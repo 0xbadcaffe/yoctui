@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 
-BRIDGE = Path(__file__).parents[1] / "ratabake_bridge.py"
+BRIDGE = Path(__file__).parents[1] / "yoctui_bridge.py"
 MAX_LINE_BYTES = 1024 * 1024
 
 
