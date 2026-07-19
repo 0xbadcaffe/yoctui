@@ -3,6 +3,33 @@ use serde::{Deserialize, Serialize};
 use thiserror::Error;
 pub const VERSION: u32 = 1;
 pub const MAX_LINE_BYTES: usize = 1024 * 1024;
+#[derive(Debug, Default)]
+pub struct LineFramer {
+    pending: Vec<u8>,
+}
+
+impl LineFramer {
+    /// Adds arbitrary transport bytes and returns only complete newline-delimited frames.
+    pub fn push(&mut self, bytes: &[u8]) -> Result<Vec<Vec<u8>>, ProtocolError> {
+        let mut frames = Vec::new();
+        for byte in bytes {
+            if *byte == b'\n' {
+                frames.push(std::mem::take(&mut self.pending));
+            } else {
+                self.pending.push(*byte);
+                if self.pending.len() > MAX_LINE_BYTES {
+                    self.pending.clear();
+                    return Err(ProtocolError::TooLarge);
+                }
+            }
+        }
+        Ok(frames)
+    }
+
+    pub fn pending_len(&self) -> usize {
+        self.pending.len()
+    }
+}
 #[derive(Debug, Error)]
 pub enum ProtocolError {
     #[error("message exceeds {MAX_LINE_BYTES} byte limit")]
@@ -157,5 +184,23 @@ mod tests {
             decode_line::<Event>(v, None).unwrap().message,
             Event::Unknown
         )
+    }
+
+    #[test]
+    fn frames_partial_lines_without_losing_data() {
+        let mut framer = LineFramer::default();
+        assert!(framer.push(b"one\ntw").unwrap().as_slice() == [b"one".to_vec()]);
+        assert_eq!(framer.pending_len(), 2);
+        assert_eq!(framer.push(b"o\n").unwrap(), vec![b"two".to_vec()]);
+    }
+
+    #[test]
+    fn oversized_partial_line_is_rejected_and_cleared() {
+        let mut framer = LineFramer::default();
+        assert!(matches!(
+            framer.push(&vec![b'x'; MAX_LINE_BYTES + 1]),
+            Err(ProtocolError::TooLarge)
+        ));
+        assert_eq!(framer.pending_len(), 0);
     }
 }
