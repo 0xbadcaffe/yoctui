@@ -1,0 +1,8 @@
+[package]
+name = "ratabake-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+ratabake-model = { path = "../ratabake-model" }
+ratabake-protocol = { path = "../ratabake-protocol" }

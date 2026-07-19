@@ -1,0 +1,14 @@
+name: CI
+on: [push, pull_request]
+permissions: { contents: read }
+concurrency: { group: ratabake-${{ github.workflow }}-${{ github.ref }}, cancel-in-progress: true }
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo fmt --all --check
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - run: cargo test --workspace --all-features
+      - run: python3 -m py_compile bridge/ratabake_bridge.py

@@ -1,0 +1,13 @@
+[package]
+name = "ratabake-bitbake"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+async-trait.workspace = true
+ratabake-model = { path = "../ratabake-model" }
+ratabake-protocol = { path = "../ratabake-protocol" }
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
