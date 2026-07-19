@@ -9,6 +9,8 @@ pub enum Input {
     Up,
     Down,
     Backspace,
+    Left,
+    Right,
 }
 pub fn key_action(key: Input) -> Option<Action> {
     match key {
@@ -21,6 +23,8 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Backspace => Some(Action::BackspaceLogQuery),
         Input::Up => Some(Action::ScrollLogs { delta: 1 }),
         Input::Down => Some(Action::ScrollLogs { delta: -1 }),
+        Input::Left => Some(Action::ScrollLogsHorizontally { delta: -8 }),
+        Input::Right => Some(Action::ScrollLogsHorizontally { delta: 8 }),
         Input::Char('l') => Some(Action::Open(Screen::Logs)),
         Input::Char('e') => Some(Action::Open(Screen::Errors)),
         Input::Char('r') => Some(Action::Open(Screen::Recipes)),

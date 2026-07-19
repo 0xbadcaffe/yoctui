@@ -677,6 +677,8 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Up => Some(Input::Up),
         KeyCode::Down => Some(Input::Down),
         KeyCode::Backspace => Some(Input::Backspace),
+        KeyCode::Left => Some(Input::Left),
+        KeyCode::Right => Some(Input::Right),
         _ => None,
     }
 }
