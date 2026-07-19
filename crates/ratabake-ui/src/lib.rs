@@ -49,6 +49,21 @@ pub fn render(frame: &mut Frame, app: &App) {
                 .block(Block::default().title("Confirm quit").borders(Borders::ALL)),
             popup,
         )
+    } else if let Some(notification) = app.notification.as_deref() {
+        let width = area.width.saturating_sub(8).clamp(24, 80);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(5) / 2,
+            width,
+            5,
+        );
+        frame.render_widget(Clear, popup);
+        frame.render_widget(
+            Paragraph::new(notification)
+                .block(Block::default().title("Notice").borders(Borders::ALL))
+                .wrap(Wrap { trim: true }),
+            popup,
+        );
     }
 }
 fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
@@ -219,5 +234,21 @@ mod tests {
                 .iter()
                 .any(|c| c.symbol() == "T")
         );
+    }
+
+    #[test]
+    fn renders_notification() {
+        let mut app = App::new(1, 1);
+        app.notification = Some("Backend unavailable".into());
+        let mut terminal = Terminal::new(TestBackend::new(80, 20)).unwrap();
+        terminal.draw(|f| render(f, &app)).unwrap();
+        let screen = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(screen.contains("Backend unavailable"));
     }
 }
