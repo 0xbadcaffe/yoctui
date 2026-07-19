@@ -152,6 +152,7 @@ pub struct LogState {
     pub retained_bytes: usize,
     pub dropped: usize,
     pub follow: bool,
+    pub paused_len: Option<usize>,
     pub wrap: bool,
     pub filter: Option<Severity>,
     pub recipe_filter: Option<String>,
@@ -167,6 +168,7 @@ impl LogState {
             retained_bytes: 0,
             dropped: 0,
             follow: true,
+            paused_len: None,
             wrap: false,
             filter: None,
             recipe_filter: None,
@@ -189,7 +191,8 @@ impl LogState {
     }
     pub fn filtered(&self) -> impl Iterator<Item = &LogEntry> {
         let query = self.query.to_lowercase();
-        self.entries.iter().filter(move |e| {
+        let visible_len = self.paused_len.unwrap_or(self.entries.len());
+        self.entries.iter().take(visible_len).filter(move |e| {
             self.filter.is_none_or(|s| s == e.severity)
                 && self
                     .recipe_filter
@@ -309,7 +312,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return Some(Effect::Cancel);
             }
         }
-        Action::ToggleLogFollow => app.logs.follow = !app.logs.follow,
+        Action::ToggleLogFollow => {
+            app.logs.follow = !app.logs.follow;
+            app.logs.paused_len = (!app.logs.follow).then_some(app.logs.entries.len());
+        }
         Action::ToggleLogWrap => app.logs.wrap = !app.logs.wrap,
         Action::CycleLogSeverity => {
             app.logs.filter = match app.logs.filter {
@@ -449,6 +455,16 @@ mod tests {
         let _ = update(&mut app, Action::ToggleLogWrap);
         assert!(!app.logs.follow);
         assert!(app.logs.wrap);
+    }
+    #[test]
+    fn paused_log_view_holds_the_visible_horizon() {
+        let mut app = App::new(10, 100);
+        app.logs.insert(log("before pause"));
+        let _ = update(&mut app, Action::ToggleLogFollow);
+        app.logs.insert(log("after pause"));
+        assert_eq!(app.logs.filtered().count(), 1);
+        let _ = update(&mut app, Action::ToggleLogFollow);
+        assert_eq!(app.logs.filtered().count(), 2);
     }
     #[test]
     fn cycles_log_severity_filter() {
