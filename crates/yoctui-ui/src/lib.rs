@@ -34,7 +34,8 @@ pub fn render(frame: &mut Frame, app: &App) {
     );
     match app.screen {
         Screen::Dashboard => dashboard(frame, app, chunks[1]),
-        Screen::Logs | Screen::Errors => logs(frame, app, chunks[1]),
+        Screen::Logs => logs(frame, app, chunks[1]),
+        Screen::Errors => errors(frame, app, chunks[1]),
         Screen::Recipes => recipes(frame, app, chunks[1]),
         Screen::Layers => layers(frame, app, chunks[1]),
         Screen::Configuration => config(frame, app, chunks[1]),
@@ -212,6 +213,53 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         .block(Block::default().title(title).borders(Borders::ALL)),
         area,
     )
+}
+fn errors(frame: &mut Frame, app: &App, area: Rect) {
+    let errors = app
+        .logs
+        .filtered()
+        .filter(|log| matches!(log.severity, Severity::Warning | Severity::Error))
+        .collect::<Vec<_>>();
+    let rows = errors
+        .into_iter()
+        .rev()
+        .take(area.height.saturating_sub(3) as usize)
+        .rev()
+        .map(|log| {
+            Row::new(vec![
+                Cell::from(format!("{:?}", log.severity)),
+                Cell::from(log.recipe.as_deref().unwrap_or("")),
+                Cell::from(log.task.as_deref().unwrap_or("")),
+                Cell::from(
+                    log.path
+                        .as_deref()
+                        .map_or_else(String::new, |path| path.display().to_string()),
+                ),
+                Cell::from(log.message.as_str()),
+            ])
+        });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Length(9),
+                Constraint::Length(16),
+                Constraint::Length(16),
+                Constraint::Length(22),
+                Constraint::Min(12),
+            ],
+        )
+        .header(
+            Row::new(["Level", "Recipe", "Task", "Location", "Message"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(
+            Block::default()
+                .title("Errors and warnings (from retained logs)")
+                .borders(Borders::ALL),
+        ),
+        area,
+    );
 }
 fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(
