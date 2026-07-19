@@ -16,6 +16,8 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
+#[cfg(unix)]
+use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{Input, key_action};
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{Action, App, AppError, BuildRequest, Effect, TaskId, TaskInfo, update};
@@ -516,7 +518,13 @@ async fn tui(
     if !targets.is_empty() {
         app.build.target = targets.first().cloned()
     }
+    #[cfg(unix)]
+    let mut termination = termination_receiver()?;
     loop {
+        #[cfg(unix)]
+        if termination.try_recv().is_ok() {
+            break;
+        }
         terminal.draw(|f| render(f, &app))?;
         if event::poll(refresh)?
             && let Event::Key(k) = event::read()?
@@ -593,6 +601,17 @@ async fn tui(
     Ok(())
 }
 
+#[cfg(unix)]
+fn termination_receiver() -> Result<tokio::sync::mpsc::Receiver<()>> {
+    let (sender, receiver) = tokio::sync::mpsc::channel(1);
+    let mut sigterm = signal(SignalKind::terminate())?;
+    tokio::spawn(async move {
+        sigterm.recv().await;
+        let _ = sender.send(()).await;
+    });
+    Ok(receiver)
+}
+
 fn input_from_key(key: KeyEvent) -> Option<Input> {
     match key.code {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlC),
@@ -634,5 +653,24 @@ mod tests {
     fn ctrl_c_is_not_the_regular_cancel_key() {
         let key = KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL);
         assert_eq!(input_from_key(key), Some(Input::CtrlC));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn sigterm_reaches_the_termination_receiver() {
+        let mut receiver = termination_receiver().unwrap();
+        let waiter = tokio::spawn(async move { receiver.recv().await });
+        tokio::task::yield_now().await;
+        // SAFETY: Tokio installs a process-local SIGTERM handler before this call; the test
+        // verifies delivery through that handler instead of allowing default termination.
+        // SAFETY: this targets only the current test process, where Tokio owns SIGTERM.
+        assert_eq!(unsafe { libc::kill(libc::getpid(), libc::SIGTERM) }, 0);
+        assert!(
+            tokio::time::timeout(Duration::from_secs(1), waiter)
+                .await
+                .unwrap()
+                .unwrap()
+                .is_some()
+        );
     }
 }
