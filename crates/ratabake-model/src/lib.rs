@@ -154,6 +154,8 @@ pub struct LogState {
     pub follow: bool,
     pub wrap: bool,
     pub filter: Option<Severity>,
+    pub recipe_filter: Option<String>,
+    pub task_filter: Option<String>,
     pub query: String,
 }
 impl LogState {
@@ -167,6 +169,8 @@ impl LogState {
             follow: true,
             wrap: false,
             filter: None,
+            recipe_filter: None,
+            task_filter: None,
             query: String::new(),
         }
     }
@@ -184,12 +188,18 @@ impl LogState {
         }
     }
     pub fn filtered(&self) -> impl Iterator<Item = &LogEntry> {
+        let query = self.query.to_lowercase();
         self.entries.iter().filter(move |e| {
             self.filter.is_none_or(|s| s == e.severity)
-                && (self.query.is_empty()
-                    || e.message
-                        .to_lowercase()
-                        .contains(&self.query.to_lowercase()))
+                && self
+                    .recipe_filter
+                    .as_ref()
+                    .is_none_or(|recipe| e.recipe.as_ref() == Some(recipe))
+                && self
+                    .task_filter
+                    .as_ref()
+                    .is_none_or(|task| e.task.as_ref() == Some(task))
+                && (query.is_empty() || e.message.to_lowercase().contains(&query))
         })
     }
 }
@@ -346,6 +356,16 @@ mod tests {
             timestamp: SystemTime::now(),
         }
     }
+    fn tagged_log(recipe: &str, task: &str, severity: Severity, message: &str) -> LogEntry {
+        LogEntry {
+            severity,
+            message: message.into(),
+            recipe: Some(recipe.into()),
+            task: Some(task.into()),
+            path: None,
+            timestamp: SystemTime::now(),
+        }
+    }
     #[test]
     fn bounded_logs_report_eviction() {
         let mut l = LogState::new(2, 100);
@@ -385,6 +405,27 @@ mod tests {
         );
         let _ = update(&mut app, Action::TaskCompleted { id, success: true });
         assert_eq!(app.build.completed, 1);
+    }
+    #[test]
+    fn log_filters_combine_severity_recipe_task_and_search() {
+        let mut logs = LogState::new(10, 1_000);
+        logs.insert(tagged_log(
+            "busybox",
+            "do_compile",
+            Severity::Warning,
+            "Compiler warning",
+        ));
+        logs.insert(tagged_log(
+            "bash",
+            "do_install",
+            Severity::Warning,
+            "Install warning",
+        ));
+        logs.filter = Some(Severity::Warning);
+        logs.recipe_filter = Some("busybox".into());
+        logs.task_filter = Some("do_compile".into());
+        logs.query = "compiler".into();
+        assert_eq!(logs.filtered().count(), 1);
     }
     #[test]
     fn request_validation() {
