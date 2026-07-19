@@ -6,6 +6,8 @@ pub enum Input {
     Esc,
     Enter,
     CtrlC,
+    Up,
+    Down,
 }
 pub fn key_action(key: Input) -> Option<Action> {
     match key {
@@ -14,6 +16,8 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('f') => Some(Action::ToggleLogFollow),
         Input::Char('w') => Some(Action::ToggleLogWrap),
         Input::Char('s') => Some(Action::CycleLogSeverity),
+        Input::Up => Some(Action::ScrollLogs { delta: 1 }),
+        Input::Down => Some(Action::ScrollLogs { delta: -1 }),
         Input::Char('l') => Some(Action::Open(Screen::Logs)),
         Input::Char('e') => Some(Action::Open(Screen::Errors)),
         Input::Char('r') => Some(Action::Open(Screen::Recipes)),
@@ -41,6 +45,7 @@ mod tests {
     fn maps_log_controls() {
         assert_eq!(key_action(Input::Char('f')), Some(Action::ToggleLogFollow));
         assert_eq!(key_action(Input::Char('w')), Some(Action::ToggleLogWrap));
+        assert_eq!(key_action(Input::Up), Some(Action::ScrollLogs { delta: 1 }));
     }
     #[test]
     fn enter_dismisses_notification() {
