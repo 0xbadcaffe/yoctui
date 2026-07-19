@@ -19,7 +19,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 ## Process backend
 
 - [DONE] Process output capture, ANSI stripping, severity classification, process-group cancellation, escalation, invalid UTF-8 handling, and fake-process tests exist. Verification: `cargo test -p yoctui-bitbake`. Commit: `c477b6a`, `6c53488`, `491db9f`.
-- [IN_PROGRESS] Bound individual process lines, preserve multiline diagnostics, map exit status, test forced cleanup/child trees/high-volume output, and expose cancellation outcome. Verification: process integration tests. Bounded-line commit pending.
+- [IN_PROGRESS] Bound individual process lines, preserve multiline diagnostics, map exit status, test forced cleanup/child trees/high-volume output, and expose cancellation outcome. Verification: process integration tests. Bounded lines: `ecbe553`; exit-code commit pending.
 
 ## Protocol and bridge
 

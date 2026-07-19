@@ -407,9 +407,13 @@ async fn headless(
                 println!("{}", l.message);
                 let _ = update(&mut app, Action::Log(l));
             }
-            BackendEvent::BuildCompleted { success } => {
+            BackendEvent::BuildCompleted { success, exit_code } => {
                 let _ = update(&mut app, Action::BuildCompleted { success });
-                println!("build {}", if success { "completed" } else { "failed" });
+                println!(
+                    "build {}{}",
+                    if success { "completed" } else { "failed" },
+                    exit_code.map_or_else(String::new, |code| format!(" (exit code {code})"))
+                );
                 if success {
                     return Ok(());
                 }
@@ -584,7 +588,7 @@ async fn tui(
             tokio::time::timeout(Duration::from_millis(1), backend.next_event()).await
         {
             match event {
-                BackendEvent::BuildCompleted { success } => {
+                BackendEvent::BuildCompleted { success, .. } => {
                     let _ = update(&mut app, Action::BuildCompleted { success });
                 }
                 event => {
@@ -660,7 +664,9 @@ mod tests {
     async fn sigterm_reaches_the_termination_receiver() {
         let mut receiver = termination_receiver().unwrap();
         let waiter = tokio::spawn(async move { receiver.recv().await });
-        tokio::task::yield_now().await;
+        // Give the spawned receiver one scheduler interval to poll and register with Tokio's
+        // signal driver before delivering the process-wide signal.
+        tokio::time::sleep(Duration::from_millis(25)).await;
         // SAFETY: Tokio installs a process-local SIGTERM handler before this call; the test
         // verifies delivery through that handler instead of allowing default termination.
         // SAFETY: this targets only the current test process, where Tokio owns SIGTERM.
