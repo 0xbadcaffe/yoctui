@@ -106,6 +106,7 @@ pub enum BackendEvent {
     },
     BuildCompleted {
         success: bool,
+        exit_code: Option<i32>,
     },
     CommandFailed {
         code: String,
@@ -179,10 +180,10 @@ impl ProcessBackend {
             process_group: None,
         }
     }
-    async fn collect(&mut self) -> Result<bool, BackendError> {
+    async fn collect(&mut self) -> Result<(bool, Option<i32>), BackendError> {
         let child = self.child.as_mut().ok_or(BackendError::NotRunning)?;
         let status = child.wait().await?;
-        Ok(status.success())
+        Ok((status.success(), status.code()))
     }
 }
 #[async_trait]
@@ -252,8 +253,8 @@ impl BitBakeBackend for ProcessBackend {
         {
             return Ok(BackendEvent::Log(line));
         }
-        let success = self.collect().await?;
-        Ok(BackendEvent::BuildCompleted { success })
+        let (success, exit_code) = self.collect().await?;
+        Ok(BackendEvent::BuildCompleted { success, exit_code })
     }
 }
 pub struct BridgeBackend {
@@ -394,7 +395,10 @@ impl BridgeBackend {
                 path: None,
                 timestamp: SystemTime::now(),
             }),
-            Event::BuildCompleted { success } => BackendEvent::BuildCompleted { success },
+            Event::BuildCompleted { success } => BackendEvent::BuildCompleted {
+                success,
+                exit_code: None,
+            },
             Event::CommandFailed { code, message } | Event::ProtocolError { code, message } => {
                 BackendEvent::CommandFailed { code, message }
             }
@@ -511,7 +515,7 @@ mod tests {
         loop {
             match backend.next_event().await.unwrap() {
                 BackendEvent::Log(entry) => messages.push(entry),
-                BackendEvent::BuildCompleted { success } => {
+                BackendEvent::BuildCompleted { success, .. } => {
                     assert!(success);
                     break;
                 }
@@ -547,6 +551,38 @@ mod tests {
             .await
             .unwrap()
             .unwrap();
+        fs::remove_file(script).unwrap();
+    }
+
+    #[tokio::test]
+    async fn process_backend_reports_exit_code() {
+        let script =
+            std::env::temp_dir().join(format!("yoctui-failed-bitbake-{}", std::process::id()));
+        fs::write(
+            &script,
+            "#!/bin/sh\nprintf 'ERROR: failed build\\n' >&2\nexit 7\n",
+        )
+        .unwrap();
+        let mut permissions = fs::metadata(&script).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&script, permissions).unwrap();
+        let mut backend = ProcessBackend::with_executable(std::env::temp_dir(), script.clone());
+        backend
+            .start_build(BuildRequest {
+                targets: vec!["core-image-minimal".into()],
+                task: None,
+            })
+            .await
+            .unwrap();
+        loop {
+            if let BackendEvent::BuildCompleted { success, exit_code } =
+                backend.next_event().await.unwrap()
+            {
+                assert!(!success);
+                assert_eq!(exit_code, Some(7));
+                break;
+            }
+        }
         fs::remove_file(script).unwrap();
     }
 }
