@@ -15,24 +15,55 @@ use yoctui_protocol::{
     Command, Envelope, Event, MAX_LINE_BYTES, ProtocolError, VERSION, decode_line, encode_line,
 };
 
+const MAX_PROCESS_LINE_BYTES: usize = 1024 * 1024;
+
 async fn read_output<R>(stream: R, sender: tokio::sync::mpsc::Sender<LogEntry>)
 where
     R: AsyncRead + Unpin,
 {
     let mut reader = BufReader::new(stream);
     let mut bytes = Vec::new();
-    loop {
-        bytes.clear();
-        let count = match reader.read_until(b'\n', &mut bytes).await {
-            Ok(count) => count,
-            Err(_) => break,
-        };
-        if count == 0 {
+    let mut discarding = false;
+    while let Ok(buffer) = reader.fill_buf().await {
+        if buffer.is_empty() {
+            if !bytes.is_empty()
+                && !discarding
+                && sender
+                    .send(classify_output(output_text(&bytes)))
+                    .await
+                    .is_err()
+            {
+                break;
+            }
             break;
         }
-        let line = output_text(&bytes);
-        if sender.send(classify_output(line)).await.is_err() {
-            break;
+        let newline = buffer.iter().position(|byte| *byte == b'\n');
+        let take = newline.unwrap_or(buffer.len());
+        if !discarding {
+            if bytes.len() + take > MAX_PROCESS_LINE_BYTES {
+                let mut message = output_text(&bytes);
+                message.push_str(" [line truncated]");
+                if sender.send(classify_output(message)).await.is_err() {
+                    break;
+                }
+                bytes.clear();
+                discarding = true;
+            } else {
+                bytes.extend_from_slice(&buffer[..take]);
+            }
+        }
+        reader.consume(take + usize::from(newline.is_some()));
+        if newline.is_some() {
+            if !discarding
+                && sender
+                    .send(classify_output(output_text(&bytes)))
+                    .await
+                    .is_err()
+            {
+                break;
+            }
+            bytes.clear();
+            discarding = false;
         }
     }
 }
@@ -431,6 +462,29 @@ mod tests {
     #[test]
     fn invalid_utf8_output_is_preserved_lossily() {
         assert_eq!(output_text(b"warning: \xff\n"), "warning: �");
+    }
+
+    #[tokio::test]
+    async fn oversized_process_line_is_truncated_and_stream_continues() {
+        let (mut writer, reader) = tokio::io::duplex(MAX_PROCESS_LINE_BYTES + 2);
+        let (sender, mut receiver) = tokio::sync::mpsc::channel(2);
+        let reader_task = tokio::spawn(read_output(reader, sender));
+        writer
+            .write_all(&vec![b'x'; MAX_PROCESS_LINE_BYTES + 1])
+            .await
+            .unwrap();
+        writer.write_all(b"\nnext line\n").await.unwrap();
+        drop(writer);
+        reader_task.await.unwrap();
+        assert!(
+            receiver
+                .recv()
+                .await
+                .unwrap()
+                .message
+                .ends_with("[line truncated]")
+        );
+        assert_eq!(receiver.recv().await.unwrap().message, "next line");
     }
 
     #[tokio::test]

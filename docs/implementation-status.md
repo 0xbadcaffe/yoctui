@@ -19,7 +19,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 ## Process backend
 
 - [DONE] Process output capture, ANSI stripping, severity classification, process-group cancellation, escalation, invalid UTF-8 handling, and fake-process tests exist. Verification: `cargo test -p yoctui-bitbake`. Commit: `c477b6a`, `6c53488`, `491db9f`.
-- [IN_PROGRESS] Bound individual process lines, preserve multiline diagnostics, map exit status, test forced cleanup/child trees/high-volume output, and expose cancellation outcome. Verification: process integration tests.
+- [IN_PROGRESS] Bound individual process lines, preserve multiline diagnostics, map exit status, test forced cleanup/child trees/high-volume output, and expose cancellation outcome. Verification: process integration tests. Bounded-line commit pending.
 
 ## Protocol and bridge
 
@@ -53,12 +53,12 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 ## CONTINUE_FROM_HERE
 
-Current phase: mandatory naming and workspace-layout compliance.
+Current phase: process-backend reliability.
 
-Next incomplete item: add terminal restoration pseudo-terminal coverage and supported termination-signal handling.
+Next incomplete item: preserve multiline diagnostics and map process exit outcomes.
 
-Relevant files: `crates/yoctui-cli/src/main.rs`, `crates/yoctui-ui/src/lib.rs`, `docs/implementation-status.md`.
+Relevant files: `crates/yoctui-bitbake/src/lib.rs`, `docs/implementation-status.md`.
 
 Last successful commands: `cargo fmt --all --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
 
-Next command: add the smallest terminal lifecycle regression test, then run the full Rust checks.
+Next command: add a process-result model and test failed exit handling.
