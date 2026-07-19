@@ -8,10 +8,10 @@ anyhow.workspace = true
 clap.workspace = true
 crossterm.workspace = true
 ratatui.workspace = true
-ratabake-app = { path = "../ratabake-app" }
-ratabake-bitbake = { path = "../ratabake-bitbake" }
-ratabake-model = { path = "../ratabake-model" }
-ratabake-ui = { path = "../ratabake-ui" }
+yoctui-app = { path = "../yoctui-app" }
+yoctui-bitbake = { path = "../yoctui-bitbake" }
+yoctui-model = { path = "../yoctui-model" }
+yoctui-ui = { path = "../yoctui-ui" }
 serde.workspace = true
 thiserror.workspace = true
 tokio.workspace = true

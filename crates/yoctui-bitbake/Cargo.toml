@@ -1,12 +1,12 @@
 [package]
-name = "ratabake-bitbake"
+name = "yoctui-bitbake"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 [dependencies]
 async-trait.workspace = true
-ratabake-model = { path = "../ratabake-model" }
-ratabake-protocol = { path = "../ratabake-protocol" }
+yoctui-model = { path = "../yoctui-model" }
+yoctui-protocol = { path = "../yoctui-protocol" }
 serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true

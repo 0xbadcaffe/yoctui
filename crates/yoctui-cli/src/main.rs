@@ -9,10 +9,6 @@ use crossterm::{
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
-use ratabake_app::{Input, key_action};
-use ratabake_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
-use ratabake_model::{Action, App, AppError, BuildRequest, Effect, TaskId, TaskInfo, update};
-use ratabake_ui::render;
 use ratatui::Terminal;
 use serde::Deserialize;
 use std::{
@@ -20,6 +16,10 @@ use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
+use yoctui_app::{Input, key_action};
+use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
+use yoctui_model::{Action, App, AppError, BuildRequest, Effect, TaskId, TaskInfo, update};
+use yoctui_ui::render;
 #[derive(Parser, Debug)]
 #[command(about = "A Ratatui frontend and control client for BitBake")]
 struct Cli {
@@ -245,7 +245,7 @@ async fn main() -> Result<()> {
     .await
 }
 
-async fn load_workspace(backend: Backend, build_dir: PathBuf) -> Result<ratabake_model::Workspace> {
+async fn load_workspace(backend: Backend, build_dir: PathBuf) -> Result<yoctui_model::Workspace> {
     let mut backend = select_backend(backend, build_dir).await?;
     backend.inspect_workspace().await.map_err(Into::into)
 }

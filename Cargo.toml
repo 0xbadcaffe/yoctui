@@ -1,7 +1,7 @@
 [workspace]
 members = [
-  "crates/ratabake-model", "crates/ratabake-protocol", "crates/ratabake-app",
-  "crates/ratabake-bitbake", "crates/ratabake-ui", "crates/ratabake-cli"
+  "crates/yoctui-model", "crates/yoctui-protocol", "crates/yoctui-app",
+  "crates/yoctui-bitbake", "crates/yoctui-ui", "crates/yoctui-cli"
 ]
 resolver = "2"
 

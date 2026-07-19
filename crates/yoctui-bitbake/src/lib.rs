@@ -1,9 +1,5 @@
 //! BitBake adapters. They execute BitBake; they never evaluate metadata themselves.
 use async_trait::async_trait;
-use ratabake_model::{BuildRequest, LogEntry, Severity, Workspace};
-use ratabake_protocol::{
-    Command, Envelope, Event, MAX_LINE_BYTES, ProtocolError, VERSION, decode_line, encode_line,
-};
 use std::{
     path::PathBuf,
     process::Stdio,
@@ -13,6 +9,10 @@ use thiserror::Error;
 use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, Command as TokioCommand},
+};
+use yoctui_model::{BuildRequest, LogEntry, Severity, Workspace};
+use yoctui_protocol::{
+    Command, Envelope, Event, MAX_LINE_BYTES, ProtocolError, VERSION, decode_line, encode_line,
 };
 
 async fn read_output<R>(stream: R, sender: tokio::sync::mpsc::Sender<LogEntry>)
