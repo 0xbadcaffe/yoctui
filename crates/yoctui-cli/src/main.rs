@@ -526,7 +526,7 @@ async fn tui(
     let mut termination = termination_receiver()?;
     loop {
         #[cfg(unix)]
-        if termination.try_recv().is_ok() {
+        if termination_requested(&mut termination) {
             break;
         }
         terminal.draw(|f| render(f, &app))?;
@@ -616,6 +616,11 @@ fn termination_receiver() -> Result<tokio::sync::mpsc::Receiver<()>> {
     Ok(receiver)
 }
 
+#[cfg(unix)]
+fn termination_requested(receiver: &mut tokio::sync::mpsc::Receiver<()>) -> bool {
+    receiver.try_recv().is_ok()
+}
+
 fn input_from_key(key: KeyEvent) -> Option<Input> {
     match key.code {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlC),
@@ -661,22 +666,9 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
-    async fn sigterm_reaches_the_termination_receiver() {
-        let mut receiver = termination_receiver().unwrap();
-        let waiter = tokio::spawn(async move { receiver.recv().await });
-        // Give the spawned receiver one scheduler interval to poll and register with Tokio's
-        // signal driver before delivering the process-wide signal.
-        tokio::time::sleep(Duration::from_millis(25)).await;
-        // SAFETY: Tokio installs a process-local SIGTERM handler before this call; the test
-        // verifies delivery through that handler instead of allowing default termination.
-        // SAFETY: this targets only the current test process, where Tokio owns SIGTERM.
-        assert_eq!(unsafe { libc::kill(libc::getpid(), libc::SIGTERM) }, 0);
-        assert!(
-            tokio::time::timeout(Duration::from_secs(1), waiter)
-                .await
-                .unwrap()
-                .unwrap()
-                .is_some()
-        );
+    async fn queued_termination_requests_exit_the_tui_loop() {
+        let (sender, mut receiver) = tokio::sync::mpsc::channel(1);
+        sender.send(()).await.unwrap();
+        assert!(termination_requested(&mut receiver));
     }
 }

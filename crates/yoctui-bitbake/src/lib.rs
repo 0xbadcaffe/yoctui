@@ -1,6 +1,7 @@
 //! BitBake adapters. They execute BitBake; they never evaluate metadata themselves.
 use async_trait::async_trait;
 use std::{
+    ffi::OsString,
     path::PathBuf,
     process::Stdio,
     time::{Duration, SystemTime},
@@ -160,6 +161,7 @@ pub fn classify_output(line: String) -> LogEntry {
 pub struct ProcessBackend {
     build_dir: PathBuf,
     executable: PathBuf,
+    arguments: Vec<OsString>,
     child: Option<Child>,
     output: Option<tokio::sync::mpsc::Receiver<LogEntry>>,
     #[cfg(unix)]
@@ -171,9 +173,14 @@ impl ProcessBackend {
     }
 
     pub fn with_executable(build_dir: PathBuf, executable: PathBuf) -> Self {
+        Self::with_command(build_dir, executable, Vec::new())
+    }
+
+    pub fn with_command(build_dir: PathBuf, executable: PathBuf, arguments: Vec<OsString>) -> Self {
         Self {
             build_dir,
             executable,
+            arguments,
             child: None,
             output: None,
             #[cfg(unix)]
@@ -199,7 +206,8 @@ impl BitBakeBackend for ProcessBackend {
             .validate()
             .map_err(|e| BackendError::Bridge(e.to_string()))?;
         let mut cmd = TokioCommand::new(&self.executable);
-        cmd.args(&request.targets)
+        cmd.args(&self.arguments)
+            .args(&request.targets)
             .current_dir(&self.build_dir)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
@@ -285,13 +293,15 @@ impl BridgeBackend {
             .stdout
             .take()
             .ok_or_else(|| BackendError::Bridge("bridge stdout unavailable".into()))?;
-        Ok(Self {
+        let mut backend = Self {
             child,
             stdin,
             lines: BufReader::new(stdout),
             sequence: 0,
             last_sequence: 0,
-        })
+        };
+        backend.handshake().await?;
+        Ok(backend)
     }
     async fn command(&mut self, message: Command) -> Result<(), BackendError> {
         self.sequence += 1;
@@ -328,6 +338,26 @@ impl BridgeBackend {
             if newline.is_some() {
                 return Ok(Some(line));
             }
+        }
+    }
+
+    async fn handshake(&mut self) -> Result<(), BackendError> {
+        self.command(Command::Hello).await?;
+        let Some(line) = self.next_line().await? else {
+            return Err(BackendError::Bridge(
+                "bridge disconnected during protocol handshake".into(),
+            ));
+        };
+        let envelope: Envelope<Event> = decode_line(&line, Some(self.last_sequence))?;
+        self.last_sequence = envelope.sequence;
+        match envelope.message {
+            Event::HelloAck { .. } => Ok(()),
+            Event::ProtocolError { code, message } | Event::CommandFailed { code, message } => Err(
+                BackendError::Bridge(format!("handshake rejected: {code}: {message}")),
+            ),
+            _ => Err(BackendError::Bridge(
+                "bridge sent an unexpected handshake event".into(),
+            )),
         }
     }
     fn event(event: Event) -> Result<BackendEvent, BackendError> {
@@ -454,7 +484,27 @@ impl Drop for BridgeBackend {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{fs, os::unix::fs::PermissionsExt};
+    use std::{
+        fs,
+        os::unix::fs::PermissionsExt,
+        time::{SystemTime, UNIX_EPOCH},
+    };
+
+    fn fixture_script(name: &str) -> PathBuf {
+        let nonce = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!("yoctui-{name}-{}-{nonce}", std::process::id()))
+    }
+
+    fn shell_backend(script: PathBuf) -> ProcessBackend {
+        ProcessBackend::with_command(
+            std::env::temp_dir(),
+            PathBuf::from("/bin/sh"),
+            vec![script.into_os_string()],
+        )
+    }
     #[test]
     fn ansi_and_severity() {
         assert_eq!(strip_ansi("\x1b[31merror: bad\x1b[0m"), "error: bad");
@@ -493,8 +543,7 @@ mod tests {
 
     #[tokio::test]
     async fn process_backend_collects_both_output_streams() {
-        let script =
-            std::env::temp_dir().join(format!("yoctui-fake-bitbake-{}", std::process::id()));
+        let script = fixture_script("fake-bitbake");
         fs::write(
             &script,
             "#!/bin/sh\nprintf 'NOTE: stdout line\\n'\nprintf 'WARNING: stderr line\\n' >&2\n",
@@ -503,7 +552,7 @@ mod tests {
         let mut permissions = fs::metadata(&script).unwrap().permissions();
         permissions.set_mode(0o700);
         fs::set_permissions(&script, permissions).unwrap();
-        let mut backend = ProcessBackend::with_executable(std::env::temp_dir(), script.clone());
+        let mut backend = shell_backend(script.clone());
         backend
             .start_build(BuildRequest {
                 targets: vec!["core-image-minimal".into()],
@@ -533,13 +582,12 @@ mod tests {
 
     #[tokio::test]
     async fn process_backend_cancels_a_hung_child() {
-        let script =
-            std::env::temp_dir().join(format!("yoctui-hung-bitbake-{}", std::process::id()));
+        let script = fixture_script("hung-bitbake");
         fs::write(&script, "#!/bin/sh\nsleep 30\n").unwrap();
         let mut permissions = fs::metadata(&script).unwrap().permissions();
         permissions.set_mode(0o700);
         fs::set_permissions(&script, permissions).unwrap();
-        let mut backend = ProcessBackend::with_executable(std::env::temp_dir(), script.clone());
+        let mut backend = shell_backend(script.clone());
         backend
             .start_build(BuildRequest {
                 targets: vec!["core-image-minimal".into()],
@@ -556,8 +604,7 @@ mod tests {
 
     #[tokio::test]
     async fn process_backend_reports_exit_code() {
-        let script =
-            std::env::temp_dir().join(format!("yoctui-failed-bitbake-{}", std::process::id()));
+        let script = fixture_script("failed-bitbake");
         fs::write(
             &script,
             "#!/bin/sh\nprintf 'ERROR: failed build\\n' >&2\nexit 7\n",
@@ -566,7 +613,7 @@ mod tests {
         let mut permissions = fs::metadata(&script).unwrap().permissions();
         permissions.set_mode(0o700);
         fs::set_permissions(&script, permissions).unwrap();
-        let mut backend = ProcessBackend::with_executable(std::env::temp_dir(), script.clone());
+        let mut backend = shell_backend(script.clone());
         backend
             .start_build(BuildRequest {
                 targets: vec!["core-image-minimal".into()],
@@ -584,5 +631,16 @@ mod tests {
             }
         }
         fs::remove_file(script).unwrap();
+    }
+
+    #[tokio::test]
+    async fn bridge_backend_negotiates_before_workspace_inspection() {
+        let script =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../bridge/yoctui_bridge.py");
+        let mut backend = BridgeBackend::spawn("python3", script, std::env::temp_dir())
+            .await
+            .unwrap();
+        let workspace = backend.inspect_workspace().await.unwrap();
+        assert_eq!(workspace.build_dir, Some(std::env::temp_dir()));
     }
 }
