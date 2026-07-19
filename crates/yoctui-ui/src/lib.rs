@@ -183,7 +183,12 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         Row::new(vec![
             Cell::from(format!("{:?}", l.severity)),
             Cell::from(l.recipe.as_deref().unwrap_or("")),
-            Cell::from(l.message.as_str()),
+            Cell::from(
+                l.message
+                    .chars()
+                    .skip(app.logs.horizontal_offset)
+                    .collect::<String>(),
+            ),
         ])
     });
     frame.render_widget(

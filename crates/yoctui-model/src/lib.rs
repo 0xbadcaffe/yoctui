@@ -160,6 +160,7 @@ pub struct LogState {
     pub query: String,
     pub searching: bool,
     pub scroll_offset: usize,
+    pub horizontal_offset: usize,
 }
 impl LogState {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
@@ -178,6 +179,7 @@ impl LogState {
             query: String::new(),
             searching: false,
             scroll_offset: 0,
+            horizontal_offset: 0,
         }
     }
     pub fn insert(&mut self, entry: LogEntry) {
@@ -261,6 +263,7 @@ pub enum Action {
     AppendLogQuery(char),
     BackspaceLogQuery,
     FinishLogSearch,
+    ScrollLogsHorizontally { delta: isize },
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -358,6 +361,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.logs.query.pop();
         }
         Action::FinishLogSearch => app.logs.searching = false,
+        Action::ScrollLogsHorizontally { delta } => {
+            app.logs.horizontal_offset = if delta.is_negative() {
+                app.logs
+                    .horizontal_offset
+                    .saturating_sub(delta.unsigned_abs())
+            } else {
+                app.logs.horizontal_offset.saturating_add(delta as usize)
+            };
+        }
         Action::AppendLogQuery(_) | Action::BackspaceLogQuery => {}
         Action::DismissNotification => app.notification = None,
         Action::Quit => {
