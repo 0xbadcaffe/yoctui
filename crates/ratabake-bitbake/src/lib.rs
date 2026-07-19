@@ -472,4 +472,27 @@ mod tests {
                 .any(|entry| entry.severity == Severity::Warning)
         );
     }
+
+    #[tokio::test]
+    async fn process_backend_cancels_a_hung_child() {
+        let script =
+            std::env::temp_dir().join(format!("yoctui-hung-bitbake-{}", std::process::id()));
+        fs::write(&script, "#!/bin/sh\nsleep 30\n").unwrap();
+        let mut permissions = fs::metadata(&script).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&script, permissions).unwrap();
+        let mut backend = ProcessBackend::with_executable(std::env::temp_dir(), script.clone());
+        backend
+            .start_build(BuildRequest {
+                targets: vec!["core-image-minimal".into()],
+                task: None,
+            })
+            .await
+            .unwrap();
+        tokio::time::timeout(Duration::from_secs(3), backend.cancel_build())
+            .await
+            .unwrap()
+            .unwrap();
+        fs::remove_file(script).unwrap();
+    }
 }
