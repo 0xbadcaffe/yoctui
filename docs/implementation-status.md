@@ -25,7 +25,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 - [DONE] Versioned envelopes, sequence/correlation fields, NDJSON framing, bounded transport reads, malformed/oversized handling, and Python framing tests exist. Verification: protocol and bridge tests. Commit: `3730f35`, `78cc988`.
 - [IN_PROGRESS] Implement bridge handshake negotiation, graceful shutdown command, compatibility adapters, mocked BitBake integration boundary, and typed workspace/recipe/layer/variable responses. Verification: pytest with mocked modules and `cargo test -p yoctui-bitbake`. Handshake: `496b177`; shutdown acknowledgement and child exit: `ad52654`; typed responses: `0f4bb33`; adapter selection: `c5daf0b`; mocked event normalization: `da142a2`.
-- [NOT_STARTED] Connect bridge to a supported live BitBake server, normalize native events, start builds, request native cancellation, and document tested BitBake versions. Verification: optional real-Yocto smoke workflow.
+- [IN_PROGRESS] Connect bridge to a supported live BitBake server, normalize native events, start builds, request native cancellation, and document tested BitBake versions. Verification: mocked `bb.server` adapter tests; live-Yocto smoke workflow remains required. Server boundary and unavailable-server diagnostics: pending commit.
 
 ## Workspace, CLI, and configuration
 
@@ -55,10 +55,10 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 Current phase: bridge reliability and compatibility.
 
-Next incomplete item: implement live BitBake server connection and native build/cancellation operations through the adapter.
+Next incomplete item: validate the live server adapter against a supported BitBake interface and normalize its native events.
 
 Relevant files: `crates/yoctui-bitbake/src/lib.rs`, `bridge/yoctui_bridge.py`, `bridge/tests/test_bridge.py`, `docs/implementation-status.md`.
 
 Last successful commands: `cargo fmt --all --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
 
-Next command: define the live BitBake server adapter boundary and unavailable-server diagnostics, then run `cargo test --workspace --all-features`.
+Next command: add a fixture-backed native-event adapter and document the unsupported live-server limitations, then run `cargo test --workspace --all-features`.
