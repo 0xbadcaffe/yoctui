@@ -34,8 +34,8 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 ## Screens and interaction
 
-- [IN_PROGRESS] Logs support bounded retention, pause/follow, wrap, severity filtering, and notification display. Verification: model/UI tests. Commit: `26aad33`, `4017e02`, `c871b26`.
-- [NOT_STARTED] Add log scrolling, horizontal navigation, text search, recipe/task filters in UI, source-log/editor actions, and eviction detail.
+- [IN_PROGRESS] Logs support bounded retention, pause/follow, wrap, severity filtering, notification display, vertical/horizontal navigation, and interactive text search. Verification: model/UI tests. Commits: `26aad33`, `4017e02`, `c871b26`, `7c04b37`, `09c4978`, `7928bbd`.
+- [IN_PROGRESS] Add recipe/task filters in UI, source-log/editor actions, and richer eviction detail.
 - [NOT_STARTED] Complete structured errors screen with selection/detail/log jump.
 - [NOT_STARTED] Complete recipes screen with search/details/valid actions and destructive confirmations.
 - [NOT_STARTED] Complete layers screen with metadata/search/open action.
