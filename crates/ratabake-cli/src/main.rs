@@ -296,6 +296,7 @@ async fn print_variable(backend: Backend, build_dir: PathBuf, name: &str) -> Res
 }
 async fn doctor(build_dir: &Path) -> Result<()> {
     let initialized = std::env::var_os("BUILDDIR").is_some();
+    let python = env::var("PYTHON").unwrap_or_else(|_| "python3".into());
     let bitbake = tokio::process::Command::new("bitbake")
         .arg("--version")
         .output()
@@ -329,6 +330,22 @@ async fn doctor(build_dir: &Path) -> Result<()> {
             println!("bitbake: unavailable — source oe-init-build-env or add bitbake to PATH")
         }
     };
+    match tokio::process::Command::new(&python)
+        .args([
+            "-c",
+            "import bb; print(getattr(bb, '__version__', 'available'))",
+        ])
+        .output()
+        .await
+    {
+        Ok(output) if output.status.success() => println!(
+            "BitBake Python module: {}",
+            String::from_utf8_lossy(&output.stdout).trim()
+        ),
+        Ok(_) | Err(_) => println!(
+            "BitBake Python module: unavailable — source oe-init-build-env before starting Yoctui"
+        ),
+    }
     for f in ["conf/local.conf", "conf/bblayers.conf"] {
         println!(
             "{}: {}",
