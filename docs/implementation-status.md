@@ -24,7 +24,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 ## Protocol and bridge
 
 - [DONE] Versioned envelopes, sequence/correlation fields, NDJSON framing, bounded transport reads, malformed/oversized handling, and Python framing tests exist. Verification: protocol and bridge tests. Commit: `3730f35`, `78cc988`.
-- [IN_PROGRESS] Implement bridge handshake negotiation, graceful shutdown command, compatibility adapters, mocked BitBake integration boundary, and typed workspace/recipe/layer/variable responses. Verification: pytest with mocked modules and `cargo test -p yoctui-bitbake`. Handshake: `496b177`; shutdown acknowledgement and child exit: `ad52654`; typed responses: `0f4bb33`; adapter selection: `c5daf0b`.
+- [IN_PROGRESS] Implement bridge handshake negotiation, graceful shutdown command, compatibility adapters, mocked BitBake integration boundary, and typed workspace/recipe/layer/variable responses. Verification: pytest with mocked modules and `cargo test -p yoctui-bitbake`. Handshake: `496b177`; shutdown acknowledgement and child exit: `ad52654`; typed responses: `0f4bb33`; adapter selection: `c5daf0b`; mocked event normalization: `da142a2`.
 - [NOT_STARTED] Connect bridge to a supported live BitBake server, normalize native events, start builds, request native cancellation, and document tested BitBake versions. Verification: optional real-Yocto smoke workflow.
 
 ## Workspace, CLI, and configuration
@@ -55,10 +55,10 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 Current phase: bridge reliability and compatibility.
 
-Next incomplete item: normalize mocked BitBake task lifecycle events through the selected adapter.
+Next incomplete item: implement live BitBake server connection and native build/cancellation operations through the adapter.
 
 Relevant files: `crates/yoctui-bitbake/src/lib.rs`, `bridge/yoctui_bridge.py`, `bridge/tests/test_bridge.py`, `docs/implementation-status.md`.
 
 Last successful commands: `cargo fmt --all --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
 
-Next command: add mocked BitBake task-event conversion through the adapter, then run `cargo test --workspace --all-features`.
+Next command: define the live BitBake server adapter boundary and unavailable-server diagnostics, then run `cargo test --workspace --all-features`.
