@@ -10,7 +10,7 @@ use crossterm::{
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratabake_app::{Input, key_action};
-use ratabake_bitbake::{BitBakeBackend, ProcessBackend};
+use ratabake_bitbake::{BitBakeBackend, BridgeBackend, ProcessBackend};
 use ratabake_model::{Action, App, BuildRequest, update};
 use ratabake_ui::render;
 use ratatui::Terminal;
@@ -213,7 +213,14 @@ async fn main() -> Result<()> {
         _ => config.default_target.clone().into_iter().collect(),
     };
     if cli.headless {
-        return headless(build_dir, targets, config.log_entries, config.log_bytes).await;
+        return headless(
+            config.backend,
+            build_dir,
+            targets,
+            config.log_entries,
+            config.log_bytes,
+        )
+        .await;
     }
     if matches!(config.backend, Backend::Bridge) {
         eprintln!(
@@ -279,12 +286,13 @@ async fn doctor(build_dir: &Path) -> Result<()> {
     Ok(())
 }
 async fn headless(
+    backend_kind: Backend,
     build_dir: PathBuf,
     targets: Vec<String>,
     log_entries: usize,
     log_bytes: usize,
 ) -> Result<()> {
-    let mut backend = ProcessBackend::new(build_dir);
+    let mut backend = select_backend(backend_kind, build_dir.clone()).await?;
     let mut app = App::new(log_entries, log_bytes);
     let _ = backend.inspect_workspace().await?;
     if targets.is_empty() {
@@ -312,6 +320,26 @@ async fn headless(
                 return Err(anyhow::anyhow!("BitBake build failed"));
             }
             _ => {}
+        }
+    }
+}
+
+async fn select_backend(backend: Backend, build_dir: PathBuf) -> Result<Box<dyn BitBakeBackend>> {
+    match backend {
+        Backend::Process => Ok(Box::new(ProcessBackend::new(build_dir))),
+        Backend::Bridge => {
+            let script = env::var_os("RATABAKE_BRIDGE_PATH")
+                .map(PathBuf::from)
+                .unwrap_or_else(|| {
+                    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                        .join("../..")
+                        .join("bridge/ratabake_bridge.py")
+                });
+            let python = env::var("PYTHON").unwrap_or_else(|_| "python3".into());
+            BridgeBackend::spawn(&python, script, build_dir)
+                .await
+                .map(|backend| Box::new(backend) as Box<dyn BitBakeBackend>)
+                .context("could not start the BitBake bridge; source oe-init-build-env or use --backend process")
         }
     }
 }

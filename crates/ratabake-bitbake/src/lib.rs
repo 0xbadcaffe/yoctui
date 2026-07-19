@@ -221,9 +221,13 @@ impl BridgeBackend {
         self.stdin.flush().await?;
         Ok(())
     }
-    fn event(event: Event) -> BackendEvent {
-        match event {
-            Event::Workspace { .. } => BackendEvent::Workspace(Workspace::default()),
+    fn event(event: Event) -> Result<BackendEvent, BackendError> {
+        Ok(match event {
+            Event::Workspace { data } => {
+                BackendEvent::Workspace(serde_json::from_value(data).map_err(|error| {
+                    BackendError::Bridge(format!("invalid workspace response: {error}"))
+                })?)
+            }
             Event::BuildStarted => BackendEvent::BuildStarted,
             Event::ParseProgress { .. } => BackendEvent::ParseProgress,
             Event::TaskStarted { recipe, task, .. } => BackendEvent::TaskStarted { recipe, task },
@@ -289,14 +293,27 @@ impl BridgeBackend {
             Event::BridgeShutdown | Event::HelloAck { .. } | Event::Unknown => {
                 BackendEvent::Disconnected
             }
-        }
+        })
     }
 }
 #[async_trait]
 impl BitBakeBackend for BridgeBackend {
     async fn inspect_workspace(&mut self) -> Result<Workspace, BackendError> {
         self.command(Command::InspectWorkspace).await?;
-        Ok(Workspace::default())
+        loop {
+            match self.next_event().await? {
+                BackendEvent::Workspace(workspace) => return Ok(workspace),
+                BackendEvent::CommandFailed { code, message } => {
+                    return Err(BackendError::Bridge(format!("{code}: {message}")));
+                }
+                BackendEvent::Disconnected => {
+                    return Err(BackendError::Bridge(
+                        "bridge disconnected during inspection".into(),
+                    ));
+                }
+                _ => {}
+            }
+        }
     }
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError> {
         self.command(Command::StartBuild {
@@ -315,7 +332,7 @@ impl BitBakeBackend for BridgeBackend {
         }
         let e: Envelope<Event> = decode_line(&line, Some(self.last_sequence))?;
         self.last_sequence = e.sequence;
-        Ok(Self::event(e.message))
+        Self::event(e.message)
     }
 }
 impl Drop for BridgeBackend {
