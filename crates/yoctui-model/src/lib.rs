@@ -158,6 +158,7 @@ pub struct LogState {
     pub recipe_filter: Option<String>,
     pub task_filter: Option<String>,
     pub query: String,
+    pub searching: bool,
     pub scroll_offset: usize,
 }
 impl LogState {
@@ -175,6 +176,7 @@ impl LogState {
             recipe_filter: None,
             task_filter: None,
             query: String::new(),
+            searching: false,
             scroll_offset: 0,
         }
     }
@@ -255,6 +257,10 @@ pub enum Action {
     ToggleLogWrap,
     CycleLogSeverity,
     ScrollLogs { delta: isize },
+    BeginLogSearch,
+    AppendLogQuery(char),
+    BackspaceLogQuery,
+    FinishLogSearch,
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -343,6 +349,16 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .min(app.logs.entries.len())
             };
         }
+        Action::BeginLogSearch => {
+            app.logs.searching = true;
+            app.logs.follow = false;
+        }
+        Action::AppendLogQuery(character) if app.logs.searching => app.logs.query.push(character),
+        Action::BackspaceLogQuery if app.logs.searching => {
+            app.logs.query.pop();
+        }
+        Action::FinishLogSearch => app.logs.searching = false,
+        Action::AppendLogQuery(_) | Action::BackspaceLogQuery => {}
         Action::DismissNotification => app.notification = None,
         Action::Quit => {
             if matches!(

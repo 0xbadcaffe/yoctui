@@ -598,6 +598,19 @@ async fn tui(
                     app.notification =
                         Some("pass a target or set default_target before starting a build".into());
                 }
+            } else if app.logs.searching {
+                match input {
+                    Input::Char(character) => {
+                        let _ = update(&mut app, Action::AppendLogQuery(character));
+                    }
+                    Input::Enter | Input::Esc => {
+                        let _ = update(&mut app, Action::FinishLogSearch);
+                    }
+                    Input::Backspace => {
+                        let _ = update(&mut app, Action::BackspaceLogQuery);
+                    }
+                    _ => {}
+                }
             } else if let Some(action) = key_action(input) {
                 if matches!(action, Action::Cancel) {
                     if let Some(Effect::Cancel) = update(&mut app, action)
@@ -663,6 +676,7 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Enter => Some(Input::Enter),
         KeyCode::Up => Some(Input::Up),
         KeyCode::Down => Some(Input::Down),
+        KeyCode::Backspace => Some(Input::Backspace),
         _ => None,
     }
 }

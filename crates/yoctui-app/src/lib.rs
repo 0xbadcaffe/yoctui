@@ -8,6 +8,7 @@ pub enum Input {
     CtrlC,
     Up,
     Down,
+    Backspace,
 }
 pub fn key_action(key: Input) -> Option<Action> {
     match key {
@@ -16,6 +17,8 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('f') => Some(Action::ToggleLogFollow),
         Input::Char('w') => Some(Action::ToggleLogWrap),
         Input::Char('s') => Some(Action::CycleLogSeverity),
+        Input::Char('/') => Some(Action::BeginLogSearch),
+        Input::Backspace => Some(Action::BackspaceLogQuery),
         Input::Up => Some(Action::ScrollLogs { delta: 1 }),
         Input::Down => Some(Action::ScrollLogs { delta: -1 }),
         Input::Char('l') => Some(Action::Open(Screen::Logs)),
