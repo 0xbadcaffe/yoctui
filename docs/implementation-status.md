@@ -24,7 +24,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 ## Protocol and bridge
 
 - [DONE] Versioned envelopes, sequence/correlation fields, NDJSON framing, bounded transport reads, malformed/oversized handling, and Python framing tests exist. Verification: protocol and bridge tests. Commit: `3730f35`, `78cc988`.
-- [IN_PROGRESS] Implement bridge handshake negotiation, graceful shutdown command, compatibility adapters, mocked BitBake integration boundary, and typed workspace/recipe/layer/variable responses. Verification: pytest with mocked modules and `cargo test -p yoctui-bitbake`. Handshake commit pending.
+- [IN_PROGRESS] Implement bridge handshake negotiation, graceful shutdown command, compatibility adapters, mocked BitBake integration boundary, and typed workspace/recipe/layer/variable responses. Verification: pytest with mocked modules and `cargo test -p yoctui-bitbake`. Handshake: `496b177`; graceful shutdown is next.
 - [NOT_STARTED] Connect bridge to a supported live BitBake server, normalize native events, start builds, request native cancellation, and document tested BitBake versions. Verification: optional real-Yocto smoke workflow.
 
 ## Workspace, CLI, and configuration
@@ -53,12 +53,12 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 ## CONTINUE_FROM_HERE
 
-Current phase: process-backend reliability.
+Current phase: bridge reliability and compatibility.
 
-Next incomplete item: preserve multiline diagnostics and map process exit outcomes.
+Next incomplete item: send and acknowledge bridge shutdown before forcefully killing the child.
 
-Relevant files: `crates/yoctui-bitbake/src/lib.rs`, `docs/implementation-status.md`.
+Relevant files: `crates/yoctui-bitbake/src/lib.rs`, `bridge/yoctui_bridge.py`, `bridge/tests/test_bridge.py`, `docs/implementation-status.md`.
 
 Last successful commands: `cargo fmt --all --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
 
-Next command: add a process-result model and test failed exit handling.
+Next command: add a bridge shutdown operation, test the acknowledgement, then run `cargo test --workspace --all-features`.
