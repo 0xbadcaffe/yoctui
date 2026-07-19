@@ -283,6 +283,24 @@ async fn doctor(build_dir: &Path) -> Result<()> {
             }
         )
     }
+    match select_backend(Backend::Bridge, build_dir.to_path_buf()).await {
+        Ok(mut bridge) => match bridge.inspect_workspace().await {
+            Ok(workspace) => println!(
+                "bridge protocol: ok (workspace: {})",
+                workspace
+                    .build_dir
+                    .as_deref()
+                    .unwrap_or(build_dir)
+                    .display()
+            ),
+            Err(error) => println!(
+                "bridge protocol: failed ({error}) — check the active Python/BitBake environment"
+            ),
+        },
+        Err(error) => {
+            println!("bridge startup: failed ({error}) — check RATABAKE_BRIDGE_PATH and PYTHON")
+        }
+    }
     Ok(())
 }
 async fn headless(
