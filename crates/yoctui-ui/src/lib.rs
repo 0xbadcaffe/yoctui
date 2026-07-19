@@ -148,6 +148,13 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
     } else {
         format!("Logs ({mode})")
     };
+    let title = if app.logs.searching {
+        format!("{title} | search: {}_", app.logs.query)
+    } else if app.logs.query.is_empty() {
+        title
+    } else {
+        format!("{title} | search: {}", app.logs.query)
+    };
     if app.logs.wrap {
         let text = visible
             .iter()
