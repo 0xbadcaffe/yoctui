@@ -11,15 +11,30 @@ def emit(message, correlation_id=None):
     sys.stdout.write(json.dumps(value, ensure_ascii=False, separators=(",",":"))+"\n"); sys.stdout.flush()
 def error(code,message,correlation_id=None): emit({"type":"command_failed","code":code,"message":message},correlation_id)
 def bitbake_version():
+    override=os.environ.get("YOCTUI_BITBAKE_VERSION")
+    if override: return override
     try:
         import bb  # type: ignore[import-not-found]
         return getattr(bb, "__version__", None)
     except ImportError:
         return None
-def workspace():
+class CompatibilityError(Exception): pass
+class BitBakeAdapter:
+    def __init__(self, version, family): self.version=version; self.family=family
+    def workspace(self): return workspace_data(self.version)
+class EnvironmentAdapter(BitBakeAdapter):
+    def __init__(self): super().__init__(None,"environment")
+def select_adapter(version=None):
+    version=bitbake_version() if version is None else version
+    if version is None: return EnvironmentAdapter()
+    try: major=int(version.split(".",1)[0])
+    except (AttributeError,ValueError): raise CompatibilityError(f"unrecognized BitBake version: {version!r}")
+    if major < 1: raise CompatibilityError(f"unsupported BitBake version: {version}")
+    return BitBakeAdapter(version,"legacy" if major == 1 else "modern")
+def workspace_data(version):
     keys=("MACHINE","DISTRO","BBLAYERS","DL_DIR","SSTATE_DIR","TMPDIR","PACKAGE_CLASSES","BB_NUMBER_THREADS","PARALLEL_MAKE")
     variables={key:os.environ[key] for key in keys if key in os.environ}
-    return {"type":"workspace","data":{"build_dir":os.environ.get("BUILDDIR",os.getcwd()),"source_dir":os.environ.get("COREBASE"),"variables":variables,"bitbake_version":bitbake_version(),"layers":[],"recipes":[]}}
+    return {"type":"workspace","data":{"build_dir":os.environ.get("BUILDDIR",os.getcwd()),"source_dir":os.environ.get("COREBASE"),"variables":variables,"bitbake_version":version,"layers":[],"recipes":[]}}
 def configured_layers():
     values=[]
     for path in os.environ.get("BBLAYERS","").split():
@@ -33,10 +48,10 @@ def configured_recipes():
             return [{"name":item["name"],"version":item.get("version"),"layer":item.get("layer")} for item in recipes]
     except json.JSONDecodeError: pass
     return []
-def handle(command,correlation_id):
+def handle(command,correlation_id,adapter):
     kind=command.get("type") if isinstance(command,dict) else None
-    if kind=="hello": emit({"type":"hello_ack","bitbake_version":None},correlation_id)
-    elif kind=="inspect_workspace": emit(workspace(),correlation_id)
+    if kind=="hello": emit({"type":"hello_ack","bitbake_version":adapter.version},correlation_id)
+    elif kind=="inspect_workspace": emit(adapter.workspace(),correlation_id)
     elif kind=="start_build":
         targets=command.get("targets")
         if not isinstance(targets,list) or not all(isinstance(t,str) and t for t in targets): error("invalid_request","start_build requires non-empty string targets",correlation_id)
@@ -55,11 +70,14 @@ def handle(command,correlation_id):
     else: error("unknown_command",f"unknown command: {kind!r}",correlation_id)
     return True
 def main():
+    try: adapter=select_adapter()
+    except CompatibilityError as exc:
+        error("unsupported_bitbake",str(exc)); return
     for raw in sys.stdin.buffer:
         if len(raw)>MAX_LINE_BYTES: error("message_too_large",f"limit is {MAX_LINE_BYTES} bytes"); continue
         try:
             data=json.loads(raw.decode("utf-8"))
             if data.get("protocol_version")!=VERSION: error("version_mismatch",f"supported version is {VERSION}",data.get("correlation_id")); continue
-            if not handle(data.get("message"),data.get("correlation_id")): return
+            if not handle(data.get("message"),data.get("correlation_id"),adapter): return
         except (UnicodeDecodeError,json.JSONDecodeError,AttributeError) as exc: error("malformed_command",str(exc))
 if __name__=="__main__": main()

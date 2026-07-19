@@ -1,7 +1,9 @@
 """Bridge framing tests; compatible with both unittest and pytest collection."""
 import json
+import os
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -10,12 +12,15 @@ BRIDGE = Path(__file__).parents[1] / "yoctui_bridge.py"
 MAX_LINE_BYTES = 1024 * 1024
 
 
-def run_bridge(*lines: bytes) -> subprocess.CompletedProcess[bytes]:
+def run_bridge(*lines: bytes, environment: dict[str, str] | None = None) -> subprocess.CompletedProcess[bytes]:
+    env=os.environ.copy()
+    if environment: env.update(environment)
     return subprocess.run(
         [sys.executable, str(BRIDGE)],
         input=b"".join(line + b"\n" for line in lines),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env=env,
         check=False,
     )
 
@@ -67,6 +72,22 @@ class BridgeProtocolTests(unittest.TestCase):
         self.assertEqual(messages[0]["recipes"], [])
         self.assertIsInstance(messages[1]["layers"], list)
         self.assertEqual(messages[2]["name"], "PATH")
+
+    def test_mocked_bitbake_module_selects_modern_adapter(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text('__version__ = "2.8.1"\n', encoding="utf-8")
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"hello"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "hello_ack")
+        self.assertEqual(message["bitbake_version"], "2.8.1")
+
+    def test_unsupported_bitbake_version_is_reported(self) -> None:
+        result = run_bridge(environment={"YOCTUI_BITBAKE_VERSION": "0.9"})
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["code"], "unsupported_bitbake")
 
     def test_parent_eof_exits_cleanly(self) -> None:
         result = run_bridge()
