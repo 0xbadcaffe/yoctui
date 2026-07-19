@@ -264,6 +264,8 @@ pub enum Action {
     BackspaceLogQuery,
     FinishLogSearch,
     ScrollLogsHorizontally { delta: isize },
+    CycleLogRecipeFilter,
+    CycleLogTaskFilter,
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -370,6 +372,28 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.logs.horizontal_offset.saturating_add(delta as usize)
             };
         }
+        Action::CycleLogRecipeFilter => {
+            let mut values = app
+                .logs
+                .entries
+                .iter()
+                .filter_map(|entry| entry.recipe.clone())
+                .collect::<Vec<_>>();
+            values.sort();
+            values.dedup();
+            app.logs.recipe_filter = next_filter(&values, app.logs.recipe_filter.take());
+        }
+        Action::CycleLogTaskFilter => {
+            let mut values = app
+                .logs
+                .entries
+                .iter()
+                .filter_map(|entry| entry.task.clone())
+                .collect::<Vec<_>>();
+            values.sort();
+            values.dedup();
+            app.logs.task_filter = next_filter(&values, app.logs.task_filter.take());
+        }
         Action::AppendLogQuery(_) | Action::BackspaceLogQuery => {}
         Action::DismissNotification => app.notification = None,
         Action::Quit => {
@@ -391,6 +415,17 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::Tick => {}
     }
     None
+}
+
+fn next_filter(values: &[String], current: Option<String>) -> Option<String> {
+    let Some(current) = current else {
+        return values.first().cloned();
+    };
+    values
+        .iter()
+        .position(|value| value == &current)
+        .and_then(|index| values.get(index + 1))
+        .cloned()
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Effect {
