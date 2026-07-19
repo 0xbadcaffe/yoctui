@@ -1,0 +1,8 @@
+[package]
+name = "ratabake-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+ratabake-model = { path = "../ratabake-model" }
+ratatui.workspace = true

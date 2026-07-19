@@ -1,0 +1,4 @@
+/target/
+/artifacts/valgrind/*.xml
+/artifacts/valgrind/*.txt
+/artifacts/flamegraph/*.svg
