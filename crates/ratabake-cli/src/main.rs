@@ -207,6 +207,17 @@ async fn main() -> Result<()> {
     if matches!(cli.command, Some(Command::Doctor)) {
         return doctor(&build_dir).await;
     }
+    match &cli.command {
+        Some(Command::Inspect) => {
+            return inspect_workspace(config.backend.clone(), build_dir).await;
+        }
+        Some(Command::Recipes) => return print_recipes(config.backend.clone(), build_dir).await,
+        Some(Command::Layers) => return print_layers(config.backend.clone(), build_dir).await,
+        Some(Command::Config { name }) => {
+            return print_variable(config.backend.clone(), build_dir, name).await;
+        }
+        Some(Command::Doctor) | Some(Command::Build { .. }) | None => {}
+    }
     let targets = match &cli.command {
         Some(Command::Build { targets }) => targets.clone(),
         _ if !cli.targets.is_empty() => cli.targets.clone(),
@@ -236,6 +247,56 @@ async fn main() -> Result<()> {
         config.color,
     )
     .await
+}
+
+async fn load_workspace(backend: Backend, build_dir: PathBuf) -> Result<ratabake_model::Workspace> {
+    let mut backend = select_backend(backend, build_dir).await?;
+    backend.inspect_workspace().await.map_err(Into::into)
+}
+
+async fn inspect_workspace(backend: Backend, build_dir: PathBuf) -> Result<()> {
+    let workspace = load_workspace(backend, build_dir).await?;
+    println!(
+        "build directory: {}",
+        workspace
+            .build_dir
+            .as_deref()
+            .map_or_else(|| "unknown".into(), |path| path.display().to_string())
+    );
+    println!(
+        "BitBake version: {}",
+        workspace.bitbake_version.as_deref().unwrap_or("unknown")
+    );
+    for (name, value) in workspace.variables {
+        println!("{name}={value}");
+    }
+    Ok(())
+}
+
+async fn print_recipes(backend: Backend, build_dir: PathBuf) -> Result<()> {
+    let workspace = load_workspace(backend, build_dir).await?;
+    for recipe in workspace.recipes {
+        println!("{} {}", recipe.name, recipe.version.unwrap_or_default());
+    }
+    Ok(())
+}
+
+async fn print_layers(backend: Backend, build_dir: PathBuf) -> Result<()> {
+    let workspace = load_workspace(backend, build_dir).await?;
+    for layer in workspace.layers {
+        println!("{} {}", layer.name, layer.path.display());
+    }
+    Ok(())
+}
+
+async fn print_variable(backend: Backend, build_dir: PathBuf, name: &str) -> Result<()> {
+    let workspace = load_workspace(backend, build_dir).await?;
+    let value = workspace
+        .variables
+        .get(name)
+        .with_context(|| format!("{name} is not available from the selected backend"))?;
+    println!("{name}={value}");
+    Ok(())
 }
 async fn doctor(build_dir: &Path) -> Result<()> {
     let initialized = std::env::var_os("BUILDDIR").is_some();
