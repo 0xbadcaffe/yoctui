@@ -7,6 +7,7 @@ from pathlib import Path
 
 
 BRIDGE = Path(__file__).parents[1] / "ratabake_bridge.py"
+MAX_LINE_BYTES = 1024 * 1024
 
 
 def run_bridge(*lines: bytes) -> subprocess.CompletedProcess[bytes]:
@@ -53,3 +54,8 @@ class BridgeProtocolTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0)
         self.assertEqual(result.stdout, b"")
 
+    def test_oversized_input_is_rejected_without_crashing(self) -> None:
+        result = run_bridge(b"x" * (MAX_LINE_BYTES + 1))
+        self.assertEqual(result.returncode, 0)
+        message = json.loads(result.stdout)
+        self.assertEqual(message["message"]["code"], "message_too_large")
