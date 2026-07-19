@@ -26,7 +26,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         .unwrap_or_else(|| "--:--:--".into());
     frame.render_widget(
         Paragraph::new(format!(
-            " Ratabake | {:?} | {} | {} | warnings: {} errors: {}",
+            " Yoctui | {:?} | {} | {} | warnings: {} errors: {}",
             app.screen, app.build.status, elapsed, app.build.warnings, app.build.errors
         ))
         .block(Block::default().borders(Borders::ALL)),

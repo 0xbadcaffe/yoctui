@@ -120,7 +120,7 @@ fn config_path(cli: &Cli) -> Option<PathBuf> {
         env::var_os("XDG_CONFIG_HOME")
             .map(PathBuf::from)
             .or_else(|| env::var_os("HOME").map(|p| PathBuf::from(p).join(".config")))
-            .map(|p| p.join("ratabake/config.toml"))
+            .map(|p| p.join("yoctui/config.toml"))
     })
 }
 
@@ -149,11 +149,11 @@ fn env_usize(name: &str) -> Result<Option<usize>> {
 
 fn resolve_config(cli: &Cli) -> Result<Config> {
     let file = read_file_config(config_path(cli).as_deref())?;
-    let environment_backend = env::var("RATABAKE_BACKEND")
+    let environment_backend = env::var("YOCTUI_BACKEND")
         .ok()
         .map(|value| {
             Backend::from_str(&value, true)
-                .map_err(|_| anyhow::anyhow!("RATABAKE_BACKEND must be bridge or process"))
+                .map_err(|_| anyhow::anyhow!("YOCTUI_BACKEND must be bridge or process"))
         })
         .transpose()?;
     let backend = cli
@@ -165,13 +165,13 @@ fn resolve_config(cli: &Cli) -> Result<Config> {
     let build_dir = cli
         .build_dir
         .clone()
-        .or_else(|| env::var_os("RATABAKE_BUILD_DIR").map(PathBuf::from))
+        .or_else(|| env::var_os("YOCTUI_BUILD_DIR").map(PathBuf::from))
         .or(file.build_dir)
         .unwrap_or(env::current_dir()?);
-    let log_entries = env_usize("RATABAKE_LOG_RETENTION_ENTRIES")?
+    let log_entries = env_usize("YOCTUI_LOG_RETENTION_ENTRIES")?
         .or(file.log_retention_entries)
         .unwrap_or(10_000);
-    let log_bytes = env_usize("RATABAKE_LOG_RETENTION_BYTES")?
+    let log_bytes = env_usize("YOCTUI_LOG_RETENTION_BYTES")?
         .or(file.log_retention_bytes)
         .unwrap_or(16 * 1024 * 1024);
     if log_entries == 0 || log_bytes == 0 {
@@ -183,13 +183,13 @@ fn resolve_config(cli: &Cli) -> Result<Config> {
         log_entries,
         log_bytes,
         refresh: Duration::from_millis(file.refresh_ms.unwrap_or(100).max(16)),
-        default_target: env::var("RATABAKE_DEFAULT_TARGET")
+        default_target: env::var("YOCTUI_DEFAULT_TARGET")
             .ok()
             .or(file.default_target),
         log_level: cli
             .log_level
             .clone()
-            .or_else(|| env::var("RATABAKE_LOG_LEVEL").ok())
+            .or_else(|| env::var("YOCTUI_LOG_LEVEL").ok())
             .unwrap_or_else(|| "info".into()),
         color: !cli.no_color && file.color.unwrap_or(true),
     })
@@ -355,7 +355,7 @@ async fn doctor(build_dir: &Path) -> Result<()> {
             ),
         },
         Err(error) => {
-            println!("bridge startup: failed ({error}) — check RATABAKE_BRIDGE_PATH and PYTHON")
+            println!("bridge startup: failed ({error}) — check YOCTUI_BRIDGE_PATH and PYTHON")
         }
     }
     Ok(())
@@ -443,7 +443,7 @@ fn action_from_event(event: BackendEvent) -> Option<Action> {
         BackendEvent::Disconnected => Some(Action::Failure(AppError::new(
             "Bridge",
             "backend disconnected",
-            "restart Ratabake and inspect the backend diagnostics",
+            "restart Yoctui and inspect the backend diagnostics",
         ))),
         BackendEvent::Log(_) | BackendEvent::BuildCompleted { .. } => None,
     }
@@ -453,12 +453,12 @@ async fn select_backend(backend: Backend, build_dir: PathBuf) -> Result<Box<dyn 
     match backend {
         Backend::Process => Ok(Box::new(ProcessBackend::new(build_dir))),
         Backend::Bridge => {
-            let script = env::var_os("RATABAKE_BRIDGE_PATH")
+            let script = env::var_os("YOCTUI_BRIDGE_PATH")
                 .map(PathBuf::from)
                 .unwrap_or_else(|| {
                     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
                         .join("../..")
-                        .join("bridge/ratabake_bridge.py")
+                        .join("bridge/yoctui_bridge.py")
                 });
             let python = env::var("PYTHON").unwrap_or_else(|_| "python3".into());
             BridgeBackend::spawn(&python, script, build_dir)
@@ -491,7 +491,7 @@ async fn tui(
                 Action::Failure(AppError::new(
                     "Backend",
                     error.to_string(),
-                    "run `ratabake doctor` to diagnose the selected backend",
+                    "run `yoctui doctor` to diagnose the selected backend",
                 )),
             );
         }
