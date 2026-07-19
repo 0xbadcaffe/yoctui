@@ -267,8 +267,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::TaskCompleted { id, .. } => {
-            app.tasks.remove(&id);
-            app.build.completed += 1
+            if app.tasks.remove(&id).is_some() {
+                app.build.completed += 1;
+            }
         }
         Action::Log(l) => {
             match l.severity {
@@ -361,6 +362,29 @@ mod tests {
         update(&mut a, Action::Quit);
         assert!(a.quit_confirm);
         assert!(!a.should_quit)
+    }
+    #[test]
+    fn duplicate_or_unknown_completion_does_not_increment_task_count() {
+        let mut app = App::new(2, 10);
+        let id = TaskId("busybox:do_compile".into());
+        let _ = update(
+            &mut app,
+            Action::TaskStarted(TaskInfo {
+                id: id.clone(),
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                progress: None,
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::TaskCompleted {
+                id: id.clone(),
+                success: true,
+            },
+        );
+        let _ = update(&mut app, Action::TaskCompleted { id, success: true });
+        assert_eq!(app.build.completed, 1);
     }
     #[test]
     fn request_validation() {
