@@ -11,7 +11,7 @@ use crossterm::{
 };
 use ratabake_app::{Input, key_action};
 use ratabake_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
-use ratabake_model::{Action, App, AppError, BuildRequest, TaskId, TaskInfo, update};
+use ratabake_model::{Action, App, AppError, BuildRequest, Effect, TaskId, TaskInfo, update};
 use ratabake_ui::render;
 use ratatui::Terminal;
 use serde::Deserialize;
@@ -233,12 +233,8 @@ async fn main() -> Result<()> {
         )
         .await;
     }
-    if matches!(config.backend, Backend::Bridge) {
-        eprintln!(
-            "Bridge backend requires an active BitBake Python environment; use --backend process for Knotty fallback."
-        )
-    }
     tui(
+        config.backend,
         build_dir,
         targets,
         config.log_entries,
@@ -473,7 +469,8 @@ async fn select_backend(backend: Backend, build_dir: PathBuf) -> Result<Box<dyn 
     }
 }
 async fn tui(
-    _build_dir: PathBuf,
+    backend_kind: Backend,
+    build_dir: PathBuf,
     targets: Vec<String>,
     log_entries: usize,
     log_bytes: usize,
@@ -483,6 +480,22 @@ async fn tui(
     let _guard = TerminalGuard::enter()?;
     let mut terminal = Terminal::new(ratatui::backend::CrosstermBackend::new(io::stdout()))?;
     let mut app = App::new(log_entries, log_bytes);
+    let mut backend = select_backend(backend_kind, build_dir).await?;
+    match backend.inspect_workspace().await {
+        Ok(workspace) => {
+            let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
+        }
+        Err(error) => {
+            let _ = update(
+                &mut app,
+                Action::Failure(AppError::new(
+                    "Backend",
+                    error.to_string(),
+                    "run `ratabake doctor` to diagnose the selected backend",
+                )),
+            );
+        }
+    }
     if !targets.is_empty() {
         app.build.target = targets.first().cloned()
     }
@@ -497,8 +510,66 @@ async fn tui(
                 KeyCode::Enter => Input::Enter,
                 _ => continue,
             };
-            if let Some(a) = key_action(input) {
-                let _ = update(&mut app, a);
+            if input == Input::Char('b') {
+                if let Some(target) = app.build.target.clone() {
+                    if let Some(Effect::Start(request)) = update(
+                        &mut app,
+                        Action::Start(BuildRequest {
+                            targets: vec![target],
+                            task: None,
+                        }),
+                    ) {
+                        match backend.start_build(request).await {
+                            Ok(()) => {
+                                let _ = update(&mut app, Action::BuildStarted);
+                            }
+                            Err(error) => {
+                                let _ = update(
+                                    &mut app,
+                                    Action::Failure(AppError::new(
+                                        "BitBake",
+                                        error.to_string(),
+                                        "check backend diagnostics and retry",
+                                    )),
+                                );
+                            }
+                        }
+                    }
+                } else {
+                    app.notification =
+                        Some("pass a target or set default_target before starting a build".into());
+                }
+            } else if let Some(action) = key_action(input) {
+                if matches!(action, Action::Cancel) {
+                    if let Some(Effect::Cancel) = update(&mut app, action)
+                        && let Err(error) = backend.cancel_build().await
+                    {
+                        let _ = update(
+                            &mut app,
+                            Action::Failure(AppError::new(
+                                "Cancellation",
+                                error.to_string(),
+                                "check whether BitBake is still running",
+                            )),
+                        );
+                    }
+                } else {
+                    let _ = update(&mut app, action);
+                }
+            }
+        }
+        if let Ok(Ok(event)) =
+            tokio::time::timeout(Duration::from_millis(1), backend.next_event()).await
+        {
+            match event {
+                BackendEvent::BuildCompleted { success } => {
+                    let _ = update(&mut app, Action::BuildCompleted { success });
+                }
+                event => {
+                    if let Some(action) = action_from_event(event) {
+                        let _ = update(&mut app, action);
+                    }
+                }
             }
         }
         if app.should_quit {
