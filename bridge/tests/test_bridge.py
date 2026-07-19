@@ -56,6 +56,18 @@ class BridgeProtocolTests(unittest.TestCase):
         self.assertIn("build_dir", message["message"]["data"])
         self.assertIn("variables", message["message"]["data"])
 
+    def test_typed_workspace_queries_return_protocol_responses(self) -> None:
+        result = run_bridge(
+            b'{"protocol_version":1,"sequence":1,"message":{"type":"list_recipes","filter":null}}',
+            b'{"protocol_version":1,"sequence":2,"message":{"type":"list_layers"}}',
+            b'{"protocol_version":1,"sequence":3,"message":{"type":"get_variable","name":"PATH","recipe":null}}',
+        )
+        messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
+        self.assertEqual([message["type"] for message in messages], ["recipes", "layers", "variable"])
+        self.assertEqual(messages[0]["recipes"], [])
+        self.assertIsInstance(messages[1]["layers"], list)
+        self.assertEqual(messages[2]["name"], "PATH")
+
     def test_parent_eof_exits_cleanly(self) -> None:
         result = run_bridge()
         self.assertEqual(result.returncode, 0)

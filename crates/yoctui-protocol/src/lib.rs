@@ -71,6 +71,20 @@ pub enum Command {
     },
     Shutdown,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RecipeData {
+    pub name: String,
+    pub version: Option<String>,
+    pub layer: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct LayerData {
+    pub name: String,
+    pub path: String,
+    pub priority: Option<i32>,
+}
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Event {
@@ -79,6 +93,16 @@ pub enum Event {
     },
     Workspace {
         data: serde_json::Value,
+    },
+    Recipes {
+        recipes: Vec<RecipeData>,
+    },
+    Layers {
+        layers: Vec<LayerData>,
+    },
+    Variable {
+        name: String,
+        value: Option<String>,
     },
     BuildStarted,
     ParseProgress {

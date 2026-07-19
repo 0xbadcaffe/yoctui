@@ -249,7 +249,11 @@ async fn main() -> Result<()> {
 
 async fn load_workspace(backend: Backend, build_dir: PathBuf) -> Result<yoctui_model::Workspace> {
     let mut backend = select_backend(backend, build_dir).await?;
-    backend.inspect_workspace().await.map_err(Into::into)
+    let result = backend.inspect_workspace().await;
+    let shutdown = backend.shutdown().await;
+    let workspace = result?;
+    shutdown?;
+    Ok(workspace)
 }
 
 async fn inspect_workspace(backend: Backend, build_dir: PathBuf) -> Result<()> {
@@ -272,27 +276,38 @@ async fn inspect_workspace(backend: Backend, build_dir: PathBuf) -> Result<()> {
 }
 
 async fn print_recipes(backend: Backend, build_dir: PathBuf) -> Result<()> {
-    let workspace = load_workspace(backend, build_dir).await?;
-    for recipe in workspace.recipes {
+    let mut backend = select_backend(backend, build_dir).await?;
+    let result = backend.list_recipes(None).await;
+    let shutdown = backend.shutdown().await;
+    let recipes = result?;
+    shutdown?;
+    for recipe in recipes {
         println!("{} {}", recipe.name, recipe.version.unwrap_or_default());
     }
     Ok(())
 }
 
 async fn print_layers(backend: Backend, build_dir: PathBuf) -> Result<()> {
-    let workspace = load_workspace(backend, build_dir).await?;
-    for layer in workspace.layers {
+    let mut backend = select_backend(backend, build_dir).await?;
+    let result = backend.list_layers().await;
+    let shutdown = backend.shutdown().await;
+    let layers = result?;
+    shutdown?;
+    for layer in layers {
         println!("{} {}", layer.name, layer.path.display());
     }
     Ok(())
 }
 
 async fn print_variable(backend: Backend, build_dir: PathBuf, name: &str) -> Result<()> {
-    let workspace = load_workspace(backend, build_dir).await?;
-    let value = workspace
-        .variables
-        .get(name)
+    let mut backend = select_backend(backend, build_dir).await?;
+    let result = backend.get_variable(name.into(), None).await;
+    let shutdown = backend.shutdown().await;
+    let value = result?;
+    let value = value
+        .as_deref()
         .with_context(|| format!("{name} is not available from the selected backend"))?;
+    shutdown?;
     println!("{name}={value}");
     Ok(())
 }
@@ -482,7 +497,11 @@ fn action_from_event(event: BackendEvent) -> Option<Action> {
             "backend disconnected",
             "restart Yoctui and inspect the backend diagnostics",
         ))),
-        BackendEvent::Log(_) | BackendEvent::BuildCompleted { .. } => None,
+        BackendEvent::Recipes(_)
+        | BackendEvent::Layers(_)
+        | BackendEvent::Variable { .. }
+        | BackendEvent::Log(_)
+        | BackendEvent::BuildCompleted { .. } => None,
     }
 }
 
