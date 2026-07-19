@@ -115,7 +115,7 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
     )
 }
 fn logs(frame: &mut Frame, app: &App, area: Rect) {
-    let visible = app
+    let mut visible = app
         .logs
         .filtered()
         .filter(|l| {
@@ -123,6 +123,10 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
                 || matches!(l.severity, Severity::Warning | Severity::Error)
         })
         .collect::<Vec<_>>();
+    let height = area.height.saturating_sub(3) as usize;
+    let end = visible.len().saturating_sub(app.logs.scroll_offset);
+    let start = end.saturating_sub(height);
+    visible = visible[start..end].to_vec();
     let mode = format!(
         "{} | {} | {}",
         if app.logs.follow {
@@ -148,7 +152,7 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         let text = visible
             .iter()
             .rev()
-            .take(area.height.saturating_sub(3) as usize)
+            .take(height)
             .rev()
             .map(|log| {
                 format!(
@@ -168,18 +172,13 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         );
         return;
     }
-    let rows = visible
-        .into_iter()
-        .rev()
-        .take(area.height.saturating_sub(3) as usize)
-        .rev()
-        .map(|l| {
-            Row::new(vec![
-                Cell::from(format!("{:?}", l.severity)),
-                Cell::from(l.recipe.as_deref().unwrap_or("")),
-                Cell::from(l.message.as_str()),
-            ])
-        });
+    let rows = visible.into_iter().rev().take(height).rev().map(|l| {
+        Row::new(vec![
+            Cell::from(format!("{:?}", l.severity)),
+            Cell::from(l.recipe.as_deref().unwrap_or("")),
+            Cell::from(l.message.as_str()),
+        ])
+    });
     frame.render_widget(
         Table::new(
             rows,

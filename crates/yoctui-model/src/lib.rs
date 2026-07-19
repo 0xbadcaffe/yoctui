@@ -158,6 +158,7 @@ pub struct LogState {
     pub recipe_filter: Option<String>,
     pub task_filter: Option<String>,
     pub query: String,
+    pub scroll_offset: usize,
 }
 impl LogState {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
@@ -174,6 +175,7 @@ impl LogState {
             recipe_filter: None,
             task_filter: None,
             query: String::new(),
+            scroll_offset: 0,
         }
     }
     pub fn insert(&mut self, entry: LogEntry) {
@@ -252,6 +254,7 @@ pub enum Action {
     ToggleLogFollow,
     ToggleLogWrap,
     CycleLogSeverity,
+    ScrollLogs { delta: isize },
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -295,6 +298,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 _ => {}
             }
             app.logs.insert(l);
+            if app.logs.follow {
+                app.logs.scroll_offset = 0;
+            }
         }
         Action::BuildCompleted { success } => {
             app.build.status = if success {
@@ -323,6 +329,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 Some(Severity::Info) => Some(Severity::Warning),
                 Some(Severity::Warning) => Some(Severity::Error),
                 Some(Severity::Error) | Some(Severity::Trace) => None,
+            };
+        }
+        Action::ScrollLogs { delta } => {
+            app.logs.follow = false;
+            app.logs.paused_len = Some(app.logs.entries.len());
+            app.logs.scroll_offset = if delta.is_negative() {
+                app.logs.scroll_offset.saturating_sub(delta.unsigned_abs())
+            } else {
+                app.logs
+                    .scroll_offset
+                    .saturating_add(delta as usize)
+                    .min(app.logs.entries.len())
             };
         }
         Action::DismissNotification => app.notification = None,
@@ -465,6 +483,18 @@ mod tests {
         assert_eq!(app.logs.filtered().count(), 1);
         let _ = update(&mut app, Action::ToggleLogFollow);
         assert_eq!(app.logs.filtered().count(), 2);
+    }
+
+    #[test]
+    fn scrolling_logs_pauses_follow_and_bounds_offset() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::Log(log("first")));
+        let _ = update(&mut app, Action::Log(log("second")));
+        let _ = update(&mut app, Action::ScrollLogs { delta: 9 });
+        assert!(!app.logs.follow);
+        assert_eq!(app.logs.scroll_offset, 2);
+        let _ = update(&mut app, Action::ScrollLogs { delta: -9 });
+        assert_eq!(app.logs.scroll_offset, 0);
     }
     #[test]
     fn cycles_log_severity_filter() {

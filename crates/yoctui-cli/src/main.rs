@@ -661,6 +661,8 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Char(character) => Some(Input::Char(character)),
         KeyCode::Esc => Some(Input::Esc),
         KeyCode::Enter => Some(Input::Enter),
+        KeyCode::Up => Some(Input::Up),
+        KeyCode::Down => Some(Input::Down),
         _ => None,
     }
 }
