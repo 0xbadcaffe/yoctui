@@ -1087,54 +1087,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ec0be4795e2f6a28069bec0b5ff3e2ac9bafc99e6a9a7dc3547996c5c816922c"
 
 [[package]]
-name = "ratabake-app"
-version = "0.1.0"
-dependencies = [
- "ratabake-model",
- "ratabake-protocol",
-]
-
-[[package]]
-name = "ratabake-bitbake"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "libc",
- "ratabake-model",
- "ratabake-protocol",
- "serde_json",
- "thiserror 2.0.19",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "ratabake-model"
-version = "0.1.0"
-dependencies = [
- "serde",
- "thiserror 2.0.19",
-]
-
-[[package]]
-name = "ratabake-protocol"
-version = "0.1.0"
-dependencies = [
- "ratabake-model",
- "serde",
- "serde_json",
- "thiserror 2.0.19",
-]
-
-[[package]]
-name = "ratabake-ui"
-version = "0.1.0"
-dependencies = [
- "ratabake-model",
- "ratatui",
-]
-
-[[package]]
 name = "ratatui"
 version = "0.30.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2052,10 +2004,6 @@ dependencies = [
  "anyhow",
  "clap",
  "crossterm",
- "ratabake-app",
- "ratabake-bitbake",
- "ratabake-model",
- "ratabake-ui",
  "ratatui",
  "serde",
  "thiserror 2.0.19",
@@ -2063,6 +2011,58 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
+ "yoctui-app",
+ "yoctui-bitbake",
+ "yoctui-model",
+ "yoctui-ui",
+]
+
+[[package]]
+name = "yoctui-app"
+version = "0.1.0"
+dependencies = [
+ "yoctui-model",
+ "yoctui-protocol",
+]
+
+[[package]]
+name = "yoctui-bitbake"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "libc",
+ "serde_json",
+ "thiserror 2.0.19",
+ "tokio",
+ "tracing",
+ "yoctui-model",
+ "yoctui-protocol",
+]
+
+[[package]]
+name = "yoctui-model"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "thiserror 2.0.19",
+]
+
+[[package]]
+name = "yoctui-protocol"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.19",
+ "yoctui-model",
+]
+
+[[package]]
+name = "yoctui-ui"
+version = "0.1.0"
+dependencies = [
+ "ratatui",
+ "yoctui-model",
 ]
 
 [[package]]

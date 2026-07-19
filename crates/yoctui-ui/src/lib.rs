@@ -1,9 +1,9 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
-use ratabake_model::{App, Screen, Severity, format_duration};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, Wrap},
 };
+use yoctui_model::{App, Screen, Severity, format_duration};
 pub fn render(frame: &mut Frame, app: &App) {
     let area = frame.area();
     if area.width < 30 || area.height < 8 {

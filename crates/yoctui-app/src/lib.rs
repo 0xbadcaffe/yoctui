@@ -1,5 +1,5 @@
 //! Application-owned input mapping, keeping terminal concerns outside the reducer.
-use ratabake_model::{Action, Screen};
+use yoctui_model::{Action, Screen};
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Input {
     Char(char),

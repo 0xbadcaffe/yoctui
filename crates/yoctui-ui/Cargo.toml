@@ -1,8 +1,8 @@
 [package]
-name = "ratabake-ui"
+name = "yoctui-ui"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 [dependencies]
-ratabake-model = { path = "../ratabake-model" }
+yoctui-model = { path = "../yoctui-model" }
 ratatui.workspace = true
