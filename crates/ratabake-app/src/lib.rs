@@ -21,6 +21,7 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('?') => Some(Action::Open(Screen::Help)),
         Input::Char('q') | Input::CtrlC => Some(Action::Quit),
         Input::Char('Y') => Some(Action::ConfirmQuit),
+        Input::Enter => Some(Action::DismissNotification),
         Input::Esc => Some(Action::Open(Screen::Dashboard)),
         _ => None,
     }
@@ -39,5 +40,9 @@ mod tests {
     fn maps_log_controls() {
         assert_eq!(key_action(Input::Char('f')), Some(Action::ToggleLogFollow));
         assert_eq!(key_action(Input::Char('w')), Some(Action::ToggleLogWrap));
+    }
+    #[test]
+    fn enter_dismisses_notification() {
+        assert_eq!(key_action(Input::Enter), Some(Action::DismissNotification));
     }
 }

@@ -248,6 +248,7 @@ pub enum Action {
     Cancel,
     ToggleLogFollow,
     ToggleLogWrap,
+    DismissNotification,
     Quit,
     ConfirmQuit,
     WorkspaceLoaded(Workspace),
@@ -309,6 +310,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::ToggleLogFollow => app.logs.follow = !app.logs.follow,
         Action::ToggleLogWrap => app.logs.wrap = !app.logs.wrap,
+        Action::DismissNotification => app.notification = None,
         Action::Quit => {
             if matches!(
                 app.build.status,

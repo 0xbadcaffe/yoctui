@@ -59,7 +59,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         );
         frame.render_widget(Clear, popup);
         frame.render_widget(
-            Paragraph::new(notification)
+            Paragraph::new(format!("{notification}\n\nPress Enter to dismiss."))
                 .block(Block::default().title("Notice").borders(Borders::ALL))
                 .wrap(Wrap { trim: true }),
             popup,
