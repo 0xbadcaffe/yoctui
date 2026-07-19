@@ -19,12 +19,28 @@ async fn read_output<R>(stream: R, sender: tokio::sync::mpsc::Sender<LogEntry>)
 where
     R: AsyncRead + Unpin,
 {
-    let mut lines = BufReader::new(stream).lines();
-    while let Ok(Some(line)) = lines.next_line().await {
+    let mut reader = BufReader::new(stream);
+    let mut bytes = Vec::new();
+    loop {
+        bytes.clear();
+        let count = match reader.read_until(b'\n', &mut bytes).await {
+            Ok(count) => count,
+            Err(_) => break,
+        };
+        if count == 0 {
+            break;
+        }
+        let line = output_text(&bytes);
         if sender.send(classify_output(line)).await.is_err() {
             break;
         }
     }
+}
+
+pub fn output_text(bytes: &[u8]) -> String {
+    String::from_utf8_lossy(bytes)
+        .trim_end_matches(['\r', '\n'])
+        .into()
 }
 #[derive(Debug, Error)]
 pub enum BackendError {
@@ -404,5 +420,9 @@ mod tests {
             classify_output("WARNING: x".into()).severity,
             Severity::Warning
         )
+    }
+    #[test]
+    fn invalid_utf8_output_is_preserved_lossily() {
+        assert_eq!(output_text(b"warning: \xff\n"), "warning: �");
     }
 }
