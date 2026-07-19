@@ -540,6 +540,14 @@ async fn tui(
     match backend.inspect_workspace().await {
         Ok(workspace) => {
             let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
+            match backend.list_recipes(None).await {
+                Ok(recipes) => app.workspace.recipes = recipes,
+                Err(error) => app.notification = Some(format!("Recipes unavailable: {error}")),
+            }
+            match backend.list_layers().await {
+                Ok(layers) => app.workspace.layers = layers,
+                Err(error) => app.notification = Some(format!("Layers unavailable: {error}")),
+            }
         }
         Err(error) => {
             let _ = update(
