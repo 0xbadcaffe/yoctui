@@ -5,7 +5,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 ## Foundation and naming
 
 - [DONE] Rust workspace exists and dependency direction is acyclic. Verification: `cargo metadata --no-deps`. Commit: `43ca39b`.
-- [IN_PROGRESS] Remove every obsolete legacy application name from crate names, directories, imports, tests, paths, scripts, and history-facing checks. Verification: `./scripts/check-obsolete-name.sh`.
+- [DONE] Remove every obsolete legacy application name from crate names, directories, imports, tests, paths, scripts, and history-facing checks. Verification: `./scripts/check-obsolete-name.sh`. Commit: `d2c38ad`.
 - [DONE] Public binary, configuration directory, environment prefix, bridge name, and UI branding use Yoctui. Verification: `cargo run -p yoctui -- --help`. Commit: `ad603ad`.
 - [NOT_STARTED] Add repository lint/format configuration and a fresh-clone setup check. Verification: CI and `./scripts/verify-completion.sh`.
 
@@ -55,10 +55,10 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 Current phase: mandatory naming and workspace-layout compliance.
 
-Next incomplete item: remove obsolete Ratabake names from internal crates and paths.
+Next incomplete item: add terminal restoration pseudo-terminal coverage and supported termination-signal handling.
 
-Relevant files: `Cargo.toml`, `crates/*/Cargo.toml`, all Rust imports, `docs/implementation-status.md`.
+Relevant files: `crates/yoctui-cli/src/main.rs`, `crates/yoctui-ui/src/lib.rs`, `docs/implementation-status.md`.
 
 Last successful commands: `cargo fmt --all --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
 
-Next command: rename internal crate directories and package/import names, then run the full Rust checks.
+Next command: add the smallest terminal lifecycle regression test, then run the full Rust checks.
