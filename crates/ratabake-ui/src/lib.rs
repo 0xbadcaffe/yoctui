@@ -117,7 +117,7 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
             Row::new(vec![
                 Cell::from(format!("{:?}", l.severity)),
                 Cell::from(l.recipe.as_deref().unwrap_or("")),
-                Cell::from(l.message.clone()),
+                Cell::from(l.message.as_str()),
             ])
         });
     let title = if app.logs.dropped > 0 {
