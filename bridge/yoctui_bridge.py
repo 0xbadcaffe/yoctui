@@ -22,6 +22,11 @@ class CompatibilityError(Exception): pass
 class BitBakeAdapter:
     def __init__(self, version, family): self.version=version; self.family=family
     def workspace(self): return workspace_data(self.version)
+    def mock_events(self):
+        try: raw=json.loads(os.environ.get("YOCTUI_MOCK_EVENTS_JSON","[]"))
+        except json.JSONDecodeError: return []
+        if not isinstance(raw,list): return []
+        return [event for event in (normalize_event(item) for item in raw) if event]
 class EnvironmentAdapter(BitBakeAdapter):
     def __init__(self): super().__init__(None,"environment")
 def select_adapter(version=None):
@@ -48,6 +53,18 @@ def configured_recipes():
             return [{"name":item["name"],"version":item.get("version"),"layer":item.get("layer")} for item in recipes]
     except json.JSONDecodeError: pass
     return []
+def normalize_event(event):
+    kind=event.get("type") if isinstance(event,dict) else None
+    if kind in ("task_started","task_completed") and all(isinstance(event.get(key),str) for key in ("recipe","task")):
+        value={"type":kind,"recipe":event["recipe"],"task":event["task"]}
+        if kind=="task_started": value["pid"]=event.get("pid")
+        else: value["success"]=bool(event.get("success"))
+        return value
+    if kind=="task_progress" and all(isinstance(event.get(key),str) for key in ("recipe","task")):
+        return {"type":kind,"recipe":event["recipe"],"task":event["task"],"progress":event.get("progress")}
+    if kind=="log" and isinstance(event.get("message"),str):
+        return {"type":"log","level":event.get("level","info"),"message":event["message"],"recipe":event.get("recipe"),"task":event.get("task"),"path":event.get("path")}
+    return {"type":"warning","message":f"unrecognized BitBake event: {kind!r}"}
 def handle(command,correlation_id,adapter):
     kind=command.get("type") if isinstance(command,dict) else None
     if kind=="hello": emit({"type":"hello_ack","bitbake_version":adapter.version},correlation_id)
@@ -55,7 +72,10 @@ def handle(command,correlation_id,adapter):
     elif kind=="start_build":
         targets=command.get("targets")
         if not isinstance(targets,list) or not all(isinstance(t,str) and t for t in targets): error("invalid_request","start_build requires non-empty string targets",correlation_id)
-        else: emit({"type":"build_started"},correlation_id); error("unsupported","direct build control requires a compatible BitBake server adapter",correlation_id)
+        else:
+            emit({"type":"build_started"},correlation_id)
+            for event in adapter.mock_events(): emit(event,correlation_id)
+            error("unsupported","direct build control requires a compatible BitBake server adapter",correlation_id)
     elif kind=="list_recipes":
         recipes=configured_recipes(); filter_value=command.get("filter")
         if isinstance(filter_value,str): recipes=[recipe for recipe in recipes if filter_value.lower() in recipe["name"].lower()]

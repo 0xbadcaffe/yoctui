@@ -89,6 +89,16 @@ class BridgeProtocolTests(unittest.TestCase):
         message = json.loads(result.stdout)["message"]
         self.assertEqual(message["code"], "unsupported_bitbake")
 
+    def test_mocked_bitbake_events_are_normalized(self) -> None:
+        events=json.dumps([{"type":"task_started","recipe":"busybox","task":"do_compile","pid":42},{"type":"unknown"}])
+        result = run_bridge(
+            b'{"protocol_version":1,"sequence":1,"message":{"type":"start_build","targets":["busybox"],"task":null}}',
+            environment={"YOCTUI_MOCK_EVENTS_JSON": events},
+        )
+        messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
+        self.assertEqual([message["type"] for message in messages], ["build_started", "task_started", "warning", "command_failed"])
+        self.assertEqual(messages[1]["recipe"], "busybox")
+
     def test_parent_eof_exits_cleanly(self) -> None:
         result = run_bridge()
         self.assertEqual(result.returncode, 0)
