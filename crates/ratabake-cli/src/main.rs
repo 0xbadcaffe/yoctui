@@ -10,8 +10,8 @@ use crossterm::{
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratabake_app::{Input, key_action};
-use ratabake_bitbake::{BitBakeBackend, BridgeBackend, ProcessBackend};
-use ratabake_model::{Action, App, BuildRequest, update};
+use ratabake_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
+use ratabake_model::{Action, App, AppError, BuildRequest, TaskId, TaskInfo, update};
 use ratabake_ui::render;
 use ratatui::Terminal;
 use serde::Deserialize;
@@ -294,7 +294,8 @@ async fn headless(
 ) -> Result<()> {
     let mut backend = select_backend(backend_kind, build_dir.clone()).await?;
     let mut app = App::new(log_entries, log_bytes);
-    let _ = backend.inspect_workspace().await?;
+    let workspace = backend.inspect_workspace().await?;
+    let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
     if targets.is_empty() {
         println!("headless inspection completed");
         return Ok(());
@@ -308,19 +309,68 @@ async fn headless(
         .context("could not start bitbake")?;
     loop {
         match backend.next_event().await? {
-            ratabake_bitbake::BackendEvent::Log(l) => {
+            BackendEvent::Log(l) => {
                 println!("{}", l.message);
-                update(&mut app, Action::Log(l));
+                let _ = update(&mut app, Action::Log(l));
             }
-            ratabake_bitbake::BackendEvent::BuildCompleted { success } => {
+            BackendEvent::BuildCompleted { success } => {
+                let _ = update(&mut app, Action::BuildCompleted { success });
                 println!("build {}", if success { "completed" } else { "failed" });
                 if success {
                     return Ok(());
                 }
                 return Err(anyhow::anyhow!("BitBake build failed"));
             }
-            _ => {}
+            event => {
+                if let Some(action) = action_from_event(event) {
+                    let _ = update(&mut app, action);
+                }
+            }
         }
+    }
+}
+
+fn action_from_event(event: BackendEvent) -> Option<Action> {
+    match event {
+        BackendEvent::Workspace(workspace) => Some(Action::WorkspaceLoaded(workspace)),
+        BackendEvent::BuildStarted => Some(Action::BuildStarted),
+        BackendEvent::ParseProgress => Some(Action::ParseProgress),
+        BackendEvent::TaskStarted { recipe, task } => {
+            let id = TaskId(format!("{recipe}:{task}"));
+            Some(Action::TaskStarted(TaskInfo {
+                id,
+                recipe,
+                task,
+                progress: None,
+            }))
+        }
+        BackendEvent::TaskProgress {
+            recipe,
+            task,
+            progress,
+        } => Some(Action::TaskProgress {
+            id: TaskId(format!("{recipe}:{task}")),
+            progress,
+        }),
+        BackendEvent::TaskCompleted {
+            recipe,
+            task,
+            success,
+        } => Some(Action::TaskCompleted {
+            id: TaskId(format!("{recipe}:{task}")),
+            success,
+        }),
+        BackendEvent::CommandFailed { code, message } => Some(Action::Failure(AppError::new(
+            "BitBake",
+            format!("{code}: {message}"),
+            "inspect the bridge or BitBake diagnostics",
+        ))),
+        BackendEvent::Disconnected => Some(Action::Failure(AppError::new(
+            "Bridge",
+            "backend disconnected",
+            "restart Ratabake and inspect the backend diagnostics",
+        ))),
+        BackendEvent::Log(_) | BackendEvent::BuildCompleted { .. } => None,
     }
 }
 
@@ -392,5 +442,17 @@ mod tests {
         assert!(matches!(config.backend, Some(Backend::Process)));
         assert_eq!(config.log_retention_entries, Some(42));
         assert_eq!(config.default_target.as_deref(), Some("core-image-minimal"));
+    }
+
+    #[test]
+    fn normalizes_task_progress_event() {
+        assert!(matches!(
+            action_from_event(BackendEvent::TaskProgress {
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                progress: 25,
+            }),
+            Some(Action::TaskProgress { progress: 25, .. })
+        ));
     }
 }
