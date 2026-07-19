@@ -360,19 +360,26 @@ async fn doctor(build_dir: &Path) -> Result<()> {
         )
     }
     match select_backend(Backend::Bridge, build_dir.to_path_buf()).await {
-        Ok(mut bridge) => match bridge.inspect_workspace().await {
-            Ok(workspace) => println!(
-                "bridge protocol: ok (workspace: {})",
-                workspace
-                    .build_dir
-                    .as_deref()
-                    .unwrap_or(build_dir)
-                    .display()
-            ),
-            Err(error) => println!(
-                "bridge protocol: failed ({error}) — check the active Python/BitBake environment"
-            ),
-        },
+        Ok(mut bridge) => {
+            let inspection = bridge.inspect_workspace().await;
+            let shutdown = bridge.shutdown().await;
+            match inspection {
+                Ok(workspace) => println!(
+                    "bridge protocol: ok (workspace: {})",
+                    workspace
+                        .build_dir
+                        .as_deref()
+                        .unwrap_or(build_dir)
+                        .display()
+                ),
+                Err(error) => println!(
+                    "bridge protocol: failed ({error}) — check the active Python/BitBake environment"
+                ),
+            }
+            if let Err(error) = shutdown {
+                println!("bridge shutdown: failed ({error})");
+            }
+        }
         Err(error) => {
             println!("bridge startup: failed ({error}) — check YOCTUI_BRIDGE_PATH and PYTHON")
         }
@@ -387,45 +394,52 @@ async fn headless(
     log_bytes: usize,
 ) -> Result<()> {
     let mut backend = select_backend(backend_kind, build_dir.clone()).await?;
-    let mut app = App::new(log_entries, log_bytes);
-    let workspace = backend.inspect_workspace().await?;
-    let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
-    if targets.is_empty() {
-        println!("headless inspection completed");
-        return Ok(());
-    }
-    backend
-        .start_build(BuildRequest {
-            targets,
-            task: None,
-        })
-        .await
-        .context("could not start bitbake")?;
-    loop {
-        match backend.next_event().await? {
-            BackendEvent::Log(l) => {
-                println!("{}", l.message);
-                let _ = update(&mut app, Action::Log(l));
-            }
-            BackendEvent::BuildCompleted { success, exit_code } => {
-                let _ = update(&mut app, Action::BuildCompleted { success });
-                println!(
-                    "build {}{}",
-                    if success { "completed" } else { "failed" },
-                    exit_code.map_or_else(String::new, |code| format!(" (exit code {code})"))
-                );
-                if success {
-                    return Ok(());
+    let result = async {
+        let mut app = App::new(log_entries, log_bytes);
+        let workspace = backend.inspect_workspace().await?;
+        let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
+        if targets.is_empty() {
+            println!("headless inspection completed");
+            return Ok(());
+        }
+        backend
+            .start_build(BuildRequest {
+                targets,
+                task: None,
+            })
+            .await
+            .context("could not start bitbake")?;
+        loop {
+            match backend.next_event().await? {
+                BackendEvent::Log(l) => {
+                    println!("{}", l.message);
+                    let _ = update(&mut app, Action::Log(l));
                 }
-                return Err(anyhow::anyhow!("BitBake build failed"));
-            }
-            event => {
-                if let Some(action) = action_from_event(event) {
-                    let _ = update(&mut app, action);
+                BackendEvent::BuildCompleted { success, exit_code } => {
+                    let _ = update(&mut app, Action::BuildCompleted { success });
+                    println!(
+                        "build {}{}",
+                        if success { "completed" } else { "failed" },
+                        exit_code.map_or_else(String::new, |code| format!(" (exit code {code})"))
+                    );
+                    if success {
+                        return Ok(());
+                    }
+                    return Err(anyhow::anyhow!("BitBake build failed"));
+                }
+                event => {
+                    if let Some(action) = action_from_event(event) {
+                        let _ = update(&mut app, action);
+                    }
                 }
             }
         }
     }
+    .await;
+    let shutdown = backend.shutdown().await;
+    result?;
+    shutdown?;
+    Ok(())
 }
 
 fn action_from_event(event: BackendEvent) -> Option<Action> {
@@ -602,6 +616,7 @@ async fn tui(
             break;
         }
     }
+    backend.shutdown().await?;
     Ok(())
 }
 

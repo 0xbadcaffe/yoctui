@@ -121,6 +121,7 @@ pub trait BitBakeBackend: Send {
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError>;
     async fn cancel_build(&mut self) -> Result<(), BackendError>;
     async fn next_event(&mut self) -> Result<BackendEvent, BackendError>;
+    async fn shutdown(&mut self) -> Result<(), BackendError>;
 }
 pub fn strip_ansi(input: &str) -> String {
     let mut out = String::new();
@@ -264,6 +265,15 @@ impl BitBakeBackend for ProcessBackend {
         let (success, exit_code) = self.collect().await?;
         Ok(BackendEvent::BuildCompleted { success, exit_code })
     }
+
+    async fn shutdown(&mut self) -> Result<(), BackendError> {
+        if let Some(child) = self.child.as_mut()
+            && child.try_wait()?.is_none()
+        {
+            self.cancel_build().await?;
+        }
+        Ok(())
+    }
 }
 pub struct BridgeBackend {
     child: Child,
@@ -359,6 +369,37 @@ impl BridgeBackend {
                 "bridge sent an unexpected handshake event".into(),
             )),
         }
+    }
+
+    /// Ask the bridge to finish its protocol work before the drop fallback kills it.
+    pub async fn shutdown(&mut self) -> Result<(), BackendError> {
+        self.command(Command::Shutdown).await?;
+        let Some(line) = self.next_line().await? else {
+            return Err(BackendError::Bridge(
+                "bridge disconnected before acknowledging shutdown".into(),
+            ));
+        };
+        let envelope: Envelope<Event> = decode_line(&line, Some(self.last_sequence))?;
+        self.last_sequence = envelope.sequence;
+        match envelope.message {
+            Event::BridgeShutdown => {}
+            Event::CommandFailed { code, message } | Event::ProtocolError { code, message } => {
+                return Err(BackendError::Bridge(format!(
+                    "shutdown rejected: {code}: {message}"
+                )));
+            }
+            _ => {
+                return Err(BackendError::Bridge(
+                    "bridge sent an unexpected shutdown event".into(),
+                ));
+            }
+        }
+        tokio::time::timeout(Duration::from_secs(2), self.child.wait())
+            .await
+            .map_err(|_| {
+                BackendError::Bridge("bridge did not exit after shutdown acknowledgement".into())
+            })??;
+        Ok(())
     }
     fn event(event: Event) -> Result<BackendEvent, BackendError> {
         Ok(match event {
@@ -474,6 +515,10 @@ impl BitBakeBackend for BridgeBackend {
         let e: Envelope<Event> = decode_line(&line, Some(self.last_sequence))?;
         self.last_sequence = e.sequence;
         Self::event(e.message)
+    }
+
+    async fn shutdown(&mut self) -> Result<(), BackendError> {
+        BridgeBackend::shutdown(self).await
     }
 }
 impl Drop for BridgeBackend {
@@ -642,5 +687,17 @@ mod tests {
             .unwrap();
         let workspace = backend.inspect_workspace().await.unwrap();
         assert_eq!(workspace.build_dir, Some(std::env::temp_dir()));
+        backend.shutdown().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn bridge_backend_waits_for_shutdown_acknowledgement() {
+        let script =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../bridge/yoctui_bridge.py");
+        let mut backend = BridgeBackend::spawn("python3", script, std::env::temp_dir())
+            .await
+            .unwrap();
+        backend.shutdown().await.unwrap();
+        assert!(backend.child.try_wait().unwrap().is_some());
     }
 }
