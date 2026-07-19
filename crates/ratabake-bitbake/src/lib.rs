@@ -127,6 +127,7 @@ pub fn classify_output(line: String) -> LogEntry {
 }
 pub struct ProcessBackend {
     build_dir: PathBuf,
+    executable: PathBuf,
     child: Option<Child>,
     output: Option<tokio::sync::mpsc::Receiver<LogEntry>>,
     #[cfg(unix)]
@@ -134,8 +135,13 @@ pub struct ProcessBackend {
 }
 impl ProcessBackend {
     pub fn new(build_dir: PathBuf) -> Self {
+        Self::with_executable(build_dir, PathBuf::from("bitbake"))
+    }
+
+    pub fn with_executable(build_dir: PathBuf, executable: PathBuf) -> Self {
         Self {
             build_dir,
+            executable,
             child: None,
             output: None,
             #[cfg(unix)]
@@ -160,7 +166,7 @@ impl BitBakeBackend for ProcessBackend {
         request
             .validate()
             .map_err(|e| BackendError::Bridge(e.to_string()))?;
-        let mut cmd = TokioCommand::new("bitbake");
+        let mut cmd = TokioCommand::new(&self.executable);
         cmd.args(&request.targets)
             .current_dir(&self.build_dir)
             .stdout(Stdio::piped())
@@ -413,6 +419,7 @@ impl Drop for BridgeBackend {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{fs, os::unix::fs::PermissionsExt};
     #[test]
     fn ansi_and_severity() {
         assert_eq!(strip_ansi("\x1b[31merror: bad\x1b[0m"), "error: bad");
@@ -424,5 +431,45 @@ mod tests {
     #[test]
     fn invalid_utf8_output_is_preserved_lossily() {
         assert_eq!(output_text(b"warning: \xff\n"), "warning: �");
+    }
+
+    #[tokio::test]
+    async fn process_backend_collects_both_output_streams() {
+        let script =
+            std::env::temp_dir().join(format!("yoctui-fake-bitbake-{}", std::process::id()));
+        fs::write(
+            &script,
+            "#!/bin/sh\nprintf 'NOTE: stdout line\\n'\nprintf 'WARNING: stderr line\\n' >&2\n",
+        )
+        .unwrap();
+        let mut permissions = fs::metadata(&script).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&script, permissions).unwrap();
+        let mut backend = ProcessBackend::with_executable(std::env::temp_dir(), script.clone());
+        backend
+            .start_build(BuildRequest {
+                targets: vec!["core-image-minimal".into()],
+                task: None,
+            })
+            .await
+            .unwrap();
+        let mut messages = Vec::new();
+        loop {
+            match backend.next_event().await.unwrap() {
+                BackendEvent::Log(entry) => messages.push(entry),
+                BackendEvent::BuildCompleted { success } => {
+                    assert!(success);
+                    break;
+                }
+                _ => {}
+            }
+        }
+        fs::remove_file(script).unwrap();
+        assert_eq!(messages.len(), 2);
+        assert!(
+            messages
+                .iter()
+                .any(|entry| entry.severity == Severity::Warning)
+        );
     }
 }
