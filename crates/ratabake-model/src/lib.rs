@@ -248,6 +248,7 @@ pub enum Action {
     Cancel,
     ToggleLogFollow,
     ToggleLogWrap,
+    CycleLogSeverity,
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -310,6 +311,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::ToggleLogFollow => app.logs.follow = !app.logs.follow,
         Action::ToggleLogWrap => app.logs.wrap = !app.logs.wrap,
+        Action::CycleLogSeverity => {
+            app.logs.filter = match app.logs.filter {
+                None => Some(Severity::Info),
+                Some(Severity::Info) => Some(Severity::Warning),
+                Some(Severity::Warning) => Some(Severity::Error),
+                Some(Severity::Error) | Some(Severity::Trace) => None,
+            };
+        }
         Action::DismissNotification => app.notification = None,
         Action::Quit => {
             if matches!(
@@ -440,6 +449,19 @@ mod tests {
         let _ = update(&mut app, Action::ToggleLogWrap);
         assert!(!app.logs.follow);
         assert!(app.logs.wrap);
+    }
+    #[test]
+    fn cycles_log_severity_filter() {
+        let mut app = App::new(2, 10);
+        for expected in [
+            Some(Severity::Info),
+            Some(Severity::Warning),
+            Some(Severity::Error),
+            None,
+        ] {
+            let _ = update(&mut app, Action::CycleLogSeverity);
+            assert_eq!(app.logs.filter, expected);
+        }
     }
     #[test]
     fn request_validation() {

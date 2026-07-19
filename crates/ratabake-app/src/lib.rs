@@ -13,6 +13,7 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('c') => Some(Action::Cancel),
         Input::Char('f') => Some(Action::ToggleLogFollow),
         Input::Char('w') => Some(Action::ToggleLogWrap),
+        Input::Char('s') => Some(Action::CycleLogSeverity),
         Input::Char('l') => Some(Action::Open(Screen::Logs)),
         Input::Char('e') => Some(Action::Open(Screen::Errors)),
         Input::Char('r') => Some(Action::Open(Screen::Recipes)),
@@ -44,5 +45,9 @@ mod tests {
     #[test]
     fn enter_dismisses_notification() {
         assert_eq!(key_action(Input::Enter), Some(Action::DismissNotification));
+    }
+    #[test]
+    fn maps_severity_filter_control() {
+        assert_eq!(key_action(Input::Char('s')), Some(Action::CycleLogSeverity));
     }
 }
