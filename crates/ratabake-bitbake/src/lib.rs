@@ -2,7 +2,7 @@
 use async_trait::async_trait;
 use ratabake_model::{BuildRequest, LogEntry, Severity, Workspace};
 use ratabake_protocol::{
-    Command, Envelope, Event, ProtocolError, VERSION, decode_line, encode_line,
+    Command, Envelope, Event, MAX_LINE_BYTES, ProtocolError, VERSION, decode_line, encode_line,
 };
 use std::{
     path::PathBuf,
@@ -251,6 +251,31 @@ impl BridgeBackend {
         self.stdin.flush().await?;
         Ok(())
     }
+
+    async fn next_line(&mut self) -> Result<Option<Vec<u8>>, BackendError> {
+        let mut line = Vec::new();
+        loop {
+            let buffer = self.lines.fill_buf().await?;
+            if buffer.is_empty() {
+                return if line.is_empty() {
+                    Ok(None)
+                } else {
+                    Err(ProtocolError::TooLarge.into())
+                };
+            }
+            let newline = buffer.iter().position(|byte| *byte == b'\n');
+            let take = newline.unwrap_or(buffer.len());
+            if line.len() + take > MAX_LINE_BYTES {
+                self.lines.consume(take);
+                return Err(ProtocolError::TooLarge.into());
+            }
+            line.extend_from_slice(&buffer[..take]);
+            self.lines.consume(take + usize::from(newline.is_some()));
+            if newline.is_some() {
+                return Ok(Some(line));
+            }
+        }
+    }
     fn event(event: Event) -> Result<BackendEvent, BackendError> {
         Ok(match event {
             Event::Workspace { data } => {
@@ -356,10 +381,9 @@ impl BitBakeBackend for BridgeBackend {
         self.command(Command::CancelBuild).await
     }
     async fn next_event(&mut self) -> Result<BackendEvent, BackendError> {
-        let mut line = Vec::new();
-        if self.lines.read_until(b'\n', &mut line).await? == 0 {
+        let Some(line) = self.next_line().await? else {
             return Ok(BackendEvent::Disconnected);
-        }
+        };
         let e: Envelope<Event> = decode_line(&line, Some(self.last_sequence))?;
         self.last_sequence = e.sequence;
         Self::event(e.message)
