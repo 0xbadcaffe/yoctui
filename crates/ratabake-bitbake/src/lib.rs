@@ -4,7 +4,11 @@ use ratabake_model::{BuildRequest, LogEntry, Severity, Workspace};
 use ratabake_protocol::{
     Command, Envelope, Event, ProtocolError, VERSION, decode_line, encode_line,
 };
-use std::{path::PathBuf, process::Stdio, time::SystemTime};
+use std::{
+    path::PathBuf,
+    process::Stdio,
+    time::{Duration, SystemTime},
+};
 use thiserror::Error;
 use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader},
@@ -109,6 +113,8 @@ pub struct ProcessBackend {
     build_dir: PathBuf,
     child: Option<Child>,
     output: Option<tokio::sync::mpsc::Receiver<LogEntry>>,
+    #[cfg(unix)]
+    process_group: Option<i32>,
 }
 impl ProcessBackend {
     pub fn new(build_dir: PathBuf) -> Self {
@@ -116,6 +122,8 @@ impl ProcessBackend {
             build_dir,
             child: None,
             output: None,
+            #[cfg(unix)]
+            process_group: None,
         }
     }
     async fn collect(&mut self) -> Result<bool, BackendError> {
@@ -141,7 +149,13 @@ impl BitBakeBackend for ProcessBackend {
             .current_dir(&self.build_dir)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
+        #[cfg(unix)]
+        cmd.process_group(0);
         let mut child = cmd.spawn()?;
+        #[cfg(unix)]
+        {
+            self.process_group = child.id().map(|id| id as i32);
+        }
         let stdout = child
             .stdout
             .take()
@@ -160,7 +174,23 @@ impl BitBakeBackend for ProcessBackend {
     }
     async fn cancel_build(&mut self) -> Result<(), BackendError> {
         let c = self.child.as_mut().ok_or(BackendError::NotRunning)?;
+        #[cfg(unix)]
+        if let Some(process_group) = self.process_group {
+            // SAFETY: process_group comes from the child PID after `process_group(0)`, and a
+            // negative PID targets only that child process group, never the caller's group.
+            let result = unsafe { libc::kill(-process_group, libc::SIGTERM) };
+            if result == 0
+                && tokio::time::timeout(Duration::from_secs(5), c.wait())
+                    .await
+                    .is_ok()
+            {
+                return Ok(());
+            }
+            // SAFETY: same process-group identity and scope as the graceful signal above.
+            let _ = unsafe { libc::kill(-process_group, libc::SIGKILL) };
+        }
         c.kill().await?;
+        let _ = c.wait().await?;
         Ok(())
     }
     async fn next_event(&mut self) -> Result<BackendEvent, BackendError> {
