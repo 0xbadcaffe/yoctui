@@ -10,9 +10,16 @@ def emit(message, correlation_id=None):
     if correlation_id is not None: value["correlation_id"]=correlation_id
     sys.stdout.write(json.dumps(value, ensure_ascii=False, separators=(",",":"))+"\n"); sys.stdout.flush()
 def error(code,message,correlation_id=None): emit({"type":"command_failed","code":code,"message":message},correlation_id)
+def bitbake_version():
+    try:
+        import bb  # type: ignore[import-not-found]
+        return getattr(bb, "__version__", None)
+    except ImportError:
+        return None
 def workspace():
-    variables={key:os.environ[key] for key in ("MACHINE","DISTRO","DL_DIR","SSTATE_DIR","TMPDIR","BB_NUMBER_THREADS","PARALLEL_MAKE") if key in os.environ}
-    return {"type":"workspace","data":{"build_dir":os.getcwd(),"variables":variables,"layers":[],"recipes":[]}}
+    keys=("MACHINE","DISTRO","BBLAYERS","DL_DIR","SSTATE_DIR","TMPDIR","PACKAGE_CLASSES","BB_NUMBER_THREADS","PARALLEL_MAKE")
+    variables={key:os.environ[key] for key in keys if key in os.environ}
+    return {"type":"workspace","data":{"build_dir":os.environ.get("BUILDDIR",os.getcwd()),"source_dir":os.environ.get("COREBASE"),"variables":variables,"bitbake_version":bitbake_version(),"layers":[],"recipes":[]}}
 def handle(command,correlation_id):
     kind=command.get("type") if isinstance(command,dict) else None
     if kind=="hello": emit({"type":"hello_ack","bitbake_version":None},correlation_id)

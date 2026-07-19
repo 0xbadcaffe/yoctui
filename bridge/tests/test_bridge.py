@@ -49,6 +49,13 @@ class BridgeProtocolTests(unittest.TestCase):
         message = json.loads(result.stdout)
         self.assertEqual(message["message"]["code"], "version_mismatch")
 
+    def test_workspace_contains_environment_values(self) -> None:
+        result = run_bridge(b'{"protocol_version":1,"sequence":1,"message":{"type":"inspect_workspace"}}')
+        message = json.loads(result.stdout)
+        self.assertEqual(message["message"]["type"], "workspace")
+        self.assertIn("build_dir", message["message"]["data"])
+        self.assertIn("variables", message["message"]["data"])
+
     def test_parent_eof_exits_cleanly(self) -> None:
         result = run_bridge()
         self.assertEqual(result.returncode, 0)
