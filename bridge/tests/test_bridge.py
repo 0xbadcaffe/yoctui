@@ -96,8 +96,18 @@ class BridgeProtocolTests(unittest.TestCase):
             environment={"YOCTUI_MOCK_EVENTS_JSON": events},
         )
         messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
-        self.assertEqual([message["type"] for message in messages], ["build_started", "task_started", "warning", "command_failed"])
-        self.assertEqual(messages[1]["recipe"], "busybox")
+        self.assertEqual(messages[-1]["code"], "bitbake_server_unavailable")
+
+    def test_mocked_server_adapter_starts_and_cancels(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                '''__version__ = "2.8.1"\nclass Connection:\n def start_build(self, targets, task): pass\n def cancel_build(self): pass\nclass Server:\n def connect(self): return Connection()\nserver = Server()\n''', encoding="utf-8")
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"start_build","targets":["busybox"],"task":null}}',
+                b'{"protocol_version":1,"sequence":2,"message":{"type":"cancel_build"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        self.assertEqual([json.loads(line)["message"]["type"] for line in result.stdout.splitlines()], ["build_started", "build_completed"])
 
     def test_parent_eof_exits_cleanly(self) -> None:
         result = run_bridge()
