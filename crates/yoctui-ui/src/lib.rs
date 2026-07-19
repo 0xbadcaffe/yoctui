@@ -142,6 +142,11 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         app.logs
             .filter
             .map_or_else(|| "all".into(), |severity| format!("{severity:?}"))
+            + &format!(
+                " | recipe: {} | task: {}",
+                app.logs.recipe_filter.as_deref().unwrap_or("all"),
+                app.logs.task_filter.as_deref().unwrap_or("all")
+            )
     );
     let title = if app.logs.dropped > 0 {
         format!("Logs ({mode}; {} older entries evicted)", app.logs.dropped)

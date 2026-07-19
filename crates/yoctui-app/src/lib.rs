@@ -20,6 +20,8 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('w') => Some(Action::ToggleLogWrap),
         Input::Char('s') => Some(Action::CycleLogSeverity),
         Input::Char('/') => Some(Action::BeginLogSearch),
+        Input::Char('R') => Some(Action::CycleLogRecipeFilter),
+        Input::Char('T') => Some(Action::CycleLogTaskFilter),
         Input::Backspace => Some(Action::BackspaceLogQuery),
         Input::Up => Some(Action::ScrollLogs { delta: 1 }),
         Input::Down => Some(Action::ScrollLogs { delta: -1 }),
