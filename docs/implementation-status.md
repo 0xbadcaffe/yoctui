@@ -24,7 +24,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 ## Protocol and bridge
 
 - [DONE] Versioned envelopes, sequence/correlation fields, NDJSON framing, bounded transport reads, malformed/oversized handling, and Python framing tests exist. Verification: protocol and bridge tests. Commit: `3730f35`, `78cc988`.
-- [IN_PROGRESS] Implement bridge handshake negotiation, graceful shutdown command, compatibility adapters, mocked BitBake integration boundary, and typed workspace/recipe/layer/variable responses. Verification: pytest with mocked modules and `cargo test -p yoctui-bitbake`. Handshake: `496b177`; shutdown acknowledgement and child exit: `ad52654`.
+- [IN_PROGRESS] Implement bridge handshake negotiation, graceful shutdown command, compatibility adapters, mocked BitBake integration boundary, and typed workspace/recipe/layer/variable responses. Verification: pytest with mocked modules and `cargo test -p yoctui-bitbake`. Handshake: `496b177`; shutdown acknowledgement and child exit: `ad52654`; typed responses: `0f4bb33`.
 - [NOT_STARTED] Connect bridge to a supported live BitBake server, normalize native events, start builds, request native cancellation, and document tested BitBake versions. Verification: optional real-Yocto smoke workflow.
 
 ## Workspace, CLI, and configuration
@@ -55,10 +55,10 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 Current phase: bridge reliability and compatibility.
 
-Next incomplete item: add compatibility adapters and typed bridge responses for recipes, layers, and variables.
+Next incomplete item: add a mocked BitBake adapter boundary and compatibility handling for supported server versions.
 
 Relevant files: `crates/yoctui-bitbake/src/lib.rs`, `bridge/yoctui_bridge.py`, `bridge/tests/test_bridge.py`, `docs/implementation-status.md`.
 
 Last successful commands: `cargo fmt --all --check`, `cargo test --workspace --all-features`, `cargo clippy --workspace --all-targets --all-features -- -D warnings`.
 
-Next command: define typed recipe, layer, and variable bridge responses, then run `cargo test --workspace --all-features`.
+Next command: isolate BitBake imports behind a mocked adapter and add compatibility tests, then run `cargo test --workspace --all-features`.
