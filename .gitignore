@@ -1,4 +1,6 @@
 /target/
+/bridge/__pycache__/
+/bridge/tests/__pycache__/
 /artifacts/valgrind/*.xml
 /artifacts/valgrind/*.txt
 /artifacts/flamegraph/*.svg

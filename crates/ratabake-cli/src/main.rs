@@ -1,7 +1,11 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use crossterm::{
-    event::{self, Event, KeyCode},
+    cursor::{Hide, Show},
+    event::{
+        self, DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
+        Event, KeyCode,
+    },
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
@@ -52,15 +56,39 @@ struct TerminalGuard;
 impl TerminalGuard {
     fn enter() -> Result<Self> {
         enable_raw_mode()?;
-        execute!(io::stdout(), EnterAlternateScreen)?;
+        execute!(
+            io::stdout(),
+            EnterAlternateScreen,
+            EnableMouseCapture,
+            EnableBracketedPaste,
+            Hide
+        )?;
         Ok(Self)
     }
 }
 impl Drop for TerminalGuard {
     fn drop(&mut self) {
-        let _ = disable_raw_mode();
-        let _ = execute!(io::stdout(), LeaveAlternateScreen);
+        restore_terminal();
     }
+}
+
+fn restore_terminal() {
+    let _ = disable_raw_mode();
+    let _ = execute!(
+        io::stdout(),
+        Show,
+        DisableBracketedPaste,
+        DisableMouseCapture,
+        LeaveAlternateScreen
+    );
+}
+
+fn install_panic_hook() {
+    let previous = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        restore_terminal();
+        previous(info);
+    }));
 }
 fn config_path(cli: &Cli) -> Option<PathBuf> {
     cli.config.clone().or_else(|| {
@@ -69,6 +97,7 @@ fn config_path(cli: &Cli) -> Option<PathBuf> {
 }
 #[tokio::main]
 async fn main() -> Result<()> {
+    install_panic_hook();
     let cli = Cli::parse();
     tracing_subscriber::fmt()
         .with_env_filter(cli.log_level.clone())
