@@ -11,9 +11,10 @@ use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, Command as TokioCommand},
 };
-use yoctui_model::{BuildRequest, LogEntry, Severity, Workspace};
+use yoctui_model::{BuildRequest, Layer, LogEntry, Recipe, Severity, Workspace};
 use yoctui_protocol::{
-    Command, Envelope, Event, MAX_LINE_BYTES, ProtocolError, VERSION, decode_line, encode_line,
+    Command, Envelope, Event, LayerData, MAX_LINE_BYTES, ProtocolError, RecipeData, VERSION,
+    decode_line, encode_line,
 };
 
 const MAX_PROCESS_LINE_BYTES: usize = 1024 * 1024;
@@ -88,6 +89,12 @@ pub enum BackendError {
 #[derive(Debug, Clone)]
 pub enum BackendEvent {
     Workspace(Workspace),
+    Recipes(Vec<Recipe>),
+    Layers(Vec<Layer>),
+    Variable {
+        name: String,
+        value: Option<String>,
+    },
     BuildStarted,
     ParseProgress,
     Log(LogEntry),
@@ -118,6 +125,13 @@ pub enum BackendEvent {
 #[async_trait]
 pub trait BitBakeBackend: Send {
     async fn inspect_workspace(&mut self) -> Result<Workspace, BackendError>;
+    async fn list_recipes(&mut self, filter: Option<String>) -> Result<Vec<Recipe>, BackendError>;
+    async fn list_layers(&mut self) -> Result<Vec<Layer>, BackendError>;
+    async fn get_variable(
+        &mut self,
+        name: String,
+        recipe: Option<String>,
+    ) -> Result<Option<String>, BackendError>;
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError>;
     async fn cancel_build(&mut self) -> Result<(), BackendError>;
     async fn next_event(&mut self) -> Result<BackendEvent, BackendError>;
@@ -201,6 +215,19 @@ impl BitBakeBackend for ProcessBackend {
             build_dir: Some(self.build_dir.clone()),
             ..Workspace::default()
         })
+    }
+    async fn list_recipes(&mut self, _filter: Option<String>) -> Result<Vec<Recipe>, BackendError> {
+        Ok(Vec::new())
+    }
+    async fn list_layers(&mut self) -> Result<Vec<Layer>, BackendError> {
+        Ok(Vec::new())
+    }
+    async fn get_variable(
+        &mut self,
+        _name: String,
+        _recipe: Option<String>,
+    ) -> Result<Option<String>, BackendError> {
+        Ok(None)
     }
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError> {
         request
@@ -408,6 +435,39 @@ impl BridgeBackend {
                     BackendError::Bridge(format!("invalid workspace response: {error}"))
                 })?)
             }
+            Event::Recipes { recipes } => BackendEvent::Recipes(
+                recipes
+                    .into_iter()
+                    .map(
+                        |RecipeData {
+                             name,
+                             version,
+                             layer,
+                         }| Recipe {
+                            name,
+                            version,
+                            layer,
+                        },
+                    )
+                    .collect(),
+            ),
+            Event::Layers { layers } => BackendEvent::Layers(
+                layers
+                    .into_iter()
+                    .map(
+                        |LayerData {
+                             name,
+                             path,
+                             priority,
+                         }| Layer {
+                            name,
+                            path: PathBuf::from(path),
+                            priority,
+                        },
+                    )
+                    .collect(),
+            ),
+            Event::Variable { name, value } => BackendEvent::Variable { name, value },
             Event::BuildStarted => BackendEvent::BuildStarted,
             Event::ParseProgress { .. } => BackendEvent::ParseProgress,
             Event::TaskStarted { recipe, task, .. } => BackendEvent::TaskStarted { recipe, task },
@@ -492,6 +552,69 @@ impl BitBakeBackend for BridgeBackend {
                 BackendEvent::Disconnected => {
                     return Err(BackendError::Bridge(
                         "bridge disconnected during inspection".into(),
+                    ));
+                }
+                _ => {}
+            }
+        }
+    }
+    async fn list_recipes(&mut self, filter: Option<String>) -> Result<Vec<Recipe>, BackendError> {
+        self.command(Command::ListRecipes { filter }).await?;
+        loop {
+            match self.next_event().await? {
+                BackendEvent::Recipes(recipes) => return Ok(recipes),
+                BackendEvent::CommandFailed { code, message } => {
+                    return Err(BackendError::Bridge(format!("{code}: {message}")));
+                }
+                BackendEvent::Disconnected => {
+                    return Err(BackendError::Bridge(
+                        "bridge disconnected while listing recipes".into(),
+                    ));
+                }
+                _ => {}
+            }
+        }
+    }
+    async fn list_layers(&mut self) -> Result<Vec<Layer>, BackendError> {
+        self.command(Command::ListLayers).await?;
+        loop {
+            match self.next_event().await? {
+                BackendEvent::Layers(layers) => return Ok(layers),
+                BackendEvent::CommandFailed { code, message } => {
+                    return Err(BackendError::Bridge(format!("{code}: {message}")));
+                }
+                BackendEvent::Disconnected => {
+                    return Err(BackendError::Bridge(
+                        "bridge disconnected while listing layers".into(),
+                    ));
+                }
+                _ => {}
+            }
+        }
+    }
+    async fn get_variable(
+        &mut self,
+        name: String,
+        recipe: Option<String>,
+    ) -> Result<Option<String>, BackendError> {
+        self.command(Command::GetVariable {
+            name: name.clone(),
+            recipe,
+        })
+        .await?;
+        loop {
+            match self.next_event().await? {
+                BackendEvent::Variable {
+                    name: returned,
+                    value,
+                } if returned == name => return Ok(value),
+                BackendEvent::Variable { .. } => continue,
+                BackendEvent::CommandFailed { code, message } => {
+                    return Err(BackendError::Bridge(format!("{code}: {message}")));
+                }
+                BackendEvent::Disconnected => {
+                    return Err(BackendError::Bridge(
+                        "bridge disconnected while reading a variable".into(),
                     ));
                 }
                 _ => {}
@@ -699,5 +822,24 @@ mod tests {
             .unwrap();
         backend.shutdown().await.unwrap();
         assert!(backend.child.try_wait().unwrap().is_some());
+    }
+
+    #[tokio::test]
+    async fn bridge_backend_decodes_typed_workspace_queries() {
+        let script =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../bridge/yoctui_bridge.py");
+        let mut backend = BridgeBackend::spawn("python3", script, std::env::temp_dir())
+            .await
+            .unwrap();
+        assert!(backend.list_recipes(None).await.unwrap().is_empty());
+        let _layers = backend.list_layers().await.unwrap();
+        assert!(
+            backend
+                .get_variable("PATH".into(), None)
+                .await
+                .unwrap()
+                .is_some()
+        );
+        backend.shutdown().await.unwrap();
     }
 }
