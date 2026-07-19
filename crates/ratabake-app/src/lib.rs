@@ -11,6 +11,8 @@ pub fn key_action(key: Input) -> Option<Action> {
     match key {
         Input::Char('b') => None,
         Input::Char('c') => Some(Action::Cancel),
+        Input::Char('f') => Some(Action::ToggleLogFollow),
+        Input::Char('w') => Some(Action::ToggleLogWrap),
         Input::Char('l') => Some(Action::Open(Screen::Logs)),
         Input::Char('e') => Some(Action::Open(Screen::Errors)),
         Input::Char('r') => Some(Action::Open(Screen::Recipes)),
@@ -32,5 +34,10 @@ mod tests {
             key_action(Input::Char('l')),
             Some(Action::Open(Screen::Logs))
         );
+    }
+    #[test]
+    fn maps_log_controls() {
+        assert_eq!(key_action(Input::Char('f')), Some(Action::ToggleLogFollow));
+        assert_eq!(key_action(Input::Char('w')), Some(Action::ToggleLogWrap));
     }
 }

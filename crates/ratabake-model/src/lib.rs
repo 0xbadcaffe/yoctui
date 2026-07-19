@@ -246,6 +246,8 @@ pub enum Action {
     Log(LogEntry),
     BuildCompleted { success: bool },
     Cancel,
+    ToggleLogFollow,
+    ToggleLogWrap,
     Quit,
     ConfirmQuit,
     WorkspaceLoaded(Workspace),
@@ -305,6 +307,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return Some(Effect::Cancel);
             }
         }
+        Action::ToggleLogFollow => app.logs.follow = !app.logs.follow,
+        Action::ToggleLogWrap => app.logs.wrap = !app.logs.wrap,
         Action::Quit => {
             if matches!(
                 app.build.status,
@@ -426,6 +430,14 @@ mod tests {
         logs.task_filter = Some("do_compile".into());
         logs.query = "compiler".into();
         assert_eq!(logs.filtered().count(), 1);
+    }
+    #[test]
+    fn toggles_log_view_preferences() {
+        let mut app = App::new(2, 10);
+        let _ = update(&mut app, Action::ToggleLogFollow);
+        let _ = update(&mut app, Action::ToggleLogWrap);
+        assert!(!app.logs.follow);
+        assert!(app.logs.wrap);
     }
     #[test]
     fn request_validation() {
