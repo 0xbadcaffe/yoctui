@@ -4,7 +4,7 @@ use crossterm::{
     cursor::{Hide, Show},
     event::{
         self, DisableBracketedPaste, DisableMouseCapture, EnableBracketedPaste, EnableMouseCapture,
-        Event, KeyCode,
+        Event, KeyCode, KeyEvent, KeyModifiers,
     },
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
@@ -504,11 +504,8 @@ async fn tui(
         if event::poll(refresh)?
             && let Event::Key(k) = event::read()?
         {
-            let input = match k.code {
-                KeyCode::Char(c) => Input::Char(c),
-                KeyCode::Esc => Input::Esc,
-                KeyCode::Enter => Input::Enter,
-                _ => continue,
+            let Some(input) = input_from_key(k) else {
+                continue;
             };
             if input == Input::Char('b') {
                 if let Some(target) = app.build.target.clone() {
@@ -579,6 +576,16 @@ async fn tui(
     Ok(())
 }
 
+fn input_from_key(key: KeyEvent) -> Option<Input> {
+    match key.code {
+        KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlC),
+        KeyCode::Char(character) => Some(Input::Char(character)),
+        KeyCode::Esc => Some(Input::Esc),
+        KeyCode::Enter => Some(Input::Enter),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -604,5 +611,11 @@ mod tests {
             }),
             Some(Action::TaskProgress { progress: 25, .. })
         ));
+    }
+
+    #[test]
+    fn ctrl_c_is_not_the_regular_cancel_key() {
+        let key = KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL);
+        assert_eq!(input_from_key(key), Some(Input::CtrlC));
     }
 }
