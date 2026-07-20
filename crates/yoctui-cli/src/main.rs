@@ -606,6 +606,11 @@ async fn tui(
                     app.notification =
                         Some("pass a target or set default_target before starting a build".into());
                 }
+            } else if app.screen == yoctui_model::Screen::Errors
+                && matches!(input, Input::Up | Input::Down)
+            {
+                let delta = if input == Input::Up { -1 } else { 1 };
+                let _ = update(&mut app, Action::SelectError { delta });
             } else if app.logs.searching {
                 match input {
                     Input::Char(character) => {
