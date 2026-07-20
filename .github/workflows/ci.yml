@@ -1,7 +1,7 @@
 name: CI
 on: [push, pull_request]
 permissions: { contents: read }
-concurrency: { group: ratabake-${{ github.workflow }}-${{ github.ref }}, cancel-in-progress: true }
+concurrency: { group: yoctui-${{ github.workflow }}-${{ github.ref }}, cancel-in-progress: true }
 jobs:
   test:
     runs-on: ubuntu-latest

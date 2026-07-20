@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-matches="$(rg -n -i 'r[a]tabake' \
+matches="$(rg --hidden -n -i 'r[a]tabake' \
   --glob '!target/**' \
   --glob '!Cargo.lock' \
   --glob '!.git/**' \
