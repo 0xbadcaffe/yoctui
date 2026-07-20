@@ -412,7 +412,10 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
         },
     );
     frame.render_widget(
-        Paragraph::new(format!("{detail}\n\no opens the selected layer directory.")).block(
+        Paragraph::new(format!(
+            "{detail}\n\nb opens this recipe in the build target dialog."
+        ))
+        .block(
             Block::default()
                 .title("Selected recipe")
                 .borders(Borders::ALL),
@@ -488,7 +491,7 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
         },
     );
     frame.render_widget(
-        Paragraph::new(detail).block(
+        Paragraph::new(format!("{detail}\n\no opens the selected layer directory.")).block(
             Block::default()
                 .title("Selected layer")
                 .borders(Borders::ALL),

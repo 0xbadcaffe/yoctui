@@ -297,6 +297,7 @@ pub enum Action {
     JumpToSelectedError,
     OpenSelectedErrorSource,
     SelectRecipe { delta: isize },
+    BeginSelectedRecipeBuild,
     SelectLayer { delta: isize },
     OpenSelectedLayer,
     SelectConfigVariable { delta: isize },
@@ -521,6 +522,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .saturating_add(delta as usize)
                     .min(app.workspace.recipes.len().saturating_sub(1))
             };
+        }
+        Action::BeginSelectedRecipeBuild => {
+            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
+                app.build_target_input = recipe.name.clone();
+                app.build_target_editing = true;
+            } else {
+                app.notification = Some("No recipe is selected to build.".into());
+            }
         }
         Action::SelectLayer { delta } => {
             app.layer_selection = if delta.is_negative() {
@@ -774,6 +783,18 @@ mod tests {
         assert_eq!(app.recipe_selection, 1);
         let _ = update(&mut app, Action::SelectRecipe { delta: -8 });
         assert_eq!(app.recipe_selection, 0);
+    }
+    #[test]
+    fn selected_recipe_prefills_the_build_target_editor() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes = vec![Recipe {
+            name: "busybox".into(),
+            version: None,
+            layer: None,
+        }];
+        let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
+        assert!(app.build_target_editing);
+        assert_eq!(app.build_target_input, "busybox");
     }
     #[test]
     fn layer_selection_stays_in_workspace_bounds() {
