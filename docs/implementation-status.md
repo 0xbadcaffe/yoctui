@@ -47,7 +47,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 - [IN_PROGRESS] Add property tests, fuzz targets, stress/memory retention tests, benchmarks, and terminal integration tests. Retention and protocol framing properties complete; fuzz, stress, benchmarks remain.
 - [NOT_STARTED] Configure coverage (`cargo llvm-cov`, `pytest-cov`) with thresholds.
 - [NOT_STARTED] Configure audit/deny/ruff/mypy checks and complete CI matrix, optional real-Yocto, sanitizer, Valgrind, and flamegraph workflows.
-- [IN_PROGRESS] Run deterministic Valgrind, profiling, flamegraph, and memory workloads; commit concise reports. Reproducible bridge workload and artifact-producing scripts: `ed9ea9b`; profiler-tool runs/reports remain pending.
+- [IN_PROGRESS] Run deterministic Valgrind, profiling, flamegraph, and memory workloads; commit concise reports. Reproducible bridge workload: `ed9ea9b`; release and Valgrind baselines: pending commit; Flamegraph remains pending.
 - [IN_PROGRESS] Complete all documentation and compatibility matrix.
 - [NOT_STARTED] Add `scripts/verify-completion.sh`, artifacts directories, and completion-gate checks.
 
