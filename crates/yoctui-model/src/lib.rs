@@ -224,6 +224,7 @@ pub struct App {
     pub notification: Option<String>,
     pub error_selection: usize,
     pub recipe_selection: usize,
+    pub layer_selection: usize,
 }
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
@@ -238,6 +239,7 @@ impl App {
             notification: None,
             error_selection: 0,
             recipe_selection: 0,
+            layer_selection: 0,
         }
     }
     pub fn elapsed(&self) -> Option<Duration> {
@@ -273,6 +275,7 @@ pub enum Action {
     SelectError { delta: isize },
     JumpToSelectedError,
     SelectRecipe { delta: isize },
+    SelectLayer { delta: isize },
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -437,6 +440,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.recipe_selection
                     .saturating_add(delta as usize)
                     .min(app.workspace.recipes.len().saturating_sub(1))
+            };
+        }
+        Action::SelectLayer { delta } => {
+            app.layer_selection = if delta.is_negative() {
+                app.layer_selection.saturating_sub(delta.unsigned_abs())
+            } else {
+                app.layer_selection
+                    .saturating_add(delta as usize)
+                    .min(app.workspace.layers.len().saturating_sub(1))
             };
         }
         Action::AppendLogQuery(_) | Action::BackspaceLogQuery => {}
@@ -632,6 +644,26 @@ mod tests {
         assert_eq!(app.recipe_selection, 1);
         let _ = update(&mut app, Action::SelectRecipe { delta: -8 });
         assert_eq!(app.recipe_selection, 0);
+    }
+    #[test]
+    fn layer_selection_stays_in_workspace_bounds() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.layers = vec![
+            Layer {
+                name: "alpha".into(),
+                path: PathBuf::from("/layers/alpha"),
+                priority: Some(1),
+            },
+            Layer {
+                name: "beta".into(),
+                path: PathBuf::from("/layers/beta"),
+                priority: None,
+            },
+        ];
+        let _ = update(&mut app, Action::SelectLayer { delta: 8 });
+        assert_eq!(app.layer_selection, 1);
+        let _ = update(&mut app, Action::SelectLayer { delta: -8 });
+        assert_eq!(app.layer_selection, 0);
     }
     proptest! {
         #[test]
