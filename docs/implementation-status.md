@@ -43,7 +43,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 ## Reliability, testing, and quality
 
-- [IN_PROGRESS] Expand model/protocol/UI/process tests; add fake bridge fixtures and integration test tree. Verification: `cargo test --workspace --all-features`, `pytest`. Property tests: `b231871`, `36374dd`.
+- [IN_PROGRESS] Expand model/protocol/UI/process tests; add fake bridge fixtures and integration test tree. Verification: `cargo test --workspace --all-features`, `pytest`, `./scripts/test-cli.sh`. Property tests: `b231871`, `36374dd`; bridge CLI smoke: `a1723c2`.
 - [IN_PROGRESS] Add property tests, fuzz targets, stress/memory retention tests, benchmarks, and terminal integration tests. Retention and protocol framing properties complete; fuzz, stress, benchmarks remain.
 - [NOT_STARTED] Configure coverage (`cargo llvm-cov`, `pytest-cov`) with thresholds.
 - [NOT_STARTED] Configure audit/deny/ruff/mypy checks and complete CI matrix, optional real-Yocto, sanitizer, Valgrind, and flamegraph workflows.
