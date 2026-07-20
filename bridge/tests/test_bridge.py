@@ -143,6 +143,35 @@ class BridgeProtocolTests(unittest.TestCase):
             ["build_started", "build_completed"],
         )
 
+    def test_mocked_server_drains_native_event_objects(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                """__version__ = "2.8.1"
+class TaskStarted:
+ def __init__(self): self.pn = "busybox"; self.task = "do_compile"; self.pid = 42
+class TaskSucceeded:
+ def __init__(self): self.pn = "busybox"; self.task = "do_compile"
+class Connection:
+ def start_build(self, targets, task): pass
+ def drain_events(self): return [TaskStarted(), TaskSucceeded()]
+class Server:
+ def connect(self): return Connection()
+server = Server()
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"start_build","targets":["busybox"],"task":null}}',
+                environment={"PYTHONPATH": directory},
+            )
+        messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
+        self.assertEqual(
+            [message["type"] for message in messages],
+            ["build_started", "task_started", "task_completed"],
+        )
+        self.assertEqual(messages[1]["pid"], 42)
+        self.assertTrue(messages[2]["success"])
+
     def test_parent_eof_exits_cleanly(self) -> None:
         result = run_bridge()
         self.assertEqual(result.returncode, 0)
