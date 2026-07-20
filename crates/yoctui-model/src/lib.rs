@@ -298,6 +298,7 @@ pub enum Action {
     OpenSelectedErrorSource,
     SelectRecipe { delta: isize },
     SelectLayer { delta: isize },
+    OpenSelectedLayer,
     SelectConfigVariable { delta: isize },
     BeginMetadataSearch,
     AppendMetadataQuery(char),
@@ -529,6 +530,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .saturating_add(delta as usize)
                     .min(app.workspace.layers.len().saturating_sub(1))
             };
+        }
+        Action::OpenSelectedLayer => {
+            if let Some(layer) = app.workspace.layers.get(app.layer_selection) {
+                return Some(Effect::OpenInEditor(layer.path.clone()));
+            }
+            app.notification = Some("No layer is selected to open.".into());
         }
         Action::SelectConfigVariable { delta } => {
             app.config_selection = if delta.is_negative() {
@@ -787,6 +794,19 @@ mod tests {
         assert_eq!(app.layer_selection, 1);
         let _ = update(&mut app, Action::SelectLayer { delta: -8 });
         assert_eq!(app.layer_selection, 0);
+    }
+    #[test]
+    fn selected_layer_opens_its_directory() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.layers = vec![Layer {
+            name: "meta-demo".into(),
+            path: PathBuf::from("/layers/meta-demo"),
+            priority: None,
+        }];
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedLayer),
+            Some(Effect::OpenInEditor(PathBuf::from("/layers/meta-demo")))
+        );
     }
     #[test]
     fn configuration_selection_stays_in_workspace_bounds() {
