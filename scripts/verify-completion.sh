@@ -28,7 +28,7 @@ cargo deny check
 "$python_tools/ruff" check bridge
 "$python_tools/ruff" format --check bridge
 "$python_tools/mypy" bridge
-"$python_tools/pytest" bridge/tests
+"$python_tools/pytest" bridge/tests --cov=bridge --cov-report=term-missing --cov-fail-under=75
 ./scripts/valgrind.sh
 ./scripts/profile-workload.sh
 ./scripts/flamegraph.sh

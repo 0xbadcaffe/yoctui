@@ -45,7 +45,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 - [IN_PROGRESS] Expand model/protocol/UI/process tests; add fake bridge fixtures and integration test tree. Verification: `cargo test --workspace --all-features`, `pytest`, `./scripts/test-cli.sh`. Property tests: `b231871`, `36374dd`; bridge CLI smoke: `a1723c2`.
 - [IN_PROGRESS] Add property tests, fuzz targets, stress/memory retention tests, benchmarks, and terminal integration tests. Retention and protocol framing properties complete; fuzz, stress, benchmarks remain.
-- [IN_PROGRESS] Configure coverage (`cargo llvm-cov`, `pytest-cov`) with thresholds. Model and protocol Rust thresholds are enforced: `9c2ca20`; Python coverage remains.
+- [IN_PROGRESS] Configure coverage (`cargo llvm-cov`, `pytest-cov`) with thresholds. Model/protocol Rust thresholds are enforced: `9c2ca20`; bridge Python coverage is 81.36% and pending commit.
 - [IN_PROGRESS] Configure audit/deny/ruff/mypy checks and complete CI matrix, optional real-Yocto, sanitizer, Valgrind, and flamegraph workflows. Ruff/mypy/pytest are enabled locally and in CI: pending commit; audit/deny and remaining workflows remain.
 - [IN_PROGRESS] Run deterministic Valgrind, profiling, flamegraph, and memory workloads; commit concise reports. Reproducible bridge workload: `ed9ea9b`; release and Valgrind baselines: `664c36e`; Flamegraph remains pending.
 - [IN_PROGRESS] Complete all documentation and compatibility matrix.

@@ -1,0 +1,7 @@
+[tool.coverage.run]
+source = ["bridge"]
+parallel = true
+patch = ["subprocess"]
+
+[tool.coverage.report]
+omit = ["bridge/tests/*"]

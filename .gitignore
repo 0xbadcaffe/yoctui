@@ -5,3 +5,5 @@
 /artifacts/valgrind/*.txt
 /artifacts/flamegraph/*.svg
 /artifacts/profile/*.txt
+/.coverage
+/.coverage.*
