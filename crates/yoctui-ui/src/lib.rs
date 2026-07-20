@@ -294,11 +294,12 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 fn recipes(frame: &mut Frame, app: &App, area: Rect) {
+    let mut recipes = app.workspace.recipes.iter().collect::<Vec<_>>();
+    recipes.sort_by(|left, right| left.name.cmp(&right.name));
     frame.render_widget(
         Paragraph::new(
-            app.workspace
-                .recipes
-                .iter()
+            recipes
+                .into_iter()
                 .map(|r| {
                     format!(
                         "{} {} {}",
@@ -312,32 +313,41 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
         )
         .block(
             Block::default()
-                .title("Recipes (BitBake supplied)")
+                .title(format!(
+                    "Recipes (BitBake supplied: {})",
+                    app.workspace.recipes.len()
+                ))
                 .borders(Borders::ALL),
         ),
         area,
     )
 }
 fn layers(frame: &mut Frame, app: &App, area: Rect) {
+    let mut layers = app.workspace.layers.iter().collect::<Vec<_>>();
+    layers.sort_by(|left, right| left.name.cmp(&right.name));
     frame.render_widget(
         Paragraph::new(
-            app.workspace
-                .layers
-                .iter()
+            layers
+                .into_iter()
                 .map(|l| format!("{} {} priority {:?}", l.name, l.path.display(), l.priority))
                 .collect::<Vec<_>>()
                 .join("\n"),
         )
-        .block(Block::default().title("Layers").borders(Borders::ALL)),
+        .block(
+            Block::default()
+                .title(format!("Layers ({})", app.workspace.layers.len()))
+                .borders(Borders::ALL),
+        ),
         area,
     )
 }
 fn config(frame: &mut Frame, app: &App, area: Rect) {
+    let mut variables = app.workspace.variables.iter().collect::<Vec<_>>();
+    variables.sort_by_key(|(name, _)| *name);
     frame.render_widget(
         Paragraph::new(
-            app.workspace
-                .variables
-                .iter()
+            variables
+                .into_iter()
                 .map(|(k, v)| format!("{k}={v}"))
                 .collect::<Vec<_>>()
                 .join("\n"),
