@@ -623,7 +623,10 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
         Ok(workspace) => {
             let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
             match backend.list_recipes(None).await {
-                Ok(recipes) => app.workspace.recipes = recipes,
+                Ok(mut recipes) => {
+                    recipes.sort_by(|left, right| left.name.cmp(&right.name));
+                    app.workspace.recipes = recipes;
+                }
                 Err(error) => app.notification = Some(format!("Recipes unavailable: {error}")),
             }
             match backend.list_layers().await {
@@ -692,6 +695,8 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
             {
                 let delta = if input == Input::Up { -1 } else { 1 };
                 let _ = update(&mut app, Action::SelectRecipe { delta });
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
             } else if app.screen == yoctui_model::Screen::Layers
                 && matches!(input, Input::Up | Input::Down)
             {
