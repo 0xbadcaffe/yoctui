@@ -417,22 +417,46 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
 fn config(frame: &mut Frame, app: &App, area: Rect) {
     let mut variables = app.workspace.variables.iter().collect::<Vec<_>>();
     variables.sort_by_key(|(name, _)| *name);
+    let selected = variables.get(app.config_selection).copied();
+    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(5)]).split(area);
     frame.render_widget(
-        Paragraph::new(
+        Table::new(
             variables
                 .into_iter()
-                .map(|(k, v)| format!("{k}={v}"))
-                .collect::<Vec<_>>()
-                .join("\n"),
+                .enumerate()
+                .map(|(index, (name, value))| {
+                    Row::new(vec![Cell::from(name.as_str()), Cell::from(value.as_str())]).style(
+                        if index == app.config_selection {
+                            Style::default().bg(Color::DarkGray)
+                        } else {
+                            Style::default()
+                        },
+                    )
+                }),
+            [Constraint::Percentage(35), Constraint::Percentage(65)],
+        )
+        .header(
+            Row::new(["Variable", "Effective value"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
         )
         .block(
             Block::default()
                 .title("Effective configuration (read-only)")
                 .borders(Borders::ALL),
-        )
-        .wrap(Wrap { trim: false }),
-        area,
-    )
+        ),
+        chunks[0],
+    );
+    let detail = selected.map_or_else(|| "No configuration variables supplied by the backend.".into(), |(name, value)| format!("Variable: {name}\nEffective value: {value}\nProvenance: backend value (provenance unavailable)"));
+    frame.render_widget(
+        Paragraph::new(detail)
+            .block(
+                Block::default()
+                    .title("Selected variable")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+        chunks[1],
+    );
 }
 fn help(frame: &mut Frame, area: Rect) {
     frame.render_widget(Paragraph::new("b Start build (available when target supplied)\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\ne Errors   r Recipes   y Layers   v Configuration\n? This help   Esc Dashboard   q Quit\n\nQuit requires confirmation during an active build.").block(Block::default().title("Help").borders(Borders::ALL)),area)
