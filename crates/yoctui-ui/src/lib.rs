@@ -283,7 +283,7 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
         },
     );
     frame.render_widget(
-        Paragraph::new(detail)
+        Paragraph::new(format!("{detail}\n\nPress Enter to jump to matching logs."))
             .block(
                 Block::default()
                     .title("Selected diagnostic")

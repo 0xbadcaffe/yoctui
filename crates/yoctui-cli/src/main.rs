@@ -611,6 +611,8 @@ async fn tui(
             {
                 let delta = if input == Input::Up { -1 } else { 1 };
                 let _ = update(&mut app, Action::SelectError { delta });
+            } else if app.screen == yoctui_model::Screen::Errors && input == Input::Enter {
+                let _ = update(&mut app, Action::JumpToSelectedError);
             } else if app.logs.searching {
                 match input {
                     Input::Char(character) => {
