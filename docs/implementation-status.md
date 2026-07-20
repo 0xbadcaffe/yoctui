@@ -37,9 +37,9 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 - [IN_PROGRESS] Logs support bounded retention, pause/follow, wrap, severity filtering, notification display, vertical/horizontal navigation, and interactive text search. Verification: model/UI tests. Commits: `26aad33`, `4017e02`, `c871b26`, `7c04b37`, `09c4978`, `7928bbd`.
 - [IN_PROGRESS] Add recipe/task filters in UI, source-log/editor actions, and richer eviction detail.
 - [IN_PROGRESS] Complete structured errors screen with selection/detail/log jump. Table/detail: `bec99cf`; selection: `4ed019b`; log jump: `8f0154f`. Cross-screen context and richer parsing remain.
-- [IN_PROGRESS] Complete recipes screen with search/details/valid actions and destructive confirmations. Backend-loaded table, selection, and details: `58c9332`; search/actions/confirmations remain.
-- [IN_PROGRESS] Complete layers screen with metadata/search/open action. Backend-loaded table, selection, and metadata details: `63895c7`; search/open action remain.
-- [IN_PROGRESS] Complete read-only configuration screen with search, expansion, and provenance. Backend-loaded table, selection, and expanded values: `5677581`; search and BitBake provenance remain.
+- [IN_PROGRESS] Complete recipes screen with search/details/valid actions and destructive confirmations. Backend-loaded table, selection, and details: `58c9332`; case-insensitive metadata search: `494f289`; actions/confirmations remain.
+- [IN_PROGRESS] Complete layers screen with metadata/search/open action. Backend-loaded table, selection, and metadata details: `63895c7`; case-insensitive metadata search: `494f289`; open action remains.
+- [IN_PROGRESS] Complete read-only configuration screen with search, expansion, and provenance. Backend-loaded table, selection, and expanded values: `5677581`; case-insensitive metadata search: `494f289`; BitBake provenance remains.
 
 ## Reliability, testing, and quality
 
