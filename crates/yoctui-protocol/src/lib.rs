@@ -180,6 +180,7 @@ pub fn encode_line<T: Serialize>(e: &Envelope<T>) -> Result<Vec<u8>, ProtocolErr
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     #[test]
     fn round_trip() {
         let e = Envelope {
@@ -226,5 +227,24 @@ mod tests {
             Err(ProtocolError::TooLarge)
         ));
         assert_eq!(framer.pending_len(), 0);
+    }
+
+    proptest! {
+        #[test]
+        fn framing_is_independent_of_chunk_boundaries(parts in proptest::collection::vec("[a-z]{0,12}", 0..30), chunk_sizes in proptest::collection::vec(1usize..16, 1..30)) {
+            let source = parts.iter().map(|part| format!("{part}\n")).collect::<String>().into_bytes();
+            let mut framer = LineFramer::default();
+            let mut frames = Vec::new();
+            let mut offset = 0;
+            for size in chunk_sizes {
+                if offset == source.len() { break; }
+                let end = (offset + size).min(source.len());
+                frames.extend(framer.push(&source[offset..end]).unwrap());
+                offset = end;
+            }
+            if offset < source.len() { frames.extend(framer.push(&source[offset..]).unwrap()); }
+            prop_assert_eq!(frames, parts.into_iter().map(String::into_bytes).collect::<Vec<_>>());
+            prop_assert_eq!(framer.pending_len(), 0);
+        }
     }
 }
