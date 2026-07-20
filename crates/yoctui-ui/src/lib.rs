@@ -4,6 +4,25 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, Wrap},
 };
 use yoctui_model::{App, Screen, Severity, format_duration};
+
+fn matches_metadata(query: &str, values: &[&str]) -> bool {
+    let query = query.to_lowercase();
+    query.is_empty()
+        || values
+            .iter()
+            .any(|value| value.to_lowercase().contains(query.as_str()))
+}
+
+fn metadata_title(base: String, app: &App) -> String {
+    if app.metadata_searching {
+        format!("{base} | search: {}_", app.metadata_query)
+    } else if app.metadata_query.is_empty() {
+        base
+    } else {
+        format!("{base} | search: {}", app.metadata_query)
+    }
+}
+
 pub fn render(frame: &mut Frame, app: &App) {
     let area = frame.area();
     if area.width < 30 || area.height < 8 {
@@ -41,7 +60,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         Screen::Configuration => config(frame, app, chunks[1]),
         Screen::Help => help(frame, chunks[1]),
     };
-    frame.render_widget(Paragraph::new("b build | c cancel | l logs | f follow | w wrap | s severity | e errors | r recipes | y layers | v config | ? help | q quit").style(Style::default().fg(Color::DarkGray)),chunks[2]);
+    frame.render_widget(Paragraph::new("b build | c cancel | l logs | f follow | w wrap | s severity | / search | e errors | r recipes | y layers | v config | ? help | q quit").style(Style::default().fg(Color::DarkGray)),chunks[2]);
     if app.quit_confirm {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 3);
         frame.render_widget(Clear, popup);
@@ -296,6 +315,17 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
 fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     let mut recipes = app.workspace.recipes.iter().collect::<Vec<_>>();
     recipes.sort_by(|left, right| left.name.cmp(&right.name));
+    recipes.retain(|recipe| {
+        matches_metadata(
+            &app.metadata_query,
+            &[
+                recipe.name.as_str(),
+                recipe.version.as_deref().unwrap_or(""),
+                recipe.layer.as_deref().unwrap_or(""),
+            ],
+        )
+    });
+    let recipe_count = recipes.len();
     let selected = recipes.get(app.recipe_selection).copied();
     let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(5)]).split(area);
     frame.render_widget(
@@ -324,9 +354,13 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
         )
         .block(
             Block::default()
-                .title(format!(
-                    "Recipes (BitBake supplied: {})",
-                    app.workspace.recipes.len()
+                .title(metadata_title(
+                    format!(
+                        "Recipes (shown: {} of {})",
+                        recipe_count,
+                        app.workspace.recipes.len()
+                    ),
+                    app,
                 ))
                 .borders(Borders::ALL),
         ),
@@ -355,6 +389,13 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
 fn layers(frame: &mut Frame, app: &App, area: Rect) {
     let mut layers = app.workspace.layers.iter().collect::<Vec<_>>();
     layers.sort_by(|left, right| left.name.cmp(&right.name));
+    layers.retain(|layer| {
+        matches_metadata(
+            &app.metadata_query,
+            &[layer.name.as_str(), layer.path.to_str().unwrap_or("")],
+        )
+    });
+    let layer_count = layers.len();
     let selected = layers.get(app.layer_selection).copied();
     let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(5)]).split(area);
     frame.render_widget(
@@ -387,7 +428,14 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
         )
         .block(
             Block::default()
-                .title(format!("Layers ({})", app.workspace.layers.len()))
+                .title(metadata_title(
+                    format!(
+                        "Layers (shown: {} of {})",
+                        layer_count,
+                        app.workspace.layers.len()
+                    ),
+                    app,
+                ))
                 .borders(Borders::ALL),
         ),
         chunks[0],
@@ -417,6 +465,10 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
 fn config(frame: &mut Frame, app: &App, area: Rect) {
     let mut variables = app.workspace.variables.iter().collect::<Vec<_>>();
     variables.sort_by_key(|(name, _)| *name);
+    variables.retain(|(name, value)| {
+        matches_metadata(&app.metadata_query, &[name.as_str(), value.as_str()])
+    });
+    let variable_count = variables.len();
     let selected = variables.get(app.config_selection).copied();
     let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(5)]).split(area);
     frame.render_widget(
@@ -441,7 +493,14 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
         )
         .block(
             Block::default()
-                .title("Effective configuration (read-only)")
+                .title(metadata_title(
+                    format!(
+                        "Effective configuration (shown: {} of {}, read-only)",
+                        variable_count,
+                        app.workspace.variables.len()
+                    ),
+                    app,
+                ))
                 .borders(Borders::ALL),
         ),
         chunks[0],
@@ -459,7 +518,7 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("b Start build (available when target supplied)\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\ne Errors   r Recipes   y Layers   v Configuration\n? This help   Esc Dashboard   q Quit\n\nQuit requires confirmation during an active build.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("b Start build (available when target supplied)\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\ne Errors   r Recipes   y Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nQuit requires confirmation during an active build.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
