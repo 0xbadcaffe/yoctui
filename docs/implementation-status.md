@@ -14,7 +14,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 - [DONE] Model, typed actions, pure reducer, bounded logs, task state, and basic TUI screens exist. Verification: `cargo test -p yoctui-model -p yoctui-ui`. Commit: multiple pre-guide commits.
 - [DONE] Terminal guard restores raw mode, alternate screen, cursor, mouse, bracketed paste, and panic state. Verification: Rust tests and manual pseudo-terminal test. Commit: `7d50f94`.
 - [IN_PROGRESS] Handle resize, supported termination signals, terminal restoration in a pseudo-terminal, and dynamic unavailable-command help. Verification: `./scripts/test-terminal.sh` and `cargo test -p yoctui`. Pseudo-terminal and SIGTERM coverage commits: `df411ad`; current signal commit pending.
-- [IN_PROGRESS] Complete dashboard metrics, build dialog, confirmations, notifications, and backend-driven TUI effects. Backend, status, task counts, diagnostics, active tasks, recent output, and a validated build-target dialog are implemented: pending commit. Fake-backend integration tests remain.
+- [IN_PROGRESS] Complete dashboard metrics, build dialog, confirmations, notifications, and backend-driven TUI effects. Backend, status, task counts, diagnostics, active tasks, and recent output: `dd1f6d5`; validated build-target dialog: `a7e89b0`. Fake-backend integration tests remain.
 
 ## Process backend
 
@@ -30,12 +30,12 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 ## Workspace, CLI, and configuration
 
 - [DONE] CLI options, configuration precedence, headless inspection, doctor diagnostics, and read-only backend CLI commands exist. Verification: CLI tests and `yoctui doctor`. Commit: `e033f62`, `35fa2cb`, `1979825`.
-- [IN_PROGRESS] Complete workspace fields, recipe/layer discovery, variable provenance, CLI subcommand outputs, editor configuration, session persistence, and all configuration settings. Environment-derived Yocto/OpenEmbedded release discovery is included: pending commit. Verification: fake bridge and CLI integration tests.
+- [IN_PROGRESS] Complete workspace fields, recipe/layer discovery, variable provenance, CLI subcommand outputs, editor configuration, session persistence, and all configuration settings. Environment-derived Yocto/OpenEmbedded release discovery: `0d693b9`. Verification: fake bridge and CLI integration tests.
 
 ## Screens and interaction
 
-- [IN_PROGRESS] Logs support bounded retention, pause/follow, wrap, severity filtering, notification display, vertical/horizontal navigation, and interactive text search with next/previous match navigation. Verification: model/UI tests. Commits: `26aad33`, `4017e02`, `c871b26`, `7c04b37`, `09c4978`, `7928bbd`; match navigation pending commit.
-- [IN_PROGRESS] Add recipe/task filters in UI, source-log/editor actions, and richer eviction detail. Recipe/task filter controls and retained-byte/eviction detail are exposed in the footer, help, and log title: pending commit; source-log/editor actions remain.
+- [IN_PROGRESS] Logs support bounded retention, pause/follow, wrap, severity filtering, notification display, vertical/horizontal navigation, and interactive text search with next/previous match navigation. Verification: model/UI tests. Commits: `26aad33`, `4017e02`, `c871b26`, `7c04b37`, `09c4978`, `7928bbd`, `6509c5d`.
+- [IN_PROGRESS] Add recipe/task filters in UI, source-log/editor actions, and richer eviction detail. Recipe/task filter controls: `37a907c`; retained-byte/eviction detail: `2e8c4f1`; source-log/editor actions remain.
 - [IN_PROGRESS] Complete structured errors screen with selection/detail/log jump. Table/detail: `bec99cf`; selection: `4ed019b`; log jump: `8f0154f`. Cross-screen context and richer parsing remain.
 - [IN_PROGRESS] Complete recipes screen with search/details/valid actions and destructive confirmations. Backend-loaded table, selection, and details: `58c9332`; case-insensitive metadata search: `494f289`; actions/confirmations remain.
 - [IN_PROGRESS] Complete layers screen with metadata/search/open action. Backend-loaded table, selection, and metadata details: `63895c7`; case-insensitive metadata search: `494f289`; open action remains.
