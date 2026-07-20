@@ -228,6 +228,7 @@ pub struct App {
     pub build_target_editing: bool,
     pub build_target_input: String,
     pub build_task: Option<String>,
+    pub recipe_task_confirmation: Option<BuildRequest>,
     pub error_selection: usize,
     pub recipe_selection: usize,
     pub layer_selection: usize,
@@ -250,6 +251,7 @@ impl App {
             build_target_editing: false,
             build_target_input: String::new(),
             build_task: None,
+            recipe_task_confirmation: None,
             error_selection: 0,
             recipe_selection: 0,
             layer_selection: 0,
@@ -301,6 +303,9 @@ pub enum Action {
     SelectRecipe { delta: isize },
     BeginSelectedRecipeBuild,
     BeginSelectedRecipeClean,
+    BeginSelectedRecipeCleanState,
+    ConfirmRecipeTask,
+    CancelRecipeTask,
     SelectLayer { delta: isize },
     OpenSelectedLayer,
     SelectConfigVariable { delta: isize },
@@ -545,6 +550,24 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some("No recipe is selected to clean.".into());
             }
         }
+        Action::BeginSelectedRecipeCleanState => {
+            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
+                app.recipe_task_confirmation = Some(BuildRequest {
+                    targets: vec![recipe.name.clone()],
+                    task: Some("cleansstate".into()),
+                });
+            } else {
+                app.notification = Some("No recipe is selected to clean state.".into());
+            }
+        }
+        Action::ConfirmRecipeTask => {
+            if let Some(request) = app.recipe_task_confirmation.take() {
+                app.build.target = request.targets.first().cloned();
+                app.build.status = BuildStatus::LoadingWorkspace;
+                return Some(Effect::Start(request));
+            }
+        }
+        Action::CancelRecipeTask => app.recipe_task_confirmation = None,
         Action::SelectLayer { delta } => {
             app.layer_selection = if delta.is_negative() {
                 app.layer_selection.saturating_sub(delta.unsigned_abs())
@@ -821,6 +844,27 @@ mod tests {
         let _ = update(&mut app, Action::BeginSelectedRecipeClean);
         assert_eq!(app.build_target_input, "busybox");
         assert_eq!(app.build_task.as_deref(), Some("clean"));
+    }
+    #[test]
+    fn clean_state_requires_confirmation_before_starting() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes = vec![Recipe {
+            name: "busybox".into(),
+            version: None,
+            layer: None,
+        }];
+        let _ = update(&mut app, Action::BeginSelectedRecipeCleanState);
+        assert!(app.recipe_task_confirmation.is_some());
+        assert_eq!(app.build.status, BuildStatus::Idle);
+
+        assert_eq!(
+            update(&mut app, Action::ConfirmRecipeTask),
+            Some(Effect::Start(BuildRequest {
+                targets: vec!["busybox".into()],
+                task: Some("cleansstate".into()),
+            }))
+        );
+        assert_eq!(app.build.status, BuildStatus::LoadingWorkspace);
     }
     #[test]
     fn layer_selection_stays_in_workspace_bounds() {

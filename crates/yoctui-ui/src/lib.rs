@@ -69,6 +69,23 @@ pub fn render(frame: &mut Frame, app: &App) {
                 .block(Block::default().title("Confirm quit").borders(Borders::ALL)),
             popup,
         )
+    } else if let Some(request) = app.recipe_task_confirmation.as_ref() {
+        let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
+        frame.render_widget(Clear, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Run `{}` for {}?\n\nThis may remove shared build state. Press Enter to continue or Esc to cancel.",
+                request.task.as_deref().unwrap_or("default task"),
+                request.targets.join(" ")
+            ))
+            .block(
+                Block::default()
+                    .title("Confirm recipe task")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: true }),
+            popup,
+        );
     } else if app.build_target_editing {
         let width = area.width.saturating_sub(12).clamp(30, 80);
         let popup = Rect::new(
@@ -414,7 +431,7 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(format!(
-            "{detail}\n\nb builds this recipe.  C runs its clean task."
+            "{detail}\n\nb builds this recipe.  C runs clean.  S requests cleansstate."
         ))
         .block(
             Block::default()
@@ -556,12 +573,13 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("b Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log or layer directory\nr Recipes: b build, C clean selected recipe   y Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nQuit requires confirmation during an active build.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("b Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log or layer directory\nr Recipes: b build, C clean, S cleansstate selected recipe   y Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
     use super::*;
     use ratatui::{Terminal, backend::TestBackend};
+    use yoctui_model::BuildRequest;
     #[test]
     fn renders_small_terminal() {
         let mut terminal = Terminal::new(TestBackend::new(20, 5)).unwrap();
@@ -628,5 +646,24 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Build target"));
         assert!(output.contains("core-image-minimal"));
+    }
+    #[test]
+    fn renders_recipe_task_confirmation() {
+        let mut terminal = Terminal::new(TestBackend::new(80, 20)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.recipe_task_confirmation = Some(BuildRequest {
+            targets: vec!["busybox".into()],
+            task: Some("cleansstate".into()),
+        });
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Confirm recipe task"));
+        assert!(output.contains("cleansstate"));
     }
 }
