@@ -176,11 +176,27 @@ def workspace_data(version):
             "build_dir": os.environ.get("BUILDDIR", os.getcwd()),
             "source_dir": os.environ.get("COREBASE"),
             "variables": variables,
+            "variable_provenance": configured_variable_provenance(),
             "bitbake_version": version,
             "release": release,
             "layers": [],
             "recipes": [],
         },
+    }
+
+
+def configured_variable_provenance():
+    """Accept bridge-provided provenance without interpreting Yocto metadata locally."""
+    try:
+        raw = json.loads(os.environ.get("YOCTUI_VARIABLE_PROVENANCE_JSON", "{}"))
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    return {
+        name: provenance
+        for name, provenance in raw.items()
+        if isinstance(name, str) and isinstance(provenance, str)
     }
 
 
