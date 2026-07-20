@@ -10,4 +10,5 @@ cargo metadata --no-deps --format-version 1 >/dev/null
 cargo fmt --all --check
 cargo test --workspace --all-features
 python3 -m unittest discover bridge/tests
+./scripts/test-cli.sh
 ./scripts/check-obsolete-name.sh

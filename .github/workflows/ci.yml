@@ -12,4 +12,5 @@ jobs:
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo test --workspace --all-features
       - run: ./scripts/test-terminal.sh
+      - run: ./scripts/test-cli.sh
       - run: python3 -m unittest discover bridge/tests
