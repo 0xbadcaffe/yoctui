@@ -49,7 +49,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 - [NOT_STARTED] Configure audit/deny/ruff/mypy checks and complete CI matrix, optional real-Yocto, sanitizer, Valgrind, and flamegraph workflows.
 - [IN_PROGRESS] Run deterministic Valgrind, profiling, flamegraph, and memory workloads; commit concise reports. Reproducible bridge workload: `ed9ea9b`; release and Valgrind baselines: `664c36e`; Flamegraph remains pending.
 - [IN_PROGRESS] Complete all documentation and compatibility matrix.
-- [NOT_STARTED] Add `scripts/verify-completion.sh`, artifacts directories, and completion-gate checks.
+- [IN_PROGRESS] Add `scripts/verify-completion.sh`, artifacts directories, and completion-gate checks. Strict gate and artifact root: `2a623ef`; required coverage/audit/static-analysis tools and remaining product checks still prevent a passing final gate.
 
 ## CONTINUE_FROM_HERE
 
