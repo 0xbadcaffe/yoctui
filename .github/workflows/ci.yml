@@ -8,9 +8,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: python3 -m pip install ruff mypy pytest
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo test --workspace --all-features
       - run: ./scripts/test-terminal.sh
       - run: ./scripts/test-cli.sh
       - run: python3 -m unittest discover bridge/tests
+      - run: ruff check bridge
+      - run: ruff format --check bridge
+      - run: mypy bridge
+      - run: pytest bridge/tests
