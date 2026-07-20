@@ -124,7 +124,7 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
         Layout::horizontal([Constraint::Percentage(45), Constraint::Percentage(55)]).split(area);
     frame.render_widget(
         Paragraph::new(format!(
-            "Target: {}\nBackend: {}\nStatus: {}\nMachine: {}\nDistro: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\n\nActive tasks:\n{}",
+            "Target: {}\nBackend: {}\nStatus: {}\nMachine: {}\nDistro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\n\nActive tasks:\n{}",
             app.build.target.as_deref().unwrap_or("none"),
             app.backend,
             app.build.status,
@@ -136,6 +136,7 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
                 .variables
                 .get("DISTRO")
                 .map_or("unknown", String::as_str),
+            app.workspace.release.as_deref().unwrap_or("unknown"),
             app.build.completed,
             app.build
                 .total

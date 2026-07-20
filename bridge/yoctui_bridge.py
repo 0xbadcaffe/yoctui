@@ -167,6 +167,9 @@ def workspace_data(version):
         "PARALLEL_MAKE",
     )
     variables = {key: os.environ[key] for key in keys if key in os.environ}
+    release = os.environ.get("DISTRO_VERSION") or os.environ.get(
+        "OECORE_DISTRO_VERSION"
+    )
     return {
         "type": "workspace",
         "data": {
@@ -174,6 +177,7 @@ def workspace_data(version):
             "source_dir": os.environ.get("COREBASE"),
             "variables": variables,
             "bitbake_version": version,
+            "release": release,
             "layers": [],
             "recipes": [],
         },

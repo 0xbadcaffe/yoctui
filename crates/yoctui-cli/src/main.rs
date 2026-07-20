@@ -278,6 +278,10 @@ async fn inspect_workspace(backend: Backend, build_dir: PathBuf) -> Result<()> {
         "BitBake version: {}",
         workspace.bitbake_version.as_deref().unwrap_or("unknown")
     );
+    println!(
+        "Yocto/OpenEmbedded release: {}",
+        workspace.release.as_deref().unwrap_or("unknown")
+    );
     for (name, value) in workspace.variables {
         println!("{name}={value}");
     }

@@ -66,12 +66,14 @@ class BridgeProtocolTests(unittest.TestCase):
 
     def test_workspace_contains_environment_values(self) -> None:
         result = run_bridge(
-            b'{"protocol_version":1,"sequence":1,"message":{"type":"inspect_workspace"}}'
+            b'{"protocol_version":1,"sequence":1,"message":{"type":"inspect_workspace"}}',
+            environment={"DISTRO_VERSION": "5.0"},
         )
         message = json.loads(result.stdout)
         self.assertEqual(message["message"]["type"], "workspace")
         self.assertIn("build_dir", message["message"]["data"])
         self.assertIn("variables", message["message"]["data"])
+        self.assertEqual(message["message"]["data"]["release"], "5.0")
 
     def test_typed_workspace_queries_return_protocol_responses(self) -> None:
         result = run_bridge(
