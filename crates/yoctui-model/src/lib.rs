@@ -466,6 +466,7 @@ impl fmt::Display for BuildStatus {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
     fn log(message: &str) -> LogEntry {
         LogEntry {
             severity: Severity::Info,
@@ -494,6 +495,16 @@ mod tests {
         l.insert(log("c"));
         assert_eq!(l.entries.len(), 2);
         assert_eq!(l.dropped, 1)
+    }
+    proptest! {
+        #[test]
+        fn retention_never_exceeds_count_or_bytes(messages in proptest::collection::vec(".{0,64}", 0..80), max_entries in 1usize..20, max_bytes in 1usize..256) {
+            let mut logs = LogState::new(max_entries, max_bytes);
+            for message in messages { logs.insert(log(&message)); }
+            prop_assert!(logs.entries.len() <= max_entries);
+            prop_assert!(logs.retained_bytes <= max_bytes || logs.entries.is_empty());
+            prop_assert_eq!(logs.retained_bytes, logs.entries.iter().map(|entry| entry.message.len()).sum::<usize>());
+        }
     }
     #[test]
     fn running_build_requires_confirmation() {
