@@ -3,6 +3,7 @@ use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, Wrap},
 };
+use std::time::{SystemTime, UNIX_EPOCH};
 use yoctui_model::{App, Screen, Severity, format_duration};
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -21,6 +22,13 @@ fn metadata_title(base: String, app: &App) -> String {
     } else {
         format!("{base} | search: {}", app.metadata_query)
     }
+}
+
+fn timestamp_text(timestamp: SystemTime) -> String {
+    timestamp.duration_since(UNIX_EPOCH).map_or_else(
+        |_| "before Unix epoch".into(),
+        |duration| format!("{}s since Unix epoch", duration.as_secs()),
+    )
 }
 
 pub fn render(frame: &mut Frame, app: &App) {
@@ -341,10 +349,11 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
         || "No retained warnings or errors.".into(),
         |log| {
             format!(
-                "{}\nrecipe: {}  task: {}\nlocation: {}",
+                "{}\nrecipe: {}  task: {}\ntimestamp: {}\nlocation: {}",
                 log.message,
                 log.recipe.as_deref().unwrap_or("unknown"),
                 log.task.as_deref().unwrap_or("unknown"),
+                timestamp_text(log.timestamp),
                 log.path
                     .as_deref()
                     .map_or_else(|| "unknown".into(), |path| path.display().to_string())
@@ -605,6 +614,10 @@ mod tests {
                 .iter()
                 .any(|c| c.symbol() == "T")
         );
+    }
+    #[test]
+    fn formats_error_timestamp_without_panicking() {
+        assert_eq!(timestamp_text(UNIX_EPOCH), "0s since Unix epoch");
     }
 
     #[test]
