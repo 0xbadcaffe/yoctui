@@ -220,12 +220,15 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
         .filtered()
         .filter(|log| matches!(log.severity, Severity::Warning | Severity::Error))
         .collect::<Vec<_>>();
+    let selected = errors.get(app.error_selection).copied();
+    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(5)]).split(area);
     let rows = errors
         .into_iter()
         .rev()
         .take(area.height.saturating_sub(3) as usize)
         .rev()
-        .map(|log| {
+        .enumerate()
+        .map(|(index, log)| {
             Row::new(vec![
                 Cell::from(format!("{:?}", log.severity)),
                 Cell::from(log.recipe.as_deref().unwrap_or("")),
@@ -237,6 +240,11 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
                 ),
                 Cell::from(log.message.as_str()),
             ])
+            .style(if index == app.error_selection {
+                Style::default().bg(Color::DarkGray)
+            } else {
+                Style::default()
+            })
         });
     frame.render_widget(
         Table::new(
@@ -258,7 +266,31 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
                 .title("Errors and warnings (from retained logs)")
                 .borders(Borders::ALL),
         ),
-        area,
+        chunks[0],
+    );
+    let detail = selected.map_or_else(
+        || "No retained warnings or errors.".into(),
+        |log| {
+            format!(
+                "{}\nrecipe: {}  task: {}\nlocation: {}",
+                log.message,
+                log.recipe.as_deref().unwrap_or("unknown"),
+                log.task.as_deref().unwrap_or("unknown"),
+                log.path
+                    .as_deref()
+                    .map_or_else(|| "unknown".into(), |path| path.display().to_string())
+            )
+        },
+    );
+    frame.render_widget(
+        Paragraph::new(detail)
+            .block(
+                Block::default()
+                    .title("Selected diagnostic")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+        chunks[1],
     );
 }
 fn recipes(frame: &mut Frame, app: &App, area: Rect) {

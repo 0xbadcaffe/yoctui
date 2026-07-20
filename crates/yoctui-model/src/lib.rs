@@ -222,6 +222,7 @@ pub struct App {
     pub should_quit: bool,
     pub quit_confirm: bool,
     pub notification: Option<String>,
+    pub error_selection: usize,
 }
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
@@ -234,6 +235,7 @@ impl App {
             should_quit: false,
             quit_confirm: false,
             notification: None,
+            error_selection: 0,
         }
     }
     pub fn elapsed(&self) -> Option<Duration> {
@@ -266,6 +268,7 @@ pub enum Action {
     ScrollLogsHorizontally { delta: isize },
     CycleLogRecipeFilter,
     CycleLogTaskFilter,
+    SelectError { delta: isize },
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -393,6 +396,21 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             values.sort();
             values.dedup();
             app.logs.task_filter = next_filter(&values, app.logs.task_filter.take());
+        }
+        Action::SelectError { delta } => {
+            let count = app
+                .logs
+                .entries
+                .iter()
+                .filter(|entry| matches!(entry.severity, Severity::Warning | Severity::Error))
+                .count();
+            app.error_selection = if delta.is_negative() {
+                app.error_selection.saturating_sub(delta.unsigned_abs())
+            } else {
+                app.error_selection
+                    .saturating_add(delta as usize)
+                    .min(count.saturating_sub(1))
+            };
         }
         Action::AppendLogQuery(_) | Action::BackspaceLogQuery => {}
         Action::DismissNotification => app.notification = None,
