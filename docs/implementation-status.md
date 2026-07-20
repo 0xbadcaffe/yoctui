@@ -7,7 +7,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 - [DONE] Rust workspace exists and dependency direction is acyclic. Verification: `cargo metadata --no-deps`. Commit: `43ca39b`.
 - [DONE] Remove every obsolete legacy application name from crate names, directories, imports, tests, paths, scripts, and history-facing checks. Verification: `./scripts/check-obsolete-name.sh`. Commit: `d2c38ad`.
 - [DONE] Public binary, configuration directory, environment prefix, bridge name, and UI branding use Yoctui. Verification: `cargo run -p yoctui -- --help`. Commit: `ad603ad`.
-- [NOT_STARTED] Add repository lint/format configuration and a fresh-clone setup check. Verification: CI and `./scripts/verify-completion.sh`.
+- [IN_PROGRESS] Add repository lint/format configuration and a fresh-clone setup check. Verification: `./scripts/check-checkout.sh`; editor configuration and hidden-path naming guard: `1eab5bf`. Final completion gate remains pending.
 
 ## Application and terminal
 
@@ -43,8 +43,8 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 ## Reliability, testing, and quality
 
-- [IN_PROGRESS] Expand model/protocol/UI/process tests; add fake bridge fixtures and integration test tree. Verification: `cargo test --workspace --all-features`, `pytest`.
-- [NOT_STARTED] Add property tests, fuzz targets, stress/memory retention tests, benchmarks, and terminal integration tests.
+- [IN_PROGRESS] Expand model/protocol/UI/process tests; add fake bridge fixtures and integration test tree. Verification: `cargo test --workspace --all-features`, `pytest`. Property tests: `b231871`, `36374dd`.
+- [IN_PROGRESS] Add property tests, fuzz targets, stress/memory retention tests, benchmarks, and terminal integration tests. Retention and protocol framing properties complete; fuzz, stress, benchmarks remain.
 - [NOT_STARTED] Configure coverage (`cargo llvm-cov`, `pytest-cov`) with thresholds.
 - [NOT_STARTED] Configure audit/deny/ruff/mypy checks and complete CI matrix, optional real-Yocto, sanitizer, Valgrind, and flamegraph workflows.
 - [NOT_STARTED] Run deterministic Valgrind, profiling, flamegraph, and memory workloads; commit concise reports.
