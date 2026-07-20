@@ -38,7 +38,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 - [IN_PROGRESS] Add recipe/task filters in UI, source-log/editor actions, and richer eviction detail.
 - [IN_PROGRESS] Complete structured errors screen with selection/detail/log jump. Table/detail: `bec99cf`; selection: `4ed019b`; log jump: `8f0154f`. Cross-screen context and richer parsing remain.
 - [IN_PROGRESS] Complete recipes screen with search/details/valid actions and destructive confirmations. Backend-loaded table, selection, and details: `58c9332`; search/actions/confirmations remain.
-- [NOT_STARTED] Complete layers screen with metadata/search/open action.
+- [IN_PROGRESS] Complete layers screen with metadata/search/open action. Backend-loaded table, selection, and metadata details: `63895c7`; search/open action remain.
 - [NOT_STARTED] Complete read-only configuration screen with search, expansion, and provenance.
 
 ## Reliability, testing, and quality
