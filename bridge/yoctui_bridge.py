@@ -51,11 +51,14 @@ class BitBakeAdapter:
         self.version = version
         self.family = family
         self.module = module
+        self.connection = None
 
     def workspace(self):
         return workspace_data(self.version)
 
     def server(self):
+        if self.connection is not None:
+            return self.connection
         server = getattr(self.module, "server", None) if self.module else None
         connector = getattr(server, "connect", None)
         if not callable(connector):
@@ -63,7 +66,8 @@ class BitBakeAdapter:
                 "no supported BitBake server connector is available; start BitBake and expose bb.server.connect"
             )
         try:
-            return connector()
+            self.connection = connector()
+            return self.connection
         except Exception as exc:
             raise ServerUnavailable(f"could not connect to the BitBake server: {exc}")
 
@@ -84,6 +88,36 @@ class BitBakeAdapter:
                 "connected BitBake server does not provide cancel_build"
             )
         operation()
+
+    def native_events(self):
+        """Drain a non-blocking server event hook when the adapter exposes one."""
+        if self.connection is None:
+            return []
+        drain = getattr(self.connection, "drain_events", None)
+        if not callable(drain):
+            return []
+        try:
+            events = drain()
+        except Exception as exc:
+            return [
+                {
+                    "type": "warning",
+                    "message": f"could not drain BitBake server events: {exc}",
+                }
+            ]
+        if events is None:
+            return []
+        try:
+            return [
+                event for event in (normalize_event(item) for item in events) if event
+            ]
+        except TypeError:
+            return [
+                {
+                    "type": "warning",
+                    "message": "BitBake server drain_events result is not iterable",
+                }
+            ]
 
     def mock_events(self):
         try:
@@ -180,34 +214,72 @@ def configured_recipes():
     return []
 
 
+def event_value(event, *names, default=None):
+    for name in names:
+        value = (
+            event.get(name) if isinstance(event, dict) else getattr(event, name, None)
+        )
+        if value is not None:
+            return value
+    return default
+
+
 def normalize_event(event):
-    kind = event.get("type") if isinstance(event, dict) else None
-    if kind in ("task_started", "task_completed") and all(
-        isinstance(event.get(key), str) for key in ("recipe", "task")
-    ):
-        value = {"type": kind, "recipe": event["recipe"], "task": event["task"]}
-        if kind == "task_started":
-            value["pid"] = event.get("pid")
-        else:
-            value["success"] = bool(event.get("success"))
-        return value
-    if kind == "task_progress" and all(
-        isinstance(event.get(key), str) for key in ("recipe", "task")
+    kind = event_value(event, "type", "event_type")
+    if not isinstance(kind, str) and event is not None:
+        kind = type(event).__name__
+    normalized_kind = kind.lower() if isinstance(kind, str) else None
+    recipe = event_value(event, "recipe", "pn")
+    task = event_value(event, "task", "taskname")
+    if normalized_kind in ("buildstarted", "build_started"):
+        return {"type": "build_started"}
+    if normalized_kind in ("buildcompleted", "build_completed"):
+        return {
+            "type": "build_completed",
+            "success": bool(event_value(event, "success")),
+        }
+    if normalized_kind in (
+        "tasksucceeded",
+        "taskcompleted",
+        "task_completed",
+        "taskfailed",
+    ) and all(isinstance(value, str) for value in (recipe, task)):
+        success = normalized_kind not in ("taskfailed",) and bool(
+            event_value(event, "success", default=True)
+        )
+        return {
+            "type": "task_completed",
+            "recipe": recipe,
+            "task": task,
+            "success": success,
+        }
+    if normalized_kind in ("taskstarted", "task_started") and all(
+        isinstance(value, str) for value in (recipe, task)
     ):
         return {
-            "type": kind,
-            "recipe": event["recipe"],
-            "task": event["task"],
-            "progress": event.get("progress"),
+            "type": "task_started",
+            "recipe": recipe,
+            "task": task,
+            "pid": event_value(event, "pid"),
         }
-    if kind == "log" and isinstance(event.get("message"), str):
+    if normalized_kind in ("taskprogress", "task_progress") and all(
+        isinstance(value, str) for value in (recipe, task)
+    ):
+        return {
+            "type": "task_progress",
+            "recipe": recipe,
+            "task": task,
+            "progress": event_value(event, "progress"),
+        }
+    message = event_value(event, "message", "msg")
+    if normalized_kind in ("log", "logrecord") and isinstance(message, str):
         return {
             "type": "log",
-            "level": event.get("level", "info"),
-            "message": event["message"],
-            "recipe": event.get("recipe"),
-            "task": event.get("task"),
-            "path": event.get("path"),
+            "level": event_value(event, "level", "levelname", default="info"),
+            "message": message,
+            "recipe": recipe,
+            "task": task,
+            "path": event_value(event, "path", "filename"),
         }
     return {"type": "warning", "message": f"unrecognized BitBake event: {kind!r}"}
 
@@ -235,6 +307,8 @@ def handle(command, correlation_id, adapter):
                 error("bitbake_server_unavailable", str(exc), correlation_id)
             else:
                 emit({"type": "build_started"}, correlation_id)
+                for event in adapter.native_events():
+                    emit(event, correlation_id)
                 for event in adapter.mock_events():
                     emit(event, correlation_id)
     elif kind == "list_recipes":
