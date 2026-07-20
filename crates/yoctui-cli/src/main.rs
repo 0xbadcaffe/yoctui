@@ -697,6 +697,12 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
             {
                 let delta = if input == Input::Up { -1 } else { 1 };
                 let _ = update(&mut app, Action::SelectLayer { delta });
+            } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('o') {
+                if let Some(Effect::OpenInEditor(path)) =
+                    update(&mut app, Action::OpenSelectedLayer)
+                {
+                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                }
             } else if app.screen == yoctui_model::Screen::Configuration
                 && matches!(input, Input::Up | Input::Down)
             {
