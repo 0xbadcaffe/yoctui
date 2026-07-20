@@ -628,6 +628,27 @@ async fn tui(
             {
                 let delta = if input == Input::Up { -1 } else { 1 };
                 let _ = update(&mut app, Action::SelectConfigVariable { delta });
+            } else if matches!(
+                app.screen,
+                yoctui_model::Screen::Recipes
+                    | yoctui_model::Screen::Layers
+                    | yoctui_model::Screen::Configuration
+            ) && input == Input::Char('/')
+            {
+                let _ = update(&mut app, Action::BeginMetadataSearch);
+            } else if app.metadata_searching {
+                match input {
+                    Input::Char(character) => {
+                        let _ = update(&mut app, Action::AppendMetadataQuery(character));
+                    }
+                    Input::Enter | Input::Esc => {
+                        let _ = update(&mut app, Action::FinishMetadataSearch);
+                    }
+                    Input::Backspace => {
+                        let _ = update(&mut app, Action::BackspaceMetadataQuery);
+                    }
+                    _ => {}
+                }
             } else if app.logs.searching {
                 match input {
                     Input::Char(character) => {

@@ -226,6 +226,8 @@ pub struct App {
     pub recipe_selection: usize,
     pub layer_selection: usize,
     pub config_selection: usize,
+    pub metadata_query: String,
+    pub metadata_searching: bool,
 }
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
@@ -242,6 +244,8 @@ impl App {
             recipe_selection: 0,
             layer_selection: 0,
             config_selection: 0,
+            metadata_query: String::new(),
+            metadata_searching: false,
         }
     }
     pub fn elapsed(&self) -> Option<Duration> {
@@ -279,6 +283,10 @@ pub enum Action {
     SelectRecipe { delta: isize },
     SelectLayer { delta: isize },
     SelectConfigVariable { delta: isize },
+    BeginMetadataSearch,
+    AppendMetadataQuery(char),
+    BackspaceMetadataQuery,
+    FinishMetadataSearch,
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -463,7 +471,24 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .min(app.workspace.variables.len().saturating_sub(1))
             };
         }
-        Action::AppendLogQuery(_) | Action::BackspaceLogQuery => {}
+        Action::BeginMetadataSearch => app.metadata_searching = true,
+        Action::AppendMetadataQuery(character) if app.metadata_searching => {
+            app.metadata_query.push(character);
+            app.recipe_selection = 0;
+            app.layer_selection = 0;
+            app.config_selection = 0;
+        }
+        Action::BackspaceMetadataQuery if app.metadata_searching => {
+            app.metadata_query.pop();
+            app.recipe_selection = 0;
+            app.layer_selection = 0;
+            app.config_selection = 0;
+        }
+        Action::FinishMetadataSearch => app.metadata_searching = false,
+        Action::AppendLogQuery(_)
+        | Action::BackspaceLogQuery
+        | Action::AppendMetadataQuery(_)
+        | Action::BackspaceMetadataQuery => {}
         Action::DismissNotification => app.notification = None,
         Action::Quit => {
             if matches!(
@@ -690,6 +715,33 @@ mod tests {
         assert_eq!(app.config_selection, 1);
         let _ = update(&mut app, Action::SelectConfigVariable { delta: -8 });
         assert_eq!(app.config_selection, 0);
+    }
+    #[test]
+    fn metadata_search_tracks_query_and_resets_metadata_selection() {
+        let mut app = App::new(10, 1_000);
+        app.recipe_selection = 3;
+        app.layer_selection = 2;
+        app.config_selection = 1;
+
+        let _ = update(&mut app, Action::BeginMetadataSearch);
+        let _ = update(&mut app, Action::AppendMetadataQuery('q'));
+        let _ = update(&mut app, Action::AppendMetadataQuery('e'));
+
+        assert!(app.metadata_searching);
+        assert_eq!(app.metadata_query, "qe");
+        assert_eq!(
+            (
+                app.recipe_selection,
+                app.layer_selection,
+                app.config_selection
+            ),
+            (0, 0, 0)
+        );
+
+        let _ = update(&mut app, Action::BackspaceMetadataQuery);
+        let _ = update(&mut app, Action::FinishMetadataSearch);
+        assert_eq!(app.metadata_query, "q");
+        assert!(!app.metadata_searching);
     }
     proptest! {
         #[test]
