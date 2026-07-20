@@ -26,6 +26,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 unicode-width = "0.2"
 libc = "0.2"
+proptest = "1.9"
 
 [profile.release]
 debug = 1
