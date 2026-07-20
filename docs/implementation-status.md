@@ -35,7 +35,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 ## Screens and interaction
 
 - [IN_PROGRESS] Logs support bounded retention, pause/follow, wrap, severity filtering, notification display, vertical/horizontal navigation, and interactive text search. Verification: model/UI tests. Commits: `26aad33`, `4017e02`, `c871b26`, `7c04b37`, `09c4978`, `7928bbd`.
-- [IN_PROGRESS] Add recipe/task filters in UI, source-log/editor actions, and richer eviction detail. Recipe/task filter controls are exposed in the footer and help: pending commit; source-log/editor actions and richer eviction detail remain.
+- [IN_PROGRESS] Add recipe/task filters in UI, source-log/editor actions, and richer eviction detail. Recipe/task filter controls and retained-byte/eviction detail are exposed in the footer, help, and log title: pending commit; source-log/editor actions remain.
 - [IN_PROGRESS] Complete structured errors screen with selection/detail/log jump. Table/detail: `bec99cf`; selection: `4ed019b`; log jump: `8f0154f`. Cross-screen context and richer parsing remain.
 - [IN_PROGRESS] Complete recipes screen with search/details/valid actions and destructive confirmations. Backend-loaded table, selection, and details: `58c9332`; case-insensitive metadata search: `494f289`; actions/confirmations remain.
 - [IN_PROGRESS] Complete layers screen with metadata/search/open action. Backend-loaded table, selection, and metadata details: `63895c7`; case-insensitive metadata search: `494f289`; open action remains.

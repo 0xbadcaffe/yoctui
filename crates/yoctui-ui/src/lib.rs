@@ -169,9 +169,15 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
             )
     );
     let title = if app.logs.dropped > 0 {
-        format!("Logs ({mode}; {} older entries evicted)", app.logs.dropped)
+        format!(
+            "Logs ({mode}; {} older entries evicted; retained: {}/{})",
+            app.logs.dropped, app.logs.retained_bytes, app.logs.max_bytes
+        )
     } else {
-        format!("Logs ({mode})")
+        format!(
+            "Logs ({mode}; retained: {}/{})",
+            app.logs.retained_bytes, app.logs.max_bytes
+        )
     };
     let title = if app.logs.searching {
         format!("{title} | search: {}_", app.logs.query)
