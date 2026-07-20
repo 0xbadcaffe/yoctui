@@ -6,10 +6,14 @@ Yoctui is a Rust/Ratatui control frontend for Yocto/BitBake. BitBake remains the
 
 - Stable Rust with Cargo.
 - Python 3 for the bundled bridge.
-- An initialized Yocto environment when using a real BitBake workspace:
+- A separate Poky/Yocto checkout when using a real BitBake workspace. `oe-init-build-env` is **not** part of this repository.
+
+  Set `YOCTO_DIR` to the directory that contains `oe-init-build-env`, then initialize its build environment:
 
   ```sh
-  source oe-init-build-env
+  export YOCTO_DIR="$HOME/src/poky"
+  test -f "$YOCTO_DIR/oe-init-build-env"
+  source "$YOCTO_DIR/oe-init-build-env" build
   ```
 
 The bridge backend is the default. The process backend invokes the `bitbake` executable as a compatible fallback.
@@ -32,7 +36,28 @@ The binaries are written to `target/debug/yoctui` and `target/release/yoctui` re
 
 ## Run
 
-Start the interactive terminal UI from an initialized build directory:
+### Quick start without a Yocto checkout
+
+This verifies the bundled bridge and terminal application from the Yoctui repository itself. It does not start a BitBake build:
+
+```sh
+cd ~/projects/yoctui
+cargo build -p yoctui
+cargo run -p yoctui -- --headless --backend bridge --build-dir "$PWD"
+```
+
+### Interactive UI with Yocto
+
+Start from an initialized build directory. The following commands are intended to be copied as one block after choosing the correct `YOCTO_DIR`:
+
+```sh
+export YOCTO_DIR="$HOME/src/poky"
+source "$YOCTO_DIR/oe-init-build-env" build
+cd ~/projects/yoctui
+cargo run -p yoctui -- --build-dir "$BUILDDIR" core-image-minimal
+```
+
+If the build directory is already initialized in the current shell, start the UI directly:
 
 ```sh
 cargo run -p yoctui -- --build-dir "$BUILDDIR" core-image-minimal
@@ -48,7 +73,7 @@ cargo run -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
 cargo run -p yoctui -- --backend process --build-dir "$BUILDDIR" core-image-minimal
 ```
 
-For scripting and CI, use a non-interactive workspace inspection:
+For scripting and CI, use a non-interactive workspace inspection. These commands work in an initialized Yocto shell; replace `"$BUILDDIR"` with an explicit path if it is not exported:
 
 ```sh
 cargo run -p yoctui -- --headless --backend bridge --build-dir "$BUILDDIR"
