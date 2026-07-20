@@ -728,6 +728,13 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
             {
                 let delta = if input == Input::Up { -1 } else { 1 };
                 let _ = update(&mut app, Action::SelectConfigVariable { delta });
+            } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Char('o')
+            {
+                if let Some(Effect::OpenInEditor(path)) =
+                    update(&mut app, Action::OpenSelectedConfigSource)
+                {
+                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                }
             } else if matches!(
                 app.screen,
                 yoctui_model::Screen::Recipes

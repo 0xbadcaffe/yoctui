@@ -573,18 +573,20 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
         },
     );
     frame.render_widget(
-        Paragraph::new(detail)
-            .block(
-                Block::default()
-                    .title("Selected variable")
-                    .borders(Borders::ALL),
-            )
-            .wrap(Wrap { trim: false }),
+        Paragraph::new(format!(
+            "{detail}\n\no opens the provenance source file when available."
+        ))
+        .block(
+            Block::default()
+                .title("Selected variable")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: false }),
         chunks[1],
     );
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("b Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log or layer directory\nr Recipes: b build, C clean, M menuconfig, S cleansstate selected recipe\ny Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("b Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate selected recipe\ny Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
