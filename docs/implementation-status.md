@@ -25,7 +25,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 - [DONE] Versioned envelopes, sequence/correlation fields, NDJSON framing, bounded transport reads, malformed/oversized handling, and Python framing tests exist. Verification: protocol and bridge tests. Commit: `3730f35`, `78cc988`.
 - [IN_PROGRESS] Implement bridge handshake negotiation, graceful shutdown command, compatibility adapters, mocked BitBake integration boundary, and typed workspace/recipe/layer/variable responses. Verification: pytest with mocked modules and `cargo test -p yoctui-bitbake`. Handshake: `496b177`; shutdown acknowledgement and child exit: `ad52654`; typed responses: `0f4bb33`; adapter selection: `c5daf0b`; mocked event normalization: `da142a2`.
-- [IN_PROGRESS] Connect bridge to a supported live BitBake server, normalize native events, start builds, request native cancellation, and document tested BitBake versions. Verification: mocked `bb.server` adapter tests; live-Yocto smoke workflow remains required. Server boundary and unavailable-server diagnostics: `993ac4c`.
+- [IN_PROGRESS] Connect bridge to a supported live BitBake server, normalize native events, start builds, request native cancellation, and document tested BitBake versions. Verification: mocked `bb.server` adapter tests; native-style event normalization: `f2ca82f`; live-Yocto smoke workflow remains required. Server boundary and unavailable-server diagnostics: `993ac4c`.
 
 ## Workspace, CLI, and configuration
 
