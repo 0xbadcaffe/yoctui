@@ -31,6 +31,16 @@ fn timestamp_text(timestamp: SystemTime) -> String {
     )
 }
 
+fn selected_style(app: &App, active: bool) -> Style {
+    if !active {
+        Style::default()
+    } else if app.color_enabled {
+        Style::default().bg(Color::DarkGray)
+    } else {
+        Style::default().add_modifier(Modifier::REVERSED)
+    }
+}
+
 pub fn render(frame: &mut Frame, app: &App) {
     let area = frame.area();
     if area.width < 30 || area.height < 8 {
@@ -68,7 +78,12 @@ pub fn render(frame: &mut Frame, app: &App) {
         Screen::Configuration => config(frame, app, chunks[1]),
         Screen::Help => help(frame, chunks[1]),
     };
-    frame.render_widget(Paragraph::new("b target/build | c cancel | l logs | f follow | w wrap | s severity | R recipe | T task | / search | n/N match | e errors | o open path | r recipes | y layers | v config | ? help | q quit").style(Style::default().fg(Color::DarkGray)),chunks[2]);
+    let footer_style = if app.color_enabled {
+        Style::default().fg(Color::DarkGray)
+    } else {
+        Style::default()
+    };
+    frame.render_widget(Paragraph::new("b target/build | c cancel | l logs | f follow | w wrap | s severity | R recipe | T task | / search | n/N match | e errors | o open path | r recipes | y layers | v config | ? help | q quit").style(footer_style),chunks[2]);
     if app.quit_confirm {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 3);
         frame.render_widget(Clear, popup);
@@ -317,11 +332,7 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
                 ),
                 Cell::from(log.message.as_str()),
             ])
-            .style(if index == app.error_selection {
-                Style::default().bg(Color::DarkGray)
-            } else {
-                Style::default()
-            })
+            .style(selected_style(app, index == app.error_selection))
         });
     frame.render_widget(
         Table::new(
@@ -397,11 +408,7 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
                     Cell::from(recipe.version.as_deref().unwrap_or("")),
                     Cell::from(recipe.layer.as_deref().unwrap_or("")),
                 ])
-                .style(if index == app.recipe_selection {
-                    Style::default().bg(Color::DarkGray)
-                } else {
-                    Style::default()
-                })
+                .style(selected_style(app, index == app.recipe_selection))
             }),
             [
                 Constraint::Percentage(40),
@@ -474,11 +481,7 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
                             .map_or_else(String::new, |priority| priority.to_string()),
                     ),
                 ])
-                .style(if index == app.layer_selection {
-                    Style::default().bg(Color::DarkGray)
-                } else {
-                    Style::default()
-                })
+                .style(selected_style(app, index == app.layer_selection))
             }),
             [
                 Constraint::Percentage(30),
@@ -541,13 +544,8 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
                 .into_iter()
                 .enumerate()
                 .map(|(index, (name, value))| {
-                    Row::new(vec![Cell::from(name.as_str()), Cell::from(value.as_str())]).style(
-                        if index == app.config_selection {
-                            Style::default().bg(Color::DarkGray)
-                        } else {
-                            Style::default()
-                        },
-                    )
+                    Row::new(vec![Cell::from(name.as_str()), Cell::from(value.as_str())])
+                        .style(selected_style(app, index == app.config_selection))
                 }),
             [Constraint::Percentage(35), Constraint::Percentage(65)],
         )
@@ -618,6 +616,17 @@ mod tests {
     #[test]
     fn formats_error_timestamp_without_panicking() {
         assert_eq!(timestamp_text(UNIX_EPOCH), "0s since Unix epoch");
+    }
+    #[test]
+    fn no_color_selection_uses_reverse_video() {
+        let mut app = App::new(10, 1_000);
+        app.color_enabled = false;
+        assert!(
+            selected_style(&app, true)
+                .add_modifier
+                .contains(Modifier::REVERSED)
+        );
+        assert_eq!(selected_style(&app, true).bg, None);
     }
 
     #[test]

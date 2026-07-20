@@ -220,6 +220,7 @@ impl LogState {
 pub struct App {
     pub screen: Screen,
     pub backend: String,
+    pub color_enabled: bool,
     pub workspace: Workspace,
     pub build: BuildState,
     pub tasks: HashMap<TaskId, TaskInfo>,
@@ -243,6 +244,7 @@ impl App {
         Self {
             screen: Screen::Dashboard,
             backend: "unknown".into(),
+            color_enabled: true,
             workspace: Workspace::default(),
             build: BuildState::default(),
             tasks: HashMap::new(),

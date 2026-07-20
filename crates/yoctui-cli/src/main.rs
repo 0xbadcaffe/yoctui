@@ -610,7 +610,7 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
         log_entries,
         log_bytes,
         refresh,
-        color: _color,
+        color,
         editor,
         ..
     } = config;
@@ -618,6 +618,7 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
     let mut terminal = Terminal::new(ratatui::backend::CrosstermBackend::new(io::stdout()))?;
     let mut app = App::new(log_entries, log_bytes);
     app.backend = backend_kind.to_string();
+    app.color_enabled = color;
     let mut backend = select_backend(backend_kind, build_dir).await?;
     match backend.inspect_workspace().await {
         Ok(workspace) => {
