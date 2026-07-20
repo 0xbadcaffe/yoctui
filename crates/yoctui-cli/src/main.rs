@@ -66,6 +66,7 @@ struct FileConfig {
     log_retention_bytes: Option<usize>,
     refresh_ms: Option<u64>,
     default_target: Option<String>,
+    editor: Option<String>,
     color: Option<bool>,
 }
 
@@ -77,6 +78,7 @@ struct Config {
     log_bytes: usize,
     refresh: Duration,
     default_target: Option<String>,
+    editor: Option<String>,
     log_level: String,
     color: bool,
 }
@@ -220,6 +222,7 @@ fn resolve_config(cli: &Cli) -> Result<Config> {
         default_target: env::var("YOCTUI_DEFAULT_TARGET")
             .ok()
             .or(file.default_target),
+        editor: env::var("YOCTUI_EDITOR").ok().or(file.editor),
         log_level: cli
             .log_level
             .clone()
@@ -267,16 +270,7 @@ async fn main() -> Result<()> {
         )
         .await;
     }
-    tui(
-        config.backend,
-        build_dir,
-        targets,
-        config.log_entries,
-        config.log_bytes,
-        config.refresh,
-        config.color,
-    )
-    .await
+    tui(config, targets).await
 }
 
 async fn load_workspace(backend: Backend, build_dir: PathBuf) -> Result<yoctui_model::Workspace> {
@@ -579,8 +573,16 @@ async fn begin_build(backend: &mut Box<dyn BitBakeBackend>, app: &mut App, reque
     }
 }
 
-async fn open_in_editor(guard: &TerminalGuard, app: &mut App, path: PathBuf) {
-    let editor = env::var_os("EDITOR").unwrap_or_else(|| "vi".into());
+async fn open_in_editor(
+    guard: &TerminalGuard,
+    app: &mut App,
+    path: PathBuf,
+    preferred_editor: Option<&str>,
+) {
+    let editor = preferred_editor
+        .map(Into::into)
+        .or_else(|| env::var_os("EDITOR"))
+        .unwrap_or_else(|| "vi".into());
     if let Err(error) = guard.suspend() {
         app.notification = Some(format!(
             "Could not suspend the terminal for $EDITOR: {error}"
@@ -601,15 +603,17 @@ async fn open_in_editor(guard: &TerminalGuard, app: &mut App, path: PathBuf) {
     }
 }
 
-async fn tui(
-    backend_kind: Backend,
-    build_dir: PathBuf,
-    targets: Vec<String>,
-    log_entries: usize,
-    log_bytes: usize,
-    refresh: Duration,
-    _color: bool,
-) -> Result<()> {
+async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
+    let Config {
+        backend: backend_kind,
+        build_dir,
+        log_entries,
+        log_bytes,
+        refresh,
+        color: _color,
+        editor,
+        ..
+    } = config;
     let guard = TerminalGuard::enter()?;
     let mut terminal = Terminal::new(ratatui::backend::CrosstermBackend::new(io::stdout()))?;
     let mut app = App::new(log_entries, log_bytes);
@@ -681,7 +685,7 @@ async fn tui(
                 if let Some(Effect::OpenInEditor(path)) =
                     update(&mut app, Action::OpenSelectedErrorSource)
                 {
-                    open_in_editor(&guard, &mut app, path).await;
+                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                 }
             } else if app.screen == yoctui_model::Screen::Recipes
                 && matches!(input, Input::Up | Input::Down)
@@ -811,12 +815,13 @@ mod tests {
     #[test]
     fn parses_retention_and_backend_settings() {
         let config: FileConfig = toml::from_str(
-            "backend = 'process'\nlog_retention_entries = 42\nlog_retention_bytes = 1024\nrefresh_ms = 50\ndefault_target = 'core-image-minimal'",
+            "backend = 'process'\nlog_retention_entries = 42\nlog_retention_bytes = 1024\nrefresh_ms = 50\ndefault_target = 'core-image-minimal'\neditor = 'nano'",
         )
         .unwrap();
         assert!(matches!(config.backend, Some(Backend::Process)));
         assert_eq!(config.log_retention_entries, Some(42));
         assert_eq!(config.default_target.as_deref(), Some("core-image-minimal"));
+        assert_eq!(config.editor.as_deref(), Some("nano"));
     }
 
     #[test]
