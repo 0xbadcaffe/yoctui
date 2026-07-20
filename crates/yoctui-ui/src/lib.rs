@@ -298,7 +298,7 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
         .filter(|log| matches!(log.severity, Severity::Warning | Severity::Error))
         .collect::<Vec<_>>();
     let selected = errors.get(app.error_selection).copied();
-    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(5)]).split(area);
+    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(8)]).split(area);
     let rows = errors
         .into_iter()
         .rev()
