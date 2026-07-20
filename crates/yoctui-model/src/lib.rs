@@ -303,6 +303,7 @@ pub enum Action {
     SelectRecipe { delta: isize },
     BeginSelectedRecipeBuild,
     BeginSelectedRecipeClean,
+    BeginSelectedRecipeMenuConfig,
     BeginSelectedRecipeCleanState,
     ConfirmRecipeTask,
     CancelRecipeTask,
@@ -548,6 +549,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.build_target_editing = true;
             } else {
                 app.notification = Some("No recipe is selected to clean.".into());
+            }
+        }
+        Action::BeginSelectedRecipeMenuConfig => {
+            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
+                app.build_target_input = recipe.name.clone();
+                app.build_task = Some("menuconfig".into());
+                app.build_target_editing = true;
+            } else {
+                app.notification = Some("No recipe is selected for menuconfig.".into());
             }
         }
         Action::BeginSelectedRecipeCleanState => {
@@ -844,6 +854,18 @@ mod tests {
         let _ = update(&mut app, Action::BeginSelectedRecipeClean);
         assert_eq!(app.build_target_input, "busybox");
         assert_eq!(app.build_task.as_deref(), Some("clean"));
+    }
+    #[test]
+    fn selected_recipe_menuconfig_prefills_the_menuconfig_task() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes = vec![Recipe {
+            name: "busybox".into(),
+            version: None,
+            layer: None,
+        }];
+        let _ = update(&mut app, Action::BeginSelectedRecipeMenuConfig);
+        assert_eq!(app.build_target_input, "busybox");
+        assert_eq!(app.build_task.as_deref(), Some("menuconfig"));
     }
     #[test]
     fn clean_state_requires_confirmation_before_starting() {
