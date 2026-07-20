@@ -697,6 +697,8 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
                 let _ = update(&mut app, Action::SelectRecipe { delta });
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('C') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeClean);
             } else if app.screen == yoctui_model::Screen::Layers
                 && matches!(input, Input::Up | Input::Down)
             {
