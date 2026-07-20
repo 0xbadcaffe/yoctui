@@ -60,7 +60,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         Screen::Configuration => config(frame, app, chunks[1]),
         Screen::Help => help(frame, chunks[1]),
     };
-    frame.render_widget(Paragraph::new("b build | c cancel | l logs | f follow | w wrap | s severity | R recipe | T task | / search | n/N match | e errors | r recipes | y layers | v config | ? help | q quit").style(Style::default().fg(Color::DarkGray)),chunks[2]);
+    frame.render_widget(Paragraph::new("b target/build | c cancel | l logs | f follow | w wrap | s severity | R recipe | T task | / search | n/N match | e errors | r recipes | y layers | v config | ? help | q quit").style(Style::default().fg(Color::DarkGray)),chunks[2]);
     if app.quit_confirm {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 3);
         frame.render_widget(Clear, popup);
@@ -69,6 +69,23 @@ pub fn render(frame: &mut Frame, app: &App) {
                 .block(Block::default().title("Confirm quit").borders(Borders::ALL)),
             popup,
         )
+    } else if app.build_target_editing {
+        let width = area.width.saturating_sub(12).clamp(30, 80);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(5) / 2,
+            width,
+            5,
+        );
+        frame.render_widget(Clear, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Target: {}_\n\nEnter starts the build; Esc cancels.",
+                app.build_target_input
+            ))
+            .block(Block::default().title("Build target").borders(Borders::ALL)),
+            popup,
+        );
     } else if let Some(notification) = app.notification.as_deref() {
         let width = area.width.saturating_sub(8).clamp(24, 80);
         let popup = Rect::new(
@@ -532,7 +549,7 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("b Start build (available when target supplied)\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   r Recipes   y Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nQuit requires confirmation during an active build.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("b Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   r Recipes   y Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nQuit requires confirmation during an active build.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
@@ -587,5 +604,22 @@ mod tests {
         assert!(output.contains("Backend: bridge"));
         assert!(output.contains("Tasks: 3/7"));
         assert!(output.contains("Warnings: 2  Errors: 1"));
+    }
+    #[test]
+    fn renders_build_target_editor() {
+        let mut terminal = Terminal::new(TestBackend::new(80, 20)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.build_target_editing = true;
+        app.build_target_input = "core-image-minimal".into();
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Build target"));
+        assert!(output.contains("core-image-minimal"));
     }
 }

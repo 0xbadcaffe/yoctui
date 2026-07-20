@@ -223,6 +223,8 @@ pub struct App {
     pub should_quit: bool,
     pub quit_confirm: bool,
     pub notification: Option<String>,
+    pub build_target_editing: bool,
+    pub build_target_input: String,
     pub error_selection: usize,
     pub recipe_selection: usize,
     pub layer_selection: usize,
@@ -242,6 +244,8 @@ impl App {
             should_quit: false,
             quit_confirm: false,
             notification: None,
+            build_target_editing: false,
+            build_target_input: String::new(),
             error_selection: 0,
             recipe_selection: 0,
             layer_selection: 0,
@@ -260,6 +264,11 @@ impl App {
 pub enum Action {
     Tick,
     Open(Screen),
+    BeginBuildTargetEdit,
+    AppendBuildTarget(char),
+    BackspaceBuildTarget,
+    ConfirmBuildTarget,
+    CancelBuildTargetEdit,
     Start(BuildRequest),
     BuildStarted,
     ParseProgress,
@@ -300,6 +309,31 @@ pub enum Action {
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     match action {
         Action::Open(s) => app.screen = s,
+        Action::BeginBuildTargetEdit => {
+            app.build_target_input = app.build.target.clone().unwrap_or_default();
+            app.build_target_editing = true;
+        }
+        Action::AppendBuildTarget(character) if app.build_target_editing => {
+            app.build_target_input.push(character);
+        }
+        Action::BackspaceBuildTarget if app.build_target_editing => {
+            app.build_target_input.pop();
+        }
+        Action::CancelBuildTargetEdit => app.build_target_editing = false,
+        Action::ConfirmBuildTarget if app.build_target_editing => {
+            let request = BuildRequest {
+                targets: vec![app.build_target_input.clone()],
+                task: None,
+            };
+            if let Err(error) = request.validate() {
+                app.notification = Some(error.to_string());
+            } else {
+                app.build.target = request.targets.first().cloned();
+                app.build.status = BuildStatus::LoadingWorkspace;
+                app.build_target_editing = false;
+                return Some(Effect::Start(request));
+            }
+        }
         Action::Start(r) => {
             if let Err(e) = r.validate() {
                 app.notification = Some(e.to_string())
@@ -508,6 +542,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BackspaceLogQuery
         | Action::NextLogMatch
         | Action::PreviousLogMatch
+        | Action::AppendBuildTarget(_)
+        | Action::BackspaceBuildTarget
+        | Action::ConfirmBuildTarget
         | Action::AppendMetadataQuery(_)
         | Action::BackspaceMetadataQuery => {}
         Action::DismissNotification => app.notification = None,
@@ -780,6 +817,26 @@ mod tests {
         assert_eq!(app.logs.scroll_offset, 1);
         let _ = update(&mut app, Action::PreviousLogMatch);
         assert_eq!(app.logs.scroll_offset, 0);
+    }
+    #[test]
+    fn build_target_editor_validates_and_starts_selected_target() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::BeginBuildTargetEdit);
+        for character in "core-image-minimal".chars() {
+            let _ = update(&mut app, Action::AppendBuildTarget(character));
+        }
+        let effect = update(&mut app, Action::ConfirmBuildTarget);
+
+        assert_eq!(app.build.target.as_deref(), Some("core-image-minimal"));
+        assert_eq!(app.build.status, BuildStatus::LoadingWorkspace);
+        assert!(!app.build_target_editing);
+        assert_eq!(
+            effect,
+            Some(Effect::Start(BuildRequest {
+                targets: vec!["core-image-minimal".into()],
+                task: None,
+            }))
+        );
     }
     proptest! {
         #[test]
