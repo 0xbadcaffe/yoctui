@@ -215,6 +215,7 @@ impl LogState {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
     pub screen: Screen,
+    pub backend: String,
     pub workspace: Workspace,
     pub build: BuildState,
     pub tasks: HashMap<TaskId, TaskInfo>,
@@ -233,6 +234,7 @@ impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
             screen: Screen::Dashboard,
+            backend: "unknown".into(),
             workspace: Workspace::default(),
             build: BuildState::default(),
             tasks: HashMap::new(),

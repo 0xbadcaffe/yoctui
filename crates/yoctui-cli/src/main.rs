@@ -48,6 +48,15 @@ enum Backend {
     Process,
 }
 
+impl std::fmt::Display for Backend {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(match self {
+            Self::Bridge => "bridge",
+            Self::Process => "process",
+        })
+    }
+}
+
 #[derive(Debug, Default, Deserialize)]
 struct FileConfig {
     backend: Option<Backend>,
@@ -536,6 +545,7 @@ async fn tui(
     let _guard = TerminalGuard::enter()?;
     let mut terminal = Terminal::new(ratatui::backend::CrosstermBackend::new(io::stdout()))?;
     let mut app = App::new(log_entries, log_bytes);
+    app.backend = backend_kind.to_string();
     let mut backend = select_backend(backend_kind, build_dir).await?;
     match backend.inspect_workspace().await {
         Ok(workspace) => {

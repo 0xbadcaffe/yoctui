@@ -107,8 +107,10 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
         Layout::horizontal([Constraint::Percentage(45), Constraint::Percentage(55)]).split(area);
     frame.render_widget(
         Paragraph::new(format!(
-            "Target: {}\nMachine: {}\nDistro: {}\nActive tasks: {}\n{}",
+            "Target: {}\nBackend: {}\nStatus: {}\nMachine: {}\nDistro: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\n\nActive tasks:\n{}",
             app.build.target.as_deref().unwrap_or("none"),
+            app.backend,
+            app.build.status,
             app.workspace
                 .variables
                 .get("MACHINE")
@@ -117,7 +119,13 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
                 .variables
                 .get("DISTRO")
                 .map_or("unknown", String::as_str),
+            app.build.completed,
+            app.build
+                .total
+                .map_or_else(|| "?".into(), |total| total.to_string()),
             app.tasks.len(),
+            app.build.warnings,
+            app.build.errors,
             active
         ))
         .block(Block::default().title("Build").borders(Borders::ALL)),
@@ -558,5 +566,26 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(screen.contains("Backend unavailable"));
+    }
+    #[test]
+    fn dashboard_renders_backend_and_build_metrics() {
+        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.backend = "bridge".into();
+        app.build.completed = 3;
+        app.build.total = Some(7);
+        app.build.warnings = 2;
+        app.build.errors = 1;
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Backend: bridge"));
+        assert!(output.contains("Tasks: 3/7"));
+        assert!(output.contains("Warnings: 2  Errors: 1"));
     }
 }
