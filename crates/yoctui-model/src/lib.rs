@@ -106,6 +106,8 @@ pub struct Workspace {
     pub source_dir: Option<PathBuf>,
     pub variables: HashMap<String, String>,
     pub bitbake_version: Option<String>,
+    #[serde(default)]
+    pub release: Option<String>,
     pub layers: Vec<Layer>,
     pub recipes: Vec<Recipe>,
 }
