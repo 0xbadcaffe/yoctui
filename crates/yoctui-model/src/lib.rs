@@ -225,6 +225,7 @@ pub struct App {
     pub error_selection: usize,
     pub recipe_selection: usize,
     pub layer_selection: usize,
+    pub config_selection: usize,
 }
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
@@ -240,6 +241,7 @@ impl App {
             error_selection: 0,
             recipe_selection: 0,
             layer_selection: 0,
+            config_selection: 0,
         }
     }
     pub fn elapsed(&self) -> Option<Duration> {
@@ -276,6 +278,7 @@ pub enum Action {
     JumpToSelectedError,
     SelectRecipe { delta: isize },
     SelectLayer { delta: isize },
+    SelectConfigVariable { delta: isize },
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -449,6 +452,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.layer_selection
                     .saturating_add(delta as usize)
                     .min(app.workspace.layers.len().saturating_sub(1))
+            };
+        }
+        Action::SelectConfigVariable { delta } => {
+            app.config_selection = if delta.is_negative() {
+                app.config_selection.saturating_sub(delta.unsigned_abs())
+            } else {
+                app.config_selection
+                    .saturating_add(delta as usize)
+                    .min(app.workspace.variables.len().saturating_sub(1))
             };
         }
         Action::AppendLogQuery(_) | Action::BackspaceLogQuery => {}
@@ -664,6 +676,20 @@ mod tests {
         assert_eq!(app.layer_selection, 1);
         let _ = update(&mut app, Action::SelectLayer { delta: -8 });
         assert_eq!(app.layer_selection, 0);
+    }
+    #[test]
+    fn configuration_selection_stays_in_workspace_bounds() {
+        let mut app = App::new(10, 1_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemuarm".into());
+        app.workspace
+            .variables
+            .insert("DISTRO".into(), "poky".into());
+        let _ = update(&mut app, Action::SelectConfigVariable { delta: 8 });
+        assert_eq!(app.config_selection, 1);
+        let _ = update(&mut app, Action::SelectConfigVariable { delta: -8 });
+        assert_eq!(app.config_selection, 0);
     }
     proptest! {
         #[test]
