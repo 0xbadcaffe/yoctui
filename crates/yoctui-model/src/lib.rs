@@ -312,6 +312,7 @@ pub enum Action {
     SelectLayer { delta: isize },
     OpenSelectedLayer,
     SelectConfigVariable { delta: isize },
+    OpenSelectedConfigSource,
     BeginMetadataSearch,
     AppendMetadataQuery(char),
     BackspaceMetadataQuery,
@@ -603,6 +604,38 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .saturating_add(delta as usize)
                     .min(app.workspace.variables.len().saturating_sub(1))
             };
+        }
+        Action::OpenSelectedConfigSource => {
+            let mut variables = app.workspace.variables.iter().collect::<Vec<_>>();
+            variables.sort_by_key(|(name, _)| *name);
+            let Some((name, _)) = variables.get(app.config_selection) else {
+                app.notification = Some("No configuration variable is selected to open.".into());
+                return None;
+            };
+            let Some(provenance) = app.workspace.variable_provenance.get(*name) else {
+                app.notification =
+                    Some("The selected variable has no file-backed provenance.".into());
+                return None;
+            };
+            let source = provenance
+                .rsplit_once(':')
+                .filter(|(_, line)| line.chars().all(|character| character.is_ascii_digit()))
+                .map_or(provenance.as_str(), |(path, _)| path);
+            let path = PathBuf::from(source);
+            if path.as_os_str().is_empty() {
+                app.notification =
+                    Some("The selected variable has no file-backed provenance.".into());
+            } else {
+                let path = if path.is_relative() {
+                    app.workspace
+                        .build_dir
+                        .as_ref()
+                        .map_or(path.clone(), |build_dir| build_dir.join(path))
+                } else {
+                    path
+                };
+                return Some(Effect::OpenInEditor(path));
+            }
         }
         Action::BeginMetadataSearch => app.metadata_searching = true,
         Action::AppendMetadataQuery(character) if app.metadata_searching => {
@@ -936,6 +969,23 @@ mod tests {
         assert_eq!(app.config_selection, 1);
         let _ = update(&mut app, Action::SelectConfigVariable { delta: -8 });
         assert_eq!(app.config_selection, 0);
+    }
+    #[test]
+    fn selected_configuration_source_opens_relative_provenance_path() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.build_dir = Some(PathBuf::from("/build"));
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemuarm".into());
+        app.workspace
+            .variable_provenance
+            .insert("MACHINE".into(), "conf/local.conf:12".into());
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedConfigSource),
+            Some(Effect::OpenInEditor(PathBuf::from(
+                "/build/conf/local.conf"
+            )))
+        );
     }
     #[test]
     fn metadata_search_tracks_query_and_resets_metadata_selection() {
