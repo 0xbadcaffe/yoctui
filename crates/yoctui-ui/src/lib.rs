@@ -560,7 +560,18 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
         ),
         chunks[0],
     );
-    let detail = selected.map_or_else(|| "No configuration variables supplied by the backend.".into(), |(name, value)| format!("Variable: {name}\nEffective value: {value}\nProvenance: backend value (provenance unavailable)"));
+    let detail = selected.map_or_else(
+        || "No configuration variables supplied by the backend.".into(),
+        |(name, value)| {
+            format!(
+                "Variable: {name}\nEffective value: {value}\nProvenance: {}",
+                app.workspace
+                    .variable_provenance
+                    .get(name)
+                    .map_or("backend did not provide source provenance", String::as_str)
+            )
+        },
+    );
     frame.render_widget(
         Paragraph::new(detail)
             .block(
@@ -665,5 +676,26 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Confirm recipe task"));
         assert!(output.contains("cleansstate"));
+    }
+    #[test]
+    fn configuration_renders_bridge_provenance() {
+        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Configuration;
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemuarm".into());
+        app.workspace
+            .variable_provenance
+            .insert("MACHINE".into(), "conf/local.conf:12".into());
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("conf/local.conf:12"));
     }
 }

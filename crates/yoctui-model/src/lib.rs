@@ -105,6 +105,8 @@ pub struct Workspace {
     pub build_dir: Option<PathBuf>,
     pub source_dir: Option<PathBuf>,
     pub variables: HashMap<String, String>,
+    #[serde(default)]
+    pub variable_provenance: HashMap<String, String>,
     pub bitbake_version: Option<String>,
     #[serde(default)]
     pub release: Option<String>,
