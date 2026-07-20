@@ -296,20 +296,31 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
 fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     let mut recipes = app.workspace.recipes.iter().collect::<Vec<_>>();
     recipes.sort_by(|left, right| left.name.cmp(&right.name));
+    let selected = recipes.get(app.recipe_selection).copied();
+    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(5)]).split(area);
     frame.render_widget(
-        Paragraph::new(
-            recipes
-                .into_iter()
-                .map(|r| {
-                    format!(
-                        "{} {} {}",
-                        r.name,
-                        r.version.as_deref().unwrap_or(""),
-                        r.layer.as_deref().unwrap_or("")
-                    )
+        Table::new(
+            recipes.into_iter().enumerate().map(|(index, recipe)| {
+                Row::new(vec![
+                    Cell::from(recipe.name.as_str()),
+                    Cell::from(recipe.version.as_deref().unwrap_or("")),
+                    Cell::from(recipe.layer.as_deref().unwrap_or("")),
+                ])
+                .style(if index == app.recipe_selection {
+                    Style::default().bg(Color::DarkGray)
+                } else {
+                    Style::default()
                 })
-                .collect::<Vec<_>>()
-                .join("\n"),
+            }),
+            [
+                Constraint::Percentage(40),
+                Constraint::Percentage(25),
+                Constraint::Percentage(35),
+            ],
+        )
+        .header(
+            Row::new(["Recipe", "Version", "Layer"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
         )
         .block(
             Block::default()
@@ -319,8 +330,27 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
                 ))
                 .borders(Borders::ALL),
         ),
-        area,
-    )
+        chunks[0],
+    );
+    let detail = selected.map_or_else(
+        || "No recipes supplied by the backend.".into(),
+        |recipe| {
+            format!(
+                "Recipe: {}\nVersion: {}\nLayer: {}",
+                recipe.name,
+                recipe.version.as_deref().unwrap_or("unknown"),
+                recipe.layer.as_deref().unwrap_or("unknown")
+            )
+        },
+    );
+    frame.render_widget(
+        Paragraph::new(detail).block(
+            Block::default()
+                .title("Selected recipe")
+                .borders(Borders::ALL),
+        ),
+        chunks[1],
+    );
 }
 fn layers(frame: &mut Frame, app: &App, area: Rect) {
     let mut layers = app.workspace.layers.iter().collect::<Vec<_>>();
