@@ -223,6 +223,7 @@ pub struct App {
     pub quit_confirm: bool,
     pub notification: Option<String>,
     pub error_selection: usize,
+    pub recipe_selection: usize,
 }
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
@@ -236,6 +237,7 @@ impl App {
             quit_confirm: false,
             notification: None,
             error_selection: 0,
+            recipe_selection: 0,
         }
     }
     pub fn elapsed(&self) -> Option<Duration> {
@@ -270,6 +272,7 @@ pub enum Action {
     CycleLogTaskFilter,
     SelectError { delta: isize },
     JumpToSelectedError,
+    SelectRecipe { delta: isize },
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -426,6 +429,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.logs.follow = false;
                 app.screen = Screen::Logs;
             }
+        }
+        Action::SelectRecipe { delta } => {
+            app.recipe_selection = if delta.is_negative() {
+                app.recipe_selection.saturating_sub(delta.unsigned_abs())
+            } else {
+                app.recipe_selection
+                    .saturating_add(delta as usize)
+                    .min(app.workspace.recipes.len().saturating_sub(1))
+            };
         }
         Action::AppendLogQuery(_) | Action::BackspaceLogQuery => {}
         Action::DismissNotification => app.notification = None,
@@ -600,6 +612,26 @@ mod tests {
         assert_eq!(app.screen, Screen::Logs);
         assert_eq!(app.logs.query, "compile failed");
         assert_eq!(app.logs.filter, Some(Severity::Error));
+    }
+    #[test]
+    fn recipe_selection_stays_in_workspace_bounds() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes = vec![
+            Recipe {
+                name: "alpha".into(),
+                version: None,
+                layer: None,
+            },
+            Recipe {
+                name: "beta".into(),
+                version: None,
+                layer: None,
+            },
+        ];
+        let _ = update(&mut app, Action::SelectRecipe { delta: 8 });
+        assert_eq!(app.recipe_selection, 1);
+        let _ = update(&mut app, Action::SelectRecipe { delta: -8 });
+        assert_eq!(app.recipe_selection, 0);
     }
     proptest! {
         #[test]
