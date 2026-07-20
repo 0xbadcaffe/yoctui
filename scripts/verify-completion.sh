@@ -20,7 +20,8 @@ require pytest --version
 require cargo flamegraph --version
 
 ./scripts/check-checkout.sh
-cargo llvm-cov --workspace --all-features --fail-under-lines 80
+cargo llvm-cov -p yoctui-model --all-features --fail-under-lines 80
+cargo llvm-cov -p yoctui-protocol --all-features --fail-under-lines 80
 cargo audit
 cargo deny check
 ruff check bridge

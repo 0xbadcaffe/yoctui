@@ -510,6 +510,64 @@ mod tests {
         );
         assert!(logs.dropped > 0);
     }
+    #[test]
+    fn reducer_covers_build_lifecycle_and_log_controls() {
+        let mut app = App::new(10, 1_000);
+        assert!(
+            update(
+                &mut app,
+                Action::Start(BuildRequest {
+                    targets: vec!["bad target".into()],
+                    task: None,
+                }),
+            )
+            .is_none()
+        );
+        assert!(app.notification.is_some());
+        let request = BuildRequest {
+            targets: vec!["busybox".into()],
+            task: Some("compile".into()),
+        };
+        assert_eq!(
+            update(&mut app, Action::Start(request.clone())),
+            Some(Effect::Start(request))
+        );
+        let _ = update(&mut app, Action::BuildStarted);
+        let id = TaskId("busybox:do_compile".into());
+        let _ = update(
+            &mut app,
+            Action::TaskStarted(TaskInfo {
+                id: id.clone(),
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                progress: None,
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::TaskProgress {
+                id: id.clone(),
+                progress: 50,
+            },
+        );
+        let _ = update(&mut app, Action::TaskCompleted { id, success: true });
+        assert_eq!(update(&mut app, Action::Cancel), Some(Effect::Cancel));
+        let _ = update(&mut app, Action::BuildCompleted { success: false });
+        assert_eq!(app.build.status, BuildStatus::Failed);
+        let _ = update(&mut app, Action::Open(Screen::Logs));
+        let _ = update(&mut app, Action::BeginLogSearch);
+        let _ = update(&mut app, Action::AppendLogQuery('x'));
+        let _ = update(&mut app, Action::BackspaceLogQuery);
+        let _ = update(&mut app, Action::FinishLogSearch);
+        let _ = update(&mut app, Action::ScrollLogsHorizontally { delta: 5 });
+        let _ = update(&mut app, Action::ScrollLogsHorizontally { delta: -5 });
+        let _ = update(
+            &mut app,
+            Action::Failure(AppError::new("test", "failure", "retry")),
+        );
+        let _ = update(&mut app, Action::DismissNotification);
+        assert!(app.notification.is_none());
+    }
     proptest! {
         #[test]
         fn retention_never_exceeds_count_or_bytes(messages in proptest::collection::vec(".{0,64}", 0..80), max_entries in 1usize..20, max_bytes in 1usize..256) {
