@@ -662,7 +662,16 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
             let Some(input) = input_from_key(k) else {
                 continue;
             };
-            if app.build_target_editing {
+            if app.recipe_task_confirmation.is_some() {
+                let effect = match input {
+                    Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
+                    Input::Esc => update(&mut app, Action::CancelRecipeTask),
+                    _ => None,
+                };
+                if let Some(Effect::Start(request)) = effect {
+                    begin_build(&mut backend, &mut app, request).await;
+                }
+            } else if app.build_target_editing {
                 let effect = match input {
                     Input::Char(character) => {
                         update(&mut app, Action::AppendBuildTarget(character))
@@ -675,6 +684,8 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
                 if let Some(Effect::Start(request)) = effect {
                     begin_build(&mut backend, &mut app, request).await;
                 }
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
             } else if input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginBuildTargetEdit);
             } else if app.screen == yoctui_model::Screen::Errors
@@ -695,10 +706,10 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
             {
                 let delta = if input == Input::Up { -1 } else { 1 };
                 let _ = update(&mut app, Action::SelectRecipe { delta });
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('C') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeClean);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('S') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeCleanState);
             } else if app.screen == yoctui_model::Screen::Layers
                 && matches!(input, Input::Up | Input::Down)
             {
