@@ -269,6 +269,7 @@ pub enum Action {
     CycleLogRecipeFilter,
     CycleLogTaskFilter,
     SelectError { delta: isize },
+    JumpToSelectedError,
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -411,6 +412,20 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .saturating_add(delta as usize)
                     .min(count.saturating_sub(1))
             };
+        }
+        Action::JumpToSelectedError => {
+            if let Some(entry) = app
+                .logs
+                .entries
+                .iter()
+                .filter(|entry| matches!(entry.severity, Severity::Warning | Severity::Error))
+                .nth(app.error_selection)
+            {
+                app.logs.query = entry.message.clone();
+                app.logs.filter = Some(entry.severity);
+                app.logs.follow = false;
+                app.screen = Screen::Logs;
+            }
         }
         Action::AppendLogQuery(_) | Action::BackspaceLogQuery => {}
         Action::DismissNotification => app.notification = None,
@@ -567,6 +582,24 @@ mod tests {
         );
         let _ = update(&mut app, Action::DismissNotification);
         assert!(app.notification.is_none());
+    }
+    #[test]
+    fn selected_error_jumps_to_filtered_logs() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(
+            &mut app,
+            Action::Log(tagged_log(
+                "busybox",
+                "do_compile",
+                Severity::Error,
+                "compile failed",
+            )),
+        );
+        let _ = update(&mut app, Action::Open(Screen::Errors));
+        let _ = update(&mut app, Action::JumpToSelectedError);
+        assert_eq!(app.screen, Screen::Logs);
+        assert_eq!(app.logs.query, "compile failed");
+        assert_eq!(app.logs.filter, Some(Severity::Error));
     }
     proptest! {
         #[test]
