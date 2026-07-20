@@ -20,6 +20,8 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('w') => Some(Action::ToggleLogWrap),
         Input::Char('s') => Some(Action::CycleLogSeverity),
         Input::Char('/') => Some(Action::BeginLogSearch),
+        Input::Char('n') => Some(Action::NextLogMatch),
+        Input::Char('N') => Some(Action::PreviousLogMatch),
         Input::Char('R') => Some(Action::CycleLogRecipeFilter),
         Input::Char('T') => Some(Action::CycleLogTaskFilter),
         Input::Backspace => Some(Action::BackspaceLogQuery),
@@ -74,5 +76,10 @@ mod tests {
             key_action(Input::Char('T')),
             Some(Action::CycleLogTaskFilter)
         );
+    }
+    #[test]
+    fn maps_log_match_navigation_controls() {
+        assert_eq!(key_action(Input::Char('n')), Some(Action::NextLogMatch));
+        assert_eq!(key_action(Input::Char('N')), Some(Action::PreviousLogMatch));
     }
 }

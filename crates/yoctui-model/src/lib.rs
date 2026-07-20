@@ -275,6 +275,8 @@ pub enum Action {
     AppendLogQuery(char),
     BackspaceLogQuery,
     FinishLogSearch,
+    NextLogMatch,
+    PreviousLogMatch,
     ScrollLogsHorizontally { delta: isize },
     CycleLogRecipeFilter,
     CycleLogTaskFilter,
@@ -384,6 +386,21 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.logs.query.pop();
         }
         Action::FinishLogSearch => app.logs.searching = false,
+        Action::NextLogMatch if !app.logs.query.is_empty() => {
+            let count = app.logs.filtered().count();
+            app.logs.follow = false;
+            app.logs.paused_len = Some(app.logs.entries.len());
+            app.logs.scroll_offset = app
+                .logs
+                .scroll_offset
+                .saturating_add(1)
+                .min(count.saturating_sub(1));
+        }
+        Action::PreviousLogMatch if !app.logs.query.is_empty() => {
+            app.logs.follow = false;
+            app.logs.paused_len = Some(app.logs.entries.len());
+            app.logs.scroll_offset = app.logs.scroll_offset.saturating_sub(1);
+        }
         Action::ScrollLogsHorizontally { delta } => {
             app.logs.horizontal_offset = if delta.is_negative() {
                 app.logs
@@ -487,6 +504,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::FinishMetadataSearch => app.metadata_searching = false,
         Action::AppendLogQuery(_)
         | Action::BackspaceLogQuery
+        | Action::NextLogMatch
+        | Action::PreviousLogMatch
         | Action::AppendMetadataQuery(_)
         | Action::BackspaceMetadataQuery => {}
         Action::DismissNotification => app.notification = None,
@@ -742,6 +761,23 @@ mod tests {
         let _ = update(&mut app, Action::FinishMetadataSearch);
         assert_eq!(app.metadata_query, "q");
         assert!(!app.metadata_searching);
+    }
+    #[test]
+    fn log_match_navigation_stays_within_active_search_results() {
+        let mut app = App::new(10, 1_000);
+        app.logs.insert(log("alpha match"));
+        app.logs.insert(log("not relevant"));
+        app.logs.insert(log("beta match"));
+        app.logs.query = "match".into();
+
+        let _ = update(&mut app, Action::NextLogMatch);
+        assert_eq!(app.logs.scroll_offset, 1);
+        assert!(!app.logs.follow);
+
+        let _ = update(&mut app, Action::NextLogMatch);
+        assert_eq!(app.logs.scroll_offset, 1);
+        let _ = update(&mut app, Action::PreviousLogMatch);
+        assert_eq!(app.logs.scroll_offset, 0);
     }
     proptest! {
         #[test]
