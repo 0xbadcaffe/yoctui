@@ -227,6 +227,7 @@ pub struct App {
     pub notification: Option<String>,
     pub build_target_editing: bool,
     pub build_target_input: String,
+    pub build_task: Option<String>,
     pub error_selection: usize,
     pub recipe_selection: usize,
     pub layer_selection: usize,
@@ -248,6 +249,7 @@ impl App {
             notification: None,
             build_target_editing: false,
             build_target_input: String::new(),
+            build_task: None,
             error_selection: 0,
             recipe_selection: 0,
             layer_selection: 0,
@@ -298,6 +300,7 @@ pub enum Action {
     OpenSelectedErrorSource,
     SelectRecipe { delta: isize },
     BeginSelectedRecipeBuild,
+    BeginSelectedRecipeClean,
     SelectLayer { delta: isize },
     OpenSelectedLayer,
     SelectConfigVariable { delta: isize },
@@ -316,6 +319,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::Open(s) => app.screen = s,
         Action::BeginBuildTargetEdit => {
             app.build_target_input = app.build.target.clone().unwrap_or_default();
+            app.build_task = None;
             app.build_target_editing = true;
         }
         Action::AppendBuildTarget(character) if app.build_target_editing => {
@@ -328,7 +332,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::ConfirmBuildTarget if app.build_target_editing => {
             let request = BuildRequest {
                 targets: vec![app.build_target_input.clone()],
-                task: None,
+                task: app.build_task.clone(),
             };
             if let Err(error) = request.validate() {
                 app.notification = Some(error.to_string());
@@ -526,9 +530,19 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::BeginSelectedRecipeBuild => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
                 app.build_target_input = recipe.name.clone();
+                app.build_task = None;
                 app.build_target_editing = true;
             } else {
                 app.notification = Some("No recipe is selected to build.".into());
+            }
+        }
+        Action::BeginSelectedRecipeClean => {
+            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
+                app.build_target_input = recipe.name.clone();
+                app.build_task = Some("clean".into());
+                app.build_target_editing = true;
+            } else {
+                app.notification = Some("No recipe is selected to clean.".into());
             }
         }
         Action::SelectLayer { delta } => {
@@ -795,6 +809,18 @@ mod tests {
         let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
         assert!(app.build_target_editing);
         assert_eq!(app.build_target_input, "busybox");
+    }
+    #[test]
+    fn selected_recipe_clean_prefills_the_clean_task() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes = vec![Recipe {
+            name: "busybox".into(),
+            version: None,
+            layer: None,
+        }];
+        let _ = update(&mut app, Action::BeginSelectedRecipeClean);
+        assert_eq!(app.build_target_input, "busybox");
+        assert_eq!(app.build_task.as_deref(), Some("clean"));
     }
     #[test]
     fn layer_selection_stays_in_workspace_bounds() {

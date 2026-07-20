@@ -80,8 +80,9 @@ pub fn render(frame: &mut Frame, app: &App) {
         frame.render_widget(Clear, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Target: {}_\n\nEnter starts the build; Esc cancels.",
-                app.build_target_input
+                "Target: {}_\nTask: {}\n\nEnter starts the build; Esc cancels.",
+                app.build_target_input,
+                app.build_task.as_deref().unwrap_or("default")
             ))
             .block(Block::default().title("Build target").borders(Borders::ALL)),
             popup,
@@ -413,7 +414,7 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(format!(
-            "{detail}\n\nb opens this recipe in the build target dialog."
+            "{detail}\n\nb builds this recipe.  C runs its clean task."
         ))
         .block(
             Block::default()
@@ -555,7 +556,7 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("b Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log or layer directory\nr Recipes   y Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nQuit requires confirmation during an active build.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("b Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log or layer directory\nr Recipes: b build, C clean selected recipe   y Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nQuit requires confirmation during an active build.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
