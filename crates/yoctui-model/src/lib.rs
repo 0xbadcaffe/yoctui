@@ -295,6 +295,7 @@ pub enum Action {
     CycleLogTaskFilter,
     SelectError { delta: isize },
     JumpToSelectedError,
+    OpenSelectedErrorSource,
     SelectRecipe { delta: isize },
     SelectLayer { delta: isize },
     SelectConfigVariable { delta: isize },
@@ -499,6 +500,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.screen = Screen::Logs;
             }
         }
+        Action::OpenSelectedErrorSource => {
+            let selected = app
+                .logs
+                .entries
+                .iter()
+                .filter(|entry| matches!(entry.severity, Severity::Warning | Severity::Error))
+                .nth(app.error_selection);
+            if let Some(path) = selected.and_then(|entry| entry.path.clone()) {
+                return Some(Effect::OpenInEditor(path));
+            }
+            app.notification = Some("The selected diagnostic has no source log path.".into());
+        }
         Action::SelectRecipe { delta } => {
             app.recipe_selection = if delta.is_negative() {
                 app.recipe_selection.saturating_sub(delta.unsigned_abs())
@@ -585,6 +598,7 @@ fn next_filter(values: &[String], current: Option<String>) -> Option<String> {
 pub enum Effect {
     Start(BuildRequest),
     Cancel,
+    OpenInEditor(PathBuf),
 }
 pub fn format_duration(duration: Duration) -> String {
     format!(
@@ -721,6 +735,18 @@ mod tests {
         assert_eq!(app.screen, Screen::Logs);
         assert_eq!(app.logs.query, "compile failed");
         assert_eq!(app.logs.filter, Some(Severity::Error));
+    }
+    #[test]
+    fn selected_error_opens_its_source_path() {
+        let mut app = App::new(10, 1_000);
+        let mut entry = tagged_log("busybox", "do_compile", Severity::Error, "compile failed");
+        entry.path = Some(PathBuf::from("/tmp/log.do_compile"));
+        let _ = update(&mut app, Action::Log(entry));
+
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedErrorSource),
+            Some(Effect::OpenInEditor(PathBuf::from("/tmp/log.do_compile")))
+        );
     }
     #[test]
     fn recipe_selection_stays_in_workspace_bounds() {

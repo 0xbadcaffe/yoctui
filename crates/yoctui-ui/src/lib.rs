@@ -60,7 +60,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         Screen::Configuration => config(frame, app, chunks[1]),
         Screen::Help => help(frame, chunks[1]),
     };
-    frame.render_widget(Paragraph::new("b target/build | c cancel | l logs | f follow | w wrap | s severity | R recipe | T task | / search | n/N match | e errors | r recipes | y layers | v config | ? help | q quit").style(Style::default().fg(Color::DarkGray)),chunks[2]);
+    frame.render_widget(Paragraph::new("b target/build | c cancel | l logs | f follow | w wrap | s severity | R recipe | T task | / search | n/N match | e errors | o source log | r recipes | y layers | v config | ? help | q quit").style(Style::default().fg(Color::DarkGray)),chunks[2]);
     if app.quit_confirm {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 3);
         frame.render_widget(Clear, popup);
@@ -334,13 +334,15 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
         },
     );
     frame.render_widget(
-        Paragraph::new(format!("{detail}\n\nPress Enter to jump to matching logs."))
-            .block(
-                Block::default()
-                    .title("Selected diagnostic")
-                    .borders(Borders::ALL),
-            )
-            .wrap(Wrap { trim: false }),
+        Paragraph::new(format!(
+            "{detail}\n\nEnter jumps to matching logs.  o opens the selected source log."
+        ))
+        .block(
+            Block::default()
+                .title("Selected diagnostic")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: false }),
         chunks[1],
     );
 }
@@ -550,7 +552,7 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("b Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   r Recipes   y Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nQuit requires confirmation during an active build.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("b Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected error source log\nr Recipes   y Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nQuit requires confirmation during an active build.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {

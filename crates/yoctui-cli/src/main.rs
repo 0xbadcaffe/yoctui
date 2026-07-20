@@ -14,6 +14,7 @@ use serde::Deserialize;
 use std::{
     env, fs, io,
     path::{Path, PathBuf},
+    process::Command as ProcessCommand,
     time::Duration,
 };
 #[cfg(unix)]
@@ -100,6 +101,28 @@ impl TerminalGuard {
             Hide
         )?;
         Ok(Self)
+    }
+    fn suspend(&self) -> Result<()> {
+        disable_raw_mode()?;
+        execute!(
+            io::stdout(),
+            Show,
+            DisableBracketedPaste,
+            DisableMouseCapture,
+            LeaveAlternateScreen
+        )?;
+        Ok(())
+    }
+    fn resume(&self) -> Result<()> {
+        enable_raw_mode()?;
+        execute!(
+            io::stdout(),
+            EnterAlternateScreen,
+            EnableMouseCapture,
+            EnableBracketedPaste,
+            Hide
+        )?;
+        Ok(())
     }
 }
 impl Drop for TerminalGuard {
@@ -556,6 +579,28 @@ async fn begin_build(backend: &mut Box<dyn BitBakeBackend>, app: &mut App, reque
     }
 }
 
+async fn open_in_editor(guard: &TerminalGuard, app: &mut App, path: PathBuf) {
+    let editor = env::var_os("EDITOR").unwrap_or_else(|| "vi".into());
+    if let Err(error) = guard.suspend() {
+        app.notification = Some(format!(
+            "Could not suspend the terminal for $EDITOR: {error}"
+        ));
+        return;
+    }
+    let editor_result =
+        tokio::task::spawn_blocking(move || ProcessCommand::new(editor).arg(path).status()).await;
+    let resume_result = guard.resume();
+    if let Err(error) = resume_result {
+        app.notification = Some(format!(
+            "Could not restore the terminal after $EDITOR: {error}"
+        ));
+    } else if let Ok(Err(error)) = editor_result {
+        app.notification = Some(format!("Could not start $EDITOR: {error}"));
+    } else if let Err(error) = editor_result {
+        app.notification = Some(format!("$EDITOR task failed: {error}"));
+    }
+}
+
 async fn tui(
     backend_kind: Backend,
     build_dir: PathBuf,
@@ -565,7 +610,7 @@ async fn tui(
     refresh: Duration,
     _color: bool,
 ) -> Result<()> {
-    let _guard = TerminalGuard::enter()?;
+    let guard = TerminalGuard::enter()?;
     let mut terminal = Terminal::new(ratatui::backend::CrosstermBackend::new(io::stdout()))?;
     let mut app = App::new(log_entries, log_bytes);
     app.backend = backend_kind.to_string();
@@ -632,6 +677,12 @@ async fn tui(
                 let _ = update(&mut app, Action::SelectError { delta });
             } else if app.screen == yoctui_model::Screen::Errors && input == Input::Enter {
                 let _ = update(&mut app, Action::JumpToSelectedError);
+            } else if app.screen == yoctui_model::Screen::Errors && input == Input::Char('o') {
+                if let Some(Effect::OpenInEditor(path)) =
+                    update(&mut app, Action::OpenSelectedErrorSource)
+                {
+                    open_in_editor(&guard, &mut app, path).await;
+                }
             } else if app.screen == yoctui_model::Screen::Recipes
                 && matches!(input, Input::Up | Input::Down)
             {
