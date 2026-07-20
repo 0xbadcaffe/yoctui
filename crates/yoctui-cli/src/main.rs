@@ -533,6 +533,25 @@ async fn select_backend(backend: Backend, build_dir: PathBuf) -> Result<Box<dyn 
         }
     }
 }
+
+async fn begin_build(backend: &mut Box<dyn BitBakeBackend>, app: &mut App, request: BuildRequest) {
+    match backend.start_build(request).await {
+        Ok(()) => {
+            let _ = update(app, Action::BuildStarted);
+        }
+        Err(error) => {
+            let _ = update(
+                app,
+                Action::Failure(AppError::new(
+                    "BitBake",
+                    error.to_string(),
+                    "check backend diagnostics and retry",
+                )),
+            );
+        }
+    }
+}
+
 async fn tui(
     backend_kind: Backend,
     build_dir: PathBuf,
@@ -587,35 +606,21 @@ async fn tui(
             let Some(input) = input_from_key(k) else {
                 continue;
             };
-            if input == Input::Char('b') {
-                if let Some(target) = app.build.target.clone() {
-                    if let Some(Effect::Start(request)) = update(
-                        &mut app,
-                        Action::Start(BuildRequest {
-                            targets: vec![target],
-                            task: None,
-                        }),
-                    ) {
-                        match backend.start_build(request).await {
-                            Ok(()) => {
-                                let _ = update(&mut app, Action::BuildStarted);
-                            }
-                            Err(error) => {
-                                let _ = update(
-                                    &mut app,
-                                    Action::Failure(AppError::new(
-                                        "BitBake",
-                                        error.to_string(),
-                                        "check backend diagnostics and retry",
-                                    )),
-                                );
-                            }
-                        }
+            if app.build_target_editing {
+                let effect = match input {
+                    Input::Char(character) => {
+                        update(&mut app, Action::AppendBuildTarget(character))
                     }
-                } else {
-                    app.notification =
-                        Some("pass a target or set default_target before starting a build".into());
+                    Input::Backspace => update(&mut app, Action::BackspaceBuildTarget),
+                    Input::Enter => update(&mut app, Action::ConfirmBuildTarget),
+                    Input::Esc => update(&mut app, Action::CancelBuildTargetEdit),
+                    _ => None,
+                };
+                if let Some(Effect::Start(request)) = effect {
+                    begin_build(&mut backend, &mut app, request).await;
                 }
+            } else if input == Input::Char('b') {
+                let _ = update(&mut app, Action::BeginBuildTargetEdit);
             } else if app.screen == yoctui_model::Screen::Errors
                 && matches!(input, Input::Up | Input::Down)
             {
