@@ -355,21 +355,64 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
 fn layers(frame: &mut Frame, app: &App, area: Rect) {
     let mut layers = app.workspace.layers.iter().collect::<Vec<_>>();
     layers.sort_by(|left, right| left.name.cmp(&right.name));
+    let selected = layers.get(app.layer_selection).copied();
+    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(5)]).split(area);
     frame.render_widget(
-        Paragraph::new(
-            layers
-                .into_iter()
-                .map(|l| format!("{} {} priority {:?}", l.name, l.path.display(), l.priority))
-                .collect::<Vec<_>>()
-                .join("\n"),
+        Table::new(
+            layers.into_iter().enumerate().map(|(index, layer)| {
+                Row::new(vec![
+                    Cell::from(layer.name.as_str()),
+                    Cell::from(layer.path.display().to_string()),
+                    Cell::from(
+                        layer
+                            .priority
+                            .map_or_else(String::new, |priority| priority.to_string()),
+                    ),
+                ])
+                .style(if index == app.layer_selection {
+                    Style::default().bg(Color::DarkGray)
+                } else {
+                    Style::default()
+                })
+            }),
+            [
+                Constraint::Percentage(30),
+                Constraint::Percentage(55),
+                Constraint::Percentage(15),
+            ],
+        )
+        .header(
+            Row::new(["Layer", "Path", "Priority"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
         )
         .block(
             Block::default()
                 .title(format!("Layers ({})", app.workspace.layers.len()))
                 .borders(Borders::ALL),
         ),
-        area,
-    )
+        chunks[0],
+    );
+    let detail = selected.map_or_else(
+        || "No layers supplied by the backend.".into(),
+        |layer| {
+            format!(
+                "Layer: {}\nPath: {}\nPriority: {}",
+                layer.name,
+                layer.path.display(),
+                layer
+                    .priority
+                    .map_or_else(|| "unknown".into(), |priority| priority.to_string())
+            )
+        },
+    );
+    frame.render_widget(
+        Paragraph::new(detail).block(
+            Block::default()
+                .title("Selected layer")
+                .borders(Borders::ALL),
+        ),
+        chunks[1],
+    );
 }
 fn config(frame: &mut Frame, app: &App, area: Rect) {
     let mut variables = app.workspace.variables.iter().collect::<Vec<_>>();
