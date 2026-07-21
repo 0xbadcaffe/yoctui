@@ -36,6 +36,7 @@ pub enum Screen {
     Dashboard,
     BuildHistory,
     Dependencies,
+    LayerRelationships,
     Recipes,
     Layers,
     Configuration,
@@ -196,6 +197,19 @@ pub struct RecipeDependencies {
     pub build: Vec<String>,
     pub runtime: Vec<String>,
 }
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct LayerRelationships {
+    pub layers: Vec<LayerRelationship>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct LayerRelationship {
+    pub name: String,
+    pub priority: Option<i32>,
+    pub compatible: Vec<String>,
+    pub depends: Vec<String>,
+    pub overlays: Vec<String>,
+    pub appends: Vec<String>,
+}
 const MAX_BUILD_HISTORY: usize = 50;
 impl Default for BuildState {
     fn default() -> Self {
@@ -302,6 +316,7 @@ pub struct App {
     pub build_history_selection: usize,
     pub dependencies: Option<RecipeDependencies>,
     pub dependency_selection: usize,
+    pub layer_relationships: Option<LayerRelationships>,
     pub tasks: HashMap<TaskId, TaskInfo>,
     pub completed_tasks: VecDeque<CompletedTask>,
     pub task_progress_scroll: usize,
@@ -346,6 +361,7 @@ impl App {
             build_history_selection: 0,
             dependencies: None,
             dependency_selection: 0,
+            layer_relationships: None,
             tasks: HashMap::new(),
             completed_tasks: VecDeque::new(),
             task_progress_scroll: 0,
@@ -501,6 +517,8 @@ pub enum Action {
     },
     OpenSelectedLayer,
     BeginSelectedLayerWorkspaceEditor,
+    BeginLayerRelationships,
+    LayerRelationshipsLoaded(LayerRelationships),
     SelectConfigVariable {
         delta: isize,
     },
@@ -1148,6 +1166,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
             app.notification = Some("No layer is selected to edit.".into());
         }
+        Action::BeginLayerRelationships => return Some(Effect::GetLayerRelationships),
+        Action::LayerRelationshipsLoaded(relationships) => {
+            app.layer_relationships = Some(relationships);
+            app.screen = Screen::LayerRelationships;
+        }
         Action::SelectConfigVariable { delta } => {
             app.config_selection = if delta.is_negative() {
                 app.config_selection.saturating_sub(delta.unsigned_abs())
@@ -1294,6 +1317,7 @@ pub enum Effect {
     DevtoolFinish(DevtoolFinishRequest),
     DevtoolDeploy(DevtoolDeployRequest),
     GetDependencies(String),
+    GetLayerRelationships,
     LoadRecipeEditorFile(PathBuf),
     SaveRecipeEditorFile { path: PathBuf, content: String },
     WriteBbmask(String),

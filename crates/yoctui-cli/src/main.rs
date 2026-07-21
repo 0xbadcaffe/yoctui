@@ -24,8 +24,8 @@ use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{Input, key_action};
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
-    Action, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry, RecipeDependencies,
-    Screen, Severity, TaskId, TaskInfo, update,
+    Action, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry, LayerRelationship,
+    LayerRelationships, RecipeDependencies, Screen, Severity, TaskId, TaskInfo, update,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -1546,6 +1546,42 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     update(&mut app, Action::BeginSelectedLayerWorkspaceEditor)
                 {
                     open_workspace_editor(&mut app, label, root).await;
+                }
+            } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('i') {
+                if matches!(
+                    update(&mut app, Action::BeginLayerRelationships),
+                    Some(Effect::GetLayerRelationships)
+                ) {
+                    match backend.get_layer_relationships().await {
+                        Ok(layers) => {
+                            let _ = update(
+                                &mut app,
+                                Action::LayerRelationshipsLoaded(LayerRelationships {
+                                    layers: layers
+                                        .into_iter()
+                                        .map(|layer| LayerRelationship {
+                                            name: layer.name,
+                                            priority: layer.priority,
+                                            compatible: layer.compatible,
+                                            depends: layer.depends,
+                                            overlays: layer.overlays,
+                                            appends: layer.appends,
+                                        })
+                                        .collect(),
+                                }),
+                            );
+                        }
+                        Err(error) => {
+                            let _ = update(
+                                &mut app,
+                                Action::Failure(AppError::new(
+                                    "Layers",
+                                    error.to_string(),
+                                    "use a bridge connected to a BitBake server that supports get_layer_relationships",
+                                )),
+                            );
+                        }
+                    }
                 }
             } else if app.screen == yoctui_model::Screen::Configuration
                 && matches!(input, Input::Up | Input::Down)
