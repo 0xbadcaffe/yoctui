@@ -73,6 +73,8 @@ While BitBake is loading, parsing, running, or cancelling a build, the dashboard
 
 The dashboard retains up to 1,024 completed package tasks for the current build alongside active tasks. Use `Up` and `Down` on the dashboard to scroll this package progress history; successful tasks are green and failed tasks red when color is enabled.
 
+The persistent header identifies the active Yocto release and source (or build) location. The bottom line changes with the current screen so its available shortcuts remain visible without opening Help.
+
 Press `x` to inspect the effective `BBMASK` patterns and their backend-provided provenance. Press `e` to edit the intended value: Yoctui previews the exact assignment it will append to `$BUILDDIR/conf/local.conf`, requires confirmation, then refreshes workspace metadata.
 
 Select a backend explicitly when needed:

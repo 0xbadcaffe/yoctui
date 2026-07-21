@@ -5,6 +5,7 @@ Yoctui is the one-stop terminal workspace after `oe-init-build-env`: users shoul
 ## One-stop workspace principles
 
 - Build cockpit: start image tasks for the effective machine, track all observed package tasks, inspect host capacity, and fall back to the inherited Yocto shell when a direct command is needed.
+- Orientation: keep the active Yocto release/workspace visible and expose the relevant shortcuts in the bottom bar on every screen.
 - Workspace changes: browse layers and configuration, open supported sources, and use Devtool-backed editing rather than guessing metadata ownership.
 - Safe configuration: show BitBake's effective values and provenance first; only then add narrowly scoped edits with a diff preview, confirmation, and metadata refresh.
 - Trust boundary: Yoctui never reimplements BitBake dependency resolution or silently writes generated build state.
