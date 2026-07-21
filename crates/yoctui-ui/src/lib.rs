@@ -163,12 +163,21 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
         .join("\n");
     let chunks =
         Layout::horizontal([Constraint::Percentage(45), Constraint::Percentage(55)]).split(area);
+    let parse_progress = app.build.parse_current.map_or_else(
+        || "not parsing".into(),
+        |current| {
+            app.build
+                .parse_total
+                .map_or_else(|| current.to_string(), |total| format!("{current}/{total}"))
+        },
+    );
     frame.render_widget(
         Paragraph::new(format!(
-            "Target: {}\nBackend: {}\nStatus: {}\nMachine: {}\nDistro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\n\nActive tasks:\n{}",
+            "Target: {}\nBackend: {}\nStatus: {}\nParse progress: {}\nMachine: {}\nDistro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\n\nActive tasks:\n{}",
             app.build.target.as_deref().unwrap_or("none"),
             app.backend,
             app.build.status,
+            parse_progress,
             app.workspace
                 .variables
                 .get("MACHINE")
@@ -668,6 +677,22 @@ mod tests {
         assert!(output.contains("Backend: bridge"));
         assert!(output.contains("Tasks: 3/7"));
         assert!(output.contains("Warnings: 2  Errors: 1"));
+    }
+    #[test]
+    fn dashboard_renders_parse_progress() {
+        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.build.parse_current = Some(8);
+        app.build.parse_total = Some(20);
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Parse progress: 8/20"));
     }
     #[test]
     fn renders_build_target_editor() {

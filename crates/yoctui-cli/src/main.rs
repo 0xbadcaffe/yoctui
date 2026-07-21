@@ -575,7 +575,9 @@ fn action_from_event(event: BackendEvent) -> Option<Action> {
     match event {
         BackendEvent::Workspace(workspace) => Some(Action::WorkspaceLoaded(workspace)),
         BackendEvent::BuildStarted => Some(Action::BuildStarted),
-        BackendEvent::ParseProgress => Some(Action::ParseProgress),
+        BackendEvent::ParseProgress { current, total } => {
+            Some(Action::ParseProgress { current, total })
+        }
         BackendEvent::TaskStarted { recipe, task } => {
             let id = TaskId(format!("{recipe}:{task}"));
             Some(Action::TaskStarted(TaskInfo {

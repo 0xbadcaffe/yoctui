@@ -217,9 +217,11 @@ class TaskStarted:
  def __init__(self): self.pn = "busybox"; self.task = "do_compile"; self.pid = 42
 class TaskSucceeded:
  def __init__(self): self.pn = "busybox"; self.task = "do_compile"
+class ParseProgress:
+ def __init__(self): self.current = 8; self.total = 20
 class Connection:
  def start_build(self, targets, task): pass
- def drain_events(self): return [TaskStarted(), TaskSucceeded()]
+ def drain_events(self): return [ParseProgress(), TaskStarted(), TaskSucceeded()]
 class Server:
  def connect(self): return Connection()
 server = Server()
@@ -233,10 +235,12 @@ server = Server()
         messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
         self.assertEqual(
             [message["type"] for message in messages],
-            ["build_started", "task_started", "task_completed"],
+            ["build_started", "parse_progress", "task_started", "task_completed"],
         )
-        self.assertEqual(messages[1]["pid"], 42)
-        self.assertTrue(messages[2]["success"])
+        self.assertEqual(messages[1]["current"], 8)
+        self.assertEqual(messages[1]["total"], 20)
+        self.assertEqual(messages[2]["pid"], 42)
+        self.assertTrue(messages[3]["success"])
 
     def test_parent_eof_exits_cleanly(self) -> None:
         result = run_bridge()

@@ -355,6 +355,12 @@ def normalize_event(event):
     task = event_value(event, "task", "taskname")
     if normalized_kind in ("buildstarted", "build_started"):
         return {"type": "build_started"}
+    if normalized_kind in ("parseprogress", "parse_progress"):
+        return {
+            "type": "parse_progress",
+            "current": event_value(event, "current"),
+            "total": event_value(event, "total"),
+        }
     if normalized_kind in ("buildcompleted", "build_completed"):
         return {
             "type": "build_completed",
