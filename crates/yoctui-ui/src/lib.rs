@@ -65,7 +65,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ package progress | B build options | ! shell | b target | c cancel | r recipes | y layers | v config | x BBMASK | ? help | q quit"
         }
         Screen::Recipes => {
-            "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | d Devtool edit | D reset | / search | Esc dashboard | ? help | q quit"
+            "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | d Devtool edit | u update-recipe | D reset | / search | Esc dashboard | ? help | q quit"
         }
         Screen::Layers => "↑/↓ select | o open layer | / search | Esc dashboard | ? help | q quit",
         Screen::Configuration => {
@@ -173,6 +173,21 @@ pub fn render(frame: &mut Frame, app: &App) {
             .block(
                 Block::default()
                     .title("Confirm Devtool reset")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: true }),
+            popup,
+        );
+    } else if let Some(recipe) = app.devtool_update_confirmation.as_deref() {
+        let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
+        frame.render_widget(Clear, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Run `devtool update-recipe {recipe}`?\n\nThis updates recipe metadata from the Devtool workspace. Press Enter to continue or Esc to cancel."
+            ))
+            .block(
+                Block::default()
+                    .title("Confirm Devtool update-recipe")
                     .borders(Borders::ALL),
             )
             .wrap(Wrap { trim: true }),
@@ -959,7 +974,7 @@ fn bbmask_assignment(value: &str) -> String {
     )
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, D devtool-reset selected recipe\ny Layers (green rows are active in this build)   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, u update-recipe, D reset selected recipe\ny Layers (green rows are active in this build)   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset/update-recipe, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
@@ -1243,6 +1258,22 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Confirm Devtool reset"));
         assert!(output.contains("devtool reset busybox"));
+    }
+    #[test]
+    fn renders_devtool_update_recipe_confirmation() {
+        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.devtool_update_confirmation = Some("busybox".into());
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Confirm Devtool update-recipe"));
+        assert!(output.contains("devtool update-recipe busybox"));
     }
     #[test]
     fn renders_recipe_editor_overlay() {

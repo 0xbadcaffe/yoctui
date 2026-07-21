@@ -956,7 +956,11 @@ async fn write_bbmask(build_dir: &Path, value: String) -> Result<()> {
     .context("BBMASK write task failed")?
 }
 
-async fn refresh_workspace(backend: &mut Box<dyn BitBakeBackend>, app: &mut App) {
+async fn refresh_workspace(
+    backend: &mut Box<dyn BitBakeBackend>,
+    app: &mut App,
+    success_message: &str,
+) {
     match backend.inspect_workspace().await {
         Ok(workspace) => {
             let _ = update(app, Action::WorkspaceLoaded(workspace));
@@ -972,13 +976,59 @@ async fn refresh_workspace(backend: &mut Box<dyn BitBakeBackend>, app: &mut App)
                 Err(error) => app.notification = Some(format!("Layers unavailable: {error}")),
             }
             if app.notification.is_none() {
-                app.notification = Some("BBMASK saved and workspace metadata refreshed.".into());
+                app.notification = Some(success_message.into());
             }
         }
         Err(error) => {
             app.notification = Some(format!(
                 "BBMASK was saved, but the workspace refresh failed: {error}"
             ));
+        }
+    }
+}
+
+async fn devtool_update_recipe(
+    guard: &TerminalGuard,
+    app: &mut App,
+    build_dir: &Path,
+    recipe: String,
+) -> bool {
+    let build_dir = build_dir.to_path_buf();
+    if let Err(error) = guard.suspend() {
+        app.notification = Some(format!(
+            "Could not suspend the terminal for devtool: {error}"
+        ));
+        return false;
+    }
+    let result = tokio::task::spawn_blocking(move || -> Result<()> {
+        let status = ProcessCommand::new("devtool")
+            .args(["update-recipe", &recipe])
+            .current_dir(build_dir)
+            .status()
+            .context("could not start devtool update-recipe")?;
+        if !status.success() {
+            anyhow::bail!("devtool update-recipe exited with {status}");
+        }
+        Ok(())
+    })
+    .await;
+    let resume_result = guard.resume();
+    if let Err(error) = resume_result {
+        app.notification = Some(format!(
+            "Could not restore the terminal after devtool: {error}"
+        ));
+        false
+    } else {
+        match result {
+            Ok(Ok(())) => true,
+            Ok(Err(error)) => {
+                app.notification = Some(format!("Could not update recipe via devtool: {error}"));
+                false
+            }
+            Err(error) => {
+                app.notification = Some(format!("Devtool task failed: {error}"));
+                false
+            }
         }
     }
 }
@@ -1149,6 +1199,22 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 if let Some(Effect::DevtoolReset(recipe)) = effect {
                     devtool_reset(&guard, &mut app, &session_build_dir, recipe).await;
                 }
+            } else if app.devtool_update_confirmation.is_some() {
+                let effect = match input {
+                    Input::Enter => update(&mut app, Action::ConfirmDevtoolUpdateRecipe),
+                    Input::Esc => update(&mut app, Action::CancelDevtoolUpdateRecipe),
+                    _ => None,
+                };
+                if let Some(Effect::DevtoolUpdateRecipe(recipe)) = effect
+                    && devtool_update_recipe(&guard, &mut app, &session_build_dir, recipe).await
+                {
+                    refresh_workspace(
+                        &mut backend,
+                        &mut app,
+                        "Devtool recipe metadata updated and workspace refreshed.",
+                    )
+                    .await;
+                }
             } else if app.bbmask_confirmation.is_some() {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmBbmaskWrite),
@@ -1157,7 +1223,14 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 };
                 if let Some(Effect::WriteBbmask(value)) = effect {
                     match write_bbmask(&session_build_dir, value).await {
-                        Ok(()) => refresh_workspace(&mut backend, &mut app).await,
+                        Ok(()) => {
+                            refresh_workspace(
+                                &mut backend,
+                                &mut app,
+                                "BBMASK saved and workspace metadata refreshed.",
+                            )
+                            .await
+                        }
                         Err(error) => {
                             app.notification = Some(format!("Could not save BBMASK: {error}"))
                         }
@@ -1235,6 +1308,8 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 }
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('D') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolReset);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('u') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe);
             } else if input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginBuildTargetEdit);
             } else if app.screen == yoctui_model::Screen::Errors
