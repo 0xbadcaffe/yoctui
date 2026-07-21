@@ -442,10 +442,24 @@ def normalize_event(event):
             "progress": event_value(event, "progress"),
         }
     message = event_value(event, "message", "msg")
-    if normalized_kind in ("log", "logrecord") and isinstance(message, str):
+    diagnostic_levels = {
+        "warning": "warning",
+        "warn": "warning",
+        "error": "error",
+        "fatal": "error",
+    }
+    if normalized_kind in ("log", "logrecord", *diagnostic_levels) and isinstance(
+        message, str
+    ):
+        level = event_value(
+            event,
+            "level",
+            "levelname",
+            default=diagnostic_levels.get(normalized_kind, "info"),
+        )
         return {
             "type": "log",
-            "level": event_value(event, "level", "levelname", default="info"),
+            "level": level.lower() if isinstance(level, str) else "info",
             "message": message,
             "recipe": recipe,
             "task": task,
