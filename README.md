@@ -69,6 +69,8 @@ Yoctui inherits the shell environment that initialized Yocto. Press `!` to tempo
 
 Press `B` to open the image build-options submenu. It shows the effective `MACHINE` and current image target, then offers `b` to build, `c` to clean, `m` to run `menuconfig`, or `e` to enter a different image target. Press `y` for the Layers screen; every listed row is an active build layer and is highlighted green when color is enabled.
 
+While BitBake is loading, parsing, running, or cancelling a build, the dashboard refreshes host CPU utilization and free space on the filesystem containing `$BUILDDIR` once per second.
+
 Select a backend explicitly when needed:
 
 ```sh

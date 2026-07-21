@@ -15,14 +15,17 @@ use std::{
     env, fs, io,
     path::{Path, PathBuf},
     process::Command as ProcessCommand,
-    time::Duration,
+    time::{Duration, Instant},
 };
+#[cfg(unix)]
+use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{Input, key_action};
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
-    Action, App, AppError, BuildRequest, Effect, Screen, Severity, TaskId, TaskInfo, update,
+    Action, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry, Screen, Severity,
+    TaskId, TaskInfo, update,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -150,6 +153,77 @@ impl TerminalGuard {
         )?;
         Ok(())
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct CpuCounters {
+    total: u64,
+    idle: u64,
+}
+
+#[derive(Debug, Default)]
+struct HostTelemetrySampler {
+    previous_cpu: Option<CpuCounters>,
+}
+
+impl HostTelemetrySampler {
+    fn sample(&mut self, build_dir: &Path) -> HostTelemetry {
+        let current_cpu = read_cpu_counters();
+        let cpu_utilization_percent = current_cpu.and_then(|current| {
+            let previous = self.previous_cpu.replace(current)?;
+            let total = current.total.saturating_sub(previous.total);
+            let idle = current.idle.saturating_sub(previous.idle);
+            (total > 0).then(|| {
+                ((total.saturating_sub(idle) * 100) / total)
+                    .min(100)
+                    .try_into()
+                    .unwrap_or(100)
+            })
+        });
+        HostTelemetry {
+            cpu_utilization_percent,
+            disk_available_bytes: disk_available_bytes(build_dir),
+        }
+    }
+}
+
+fn read_cpu_counters() -> Option<CpuCounters> {
+    let line = fs::read_to_string("/proc/stat")
+        .ok()?
+        .lines()
+        .next()?
+        .to_owned();
+    parse_cpu_counters(&line)
+}
+
+fn parse_cpu_counters(line: &str) -> Option<CpuCounters> {
+    let mut fields = line.split_whitespace();
+    (fields.next()? == "cpu").then_some(())?;
+    let values = fields
+        .map(str::parse::<u64>)
+        .collect::<Result<Vec<_>, _>>()
+        .ok()?;
+    let total = values.iter().copied().sum();
+    let idle = values.get(3).copied()? + values.get(4).copied().unwrap_or_default();
+    Some(CpuCounters { total, idle })
+}
+
+#[cfg(unix)]
+fn disk_available_bytes(path: &Path) -> Option<u64> {
+    let path = CString::new(path.as_os_str().as_bytes()).ok()?;
+    let mut stat = std::mem::MaybeUninit::<libc::statvfs>::uninit();
+    // SAFETY: `path` is a NUL-terminated C string and `stat` is valid writable storage.
+    if unsafe { libc::statvfs(path.as_ptr(), stat.as_mut_ptr()) } != 0 {
+        return None;
+    }
+    // SAFETY: a successful `statvfs` call initializes `stat`.
+    let stat = unsafe { stat.assume_init() };
+    Some(stat.f_bavail.saturating_mul(stat.f_frsize))
+}
+
+#[cfg(not(unix))]
+fn disk_available_bytes(_path: &Path) -> Option<u64> {
+    None
 }
 impl Drop for TerminalGuard {
     fn drop(&mut self) {
@@ -947,12 +1021,26 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
     if !targets.is_empty() {
         app.build.target = targets.first().cloned()
     }
+    let mut telemetry_sampler = HostTelemetrySampler::default();
+    let mut next_telemetry_sample = Instant::now();
     #[cfg(unix)]
     let mut termination = termination_receiver()?;
     loop {
         #[cfg(unix)]
         if termination_requested(&mut termination) {
             break;
+        }
+        if matches!(
+            app.build.status,
+            BuildStatus::LoadingWorkspace
+                | BuildStatus::Parsing
+                | BuildStatus::Running
+                | BuildStatus::Cancelling
+        ) && Instant::now() >= next_telemetry_sample
+        {
+            let telemetry = telemetry_sampler.sample(&session_build_dir);
+            let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry));
+            next_telemetry_sample = Instant::now() + Duration::from_secs(1);
         }
         terminal.draw(|f| render(f, &app))?;
         if event::poll(refresh)?
@@ -1304,6 +1392,18 @@ mod tests {
             }),
             Some(Action::TaskProgress { progress: 25, .. })
         ));
+    }
+
+    #[test]
+    fn parses_cpu_counters_from_proc_stat() {
+        assert_eq!(
+            parse_cpu_counters("cpu  100 20 30 400 50 0 0 0 0 0"),
+            Some(CpuCounters {
+                total: 600,
+                idle: 450,
+            })
+        );
+        assert_eq!(parse_cpu_counters("intr 1 2 3"), None);
     }
 
     #[test]

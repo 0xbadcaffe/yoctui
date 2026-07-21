@@ -6,6 +6,7 @@ Yoctui is the one-stop terminal workspace after `oe-init-build-env`: users shoul
 
 - [DONE] Display active BitBake package tasks as colored progress gauges with percentages on the dashboard.
 - [DONE] Provide an inherited Yocto shell (`!`) plus a machine-aware image build-options menu (`B`) for build, clean, menuconfig, and target selection.
+- [DONE] Refresh host CPU utilization and available space for the build-directory filesystem while a build is active.
 - [NOT_STARTED] Retain a bounded completed-task matrix so the dashboard can display progress for every package in a build, not only currently active tasks.
 - [NOT_STARTED] Add build queue, task failure drill-down, and build-history views backed by BitBake events.
 
