@@ -1,6 +1,12 @@
 # Yocto workbench roadmap
 
-Yoctui remains a BitBake frontend: BitBake and Devtool are the authoritative interfaces for metadata and workspace changes. Every future write operation must be an explicit user action with a preview or confirmation where it changes a workspace.
+Yoctui is the one-stop terminal workspace after `oe-init-build-env`: users should be able to build images, follow package progress, inspect and edit supported workspace files, and invoke BitBake/Devtool operations without leaving the TUI. BitBake and Devtool remain authoritative for metadata and workspace changes. Every future write operation must be an explicit user action with a preview or confirmation where it changes a workspace.
+
+## Build cockpit
+
+- [DONE] Display active BitBake package tasks as colored progress gauges with percentages on the dashboard.
+- [NOT_STARTED] Retain a bounded completed-task matrix so the dashboard can display progress for every package in a build, not only currently active tasks.
+- [NOT_STARTED] Add build queue, task failure drill-down, and build-history views backed by BitBake events.
 
 ## Recipe workspace editor
 
