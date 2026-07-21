@@ -94,6 +94,7 @@ pub enum BackendEvent {
     Variable {
         name: String,
         value: Option<String>,
+        provenance: Option<String>,
     },
     BuildStarted,
     ParseProgress,
@@ -122,6 +123,13 @@ pub enum BackendEvent {
     },
     Disconnected,
 }
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct VariableValue {
+    pub value: Option<String>,
+    pub provenance: Option<String>,
+}
+
 #[async_trait]
 pub trait BitBakeBackend: Send {
     async fn inspect_workspace(&mut self) -> Result<Workspace, BackendError>;
@@ -131,7 +139,7 @@ pub trait BitBakeBackend: Send {
         &mut self,
         name: String,
         recipe: Option<String>,
-    ) -> Result<Option<String>, BackendError>;
+    ) -> Result<VariableValue, BackendError>;
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError>;
     async fn cancel_build(&mut self) -> Result<(), BackendError>;
     async fn next_event(&mut self) -> Result<BackendEvent, BackendError>;
@@ -232,8 +240,8 @@ impl BitBakeBackend for ProcessBackend {
         &mut self,
         _name: String,
         _recipe: Option<String>,
-    ) -> Result<Option<String>, BackendError> {
-        Ok(None)
+    ) -> Result<VariableValue, BackendError> {
+        Ok(VariableValue::default())
     }
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError> {
         request
@@ -473,7 +481,15 @@ impl BridgeBackend {
                     )
                     .collect(),
             ),
-            Event::Variable { name, value } => BackendEvent::Variable { name, value },
+            Event::Variable {
+                name,
+                value,
+                provenance,
+            } => BackendEvent::Variable {
+                name,
+                value,
+                provenance,
+            },
             Event::BuildStarted => BackendEvent::BuildStarted,
             Event::ParseProgress { .. } => BackendEvent::ParseProgress,
             Event::TaskStarted { recipe, task, .. } => BackendEvent::TaskStarted { recipe, task },
@@ -602,7 +618,7 @@ impl BitBakeBackend for BridgeBackend {
         &mut self,
         name: String,
         recipe: Option<String>,
-    ) -> Result<Option<String>, BackendError> {
+    ) -> Result<VariableValue, BackendError> {
         self.command(Command::GetVariable {
             name: name.clone(),
             recipe,
@@ -613,7 +629,8 @@ impl BitBakeBackend for BridgeBackend {
                 BackendEvent::Variable {
                     name: returned,
                     value,
-                } if returned == name => return Ok(value),
+                    provenance,
+                } if returned == name => return Ok(VariableValue { value, provenance }),
                 BackendEvent::Variable { .. } => continue,
                 BackendEvent::CommandFailed { code, message } => {
                     return Err(BackendError::Bridge(format!("{code}: {message}")));
@@ -871,6 +888,7 @@ mod tests {
                 .get_variable("PATH".into(), None)
                 .await
                 .unwrap()
+                .value
                 .is_some()
         );
         backend.shutdown().await.unwrap();

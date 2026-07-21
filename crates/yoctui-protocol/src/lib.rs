@@ -103,6 +103,8 @@ pub enum Event {
     Variable {
         name: String,
         value: Option<String>,
+        #[serde(default)]
+        provenance: Option<String>,
     },
     BuildStarted,
     ParseProgress {

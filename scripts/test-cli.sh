@@ -14,6 +14,12 @@ if [[ "$inspect" != *"build directory:"* ]]; then
   exit 1
 fi
 
+config_output="$(YOCTUI_VARIABLE_PROVENANCE_JSON='{"PATH":"conf/local.conf:8"}' cargo run -q -p yoctui -- --backend bridge --build-dir "$repo_root" config PATH)"
+if [[ "$config_output" != *"PATH="* || "$config_output" != *"provenance: conf/local.conf:8"* ]]; then
+  printf '%s\n' 'bridge variable query did not report its value and provenance' >&2
+  exit 1
+fi
+
 fixture_dir="$(mktemp -d)"
 trap 'rm -rf "$fixture_dir"' EXIT
 printf '%s\n' \
