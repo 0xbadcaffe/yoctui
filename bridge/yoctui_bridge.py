@@ -89,16 +89,20 @@ class BitBakeAdapter:
             )
         operation()
 
-    def variable(self, name, recipe):
-        """Query a server-provided effective value without interpreting metadata."""
+    def optional_server_operation(self, name):
         if self.module is None:
             return None
         try:
             connection = self.server()
         except ServerUnavailable:
             return None
-        operation = getattr(connection, "get_variable", None)
-        if not callable(operation):
+        operation = getattr(connection, name, None)
+        return operation if callable(operation) else None
+
+    def variable(self, name, recipe):
+        """Query a server-provided effective value without interpreting metadata."""
+        operation = self.optional_server_operation("get_variable")
+        if operation is None:
             return None
         try:
             response = operation(name, recipe)
@@ -118,6 +122,30 @@ class BitBakeAdapter:
         raise ServerUnavailable(
             f"BitBake server returned an unsupported variable response for {name}"
         )
+
+    def recipes(self, filter_value):
+        operation = self.optional_server_operation("list_recipes")
+        if operation is None:
+            return None
+        try:
+            response = operation(filter_value)
+        except Exception as exc:
+            raise ServerUnavailable(
+                f"could not list recipes from the BitBake server: {exc}"
+            )
+        return typed_recipes(response)
+
+    def layers(self):
+        operation = self.optional_server_operation("list_layers")
+        if operation is None:
+            return None
+        try:
+            response = operation()
+        except Exception as exc:
+            raise ServerUnavailable(
+                f"could not list layers from the BitBake server: {exc}"
+            )
+        return typed_layers(response)
 
     def native_events(self):
         """Drain a non-blocking server event hook when the adapter exposes one."""
@@ -264,6 +292,50 @@ def configured_recipes():
     return []
 
 
+def typed_recipes(response):
+    if not isinstance(response, list):
+        raise ServerUnavailable(
+            "BitBake server returned an unsupported recipe response"
+        )
+    if not all(
+        isinstance(recipe, dict)
+        and isinstance(recipe.get("name"), str)
+        and (recipe.get("version") is None or isinstance(recipe.get("version"), str))
+        and (recipe.get("layer") is None or isinstance(recipe.get("layer"), str))
+        for recipe in response
+    ):
+        raise ServerUnavailable("BitBake server returned malformed recipe data")
+    return [
+        {
+            "name": recipe["name"],
+            "version": recipe.get("version"),
+            "layer": recipe.get("layer"),
+        }
+        for recipe in response
+    ]
+
+
+def typed_layers(response):
+    if not isinstance(response, list):
+        raise ServerUnavailable("BitBake server returned an unsupported layer response")
+    if not all(
+        isinstance(layer, dict)
+        and isinstance(layer.get("name"), str)
+        and isinstance(layer.get("path"), str)
+        and (layer.get("priority") is None or isinstance(layer.get("priority"), int))
+        for layer in response
+    ):
+        raise ServerUnavailable("BitBake server returned malformed layer data")
+    return [
+        {
+            "name": layer["name"],
+            "path": layer["path"],
+            "priority": layer.get("priority"),
+        }
+        for layer in response
+    ]
+
+
 def event_value(event, *names, default=None):
     for name in names:
         value = (
@@ -362,17 +434,41 @@ def handle(command, correlation_id, adapter):
                 for event in adapter.mock_events():
                     emit(event, correlation_id)
     elif kind == "list_recipes":
-        recipes = configured_recipes()
         filter_value = command.get("filter")
-        if isinstance(filter_value, str):
-            recipes = [
-                recipe
-                for recipe in recipes
-                if filter_value.lower() in recipe["name"].lower()
-            ]
+        if filter_value is not None and not isinstance(filter_value, str):
+            error(
+                "invalid_request",
+                "list_recipes filter must be a string",
+                correlation_id,
+            )
+            return True
+        try:
+            recipes = adapter.recipes(filter_value)
+        except ServerUnavailable as exc:
+            error("bitbake_server_unavailable", str(exc), correlation_id)
+            return True
+        if recipes is None:
+            recipes = configured_recipes()
+            if filter_value is not None:
+                recipes = [
+                    recipe
+                    for recipe in recipes
+                    if filter_value.lower() in recipe["name"].lower()
+                ]
         emit({"type": "recipes", "recipes": recipes}, correlation_id)
     elif kind == "list_layers":
-        emit({"type": "layers", "layers": configured_layers()}, correlation_id)
+        try:
+            layers = adapter.layers()
+        except ServerUnavailable as exc:
+            error("bitbake_server_unavailable", str(exc), correlation_id)
+            return True
+        emit(
+            {
+                "type": "layers",
+                "layers": configured_layers() if layers is None else layers,
+            },
+            correlation_id,
+        )
     elif kind == "get_variable":
         name = command.get("name")
         recipe = command.get("recipe")
