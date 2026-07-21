@@ -10,7 +10,7 @@ This copy-ready example clones Poky's current `master` branch (the latest Yocto 
 export YOCTUI_DIR="$HOME/projects/yoctui"
 export YOCTO_DIR="$HOME/src/poky"
 
-git clone --branch master --single-branch https://git.yoctoproject.org/git/poky.git "$YOCTO_DIR"
+git clone --branch master --single-branch https://git.yoctoproject.org/poky "$YOCTO_DIR"
 cd "$YOCTO_DIR"
 source oe-init-build-env build-qemux86-64
 
