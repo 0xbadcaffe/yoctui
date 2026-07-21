@@ -1033,6 +1033,61 @@ async fn devtool_update_recipe(
     }
 }
 
+async fn devtool_finish(
+    guard: &TerminalGuard,
+    app: &mut App,
+    build_dir: &Path,
+    request: yoctui_model::DevtoolFinishRequest,
+) -> bool {
+    if !request.destination.is_dir() {
+        app.notification = Some(format!(
+            "Devtool finish destination is not a directory: {}",
+            request.destination.display()
+        ));
+        return false;
+    }
+    let build_dir = build_dir.to_path_buf();
+    if let Err(error) = guard.suspend() {
+        app.notification = Some(format!(
+            "Could not suspend the terminal for devtool: {error}"
+        ));
+        return false;
+    }
+    let result = tokio::task::spawn_blocking(move || -> Result<()> {
+        let status = ProcessCommand::new("devtool")
+            .arg("finish")
+            .arg(&request.recipe)
+            .arg(&request.destination)
+            .current_dir(build_dir)
+            .status()
+            .context("could not start devtool finish")?;
+        if !status.success() {
+            anyhow::bail!("devtool finish exited with {status}");
+        }
+        Ok(())
+    })
+    .await;
+    let resume_result = guard.resume();
+    if let Err(error) = resume_result {
+        app.notification = Some(format!(
+            "Could not restore the terminal after devtool: {error}"
+        ));
+        false
+    } else {
+        match result {
+            Ok(Ok(())) => true,
+            Ok(Err(error)) => {
+                app.notification = Some(format!("Could not finish via devtool: {error}"));
+                false
+            }
+            Err(error) => {
+                app.notification = Some(format!("Devtool task failed: {error}"));
+                false
+            }
+        }
+    }
+}
+
 async fn devtool_reset(guard: &TerminalGuard, app: &mut App, build_dir: &Path, recipe: String) {
     let build_dir = build_dir.to_path_buf();
     if let Err(error) = guard.suspend() {
@@ -1215,6 +1270,32 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     )
                     .await;
                 }
+            } else if app.devtool_finish_confirmation.is_some() {
+                let effect = match input {
+                    Input::Enter => update(&mut app, Action::ConfirmDevtoolFinish),
+                    Input::Esc => update(&mut app, Action::CancelDevtoolFinishConfirmation),
+                    _ => None,
+                };
+                if let Some(Effect::DevtoolFinish(request)) = effect
+                    && devtool_finish(&guard, &mut app, &session_build_dir, request).await
+                {
+                    refresh_workspace(
+                        &mut backend,
+                        &mut app,
+                        "Devtool changes finished and workspace refreshed.",
+                    )
+                    .await;
+                }
+            } else if app.devtool_finish_recipe.is_some() {
+                let _ = match input {
+                    Input::Char(character) => {
+                        update(&mut app, Action::AppendDevtoolFinishDestination(character))
+                    }
+                    Input::Backspace => update(&mut app, Action::BackspaceDevtoolFinishDestination),
+                    Input::Enter => update(&mut app, Action::PreviewDevtoolFinish),
+                    Input::Esc => update(&mut app, Action::CancelDevtoolFinish),
+                    _ => None,
+                };
             } else if app.bbmask_confirmation.is_some() {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmBbmaskWrite),
@@ -1310,6 +1391,8 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolReset);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('u') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('F') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolFinish);
             } else if input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginBuildTargetEdit);
             } else if app.screen == yoctui_model::Screen::Errors
