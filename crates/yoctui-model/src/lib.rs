@@ -68,6 +68,7 @@ impl BuildRequest {
         if self.targets.is_empty()
             || self.targets.iter().any(|x| {
                 x.is_empty()
+                    || matches!(x.as_str(), "." | "..")
                     || !x
                         .chars()
                         .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | '+'))
@@ -344,6 +345,7 @@ pub enum Action {
     BeginSelectedRecipeClean,
     BeginSelectedRecipeMenuConfig,
     BeginSelectedRecipeCleanState,
+    BeginSelectedRecipeDevtoolModify,
     ConfirmRecipeTask,
     CancelRecipeTask,
     SelectLayer {
@@ -634,10 +636,24 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some("No recipe is selected to clean state.".into());
             }
         }
+        Action::BeginSelectedRecipeDevtoolModify => {
+            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
+                let request = BuildRequest {
+                    targets: vec![recipe.name.clone()],
+                    task: None,
+                };
+                if let Err(error) = request.validate() {
+                    app.notification = Some(error.to_string());
+                } else {
+                    return Some(Effect::DevtoolModify(recipe.name.clone()));
+                }
+            } else {
+                app.notification = Some("No recipe is selected for devtool modification.".into());
+            }
+        }
         Action::ConfirmRecipeTask => {
             if let Some(request) = app.recipe_task_confirmation.take() {
-                app.build.target = request.targets.first().cloned();
-                app.build.status = BuildStatus::LoadingWorkspace;
+                prepare_build(app, request.targets.first().cloned());
                 return Some(Effect::Start(request));
             }
         }
@@ -758,6 +774,7 @@ pub enum Effect {
     Start(BuildRequest),
     Cancel,
     OpenInEditor(PathBuf),
+    DevtoolModify(String),
 }
 pub fn format_duration(duration: Duration) -> String {
     format!(
@@ -1048,6 +1065,19 @@ mod tests {
         assert_eq!(app.build_task.as_deref(), Some("menuconfig"));
     }
     #[test]
+    fn selected_recipe_requests_devtool_modification() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes = vec![Recipe {
+            name: "busybox".into(),
+            version: None,
+            layer: None,
+        }];
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedRecipeDevtoolModify),
+            Some(Effect::DevtoolModify("busybox".into()))
+        );
+    }
+    #[test]
     fn clean_state_requires_confirmation_before_starting() {
         let mut app = App::new(10, 1_000);
         app.workspace.recipes = vec![Recipe {
@@ -1318,6 +1348,14 @@ mod tests {
             }
             .validate()
             .is_err()
-        )
+        );
+        assert!(
+            BuildRequest {
+                targets: vec!["..".into()],
+                task: None
+            }
+            .validate()
+            .is_err()
+        );
     }
 }

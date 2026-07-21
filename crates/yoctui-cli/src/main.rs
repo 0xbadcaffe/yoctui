@@ -705,6 +705,69 @@ async fn open_in_editor(
     }
 }
 
+fn devtool_source_dir(build_dir: &Path, recipe: &str) -> PathBuf {
+    build_dir.join("workspace").join("sources").join(recipe)
+}
+
+async fn devtool_modify_and_edit(
+    guard: &TerminalGuard,
+    app: &mut App,
+    build_dir: &Path,
+    recipe: String,
+    preferred_editor: Option<&str>,
+) {
+    let source_dir = devtool_source_dir(build_dir, &recipe);
+    let build_dir = build_dir.to_path_buf();
+    let editor = preferred_editor
+        .map(Into::into)
+        .or_else(|| env::var_os("EDITOR"))
+        .unwrap_or_else(|| "vi".into());
+    if let Err(error) = guard.suspend() {
+        app.notification = Some(format!(
+            "Could not suspend the terminal for devtool: {error}"
+        ));
+        return;
+    }
+    let result = tokio::task::spawn_blocking(move || -> Result<()> {
+        if !source_dir.is_dir() {
+            let status = ProcessCommand::new("devtool")
+                .args(["modify", &recipe])
+                .current_dir(build_dir)
+                .status()
+                .context("could not start devtool modify")?;
+            if !status.success() {
+                anyhow::bail!("devtool modify exited with {status}");
+            }
+        }
+        let status = ProcessCommand::new(editor)
+            .arg(&source_dir)
+            .status()
+            .context("could not start the preferred editor")?;
+        if !status.success() {
+            anyhow::bail!("the preferred editor exited with {status}");
+        }
+        Ok(())
+    })
+    .await;
+    let resume_result = guard.resume();
+    if let Err(error) = resume_result {
+        app.notification = Some(format!(
+            "Could not restore the terminal after devtool: {error}"
+        ));
+    } else {
+        match result {
+            Ok(Ok(())) => {
+                app.notification =
+                    Some("Devtool workspace closed; recipe changes are ready.".into())
+            }
+            Ok(Err(error)) => {
+                app.notification = Some(format!("Could not edit via devtool: {error}"))
+            }
+            Err(error) => app.notification = Some(format!("Devtool task failed: {error}")),
+        }
+    }
+}
+
 async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<()> {
     let Config {
         backend: backend_kind,
@@ -799,6 +862,19 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 }
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('d') {
+                if let Some(Effect::DevtoolModify(recipe)) =
+                    update(&mut app, Action::BeginSelectedRecipeDevtoolModify)
+                {
+                    devtool_modify_and_edit(
+                        &guard,
+                        &mut app,
+                        &session_build_dir,
+                        recipe,
+                        editor.as_deref(),
+                    )
+                    .await;
+                }
             } else if input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginBuildTargetEdit);
             } else if app.screen == yoctui_model::Screen::Errors
@@ -1050,5 +1126,13 @@ mod tests {
         let (sender, mut receiver) = tokio::sync::mpsc::channel(1);
         sender.send(()).await.unwrap();
         assert!(termination_requested(&mut receiver));
+    }
+
+    #[test]
+    fn devtool_source_path_uses_the_standard_workspace_layout() {
+        assert_eq!(
+            devtool_source_dir(Path::new("/build"), "busybox"),
+            PathBuf::from("/build/workspace/sources/busybox")
+        );
     }
 }
