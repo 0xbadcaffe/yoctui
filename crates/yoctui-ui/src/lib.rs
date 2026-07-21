@@ -1,7 +1,7 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, Wrap},
+    widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap},
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 use yoctui_model::{App, RecipeEditor, Screen, Severity, format_duration};
@@ -239,12 +239,11 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
     );
 }
 fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
-    let active = app
-        .tasks
-        .values()
-        .map(|t| format!("{}:{} {}%", t.recipe, t.task, t.progress.unwrap_or(0)))
-        .collect::<Vec<_>>()
-        .join("\n");
+    let mut active = app.tasks.values().collect::<Vec<_>>();
+    active.sort_by(|left, right| {
+        (left.recipe.as_str(), left.task.as_str())
+            .cmp(&(right.recipe.as_str(), right.task.as_str()))
+    });
     let recent = app
         .logs
         .entries
@@ -265,9 +264,11 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
                 .map_or_else(|| current.to_string(), |total| format!("{current}/{total}"))
         },
     );
+    let build_panels =
+        Layout::vertical([Constraint::Length(12), Constraint::Min(3)]).split(chunks[0]);
     frame.render_widget(
         Paragraph::new(format!(
-            "Target: {}\nBackend: {}\nStatus: {}\nExit code: {}\nParse progress: {}\nMachine: {}\nDistro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\n\nActive tasks:\n{}",
+            "Target: {}\nBackend: {}\nStatus: {}\nExit code: {}\nParse progress: {}\nMachine: {}\nDistro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}",
             app.build.target.as_deref().unwrap_or("none"),
             app.backend,
             app.build.status,
@@ -289,11 +290,51 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
             app.tasks.len(),
             app.build.warnings,
             app.build.errors,
-            active
         ))
         .block(Block::default().title("Build").borders(Borders::ALL)),
-        chunks[0],
+        build_panels[0],
     );
+    let task_block = Block::default()
+        .title(format!("Active package tasks ({})", active.len()))
+        .borders(Borders::ALL);
+    let task_area = task_block.inner(build_panels[1]);
+    frame.render_widget(task_block, build_panels[1]);
+    if active.is_empty() {
+        frame.render_widget(
+            Paragraph::new("Waiting for BitBake task events."),
+            task_area,
+        );
+    } else {
+        let rows = Layout::vertical(
+            active
+                .iter()
+                .take(task_area.height as usize)
+                .map(|_| Constraint::Length(1))
+                .collect::<Vec<_>>(),
+        )
+        .split(task_area);
+        for (task, row) in active.into_iter().zip(rows.iter().copied()) {
+            let progress = task.progress.unwrap_or(0).min(100);
+            let color = if app.color_enabled {
+                if progress >= 100 {
+                    Color::Green
+                } else if progress >= 75 {
+                    Color::Yellow
+                } else {
+                    Color::LightBlue
+                }
+            } else {
+                Color::Reset
+            };
+            frame.render_widget(
+                Gauge::default()
+                    .ratio(f64::from(progress) / 100.0)
+                    .label(format!("{}:{} {progress}%", task.recipe, task.task))
+                    .gauge_style(Style::default().fg(color)),
+                row,
+            );
+        }
+    }
     frame.render_widget(
         Paragraph::new(recent)
             .block(
@@ -803,6 +844,29 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(output.contains("Exit code: 1"));
+    }
+    #[test]
+    fn dashboard_renders_colored_task_progress_labels() {
+        let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.tasks.insert(
+            yoctui_model::TaskId("busybox:do_compile".into()),
+            yoctui_model::TaskInfo {
+                id: yoctui_model::TaskId("busybox:do_compile".into()),
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                progress: Some(42),
+            },
+        );
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("busybox:do_compile 42%"));
     }
     #[test]
     fn renders_build_target_editor() {
