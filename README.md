@@ -12,7 +12,7 @@ export BITBAKE_DIR="$HOME/src/bitbake"
 
 git clone https://git.openembedded.org/bitbake "$BITBAKE_DIR"
 cd "$BITBAKE_DIR"
-./bitbake/bin/bitbake-setup init --setup-dir-name yoctui-qemux86-64
+./bin/bitbake-setup init --setup-dir-name yoctui-qemux86-64
 
 # In the interactive prompts choose the current poky-master template,
 # the poky distro, and the qemux86-64 machine.
