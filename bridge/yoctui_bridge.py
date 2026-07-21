@@ -156,6 +156,21 @@ class BitBakeAdapter:
             )
         return typed_layers(response)
 
+    def dependencies(self, recipe):
+        """Return server-resolved build and runtime dependencies for one recipe."""
+        operation = self.optional_server_operation("get_dependencies")
+        if operation is None:
+            raise ServerUnavailable(
+                "connected BitBake server does not provide get_dependencies; authoritative dependency inspection is unavailable"
+            )
+        try:
+            response = operation(recipe)
+        except Exception as exc:
+            raise ServerUnavailable(
+                f"could not inspect dependencies for {recipe} from the BitBake server: {exc}"
+            )
+        return typed_dependencies(response)
+
     def native_events(self):
         """Drain a non-blocking server event hook when the adapter exposes one."""
         if self.connection is None:
@@ -378,6 +393,21 @@ def typed_layers(response):
     ]
 
 
+def typed_dependencies(response):
+    if not isinstance(response, dict):
+        raise ServerUnavailable(
+            "BitBake server returned an unsupported dependency response"
+        )
+    build = response.get("build", [])
+    runtime = response.get("runtime", [])
+    if not all(
+        isinstance(values, list) and all(isinstance(value, str) for value in values)
+        for values in (build, runtime)
+    ):
+        raise ServerUnavailable("BitBake server returned malformed dependency data")
+    return {"build": build, "runtime": runtime}
+
+
 def event_value(event, *names, default=None):
     for name in names:
         value = (
@@ -570,6 +600,28 @@ def handle(command, correlation_id, adapter):
                 },
                 correlation_id,
             )
+    elif kind == "get_dependencies":
+        recipe = command.get("recipe")
+        if not isinstance(recipe, str) or not recipe:
+            error(
+                "invalid_request",
+                "get_dependencies requires a recipe name",
+                correlation_id,
+            )
+        else:
+            try:
+                dependencies = adapter.dependencies(recipe)
+            except ServerUnavailable as exc:
+                error("bitbake_server_unavailable", str(exc), correlation_id)
+            else:
+                emit(
+                    {
+                        "type": "dependencies",
+                        "recipe": recipe,
+                        **dependencies,
+                    },
+                    correlation_id,
+                )
     elif kind == "cancel_build":
         try:
             adapter.cancel_build()
