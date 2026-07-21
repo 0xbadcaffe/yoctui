@@ -89,6 +89,36 @@ class BitBakeAdapter:
             )
         operation()
 
+    def variable(self, name, recipe):
+        """Query a server-provided effective value without interpreting metadata."""
+        if self.module is None:
+            return None
+        try:
+            connection = self.server()
+        except ServerUnavailable:
+            return None
+        operation = getattr(connection, "get_variable", None)
+        if not callable(operation):
+            return None
+        try:
+            response = operation(name, recipe)
+        except Exception as exc:
+            raise ServerUnavailable(
+                f"could not query {name} from the BitBake server: {exc}"
+            )
+        if response is None or isinstance(response, str):
+            return {"value": response, "provenance": None}
+        if isinstance(response, dict):
+            value = response.get("value")
+            provenance = response.get("provenance")
+            if (value is None or isinstance(value, str)) and (
+                provenance is None or isinstance(provenance, str)
+            ):
+                return {"value": value, "provenance": provenance}
+        raise ServerUnavailable(
+            f"BitBake server returned an unsupported variable response for {name}"
+        )
+
     def native_events(self):
         """Drain a non-blocking server event hook when the adapter exposes one."""
         if self.connection is None:
@@ -345,19 +375,33 @@ def handle(command, correlation_id, adapter):
         emit({"type": "layers", "layers": configured_layers()}, correlation_id)
     elif kind == "get_variable":
         name = command.get("name")
-        if not isinstance(name, str) or not name:
+        recipe = command.get("recipe")
+        if (
+            not isinstance(name, str)
+            or not name
+            or (recipe is not None and not isinstance(recipe, str))
+        ):
             error(
                 "invalid_request",
-                "get_variable requires a variable name",
+                "get_variable requires a variable name and optional recipe name",
                 correlation_id,
             )
         else:
+            try:
+                variable = adapter.variable(name, recipe)
+            except ServerUnavailable as exc:
+                error("bitbake_server_unavailable", str(exc), correlation_id)
+                return True
+            if variable is None:
+                variable = {
+                    "value": os.environ.get(name),
+                    "provenance": configured_variable_provenance().get(name),
+                }
             emit(
                 {
                     "type": "variable",
                     "name": name,
-                    "value": os.environ.get(name),
-                    "provenance": configured_variable_provenance().get(name),
+                    **variable,
                 },
                 correlation_id,
             )

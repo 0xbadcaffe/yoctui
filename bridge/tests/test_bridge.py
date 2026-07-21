@@ -160,6 +160,30 @@ class BridgeProtocolTests(unittest.TestCase):
             ["build_started", "build_completed"],
         )
 
+    def test_mocked_server_adapter_reports_variable_provenance(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                """__version__ = "2.8.1"
+class Connection:
+ def get_variable(self, name, recipe):
+  assert name == "MACHINE"
+  assert recipe is None
+  return {"value": "qemuarm", "provenance": "conf/local.conf:12"}
+class Server:
+ def connect(self): return Connection()
+server = Server()
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"get_variable","name":"MACHINE","recipe":null}}',
+                environment={"PYTHONPATH": directory},
+            )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "variable")
+        self.assertEqual(message["value"], "qemuarm")
+        self.assertEqual(message["provenance"], "conf/local.conf:12")
+
     def test_mocked_server_drains_native_event_objects(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             Path(directory, "bb.py").write_text(
