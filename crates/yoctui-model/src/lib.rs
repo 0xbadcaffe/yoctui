@@ -114,6 +114,11 @@ pub struct Workspace {
     pub layers: Vec<Layer>,
     pub recipes: Vec<Recipe>,
 }
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct HostTelemetry {
+    pub cpu_utilization_percent: Option<u8>,
+    pub disk_available_bytes: Option<u64>,
+}
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Layer {
     pub name: String,
@@ -255,6 +260,7 @@ pub struct App {
     pub backend: String,
     pub color_enabled: bool,
     pub workspace: Workspace,
+    pub host_telemetry: HostTelemetry,
     pub build: BuildState,
     pub tasks: HashMap<TaskId, TaskInfo>,
     pub logs: LogState,
@@ -282,6 +288,7 @@ impl App {
             backend: "unknown".into(),
             color_enabled: true,
             workspace: Workspace::default(),
+            host_telemetry: HostTelemetry::default(),
             build: BuildState::default(),
             tasks: HashMap::new(),
             logs: LogState::new(max_entries, max_bytes),
@@ -408,6 +415,7 @@ pub enum Action {
     Quit,
     ConfirmQuit,
     WorkspaceLoaded(Workspace),
+    HostTelemetryUpdated(HostTelemetry),
     Failure(AppError),
 }
 
@@ -917,6 +925,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::ConfirmQuit => app.should_quit = true,
         Action::WorkspaceLoaded(w) => app.workspace = w,
+        Action::HostTelemetryUpdated(telemetry) => app.host_telemetry = telemetry,
         Action::Failure(e) => {
             app.notification = Some(e.to_string());
             app.build.status = BuildStatus::Failed
@@ -1456,6 +1465,16 @@ mod tests {
         assert!(app.build_target_editing);
         assert_eq!(app.build_target_input, "core-image-minimal");
         assert_eq!(app.build_task.as_deref(), Some("clean"));
+    }
+    #[test]
+    fn updates_host_telemetry() {
+        let mut app = App::new(10, 1_000);
+        let telemetry = HostTelemetry {
+            cpu_utilization_percent: Some(42),
+            disk_available_bytes: Some(8 * 1024 * 1024 * 1024),
+        };
+        let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry.clone()));
+        assert_eq!(app.host_telemetry, telemetry);
     }
     proptest! {
         #[test]

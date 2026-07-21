@@ -2137,6 +2137,7 @@ dependencies = [
  "anyhow",
  "clap",
  "crossterm",
+ "libc",
  "ratatui",
  "serde",
  "thiserror 2.0.19",

@@ -286,11 +286,19 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
                 .map_or_else(|| current.to_string(), |total| format!("{current}/{total}"))
         },
     );
+    let cpu_utilization = app
+        .host_telemetry
+        .cpu_utilization_percent
+        .map_or_else(|| "sampling".into(), |percent| format!("{percent}%"));
+    let disk_available = app
+        .host_telemetry
+        .disk_available_bytes
+        .map_or_else(|| "unavailable".into(), format_bytes);
     let build_panels =
-        Layout::vertical([Constraint::Length(12), Constraint::Min(3)]).split(chunks[0]);
+        Layout::vertical([Constraint::Length(13), Constraint::Min(3)]).split(chunks[0]);
     frame.render_widget(
         Paragraph::new(format!(
-            "Target: {}\nBackend: {}\nStatus: {}\nExit code: {}\nParse progress: {}\nMachine: {}\nDistro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}",
+            "Target: {}\nBackend: {}\nStatus: {}\nExit code: {}\nParse progress: {}\nMachine: {}\nDistro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\nHost CPU: {}  Build disk free: {}",
             app.build.target.as_deref().unwrap_or("none"),
             app.backend,
             app.build.status,
@@ -312,6 +320,8 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
             app.tasks.len(),
             app.build.warnings,
             app.build.errors,
+            cpu_utilization,
+            disk_available,
         ))
         .block(Block::default().title("Build").borders(Borders::ALL)),
         build_panels[0],
@@ -367,6 +377,21 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
             .wrap(Wrap { trim: false }),
         chunks[1],
     )
+}
+
+fn format_bytes(bytes: u64) -> String {
+    const UNITS: [&str; 4] = ["B", "KiB", "MiB", "GiB"];
+    let mut value = bytes as f64;
+    let mut unit = 0;
+    while value >= 1024.0 && unit < UNITS.len() - 1 {
+        value /= 1024.0;
+        unit += 1;
+    }
+    if unit == 0 {
+        format!("{bytes} {}", UNITS[unit])
+    } else {
+        format!("{value:.1} {}", UNITS[unit])
+    }
 }
 fn logs(frame: &mut Frame, app: &App, area: Rect) {
     let mut visible = app
@@ -846,6 +871,23 @@ mod tests {
         assert!(output.contains("Backend: bridge"));
         assert!(output.contains("Tasks: 3/7"));
         assert!(output.contains("Warnings: 2  Errors: 1"));
+    }
+    #[test]
+    fn dashboard_renders_host_cpu_and_build_disk_space() {
+        let mut terminal = Terminal::new(TestBackend::new(120, 20)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.host_telemetry.cpu_utilization_percent = Some(42);
+        app.host_telemetry.disk_available_bytes = Some(8 * 1024 * 1024 * 1024);
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Host CPU: 42%"));
+        assert!(output.contains("Build disk free: 8.0 GiB"));
     }
     #[test]
     fn dashboard_renders_parse_progress() {
