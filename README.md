@@ -75,7 +75,7 @@ cargo run -p yoctui -- --backend process --build-dir "$BUILDDIR" core-image-mini
 
 ### Edit a recipe with Devtool
 
-In the interactive Recipes screen, select a recipe and press `d`. Yoctui runs `devtool modify <recipe>` from the active build directory when needed, then opens `$BUILDDIR/workspace/sources/<recipe>` in the configured `editor` preference (or `$EDITOR`, then `vi`). This is an explicit user action and requires `devtool` from the initialized Yocto environment.
+In the interactive Recipes screen, select a recipe and press `d`. Yoctui runs `devtool modify <recipe>` from the active build directory when needed, then opens `$BUILDDIR/workspace/sources/<recipe>` in the configured `editor` preference (or `$EDITOR`, then `vi`). Press `D` to reset that Devtool workspace; Yoctui requires confirmation before it runs `devtool reset <recipe>`. These are explicit user actions and require `devtool` from the initialized Yocto environment.
 
 For scripting and CI, use a non-interactive workspace inspection. These commands work in an initialized Yocto shell; replace `"$BUILDDIR"` with an explicit path if it is not exported:
 

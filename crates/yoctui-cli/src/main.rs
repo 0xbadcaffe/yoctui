@@ -768,6 +768,42 @@ async fn devtool_modify_and_edit(
     }
 }
 
+async fn devtool_reset(guard: &TerminalGuard, app: &mut App, build_dir: &Path, recipe: String) {
+    let build_dir = build_dir.to_path_buf();
+    if let Err(error) = guard.suspend() {
+        app.notification = Some(format!(
+            "Could not suspend the terminal for devtool: {error}"
+        ));
+        return;
+    }
+    let result = tokio::task::spawn_blocking(move || -> Result<()> {
+        let status = ProcessCommand::new("devtool")
+            .args(["reset", &recipe])
+            .current_dir(build_dir)
+            .status()
+            .context("could not start devtool reset")?;
+        if !status.success() {
+            anyhow::bail!("devtool reset exited with {status}");
+        }
+        Ok(())
+    })
+    .await;
+    let resume_result = guard.resume();
+    if let Err(error) = resume_result {
+        app.notification = Some(format!(
+            "Could not restore the terminal after devtool: {error}"
+        ));
+    } else {
+        match result {
+            Ok(Ok(())) => app.notification = Some("Devtool workspace reset.".into()),
+            Ok(Err(error)) => {
+                app.notification = Some(format!("Could not reset via devtool: {error}"))
+            }
+            Err(error) => app.notification = Some(format!("Devtool task failed: {error}")),
+        }
+    }
+}
+
 async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<()> {
     let Config {
         backend: backend_kind,
@@ -838,7 +874,16 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
             let Some(input) = input_from_key(k) else {
                 continue;
             };
-            if app.recipe_task_confirmation.is_some() {
+            if app.devtool_reset_confirmation.is_some() {
+                let effect = match input {
+                    Input::Enter => update(&mut app, Action::ConfirmDevtoolReset),
+                    Input::Esc => update(&mut app, Action::CancelDevtoolReset),
+                    _ => None,
+                };
+                if let Some(Effect::DevtoolReset(recipe)) = effect {
+                    devtool_reset(&guard, &mut app, &session_build_dir, recipe).await;
+                }
+            } else if app.recipe_task_confirmation.is_some() {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
                     Input::Esc => update(&mut app, Action::CancelRecipeTask),
@@ -875,6 +920,8 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     )
                     .await;
                 }
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('D') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolReset);
             } else if input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginBuildTargetEdit);
             } else if app.screen == yoctui_model::Screen::Errors
