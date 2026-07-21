@@ -23,7 +23,7 @@ Yoctui is the one-stop terminal workspace after `oe-init-build-env`: users shoul
 - [IN_PROGRESS] Devtool-backed in-TUI source editor: `d` prepares a Devtool workspace, displays a two-pane file editor, supports editing and `Ctrl+S`, and returns with `Esc`.
 - [DONE] Confirmation-protected `devtool reset` from the Recipes screen.
 - [NOT_STARTED] Resolve and display original `.bb`/`.bbappend` paths from BitBake so the left tree can include the providing metadata layer as well as the Devtool source workspace.
-- [IN_PROGRESS] Add Devtool `finish`, `update-recipe`, and deploy workflows, each with a preview and confirmation. `u` runs confirmation-protected `devtool update-recipe`; `F` selects a destination layer and runs confirmation-protected `devtool finish`; both refresh workspace metadata. Deploy still needs target selection.
+- [DONE] Add Devtool `finish`, `update-recipe`, and deploy workflows with explicit target/destination selection and confirmation. `u` runs `update-recipe`, `F` runs `finish`, and `P` runs `deploy-target`; workspace metadata refreshes after the metadata-changing operations.
 
 ## Metadata and graph views
 

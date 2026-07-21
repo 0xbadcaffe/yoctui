@@ -103,6 +103,11 @@ pub struct DevtoolFinishRequest {
     pub recipe: String,
     pub destination: PathBuf,
 }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolDeployRequest {
+    pub recipe: String,
+    pub target: String,
+}
 const MAX_COMPLETED_TASKS: usize = 1_024;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LogEntry {
@@ -291,6 +296,9 @@ pub struct App {
     pub devtool_finish_recipe: Option<String>,
     pub devtool_finish_destination: String,
     pub devtool_finish_confirmation: Option<DevtoolFinishRequest>,
+    pub devtool_deploy_recipe: Option<String>,
+    pub devtool_deploy_target: String,
+    pub devtool_deploy_confirmation: Option<DevtoolDeployRequest>,
     pub bbmask_editing: bool,
     pub bbmask_input: String,
     pub bbmask_confirmation: Option<String>,
@@ -328,6 +336,9 @@ impl App {
             devtool_finish_recipe: None,
             devtool_finish_destination: String::new(),
             devtool_finish_confirmation: None,
+            devtool_deploy_recipe: None,
+            devtool_deploy_target: String::new(),
+            devtool_deploy_confirmation: None,
             bbmask_editing: false,
             bbmask_input: String::new(),
             bbmask_confirmation: None,
@@ -415,6 +426,7 @@ pub enum Action {
     BeginSelectedRecipeDevtoolReset,
     BeginSelectedRecipeDevtoolUpdateRecipe,
     BeginSelectedRecipeDevtoolFinish,
+    BeginSelectedRecipeDevtoolDeploy,
     OpenRecipeEditor {
         recipe: String,
         root: PathBuf,
@@ -442,6 +454,12 @@ pub enum Action {
     CancelDevtoolFinish,
     ConfirmDevtoolFinish,
     CancelDevtoolFinishConfirmation,
+    AppendDevtoolDeployTarget(char),
+    BackspaceDevtoolDeployTarget,
+    PreviewDevtoolDeploy,
+    CancelDevtoolDeploy,
+    ConfirmDevtoolDeploy,
+    CancelDevtoolDeployConfirmation,
     SelectLayer {
         delta: isize,
     },
@@ -821,6 +839,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 })
                 .map_or_else(String::new, |layer| layer.path.display().to_string());
         }
+        Action::BeginSelectedRecipeDevtoolDeploy => {
+            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
+                app.devtool_deploy_recipe = Some(recipe.name.clone());
+                app.devtool_deploy_target.clear();
+            } else {
+                app.notification = Some("No recipe is selected for devtool deploy-target.".into());
+            }
+        }
         Action::ConfirmRecipeTask => {
             if let Some(request) = app.recipe_task_confirmation.take() {
                 prepare_build(app, request.targets.first().cloned());
@@ -870,6 +896,33 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CancelDevtoolFinishConfirmation => app.devtool_finish_confirmation = None,
+        Action::AppendDevtoolDeployTarget(character) if app.devtool_deploy_recipe.is_some() => {
+            app.devtool_deploy_target.push(character);
+        }
+        Action::BackspaceDevtoolDeployTarget if app.devtool_deploy_recipe.is_some() => {
+            app.devtool_deploy_target.pop();
+        }
+        Action::PreviewDevtoolDeploy if app.devtool_deploy_recipe.is_some() => {
+            let target = app.devtool_deploy_target.trim();
+            if target.is_empty() || target.contains(char::is_whitespace) {
+                app.notification = Some("Enter one deployment target without whitespace.".into());
+            } else if let Some(recipe) = app.devtool_deploy_recipe.take() {
+                app.devtool_deploy_confirmation = Some(DevtoolDeployRequest {
+                    recipe,
+                    target: target.into(),
+                });
+            }
+        }
+        Action::CancelDevtoolDeploy => {
+            app.devtool_deploy_recipe = None;
+            app.devtool_deploy_target.clear();
+        }
+        Action::ConfirmDevtoolDeploy => {
+            if let Some(request) = app.devtool_deploy_confirmation.take() {
+                return Some(Effect::DevtoolDeploy(request));
+            }
+        }
+        Action::CancelDevtoolDeployConfirmation => app.devtool_deploy_confirmation = None,
         Action::OpenRecipeEditor {
             recipe,
             root,
@@ -1075,7 +1128,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::PreviewBbmaskEdit
         | Action::AppendDevtoolFinishDestination(_)
         | Action::BackspaceDevtoolFinishDestination
-        | Action::PreviewDevtoolFinish => {}
+        | Action::PreviewDevtoolFinish
+        | Action::AppendDevtoolDeployTarget(_)
+        | Action::BackspaceDevtoolDeployTarget
+        | Action::PreviewDevtoolDeploy => {}
         Action::DismissNotification => app.notification = None,
         Action::Quit => {
             if matches!(
@@ -1118,6 +1174,7 @@ pub enum Effect {
     DevtoolReset(String),
     DevtoolUpdateRecipe(String),
     DevtoolFinish(DevtoolFinishRequest),
+    DevtoolDeploy(DevtoolDeployRequest),
     LoadRecipeEditorFile(PathBuf),
     SaveRecipeEditorFile { path: PathBuf, content: String },
     WriteBbmask(String),
@@ -1481,6 +1538,28 @@ mod tests {
             Some(Effect::DevtoolFinish(DevtoolFinishRequest {
                 recipe: "busybox".into(),
                 destination: PathBuf::from("/layers/meta-demo"),
+            }))
+        );
+    }
+    #[test]
+    fn devtool_deploy_requires_a_target_and_confirmation() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes = vec![Recipe {
+            name: "busybox".into(),
+            version: None,
+            layer: None,
+        }];
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolDeploy);
+        let _ = update(&mut app, Action::AppendDevtoolDeployTarget('q'));
+        let _ = update(&mut app, Action::AppendDevtoolDeployTarget('e'));
+        let _ = update(&mut app, Action::AppendDevtoolDeployTarget('m'));
+        let _ = update(&mut app, Action::AppendDevtoolDeployTarget('u'));
+        let _ = update(&mut app, Action::PreviewDevtoolDeploy);
+        assert_eq!(
+            update(&mut app, Action::ConfirmDevtoolDeploy),
+            Some(Effect::DevtoolDeploy(DevtoolDeployRequest {
+                recipe: "busybox".into(),
+                target: "qemu".into(),
             }))
         );
     }
