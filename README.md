@@ -2,9 +2,9 @@
 
 Yoctui is a Rust/Ratatui control frontend for Yocto/BitBake. BitBake remains the metadata and build authority; Yoctui observes it and requests operations.
 
-## Quickstart: current Yocto development setup, QEMU build, and Yoctui
+## Quickstart: current Yocto development setup and Yoctui
 
-Poky's `master` checkout is now intentionally a README-only migration notice. For current Yocto development, use BitBake's supported `bitbake-setup` workflow: it checks out BitBake, OpenEmbedded-Core, and meta-yocto separately. This example creates a `qemux86-64` setup and starts Yoctui for `core-image-minimal`.
+Poky's `master` checkout is now intentionally a README-only migration notice. For current Yocto development, use BitBake's supported `bitbake-setup` workflow: it checks out BitBake, OpenEmbedded-Core, and meta-yocto separately. This example creates a `qemux86-64` setup and opens Yoctui; start the image build from the TUI.
 
 ```sh
 export YOCTUI_DIR="$HOME/projects/yoctui"
@@ -17,14 +17,23 @@ cd "$BITBAKE_DIR"
 # In the interactive prompts choose the current poky-master template,
 # the poky distro, and the qemux86-64 machine.
 source "$BITBAKE_DIR/bitbake-builds/yoctui-qemux86-64/build/init-build-env"
-bitbake core-image-minimal
 
 cd "$YOCTUI_DIR"
 cargo build -p yoctui
-cargo run -p yoctui -- --backend bridge --build-dir "$BUILDDIR" core-image-minimal
+cargo run -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
 ```
 
-Inside Yoctui, press `B` for image build options or `b` to enter another BitBake target. Press `!` to open an inherited Yocto shell for commands such as `bitbake-layers show-layers`; type `exit` to return to Yoctui.
+Inside Yoctui, press `B` for image build options, then `e` and enter `core-image-minimal`; press Enter to start the build. Alternatively, press `b` and enter any BitBake target directly. Build progress, package progress, CPU utilization, disk free space, and logs remain visible in Yoctui throughout the build.
+
+To use an existing Yocto build instead of creating a new setup, source that build directory's `init-build-env` (or its existing environment setup script) and launch Yoctui with its exported `BUILDDIR`. For example, the setup above can be reopened without rebuilding from the shell:
+
+```sh
+source "$BITBAKE_DIR/bitbake-builds/yoctui-qemux86-64/build/init-build-env"
+cd "$YOCTUI_DIR"
+cargo run -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
+```
+
+Yoctui does not start a build merely because it opens an existing build directory; choose the image from its build controls when you are ready. Press `!` to open an inherited Yocto shell for optional commands such as `bitbake-layers show-layers`; type `exit` to return to Yoctui.
 
 ## Prerequisites
 
