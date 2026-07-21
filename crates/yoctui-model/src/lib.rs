@@ -282,6 +282,7 @@ pub struct App {
     pub build_task: Option<String>,
     pub recipe_task_confirmation: Option<BuildRequest>,
     pub devtool_reset_confirmation: Option<String>,
+    pub devtool_update_confirmation: Option<String>,
     pub bbmask_editing: bool,
     pub bbmask_input: String,
     pub bbmask_confirmation: Option<String>,
@@ -315,6 +316,7 @@ impl App {
             build_task: None,
             recipe_task_confirmation: None,
             devtool_reset_confirmation: None,
+            devtool_update_confirmation: None,
             bbmask_editing: false,
             bbmask_input: String::new(),
             bbmask_confirmation: None,
@@ -400,6 +402,7 @@ pub enum Action {
     BeginSelectedRecipeCleanState,
     BeginSelectedRecipeDevtoolModify,
     BeginSelectedRecipeDevtoolReset,
+    BeginSelectedRecipeDevtoolUpdateRecipe,
     OpenRecipeEditor {
         recipe: String,
         root: PathBuf,
@@ -419,6 +422,8 @@ pub enum Action {
     CancelRecipeTask,
     ConfirmDevtoolReset,
     CancelDevtoolReset,
+    ConfirmDevtoolUpdateRecipe,
+    CancelDevtoolUpdateRecipe,
     SelectLayer {
         delta: isize,
     },
@@ -773,6 +778,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some("No recipe is selected for devtool reset.".into());
             }
         }
+        Action::BeginSelectedRecipeDevtoolUpdateRecipe => {
+            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
+                app.devtool_update_confirmation = Some(recipe.name.clone());
+            } else {
+                app.notification = Some("No recipe is selected for devtool update-recipe.".into());
+            }
+        }
         Action::ConfirmRecipeTask => {
             if let Some(request) = app.recipe_task_confirmation.take() {
                 prepare_build(app, request.targets.first().cloned());
@@ -786,6 +798,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CancelDevtoolReset => app.devtool_reset_confirmation = None,
+        Action::ConfirmDevtoolUpdateRecipe => {
+            if let Some(recipe) = app.devtool_update_confirmation.take() {
+                return Some(Effect::DevtoolUpdateRecipe(recipe));
+            }
+        }
+        Action::CancelDevtoolUpdateRecipe => app.devtool_update_confirmation = None,
         Action::OpenRecipeEditor {
             recipe,
             root,
@@ -1029,6 +1047,7 @@ pub enum Effect {
     OpenInEditor(PathBuf),
     DevtoolModify(String),
     DevtoolReset(String),
+    DevtoolUpdateRecipe(String),
     LoadRecipeEditorFile(PathBuf),
     SaveRecipeEditorFile { path: PathBuf, content: String },
     WriteBbmask(String),
@@ -1350,6 +1369,24 @@ mod tests {
         assert_eq!(
             update(&mut app, Action::ConfirmDevtoolReset),
             Some(Effect::DevtoolReset("busybox".into()))
+        );
+    }
+    #[test]
+    fn selected_recipe_requires_confirmation_before_devtool_update_recipe() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes = vec![Recipe {
+            name: "busybox".into(),
+            version: None,
+            layer: None,
+        }];
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe),
+            None
+        );
+        assert_eq!(app.devtool_update_confirmation.as_deref(), Some("busybox"));
+        assert_eq!(
+            update(&mut app, Action::ConfirmDevtoolUpdateRecipe),
+            Some(Effect::DevtoolUpdateRecipe("busybox".into()))
         );
     }
     #[test]
