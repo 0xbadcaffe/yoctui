@@ -76,6 +76,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         Screen::Recipes => recipes(frame, app, chunks[1]),
         Screen::Layers => layers(frame, app, chunks[1]),
         Screen::Configuration => config(frame, app, chunks[1]),
+        Screen::Bbmask => bbmask(frame, app, chunks[1]),
         Screen::Help => help(frame, chunks[1]),
     };
     let footer_style = if app.color_enabled {
@@ -83,7 +84,7 @@ pub fn render(frame: &mut Frame, app: &App) {
     } else {
         Style::default()
     };
-    frame.render_widget(Paragraph::new("B build options | ! Yocto shell | b target/build | c cancel | l logs | f follow | w wrap | s severity | R recipe | T task | / search | n/N match | e errors | o open path | r recipes | y layers | v config | ? help | q quit").style(footer_style),chunks[2]);
+    frame.render_widget(Paragraph::new("B build options | ! Yocto shell | b target/build | c cancel | l logs | f follow | w wrap | s severity | R recipe | T task | / search | n/N match | e errors | o open path | r recipes | y layers | v config | x BBMASK | ? help | q quit").style(footer_style),chunks[2]);
     if let Some(editor) = app.recipe_editor.as_ref() {
         recipe_editor(frame, app, editor, area);
     } else if app.quit_confirm {
@@ -831,8 +832,37 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
         chunks[1],
     );
 }
+fn bbmask(frame: &mut Frame, app: &App, area: Rect) {
+    let value = app.workspace.variables.get("BBMASK").map_or(
+        "(BBMASK is not set in the effective configuration)",
+        String::as_str,
+    );
+    let provenance = app
+        .workspace
+        .variable_provenance
+        .get("BBMASK")
+        .map_or("backend did not provide source provenance", String::as_str);
+    let patterns = value
+        .split_whitespace()
+        .enumerate()
+        .map(|(index, pattern)| format!("{:>3}. {pattern}", index + 1))
+        .collect::<Vec<_>>();
+    let pattern_text = if patterns.is_empty() {
+        "No masked recipe patterns are active.".into()
+    } else {
+        patterns.join("\n")
+    };
+    frame.render_widget(
+        Paragraph::new(format!(
+            "Effective BBMASK patterns:\n{pattern_text}\n\nProvenance: {provenance}\n\nThis view is read-only. BBMASK changes will require a preview and confirmation workflow."
+        ))
+        .block(Block::default().title("Effective BBMASK").borders(Borders::ALL))
+        .wrap(Wrap { trim: false }),
+        area,
+    );
+}
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, D devtool-reset selected recipe\ny Layers (green rows are active in this build)   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, D devtool-reset selected recipe\ny Layers (green rows are active in this build)   v Configuration   x effective BBMASK\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
@@ -1143,5 +1173,28 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(output.contains("conf/local.conf:12"));
+    }
+    #[test]
+    fn bbmask_renders_effective_patterns_and_provenance() {
+        let mut terminal = Terminal::new(TestBackend::new(100, 20)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Bbmask;
+        app.workspace
+            .variables
+            .insert("BBMASK".into(), "meta-broken/.* meta-old/.*".into());
+        app.workspace
+            .variable_provenance
+            .insert("BBMASK".into(), "conf/local.conf:42".into());
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Effective BBMASK"));
+        assert!(output.contains("meta-broken/.*"));
+        assert!(output.contains("conf/local.conf:42"));
     }
 }

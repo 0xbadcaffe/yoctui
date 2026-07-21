@@ -37,6 +37,7 @@ pub enum Screen {
     Recipes,
     Layers,
     Configuration,
+    Bbmask,
     Logs,
     Errors,
     Help,
