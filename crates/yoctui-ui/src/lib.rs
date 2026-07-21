@@ -4,7 +4,7 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Table, Wrap},
 };
 use std::time::{SystemTime, UNIX_EPOCH};
-use yoctui_model::{App, Screen, Severity, format_duration};
+use yoctui_model::{App, RecipeEditor, Screen, Severity, format_duration};
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
     let query = query.to_lowercase();
@@ -84,7 +84,9 @@ pub fn render(frame: &mut Frame, app: &App) {
         Style::default()
     };
     frame.render_widget(Paragraph::new("b target/build | c cancel | l logs | f follow | w wrap | s severity | R recipe | T task | / search | n/N match | e errors | o open path | r recipes | y layers | v config | ? help | q quit").style(footer_style),chunks[2]);
-    if app.quit_confirm {
+    if let Some(editor) = app.recipe_editor.as_ref() {
+        recipe_editor(frame, app, editor, area);
+    } else if app.quit_confirm {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 3);
         frame.render_widget(Clear, popup);
         frame.render_widget(
@@ -158,6 +160,83 @@ pub fn render(frame: &mut Frame, app: &App) {
             popup,
         );
     }
+}
+fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect) {
+    let width = area.width.saturating_sub(4).max(30);
+    let height = area.height.saturating_sub(2).max(8);
+    let popup = Rect::new(
+        (area.width.saturating_sub(width)) / 2,
+        (area.height.saturating_sub(height)) / 2,
+        width,
+        height,
+    );
+    frame.render_widget(Clear, popup);
+    let columns =
+        Layout::horizontal([Constraint::Percentage(35), Constraint::Percentage(65)]).split(popup);
+    let files = editor
+        .files
+        .iter()
+        .enumerate()
+        .map(|(index, path)| {
+            format!(
+                "{} {}",
+                if index == editor.selection { ">" } else { " " },
+                path.display()
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    frame.render_widget(
+        Paragraph::new(files)
+            .block(
+                Block::default()
+                    .title(format!("Devtool workspace tree: {}", editor.recipe))
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+        columns[0],
+    );
+    let selected = editor
+        .files
+        .get(editor.selection)
+        .map_or_else(|| "no file".into(), |path| path.display().to_string());
+    let mode = if editor.editing {
+        "editing"
+    } else {
+        "read-only"
+    };
+    let modified = if editor.dirty { " modified" } else { "" };
+    let content = if editor.editing {
+        format!("{}▏", editor.content)
+    } else {
+        editor.content.clone()
+    };
+    frame.render_widget(
+        Paragraph::new(content)
+            .block(
+                Block::default()
+                    .title(format!("{selected} ({mode}{modified})"))
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+        columns[1],
+    );
+    let footer = Rect::new(
+        popup.x,
+        popup.y.saturating_add(popup.height.saturating_sub(1)),
+        popup.width,
+        1,
+    );
+    frame.render_widget(
+        Paragraph::new("↑/↓ file  Enter/e edit  Ctrl+S save  Esc return to Yoctui").style(
+            if app.color_enabled {
+                Style::default().fg(Color::DarkGray)
+            } else {
+                Style::default()
+            },
+        ),
+        footer,
+    );
 }
 fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
     let active = app
@@ -794,6 +873,30 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Confirm Devtool reset"));
         assert!(output.contains("devtool reset busybox"));
+    }
+    #[test]
+    fn renders_recipe_editor_overlay() {
+        let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.recipe_editor = Some(RecipeEditor {
+            recipe: "busybox".into(),
+            root: "/build/workspace/sources/busybox".into(),
+            files: vec!["main.c".into()],
+            selection: 0,
+            content: "int main() {}".into(),
+            editing: false,
+            dirty: false,
+        });
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Devtool workspace tree: busybox"));
+        assert!(output.contains("int main() {}"));
     }
     #[test]
     fn configuration_renders_bridge_provenance() {
