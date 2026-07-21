@@ -65,8 +65,9 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ package progress | h build history | B build options | ! shell | b target | c cancel | r recipes | y layers | v config | x BBMASK | ? help | q quit"
         }
         Screen::BuildHistory => "↑/↓ select | Esc dashboard | ? help | q quit",
+        Screen::Dependencies => "Esc dashboard | r recipes | ? help | q quit",
         Screen::Recipes => {
-            "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | d Devtool edit | u update-recipe | F finish | P deploy | D reset | / search | Esc dashboard | ? help | q quit"
+            "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | g graph | d Devtool edit | u update-recipe | F finish | P deploy | D reset | / search | Esc dashboard | ? help | q quit"
         }
         Screen::Layers => {
             "↑/↓ select | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
@@ -123,6 +124,7 @@ pub fn render(frame: &mut Frame, app: &App) {
     match app.screen {
         Screen::Dashboard => dashboard(frame, app, chunks[1]),
         Screen::BuildHistory => build_history(frame, app, chunks[1]),
+        Screen::Dependencies => dependencies(frame, app, chunks[1]),
         Screen::Logs => logs(frame, app, chunks[1]),
         Screen::Errors => errors(frame, app, chunks[1]),
         Screen::Recipes => recipes(frame, app, chunks[1]),
@@ -680,6 +682,38 @@ fn build_history(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
+fn dependencies(frame: &mut Frame, app: &App, area: Rect) {
+    let text = app.dependencies.as_ref().map_or_else(
+        || "No recipe dependency data is loaded. Select a recipe and press g.".into(),
+        |dependencies| {
+            let build = if dependencies.build.is_empty() {
+                "(none)".into()
+            } else {
+                dependencies.build.join("\n")
+            };
+            let runtime = if dependencies.runtime.is_empty() {
+                "(none)".into()
+            } else {
+                dependencies.runtime.join("\n")
+            };
+            format!(
+                "Recipe: {}\n\nBuild dependencies:\n{build}\n\nRuntime dependencies:\n{runtime}\n\nValues are supplied by the active BitBake server.",
+                dependencies.recipe
+            )
+        },
+    );
+    frame.render_widget(
+        Paragraph::new(text)
+            .block(
+                Block::default()
+                    .title("Dependency graph")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
 fn format_bytes(bytes: u64) -> String {
     const UNITS: [&str; 4] = ["B", "KiB", "MiB", "GiB"];
     let mut value = bytes as f64;
@@ -1136,7 +1170,7 @@ fn bbmask_assignment(value: &str) -> String {
     )
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, u update-recipe, F finish, P deploy, D reset selected recipe\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, g server dependency graph, d devtool-edit, u update-recipe, F finish, P deploy, D reset selected recipe\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
@@ -1299,6 +1333,28 @@ mod tests {
         assert!(output.contains("Build history"));
         assert!(output.contains("core-image-minimal"));
         assert!(output.contains("Completed package tasks: 42"));
+    }
+    #[test]
+    fn dependencies_render_server_supplied_values() {
+        let mut terminal = Terminal::new(TestBackend::new(120, 25)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Dependencies;
+        app.dependencies = Some(yoctui_model::RecipeDependencies {
+            recipe: "busybox".into(),
+            build: vec!["virtual/libc".into()],
+            runtime: vec!["base-files".into()],
+        });
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Dependency graph"));
+        assert!(output.contains("virtual/libc"));
+        assert!(output.contains("base-files"));
     }
     #[test]
     fn dashboard_renders_colored_task_progress_labels() {

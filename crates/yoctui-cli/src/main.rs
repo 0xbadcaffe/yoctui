@@ -24,8 +24,8 @@ use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{Input, key_action};
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
-    Action, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry, Screen, Severity,
-    TaskId, TaskInfo, update,
+    Action, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry, RecipeDependencies,
+    Screen, Severity, TaskId, TaskInfo, update,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -1469,6 +1469,33 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolFinish);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('P') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolDeploy);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('g') {
+                if let Some(Effect::GetDependencies(recipe)) =
+                    update(&mut app, Action::BeginSelectedRecipeDependencies)
+                {
+                    match backend.get_dependencies(recipe.clone()).await {
+                        Ok(dependencies) => {
+                            let _ = update(
+                                &mut app,
+                                Action::DependenciesLoaded(RecipeDependencies {
+                                    recipe,
+                                    build: dependencies.build,
+                                    runtime: dependencies.runtime,
+                                }),
+                            );
+                        }
+                        Err(error) => {
+                            let _ = update(
+                                &mut app,
+                                Action::Failure(AppError::new(
+                                    "Dependencies",
+                                    error.to_string(),
+                                    "use a bridge connected to a BitBake server that supports get_dependencies",
+                                )),
+                            );
+                        }
+                    }
+                }
             } else if input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginBuildTargetEdit);
             } else if app.screen == yoctui_model::Screen::Errors
