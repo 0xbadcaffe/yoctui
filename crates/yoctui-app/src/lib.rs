@@ -31,6 +31,7 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Left => Some(Action::ScrollLogsHorizontally { delta: -8 }),
         Input::Right => Some(Action::ScrollLogsHorizontally { delta: 8 }),
         Input::Char('l') => Some(Action::Open(Screen::Logs)),
+        Input::Char('h') => Some(Action::Open(Screen::BuildHistory)),
         Input::Char('e') => Some(Action::Open(Screen::Errors)),
         Input::Char('r') => Some(Action::Open(Screen::Recipes)),
         Input::Char('y') => Some(Action::Open(Screen::Layers)),
