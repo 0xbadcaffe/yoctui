@@ -25,7 +25,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 - [DONE] Versioned envelopes, sequence/correlation fields, NDJSON framing, bounded transport reads, malformed/oversized handling, and Python framing tests exist. Verification: protocol and bridge tests. Commit: `3730f35`, `78cc988`.
 - [IN_PROGRESS] Implement bridge handshake negotiation, graceful shutdown command, compatibility adapters, mocked BitBake integration boundary, and typed workspace/recipe/layer/variable responses. Verification: pytest with mocked modules and `cargo test -p yoctui-bitbake`. Handshake: `496b177`; shutdown acknowledgement and child exit: `ad52654`; typed responses: `0f4bb33`; adapter selection: `c5daf0b`; mocked event normalization: `da142a2`.
-- [IN_PROGRESS] Connect bridge to a supported live BitBake server, normalize native events, start builds, request native cancellation, and document tested BitBake versions. Verification: mocked `bb.server` adapter tests; native-style event normalization: `f2ca82f`; live-Yocto smoke workflow remains required. Server boundary and unavailable-server diagnostics: `993ac4c`.
+- [IN_PROGRESS] Connect bridge to a supported live BitBake server, normalize native events, start builds, request native cancellation, and document tested BitBake versions. Verification: mocked `bb.server` adapter tests; native-style event normalization: `f2ca82f`; server-backed variable query: `0fdf76c`; live-Yocto smoke workflow remains required. Server boundary and unavailable-server diagnostics: `993ac4c`.
 
 ## Workspace, CLI, and configuration
 
@@ -39,7 +39,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 - [IN_PROGRESS] Complete structured errors screen with selection/detail/log jump. Table/detail: `bec99cf`; selection: `4ed019b`; log jump: `8f0154f`; timestamp detail: `b14fcff`; expanded multiline detail: `4332055`. Cross-screen context and richer parsing remain.
 - [IN_PROGRESS] Complete recipes screen with search/details/valid actions and destructive confirmations. Backend-loaded table, selection, and details: `58c9332`; case-insensitive metadata search: `494f289`; selected recipe build action: `b7b0564`; clean action: `44eab59`; cleansstate confirmation: `5672ce9`; menuconfig: `66dadbe`.
 - [IN_PROGRESS] Complete layers screen with metadata/search/open action. Backend-loaded table, selection, and metadata details: `63895c7`; case-insensitive metadata search: `494f289`; selected directory opening: `4039f66`.
-- [IN_PROGRESS] Complete read-only configuration screen with search, expansion, and provenance. Backend-loaded table, selection, and expanded values: `5677581`; case-insensitive metadata search: `494f289`; bridge-supplied provenance: `201819a`; provenance source opening: `d6686f4`; CLI provenance output: `ee111c9`; live BitBake provenance remains.
+- [IN_PROGRESS] Complete read-only configuration screen with search, expansion, and provenance. Backend-loaded table, selection, and expanded values: `5677581`; case-insensitive metadata search: `494f289`; bridge-supplied provenance: `201819a`; provenance source opening: `d6686f4`; CLI provenance output: `ee111c9`; server-backed variable query: `0fdf76c`; live BitBake provenance remains.
 
 ## Reliability, testing, and quality
 
