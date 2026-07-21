@@ -127,6 +127,46 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: true }),
             popup,
         );
+    } else if let Some(value) = app.bbmask_confirmation.as_deref() {
+        let width = area.width.saturating_sub(12).clamp(40, 96);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(7) / 2,
+            width,
+            7,
+        );
+        frame.render_widget(Clear, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Append this exact assignment to $BUILDDIR/conf/local.conf:\n\n{}\n\nEnter writes and refreshes configuration; Esc cancels.",
+                bbmask_assignment(value)
+            ))
+            .block(Block::default().title("Confirm BBMASK change").borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+            popup,
+        );
+    } else if app.bbmask_editing {
+        let width = area.width.saturating_sub(12).clamp(40, 96);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(6) / 2,
+            width,
+            6,
+        );
+        frame.render_widget(Clear, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "BBMASK: {}_\n\nEnter previews the exact local.conf assignment; Esc cancels.",
+                app.bbmask_input
+            ))
+            .block(
+                Block::default()
+                    .title("Edit effective BBMASK")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+            popup,
+        );
     } else if app.build_options_open {
         let machine = app
             .workspace
@@ -854,15 +894,21 @@ fn bbmask(frame: &mut Frame, app: &App, area: Rect) {
     };
     frame.render_widget(
         Paragraph::new(format!(
-            "Effective BBMASK patterns:\n{pattern_text}\n\nProvenance: {provenance}\n\nThis view is read-only. BBMASK changes will require a preview and confirmation workflow."
+            "Effective BBMASK patterns:\n{pattern_text}\n\nProvenance: {provenance}\n\ne edits the value; Yoctui previews the exact local.conf assignment and requires confirmation."
         ))
         .block(Block::default().title("Effective BBMASK").borders(Borders::ALL))
         .wrap(Wrap { trim: false }),
         area,
     );
 }
+fn bbmask_assignment(value: &str) -> String {
+    format!(
+        "BBMASK = \"{}\"",
+        value.replace('\\', "\\\\").replace('"', "\\\"")
+    )
+}
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, D devtool-reset selected recipe\ny Layers (green rows are active in this build)   v Configuration   x effective BBMASK\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, D devtool-reset selected recipe\ny Layers (green rows are active in this build)   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
@@ -1196,5 +1242,21 @@ mod tests {
         assert!(output.contains("Effective BBMASK"));
         assert!(output.contains("meta-broken/.*"));
         assert!(output.contains("conf/local.conf:42"));
+    }
+    #[test]
+    fn bbmask_edit_preview_shows_the_exact_assignment() {
+        let mut terminal = Terminal::new(TestBackend::new(100, 20)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.bbmask_confirmation = Some("meta-broken/.*".into());
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Confirm BBMASK change"));
+        assert!(output.contains("BBMASK = \"meta-broken/.*\""));
     }
 }

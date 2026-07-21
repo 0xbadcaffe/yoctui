@@ -282,6 +282,9 @@ pub struct App {
     pub build_task: Option<String>,
     pub recipe_task_confirmation: Option<BuildRequest>,
     pub devtool_reset_confirmation: Option<String>,
+    pub bbmask_editing: bool,
+    pub bbmask_input: String,
+    pub bbmask_confirmation: Option<String>,
     pub recipe_editor: Option<RecipeEditor>,
     pub error_selection: usize,
     pub recipe_selection: usize,
@@ -312,6 +315,9 @@ impl App {
             build_task: None,
             recipe_task_confirmation: None,
             devtool_reset_confirmation: None,
+            bbmask_editing: false,
+            bbmask_input: String::new(),
+            bbmask_confirmation: None,
             recipe_editor: None,
             error_selection: 0,
             recipe_selection: 0,
@@ -421,6 +427,13 @@ pub enum Action {
         delta: isize,
     },
     OpenSelectedConfigSource,
+    BeginBbmaskEdit,
+    AppendBbmask(char),
+    BackspaceBbmask,
+    PreviewBbmaskEdit,
+    CancelBbmaskEdit,
+    ConfirmBbmaskWrite,
+    CancelBbmaskWrite,
     BeginMetadataSearch,
     AppendMetadataQuery(char),
     BackspaceMetadataQuery,
@@ -922,6 +935,34 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return Some(Effect::OpenInEditor(path));
             }
         }
+        Action::BeginBbmaskEdit => {
+            app.bbmask_input = app
+                .workspace
+                .variables
+                .get("BBMASK")
+                .cloned()
+                .unwrap_or_default();
+            app.bbmask_editing = true;
+        }
+        Action::AppendBbmask(character) if app.bbmask_editing => app.bbmask_input.push(character),
+        Action::BackspaceBbmask if app.bbmask_editing => {
+            app.bbmask_input.pop();
+        }
+        Action::PreviewBbmaskEdit if app.bbmask_editing => {
+            if app.bbmask_input.contains(['\n', '\r']) {
+                app.notification = Some("BBMASK must be entered on one line.".into());
+            } else {
+                app.bbmask_confirmation = Some(app.bbmask_input.clone());
+                app.bbmask_editing = false;
+            }
+        }
+        Action::CancelBbmaskEdit => app.bbmask_editing = false,
+        Action::ConfirmBbmaskWrite => {
+            if let Some(value) = app.bbmask_confirmation.take() {
+                return Some(Effect::WriteBbmask(value));
+            }
+        }
+        Action::CancelBbmaskWrite => app.bbmask_confirmation = None,
         Action::BeginMetadataSearch => app.metadata_searching = true,
         Action::AppendMetadataQuery(character) if app.metadata_searching => {
             app.metadata_query.push(character);
@@ -944,7 +985,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BackspaceBuildTarget
         | Action::ConfirmBuildTarget
         | Action::AppendMetadataQuery(_)
-        | Action::BackspaceMetadataQuery => {}
+        | Action::BackspaceMetadataQuery
+        | Action::AppendBbmask(_)
+        | Action::BackspaceBbmask
+        | Action::PreviewBbmaskEdit => {}
         Action::DismissNotification => app.notification = None,
         Action::Quit => {
             if matches!(
@@ -987,6 +1031,7 @@ pub enum Effect {
     DevtoolReset(String),
     LoadRecipeEditorFile(PathBuf),
     SaveRecipeEditorFile { path: PathBuf, content: String },
+    WriteBbmask(String),
 }
 pub fn format_duration(duration: Duration) -> String {
     format!(
@@ -1508,6 +1553,25 @@ mod tests {
         };
         let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry.clone()));
         assert_eq!(app.host_telemetry, telemetry);
+    }
+    #[test]
+    fn bbmask_editing_requires_a_preview_and_confirmation() {
+        let mut app = App::new(10, 1_000);
+        app.workspace
+            .variables
+            .insert("BBMASK".into(), "meta-old/.*".into());
+        let _ = update(&mut app, Action::BeginBbmaskEdit);
+        assert!(app.bbmask_editing);
+        assert_eq!(app.bbmask_input, "meta-old/.*");
+        let _ = update(&mut app, Action::AppendBbmask(' '));
+        let _ = update(&mut app, Action::AppendBbmask('x'));
+        let _ = update(&mut app, Action::PreviewBbmaskEdit);
+        assert!(!app.bbmask_editing);
+        assert_eq!(app.bbmask_confirmation.as_deref(), Some("meta-old/.* x"));
+        assert_eq!(
+            update(&mut app, Action::ConfirmBbmaskWrite),
+            Some(Effect::WriteBbmask("meta-old/.* x".into()))
+        );
     }
     proptest! {
         #[test]

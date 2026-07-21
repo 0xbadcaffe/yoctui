@@ -929,6 +929,60 @@ async fn save_recipe_editor_file(app: &mut App, path: PathBuf, content: String) 
     }
 }
 
+fn bbmask_assignment(value: &str) -> Result<String> {
+    if value.contains(['\n', '\r']) {
+        anyhow::bail!("BBMASK must be entered on one line");
+    }
+    Ok(format!(
+        "BBMASK = \"{}\"",
+        value.replace('\\', "\\\\").replace('"', "\\\"")
+    ))
+}
+
+async fn write_bbmask(build_dir: &Path, value: String) -> Result<()> {
+    let path = build_dir.join("conf").join("local.conf");
+    tokio::task::spawn_blocking(move || -> Result<()> {
+        let assignment = bbmask_assignment(&value)?;
+        let mut content = fs::read_to_string(&path)
+            .with_context(|| format!("could not read {}", path.display()))?;
+        if !content.is_empty() && !content.ends_with('\n') {
+            content.push('\n');
+        }
+        content.push_str(&assignment);
+        content.push('\n');
+        fs::write(&path, content).with_context(|| format!("could not write {}", path.display()))
+    })
+    .await
+    .context("BBMASK write task failed")?
+}
+
+async fn refresh_workspace(backend: &mut Box<dyn BitBakeBackend>, app: &mut App) {
+    match backend.inspect_workspace().await {
+        Ok(workspace) => {
+            let _ = update(app, Action::WorkspaceLoaded(workspace));
+            match backend.list_recipes(None).await {
+                Ok(mut recipes) => {
+                    recipes.sort_by(|left, right| left.name.cmp(&right.name));
+                    app.workspace.recipes = recipes;
+                }
+                Err(error) => app.notification = Some(format!("Recipes unavailable: {error}")),
+            }
+            match backend.list_layers().await {
+                Ok(layers) => app.workspace.layers = layers,
+                Err(error) => app.notification = Some(format!("Layers unavailable: {error}")),
+            }
+            if app.notification.is_none() {
+                app.notification = Some("BBMASK saved and workspace metadata refreshed.".into());
+            }
+        }
+        Err(error) => {
+            app.notification = Some(format!(
+                "BBMASK was saved, but the workspace refresh failed: {error}"
+            ));
+        }
+    }
+}
+
 async fn devtool_reset(guard: &TerminalGuard, app: &mut App, build_dir: &Path, recipe: String) {
     let build_dir = build_dir.to_path_buf();
     if let Err(error) = guard.suspend() {
@@ -1095,6 +1149,28 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 if let Some(Effect::DevtoolReset(recipe)) = effect {
                     devtool_reset(&guard, &mut app, &session_build_dir, recipe).await;
                 }
+            } else if app.bbmask_confirmation.is_some() {
+                let effect = match input {
+                    Input::Enter => update(&mut app, Action::ConfirmBbmaskWrite),
+                    Input::Esc => update(&mut app, Action::CancelBbmaskWrite),
+                    _ => None,
+                };
+                if let Some(Effect::WriteBbmask(value)) = effect {
+                    match write_bbmask(&session_build_dir, value).await {
+                        Ok(()) => refresh_workspace(&mut backend, &mut app).await,
+                        Err(error) => {
+                            app.notification = Some(format!("Could not save BBMASK: {error}"))
+                        }
+                    }
+                }
+            } else if app.bbmask_editing {
+                let _ = match input {
+                    Input::Char(character) => update(&mut app, Action::AppendBbmask(character)),
+                    Input::Backspace => update(&mut app, Action::BackspaceBbmask),
+                    Input::Enter => update(&mut app, Action::PreviewBbmaskEdit),
+                    Input::Esc => update(&mut app, Action::CancelBbmaskEdit),
+                    _ => None,
+                };
             } else if app.recipe_task_confirmation.is_some() {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
@@ -1208,6 +1284,8 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 {
                     open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                 }
+            } else if app.screen == yoctui_model::Screen::Bbmask && input == Input::Char('e') {
+                let _ = update(&mut app, Action::BeginBbmaskEdit);
             } else if matches!(
                 app.screen,
                 yoctui_model::Screen::Recipes
@@ -1409,6 +1487,36 @@ mod tests {
             })
         );
         assert_eq!(parse_cpu_counters("intr 1 2 3"), None);
+    }
+
+    #[test]
+    fn bbmask_assignment_is_single_line_and_shell_quoted() {
+        assert_eq!(
+            bbmask_assignment("meta-broken/.* \"quoted\"").unwrap(),
+            "BBMASK = \"meta-broken/.* \\\"quoted\\\"\""
+        );
+        assert!(bbmask_assignment("bad\nvalue").is_err());
+    }
+
+    #[tokio::test]
+    async fn writes_an_explicit_bbmask_assignment_to_local_conf() {
+        let build_dir = std::env::temp_dir().join(format!("yoctui-bbmask-{}", std::process::id()));
+        let conf_dir = build_dir.join("conf");
+        fs::create_dir_all(&conf_dir).unwrap();
+        let local_conf = conf_dir.join("local.conf");
+        fs::write(&local_conf, "MACHINE = \"qemuarm\"\n").unwrap();
+
+        write_bbmask(&build_dir, "meta-broken/.*".into())
+            .await
+            .unwrap();
+
+        assert_eq!(
+            fs::read_to_string(&local_conf).unwrap(),
+            "MACHINE = \"qemuarm\"\nBBMASK = \"meta-broken/.*\"\n"
+        );
+        fs::remove_file(local_conf).unwrap();
+        fs::remove_dir(conf_dir).unwrap();
+        fs::remove_dir(build_dir).unwrap();
     }
 
     #[test]

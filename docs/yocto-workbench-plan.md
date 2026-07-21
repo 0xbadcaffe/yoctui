@@ -34,7 +34,7 @@ Yoctui is the one-stop terminal workspace after `oe-init-build-env`: users shoul
 ## Explicit configuration controls
 
 - [DONE] Add a read-only BBMASK view (`x`), populated by BitBake's effective configuration and provenance when supplied by the backend.
-- [NOT_STARTED] Add an opt-in BBMASK editing dialog that previews the exact `conf/local.conf` change, writes only after confirmation, and refreshes BitBake's effective configuration afterward.
+- [DONE] Add an opt-in BBMASK editing dialog that previews the exact `conf/local.conf` assignment, writes only after confirmation, and refreshes BitBake workspace metadata afterward.
 - [NOT_STARTED] Add equivalent preview/confirmation workflows for supported Devtool and layer operations; Yoctui must never silently modify configuration.
 
 ## Verification
