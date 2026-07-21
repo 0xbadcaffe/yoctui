@@ -2,6 +2,28 @@
 
 Yoctui is a Rust/Ratatui control frontend for Yocto/BitBake. BitBake remains the metadata and build authority; Yoctui observes it and requests operations.
 
+## Quickstart: latest Yocto development branch, QEMU build, and Yoctui
+
+This copy-ready example clones Poky's current `master` branch (the latest Yocto development branch), initializes a `qemux86-64` build, and starts Yoctui for `core-image-minimal`. Use a stable release branch instead of `master` when you need a reproducible supported release.
+
+```sh
+export YOCTUI_DIR="$HOME/projects/yoctui"
+export YOCTO_DIR="$HOME/src/poky"
+
+git clone --branch master --single-branch https://git.yoctoproject.org/git/poky.git "$YOCTO_DIR"
+cd "$YOCTO_DIR"
+source oe-init-build-env build-qemux86-64
+
+printf '\nMACHINE = "qemux86-64"\n' >> conf/local.conf
+bitbake core-image-minimal
+
+cd "$YOCTUI_DIR"
+cargo build -p yoctui
+cargo run -p yoctui -- --backend bridge --build-dir "$BUILDDIR" core-image-minimal
+```
+
+Inside Yoctui, press `B` for image build options or `b` to enter another BitBake target. Press `!` to open an inherited Yocto shell for commands such as `bitbake-layers show-layers`; type `exit` to return to Yoctui.
+
 ## Prerequisites
 
 - Stable Rust with Cargo.
