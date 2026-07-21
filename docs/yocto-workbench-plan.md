@@ -2,6 +2,13 @@
 
 Yoctui is the one-stop terminal workspace after `oe-init-build-env`: users should be able to build images, follow package progress, inspect and edit supported workspace files, and invoke BitBake/Devtool operations without leaving the TUI. BitBake and Devtool remain authoritative for metadata and workspace changes. Every future write operation must be an explicit user action with a preview or confirmation where it changes a workspace.
 
+## One-stop workspace principles
+
+- Build cockpit: start image tasks for the effective machine, track all observed package tasks, inspect host capacity, and fall back to the inherited Yocto shell when a direct command is needed.
+- Workspace changes: browse layers and configuration, open supported sources, and use Devtool-backed editing rather than guessing metadata ownership.
+- Safe configuration: show BitBake's effective values and provenance first; only then add narrowly scoped edits with a diff preview, confirmation, and metadata refresh.
+- Trust boundary: Yoctui never reimplements BitBake dependency resolution or silently writes generated build state.
+
 ## Build cockpit
 
 - [DONE] Display active BitBake package tasks as colored progress gauges with percentages on the dashboard.
@@ -26,7 +33,7 @@ Yoctui is the one-stop terminal workspace after `oe-init-build-env`: users shoul
 
 ## Explicit configuration controls
 
-- [NOT_STARTED] Add a read-only BBMASK view first, populated by BitBake's effective configuration and provenance.
+- [DONE] Add a read-only BBMASK view (`x`), populated by BitBake's effective configuration and provenance when supplied by the backend.
 - [NOT_STARTED] Add an opt-in BBMASK editing dialog that previews the exact `conf/local.conf` change, writes only after confirmation, and refreshes BitBake's effective configuration afterward.
 - [NOT_STARTED] Add equivalent preview/confirmation workflows for supported Devtool and layer operations; Yoctui must never silently modify configuration.
 

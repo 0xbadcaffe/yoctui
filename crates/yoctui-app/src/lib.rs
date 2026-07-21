@@ -35,6 +35,7 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('r') => Some(Action::Open(Screen::Recipes)),
         Input::Char('y') => Some(Action::Open(Screen::Layers)),
         Input::Char('v') => Some(Action::Open(Screen::Configuration)),
+        Input::Char('x') => Some(Action::Open(Screen::Bbmask)),
         Input::Char('?') => Some(Action::Open(Screen::Help)),
         Input::Char('q') | Input::CtrlC => Some(Action::Quit),
         Input::Char('Y') => Some(Action::ConfirmQuit),
@@ -51,6 +52,10 @@ mod tests {
         assert_eq!(
             key_action(Input::Char('l')),
             Some(Action::Open(Screen::Logs))
+        );
+        assert_eq!(
+            key_action(Input::Char('x')),
+            Some(Action::Open(Screen::Bbmask))
         );
     }
     #[test]
