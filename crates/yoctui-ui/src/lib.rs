@@ -41,6 +41,49 @@ fn selected_style(app: &App, active: bool) -> Style {
     }
 }
 
+fn active_yocto(app: &App) -> String {
+    let release = app
+        .workspace
+        .release
+        .as_deref()
+        .unwrap_or("unknown release");
+    let location = app
+        .workspace
+        .source_dir
+        .as_deref()
+        .or(app.workspace.build_dir.as_deref())
+        .map_or_else(
+            || "workspace unavailable".into(),
+            |path| path.display().to_string(),
+        );
+    format!("{release} @ {location}")
+}
+
+fn footer_shortcuts(app: &App) -> &'static str {
+    match app.screen {
+        Screen::Dashboard => {
+            "↑/↓ package progress | B build options | ! shell | b target | c cancel | r recipes | y layers | v config | x BBMASK | ? help | q quit"
+        }
+        Screen::Recipes => {
+            "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | d Devtool edit | D reset | / search | Esc dashboard | ? help | q quit"
+        }
+        Screen::Layers => "↑/↓ select | o open layer | / search | Esc dashboard | ? help | q quit",
+        Screen::Configuration => {
+            "↑/↓ select | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
+        }
+        Screen::Bbmask => {
+            "e edit BBMASK | Enter preview/confirm | Esc cancel/dashboard | v configuration | ? help | q quit"
+        }
+        Screen::Logs => {
+            "↑/↓ scroll | ←/→ horizontal | f follow | w wrap | s severity | R/T filters | / search | Esc dashboard | ? help | q quit"
+        }
+        Screen::Errors => {
+            "↑/↓ select | Enter logs | o open source | Esc dashboard | ? help | q quit"
+        }
+        Screen::Help => "Esc dashboard | q quit",
+    }
+}
+
 pub fn render(frame: &mut Frame, app: &App) {
     let area = frame.area();
     if area.width < 30 || area.height < 8 {
@@ -63,8 +106,13 @@ pub fn render(frame: &mut Frame, app: &App) {
         .unwrap_or_else(|| "--:--:--".into());
     frame.render_widget(
         Paragraph::new(format!(
-            " Yoctui | {:?} | {} | {} | warnings: {} errors: {}",
-            app.screen, app.build.status, elapsed, app.build.warnings, app.build.errors
+            " Yoctui | {:?} | {} | {} | Yocto: {} | warnings: {} errors: {}",
+            app.screen,
+            app.build.status,
+            elapsed,
+            active_yocto(app),
+            app.build.warnings,
+            app.build.errors
         ))
         .block(Block::default().borders(Borders::ALL)),
         chunks[0],
@@ -84,7 +132,10 @@ pub fn render(frame: &mut Frame, app: &App) {
     } else {
         Style::default()
     };
-    frame.render_widget(Paragraph::new("B build options | ! Yocto shell | b target/build | c cancel | l logs | f follow | w wrap | s severity | R recipe | T task | / search | n/N match | e errors | o open path | r recipes | y layers | v config | x BBMASK | ? help | q quit").style(footer_style),chunks[2]);
+    frame.render_widget(
+        Paragraph::new(footer_shortcuts(app)).style(footer_style),
+        chunks[2],
+    );
     if let Some(editor) = app.recipe_editor.as_ref() {
         recipe_editor(frame, app, editor, area);
     } else if app.quit_confirm {
@@ -968,6 +1019,8 @@ mod tests {
         app.build.total = Some(7);
         app.build.warnings = 2;
         app.build.errors = 1;
+        app.workspace.release = Some("kirkstone".into());
+        app.workspace.source_dir = Some("/src/poky".into());
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -979,6 +1032,22 @@ mod tests {
         assert!(output.contains("Backend: bridge"));
         assert!(output.contains("Tasks: 3/7"));
         assert!(output.contains("Warnings: 2  Errors: 1"));
+        assert!(output.contains("Yocto: kirkstone @ /src/poky"));
+    }
+    #[test]
+    fn bbmask_footer_shows_its_edit_shortcut() {
+        let mut terminal = Terminal::new(TestBackend::new(160, 20)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Bbmask;
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("e edit BBMASK"));
     }
     #[test]
     fn dashboard_renders_host_cpu_and_build_disk_space() {
