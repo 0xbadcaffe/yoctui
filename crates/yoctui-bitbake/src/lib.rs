@@ -96,6 +96,11 @@ pub enum BackendEvent {
         value: Option<String>,
         provenance: Option<String>,
     },
+    Dependencies {
+        recipe: String,
+        build: Vec<String>,
+        runtime: Vec<String>,
+    },
     BuildStarted,
     ParseProgress {
         current: Option<u64>,
@@ -133,6 +138,12 @@ pub struct VariableValue {
     pub provenance: Option<String>,
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct RecipeDependencies {
+    pub build: Vec<String>,
+    pub runtime: Vec<String>,
+}
+
 #[async_trait]
 pub trait BitBakeBackend: Send {
     async fn inspect_workspace(&mut self) -> Result<Workspace, BackendError>;
@@ -143,6 +154,10 @@ pub trait BitBakeBackend: Send {
         name: String,
         recipe: Option<String>,
     ) -> Result<VariableValue, BackendError>;
+    async fn get_dependencies(
+        &mut self,
+        recipe: String,
+    ) -> Result<RecipeDependencies, BackendError>;
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError>;
     async fn cancel_build(&mut self) -> Result<(), BackendError>;
     async fn next_event(&mut self) -> Result<BackendEvent, BackendError>;
@@ -245,6 +260,15 @@ impl BitBakeBackend for ProcessBackend {
         _recipe: Option<String>,
     ) -> Result<VariableValue, BackendError> {
         Ok(VariableValue::default())
+    }
+    async fn get_dependencies(
+        &mut self,
+        _recipe: String,
+    ) -> Result<RecipeDependencies, BackendError> {
+        Err(BackendError::Bridge(
+            "the process backend cannot inspect authoritative recipe dependencies; use the Yoctui bridge"
+                .into(),
+        ))
     }
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError> {
         request
@@ -493,6 +517,15 @@ impl BridgeBackend {
                 value,
                 provenance,
             },
+            Event::Dependencies {
+                recipe,
+                build,
+                runtime,
+            } => BackendEvent::Dependencies {
+                recipe,
+                build,
+                runtime,
+            },
             Event::BuildStarted => BackendEvent::BuildStarted,
             Event::ParseProgress { current, total } => {
                 BackendEvent::ParseProgress { current, total }
@@ -645,6 +678,34 @@ impl BitBakeBackend for BridgeBackend {
                     ));
                 }
                 _ => {}
+            }
+        }
+    }
+    async fn get_dependencies(
+        &mut self,
+        recipe: String,
+    ) -> Result<RecipeDependencies, BackendError> {
+        self.command(Command::GetDependencies {
+            recipe: recipe.clone(),
+        })
+        .await?;
+        loop {
+            match self.next_event().await? {
+                BackendEvent::Dependencies {
+                    recipe: returned,
+                    build,
+                    runtime,
+                } if returned == recipe => return Ok(RecipeDependencies { build, runtime }),
+                BackendEvent::Dependencies { .. } => continue,
+                BackendEvent::CommandFailed { code, message } => {
+                    return Err(BackendError::Bridge(format!("{code}: {message}")));
+                }
+                BackendEvent::Disconnected => {
+                    return Err(BackendError::Bridge(
+                        "bridge disconnected while reading recipe dependencies".into(),
+                    ));
+                }
+                _ => continue,
             }
         }
     }

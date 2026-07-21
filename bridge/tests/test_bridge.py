@@ -184,6 +184,38 @@ server = Server()
         self.assertEqual(message["value"], "qemuarm")
         self.assertEqual(message["provenance"], "conf/local.conf:12")
 
+    def test_mocked_server_adapter_returns_authoritative_dependencies(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                """__version__ = "2.8.1"
+class Connection:
+ def get_dependencies(self, recipe):
+  assert recipe == "busybox"
+  return {"build": ["virtual/libc", "zlib"], "runtime": ["base-files"]}
+class Server:
+ def connect(self): return Connection()
+server = Server()
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"get_dependencies","recipe":"busybox"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "dependencies")
+        self.assertEqual(message["recipe"], "busybox")
+        self.assertEqual(message["build"], ["virtual/libc", "zlib"])
+        self.assertEqual(message["runtime"], ["base-files"])
+
+    def test_dependencies_without_a_server_capability_are_not_guessed(self) -> None:
+        result = run_bridge(
+            b'{"protocol_version":1,"sequence":1,"message":{"type":"get_dependencies","recipe":"busybox"}}'
+        )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "command_failed")
+        self.assertEqual(message["code"], "bitbake_server_unavailable")
+
     def test_mocked_server_adapter_lists_typed_workspace_data(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             Path(directory, "bb.py").write_text(

@@ -69,6 +69,9 @@ pub enum Command {
         name: String,
         recipe: Option<String>,
     },
+    GetDependencies {
+        recipe: String,
+    },
     Shutdown,
 }
 
@@ -105,6 +108,11 @@ pub enum Event {
         value: Option<String>,
         #[serde(default)]
         provenance: Option<String>,
+    },
+    Dependencies {
+        recipe: String,
+        build: Vec<String>,
+        runtime: Vec<String>,
     },
     BuildStarted,
     ParseProgress {

@@ -690,6 +690,7 @@ fn action_from_event(event: BackendEvent) -> Option<Action> {
         BackendEvent::Recipes(_)
         | BackendEvent::Layers(_)
         | BackendEvent::Variable { .. }
+        | BackendEvent::Dependencies { .. }
         | BackendEvent::Log(_)
         | BackendEvent::BuildCompleted { .. } => None,
     }
