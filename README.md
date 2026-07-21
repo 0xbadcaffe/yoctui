@@ -2,19 +2,21 @@
 
 Yoctui is a Rust/Ratatui control frontend for Yocto/BitBake. BitBake remains the metadata and build authority; Yoctui observes it and requests operations.
 
-## Quickstart: latest Yocto development branch, QEMU build, and Yoctui
+## Quickstart: current Yocto development setup, QEMU build, and Yoctui
 
-This copy-ready example clones Poky's current `master` branch (the latest Yocto development branch), initializes a `qemux86-64` build, and starts Yoctui for `core-image-minimal`. Use a stable release branch instead of `master` when you need a reproducible supported release.
+Poky's `master` checkout is now intentionally a README-only migration notice. For current Yocto development, use BitBake's supported `bitbake-setup` workflow: it checks out BitBake, OpenEmbedded-Core, and meta-yocto separately. This example creates a `qemux86-64` setup and starts Yoctui for `core-image-minimal`.
 
 ```sh
 export YOCTUI_DIR="$HOME/projects/yoctui"
-export YOCTO_DIR="$HOME/src/poky"
+export BITBAKE_DIR="$HOME/src/bitbake"
 
-git clone --branch master --single-branch https://git.yoctoproject.org/poky "$YOCTO_DIR"
-cd "$YOCTO_DIR"
-source oe-init-build-env build-qemux86-64
+git clone https://git.openembedded.org/bitbake "$BITBAKE_DIR"
+cd "$BITBAKE_DIR"
+./bitbake/bin/bitbake-setup init --setup-dir-name yoctui-qemux86-64
 
-printf '\nMACHINE = "qemux86-64"\n' >> conf/local.conf
+# In the interactive prompts choose the current poky-master template,
+# the poky distro, and the qemux86-64 machine.
+source "$BITBAKE_DIR/bitbake-builds/yoctui-qemux86-64/build/init-build-env"
 bitbake core-image-minimal
 
 cd "$YOCTUI_DIR"
