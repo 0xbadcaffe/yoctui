@@ -545,7 +545,7 @@ async fn headless(
                     let _ = update(&mut app, Action::Log(l));
                 }
                 BackendEvent::BuildCompleted { success, exit_code } => {
-                    let _ = update(&mut app, Action::BuildCompleted { success });
+                    let _ = update(&mut app, Action::BuildCompleted { success, exit_code });
                     println!(
                         "build {}{}",
                         if success { "completed" } else { "failed" },
@@ -905,8 +905,8 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
             tokio::time::timeout(Duration::from_millis(1), backend.next_event()).await
         {
             match event {
-                BackendEvent::BuildCompleted { success, .. } => {
-                    let _ = update(&mut app, Action::BuildCompleted { success });
+                BackendEvent::BuildCompleted { success, exit_code } => {
+                    let _ = update(&mut app, Action::BuildCompleted { success, exit_code });
                 }
                 event => {
                     if let Some(action) = action_from_event(event) {

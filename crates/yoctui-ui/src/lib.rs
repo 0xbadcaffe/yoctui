@@ -173,10 +173,11 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(format!(
-            "Target: {}\nBackend: {}\nStatus: {}\nParse progress: {}\nMachine: {}\nDistro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\n\nActive tasks:\n{}",
+            "Target: {}\nBackend: {}\nStatus: {}\nExit code: {}\nParse progress: {}\nMachine: {}\nDistro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\n\nActive tasks:\n{}",
             app.build.target.as_deref().unwrap_or("none"),
             app.backend,
             app.build.status,
+            app.build.exit_code.map_or_else(|| "none".into(), |code| code.to_string()),
             parse_progress,
             app.workspace
                 .variables
@@ -693,6 +694,21 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(output.contains("Parse progress: 8/20"));
+    }
+    #[test]
+    fn dashboard_renders_build_exit_code() {
+        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.build.exit_code = Some(1);
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Exit code: 1"));
     }
     #[test]
     fn renders_build_target_editor() {

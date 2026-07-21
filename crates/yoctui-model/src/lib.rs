@@ -136,6 +136,7 @@ pub struct BuildState {
     pub parse_total: Option<u64>,
     pub warnings: usize,
     pub errors: usize,
+    pub exit_code: Option<i32>,
 }
 impl Default for BuildState {
     fn default() -> Self {
@@ -149,6 +150,7 @@ impl Default for BuildState {
             parse_total: None,
             warnings: 0,
             errors: 0,
+            exit_code: None,
         }
     }
 }
@@ -310,6 +312,7 @@ pub enum Action {
     Log(LogEntry),
     BuildCompleted {
         success: bool,
+        exit_code: Option<i32>,
     },
     Cancel,
     ToggleLogFollow,
@@ -434,12 +437,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.logs.scroll_offset = 0;
             }
         }
-        Action::BuildCompleted { success } => {
+        Action::BuildCompleted { success, exit_code } => {
             app.build.status = if success {
                 BuildStatus::Completed
             } else {
                 BuildStatus::Failed
-            }
+            };
+            app.build.exit_code = exit_code;
         }
         Action::Cancel => {
             if matches!(
@@ -881,8 +885,15 @@ mod tests {
         );
         let _ = update(&mut app, Action::TaskCompleted { id, success: true });
         assert_eq!(update(&mut app, Action::Cancel), Some(Effect::Cancel));
-        let _ = update(&mut app, Action::BuildCompleted { success: false });
+        let _ = update(
+            &mut app,
+            Action::BuildCompleted {
+                success: false,
+                exit_code: Some(1),
+            },
+        );
         assert_eq!(app.build.status, BuildStatus::Failed);
+        assert_eq!(app.build.exit_code, Some(1));
         let _ = update(&mut app, Action::Open(Screen::Logs));
         let _ = update(&mut app, Action::BeginLogSearch);
         let _ = update(&mut app, Action::AppendLogQuery('x'));
