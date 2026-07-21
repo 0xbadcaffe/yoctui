@@ -25,12 +25,12 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 - [DONE] Versioned envelopes, sequence/correlation fields, NDJSON framing, bounded transport reads, malformed/oversized handling, and Python framing tests exist. Verification: protocol and bridge tests. Commit: `3730f35`, `78cc988`.
 - [IN_PROGRESS] Implement bridge handshake negotiation, graceful shutdown command, compatibility adapters, mocked BitBake integration boundary, and typed workspace/recipe/layer/variable responses. Verification: pytest with mocked modules and `cargo test -p yoctui-bitbake`. Handshake: `496b177`; shutdown acknowledgement and child exit: `ad52654`; typed responses: `0f4bb33`; adapter selection: `c5daf0b`; mocked event normalization: `da142a2`.
-- [IN_PROGRESS] Connect bridge to a supported live BitBake server, normalize native events, start builds, request native cancellation, and document tested BitBake versions. Verification: mocked `bb.server` adapter tests; native-style event normalization: `f2ca82f`; server-backed variable query: `0fdf76c`; live-Yocto smoke workflow remains required. Server boundary and unavailable-server diagnostics: `993ac4c`.
+- [IN_PROGRESS] Connect bridge to a supported live BitBake server, normalize native events, start builds, request native cancellation, and document tested BitBake versions. Verification: mocked `bb.server` adapter tests; native-style event normalization: `f2ca82f`; server-backed variable query: `0fdf76c`; server-backed recipe/layer queries: `996a6d8`; live-Yocto smoke workflow remains required. Server boundary and unavailable-server diagnostics: `993ac4c`.
 
 ## Workspace, CLI, and configuration
 
 - [DONE] CLI options, configuration precedence, headless inspection, doctor diagnostics, and read-only backend CLI commands exist. Verification: CLI tests and `yoctui doctor`. Commit: `e033f62`, `35fa2cb`, `1979825`.
-- [IN_PROGRESS] Complete workspace fields, recipe/layer discovery, variable provenance, CLI subcommand outputs, editor configuration, session persistence, and all configuration settings. Environment-derived Yocto/OpenEmbedded release discovery: `0d693b9`; preferred editor configuration: `9ac79a6`; color configuration: `0c7e551`; cancellation timeout: `ad293af`; target session persistence: `464e76c`; CLI variable provenance: `ee111c9`. Verification: fake bridge and CLI integration tests.
+- [IN_PROGRESS] Complete workspace fields, recipe/layer discovery, variable provenance, CLI subcommand outputs, editor configuration, session persistence, and all configuration settings. Environment-derived Yocto/OpenEmbedded release discovery: `0d693b9`; preferred editor configuration: `9ac79a6`; color configuration: `0c7e551`; cancellation timeout: `ad293af`; target session persistence: `464e76c`; CLI variable provenance: `ee111c9`; server-backed recipe/layer data: `996a6d8`. Verification: fake bridge and CLI integration tests.
 
 ## Screens and interaction
 
