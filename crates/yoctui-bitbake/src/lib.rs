@@ -13,8 +13,8 @@ use tokio::{
 };
 use yoctui_model::{BuildRequest, Layer, LogEntry, Recipe, Severity, Workspace};
 use yoctui_protocol::{
-    Command, Envelope, Event, LayerData, MAX_LINE_BYTES, ProtocolError, RecipeData, VERSION,
-    decode_line, encode_line,
+    Command, Envelope, Event, LayerData, LayerRelationshipData, MAX_LINE_BYTES, ProtocolError,
+    RecipeData, VERSION, decode_line, encode_line,
 };
 
 const MAX_PROCESS_LINE_BYTES: usize = 1024 * 1024;
@@ -101,6 +101,7 @@ pub enum BackendEvent {
         build: Vec<String>,
         runtime: Vec<String>,
     },
+    LayerRelationships(Vec<LayerRelationship>),
     BuildStarted,
     ParseProgress {
         current: Option<u64>,
@@ -143,6 +144,15 @@ pub struct RecipeDependencies {
     pub build: Vec<String>,
     pub runtime: Vec<String>,
 }
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct LayerRelationship {
+    pub name: String,
+    pub priority: Option<i32>,
+    pub compatible: Vec<String>,
+    pub depends: Vec<String>,
+    pub overlays: Vec<String>,
+    pub appends: Vec<String>,
+}
 
 #[async_trait]
 pub trait BitBakeBackend: Send {
@@ -158,6 +168,7 @@ pub trait BitBakeBackend: Send {
         &mut self,
         recipe: String,
     ) -> Result<RecipeDependencies, BackendError>;
+    async fn get_layer_relationships(&mut self) -> Result<Vec<LayerRelationship>, BackendError>;
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError>;
     async fn cancel_build(&mut self) -> Result<(), BackendError>;
     async fn next_event(&mut self) -> Result<BackendEvent, BackendError>;
@@ -269,6 +280,9 @@ impl BitBakeBackend for ProcessBackend {
             "the process backend cannot inspect authoritative recipe dependencies; use the Yoctui bridge"
                 .into(),
         ))
+    }
+    async fn get_layer_relationships(&mut self) -> Result<Vec<LayerRelationship>, BackendError> {
+        Err(BackendError::Bridge("the process backend cannot inspect authoritative layer relationships; use the Yoctui bridge".into()))
     }
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError> {
         request
@@ -526,6 +540,28 @@ impl BridgeBackend {
                 build,
                 runtime,
             },
+            Event::LayerRelationships { layers } => BackendEvent::LayerRelationships(
+                layers
+                    .into_iter()
+                    .map(
+                        |LayerRelationshipData {
+                             name,
+                             priority,
+                             compatible,
+                             depends,
+                             overlays,
+                             appends,
+                         }| LayerRelationship {
+                            name,
+                            priority,
+                            compatible,
+                            depends,
+                            overlays,
+                            appends,
+                        },
+                    )
+                    .collect(),
+            ),
             Event::BuildStarted => BackendEvent::BuildStarted,
             Event::ParseProgress { current, total } => {
                 BackendEvent::ParseProgress { current, total }
@@ -703,6 +739,23 @@ impl BitBakeBackend for BridgeBackend {
                 BackendEvent::Disconnected => {
                     return Err(BackendError::Bridge(
                         "bridge disconnected while reading recipe dependencies".into(),
+                    ));
+                }
+                _ => continue,
+            }
+        }
+    }
+    async fn get_layer_relationships(&mut self) -> Result<Vec<LayerRelationship>, BackendError> {
+        self.command(Command::GetLayerRelationships).await?;
+        loop {
+            match self.next_event().await? {
+                BackendEvent::LayerRelationships(layers) => return Ok(layers),
+                BackendEvent::CommandFailed { code, message } => {
+                    return Err(BackendError::Bridge(format!("{code}: {message}")));
+                }
+                BackendEvent::Disconnected => {
+                    return Err(BackendError::Bridge(
+                        "bridge disconnected while reading layer relationships".into(),
                     ));
                 }
                 _ => continue,

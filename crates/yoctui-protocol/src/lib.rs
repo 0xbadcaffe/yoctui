@@ -72,6 +72,7 @@ pub enum Command {
     GetDependencies {
         recipe: String,
     },
+    GetLayerRelationships,
     Shutdown,
 }
 
@@ -87,6 +88,15 @@ pub struct LayerData {
     pub name: String,
     pub path: String,
     pub priority: Option<i32>,
+}
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct LayerRelationshipData {
+    pub name: String,
+    pub priority: Option<i32>,
+    pub compatible: Vec<String>,
+    pub depends: Vec<String>,
+    pub overlays: Vec<String>,
+    pub appends: Vec<String>,
 }
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -113,6 +123,9 @@ pub enum Event {
         recipe: String,
         build: Vec<String>,
         runtime: Vec<String>,
+    },
+    LayerRelationships {
+        layers: Vec<LayerRelationshipData>,
     },
     BuildStarted,
     ParseProgress {

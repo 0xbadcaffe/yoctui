@@ -171,6 +171,19 @@ class BitBakeAdapter:
             )
         return typed_dependencies(response)
 
+    def layer_relationships(self):
+        operation = self.optional_server_operation("get_layer_relationships")
+        if operation is None:
+            raise ServerUnavailable(
+                "connected BitBake server does not provide get_layer_relationships; authoritative layer relationships are unavailable"
+            )
+        try:
+            return typed_layer_relationships(operation())
+        except Exception as exc:
+            raise ServerUnavailable(
+                f"could not inspect layer relationships from the BitBake server: {exc}"
+            )
+
     def native_events(self):
         """Drain a non-blocking server event hook when the adapter exposes one."""
         if self.connection is None:
@@ -408,6 +421,32 @@ def typed_dependencies(response):
     return {"build": build, "runtime": runtime}
 
 
+def typed_layer_relationships(response):
+    fields = ("compatible", "depends", "overlays", "appends")
+    if not isinstance(response, list) or not all(
+        isinstance(layer, dict)
+        and isinstance(layer.get("name"), str)
+        and (layer.get("priority") is None or isinstance(layer.get("priority"), int))
+        and all(
+            isinstance(layer.get(field, []), list)
+            and all(isinstance(value, str) for value in layer.get(field, []))
+            for field in fields
+        )
+        for layer in response
+    ):
+        raise ServerUnavailable(
+            "BitBake server returned malformed layer relationship data"
+        )
+    return [
+        {
+            "name": layer["name"],
+            "priority": layer.get("priority"),
+            **{field: layer.get(field, []) for field in fields},
+        }
+        for layer in response
+    ]
+
+
 def event_value(event, *names, default=None):
     for name in names:
         value = (
@@ -622,6 +661,13 @@ def handle(command, correlation_id, adapter):
                     },
                     correlation_id,
                 )
+    elif kind == "get_layer_relationships":
+        try:
+            layers = adapter.layer_relationships()
+        except ServerUnavailable as exc:
+            error("bitbake_server_unavailable", str(exc), correlation_id)
+        else:
+            emit({"type": "layer_relationships", "layers": layers}, correlation_id)
     elif kind == "cancel_build":
         try:
             adapter.cancel_build()
