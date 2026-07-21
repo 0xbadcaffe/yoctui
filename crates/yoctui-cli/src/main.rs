@@ -10,7 +10,7 @@ use crossterm::{
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::Terminal;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::{
     env, fs, io,
     path::{Path, PathBuf},
@@ -83,6 +83,11 @@ struct Config {
     editor: Option<String>,
     log_level: String,
     color: bool,
+    session_path: Option<PathBuf>,
+}
+#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+struct Session {
+    last_target: Option<String>,
 }
 #[derive(Subcommand, Debug)]
 enum Command {
@@ -174,6 +179,37 @@ fn read_file_config(path: Option<&Path>) -> Result<FileConfig> {
     toml::from_str(&text).with_context(|| format!("invalid configuration file {}", path.display()))
 }
 
+fn session_path(config: Option<&Path>) -> Option<PathBuf> {
+    config
+        .and_then(Path::parent)
+        .map(|directory| directory.join("session.toml"))
+}
+
+fn read_session(path: Option<&Path>) -> Result<Session> {
+    let Some(path) = path else {
+        return Ok(Session::default());
+    };
+    if !path.exists() {
+        return Ok(Session::default());
+    }
+    let text = fs::read_to_string(path)
+        .with_context(|| format!("could not read session file {}", path.display()))?;
+    toml::from_str(&text).with_context(|| format!("invalid session file {}", path.display()))
+}
+
+fn write_session(path: Option<&Path>, session: &Session) -> Result<()> {
+    let Some(path) = path else {
+        return Ok(());
+    };
+    if let Some(directory) = path.parent() {
+        fs::create_dir_all(directory).with_context(|| {
+            format!("could not create session directory {}", directory.display())
+        })?;
+    }
+    fs::write(path, toml::to_string(session)?)
+        .with_context(|| format!("could not write session file {}", path.display()))
+}
+
 fn env_usize(name: &str) -> Result<Option<usize>> {
     env::var(name)
         .ok()
@@ -186,7 +222,8 @@ fn env_usize(name: &str) -> Result<Option<usize>> {
 }
 
 fn resolve_config(cli: &Cli) -> Result<Config> {
-    let file = read_file_config(config_path(cli).as_deref())?;
+    let configured_path = config_path(cli);
+    let file = read_file_config(configured_path.as_deref())?;
     let environment_backend = env::var("YOCTUI_BACKEND")
         .ok()
         .map(|value| {
@@ -240,6 +277,7 @@ fn resolve_config(cli: &Cli) -> Result<Config> {
             .or_else(|| env::var("YOCTUI_LOG_LEVEL").ok())
             .unwrap_or_else(|| "info".into()),
         color: !cli.no_color && file.color.unwrap_or(true),
+        session_path: session_path(configured_path.as_deref()),
     })
 }
 #[tokio::main]
@@ -247,6 +285,7 @@ async fn main() -> Result<()> {
     install_panic_hook();
     let cli = Cli::parse();
     let config = resolve_config(&cli)?;
+    let session = read_session(config.session_path.as_deref())?;
     tracing_subscriber::fmt()
         .with_env_filter(config.log_level.clone())
         .with_writer(std::io::stderr)
@@ -269,7 +308,12 @@ async fn main() -> Result<()> {
     let targets = match &cli.command {
         Some(Command::Build { targets }) => targets.clone(),
         _ if !cli.targets.is_empty() => cli.targets.clone(),
-        _ => config.default_target.clone().into_iter().collect(),
+        _ => config
+            .default_target
+            .clone()
+            .or(session.last_target)
+            .into_iter()
+            .collect(),
     };
     if cli.headless {
         return headless(
@@ -640,6 +684,7 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
         cancellation_timeout,
         color,
         editor,
+        session_path,
         ..
     } = config;
     let guard = TerminalGuard::enter()?;
@@ -837,6 +882,12 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
         }
     }
     backend.shutdown().await?;
+    write_session(
+        session_path.as_deref(),
+        &Session {
+            last_target: app.build.target,
+        },
+    )?;
     Ok(())
 }
 
@@ -886,6 +937,27 @@ mod tests {
         assert_eq!(config.default_target.as_deref(), Some("core-image-minimal"));
         assert_eq!(config.editor.as_deref(), Some("nano"));
         assert_eq!(config.cancellation_timeout_ms, Some(250));
+    }
+
+    #[test]
+    fn session_round_trip_preserves_last_target() {
+        let directory = std::env::temp_dir().join(format!("yoctui-session-{}", std::process::id()));
+        let path = directory.join("session.toml");
+        write_session(
+            Some(&path),
+            &Session {
+                last_target: Some("core-image-minimal".into()),
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            read_session(Some(&path)).unwrap(),
+            Session {
+                last_target: Some("core-image-minimal".into()),
+            }
+        );
+        fs::remove_file(&path).unwrap();
+        fs::remove_dir(&directory).unwrap();
     }
 
     #[test]
