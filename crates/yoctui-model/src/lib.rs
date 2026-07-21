@@ -261,6 +261,7 @@ pub struct App {
     pub should_quit: bool,
     pub quit_confirm: bool,
     pub notification: Option<String>,
+    pub build_options_open: bool,
     pub build_target_editing: bool,
     pub build_target_input: String,
     pub build_task: Option<String>,
@@ -287,6 +288,7 @@ impl App {
             should_quit: false,
             quit_confirm: false,
             notification: None,
+            build_options_open: false,
             build_target_editing: false,
             build_target_input: String::new(),
             build_task: None,
@@ -311,7 +313,10 @@ impl App {
 pub enum Action {
     Tick,
     Open(Screen),
+    OpenBuildOptions,
+    CloseBuildOptions,
     BeginBuildTargetEdit,
+    BeginBuildTargetTask(Option<String>),
     AppendBuildTarget(char),
     BackspaceBuildTarget,
     ConfirmBuildTarget,
@@ -423,9 +428,18 @@ fn prepare_build(app: &mut App, target: Option<String>) {
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     match action {
         Action::Open(s) => app.screen = s,
+        Action::OpenBuildOptions => app.build_options_open = true,
+        Action::CloseBuildOptions => app.build_options_open = false,
         Action::BeginBuildTargetEdit => {
             app.build_target_input = app.build.target.clone().unwrap_or_default();
             app.build_task = None;
+            app.build_options_open = false;
+            app.build_target_editing = true;
+        }
+        Action::BeginBuildTargetTask(task) => {
+            app.build_target_input = app.build.target.clone().unwrap_or_default();
+            app.build_task = task;
+            app.build_options_open = false;
             app.build_target_editing = true;
         }
         Action::AppendBuildTarget(character) if app.build_target_editing => {
@@ -1428,6 +1442,20 @@ mod tests {
                 task: None,
             }))
         );
+    }
+    #[test]
+    fn build_options_prefill_the_current_target_and_requested_task() {
+        let mut app = App::new(10, 1_000);
+        app.build.target = Some("core-image-minimal".into());
+
+        let _ = update(&mut app, Action::OpenBuildOptions);
+        assert!(app.build_options_open);
+        let _ = update(&mut app, Action::BeginBuildTargetTask(Some("clean".into())));
+
+        assert!(!app.build_options_open);
+        assert!(app.build_target_editing);
+        assert_eq!(app.build_target_input, "core-image-minimal");
+        assert_eq!(app.build_task.as_deref(), Some("clean"));
     }
     proptest! {
         #[test]

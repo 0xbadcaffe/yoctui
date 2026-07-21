@@ -63,6 +63,12 @@ If the build directory is already initialized in the current shell, start the UI
 cargo run -p yoctui -- --build-dir "$BUILDDIR" core-image-minimal
 ```
 
+### Interactive cockpit shortcuts
+
+Yoctui inherits the shell environment that initialized Yocto. Press `!` to temporarily leave the TUI for that shell, run commands such as `bitbake-layers show-layers`, `bitbake -e <target>`, or `bitbake <target>`, then run `exit` to return to Yoctui. The TUI restores after the shell ends.
+
+Press `B` to open the image build-options submenu. It shows the effective `MACHINE` and current image target, then offers `b` to build, `c` to clean, `m` to run `menuconfig`, or `e` to enter a different image target. Press `y` for the Layers screen; every listed row is an active build layer and is highlighted green when color is enabled.
+
 Select a backend explicitly when needed:
 
 ```sh
