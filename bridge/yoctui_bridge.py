@@ -3,6 +3,8 @@
 
 import json
 import os
+import re
+import subprocess
 import sys
 
 VERSION = 1
@@ -411,6 +413,33 @@ def configured_recipes():
     return []
 
 
+def bitbake_recipes(filter_value):
+    """Ask BitBake for its parsed recipe inventory when no server API is available."""
+    try:
+        result = subprocess.run(
+            ["bitbake", "-s"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    recipes = []
+    for line in result.stdout.splitlines():
+        match = re.match(r"^([A-Za-z0-9_.+-]+)\s*:\s*(\S+)", line)
+        if match and (
+            filter_value is None or filter_value.lower() in match.group(1).lower()
+        ):
+            recipes.append(
+                {"name": match.group(1), "version": match.group(2), "layer": None}
+            )
+    return recipes
+
+
 def typed_recipes(response):
     if not isinstance(response, list):
         raise ServerUnavailable(
@@ -635,13 +664,15 @@ def handle(command, correlation_id, adapter):
             error("bitbake_server_unavailable", str(exc), correlation_id)
             return True
         if recipes is None:
-            recipes = configured_recipes()
-            if filter_value is not None:
-                recipes = [
-                    recipe
-                    for recipe in recipes
-                    if filter_value.lower() in recipe["name"].lower()
-                ]
+            recipes = bitbake_recipes(filter_value)
+            if recipes is None:
+                recipes = configured_recipes()
+                if filter_value is not None:
+                    recipes = [
+                        recipe
+                        for recipe in recipes
+                        if filter_value.lower() in recipe["name"].lower()
+                    ]
         emit({"type": "recipes", "recipes": recipes}, correlation_id)
     elif kind == "list_layers":
         try:
