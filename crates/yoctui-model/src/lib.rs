@@ -132,6 +132,8 @@ pub struct BuildState {
     pub started: Option<SystemTime>,
     pub completed: usize,
     pub total: Option<usize>,
+    pub parse_current: Option<u64>,
+    pub parse_total: Option<u64>,
     pub warnings: usize,
     pub errors: usize,
 }
@@ -143,6 +145,8 @@ impl Default for BuildState {
             started: None,
             completed: 0,
             total: None,
+            parse_current: None,
+            parse_total: None,
             warnings: 0,
             errors: 0,
         }
@@ -290,39 +294,62 @@ pub enum Action {
     CancelBuildTargetEdit,
     Start(BuildRequest),
     BuildStarted,
-    ParseProgress,
+    ParseProgress {
+        current: Option<u64>,
+        total: Option<u64>,
+    },
     TaskStarted(TaskInfo),
-    TaskProgress { id: TaskId, progress: u8 },
-    TaskCompleted { id: TaskId, success: bool },
+    TaskProgress {
+        id: TaskId,
+        progress: u8,
+    },
+    TaskCompleted {
+        id: TaskId,
+        success: bool,
+    },
     Log(LogEntry),
-    BuildCompleted { success: bool },
+    BuildCompleted {
+        success: bool,
+    },
     Cancel,
     ToggleLogFollow,
     ToggleLogWrap,
     CycleLogSeverity,
-    ScrollLogs { delta: isize },
+    ScrollLogs {
+        delta: isize,
+    },
     BeginLogSearch,
     AppendLogQuery(char),
     BackspaceLogQuery,
     FinishLogSearch,
     NextLogMatch,
     PreviousLogMatch,
-    ScrollLogsHorizontally { delta: isize },
+    ScrollLogsHorizontally {
+        delta: isize,
+    },
     CycleLogRecipeFilter,
     CycleLogTaskFilter,
-    SelectError { delta: isize },
+    SelectError {
+        delta: isize,
+    },
     JumpToSelectedError,
     OpenSelectedErrorSource,
-    SelectRecipe { delta: isize },
+    SelectRecipe {
+        delta: isize,
+    },
     BeginSelectedRecipeBuild,
     BeginSelectedRecipeClean,
     BeginSelectedRecipeMenuConfig,
     BeginSelectedRecipeCleanState,
     ConfirmRecipeTask,
     CancelRecipeTask,
-    SelectLayer { delta: isize },
+    SelectLayer {
+        delta: isize,
+    },
     OpenSelectedLayer,
-    SelectConfigVariable { delta: isize },
+    SelectConfigVariable {
+        delta: isize,
+    },
     OpenSelectedConfigSource,
     BeginMetadataSearch,
     AppendMetadataQuery(char),
@@ -375,8 +402,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::BuildStarted => {
             app.build.status = BuildStatus::Running;
             app.build.started = Some(SystemTime::now());
+            app.build.parse_current = None;
+            app.build.parse_total = None;
         }
-        Action::ParseProgress => app.build.status = BuildStatus::Parsing,
+        Action::ParseProgress { current, total } => {
+            app.build.status = BuildStatus::Parsing;
+            app.build.parse_current = current;
+            app.build.parse_total = total;
+        }
         Action::TaskStarted(t) => {
             app.tasks.insert(t.id.clone(), t);
         }
@@ -754,6 +787,23 @@ mod tests {
         l.insert(log("c"));
         assert_eq!(l.entries.len(), 2);
         assert_eq!(l.dropped, 1)
+    }
+    #[test]
+    fn parse_progress_tracks_current_and_total() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(
+            &mut app,
+            Action::ParseProgress {
+                current: Some(8),
+                total: Some(20),
+            },
+        );
+        assert_eq!(app.build.status, BuildStatus::Parsing);
+        assert_eq!(app.build.parse_current, Some(8));
+        assert_eq!(app.build.parse_total, Some(20));
+        let _ = update(&mut app, Action::BuildStarted);
+        assert_eq!(app.build.parse_current, None);
+        assert_eq!(app.build.parse_total, None);
     }
     #[test]
     fn eviction_counts_dropped_warnings_and_errors() {

@@ -97,7 +97,10 @@ pub enum BackendEvent {
         provenance: Option<String>,
     },
     BuildStarted,
-    ParseProgress,
+    ParseProgress {
+        current: Option<u64>,
+        total: Option<u64>,
+    },
     Log(LogEntry),
     TaskStarted {
         recipe: String,
@@ -491,7 +494,9 @@ impl BridgeBackend {
                 provenance,
             },
             Event::BuildStarted => BackendEvent::BuildStarted,
-            Event::ParseProgress { .. } => BackendEvent::ParseProgress,
+            Event::ParseProgress { current, total } => {
+                BackendEvent::ParseProgress { current, total }
+            }
             Event::TaskStarted { recipe, task, .. } => BackendEvent::TaskStarted { recipe, task },
             Event::TaskProgress {
                 recipe,
