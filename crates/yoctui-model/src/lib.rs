@@ -98,6 +98,11 @@ pub struct CompletedTask {
     pub task: TaskInfo,
     pub success: bool,
 }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolFinishRequest {
+    pub recipe: String,
+    pub destination: PathBuf,
+}
 const MAX_COMPLETED_TASKS: usize = 1_024;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LogEntry {
@@ -283,6 +288,9 @@ pub struct App {
     pub recipe_task_confirmation: Option<BuildRequest>,
     pub devtool_reset_confirmation: Option<String>,
     pub devtool_update_confirmation: Option<String>,
+    pub devtool_finish_recipe: Option<String>,
+    pub devtool_finish_destination: String,
+    pub devtool_finish_confirmation: Option<DevtoolFinishRequest>,
     pub bbmask_editing: bool,
     pub bbmask_input: String,
     pub bbmask_confirmation: Option<String>,
@@ -317,6 +325,9 @@ impl App {
             recipe_task_confirmation: None,
             devtool_reset_confirmation: None,
             devtool_update_confirmation: None,
+            devtool_finish_recipe: None,
+            devtool_finish_destination: String::new(),
+            devtool_finish_confirmation: None,
             bbmask_editing: false,
             bbmask_input: String::new(),
             bbmask_confirmation: None,
@@ -403,6 +414,7 @@ pub enum Action {
     BeginSelectedRecipeDevtoolModify,
     BeginSelectedRecipeDevtoolReset,
     BeginSelectedRecipeDevtoolUpdateRecipe,
+    BeginSelectedRecipeDevtoolFinish,
     OpenRecipeEditor {
         recipe: String,
         root: PathBuf,
@@ -424,6 +436,12 @@ pub enum Action {
     CancelDevtoolReset,
     ConfirmDevtoolUpdateRecipe,
     CancelDevtoolUpdateRecipe,
+    AppendDevtoolFinishDestination(char),
+    BackspaceDevtoolFinishDestination,
+    PreviewDevtoolFinish,
+    CancelDevtoolFinish,
+    ConfirmDevtoolFinish,
+    CancelDevtoolFinishConfirmation,
     SelectLayer {
         delta: isize,
     },
@@ -785,6 +803,24 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some("No recipe is selected for devtool update-recipe.".into());
             }
         }
+        Action::BeginSelectedRecipeDevtoolFinish => {
+            let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) else {
+                app.notification = Some("No recipe is selected for devtool finish.".into());
+                return None;
+            };
+            let recipe_name = recipe.name.clone();
+            let layer_name = recipe.layer.clone();
+            app.devtool_finish_recipe = Some(recipe_name);
+            app.devtool_finish_destination = layer_name
+                .as_deref()
+                .and_then(|layer| {
+                    app.workspace
+                        .layers
+                        .iter()
+                        .find(|candidate| candidate.name == layer)
+                })
+                .map_or_else(String::new, |layer| layer.path.display().to_string());
+        }
         Action::ConfirmRecipeTask => {
             if let Some(request) = app.recipe_task_confirmation.take() {
                 prepare_build(app, request.targets.first().cloned());
@@ -804,6 +840,36 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CancelDevtoolUpdateRecipe => app.devtool_update_confirmation = None,
+        Action::AppendDevtoolFinishDestination(character)
+            if app.devtool_finish_recipe.is_some() =>
+        {
+            app.devtool_finish_destination.push(character);
+        }
+        Action::BackspaceDevtoolFinishDestination if app.devtool_finish_recipe.is_some() => {
+            app.devtool_finish_destination.pop();
+        }
+        Action::PreviewDevtoolFinish if app.devtool_finish_recipe.is_some() => {
+            let destination = app.devtool_finish_destination.trim();
+            if destination.is_empty() {
+                app.notification =
+                    Some("Enter a destination layer directory for devtool finish.".into());
+            } else if let Some(recipe) = app.devtool_finish_recipe.take() {
+                app.devtool_finish_confirmation = Some(DevtoolFinishRequest {
+                    recipe,
+                    destination: PathBuf::from(destination),
+                });
+            }
+        }
+        Action::CancelDevtoolFinish => {
+            app.devtool_finish_recipe = None;
+            app.devtool_finish_destination.clear();
+        }
+        Action::ConfirmDevtoolFinish => {
+            if let Some(request) = app.devtool_finish_confirmation.take() {
+                return Some(Effect::DevtoolFinish(request));
+            }
+        }
+        Action::CancelDevtoolFinishConfirmation => app.devtool_finish_confirmation = None,
         Action::OpenRecipeEditor {
             recipe,
             root,
@@ -1006,7 +1072,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BackspaceMetadataQuery
         | Action::AppendBbmask(_)
         | Action::BackspaceBbmask
-        | Action::PreviewBbmaskEdit => {}
+        | Action::PreviewBbmaskEdit
+        | Action::AppendDevtoolFinishDestination(_)
+        | Action::BackspaceDevtoolFinishDestination
+        | Action::PreviewDevtoolFinish => {}
         Action::DismissNotification => app.notification = None,
         Action::Quit => {
             if matches!(
@@ -1048,6 +1117,7 @@ pub enum Effect {
     DevtoolModify(String),
     DevtoolReset(String),
     DevtoolUpdateRecipe(String),
+    DevtoolFinish(DevtoolFinishRequest),
     LoadRecipeEditorFile(PathBuf),
     SaveRecipeEditorFile { path: PathBuf, content: String },
     WriteBbmask(String),
@@ -1387,6 +1457,31 @@ mod tests {
         assert_eq!(
             update(&mut app, Action::ConfirmDevtoolUpdateRecipe),
             Some(Effect::DevtoolUpdateRecipe("busybox".into()))
+        );
+    }
+    #[test]
+    fn devtool_finish_prefills_the_selected_recipe_layer_and_requires_confirmation() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.layers = vec![Layer {
+            name: "meta-demo".into(),
+            path: PathBuf::from("/layers/meta-demo"),
+            priority: None,
+        }];
+        app.workspace.recipes = vec![Recipe {
+            name: "busybox".into(),
+            version: None,
+            layer: Some("meta-demo".into()),
+        }];
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolFinish);
+        assert_eq!(app.devtool_finish_recipe.as_deref(), Some("busybox"));
+        assert_eq!(app.devtool_finish_destination, "/layers/meta-demo");
+        let _ = update(&mut app, Action::PreviewDevtoolFinish);
+        assert_eq!(
+            update(&mut app, Action::ConfirmDevtoolFinish),
+            Some(Effect::DevtoolFinish(DevtoolFinishRequest {
+                recipe: "busybox".into(),
+                destination: PathBuf::from("/layers/meta-demo"),
+            }))
         );
     }
     #[test]

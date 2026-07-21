@@ -65,7 +65,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ package progress | B build options | ! shell | b target | c cancel | r recipes | y layers | v config | x BBMASK | ? help | q quit"
         }
         Screen::Recipes => {
-            "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | d Devtool edit | u update-recipe | D reset | / search | Esc dashboard | ? help | q quit"
+            "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | d Devtool edit | u update-recipe | F finish | D reset | / search | Esc dashboard | ? help | q quit"
         }
         Screen::Layers => "↑/↓ select | o open layer | / search | Esc dashboard | ? help | q quit",
         Screen::Configuration => {
@@ -191,6 +191,51 @@ pub fn render(frame: &mut Frame, app: &App) {
                     .borders(Borders::ALL),
             )
             .wrap(Wrap { trim: true }),
+            popup,
+        );
+    } else if let Some(request) = app.devtool_finish_confirmation.as_ref() {
+        let width = area.width.saturating_sub(12).clamp(44, 100);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(7) / 2,
+            width,
+            7,
+        );
+        frame.render_widget(Clear, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Run `devtool finish {} {}`?\n\nThis exports Devtool changes into the destination layer.\n\nEnter continues; Esc cancels.",
+                request.recipe,
+                request.destination.display()
+            ))
+            .block(
+                Block::default()
+                    .title("Confirm Devtool finish")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: true }),
+            popup,
+        );
+    } else if let Some(recipe) = app.devtool_finish_recipe.as_deref() {
+        let width = area.width.saturating_sub(12).clamp(44, 100);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(6) / 2,
+            width,
+            6,
+        );
+        frame.render_widget(Clear, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Recipe: {recipe}\nDestination layer: {}_\n\nEnter previews the command; Esc cancels.",
+                app.devtool_finish_destination
+            ))
+            .block(
+                Block::default()
+                    .title("Devtool finish destination")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
             popup,
         );
     } else if let Some(value) = app.bbmask_confirmation.as_deref() {
@@ -974,7 +1019,7 @@ fn bbmask_assignment(value: &str) -> String {
     )
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, u update-recipe, D reset selected recipe\ny Layers (green rows are active in this build)   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset/update-recipe, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, u update-recipe, F finish, D reset selected recipe\ny Layers (green rows are active in this build)   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset/update-recipe/finish, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
@@ -1274,6 +1319,25 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Confirm Devtool update-recipe"));
         assert!(output.contains("devtool update-recipe busybox"));
+    }
+    #[test]
+    fn renders_devtool_finish_confirmation() {
+        let mut terminal = Terminal::new(TestBackend::new(120, 25)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.devtool_finish_confirmation = Some(yoctui_model::DevtoolFinishRequest {
+            recipe: "busybox".into(),
+            destination: "/layers/meta-demo".into(),
+        });
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Confirm Devtool finish"));
+        assert!(output.contains("devtool finish busybox /layers/meta-demo"));
     }
     #[test]
     fn renders_recipe_editor_overlay() {
