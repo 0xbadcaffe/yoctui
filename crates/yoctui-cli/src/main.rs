@@ -886,7 +886,7 @@ fn recipe_editor_files(root: &Path) -> Result<Vec<PathBuf>> {
     Ok(files)
 }
 
-async fn open_recipe_editor(app: &mut App, recipe: String, root: PathBuf) {
+async fn open_workspace_editor(app: &mut App, recipe: String, root: PathBuf) {
     let root_for_scan = root.clone();
     let files = tokio::task::spawn_blocking(move || recipe_editor_files(&root_for_scan)).await;
     match files {
@@ -902,8 +902,10 @@ async fn open_recipe_editor(app: &mut App, recipe: String, root: PathBuf) {
                 load_recipe_editor_file(app, path).await;
             }
         }
-        Ok(Err(error)) => app.notification = Some(format!("Could not list Devtool files: {error}")),
-        Err(error) => app.notification = Some(format!("Devtool file scan failed: {error}")),
+        Ok(Err(error)) => {
+            app.notification = Some(format!("Could not list workspace files: {error}"))
+        }
+        Err(error) => app.notification = Some(format!("Workspace file scan failed: {error}")),
     }
 }
 
@@ -1451,7 +1453,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     _ => None,
                 };
                 if let Some((recipe, root)) = root {
-                    open_recipe_editor(&mut app, recipe, root).await;
+                    open_workspace_editor(&mut app, recipe, root).await;
                 }
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('D') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolReset);
@@ -1497,6 +1499,12 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     update(&mut app, Action::OpenSelectedLayer)
                 {
                     open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                }
+            } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('e') {
+                if let Some(Effect::OpenWorkspaceEditor { label, root }) =
+                    update(&mut app, Action::BeginSelectedLayerWorkspaceEditor)
+                {
+                    open_workspace_editor(&mut app, label, root).await;
                 }
             } else if app.screen == yoctui_model::Screen::Configuration
                 && matches!(input, Input::Up | Input::Down)

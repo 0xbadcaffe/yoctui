@@ -28,6 +28,7 @@ Yoctui is the one-stop terminal workspace after `oe-init-build-env`: users shoul
 ## Metadata and graph views
 
 - [DONE] Clearly identify every backend-supplied layer as active in the current build configuration, with color highlighting where enabled.
+- [DONE] Browse and edit the active metadata layer file tree in the in-TUI two-pane workspace editor; external editor opening remains available.
 - [NOT_STARTED] Add an on-demand dependency graph view backed by BitBake-generated graph data (`bitbake -g` or a supported server query), with recipe/task graph navigation and no independent dependency resolution.
 - [NOT_STARTED] Add read-only layer relationship views: priorities, compatibility, overlays, appends, and declared dependencies supplied by BitBake.
 - [NOT_STARTED] Add configuration provenance chains that distinguish original, append, override, and effective values when the active BitBake server supplies them.
