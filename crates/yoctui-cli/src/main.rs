@@ -1449,6 +1449,13 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
             {
                 let delta = if input == Input::Up { -1 } else { 1 };
                 let _ = update(&mut app, Action::SelectBuildHistory { delta });
+            } else if app.screen == yoctui_model::Screen::Dependencies
+                && matches!(input, Input::Up | Input::Down)
+            {
+                let delta = if input == Input::Up { -1 } else { 1 };
+                let _ = update(&mut app, Action::SelectDependency { delta });
+            } else if app.screen == yoctui_model::Screen::Dependencies && input == Input::Enter {
+                let _ = update(&mut app, Action::OpenSelectedDependency);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('d') {
                 let root = match update(&mut app, Action::BeginSelectedRecipeDevtoolModify) {
                     Some(Effect::DevtoolModify(recipe)) => {

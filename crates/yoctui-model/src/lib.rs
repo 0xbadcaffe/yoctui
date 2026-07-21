@@ -301,6 +301,7 @@ pub struct App {
     pub build_history: VecDeque<BuildRecord>,
     pub build_history_selection: usize,
     pub dependencies: Option<RecipeDependencies>,
+    pub dependency_selection: usize,
     pub tasks: HashMap<TaskId, TaskInfo>,
     pub completed_tasks: VecDeque<CompletedTask>,
     pub task_progress_scroll: usize,
@@ -344,6 +345,7 @@ impl App {
             build_history: VecDeque::new(),
             build_history_selection: 0,
             dependencies: None,
+            dependency_selection: 0,
             tasks: HashMap::new(),
             completed_tasks: VecDeque::new(),
             task_progress_scroll: 0,
@@ -457,6 +459,10 @@ pub enum Action {
     BeginSelectedRecipeDevtoolDeploy,
     BeginSelectedRecipeDependencies,
     DependenciesLoaded(RecipeDependencies),
+    SelectDependency {
+        delta: isize,
+    },
+    OpenSelectedDependency,
     OpenRecipeEditor {
         recipe: String,
         root: PathBuf,
@@ -910,6 +916,44 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::DependenciesLoaded(dependencies) => {
             app.screen = Screen::Dependencies;
             app.dependencies = Some(dependencies);
+            app.dependency_selection = 0;
+        }
+        Action::SelectDependency { delta } => {
+            let count = app.dependencies.as_ref().map_or(0, |dependencies| {
+                dependencies.build.len() + dependencies.runtime.len()
+            });
+            app.dependency_selection = if delta.is_negative() {
+                app.dependency_selection
+                    .saturating_sub(delta.unsigned_abs())
+            } else {
+                app.dependency_selection
+                    .saturating_add(delta as usize)
+                    .min(count.saturating_sub(1))
+            };
+        }
+        Action::OpenSelectedDependency => {
+            let selected = app.dependencies.as_ref().and_then(|dependencies| {
+                dependencies
+                    .build
+                    .iter()
+                    .chain(dependencies.runtime.iter())
+                    .nth(app.dependency_selection)
+            });
+            if let Some(name) = selected {
+                if let Some(index) = app
+                    .workspace
+                    .recipes
+                    .iter()
+                    .position(|recipe| recipe.name == *name)
+                {
+                    app.recipe_selection = index;
+                    app.screen = Screen::Recipes;
+                } else {
+                    app.notification = Some(format!(
+                        "{name} is a dependency but is not an available recipe in this workspace."
+                    ));
+                }
+            }
         }
         Action::ConfirmRecipeTask => {
             if let Some(request) = app.recipe_task_confirmation.take() {
@@ -1601,6 +1645,15 @@ mod tests {
         );
         assert_eq!(app.screen, Screen::Dependencies);
         assert_eq!(app.dependencies.as_ref().unwrap().build, ["virtual/libc"]);
+        app.workspace.recipes.push(Recipe {
+            name: "base-files".into(),
+            version: None,
+            layer: None,
+        });
+        let _ = update(&mut app, Action::SelectDependency { delta: 1 });
+        let _ = update(&mut app, Action::OpenSelectedDependency);
+        assert_eq!(app.screen, Screen::Recipes);
+        assert_eq!(app.recipe_selection, 1);
     }
     #[test]
     fn selected_recipe_requires_confirmation_before_devtool_reset() {
