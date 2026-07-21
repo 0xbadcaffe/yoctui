@@ -89,6 +89,11 @@ class BridgeProtocolTests(unittest.TestCase):
             b'{"protocol_version":1,"sequence":1,"message":{"type":"list_recipes","filter":null}}',
             b'{"protocol_version":1,"sequence":2,"message":{"type":"list_layers"}}',
             b'{"protocol_version":1,"sequence":3,"message":{"type":"get_variable","name":"PATH","recipe":null}}',
+            environment={
+                "YOCTUI_VARIABLE_PROVENANCE_JSON": json.dumps(
+                    {"PATH": "conf/local.conf:8"}
+                )
+            },
         )
         messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
         self.assertEqual(
@@ -97,6 +102,7 @@ class BridgeProtocolTests(unittest.TestCase):
         self.assertEqual(messages[0]["recipes"], [])
         self.assertIsInstance(messages[1]["layers"], list)
         self.assertEqual(messages[2]["name"], "PATH")
+        self.assertEqual(messages[2]["provenance"], "conf/local.conf:8")
 
     def test_mocked_bitbake_module_selects_modern_adapter(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

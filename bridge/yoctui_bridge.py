@@ -353,7 +353,12 @@ def handle(command, correlation_id, adapter):
             )
         else:
             emit(
-                {"type": "variable", "name": name, "value": os.environ.get(name)},
+                {
+                    "type": "variable",
+                    "name": name,
+                    "value": os.environ.get(name),
+                    "provenance": configured_variable_provenance().get(name),
+                },
                 correlation_id,
             )
     elif kind == "cancel_build":

@@ -388,12 +388,16 @@ async fn print_variable(backend: Backend, build_dir: PathBuf, name: &str) -> Res
     let mut backend = select_backend(backend, build_dir).await?;
     let result = backend.get_variable(name.into(), None).await;
     let shutdown = backend.shutdown().await;
-    let value = result?;
-    let value = value
+    let variable = result?;
+    let value = variable
+        .value
         .as_deref()
         .with_context(|| format!("{name} is not available from the selected backend"))?;
     shutdown?;
     println!("{name}={value}");
+    if let Some(provenance) = variable.provenance {
+        println!("provenance: {provenance}");
+    }
     Ok(())
 }
 async fn doctor(build_dir: &Path) -> Result<()> {
