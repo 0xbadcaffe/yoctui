@@ -245,9 +245,11 @@ class Warning:
  def __init__(self): self.message = "deprecated setting"; self.pn = "busybox"
 class Error:
  def __init__(self): self.message = "task failed"; self.pn = "busybox"; self.task = "do_compile"
+class BuildCompleted:
+ def __init__(self): self.success = False; self.returncode = 1
 class Connection:
  def start_build(self, targets, task): pass
- def drain_events(self): return [ParseProgress(), Warning(), Error(), TaskStarted(), TaskSucceeded()]
+ def drain_events(self): return [ParseProgress(), Warning(), Error(), TaskStarted(), TaskSucceeded(), BuildCompleted()]
 class Server:
  def connect(self): return Connection()
 server = Server()
@@ -268,6 +270,7 @@ server = Server()
                 "log",
                 "task_started",
                 "task_completed",
+                "build_completed",
             ],
         )
         self.assertEqual(messages[1]["current"], 8)
@@ -276,6 +279,7 @@ server = Server()
         self.assertEqual(messages[3]["level"], "error")
         self.assertEqual(messages[4]["pid"], 42)
         self.assertTrue(messages[5]["success"])
+        self.assertEqual(messages[6]["exit_code"], 1)
 
     def test_parent_eof_exits_cleanly(self) -> None:
         result = run_bridge()

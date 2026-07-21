@@ -141,6 +141,8 @@ pub enum Event {
     },
     BuildCompleted {
         success: bool,
+        #[serde(default)]
+        exit_code: Option<i32>,
     },
     CommandFailed {
         code: String,

@@ -553,10 +553,9 @@ impl BridgeBackend {
                 path: None,
                 timestamp: SystemTime::now(),
             }),
-            Event::BuildCompleted { success } => BackendEvent::BuildCompleted {
-                success,
-                exit_code: None,
-            },
+            Event::BuildCompleted { success, exit_code } => {
+                BackendEvent::BuildCompleted { success, exit_code }
+            }
             Event::CommandFailed { code, message } | Event::ProtocolError { code, message } => {
                 BackendEvent::CommandFailed { code, message }
             }

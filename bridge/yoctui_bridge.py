@@ -404,9 +404,11 @@ def normalize_event(event):
             "total": event_value(event, "total"),
         }
     if normalized_kind in ("buildcompleted", "build_completed"):
+        exit_code = event_value(event, "exit_code", "returncode")
         return {
             "type": "build_completed",
             "success": bool(event_value(event, "success")),
+            "exit_code": exit_code if isinstance(exit_code, int) else None,
         }
     if normalized_kind in (
         "tasksucceeded",
