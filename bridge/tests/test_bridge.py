@@ -72,6 +72,9 @@ class BridgeProtocolTests(unittest.TestCase):
                 "YOCTUI_VARIABLE_PROVENANCE_JSON": json.dumps(
                     {"MACHINE": "conf/local.conf:12"}
                 ),
+                "YOCTUI_VARIABLE_PROVENANCE_CHAIN_JSON": json.dumps(
+                    {"MACHINE": ["meta/conf/bitbake.conf:1", "conf/local.conf:12"]}
+                ),
             },
         )
         message = json.loads(result.stdout)
@@ -82,6 +85,10 @@ class BridgeProtocolTests(unittest.TestCase):
         self.assertEqual(
             message["message"]["data"]["variable_provenance"]["MACHINE"],
             "conf/local.conf:12",
+        )
+        self.assertEqual(
+            message["message"]["data"]["variable_provenance_chain"]["MACHINE"],
+            ["meta/conf/bitbake.conf:1", "conf/local.conf:12"],
         )
 
     def test_typed_workspace_queries_return_protocol_responses(self) -> None:

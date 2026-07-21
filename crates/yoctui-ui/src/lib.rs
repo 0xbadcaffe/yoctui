@@ -1128,7 +1128,7 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
     });
     let variable_count = variables.len();
     let selected = variables.get(app.config_selection).copied();
-    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(5)]).split(area);
+    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(9)]).split(area);
     frame.render_widget(
         Table::new(
             variables
@@ -1161,8 +1161,17 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
     let detail = selected.map_or_else(
         || "No configuration variables supplied by the backend.".into(),
         |(name, value)| {
+            let chain = app
+                .workspace
+                .variable_provenance_chain
+                .get(name)
+                .filter(|chain| !chain.is_empty())
+                .map_or_else(
+                    || "backend did not provide an original/append/override chain".into(),
+                    |chain| chain.join("\n  -> "),
+                );
             format!(
-                "Variable: {name}\nEffective value: {value}\nProvenance: {}",
+                "Variable: {name}\nEffective value: {value}\nProvenance: {}\nSource chain:\n  {chain}",
                 app.workspace
                     .variable_provenance
                     .get(name)
@@ -1641,6 +1650,13 @@ mod tests {
         app.workspace
             .variable_provenance
             .insert("MACHINE".into(), "conf/local.conf:12".into());
+        app.workspace.variable_provenance_chain.insert(
+            "MACHINE".into(),
+            vec![
+                "meta/conf/bitbake.conf:1".into(),
+                "conf/local.conf:12".into(),
+            ],
+        );
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -1650,6 +1666,7 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(output.contains("conf/local.conf:12"));
+        assert!(output.contains("meta/conf/bitbake.conf:1"));
     }
     #[test]
     fn bbmask_renders_effective_patterns_and_provenance() {

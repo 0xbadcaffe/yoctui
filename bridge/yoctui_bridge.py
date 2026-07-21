@@ -272,6 +272,7 @@ def workspace_data(version):
             "source_dir": os.environ.get("COREBASE"),
             "variables": variables,
             "variable_provenance": configured_variable_provenance(),
+            "variable_provenance_chain": configured_variable_provenance_chain(),
             "bitbake_version": version,
             "release": release,
             "layers": [],
@@ -292,6 +293,22 @@ def configured_variable_provenance():
         name: provenance
         for name, provenance in raw.items()
         if isinstance(name, str) and isinstance(provenance, str)
+    }
+
+
+def configured_variable_provenance_chain():
+    try:
+        raw = json.loads(os.environ.get("YOCTUI_VARIABLE_PROVENANCE_CHAIN_JSON", "{}"))
+    except json.JSONDecodeError:
+        return {}
+    if not isinstance(raw, dict):
+        return {}
+    return {
+        name: chain
+        for name, chain in raw.items()
+        if isinstance(name, str)
+        and isinstance(chain, list)
+        and all(isinstance(source, str) for source in chain)
     }
 
 
@@ -316,11 +333,23 @@ def typed_workspace(response):
             return value
         raise ServerUnavailable(f"BitBake server returned malformed {name} data")
 
+    def string_list_map(name):
+        value = response.get(name, {})
+        if isinstance(value, dict) and all(
+            isinstance(key, str)
+            and isinstance(items, list)
+            and all(isinstance(item, str) for item in items)
+            for key, items in value.items()
+        ):
+            return value
+        raise ServerUnavailable(f"BitBake server returned malformed {name} data")
+
     return {
         "build_dir": optional_string("build_dir"),
         "source_dir": optional_string("source_dir"),
         "variables": string_map("variables"),
         "variable_provenance": string_map("variable_provenance"),
+        "variable_provenance_chain": string_list_map("variable_provenance_chain"),
         "bitbake_version": optional_string("bitbake_version"),
         "release": optional_string("release"),
         "layers": typed_layers(response.get("layers", [])),
