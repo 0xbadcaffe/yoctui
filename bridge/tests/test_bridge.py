@@ -184,6 +184,31 @@ server = Server()
         self.assertEqual(message["value"], "qemuarm")
         self.assertEqual(message["provenance"], "conf/local.conf:12")
 
+    def test_mocked_server_adapter_lists_typed_workspace_data(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                """__version__ = "2.8.1"
+class Connection:
+ def list_recipes(self, filter_value):
+  assert filter_value == "busy"
+  return [{"name": "busybox", "version": "1.36", "layer": "meta"}]
+ def list_layers(self):
+  return [{"name": "meta", "path": "/src/meta", "priority": 5}]
+class Server:
+ def connect(self): return Connection()
+server = Server()
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"list_recipes","filter":"busy"}}',
+                b'{"protocol_version":1,"sequence":2,"message":{"type":"list_layers"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
+        self.assertEqual(messages[0]["recipes"][0]["name"], "busybox")
+        self.assertEqual(messages[1]["layers"][0]["path"], "/src/meta")
+
     def test_mocked_server_drains_native_event_objects(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             Path(directory, "bb.py").write_text(
