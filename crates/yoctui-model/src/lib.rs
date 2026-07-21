@@ -34,6 +34,7 @@ impl AppError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Screen {
     Dashboard,
+    BuildHistory,
     Recipes,
     Layers,
     Configuration,
@@ -178,6 +179,17 @@ pub struct BuildState {
     pub errors: usize,
     pub exit_code: Option<i32>,
 }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BuildRecord {
+    pub target: Option<String>,
+    pub success: bool,
+    pub exit_code: Option<i32>,
+    pub elapsed: Option<Duration>,
+    pub completed_tasks: usize,
+    pub warnings: usize,
+    pub errors: usize,
+}
+const MAX_BUILD_HISTORY: usize = 50;
 impl Default for BuildState {
     fn default() -> Self {
         Self {
@@ -279,6 +291,8 @@ pub struct App {
     pub workspace: Workspace,
     pub host_telemetry: HostTelemetry,
     pub build: BuildState,
+    pub build_history: VecDeque<BuildRecord>,
+    pub build_history_selection: usize,
     pub tasks: HashMap<TaskId, TaskInfo>,
     pub completed_tasks: VecDeque<CompletedTask>,
     pub task_progress_scroll: usize,
@@ -319,6 +333,8 @@ impl App {
             workspace: Workspace::default(),
             host_telemetry: HostTelemetry::default(),
             build: BuildState::default(),
+            build_history: VecDeque::new(),
+            build_history_selection: 0,
             tasks: HashMap::new(),
             completed_tasks: VecDeque::new(),
             task_progress_scroll: 0,
@@ -391,6 +407,9 @@ pub enum Action {
     BuildCompleted {
         success: bool,
         exit_code: Option<i32>,
+    },
+    SelectBuildHistory {
+        delta: isize,
     },
     Cancel,
     ToggleLogFollow,
@@ -608,6 +627,29 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 BuildStatus::Failed
             };
             app.build.exit_code = exit_code;
+            app.build_history.push_back(BuildRecord {
+                target: app.build.target.clone(),
+                success,
+                exit_code,
+                elapsed: app.elapsed(),
+                completed_tasks: app.build.completed,
+                warnings: app.build.warnings,
+                errors: app.build.errors,
+            });
+            if app.build_history.len() > MAX_BUILD_HISTORY {
+                app.build_history.pop_front();
+            }
+            app.build_history_selection = 0;
+        }
+        Action::SelectBuildHistory { delta } => {
+            app.build_history_selection = if delta.is_negative() {
+                app.build_history_selection
+                    .saturating_sub(delta.unsigned_abs())
+            } else {
+                app.build_history_selection
+                    .saturating_add(delta as usize)
+                    .min(app.build_history.len().saturating_sub(1))
+            };
         }
         Action::Cancel => {
             if matches!(
@@ -1391,6 +1433,30 @@ mod tests {
         assert_eq!(app.build.exit_code, None);
         assert_eq!(app.build.started, None);
         assert!(app.tasks.is_empty());
+    }
+    #[test]
+    fn completed_builds_are_retained_in_session_history() {
+        let mut app = App::new(10, 1_000);
+        app.build.target = Some("core-image-minimal".into());
+        app.build.completed = 12;
+        app.build.warnings = 2;
+        app.build.errors = 1;
+        app.build.started = Some(SystemTime::now());
+        let _ = update(
+            &mut app,
+            Action::BuildCompleted {
+                success: false,
+                exit_code: Some(1),
+            },
+        );
+        assert_eq!(app.build_history.len(), 1);
+        assert_eq!(
+            app.build_history[0].target.as_deref(),
+            Some("core-image-minimal")
+        );
+        assert!(!app.build_history[0].success);
+        assert_eq!(app.build_history[0].completed_tasks, 12);
+        assert_eq!(app.build_history[0].errors, 1);
     }
     #[test]
     fn selected_error_jumps_to_filtered_logs() {

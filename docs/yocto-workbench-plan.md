@@ -16,7 +16,7 @@ Yoctui is the one-stop terminal workspace after `oe-init-build-env`: users shoul
 - [DONE] Provide an inherited Yocto shell (`!`) plus a machine-aware image build-options menu (`B`) for build, clean, menuconfig, and target selection.
 - [DONE] Refresh host CPU utilization and available space for the build-directory filesystem while a build is active.
 - [DONE] Retain a bounded completed-task history so the dashboard can display active, successful, and failed package tasks for the current build; scroll it with `Up`/`Down`.
-- [NOT_STARTED] Add build queue, task failure drill-down, and build-history views backed by BitBake events.
+- [IN_PROGRESS] Add build queue, task failure drill-down, and build-history views backed by BitBake events. `h` now shows bounded in-session completed-build history; queue and failure drill-down remain.
 
 ## Recipe workspace editor
 
