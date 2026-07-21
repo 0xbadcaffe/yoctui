@@ -30,7 +30,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 ## Workspace, CLI, and configuration
 
 - [DONE] CLI options, configuration precedence, headless inspection, doctor diagnostics, and read-only backend CLI commands exist. Verification: CLI tests and `yoctui doctor`. Commit: `e033f62`, `35fa2cb`, `1979825`.
-- [IN_PROGRESS] Complete workspace fields, recipe/layer discovery, variable provenance, CLI subcommand outputs, editor configuration, session persistence, and all configuration settings. Environment-derived Yocto/OpenEmbedded release discovery: `0d693b9`; preferred editor configuration: `9ac79a6`; color configuration: `0c7e551`. Verification: fake bridge and CLI integration tests.
+- [IN_PROGRESS] Complete workspace fields, recipe/layer discovery, variable provenance, CLI subcommand outputs, editor configuration, session persistence, and all configuration settings. Environment-derived Yocto/OpenEmbedded release discovery: `0d693b9`; preferred editor configuration: `9ac79a6`; color configuration: `0c7e551`; cancellation timeout pending commit. Verification: fake bridge and CLI integration tests.
 
 ## Screens and interaction
 

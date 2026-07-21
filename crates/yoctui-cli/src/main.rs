@@ -65,6 +65,7 @@ struct FileConfig {
     log_retention_entries: Option<usize>,
     log_retention_bytes: Option<usize>,
     refresh_ms: Option<u64>,
+    cancellation_timeout_ms: Option<u64>,
     default_target: Option<String>,
     editor: Option<String>,
     color: Option<bool>,
@@ -77,6 +78,7 @@ struct Config {
     log_entries: usize,
     log_bytes: usize,
     refresh: Duration,
+    cancellation_timeout: Duration,
     default_target: Option<String>,
     editor: Option<String>,
     log_level: String,
@@ -213,12 +215,21 @@ fn resolve_config(cli: &Cli) -> Result<Config> {
     if log_entries == 0 || log_bytes == 0 {
         anyhow::bail!("log retention limits must be greater than zero");
     }
+    let cancellation_timeout_ms = env_usize("YOCTUI_CANCELLATION_TIMEOUT_MS")?
+        .map(u64::try_from)
+        .transpose()?
+        .or(file.cancellation_timeout_ms)
+        .unwrap_or(5_000);
+    if cancellation_timeout_ms == 0 {
+        anyhow::bail!("cancellation timeout must be greater than zero");
+    }
     Ok(Config {
         backend,
         build_dir,
         log_entries,
         log_bytes,
         refresh: Duration::from_millis(file.refresh_ms.unwrap_or(100).max(16)),
+        cancellation_timeout: Duration::from_millis(cancellation_timeout_ms),
         default_target: env::var("YOCTUI_DEFAULT_TARGET")
             .ok()
             .or(file.default_target),
@@ -536,8 +547,24 @@ fn action_from_event(event: BackendEvent) -> Option<Action> {
 }
 
 async fn select_backend(backend: Backend, build_dir: PathBuf) -> Result<Box<dyn BitBakeBackend>> {
+    select_backend_with_timeout(backend, build_dir, None).await
+}
+
+async fn select_backend_with_timeout(
+    backend: Backend,
+    build_dir: PathBuf,
+    cancellation_timeout: Option<Duration>,
+) -> Result<Box<dyn BitBakeBackend>> {
     match backend {
-        Backend::Process => Ok(Box::new(ProcessBackend::new(build_dir))),
+        Backend::Process => {
+            let backend = ProcessBackend::new(build_dir);
+            let backend = if let Some(timeout) = cancellation_timeout {
+                backend.with_cancellation_timeout(timeout)
+            } else {
+                backend
+            };
+            Ok(Box::new(backend))
+        }
         Backend::Bridge => {
             let script = env::var_os("YOCTUI_BRIDGE_PATH")
                 .map(PathBuf::from)
@@ -610,6 +637,7 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
         log_entries,
         log_bytes,
         refresh,
+        cancellation_timeout,
         color,
         editor,
         ..
@@ -619,7 +647,8 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
     let mut app = App::new(log_entries, log_bytes);
     app.backend = backend_kind.to_string();
     app.color_enabled = color;
-    let mut backend = select_backend(backend_kind, build_dir).await?;
+    let mut backend =
+        select_backend_with_timeout(backend_kind, build_dir, Some(cancellation_timeout)).await?;
     match backend.inspect_workspace().await {
         Ok(workspace) => {
             let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
@@ -849,13 +878,14 @@ mod tests {
     #[test]
     fn parses_retention_and_backend_settings() {
         let config: FileConfig = toml::from_str(
-            "backend = 'process'\nlog_retention_entries = 42\nlog_retention_bytes = 1024\nrefresh_ms = 50\ndefault_target = 'core-image-minimal'\neditor = 'nano'",
+            "backend = 'process'\nlog_retention_entries = 42\nlog_retention_bytes = 1024\nrefresh_ms = 50\ncancellation_timeout_ms = 250\ndefault_target = 'core-image-minimal'\neditor = 'nano'",
         )
         .unwrap();
         assert!(matches!(config.backend, Some(Backend::Process)));
         assert_eq!(config.log_retention_entries, Some(42));
         assert_eq!(config.default_target.as_deref(), Some("core-image-minimal"));
         assert_eq!(config.editor.as_deref(), Some("nano"));
+        assert_eq!(config.cancellation_timeout_ms, Some(250));
     }
 
     #[test]
