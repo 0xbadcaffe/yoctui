@@ -21,7 +21,9 @@ use std::{
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{Input, key_action};
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
-use yoctui_model::{Action, App, AppError, BuildRequest, Effect, TaskId, TaskInfo, update};
+use yoctui_model::{
+    Action, App, AppError, BuildRequest, Effect, Screen, Severity, TaskId, TaskInfo, update,
+};
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
 #[command(about = "A Ratatui frontend and control client for BitBake")]
@@ -42,7 +44,7 @@ struct Cli {
     command: Option<Command>,
     targets: Vec<String>,
 }
-#[derive(Clone, Debug, Deserialize, ValueEnum)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq, ValueEnum)]
 #[serde(rename_all = "lowercase")]
 enum Backend {
     Bridge,
@@ -87,7 +89,22 @@ struct Config {
 }
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 struct Session {
+    #[serde(default)]
     last_target: Option<String>,
+    #[serde(default)]
+    last_screen: Option<Screen>,
+    #[serde(default)]
+    log_filter: Option<Severity>,
+    #[serde(default)]
+    log_recipe_filter: Option<String>,
+    #[serde(default)]
+    log_task_filter: Option<String>,
+    #[serde(default)]
+    log_wrap: bool,
+    #[serde(default)]
+    last_backend: Option<Backend>,
+    #[serde(default)]
+    recent_build_dirs: Vec<PathBuf>,
 }
 #[derive(Subcommand, Debug)]
 enum Command {
@@ -221,7 +238,7 @@ fn env_usize(name: &str) -> Result<Option<usize>> {
         .transpose()
 }
 
-fn resolve_config(cli: &Cli) -> Result<Config> {
+fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
     let configured_path = config_path(cli);
     let file = read_file_config(configured_path.as_deref())?;
     let environment_backend = env::var("YOCTUI_BACKEND")
@@ -236,12 +253,20 @@ fn resolve_config(cli: &Cli) -> Result<Config> {
         .clone()
         .or(environment_backend)
         .or(file.backend)
+        .or(session.last_backend.clone())
         .unwrap_or(Backend::Bridge);
     let build_dir = cli
         .build_dir
         .clone()
         .or_else(|| env::var_os("YOCTUI_BUILD_DIR").map(PathBuf::from))
         .or(file.build_dir)
+        .or_else(|| {
+            session
+                .recent_build_dirs
+                .iter()
+                .find(|directory| directory.is_dir())
+                .cloned()
+        })
         .unwrap_or(env::current_dir()?);
     let log_entries = env_usize("YOCTUI_LOG_RETENTION_ENTRIES")?
         .or(file.log_retention_entries)
@@ -284,8 +309,8 @@ fn resolve_config(cli: &Cli) -> Result<Config> {
 async fn main() -> Result<()> {
     install_panic_hook();
     let cli = Cli::parse();
-    let config = resolve_config(&cli)?;
-    let session = read_session(config.session_path.as_deref())?;
+    let session = read_session(session_path(config_path(&cli).as_deref()).as_deref())?;
+    let config = resolve_config(&cli, &session)?;
     tracing_subscriber::fmt()
         .with_env_filter(config.log_level.clone())
         .with_writer(std::io::stderr)
@@ -311,7 +336,7 @@ async fn main() -> Result<()> {
         _ => config
             .default_target
             .clone()
-            .or(session.last_target)
+            .or(session.last_target.clone())
             .into_iter()
             .collect(),
     };
@@ -325,7 +350,7 @@ async fn main() -> Result<()> {
         )
         .await;
     }
-    tui(config, targets).await
+    tui(config, targets, session).await
 }
 
 async fn load_workspace(backend: Backend, build_dir: PathBuf) -> Result<yoctui_model::Workspace> {
@@ -678,7 +703,7 @@ async fn open_in_editor(
     }
 }
 
-async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
+async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<()> {
     let Config {
         backend: backend_kind,
         build_dir,
@@ -696,8 +721,15 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
     let mut app = App::new(log_entries, log_bytes);
     app.backend = backend_kind.to_string();
     app.color_enabled = color;
+    app.screen = session.last_screen.unwrap_or(Screen::Dashboard);
+    app.logs.filter = session.log_filter;
+    app.logs.recipe_filter = session.log_recipe_filter;
+    app.logs.task_filter = session.log_task_filter;
+    app.logs.wrap = session.log_wrap;
+    let session_build_dir = build_dir.clone();
     let mut backend =
-        select_backend_with_timeout(backend_kind, build_dir, Some(cancellation_timeout)).await?;
+        select_backend_with_timeout(backend_kind.clone(), build_dir, Some(cancellation_timeout))
+            .await?;
     match backend.inspect_workspace().await {
         Ok(workspace) => {
             let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
@@ -890,6 +922,20 @@ async fn tui(config: Config, targets: Vec<String>) -> Result<()> {
         session_path.as_deref(),
         &Session {
             last_target: app.build.target,
+            last_screen: Some(app.screen),
+            log_filter: app.logs.filter,
+            log_recipe_filter: app.logs.recipe_filter,
+            log_task_filter: app.logs.task_filter,
+            log_wrap: app.logs.wrap,
+            last_backend: Some(backend_kind),
+            recent_build_dirs: std::iter::once(session_build_dir)
+                .chain(session.recent_build_dirs)
+                .fold(Vec::new(), |mut directories, directory| {
+                    if !directories.contains(&directory) && directories.len() < 10 {
+                        directories.push(directory);
+                    }
+                    directories
+                }),
         },
     )?;
     Ok(())
@@ -944,13 +990,20 @@ mod tests {
     }
 
     #[test]
-    fn session_round_trip_preserves_last_target() {
+    fn session_round_trip_preserves_preferences() {
         let directory = std::env::temp_dir().join(format!("yoctui-session-{}", std::process::id()));
         let path = directory.join("session.toml");
         write_session(
             Some(&path),
             &Session {
                 last_target: Some("core-image-minimal".into()),
+                last_screen: Some(Screen::Logs),
+                log_filter: Some(Severity::Warning),
+                log_recipe_filter: Some("busybox".into()),
+                log_task_filter: Some("do_compile".into()),
+                log_wrap: true,
+                last_backend: Some(Backend::Process),
+                recent_build_dirs: vec![PathBuf::from("/build")],
             },
         )
         .unwrap();
@@ -958,6 +1011,13 @@ mod tests {
             read_session(Some(&path)).unwrap(),
             Session {
                 last_target: Some("core-image-minimal".into()),
+                last_screen: Some(Screen::Logs),
+                log_filter: Some(Severity::Warning),
+                log_recipe_filter: Some("busybox".into()),
+                log_task_filter: Some("do_compile".into()),
+                log_wrap: true,
+                last_backend: Some(Backend::Process),
+                recent_build_dirs: vec![PathBuf::from("/build")],
             }
         );
         fs::remove_file(&path).unwrap();
