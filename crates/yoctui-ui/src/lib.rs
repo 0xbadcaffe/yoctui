@@ -68,11 +68,12 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Dependencies => {
             "↑/↓ select | Enter recipe | Esc dashboard | r recipes | ? help | q quit"
         }
+        Screen::LayerRelationships => "Esc dashboard | y layers | ? help | q quit",
         Screen::Recipes => {
             "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | g graph | d Devtool edit | u update-recipe | F finish | P deploy | D reset | / search | Esc dashboard | ? help | q quit"
         }
         Screen::Layers => {
-            "↑/↓ select | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
+            "↑/↓ select | i relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
         Screen::Configuration => {
             "↑/↓ select | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
@@ -127,6 +128,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         Screen::Dashboard => dashboard(frame, app, chunks[1]),
         Screen::BuildHistory => build_history(frame, app, chunks[1]),
         Screen::Dependencies => dependencies(frame, app, chunks[1]),
+        Screen::LayerRelationships => layer_relationships(frame, app, chunks[1]),
         Screen::Logs => logs(frame, app, chunks[1]),
         Screen::Errors => errors(frame, app, chunks[1]),
         Screen::Recipes => recipes(frame, app, chunks[1]),
@@ -730,6 +732,35 @@ fn dependencies(frame: &mut Frame, app: &App, area: Rect) {
         ),
         area,
     );
+}
+
+fn layer_relationships(frame: &mut Frame, app: &App, area: Rect) {
+    let text = app.layer_relationships.as_ref().map_or_else(
+        || "No layer relationship data is loaded. Open Layers and press i.".into(),
+        |relationships| relationships.layers.iter().map(|layer| format!(
+            "{} (priority: {})\n  compatible: {}\n  depends: {}\n  overlays: {}\n  appends: {}",
+            layer.name, layer.priority.map_or_else(|| "unknown".into(), |value| value.to_string()),
+            list_or_none(&layer.compatible), list_or_none(&layer.depends), list_or_none(&layer.overlays), list_or_none(&layer.appends)
+        )).collect::<Vec<_>>().join("\n\n"),
+    );
+    frame.render_widget(
+        Paragraph::new(text)
+            .block(
+                Block::default()
+                    .title("Layer relationships (server supplied)")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn list_or_none(values: &[String]) -> String {
+    if values.is_empty() {
+        "(none)".into()
+    } else {
+        values.join(", ")
+    }
 }
 
 fn format_bytes(bytes: u64) -> String {
