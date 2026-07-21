@@ -101,6 +101,10 @@ pub enum BackendEvent {
         build: Vec<String>,
         runtime: Vec<String>,
     },
+    RecipeSources {
+        recipe: String,
+        paths: Vec<PathBuf>,
+    },
     LayerRelationships(Vec<LayerRelationship>),
     BuildStarted,
     ParseProgress {
@@ -168,6 +172,7 @@ pub trait BitBakeBackend: Send {
         &mut self,
         recipe: String,
     ) -> Result<RecipeDependencies, BackendError>;
+    async fn get_recipe_sources(&mut self, recipe: String) -> Result<Vec<PathBuf>, BackendError>;
     async fn get_layer_relationships(&mut self) -> Result<Vec<LayerRelationship>, BackendError>;
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError>;
     async fn cancel_build(&mut self) -> Result<(), BackendError>;
@@ -280,6 +285,9 @@ impl BitBakeBackend for ProcessBackend {
             "the process backend cannot inspect authoritative recipe dependencies; use the Yoctui bridge"
                 .into(),
         ))
+    }
+    async fn get_recipe_sources(&mut self, _recipe: String) -> Result<Vec<PathBuf>, BackendError> {
+        Err(BackendError::Bridge("the process backend cannot inspect authoritative recipe source paths; use the Yoctui bridge".into()))
     }
     async fn get_layer_relationships(&mut self) -> Result<Vec<LayerRelationship>, BackendError> {
         Err(BackendError::Bridge("the process backend cannot inspect authoritative layer relationships; use the Yoctui bridge".into()))
@@ -540,6 +548,10 @@ impl BridgeBackend {
                 build,
                 runtime,
             },
+            Event::RecipeSources { recipe, paths } => BackendEvent::RecipeSources {
+                recipe,
+                paths: paths.into_iter().map(PathBuf::from).collect(),
+            },
             Event::LayerRelationships { layers } => BackendEvent::LayerRelationships(
                 layers
                     .into_iter()
@@ -739,6 +751,30 @@ impl BitBakeBackend for BridgeBackend {
                 BackendEvent::Disconnected => {
                     return Err(BackendError::Bridge(
                         "bridge disconnected while reading recipe dependencies".into(),
+                    ));
+                }
+                _ => continue,
+            }
+        }
+    }
+    async fn get_recipe_sources(&mut self, recipe: String) -> Result<Vec<PathBuf>, BackendError> {
+        self.command(Command::GetRecipeSources {
+            recipe: recipe.clone(),
+        })
+        .await?;
+        loop {
+            match self.next_event().await? {
+                BackendEvent::RecipeSources {
+                    recipe: returned,
+                    paths,
+                } if returned == recipe => return Ok(paths),
+                BackendEvent::RecipeSources { .. } => continue,
+                BackendEvent::CommandFailed { code, message } => {
+                    return Err(BackendError::Bridge(format!("{code}: {message}")));
+                }
+                BackendEvent::Disconnected => {
+                    return Err(BackendError::Bridge(
+                        "bridge disconnected while reading recipe source paths".into(),
                     ));
                 }
                 _ => continue,

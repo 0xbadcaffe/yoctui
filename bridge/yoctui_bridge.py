@@ -171,6 +171,26 @@ class BitBakeAdapter:
             )
         return typed_dependencies(response)
 
+    def recipe_sources(self, recipe):
+        operation = self.optional_server_operation("get_recipe_sources")
+        if operation is None:
+            raise ServerUnavailable(
+                "connected BitBake server does not provide get_recipe_sources; authoritative recipe metadata paths are unavailable"
+            )
+        try:
+            response = operation(recipe)
+        except Exception as exc:
+            raise ServerUnavailable(
+                f"could not inspect metadata paths for {recipe} from the BitBake server: {exc}"
+            )
+        if not isinstance(response, list) or not all(
+            isinstance(path, str) for path in response
+        ):
+            raise ServerUnavailable(
+                "BitBake server returned malformed recipe source data"
+            )
+        return response
+
     def layer_relationships(self):
         operation = self.optional_server_operation("get_layer_relationships")
         if operation is None:
@@ -688,6 +708,24 @@ def handle(command, correlation_id, adapter):
                         "recipe": recipe,
                         **dependencies,
                     },
+                    correlation_id,
+                )
+    elif kind == "get_recipe_sources":
+        recipe = command.get("recipe")
+        if not isinstance(recipe, str) or not recipe:
+            error(
+                "invalid_request",
+                "get_recipe_sources requires a recipe name",
+                correlation_id,
+            )
+        else:
+            try:
+                paths = adapter.recipe_sources(recipe)
+            except ServerUnavailable as exc:
+                error("bitbake_server_unavailable", str(exc), correlation_id)
+            else:
+                emit(
+                    {"type": "recipe_sources", "recipe": recipe, "paths": paths},
                     correlation_id,
                 )
     elif kind == "get_layer_relationships":
