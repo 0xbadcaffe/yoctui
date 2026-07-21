@@ -179,6 +179,7 @@ pub struct ProcessBackend {
     arguments: Vec<OsString>,
     child: Option<Child>,
     output: Option<tokio::sync::mpsc::Receiver<LogEntry>>,
+    cancellation_timeout: Duration,
     #[cfg(unix)]
     process_group: Option<i32>,
 }
@@ -198,9 +199,14 @@ impl ProcessBackend {
             arguments,
             child: None,
             output: None,
+            cancellation_timeout: Duration::from_secs(5),
             #[cfg(unix)]
             process_group: None,
         }
+    }
+    pub fn with_cancellation_timeout(mut self, timeout: Duration) -> Self {
+        self.cancellation_timeout = timeout;
+        self
     }
     async fn collect(&mut self) -> Result<(bool, Option<i32>), BackendError> {
         let child = self.child.as_mut().ok_or(BackendError::NotRunning)?;
@@ -270,7 +276,7 @@ impl BitBakeBackend for ProcessBackend {
             // negative PID targets only that child process group, never the caller's group.
             let result = unsafe { libc::kill(-process_group, libc::SIGTERM) };
             if result == 0
-                && tokio::time::timeout(Duration::from_secs(5), c.wait())
+                && tokio::time::timeout(self.cancellation_timeout, c.wait())
                     .await
                     .is_ok()
             {
@@ -764,6 +770,33 @@ mod tests {
             .await
             .unwrap();
         tokio::time::timeout(Duration::from_secs(3), backend.cancel_build())
+            .await
+            .unwrap()
+            .unwrap();
+        fs::remove_file(script).unwrap();
+    }
+
+    #[tokio::test]
+    async fn process_backend_escalates_after_configured_cancellation_timeout() {
+        let script = fixture_script("term-ignoring-bitbake");
+        fs::write(
+            &script,
+            "#!/bin/sh\ntrap '' TERM\nwhile :; do sleep 1; done\n",
+        )
+        .unwrap();
+        let mut permissions = fs::metadata(&script).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&script, permissions).unwrap();
+        let mut backend =
+            shell_backend(script.clone()).with_cancellation_timeout(Duration::from_millis(20));
+        backend
+            .start_build(BuildRequest {
+                targets: vec!["core-image-minimal".into()],
+                task: None,
+            })
+            .await
+            .unwrap();
+        tokio::time::timeout(Duration::from_secs(2), backend.cancel_build())
             .await
             .unwrap()
             .unwrap();
