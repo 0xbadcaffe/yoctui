@@ -111,6 +111,24 @@ class BridgeProtocolTests(unittest.TestCase):
         self.assertEqual(messages[2]["name"], "PATH")
         self.assertEqual(messages[2]["provenance"], "conf/local.conf:8")
 
+    def test_recipe_listing_uses_bitbake_when_server_api_is_unavailable(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            command = Path(directory, "bitbake")
+            command.write_text(
+                "#!/bin/sh\nprintf 'busybox : 1.36.0-r0\\ncore-image-minimal : 1.0-r0\\n'\n",
+                encoding="utf-8",
+            )
+            command.chmod(0o755)
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"list_recipes","filter":"busy"}}',
+                environment={"PATH": f"{directory}:{os.environ['PATH']}"},
+            )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(
+            message["recipes"],
+            [{"name": "busybox", "version": "1.36.0-r0", "layer": None}],
+        )
+
     def test_mocked_bitbake_module_selects_modern_adapter(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             Path(directory, "bb.py").write_text(
