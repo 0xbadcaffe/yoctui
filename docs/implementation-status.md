@@ -34,6 +34,8 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 ## Screens and interaction
 
+- [IN_PROGRESS] Build the Yocto workbench: Devtool-backed in-TUI recipe editing is underway; dependency graph, metadata layer tree, BBMASK, and additional Devtool operations are planned in [yocto-workbench-plan.md](yocto-workbench-plan.md).
+
 - [IN_PROGRESS] Logs support bounded retention, pause/follow, wrap, severity filtering, notification display, vertical/horizontal navigation, and interactive text search with next/previous match navigation. Verification: model/UI tests. Commits: `26aad33`, `4017e02`, `c871b26`, `7c04b37`, `09c4978`, `7928bbd`, `6509c5d`; warning/error eviction indicators: `1359c28`.
 - [IN_PROGRESS] Add recipe/task filters in UI, source-log/editor actions, and richer eviction detail. Recipe/task filter controls: `37a907c`; retained-byte/eviction detail: `2e8c4f1`; selected error source logs open in `$EDITOR`: `9a35b5d`.
 - [IN_PROGRESS] Complete structured errors screen with selection/detail/log jump. Table/detail: `bec99cf`; selection: `4ed019b`; log jump: `8f0154f`; timestamp detail: `b14fcff`; expanded multiline detail: `4332055`. Cross-screen context and richer parsing remain.

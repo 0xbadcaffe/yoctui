@@ -127,6 +127,23 @@ pub struct Recipe {
     pub layer: Option<String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecipeEditor {
+    pub recipe: String,
+    pub root: PathBuf,
+    pub files: Vec<PathBuf>,
+    pub selection: usize,
+    pub content: String,
+    pub editing: bool,
+    pub dirty: bool,
+}
+impl RecipeEditor {
+    fn selected_path(&self) -> Option<PathBuf> {
+        self.files
+            .get(self.selection)
+            .map(|path| self.root.join(path))
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BuildState {
     pub status: BuildStatus,
     pub target: Option<String>,
@@ -249,6 +266,7 @@ pub struct App {
     pub build_task: Option<String>,
     pub recipe_task_confirmation: Option<BuildRequest>,
     pub devtool_reset_confirmation: Option<String>,
+    pub recipe_editor: Option<RecipeEditor>,
     pub error_selection: usize,
     pub recipe_selection: usize,
     pub layer_selection: usize,
@@ -274,6 +292,7 @@ impl App {
             build_task: None,
             recipe_task_confirmation: None,
             devtool_reset_confirmation: None,
+            recipe_editor: None,
             error_selection: 0,
             recipe_selection: 0,
             layer_selection: 0,
@@ -349,6 +368,21 @@ pub enum Action {
     BeginSelectedRecipeCleanState,
     BeginSelectedRecipeDevtoolModify,
     BeginSelectedRecipeDevtoolReset,
+    OpenRecipeEditor {
+        recipe: String,
+        root: PathBuf,
+        files: Vec<PathBuf>,
+    },
+    SelectRecipeEditorFile {
+        delta: isize,
+    },
+    LoadRecipeEditorContent(String),
+    ToggleRecipeEditorEditing,
+    AppendRecipeEditor(char),
+    BackspaceRecipeEditor,
+    SaveRecipeEditor,
+    RecipeEditorSaved,
+    CloseRecipeEditor,
     ConfirmRecipeTask,
     CancelRecipeTask,
     ConfirmDevtoolReset,
@@ -684,6 +718,99 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CancelDevtoolReset => app.devtool_reset_confirmation = None,
+        Action::OpenRecipeEditor {
+            recipe,
+            root,
+            files,
+        } => {
+            app.recipe_editor = Some(RecipeEditor {
+                recipe,
+                root,
+                files,
+                selection: 0,
+                content: String::new(),
+                editing: false,
+                dirty: false,
+            });
+            if let Some(path) = app
+                .recipe_editor
+                .as_ref()
+                .and_then(RecipeEditor::selected_path)
+            {
+                return Some(Effect::LoadRecipeEditorFile(path));
+            }
+            app.notification = Some("The Devtool workspace contains no editable files.".into());
+        }
+        Action::SelectRecipeEditorFile { delta } => {
+            let path = if let Some(editor) = app.recipe_editor.as_mut() {
+                if editor.dirty {
+                    app.notification =
+                        Some("Save changes with Ctrl+S before selecting another file.".into());
+                    None
+                } else {
+                    editor.selection = if delta.is_negative() {
+                        editor.selection.saturating_sub(delta.unsigned_abs())
+                    } else {
+                        editor
+                            .selection
+                            .saturating_add(delta as usize)
+                            .min(editor.files.len().saturating_sub(1))
+                    };
+                    editor.selected_path()
+                }
+            } else {
+                None
+            };
+            if let Some(path) = path {
+                return Some(Effect::LoadRecipeEditorFile(path));
+            }
+        }
+        Action::LoadRecipeEditorContent(content) => {
+            if let Some(editor) = app.recipe_editor.as_mut() {
+                editor.content = content;
+                editor.editing = false;
+                editor.dirty = false;
+            }
+        }
+        Action::ToggleRecipeEditorEditing => {
+            if let Some(editor) = app.recipe_editor.as_mut() {
+                editor.editing = !editor.editing;
+            }
+        }
+        Action::AppendRecipeEditor(character) => {
+            if let Some(editor) = app.recipe_editor.as_mut()
+                && editor.editing
+            {
+                editor.content.push(character);
+                editor.dirty = true;
+            }
+        }
+        Action::BackspaceRecipeEditor => {
+            if let Some(editor) = app.recipe_editor.as_mut()
+                && editor.editing
+            {
+                editor.content.pop();
+                editor.dirty = true;
+            }
+        }
+        Action::SaveRecipeEditor => {
+            if let Some(editor) = app.recipe_editor.as_ref()
+                && editor.dirty
+                && let Some(path) = editor.selected_path()
+            {
+                return Some(Effect::SaveRecipeEditorFile {
+                    path,
+                    content: editor.content.clone(),
+                });
+            }
+        }
+        Action::RecipeEditorSaved => {
+            if let Some(editor) = app.recipe_editor.as_mut() {
+                editor.dirty = false;
+                app.notification = Some("Recipe file saved. Press Esc to return to Yoctui.".into());
+            }
+        }
+        Action::CloseRecipeEditor => app.recipe_editor = None,
         Action::SelectLayer { delta } => {
             app.layer_selection = if delta.is_negative() {
                 app.layer_selection.saturating_sub(delta.unsigned_abs())
@@ -802,6 +929,8 @@ pub enum Effect {
     OpenInEditor(PathBuf),
     DevtoolModify(String),
     DevtoolReset(String),
+    LoadRecipeEditorFile(PathBuf),
+    SaveRecipeEditorFile { path: PathBuf, content: String },
 }
 pub fn format_duration(duration: Duration) -> String {
     format!(
@@ -1120,6 +1249,35 @@ mod tests {
         assert_eq!(
             update(&mut app, Action::ConfirmDevtoolReset),
             Some(Effect::DevtoolReset("busybox".into()))
+        );
+    }
+    #[test]
+    fn recipe_editor_loads_edits_and_saves_selected_file() {
+        let mut app = App::new(10, 1_000);
+        let root = PathBuf::from("/build/workspace/sources/busybox");
+        assert_eq!(
+            update(
+                &mut app,
+                Action::OpenRecipeEditor {
+                    recipe: "busybox".into(),
+                    root: root.clone(),
+                    files: vec![PathBuf::from("main.c")],
+                },
+            ),
+            Some(Effect::LoadRecipeEditorFile(root.join("main.c")))
+        );
+        let _ = update(
+            &mut app,
+            Action::LoadRecipeEditorContent("int main() {}".into()),
+        );
+        let _ = update(&mut app, Action::ToggleRecipeEditorEditing);
+        let _ = update(&mut app, Action::AppendRecipeEditor('\n'));
+        assert_eq!(
+            update(&mut app, Action::SaveRecipeEditor),
+            Some(Effect::SaveRecipeEditorFile {
+                path: root.join("main.c"),
+                content: "int main() {}\n".into(),
+            })
         );
     }
     #[test]

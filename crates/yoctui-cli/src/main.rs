@@ -709,26 +709,21 @@ fn devtool_source_dir(build_dir: &Path, recipe: &str) -> PathBuf {
     build_dir.join("workspace").join("sources").join(recipe)
 }
 
-async fn devtool_modify_and_edit(
+async fn devtool_modify(
     guard: &TerminalGuard,
     app: &mut App,
     build_dir: &Path,
     recipe: String,
-    preferred_editor: Option<&str>,
-) {
+) -> Option<PathBuf> {
     let source_dir = devtool_source_dir(build_dir, &recipe);
     let build_dir = build_dir.to_path_buf();
-    let editor = preferred_editor
-        .map(Into::into)
-        .or_else(|| env::var_os("EDITOR"))
-        .unwrap_or_else(|| "vi".into());
     if let Err(error) = guard.suspend() {
         app.notification = Some(format!(
             "Could not suspend the terminal for devtool: {error}"
         ));
-        return;
+        return None;
     }
-    let result = tokio::task::spawn_blocking(move || -> Result<()> {
+    let result = tokio::task::spawn_blocking(move || -> Result<PathBuf> {
         if !source_dir.is_dir() {
             let status = ProcessCommand::new("devtool")
                 .args(["modify", &recipe])
@@ -739,14 +734,7 @@ async fn devtool_modify_and_edit(
                 anyhow::bail!("devtool modify exited with {status}");
             }
         }
-        let status = ProcessCommand::new(editor)
-            .arg(&source_dir)
-            .status()
-            .context("could not start the preferred editor")?;
-        if !status.success() {
-            anyhow::bail!("the preferred editor exited with {status}");
-        }
-        Ok(())
+        Ok(source_dir)
     })
     .await;
     let resume_result = guard.resume();
@@ -754,17 +742,92 @@ async fn devtool_modify_and_edit(
         app.notification = Some(format!(
             "Could not restore the terminal after devtool: {error}"
         ));
+        None
     } else {
         match result {
-            Ok(Ok(())) => {
-                app.notification =
-                    Some("Devtool workspace closed; recipe changes are ready.".into())
-            }
+            Ok(Ok(source_dir)) => Some(source_dir),
             Ok(Err(error)) => {
-                app.notification = Some(format!("Could not edit via devtool: {error}"))
+                app.notification =
+                    Some(format!("Could not prepare the Devtool workspace: {error}"));
+                None
             }
-            Err(error) => app.notification = Some(format!("Devtool task failed: {error}")),
+            Err(error) => {
+                app.notification = Some(format!("Devtool task failed: {error}"));
+                None
+            }
         }
+    }
+}
+
+fn recipe_editor_files(root: &Path) -> Result<Vec<PathBuf>> {
+    fn visit(root: &Path, directory: &Path, files: &mut Vec<PathBuf>) -> std::io::Result<()> {
+        for entry in fs::read_dir(directory)? {
+            if files.len() >= 512 {
+                break;
+            }
+            let entry = entry?;
+            let path = entry.path();
+            let file_type = entry.file_type()?;
+            if file_type.is_dir() {
+                if entry.file_name() != ".git" {
+                    visit(root, &path, files)?;
+                }
+            } else if file_type.is_file()
+                && entry.metadata()?.len() <= 1_048_576
+                && let Ok(relative) = path.strip_prefix(root)
+            {
+                files.push(relative.to_path_buf());
+            }
+        }
+        Ok(())
+    }
+
+    let mut files = Vec::new();
+    visit(root, root, &mut files)?;
+    files.sort();
+    Ok(files)
+}
+
+async fn open_recipe_editor(app: &mut App, recipe: String, root: PathBuf) {
+    let root_for_scan = root.clone();
+    let files = tokio::task::spawn_blocking(move || recipe_editor_files(&root_for_scan)).await;
+    match files {
+        Ok(Ok(files)) => {
+            if let Some(Effect::LoadRecipeEditorFile(path)) = update(
+                app,
+                Action::OpenRecipeEditor {
+                    recipe,
+                    root,
+                    files,
+                },
+            ) {
+                load_recipe_editor_file(app, path).await;
+            }
+        }
+        Ok(Err(error)) => app.notification = Some(format!("Could not list Devtool files: {error}")),
+        Err(error) => app.notification = Some(format!("Devtool file scan failed: {error}")),
+    }
+}
+
+async fn load_recipe_editor_file(app: &mut App, path: PathBuf) {
+    let result = tokio::task::spawn_blocking(move || fs::read_to_string(path)).await;
+    match result {
+        Ok(Ok(content)) => {
+            let _ = update(app, Action::LoadRecipeEditorContent(content));
+        }
+        Ok(Err(error)) => app.notification = Some(format!("Could not read recipe file: {error}")),
+        Err(error) => app.notification = Some(format!("Recipe file load failed: {error}")),
+    }
+}
+
+async fn save_recipe_editor_file(app: &mut App, path: PathBuf, content: String) {
+    let result = tokio::task::spawn_blocking(move || fs::write(path, content)).await;
+    match result {
+        Ok(Ok(())) => {
+            let _ = update(app, Action::RecipeEditorSaved);
+        }
+        Ok(Err(error)) => app.notification = Some(format!("Could not save recipe file: {error}")),
+        Err(error) => app.notification = Some(format!("Recipe file save failed: {error}")),
     }
 }
 
@@ -874,7 +937,44 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
             let Some(input) = input_from_key(k) else {
                 continue;
             };
-            if app.devtool_reset_confirmation.is_some() {
+            if app.recipe_editor.is_some() {
+                let effect = match input {
+                    Input::Esc => update(&mut app, Action::CloseRecipeEditor),
+                    Input::Up => update(&mut app, Action::SelectRecipeEditorFile { delta: -1 }),
+                    Input::Down => update(&mut app, Action::SelectRecipeEditorFile { delta: 1 }),
+                    Input::Enter
+                        if app
+                            .recipe_editor
+                            .as_ref()
+                            .is_some_and(|editor| editor.editing) =>
+                    {
+                        update(&mut app, Action::AppendRecipeEditor('\n'))
+                    }
+                    Input::Enter | Input::Char('e')
+                        if app
+                            .recipe_editor
+                            .as_ref()
+                            .is_some_and(|editor| !editor.editing) =>
+                    {
+                        update(&mut app, Action::ToggleRecipeEditorEditing)
+                    }
+                    Input::CtrlS => update(&mut app, Action::SaveRecipeEditor),
+                    Input::Backspace => update(&mut app, Action::BackspaceRecipeEditor),
+                    Input::Char(character) => {
+                        update(&mut app, Action::AppendRecipeEditor(character))
+                    }
+                    _ => None,
+                };
+                match effect {
+                    Some(Effect::LoadRecipeEditorFile(path)) => {
+                        load_recipe_editor_file(&mut app, path).await;
+                    }
+                    Some(Effect::SaveRecipeEditorFile { path, content }) => {
+                        save_recipe_editor_file(&mut app, path, content).await;
+                    }
+                    _ => {}
+                }
+            } else if app.devtool_reset_confirmation.is_some() {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmDevtoolReset),
                     Input::Esc => update(&mut app, Action::CancelDevtoolReset),
@@ -908,17 +1008,16 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('d') {
-                if let Some(Effect::DevtoolModify(recipe)) =
-                    update(&mut app, Action::BeginSelectedRecipeDevtoolModify)
-                {
-                    devtool_modify_and_edit(
-                        &guard,
-                        &mut app,
-                        &session_build_dir,
-                        recipe,
-                        editor.as_deref(),
-                    )
-                    .await;
+                let root = match update(&mut app, Action::BeginSelectedRecipeDevtoolModify) {
+                    Some(Effect::DevtoolModify(recipe)) => {
+                        devtool_modify(&guard, &mut app, &session_build_dir, recipe.clone())
+                            .await
+                            .map(|root| (recipe, root))
+                    }
+                    _ => None,
+                };
+                if let Some((recipe, root)) = root {
+                    open_recipe_editor(&mut app, recipe, root).await;
                 }
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('D') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolReset);
@@ -1085,6 +1184,7 @@ fn termination_requested(receiver: &mut tokio::sync::mpsc::Receiver<()>) -> bool
 fn input_from_key(key: KeyEvent) -> Option<Input> {
     match key.code {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlC),
+        KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlS),
         KeyCode::Char(character) => Some(Input::Char(character)),
         KeyCode::Esc => Some(Input::Esc),
         KeyCode::Enter => Some(Input::Enter),
