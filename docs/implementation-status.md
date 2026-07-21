@@ -14,7 +14,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 - [DONE] Model, typed actions, pure reducer, bounded logs, task state, and basic TUI screens exist. Verification: `cargo test -p yoctui-model -p yoctui-ui`. Commit: multiple pre-guide commits.
 - [DONE] Terminal guard restores raw mode, alternate screen, cursor, mouse, bracketed paste, and panic state. Verification: Rust tests and manual pseudo-terminal test. Commit: `7d50f94`.
 - [IN_PROGRESS] Handle resize, supported termination signals, terminal restoration in a pseudo-terminal, and dynamic unavailable-command help. Verification: `./scripts/test-terminal.sh` and `cargo test -p yoctui`. Pseudo-terminal and SIGTERM coverage commits: `df411ad`; current signal commit pending.
-- [IN_PROGRESS] Complete dashboard metrics, build dialog, confirmations, notifications, and backend-driven TUI effects. Backend, status, task counts, diagnostics, active tasks, and recent output: `dd1f6d5`; validated build-target dialog: `a7e89b0`; fake bridge build integration: `bb5dd0d`; parse progress: `7bdd355`. Notifications and build-state edge cases remain.
+- [IN_PROGRESS] Complete dashboard metrics, build dialog, confirmations, notifications, and backend-driven TUI effects. Backend, status, task counts, diagnostics, active tasks, and recent output: `dd1f6d5`; validated build-target dialog: `a7e89b0`; fake bridge build integration: `bb5dd0d`; parse progress: `7bdd355`; backend exit code: `e9bf2f7`. Notifications and build-state edge cases remain.
 
 ## Process backend
 
