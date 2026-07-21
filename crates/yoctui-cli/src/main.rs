@@ -1088,6 +1088,53 @@ async fn devtool_finish(
     }
 }
 
+async fn devtool_deploy(
+    guard: &TerminalGuard,
+    app: &mut App,
+    build_dir: &Path,
+    request: yoctui_model::DevtoolDeployRequest,
+) {
+    let build_dir = build_dir.to_path_buf();
+    if let Err(error) = guard.suspend() {
+        app.notification = Some(format!(
+            "Could not suspend the terminal for devtool: {error}"
+        ));
+        return;
+    }
+    let result = tokio::task::spawn_blocking(move || -> Result<()> {
+        let status = ProcessCommand::new("devtool")
+            .arg("deploy-target")
+            .arg(&request.recipe)
+            .arg(&request.target)
+            .current_dir(build_dir)
+            .status()
+            .context("could not start devtool deploy-target")?;
+        if !status.success() {
+            anyhow::bail!("devtool deploy-target exited with {status}");
+        }
+        Ok(())
+    })
+    .await;
+    let resume_result = guard.resume();
+    if let Err(error) = resume_result {
+        app.notification = Some(format!(
+            "Could not restore the terminal after devtool: {error}"
+        ));
+    } else {
+        match result {
+            Ok(Ok(())) => {
+                app.notification = Some("Devtool deployment completed.".into());
+            }
+            Ok(Err(error)) => {
+                app.notification = Some(format!("Could not deploy via devtool: {error}"));
+            }
+            Err(error) => {
+                app.notification = Some(format!("Devtool task failed: {error}"));
+            }
+        }
+    }
+}
+
 async fn devtool_reset(guard: &TerminalGuard, app: &mut App, build_dir: &Path, recipe: String) {
     let build_dir = build_dir.to_path_buf();
     if let Err(error) = guard.suspend() {
@@ -1296,6 +1343,25 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     Input::Esc => update(&mut app, Action::CancelDevtoolFinish),
                     _ => None,
                 };
+            } else if app.devtool_deploy_confirmation.is_some() {
+                let effect = match input {
+                    Input::Enter => update(&mut app, Action::ConfirmDevtoolDeploy),
+                    Input::Esc => update(&mut app, Action::CancelDevtoolDeployConfirmation),
+                    _ => None,
+                };
+                if let Some(Effect::DevtoolDeploy(request)) = effect {
+                    devtool_deploy(&guard, &mut app, &session_build_dir, request).await;
+                }
+            } else if app.devtool_deploy_recipe.is_some() {
+                let _ = match input {
+                    Input::Char(character) => {
+                        update(&mut app, Action::AppendDevtoolDeployTarget(character))
+                    }
+                    Input::Backspace => update(&mut app, Action::BackspaceDevtoolDeployTarget),
+                    Input::Enter => update(&mut app, Action::PreviewDevtoolDeploy),
+                    Input::Esc => update(&mut app, Action::CancelDevtoolDeploy),
+                    _ => None,
+                };
             } else if app.bbmask_confirmation.is_some() {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmBbmaskWrite),
@@ -1393,6 +1459,8 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('F') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolFinish);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('P') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolDeploy);
             } else if input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginBuildTargetEdit);
             } else if app.screen == yoctui_model::Screen::Errors
