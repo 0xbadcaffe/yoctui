@@ -92,6 +92,12 @@ pub struct TaskInfo {
     pub task: String,
     pub progress: Option<u8>,
 }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CompletedTask {
+    pub task: TaskInfo,
+    pub success: bool,
+}
+const MAX_COMPLETED_TASKS: usize = 1_024;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LogEntry {
     pub severity: Severity,
@@ -263,6 +269,8 @@ pub struct App {
     pub host_telemetry: HostTelemetry,
     pub build: BuildState,
     pub tasks: HashMap<TaskId, TaskInfo>,
+    pub completed_tasks: VecDeque<CompletedTask>,
+    pub task_progress_scroll: usize,
     pub logs: LogState,
     pub should_quit: bool,
     pub quit_confirm: bool,
@@ -291,6 +299,8 @@ impl App {
             host_telemetry: HostTelemetry::default(),
             build: BuildState::default(),
             tasks: HashMap::new(),
+            completed_tasks: VecDeque::new(),
+            task_progress_scroll: 0,
             logs: LogState::new(max_entries, max_bytes),
             should_quit: false,
             quit_confirm: false,
@@ -342,6 +352,9 @@ pub enum Action {
     TaskCompleted {
         id: TaskId,
         success: bool,
+    },
+    ScrollBuildTasks {
+        delta: isize,
     },
     Log(LogEntry),
     BuildCompleted {
@@ -431,6 +444,8 @@ fn prepare_build(app: &mut App, target: Option<String>) {
     app.build.errors = 0;
     app.build.exit_code = None;
     app.tasks.clear();
+    app.completed_tasks.clear();
+    app.task_progress_scroll = 0;
 }
 
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
@@ -497,10 +512,27 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 t.progress = Some(progress)
             }
         }
-        Action::TaskCompleted { id, .. } => {
-            if app.tasks.remove(&id).is_some() {
+        Action::TaskCompleted { id, success } => {
+            if let Some(mut task) = app.tasks.remove(&id) {
+                task.progress = Some(100);
+                app.completed_tasks
+                    .push_back(CompletedTask { task, success });
+                if app.completed_tasks.len() > MAX_COMPLETED_TASKS {
+                    app.completed_tasks.pop_front();
+                }
                 app.build.completed += 1;
             }
+        }
+        Action::ScrollBuildTasks { delta } => {
+            let task_count = app.tasks.len() + app.completed_tasks.len();
+            app.task_progress_scroll = if delta.is_negative() {
+                app.task_progress_scroll
+                    .saturating_sub(delta.unsigned_abs())
+            } else {
+                app.task_progress_scroll
+                    .saturating_add(delta as usize)
+                    .min(task_count.saturating_sub(1))
+            };
         }
         Action::Log(l) => {
             match l.severity {
@@ -1516,6 +1548,29 @@ mod tests {
         );
         let _ = update(&mut app, Action::TaskCompleted { id, success: true });
         assert_eq!(app.build.completed, 1);
+        assert_eq!(app.completed_tasks.len(), 1);
+        assert!(app.completed_tasks.front().is_some_and(|task| task.success));
+    }
+    #[test]
+    fn build_task_scrolling_stays_within_observed_task_history() {
+        let mut app = App::new(2, 10);
+        for recipe in ["busybox", "bash"] {
+            let id = TaskId(format!("{recipe}:do_compile"));
+            let _ = update(
+                &mut app,
+                Action::TaskStarted(TaskInfo {
+                    id: id.clone(),
+                    recipe: recipe.into(),
+                    task: "do_compile".into(),
+                    progress: None,
+                }),
+            );
+            let _ = update(&mut app, Action::TaskCompleted { id, success: true });
+        }
+        let _ = update(&mut app, Action::ScrollBuildTasks { delta: 8 });
+        assert_eq!(app.task_progress_scroll, 1);
+        let _ = update(&mut app, Action::ScrollBuildTasks { delta: -8 });
+        assert_eq!(app.task_progress_scroll, 0);
     }
     #[test]
     fn log_filters_combine_severity_recipe_task_and_search() {

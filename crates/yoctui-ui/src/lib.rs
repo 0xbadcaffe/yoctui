@@ -266,6 +266,13 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
         (left.recipe.as_str(), left.task.as_str())
             .cmp(&(right.recipe.as_str(), right.task.as_str()))
     });
+    let mut package_tasks = active.iter().map(|task| (*task, None)).collect::<Vec<_>>();
+    package_tasks.extend(
+        app.completed_tasks
+            .iter()
+            .rev()
+            .map(|completed| (&completed.task, Some(completed.success))),
+    );
     let recent = app
         .logs
         .entries
@@ -326,29 +333,45 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
         .block(Block::default().title("Build").borders(Borders::ALL)),
         build_panels[0],
     );
+    let task_count = package_tasks.len();
+    let start = app.task_progress_scroll.min(task_count.saturating_sub(1));
     let task_block = Block::default()
-        .title(format!("Active package tasks ({})", active.len()))
+        .title(format!(
+            "Package task progress ({} active, {} complete; use Up/Down to scroll)",
+            active.len(),
+            app.completed_tasks.len()
+        ))
         .borders(Borders::ALL);
     let task_area = task_block.inner(build_panels[1]);
     frame.render_widget(task_block, build_panels[1]);
-    if active.is_empty() {
+    if package_tasks.is_empty() {
         frame.render_widget(
             Paragraph::new("Waiting for BitBake task events."),
             task_area,
         );
     } else {
         let rows = Layout::vertical(
-            active
+            package_tasks[start..]
                 .iter()
                 .take(task_area.height as usize)
                 .map(|_| Constraint::Length(1))
                 .collect::<Vec<_>>(),
         )
         .split(task_area);
-        for (task, row) in active.into_iter().zip(rows.iter().copied()) {
-            let progress = task.progress.unwrap_or(0).min(100);
+        for ((task, completed), row) in package_tasks[start..]
+            .iter()
+            .take(rows.len())
+            .zip(rows.iter().copied())
+        {
+            let progress = if completed.is_some() {
+                100
+            } else {
+                task.progress.unwrap_or(0).min(100)
+            };
             let color = if app.color_enabled {
-                if progress >= 100 {
+                if *completed == Some(false) {
+                    Color::Red
+                } else if progress >= 100 {
                     Color::Green
                 } else if progress >= 75 {
                     Color::Yellow
@@ -361,7 +384,16 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
             frame.render_widget(
                 Gauge::default()
                     .ratio(f64::from(progress) / 100.0)
-                    .label(format!("{}:{} {progress}%", task.recipe, task.task))
+                    .label(format!(
+                        "{}:{} {progress}%{}",
+                        task.recipe,
+                        task.task,
+                        match completed {
+                            Some(true) => " complete",
+                            Some(false) => " failed",
+                            None => "",
+                        }
+                    ))
                     .gauge_style(Style::default().fg(color)),
                 row,
             );
@@ -800,7 +832,7 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, D devtool-reset selected recipe\ny Layers (green rows are active in this build)   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, D devtool-reset selected recipe\ny Layers (green rows are active in this build)   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
@@ -942,6 +974,39 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(output.contains("busybox:do_compile 42%"));
+    }
+    #[test]
+    fn dashboard_renders_completed_and_failed_package_tasks() {
+        let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.completed_tasks.push_back(yoctui_model::CompletedTask {
+            task: yoctui_model::TaskInfo {
+                id: yoctui_model::TaskId("busybox:do_compile".into()),
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                progress: Some(100),
+            },
+            success: true,
+        });
+        app.completed_tasks.push_back(yoctui_model::CompletedTask {
+            task: yoctui_model::TaskInfo {
+                id: yoctui_model::TaskId("bash:do_install".into()),
+                recipe: "bash".into(),
+                task: "do_install".into(),
+                progress: Some(100),
+            },
+            success: false,
+        });
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("busybox:do_compile 100% complete"));
+        assert!(output.contains("bash:do_install 100% failed"));
     }
     #[test]
     fn renders_build_target_editor() {

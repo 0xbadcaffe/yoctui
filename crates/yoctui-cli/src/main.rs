@@ -1140,6 +1140,11 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 let _ = update(&mut app, Action::OpenBuildOptions);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
+            } else if app.screen == yoctui_model::Screen::Dashboard
+                && matches!(input, Input::Up | Input::Down)
+            {
+                let delta = if input == Input::Up { -1 } else { 1 };
+                let _ = update(&mut app, Action::ScrollBuildTasks { delta });
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('d') {
                 let root = match update(&mut app, Action::BeginSelectedRecipeDevtoolModify) {
                     Some(Effect::DevtoolModify(recipe)) => {

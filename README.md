@@ -71,6 +71,8 @@ Press `B` to open the image build-options submenu. It shows the effective `MACHI
 
 While BitBake is loading, parsing, running, or cancelling a build, the dashboard refreshes host CPU utilization and free space on the filesystem containing `$BUILDDIR` once per second.
 
+The dashboard retains up to 1,024 completed package tasks for the current build alongside active tasks. Use `Up` and `Down` on the dashboard to scroll this package progress history; successful tasks are green and failed tasks red when color is enabled.
+
 Select a backend explicitly when needed:
 
 ```sh
