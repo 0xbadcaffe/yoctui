@@ -77,6 +77,8 @@ The persistent header identifies the active Yocto release and source (or build) 
 
 Press `x` to inspect the effective `BBMASK` patterns and their backend-provided provenance. Press `e` to edit the intended value: Yoctui previews the exact assignment it will append to `$BUILDDIR/conf/local.conf`, requires confirmation, then refreshes workspace metadata.
 
+In the Layers screen, select an active layer and press `e` to open its full metadata file tree in Yoctui’s two-pane editor. This is useful for layer recipes and configuration files; use `Enter` or `e` to edit a selected file, `Ctrl+S` to save, and `Esc` to return. Press `o` when you prefer the configured external editor.
+
 Select a backend explicitly when needed:
 
 ```sh

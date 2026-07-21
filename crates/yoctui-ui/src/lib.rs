@@ -67,7 +67,9 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Recipes => {
             "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | d Devtool edit | u update-recipe | F finish | P deploy | D reset | / search | Esc dashboard | ? help | q quit"
         }
-        Screen::Layers => "↑/↓ select | o open layer | / search | Esc dashboard | ? help | q quit",
+        Screen::Layers => {
+            "↑/↓ select | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
+        }
         Screen::Configuration => {
             "↑/↓ select | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
         }
@@ -408,7 +410,7 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         Paragraph::new(files)
             .block(
                 Block::default()
-                    .title(format!("Devtool workspace tree: {}", editor.recipe))
+                    .title(format!("Workspace file tree: {}", editor.recipe))
                     .borders(Borders::ALL),
             )
             .wrap(Wrap { trim: false }),
@@ -1063,7 +1065,7 @@ fn bbmask_assignment(value: &str) -> String {
     )
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, u update-recipe, F finish, P deploy, D reset selected recipe\ny Layers (green rows are active in this build)   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, u update-recipe, F finish, P deploy, D reset selected recipe\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
@@ -1423,7 +1425,7 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(output.contains("Devtool workspace tree: busybox"));
+        assert!(output.contains("Workspace file tree: busybox"));
         assert!(output.contains("int main() {}"));
     }
     #[test]

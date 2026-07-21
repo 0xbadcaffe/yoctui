@@ -464,6 +464,7 @@ pub enum Action {
         delta: isize,
     },
     OpenSelectedLayer,
+    BeginSelectedLayerWorkspaceEditor,
     SelectConfigVariable {
         delta: isize,
     },
@@ -1031,6 +1032,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
             app.notification = Some("No layer is selected to open.".into());
         }
+        Action::BeginSelectedLayerWorkspaceEditor => {
+            if let Some(layer) = app.workspace.layers.get(app.layer_selection) {
+                return Some(Effect::OpenWorkspaceEditor {
+                    label: format!("Layer: {}", layer.name),
+                    root: layer.path.clone(),
+                });
+            }
+            app.notification = Some("No layer is selected to edit.".into());
+        }
         Action::SelectConfigVariable { delta } => {
             app.config_selection = if delta.is_negative() {
                 app.config_selection.saturating_sub(delta.unsigned_abs())
@@ -1170,6 +1180,7 @@ pub enum Effect {
     Start(BuildRequest),
     Cancel,
     OpenInEditor(PathBuf),
+    OpenWorkspaceEditor { label: String, root: PathBuf },
     DevtoolModify(String),
     DevtoolReset(String),
     DevtoolUpdateRecipe(String),
@@ -1644,6 +1655,22 @@ mod tests {
         assert_eq!(
             update(&mut app, Action::OpenSelectedLayer),
             Some(Effect::OpenInEditor(PathBuf::from("/layers/meta-demo")))
+        );
+    }
+    #[test]
+    fn selected_layer_opens_the_in_tui_workspace_editor() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.layers = vec![Layer {
+            name: "meta-demo".into(),
+            path: PathBuf::from("/layers/meta-demo"),
+            priority: None,
+        }];
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedLayerWorkspaceEditor),
+            Some(Effect::OpenWorkspaceEditor {
+                label: "Layer: meta-demo".into(),
+                root: PathBuf::from("/layers/meta-demo"),
+            })
         );
     }
     #[test]
