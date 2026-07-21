@@ -35,6 +35,7 @@ impl AppError {
 pub enum Screen {
     Dashboard,
     BuildHistory,
+    Dependencies,
     Recipes,
     Layers,
     Configuration,
@@ -189,6 +190,12 @@ pub struct BuildRecord {
     pub warnings: usize,
     pub errors: usize,
 }
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct RecipeDependencies {
+    pub recipe: String,
+    pub build: Vec<String>,
+    pub runtime: Vec<String>,
+}
 const MAX_BUILD_HISTORY: usize = 50;
 impl Default for BuildState {
     fn default() -> Self {
@@ -293,6 +300,7 @@ pub struct App {
     pub build: BuildState,
     pub build_history: VecDeque<BuildRecord>,
     pub build_history_selection: usize,
+    pub dependencies: Option<RecipeDependencies>,
     pub tasks: HashMap<TaskId, TaskInfo>,
     pub completed_tasks: VecDeque<CompletedTask>,
     pub task_progress_scroll: usize,
@@ -335,6 +343,7 @@ impl App {
             build: BuildState::default(),
             build_history: VecDeque::new(),
             build_history_selection: 0,
+            dependencies: None,
             tasks: HashMap::new(),
             completed_tasks: VecDeque::new(),
             task_progress_scroll: 0,
@@ -446,6 +455,8 @@ pub enum Action {
     BeginSelectedRecipeDevtoolUpdateRecipe,
     BeginSelectedRecipeDevtoolFinish,
     BeginSelectedRecipeDevtoolDeploy,
+    BeginSelectedRecipeDependencies,
+    DependenciesLoaded(RecipeDependencies),
     OpenRecipeEditor {
         recipe: String,
         root: PathBuf,
@@ -890,6 +901,16 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some("No recipe is selected for devtool deploy-target.".into());
             }
         }
+        Action::BeginSelectedRecipeDependencies => {
+            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
+                return Some(Effect::GetDependencies(recipe.name.clone()));
+            }
+            app.notification = Some("No recipe is selected for dependency inspection.".into());
+        }
+        Action::DependenciesLoaded(dependencies) => {
+            app.screen = Screen::Dependencies;
+            app.dependencies = Some(dependencies);
+        }
         Action::ConfirmRecipeTask => {
             if let Some(request) = app.recipe_task_confirmation.take() {
                 prepare_build(app, request.targets.first().cloned());
@@ -1228,6 +1249,7 @@ pub enum Effect {
     DevtoolUpdateRecipe(String),
     DevtoolFinish(DevtoolFinishRequest),
     DevtoolDeploy(DevtoolDeployRequest),
+    GetDependencies(String),
     LoadRecipeEditorFile(PathBuf),
     SaveRecipeEditorFile { path: PathBuf, content: String },
     WriteBbmask(String),
@@ -1556,6 +1578,29 @@ mod tests {
             update(&mut app, Action::BeginSelectedRecipeDevtoolModify),
             Some(Effect::DevtoolModify("busybox".into()))
         );
+    }
+    #[test]
+    fn selected_recipe_requests_authoritative_dependencies() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes = vec![Recipe {
+            name: "busybox".into(),
+            version: None,
+            layer: None,
+        }];
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedRecipeDependencies),
+            Some(Effect::GetDependencies("busybox".into()))
+        );
+        let _ = update(
+            &mut app,
+            Action::DependenciesLoaded(RecipeDependencies {
+                recipe: "busybox".into(),
+                build: vec!["virtual/libc".into()],
+                runtime: vec!["base-files".into()],
+            }),
+        );
+        assert_eq!(app.screen, Screen::Dependencies);
+        assert_eq!(app.dependencies.as_ref().unwrap().build, ["virtual/libc"]);
     }
     #[test]
     fn selected_recipe_requires_confirmation_before_devtool_reset() {
