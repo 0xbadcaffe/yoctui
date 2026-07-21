@@ -461,7 +461,7 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(format!(
-            "{detail}\n\nb builds.  C cleans.  M runs menuconfig.  S requests cleansstate."
+            "{detail}\n\nb builds.  C cleans.  M runs menuconfig.  S requests cleansstate.  d opens a devtool workspace."
         ))
         .block(
             Block::default()
@@ -607,7 +607,7 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("b Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate selected recipe\ny Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("b Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit selected recipe\ny Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
