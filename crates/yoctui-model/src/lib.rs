@@ -128,6 +128,8 @@ pub struct Workspace {
     pub variables: HashMap<String, String>,
     #[serde(default)]
     pub variable_provenance: HashMap<String, String>,
+    #[serde(default)]
+    pub variable_provenance_chain: HashMap<String, Vec<String>>,
     pub bitbake_version: Option<String>,
     #[serde(default)]
     pub release: Option<String>,
