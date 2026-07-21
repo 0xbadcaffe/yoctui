@@ -237,8 +237,12 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
     );
     let title = if app.logs.dropped > 0 {
         format!(
-            "Logs ({mode}; {} older entries evicted; retained: {}/{})",
-            app.logs.dropped, app.logs.retained_bytes, app.logs.max_bytes
+            "Logs ({mode}; {} older entries evicted, including {} warnings and {} errors; retained: {}/{})",
+            app.logs.dropped,
+            app.logs.dropped_warnings,
+            app.logs.dropped_errors,
+            app.logs.retained_bytes,
+            app.logs.max_bytes
         )
     } else {
         format!(
@@ -681,6 +685,24 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Build target"));
         assert!(output.contains("core-image-minimal"));
+    }
+    #[test]
+    fn logs_identify_evicted_warnings_and_errors() {
+        let mut terminal = Terminal::new(TestBackend::new(160, 20)).unwrap();
+        let mut app = App::new(1, 1_000);
+        app.screen = Screen::Logs;
+        app.logs.dropped = 3;
+        app.logs.dropped_warnings = 1;
+        app.logs.dropped_errors = 2;
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("including 1 warnings and 2 errors"));
     }
     #[test]
     fn renders_recipe_task_confirmation() {

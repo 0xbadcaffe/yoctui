@@ -155,6 +155,8 @@ pub struct LogState {
     pub max_bytes: usize,
     pub retained_bytes: usize,
     pub dropped: usize,
+    pub dropped_warnings: usize,
+    pub dropped_errors: usize,
     pub follow: bool,
     pub paused_len: Option<usize>,
     pub wrap: bool,
@@ -174,6 +176,8 @@ impl LogState {
             max_bytes,
             retained_bytes: 0,
             dropped: 0,
+            dropped_warnings: 0,
+            dropped_errors: 0,
             follow: true,
             paused_len: None,
             wrap: false,
@@ -194,6 +198,11 @@ impl LogState {
             if let Some(old) = self.entries.pop_front() {
                 self.retained_bytes = self.retained_bytes.saturating_sub(old.message.len());
                 self.dropped += 1;
+                match old.severity {
+                    Severity::Warning => self.dropped_warnings += 1,
+                    Severity::Error => self.dropped_errors += 1,
+                    Severity::Trace | Severity::Info => {}
+                }
             } else {
                 break;
             }
@@ -745,6 +754,26 @@ mod tests {
         l.insert(log("c"));
         assert_eq!(l.entries.len(), 2);
         assert_eq!(l.dropped, 1)
+    }
+    #[test]
+    fn eviction_counts_dropped_warnings_and_errors() {
+        let mut logs = LogState::new(1, 100);
+        logs.insert(tagged_log(
+            "busybox",
+            "do_compile",
+            Severity::Warning,
+            "warning",
+        ));
+        logs.insert(tagged_log(
+            "busybox",
+            "do_compile",
+            Severity::Error,
+            "error",
+        ));
+        logs.insert(log("latest"));
+        assert_eq!(logs.dropped, 2);
+        assert_eq!(logs.dropped_warnings, 1);
+        assert_eq!(logs.dropped_errors, 1);
     }
     #[test]
     fn high_volume_logs_remain_within_retention_limits() {
