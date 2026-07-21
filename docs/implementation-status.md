@@ -30,7 +30,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 ## Workspace, CLI, and configuration
 
 - [DONE] CLI options, configuration precedence, headless inspection, doctor diagnostics, and read-only backend CLI commands exist. Verification: CLI tests and `yoctui doctor`. Commit: `e033f62`, `35fa2cb`, `1979825`.
-- [IN_PROGRESS] Complete workspace fields, recipe/layer discovery, variable provenance, CLI subcommand outputs, editor configuration, session persistence, and all configuration settings. Environment-derived Yocto/OpenEmbedded release discovery: `0d693b9`; preferred editor configuration: `9ac79a6`; color configuration: `0c7e551`; cancellation timeout: `ad293af`; target session persistence: `464e76c`. Verification: fake bridge and CLI integration tests.
+- [IN_PROGRESS] Complete workspace fields, recipe/layer discovery, variable provenance, CLI subcommand outputs, editor configuration, session persistence, and all configuration settings. Environment-derived Yocto/OpenEmbedded release discovery: `0d693b9`; preferred editor configuration: `9ac79a6`; color configuration: `0c7e551`; cancellation timeout: `ad293af`; target session persistence: `464e76c`; CLI variable provenance: `ee111c9`. Verification: fake bridge and CLI integration tests.
 
 ## Screens and interaction
 
@@ -39,7 +39,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 - [IN_PROGRESS] Complete structured errors screen with selection/detail/log jump. Table/detail: `bec99cf`; selection: `4ed019b`; log jump: `8f0154f`; timestamp detail: `b14fcff`; expanded multiline detail: `4332055`. Cross-screen context and richer parsing remain.
 - [IN_PROGRESS] Complete recipes screen with search/details/valid actions and destructive confirmations. Backend-loaded table, selection, and details: `58c9332`; case-insensitive metadata search: `494f289`; selected recipe build action: `b7b0564`; clean action: `44eab59`; cleansstate confirmation: `5672ce9`; menuconfig: `66dadbe`.
 - [IN_PROGRESS] Complete layers screen with metadata/search/open action. Backend-loaded table, selection, and metadata details: `63895c7`; case-insensitive metadata search: `494f289`; selected directory opening: `4039f66`.
-- [IN_PROGRESS] Complete read-only configuration screen with search, expansion, and provenance. Backend-loaded table, selection, and expanded values: `5677581`; case-insensitive metadata search: `494f289`; bridge-supplied provenance: `201819a`; provenance source opening: `d6686f4`; live BitBake provenance remains.
+- [IN_PROGRESS] Complete read-only configuration screen with search, expansion, and provenance. Backend-loaded table, selection, and expanded values: `5677581`; case-insensitive metadata search: `494f289`; bridge-supplied provenance: `201819a`; provenance source opening: `d6686f4`; CLI provenance output: `ee111c9`; live BitBake provenance remains.
 
 ## Reliability, testing, and quality
 
