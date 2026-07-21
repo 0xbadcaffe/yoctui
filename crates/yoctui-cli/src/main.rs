@@ -705,6 +705,30 @@ async fn open_in_editor(
     }
 }
 
+async fn open_yocto_shell(guard: &TerminalGuard, app: &mut App) {
+    let shell = env::var_os("SHELL").unwrap_or_else(|| "/bin/sh".into());
+    if let Err(error) = guard.suspend() {
+        app.notification = Some(format!(
+            "Could not suspend the terminal for the Yocto shell: {error}"
+        ));
+        return;
+    }
+    let shell_result =
+        tokio::task::spawn_blocking(move || ProcessCommand::new(shell).status()).await;
+    let resume_result = guard.resume();
+    if let Err(error) = resume_result {
+        app.notification = Some(format!(
+            "Could not restore the terminal after the Yocto shell: {error}"
+        ));
+    } else if let Ok(Err(error)) = shell_result {
+        app.notification = Some(format!("Could not start the Yocto shell: {error}"));
+    } else if let Err(error) = shell_result {
+        app.notification = Some(format!("Yocto shell task failed: {error}"));
+    } else {
+        app.notification = Some("Returned from the inherited Yocto shell.".into());
+    }
+}
+
 fn devtool_source_dir(build_dir: &Path, recipe: &str) -> PathBuf {
     build_dir.join("workspace").join("sources").join(recipe)
 }
@@ -992,6 +1016,23 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 if let Some(Effect::Start(request)) = effect {
                     begin_build(&mut backend, &mut app, request).await;
                 }
+            } else if app.build_options_open {
+                let effect = match input {
+                    Input::Char('b') => update(&mut app, Action::BeginBuildTargetTask(None)),
+                    Input::Char('c') => {
+                        update(&mut app, Action::BeginBuildTargetTask(Some("clean".into())))
+                    }
+                    Input::Char('m') => update(
+                        &mut app,
+                        Action::BeginBuildTargetTask(Some("menuconfig".into())),
+                    ),
+                    Input::Char('e') => update(&mut app, Action::BeginBuildTargetEdit),
+                    Input::Esc => update(&mut app, Action::CloseBuildOptions),
+                    _ => None,
+                };
+                if let Some(Effect::Start(request)) = effect {
+                    begin_build(&mut backend, &mut app, request).await;
+                }
             } else if app.build_target_editing {
                 let effect = match input {
                     Input::Char(character) => {
@@ -1005,6 +1046,10 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 if let Some(Effect::Start(request)) = effect {
                     begin_build(&mut backend, &mut app, request).await;
                 }
+            } else if input == Input::Char('!') {
+                open_yocto_shell(&guard, &mut app).await;
+            } else if input == Input::Char('B') {
+                let _ = update(&mut app, Action::OpenBuildOptions);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('d') {

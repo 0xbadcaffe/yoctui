@@ -83,7 +83,7 @@ pub fn render(frame: &mut Frame, app: &App) {
     } else {
         Style::default()
     };
-    frame.render_widget(Paragraph::new("b target/build | c cancel | l logs | f follow | w wrap | s severity | R recipe | T task | / search | n/N match | e errors | o open path | r recipes | y layers | v config | ? help | q quit").style(footer_style),chunks[2]);
+    frame.render_widget(Paragraph::new("B build options | ! Yocto shell | b target/build | c cancel | l logs | f follow | w wrap | s severity | R recipe | T task | / search | n/N match | e errors | o open path | r recipes | y layers | v config | ? help | q quit").style(footer_style),chunks[2]);
     if let Some(editor) = app.recipe_editor.as_ref() {
         recipe_editor(frame, app, editor, area);
     } else if app.quit_confirm {
@@ -124,6 +124,28 @@ pub fn render(frame: &mut Frame, app: &App) {
                     .borders(Borders::ALL),
             )
             .wrap(Wrap { trim: true }),
+            popup,
+        );
+    } else if app.build_options_open {
+        let machine = app
+            .workspace
+            .variables
+            .get("MACHINE")
+            .map_or("unknown", String::as_str);
+        let width = area.width.saturating_sub(12).clamp(38, 84);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(10) / 2,
+            width,
+            10,
+        );
+        frame.render_widget(Clear, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Machine: {machine}\nCurrent image target: {}\n\nb  Build image\nc  Clean image\nm  Run menuconfig\ne  Enter a different image target\n\nEsc closes this menu.",
+                app.build.target.as_deref().unwrap_or("not selected")
+            ))
+            .block(Block::default().title("Image build options").borders(Borders::ALL)),
             popup,
         );
     } else if app.build_target_editing {
@@ -630,7 +652,15 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
                             .map_or_else(String::new, |priority| priority.to_string()),
                     ),
                 ])
-                .style(selected_style(app, index == app.layer_selection))
+                .style({
+                    let mut style = selected_style(app, index == app.layer_selection);
+                    if app.color_enabled {
+                        style = style.fg(Color::Green);
+                    } else {
+                        style = style.add_modifier(Modifier::BOLD);
+                    }
+                    style
+                })
             }),
             [
                 Constraint::Percentage(30),
@@ -646,7 +676,7 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
             Block::default()
                 .title(metadata_title(
                     format!(
-                        "Layers (shown: {} of {})",
+                        "Active build layers (shown: {} of {})",
                         layer_count,
                         app.workspace.layers.len()
                     ),
@@ -660,7 +690,7 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
         || "No layers supplied by the backend.".into(),
         |layer| {
             format!(
-                "Layer: {}\nPath: {}\nPriority: {}",
+                "Active in this build configuration\nLayer: {}\nPath: {}\nPriority: {}",
                 layer.name,
                 layer.path.display(),
                 layer
@@ -670,7 +700,10 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
         },
     );
     frame.render_widget(
-        Paragraph::new(format!("{detail}\n\no opens the selected layer directory.")).block(
+        Paragraph::new(format!(
+            "{detail}\n\nGreen rows are active build layers. o opens the selected layer directory."
+        ))
+        .block(
             Block::default()
                 .title("Selected layer")
                 .borders(Borders::ALL),
@@ -742,7 +775,7 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("b Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, D devtool-reset selected recipe\ny Layers   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, d devtool-edit, D devtool-reset selected recipe\ny Layers (green rows are active in this build)   v Configuration\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
@@ -884,6 +917,27 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Build target"));
         assert!(output.contains("core-image-minimal"));
+    }
+    #[test]
+    fn renders_machine_aware_build_options() {
+        let mut terminal = Terminal::new(TestBackend::new(80, 20)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.build_options_open = true;
+        app.build.target = Some("core-image-minimal".into());
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemuarm".into());
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Image build options"));
+        assert!(output.contains("qemuarm"));
+        assert!(output.contains("Clean image"));
     }
     #[test]
     fn logs_identify_evicted_warnings_and_errors() {
