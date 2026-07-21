@@ -72,6 +72,9 @@ pub enum Command {
     GetDependencies {
         recipe: String,
     },
+    GetRecipeSources {
+        recipe: String,
+    },
     GetLayerRelationships,
     Shutdown,
 }
@@ -123,6 +126,10 @@ pub enum Event {
         recipe: String,
         build: Vec<String>,
         runtime: Vec<String>,
+    },
+    RecipeSources {
+        recipe: String,
+        paths: Vec<String>,
     },
     LayerRelationships {
         layers: Vec<LayerRelationshipData>,

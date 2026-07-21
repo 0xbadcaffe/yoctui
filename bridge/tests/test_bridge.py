@@ -223,6 +223,29 @@ server = Server()
         self.assertEqual(message["type"], "command_failed")
         self.assertEqual(message["code"], "bitbake_server_unavailable")
 
+    def test_mocked_server_adapter_returns_recipe_source_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                """__version__ = "2.8.1"
+class Connection:
+ def get_recipe_sources(self, recipe):
+  assert recipe == "busybox"
+  return ["/layers/meta/recipes-core/busybox/busybox_1.0.bb", "/layers/meta-custom/recipes-core/busybox/busybox_%.bbappend"]
+class Server:
+ def connect(self): return Connection()
+server = Server()
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"get_recipe_sources","recipe":"busybox"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "recipe_sources")
+        self.assertEqual(message["recipe"], "busybox")
+        self.assertEqual(len(message["paths"]), 2)
+
     def test_mocked_server_adapter_lists_typed_workspace_data(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             Path(directory, "bb.py").write_text(
