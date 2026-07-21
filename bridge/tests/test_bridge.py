@@ -209,6 +209,28 @@ server = Server()
         self.assertEqual(messages[0]["recipes"][0]["name"], "busybox")
         self.assertEqual(messages[1]["layers"][0]["path"], "/src/meta")
 
+    def test_mocked_server_adapter_inspects_typed_workspace(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                """__version__ = "2.8.1"
+class Connection:
+ def inspect_workspace(self):
+  return {"build_dir": "/build", "source_dir": "/src", "variables": {"MACHINE": "qemuarm"}, "variable_provenance": {"MACHINE": "conf/local.conf:12"}, "bitbake_version": "2.8.1", "release": "5.0", "layers": [], "recipes": []}
+class Server:
+ def connect(self): return Connection()
+server = Server()
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"inspect_workspace"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        data = json.loads(result.stdout)["message"]["data"]
+        self.assertEqual(data["build_dir"], "/build")
+        self.assertEqual(data["variables"]["MACHINE"], "qemuarm")
+        self.assertEqual(data["variable_provenance"]["MACHINE"], "conf/local.conf:12")
+
     def test_mocked_server_drains_native_event_objects(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             Path(directory, "bb.py").write_text(

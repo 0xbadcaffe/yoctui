@@ -54,7 +54,16 @@ class BitBakeAdapter:
         self.connection = None
 
     def workspace(self):
-        return workspace_data(self.version)
+        operation = self.optional_server_operation("inspect_workspace")
+        if operation is None:
+            return workspace_data(self.version)
+        try:
+            response = operation()
+        except Exception as exc:
+            raise ServerUnavailable(
+                f"could not inspect the BitBake workspace from the server: {exc}"
+            )
+        return {"type": "workspace", "data": typed_workspace(response)}
 
     def server(self):
         if self.connection is not None:
@@ -258,6 +267,39 @@ def configured_variable_provenance():
     }
 
 
+def typed_workspace(response):
+    if not isinstance(response, dict):
+        raise ServerUnavailable(
+            "BitBake server returned an unsupported workspace response"
+        )
+
+    def optional_string(name):
+        value = response.get(name)
+        if value is None or isinstance(value, str):
+            return value
+        raise ServerUnavailable(f"BitBake server returned malformed {name} data")
+
+    def string_map(name):
+        value = response.get(name, {})
+        if isinstance(value, dict) and all(
+            isinstance(key, str) and isinstance(item, str)
+            for key, item in value.items()
+        ):
+            return value
+        raise ServerUnavailable(f"BitBake server returned malformed {name} data")
+
+    return {
+        "build_dir": optional_string("build_dir"),
+        "source_dir": optional_string("source_dir"),
+        "variables": string_map("variables"),
+        "variable_provenance": string_map("variable_provenance"),
+        "bitbake_version": optional_string("bitbake_version"),
+        "release": optional_string("release"),
+        "layers": typed_layers(response.get("layers", [])),
+        "recipes": typed_recipes(response.get("recipes", [])),
+    }
+
+
 def configured_layers():
     values = []
     for path in os.environ.get("BBLAYERS", "").split():
@@ -417,7 +459,12 @@ def handle(command, correlation_id, adapter):
     if kind == "hello":
         emit({"type": "hello_ack", "bitbake_version": adapter.version}, correlation_id)
     elif kind == "inspect_workspace":
-        emit(adapter.workspace(), correlation_id)
+        try:
+            workspace = adapter.workspace()
+        except ServerUnavailable as exc:
+            error("bitbake_server_unavailable", str(exc), correlation_id)
+            return True
+        emit(workspace, correlation_id)
     elif kind == "start_build":
         targets = command.get("targets")
         if not isinstance(targets, list) or not all(
