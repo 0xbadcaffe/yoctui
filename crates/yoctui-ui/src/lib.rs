@@ -65,7 +65,9 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ package progress | h build history | B build options | ! shell | b target | c cancel | r recipes | y layers | v config | x BBMASK | ? help | q quit"
         }
         Screen::BuildHistory => "↑/↓ select | Esc dashboard | ? help | q quit",
-        Screen::Dependencies => "Esc dashboard | r recipes | ? help | q quit",
+        Screen::Dependencies => {
+            "↑/↓ select | Enter recipe | Esc dashboard | r recipes | ? help | q quit"
+        }
         Screen::Recipes => {
             "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | g graph | d Devtool edit | u update-recipe | F finish | P deploy | D reset | / search | Esc dashboard | ? help | q quit"
         }
@@ -683,33 +685,49 @@ fn build_history(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn dependencies(frame: &mut Frame, app: &App, area: Rect) {
-    let text = app.dependencies.as_ref().map_or_else(
-        || "No recipe dependency data is loaded. Select a recipe and press g.".into(),
-        |dependencies| {
-            let build = if dependencies.build.is_empty() {
-                "(none)".into()
-            } else {
-                dependencies.build.join("\n")
-            };
-            let runtime = if dependencies.runtime.is_empty() {
-                "(none)".into()
-            } else {
-                dependencies.runtime.join("\n")
-            };
-            format!(
-                "Recipe: {}\n\nBuild dependencies:\n{build}\n\nRuntime dependencies:\n{runtime}\n\nValues are supplied by the active BitBake server.",
-                dependencies.recipe
-            )
-        },
-    );
+    let Some(dependencies) = app.dependencies.as_ref() else {
+        frame.render_widget(
+            Paragraph::new("No recipe dependency data is loaded. Select a recipe and press g.")
+                .block(
+                    Block::default()
+                        .title("Dependency graph")
+                        .borders(Borders::ALL),
+                ),
+            area,
+        );
+        return;
+    };
+    let rows = dependencies
+        .build
+        .iter()
+        .map(|name| ("build", name.as_str()))
+        .chain(
+            dependencies
+                .runtime
+                .iter()
+                .map(|name| ("runtime", name.as_str())),
+        )
+        .collect::<Vec<_>>();
     frame.render_widget(
-        Paragraph::new(text)
-            .block(
-                Block::default()
-                    .title("Dependency graph")
-                    .borders(Borders::ALL),
-            )
-            .wrap(Wrap { trim: false }),
+        Table::new(
+            rows.iter().enumerate().map(|(index, (kind, name))| {
+                Row::new(vec![Cell::from(*kind), Cell::from(*name)])
+                    .style(selected_style(app, index == app.dependency_selection))
+            }),
+            [Constraint::Length(12), Constraint::Min(1)],
+        )
+        .header(
+            Row::new(["Kind", "Dependency"]).style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(
+            Block::default()
+                .title(format!(
+                    "Dependency graph: {} ({} edges, server supplied)",
+                    dependencies.recipe,
+                    rows.len()
+                ))
+                .borders(Borders::ALL),
+        ),
         area,
     );
 }

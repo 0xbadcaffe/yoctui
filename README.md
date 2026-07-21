@@ -114,7 +114,7 @@ Use `cargo run -p yoctui -- --help` for the complete CLI reference.
 
 The bridge protocol is NDJSON on standard I/O. The included bridge safely negotiates and inspects environment-derived workspace data without parsing configuration as authority; server operations require a compatible live BitBake adapter. See `docs/` for architecture, testing, profiling, protocol, and compatibility details.
 
-In the Recipes screen, press `g` to inspect the selected recipe's build and runtime dependencies. This view is intentionally available only when the active BitBake server supports the bridge's `get_dependencies` capability; Yoctui does not infer dependencies itself.
+In the Recipes screen, press `g` to inspect the selected recipe's build and runtime dependencies. Use Up/Down and Enter to open a dependency recipe that is present in the workspace. This view is intentionally available only when the active BitBake server supports the bridge's `get_dependencies` capability; Yoctui does not infer dependencies itself.
 
 Configuration is read from `$XDG_CONFIG_HOME/yoctui/config.toml` (or `~/.config/yoctui/config.toml`). CLI flags override `YOCTUI_*` environment variables, which override the configuration file, which overrides the most recent session, which overrides built-in defaults. Supported values include `backend`, `build_dir`, `log_retention_entries`, `log_retention_bytes`, `refresh_ms`, `default_target`, `editor`, `color`, and `cancellation_timeout_ms`.
 
