@@ -348,6 +348,7 @@ pub struct App {
     pub quit_confirm: bool,
     pub notification: Option<String>,
     pub build_options_open: bool,
+    pub build_completion_open: bool,
     pub build_target_editing: bool,
     pub build_target_input: String,
     pub build_task: Option<String>,
@@ -395,6 +396,7 @@ impl App {
             quit_confirm: false,
             notification: None,
             build_options_open: false,
+            build_completion_open: false,
             build_target_editing: false,
             build_target_input: String::new(),
             build_task: None,
@@ -467,6 +469,7 @@ pub enum Action {
         success: bool,
         exit_code: Option<i32>,
     },
+    DismissBuildCompletion,
     SelectBuildHistory {
         delta: isize,
     },
@@ -599,6 +602,7 @@ fn prepare_build(app: &mut App, target: Option<String>) {
     app.build.warnings = 0;
     app.build.errors = 0;
     app.build.exit_code = None;
+    app.build_completion_open = false;
     app.tasks.clear();
     app.completed_tasks.clear();
     app.task_progress_scroll = 0;
@@ -773,7 +777,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.build_history.pop_front();
             }
             app.build_history_selection = 0;
+            app.build_completion_open = true;
         }
+        Action::DismissBuildCompletion => app.build_completion_open = false,
         Action::SelectBuildHistory { delta } => {
             app.build_history_selection = if delta.is_negative() {
                 app.build_history_selection
@@ -925,9 +931,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::BeginSelectedRecipeBuild => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                app.build_target_input = recipe.name.clone();
-                app.build_task = None;
-                app.build_target_editing = true;
+                app.recipe_task_confirmation = Some(BuildRequest {
+                    targets: vec![recipe.name.clone()],
+                    task: None,
+                });
             } else {
                 app.notification = Some("No recipe is selected to build.".into());
             }
@@ -1818,7 +1825,7 @@ mod tests {
         assert_eq!(app.recipe_selection, 0);
     }
     #[test]
-    fn selected_recipe_prefills_the_build_target_editor() {
+    fn selected_recipe_build_requires_confirmation() {
         let mut app = App::new(10, 1_000);
         app.workspace.recipes = vec![Recipe {
             name: "busybox".into(),
@@ -1826,8 +1833,13 @@ mod tests {
             layer: None,
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
-        assert!(app.build_target_editing);
-        assert_eq!(app.build_target_input, "busybox");
+        assert_eq!(
+            app.recipe_task_confirmation,
+            Some(BuildRequest {
+                targets: vec!["busybox".into()],
+                task: None,
+            })
+        );
     }
     #[test]
     fn selected_recipe_clean_prefills_the_clean_task() {
@@ -2246,6 +2258,21 @@ mod tests {
                 task: None,
             })
         );
+    }
+    #[test]
+    fn build_completion_stays_open_until_dismissed() {
+        let mut app = App::new(10, 1_000);
+        app.build.target = Some("core-image-minimal".into());
+        let _ = update(
+            &mut app,
+            Action::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        );
+        assert!(app.build_completion_open);
+        let _ = update(&mut app, Action::DismissBuildCompletion);
+        assert!(!app.build_completion_open);
     }
     #[test]
     fn build_options_prefill_the_current_target_and_requested_task() {

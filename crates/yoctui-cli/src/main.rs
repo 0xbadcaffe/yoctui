@@ -1490,6 +1490,8 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     Input::Esc => update(&mut app, Action::CancelBbmaskEdit),
                     _ => None,
                 };
+            } else if app.build_completion_open {
+                let _ = update(&mut app, Action::DismissBuildCompletion);
             } else if app.image_picker.is_some() {
                 let _ = match input {
                     Input::Up => update(&mut app, Action::SelectImage { delta: -1 }),
