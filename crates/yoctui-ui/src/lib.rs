@@ -231,6 +231,16 @@ pub fn render(frame: &mut Frame, app: &App) {
     );
     if let Some(editor) = app.recipe_editor.as_ref() {
         recipe_editor(frame, app, editor, area);
+    } else if app.build_completion_open {
+        build_completion_popup(frame, app, area);
+    } else if matches!(
+        app.build.status,
+        yoctui_model::BuildStatus::LoadingWorkspace
+            | yoctui_model::BuildStatus::Parsing
+            | yoctui_model::BuildStatus::Running
+            | yoctui_model::BuildStatus::Cancelling
+    ) {
+        build_progress_popup(frame, app, area);
     } else if app.quit_confirm {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 3);
         frame.render_widget(Clear, popup);
@@ -510,6 +520,93 @@ pub fn render(frame: &mut Frame, app: &App) {
             popup,
         );
     }
+}
+
+fn build_progress_popup(frame: &mut Frame, app: &App, area: Rect) {
+    let width = area.width.saturating_sub(14).clamp(50, 110);
+    let height = area.height.saturating_sub(6).clamp(12, 28);
+    let popup = Rect::new(
+        (area.width.saturating_sub(width)) / 2,
+        (area.height.saturating_sub(height)) / 2,
+        width,
+        height,
+    );
+    let mut task_lines = app
+        .tasks
+        .values()
+        .map(|task| {
+            format!(
+                "  {:<28} {:<18} {:>3}%",
+                task.recipe,
+                task.task,
+                task.progress.unwrap_or(0)
+            )
+        })
+        .collect::<Vec<_>>();
+    task_lines.sort();
+    if task_lines.is_empty() {
+        task_lines.push("  Waiting for BitBake task events…".into());
+    }
+    let cpu = app
+        .host_telemetry
+        .cpu_utilization_percent
+        .map_or_else(|| "sampling".into(), |value| format!("{value}%"));
+    let disk = app
+        .host_telemetry
+        .disk_available_bytes
+        .map_or_else(|| "unavailable".into(), format_bytes);
+    let parse = match (app.build.parse_current, app.build.parse_total) {
+        (Some(current), Some(total)) if total > 0 => format!(
+            "{current}/{total} ({:.0}%)",
+            current as f64 / total as f64 * 100.0
+        ),
+        _ => "not parsing".into(),
+    };
+    frame.render_widget(Clear, popup);
+    frame.render_widget(
+        Paragraph::new(format!(
+            "Target: {}\nStatus: {:?}    Tasks: {} complete, {} active\nParse: {parse}    CPU: {cpu}    Free disk: {disk}\n\nActive recipe tasks:\n{}\n\nBitBake is running. c cancels the build.",
+            app.build.target.as_deref().unwrap_or("unknown"),
+            app.build.status,
+            app.build.completed,
+            app.tasks.len(),
+            task_lines.join("\n"),
+        ))
+        .block(Block::default().title("Build progress").borders(Borders::ALL))
+        .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
+fn build_completion_popup(frame: &mut Frame, app: &App, area: Rect) {
+    let width = area.width.saturating_sub(24).clamp(44, 90);
+    let popup = Rect::new(
+        (area.width.saturating_sub(width)) / 2,
+        area.height.saturating_sub(9) / 2,
+        width,
+        9,
+    );
+    let result = if app.build.status == yoctui_model::BuildStatus::Completed {
+        "completed successfully"
+    } else {
+        "failed"
+    };
+    frame.render_widget(Clear, popup);
+    frame.render_widget(
+        Paragraph::new(format!(
+            "Build {} for {}.\n\nTasks completed: {}\nWarnings: {}    Errors: {}    Exit code: {}\nElapsed: {}\n\nPress any key to return to Yoctui.",
+            result,
+            app.build.target.as_deref().unwrap_or("unknown target"),
+            app.build.completed,
+            app.build.warnings,
+            app.build.errors,
+            app.build.exit_code.map_or_else(|| "unknown".into(), |code| code.to_string()),
+            app.elapsed().map(format_duration).unwrap_or_else(|| "unknown".into()),
+        ))
+        .block(Block::default().title("Build finished").borders(Borders::ALL))
+        .wrap(Wrap { trim: true }),
+        popup,
+    );
 }
 fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect) {
     let width = area.width.saturating_sub(4).max(30);
@@ -1908,6 +2005,37 @@ mod tests {
         assert!(output.contains("Available image targets"));
         assert!(output.contains("qemux86-64"));
         assert!(output.contains("core-image-minimal"));
+    }
+    #[test]
+    fn renders_build_progress_and_completion_popups() {
+        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.build.target = Some("core-image-minimal".into());
+        app.build.status = yoctui_model::BuildStatus::Running;
+        app.host_telemetry.cpu_utilization_percent = Some(50);
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Build progress"));
+        assert!(output.contains("CPU: 50%"));
+
+        app.build.status = yoctui_model::BuildStatus::Completed;
+        app.build_completion_open = true;
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Build finished"));
+        assert!(output.contains("Press any key"));
     }
     #[test]
     fn configuration_renders_bridge_provenance() {
