@@ -24,8 +24,9 @@ use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{Input, key_action};
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
-    Action, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry, LayerRelationship,
-    LayerRelationships, RecipeDependencies, Screen, Severity, TaskId, TaskInfo, update,
+    Action, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry, LayerBrowserEntry,
+    LayerRelationship, LayerRelationships, RecipeDependencies, Screen, Severity, TaskId, TaskInfo,
+    update,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -912,6 +913,66 @@ async fn open_workspace_editor(app: &mut App, recipe: String, root: PathBuf) {
     }
 }
 
+async fn load_layer_browser_directory(
+    app: &mut App,
+    layer: String,
+    root: PathBuf,
+    directory: PathBuf,
+) {
+    let scan = directory.clone();
+    match tokio::task::spawn_blocking(move || {
+        let mut entries = fs::read_dir(&scan)?
+            .filter_map(Result::ok)
+            .filter_map(|entry| {
+                let is_dir = entry.file_type().ok()?.is_dir();
+                let path = entry.path();
+                (entry.file_name() != ".git").then_some(LayerBrowserEntry { path, is_dir })
+            })
+            .collect::<Vec<_>>();
+        entries.sort_by_key(|entry| {
+            (
+                !entry.is_dir,
+                entry.path.file_name().map(|name| name.to_owned()),
+            )
+        });
+        Ok::<_, std::io::Error>(entries)
+    })
+    .await
+    {
+        Ok(Ok(entries)) => {
+            if let Some(Effect::LoadLayerBrowserPreview(path)) = update(
+                app,
+                Action::LoadLayerBrowserDirectory {
+                    layer,
+                    root,
+                    directory,
+                    entries,
+                },
+            ) {
+                load_layer_browser_preview(app, path).await;
+            }
+        }
+        Ok(Err(error)) => {
+            app.notification = Some(format!("Could not read layer directory: {error}"))
+        }
+        Err(error) => app.notification = Some(format!("Layer directory scan failed: {error}")),
+    }
+}
+
+async fn load_layer_browser_preview(app: &mut App, path: PathBuf) {
+    match tokio::task::spawn_blocking(move || {
+        fs::read_to_string(path).map(|content| content.chars().take(24_000).collect::<String>())
+    })
+    .await
+    {
+        Ok(Ok(content)) => {
+            let _ = update(app, Action::LoadLayerBrowserPreview(content));
+        }
+        Ok(Err(error)) => app.notification = Some(format!("Could not preview layer file: {error}")),
+        Err(error) => app.notification = Some(format!("Layer preview failed: {error}")),
+    }
+}
+
 async fn load_recipe_editor_file(app: &mut App, path: PathBuf) {
     let result = tokio::task::spawn_blocking(move || fs::read_to_string(path)).await;
     match result {
@@ -1297,6 +1358,38 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     }
                     _ => {}
                 }
+            } else if app.layer_browser.is_some() {
+                let effect = match input {
+                    Input::Up => update(&mut app, Action::SelectLayerBrowserEntry { delta: -1 }),
+                    Input::Down => update(&mut app, Action::SelectLayerBrowserEntry { delta: 1 }),
+                    Input::Enter => update(&mut app, Action::LayerBrowserEnter),
+                    Input::Esc => update(&mut app, Action::LayerBrowserUp),
+                    Input::Char('e') => update(&mut app, Action::EditSelectedLayerBrowserFile),
+                    _ => None,
+                };
+                match effect {
+                    Some(Effect::LoadLayerBrowserDirectory {
+                        layer,
+                        root,
+                        directory,
+                    }) => load_layer_browser_directory(&mut app, layer, root, directory).await,
+                    Some(Effect::LoadLayerBrowserPreview(path)) => {
+                        load_layer_browser_preview(&mut app, path).await
+                    }
+                    Some(Effect::OpenLayerBrowserEditor { layer, root, file }) => {
+                        if let Some(Effect::LoadRecipeEditorFile(path)) = update(
+                            &mut app,
+                            Action::OpenRecipeEditor {
+                                recipe: format!("Layer: {layer}"),
+                                root,
+                                files: vec![file],
+                            },
+                        ) {
+                            load_recipe_editor_file(&mut app, path).await;
+                        }
+                    }
+                    _ => {}
+                }
             } else if app.devtool_reset_confirmation.is_some() {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmDevtoolReset),
@@ -1536,6 +1629,15 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
             {
                 let delta = if input == Input::Up { -1 } else { 1 };
                 let _ = update(&mut app, Action::SelectLayer { delta });
+            } else if app.screen == yoctui_model::Screen::Layers && input == Input::Enter {
+                if let Some(Effect::LoadLayerBrowserDirectory {
+                    layer,
+                    root,
+                    directory,
+                }) = update(&mut app, Action::BeginSelectedLayerBrowser)
+                {
+                    load_layer_browser_directory(&mut app, layer, root, directory).await;
+                }
             } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('o') {
                 if let Some(Effect::OpenInEditor(path)) =
                     update(&mut app, Action::OpenSelectedLayer)

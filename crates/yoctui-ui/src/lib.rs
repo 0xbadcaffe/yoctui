@@ -4,7 +4,7 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap},
 };
 use std::time::{SystemTime, UNIX_EPOCH};
-use yoctui_model::{App, RecipeEditor, Screen, Severity, format_duration};
+use yoctui_model::{App, LayerBrowser, RecipeEditor, Screen, Severity, format_duration};
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
     let query = query.to_lowercase();
@@ -60,6 +60,9 @@ fn active_yocto(app: &App) -> String {
 }
 
 fn footer_shortcuts(app: &App) -> &'static str {
+    if app.layer_browser.is_some() {
+        return "↑/↓ select | Enter descend | Esc up | e edit file | Ctrl+S save | ? help | q quit";
+    }
     match app.screen {
         Screen::Dashboard => {
             "↑/↓ package progress | h build history | B build options | ! shell | b target | c cancel | r recipes | y layers | v config | x BBMASK | ? help | q quit"
@@ -132,7 +135,13 @@ pub fn render(frame: &mut Frame, app: &App) {
         Screen::Logs => logs(frame, app, chunks[1]),
         Screen::Errors => errors(frame, app, chunks[1]),
         Screen::Recipes => recipes(frame, app, chunks[1]),
-        Screen::Layers => layers(frame, app, chunks[1]),
+        Screen::Layers => {
+            if let Some(browser) = app.layer_browser.as_ref() {
+                layer_browser(frame, app, browser, chunks[1]);
+            } else {
+                layers(frame, app, chunks[1]);
+            }
+        }
         Screen::Configuration => config(frame, app, chunks[1]),
         Screen::Bbmask => bbmask(frame, app, chunks[1]),
         Screen::Help => help(frame, chunks[1]),
@@ -1037,6 +1046,70 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
         chunks[1],
     );
 }
+fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rect) {
+    let chunks =
+        Layout::horizontal([Constraint::Percentage(42), Constraint::Percentage(58)]).split(area);
+    frame.render_widget(
+        Table::new(
+            browser.entries.iter().enumerate().map(|(index, entry)| {
+                let name = entry.path.file_name().map_or_else(
+                    || entry.path.display().to_string(),
+                    |name| name.to_string_lossy().into_owned(),
+                );
+                Row::new(vec![Cell::from(if entry.is_dir {
+                    format!("▸ {name}/")
+                } else {
+                    format!("  {name}")
+                })])
+                .style(selected_style(app, index == browser.selection))
+            }),
+            [Constraint::Min(1)],
+        )
+        .block(
+            Block::default()
+                .title(format!(
+                    "{}: {}",
+                    browser.layer,
+                    browser.directory.strip_prefix(&browser.root).map_or_else(
+                        |_| browser.directory.display().to_string(),
+                        |path| format!("/{}", path.display())
+                    )
+                ))
+                .borders(Borders::ALL),
+        ),
+        chunks[0],
+    );
+    let title = browser.entries.get(browser.selection).map_or_else(
+        || "Preview".into(),
+        |entry| {
+            format!(
+                "Preview: {}",
+                entry.path.file_name().map_or_else(
+                    || entry.path.display().to_string(),
+                    |name| name.to_string_lossy().into_owned()
+                )
+            )
+        },
+    );
+    let preview = if browser
+        .entries
+        .get(browser.selection)
+        .is_some_and(|entry| entry.is_dir)
+    {
+        "Directory selected. Press Enter to open it.".into()
+    } else if browser.preview.is_empty() {
+        "Select a readable recipe, configuration, or Markdown file.".into()
+    } else {
+        browser.preview.clone()
+    };
+    frame.render_widget(
+        Paragraph::new(preview)
+            .block(Block::default().title(title).borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+        chunks[1],
+    );
+}
+
 fn layers(frame: &mut Frame, app: &App, area: Rect) {
     let layers = app
         .workspace
@@ -1658,6 +1731,34 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Workspace file tree: busybox"));
         assert!(output.contains("int main() {}"));
+    }
+    #[test]
+    fn layer_browser_renders_the_selected_file_preview() {
+        let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Layers;
+        app.layer_browser = Some(LayerBrowser {
+            layer: "meta-demo".into(),
+            root: "/layers/meta-demo".into(),
+            directory: "/layers/meta-demo/conf".into(),
+            entries: vec![yoctui_model::LayerBrowserEntry {
+                path: "/layers/meta-demo/conf/layer.conf".into(),
+                is_dir: false,
+            }],
+            selection: 0,
+            preview: "BBFILE_COLLECTIONS += \\\"demo\\\"".into(),
+        });
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("meta-demo: /conf"));
+        assert!(output.contains("layer.conf"));
+        assert!(output.contains("BBFILE_COLLECTIONS"));
     }
     #[test]
     fn configuration_renders_bridge_provenance() {
