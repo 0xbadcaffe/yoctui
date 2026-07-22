@@ -212,6 +212,20 @@ pub struct LayerRelationship {
     pub overlays: Vec<String>,
     pub appends: Vec<String>,
 }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LayerBrowserEntry {
+    pub path: PathBuf,
+    pub is_dir: bool,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LayerBrowser {
+    pub layer: String,
+    pub root: PathBuf,
+    pub directory: PathBuf,
+    pub entries: Vec<LayerBrowserEntry>,
+    pub selection: usize,
+    pub preview: String,
+}
 const MAX_BUILD_HISTORY: usize = 50;
 impl Default for BuildState {
     fn default() -> Self {
@@ -319,6 +333,7 @@ pub struct App {
     pub dependencies: Option<RecipeDependencies>,
     pub dependency_selection: usize,
     pub layer_relationships: Option<LayerRelationships>,
+    pub layer_browser: Option<LayerBrowser>,
     pub tasks: HashMap<TaskId, TaskInfo>,
     pub completed_tasks: VecDeque<CompletedTask>,
     pub task_progress_scroll: usize,
@@ -364,6 +379,7 @@ impl App {
             dependencies: None,
             dependency_selection: 0,
             layer_relationships: None,
+            layer_browser: None,
             tasks: HashMap::new(),
             completed_tasks: VecDeque::new(),
             task_progress_scroll: 0,
@@ -519,6 +535,20 @@ pub enum Action {
     },
     OpenSelectedLayer,
     BeginSelectedLayerWorkspaceEditor,
+    BeginSelectedLayerBrowser,
+    LoadLayerBrowserDirectory {
+        layer: String,
+        root: PathBuf,
+        directory: PathBuf,
+        entries: Vec<LayerBrowserEntry>,
+    },
+    SelectLayerBrowserEntry {
+        delta: isize,
+    },
+    LayerBrowserEnter,
+    LayerBrowserUp,
+    LoadLayerBrowserPreview(String),
+    EditSelectedLayerBrowserFile,
     BeginLayerRelationships,
     LayerRelationshipsLoaded(LayerRelationships),
     SelectConfigVariable {
@@ -1168,6 +1198,110 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
             app.notification = Some("No layer is selected to edit.".into());
         }
+        Action::BeginSelectedLayerBrowser => {
+            if let Some(layer) = app.workspace.layers.get(app.layer_selection) {
+                return Some(Effect::LoadLayerBrowserDirectory {
+                    layer: layer.name.clone(),
+                    root: layer.path.clone(),
+                    directory: layer.path.clone(),
+                });
+            }
+            app.notification = Some("No layer is selected to browse.".into());
+        }
+        Action::LoadLayerBrowserDirectory {
+            layer,
+            root,
+            directory,
+            entries,
+        } => {
+            app.layer_browser = Some(LayerBrowser {
+                layer,
+                root,
+                directory,
+                entries,
+                selection: 0,
+                preview: String::new(),
+            });
+            if let Some(path) = app
+                .layer_browser
+                .as_ref()
+                .and_then(|browser| browser.entries.first())
+                .filter(|entry| !entry.is_dir)
+                .map(|entry| entry.path.clone())
+            {
+                return Some(Effect::LoadLayerBrowserPreview(path));
+            }
+        }
+        Action::SelectLayerBrowserEntry { delta } => {
+            let path = if let Some(browser) = app.layer_browser.as_mut() {
+                browser.selection = if delta.is_negative() {
+                    browser.selection.saturating_sub(delta.unsigned_abs())
+                } else {
+                    browser
+                        .selection
+                        .saturating_add(delta as usize)
+                        .min(browser.entries.len().saturating_sub(1))
+                };
+                browser
+                    .entries
+                    .get(browser.selection)
+                    .filter(|entry| !entry.is_dir)
+                    .map(|entry| entry.path.clone())
+            } else {
+                None
+            };
+            if let Some(path) = path {
+                return Some(Effect::LoadLayerBrowserPreview(path));
+            }
+        }
+        Action::LayerBrowserEnter => {
+            if let Some(browser) = app.layer_browser.as_ref()
+                && let Some(entry) = browser.entries.get(browser.selection)
+                && entry.is_dir
+            {
+                return Some(Effect::LoadLayerBrowserDirectory {
+                    layer: browser.layer.clone(),
+                    root: browser.root.clone(),
+                    directory: entry.path.clone(),
+                });
+            }
+        }
+        Action::LayerBrowserUp => {
+            if let Some(browser) = app.layer_browser.as_ref()
+                && browser.directory != browser.root
+            {
+                let directory = browser
+                    .directory
+                    .parent()
+                    .unwrap_or(&browser.root)
+                    .to_path_buf();
+                return Some(Effect::LoadLayerBrowserDirectory {
+                    layer: browser.layer.clone(),
+                    root: browser.root.clone(),
+                    directory,
+                });
+            }
+            app.layer_browser = None;
+        }
+        Action::LoadLayerBrowserPreview(preview) => {
+            if let Some(browser) = app.layer_browser.as_mut() {
+                browser.preview = preview;
+            }
+        }
+        Action::EditSelectedLayerBrowserFile => {
+            if let Some(browser) = app.layer_browser.as_ref()
+                && let Some(entry) = browser.entries.get(browser.selection)
+                && !entry.is_dir
+                && let Some(name) = entry.path.file_name()
+            {
+                return Some(Effect::OpenLayerBrowserEditor {
+                    layer: browser.layer.clone(),
+                    root: browser.directory.clone(),
+                    file: PathBuf::from(name),
+                });
+            }
+            app.notification = Some("Select a file to edit.".into());
+        }
         Action::BeginLayerRelationships => return Some(Effect::GetLayerRelationships),
         Action::LayerRelationshipsLoaded(relationships) => {
             app.layer_relationships = Some(relationships);
@@ -1312,7 +1446,21 @@ pub enum Effect {
     Start(BuildRequest),
     Cancel,
     OpenInEditor(PathBuf),
-    OpenWorkspaceEditor { label: String, root: PathBuf },
+    OpenWorkspaceEditor {
+        label: String,
+        root: PathBuf,
+    },
+    LoadLayerBrowserDirectory {
+        layer: String,
+        root: PathBuf,
+        directory: PathBuf,
+    },
+    LoadLayerBrowserPreview(PathBuf),
+    OpenLayerBrowserEditor {
+        layer: String,
+        root: PathBuf,
+        file: PathBuf,
+    },
     DevtoolModify(String),
     DevtoolReset(String),
     DevtoolUpdateRecipe(String),
@@ -1321,7 +1469,10 @@ pub enum Effect {
     GetDependencies(String),
     GetLayerRelationships,
     LoadRecipeEditorFile(PathBuf),
-    SaveRecipeEditorFile { path: PathBuf, content: String },
+    SaveRecipeEditorFile {
+        path: PathBuf,
+        content: String,
+    },
     WriteBbmask(String),
 }
 pub fn format_duration(duration: Duration) -> String {
@@ -1860,6 +2011,60 @@ mod tests {
             Some(Effect::OpenWorkspaceEditor {
                 label: "Layer: meta-demo".into(),
                 root: PathBuf::from("/layers/meta-demo"),
+            })
+        );
+    }
+    #[test]
+    fn layer_browser_descends_and_returns_to_the_parent_directory() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.layers.push(Layer {
+            name: "meta-demo".into(),
+            path: "/layers/meta-demo".into(),
+            priority: Some(5),
+        });
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedLayerBrowser),
+            Some(Effect::LoadLayerBrowserDirectory {
+                layer: "meta-demo".into(),
+                root: "/layers/meta-demo".into(),
+                directory: "/layers/meta-demo".into(),
+            })
+        );
+        let _ = update(
+            &mut app,
+            Action::LoadLayerBrowserDirectory {
+                layer: "meta-demo".into(),
+                root: "/layers/meta-demo".into(),
+                directory: "/layers/meta-demo".into(),
+                entries: vec![LayerBrowserEntry {
+                    path: "/layers/meta-demo/recipes-core".into(),
+                    is_dir: true,
+                }],
+            },
+        );
+        assert_eq!(
+            update(&mut app, Action::LayerBrowserEnter),
+            Some(Effect::LoadLayerBrowserDirectory {
+                layer: "meta-demo".into(),
+                root: "/layers/meta-demo".into(),
+                directory: "/layers/meta-demo/recipes-core".into(),
+            })
+        );
+        let _ = update(
+            &mut app,
+            Action::LoadLayerBrowserDirectory {
+                layer: "meta-demo".into(),
+                root: "/layers/meta-demo".into(),
+                directory: "/layers/meta-demo/recipes-core".into(),
+                entries: vec![],
+            },
+        );
+        assert_eq!(
+            update(&mut app, Action::LayerBrowserUp),
+            Some(Effect::LoadLayerBrowserDirectory {
+                layer: "meta-demo".into(),
+                root: "/layers/meta-demo".into(),
+                directory: "/layers/meta-demo".into(),
             })
         );
     }
