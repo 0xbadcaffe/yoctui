@@ -129,6 +129,29 @@ class BridgeProtocolTests(unittest.TestCase):
             [{"name": "busybox", "version": "1.36.0-r0", "layer": None}],
         )
 
+    def test_layer_reports_supply_recipe_ownership_and_paths(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            command = Path(directory, "bitbake-layers")
+            command.write_text(
+                """#!/bin/sh
+if [ "$1" = show-recipes ]; then
+ printf 'busybox:\\n  meta-core 1.38.0\\n'
+else
+ printf 'layer path priority\\n=====\\nmeta-core /layers/meta-core 5\\n'
+fi
+""",
+                encoding="utf-8",
+            )
+            command.chmod(0o755)
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"list_recipes","filter":null}}',
+                b'{"protocol_version":1,"sequence":2,"message":{"type":"list_layers"}}',
+                environment={"PATH": f"{directory}:{os.environ['PATH']}"},
+            )
+        messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
+        self.assertEqual(messages[0]["recipes"][0]["layer"], "meta-core")
+        self.assertEqual(messages[1]["layers"][0]["path"], "/layers/meta-core")
+
     def test_mocked_bitbake_module_selects_modern_adapter(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             Path(directory, "bb.py").write_text(
