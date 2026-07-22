@@ -59,6 +59,80 @@ fn active_yocto(app: &App) -> String {
     format!("{release} @ {location}")
 }
 
+fn source_preview(content: &str, file_name: &str, color_enabled: bool) -> Text<'static> {
+    let bitbake_source = ["bb", "bbappend", "inc", "conf"]
+        .iter()
+        .any(|extension| file_name.ends_with(&format!(".{extension}")));
+    let markdown = file_name.ends_with(".md") || file_name.ends_with(".markdown");
+    if !color_enabled || (!bitbake_source && !markdown) {
+        return Text::from(content.to_owned());
+    }
+    Text::from(
+        content
+            .lines()
+            .map(|line| {
+                if markdown {
+                    let style = if line.starts_with('#') {
+                        Style::default().fg(Color::LightBlue)
+                    } else if line.starts_with("```") {
+                        Style::default().fg(Color::Magenta)
+                    } else {
+                        Style::default()
+                    };
+                    return Line::from(Span::styled(line.to_owned(), style));
+                }
+                let (code, comment) = line
+                    .split_once('#')
+                    .map_or((line, None), |(code, comment)| (code, Some(comment)));
+                let mut spans = Vec::new();
+                let trimmed = code.trim_start();
+                let indent_len = code.len().saturating_sub(trimmed.len());
+                if indent_len > 0 {
+                    spans.push(Span::raw(code[..indent_len].to_owned()));
+                }
+                if [
+                    "inherit", "require", "include", "export", "addtask", "deltask",
+                ]
+                .iter()
+                .any(|keyword| trimmed.starts_with(keyword))
+                {
+                    let keyword_end = trimmed.find(char::is_whitespace).unwrap_or(trimmed.len());
+                    spans.push(Span::styled(
+                        trimmed[..keyword_end].to_owned(),
+                        Style::default().fg(Color::LightBlue),
+                    ));
+                    spans.push(Span::raw(trimmed[keyword_end..].to_owned()));
+                } else if let Some(equals) = trimmed.find('=') {
+                    let lhs_end = trimmed[..equals]
+                        .trim_end_matches([' ', '?', '+', ':'])
+                        .len();
+                    spans.push(Span::styled(
+                        trimmed[..lhs_end].to_owned(),
+                        Style::default().fg(Color::Yellow),
+                    ));
+                    spans.push(Span::styled(
+                        trimmed[lhs_end..=equals].to_owned(),
+                        Style::default().fg(Color::Magenta),
+                    ));
+                    spans.push(Span::styled(
+                        trimmed[equals + 1..].to_owned(),
+                        Style::default().fg(Color::Green),
+                    ));
+                } else {
+                    spans.push(Span::raw(trimmed.to_owned()));
+                }
+                if let Some(comment) = comment {
+                    spans.push(Span::styled(
+                        format!("#{comment}"),
+                        Style::default().fg(Color::DarkGray),
+                    ));
+                }
+                Line::from(spans)
+            })
+            .collect::<Vec<_>>(),
+    )
+}
+
 fn footer_shortcuts(app: &App) -> &'static str {
     if app.layer_browser.is_some() {
         return "↑/↓ select | Enter descend | Esc up | e edit file | Ctrl+S save | ? help | q quit";
@@ -449,7 +523,7 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         editor.content.clone()
     };
     frame.render_widget(
-        Paragraph::new(content)
+        Paragraph::new(source_preview(&content, &selected, app.color_enabled))
             .block(
                 Block::default()
                     .title(format!("{selected} ({mode}{modified})"))
@@ -1102,8 +1176,13 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
     } else {
         browser.preview.clone()
     };
+    let selected_name = browser
+        .entries
+        .get(browser.selection)
+        .and_then(|entry| entry.path.file_name())
+        .map_or("", |name| name.to_str().unwrap_or(""));
     frame.render_widget(
-        Paragraph::new(preview)
+        Paragraph::new(source_preview(&preview, selected_name, app.color_enabled))
             .block(Block::default().title(title).borders(Borders::ALL))
             .wrap(Wrap { trim: false }),
         chunks[1],
@@ -1759,6 +1838,14 @@ mod tests {
         assert!(output.contains("meta-demo: /conf"));
         assert!(output.contains("layer.conf"));
         assert!(output.contains("BBFILE_COLLECTIONS"));
+    }
+    #[test]
+    fn bitbake_preview_highlights_assignments_and_comments() {
+        let preview = source_preview("SUMMARY = \"demo\" # explanation", "demo.bb", true);
+        assert_eq!(preview.lines[0].spans[0].style.fg, Some(Color::Yellow));
+        assert_eq!(preview.lines[0].spans[1].style.fg, Some(Color::Magenta));
+        assert_eq!(preview.lines[0].spans[2].style.fg, Some(Color::Green));
+        assert_eq!(preview.lines[0].spans[3].style.fg, Some(Color::DarkGray));
     }
     #[test]
     fn configuration_renders_bridge_provenance() {
