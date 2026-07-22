@@ -6,6 +6,7 @@ pub enum Input {
     Esc,
     Enter,
     CtrlC,
+    CtrlB,
     CtrlS,
     Up,
     Down,

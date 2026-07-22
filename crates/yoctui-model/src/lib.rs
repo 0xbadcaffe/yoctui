@@ -226,6 +226,11 @@ pub struct LayerBrowser {
     pub selection: usize,
     pub preview: String,
 }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ImagePicker {
+    pub images: Vec<String>,
+    pub selection: usize,
+}
 const MAX_BUILD_HISTORY: usize = 50;
 impl Default for BuildState {
     fn default() -> Self {
@@ -334,6 +339,7 @@ pub struct App {
     pub dependency_selection: usize,
     pub layer_relationships: Option<LayerRelationships>,
     pub layer_browser: Option<LayerBrowser>,
+    pub image_picker: Option<ImagePicker>,
     pub tasks: HashMap<TaskId, TaskInfo>,
     pub completed_tasks: VecDeque<CompletedTask>,
     pub task_progress_scroll: usize,
@@ -380,6 +386,7 @@ impl App {
             dependency_selection: 0,
             layer_relationships: None,
             layer_browser: None,
+            image_picker: None,
             tasks: HashMap::new(),
             completed_tasks: VecDeque::new(),
             task_progress_scroll: 0,
@@ -424,6 +431,13 @@ pub enum Action {
     Open(Screen),
     OpenBuildOptions,
     CloseBuildOptions,
+    OpenImagePicker(Vec<String>),
+    SelectImage {
+        delta: isize,
+    },
+    ConfirmImagePicker,
+    CancelImagePicker,
+    BeginCurrentImageBuild,
     BeginBuildTargetEdit,
     BeginBuildTargetTask(Option<String>),
     AppendBuildTarget(char),
@@ -595,6 +609,59 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::Open(s) => app.screen = s,
         Action::OpenBuildOptions => app.build_options_open = true,
         Action::CloseBuildOptions => app.build_options_open = false,
+        Action::OpenImagePicker(mut images) => {
+            images.sort();
+            images.dedup();
+            let selection = app
+                .build
+                .target
+                .as_ref()
+                .and_then(|target| images.iter().position(|image| image == target))
+                .unwrap_or(0);
+            if images.is_empty() {
+                app.notification =
+                    Some("No image recipes were discovered in the active layers.".into());
+            } else {
+                app.image_picker = Some(ImagePicker { images, selection });
+            }
+        }
+        Action::SelectImage { delta } => {
+            if let Some(picker) = app.image_picker.as_mut() {
+                picker.selection = if delta.is_negative() {
+                    picker.selection.saturating_sub(delta.unsigned_abs())
+                } else {
+                    picker
+                        .selection
+                        .saturating_add(delta as usize)
+                        .min(picker.images.len().saturating_sub(1))
+                };
+            }
+        }
+        Action::ConfirmImagePicker => {
+            if let Some(picker) = app.image_picker.take()
+                && let Some(image) = picker.images.get(picker.selection)
+            {
+                app.build.target = Some(image.clone());
+            }
+        }
+        Action::CancelImagePicker => app.image_picker = None,
+        Action::BeginCurrentImageBuild => {
+            if app
+                .recipe_editor
+                .as_ref()
+                .is_some_and(|editor| editor.dirty)
+            {
+                app.notification = Some("Save the edited file with Ctrl+S before building.".into());
+            } else if let Some(target) = app.build.target.clone() {
+                app.recipe_editor = None;
+                app.recipe_task_confirmation = Some(BuildRequest {
+                    targets: vec![target],
+                    task: None,
+                });
+            } else {
+                app.notification = Some("Select an image first with i.".into());
+            }
+        }
         Action::BeginBuildTargetEdit => {
             app.build_target_input = app.build.target.clone().unwrap_or_default();
             app.build_task = None;
@@ -622,9 +689,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             if let Err(error) = request.validate() {
                 app.notification = Some(error.to_string());
             } else {
-                prepare_build(app, request.targets.first().cloned());
                 app.build_target_editing = false;
-                return Some(Effect::Start(request));
+                app.recipe_task_confirmation = Some(request);
             }
         }
         Action::Start(r) => {
@@ -2144,7 +2210,7 @@ mod tests {
         assert_eq!(app.logs.scroll_offset, 0);
     }
     #[test]
-    fn build_target_editor_validates_and_starts_selected_target() {
+    fn build_target_editor_requires_confirmation_before_starting() {
         let mut app = App::new(10, 1_000);
         let _ = update(&mut app, Action::BeginBuildTargetEdit);
         for character in "core-image-minimal".chars() {
@@ -2152,15 +2218,33 @@ mod tests {
         }
         let effect = update(&mut app, Action::ConfirmBuildTarget);
 
-        assert_eq!(app.build.target.as_deref(), Some("core-image-minimal"));
-        assert_eq!(app.build.status, BuildStatus::LoadingWorkspace);
         assert!(!app.build_target_editing);
+        assert_eq!(effect, None);
         assert_eq!(
-            effect,
-            Some(Effect::Start(BuildRequest {
+            app.recipe_task_confirmation,
+            Some(BuildRequest {
                 targets: vec!["core-image-minimal".into()],
                 task: None,
-            }))
+            })
+        );
+    }
+    #[test]
+    fn image_picker_selects_an_image_then_requires_build_confirmation() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(
+            &mut app,
+            Action::OpenImagePicker(vec!["core-image-base".into(), "core-image-minimal".into()]),
+        );
+        let _ = update(&mut app, Action::SelectImage { delta: 1 });
+        let _ = update(&mut app, Action::ConfirmImagePicker);
+        assert_eq!(app.build.target.as_deref(), Some("core-image-minimal"));
+        let _ = update(&mut app, Action::BeginCurrentImageBuild);
+        assert_eq!(
+            app.recipe_task_confirmation,
+            Some(BuildRequest {
+                targets: vec!["core-image-minimal".into()],
+                task: None,
+            })
         );
     }
     #[test]
