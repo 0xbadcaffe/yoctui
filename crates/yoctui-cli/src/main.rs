@@ -1343,6 +1343,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                         update(&mut app, Action::ToggleRecipeEditorEditing)
                     }
                     Input::CtrlS => update(&mut app, Action::SaveRecipeEditor),
+                    Input::CtrlB => update(&mut app, Action::BeginCurrentImageBuild),
                     Input::Backspace => update(&mut app, Action::BackspaceRecipeEditor),
                     Input::Char(character) => {
                         update(&mut app, Action::AppendRecipeEditor(character))
@@ -1489,6 +1490,14 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     Input::Esc => update(&mut app, Action::CancelBbmaskEdit),
                     _ => None,
                 };
+            } else if app.image_picker.is_some() {
+                let _ = match input {
+                    Input::Up => update(&mut app, Action::SelectImage { delta: -1 }),
+                    Input::Down => update(&mut app, Action::SelectImage { delta: 1 }),
+                    Input::Enter => update(&mut app, Action::ConfirmImagePicker),
+                    Input::Esc => update(&mut app, Action::CancelImagePicker),
+                    _ => None,
+                };
             } else if app.recipe_task_confirmation.is_some() {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
@@ -1530,6 +1539,16 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 }
             } else if input == Input::Char('!') {
                 open_yocto_shell(&guard, &mut app).await;
+            } else if input == Input::Char('i') {
+                let images = app
+                    .workspace
+                    .recipes
+                    .iter()
+                    .map(|recipe| recipe.name.as_str())
+                    .filter(|name| name.contains("image"))
+                    .map(str::to_owned)
+                    .collect();
+                let _ = update(&mut app, Action::OpenImagePicker(images));
             } else if input == Input::Char('B') {
                 let _ = update(&mut app, Action::OpenBuildOptions);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
@@ -1599,7 +1618,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     }
                 }
             } else if input == Input::Char('b') {
-                let _ = update(&mut app, Action::BeginBuildTargetEdit);
+                let _ = update(&mut app, Action::BeginCurrentImageBuild);
             } else if app.screen == yoctui_model::Screen::Errors
                 && matches!(input, Input::Up | Input::Down)
             {
@@ -1650,7 +1669,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 {
                     open_workspace_editor(&mut app, label, root).await;
                 }
-            } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('i') {
+            } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('R') {
                 if matches!(
                     update(&mut app, Action::BeginLayerRelationships),
                     Some(Effect::GetLayerRelationships)
@@ -1815,6 +1834,7 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
     match key.code {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlC),
         KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlS),
+        KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlB),
         KeyCode::Char(character) => Some(Input::Char(character)),
         KeyCode::Esc => Some(Input::Esc),
         KeyCode::Enter => Some(Input::Enter),

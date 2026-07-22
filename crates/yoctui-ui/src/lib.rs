@@ -139,7 +139,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
     }
     match app.screen {
         Screen::Dashboard => {
-            "↑/↓ package progress | h build history | B build options | ! shell | b target | c cancel | r recipes | y layers | v config | x BBMASK | ? help | q quit"
+            "↑/↓ package progress | i image | b build image | B options | ! shell | c cancel | r recipes | y layers | v config | x BBMASK | ? help | q quit"
         }
         Screen::BuildHistory => "↑/↓ select | Esc dashboard | ? help | q quit",
         Screen::Dependencies => {
@@ -150,7 +150,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | g graph | d Devtool edit | u update-recipe | F finish | P deploy | D reset | / search | Esc dashboard | ? help | q quit"
         }
         Screen::Layers => {
-            "↑/↓ select | i relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
+            "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
         Screen::Configuration => {
             "↑/↓ select | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
@@ -244,8 +244,11 @@ pub fn render(frame: &mut Frame, app: &App) {
         frame.render_widget(Clear, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Run `{}` for {}?\n\nThis may remove shared build state. Press Enter to continue or Esc to cancel.",
-                request.task.as_deref().unwrap_or("default task"),
+                "Run `bitbake {} {}`?\n\nPress Enter to continue or Esc to cancel.",
+                request
+                    .task
+                    .as_deref()
+                    .map_or(String::new(), |task| format!("-c {task}")),
                 request.targets.join(" ")
             ))
             .block(
@@ -412,6 +415,42 @@ pub fn render(frame: &mut Frame, app: &App) {
                     .title("Edit effective BBMASK")
                     .borders(Borders::ALL),
             )
+            .wrap(Wrap { trim: false }),
+            popup,
+        );
+    } else if let Some(picker) = app.image_picker.as_ref() {
+        let width = area.width.saturating_sub(24).clamp(42, 90);
+        let height = area.height.saturating_sub(8).clamp(10, 24);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            (area.height.saturating_sub(height)) / 2,
+            width,
+            height,
+        );
+        let machine = app
+            .workspace
+            .variables
+            .get("MACHINE")
+            .map_or("unknown", String::as_str);
+        let images = picker
+            .images
+            .iter()
+            .enumerate()
+            .map(|(index, image)| {
+                format!(
+                    "{} {}",
+                    if index == picker.selection { ">" } else { " " },
+                    image
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        frame.render_widget(Clear, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Active MACHINE: {machine}\n\n{images}\n\nUp/Down select  Enter choose image  Esc cancel"
+            ))
+            .block(Block::default().title("Available image targets").borders(Borders::ALL))
             .wrap(Wrap { trim: false }),
             popup,
         );
@@ -1846,6 +1885,29 @@ mod tests {
         assert_eq!(preview.lines[0].spans[1].style.fg, Some(Color::Magenta));
         assert_eq!(preview.lines[0].spans[2].style.fg, Some(Color::Green));
         assert_eq!(preview.lines[0].spans[3].style.fg, Some(Color::DarkGray));
+    }
+    #[test]
+    fn renders_image_picker_for_active_machine() {
+        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.image_picker = Some(yoctui_model::ImagePicker {
+            images: vec!["core-image-minimal".into()],
+            selection: 0,
+        });
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Available image targets"));
+        assert!(output.contains("qemux86-64"));
+        assert!(output.contains("core-image-minimal"));
     }
     #[test]
     fn configuration_renders_bridge_provenance() {
