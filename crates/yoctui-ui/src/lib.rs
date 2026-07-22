@@ -1038,22 +1038,35 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 fn layers(frame: &mut Frame, app: &App, area: Rect) {
-    let mut layers = app.workspace.layers.iter().collect::<Vec<_>>();
-    layers.sort_by(|left, right| left.name.cmp(&right.name));
-    layers.retain(|layer| {
-        matches_metadata(
-            &app.metadata_query,
-            &[layer.name.as_str(), layer.path.to_str().unwrap_or("")],
-        )
-    });
-    let layer_count = layers.len();
+    let layers = app
+        .workspace
+        .layers
+        .iter()
+        .filter(|layer| {
+            matches_metadata(
+                &app.metadata_query,
+                &[layer.name.as_str(), layer.path.to_str().unwrap_or("")],
+            )
+        })
+        .collect::<Vec<_>>();
     let selected = layers.get(app.layer_selection).copied();
-    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(5)]).split(area);
+    let recipes = selected.map_or_else(Vec::new, |layer| {
+        let mut recipes = app
+            .workspace
+            .recipes
+            .iter()
+            .filter(|recipe| recipe.layer.as_deref() == Some(layer.name.as_str()))
+            .collect::<Vec<_>>();
+        recipes.sort_by(|left, right| left.name.cmp(&right.name));
+        recipes
+    });
+    let chunks =
+        Layout::horizontal([Constraint::Percentage(48), Constraint::Percentage(52)]).split(area);
     frame.render_widget(
         Table::new(
             layers.into_iter().enumerate().map(|(index, layer)| {
                 Row::new(vec![
-                    Cell::from(layer.name.as_str()),
+                    Cell::from(format!("▸ {}", layer.name)),
                     Cell::from(layer.path.display().to_string()),
                     Cell::from(
                         layer
@@ -1072,8 +1085,8 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
                 })
             }),
             [
-                Constraint::Percentage(30),
-                Constraint::Percentage(55),
+                Constraint::Percentage(32),
+                Constraint::Percentage(53),
                 Constraint::Percentage(15),
             ],
         )
@@ -1085,8 +1098,15 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
             Block::default()
                 .title(metadata_title(
                     format!(
-                        "Active build layers (shown: {} of {})",
-                        layer_count,
+                        "Active layer tree (shown: {} of {})",
+                        app.workspace
+                            .layers
+                            .iter()
+                            .filter(|layer| matches_metadata(
+                                &app.metadata_query,
+                                &[layer.name.as_str(), layer.path.to_str().unwrap_or("")]
+                            ))
+                            .count(),
                         app.workspace.layers.len()
                     ),
                     app,
@@ -1095,26 +1115,26 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
         ),
         chunks[0],
     );
-    let detail = selected.map_or_else(
-        || "No layers supplied by the backend.".into(),
-        |layer| {
-            format!(
-                "Active in this build configuration\nLayer: {}\nPath: {}\nPriority: {}",
-                layer.name,
-                layer.path.display(),
-                layer
-                    .priority
-                    .map_or_else(|| "unknown".into(), |priority| priority.to_string())
-            )
-        },
-    );
     frame.render_widget(
-        Paragraph::new(format!(
-            "{detail}\n\nGreen rows are active build layers. o opens the selected layer directory."
-        ))
+        Table::new(
+            recipes.iter().map(|recipe| {
+                Row::new(vec![
+                    Cell::from(recipe.name.as_str()),
+                    Cell::from(recipe.version.as_deref().unwrap_or("")),
+                ])
+            }),
+            [Constraint::Percentage(68), Constraint::Percentage(32)],
+        )
+        .header(
+            Row::new(["Recipe in selected layer", "Version"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
         .block(
             Block::default()
-                .title("Selected layer")
+                .title(selected.map_or_else(
+                    || "Layer recipes".into(),
+                    |layer| format!("Recipes: {} ({})", layer.name, recipes.len()),
+                ))
                 .borders(Borders::ALL),
         ),
         chunks[1],

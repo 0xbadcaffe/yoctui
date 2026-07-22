@@ -440,6 +440,68 @@ def bitbake_recipes(filter_value):
     return recipes
 
 
+def bitbake_layer_recipes(filter_value):
+    try:
+        result = subprocess.run(
+            ["bitbake-layers", "show-recipes"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    recipes = []
+    current = None
+    for line in result.stdout.splitlines():
+        heading = re.match(r"^([A-Za-z0-9_.+-]+):$", line)
+        if heading:
+            current = heading.group(1)
+            continue
+        detail = re.match(r"^\s+([A-Za-z0-9_.+-]+)\s+(\S+)", line)
+        if (
+            current
+            and detail
+            and (filter_value is None or filter_value.lower() in current.lower())
+        ):
+            recipes.append(
+                {"name": current, "version": detail.group(2), "layer": detail.group(1)}
+            )
+            current = None
+    return recipes
+
+
+def bitbake_layers():
+    try:
+        result = subprocess.run(
+            ["bitbake-layers", "show-layers"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            timeout=120,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    if result.returncode != 0:
+        return None
+    layers = []
+    for line in result.stdout.splitlines():
+        match = re.match(r"^(\S+)\s+(\S+)\s+(\d+)\s*$", line)
+        if match:
+            layers.append(
+                {
+                    "name": match.group(1),
+                    "path": match.group(2),
+                    "priority": int(match.group(3)),
+                }
+            )
+    return layers
+
+
 def typed_recipes(response):
     if not isinstance(response, list):
         raise ServerUnavailable(
@@ -664,7 +726,9 @@ def handle(command, correlation_id, adapter):
             error("bitbake_server_unavailable", str(exc), correlation_id)
             return True
         if recipes is None:
-            recipes = bitbake_recipes(filter_value)
+            recipes = bitbake_layer_recipes(filter_value)
+            if recipes is None:
+                recipes = bitbake_recipes(filter_value)
             if recipes is None:
                 recipes = configured_recipes()
                 if filter_value is not None:
@@ -680,6 +744,8 @@ def handle(command, correlation_id, adapter):
         except ServerUnavailable as exc:
             error("bitbake_server_unavailable", str(exc), correlation_id)
             return True
+        if layers is None:
+            layers = bitbake_layers()
         emit(
             {
                 "type": "layers",
