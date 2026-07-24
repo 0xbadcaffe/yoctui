@@ -167,6 +167,29 @@ fn source_preview(content: &str, file_name: &str, color_enabled: bool) -> Text<'
     )
 }
 
+fn task_activity(app: &App, task_progress: Option<u8>) -> &'static str {
+    if task_progress.is_some() || app.reduced_motion {
+        return "";
+    }
+    const FAST: [&str; 8] = [
+        "▸▸▸▸▸▸▸▸",
+        "▹▸▸▸▸▸▸▸",
+        "▹▹▸▸▸▸▸▸",
+        "▹▹▹▸▸▸▸▸",
+        "▹▹▹▹▸▸▸▸",
+        "▹▹▹▹▹▸▸▸",
+        "▹▹▹▹▹▹▸▸",
+        "▹▹▹▹▹▹▹▸",
+    ];
+    FAST[(app.animation_frame as usize
+        / if app.animation_speed == yoctui_model::AnimationSpeed::Slow {
+            3
+        } else {
+            1
+        })
+        % FAST.len()]
+}
+
 fn footer_shortcuts(app: &App) -> &'static str {
     if app.focus == FocusTarget::Navigator {
         return "j/k or ↑/↓ select | Enter open | Tab workspace | Shift+Tab inspector | q quit";
@@ -972,9 +995,10 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
                 Gauge::default()
                     .ratio(f64::from(progress) / 100.0)
                     .label(format!(
-                        "{}:{} {progress}%{}",
+                        "{}:{}{} {progress}%{}",
                         task.recipe,
                         task.task,
+                        task_activity(app, task.progress),
                         match completed {
                             Some(true) => " complete",
                             Some(false) => " failed",
