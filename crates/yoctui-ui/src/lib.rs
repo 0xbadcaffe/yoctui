@@ -731,13 +731,69 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn inspector(frame: &mut Frame, app: &App, area: Rect) {
-    let details = format!(
-        "Workspace: {:?}\nFocus: {:?}\n\nTarget: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
-        app.screen,
-        app.focus,
-        app.build.target.as_deref().unwrap_or("not selected"),
-        app.build.status
-    );
+    let details = match app.screen {
+        Screen::Recipes => app.workspace.recipes.get(app.recipe_selection).map_or_else(
+            || "No recipe selected.".into(),
+            |recipe| {
+                format!(
+                    "Recipe: {}\nVersion: {}\nLayer: {}\n\nUse b to build or g for dependencies.",
+                    recipe.name,
+                    recipe.version.as_deref().unwrap_or("unknown"),
+                    recipe.layer.as_deref().unwrap_or("unknown")
+                )
+            },
+        ),
+        Screen::Layers => app.layer_browser.as_ref().map_or_else(
+            || {
+                app.workspace.layers.get(app.layer_selection).map_or_else(
+                    || "No layer selected.".into(),
+                    |layer| {
+                        format!(
+                            "Layer: {}\nPath: {}\nPriority: {}\n\nEnter browses this layer.",
+                            layer.name,
+                            layer.path.display(),
+                            layer
+                                .priority
+                                .map_or_else(|| "unknown".into(), |value| value.to_string())
+                        )
+                    },
+                )
+            },
+            |browser| {
+                format!(
+                    "Path: {}\n\n{}",
+                    browser.directory.display(),
+                    browser.preview
+                )
+            },
+        ),
+        Screen::Configuration => app
+            .workspace
+            .variables
+            .iter()
+            .nth(app.config_selection)
+            .map_or_else(
+                || "No configuration variable selected.".into(),
+                |(name, value)| {
+                    format!(
+                        "{name} = {value}\n\n{}",
+                        app.workspace
+                            .variable_provenance
+                            .get(name)
+                            .map_or("No provenance available.", String::as_str)
+                    )
+                },
+            ),
+        Screen::Logs => app.logs.entries.back().map_or_else(
+            || "No logs retained.".into(),
+            |entry| format!("{:?}\n{}", entry.severity, entry.message),
+        ),
+        _ => format!(
+            "Target: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
+            app.build.target.as_deref().unwrap_or("not selected"),
+            app.build.status
+        ),
+    };
     frame.render_widget(
         Paragraph::new(details)
             .block(pane_block(
