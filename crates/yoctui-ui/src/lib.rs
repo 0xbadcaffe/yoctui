@@ -367,14 +367,6 @@ pub fn render(frame: &mut Frame, app: &App) {
         );
     } else if app.build_completion_open {
         build_completion_popup(frame, app, area);
-    } else if matches!(
-        app.build.status,
-        yoctui_model::BuildStatus::LoadingWorkspace
-            | yoctui_model::BuildStatus::Parsing
-            | yoctui_model::BuildStatus::Running
-            | yoctui_model::BuildStatus::Cancelling
-    ) {
-        build_progress_popup(frame, app, area);
     } else if app.quit_confirm {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 3);
         frame.render_widget(Clear, popup);
@@ -806,6 +798,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
+#[allow(dead_code)]
 fn build_progress_popup(frame: &mut Frame, app: &App, area: Rect) {
     let width = area.width.saturating_sub(14).clamp(50, 110);
     let height = area.height.saturating_sub(6).clamp(12, 28);
@@ -2357,7 +2350,7 @@ mod tests {
         assert!(output.contains("BBFILE_COLLECTIONS"));
     }
     #[test]
-    fn renders_build_progress_and_completion_popups() {
+    fn build_completion_is_modal_but_running_builds_keep_the_shell_visible() {
         let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
         let mut app = App::new(10, 1_000);
         app.build.target = Some("core-image-minimal".into());
@@ -2371,8 +2364,8 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(output.contains("Build progress"));
-        assert!(output.contains("CPU: 50%"));
+        assert!(output.contains("Dashboard"));
+        assert!(output.contains("Host CPU: 50%"));
 
         app.build.status = yoctui_model::BuildStatus::Completed;
         app.build_completion_open = true;
