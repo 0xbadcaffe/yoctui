@@ -7,7 +7,6 @@ license.workspace = true
 async-trait.workspace = true
 yoctui-model = { path = "../yoctui-model" }
 yoctui-protocol = { path = "../yoctui-protocol" }
-serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
