@@ -57,9 +57,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `RECIPES-ACTIONS-001` — complete typed recipe actions
-2. `CONFIG-001` — complete configuration provenance and editing
-3. `DEVTOOL-001` — complete Devtool lifecycle
+1. `RECIPE-BITBAKE-001` — complete typed recipe BitBake operations
+2. `RECIPE-NAV-001` — complete recipe file, log, patch, and Devtool routes
+3. `RECIPE-QA-001` — add recipe CVE and SPDX background actions
+4. `CONFIG-001` — complete configuration provenance and editing
+5. `DEVTOOL-001` — complete Devtool lifecycle
 
 ## Rules
 

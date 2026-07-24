@@ -252,11 +252,44 @@ id = "RECIPES-ACTIONS-001"
 milestone = "M3"
 title = "Complete typed recipe actions"
 status = "IN_PROGRESS"
-priority = 42
+priority = 43
+required = true
+depends_on = ["RECIPE-BITBAKE-001", "RECIPE-NAV-001", "RECIPE-QA-001"]
+verify = ["cargo test -p yoctui-model recipe_action", "cargo test -p yoctui-app recipe_action", "cargo test -p yoctui-ui recipe_action", "cargo test -p yoctui -- recipe_action"]
+notes = "Parent completion gate for standard BitBake operations, authoritative navigation/Devtool routes, and QA/SPDX background jobs."
+
+[[task]]
+id = "RECIPE-BITBAKE-001"
+milestone = "M3"
+title = "Complete typed recipe BitBake operations"
+status = "IN_PROGRESS"
+priority = 40
 required = true
 depends_on = ["RECIPES-UI-001", "JOB-002"]
-verify = ["cargo test -p yoctui-model recipe_action", "cargo test -p yoctui-app recipe_action", "cargo test -p yoctui-ui recipe_action", "cargo test -p yoctui -- recipe_action"]
-notes = "Build/task, clean, devshell, config/signature, editor/log, Devtool, patch, CVE, and SPDX actions with confirmations, capabilities, and persistent jobs."
+verify = ["cargo test -p yoctui-model recipe_bitbake_action", "cargo test -p yoctui-app recipe_bitbake_action", "cargo test -p yoctui-ui recipe_bitbake_action", "cargo test -p yoctui -- recipe_bitbake_action"]
+notes = "Build, force-task selection, clean, cleansstate, devshell, menuconfig, diffconfig, and diffsigs with typed confirmation and persistent jobs."
+
+[[task]]
+id = "RECIPE-NAV-001"
+milestone = "M3"
+title = "Complete recipe file, log, patch, and Devtool routes"
+status = "NOT_STARTED"
+priority = 41
+required = true
+depends_on = ["RECIPE-BITBAKE-001"]
+verify = ["cargo test -p yoctui-model recipe_navigation", "cargo test -p yoctui-app recipe_navigation", "cargo test -p yoctui-ui recipe_navigation", "cargo test -p yoctui -- recipe_navigation"]
+notes = "Authoritative provider/editor, selected task log, patch review, missing-path/tool failures, disabled explanations, and existing Devtool route integration."
+
+[[task]]
+id = "RECIPE-QA-001"
+milestone = "M3"
+title = "Add recipe CVE and SPDX background actions"
+status = "NOT_STARTED"
+priority = 42
+required = true
+depends_on = ["RECIPE-NAV-001", "JOB-002"]
+verify = ["cargo test -p yoctui-model recipe_qa_action", "cargo test -p yoctui-app recipe_qa_action", "cargo test -p yoctui-ui recipe_qa_action", "cargo test -p yoctui -- recipe_qa_action"]
+notes = "Capability-aware cve_check and create-spdx operations with confirmation, retained output, completion, failure, and cancellation."
 
 [[task]]
 id = "CONFIG-001"
