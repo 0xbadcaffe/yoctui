@@ -2292,6 +2292,47 @@ mod tests {
         assert!(output.contains("core-image-minimal"));
     }
     #[test]
+    fn inspector_reflects_selected_recipe_and_layer_preview() {
+        let mut terminal = Terminal::new(TestBackend::new(160, 30)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Recipes;
+        app.workspace.recipes.push(yoctui_model::Recipe {
+            name: "busybox".into(),
+            version: Some("1.36".into()),
+            layer: Some("meta".into()),
+        });
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Recipe: busybox"));
+        assert!(output.contains("Version: 1.36"));
+
+        app.screen = Screen::Layers;
+        app.layer_browser = Some(LayerBrowser {
+            layer: "meta".into(),
+            root: "/layers/meta".into(),
+            directory: "/layers/meta/conf".into(),
+            entries: vec![],
+            selection: 0,
+            preview: "BBFILE_COLLECTIONS += \"meta\"".into(),
+        });
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Path: /layers/meta/conf"));
+        assert!(output.contains("BBFILE_COLLECTIONS"));
+    }
+    #[test]
     fn renders_build_progress_and_completion_popups() {
         let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
         let mut app = App::new(10, 1_000);
