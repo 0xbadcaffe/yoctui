@@ -698,6 +698,11 @@ mod tests {
         assert_eq!(settings_action(Input::Esc), None);
     }
     #[test]
+    fn command_palette_global_shortcut_is_typed() {
+        assert_eq!(key_action(Input::CtrlP), Some(Action::OpenCommandPalette));
+        assert_eq!(focus_action(FocusTarget::CommandPalette, Input::Tab), None);
+    }
+    #[test]
     fn dialog_focus_navigation_keys_are_typed_before_cli_routing() {
         assert_eq!(
             key_action(Input::Tab),

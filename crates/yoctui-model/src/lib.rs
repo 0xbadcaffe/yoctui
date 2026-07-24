@@ -91,6 +91,36 @@ pub const SETTINGS: [Setting; 6] = [
     Setting::LogWrap,
     Setting::LogFollow,
 ];
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommandId {
+    BuildImage,
+    SelectImage,
+    BuildSelectedRecipe,
+    EditBbmask,
+    OpenDashboard,
+    OpenLayers,
+    OpenRecipes,
+    OpenImages,
+    OpenTasks,
+    OpenLogs,
+    OpenErrors,
+    OpenConfiguration,
+    OpenSettings,
+    OpenHelp,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PaletteCommand {
+    pub id: CommandId,
+    pub label: &'static str,
+    pub description: &'static str,
+    pub shortcut: &'static str,
+    pub disabled_reason: Option<&'static str>,
+}
+impl PaletteCommand {
+    pub fn enabled(&self) -> bool {
+        self.disabled_reason.is_none()
+    }
+}
 const NAVIGATOR_SCREENS: [Screen; 12] = [
     Screen::Dashboard,
     Screen::Layers,
@@ -683,6 +713,7 @@ pub struct App {
     pub notification: Option<String>,
     pub command_palette_open: bool,
     pub command_palette_selection: usize,
+    pub command_palette_query: String,
     pub error_selection: usize,
     pub recipe_selection: usize,
     pub layer_selection: usize,
@@ -724,6 +755,7 @@ impl App {
             notification: None,
             command_palette_open: false,
             command_palette_selection: 0,
+            command_palette_query: String::new(),
             error_selection: 0,
             recipe_selection: 0,
             layer_selection: 0,
@@ -743,6 +775,128 @@ impl App {
     pub fn active_dialog_mut(&mut self) -> Option<&mut Dialog> {
         self.dialogs.front_mut()
     }
+    pub fn command_palette_commands(&self) -> Vec<PaletteCommand> {
+        let workspace_missing = self.workspace.build_dir.is_none();
+        let recipe_missing = self.screen != Screen::Recipes
+            || self.workspace.recipes.get(self.recipe_selection).is_none();
+        vec![
+            PaletteCommand {
+                id: CommandId::BuildImage,
+                label: "Build image",
+                description: "Open image build options for the active machine",
+                shortcut: "F5",
+                disabled_reason: workspace_missing.then_some("Load a Yocto workspace first"),
+            },
+            PaletteCommand {
+                id: CommandId::SelectImage,
+                label: "Select image",
+                description: "Choose an image recipe discovered in active layers",
+                shortcut: "i",
+                disabled_reason: (!self
+                    .workspace
+                    .recipes
+                    .iter()
+                    .any(|recipe| recipe.name.contains("image")))
+                .then_some("No image recipes are available"),
+            },
+            PaletteCommand {
+                id: CommandId::BuildSelectedRecipe,
+                label: "Build selected recipe",
+                description: "Confirm and build the selected recipe",
+                shortcut: "b",
+                disabled_reason: recipe_missing.then_some("Open Recipes and select a recipe"),
+            },
+            PaletteCommand {
+                id: CommandId::EditBbmask,
+                label: "Edit BBMASK",
+                description: "Preview and save the effective BBMASK value",
+                shortcut: "x then e",
+                disabled_reason: workspace_missing.then_some("Load a Yocto workspace first"),
+            },
+            PaletteCommand {
+                id: CommandId::OpenDashboard,
+                label: "Open Dashboard",
+                description: "Show build status, task progress, and recent output",
+                shortcut: "Esc",
+                disabled_reason: None,
+            },
+            PaletteCommand {
+                id: CommandId::OpenLayers,
+                label: "Open Layers",
+                description: "Browse active layer metadata and files",
+                shortcut: "y",
+                disabled_reason: None,
+            },
+            PaletteCommand {
+                id: CommandId::OpenRecipes,
+                label: "Open Recipes",
+                description: "Browse recipes and typed recipe actions",
+                shortcut: "r",
+                disabled_reason: None,
+            },
+            PaletteCommand {
+                id: CommandId::OpenImages,
+                label: "Open Images",
+                description: "Browse image recipes and artifacts",
+                shortcut: "i",
+                disabled_reason: None,
+            },
+            PaletteCommand {
+                id: CommandId::OpenTasks,
+                label: "Open Tasks",
+                description: "Inspect active and completed BitBake tasks",
+                shortcut: "t",
+                disabled_reason: None,
+            },
+            PaletteCommand {
+                id: CommandId::OpenLogs,
+                label: "Open Logs",
+                description: "Inspect retained structured build logs",
+                shortcut: "l",
+                disabled_reason: None,
+            },
+            PaletteCommand {
+                id: CommandId::OpenErrors,
+                label: "Open Errors",
+                description: "Inspect retained warnings and errors",
+                shortcut: "e",
+                disabled_reason: None,
+            },
+            PaletteCommand {
+                id: CommandId::OpenConfiguration,
+                label: "Open Configuration",
+                description: "Inspect effective BitBake variables and provenance",
+                shortcut: "v",
+                disabled_reason: None,
+            },
+            PaletteCommand {
+                id: CommandId::OpenSettings,
+                label: "Open Settings",
+                description: "Edit persistent visual and log preferences",
+                shortcut: "none",
+                disabled_reason: None,
+            },
+            PaletteCommand {
+                id: CommandId::OpenHelp,
+                label: "Open Help",
+                description: "Show all global and contextual shortcuts",
+                shortcut: "?",
+                disabled_reason: None,
+            },
+        ]
+    }
+    pub fn filtered_command_palette_commands(&self) -> Vec<PaletteCommand> {
+        let query = self.command_palette_query.trim().to_lowercase();
+        self.command_palette_commands()
+            .into_iter()
+            .filter(|command| {
+                query.is_empty()
+                    || command.label.to_lowercase().contains(&query)
+                    || command.description.to_lowercase().contains(&query)
+                    || command.shortcut.to_lowercase().contains(&query)
+            })
+            .collect()
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
@@ -760,6 +914,8 @@ pub enum Action {
     SelectCommandPalette {
         delta: isize,
     },
+    AppendCommandPaletteQuery(char),
+    BackspaceCommandPaletteQuery,
     ActivateCommandPalette,
     CloseCommandPalette,
     SelectSetting {
@@ -1079,6 +1235,33 @@ fn cycle_theme(theme: Theme, backwards: bool) -> Theme {
     THEMES[next]
 }
 
+fn command_action(app: &App, id: CommandId) -> Action {
+    match id {
+        CommandId::BuildImage => Action::OpenBuildOptions,
+        CommandId::SelectImage => Action::OpenImagePicker(
+            app.workspace
+                .recipes
+                .iter()
+                .map(|recipe| recipe.name.as_str())
+                .filter(|name| name.contains("image"))
+                .map(str::to_owned)
+                .collect(),
+        ),
+        CommandId::BuildSelectedRecipe => Action::BeginSelectedRecipeBuild,
+        CommandId::EditBbmask => Action::BeginBbmaskEdit,
+        CommandId::OpenDashboard => Action::Open(Screen::Dashboard),
+        CommandId::OpenLayers => Action::Open(Screen::Layers),
+        CommandId::OpenRecipes => Action::Open(Screen::Recipes),
+        CommandId::OpenImages => Action::Open(Screen::Images),
+        CommandId::OpenTasks => Action::Open(Screen::Tasks),
+        CommandId::OpenLogs => Action::Open(Screen::Logs),
+        CommandId::OpenErrors => Action::Open(Screen::Errors),
+        CommandId::OpenConfiguration => Action::Open(Screen::Configuration),
+        CommandId::OpenSettings => Action::Open(Screen::Settings),
+        CommandId::OpenHelp => Action::Open(Screen::Help),
+    }
+}
+
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     if modal_focus(app).is_some()
         && matches!(
@@ -1127,30 +1310,40 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::OpenCommandPalette => {
             app.command_palette_open = true;
             app.command_palette_selection = 0;
+            app.command_palette_query.clear();
         }
         Action::SelectCommandPalette { delta } => {
+            let count = app.filtered_command_palette_commands().len();
             app.command_palette_selection = if delta.is_negative() {
                 app.command_palette_selection
                     .saturating_sub(delta.unsigned_abs())
             } else {
                 app.command_palette_selection
                     .saturating_add(delta as usize)
-                    .min(5)
+                    .min(count.saturating_sub(1))
             };
+        }
+        Action::AppendCommandPaletteQuery(character) if app.command_palette_open => {
+            app.command_palette_query.push(character);
+            app.command_palette_selection = 0;
+        }
+        Action::BackspaceCommandPaletteQuery if app.command_palette_open => {
+            app.command_palette_query.pop();
+            app.command_palette_selection = 0;
         }
         Action::ActivateCommandPalette => {
             if !app.command_palette_open {
                 return None;
             }
-            match app.command_palette_selection {
-                0 => open_dialog(app, Dialog::BuildOptions),
-                1 => app.screen = Screen::Layers,
-                2 => app.screen = Screen::Recipes,
-                3 => app.screen = Screen::Logs,
-                4 => app.screen = Screen::Errors,
-                _ => app.screen = Screen::Help,
-            };
+            let command = app
+                .filtered_command_palette_commands()
+                .get(app.command_palette_selection)
+                .cloned()?;
+            if !command.enabled() {
+                return None;
+            }
             app.command_palette_open = false;
+            return update(app, command_action(app, command.id));
         }
         Action::CloseCommandPalette => {
             app.command_palette_open = false;
@@ -2342,6 +2535,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BackspaceLogQuery
         | Action::NextLogMatch
         | Action::PreviousLogMatch
+        | Action::AppendCommandPaletteQuery(_)
+        | Action::BackspaceCommandPaletteQuery
         | Action::AppendMetadataQuery(_)
         | Action::BackspaceMetadataQuery => {}
         Action::Notify(message) => app.notification = Some(message),
@@ -2847,6 +3042,7 @@ mod tests {
     fn focus_command_palette_restores_or_transitions_without_leaking_input() {
         let mut app = App::new(10, 1_000);
         app.focus = FocusTarget::Navigator;
+        app.workspace.build_dir = Some(PathBuf::from("/build"));
 
         let _ = update(&mut app, Action::OpenCommandPalette);
         assert_eq!(app.focus, FocusTarget::CommandPalette);
@@ -2867,6 +3063,55 @@ mod tests {
         assert_eq!(app.focus_return, Some(FocusTarget::Navigator));
         let _ = update(&mut app, Action::CloseBuildOptions);
         assert_eq!(app.focus, FocusTarget::Navigator);
+    }
+    #[test]
+    fn command_palette_search_is_case_insensitive_and_selection_is_bounded() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::OpenCommandPalette);
+        for character in "PROVENANCE".chars() {
+            let _ = update(&mut app, Action::AppendCommandPaletteQuery(character));
+        }
+        let commands = app.filtered_command_palette_commands();
+        assert_eq!(commands.len(), 1);
+        assert_eq!(commands[0].id, CommandId::OpenConfiguration);
+
+        let _ = update(&mut app, Action::SelectCommandPalette { delta: 99 });
+        assert_eq!(app.command_palette_selection, 0);
+        for _ in 0.."PROVENANCE".len() {
+            let _ = update(&mut app, Action::BackspaceCommandPaletteQuery);
+        }
+        assert!(app.command_palette_query.is_empty());
+        assert!(app.filtered_command_palette_commands().len() > 6);
+    }
+    #[test]
+    fn command_palette_empty_and_disabled_activation_are_inert() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::OpenCommandPalette);
+        let original = app.clone();
+        assert_eq!(update(&mut app, Action::ActivateCommandPalette), None);
+        assert_eq!(app, original, "disabled Build image must remain open");
+
+        for character in "no such command".chars() {
+            let _ = update(&mut app, Action::AppendCommandPaletteQuery(character));
+        }
+        let no_results = app.clone();
+        assert!(app.filtered_command_palette_commands().is_empty());
+        assert_eq!(update(&mut app, Action::ActivateCommandPalette), None);
+        assert_eq!(app, no_results);
+    }
+    #[test]
+    fn command_palette_available_entry_dispatches_existing_typed_action() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Inspector;
+        let _ = update(&mut app, Action::OpenCommandPalette);
+        for character in "Open Settings".chars() {
+            let _ = update(&mut app, Action::AppendCommandPaletteQuery(character));
+        }
+
+        assert_eq!(update(&mut app, Action::ActivateCommandPalette), None);
+        assert_eq!(app.screen, Screen::Settings);
+        assert!(!app.command_palette_open);
+        assert_eq!(app.focus, FocusTarget::Workspace);
     }
     #[test]
     fn focus_async_dialog_waits_behind_palette_then_restores() {

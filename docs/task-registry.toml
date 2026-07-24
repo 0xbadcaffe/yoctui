@@ -119,12 +119,12 @@ notes = "UI-tick animation now distinguishes fast/slow cadence, reduced motion u
 id = "PALETTE-001"
 milestone = "M2"
 title = "Searchable contextual command palette"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 17
 required = true
 depends_on = ["UI-SHELL-001"]
 verify = ["cargo test -p yoctui-model command_palette", "cargo test -p yoctui-app command_palette", "cargo test -p yoctui-ui command_palette", "cargo test -p yoctui -- command_palette"]
-notes = "Command palette overlay, selection, activation, and Ctrl+P routing added by 457f176. Search, context filtering, disabled-command explanations, and direct tests remain."
+notes = "A typed 14-command catalog now owns deterministic ordering, case-insensitive label/description/shortcut search, bounded selection, contextual availability, exact disabled explanations, and existing-action dispatch. Empty/disabled activation, focus, CLI input, themes, and narrow rendering are covered in this commit."
 
 [[task]]
 id = "TASKS-001"
@@ -178,7 +178,7 @@ status = "IN_PROGRESS"
 priority = 31
 required = true
 depends_on = ["GOV-001"]
-verify = ["./scripts/verify-ui-spec.sh", "cargo test -p yoctui-bitbake typed_event"]
+verify = ["./scripts/verify-ui-spec.sh", "cargo test -p yoctui-protocol typed_event", "cargo test -p yoctui-bitbake typed_event", "cargo test -p yoctui-app typed_event", "cargo test -p yoctui-model typed_event"]
 notes = "No raw backend parsing in Ratatui widgets."
 
 [[task]]

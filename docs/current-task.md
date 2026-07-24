@@ -2,57 +2,53 @@
 
 ## Active task
 
-**ID:** PALETTE-001
-**Title:** Implement the searchable contextual command palette
+**ID:** BB-002
+**Title:** Complete the typed backend-to-model event boundary
 
 ## Objective
 
-Replace the fixed six-entry command overlay with a typed, searchable command
-catalog that reflects the active workspace, build state, selection, and
-backend capability while explaining unavailable actions.
+Enforce one complete typed boundary from BitBake/process/bridge adapters through
+application event mapping into reducer actions, with no raw backend parsing or
+state mutation in UI widgets.
 
 ## Required work
 
-1. Inventory every currently reachable global/workspace action and its
-   availability requirements before defining the catalog.
-2. Define typed command identifiers, labels, descriptions, shortcuts,
-   contextual visibility, availability, and disabled explanations in the
-   model/application boundary.
-3. Add a query string with append, backspace, selection, activation, and close
-   reducer transitions.
-4. Filter case-insensitively across labels, descriptions, and shortcuts while
-   preserving deterministic ordering and bounded selection.
-5. Keep unavailable commands discoverable and visibly disabled with an exact
-   explanation; activation must be inert.
-6. Execute available commands through existing typed actions/effects rather
-   than duplicating workflow logic.
-7. Route palette input before dialogs and workspace input while preserving the
-   exact pane return target.
-8. Render query, contextual results, descriptions, shortcuts, selection, and
-   disabled state safely at wide and narrow supported sizes.
-9. Add model reducer, app mapping, CLI routing, and TestBackend coverage for
-   filtering, empty results, disabled commands, activation, and focus restore.
-10. Update `docs/ui-spec.md` and `docs/architecture.md` for the command catalog
-    ownership and availability contract.
+1. Inventory every backend event variant, protocol event, app mapping branch,
+   reducer action, and widget consumer before changing the boundary.
+2. Ensure protocol and backend events carry typed workspace, recipe, layer,
+   variable, dependency, relationship, parse, task, log, completion,
+   cancellation, command-failure, and disconnect data.
+3. Centralize backend-event-to-model-action normalization in `yoctui-app`.
+4. Remove any raw backend/process/protocol parsing from CLI orchestration,
+   model reducers, and Ratatui widgets.
+5. Preserve unknown/new protocol-event safety without inventing model state.
+6. Ensure malformed, oversized, out-of-order, and disconnected input produces
+   typed failure/loss behavior rather than panics or silent state mutation.
+7. Verify build-job lifecycle actions and primary model actions are both
+   emitted exactly once for every relevant backend terminal event.
+8. Add typed-event tests in protocol, bitbake, app, model, and UI boundary
+   enforcement tests as applicable.
+9. Update `docs/architecture.md` if normalization ownership needs
+   clarification.
 
 ## Definition of done
 
-- One typed catalog determines palette content and ordering.
-- Search and selection are reducer-owned and deterministic.
-- Contextual/unavailable commands explain their state and cannot activate.
-- Available entries dispatch existing typed workflows.
-- Focus trapping and exact pane restoration remain correct.
-- Wide, narrow, theme, and no-color rendering are covered.
+- Every backend event reaches the model through a typed app mapping.
+- Terminal events update both build state and the persistent job exactly once.
+- UI widgets consume typed model state and never parse backend text.
+- Unknown/malformed/disconnected input is safe and observable.
+- Boundary enforcement and typed-event tests pass.
 - Task-specific and baseline verification pass.
 - Registry/status documents are updated and the next eligible task is active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model command_palette
-cargo test -p yoctui-app command_palette
-cargo test -p yoctui-ui command_palette
-cargo test -p yoctui -- command_palette
+./scripts/verify-ui-spec.sh
+cargo test -p yoctui-protocol typed_event
+cargo test -p yoctui-bitbake typed_event
+cargo test -p yoctui-app typed_event
+cargo test -p yoctui-model typed_event
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -62,4 +58,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`BB-002 — Complete the typed backend-to-model event boundary`
+`TASKS-001 — Complete the live Tasks workspace`

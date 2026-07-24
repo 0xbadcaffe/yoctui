@@ -489,48 +489,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         chunks[2],
     );
     if app.command_palette_open {
-        let commands = [
-            "Build image",
-            "Open Layers",
-            "Open Recipes",
-            "Open Logs",
-            "Open Errors",
-            "Open Help",
-        ];
-        let items = commands
-            .iter()
-            .enumerate()
-            .map(|(index, command)| {
-                format!(
-                    "{} {}",
-                    if index == app.command_palette_selection {
-                        ">"
-                    } else {
-                        " "
-                    },
-                    command
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-        let popup = Rect::new(
-            area.width / 4,
-            area.height / 4,
-            area.width / 2,
-            area.height / 2,
-        );
-        clear_popup(frame, app, popup);
-        frame.render_widget(
-            Paragraph::new(format!(
-                "Commands\n\n{items}\n\nUp/Down select  Enter run  Esc cancel"
-            ))
-            .block(
-                Block::default()
-                    .title("Command palette")
-                    .borders(Borders::ALL),
-            ),
-            popup,
-        );
+        command_palette(frame, app, area);
     } else if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() {
         recipe_editor(frame, app, editor, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
@@ -825,6 +784,90 @@ pub fn render(frame: &mut Frame, app: &App) {
             popup,
         );
     }
+}
+
+fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
+    let width = area.width.saturating_sub(12).clamp(60, 100);
+    let height = area.height.saturating_sub(4).clamp(16, 26);
+    let popup = Rect::new(
+        (area.width.saturating_sub(width)) / 2,
+        (area.height.saturating_sub(height)) / 2,
+        width,
+        height,
+    );
+    let commands = app.filtered_command_palette_commands();
+    let visible_count = usize::from(height.saturating_sub(10)).max(1);
+    let start = app
+        .command_palette_selection
+        .saturating_sub(visible_count.saturating_sub(1));
+    let palette = ThemePalette::for_app(app);
+    let mut lines = vec![
+        Line::from(format!("Search: {}_", app.command_palette_query)),
+        Line::from(""),
+    ];
+    if commands.is_empty() {
+        lines.push(Line::styled(
+            "No commands match this search.",
+            palette.role(palette.disabled, Modifier::DIM),
+        ));
+    } else {
+        lines.extend(
+            commands
+                .iter()
+                .enumerate()
+                .skip(start)
+                .take(visible_count)
+                .map(|(index, command)| {
+                    let disabled = command.disabled_reason.is_some();
+                    let marker = if index == app.command_palette_selection {
+                        ">"
+                    } else {
+                        " "
+                    };
+                    let suffix = if disabled { " (unavailable)" } else { "" };
+                    let style = if index == app.command_palette_selection {
+                        selected_style(app, true)
+                    } else if disabled {
+                        palette.role(palette.disabled, Modifier::DIM)
+                    } else {
+                        Style::default()
+                    };
+                    Line::styled(
+                        format!("{marker} {}  [{}]{suffix}", command.label, command.shortcut),
+                        style,
+                    )
+                }),
+        );
+    }
+    lines.push(Line::from(""));
+    if let Some(command) = commands.get(app.command_palette_selection) {
+        lines.push(Line::styled(
+            command.description,
+            palette.role(palette.info, Modifier::ITALIC),
+        ));
+        if let Some(reason) = command.disabled_reason {
+            lines.push(Line::styled(
+                format!("Unavailable: {reason}."),
+                palette.role(palette.warning, Modifier::BOLD),
+            ));
+        }
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from(
+        "Type to search  ↑/↓ select  Enter run  Backspace edit  Esc cancel",
+    ));
+
+    clear_popup(frame, app, popup);
+    frame.render_widget(
+        Paragraph::new(Text::from(lines))
+            .block(
+                Block::default()
+                    .title("Command palette")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: true }),
+        popup,
+    );
 }
 
 fn responsive_shell(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {
@@ -2674,6 +2717,41 @@ mod tests {
             app.dialogs.push_back(dialog);
             let output = rendered_text(&app, 80, 24);
             assert!(output.contains(title), "missing {title} in narrow dialog");
+        }
+    }
+    #[test]
+    fn command_palette_renders_search_results_and_disabled_explanations() {
+        let mut app = App::new(10, 1_000);
+        app.command_palette_open = true;
+        app.command_palette_query = "build".into();
+        let output = rendered_text(&app, 100, 25);
+        assert!(output.contains("Search: build_"));
+        assert!(output.contains("Build image"));
+        assert!(output.contains("unavailable"));
+        assert!(output.contains("Load a Yocto workspace first"));
+        assert!(output.contains("Type to search"));
+
+        app.command_palette_query = "nothing matches this".into();
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("No commands match"));
+    }
+    #[test]
+    fn command_palette_selection_description_and_shortcut_render_in_all_themes() {
+        for theme in [
+            Theme::Dark,
+            Theme::Light,
+            Theme::MatrixGreen,
+            Theme::HighContrast,
+            Theme::Monochrome,
+        ] {
+            let mut app = App::new(10, 1_000);
+            app.theme = theme;
+            app.command_palette_open = true;
+            app.command_palette_query = "Open Settings".into();
+            let output = rendered_text(&app, 80, 24);
+            assert!(output.contains("Open Settings"));
+            assert!(output.contains("persistent visual"));
+            assert!(output.contains("[none]"));
         }
     }
     #[test]
