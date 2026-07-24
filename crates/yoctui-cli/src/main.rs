@@ -1359,6 +1359,23 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     }
                     _ => {}
                 }
+            } else if app.focus == yoctui_model::FocusTarget::Navigator {
+                let _ = match input {
+                    Input::Up | Input::Char('k') => {
+                        update(&mut app, Action::SelectNavigator { delta: -1 })
+                    }
+                    Input::Down | Input::Char('j') => {
+                        update(&mut app, Action::SelectNavigator { delta: 1 })
+                    }
+                    Input::Enter => update(&mut app, Action::ActivateNavigator),
+                    Input::Tab => update(&mut app, Action::CycleFocus { backwards: false }),
+                    Input::BackTab => update(&mut app, Action::CycleFocus { backwards: true }),
+                    Input::Esc => update(
+                        &mut app,
+                        Action::Focus(yoctui_model::FocusTarget::Workspace),
+                    ),
+                    _ => None,
+                };
             } else if app.layer_browser.is_some() {
                 let effect = match input {
                     Input::Up => update(&mut app, Action::SelectLayerBrowserEntry { delta: -1 }),
