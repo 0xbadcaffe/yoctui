@@ -163,12 +163,12 @@ notes = "BuildJobCoordinator maps typed backend events into persistent job lifec
 id = "BB-001"
 milestone = "M1"
 title = "Real BitBake smoke harness"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 30
 required = true
 depends_on = ["JOB-002"]
 verify = ["./scripts/verify-live-bitbake.sh"]
-notes = "Workspace, queries, build, events, completion, cancellation, shutdown."
+notes = "Production Tinfoil bridge and opt-in harness validated BitBake 2.19.0 / Poky 6.0.99 snapshot on qemux86-64, including workspace, metadata, native events, completion, cancellation, and shutdown; deterministic preflight tests are included in this commit."
 
 [[task]]
 id = "BB-002"
