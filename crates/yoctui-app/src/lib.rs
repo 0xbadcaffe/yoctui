@@ -380,6 +380,17 @@ pub fn focus_action(focus: FocusTarget, key: Input) -> Option<Action> {
         _ => None,
     }
 }
+
+pub fn settings_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectSetting { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectSetting { delta: 1 }),
+        Input::Left => Some(Action::ChangeSelectedSetting { backwards: true }),
+        Input::Right | Input::Enter => Some(Action::ChangeSelectedSetting { backwards: false }),
+        Input::Char('r') => Some(Action::RetrySettingsPersistence),
+        _ => None,
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -661,6 +672,30 @@ mod tests {
             key_action(Input::BackTab),
             Some(Action::CycleFocus { backwards: true })
         );
+    }
+    #[test]
+    fn settings_input_maps_selection_and_typed_changes() {
+        assert_eq!(
+            settings_action(Input::Up),
+            Some(Action::SelectSetting { delta: -1 })
+        );
+        assert_eq!(
+            settings_action(Input::Down),
+            Some(Action::SelectSetting { delta: 1 })
+        );
+        assert_eq!(
+            settings_action(Input::Left),
+            Some(Action::ChangeSelectedSetting { backwards: true })
+        );
+        assert_eq!(
+            settings_action(Input::Enter),
+            Some(Action::ChangeSelectedSetting { backwards: false })
+        );
+        assert_eq!(
+            settings_action(Input::Char('r')),
+            Some(Action::RetrySettingsPersistence)
+        );
+        assert_eq!(settings_action(Input::Esc), None);
     }
     #[test]
     fn dialog_focus_navigation_keys_are_typed_before_cli_routing() {

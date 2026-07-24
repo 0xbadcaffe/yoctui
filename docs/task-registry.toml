@@ -97,12 +97,12 @@ notes = "One complete semantic palette now covers all five themes, shell/backgro
 id = "SETTINGS-001"
 milestone = "M2"
 title = "Interactive settings editing and persistence"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 15
 required = true
 depends_on = ["THEME-001", "DIALOG-001"]
 verify = ["cargo test -p yoctui-model settings", "cargo test -p yoctui-app settings", "cargo test -p yoctui-ui settings", "cargo test -p yoctui -- settings"]
-notes = "Read-only Settings workspace added by 32b7983 and theme/animation preferences load from config. Interactive editing and complete persistence remain."
+notes = "Typed theme, animation, reduced-motion, color, log-wrap, and log-follow rows now preview immediately and persist atomically in session.toml. CLI precedence, unrelated-field preservation, dirty retry, failure notices, input mapping, and narrow UI coverage are complete in this commit."
 
 [[task]]
 id = "ANIM-001"
@@ -112,7 +112,7 @@ status = "IN_PROGRESS"
 priority = 16
 required = true
 depends_on = ["UI-SHELL-001"]
-verify = ["cargo test -p yoctui-ui animation"]
+verify = ["cargo test -p yoctui-model animation", "cargo test -p yoctui-ui animation"]
 notes = "Tick-driven indeterminate frames, fast/slow speed, and reduced-motion suppression exist from 3f69c16. Direct animation behavior tests remain."
 
 [[task]]

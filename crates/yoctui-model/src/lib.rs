@@ -74,6 +74,23 @@ pub enum AnimationSpeed {
     #[default]
     Fast,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Setting {
+    Theme,
+    AnimationSpeed,
+    ReducedMotion,
+    Color,
+    LogWrap,
+    LogFollow,
+}
+pub const SETTINGS: [Setting; 6] = [
+    Setting::Theme,
+    Setting::AnimationSpeed,
+    Setting::ReducedMotion,
+    Setting::Color,
+    Setting::LogWrap,
+    Setting::LogFollow,
+];
 const NAVIGATOR_SCREENS: [Screen; 12] = [
     Screen::Dashboard,
     Screen::Layers,
@@ -644,6 +661,8 @@ pub struct App {
     pub theme: Theme,
     pub animation_speed: AnimationSpeed,
     pub reduced_motion: bool,
+    pub settings_selection: usize,
+    pub settings_dirty: bool,
     pub animation_frame: u64,
     pub workspace: Workspace,
     pub host_telemetry: HostTelemetry,
@@ -683,6 +702,8 @@ impl App {
             theme: Theme::Dark,
             animation_speed: AnimationSpeed::Fast,
             reduced_motion: false,
+            settings_selection: 0,
+            settings_dirty: false,
             animation_frame: 0,
             workspace: Workspace::default(),
             host_telemetry: HostTelemetry::default(),
@@ -741,6 +762,15 @@ pub enum Action {
     },
     ActivateCommandPalette,
     CloseCommandPalette,
+    SelectSetting {
+        delta: isize,
+    },
+    ChangeSelectedSetting {
+        backwards: bool,
+    },
+    RetrySettingsPersistence,
+    SettingsPersisted,
+    SettingsPersistenceFailed(String),
     OpenBuildOptions,
     CloseBuildOptions,
     OpenImagePicker(Vec<String>),
@@ -1029,6 +1059,26 @@ fn synchronize_focus(app: &mut App) {
     }
 }
 
+fn cycle_theme(theme: Theme, backwards: bool) -> Theme {
+    const THEMES: [Theme; 5] = [
+        Theme::Dark,
+        Theme::Light,
+        Theme::MatrixGreen,
+        Theme::HighContrast,
+        Theme::Monochrome,
+    ];
+    let current = THEMES
+        .iter()
+        .position(|candidate| *candidate == theme)
+        .unwrap_or_default();
+    let next = if backwards {
+        (current + THEMES.len() - 1) % THEMES.len()
+    } else {
+        (current + 1) % THEMES.len()
+    };
+    THEMES[next]
+}
+
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     if modal_focus(app).is_some()
         && matches!(
@@ -1104,6 +1154,49 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::CloseCommandPalette => {
             app.command_palette_open = false;
+        }
+        Action::SelectSetting { delta } => {
+            app.settings_selection = if delta.is_negative() {
+                app.settings_selection.saturating_sub(delta.unsigned_abs())
+            } else {
+                app.settings_selection
+                    .saturating_add(delta as usize)
+                    .min(SETTINGS.len().saturating_sub(1))
+            };
+        }
+        Action::ChangeSelectedSetting { backwards } => {
+            match SETTINGS[app.settings_selection.min(SETTINGS.len() - 1)] {
+                Setting::Theme => app.theme = cycle_theme(app.theme, backwards),
+                Setting::AnimationSpeed => {
+                    app.animation_speed = match app.animation_speed {
+                        AnimationSpeed::Slow => AnimationSpeed::Fast,
+                        AnimationSpeed::Fast => AnimationSpeed::Slow,
+                    }
+                }
+                Setting::ReducedMotion => app.reduced_motion = !app.reduced_motion,
+                Setting::Color => app.color_enabled = !app.color_enabled,
+                Setting::LogWrap => app.logs.wrap = !app.logs.wrap,
+                Setting::LogFollow => {
+                    app.logs.follow = !app.logs.follow;
+                    app.logs.paused_len = (!app.logs.follow).then_some(app.logs.entries.len());
+                }
+            }
+            app.settings_dirty = true;
+            return Some(Effect::PersistSettings);
+        }
+        Action::RetrySettingsPersistence if app.settings_dirty => {
+            return Some(Effect::PersistSettings);
+        }
+        Action::RetrySettingsPersistence => {}
+        Action::SettingsPersisted => {
+            app.settings_dirty = false;
+            app.notification = None;
+        }
+        Action::SettingsPersistenceFailed(message) => {
+            app.settings_dirty = true;
+            app.notification = Some(format!(
+                "Settings changed in memory but could not be saved: {message}"
+            ));
         }
         Action::CycleFocus { backwards } => {
             if matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette) {
@@ -2300,6 +2393,7 @@ fn next_filter(values: &[String], current: Option<String>) -> Option<String> {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Effect {
+    PersistSettings,
     Start(BuildRequest),
     Cancel,
     OpenInEditor(PathBuf),
@@ -3576,6 +3670,53 @@ mod tests {
         };
         let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry.clone()));
         assert_eq!(app.host_telemetry, telemetry);
+    }
+    #[test]
+    fn settings_selection_and_changes_are_typed_and_persisted() {
+        let mut app = App::new(10, 1_000);
+        assert_eq!(SETTINGS[app.settings_selection], Setting::Theme);
+        assert_eq!(
+            update(&mut app, Action::ChangeSelectedSetting { backwards: false }),
+            Some(Effect::PersistSettings)
+        );
+        assert_eq!(app.theme, Theme::Light);
+        assert!(app.settings_dirty);
+
+        let _ = update(&mut app, Action::SelectSetting { delta: 99 });
+        assert_eq!(SETTINGS[app.settings_selection], Setting::LogFollow);
+        assert_eq!(
+            update(&mut app, Action::ChangeSelectedSetting { backwards: true }),
+            Some(Effect::PersistSettings)
+        );
+        assert!(!app.logs.follow);
+        assert_eq!(app.logs.paused_len, Some(0));
+
+        let _ = update(&mut app, Action::SettingsPersisted);
+        assert!(!app.settings_dirty);
+        assert!(app.notification.is_none());
+    }
+    #[test]
+    fn settings_persistence_failure_retains_the_preview_and_dirty_state() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::ChangeSelectedSetting { backwards: true });
+        assert_eq!(app.theme, Theme::Monochrome);
+
+        let _ = update(
+            &mut app,
+            Action::SettingsPersistenceFailed("read-only filesystem".into()),
+        );
+        assert_eq!(app.theme, Theme::Monochrome);
+        assert!(app.settings_dirty);
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("read-only filesystem")
+        );
+        assert_eq!(
+            update(&mut app, Action::RetrySettingsPersistence),
+            Some(Effect::PersistSettings)
+        );
     }
     #[test]
     fn bbmask_editing_requires_a_preview_and_confirmation() {

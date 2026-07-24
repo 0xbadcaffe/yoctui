@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Interactive settings and preference persistence. Semantic themes, unified dialogs, shared focus routing, responsive layouts, persistent jobs, and the first live BitBake compatibility matrix are complete.
+Indeterminate task animation and reduced motion. Interactive settings, semantic themes, unified dialogs, shared focus routing, responsive layouts, persistent jobs, and the first live BitBake compatibility matrix are complete.
 
 ## Current task
 
@@ -47,20 +47,20 @@ See `docs/current-task.md`.
 | Layers workspace | IN_PROGRESS | Lazy directory descent, parent navigation, subtree refresh, file preview, and editing exist (`a7512fa`, `c7128a6`); hidden files, Git state, and safe large-file handling remain |
 | Tasks workspace | IN_PROGRESS | Active task list and persistent navigation exist (`854f798`); completed/waiting rows, filters, inspector selection, and direct tests remain |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
-| Settings workspace | IN_PROGRESS | Current theme/animation preferences render (`32b7983`); interactive editing and complete persistence remain |
+| Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature workflows | NOT_STARTED | No adapter, typed workflow, UI, or tests are present |
 | Package data browser | NOT_STARTED | No `oe-pkgdata-util` adapter, workspace, typed workflow, or tests are present |
 
 ## Priority queue
 
-1. `SETTINGS-001` — interactive settings and persistence
-2. `ANIM-001` — complete task animation and reduced motion
-3. `PALETTE-001` — searchable contextual command palette
-4. `TASKS-001` — complete live Tasks workspace
-5. `LAYERS-001` — complete lazy layer tree and inspector
-6. `IMAGES-001` — complete image artifact workspace
-7. `DEP-001` — dependency exploration
-8. `QEMU-001` — managed QEMU workflow
+1. `ANIM-001` — complete task animation and reduced motion
+2. `PALETTE-001` — searchable contextual command palette
+3. `TASKS-001` — complete live Tasks workspace
+4. `LAYERS-001` — complete lazy layer tree and inspector
+5. `IMAGES-001` — complete image artifact workspace
+6. `DEP-001` — dependency exploration
+7. `QEMU-001` — managed QEMU workflow
+8. `WIC-001` — managed Wic workflow
 
 ## Rules
 
