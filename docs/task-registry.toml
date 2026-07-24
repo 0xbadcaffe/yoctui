@@ -219,11 +219,44 @@ id = "RECIPES-001"
 milestone = "M3"
 title = "Complete recipes workspace actions"
 status = "IN_PROGRESS"
+priority = 43
+required = true
+depends_on = ["RECIPES-META-001", "RECIPES-UI-001", "RECIPES-ACTIONS-001"]
+verify = ["cargo test -p yoctui-ui recipes", "cargo test -p yoctui-app recipe_action"]
+notes = "Parent completion gate for authoritative recipe metadata, the searchable Inspector, and typed recipe actions."
+
+[[task]]
+id = "RECIPES-META-001"
+milestone = "M3"
+title = "Add authoritative typed recipe metadata"
+status = "IN_PROGRESS"
+priority = 40
+required = true
+depends_on = ["BB-002"]
+verify = ["cargo test -p yoctui-protocol recipe_metadata", "cargo test -p yoctui-bitbake recipe_metadata", "cargo test -p yoctui-model recipe_metadata", "python3 -m pytest bridge/tests -k recipe_metadata"]
+notes = "Preferred/resolved versions, provider, append/workspace/build state, tasks, sources, patches, packages, history, capability visibility."
+
+[[task]]
+id = "RECIPES-UI-001"
+milestone = "M3"
+title = "Complete searchable Recipes Inspector"
+status = "NOT_STARTED"
 priority = 41
 required = true
-depends_on = ["JOB-002"]
-verify = ["cargo test -p yoctui-ui recipes", "cargo test -p yoctui-app recipe_action"]
-notes = "Search, build, clean, cleansstate, menuconfig, Devtool."
+depends_on = ["RECIPES-META-001"]
+verify = ["cargo test -p yoctui-model recipes_workspace", "cargo test -p yoctui-ui recipes_workspace", "cargo test -p yoctui-app recipes_workspace"]
+notes = "Bounded filters and selection, authoritative rows, contextual Inspector sections, responsive and unavailable states."
+
+[[task]]
+id = "RECIPES-ACTIONS-001"
+milestone = "M3"
+title = "Complete typed recipe actions"
+status = "NOT_STARTED"
+priority = 42
+required = true
+depends_on = ["RECIPES-UI-001", "JOB-002"]
+verify = ["cargo test -p yoctui-model recipe_action", "cargo test -p yoctui-app recipe_action", "cargo test -p yoctui-ui recipe_action", "cargo test -p yoctui -- recipe_action"]
+notes = "Build/task, clean, devshell, config/signature, editor/log, Devtool, patch, CVE, and SPDX actions with confirmations, capabilities, and persistent jobs."
 
 [[task]]
 id = "CONFIG-001"

@@ -56,9 +56,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `RECIPES-001` — complete recipe actions and inspector
-2. `CONFIG-001` — complete configuration provenance and editing
-3. `DEVTOOL-001` — complete Devtool lifecycle
+1. `RECIPES-META-001` — add authoritative typed recipe metadata
+2. `RECIPES-UI-001` — complete searchable Recipes Inspector
+3. `RECIPES-ACTIONS-001` — complete typed recipe actions
+4. `CONFIG-001` — complete configuration provenance and editing
+5. `DEVTOOL-001` — complete Devtool lifecycle
 
 ## Rules
 
