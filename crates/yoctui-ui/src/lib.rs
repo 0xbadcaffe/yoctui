@@ -5,8 +5,8 @@ use ratatui::{
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 use yoctui_model::{
-    App, BuildStatus, Dialog, FocusTarget, GitFileState, LayerBrowser, LayerBrowserEntry,
-    LayerInspectorMode, PreviewKind, Recipe, RecipeBuildStatus, RecipeEditor,
+    App, BackgroundJobKind, BuildStatus, Dialog, FocusTarget, GitFileState, LayerBrowser,
+    LayerBrowserEntry, LayerInspectorMode, PreviewKind, Recipe, RecipeBuildStatus, RecipeEditor,
     RecipeWorkspaceStatus, Screen, Severity, TaskFilterField, TaskRow, TaskState, Theme,
     format_duration,
 };
@@ -423,7 +423,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
         }
         Screen::LayerRelationships => "Esc dashboard | y layers | ? help | q quit",
         Screen::Recipes => {
-            "↑/↓ select | Enter inspect | e provider | o task logs | p patches | b build | f force | C/S clean | M menuconfig | d modify | u update | F finish | P deploy | D reset | / search"
+            "↑/↓ select | Enter inspect | e provider | o logs | p patches | b/f tasks | V CVE | X SPDX | C/S clean | M menuconfig | d modify | u update | F finish | P deploy | D reset | / search"
         }
         Screen::Images => {
             "↑/↓ select | b build selected image | i image picker | Tab focus | q quit"
@@ -2406,13 +2406,77 @@ fn recipe_inspector(app: &App, recipe: &Recipe) -> String {
             format!("enabled ({retained_log_count})")
         },
     );
+    let supports_task = |task: &str| {
+        reported_tasks.is_some_and(|tasks| {
+            let canonical = format!("do_{task}");
+            tasks
+                .iter()
+                .any(|candidate| candidate == task || candidate == &canonical)
+        })
+    };
+    let qa_capabilities = if reported_tasks.is_none() {
+        "QA actions unavailable until authoritative task metadata is loaded.".into()
+    } else {
+        format!(
+            "QA actions: CVE check {}; SPDX generation {}.",
+            if supports_task("cve_check") {
+                "enabled"
+            } else {
+                "unavailable (do_cve_check not reported)"
+            },
+            if supports_task("create_spdx") {
+                "enabled"
+            } else {
+                "unavailable (do_create_spdx not reported)"
+            }
+        )
+    };
+    let latest_qa_job = app.background_jobs.jobs.iter().rev().find(|job| {
+        job.context.recipe.as_deref() == Some(recipe.name.as_str())
+            && matches!(
+                job.kind,
+                BackgroundJobKind::CveCheck | BackgroundJobKind::Spdx
+            )
+    });
+    let qa_job = latest_qa_job.map_or_else(
+        || "Latest QA job: not run.".into(),
+        |job| {
+            let artifacts = if job
+                .result
+                .as_ref()
+                .is_some_and(|result| !result.artifacts.is_empty())
+            {
+                job.result
+                    .as_ref()
+                    .unwrap()
+                    .artifacts
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            } else {
+                "none reported".into()
+            };
+            let detail = job
+                .error
+                .as_ref()
+                .map(|error| error.summary.as_str())
+                .or_else(|| job.result.as_ref().map(|result| result.summary.as_str()))
+                .or_else(|| job.output.back().map(|entry| entry.message.as_str()))
+                .unwrap_or("no retained result yet");
+            format!(
+                "Latest QA job: {} [{:?}], progress {:?}, warnings {}, errors {}.\nQA result: {detail}; artifacts: {artifacts}.",
+                job.title, job.status, job.progress, job.warnings, job.errors
+            )
+        },
+    );
     let tasks = if active_tasks.is_empty() {
         recipe_values("Tasks", reported_tasks)
     } else {
         format!("Active tasks: {}", active_tasks.join(", "))
     };
     format!(
-        "Recipe: {}\nResolved version: {}\nPreferred version: {}\nProvider layer: {}\nProvider file: {}\nAppends: {}\nWorkspace/Devtool: {}\nBuild: {}\nDetail: {load_state}\n{task_capabilities}\n{navigation_capabilities}\n\nDependencies: {}\nRuntime dependencies: {}\nReverse dependencies: unavailable\n{tasks}\n{}\n{}\n{}\n{}",
+        "Recipe: {}\nResolved version: {}\nPreferred version: {}\nProvider layer: {}\nProvider file: {}\nAppends: {}\nWorkspace/Devtool: {}\nBuild: {}\nDetail: {load_state}\n{task_capabilities}\n{navigation_capabilities}\n{qa_capabilities}\n{qa_job}\n\nDependencies: {}\nRuntime dependencies: {}\nReverse dependencies: unavailable\n{tasks}\n{}\n{}\n{}\n{}",
         recipe.name,
         recipe.version.as_deref().unwrap_or("unavailable"),
         recipe.preferred_version.as_deref().unwrap_or("unavailable"),
@@ -3044,7 +3108,7 @@ fn bbmask_assignment(value: &str) -> String {
     )
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: e provider, o task logs, p patches, b/f tasks, d modify, u update-recipe, F finish, P deploy, D reset\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
@@ -4363,6 +4427,97 @@ mod tests {
             "{output}"
         );
         assert!(output.contains("Devtool: modify/update/finish"), "{output}");
+    }
+    #[test]
+    fn recipe_qa_action_renders_capabilities_confirmation_and_honest_results() {
+        for (width, height) in [(160, 32), (110, 28), (90, 25)] {
+            let mut app = App::new(10, 1_000);
+            app.dialogs
+                .push_back(Dialog::RecipeTaskConfirmation(BuildRequest {
+                    targets: vec!["busybox".into()],
+                    task: Some("cve_check".into()),
+                    force: false,
+                }));
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("bitbake busybox -c cve_check"), "{output}");
+        }
+
+        let mut app = App::new(20, 4_000);
+        app.screen = Screen::Recipes;
+        app.workspace.recipes.push(yoctui_model::Recipe {
+            name: "busybox".into(),
+            ..yoctui_model::Recipe::default()
+        });
+        app.recipe_metadata.insert(
+            "busybox".into(),
+            yoctui_model::RecipeMetadata {
+                recipe: "busybox".into(),
+                tasks: Some(vec!["do_cve_check".into(), "do_create_spdx".into()]),
+                ..yoctui_model::RecipeMetadata::default()
+            },
+        );
+        let id = yoctui_model::BackgroundJobId(7);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(yoctui_model::BackgroundJobSpec {
+                id,
+                kind: BackgroundJobKind::Spdx,
+                title: "SPDX generation busybox".into(),
+                context: yoctui_model::BackgroundJobContext {
+                    workspace: Some(Screen::Recipes),
+                    recipe: Some("busybox".into()),
+                    task: Some("create_spdx".into()),
+                    ..yoctui_model::BackgroundJobContext::default()
+                },
+                cancellation_supported: true,
+                queued_at: SystemTime::UNIX_EPOCH,
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::StartBackgroundJob {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::RunBackgroundJob { id });
+        let _ = update(
+            &mut app,
+            Action::SucceedBackgroundJob {
+                id,
+                result: yoctui_model::BackgroundJobResult {
+                    summary: "SPDX generation completed; BitBake reported no result path".into(),
+                    artifacts: vec![],
+                },
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let output = rendered_text(&app, 200, 40);
+        assert!(output.contains("QA actions: CVE check enabled"), "{output}");
+        assert!(output.contains("SPDX generation enabled"), "{output}");
+        assert!(
+            output.contains("SPDX generation busybox [Succeeded]"),
+            "{output}"
+        );
+        assert!(
+            output.contains("artifacts: none") && output.contains("reported."),
+            "{output}"
+        );
+        assert!(output.contains("V CVE"), "{output}");
+        assert!(output.contains("X SPDX"), "{output}");
+
+        app.recipe_metadata.get_mut("busybox").unwrap().tasks = Some(vec![]);
+        let output = rendered_text(&app, 200, 40);
+        assert!(
+            output.contains("CVE check unavailable")
+                && output.contains("do_cve_check not reported"),
+            "{output}"
+        );
+        assert!(
+            output.contains("SPDX generation unavailable")
+                && output.contains("do_create_spdx not reported"),
+            "{output}"
+        );
     }
     #[test]
     fn build_completion_is_modal_but_running_builds_keep_the_shell_visible() {

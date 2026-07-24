@@ -1889,6 +1889,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 let _ = update(&mut app, Action::BeginSelectedRecipeDiffconfig);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('z') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeDiffsigs);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('V') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeCveCheck);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('X') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeSpdx);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('e') {
                 if let Some(Effect::OpenInEditor(path)) =
                     update(&mut app, Action::OpenSelectedRecipeProvider)
@@ -2643,5 +2647,20 @@ mod tests {
             .unwrap();
         let error = editor_exit_error(status, "/tmp/recipe.bb").unwrap();
         assert!(error.contains("exit status: 7"), "{error}");
+    }
+
+    #[test]
+    fn recipe_qa_action_terminal_keys_decode_to_typed_routes() {
+        for (key, expected) in [
+            ('V', Action::BeginSelectedRecipeCveCheck),
+            ('X', Action::BeginSelectedRecipeSpdx),
+        ] {
+            let input =
+                input_from_key(KeyEvent::new(KeyCode::Char(key), KeyModifiers::NONE)).unwrap();
+            assert_eq!(
+                yoctui_app::recipes_workspace_action(false, input),
+                Some(expected)
+            );
+        }
     }
 }

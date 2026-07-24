@@ -108,6 +108,14 @@ Process execution translates the request to BitBake arguments; the bridge
 serializes the same fields and temporarily applies BitBake's force
 configuration only for the corresponding asynchronous build.
 
+The same coordinator classifies `cve_check` and `create_spdx` requests as
+distinct CVE/SPDX background-job kinds and records the selected recipe and task
+in typed job context. Backend parse, task, log, completion, cancellation, and
+disconnect events still drive the single lifecycle used by ordinary builds.
+Successful QA completion retains an empty artifact list unless a typed backend
+event supplies paths; widgets must describe that as no path reported and must
+not extract filesystem locations from log text.
+
 Unknown future protocol events normalize to an ignored event and do not imply a
 backend disconnect. Missing task progress remains unknown rather than becoming
 zero. Terminal build events emit one primary build-state action and one

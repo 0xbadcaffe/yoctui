@@ -494,6 +494,8 @@ pub struct BackgroundJobId(pub u64);
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BackgroundJobKind {
     Build,
+    CveCheck,
+    Spdx,
     Qemu,
     Wic,
     Sdk,
@@ -1598,6 +1600,8 @@ pub enum Action {
     BeginSelectedRecipeDevshell,
     BeginSelectedRecipeDiffconfig,
     BeginSelectedRecipeDiffsigs,
+    BeginSelectedRecipeCveCheck,
+    BeginSelectedRecipeSpdx,
     BeginSelectedRecipeForceTask,
     BeginSelectedRecipeTask {
         task: Option<String>,
@@ -2878,6 +2882,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::BeginSelectedRecipeDiffsigs => {
             begin_recipe_task(app, Some("diffsigs".into()), false);
+        }
+        Action::BeginSelectedRecipeCveCheck => {
+            begin_recipe_task(app, Some("cve_check".into()), false);
+        }
+        Action::BeginSelectedRecipeSpdx => {
+            begin_recipe_task(app, Some("create_spdx".into()), false);
         }
         Action::BeginSelectedRecipeTask { task, force } => {
             begin_recipe_task(app, task, force);
@@ -6436,5 +6446,123 @@ mod tests {
         );
         let _ = update(&mut app, Action::BeginSelectedRecipePatchReview);
         assert!(app.notification.as_deref().unwrap().contains("unresolved"));
+    }
+
+    #[test]
+    fn recipe_qa_action_requires_authoritative_tasks_and_exact_confirmation() {
+        let mut app = App::new(20, 4_000);
+        app.workspace.recipes.push(Recipe {
+            name: "busybox".into(),
+            ..Recipe::default()
+        });
+        let _ = update(&mut app, Action::BeginSelectedRecipeCveCheck);
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("Load selected recipe metadata")
+        );
+        app.recipe_metadata.insert(
+            "busybox".into(),
+            RecipeMetadata {
+                recipe: "busybox".into(),
+                tasks: Some(vec!["do_cve_check".into(), "do_create_spdx".into()]),
+                ..RecipeMetadata::default()
+            },
+        );
+        let _ = update(&mut app, Action::BeginSelectedRecipeCveCheck);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::RecipeTaskConfirmation(BuildRequest {
+                targets,
+                task: Some(task),
+                force: false,
+            })) if targets == &["busybox"] && task == "cve_check"
+        ));
+        assert_eq!(
+            update(&mut app, Action::ConfirmRecipeTask),
+            Some(Effect::Start(BuildRequest {
+                targets: vec!["busybox".into()],
+                task: Some("cve_check".into()),
+                force: false,
+            }))
+        );
+        let _ = update(&mut app, Action::BeginSelectedRecipeSpdx);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::RecipeTaskConfirmation(BuildRequest {
+                task: Some(task),
+                ..
+            })) if task == "create_spdx"
+        ));
+        let _ = update(&mut app, Action::CancelRecipeTask);
+        app.recipe_metadata.get_mut("busybox").unwrap().tasks = Some(vec![]);
+        let _ = update(&mut app, Action::BeginSelectedRecipeSpdx);
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("Task create_spdx is not reported")
+        );
+    }
+
+    #[test]
+    fn recipe_qa_action_reducer_retains_output_and_honest_empty_artifacts() {
+        let mut app = App::new(20, 4_000);
+        let id = BackgroundJobId(9);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(BackgroundJobSpec {
+                id,
+                kind: BackgroundJobKind::CveCheck,
+                title: "CVE check busybox".into(),
+                context: BackgroundJobContext {
+                    workspace: Some(Screen::Recipes),
+                    recipe: Some("busybox".into()),
+                    task: Some("cve_check".into()),
+                    ..BackgroundJobContext::default()
+                },
+                cancellation_supported: true,
+                queued_at: SystemTime::UNIX_EPOCH,
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::StartBackgroundJob {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::RunBackgroundJob { id });
+        let _ = update(
+            &mut app,
+            Action::AppendBackgroundJobOutput {
+                id,
+                entry: BackgroundJobOutputEntry {
+                    severity: Severity::Warning,
+                    message: "CVE-2026-0001 requires review".into(),
+                    timestamp: SystemTime::UNIX_EPOCH,
+                },
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::SucceedBackgroundJob {
+                id,
+                result: BackgroundJobResult {
+                    summary: "CVE check completed; BitBake reported no result path".into(),
+                    artifacts: vec![],
+                },
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let job = app.background_jobs.get(id).unwrap();
+        assert_eq!(job.status, BackgroundJobStatus::Succeeded);
+        assert_eq!(job.warnings, 1);
+        assert_eq!(
+            job.output.back().unwrap().message,
+            "CVE-2026-0001 requires review"
+        );
+        assert!(job.result.as_ref().unwrap().artifacts.is_empty());
     }
 }
