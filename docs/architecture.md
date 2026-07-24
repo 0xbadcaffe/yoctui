@@ -219,6 +219,14 @@ entry in the Inspector. Source opening and clipboard copying are typed effects
 executed by the CLI; clipboard execution probes `wl-copy`, `xclip`, then `xsel`
 without invoking a shell and reports unsupported environments visibly.
 
+Warnings and errors additionally carry a stable retained ID and typed
+`DiagnosticInfo`: normalized category, bounded summary, event metadata, and
+suggested actions. The Errors workspace derives from these diagnostic records,
+not severity-colored text parsing. Exact log navigation stores the diagnostic
+ID as a temporary jump target, preserving the user's query and filters while
+making that one retained entry selectable. Completion and backend-loss
+reducers create typed protected diagnostics and actionable outcome state.
+
 ## Dialog architecture
 
 Dialogs are typed model values, not ad-hoc widget-local state.

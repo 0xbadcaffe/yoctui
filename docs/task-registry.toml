@@ -196,12 +196,12 @@ notes = "Bounded retention now prefers protected diagnostics, safely truncates o
 id = "ERR-001"
 milestone = "M1"
 title = "Structured error investigation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 33
 required = true
 depends_on = ["BB-002"]
 verify = ["cargo test -p yoctui-model error", "cargo test -p yoctui-ui error", "cargo test -p yoctui-app error"]
-notes = "Details, source, context, log jump, cross-screen navigation."
+notes = "Retained warnings/errors now gain stable IDs and typed categories, summaries, metadata, and suggestions. The complete list and contextual Inspector include build/recipe/task/source/related context; selection is bounded, source opening is typed, exact log jumps preserve filters, diagnostic loss is visible, and success/warning/failure/cancellation/backend-loss outcomes are distinct and actionable."
 
 [[task]]
 id = "LAYERS-001"
@@ -211,7 +211,7 @@ status = "IN_PROGRESS"
 priority = 40
 required = true
 depends_on = ["JOB-002"]
-verify = ["cargo test -p yoctui-ui layer_tree"]
+verify = ["cargo test -p yoctui-model layer_tree", "cargo test -p yoctui-ui layer_tree", "cargo test -p yoctui-app layer_tree", "cargo test -p yoctui -- layer_tree"]
 notes = "Expansion, collapse, refresh, hidden files, preview, Git state, large files."
 
 [[task]]
