@@ -62,6 +62,15 @@ Owns:
 
 Every adapter returns typed events and typed results.
 
+The production Python bridge uses BitBake's `bb.tinfoil.Tinfoil` client API. It
+starts in configuration-only mode for lightweight workspace queries, parses
+recipes on demand, and submits `buildTargets` asynchronously. A bridge-side
+event pump converts native parse, task, log, completion, and cancellation
+records into protocol events. Standard output remains reserved for NDJSON;
+BitBake diagnostics go to standard error. The environment-only and mocked
+connection paths are test/diagnostic fallbacks and are not live compatibility
+evidence.
+
 ### `yoctui-app`
 
 Owns:
@@ -274,3 +283,8 @@ A Yocto/BitBake release may be listed as supported only after:
 - bridge shutdown
 
 are exercised in a real initialized environment.
+
+The repeatable opt-in entry point for this boundary is
+`scripts/verify-live-bitbake.sh`. It validates preconditions before starting
+BitBake and records the tested matrix in `docs/compatibility.md` only after the
+full cycle succeeds.

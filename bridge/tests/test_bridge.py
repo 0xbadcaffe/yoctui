@@ -384,6 +384,71 @@ server = Server()
         self.assertTrue(messages[5]["success"])
         self.assertEqual(messages[6]["exit_code"], 1)
 
+    def test_real_build_completion_shape_infers_success_from_failures(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                """__version__ = "2.8.1"
+class BuildCompleted:
+ def __init__(self): self._failures = 0; self._interrupted = 0
+ def getFailures(self): return self._failures
+class Connection:
+ def start_build(self, targets, task): pass
+ def drain_events(self): return [BuildCompleted()]
+class Server:
+ def connect(self): return Connection()
+server = Server()
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"start_build","targets":["base-files"],"task":"listtasks"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        completion = json.loads(result.stdout.splitlines()[-1])["message"]
+        self.assertEqual(completion["type"], "build_completed")
+        self.assertTrue(completion["success"])
+        self.assertEqual(completion["exit_code"], 0)
+
+    def test_tinfoil_package_is_used_for_live_metadata_queries(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory, "bb")
+            package.mkdir()
+            Path(package, "__init__.py").write_text(
+                '__version__ = "2.19.0"\n', encoding="utf-8"
+            )
+            Path(package, "tinfoil.py").write_text(
+                """class History:
+ def variable(self, name): return []
+class Data:
+ varhistory = History()
+ def getVar(self, name):
+  return {"BBLAYERS": "/layers/meta", "TOPDIR": "/build", "COREBASE": "/layers", "MACHINE": "qemux86-64", "DISTRO_VERSION": "6.0.99", "BBMULTICONFIG": ""}.get(name)
+class Tinfoil:
+ def __init__(self, **kwargs): self.config_data = Data()
+ def prepare(self, **kwargs): pass
+ def parse_recipes(self): pass
+ def shutdown(self): pass
+ def run_command(self, command, *args, **kwargs):
+  if command == "getLayerPriorities": return [("core", "", "^/layers/meta/", 5)]
+  if command == "getRecipes": return [("base-files", ["/layers/meta/recipes-core/base-files/base-files.bb"])]
+  if command == "getRecipeVersions": return {"/layers/meta/recipes-core/base-files/base-files.bb": ("", "3.0.14", "r0")}
+  return None
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"inspect_workspace"}}',
+                b'{"protocol_version":1,"sequence":2,"message":{"type":"list_recipes","filter":"base-files"}}',
+                b'{"protocol_version":1,"sequence":3,"message":{"type":"shutdown"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
+        self.assertEqual(messages[0]["data"]["bitbake_version"], "2.19.0")
+        self.assertEqual(messages[0]["data"]["layers"][0]["name"], "core")
+        self.assertEqual(messages[1]["recipes"][0]["version"], "3.0.14")
+        self.assertEqual(messages[1]["recipes"][0]["layer"], "core")
+        self.assertEqual(messages[2]["type"], "bridge_shutdown")
+
     def test_parent_eof_exits_cleanly(self) -> None:
         result = run_bridge()
         self.assertEqual(result.returncode, 0)

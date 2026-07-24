@@ -2,37 +2,53 @@
 
 ## Active task
 
-**ID:** BB-001
-**Title:** Add the real BitBake smoke harness
+**ID:** UI-RESP-001
+**Title:** Complete responsive wide, medium, narrow, and too-small layouts
 
 ## Objective
 
-Create and run a live, explicitly configured smoke harness that validates Yoctui against a real initialized Yocto/BitBake environment without treating mocked tests as compatibility evidence.
+Implement the complete responsive shell behavior specified in
+`docs/ui-spec.md`: three persistent panes on wide terminals, navigator plus
+workspace with a toggleable inspector on medium terminals, a visible
+one-pane switcher on narrow terminals, and a safe resize message below the
+minimum size.
 
 ## Required work
 
-1. Inspect the compatibility document, existing bridge/process adapters, CLI smoke scripts, and any available initialized build directories.
-2. Add `scripts/verify-live-bitbake.sh` with explicit environment inputs and safe preflight diagnostics.
-3. Exercise real workspace inspection, variable lookup, recipe listing, layer listing, build start, parse/task/log events, normal completion, cancellation, and bridge shutdown.
-4. Record the exact BitBake/Yocto versions and backend used only after successful live validation.
-5. Keep the live target configurable; use a documented small target by default only when the caller explicitly enables the live test.
-6. Never substitute mocked modules, the process fixture backend, or synthetic events for the live matrix.
-7. Add deterministic harness self-tests for configuration and failure reporting where they do not claim compatibility.
-8. If no usable initialized environment exists, mark this task `BLOCKED` with exact discovery commands and reproduction details, then continue with the next eligible task.
+1. Inspect the current shell renderer, application focus/navigation model,
+   input mapping, and existing breakpoint tests before changing code.
+2. Define stable wide, medium, narrow, and too-small breakpoint behavior
+   without duplicating screen-specific layouts.
+3. Keep Navigator, Workspace, and Inspector visible together in wide mode.
+4. Keep Navigator and Workspace visible in medium mode and provide a
+   keyboard-accessible inspector overlay or tab.
+5. Render one pane at a time in narrow mode with a visible pane switcher and
+   keyboard navigation among Navigator, Workspace, and Inspector.
+6. Preserve existing modal focus trapping and do not let responsive pane
+   controls bypass dialogs.
+7. Ensure every supported screen and relevant dialog renders without panic at
+   boundary dimensions and after resize transitions.
+8. Add reducer/input tests for pane selection and Ratatui `TestBackend` tests
+   for semantic content at every breakpoint.
+9. Update `docs/ui-spec.md` in the same commit if implementation requires a
+   more precise intentional shortcut or breakpoint contract.
 
 ## Definition of done
 
-- The live harness rejects missing or uninitialized build directories clearly.
-- A real bridge-backed workspace, metadata queries, build, events, completion, cancellation, and shutdown are exercised.
-- Compatibility documentation records only actually observed versions.
-- Harness self-tests and the configured live run pass.
-- Mock-only evidence is never presented as live support.
-- Registry and human-readable status are updated after verification or an exact external blocker is recorded.
+- Wide, medium, narrow, and too-small behavior matches `docs/ui-spec.md`.
+- Medium terminals can reveal and dismiss the Inspector without losing the
+  underlying workspace.
+- Narrow terminals visibly identify and switch the active pane.
+- Resize transitions clamp or preserve pane state safely.
+- No supported screen or dialog panics at tested boundary dimensions.
+- Task-specific and baseline verification pass.
+- Registry/status documents are updated and the next eligible task is active.
 
 ## Verification
 
 ```bash
-./scripts/verify-live-bitbake.sh
+cargo test -p yoctui-ui responsive
+cargo test -p yoctui-app responsive
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -42,4 +58,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`UI-RESP-001 — Complete the responsive shell matrix`
+`FOCUS-001 — Complete the shared focus router and modal focus trapping`
