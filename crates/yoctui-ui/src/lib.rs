@@ -5,7 +5,7 @@ use ratatui::{
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 use yoctui_model::{
-    App, FocusTarget, LayerBrowser, RecipeEditor, Screen, Severity, format_duration,
+    App, FocusTarget, LayerBrowser, RecipeEditor, Screen, Severity, Theme, format_duration,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -37,9 +37,41 @@ fn selected_style(app: &App, active: bool) -> Style {
     if !active {
         Style::default()
     } else if app.color_enabled {
-        Style::default().bg(Color::DarkGray)
+        Style::default()
+            .bg(theme_selected_background(app.theme))
+            .fg(theme_selected_foreground(app.theme))
     } else {
         Style::default().add_modifier(Modifier::REVERSED)
+    }
+}
+
+fn theme_selected_background(theme: Theme) -> Color {
+    match theme {
+        Theme::Dark => Color::DarkGray,
+        Theme::Light => Color::Gray,
+        Theme::MatrixGreen => Color::Green,
+        Theme::HighContrast => Color::White,
+        Theme::Monochrome => Color::Reset,
+    }
+}
+
+fn theme_selected_foreground(theme: Theme) -> Color {
+    match theme {
+        Theme::MatrixGreen | Theme::HighContrast => Color::Black,
+        _ => Color::Reset,
+    }
+}
+
+fn theme_focus_color(app: &App) -> Color {
+    if !app.color_enabled {
+        return Color::Reset;
+    }
+    match app.theme {
+        Theme::Dark => Color::Cyan,
+        Theme::Light => Color::Blue,
+        Theme::MatrixGreen => Color::LightGreen,
+        Theme::HighContrast => Color::Yellow,
+        Theme::Monochrome => Color::Reset,
     }
 }
 
@@ -257,7 +289,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         workspace(frame, app, panes[0]);
     }
     let footer_style = if app.color_enabled {
-        Style::default().fg(Color::DarkGray)
+        Style::default().fg(theme_focus_color(app))
     } else {
         Style::default()
     };
@@ -558,9 +590,9 @@ pub fn render(frame: &mut Frame, app: &App) {
     }
 }
 
-fn pane_block(title: &str, focused: bool) -> Block<'_> {
+fn pane_block<'a>(app: &App, title: &'a str, focused: bool) -> Block<'a> {
     let style = if focused {
-        Style::default().fg(Color::Cyan)
+        Style::default().fg(theme_focus_color(app))
     } else {
         Style::default().fg(Color::DarkGray)
     };
@@ -601,7 +633,11 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
         .collect::<Vec<_>>()
         .join("\n");
     frame.render_widget(
-        Paragraph::new(text).block(pane_block("Navigator", app.focus == FocusTarget::Navigator)),
+        Paragraph::new(text).block(pane_block(
+            app,
+            "Navigator",
+            app.focus == FocusTarget::Navigator,
+        )),
         area,
     );
 }
@@ -638,7 +674,11 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(details)
-            .block(pane_block("Inspector", app.focus == FocusTarget::Inspector))
+            .block(pane_block(
+                app,
+                "Inspector",
+                app.focus == FocusTarget::Inspector,
+            ))
             .wrap(Wrap { trim: false }),
         area,
     );

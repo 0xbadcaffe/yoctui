@@ -54,6 +54,16 @@ pub enum FocusTarget {
     Dialog,
     CommandPalette,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum Theme {
+    #[default]
+    Dark,
+    Light,
+    MatrixGreen,
+    HighContrast,
+    Monochrome,
+}
 const NAVIGATOR_SCREENS: [Screen; 11] = [
     Screen::Dashboard,
     Screen::Layers,
@@ -354,6 +364,7 @@ pub struct App {
     pub navigator_selection: usize,
     pub backend: String,
     pub color_enabled: bool,
+    pub theme: Theme,
     pub workspace: Workspace,
     pub host_telemetry: HostTelemetry,
     pub build: BuildState,
@@ -404,6 +415,7 @@ impl App {
             navigator_selection: 0,
             backend: "unknown".into(),
             color_enabled: true,
+            theme: Theme::Dark,
             workspace: Workspace::default(),
             host_telemetry: HostTelemetry::default(),
             build: BuildState::default(),
