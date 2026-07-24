@@ -219,6 +219,7 @@ impl BuildJobCoordinator {
             | BackendEvent::Variable { .. }
             | BackendEvent::Dependencies { .. }
             | BackendEvent::RecipeSources { .. }
+            | BackendEvent::RecipeMetadata(_)
             | BackendEvent::LayerRelationships(_)
             | BackendEvent::ParseProgress { .. }
             | BackendEvent::TaskQueued { .. }
@@ -340,6 +341,7 @@ pub fn model_action_from_backend_event(event: BackendEvent) -> Option<Action> {
         BackendEvent::RecipeSources { recipe, paths } => {
             Some(Action::RecipeSourcesLoaded { recipe, paths })
         }
+        BackendEvent::RecipeMetadata(metadata) => Some(Action::RecipeMetadataLoaded(metadata)),
         BackendEvent::LayerRelationships(layers) => {
             Some(Action::LayerRelationshipsLoaded(LayerRelationships {
                 layers: layers

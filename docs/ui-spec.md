@@ -674,6 +674,14 @@ Required:
 - package outputs
 - history where available
 
+The recipe inventory obtains resolved version, provider file/layer, and append
+count from BitBake's parsed provider tables. `Enter` lazily refreshes the
+selected recipe's authoritative tasks, metadata sources/appends, patch URIs,
+and package outputs. Fields the backend cannot supply, including workspace,
+per-recipe build status, or history, remain explicitly unavailable until a
+typed source provides them. Inventory refresh preserves selection by recipe
+name and removes details for recipes that disappeared.
+
 Recipe actions use dialogs:
 
 - build

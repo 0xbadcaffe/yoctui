@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete Recipes workspace actions and its contextual Inspector. The lazy Layers tree, structured error investigation, bounded searchable logs, the live Tasks workspace, typed backend boundary, command palette, animation, interactive settings, semantic themes, unified dialogs, responsive workbench, persistent jobs, and first live BitBake matrix are complete.
+Complete the searchable Recipes workspace and contextual Inspector. Authoritative typed recipe summary/detail metadata now passes live BitBake validation; the lazy Layers tree, structured error investigation, bounded searchable logs, live Tasks workspace, typed backend boundary, and persistent workbench are complete.
 
 ## Current task
 
@@ -48,6 +48,7 @@ See `docs/current-task.md`.
 | Logs workspace | DONE | Protected-diagnostic retention, bounded bytes/entries, safe truncation, coalescing, pressure counters, follow/pause, both-axis scrolling, search, all filters, selected Inspector, source opening, and clipboard effects are covered |
 | Errors workspace | DONE | Stable structured diagnostics drive the full list and Inspector, exact retained-log and source navigation, related context, visible loss counters, and actionable success/warning/failure/cancellation/backend-loss outcomes |
 | Layers workspace | DONE | Every configured layer stays visible above a stable-path lazy tree; priority, compatibility, active/Git state, subtree refresh, hidden/search filtering, typed Inspector modes, safe 64 KiB text/binary previews, and responsive failure-safe rendering are tested |
+| Recipes workspace | IN_PROGRESS | Typed summary/detail metadata is live-validated for resolved provider/version, appends, tasks, sources, patches, and packages; searchable rows, full Inspector sections, and remaining actions are incomplete |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
@@ -56,11 +57,10 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `RECIPES-META-001` — add authoritative typed recipe metadata
-2. `RECIPES-UI-001` — complete searchable Recipes Inspector
-3. `RECIPES-ACTIONS-001` — complete typed recipe actions
-4. `CONFIG-001` — complete configuration provenance and editing
-5. `DEVTOOL-001` — complete Devtool lifecycle
+1. `RECIPES-UI-001` — complete searchable Recipes Inspector
+2. `RECIPES-ACTIONS-001` — complete typed recipe actions
+3. `CONFIG-001` — complete configuration provenance and editing
+4. `DEVTOOL-001` — complete Devtool lifecycle
 
 ## Rules
 

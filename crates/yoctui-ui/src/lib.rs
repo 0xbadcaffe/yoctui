@@ -3799,6 +3799,7 @@ mod tests {
             name: "busybox".into(),
             version: Some("1.36".into()),
             layer: Some("meta".into()),
+            ..yoctui_model::Recipe::default()
         });
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal

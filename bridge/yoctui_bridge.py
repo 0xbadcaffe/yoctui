@@ -92,6 +92,7 @@ class TinfoilConnection:
         self.tinfoil.prepare(config_only=True, quiet=2)
         self.recipes_parsed = False
         self.active = False
+        self.recipe_files = {}
 
     def _ensure_recipes(self):
         if not self.recipes_parsed:
@@ -194,19 +195,62 @@ class TinfoilConnection:
         self._ensure_recipes()
         recipes = self.tinfoil.run_command("getRecipes", "") or []
         versions = self.tinfoil.run_command("getRecipeVersions", "") or {}
+        try:
+            providers = self.tinfoil.run_command("findProviders", "") or ()
+            preferred = (
+                providers[1]
+                if isinstance(providers, (list, tuple))
+                and len(providers) > 1
+                and isinstance(providers[1], dict)
+                else {}
+            )
+        except Exception:
+            preferred = {}
+        try:
+            all_appends = self.tinfoil.run_command("getAllAppends", "") or []
+        except Exception:
+            all_appends = []
         layers = self._layers()
         result = []
         for name, paths in recipes:
             if filter_value is not None and filter_value.lower() not in name.lower():
                 continue
             recipe_paths = sorted(path for path in paths if isinstance(path, str))
-            path = recipe_paths[0] if recipe_paths else None
+            preferred_data = preferred.get(name)
+            path = (
+                preferred_data[1]
+                if isinstance(preferred_data, (list, tuple))
+                and len(preferred_data) > 1
+                and isinstance(preferred_data[1], str)
+                else recipe_paths[0]
+                if recipe_paths
+                else None
+            )
             version_data = versions.get(path) if path is not None else None
             version = (
                 str(version_data[1])
                 if isinstance(version_data, (list, tuple)) and len(version_data) > 1
                 else None
             )
+            append_count = None
+            if path is not None and isinstance(all_appends, (list, tuple)):
+                basename = os.path.basename(path)
+                append_count = sum(
+                    1
+                    for item in all_appends
+                    if isinstance(item, (list, tuple))
+                    and len(item) > 1
+                    and isinstance(item[0], str)
+                    and (
+                        item[0] == basename
+                        or (
+                            "%" in item[0]
+                            and item[0].startswith(basename[: item[0].index("%")])
+                        )
+                    )
+                )
+            if path is not None:
+                self.recipe_files[str(name)] = path
             result.append(
                 {
                     "name": str(name),
@@ -214,6 +258,9 @@ class TinfoilConnection:
                     "layer": self._layer_for_path(path, layers)
                     if path is not None
                     else None,
+                    "preferred_version": None,
+                    "file": path,
+                    "append_count": append_count,
                 }
             )
         return result
@@ -238,11 +285,61 @@ class TinfoilConnection:
         ).split()
         return {"build": build, "runtime": runtime}
 
+    def _preferred_recipe_file(self, recipe):
+        if recipe in self.recipe_files:
+            return self.recipe_files[recipe]
+        providers = self.tinfoil.run_command("findProviders", "") or ()
+        preferred = (
+            providers[1]
+            if isinstance(providers, (list, tuple))
+            and len(providers) > 1
+            and isinstance(providers[1], dict)
+            else {}
+        )
+        preferred_data = preferred.get(recipe)
+        if (
+            isinstance(preferred_data, (list, tuple))
+            and len(preferred_data) > 1
+            and isinstance(preferred_data[1], str)
+        ):
+            return preferred_data[1]
+        recipes = self.tinfoil.run_command("getRecipes", "") or []
+        for name, paths in recipes:
+            if name == recipe:
+                candidates = sorted(path for path in paths if isinstance(path, str))
+                if candidates:
+                    return candidates[0]
+        raise RuntimeError(f"no provider file is available for {recipe}")
+
     def get_recipe_sources(self, recipe):
         self._ensure_recipes()
-        recipe_file = self.tinfoil.get_recipe_file(recipe)
+        recipe_file = self._preferred_recipe_file(recipe)
         appends = self.tinfoil.get_file_appends(recipe_file) or []
         return [recipe_file, *appends]
+
+    def get_recipe_metadata(self, recipe):
+        self._ensure_recipes()
+        recipe_file = self._preferred_recipe_file(recipe)
+        appends = list(self.tinfoil.get_file_appends(recipe_file) or [])
+        datastore = self.tinfoil.parse_recipe_file(recipe_file)
+        tasks = datastore.getVar("__BBTASKS") or []
+        packages = (datastore.getVar("PACKAGES") or "").split()
+        source_uri = (datastore.getVar("SRC_URI") or "").split()
+        patches = [
+            value
+            for value in source_uri
+            if value.split(";", 1)[0].endswith((".patch", ".diff"))
+        ]
+        return {
+            "recipe": recipe,
+            "workspace_status": None,
+            "build_status": None,
+            "tasks": sorted(str(task) for task in tasks),
+            "sources": [recipe_file, *appends],
+            "patches": patches,
+            "packages": packages,
+            "history": None,
+        }
 
     def start_build(self, targets, task):
         if self.active:
@@ -459,6 +556,19 @@ class BitBakeAdapter:
                 "BitBake server returned malformed recipe source data"
             )
         return response
+
+    def recipe_metadata(self, recipe):
+        operation = self.optional_server_operation("get_recipe_metadata")
+        if operation is None:
+            raise ServerUnavailable(
+                "connected BitBake server does not provide get_recipe_metadata; authoritative recipe details are unavailable"
+            )
+        try:
+            return typed_recipe_metadata(operation(recipe))
+        except Exception as exc:
+            raise ServerUnavailable(
+                f"could not inspect metadata for {recipe} from the BitBake server: {exc}"
+            )
 
     def layer_relationships(self):
         operation = self.optional_server_operation("get_layer_relationships")
@@ -782,6 +892,15 @@ def typed_recipes(response):
         and isinstance(recipe.get("name"), str)
         and (recipe.get("version") is None or isinstance(recipe.get("version"), str))
         and (recipe.get("layer") is None or isinstance(recipe.get("layer"), str))
+        and (
+            recipe.get("preferred_version") is None
+            or isinstance(recipe.get("preferred_version"), str)
+        )
+        and (recipe.get("file") is None or isinstance(recipe.get("file"), str))
+        and (
+            recipe.get("append_count") is None
+            or isinstance(recipe.get("append_count"), int)
+        )
         for recipe in response
     ):
         raise ServerUnavailable("BitBake server returned malformed recipe data")
@@ -790,9 +909,45 @@ def typed_recipes(response):
             "name": recipe["name"],
             "version": recipe.get("version"),
             "layer": recipe.get("layer"),
+            "preferred_version": recipe.get("preferred_version"),
+            "file": recipe.get("file"),
+            "append_count": recipe.get("append_count"),
         }
         for recipe in response
     ]
+
+
+def typed_recipe_metadata(response):
+    if not isinstance(response, dict) or not isinstance(response.get("recipe"), str):
+        raise ServerUnavailable("BitBake server returned malformed recipe metadata")
+    list_fields = ("tasks", "sources", "patches", "packages", "history")
+    if any(
+        response.get(field) is not None
+        and (
+            not isinstance(response.get(field), list)
+            or not all(isinstance(value, str) for value in response[field])
+        )
+        for field in list_fields
+    ):
+        raise ServerUnavailable("BitBake server returned malformed recipe metadata")
+    if response.get("workspace_status") not in (None, "clean", "modified"):
+        raise ServerUnavailable("BitBake server returned an invalid workspace status")
+    if response.get("build_status") not in (
+        None,
+        "idle",
+        "queued",
+        "running",
+        "succeeded",
+        "failed",
+        "cancelled",
+    ):
+        raise ServerUnavailable("BitBake server returned an invalid recipe build status")
+    return {
+        "recipe": response["recipe"],
+        "workspace_status": response.get("workspace_status"),
+        "build_status": response.get("build_status"),
+        **{field: response.get(field) for field in list_fields},
+    }
 
 
 def typed_layers(response):
@@ -1176,6 +1331,24 @@ def handle(command, correlation_id, adapter):
             else:
                 emit(
                     {"type": "recipe_sources", "recipe": recipe, "paths": paths},
+                    correlation_id,
+                )
+    elif kind == "get_recipe_metadata":
+        recipe = command.get("recipe")
+        if not isinstance(recipe, str) or not recipe:
+            error(
+                "invalid_request",
+                "get_recipe_metadata requires a recipe name",
+                correlation_id,
+            )
+        else:
+            try:
+                metadata = adapter.recipe_metadata(recipe)
+            except ServerUnavailable as exc:
+                error("bitbake_server_unavailable", str(exc), correlation_id)
+            else:
+                emit(
+                    {"type": "recipe_metadata", "data": metadata},
                     correlation_id,
                 )
     elif kind == "get_layer_relationships":

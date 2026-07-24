@@ -363,11 +363,42 @@ pub struct Layer {
     pub path: PathBuf,
     pub priority: Option<i32>,
 }
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct Recipe {
     pub name: String,
     pub version: Option<String>,
     pub layer: Option<String>,
+    #[serde(default)]
+    pub preferred_version: Option<String>,
+    #[serde(default)]
+    pub file: Option<PathBuf>,
+    #[serde(default)]
+    pub append_count: Option<usize>,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecipeWorkspaceStatus {
+    Clean,
+    Modified,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecipeBuildStatus {
+    Idle,
+    Queued,
+    Running,
+    Succeeded,
+    Failed,
+    Cancelled,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct RecipeMetadata {
+    pub recipe: String,
+    pub workspace_status: Option<RecipeWorkspaceStatus>,
+    pub build_status: Option<RecipeBuildStatus>,
+    pub tasks: Option<Vec<String>>,
+    pub sources: Option<Vec<PathBuf>>,
+    pub patches: Option<Vec<String>>,
+    pub packages: Option<Vec<String>>,
+    pub history: Option<Vec<String>>,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecipeEditor {
@@ -1062,6 +1093,7 @@ pub struct App {
     pub dependency_selection: usize,
     pub layer_relationships: Option<LayerRelationships>,
     pub recipe_sources: HashMap<String, Vec<PathBuf>>,
+    pub recipe_metadata: HashMap<String, RecipeMetadata>,
     pub layer_browser: Option<LayerBrowser>,
     pub dialogs: VecDeque<Dialog>,
     pub tasks: HashMap<TaskId, TaskInfo>,
@@ -1108,6 +1140,7 @@ impl App {
             dependency_selection: 0,
             layer_relationships: None,
             recipe_sources: HashMap::new(),
+            recipe_metadata: HashMap::new(),
             layer_browser: None,
             dialogs: VecDeque::new(),
             tasks: HashMap::new(),
@@ -1533,6 +1566,8 @@ pub enum Action {
     BeginSelectedRecipeDevtoolFinish,
     BeginSelectedRecipeDevtoolDeploy,
     BeginSelectedRecipeDependencies,
+    BeginSelectedRecipeMetadata,
+    RecipeMetadataLoaded(RecipeMetadata),
     DependenciesLoaded(RecipeDependencies),
     SelectDependency {
         delta: isize,
@@ -2809,6 +2844,21 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
             app.notification = Some("No recipe is selected for dependency inspection.".into());
         }
+        Action::BeginSelectedRecipeMetadata => {
+            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
+                return Some(Effect::GetRecipeMetadata(recipe.name.clone()));
+            }
+            app.notification = Some("No recipe is selected for metadata inspection.".into());
+        }
+        Action::RecipeMetadataLoaded(metadata) => {
+            let recipe = metadata.recipe.clone();
+            if let Some(sources) = metadata.sources.as_ref() {
+                app.recipe_sources.insert(recipe.clone(), sources.clone());
+            } else {
+                app.recipe_sources.remove(&recipe);
+            }
+            app.recipe_metadata.insert(recipe, metadata);
+        }
         Action::DependenciesLoaded(dependencies) => {
             app.screen = Screen::Dependencies;
             app.dependencies = Some(dependencies);
@@ -3486,11 +3536,32 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::WorkspaceLoaded(w) => app.workspace = w,
         Action::RecipesLoaded(mut recipes) => {
+            let selected = app
+                .workspace
+                .recipes
+                .get(app.recipe_selection)
+                .map(|recipe| recipe.name.clone());
             recipes.sort_by(|left, right| left.name.cmp(&right.name));
+            let names = recipes
+                .iter()
+                .map(|recipe| recipe.name.clone())
+                .collect::<HashSet<_>>();
             app.workspace.recipes = recipes;
-            app.recipe_selection = app
-                .recipe_selection
-                .min(app.workspace.recipes.len().saturating_sub(1));
+            app.recipe_metadata
+                .retain(|recipe, _| names.contains(recipe));
+            app.recipe_sources
+                .retain(|recipe, _| names.contains(recipe));
+            app.recipe_selection = selected
+                .and_then(|selected| {
+                    app.workspace
+                        .recipes
+                        .iter()
+                        .position(|recipe| recipe.name == selected)
+                })
+                .unwrap_or_else(|| {
+                    app.recipe_selection
+                        .min(app.workspace.recipes.len().saturating_sub(1))
+                });
         }
         Action::LayersLoaded(mut layers) => {
             layers.sort_by(|left, right| left.name.cmp(&right.name));
@@ -3573,6 +3644,7 @@ pub enum Effect {
     DevtoolFinish(DevtoolFinishRequest),
     DevtoolDeploy(DevtoolDeployRequest),
     GetDependencies(String),
+    GetRecipeMetadata(String),
     GetLayerRelationships,
     LoadRecipeEditorFile(PathBuf),
     SaveRecipeEditorFile {
@@ -4496,11 +4568,13 @@ mod tests {
                 name: "alpha".into(),
                 version: None,
                 layer: None,
+                ..Recipe::default()
             },
             Recipe {
                 name: "beta".into(),
                 version: None,
                 layer: None,
+                ..Recipe::default()
             },
         ];
         let _ = update(&mut app, Action::SelectRecipe { delta: 8 });
@@ -4509,12 +4583,57 @@ mod tests {
         assert_eq!(app.recipe_selection, 0);
     }
     #[test]
+    fn recipe_metadata_refresh_is_typed_and_replaces_stale_detail() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes.push(Recipe {
+            name: "busybox".into(),
+            version: Some("1.36".into()),
+            layer: Some("core".into()),
+            preferred_version: None,
+            file: Some("/layers/meta/recipes-core/busybox/busybox.bb".into()),
+            append_count: Some(2),
+        });
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedRecipeMetadata),
+            Some(Effect::GetRecipeMetadata("busybox".into()))
+        );
+        let _ = update(
+            &mut app,
+            Action::RecipeMetadataLoaded(RecipeMetadata {
+                recipe: "busybox".into(),
+                workspace_status: None,
+                build_status: None,
+                tasks: Some(vec!["do_build".into()]),
+                sources: Some(vec!["/layers/meta/busybox.bb".into()]),
+                patches: Some(vec![]),
+                packages: Some(vec!["busybox".into()]),
+                history: None,
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::RecipeMetadataLoaded(RecipeMetadata {
+                recipe: "busybox".into(),
+                tasks: Some(vec!["do_compile".into()]),
+                sources: None,
+                ..RecipeMetadata::default()
+            }),
+        );
+        let metadata = &app.recipe_metadata["busybox"];
+        assert_eq!(metadata.tasks, Some(vec!["do_compile".into()]));
+        assert_eq!(metadata.sources, None);
+        assert!(!app.recipe_sources.contains_key("busybox"));
+        assert_eq!(metadata.workspace_status, None);
+        assert_eq!(metadata.history, None);
+    }
+    #[test]
     fn selected_recipe_build_requires_confirmation() {
         let mut app = App::new(10, 1_000);
         app.workspace.recipes = vec![Recipe {
             name: "busybox".into(),
             version: None,
             layer: None,
+            ..Recipe::default()
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
         assert_eq!(
@@ -4532,6 +4651,7 @@ mod tests {
             name: "busybox".into(),
             version: None,
             layer: None,
+            ..Recipe::default()
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeClean);
         assert!(matches!(
@@ -4547,6 +4667,7 @@ mod tests {
             name: "busybox".into(),
             version: None,
             layer: None,
+            ..Recipe::default()
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeMenuConfig);
         assert!(matches!(
@@ -4562,6 +4683,7 @@ mod tests {
             name: "busybox".into(),
             version: None,
             layer: None,
+            ..Recipe::default()
         }];
         assert_eq!(
             update(&mut app, Action::BeginSelectedRecipeDevtoolModify),
@@ -4575,6 +4697,7 @@ mod tests {
             name: "busybox".into(),
             version: None,
             layer: None,
+            ..Recipe::default()
         }];
         assert_eq!(
             update(&mut app, Action::BeginSelectedRecipeDependencies),
@@ -4594,6 +4717,7 @@ mod tests {
             name: "base-files".into(),
             version: None,
             layer: None,
+            ..Recipe::default()
         });
         let _ = update(&mut app, Action::SelectDependency { delta: 1 });
         let _ = update(&mut app, Action::OpenSelectedDependency);
@@ -4607,6 +4731,7 @@ mod tests {
             name: "busybox".into(),
             version: None,
             layer: None,
+            ..Recipe::default()
         }];
         assert_eq!(
             update(&mut app, Action::BeginSelectedRecipeDevtoolReset),
@@ -4628,6 +4753,7 @@ mod tests {
             name: "busybox".into(),
             version: None,
             layer: None,
+            ..Recipe::default()
         }];
         assert_eq!(
             update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe),
@@ -4654,6 +4780,7 @@ mod tests {
             name: "busybox".into(),
             version: None,
             layer: Some("meta-demo".into()),
+            ..Recipe::default()
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolFinish);
         assert!(matches!(
@@ -4679,6 +4806,7 @@ mod tests {
             name: "busybox".into(),
             version: None,
             layer: None,
+            ..Recipe::default()
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolDeploy);
         let _ = update(&mut app, Action::AppendDevtoolDeployTarget('q'));
@@ -4730,6 +4858,7 @@ mod tests {
             name: "busybox".into(),
             version: None,
             layer: None,
+            ..Recipe::default()
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeCleanState);
         assert!(matches!(
@@ -5183,11 +5312,13 @@ mod tests {
                     name: "zlib".into(),
                     version: None,
                     layer: Some("core".into()),
+                    ..Recipe::default()
                 },
                 Recipe {
                     name: "base-files".into(),
                     version: None,
                     layer: Some("core".into()),
+                    ..Recipe::default()
                 },
             ]),
         );
