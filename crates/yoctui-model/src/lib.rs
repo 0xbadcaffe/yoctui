@@ -751,8 +751,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             };
             app.focus = TARGETS[next];
         }
-        Action::OpenBuildOptions => app.build_options_open = true,
-        Action::CloseBuildOptions => app.build_options_open = false,
+        Action::OpenBuildOptions => {
+            app.build_options_open = true;
+            app.focus = FocusTarget::Dialog;
+        }
+        Action::CloseBuildOptions => {
+            app.build_options_open = false;
+            app.focus = FocusTarget::Workspace;
+        }
         Action::OpenImagePicker(mut images) => {
             images.sort();
             images.dedup();
@@ -767,6 +773,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     Some("No image recipes were discovered in the active layers.".into());
             } else {
                 app.image_picker = Some(ImagePicker { images, selection });
+                app.focus = FocusTarget::Dialog;
             }
         }
         Action::SelectImage { delta } => {
@@ -787,8 +794,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             {
                 app.build.target = Some(image.clone());
             }
+            app.focus = FocusTarget::Workspace;
         }
-        Action::CancelImagePicker => app.image_picker = None,
+        Action::CancelImagePicker => {
+            app.image_picker = None;
+            app.focus = FocusTarget::Workspace;
+        }
         Action::BeginCurrentImageBuild => {
             if app
                 .recipe_editor
@@ -811,12 +822,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.build_task = None;
             app.build_options_open = false;
             app.build_target_editing = true;
+            app.focus = FocusTarget::Dialog;
         }
         Action::BeginBuildTargetTask(task) => {
             app.build_target_input = app.build.target.clone().unwrap_or_default();
             app.build_task = task;
             app.build_options_open = false;
             app.build_target_editing = true;
+            app.focus = FocusTarget::Dialog;
         }
         Action::AppendBuildTarget(character) if app.build_target_editing => {
             app.build_target_input.push(character);
@@ -2438,6 +2451,7 @@ mod tests {
 
         let _ = update(&mut app, Action::OpenBuildOptions);
         assert!(app.build_options_open);
+        assert_eq!(app.focus, FocusTarget::Dialog);
         let _ = update(&mut app, Action::BeginBuildTargetTask(Some("clean".into())));
 
         assert!(!app.build_options_open);
