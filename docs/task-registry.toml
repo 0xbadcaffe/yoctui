@@ -108,12 +108,12 @@ notes = "Typed theme, animation, reduced-motion, color, log-wrap, and log-follow
 id = "ANIM-001"
 milestone = "M2"
 title = "Indeterminate task animation and reduced motion"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 16
 required = true
 depends_on = ["UI-SHELL-001"]
 verify = ["cargo test -p yoctui-model animation", "cargo test -p yoctui-ui animation"]
-notes = "Tick-driven indeterminate frames, fast/slow speed, and reduced-motion suppression exist from 3f69c16. Direct animation behavior tests remain."
+notes = "UI-tick animation now distinguishes fast/slow cadence, reduced motion uses a stable active label, unknown progress never fabricates 0%, and determinate/terminal rows never animate. Theme, no-color, narrow, reducer, and TestBackend coverage are complete in this commit."
 
 [[task]]
 id = "PALETTE-001"
@@ -123,7 +123,7 @@ status = "IN_PROGRESS"
 priority = 17
 required = true
 depends_on = ["UI-SHELL-001"]
-verify = ["cargo test -p yoctui-model command_palette", "cargo test -p yoctui-ui command_palette", "cargo test -p yoctui-app command_palette"]
+verify = ["cargo test -p yoctui-model command_palette", "cargo test -p yoctui-app command_palette", "cargo test -p yoctui-ui command_palette", "cargo test -p yoctui -- command_palette"]
 notes = "Command palette overlay, selection, activation, and Ctrl+P routing added by 457f176. Search, context filtering, disabled-command explanations, and direct tests remain."
 
 [[task]]

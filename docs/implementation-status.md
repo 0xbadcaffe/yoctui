@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Indeterminate task animation and reduced motion. Interactive settings, semantic themes, unified dialogs, shared focus routing, responsive layouts, persistent jobs, and the first live BitBake compatibility matrix are complete.
+Searchable contextual command palette. Animation, interactive settings, semantic themes, unified dialogs, shared focus routing, responsive layouts, persistent jobs, and the first live BitBake compatibility matrix are complete.
 
 ## Current task
 
@@ -40,7 +40,7 @@ See `docs/current-task.md`.
 | Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |
 | Command palette | IN_PROGRESS | Ctrl+P overlay, selection, and activation exist (`457f176`); search, contextual availability, explanations, and direct tests remain |
 | Themes | DONE | Five complete semantic palettes cover shell, focus, selection, status, severity, progress, dialogs, notifications, and syntax; monochrome/no-color use terminal attributes |
-| Task animation | IN_PROGRESS | Tick-driven fast/slow indeterminate frames and reduced-motion suppression exist (`3f69c16`); direct behavior tests remain |
+| Task animation | DONE | UI-tick fast/slow cadence, stable reduced-motion activity, honest unknown progress, and nonanimated determinate/terminal rows have reducer and TestBackend coverage |
 | Background-job model | DONE | Stable IDs, typed lifecycle/context/progress/result/error, bounded output/history, cancellation capability, and reducer coverage are implemented |
 | Background build execution | DONE | Confirmed builds allocate one job; typed events drive lifecycle/output; navigation persists; failure, cancellation rejection/acknowledgement, and backend loss are covered |
 | Live BitBake bridge | DONE | Tinfoil-backed workspace, variable, recipe, layer, parse/task/log events, normal completion, cancellation, and shutdown passed against BitBake 2.19.0 / Poky 6.0.99 snapshot on qemux86-64 |
@@ -53,14 +53,14 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `ANIM-001` — complete task animation and reduced motion
-2. `PALETTE-001` — searchable contextual command palette
-3. `TASKS-001` — complete live Tasks workspace
-4. `LAYERS-001` — complete lazy layer tree and inspector
-5. `IMAGES-001` — complete image artifact workspace
-6. `DEP-001` — dependency exploration
-7. `QEMU-001` — managed QEMU workflow
-8. `WIC-001` — managed Wic workflow
+1. `PALETTE-001` — searchable contextual command palette
+2. `BB-002` — typed backend-to-model event boundary
+3. `LAYERS-001` — complete lazy layer tree and inspector
+4. `RECIPES-001` — complete recipe actions and inspector
+5. `CONFIG-001` — complete configuration provenance and editing
+6. `DEVTOOL-001` — complete Devtool lifecycle
+7. `DEP-001` — dependency exploration
+8. `IMAGES-001` — complete image artifact workspace
 
 ## Rules
 

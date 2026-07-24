@@ -346,8 +346,11 @@ fn source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
 }
 
 fn task_activity(app: &App, task_progress: Option<u8>) -> &'static str {
-    if task_progress.is_some() || app.reduced_motion {
+    if task_progress.is_some() {
         return "";
+    }
+    if app.reduced_motion {
+        return " active";
     }
     const FAST: [&str; 8] = [
         "▸▸▸▸▸▸▸▸",
@@ -1269,7 +1272,7 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
     let start = app.task_progress_scroll.min(task_count.saturating_sub(1));
     let task_block = Block::default()
         .title(format!(
-            "Package task progress ({} active, {} complete; use Up/Down to scroll)",
+            "Package task progress (? = progress unknown; {} active, {} complete; use Up/Down to scroll)",
             active.len(),
             app.completed_tasks.len()
         ))
@@ -1310,20 +1313,31 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
             } else {
                 palette.role(palette.progress, Modifier::BOLD)
             };
+            let label = if completed.is_some() {
+                format!(
+                    "{}:{} {progress}%{}",
+                    task.recipe,
+                    task.task,
+                    match completed {
+                        Some(true) => " complete",
+                        Some(false) => " failed",
+                        None => "",
+                    }
+                )
+            } else if task.progress.is_some() {
+                format!("{}:{} {progress}%", task.recipe, task.task)
+            } else {
+                format!(
+                    "? {}:{}{}",
+                    task.recipe,
+                    task.task,
+                    task_activity(app, None)
+                )
+            };
             frame.render_widget(
                 Gauge::default()
                     .ratio(f64::from(progress) / 100.0)
-                    .label(format!(
-                        "{}:{}{} {progress}%{}",
-                        task.recipe,
-                        task.task,
-                        task_activity(app, task.progress),
-                        match completed {
-                            Some(true) => " complete",
-                            Some(false) => " failed",
-                            None => "",
-                        }
-                    ))
+                    .label(label)
                     .gauge_style(progress_style),
                 row,
             );
@@ -2330,6 +2344,88 @@ mod tests {
         assert!(output.contains("Log follow"));
         assert!(output.contains("select"));
         assert!(output.contains("change"));
+    }
+
+    #[test]
+    fn animation_fast_slow_and_reduced_motion_have_deterministic_cadence() {
+        let mut fast = App::new(10, 1_000);
+        fast.animation_frame = 0;
+        let first = task_activity(&fast, None);
+        fast.animation_frame = 1;
+        assert_ne!(task_activity(&fast, None), first);
+
+        let mut slow = App::new(10, 1_000);
+        slow.animation_speed = yoctui_model::AnimationSpeed::Slow;
+        slow.animation_frame = 0;
+        let first = task_activity(&slow, None);
+        slow.animation_frame = 1;
+        assert_eq!(task_activity(&slow, None), first);
+        slow.animation_frame = 3;
+        assert_ne!(task_activity(&slow, None), first);
+
+        slow.reduced_motion = true;
+        assert_eq!(task_activity(&slow, None), " active");
+        assert_eq!(task_activity(&slow, Some(0)), "");
+    }
+
+    #[test]
+    fn animation_unknown_progress_never_fabricates_a_percentage() {
+        for (theme, color_enabled) in [
+            (Theme::Dark, true),
+            (Theme::Light, true),
+            (Theme::MatrixGreen, true),
+            (Theme::HighContrast, true),
+            (Theme::Monochrome, true),
+            (Theme::Dark, false),
+        ] {
+            let mut app = App::new(10, 1_000);
+            app.theme = theme;
+            app.color_enabled = color_enabled;
+            app.tasks.insert(
+                yoctui_model::TaskId("busybox:do_compile".into()),
+                yoctui_model::TaskInfo {
+                    id: yoctui_model::TaskId("busybox:do_compile".into()),
+                    recipe: "busybox".into(),
+                    task: "do_compile".into(),
+                    progress: None,
+                },
+            );
+            let output = rendered_text(&app, 300, 30);
+            assert!(output.contains("progress unknown"), "{output}");
+            assert!(!output.contains("busybox:do_compile 0%"));
+            let _ = rendered_text(&app, 80, 24);
+        }
+    }
+
+    #[test]
+    fn animation_is_absent_from_determinate_and_terminal_rows() {
+        let mut app = App::new(10, 1_000);
+        app.tasks.insert(
+            yoctui_model::TaskId("busybox:do_compile".into()),
+            yoctui_model::TaskInfo {
+                id: yoctui_model::TaskId("busybox:do_compile".into()),
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                progress: Some(42),
+            },
+        );
+        app.completed_tasks.push_back(yoctui_model::CompletedTask {
+            task: yoctui_model::TaskInfo {
+                id: yoctui_model::TaskId("base-files:do_install".into()),
+                recipe: "base-files".into(),
+                task: "do_install".into(),
+                progress: None,
+            },
+            success: true,
+        });
+        let output = rendered_text(&app, 300, 30);
+        assert!(output.contains("busybox:do_compile 42%"));
+        assert!(
+            output.contains("base-files:do_install 100% complete"),
+            "{output}"
+        );
+        assert!(!output.contains("base-files:do_install▸"));
+        assert!(!output.contains("base-files:do_install active"));
     }
 
     #[test]
