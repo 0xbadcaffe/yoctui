@@ -319,6 +319,10 @@ pub struct LogEntry {
     pub task: Option<String>,
     pub path: Option<PathBuf>,
     pub timestamp: SystemTime,
+    #[serde(default)]
+    pub build: Option<String>,
+    #[serde(default)]
+    pub protected: bool,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct Workspace {
@@ -720,16 +724,19 @@ pub struct LogState {
     pub dropped: usize,
     pub dropped_warnings: usize,
     pub dropped_errors: usize,
+    pub coalesced: usize,
     pub follow: bool,
     pub paused_len: Option<usize>,
     pub wrap: bool,
     pub filter: Option<Severity>,
     pub recipe_filter: Option<String>,
     pub task_filter: Option<String>,
+    pub build_filter: Option<String>,
     pub query: String,
     pub searching: bool,
     pub scroll_offset: usize,
     pub horizontal_offset: usize,
+    pub selection: usize,
 }
 impl LogState {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
@@ -741,34 +748,79 @@ impl LogState {
             dropped: 0,
             dropped_warnings: 0,
             dropped_errors: 0,
+            coalesced: 0,
             follow: true,
             paused_len: None,
             wrap: false,
             filter: None,
             recipe_filter: None,
             task_filter: None,
+            build_filter: None,
             query: String::new(),
             searching: false,
             scroll_offset: 0,
             horizontal_offset: 0,
+            selection: 0,
         }
     }
-    pub fn insert(&mut self, entry: LogEntry) {
+    pub fn insert(&mut self, mut entry: LogEntry) {
+        if self.max_entries == 0 || self.max_bytes == 0 {
+            self.record_drop(&entry);
+            return;
+        }
+        if self.paused_len.is_none()
+            && !self.is_important(&entry)
+            && self.entries.back().is_some_and(|last| {
+                last.severity == entry.severity
+                    && last.message == entry.message
+                    && last.recipe == entry.recipe
+                    && last.task == entry.task
+                    && last.path == entry.path
+                    && last.build == entry.build
+            })
+        {
+            self.coalesced += 1;
+            if let Some(last) = self.entries.back_mut() {
+                last.timestamp = entry.timestamp;
+            }
+            return;
+        }
+        if entry.message.len() > self.max_bytes {
+            let suffix = "\n[entry truncated to retention byte limit]";
+            let mut keep = self
+                .max_bytes
+                .saturating_sub(suffix.len())
+                .min(entry.message.len());
+            while keep > 0 && !entry.message.is_char_boundary(keep) {
+                keep -= 1;
+            }
+            entry.message.truncate(keep);
+            if suffix.len() <= self.max_bytes {
+                entry.message.push_str(suffix);
+            }
+        }
         let bytes = entry.message.len();
         self.retained_bytes += bytes;
         self.entries.push_back(entry);
         while self.entries.len() > self.max_entries || self.retained_bytes > self.max_bytes {
-            if let Some(old) = self.entries.pop_front() {
-                self.retained_bytes = self.retained_bytes.saturating_sub(old.message.len());
-                self.dropped += 1;
-                match old.severity {
-                    Severity::Warning => self.dropped_warnings += 1,
-                    Severity::Error => self.dropped_errors += 1,
-                    Severity::Trace | Severity::Info => {}
-                }
-            } else {
+            let ordinary = self
+                .entries
+                .iter()
+                .position(|candidate| !self.is_important(candidate));
+            let index = ordinary.unwrap_or(0);
+            let Some(old) = self.entries.remove(index) else {
                 break;
+            };
+            if self.paused_len.is_some_and(|visible| index < visible) {
+                self.paused_len = self.paused_len.map(|visible| visible.saturating_sub(1));
             }
+            self.retained_bytes = self.retained_bytes.saturating_sub(old.message.len());
+            self.record_drop(&old);
+        }
+        self.clamp_selection();
+        if self.follow {
+            self.selection = self.filtered().count().saturating_sub(1);
+            self.scroll_offset = 0;
         }
     }
     pub fn filtered(&self) -> impl Iterator<Item = &LogEntry> {
@@ -784,8 +836,39 @@ impl LogState {
                     .task_filter
                     .as_ref()
                     .is_none_or(|task| e.task.as_ref() == Some(task))
+                && self
+                    .build_filter
+                    .as_ref()
+                    .is_none_or(|build| e.build.as_ref() == Some(build))
                 && (query.is_empty() || e.message.to_lowercase().contains(&query))
         })
+    }
+    pub fn selected(&self) -> Option<&LogEntry> {
+        self.filtered().nth(self.selection)
+    }
+    pub fn match_position(&self) -> Option<(usize, usize)> {
+        let count = self.filtered().count();
+        (count > 0).then(|| (self.selection.min(count - 1) + 1, count))
+    }
+    fn is_important(&self, entry: &LogEntry) -> bool {
+        entry.protected || matches!(entry.severity, Severity::Warning | Severity::Error)
+    }
+    fn record_drop(&mut self, entry: &LogEntry) {
+        self.dropped += 1;
+        match entry.severity {
+            Severity::Warning => self.dropped_warnings += 1,
+            Severity::Error => self.dropped_errors += 1,
+            Severity::Trace | Severity::Info => {}
+        }
+    }
+    fn clamp_selection(&mut self) {
+        self.selection = self
+            .selection
+            .min(self.filtered().count().saturating_sub(1));
+        self.scroll_offset = self
+            .filtered()
+            .count()
+            .saturating_sub(self.selection.saturating_add(1));
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1261,6 +1344,9 @@ pub enum Action {
     },
     CycleLogRecipeFilter,
     CycleLogTaskFilter,
+    CycleLogBuildFilter,
+    OpenSelectedLogSource,
+    CopySelectedLog,
     SelectError {
         delta: isize,
     },
@@ -1414,6 +1500,39 @@ fn archive_unfinished_tasks(app: &mut App, state: TaskState, cancellation: Optio
         app.completed_tasks.pop_front();
     }
     clamp_task_selection(app);
+}
+
+fn insert_system_log(app: &mut App, severity: Severity, message: String) {
+    let build = app.build.target.clone();
+    app.logs.insert(LogEntry {
+        severity,
+        message,
+        recipe: None,
+        task: None,
+        path: None,
+        timestamp: SystemTime::now(),
+        build,
+        protected: true,
+    });
+    if app.logs.follow {
+        app.logs.selection = app.logs.filtered().count().saturating_sub(1);
+        app.logs.scroll_offset = 0;
+    }
+}
+
+pub fn format_log_details(entry: &LogEntry) -> String {
+    format!(
+        "Severity: {:?}\nBuild: {}\nRecipe: {}\nTask: {}\nSource: {}\n\n{}",
+        entry.severity,
+        entry.build.as_deref().unwrap_or("unavailable"),
+        entry.recipe.as_deref().unwrap_or("unavailable"),
+        entry.task.as_deref().unwrap_or("unavailable"),
+        entry
+            .path
+            .as_ref()
+            .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+        entry.message,
+    )
 }
 
 fn is_pane_focus(target: FocusTarget) -> bool {
@@ -1631,10 +1750,19 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 }
                 Setting::ReducedMotion => app.reduced_motion = !app.reduced_motion,
                 Setting::Color => app.color_enabled = !app.color_enabled,
-                Setting::LogWrap => app.logs.wrap = !app.logs.wrap,
+                Setting::LogWrap => {
+                    app.logs.wrap = !app.logs.wrap;
+                    if app.logs.wrap {
+                        app.logs.horizontal_offset = 0;
+                    }
+                }
                 Setting::LogFollow => {
                     app.logs.follow = !app.logs.follow;
                     app.logs.paused_len = (!app.logs.follow).then_some(app.logs.entries.len());
+                    if app.logs.follow {
+                        app.logs.selection = app.logs.filtered().count().saturating_sub(1);
+                        app.logs.scroll_offset = 0;
+                    }
                 }
             }
             app.settings_dirty = true;
@@ -1997,13 +2125,17 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             clamp_task_selection(app);
         }
         Action::Log(l) => {
-            match l.severity {
+            let mut entry = l;
+            match entry.severity {
                 Severity::Warning => app.build.warnings += 1,
                 Severity::Error => app.build.errors += 1,
                 _ => {}
             }
-            app.logs.insert(l);
+            entry.build = entry.build.or_else(|| app.build.target.clone());
+            entry.protected |= matches!(entry.severity, Severity::Warning | Severity::Error);
+            app.logs.insert(entry);
             if app.logs.follow {
+                app.logs.selection = app.logs.filtered().count().saturating_sub(1);
                 app.logs.scroll_offset = 0;
             }
         }
@@ -2017,6 +2149,19 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             if success && let Some(total) = app.build.total {
                 app.build.completed = total;
             }
+            insert_system_log(
+                app,
+                if success {
+                    Severity::Info
+                } else {
+                    Severity::Error
+                },
+                format!(
+                    "Build {} with exit code {}",
+                    if success { "completed" } else { "failed" },
+                    exit_code.map_or_else(|| "unknown".into(), |code| code.to_string())
+                ),
+            );
             app.build.exit_code = exit_code;
             app.build_history.push_back(BuildRecord {
                 target: app.build.target.clone(),
@@ -2038,6 +2183,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             archive_unfinished_tasks(app, TaskState::Cancelled, Some("cancelled"));
             app.build.status = BuildStatus::Cancelled;
             app.build.exit_code = exit_code;
+            insert_system_log(
+                app,
+                Severity::Warning,
+                format!(
+                    "Build cancelled with exit code {}",
+                    exit_code.map_or_else(|| "unknown".into(), |code| code.to_string())
+                ),
+            );
             app.build_history.push_back(BuildRecord {
                 target: app.build.target.clone(),
                 success: false,
@@ -2061,6 +2214,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             for task in app.tasks.values_mut() {
                 task.cancellation = None;
             }
+            insert_system_log(
+                app,
+                Severity::Warning,
+                format!("Build cancellation was rejected: {message}"),
+            );
             app.notification = Some(format!(
                 "Could not cancel the active build: {message}. The build may still be running."
             ));
@@ -2089,14 +2247,28 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 for task in app.tasks.values_mut() {
                     task.cancellation = Some("cancellation requested".into());
                 }
+                insert_system_log(
+                    app,
+                    Severity::Warning,
+                    "Build cancellation requested".into(),
+                );
                 return Some(Effect::Cancel);
             }
         }
         Action::ToggleLogFollow => {
             app.logs.follow = !app.logs.follow;
             app.logs.paused_len = (!app.logs.follow).then_some(app.logs.entries.len());
+            if app.logs.follow {
+                app.logs.selection = app.logs.filtered().count().saturating_sub(1);
+                app.logs.scroll_offset = 0;
+            }
         }
-        Action::ToggleLogWrap => app.logs.wrap = !app.logs.wrap,
+        Action::ToggleLogWrap => {
+            app.logs.wrap = !app.logs.wrap;
+            if app.logs.wrap {
+                app.logs.horizontal_offset = 0;
+            }
+        }
         Action::CycleLogSeverity => {
             app.logs.filter = match app.logs.filter {
                 None => Some(Severity::Info),
@@ -2104,50 +2276,74 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 Some(Severity::Warning) => Some(Severity::Error),
                 Some(Severity::Error) | Some(Severity::Trace) => None,
             };
+            app.logs.clamp_selection();
         }
         Action::ScrollLogs { delta } => {
             app.logs.follow = false;
             app.logs.paused_len = Some(app.logs.entries.len());
-            app.logs.scroll_offset = if delta.is_negative() {
-                app.logs.scroll_offset.saturating_sub(delta.unsigned_abs())
-            } else {
+            let count = app.logs.filtered().count();
+            app.logs.selection = if delta.is_negative() {
                 app.logs
-                    .scroll_offset
-                    .saturating_add(delta as usize)
-                    .min(app.logs.entries.len())
+                    .selection
+                    .saturating_add(delta.unsigned_abs())
+                    .min(count.saturating_sub(1))
+            } else {
+                app.logs.selection.saturating_sub(delta as usize)
             };
+            app.logs.scroll_offset = count.saturating_sub(app.logs.selection.saturating_add(1));
         }
         Action::BeginLogSearch => {
             app.logs.searching = true;
             app.logs.follow = false;
+            app.logs.paused_len = Some(app.logs.entries.len());
         }
-        Action::AppendLogQuery(character) if app.logs.searching => app.logs.query.push(character),
+        Action::AppendLogQuery(character) if app.logs.searching => {
+            app.logs.query.push(character);
+            app.logs.clamp_selection();
+        }
         Action::BackspaceLogQuery if app.logs.searching => {
             app.logs.query.pop();
+            app.logs.clamp_selection();
         }
         Action::FinishLogSearch => app.logs.searching = false,
         Action::NextLogMatch if !app.logs.query.is_empty() => {
             let count = app.logs.filtered().count();
             app.logs.follow = false;
             app.logs.paused_len = Some(app.logs.entries.len());
-            app.logs.scroll_offset = app
+            app.logs.selection = app
                 .logs
-                .scroll_offset
+                .selection
                 .saturating_add(1)
                 .min(count.saturating_sub(1));
+            app.logs.scroll_offset = count.saturating_sub(app.logs.selection.saturating_add(1));
         }
         Action::PreviousLogMatch if !app.logs.query.is_empty() => {
             app.logs.follow = false;
             app.logs.paused_len = Some(app.logs.entries.len());
-            app.logs.scroll_offset = app.logs.scroll_offset.saturating_sub(1);
+            app.logs.selection = app.logs.selection.saturating_sub(1);
+            let count = app.logs.filtered().count();
+            app.logs.scroll_offset = count.saturating_sub(app.logs.selection.saturating_add(1));
         }
         Action::ScrollLogsHorizontally { delta } => {
+            if app.logs.wrap {
+                return None;
+            }
             app.logs.horizontal_offset = if delta.is_negative() {
                 app.logs
                     .horizontal_offset
                     .saturating_sub(delta.unsigned_abs())
             } else {
-                app.logs.horizontal_offset.saturating_add(delta as usize)
+                let maximum = app
+                    .logs
+                    .filtered()
+                    .map(|entry| entry.message.chars().count())
+                    .max()
+                    .unwrap_or(0)
+                    .saturating_sub(1);
+                app.logs
+                    .horizontal_offset
+                    .saturating_add(delta as usize)
+                    .min(maximum)
             };
         }
         Action::CycleLogRecipeFilter => {
@@ -2160,6 +2356,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             values.sort();
             values.dedup();
             app.logs.recipe_filter = next_filter(&values, app.logs.recipe_filter.take());
+            app.logs.clamp_selection();
         }
         Action::CycleLogTaskFilter => {
             let mut values = app
@@ -2171,6 +2368,31 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             values.sort();
             values.dedup();
             app.logs.task_filter = next_filter(&values, app.logs.task_filter.take());
+            app.logs.clamp_selection();
+        }
+        Action::CycleLogBuildFilter => {
+            let mut values = app
+                .logs
+                .entries
+                .iter()
+                .filter_map(|entry| entry.build.clone())
+                .collect::<Vec<_>>();
+            values.sort();
+            values.dedup();
+            app.logs.build_filter = next_filter(&values, app.logs.build_filter.take());
+            app.logs.clamp_selection();
+        }
+        Action::OpenSelectedLogSource => {
+            if let Some(path) = app.logs.selected().and_then(|entry| entry.path.clone()) {
+                return Some(Effect::OpenInEditor(path));
+            }
+            app.notification = Some("The selected log entry has no source path.".into());
+        }
+        Action::CopySelectedLog => {
+            if let Some(entry) = app.logs.selected() {
+                return Some(Effect::CopyToClipboard(format_log_details(entry)));
+            }
+            app.notification = Some("No log entry is selected to copy.".into());
         }
         Action::SelectError { delta } => {
             let count = app
@@ -2944,7 +3166,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::HostTelemetryUpdated(telemetry) => app.host_telemetry = telemetry,
         Action::Failure(e) => {
-            app.notification = Some(e.to_string());
+            let message = e.to_string();
+            insert_system_log(app, Severity::Error, message.clone());
+            app.notification = Some(message);
             app.build.status = BuildStatus::Failed
         }
         Action::Tick if !app.reduced_motion => {
@@ -2972,6 +3196,7 @@ pub enum Effect {
     Start(BuildRequest),
     Cancel,
     OpenInEditor(PathBuf),
+    CopyToClipboard(String),
     OpenWorkspaceEditor {
         label: String,
         root: PathBuf,
@@ -3026,6 +3251,8 @@ mod tests {
             task: None,
             path: None,
             timestamp: SystemTime::now(),
+            build: None,
+            protected: false,
         }
     }
     fn tagged_log(recipe: &str, task: &str, severity: Severity, message: &str) -> LogEntry {
@@ -3036,6 +3263,8 @@ mod tests {
             task: Some(task.into()),
             path: None,
             timestamp: SystemTime::now(),
+            build: None,
+            protected: false,
         }
     }
     fn background_job_spec(id: u64, cancellation_supported: bool) -> BackgroundJobSpec {
@@ -3606,7 +3835,11 @@ mod tests {
         logs.insert(log("latest"));
         assert_eq!(logs.dropped, 2);
         assert_eq!(logs.dropped_warnings, 1);
-        assert_eq!(logs.dropped_errors, 1);
+        assert_eq!(logs.dropped_errors, 0);
+        assert_eq!(
+            logs.entries.front().map(|entry| entry.severity),
+            Some(Severity::Error)
+        );
     }
     #[test]
     fn high_volume_logs_remain_within_retention_limits() {
@@ -4212,13 +4445,15 @@ mod tests {
         app.logs.query = "match".into();
 
         let _ = update(&mut app, Action::NextLogMatch);
-        assert_eq!(app.logs.scroll_offset, 1);
+        assert_eq!(app.logs.selection, 1);
+        assert_eq!(app.logs.match_position(), Some((2, 2)));
         assert!(!app.logs.follow);
 
         let _ = update(&mut app, Action::NextLogMatch);
-        assert_eq!(app.logs.scroll_offset, 1);
+        assert_eq!(app.logs.selection, 1);
         let _ = update(&mut app, Action::PreviousLogMatch);
-        assert_eq!(app.logs.scroll_offset, 0);
+        assert_eq!(app.logs.selection, 0);
+        assert_eq!(app.logs.scroll_offset, 1);
     }
     #[test]
     fn build_target_editor_requires_confirmation_before_starting() {
@@ -4571,9 +4806,17 @@ mod tests {
         let _ = update(&mut app, Action::Log(log("second")));
         let _ = update(&mut app, Action::ScrollLogs { delta: 9 });
         assert!(!app.logs.follow);
-        assert_eq!(app.logs.scroll_offset, 2);
+        assert_eq!(app.logs.scroll_offset, 1);
+        assert_eq!(
+            app.logs.selected().map(|entry| entry.message.as_str()),
+            Some("first")
+        );
         let _ = update(&mut app, Action::ScrollLogs { delta: -9 });
         assert_eq!(app.logs.scroll_offset, 0);
+        assert_eq!(
+            app.logs.selected().map(|entry| entry.message.as_str()),
+            Some("second")
+        );
     }
     #[test]
     fn cycles_log_severity_filter() {
@@ -4587,6 +4830,87 @@ mod tests {
             let _ = update(&mut app, Action::CycleLogSeverity);
             assert_eq!(app.logs.filter, expected);
         }
+    }
+    #[test]
+    fn log_retention_prefers_important_diagnostics_and_reports_coalescing() {
+        let mut logs = LogState::new(3, 1_000);
+        logs.insert(tagged_log(
+            "busybox",
+            "do_compile",
+            Severity::Warning,
+            "warning retained",
+        ));
+        logs.insert(tagged_log(
+            "busybox",
+            "do_compile",
+            Severity::Error,
+            "error retained",
+        ));
+        for index in 0..20 {
+            logs.insert(log(&format!("ordinary {index}")));
+        }
+        assert_eq!(logs.entries.len(), 3);
+        assert!(
+            logs.entries
+                .iter()
+                .any(|entry| entry.message == "warning retained")
+        );
+        assert!(
+            logs.entries
+                .iter()
+                .any(|entry| entry.message == "error retained")
+        );
+        assert_eq!(logs.dropped_warnings, 0);
+        assert_eq!(logs.dropped_errors, 0);
+
+        logs.insert(log("repeat"));
+        logs.insert(log("repeat"));
+        assert_eq!(logs.coalesced, 1);
+    }
+    #[test]
+    fn log_build_filter_selection_source_and_copy_are_typed() {
+        let mut app = App::new(10, 1_000);
+        app.build.target = Some("core-image-minimal".into());
+        let mut first = tagged_log("busybox", "do_compile", Severity::Info, "compiler output");
+        first.path = Some(PathBuf::from("/tmp/log.do_compile"));
+        let _ = update(&mut app, Action::Log(first));
+        app.build.target = Some("core-image-full-cmdline".into());
+        let _ = update(&mut app, Action::Log(log("second build")));
+
+        let _ = update(&mut app, Action::CycleLogBuildFilter);
+        assert_eq!(
+            app.logs.build_filter.as_deref(),
+            Some("core-image-full-cmdline")
+        );
+        assert_eq!(app.logs.filtered().count(), 1);
+        let _ = update(&mut app, Action::CycleLogBuildFilter);
+        assert_eq!(app.logs.build_filter.as_deref(), Some("core-image-minimal"));
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedLogSource),
+            Some(Effect::OpenInEditor(PathBuf::from("/tmp/log.do_compile")))
+        );
+        let Some(Effect::CopyToClipboard(details)) = update(&mut app, Action::CopySelectedLog)
+        else {
+            panic!("selected log details were not copied through a typed effect");
+        };
+        assert!(details.contains("Build: core-image-minimal"));
+        assert!(details.contains("compiler output"));
+    }
+    #[test]
+    fn log_terminal_diagnostics_are_protected_and_observable() {
+        let mut app = App::new(10, 1_000);
+        app.build.target = Some("core-image-minimal".into());
+        let _ = update(
+            &mut app,
+            Action::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        );
+        let entry = app.logs.entries.back().unwrap();
+        assert!(entry.protected);
+        assert_eq!(entry.build.as_deref(), Some("core-image-minimal"));
+        assert!(entry.message.contains("completed"));
     }
     #[test]
     fn request_validation() {

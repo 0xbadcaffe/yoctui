@@ -2,43 +2,46 @@
 
 ## Active task
 
-**ID:** LOG-001
-**Title:** Complete bounded searchable logs
+**ID:** ERR-001
+**Title:** Complete structured error investigation
 
 ## Objective
 
-Complete the Logs workspace specified by `docs/ui-spec.md` while preserving
-important diagnostics under bounded retention and backend pressure.
+Turn warnings and errors into the complete structured investigation workspace
+specified by `docs/ui-spec.md`, with direct navigation to related logs and
+source paths.
 
 ## Required work
 
-1. Inventory existing `LogState`, reducer actions, input routes, retention, and
-   rendering before adding behavior.
-2. Preserve warnings, errors, cancellation, disconnect, and final-result
-   diagnostics when ordinary informational logs are evicted.
-3. Keep bounded entry and byte retention with observable dropped/coalesced
-   counters.
-4. Complete live follow, pause/resume, vertical scrolling, wrap, and
-   wrap-disabled horizontal scrolling.
-5. Complete incremental search with visible match counts and bounded
-   next/previous navigation.
-6. Complete severity, recipe, task, and selected-build filters.
-7. Add a bounded selected log row and populate the Inspector with timestamp,
-   severity, recipe, task, source path, and full multiline content.
-8. Add typed effects and input for opening the selected source log in the
-   configured editor and copying the selected line/details where supported.
-9. Render empty, evicted, paused, searching, narrow, and multiline states
-   safely in every theme.
+1. Inventory existing warning/error retention, selection, rendering, input,
+   completion notification, and log-jump behavior.
+2. Represent normalized category, summary, full message, build session,
+   recipe, task, source path/log, event metadata, suggestions, and related
+   diagnostic identity as typed model state.
+3. Render the specified time, severity, recipe, task, summary, and build
+   session columns with bounded selection.
+4. Populate the Inspector with complete multiline details, category, source,
+   event context, suggested actions, and related entries.
+5. Make `Enter` jump to the exact matching log context without replacing the
+   user's query with the whole diagnostic message.
+6. Open the selected source file/log through a typed editor effect and report
+   missing paths visibly.
+7. Implement completion notifications for success, warnings-only, errors, and
+   cancellation; `Enter` on failure opens the selected Errors context.
+8. Preserve structured warnings/errors when ordinary logs are dropped and
+   expose any diagnostic loss honestly.
+9. Render empty, multiline, narrow, and backend-loss cases safely in every
+   theme.
 10. Add reducer, input-mapping, integration, and Ratatui `TestBackend` coverage
-    named `log`.
+    named `error`.
 
 ## Definition of done
 
-- Important diagnostics survive ordinary-log pressure.
-- Retention, drop, and coalescing behavior is bounded and observable.
-- Follow, pause, scrolling, wrap, search, and all filters are complete.
-- Selection drives full structured Inspector content.
-- Source opening and copy actions use typed effects and fail visibly.
+- Warnings and errors are structured, bounded, selectable investigation rows.
+- All specified list and Inspector metadata is typed and visible.
+- Exact log-context and source navigation work without text parsing.
+- Completion outcomes produce distinct actionable notifications.
+- Diagnostic retention/loss remains observable under pressure.
 - Responsive and multiline rendering never panics.
 - Reducer, integration, input-mapping, and TestBackend checks pass.
 - Task-specific and baseline verification pass.
@@ -47,8 +50,9 @@ important diagnostics under bounded retention and backend pressure.
 ## Verification
 
 ```bash
-cargo test -p yoctui-model log
-cargo test -p yoctui-ui log
+cargo test -p yoctui-model error
+cargo test -p yoctui-ui error
+cargo test -p yoctui-app error
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -58,4 +62,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`ERR-001 — Complete structured error investigation`
+`LAYERS-001 — Complete lazy Layers tree and contextual Inspector`

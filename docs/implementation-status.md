@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete bounded searchable logs. The live Tasks workspace, typed backend boundary, command palette, animation, interactive settings, semantic themes, unified dialogs, responsive workbench, persistent jobs, and first live BitBake matrix are complete.
+Complete structured error investigation. Bounded searchable logs, the live Tasks workspace, typed backend boundary, command palette, animation, interactive settings, semantic themes, unified dialogs, responsive workbench, persistent jobs, and first live BitBake matrix are complete.
 
 ## Current task
 
@@ -45,6 +45,7 @@ See `docs/current-task.md`.
 | Background build execution | DONE | Confirmed builds allocate one job; typed events drive lifecycle/output; navigation persists; failure, cancellation rejection/acknowledgement, and backend loss are covered |
 | Live BitBake bridge | DONE | Tinfoil-backed workspace, variable, recipe, layer, parse/task/log events, normal completion, cancellation, and shutdown passed against BitBake 2.19.0 / Poky 6.0.99 snapshot on qemux86-64 |
 | Typed backend boundary | DONE | Typed workspace and metadata events normalize in the app into reducer actions; unknown events are safe, missing progress remains unknown, terminal lifecycle updates are singular, and the UI boundary rejects backend parsing |
+| Logs workspace | DONE | Protected-diagnostic retention, bounded bytes/entries, safe truncation, coalescing, pressure counters, follow/pause, both-axis scrolling, search, all filters, selected Inspector, source opening, and clipboard effects are covered |
 | Layers workspace | IN_PROGRESS | Lazy directory descent, parent navigation, subtree refresh, file preview, and editing exist (`a7512fa`, `c7128a6`); hidden files, Git state, and safe large-file handling remain |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
@@ -54,12 +55,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `LOG-001` — complete bounded searchable logs
-2. `ERROR-001` — complete error workspace
-3. `LAYERS-001` — complete lazy layer tree and inspector
-4. `RECIPES-001` — complete recipe actions and inspector
-5. `CONFIG-001` — complete configuration provenance and editing
-6. `DEVTOOL-001` — complete Devtool lifecycle
+1. `ERR-001` — complete structured error investigation
+2. `LAYERS-001` — complete lazy layer tree and inspector
+3. `RECIPES-001` — complete recipe actions and inspector
+4. `CONFIG-001` — complete configuration provenance and editing
+5. `DEVTOOL-001` — complete Devtool lifecycle
 
 ## Rules
 

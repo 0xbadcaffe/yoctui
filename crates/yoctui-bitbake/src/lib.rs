@@ -224,6 +224,8 @@ pub fn classify_output(line: String) -> LogEntry {
         task: None,
         path: None,
         timestamp: SystemTime::now(),
+        build: None,
+        protected: false,
     }
 }
 pub struct ProcessBackend {
@@ -681,6 +683,8 @@ impl BridgeBackend {
                     task,
                     path: path.map(PathBuf::from),
                     timestamp: SystemTime::now(),
+                    build: None,
+                    protected: false,
                 })
             }
             Event::Warning { message } => BackendEvent::Log(LogEntry {
@@ -690,6 +694,8 @@ impl BridgeBackend {
                 task: None,
                 path: None,
                 timestamp: SystemTime::now(),
+                build: None,
+                protected: true,
             }),
             Event::Error { message } => BackendEvent::Log(LogEntry {
                 severity: Severity::Error,
@@ -698,6 +704,8 @@ impl BridgeBackend {
                 task: None,
                 path: None,
                 timestamp: SystemTime::now(),
+                build: None,
+                protected: true,
             }),
             Event::BuildCompleted { success, exit_code } => {
                 BackendEvent::BuildCompleted { success, exit_code }
