@@ -467,6 +467,15 @@ class Tinfoil:
 """,
                 encoding="utf-8",
             )
+            Path(package, "fetch2.py").write_text(
+                """class Fetch:
+ def __init__(self, urls, datastore): pass
+ def localpath(self, uri):
+  assert uri == "file://fix.patch"
+  return "/layers/meta/recipes-core/base-files/files/fix.patch"
+""",
+                encoding="utf-8",
+            )
             result = run_bridge(
                 b'{"protocol_version":1,"sequence":1,"message":{"type":"inspect_workspace"}}',
                 b'{"protocol_version":1,"sequence":2,"message":{"type":"list_recipes","filter":"base-files"}}',
@@ -486,7 +495,10 @@ class Tinfoil:
         self.assertEqual(messages[1]["recipes"][0]["append_count"], 1)
         self.assertEqual(messages[2]["type"], "recipe_metadata")
         self.assertEqual(messages[2]["data"]["tasks"], ["do_build", "do_compile"])
-        self.assertEqual(messages[2]["data"]["patches"], ["file://fix.patch"])
+        self.assertEqual(
+            messages[2]["data"]["patches"],
+            ["/layers/meta/recipes-core/base-files/files/fix.patch"],
+        )
         self.assertEqual(
             messages[2]["data"]["packages"], ["base-files", "base-files-doc"]
         )

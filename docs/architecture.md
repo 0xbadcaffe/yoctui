@@ -90,6 +90,15 @@ authoritatively provide that field; an available empty list means BitBake
 reported no values. Inventory refresh preserves stable recipe-name selection
 and evicts detail state for recipes no longer present.
 
+For local `file://` patch entries, the Tinfoil bridge asks BitBake's fetcher
+for the resolved local path in the parsed recipe datastore. Unresolved or
+remote entries remain URIs. The model exposes only absolute resolved paths to
+the patch-review effect and explains the rest instead of guessing from layer
+directory layout. Provider files come from the provider table, while task-log
+choices come only from retained typed task records. All three routes emit the
+existing editor effect; CLI terminal lifecycle code validates path existence,
+restores the terminal, and reports launch or exit failures.
+
 Recipe BitBake operations share a validated model `BuildRequest` containing
 typed targets, an optional task, and an explicit force flag. The reducer
 derives task choices only from authoritative recipe metadata and emits one

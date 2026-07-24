@@ -772,16 +772,46 @@ async fn begin_build(
     }
 }
 
+fn editor_path_error(path: &Path) -> Option<String> {
+    match path.try_exists() {
+        Ok(true) => None,
+        Ok(false) => Some(format!(
+            "Cannot open {} because the reported path no longer exists.",
+            path.display()
+        )),
+        Err(error) => Some(format!(
+            "Cannot inspect the reported path {}: {error}",
+            path.display()
+        )),
+    }
+}
+
+fn run_editor_process(
+    editor: &std::ffi::OsStr,
+    path: &Path,
+) -> std::io::Result<std::process::ExitStatus> {
+    ProcessCommand::new(editor).arg(path).status()
+}
+
+fn editor_exit_error(status: std::process::ExitStatus, path: &str) -> Option<String> {
+    (!status.success()).then(|| format!("$EDITOR exited with {status} while opening {path}."))
+}
+
 async fn open_in_editor(
     guard: &TerminalGuard,
     app: &mut App,
     path: PathBuf,
     preferred_editor: Option<&str>,
 ) {
+    if let Some(error) = editor_path_error(&path) {
+        app.notification = Some(error);
+        return;
+    }
     let editor = preferred_editor
         .map(Into::into)
         .or_else(|| env::var_os("EDITOR"))
         .unwrap_or_else(|| "vi".into());
+    let path_label = path.display().to_string();
     if let Err(error) = guard.suspend() {
         app.notification = Some(format!(
             "Could not suspend the terminal for $EDITOR: {error}"
@@ -789,7 +819,7 @@ async fn open_in_editor(
         return;
     }
     let editor_result =
-        tokio::task::spawn_blocking(move || ProcessCommand::new(editor).arg(path).status()).await;
+        tokio::task::spawn_blocking(move || run_editor_process(&editor, &path)).await;
     let resume_result = guard.resume();
     if let Err(error) = resume_result {
         app.notification = Some(format!(
@@ -797,6 +827,10 @@ async fn open_in_editor(
         ));
     } else if let Ok(Err(error)) = editor_result {
         app.notification = Some(format!("Could not start $EDITOR: {error}"));
+    } else if let Ok(Ok(status)) = editor_result
+        && let Some(error) = editor_exit_error(status, &path_label)
+    {
+        app.notification = Some(error);
     } else if let Err(error) = editor_result {
         app.notification = Some(format!("$EDITOR task failed: {error}"));
     }
@@ -1713,6 +1747,28 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Input::Esc => update(&mut app, Action::CancelRecipeTaskPicker),
                     _ => None,
                 };
+            } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskLogPicker(_))) {
+                let effect = match input {
+                    Input::Up => update(&mut app, Action::SelectRecipeTaskLog { delta: -1 }),
+                    Input::Down => update(&mut app, Action::SelectRecipeTaskLog { delta: 1 }),
+                    Input::Enter => update(&mut app, Action::OpenSelectedRecipeTaskLog),
+                    Input::Esc => update(&mut app, Action::CancelRecipeTaskLogPicker),
+                    _ => None,
+                };
+                if let Some(Effect::OpenInEditor(path)) = effect {
+                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                }
+            } else if matches!(app.active_dialog(), Some(Dialog::RecipePatchPicker(_))) {
+                let effect = match input {
+                    Input::Up => update(&mut app, Action::SelectRecipePatch { delta: -1 }),
+                    Input::Down => update(&mut app, Action::SelectRecipePatch { delta: 1 }),
+                    Input::Enter => update(&mut app, Action::OpenSelectedRecipePatch),
+                    Input::Esc => update(&mut app, Action::CancelRecipePatchPicker),
+                    _ => None,
+                };
+                if let Some(Effect::OpenInEditor(path)) = effect {
+                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                }
             } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
@@ -1833,6 +1889,24 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 let _ = update(&mut app, Action::BeginSelectedRecipeDiffconfig);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('z') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeDiffsigs);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('e') {
+                if let Some(Effect::OpenInEditor(path)) =
+                    update(&mut app, Action::OpenSelectedRecipeProvider)
+                {
+                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                }
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('o') {
+                if let Some(Effect::OpenInEditor(path)) =
+                    update(&mut app, Action::BeginSelectedRecipeTaskLog)
+                {
+                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                }
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('p') {
+                if let Some(Effect::OpenInEditor(path)) =
+                    update(&mut app, Action::BeginSelectedRecipePatchReview)
+                {
+                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                }
             } else if app.screen == yoctui_model::Screen::Dashboard
                 && matches!(input, Input::Up | Input::Down)
             {
@@ -2527,5 +2601,47 @@ mod tests {
             yoctui_app::recipes_workspace_action(false, devshell),
             Some(Action::BeginSelectedRecipeDevshell)
         );
+    }
+
+    #[test]
+    fn recipe_navigation_terminal_keys_and_missing_paths_are_typed() {
+        for (key, expected) in [
+            ('e', Action::OpenSelectedRecipeProvider),
+            ('o', Action::BeginSelectedRecipeTaskLog),
+            ('p', Action::BeginSelectedRecipePatchReview),
+            ('d', Action::BeginSelectedRecipeDevtoolModify),
+            ('u', Action::BeginSelectedRecipeDevtoolUpdateRecipe),
+            ('F', Action::BeginSelectedRecipeDevtoolFinish),
+            ('P', Action::BeginSelectedRecipeDevtoolDeploy),
+            ('D', Action::BeginSelectedRecipeDevtoolReset),
+        ] {
+            let input =
+                input_from_key(KeyEvent::new(KeyCode::Char(key), KeyModifiers::NONE)).unwrap();
+            assert_eq!(
+                yoctui_app::recipes_workspace_action(false, input),
+                Some(expected)
+            );
+        }
+        let missing = std::env::temp_dir().join(format!(
+            "yoctui-recipe-navigation-missing-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_file(&missing);
+        let error = editor_path_error(&missing).unwrap();
+        assert!(error.contains("no longer exists"), "{error}");
+
+        let missing_editor = std::ffi::OsStr::new("yoctui-editor-that-does-not-exist");
+        assert_eq!(
+            run_editor_process(missing_editor, Path::new("/tmp"))
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::NotFound
+        );
+        let status = ProcessCommand::new("/bin/sh")
+            .args(["-c", "exit 7"])
+            .status()
+            .unwrap();
+        let error = editor_exit_error(status, "/tmp/recipe.bb").unwrap();
+        assert!(error.contains("exit status: 7"), "{error}");
     }
 }
