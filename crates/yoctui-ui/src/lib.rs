@@ -232,6 +232,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ select | Enter logs | o open source | Esc dashboard | ? help | q quit"
         }
         Screen::Help => "Esc dashboard | q quit",
+        Screen::Settings => "Ctrl+P commands | Tab focus | q quit",
     }
 }
 
@@ -677,7 +678,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
         ("Dependencies", Screen::Dependencies),
         ("Devtool", Screen::Recipes),
         ("Maintenance", Screen::Bbmask),
-        ("Settings", Screen::Help),
+        ("Settings", Screen::Settings),
     ];
     let text = entries
         .iter()
@@ -726,6 +727,7 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Configuration => config(frame, app, area),
         Screen::Bbmask => bbmask(frame, app, area),
         Screen::Help => help(frame, area),
+        Screen::Settings => settings_workspace(frame, app, area),
     }
 }
 
@@ -1182,6 +1184,21 @@ fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
             "Image target                         Version        Layer\n{text}"
         ))
         .block(Block::default().title("Images").borders(Borders::ALL))
+        .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    frame.render_widget(
+        Paragraph::new(format!(
+            "Theme: {:?}\nColor: {}\nAnimation speed: {:?}\nReduced motion: {}\n\nSettings are loaded from $XDG_CONFIG_HOME/yoctui/config.toml.\nUse Ctrl+P to discover available workspace commands.",
+            app.theme,
+            if app.color_enabled { "enabled" } else { "disabled" },
+            app.animation_speed,
+            app.reduced_motion,
+        ))
+        .block(Block::default().title("Settings").borders(Borders::ALL))
         .wrap(Wrap { trim: false }),
         area,
     );
