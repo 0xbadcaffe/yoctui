@@ -34,6 +34,7 @@ impl AppError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Screen {
     Dashboard,
+    Tasks,
     BuildHistory,
     Dependencies,
     LayerRelationships,
@@ -75,7 +76,7 @@ const NAVIGATOR_SCREENS: [Screen; 11] = [
     Screen::Dashboard,
     Screen::Layers,
     Screen::Recipes,
-    Screen::Dashboard,
+    Screen::Tasks,
     Screen::Logs,
     Screen::Errors,
     Screen::Configuration,

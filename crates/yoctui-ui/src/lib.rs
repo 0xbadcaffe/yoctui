@@ -204,6 +204,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Dashboard => {
             "F5 build | Ctrl+P commands | Tab focus | ↑/↓ package progress | i image | ! shell | c cancel | r recipes | y layers | ? help | q quit"
         }
+        Screen::Tasks => "↑/↓ task progress | c cancel | Tab focus | l logs | e errors | q quit",
         Screen::BuildHistory => "↑/↓ select | Esc dashboard | ? help | q quit",
         Screen::Dependencies => {
             "↑/↓ select | Enter recipe | Esc dashboard | r recipes | ? help | q quit"
@@ -665,7 +666,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
         ("Dashboard", Screen::Dashboard),
         ("Layers", Screen::Layers),
         ("Recipes", Screen::Recipes),
-        ("Tasks", Screen::Dashboard),
+        ("Tasks", Screen::Tasks),
         ("Logs", Screen::Logs),
         ("Errors", Screen::Errors),
         ("Configuration", Screen::Configuration),
@@ -703,6 +704,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
 fn workspace(frame: &mut Frame, app: &App, area: Rect) {
     match app.screen {
         Screen::Dashboard => dashboard(frame, app, area),
+        Screen::Tasks => tasks_workspace(frame, app, area),
         Screen::BuildHistory => build_history(frame, app, area),
         Screen::Dependencies => dependencies(frame, app, area),
         Screen::LayerRelationships => layer_relationships(frame, app, area),
@@ -1112,6 +1114,39 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
             .wrap(Wrap { trim: false }),
         chunks[1],
     )
+}
+
+fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let mut tasks = app.tasks.values().collect::<Vec<_>>();
+    tasks.sort_by(|left, right| {
+        (left.recipe.as_str(), left.task.as_str())
+            .cmp(&(right.recipe.as_str(), right.task.as_str()))
+    });
+    let lines = if tasks.is_empty() {
+        "Waiting for BitBake task events.".into()
+    } else {
+        tasks
+            .iter()
+            .map(|task| {
+                format!(
+                    "{:<28} {:<24} {}",
+                    task.recipe,
+                    task.task,
+                    task.progress.map_or_else(
+                        || task_activity(app, None).into(),
+                        |progress| format!("{progress}%")
+                    )
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    frame.render_widget(
+        Paragraph::new(format!("Overall: {}/{} complete | {} active\n\nRecipe                       Task                     Progress\n{lines}", app.build.completed, app.build.total.map_or_else(|| "?".into(), |total| total.to_string()), tasks.len()))
+            .block(Block::default().title("Live Tasks").borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
 }
 
 fn build_history(frame: &mut Frame, app: &App, area: Rect) {
