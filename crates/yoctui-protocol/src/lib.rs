@@ -102,6 +102,13 @@ pub struct LayerRelationshipData {
     pub overlays: Vec<String>,
     pub appends: Vec<String>,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TaskStatsData {
+    pub completed: usize,
+    pub total: usize,
+    pub active: usize,
+    pub failed: usize,
+}
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct WorkspaceData {
     pub build_dir: Option<String>,
@@ -158,10 +165,24 @@ pub enum Event {
         current: Option<u64>,
         total: Option<u64>,
     },
+    TaskQueued {
+        recipe: String,
+        task: String,
+        #[serde(default)]
+        worker: Option<String>,
+        #[serde(default)]
+        stats: Option<TaskStatsData>,
+    },
     TaskStarted {
         recipe: String,
         task: String,
         pid: Option<u32>,
+        #[serde(default)]
+        worker: Option<String>,
+        #[serde(default)]
+        log_path: Option<String>,
+        #[serde(default)]
+        stats: Option<TaskStatsData>,
     },
     TaskProgress {
         recipe: String,

@@ -21,7 +21,9 @@ use std::{
 use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
-use yoctui_app::{BuildJobCoordinator, Input, focus_action, key_action, settings_action};
+use yoctui_app::{
+    BuildJobCoordinator, Input, focus_action, key_action, settings_action, tasks_action,
+};
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, Dialog, Effect,
@@ -1619,6 +1621,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     };
                     let _ = update(&mut app, persistence_action);
                 }
+            } else if app.screen == Screen::Tasks
+                && tasks_action(app.task_filter_editing, input).is_some()
+            {
+                let action =
+                    tasks_action(app.task_filter_editing, input).expect("Tasks action was checked");
+                let _ = update(&mut app, action);
             } else if input == Input::Char('!') {
                 open_yocto_shell(&guard, &mut app).await;
             } else if input == Input::Char('i') {

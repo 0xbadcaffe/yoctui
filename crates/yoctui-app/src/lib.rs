@@ -221,6 +221,7 @@ impl BuildJobCoordinator {
             | BackendEvent::RecipeSources { .. }
             | BackendEvent::LayerRelationships(_)
             | BackendEvent::ParseProgress { .. }
+            | BackendEvent::TaskQueued { .. }
             | BackendEvent::TaskStarted { .. }
             | BackendEvent::TaskProgress { .. }
             | BackendEvent::TaskCompleted { .. }
@@ -259,14 +260,33 @@ pub fn model_action_from_backend_event(event: BackendEvent) -> Option<Action> {
             Some(Action::ParseProgress { current, total })
         }
         BackendEvent::Log(entry) => Some(Action::Log(entry)),
-        BackendEvent::TaskStarted { recipe, task } => {
+        BackendEvent::TaskQueued {
+            recipe,
+            task,
+            worker,
+            stats,
+        } => {
             let id = TaskId(format!("{recipe}:{task}"));
-            Some(Action::TaskStarted(TaskInfo {
-                id,
-                recipe,
-                task,
-                progress: None,
-            }))
+            let mut info = TaskInfo::active(id, recipe, task);
+            info.worker = worker;
+            info.stats = stats;
+            Some(Action::TaskQueued(info))
+        }
+        BackendEvent::TaskStarted {
+            recipe,
+            task,
+            pid,
+            worker,
+            log_path,
+            stats,
+        } => {
+            let id = TaskId(format!("{recipe}:{task}"));
+            let mut info = TaskInfo::active(id, recipe, task);
+            info.pid = pid;
+            info.worker = worker;
+            info.log_path = log_path;
+            info.stats = stats;
+            Some(Action::TaskStarted(info))
         }
         BackendEvent::TaskProgress {
             recipe,
@@ -423,6 +443,25 @@ pub fn settings_action(key: Input) -> Option<Action> {
         Input::Left => Some(Action::ChangeSelectedSetting { backwards: true }),
         Input::Right | Input::Enter => Some(Action::ChangeSelectedSetting { backwards: false }),
         Input::Char('r') => Some(Action::RetrySettingsPersistence),
+        _ => None,
+    }
+}
+pub fn tasks_action(editing: bool, key: Input) -> Option<Action> {
+    if editing {
+        return match key {
+            Input::Char(character) => Some(Action::AppendTaskFilter(character)),
+            Input::Backspace => Some(Action::BackspaceTaskFilter),
+            Input::Enter | Input::Esc => Some(Action::FinishTaskFilterEdit),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::ScrollBuildTasks { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::ScrollBuildTasks { delta: 1 }),
+        Input::Char('f') => Some(Action::CycleTaskStateFilter),
+        Input::Char('F') => Some(Action::CycleTaskFilterField),
+        Input::Char('/') => Some(Action::BeginTaskFilterEdit),
+        Input::Char('d') => Some(Action::CycleTaskDurationFilter),
         _ => None,
     }
 }
@@ -828,6 +867,52 @@ mod tests {
             Some(Action::RetrySettingsPersistence)
         );
         assert_eq!(settings_action(Input::Esc), None);
+    }
+    #[test]
+    fn live_tasks_input_maps_selection_and_filter_controls() {
+        assert_eq!(
+            tasks_action(false, Input::Down),
+            Some(Action::ScrollBuildTasks { delta: 1 })
+        );
+        assert_eq!(
+            tasks_action(false, Input::Char('f')),
+            Some(Action::CycleTaskStateFilter)
+        );
+        assert_eq!(
+            tasks_action(false, Input::Char('F')),
+            Some(Action::CycleTaskFilterField)
+        );
+        assert_eq!(
+            tasks_action(false, Input::Char('/')),
+            Some(Action::BeginTaskFilterEdit)
+        );
+        assert_eq!(
+            tasks_action(true, Input::Char('x')),
+            Some(Action::AppendTaskFilter('x'))
+        );
+        assert_eq!(
+            tasks_action(true, Input::Esc),
+            Some(Action::FinishTaskFilterEdit)
+        );
+        let action = model_action_from_backend_event(BackendEvent::TaskQueued {
+            recipe: "busybox".into(),
+            task: "do_compile".into(),
+            worker: Some("worker-1".into()),
+            stats: Some(yoctui_model::TaskStats {
+                completed: 3,
+                total: 10,
+                active: 2,
+                failed: 0,
+            }),
+        });
+        assert!(matches!(
+            action,
+            Some(Action::TaskQueued(TaskInfo {
+                worker: Some(worker),
+                stats: Some(yoctui_model::TaskStats { total: 10, .. }),
+                ..
+            })) if worker == "worker-1"
+        ));
     }
     #[test]
     fn command_palette_global_shortcut_is_typed() {
