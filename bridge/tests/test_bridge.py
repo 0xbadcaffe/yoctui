@@ -57,6 +57,15 @@ class BridgeProtocolTests(unittest.TestCase):
         message = json.loads(result.stdout)
         self.assertEqual(message["message"]["code"], "unknown_command")
 
+    def test_recipe_bitbake_action_rejects_non_boolean_force(self) -> None:
+        result = run_bridge(
+            b'{"protocol_version":1,"sequence":1,"message":{"type":"start_build","targets":["busybox"],"task":"compile","force":"yes"}}'
+        )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "command_failed")
+        self.assertEqual(message["code"], "invalid_request")
+        self.assertIn("force must be a boolean", message["message"])
+
     def test_protocol_version_mismatch_is_rejected(self) -> None:
         result = run_bridge(
             b'{"protocol_version":999,"sequence":1,"message":{"type":"hello"}}'

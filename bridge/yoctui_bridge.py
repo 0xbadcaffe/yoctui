@@ -93,6 +93,7 @@ class TinfoilConnection:
         self.recipes_parsed = False
         self.active = False
         self.recipe_files = {}
+        self.force_active = False
 
     def _ensure_recipes(self):
         if not self.recipes_parsed:
@@ -341,7 +342,7 @@ class TinfoilConnection:
             "history": None,
         }
 
-    def start_build(self, targets, task):
+    def start_build(self, targets, task, force=False):
         if self.active:
             raise RuntimeError("a BitBake build is already active")
         self._reset_for_build()
@@ -349,11 +350,19 @@ class TinfoilConnection:
         selected_task = task or self.tinfoil.config_data.getVar("BB_DEFAULT_TASK")
         self.active = True
         try:
+            if force:
+                # BitBake's setConfig command coerces values to strings and
+                # later tests this configuration field by truthiness.
+                self.tinfoil.run_command("setConfig", "force", "1")
+                self.force_active = True
             self.tinfoil.run_command(
                 "buildTargets", targets, selected_task, handle_events=False
             )
         except Exception:
             self.active = False
+            if self.force_active:
+                self.tinfoil.run_command("setConfig", "force", "")
+                self.force_active = False
             raise
 
     def cancel_build(self):
@@ -375,10 +384,16 @@ class TinfoilConnection:
             events.append(event)
             if type(event).__name__ == "BuildCompleted":
                 self.active = False
+        if not self.active and self.force_active:
+            self.tinfoil.run_command("setConfig", "force", "")
+            self.force_active = False
         return events
 
     def shutdown(self):
         if self.tinfoil is not None:
+            if self.force_active:
+                self.tinfoil.run_command("setConfig", "force", "")
+                self.force_active = False
             self.tinfoil.shutdown()
             self.tinfoil = None
         self.active = False
@@ -428,7 +443,7 @@ class BitBakeAdapter:
         except Exception as exc:
             raise ServerUnavailable(f"could not connect to the BitBake server: {exc}")
 
-    def start_build(self, targets, task):
+    def start_build(self, targets, task, force=False):
         connection = self.server()
         operation = getattr(connection, "start_build", None)
         if not callable(operation):
@@ -436,7 +451,14 @@ class BitBakeAdapter:
                 "connected BitBake server does not provide start_build"
             )
         try:
-            operation(targets, task)
+            try:
+                operation(targets, task, force)
+            except TypeError:
+                if force:
+                    raise ServerUnavailable(
+                        "connected BitBake server does not support forced task execution"
+                    )
+                operation(targets, task)
         except Exception as exc:
             raise ServerUnavailable(f"could not start the BitBake build: {exc}")
         self.build_active = True
@@ -1209,7 +1231,17 @@ def handle(command, correlation_id, adapter):
             )
         else:
             try:
-                native_events = adapter.start_build(targets, command.get("task"))
+                force = command.get("force", False)
+                if not isinstance(force, bool):
+                    error(
+                        "invalid_request",
+                        "start_build force must be a boolean",
+                        correlation_id,
+                    )
+                    return True
+                native_events = adapter.start_build(
+                    targets, command.get("task"), force
+                )
             except ServerUnavailable as exc:
                 error("bitbake_server_unavailable", str(exc), correlation_id)
             else:

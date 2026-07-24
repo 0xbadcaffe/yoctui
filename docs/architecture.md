@@ -90,6 +90,15 @@ authoritatively provide that field; an available empty list means BitBake
 reported no values. Inventory refresh preserves stable recipe-name selection
 and evicts detail state for recipes no longer present.
 
+Recipe BitBake operations share a validated model `BuildRequest` containing
+typed targets, an optional task, and an explicit force flag. The reducer
+derives task choices only from authoritative recipe metadata and emits one
+start effect after confirmation. The CLI's build-job coordinator owns
+execution, duplicate-job rejection, cancellation, and persistent results.
+Process execution translates the request to BitBake arguments; the bridge
+serializes the same fields and temporarily applies BitBake's force
+configuration only for the corresponding asynchronous build.
+
 Unknown future protocol events normalize to an ignored event and do not imply a
 backend disconnect. Missing task progress remains unknown rather than becoming
 zero. Terminal build events emit one primary build-state action and one

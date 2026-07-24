@@ -262,18 +262,18 @@ notes = "Parent completion gate for standard BitBake operations, authoritative n
 id = "RECIPE-BITBAKE-001"
 milestone = "M3"
 title = "Complete typed recipe BitBake operations"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 40
 required = true
 depends_on = ["RECIPES-UI-001", "JOB-002"]
 verify = ["cargo test -p yoctui-model recipe_bitbake_action", "cargo test -p yoctui-app recipe_bitbake_action", "cargo test -p yoctui-ui recipe_bitbake_action", "cargo test -p yoctui -- recipe_bitbake_action"]
-notes = "Build, force-task selection, clean, cleansstate, devshell, menuconfig, diffconfig, and diffsigs with typed confirmation and persistent jobs."
+notes = "Build, metadata-backed force-task selection, clean, cleansstate, devshell, menuconfig, diffconfig, and diffsigs now share validated typed requests, exact confirmation, backend target/task/force preservation, persistent jobs, and reducer/app/CLI/TestBackend coverage."
 
 [[task]]
 id = "RECIPE-NAV-001"
 milestone = "M3"
 title = "Complete recipe file, log, patch, and Devtool routes"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 41
 required = true
 depends_on = ["RECIPE-BITBAKE-001"]

@@ -657,6 +657,7 @@ async fn headless(
         let request = BuildRequest {
             targets,
             task: None,
+            force: false,
         };
         if let Some(actions) = build_jobs.queue_build(&request, SystemTime::now()) {
             for action in actions {
@@ -1704,6 +1705,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Input::Esc => update(&mut app, Action::CancelImagePicker),
                     _ => None,
                 };
+            } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskPicker(_))) {
+                let _ = match input {
+                    Input::Up => update(&mut app, Action::SelectRecipeTask { delta: -1 }),
+                    Input::Down => update(&mut app, Action::SelectRecipeTask { delta: 1 }),
+                    Input::Enter => update(&mut app, Action::PreviewSelectedRecipeTask),
+                    Input::Esc => update(&mut app, Action::CancelRecipeTaskPicker),
+                    _ => None,
+                };
             } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
@@ -1816,6 +1825,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 let _ = update(&mut app, Action::OpenBuildOptions);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('f') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeForceTask);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('v') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeDevshell);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('K') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeDiffconfig);
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('z') {
+                let _ = update(&mut app, Action::BeginSelectedRecipeDiffsigs);
             } else if app.screen == yoctui_model::Screen::Dashboard
                 && matches!(input, Input::Up | Input::Down)
             {
@@ -2495,5 +2512,20 @@ mod tests {
             );
         }
         fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn recipe_bitbake_action_terminal_keys_decode_to_typed_routes() {
+        let force = input_from_key(KeyEvent::new(KeyCode::Char('f'), KeyModifiers::NONE)).unwrap();
+        let devshell =
+            input_from_key(KeyEvent::new(KeyCode::Char('v'), KeyModifiers::NONE)).unwrap();
+        assert_eq!(
+            yoctui_app::recipes_workspace_action(false, force),
+            Some(Action::BeginSelectedRecipeForceTask)
+        );
+        assert_eq!(
+            yoctui_app::recipes_workspace_action(false, devshell),
+            Some(Action::BeginSelectedRecipeDevshell)
+        );
     }
 }
