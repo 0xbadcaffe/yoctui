@@ -141,18 +141,18 @@ notes = "Active-task workspace and persistent navigation added by 854f798 and 4d
 id = "JOB-001"
 milestone = "M2"
 title = "Persistent background-job domain model"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 20
 required = true
 depends_on = ["GOV-001"]
 verify = ["cargo test -p yoctui-model background_job"]
-notes = "Shared lifecycle for builds, QEMU, Wic, SDK, tests, and maintenance."
+notes = "Typed lifecycle, context, progress, bounded output/history, result/error, cancellation capability, and reducer coverage implemented in this commit."
 
 [[task]]
 id = "JOB-002"
 milestone = "M2"
 title = "Background-job effect execution and cancellation"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 21
 required = true
 depends_on = ["JOB-001"]

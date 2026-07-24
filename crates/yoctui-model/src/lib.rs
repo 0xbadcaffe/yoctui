@@ -236,6 +236,252 @@ pub struct BuildRecord {
     pub warnings: usize,
     pub errors: usize,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct BackgroundJobId(pub u64);
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackgroundJobKind {
+    Build,
+    Qemu,
+    Wic,
+    Sdk,
+    Test,
+    Devtool,
+    Maintenance,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackgroundJobStatus {
+    Queued,
+    Starting,
+    Running,
+    Cancelling,
+    Succeeded,
+    Failed,
+    Cancelled,
+    Lost,
+}
+impl BackgroundJobStatus {
+    pub fn is_terminal(self) -> bool {
+        matches!(
+            self,
+            Self::Succeeded | Self::Failed | Self::Cancelled | Self::Lost
+        )
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BackgroundJobProgress {
+    Indeterminate,
+    Percent(u8),
+    Units { completed: u64, total: u64 },
+}
+impl BackgroundJobProgress {
+    fn is_valid(&self) -> bool {
+        match self {
+            Self::Indeterminate => true,
+            Self::Percent(percent) => *percent <= 100,
+            Self::Units { completed, total } => *total > 0 && completed <= total,
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct BackgroundJobContext {
+    pub workspace: Option<Screen>,
+    pub target: Option<String>,
+    pub recipe: Option<String>,
+    pub task: Option<String>,
+    pub image: Option<String>,
+    pub path: Option<PathBuf>,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BackgroundJobSpec {
+    pub id: BackgroundJobId,
+    pub kind: BackgroundJobKind,
+    pub title: String,
+    pub context: BackgroundJobContext,
+    pub cancellation_supported: bool,
+    pub queued_at: SystemTime,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BackgroundJobOutputEntry {
+    pub severity: Severity,
+    pub message: String,
+    pub timestamp: SystemTime,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BackgroundJobResult {
+    pub summary: String,
+    pub artifacts: Vec<PathBuf>,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BackgroundJobError {
+    pub summary: String,
+    pub detail: Option<String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BackgroundJob {
+    pub id: BackgroundJobId,
+    pub kind: BackgroundJobKind,
+    pub title: String,
+    pub status: BackgroundJobStatus,
+    pub context: BackgroundJobContext,
+    pub cancellation_supported: bool,
+    pub progress: BackgroundJobProgress,
+    pub output: VecDeque<BackgroundJobOutputEntry>,
+    pub retained_output_bytes: usize,
+    pub dropped_output_entries: usize,
+    pub warnings: usize,
+    pub errors: usize,
+    pub queued_at: SystemTime,
+    pub started_at: Option<SystemTime>,
+    pub finished_at: Option<SystemTime>,
+    pub result: Option<BackgroundJobResult>,
+    pub error: Option<BackgroundJobError>,
+}
+impl BackgroundJob {
+    fn from_spec(spec: BackgroundJobSpec) -> Self {
+        Self {
+            id: spec.id,
+            kind: spec.kind,
+            title: spec.title,
+            status: BackgroundJobStatus::Queued,
+            context: spec.context,
+            cancellation_supported: spec.cancellation_supported,
+            progress: BackgroundJobProgress::Indeterminate,
+            output: VecDeque::new(),
+            retained_output_bytes: 0,
+            dropped_output_entries: 0,
+            warnings: 0,
+            errors: 0,
+            queued_at: spec.queued_at,
+            started_at: None,
+            finished_at: None,
+            result: None,
+            error: None,
+        }
+    }
+}
+const MAX_BACKGROUND_JOBS: usize = 128;
+const MAX_BACKGROUND_JOB_OUTPUT_ENTRIES: usize = 512;
+const MAX_BACKGROUND_JOB_OUTPUT_BYTES: usize = 1024 * 1024;
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BackgroundJobs {
+    pub jobs: VecDeque<BackgroundJob>,
+    pub dropped_jobs: usize,
+    pub rejected_jobs: usize,
+    pub ignored_transitions: usize,
+    max_jobs: usize,
+    max_output_entries: usize,
+    max_output_bytes: usize,
+}
+impl BackgroundJobs {
+    pub fn new(max_jobs: usize, max_output_entries: usize, max_output_bytes: usize) -> Self {
+        Self {
+            jobs: VecDeque::new(),
+            dropped_jobs: 0,
+            rejected_jobs: 0,
+            ignored_transitions: 0,
+            max_jobs: max_jobs.max(1),
+            max_output_entries: max_output_entries.max(1),
+            max_output_bytes: max_output_bytes.max(1),
+        }
+    }
+
+    pub fn get(&self, id: BackgroundJobId) -> Option<&BackgroundJob> {
+        self.jobs.iter().find(|job| job.id == id)
+    }
+
+    fn queue(&mut self, spec: BackgroundJobSpec) {
+        if spec.title.trim().is_empty() || self.get(spec.id).is_some() {
+            self.rejected_jobs += 1;
+            return;
+        }
+        while self.jobs.len() >= self.max_jobs {
+            let Some(index) = self.jobs.iter().position(|job| job.status.is_terminal()) else {
+                self.rejected_jobs += 1;
+                return;
+            };
+            self.jobs.remove(index);
+            self.dropped_jobs += 1;
+        }
+        self.jobs.push_back(BackgroundJob::from_spec(spec));
+    }
+
+    fn update_if(
+        &mut self,
+        id: BackgroundJobId,
+        allowed: &[BackgroundJobStatus],
+        mutation: impl FnOnce(&mut BackgroundJob),
+    ) {
+        let Some(job) = self.jobs.iter_mut().find(|job| job.id == id) else {
+            self.ignored_transitions += 1;
+            return;
+        };
+        if !allowed.contains(&job.status) {
+            self.ignored_transitions += 1;
+            return;
+        }
+        mutation(job);
+    }
+
+    fn append_output(&mut self, id: BackgroundJobId, entry: BackgroundJobOutputEntry) {
+        let max_entries = self.max_output_entries;
+        let max_bytes = self.max_output_bytes;
+        self.update_if(
+            id,
+            &[
+                BackgroundJobStatus::Queued,
+                BackgroundJobStatus::Starting,
+                BackgroundJobStatus::Running,
+                BackgroundJobStatus::Cancelling,
+            ],
+            |job| {
+                match entry.severity {
+                    Severity::Warning => job.warnings += 1,
+                    Severity::Error => job.errors += 1,
+                    Severity::Trace | Severity::Info => {}
+                }
+                job.retained_output_bytes += entry.message.len();
+                job.output.push_back(entry);
+                while job.output.len() > max_entries || job.retained_output_bytes > max_bytes {
+                    let Some(dropped) = job.output.pop_front() else {
+                        break;
+                    };
+                    job.retained_output_bytes = job
+                        .retained_output_bytes
+                        .saturating_sub(dropped.message.len());
+                    job.dropped_output_entries += 1;
+                }
+            },
+        );
+    }
+
+    fn request_cancellation(&mut self, id: BackgroundJobId) {
+        let Some(job) = self.jobs.iter_mut().find(|job| job.id == id) else {
+            self.ignored_transitions += 1;
+            return;
+        };
+        if !job.cancellation_supported
+            || !matches!(
+                job.status,
+                BackgroundJobStatus::Queued
+                    | BackgroundJobStatus::Starting
+                    | BackgroundJobStatus::Running
+            )
+        {
+            self.ignored_transitions += 1;
+            return;
+        }
+        job.status = BackgroundJobStatus::Cancelling;
+    }
+}
+impl Default for BackgroundJobs {
+    fn default() -> Self {
+        Self::new(
+            MAX_BACKGROUND_JOBS,
+            MAX_BACKGROUND_JOB_OUTPUT_ENTRIES,
+            MAX_BACKGROUND_JOB_OUTPUT_BYTES,
+        )
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct RecipeDependencies {
     pub recipe: String,
@@ -382,6 +628,7 @@ pub struct App {
     pub workspace: Workspace,
     pub host_telemetry: HostTelemetry,
     pub build: BuildState,
+    pub background_jobs: BackgroundJobs,
     pub build_history: VecDeque<BuildRecord>,
     pub build_history_selection: usize,
     pub dependencies: Option<RecipeDependencies>,
@@ -438,6 +685,7 @@ impl App {
             workspace: Workspace::default(),
             host_telemetry: HostTelemetry::default(),
             build: BuildState::default(),
+            background_jobs: BackgroundJobs::default(),
             build_history: VecDeque::new(),
             build_history_selection: 0,
             dependencies: None,
@@ -520,6 +768,44 @@ pub enum Action {
     ConfirmBuildTarget,
     CancelBuildTargetEdit,
     Start(BuildRequest),
+    QueueBackgroundJob(BackgroundJobSpec),
+    StartBackgroundJob {
+        id: BackgroundJobId,
+        started_at: SystemTime,
+    },
+    RunBackgroundJob {
+        id: BackgroundJobId,
+    },
+    UpdateBackgroundJobProgress {
+        id: BackgroundJobId,
+        progress: BackgroundJobProgress,
+    },
+    AppendBackgroundJobOutput {
+        id: BackgroundJobId,
+        entry: BackgroundJobOutputEntry,
+    },
+    RequestBackgroundJobCancellation {
+        id: BackgroundJobId,
+    },
+    SucceedBackgroundJob {
+        id: BackgroundJobId,
+        result: BackgroundJobResult,
+        finished_at: SystemTime,
+    },
+    FailBackgroundJob {
+        id: BackgroundJobId,
+        error: BackgroundJobError,
+        finished_at: SystemTime,
+    },
+    CancelBackgroundJob {
+        id: BackgroundJobId,
+        finished_at: SystemTime,
+    },
+    LoseBackgroundJob {
+        id: BackgroundJobId,
+        error: BackgroundJobError,
+        finished_at: SystemTime,
+    },
     BuildStarted,
     ParseProgress {
         current: Option<u64>,
@@ -863,6 +1149,88 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return Some(Effect::Start(r));
             }
         }
+        Action::QueueBackgroundJob(spec) => app.background_jobs.queue(spec),
+        Action::StartBackgroundJob { id, started_at } => {
+            app.background_jobs
+                .update_if(id, &[BackgroundJobStatus::Queued], |job| {
+                    job.status = BackgroundJobStatus::Starting;
+                    job.started_at = Some(started_at);
+                })
+        }
+        Action::RunBackgroundJob { id } => {
+            app.background_jobs
+                .update_if(id, &[BackgroundJobStatus::Starting], |job| {
+                    job.status = BackgroundJobStatus::Running
+                })
+        }
+        Action::UpdateBackgroundJobProgress { id, progress } => {
+            if progress.is_valid() {
+                app.background_jobs
+                    .update_if(id, &[BackgroundJobStatus::Running], |job| {
+                        job.progress = progress
+                    });
+            } else {
+                app.background_jobs.ignored_transitions += 1;
+            }
+        }
+        Action::AppendBackgroundJobOutput { id, entry } => {
+            app.background_jobs.append_output(id, entry);
+        }
+        Action::RequestBackgroundJobCancellation { id } => {
+            app.background_jobs.request_cancellation(id);
+        }
+        Action::SucceedBackgroundJob {
+            id,
+            result,
+            finished_at,
+        } => app
+            .background_jobs
+            .update_if(id, &[BackgroundJobStatus::Running], |job| {
+                job.status = BackgroundJobStatus::Succeeded;
+                job.finished_at = Some(finished_at);
+                job.result = Some(result);
+            }),
+        Action::FailBackgroundJob {
+            id,
+            error,
+            finished_at,
+        } => app.background_jobs.update_if(
+            id,
+            &[
+                BackgroundJobStatus::Starting,
+                BackgroundJobStatus::Running,
+                BackgroundJobStatus::Cancelling,
+            ],
+            |job| {
+                job.status = BackgroundJobStatus::Failed;
+                job.finished_at = Some(finished_at);
+                job.error = Some(error);
+            },
+        ),
+        Action::CancelBackgroundJob { id, finished_at } => {
+            app.background_jobs
+                .update_if(id, &[BackgroundJobStatus::Cancelling], |job| {
+                    job.status = BackgroundJobStatus::Cancelled;
+                    job.finished_at = Some(finished_at);
+                })
+        }
+        Action::LoseBackgroundJob {
+            id,
+            error,
+            finished_at,
+        } => app.background_jobs.update_if(
+            id,
+            &[
+                BackgroundJobStatus::Starting,
+                BackgroundJobStatus::Running,
+                BackgroundJobStatus::Cancelling,
+            ],
+            |job| {
+                job.status = BackgroundJobStatus::Lost;
+                job.finished_at = Some(finished_at);
+                job.error = Some(error);
+            },
+        ),
         Action::BuildStarted => {
             app.build.status = BuildStatus::Running;
             app.build.started = Some(SystemTime::now());
@@ -1754,6 +2122,309 @@ mod tests {
             path: None,
             timestamp: SystemTime::now(),
         }
+    }
+    fn background_job_spec(id: u64, cancellation_supported: bool) -> BackgroundJobSpec {
+        BackgroundJobSpec {
+            id: BackgroundJobId(id),
+            kind: BackgroundJobKind::Build,
+            title: format!("Build job {id}"),
+            context: BackgroundJobContext {
+                workspace: Some(Screen::Tasks),
+                target: Some("core-image-minimal".into()),
+                ..BackgroundJobContext::default()
+            },
+            cancellation_supported,
+            queued_at: SystemTime::UNIX_EPOCH,
+        }
+    }
+    fn run_background_job(app: &mut App, id: u64) {
+        let id = BackgroundJobId(id);
+        let _ = update(
+            app,
+            Action::StartBackgroundJob {
+                id,
+                started_at: SystemTime::UNIX_EPOCH + Duration::from_secs(1),
+            },
+        );
+        let _ = update(app, Action::RunBackgroundJob { id });
+    }
+    #[test]
+    fn background_job_completes_and_survives_workspace_navigation() {
+        let mut app = App::new(10, 1_000);
+        let id = BackgroundJobId(1);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(1, true)),
+        );
+        let _ = update(&mut app, Action::Open(Screen::Layers));
+        run_background_job(&mut app, 1);
+        let _ = update(
+            &mut app,
+            Action::UpdateBackgroundJobProgress {
+                id,
+                progress: BackgroundJobProgress::Units {
+                    completed: 4,
+                    total: 10,
+                },
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::AppendBackgroundJobOutput {
+                id,
+                entry: BackgroundJobOutputEntry {
+                    severity: Severity::Warning,
+                    message: "cache miss".into(),
+                    timestamp: SystemTime::UNIX_EPOCH + Duration::from_secs(2),
+                },
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::SucceedBackgroundJob {
+                id,
+                result: BackgroundJobResult {
+                    summary: "image built".into(),
+                    artifacts: vec!["/deploy/core-image-minimal.wic".into()],
+                },
+                finished_at: SystemTime::UNIX_EPOCH + Duration::from_secs(3),
+            },
+        );
+        let _ = update(&mut app, Action::Open(Screen::Settings));
+
+        let job = app.background_jobs.get(id).unwrap();
+        assert_eq!(app.screen, Screen::Settings);
+        assert_eq!(job.status, BackgroundJobStatus::Succeeded);
+        assert_eq!(
+            job.progress,
+            BackgroundJobProgress::Units {
+                completed: 4,
+                total: 10
+            }
+        );
+        assert_eq!(job.warnings, 1);
+        assert_eq!(
+            job.started_at,
+            Some(SystemTime::UNIX_EPOCH + Duration::from_secs(1))
+        );
+        assert_eq!(
+            job.finished_at,
+            Some(SystemTime::UNIX_EPOCH + Duration::from_secs(3))
+        );
+        assert_eq!(
+            job.result.as_ref().map(|result| result.summary.as_str()),
+            Some("image built")
+        );
+    }
+    #[test]
+    fn background_job_records_failure_and_loss() {
+        let mut app = App::new(10, 1_000);
+        for id in [1, 2] {
+            let _ = update(
+                &mut app,
+                Action::QueueBackgroundJob(background_job_spec(id, true)),
+            );
+            run_background_job(&mut app, id);
+        }
+        let _ = update(
+            &mut app,
+            Action::FailBackgroundJob {
+                id: BackgroundJobId(1),
+                error: BackgroundJobError {
+                    summary: "BitBake failed".into(),
+                    detail: Some("exit code 1".into()),
+                },
+                finished_at: SystemTime::UNIX_EPOCH + Duration::from_secs(4),
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::LoseBackgroundJob {
+                id: BackgroundJobId(2),
+                error: BackgroundJobError {
+                    summary: "bridge disconnected".into(),
+                    detail: None,
+                },
+                finished_at: SystemTime::UNIX_EPOCH + Duration::from_secs(5),
+            },
+        );
+
+        assert_eq!(
+            app.background_jobs.get(BackgroundJobId(1)).unwrap().status,
+            BackgroundJobStatus::Failed
+        );
+        let lost = app.background_jobs.get(BackgroundJobId(2)).unwrap();
+        assert_eq!(lost.status, BackgroundJobStatus::Lost);
+        assert_eq!(
+            lost.error.as_ref().map(|error| error.summary.as_str()),
+            Some("bridge disconnected")
+        );
+    }
+    #[test]
+    fn background_job_cancellation_requires_capability_and_acknowledgement() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(1, true)),
+        );
+        let _ = update(
+            &mut app,
+            Action::RequestBackgroundJobCancellation {
+                id: BackgroundJobId(1),
+            },
+        );
+        assert_eq!(
+            app.background_jobs.get(BackgroundJobId(1)).unwrap().status,
+            BackgroundJobStatus::Cancelling
+        );
+        let _ = update(
+            &mut app,
+            Action::CancelBackgroundJob {
+                id: BackgroundJobId(1),
+                finished_at: SystemTime::UNIX_EPOCH + Duration::from_secs(1),
+            },
+        );
+        assert_eq!(
+            app.background_jobs.get(BackgroundJobId(1)).unwrap().status,
+            BackgroundJobStatus::Cancelled
+        );
+
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(2, false)),
+        );
+        run_background_job(&mut app, 2);
+        let ignored_before = app.background_jobs.ignored_transitions;
+        let _ = update(
+            &mut app,
+            Action::RequestBackgroundJobCancellation {
+                id: BackgroundJobId(2),
+            },
+        );
+        assert_eq!(
+            app.background_jobs.get(BackgroundJobId(2)).unwrap().status,
+            BackgroundJobStatus::Running
+        );
+        assert_eq!(app.background_jobs.ignored_transitions, ignored_before + 1);
+    }
+    #[test]
+    fn background_job_invalid_transitions_leave_state_unchanged() {
+        let mut app = App::new(10, 1_000);
+        let id = BackgroundJobId(1);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(1, true)),
+        );
+        let _ = update(&mut app, Action::RunBackgroundJob { id });
+        let _ = update(
+            &mut app,
+            Action::UpdateBackgroundJobProgress {
+                id,
+                progress: BackgroundJobProgress::Percent(101),
+            },
+        );
+        assert_eq!(
+            app.background_jobs.get(id).unwrap().status,
+            BackgroundJobStatus::Queued
+        );
+        assert_eq!(app.background_jobs.ignored_transitions, 2);
+
+        run_background_job(&mut app, 1);
+        let _ = update(
+            &mut app,
+            Action::SucceedBackgroundJob {
+                id,
+                result: BackgroundJobResult {
+                    summary: "done".into(),
+                    artifacts: vec![],
+                },
+                finished_at: SystemTime::UNIX_EPOCH + Duration::from_secs(2),
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::FailBackgroundJob {
+                id,
+                error: BackgroundJobError {
+                    summary: "late failure".into(),
+                    detail: None,
+                },
+                finished_at: SystemTime::UNIX_EPOCH + Duration::from_secs(3),
+            },
+        );
+        assert_eq!(
+            app.background_jobs.get(id).unwrap().status,
+            BackgroundJobStatus::Succeeded
+        );
+        assert_eq!(app.background_jobs.ignored_transitions, 3);
+    }
+    #[test]
+    fn background_job_history_and_output_retention_are_bounded_and_observable() {
+        let mut app = App::new(10, 1_000);
+        app.background_jobs = BackgroundJobs::new(2, 2, 4);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(1, true)),
+        );
+        run_background_job(&mut app, 1);
+        let _ = update(
+            &mut app,
+            Action::SucceedBackgroundJob {
+                id: BackgroundJobId(1),
+                result: BackgroundJobResult {
+                    summary: "done".into(),
+                    artifacts: vec![],
+                },
+                finished_at: SystemTime::UNIX_EPOCH + Duration::from_secs(2),
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(2, true)),
+        );
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(3, true)),
+        );
+        assert_eq!(app.background_jobs.jobs.len(), 2);
+        assert_eq!(app.background_jobs.dropped_jobs, 1);
+        assert!(app.background_jobs.get(BackgroundJobId(1)).is_none());
+
+        let _ = update(
+            &mut app,
+            Action::AppendBackgroundJobOutput {
+                id: BackgroundJobId(2),
+                entry: BackgroundJobOutputEntry {
+                    severity: Severity::Warning,
+                    message: "abc".into(),
+                    timestamp: SystemTime::UNIX_EPOCH,
+                },
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::AppendBackgroundJobOutput {
+                id: BackgroundJobId(2),
+                entry: BackgroundJobOutputEntry {
+                    severity: Severity::Error,
+                    message: "de".into(),
+                    timestamp: SystemTime::UNIX_EPOCH,
+                },
+            },
+        );
+        let retained = app.background_jobs.get(BackgroundJobId(2)).unwrap();
+        assert_eq!(retained.output.len(), 1);
+        assert_eq!(retained.retained_output_bytes, 2);
+        assert_eq!(retained.dropped_output_entries, 1);
+        assert_eq!(retained.warnings, 1);
+        assert_eq!(retained.errors, 1);
+
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(4, true)),
+        );
+        assert_eq!(app.background_jobs.jobs.len(), 2);
+        assert_eq!(app.background_jobs.rejected_jobs, 1);
     }
     #[test]
     fn bounded_logs_report_eviction() {

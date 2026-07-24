@@ -2,37 +2,39 @@
 
 ## Active task
 
-**ID:** JOB-001
-**Title:** Add the persistent background-job domain model
+**ID:** JOB-002
+**Title:** Add background-job effect execution and cancellation
 
 ## Objective
 
-Add the pure, typed model state required for builds and future QEMU, Wic, SDK, testing, Devtool, and maintenance operations to persist independently of workspace navigation.
+Connect the existing asynchronous build execution path to the shared background-job model so build lifecycle, output, completion, failure, and cancellation remain observable while the user navigates other workspaces.
 
 ## Required work
 
-1. Inspect the existing build state and reducer before introducing new types.
-2. Add stable job identifiers, kinds, lifecycle states, optional context, progress, bounded output, result/error, timestamps, and cancellation capability in `yoctui-model`.
-3. Store jobs independently of the active workspace and keep their history bounded.
-4. Add typed reducer actions for queueing, starting, progress, cancellation request, success, failure, cancellation, and loss.
-5. Reject or ignore invalid lifecycle transitions deterministically.
-6. Add model tests for normal completion, failure, cancellation, invalid transitions, bounded retention, and workspace navigation while a job runs.
-7. Do not add process execution or backend cancellation in this task; that belongs to `JOB-002`.
+1. Inspect the existing CLI build loop, `yoctui-app` effect boundary, and backend cancellation adapters before changing them.
+2. Allocate a stable background-job ID when a confirmed build is started.
+3. Drive the job through queued, starting, running, progress/output, and terminal states from typed backend events.
+4. Associate the current target and Tasks workspace context with the job.
+5. Keep event handling and cancellation active while the user changes workspaces.
+6. Map cancellation request, acknowledgement, backend failure, and disconnect/loss without reporting false success.
+7. Add app orchestration tests and fake backend/process cancellation tests for success, failure, cancellation, and navigation persistence.
+8. Preserve the existing typed backend boundary and do not parse raw process text in UI code.
 
 ## Definition of done
 
-- Background jobs have a reusable typed domain model with a documented lifecycle.
-- Job state survives workspace changes.
-- Retention is bounded and observable.
-- Invalid transitions cannot corrupt terminal job state.
-- Normal, failure, cancellation, loss, and retention paths are covered by reducer tests.
-- No process or UI concerns are added to `yoctui-model`.
+- A confirmed build creates exactly one background job.
+- Typed backend events update that job without widget parsing.
+- The job remains active and inspectable across workspace changes.
+- Normal completion, build failure, cancellation acknowledgement, cancellation failure, and backend loss produce correct terminal states.
+- Existing build controls continue to work.
+- Fake integration coverage passes without claiming live BitBake compatibility.
 - Registry and human-readable status are updated after verification.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model background_job
+cargo test -p yoctui-app background_job
+cargo test -p yoctui-bitbake cancellation
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -42,4 +44,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`JOB-002 — Add background-job effect execution and cancellation`
+`BB-001 — Add the real BitBake smoke harness`
