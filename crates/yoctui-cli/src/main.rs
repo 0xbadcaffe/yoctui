@@ -13,7 +13,7 @@ use ratatui::Terminal;
 use serde::{Deserialize, Serialize};
 use std::{
     env, fs, io,
-    io::Write as _,
+    io::{Read as _, Write as _},
     path::{Path, PathBuf},
     process::{Command as ProcessCommand, Stdio},
     time::{Duration, Instant, SystemTime},
@@ -28,9 +28,9 @@ use yoctui_app::{
 };
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
-    Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, Dialog, Effect,
-    HostTelemetry, LayerBrowserEntry, LayerRelationship, LayerRelationships, RecipeDependencies,
-    Screen, Severity, Theme, update,
+    Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, Dialog, Effect, GitFileState,
+    HostTelemetry, LayerBrowserEntry, LayerInspectorMode, LayerRelationship, LayerRelationships,
+    PreviewKind, RecipeDependencies, Screen, Severity, Theme, update,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -965,6 +965,74 @@ async fn open_workspace_editor(app: &mut App, recipe: String, root: PathBuf) {
     }
 }
 
+fn scan_layer_directory(scan: &Path) -> io::Result<Vec<LayerBrowserEntry>> {
+    let git_output = ProcessCommand::new("git")
+        .args([
+            "status",
+            "--porcelain=v1",
+            "--ignored",
+            "--untracked-files=all",
+            "--",
+            ".",
+        ])
+        .current_dir(scan)
+        .output()
+        .ok()
+        .filter(|output| output.status.success());
+    let git_lines = git_output.as_ref().map(|output| {
+        String::from_utf8_lossy(&output.stdout)
+            .lines()
+            .filter_map(|line| {
+                let status = line.get(..2)?;
+                let path = line.get(3..)?;
+                Some((status.to_owned(), scan.join(path)))
+            })
+            .collect::<Vec<_>>()
+    });
+    let mut entries = fs::read_dir(scan)?
+        .filter_map(Result::ok)
+        .filter_map(|entry| {
+            let path = entry.path();
+            let name = entry.file_name();
+            if name == ".git" {
+                return None;
+            }
+            let metadata = entry.metadata().ok();
+            let is_dir = metadata.as_ref().is_some_and(|value| value.is_dir());
+            let git = git_lines
+                .as_ref()
+                .map_or(GitFileState::Unavailable, |lines| {
+                    lines
+                        .iter()
+                        .find(|(_, changed)| {
+                            changed == &path || (is_dir && changed.starts_with(&path))
+                        })
+                        .map_or(GitFileState::Clean, |(status, _)| match status.as_str() {
+                            "??" => GitFileState::Untracked,
+                            "!!" => GitFileState::Ignored,
+                            _ => GitFileState::Modified,
+                        })
+                });
+            Some(LayerBrowserEntry {
+                path,
+                is_dir,
+                depth: 0,
+                is_hidden: name.to_string_lossy().starts_with('.'),
+                size: metadata.as_ref().map(|value| value.len()),
+                modified: metadata.and_then(|value| value.modified().ok()),
+                git,
+            })
+        })
+        .collect::<Vec<_>>();
+    entries.sort_by_key(|entry| {
+        (
+            !entry.is_dir,
+            entry.path.file_name().map(|name| name.to_owned()),
+        )
+    });
+    Ok(entries)
+}
+
 async fn load_layer_browser_directory(
     app: &mut App,
     layer: String,
@@ -972,25 +1040,7 @@ async fn load_layer_browser_directory(
     directory: PathBuf,
 ) {
     let scan = directory.clone();
-    match tokio::task::spawn_blocking(move || {
-        let mut entries = fs::read_dir(&scan)?
-            .filter_map(Result::ok)
-            .filter_map(|entry| {
-                let is_dir = entry.file_type().ok()?.is_dir();
-                let path = entry.path();
-                (entry.file_name() != ".git").then_some(LayerBrowserEntry { path, is_dir })
-            })
-            .collect::<Vec<_>>();
-        entries.sort_by_key(|entry| {
-            (
-                !entry.is_dir,
-                entry.path.file_name().map(|name| name.to_owned()),
-            )
-        });
-        Ok::<_, std::io::Error>(entries)
-    })
-    .await
-    {
+    match tokio::task::spawn_blocking(move || scan_layer_directory(&scan)).await {
         Ok(Ok(entries)) => {
             if let Some(Effect::LoadLayerBrowserPreview(path)) = update(
                 app,
@@ -1011,14 +1061,39 @@ async fn load_layer_browser_directory(
     }
 }
 
+fn read_layer_preview(path: &Path) -> io::Result<(String, PreviewKind, bool)> {
+    const MAX_PREVIEW_BYTES: usize = 64 * 1024;
+    let mut file = fs::File::open(path)?;
+    let size = file.metadata()?.len();
+    let mut bytes = Vec::new();
+    std::io::Read::by_ref(&mut file)
+        .take(MAX_PREVIEW_BYTES as u64)
+        .read_to_end(&mut bytes)?;
+    let truncated = size > bytes.len() as u64;
+    if bytes.contains(&0) || std::str::from_utf8(&bytes).is_err() {
+        Ok((String::new(), PreviewKind::Binary, truncated))
+    } else {
+        Ok((
+            String::from_utf8(bytes).expect("UTF-8 was validated"),
+            PreviewKind::Text,
+            truncated,
+        ))
+    }
+}
+
 async fn load_layer_browser_preview(app: &mut App, path: PathBuf) {
-    match tokio::task::spawn_blocking(move || {
-        fs::read_to_string(path).map(|content| content.chars().take(24_000).collect::<String>())
-    })
-    .await
-    {
-        Ok(Ok(content)) => {
-            let _ = update(app, Action::LoadLayerBrowserPreview(content));
+    let preview_path = path.clone();
+    match tokio::task::spawn_blocking(move || read_layer_preview(&preview_path)).await {
+        Ok(Ok((content, kind, truncated))) => {
+            let _ = update(
+                app,
+                Action::LoadLayerBrowserPreview {
+                    path,
+                    content,
+                    kind,
+                    truncated,
+                },
+            );
         }
         Ok(Err(error)) => app.notification = Some(format!("Could not preview layer file: {error}")),
         Err(error) => app.notification = Some(format!("Layer preview failed: {error}")),
@@ -1446,17 +1521,35 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Input::Esc => update(&mut app, Action::CancelQuit),
                     _ => None,
                 };
-            } else if app.layer_browser.is_some() && app.focus != yoctui_model::FocusTarget::Dialog
+            } else if app.layer_browser.is_some()
+                && !app.metadata_searching
+                && app.focus != yoctui_model::FocusTarget::Dialog
             {
                 let effect = match input {
                     Input::Tab => update(&mut app, Action::CycleFocus { backwards: false }),
                     Input::BackTab => update(&mut app, Action::CycleFocus { backwards: true }),
                     Input::Up => update(&mut app, Action::SelectLayerBrowserEntry { delta: -1 }),
                     Input::Down => update(&mut app, Action::SelectLayerBrowserEntry { delta: 1 }),
-                    Input::Enter | Input::Right => update(&mut app, Action::LayerBrowserEnter),
-                    Input::Esc | Input::Left => update(&mut app, Action::LayerBrowserUp),
+                    Input::Enter => update(&mut app, Action::LayerBrowserEnter),
+                    Input::Right | Input::Char('l') => update(&mut app, Action::LayerBrowserExpand),
+                    Input::Esc => update(&mut app, Action::CloseLayerBrowser),
+                    Input::Left | Input::Char('h') => update(&mut app, Action::LayerBrowserUp),
                     Input::Char('r') => update(&mut app, Action::RefreshLayerBrowser),
                     Input::Char('e') => update(&mut app, Action::EditSelectedLayerBrowserFile),
+                    Input::Char('.') => update(&mut app, Action::ToggleLayerBrowserHidden),
+                    Input::Char('/') => update(&mut app, Action::BeginMetadataSearch),
+                    Input::Char('g') => update(
+                        &mut app,
+                        Action::SetLayerInspectorMode(LayerInspectorMode::Git),
+                    ),
+                    Input::Char('m') => update(
+                        &mut app,
+                        Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
+                    ),
+                    Input::Char('d') => update(
+                        &mut app,
+                        Action::SetLayerInspectorMode(LayerInspectorMode::Dependencies),
+                    ),
                     _ => None,
                 };
                 match effect {
@@ -2277,5 +2370,111 @@ mod tests {
             devtool_source_dir(Path::new("/build"), "busybox"),
             PathBuf::from("/build/workspace/sources/busybox")
         );
+    }
+
+    #[test]
+    fn layer_tree_scanner_is_shallow_sorted_and_keeps_hidden_metadata() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-layer-tree-scan-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+        fs::create_dir_all(directory.join("recipes-demo")).unwrap();
+        fs::write(directory.join("demo.bb"), "SUMMARY = \"demo\"").unwrap();
+        fs::write(directory.join(".hidden"), "hidden").unwrap();
+
+        let entries = scan_layer_directory(&directory).unwrap();
+        assert_eq!(
+            entries[0].path.file_name().unwrap().to_string_lossy(),
+            "recipes-demo"
+        );
+        assert!(entries.iter().any(|entry| entry.is_hidden));
+        assert!(entries.iter().all(|entry| entry.depth == 0));
+        assert!(!entries.iter().any(|entry| entry.path.ends_with(".git")));
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn layer_tree_preview_bounds_large_text_and_rejects_binary() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-layer-tree-preview-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+        fs::create_dir_all(&directory).unwrap();
+        let text = directory.join("large.conf");
+        fs::write(&text, vec![b'A'; 70 * 1024]).unwrap();
+        let (content, kind, truncated) = read_layer_preview(&text).unwrap();
+        assert_eq!(kind, PreviewKind::Text);
+        assert_eq!(content.len(), 64 * 1024);
+        assert!(truncated);
+
+        let binary = directory.join("image.bin");
+        fs::write(&binary, [0, 159, 146, 150]).unwrap();
+        let (content, kind, truncated) = read_layer_preview(&binary).unwrap();
+        assert_eq!(kind, PreviewKind::Binary);
+        assert!(content.is_empty());
+        assert!(!truncated);
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn layer_tree_scanner_reports_git_states_without_requiring_git() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-layer-tree-git-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+        fs::create_dir_all(&directory).unwrap();
+        fs::write(directory.join(".gitignore"), "ignored.bin\n").unwrap();
+        fs::write(directory.join("tracked.bb"), "SUMMARY = \"first\"\n").unwrap();
+        let initialized = ProcessCommand::new("git")
+            .arg("init")
+            .arg("-q")
+            .current_dir(&directory)
+            .status()
+            .is_ok_and(|status| status.success());
+        if initialized {
+            assert!(
+                ProcessCommand::new("git")
+                    .args(["add", ".gitignore", "tracked.bb"])
+                    .current_dir(&directory)
+                    .status()
+                    .unwrap()
+                    .success()
+            );
+            assert!(
+                ProcessCommand::new("git")
+                    .args([
+                        "-c",
+                        "user.name=Yoctui Test",
+                        "-c",
+                        "user.email=yoctui@example.invalid",
+                        "commit",
+                        "-qm",
+                        "fixture",
+                    ])
+                    .current_dir(&directory)
+                    .status()
+                    .unwrap()
+                    .success()
+            );
+            fs::write(directory.join("tracked.bb"), "SUMMARY = \"changed\"\n").unwrap();
+            fs::write(directory.join("new.bb"), "SUMMARY = \"new\"\n").unwrap();
+            fs::write(directory.join("ignored.bin"), [1, 2, 3]).unwrap();
+            let entries = scan_layer_directory(&directory).unwrap();
+            let state = |name: &str| {
+                entries
+                    .iter()
+                    .find(|entry| entry.path.ends_with(name))
+                    .unwrap()
+                    .git
+            };
+            assert_eq!(state("tracked.bb"), GitFileState::Modified);
+            assert_eq!(state("new.bb"), GitFileState::Untracked);
+            assert_eq!(state("ignored.bin"), GitFileState::Ignored);
+        } else {
+            assert!(
+                scan_layer_directory(&directory)
+                    .unwrap()
+                    .iter()
+                    .all(|entry| entry.git == GitFileState::Unavailable)
+            );
+        }
+        fs::remove_dir_all(directory).unwrap();
     }
 }

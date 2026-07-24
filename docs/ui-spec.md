@@ -256,6 +256,18 @@ Required behavior:
 - refresh selected subtree
 - detect modified, untracked, and generated files where Git information is available
 
+The configured-layer inventory stays pinned above the active layer tree. It
+shows each layer's priority and reported compatibility; the currently browsed
+layer is selected and layers supplying the active target/tasks use the active
+semantic role. Expanding a directory caches only that directory's immediate
+children. Collapse never discards cached descendants, while refresh replaces
+only the selected subtree listing.
+
+Tree Git decorations are `M` for modified, `?` for untracked, `I` for
+ignored/generated, and `-` when Git is unavailable. Hidden entries are loaded
+but omitted until `.` toggles them on, so toggling does not cause a recursive
+scan or lose path identity.
+
 Keyboard:
 
 - `Right` / `l`: expand
@@ -312,6 +324,12 @@ Inspector rules:
 - binary files show metadata, not raw terminal garbage
 - large files are streamed or truncated safely
 - show a clear message when preview is unavailable
+
+Layer text previews are limited to 64 KiB, show line numbers, and retain
+BitBake/Markdown syntax styling. A truncation banner identifies bounded
+previews. Invalid UTF-8 or NUL-containing files are treated as binary and show
+metadata only. Preview responses carry their source path, so a late response
+cannot replace the newly selected file's Inspector.
 
 The first version does not implement a full embedded code editor.
 

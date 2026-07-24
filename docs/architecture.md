@@ -129,6 +129,16 @@ Owns:
 - terminal guard lifecycle
 - runtime startup and shutdown
 - headless command dispatch
+- shallow filesystem and Git inspection requested by typed layer-tree effects
+- bounded text/binary preview loading
+
+The model owns the cached layer tree by stable paths, expansion state,
+selection, Git/file metadata, preview classification, and Inspector mode.
+Expanding or refreshing emits a directory-specific effect; the CLI reads only
+that directory and returns typed entries. File previews are capped at 64 KiB
+and include path, text/binary classification, and truncation state. The reducer
+rejects a preview whose path is no longer selected. Neither the CLI nor widgets
+recursively discover unopened subtrees.
 
 ## Dependency direction
 

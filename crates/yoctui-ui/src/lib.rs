@@ -5,8 +5,9 @@ use ratatui::{
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 use yoctui_model::{
-    App, Dialog, FocusTarget, LayerBrowser, RecipeEditor, Screen, Severity, TaskFilterField,
-    TaskRow, TaskState, Theme, format_duration,
+    App, Dialog, FocusTarget, GitFileState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode,
+    PreviewKind, RecipeEditor, Screen, Severity, TaskFilterField, TaskRow, TaskState, Theme,
+    format_duration,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -357,6 +358,21 @@ fn source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
     )
 }
 
+fn numbered_source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
+    let palette = ThemePalette::for_app(app);
+    let mut source = source_preview(content, file_name, app);
+    for (index, line) in source.lines.iter_mut().enumerate() {
+        line.spans.insert(
+            0,
+            Span::styled(
+                format!("{:>4} │ ", index + 1),
+                palette.role(palette.disabled, Modifier::DIM),
+            ),
+        );
+    }
+    source
+}
+
 fn task_activity(app: &App, task_progress: Option<u8>) -> &'static str {
     if task_progress.is_some() {
         return "";
@@ -391,7 +407,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
         return "Tab navigator | Shift+Tab workspace | ↑/↓ scroll inspector | / search | q quit";
     }
     if app.layer_browser.is_some() {
-        return "↑/↓ select | Enter/→ descend | Esc/← up | r refresh | e edit file | Ctrl+S save | ? help | q quit";
+        return "↑/↓ select | →/l expand | ←/h collapse | Enter open/toggle | e editor | r refresh | . hidden | / search | g Git | m metadata | d deps";
     }
     match app.screen {
         Screen::Dashboard => {
@@ -1045,10 +1061,19 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
                 )
             },
             |browser| {
-                format!(
-                    "Path: {}\n\n{}",
-                    browser.directory.display(),
-                    browser.preview
+                browser.selected_entry().map_or_else(
+                    || format!("Layer: {}\n\nThis layer is empty.", browser.layer),
+                    |entry| {
+                        let detail = layer_entry_metadata(app, browser, entry);
+                        let preview = match browser.preview_kind {
+                            PreviewKind::Binary => "Binary preview unavailable.",
+                            PreviewKind::Text if !browser.preview.is_empty() => {
+                                "Text preview is visible in the workspace."
+                            }
+                            _ => "Preview unavailable.",
+                        };
+                        format!("{detail}\n\n{preview}")
+                    },
                 )
             },
         ),
@@ -2200,70 +2225,282 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
         chunks[1],
     );
 }
+fn git_state_text(state: GitFileState) -> &'static str {
+    match state {
+        GitFileState::Clean => "clean",
+        GitFileState::Modified => "modified",
+        GitFileState::Untracked => "untracked",
+        GitFileState::Ignored => "ignored/generated",
+        GitFileState::Unavailable => "Git unavailable",
+    }
+}
+
+fn layer_relationship<'a>(
+    app: &'a App,
+    layer: &str,
+) -> Option<&'a yoctui_model::LayerRelationship> {
+    app.layer_relationships
+        .as_ref()?
+        .layers
+        .iter()
+        .find(|relationship| relationship.name == layer)
+}
+
+fn active_build_layer(app: &App, layer: &str) -> bool {
+    app.build
+        .target
+        .as_ref()
+        .and_then(|target| {
+            app.workspace
+                .recipes
+                .iter()
+                .find(|recipe| &recipe.name == target)
+        })
+        .and_then(|recipe| recipe.layer.as_deref())
+        .is_some_and(|recipe_layer| recipe_layer == layer)
+        || app.tasks.values().any(|task| {
+            app.workspace
+                .recipes
+                .iter()
+                .find(|recipe| recipe.name == task.recipe)
+                .and_then(|recipe| recipe.layer.as_deref())
+                .is_some_and(|recipe_layer| recipe_layer == layer)
+        })
+}
+
+fn layer_entry_metadata(app: &App, browser: &LayerBrowser, entry: &LayerBrowserEntry) -> String {
+    let relationship = layer_relationship(app, &browser.layer);
+    let size = if entry.is_dir {
+        "directory".into()
+    } else {
+        entry
+            .size
+            .map_or_else(|| "unavailable".into(), |size| format!("{size} bytes"))
+    };
+    let modified = entry
+        .modified
+        .map_or_else(|| "unavailable".into(), timestamp_text);
+    let compatibility = relationship.map_or_else(
+        || "unavailable".into(),
+        |value| {
+            if value.compatible.is_empty() {
+                "not reported".into()
+            } else {
+                value.compatible.join(", ")
+            }
+        },
+    );
+    format!(
+        "Path: {}\nType/size: {size}\nModified: {modified}\nGit: {}\nLayer: {}\nCompatibility: {compatibility}",
+        entry.path.display(),
+        git_state_text(entry.git),
+        browser.layer
+    )
+}
+
+fn layer_inspector_text(app: &App, browser: &LayerBrowser) -> Text<'static> {
+    let Some(entry) = browser.selected_entry() else {
+        return Text::from("This layer is empty.");
+    };
+    let metadata = layer_entry_metadata(app, browser, entry);
+    let relationship = layer_relationship(app, &browser.layer);
+    match browser.inspector_mode {
+        LayerInspectorMode::Git => Text::from(format!(
+            "{metadata}\n\nGit state: {}\nGit status is detected per loaded subtree; missing Git is non-fatal.",
+            git_state_text(entry.git)
+        )),
+        LayerInspectorMode::Metadata => Text::from(metadata),
+        LayerInspectorMode::Dependencies => Text::from(format!(
+            "{metadata}\n\nDepends: {}\nOverlays: {}\nAppends: {}",
+            relationship.map_or("unavailable".into(), |value| {
+                if value.depends.is_empty() {
+                    "none reported".into()
+                } else {
+                    value.depends.join(", ")
+                }
+            }),
+            relationship.map_or("unavailable".into(), |value| {
+                if value.overlays.is_empty() {
+                    "none reported".into()
+                } else {
+                    value.overlays.join(", ")
+                }
+            }),
+            relationship.map_or("unavailable".into(), |value| {
+                if value.appends.is_empty() {
+                    "none reported".into()
+                } else {
+                    value.appends.join(", ")
+                }
+            })
+        )),
+        LayerInspectorMode::Preview if entry.is_dir => Text::from(format!(
+            "{metadata}\n\nDirectory contents are loaded only when expanded."
+        )),
+        LayerInspectorMode::Preview => match browser.preview_kind {
+            PreviewKind::Binary => Text::from(format!(
+                "{metadata}\n\nBinary preview unavailable.{}",
+                if browser.preview_truncated {
+                    "\nPreview exceeds the 64 KiB bound."
+                } else {
+                    ""
+                }
+            )),
+            PreviewKind::Unavailable => Text::from(format!(
+                "{metadata}\n\nPreview unavailable or still loading."
+            )),
+            PreviewKind::Text => {
+                let file_name = entry
+                    .path
+                    .file_name()
+                    .and_then(|name| name.to_str())
+                    .unwrap_or("");
+                let mut preview = numbered_source_preview(&browser.preview, file_name, app);
+                if browser.preview_truncated {
+                    preview.lines.insert(
+                        0,
+                        Line::from("[preview truncated at 64 KiB]").style(
+                            ThemePalette::for_app(app)
+                                .role(ThemePalette::for_app(app).warning, Modifier::BOLD),
+                        ),
+                    );
+                }
+                preview
+            }
+        },
+    }
+}
+
 fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rect) {
     let chunks =
         Layout::horizontal([Constraint::Percentage(42), Constraint::Percentage(58)]).split(area);
+    let layer_height = app.workspace.layers.len().saturating_add(2).min(8) as u16;
+    let left =
+        Layout::vertical([Constraint::Length(layer_height), Constraint::Min(3)]).split(chunks[0]);
+    let palette = ThemePalette::for_app(app);
+    let configured = app
+        .workspace
+        .layers
+        .iter()
+        .filter(|layer| {
+            matches_metadata(
+                &app.metadata_query,
+                &[layer.name.as_str(), layer.path.to_str().unwrap_or("")],
+            )
+        })
+        .map(|layer| {
+            let relationship = layer_relationship(app, &layer.name);
+            let compatibility = relationship.map_or("?", |value| {
+                if value.compatible.is_empty() {
+                    "-"
+                } else {
+                    "yes"
+                }
+            });
+            let active = active_build_layer(app, &layer.name);
+            let style = if layer.name == browser.layer {
+                palette.selected()
+            } else if active {
+                palette.role(palette.success, Modifier::BOLD)
+            } else {
+                Style::default()
+            };
+            Row::new([
+                if active {
+                    format!("● {}", layer.name)
+                } else {
+                    format!("  {}", layer.name)
+                },
+                layer
+                    .priority
+                    .map_or_else(|| "?".into(), |priority| priority.to_string()),
+                compatibility.into(),
+            ])
+            .style(style)
+        });
     frame.render_widget(
         Table::new(
-            browser.entries.iter().enumerate().map(|(index, entry)| {
+            configured,
+            [
+                Constraint::Min(8),
+                Constraint::Length(4),
+                Constraint::Length(6),
+            ],
+        )
+        .header(Row::new(["Configured layers", "Pri", "Compat"]).style(Style::default().bold()))
+        .block(Block::default().borders(Borders::ALL)),
+        left[0],
+    );
+
+    let query = app.metadata_query.to_ascii_lowercase();
+    let entries = browser.entries.iter().enumerate().filter(|(_, entry)| {
+        query.is_empty()
+            || entry
+                .path
+                .to_string_lossy()
+                .to_ascii_lowercase()
+                .contains(&query)
+    });
+    frame.render_widget(
+        Table::new(
+            entries.map(|(index, entry)| {
                 let name = entry.path.file_name().map_or_else(
                     || entry.path.display().to_string(),
                     |name| name.to_string_lossy().into_owned(),
                 );
-                Row::new(vec![Cell::from(if entry.is_dir {
-                    format!("▸ {name}/")
+                let marker = if entry.is_dir {
+                    if browser.expanded.contains(&entry.path) {
+                        "▾"
+                    } else {
+                        "▸"
+                    }
                 } else {
-                    format!("  {name}")
-                })])
+                    " "
+                };
+                let git = match entry.git {
+                    GitFileState::Modified => " M",
+                    GitFileState::Untracked => " ?",
+                    GitFileState::Ignored => " I",
+                    GitFileState::Clean => "  ",
+                    GitFileState::Unavailable => " -",
+                };
+                let indent = "  ".repeat(entry.depth);
+                Row::new([format!(
+                    "{indent}{marker} {name}{}{git}",
+                    if entry.is_dir { "/" } else { "" }
+                )])
                 .style(selected_style(app, index == browser.selection))
             }),
             [Constraint::Min(1)],
         )
         .block(
             Block::default()
-                .title(format!(
-                    "{}: {}",
-                    browser.layer,
-                    browser.directory.strip_prefix(&browser.root).map_or_else(
-                        |_| browser.directory.display().to_string(),
-                        |path| format!("/{}", path.display())
-                    )
+                .title(metadata_title(
+                    format!(
+                        "{} tree | hidden {}",
+                        browser.layer,
+                        if browser.show_hidden { "on" } else { "off" }
+                    ),
+                    app,
                 ))
                 .borders(Borders::ALL),
         ),
-        chunks[0],
+        left[1],
     );
-    let title = browser.entries.get(browser.selection).map_or_else(
-        || "Preview".into(),
-        |entry| {
-            format!(
-                "Preview: {}",
-                entry.path.file_name().map_or_else(
-                    || entry.path.display().to_string(),
-                    |name| name.to_string_lossy().into_owned()
-                )
-            )
-        },
-    );
-    let preview = if browser
-        .entries
-        .get(browser.selection)
-        .is_some_and(|entry| entry.is_dir)
-    {
-        "Directory selected. Press Enter to open it.".into()
-    } else if browser.preview.is_empty() {
-        "Select a readable recipe, configuration, or Markdown file.".into()
-    } else {
-        browser.preview.clone()
+
+    let mode = match browser.inspector_mode {
+        LayerInspectorMode::Preview => "Preview",
+        LayerInspectorMode::Git => "Git",
+        LayerInspectorMode::Metadata => "Metadata",
+        LayerInspectorMode::Dependencies => "Dependencies",
     };
-    let selected_name = browser
-        .entries
-        .get(browser.selection)
-        .and_then(|entry| entry.path.file_name())
-        .map_or("", |name| name.to_str().unwrap_or(""));
     frame.render_widget(
-        Paragraph::new(source_preview(&preview, selected_name, app))
-            .block(Block::default().title(title).borders(Borders::ALL))
+        Paragraph::new(layer_inspector_text(app, browser))
+            .block(
+                Block::default()
+                    .title(format!("Inspector [{mode}]"))
+                    .borders(Borders::ALL),
+            )
             .wrap(Wrap { trim: false }),
         chunks[1],
     );
@@ -3445,21 +3682,33 @@ mod tests {
         assert!(output.contains("int main() {}"));
     }
     #[test]
-    fn layer_browser_renders_the_selected_file_preview() {
+    fn layer_tree_renders_configured_layers_git_state_and_numbered_preview() {
         let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Layers;
-        app.layer_browser = Some(LayerBrowser {
-            layer: "meta-demo".into(),
-            root: "/layers/meta-demo".into(),
-            directory: "/layers/meta-demo/conf".into(),
-            entries: vec![yoctui_model::LayerBrowserEntry {
-                path: "/layers/meta-demo/conf/layer.conf".into(),
-                is_dir: false,
-            }],
-            selection: 0,
-            preview: "BBFILE_COLLECTIONS += \\\"demo\\\"".into(),
+        app.workspace.layers.push(yoctui_model::Layer {
+            name: "meta-demo".into(),
+            path: "/layers/meta-demo".into(),
+            priority: Some(7),
         });
+        app.layer_relationships = Some(yoctui_model::LayerRelationships {
+            layers: vec![yoctui_model::LayerRelationship {
+                name: "meta-demo".into(),
+                compatible: vec!["scarthgap".into()],
+                ..yoctui_model::LayerRelationship::default()
+            }],
+        });
+        let mut browser = LayerBrowser::new("meta-demo".into(), "/layers/meta-demo".into());
+        browser.entries = vec![yoctui_model::LayerBrowserEntry {
+            path: "/layers/meta-demo/conf/layer.conf".into(),
+            is_dir: false,
+            size: Some(31),
+            git: yoctui_model::GitFileState::Modified,
+            ..yoctui_model::LayerBrowserEntry::default()
+        }];
+        browser.preview = "BBFILE_COLLECTIONS += \\\"demo\\\"".into();
+        browser.preview_kind = yoctui_model::PreviewKind::Text;
+        app.layer_browser = Some(browser);
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -3468,9 +3717,45 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(output.contains("meta-demo: /conf"));
+        assert!(output.contains("Configured layers"));
+        assert!(output.contains("meta-demo"));
+        assert!(output.contains("hidden off"));
         assert!(output.contains("layer.conf"));
         assert!(output.contains("BBFILE_COLLECTIONS"));
+        assert!(output.contains("M"));
+        assert!(output.contains("1"));
+    }
+
+    #[test]
+    fn layer_tree_binary_preview_and_responsive_modes_never_render_bytes() {
+        for (width, height) in [(160, 30), (110, 28), (90, 25), (70, 20)] {
+            let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+            let mut app = App::new(10, 1_000);
+            app.screen = Screen::Layers;
+            let mut browser = LayerBrowser::new("meta-binary".into(), "/layers/meta-binary".into());
+            browser.entries.push(yoctui_model::LayerBrowserEntry {
+                path: "/layers/meta-binary/image.bin".into(),
+                size: Some(100_000),
+                git: yoctui_model::GitFileState::Unavailable,
+                ..yoctui_model::LayerBrowserEntry::default()
+            });
+            browser.preview = "\0secret".into();
+            browser.preview_kind = yoctui_model::PreviewKind::Binary;
+            browser.preview_truncated = true;
+            app.layer_browser = Some(browser);
+            terminal.draw(|frame| render(frame, &app)).unwrap();
+            let output = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>();
+            assert!(!output.contains("secret"));
+            if width >= 80 && height >= 24 {
+                assert!(output.contains("Binary preview unavailable"));
+            }
+        }
     }
     #[test]
     fn bitbake_preview_highlights_assignments_and_comments() {
@@ -3527,14 +3812,15 @@ mod tests {
         assert!(output.contains("Version: 1.36"));
 
         app.screen = Screen::Layers;
-        app.layer_browser = Some(LayerBrowser {
-            layer: "meta".into(),
-            root: "/layers/meta".into(),
-            directory: "/layers/meta/conf".into(),
-            entries: vec![],
-            selection: 0,
-            preview: "BBFILE_COLLECTIONS += \"meta\"".into(),
+        let mut browser = LayerBrowser::new("meta".into(), "/layers/meta".into());
+        browser.directory = "/layers/meta/conf".into();
+        browser.entries.push(yoctui_model::LayerBrowserEntry {
+            path: "/layers/meta/conf/layer.conf".into(),
+            ..yoctui_model::LayerBrowserEntry::default()
         });
+        browser.preview = "BBFILE_COLLECTIONS += \"meta\"".into();
+        browser.preview_kind = yoctui_model::PreviewKind::Text;
+        app.layer_browser = Some(browser);
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -3543,7 +3829,7 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(output.contains("Path: /layers/meta/conf"));
+        assert!(output.contains("Path: /layers/meta/conf/layer.conf"));
         assert!(output.contains("BBFILE_COLLECTIONS"));
     }
     #[test]
