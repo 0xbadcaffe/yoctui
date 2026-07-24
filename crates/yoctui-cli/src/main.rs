@@ -1404,8 +1404,8 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 let effect = match input {
                     Input::Up => update(&mut app, Action::SelectLayerBrowserEntry { delta: -1 }),
                     Input::Down => update(&mut app, Action::SelectLayerBrowserEntry { delta: 1 }),
-                    Input::Enter => update(&mut app, Action::LayerBrowserEnter),
-                    Input::Esc => update(&mut app, Action::LayerBrowserUp),
+                    Input::Enter | Input::Right => update(&mut app, Action::LayerBrowserEnter),
+                    Input::Esc | Input::Left => update(&mut app, Action::LayerBrowserUp),
                     Input::Char('e') => update(&mut app, Action::EditSelectedLayerBrowserFile),
                     _ => None,
                 };
