@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Unified typed dialog state. Shared focus routing, responsive layouts, persistent jobs, and the first live BitBake compatibility matrix are complete.
+Built-in semantic themes. Unified dialogs, shared focus routing, responsive layouts, persistent jobs, and the first live BitBake compatibility matrix are complete.
 
 ## Current task
 
@@ -23,7 +23,7 @@ See `docs/current-task.md`.
 |---|---|---|
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
 | M1 BitBake cockpit | IN_PROGRESS | Typed background build execution and live BitBake 2.19.0 Tinfoil validation exist; remaining typed cockpit workflows are incomplete |
-| M2 Persistent workbench | IN_PROGRESS | Persistent shell and background build jobs are complete; responsive modes, palette, Tasks, preferences, and dialogs remain partial |
+| M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, and background build jobs are complete; palette, Tasks, and preferences remain partial |
 | M3 Development workbench | IN_PROGRESS | Recipes, lazy layer browsing, config provenance, and Devtool are partial; signatures and package data have not started |
 | M4 Images/SDK/QEMU/Wic | IN_PROGRESS | Image-recipe listing and build selection exist; artifact, SDK, QEMU, and Wic workflows remain |
 | M5 Testing/QA/Security | NOT_STARTED | Coverage infrastructure exists; product workflows remain |
@@ -37,7 +37,7 @@ See `docs/current-task.md`.
 | Persistent application shell | DONE | Header, Navigator, Workspace, Inspector, and Footer remain visible during builds (`fc1b1ae`, `4db7369`); breakpoint TestBackend coverage is in `88b4aa7` |
 | Responsive layouts | DONE | Wide three-pane mode, medium Inspector overlay, narrow visible pane switcher, too-small messaging, resize preservation, and all-screen boundary tests are complete |
 | Focus routing | DONE | Bidirectional pane cycling, modal input trapping, nested-modal return targets, exact pane restoration, quit cancellation, and responsive focus rendering are covered |
-| Dialogs | IN_PROGRESS | Build, image, recipe, Devtool, BBMASK, notification, and completion overlays exist; dialog state remains split across ad-hoc App fields |
+| Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |
 | Command palette | IN_PROGRESS | Ctrl+P overlay, selection, and activation exist (`457f176`); search, contextual availability, explanations, and direct tests remain |
 | Themes | IN_PROGRESS | Five built-in names and focus/selection roles exist (`88816bd`); complete semantic roles and interactive persistence remain |
 | Task animation | IN_PROGRESS | Tick-driven fast/slow indeterminate frames and reduced-motion suppression exist (`3f69c16`); direct behavior tests remain |
@@ -53,14 +53,14 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DIALOG-001` — unified typed dialog stack
-2. `PALETTE-001` — searchable contextual command palette
-3. `TASKS-001` — complete live Tasks workspace
-4. `SETTINGS-001` — interactive settings and persistence
-5. `LAYERS-001` — complete lazy layer tree and inspector
-6. `IMAGES-001` — complete image artifact workspace
-7. `DEP-001` — dependency exploration
-8. `QEMU-001` — managed QEMU workflow
+1. `THEME-001` — built-in semantic themes
+2. `SETTINGS-001` — interactive settings and persistence
+3. `ANIM-001` — complete task animation and reduced motion
+4. `PALETTE-001` — searchable contextual command palette
+5. `TASKS-001` — complete live Tasks workspace
+6. `LAYERS-001` — complete lazy layer tree and inspector
+7. `IMAGES-001` — complete image artifact workspace
+8. `DEP-001` — dependency exploration
 
 ## Rules
 

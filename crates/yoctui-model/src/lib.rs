@@ -207,6 +207,24 @@ pub struct RecipeEditor {
     pub editing: bool,
     pub dirty: bool,
 }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Dialog {
+    BuildOptions,
+    BuildCompletion,
+    BuildTarget { input: String, task: Option<String> },
+    ImagePicker(ImagePicker),
+    RecipeTaskConfirmation(BuildRequest),
+    DevtoolResetConfirmation(String),
+    DevtoolUpdateConfirmation(String),
+    DevtoolFinish { recipe: String, destination: String },
+    DevtoolFinishConfirmation(DevtoolFinishRequest),
+    DevtoolDeploy { recipe: String, target: String },
+    DevtoolDeployConfirmation(DevtoolDeployRequest),
+    BbmaskEdit { input: String },
+    BbmaskConfirmation(String),
+    RecipeEditor(RecipeEditor),
+    QuitConfirmation,
+}
 impl RecipeEditor {
     fn selected_path(&self) -> Option<PathBuf> {
         self.files
@@ -637,34 +655,15 @@ pub struct App {
     pub dependency_selection: usize,
     pub layer_relationships: Option<LayerRelationships>,
     pub layer_browser: Option<LayerBrowser>,
-    pub image_picker: Option<ImagePicker>,
+    pub dialogs: VecDeque<Dialog>,
     pub tasks: HashMap<TaskId, TaskInfo>,
     pub completed_tasks: VecDeque<CompletedTask>,
     pub task_progress_scroll: usize,
     pub logs: LogState,
     pub should_quit: bool,
-    pub quit_confirm: bool,
     pub notification: Option<String>,
     pub command_palette_open: bool,
     pub command_palette_selection: usize,
-    pub build_options_open: bool,
-    pub build_completion_open: bool,
-    pub build_target_editing: bool,
-    pub build_target_input: String,
-    pub build_task: Option<String>,
-    pub recipe_task_confirmation: Option<BuildRequest>,
-    pub devtool_reset_confirmation: Option<String>,
-    pub devtool_update_confirmation: Option<String>,
-    pub devtool_finish_recipe: Option<String>,
-    pub devtool_finish_destination: String,
-    pub devtool_finish_confirmation: Option<DevtoolFinishRequest>,
-    pub devtool_deploy_recipe: Option<String>,
-    pub devtool_deploy_target: String,
-    pub devtool_deploy_confirmation: Option<DevtoolDeployRequest>,
-    pub bbmask_editing: bool,
-    pub bbmask_input: String,
-    pub bbmask_confirmation: Option<String>,
-    pub recipe_editor: Option<RecipeEditor>,
     pub error_selection: usize,
     pub recipe_selection: usize,
     pub layer_selection: usize,
@@ -695,34 +694,15 @@ impl App {
             dependency_selection: 0,
             layer_relationships: None,
             layer_browser: None,
-            image_picker: None,
+            dialogs: VecDeque::new(),
             tasks: HashMap::new(),
             completed_tasks: VecDeque::new(),
             task_progress_scroll: 0,
             logs: LogState::new(max_entries, max_bytes),
             should_quit: false,
-            quit_confirm: false,
             notification: None,
             command_palette_open: false,
             command_palette_selection: 0,
-            build_options_open: false,
-            build_completion_open: false,
-            build_target_editing: false,
-            build_target_input: String::new(),
-            build_task: None,
-            recipe_task_confirmation: None,
-            devtool_reset_confirmation: None,
-            devtool_update_confirmation: None,
-            devtool_finish_recipe: None,
-            devtool_finish_destination: String::new(),
-            devtool_finish_confirmation: None,
-            devtool_deploy_recipe: None,
-            devtool_deploy_target: String::new(),
-            devtool_deploy_confirmation: None,
-            bbmask_editing: false,
-            bbmask_input: String::new(),
-            bbmask_confirmation: None,
-            recipe_editor: None,
             error_selection: 0,
             recipe_selection: 0,
             layer_selection: 0,
@@ -735,6 +715,12 @@ impl App {
         self.build
             .started
             .and_then(|s| SystemTime::now().duration_since(s).ok())
+    }
+    pub fn active_dialog(&self) -> Option<&Dialog> {
+        self.dialogs.front()
+    }
+    pub fn active_dialog_mut(&mut self) -> Option<&mut Dialog> {
+        self.dialogs.front_mut()
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -974,7 +960,8 @@ fn prepare_build(app: &mut App, target: Option<String>) {
     app.build.warnings = 0;
     app.build.errors = 0;
     app.build.exit_code = None;
-    app.build_completion_open = false;
+    app.dialogs
+        .retain(|dialog| !matches!(dialog, Dialog::BuildCompletion));
     app.tasks.clear();
     app.completed_tasks.clear();
     app.task_progress_scroll = 0;
@@ -988,21 +975,35 @@ fn is_pane_focus(target: FocusTarget) -> bool {
 }
 
 fn dialog_is_open(app: &App) -> bool {
-    app.recipe_editor.is_some()
-        || app.build_completion_open
-        || app.quit_confirm
-        || app.recipe_task_confirmation.is_some()
-        || app.devtool_reset_confirmation.is_some()
-        || app.devtool_update_confirmation.is_some()
-        || app.devtool_finish_recipe.is_some()
-        || app.devtool_finish_confirmation.is_some()
-        || app.devtool_deploy_recipe.is_some()
-        || app.devtool_deploy_confirmation.is_some()
-        || app.bbmask_editing
-        || app.bbmask_confirmation.is_some()
-        || app.image_picker.is_some()
-        || app.build_options_open
-        || app.build_target_editing
+    !app.dialogs.is_empty()
+}
+
+fn open_dialog(app: &mut App, dialog: Dialog) {
+    if app.dialogs.is_empty() {
+        app.dialogs.push_front(dialog);
+    }
+}
+
+fn replace_dialog(app: &mut App, dialog: Dialog) {
+    if let Some(active) = app.dialogs.front_mut() {
+        *active = dialog;
+    } else {
+        app.dialogs.push_front(dialog);
+    }
+}
+
+fn close_dialog(app: &mut App) {
+    app.dialogs.pop_front();
+}
+
+fn enqueue_build_completion(app: &mut App) {
+    if !app
+        .dialogs
+        .iter()
+        .any(|dialog| matches!(dialog, Dialog::BuildCompletion))
+    {
+        app.dialogs.push_back(Dialog::BuildCompletion);
+    }
 }
 
 fn modal_focus(app: &App) -> Option<FocusTarget> {
@@ -1092,7 +1093,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return None;
             }
             match app.command_palette_selection {
-                0 => app.build_options_open = true,
+                0 => open_dialog(app, Dialog::BuildOptions),
                 1 => app.screen = Screen::Layers,
                 2 => app.screen = Screen::Recipes,
                 3 => app.screen = Screen::Logs,
@@ -1125,10 +1126,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.focus = TARGETS[next];
         }
         Action::OpenBuildOptions => {
-            app.build_options_open = true;
+            open_dialog(app, Dialog::BuildOptions);
         }
         Action::CloseBuildOptions => {
-            app.build_options_open = false;
+            if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
+                close_dialog(app);
+            }
         }
         Action::OpenImagePicker(mut images) => {
             images.sort();
@@ -1143,11 +1146,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification =
                     Some("No image recipes were discovered in the active layers.".into());
             } else {
-                app.image_picker = Some(ImagePicker { images, selection });
+                open_dialog(app, Dialog::ImagePicker(ImagePicker { images, selection }));
             }
         }
         Action::SelectImage { delta } => {
-            if let Some(picker) = app.image_picker.as_mut() {
+            if let Some(Dialog::ImagePicker(picker)) = app.active_dialog_mut() {
                 picker.selection = if delta.is_negative() {
                     picker.selection.saturating_sub(delta.unsigned_abs())
                 } else {
@@ -1159,61 +1162,81 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::ConfirmImagePicker => {
-            if let Some(picker) = app.image_picker.take()
-                && let Some(image) = picker.images.get(picker.selection)
-            {
-                app.build.target = Some(image.clone());
+            if let Some(Dialog::ImagePicker(picker)) = app.active_dialog() {
+                let image = picker.images.get(picker.selection).cloned();
+                if let Some(image) = image {
+                    app.build.target = Some(image);
+                    close_dialog(app);
+                }
             }
         }
         Action::CancelImagePicker => {
-            app.image_picker = None;
+            if matches!(app.active_dialog(), Some(Dialog::ImagePicker(_))) {
+                close_dialog(app);
+            }
         }
         Action::BeginCurrentImageBuild => {
-            if app
-                .recipe_editor
-                .as_ref()
-                .is_some_and(|editor| editor.dirty)
-            {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::RecipeEditor(editor)) if editor.dirty
+            ) {
                 app.notification = Some("Save the edited file with Ctrl+S before building.".into());
             } else if let Some(target) = app.build.target.clone() {
-                app.recipe_editor = None;
-                app.recipe_task_confirmation = Some(BuildRequest {
-                    targets: vec![target],
-                    task: None,
-                });
+                replace_dialog(
+                    app,
+                    Dialog::RecipeTaskConfirmation(BuildRequest {
+                        targets: vec![target],
+                        task: None,
+                    }),
+                );
             } else {
                 app.notification = Some("Select an image first with i.".into());
             }
         }
         Action::BeginBuildTargetEdit => {
-            app.build_target_input = app.build.target.clone().unwrap_or_default();
-            app.build_task = None;
-            app.build_options_open = false;
-            app.build_target_editing = true;
+            replace_dialog(
+                app,
+                Dialog::BuildTarget {
+                    input: app.build.target.clone().unwrap_or_default(),
+                    task: None,
+                },
+            );
         }
         Action::BeginBuildTargetTask(task) => {
-            app.build_target_input = app.build.target.clone().unwrap_or_default();
-            app.build_task = task;
-            app.build_options_open = false;
-            app.build_target_editing = true;
+            replace_dialog(
+                app,
+                Dialog::BuildTarget {
+                    input: app.build.target.clone().unwrap_or_default(),
+                    task,
+                },
+            );
         }
-        Action::AppendBuildTarget(character) if app.build_target_editing => {
-            app.build_target_input.push(character);
+        Action::AppendBuildTarget(character) => {
+            if let Some(Dialog::BuildTarget { input, .. }) = app.active_dialog_mut() {
+                input.push(character);
+            }
         }
-        Action::BackspaceBuildTarget if app.build_target_editing => {
-            app.build_target_input.pop();
+        Action::BackspaceBuildTarget => {
+            if let Some(Dialog::BuildTarget { input, .. }) = app.active_dialog_mut() {
+                input.pop();
+            }
         }
-        Action::CancelBuildTargetEdit => app.build_target_editing = false,
-        Action::ConfirmBuildTarget if app.build_target_editing => {
-            let request = BuildRequest {
-                targets: vec![app.build_target_input.clone()],
-                task: app.build_task.clone(),
-            };
-            if let Err(error) = request.validate() {
-                app.notification = Some(error.to_string());
-            } else {
-                app.build_target_editing = false;
-                app.recipe_task_confirmation = Some(request);
+        Action::CancelBuildTargetEdit => {
+            if matches!(app.active_dialog(), Some(Dialog::BuildTarget { .. })) {
+                close_dialog(app);
+            }
+        }
+        Action::ConfirmBuildTarget => {
+            if let Some(Dialog::BuildTarget { input, task }) = app.active_dialog() {
+                let request = BuildRequest {
+                    targets: vec![input.clone()],
+                    task: task.clone(),
+                };
+                if let Err(error) = request.validate() {
+                    app.notification = Some(error.to_string());
+                } else {
+                    replace_dialog(app, Dialog::RecipeTaskConfirmation(request));
+                }
             }
         }
         Action::Start(r) => {
@@ -1384,7 +1407,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.build_history.pop_front();
             }
             app.build_history_selection = 0;
-            app.build_completion_open = true;
+            enqueue_build_completion(app);
         }
         Action::BuildCancelled { exit_code } => {
             app.build.status = BuildStatus::Cancelled;
@@ -1402,7 +1425,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.build_history.pop_front();
             }
             app.build_history_selection = 0;
-            app.build_completion_open = true;
+            enqueue_build_completion(app);
         }
         Action::BuildCancellationRejected(message) => {
             if app.build.status == BuildStatus::Cancelling {
@@ -1412,7 +1435,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 "Could not cancel the active build: {message}. The build may still be running."
             ));
         }
-        Action::DismissBuildCompletion => app.build_completion_open = false,
+        Action::DismissBuildCompletion => {
+            if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
+                close_dialog(app);
+            }
+        }
         Action::SelectBuildHistory { delta } => {
             app.build_history_selection = if delta.is_negative() {
                 app.build_history_selection
@@ -1564,38 +1591,52 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::BeginSelectedRecipeBuild => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                app.recipe_task_confirmation = Some(BuildRequest {
-                    targets: vec![recipe.name.clone()],
-                    task: None,
-                });
+                open_dialog(
+                    app,
+                    Dialog::RecipeTaskConfirmation(BuildRequest {
+                        targets: vec![recipe.name.clone()],
+                        task: None,
+                    }),
+                );
             } else {
                 app.notification = Some("No recipe is selected to build.".into());
             }
         }
         Action::BeginSelectedRecipeClean => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                app.build_target_input = recipe.name.clone();
-                app.build_task = Some("clean".into());
-                app.build_target_editing = true;
+                open_dialog(
+                    app,
+                    Dialog::BuildTarget {
+                        input: recipe.name.clone(),
+                        task: Some("clean".into()),
+                    },
+                );
             } else {
                 app.notification = Some("No recipe is selected to clean.".into());
             }
         }
         Action::BeginSelectedRecipeMenuConfig => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                app.build_target_input = recipe.name.clone();
-                app.build_task = Some("menuconfig".into());
-                app.build_target_editing = true;
+                open_dialog(
+                    app,
+                    Dialog::BuildTarget {
+                        input: recipe.name.clone(),
+                        task: Some("menuconfig".into()),
+                    },
+                );
             } else {
                 app.notification = Some("No recipe is selected for menuconfig.".into());
             }
         }
         Action::BeginSelectedRecipeCleanState => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                app.recipe_task_confirmation = Some(BuildRequest {
-                    targets: vec![recipe.name.clone()],
-                    task: Some("cleansstate".into()),
-                });
+                open_dialog(
+                    app,
+                    Dialog::RecipeTaskConfirmation(BuildRequest {
+                        targets: vec![recipe.name.clone()],
+                        task: Some("cleansstate".into()),
+                    }),
+                );
             } else {
                 app.notification = Some("No recipe is selected to clean state.".into());
             }
@@ -1624,7 +1665,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 if let Err(error) = request.validate() {
                     app.notification = Some(error.to_string());
                 } else {
-                    app.devtool_reset_confirmation = Some(recipe.name.clone());
+                    open_dialog(app, Dialog::DevtoolResetConfirmation(recipe.name.clone()));
                 }
             } else {
                 app.notification = Some("No recipe is selected for devtool reset.".into());
@@ -1632,7 +1673,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::BeginSelectedRecipeDevtoolUpdateRecipe => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                app.devtool_update_confirmation = Some(recipe.name.clone());
+                open_dialog(app, Dialog::DevtoolUpdateConfirmation(recipe.name.clone()));
             } else {
                 app.notification = Some("No recipe is selected for devtool update-recipe.".into());
             }
@@ -1644,8 +1685,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             };
             let recipe_name = recipe.name.clone();
             let layer_name = recipe.layer.clone();
-            app.devtool_finish_recipe = Some(recipe_name);
-            app.devtool_finish_destination = layer_name
+            let destination = layer_name
                 .as_deref()
                 .and_then(|layer| {
                     app.workspace
@@ -1654,11 +1694,23 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                         .find(|candidate| candidate.name == layer)
                 })
                 .map_or_else(String::new, |layer| layer.path.display().to_string());
+            open_dialog(
+                app,
+                Dialog::DevtoolFinish {
+                    recipe: recipe_name,
+                    destination,
+                },
+            );
         }
         Action::BeginSelectedRecipeDevtoolDeploy => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                app.devtool_deploy_recipe = Some(recipe.name.clone());
-                app.devtool_deploy_target.clear();
+                open_dialog(
+                    app,
+                    Dialog::DevtoolDeploy {
+                        recipe: recipe.name.clone(),
+                        target: String::new(),
+                    },
+                );
             } else {
                 app.notification = Some("No recipe is selected for devtool deploy-target.".into());
             }
@@ -1712,112 +1764,173 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::ConfirmRecipeTask => {
-            if let Some(request) = app.recipe_task_confirmation.take() {
+            if let Some(Dialog::RecipeTaskConfirmation(request)) = app.active_dialog().cloned() {
+                close_dialog(app);
                 prepare_build(app, request.targets.first().cloned());
                 synchronize_focus(app);
                 return Some(Effect::Start(request));
             }
         }
-        Action::CancelRecipeTask => app.recipe_task_confirmation = None,
+        Action::CancelRecipeTask => {
+            if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
+                close_dialog(app);
+            }
+        }
         Action::ConfirmDevtoolReset => {
-            if let Some(recipe) = app.devtool_reset_confirmation.take() {
+            if let Some(Dialog::DevtoolResetConfirmation(recipe)) = app.active_dialog().cloned() {
+                close_dialog(app);
                 synchronize_focus(app);
                 return Some(Effect::DevtoolReset(recipe));
             }
         }
-        Action::CancelDevtoolReset => app.devtool_reset_confirmation = None,
+        Action::CancelDevtoolReset => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolResetConfirmation(_))
+            ) {
+                close_dialog(app);
+            }
+        }
         Action::ConfirmDevtoolUpdateRecipe => {
-            if let Some(recipe) = app.devtool_update_confirmation.take() {
+            if let Some(Dialog::DevtoolUpdateConfirmation(recipe)) = app.active_dialog().cloned() {
+                close_dialog(app);
                 synchronize_focus(app);
                 return Some(Effect::DevtoolUpdateRecipe(recipe));
             }
         }
-        Action::CancelDevtoolUpdateRecipe => app.devtool_update_confirmation = None,
-        Action::AppendDevtoolFinishDestination(character)
-            if app.devtool_finish_recipe.is_some() =>
-        {
-            app.devtool_finish_destination.push(character);
+        Action::CancelDevtoolUpdateRecipe => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolUpdateConfirmation(_))
+            ) {
+                close_dialog(app);
+            }
         }
-        Action::BackspaceDevtoolFinishDestination if app.devtool_finish_recipe.is_some() => {
-            app.devtool_finish_destination.pop();
+        Action::AppendDevtoolFinishDestination(character) => {
+            if let Some(Dialog::DevtoolFinish { destination, .. }) = app.active_dialog_mut() {
+                destination.push(character);
+            }
         }
-        Action::PreviewDevtoolFinish if app.devtool_finish_recipe.is_some() => {
-            let destination = app.devtool_finish_destination.trim();
-            if destination.is_empty() {
-                app.notification =
-                    Some("Enter a destination layer directory for devtool finish.".into());
-            } else if let Some(recipe) = app.devtool_finish_recipe.take() {
-                app.devtool_finish_confirmation = Some(DevtoolFinishRequest {
-                    recipe,
-                    destination: PathBuf::from(destination),
-                });
+        Action::BackspaceDevtoolFinishDestination => {
+            if let Some(Dialog::DevtoolFinish { destination, .. }) = app.active_dialog_mut() {
+                destination.pop();
+            }
+        }
+        Action::PreviewDevtoolFinish => {
+            if let Some(Dialog::DevtoolFinish {
+                recipe,
+                destination,
+            }) = app.active_dialog()
+            {
+                let recipe = recipe.clone();
+                let destination = destination.trim().to_owned();
+                if destination.is_empty() {
+                    app.notification =
+                        Some("Enter a destination layer directory for devtool finish.".into());
+                } else {
+                    replace_dialog(
+                        app,
+                        Dialog::DevtoolFinishConfirmation(DevtoolFinishRequest {
+                            recipe,
+                            destination: PathBuf::from(destination),
+                        }),
+                    );
+                }
             }
         }
         Action::CancelDevtoolFinish => {
-            app.devtool_finish_recipe = None;
-            app.devtool_finish_destination.clear();
+            if matches!(app.active_dialog(), Some(Dialog::DevtoolFinish { .. })) {
+                close_dialog(app);
+            }
         }
         Action::ConfirmDevtoolFinish => {
-            if let Some(request) = app.devtool_finish_confirmation.take() {
+            if let Some(Dialog::DevtoolFinishConfirmation(request)) = app.active_dialog().cloned() {
+                close_dialog(app);
                 synchronize_focus(app);
                 return Some(Effect::DevtoolFinish(request));
             }
         }
-        Action::CancelDevtoolFinishConfirmation => app.devtool_finish_confirmation = None,
-        Action::AppendDevtoolDeployTarget(character) if app.devtool_deploy_recipe.is_some() => {
-            app.devtool_deploy_target.push(character);
+        Action::CancelDevtoolFinishConfirmation => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolFinishConfirmation(_))
+            ) {
+                close_dialog(app);
+            }
         }
-        Action::BackspaceDevtoolDeployTarget if app.devtool_deploy_recipe.is_some() => {
-            app.devtool_deploy_target.pop();
+        Action::AppendDevtoolDeployTarget(character) => {
+            if let Some(Dialog::DevtoolDeploy { target, .. }) = app.active_dialog_mut() {
+                target.push(character);
+            }
         }
-        Action::PreviewDevtoolDeploy if app.devtool_deploy_recipe.is_some() => {
-            let target = app.devtool_deploy_target.trim();
-            if target.is_empty() || target.contains(char::is_whitespace) {
-                app.notification = Some("Enter one deployment target without whitespace.".into());
-            } else if let Some(recipe) = app.devtool_deploy_recipe.take() {
-                app.devtool_deploy_confirmation = Some(DevtoolDeployRequest {
-                    recipe,
-                    target: target.into(),
-                });
+        Action::BackspaceDevtoolDeployTarget => {
+            if let Some(Dialog::DevtoolDeploy { target, .. }) = app.active_dialog_mut() {
+                target.pop();
+            }
+        }
+        Action::PreviewDevtoolDeploy => {
+            if let Some(Dialog::DevtoolDeploy { recipe, target }) = app.active_dialog() {
+                let recipe = recipe.clone();
+                let target = target.trim().to_owned();
+                if target.is_empty() || target.contains(char::is_whitespace) {
+                    app.notification =
+                        Some("Enter one deployment target without whitespace.".into());
+                } else {
+                    replace_dialog(
+                        app,
+                        Dialog::DevtoolDeployConfirmation(DevtoolDeployRequest { recipe, target }),
+                    );
+                }
             }
         }
         Action::CancelDevtoolDeploy => {
-            app.devtool_deploy_recipe = None;
-            app.devtool_deploy_target.clear();
+            if matches!(app.active_dialog(), Some(Dialog::DevtoolDeploy { .. })) {
+                close_dialog(app);
+            }
         }
         Action::ConfirmDevtoolDeploy => {
-            if let Some(request) = app.devtool_deploy_confirmation.take() {
+            if let Some(Dialog::DevtoolDeployConfirmation(request)) = app.active_dialog().cloned() {
+                close_dialog(app);
                 synchronize_focus(app);
                 return Some(Effect::DevtoolDeploy(request));
             }
         }
-        Action::CancelDevtoolDeployConfirmation => app.devtool_deploy_confirmation = None,
+        Action::CancelDevtoolDeployConfirmation => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolDeployConfirmation(_))
+            ) {
+                close_dialog(app);
+            }
+        }
         Action::OpenRecipeEditor {
             recipe,
             root,
             files,
         } => {
-            app.recipe_editor = Some(RecipeEditor {
-                recipe,
-                root,
-                files,
-                selection: 0,
-                content: String::new(),
-                editing: false,
-                dirty: false,
-            });
-            if let Some(path) = app
-                .recipe_editor
-                .as_ref()
-                .and_then(RecipeEditor::selected_path)
-            {
+            open_dialog(
+                app,
+                Dialog::RecipeEditor(RecipeEditor {
+                    recipe,
+                    root,
+                    files,
+                    selection: 0,
+                    content: String::new(),
+                    editing: false,
+                    dirty: false,
+                }),
+            );
+            if let Some(path) = app.active_dialog().and_then(|dialog| match dialog {
+                Dialog::RecipeEditor(editor) => editor.selected_path(),
+                _ => None,
+            }) {
                 synchronize_focus(app);
                 return Some(Effect::LoadRecipeEditorFile(path));
             }
             app.notification = Some("The Devtool workspace contains no editable files.".into());
         }
         Action::SelectRecipeEditorFile { delta } => {
-            let path = if let Some(editor) = app.recipe_editor.as_mut() {
+            let path = if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
                 if editor.dirty {
                     app.notification =
                         Some("Save changes with Ctrl+S before selecting another file.".into());
@@ -1841,19 +1954,19 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::LoadRecipeEditorContent(content) => {
-            if let Some(editor) = app.recipe_editor.as_mut() {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
                 editor.content = content;
                 editor.editing = false;
                 editor.dirty = false;
             }
         }
         Action::ToggleRecipeEditorEditing => {
-            if let Some(editor) = app.recipe_editor.as_mut() {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
                 editor.editing = !editor.editing;
             }
         }
         Action::AppendRecipeEditor(character) => {
-            if let Some(editor) = app.recipe_editor.as_mut()
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut()
                 && editor.editing
             {
                 editor.content.push(character);
@@ -1861,7 +1974,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::BackspaceRecipeEditor => {
-            if let Some(editor) = app.recipe_editor.as_mut()
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut()
                 && editor.editing
             {
                 editor.content.pop();
@@ -1869,7 +1982,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::SaveRecipeEditor => {
-            if let Some(editor) = app.recipe_editor.as_ref()
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog()
                 && editor.dirty
                 && let Some(path) = editor.selected_path()
             {
@@ -1880,12 +1993,16 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::RecipeEditorSaved => {
-            if let Some(editor) = app.recipe_editor.as_mut() {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
                 editor.dirty = false;
                 app.notification = Some("Recipe file saved. Press Esc to return to Yoctui.".into());
             }
         }
-        Action::CloseRecipeEditor => app.recipe_editor = None,
+        Action::CloseRecipeEditor => {
+            if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
+                close_dialog(app);
+            }
+        }
         Action::SelectLayer { delta } => {
             app.layer_selection = if delta.is_negative() {
                 app.layer_selection.saturating_sub(delta.unsigned_abs())
@@ -2070,34 +2187,50 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::BeginBbmaskEdit => {
-            app.bbmask_input = app
+            let input = app
                 .workspace
                 .variables
                 .get("BBMASK")
                 .cloned()
                 .unwrap_or_default();
-            app.bbmask_editing = true;
+            open_dialog(app, Dialog::BbmaskEdit { input });
         }
-        Action::AppendBbmask(character) if app.bbmask_editing => app.bbmask_input.push(character),
-        Action::BackspaceBbmask if app.bbmask_editing => {
-            app.bbmask_input.pop();
-        }
-        Action::PreviewBbmaskEdit if app.bbmask_editing => {
-            if app.bbmask_input.contains(['\n', '\r']) {
-                app.notification = Some("BBMASK must be entered on one line.".into());
-            } else {
-                app.bbmask_confirmation = Some(app.bbmask_input.clone());
-                app.bbmask_editing = false;
+        Action::AppendBbmask(character) => {
+            if let Some(Dialog::BbmaskEdit { input }) = app.active_dialog_mut() {
+                input.push(character);
             }
         }
-        Action::CancelBbmaskEdit => app.bbmask_editing = false,
+        Action::BackspaceBbmask => {
+            if let Some(Dialog::BbmaskEdit { input }) = app.active_dialog_mut() {
+                input.pop();
+            }
+        }
+        Action::PreviewBbmaskEdit => {
+            if let Some(Dialog::BbmaskEdit { input }) = app.active_dialog() {
+                if input.contains(['\n', '\r']) {
+                    app.notification = Some("BBMASK must be entered on one line.".into());
+                } else {
+                    replace_dialog(app, Dialog::BbmaskConfirmation(input.clone()));
+                }
+            }
+        }
+        Action::CancelBbmaskEdit => {
+            if matches!(app.active_dialog(), Some(Dialog::BbmaskEdit { .. })) {
+                close_dialog(app);
+            }
+        }
         Action::ConfirmBbmaskWrite => {
-            if let Some(value) = app.bbmask_confirmation.take() {
+            if let Some(Dialog::BbmaskConfirmation(value)) = app.active_dialog().cloned() {
+                close_dialog(app);
                 synchronize_focus(app);
                 return Some(Effect::WriteBbmask(value));
             }
         }
-        Action::CancelBbmaskWrite => app.bbmask_confirmation = None,
+        Action::CancelBbmaskWrite => {
+            if matches!(app.active_dialog(), Some(Dialog::BbmaskConfirmation(_))) {
+                close_dialog(app);
+            }
+        }
         Action::BeginMetadataSearch => app.metadata_searching = true,
         Action::AppendMetadataQuery(character) if app.metadata_searching => {
             app.metadata_query.push(character);
@@ -2116,20 +2249,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BackspaceLogQuery
         | Action::NextLogMatch
         | Action::PreviousLogMatch
-        | Action::AppendBuildTarget(_)
-        | Action::BackspaceBuildTarget
-        | Action::ConfirmBuildTarget
         | Action::AppendMetadataQuery(_)
-        | Action::BackspaceMetadataQuery
-        | Action::AppendBbmask(_)
-        | Action::BackspaceBbmask
-        | Action::PreviewBbmaskEdit
-        | Action::AppendDevtoolFinishDestination(_)
-        | Action::BackspaceDevtoolFinishDestination
-        | Action::PreviewDevtoolFinish
-        | Action::AppendDevtoolDeployTarget(_)
-        | Action::BackspaceDevtoolDeployTarget
-        | Action::PreviewDevtoolDeploy => {}
+        | Action::BackspaceMetadataQuery => {}
         Action::Notify(message) => app.notification = Some(message),
         Action::DismissNotification => app.notification = None,
         Action::Quit => {
@@ -2137,13 +2258,21 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.build.status,
                 BuildStatus::Running | BuildStatus::Parsing | BuildStatus::Cancelling
             ) {
-                app.quit_confirm = true
+                open_dialog(app, Dialog::QuitConfirmation)
             } else {
                 app.should_quit = true
             }
         }
-        Action::ConfirmQuit => app.should_quit = true,
-        Action::CancelQuit => app.quit_confirm = false,
+        Action::ConfirmQuit => {
+            if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
+                app.should_quit = true;
+            }
+        }
+        Action::CancelQuit => {
+            if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
+                close_dialog(app);
+            }
+        }
         Action::WorkspaceLoaded(w) => app.workspace = w,
         Action::HostTelemetryUpdated(telemetry) => app.host_telemetry = telemetry,
         Action::Failure(e) => {
@@ -2609,8 +2738,10 @@ mod tests {
         assert_eq!(app.focus_return, Some(FocusTarget::Inspector));
 
         let _ = update(&mut app, Action::BeginBuildTargetEdit);
-        assert!(!app.build_options_open);
-        assert!(app.build_target_editing);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::BuildTarget { .. })
+        ));
         assert_eq!(app.focus, FocusTarget::Dialog);
         assert_eq!(app.focus_return, Some(FocusTarget::Inspector));
 
@@ -2637,7 +2768,7 @@ mod tests {
         assert_eq!(app.focus, FocusTarget::CommandPalette);
 
         let _ = update(&mut app, Action::ActivateCommandPalette);
-        assert!(app.build_options_open);
+        assert!(matches!(app.active_dialog(), Some(Dialog::BuildOptions)));
         assert_eq!(app.focus, FocusTarget::Dialog);
         assert_eq!(app.focus_return, Some(FocusTarget::Navigator));
         let _ = update(&mut app, Action::CloseBuildOptions);
@@ -2655,7 +2786,7 @@ mod tests {
                 exit_code: Some(0),
             },
         );
-        assert!(app.build_completion_open);
+        assert!(matches!(app.active_dialog(), Some(Dialog::BuildCompletion)));
         assert_eq!(app.focus, FocusTarget::CommandPalette);
 
         let _ = update(&mut app, Action::CloseCommandPalette);
@@ -2664,18 +2795,61 @@ mod tests {
         assert_eq!(app.focus, FocusTarget::Inspector);
     }
     #[test]
+    fn dialog_completion_queues_behind_active_dialog_and_restores_focus_after_both_close() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Navigator;
+        let _ = update(&mut app, Action::OpenBuildOptions);
+        let _ = update(
+            &mut app,
+            Action::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        );
+
+        assert_eq!(
+            app.dialogs.iter().collect::<Vec<_>>(),
+            vec![&Dialog::BuildOptions, &Dialog::BuildCompletion]
+        );
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        let _ = update(&mut app, Action::DismissBuildCompletion);
+        assert_eq!(app.dialogs.len(), 2, "only the active dialog may dismiss");
+
+        let _ = update(&mut app, Action::CloseBuildOptions);
+        assert!(matches!(app.active_dialog(), Some(Dialog::BuildCompletion)));
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        let _ = update(&mut app, Action::DismissBuildCompletion);
+        assert!(app.dialogs.is_empty());
+        assert_eq!(app.focus, FocusTarget::Navigator);
+    }
+    #[test]
+    fn dialog_invalid_actions_leave_active_state_unchanged() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::OpenBuildOptions);
+        let original = app.clone();
+
+        assert_eq!(update(&mut app, Action::ConfirmDevtoolReset), None);
+        let _ = update(&mut app, Action::AppendBbmask('x'));
+        let _ = update(&mut app, Action::CancelImagePicker);
+
+        assert_eq!(app, original);
+    }
+    #[test]
     fn focus_quit_confirmation_traps_and_restores() {
         let mut app = App::new(10, 1_000);
         app.focus = FocusTarget::Navigator;
         app.build.status = BuildStatus::Running;
         let _ = update(&mut app, Action::Quit);
-        assert!(app.quit_confirm);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::QuitConfirmation)
+        ));
         assert_eq!(app.focus, FocusTarget::Dialog);
 
         let _ = update(&mut app, Action::Open(Screen::Logs));
         assert_eq!(app.screen, Screen::Dashboard);
         let _ = update(&mut app, Action::CancelQuit);
-        assert!(!app.quit_confirm);
+        assert!(app.active_dialog().is_none());
         assert_eq!(app.focus, FocusTarget::Navigator);
     }
     #[test]
@@ -2918,11 +3092,11 @@ mod tests {
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
         assert_eq!(
-            app.recipe_task_confirmation,
-            Some(BuildRequest {
+            app.active_dialog(),
+            Some(&Dialog::RecipeTaskConfirmation(BuildRequest {
                 targets: vec!["busybox".into()],
                 task: None,
-            })
+            }))
         );
     }
     #[test]
@@ -2934,8 +3108,11 @@ mod tests {
             layer: None,
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeClean);
-        assert_eq!(app.build_target_input, "busybox");
-        assert_eq!(app.build_task.as_deref(), Some("clean"));
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::BuildTarget { input, task })
+                if input == "busybox" && task.as_deref() == Some("clean")
+        ));
     }
     #[test]
     fn selected_recipe_menuconfig_prefills_the_menuconfig_task() {
@@ -2946,8 +3123,11 @@ mod tests {
             layer: None,
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeMenuConfig);
-        assert_eq!(app.build_target_input, "busybox");
-        assert_eq!(app.build_task.as_deref(), Some("menuconfig"));
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::BuildTarget { input, task })
+                if input == "busybox" && task.as_deref() == Some("menuconfig")
+        ));
     }
     #[test]
     fn selected_recipe_requests_devtool_modification() {
@@ -3006,7 +3186,10 @@ mod tests {
             update(&mut app, Action::BeginSelectedRecipeDevtoolReset),
             None
         );
-        assert_eq!(app.devtool_reset_confirmation.as_deref(), Some("busybox"));
+        assert_eq!(
+            app.active_dialog(),
+            Some(&Dialog::DevtoolResetConfirmation("busybox".into()))
+        );
         assert_eq!(
             update(&mut app, Action::ConfirmDevtoolReset),
             Some(Effect::DevtoolReset("busybox".into()))
@@ -3024,7 +3207,10 @@ mod tests {
             update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe),
             None
         );
-        assert_eq!(app.devtool_update_confirmation.as_deref(), Some("busybox"));
+        assert_eq!(
+            app.active_dialog(),
+            Some(&Dialog::DevtoolUpdateConfirmation("busybox".into()))
+        );
         assert_eq!(
             update(&mut app, Action::ConfirmDevtoolUpdateRecipe),
             Some(Effect::DevtoolUpdateRecipe("busybox".into()))
@@ -3044,8 +3230,13 @@ mod tests {
             layer: Some("meta-demo".into()),
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolFinish);
-        assert_eq!(app.devtool_finish_recipe.as_deref(), Some("busybox"));
-        assert_eq!(app.devtool_finish_destination, "/layers/meta-demo");
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::DevtoolFinish {
+                recipe,
+                destination
+            }) if recipe == "busybox" && destination == "/layers/meta-demo"
+        ));
         let _ = update(&mut app, Action::PreviewDevtoolFinish);
         assert_eq!(
             update(&mut app, Action::ConfirmDevtoolFinish),
@@ -3115,7 +3306,10 @@ mod tests {
             layer: None,
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeCleanState);
-        assert!(app.recipe_task_confirmation.is_some());
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::RecipeTaskConfirmation(_))
+        ));
         assert_eq!(app.build.status, BuildStatus::Idle);
 
         assert_eq!(
@@ -3314,14 +3508,13 @@ mod tests {
         }
         let effect = update(&mut app, Action::ConfirmBuildTarget);
 
-        assert!(!app.build_target_editing);
         assert_eq!(effect, None);
         assert_eq!(
-            app.recipe_task_confirmation,
-            Some(BuildRequest {
+            app.active_dialog(),
+            Some(&Dialog::RecipeTaskConfirmation(BuildRequest {
                 targets: vec!["core-image-minimal".into()],
                 task: None,
-            })
+            }))
         );
     }
     #[test]
@@ -3336,11 +3529,11 @@ mod tests {
         assert_eq!(app.build.target.as_deref(), Some("core-image-minimal"));
         let _ = update(&mut app, Action::BeginCurrentImageBuild);
         assert_eq!(
-            app.recipe_task_confirmation,
-            Some(BuildRequest {
+            app.active_dialog(),
+            Some(&Dialog::RecipeTaskConfirmation(BuildRequest {
                 targets: vec!["core-image-minimal".into()],
                 task: None,
-            })
+            }))
         );
     }
     #[test]
@@ -3354,9 +3547,9 @@ mod tests {
                 exit_code: Some(0),
             },
         );
-        assert!(app.build_completion_open);
+        assert!(matches!(app.active_dialog(), Some(Dialog::BuildCompletion)));
         let _ = update(&mut app, Action::DismissBuildCompletion);
-        assert!(!app.build_completion_open);
+        assert!(app.active_dialog().is_none());
     }
     #[test]
     fn build_options_prefill_the_current_target_and_requested_task() {
@@ -3364,14 +3557,15 @@ mod tests {
         app.build.target = Some("core-image-minimal".into());
 
         let _ = update(&mut app, Action::OpenBuildOptions);
-        assert!(app.build_options_open);
+        assert!(matches!(app.active_dialog(), Some(Dialog::BuildOptions)));
         assert_eq!(app.focus, FocusTarget::Dialog);
         let _ = update(&mut app, Action::BeginBuildTargetTask(Some("clean".into())));
 
-        assert!(!app.build_options_open);
-        assert!(app.build_target_editing);
-        assert_eq!(app.build_target_input, "core-image-minimal");
-        assert_eq!(app.build_task.as_deref(), Some("clean"));
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::BuildTarget { input, task })
+                if input == "core-image-minimal" && task.as_deref() == Some("clean")
+        ));
     }
     #[test]
     fn updates_host_telemetry() {
@@ -3390,13 +3584,19 @@ mod tests {
             .variables
             .insert("BBMASK".into(), "meta-old/.*".into());
         let _ = update(&mut app, Action::BeginBbmaskEdit);
-        assert!(app.bbmask_editing);
-        assert_eq!(app.bbmask_input, "meta-old/.*");
+        assert_eq!(
+            app.active_dialog(),
+            Some(&Dialog::BbmaskEdit {
+                input: "meta-old/.*".into()
+            })
+        );
         let _ = update(&mut app, Action::AppendBbmask(' '));
         let _ = update(&mut app, Action::AppendBbmask('x'));
         let _ = update(&mut app, Action::PreviewBbmaskEdit);
-        assert!(!app.bbmask_editing);
-        assert_eq!(app.bbmask_confirmation.as_deref(), Some("meta-old/.* x"));
+        assert_eq!(
+            app.active_dialog(),
+            Some(&Dialog::BbmaskConfirmation("meta-old/.* x".into()))
+        );
         assert_eq!(
             update(&mut app, Action::ConfirmBbmaskWrite),
             Some(Effect::WriteBbmask("meta-old/.* x".into()))
@@ -3417,7 +3617,7 @@ mod tests {
         let mut a = App::new(2, 10);
         a.build.status = BuildStatus::Running;
         update(&mut a, Action::Quit);
-        assert!(a.quit_confirm);
+        assert!(matches!(a.active_dialog(), Some(Dialog::QuitConfirmation)));
         assert!(!a.should_quit)
     }
     #[test]

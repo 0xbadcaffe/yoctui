@@ -184,6 +184,11 @@ Rules:
   modal restores it
 - pane navigation and workspace activation actions are ignored while modal
   focus is trapped
+- exactly one typed dialog is active: the front of the retained dialog queue
+- a dialog workflow may replace its active variant while preserving the
+  original pane return target
+- asynchronous completion arriving while a user dialog is active is queued
+  and shown after that dialog closes; it never interrupts or discards input
 - inactive panes remain visible but use subdued styling
 - focus must be visibly obvious in every theme
 
@@ -832,6 +837,9 @@ Common rules:
 - unavailable submit action explains why
 - long-running dialog actions become background jobs
 - dialogs must not block backend event consumption
+- only the active typed dialog receives input or renders
+- invalid actions for the active dialog leave it unchanged
+- asynchronous result dialogs retain FIFO order behind an active user dialog
 
 ---
 

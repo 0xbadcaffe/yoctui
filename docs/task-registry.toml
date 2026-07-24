@@ -75,12 +75,12 @@ notes = "Central focus synchronization records and restores the exact pane acros
 id = "DIALOG-001"
 milestone = "M2"
 title = "Unified typed dialog stack"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 13
 required = true
 depends_on = ["FOCUS-001"]
-verify = ["cargo test -p yoctui-model dialog", "cargo test -p yoctui-ui dialog"]
-notes = "Build, image, recipe, Devtool, BBMASK, notification, and completion overlays exist with confirmation tests. They remain ad-hoc App fields rather than one typed dialog stack."
+verify = ["cargo test -p yoctui-model dialog", "cargo test -p yoctui-app dialog", "cargo test -p yoctui-ui dialog", "cargo test -p yoctui -- dialog"]
+notes = "One typed FIFO dialog queue now owns build, image, recipe, Devtool, BBMASK, editor, quit, and completion state. Explicit reducer transitions, invalid-action preservation, exact focus restoration, retained asynchronous completion, CLI routing, and narrow TestBackend coverage are complete in this commit."
 
 [[task]]
 id = "THEME-001"

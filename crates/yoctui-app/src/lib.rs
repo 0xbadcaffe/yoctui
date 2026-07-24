@@ -663,7 +663,7 @@ mod tests {
         );
     }
     #[test]
-    fn focus_navigation_keys_are_typed_before_cli_routing() {
+    fn dialog_focus_navigation_keys_are_typed_before_cli_routing() {
         assert_eq!(
             key_action(Input::Tab),
             Some(Action::CycleFocus { backwards: false })

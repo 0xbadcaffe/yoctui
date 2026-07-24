@@ -78,7 +78,7 @@ Owns:
 - keyboard and mouse input mapping
 - effect orchestration
 - background-job execution
-- dialogs and confirmations
+- dialog input routing and confirmation effect orchestration
 - configuration/session coordination
 - editor and inherited-shell launch coordination
 
@@ -184,6 +184,16 @@ Indeterminate activity must never imply false numeric progress.
 ## Dialog architecture
 
 Dialogs are typed model values, not ad-hoc widget-local state.
+
+`yoctui-model::App` owns a FIFO dialog queue. The front value is the only
+active dialog and carries every field required by that workflow. Reducer
+actions explicitly open, replace, confirm, cancel, or dismiss that value.
+Asynchronous completion can enqueue behind an active user dialog, so backend
+events never interrupt or discard in-progress input.
+
+`yoctui-app` maps input for the active variant and executes returned effects.
+`yoctui-ui` renders only the active variant. Neither layer establishes its own
+dialog precedence or mutates dialog state directly.
 
 Each dialog defines:
 

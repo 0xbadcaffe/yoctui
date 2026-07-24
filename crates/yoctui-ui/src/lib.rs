@@ -5,7 +5,7 @@ use ratatui::{
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 use yoctui_model::{
-    App, FocusTarget, LayerBrowser, RecipeEditor, Screen, Severity, Theme, format_duration,
+    App, Dialog, FocusTarget, LayerBrowser, RecipeEditor, Screen, Severity, Theme, format_duration,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -304,9 +304,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         Paragraph::new(footer_shortcuts(app)).style(footer_style),
         chunks[2],
     );
-    if let Some(editor) = app.recipe_editor.as_ref() {
-        recipe_editor(frame, app, editor, area);
-    } else if app.command_palette_open {
+    if app.command_palette_open {
         let commands = [
             "Build image",
             "Open Layers",
@@ -349,9 +347,11 @@ pub fn render(frame: &mut Frame, app: &App) {
             ),
             popup,
         );
-    } else if app.build_completion_open {
+    } else if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() {
+        recipe_editor(frame, app, editor, area);
+    } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);
-    } else if app.quit_confirm {
+    } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 3);
         frame.render_widget(Clear, popup);
         frame.render_widget(
@@ -359,7 +359,7 @@ pub fn render(frame: &mut Frame, app: &App) {
                 .block(Block::default().title("Confirm quit").borders(Borders::ALL)),
             popup,
         )
-    } else if let Some(request) = app.recipe_task_confirmation.as_ref() {
+    } else if let Some(Dialog::RecipeTaskConfirmation(request)) = app.active_dialog() {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
         frame.render_widget(Clear, popup);
         frame.render_widget(
@@ -379,7 +379,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: true }),
             popup,
         );
-    } else if let Some(recipe) = app.devtool_reset_confirmation.as_deref() {
+    } else if let Some(Dialog::DevtoolResetConfirmation(recipe)) = app.active_dialog() {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
         frame.render_widget(Clear, popup);
         frame.render_widget(
@@ -394,7 +394,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: true }),
             popup,
         );
-    } else if let Some(recipe) = app.devtool_update_confirmation.as_deref() {
+    } else if let Some(Dialog::DevtoolUpdateConfirmation(recipe)) = app.active_dialog() {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
         frame.render_widget(Clear, popup);
         frame.render_widget(
@@ -409,7 +409,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: true }),
             popup,
         );
-    } else if let Some(request) = app.devtool_finish_confirmation.as_ref() {
+    } else if let Some(Dialog::DevtoolFinishConfirmation(request)) = app.active_dialog() {
         let width = area.width.saturating_sub(12).clamp(44, 100);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
@@ -432,7 +432,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: true }),
             popup,
         );
-    } else if let Some(request) = app.devtool_deploy_confirmation.as_ref() {
+    } else if let Some(Dialog::DevtoolDeployConfirmation(request)) = app.active_dialog() {
         let width = area.width.saturating_sub(12).clamp(44, 100);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
@@ -454,7 +454,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: true }),
             popup,
         );
-    } else if let Some(recipe) = app.devtool_deploy_recipe.as_deref() {
+    } else if let Some(Dialog::DevtoolDeploy { recipe, target }) = app.active_dialog() {
         let width = area.width.saturating_sub(12).clamp(44, 100);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
@@ -466,7 +466,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         frame.render_widget(
             Paragraph::new(format!(
                 "Recipe: {recipe}\nDeployment target: {}_\n\nEnter previews the command; Esc cancels.",
-                app.devtool_deploy_target
+                target
             ))
             .block(
                 Block::default()
@@ -476,7 +476,11 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: false }),
             popup,
         );
-    } else if let Some(recipe) = app.devtool_finish_recipe.as_deref() {
+    } else if let Some(Dialog::DevtoolFinish {
+        recipe,
+        destination,
+    }) = app.active_dialog()
+    {
         let width = area.width.saturating_sub(12).clamp(44, 100);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
@@ -488,7 +492,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         frame.render_widget(
             Paragraph::new(format!(
                 "Recipe: {recipe}\nDestination layer: {}_\n\nEnter previews the command; Esc cancels.",
-                app.devtool_finish_destination
+                destination
             ))
             .block(
                 Block::default()
@@ -498,7 +502,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: false }),
             popup,
         );
-    } else if let Some(value) = app.bbmask_confirmation.as_deref() {
+    } else if let Some(Dialog::BbmaskConfirmation(value)) = app.active_dialog() {
         let width = area.width.saturating_sub(12).clamp(40, 96);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
@@ -516,7 +520,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: false }),
             popup,
         );
-    } else if app.bbmask_editing {
+    } else if let Some(Dialog::BbmaskEdit { input }) = app.active_dialog() {
         let width = area.width.saturating_sub(12).clamp(40, 96);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
@@ -528,7 +532,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         frame.render_widget(
             Paragraph::new(format!(
                 "BBMASK: {}_\n\nEnter previews the exact local.conf assignment; Esc cancels.",
-                app.bbmask_input
+                input
             ))
             .block(
                 Block::default()
@@ -538,7 +542,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: false }),
             popup,
         );
-    } else if let Some(picker) = app.image_picker.as_ref() {
+    } else if let Some(Dialog::ImagePicker(picker)) = app.active_dialog() {
         let width = area.width.saturating_sub(24).clamp(42, 90);
         let height = area.height.saturating_sub(8).clamp(10, 24);
         let popup = Rect::new(
@@ -574,7 +578,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: false }),
             popup,
         );
-    } else if app.build_options_open {
+    } else if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
         let machine = app
             .workspace
             .variables
@@ -596,7 +600,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             .block(Block::default().title("Image build options").borders(Borders::ALL)),
             popup,
         );
-    } else if app.build_target_editing {
+    } else if let Some(Dialog::BuildTarget { input, task }) = app.active_dialog() {
         let width = area.width.saturating_sub(12).clamp(30, 80);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
@@ -608,8 +612,8 @@ pub fn render(frame: &mut Frame, app: &App) {
         frame.render_widget(
             Paragraph::new(format!(
                 "Target: {}_\nTask: {}\n\nEnter starts the build; Esc cancels.",
-                app.build_target_input,
-                app.build_task.as_deref().unwrap_or("default")
+                input,
+                task.as_deref().unwrap_or("default")
             ))
             .block(Block::default().title("Build target").borders(Borders::ALL)),
             popup,
@@ -2093,7 +2097,7 @@ mod tests {
         }
 
         let mut build_options = App::new(10, 1_000);
-        build_options.build_options_open = true;
+        build_options.dialogs.push_back(Dialog::BuildOptions);
         build_options.focus = FocusTarget::Dialog;
         let _ = rendered_text(&build_options, 80, 24);
 
@@ -2103,12 +2107,109 @@ mod tests {
         let _ = rendered_text(&palette, 80, 24);
 
         let mut confirmation = App::new(10, 1_000);
-        confirmation.recipe_task_confirmation = Some(BuildRequest {
-            targets: vec!["base-files".into()],
-            task: Some("listtasks".into()),
-        });
+        confirmation
+            .dialogs
+            .push_back(Dialog::RecipeTaskConfirmation(BuildRequest {
+                targets: vec!["base-files".into()],
+                task: Some("listtasks".into()),
+            }));
         confirmation.focus = FocusTarget::Dialog;
         let _ = rendered_text(&confirmation, 80, 24);
+    }
+    #[test]
+    fn dialog_families_render_on_narrow_supported_terminals() {
+        let dialogs = vec![
+            (Dialog::BuildOptions, "Image build options"),
+            (Dialog::BuildCompletion, "Build finished"),
+            (
+                Dialog::BuildTarget {
+                    input: "busybox".into(),
+                    task: None,
+                },
+                "Build target",
+            ),
+            (
+                Dialog::ImagePicker(yoctui_model::ImagePicker {
+                    images: vec!["core-image-minimal".into()],
+                    selection: 0,
+                }),
+                "Available image targets",
+            ),
+            (
+                Dialog::RecipeTaskConfirmation(BuildRequest {
+                    targets: vec!["busybox".into()],
+                    task: None,
+                }),
+                "Confirm recipe task",
+            ),
+            (
+                Dialog::DevtoolResetConfirmation("busybox".into()),
+                "Confirm Devtool reset",
+            ),
+            (
+                Dialog::DevtoolUpdateConfirmation("busybox".into()),
+                "Confirm Devtool update-recipe",
+            ),
+            (
+                Dialog::DevtoolFinish {
+                    recipe: "busybox".into(),
+                    destination: "/layers/meta".into(),
+                },
+                "Devtool finish destination",
+            ),
+            (
+                Dialog::DevtoolFinishConfirmation(yoctui_model::DevtoolFinishRequest {
+                    recipe: "busybox".into(),
+                    destination: "/layers/meta".into(),
+                }),
+                "Confirm Devtool finish",
+            ),
+            (
+                Dialog::DevtoolDeploy {
+                    recipe: "busybox".into(),
+                    target: "qemu".into(),
+                },
+                "Devtool deploy target",
+            ),
+            (
+                Dialog::DevtoolDeployConfirmation(yoctui_model::DevtoolDeployRequest {
+                    recipe: "busybox".into(),
+                    target: "qemu".into(),
+                }),
+                "Confirm Devtool deploy-target",
+            ),
+            (
+                Dialog::BbmaskEdit {
+                    input: "meta-old/.*".into(),
+                },
+                "Edit effective BBMASK",
+            ),
+            (
+                Dialog::BbmaskConfirmation("meta-old/.*".into()),
+                "Confirm BBMASK change",
+            ),
+            (
+                Dialog::RecipeEditor(RecipeEditor {
+                    recipe: "busybox".into(),
+                    root: "/workspace/busybox".into(),
+                    files: vec!["main.c".into()],
+                    selection: 0,
+                    content: "int main() {}".into(),
+                    editing: false,
+                    dirty: false,
+                }),
+                "Workspace file tree",
+            ),
+            (Dialog::QuitConfirmation, "Confirm quit"),
+        ];
+
+        for (dialog, title) in dialogs {
+            let mut app = App::new(10, 1_000);
+            app.build.status = yoctui_model::BuildStatus::Completed;
+            app.dialogs.push_back(dialog);
+            let output = rendered_text(&app, 80, 24);
+            assert!(output.contains(title), "missing {title} in narrow dialog");
+        }
     }
     #[test]
     fn dialog_focus_is_trapped_then_visibly_restored_to_inspector() {
@@ -2353,8 +2454,10 @@ mod tests {
     fn renders_build_target_editor() {
         let mut terminal = Terminal::new(TestBackend::new(140, 30)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.build_target_editing = true;
-        app.build_target_input = "core-image-minimal".into();
+        app.dialogs.push_back(Dialog::BuildTarget {
+            input: "core-image-minimal".into(),
+            task: None,
+        });
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -2370,7 +2473,7 @@ mod tests {
     fn renders_machine_aware_build_options() {
         let mut terminal = Terminal::new(TestBackend::new(140, 30)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.build_options_open = true;
+        app.dialogs.push_back(Dialog::BuildOptions);
         app.build.target = Some("core-image-minimal".into());
         app.workspace
             .variables
@@ -2409,10 +2512,11 @@ mod tests {
     fn renders_recipe_task_confirmation() {
         let mut terminal = Terminal::new(TestBackend::new(140, 30)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.recipe_task_confirmation = Some(BuildRequest {
-            targets: vec!["busybox".into()],
-            task: Some("cleansstate".into()),
-        });
+        app.dialogs
+            .push_back(Dialog::RecipeTaskConfirmation(BuildRequest {
+                targets: vec!["busybox".into()],
+                task: Some("cleansstate".into()),
+            }));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -2428,7 +2532,8 @@ mod tests {
     fn renders_devtool_reset_confirmation() {
         let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.devtool_reset_confirmation = Some("busybox".into());
+        app.dialogs
+            .push_back(Dialog::DevtoolResetConfirmation("busybox".into()));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -2444,7 +2549,8 @@ mod tests {
     fn renders_devtool_update_recipe_confirmation() {
         let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.devtool_update_confirmation = Some("busybox".into());
+        app.dialogs
+            .push_back(Dialog::DevtoolUpdateConfirmation("busybox".into()));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -2460,10 +2566,12 @@ mod tests {
     fn renders_devtool_finish_confirmation() {
         let mut terminal = Terminal::new(TestBackend::new(120, 25)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.devtool_finish_confirmation = Some(yoctui_model::DevtoolFinishRequest {
-            recipe: "busybox".into(),
-            destination: "/layers/meta-demo".into(),
-        });
+        app.dialogs.push_back(Dialog::DevtoolFinishConfirmation(
+            yoctui_model::DevtoolFinishRequest {
+                recipe: "busybox".into(),
+                destination: "/layers/meta-demo".into(),
+            },
+        ));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -2479,10 +2587,12 @@ mod tests {
     fn renders_devtool_deploy_confirmation() {
         let mut terminal = Terminal::new(TestBackend::new(120, 25)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.devtool_deploy_confirmation = Some(yoctui_model::DevtoolDeployRequest {
-            recipe: "busybox".into(),
-            target: "qemuarm".into(),
-        });
+        app.dialogs.push_back(Dialog::DevtoolDeployConfirmation(
+            yoctui_model::DevtoolDeployRequest {
+                recipe: "busybox".into(),
+                target: "qemuarm".into(),
+            },
+        ));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -2498,7 +2608,7 @@ mod tests {
     fn renders_recipe_editor_overlay() {
         let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.recipe_editor = Some(RecipeEditor {
+        app.dialogs.push_back(Dialog::RecipeEditor(RecipeEditor {
             recipe: "busybox".into(),
             root: "/build/workspace/sources/busybox".into(),
             files: vec!["main.c".into()],
@@ -2506,7 +2616,7 @@ mod tests {
             content: "int main() {}".into(),
             editing: false,
             dirty: false,
-        });
+        }));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -2561,10 +2671,11 @@ mod tests {
         app.workspace
             .variables
             .insert("MACHINE".into(), "qemux86-64".into());
-        app.image_picker = Some(yoctui_model::ImagePicker {
-            images: vec!["core-image-minimal".into()],
-            selection: 0,
-        });
+        app.dialogs
+            .push_back(Dialog::ImagePicker(yoctui_model::ImagePicker {
+                images: vec!["core-image-minimal".into()],
+                selection: 0,
+            }));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -2637,7 +2748,7 @@ mod tests {
         assert!(output.contains("Host CPU: 50%"));
 
         app.build.status = yoctui_model::BuildStatus::Completed;
-        app.build_completion_open = true;
+        app.dialogs.push_back(Dialog::BuildCompletion);
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -2655,7 +2766,7 @@ mod tests {
         let mut app = App::new(10, 1_000);
         app.build.target = Some("core-image-minimal".into());
         app.build.status = yoctui_model::BuildStatus::Cancelled;
-        app.build_completion_open = true;
+        app.dialogs.push_back(Dialog::BuildCompletion);
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -2723,7 +2834,8 @@ mod tests {
     fn bbmask_edit_preview_shows_the_exact_assignment() {
         let mut terminal = Terminal::new(TestBackend::new(160, 30)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.bbmask_confirmation = Some("meta-broken/.*".into());
+        app.dialogs
+            .push_back(Dialog::BbmaskConfirmation("meta-broken/.*".into()));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()

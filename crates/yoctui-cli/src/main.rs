@@ -24,9 +24,9 @@ use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{BuildJobCoordinator, Input, focus_action, key_action};
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
-    Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry,
-    LayerBrowserEntry, LayerRelationship, LayerRelationships, RecipeDependencies, Screen, Severity,
-    Theme, update,
+    Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, Dialog, Effect,
+    HostTelemetry, LayerBrowserEntry, LayerRelationship, LayerRelationships, RecipeDependencies,
+    Screen, Severity, Theme, update,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -1317,24 +1317,22 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     Input::Esc => update(&mut app, Action::CloseCommandPalette),
                     _ => None,
                 };
-            } else if app.recipe_editor.is_some() {
+            } else if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
                 let effect = match input {
                     Input::Esc => update(&mut app, Action::CloseRecipeEditor),
                     Input::Up => update(&mut app, Action::SelectRecipeEditorFile { delta: -1 }),
                     Input::Down => update(&mut app, Action::SelectRecipeEditorFile { delta: 1 }),
                     Input::Enter
                         if app
-                            .recipe_editor
-                            .as_ref()
-                            .is_some_and(|editor| editor.editing) =>
+                            .active_dialog()
+                            .is_some_and(|dialog| matches!(dialog, Dialog::RecipeEditor(editor) if editor.editing)) =>
                     {
                         update(&mut app, Action::AppendRecipeEditor('\n'))
                     }
                     Input::Enter | Input::Char('e')
                         if app
-                            .recipe_editor
-                            .as_ref()
-                            .is_some_and(|editor| !editor.editing) =>
+                            .active_dialog()
+                            .is_some_and(|dialog| matches!(dialog, Dialog::RecipeEditor(editor) if !editor.editing)) =>
                     {
                         update(&mut app, Action::ToggleRecipeEditorEditing)
                     }
@@ -1362,7 +1360,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 if let Some(action) = focus_action(app.focus, input) {
                     let _ = update(&mut app, action);
                 }
-            } else if app.quit_confirm {
+            } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
                 let _ = match input {
                     Input::Char('Y') => update(&mut app, Action::ConfirmQuit),
                     Input::Esc => update(&mut app, Action::CancelQuit),
@@ -1404,7 +1402,10 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     }
                     _ => {}
                 }
-            } else if app.devtool_reset_confirmation.is_some() {
+            } else if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolResetConfirmation(_))
+            ) {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmDevtoolReset),
                     Input::Esc => update(&mut app, Action::CancelDevtoolReset),
@@ -1413,7 +1414,10 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 if let Some(Effect::DevtoolReset(recipe)) = effect {
                     devtool_reset(&guard, &mut app, &session_build_dir, recipe).await;
                 }
-            } else if app.devtool_update_confirmation.is_some() {
+            } else if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolUpdateConfirmation(_))
+            ) {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmDevtoolUpdateRecipe),
                     Input::Esc => update(&mut app, Action::CancelDevtoolUpdateRecipe),
@@ -1429,7 +1433,10 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     )
                     .await;
                 }
-            } else if app.devtool_finish_confirmation.is_some() {
+            } else if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolFinishConfirmation(_))
+            ) {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmDevtoolFinish),
                     Input::Esc => update(&mut app, Action::CancelDevtoolFinishConfirmation),
@@ -1445,7 +1452,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     )
                     .await;
                 }
-            } else if app.devtool_finish_recipe.is_some() {
+            } else if matches!(app.active_dialog(), Some(Dialog::DevtoolFinish { .. })) {
                 let _ = match input {
                     Input::Char(character) => {
                         update(&mut app, Action::AppendDevtoolFinishDestination(character))
@@ -1455,7 +1462,10 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     Input::Esc => update(&mut app, Action::CancelDevtoolFinish),
                     _ => None,
                 };
-            } else if app.devtool_deploy_confirmation.is_some() {
+            } else if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolDeployConfirmation(_))
+            ) {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmDevtoolDeploy),
                     Input::Esc => update(&mut app, Action::CancelDevtoolDeployConfirmation),
@@ -1464,7 +1474,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 if let Some(Effect::DevtoolDeploy(request)) = effect {
                     devtool_deploy(&guard, &mut app, &session_build_dir, request).await;
                 }
-            } else if app.devtool_deploy_recipe.is_some() {
+            } else if matches!(app.active_dialog(), Some(Dialog::DevtoolDeploy { .. })) {
                 let _ = match input {
                     Input::Char(character) => {
                         update(&mut app, Action::AppendDevtoolDeployTarget(character))
@@ -1474,7 +1484,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     Input::Esc => update(&mut app, Action::CancelDevtoolDeploy),
                     _ => None,
                 };
-            } else if app.bbmask_confirmation.is_some() {
+            } else if matches!(app.active_dialog(), Some(Dialog::BbmaskConfirmation(_))) {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmBbmaskWrite),
                     Input::Esc => update(&mut app, Action::CancelBbmaskWrite),
@@ -1495,7 +1505,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                         }
                     }
                 }
-            } else if app.bbmask_editing {
+            } else if matches!(app.active_dialog(), Some(Dialog::BbmaskEdit { .. })) {
                 let _ = match input {
                     Input::Char(character) => update(&mut app, Action::AppendBbmask(character)),
                     Input::Backspace => update(&mut app, Action::BackspaceBbmask),
@@ -1503,9 +1513,9 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     Input::Esc => update(&mut app, Action::CancelBbmaskEdit),
                     _ => None,
                 };
-            } else if app.build_completion_open {
+            } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
                 let _ = update(&mut app, Action::DismissBuildCompletion);
-            } else if app.image_picker.is_some() {
+            } else if matches!(app.active_dialog(), Some(Dialog::ImagePicker(_))) {
                 let _ = match input {
                     Input::Up => update(&mut app, Action::SelectImage { delta: -1 }),
                     Input::Down => update(&mut app, Action::SelectImage { delta: 1 }),
@@ -1513,7 +1523,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     Input::Esc => update(&mut app, Action::CancelImagePicker),
                     _ => None,
                 };
-            } else if app.recipe_task_confirmation.is_some() {
+            } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
                     Input::Esc => update(&mut app, Action::CancelRecipeTask),
@@ -1522,7 +1532,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 if let Some(Effect::Start(request)) = effect {
                     begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
                 }
-            } else if app.build_options_open {
+            } else if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
                 let effect = match input {
                     Input::Char('b') => update(&mut app, Action::BeginBuildTargetTask(None)),
                     Input::Char('c') => {
@@ -1539,7 +1549,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 if let Some(Effect::Start(request)) = effect {
                     begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
                 }
-            } else if app.build_target_editing {
+            } else if matches!(app.active_dialog(), Some(Dialog::BuildTarget { .. })) {
                 let effect = match input {
                     Input::Char(character) => {
                         update(&mut app, Action::AppendBuildTarget(character))
@@ -1991,6 +2001,22 @@ mod tests {
             input_from_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE)),
             Some(Input::Esc)
         );
+    }
+
+    #[test]
+    fn dialog_input_routing_prevents_pane_shortcuts_from_leaking() {
+        let mut app = App::new(10, 1_000);
+        app.focus = yoctui_model::FocusTarget::Inspector;
+        let _ = update(&mut app, Action::OpenBuildOptions);
+        let selection = app.navigator_selection;
+
+        let tab = input_from_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE)).unwrap();
+        assert_eq!(yoctui_app::focus_action(app.focus, tab), None);
+        let _ = update(&mut app, Action::SelectNavigator { delta: 1 });
+
+        assert!(matches!(app.active_dialog(), Some(Dialog::BuildOptions)));
+        assert_eq!(app.navigator_selection, selection);
+        assert_eq!(app.focus, yoctui_model::FocusTarget::Dialog);
     }
 
     #[cfg(unix)]
