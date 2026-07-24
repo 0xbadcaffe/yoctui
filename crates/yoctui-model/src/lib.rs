@@ -46,6 +46,7 @@ pub enum Screen {
     Logs,
     Errors,
     Help,
+    Settings,
 }
 /// The one active target in Yoctui's persistent workbench shell.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -85,7 +86,7 @@ const NAVIGATOR_SCREENS: [Screen; 12] = [
     Screen::Dependencies,
     Screen::Recipes,
     Screen::Bbmask,
-    Screen::Help,
+    Screen::Settings,
 ];
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BuildStatus {
@@ -1770,7 +1771,7 @@ mod tests {
         let _ = update(&mut app, Action::SelectNavigator { delta: 100 });
         assert_eq!(app.navigator_selection, NAVIGATOR_SCREENS.len() - 1);
         let _ = update(&mut app, Action::ActivateNavigator);
-        assert_eq!(app.screen, Screen::Help);
+        assert_eq!(app.screen, Screen::Settings);
         assert_eq!(app.focus, FocusTarget::Workspace);
         let _ = update(&mut app, Action::CycleFocus { backwards: false });
         assert_eq!(app.focus, FocusTarget::Inspector);
