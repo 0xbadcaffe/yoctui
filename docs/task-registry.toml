@@ -207,12 +207,12 @@ notes = "Retained warnings/errors now gain stable IDs and typed categories, summ
 id = "LAYERS-001"
 milestone = "M3"
 title = "Lazy Layers tree and contextual inspector"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 40
 required = true
 depends_on = ["JOB-002"]
 verify = ["cargo test -p yoctui-model layer_tree", "cargo test -p yoctui-ui layer_tree", "cargo test -p yoctui-app layer_tree", "cargo test -p yoctui -- layer_tree"]
-notes = "Expansion, collapse, refresh, hidden files, preview, Git state, large files."
+notes = "The pinned configured-layer inventory, stable-path cached lazy tree, subtree refresh, hidden/search filtering, Git decorations, active highlighting, typed Inspector modes, stale-response rejection, and 64 KiB binary-safe line-numbered previews are covered across reducer, input, CLI integration, and responsive TestBackend tests."
 
 [[task]]
 id = "RECIPES-001"

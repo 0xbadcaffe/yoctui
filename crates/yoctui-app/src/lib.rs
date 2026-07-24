@@ -4,8 +4,8 @@ use yoctui_bitbake::BackendEvent;
 use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
     BackgroundJobOutputEntry, BackgroundJobProgress, BackgroundJobResult, BackgroundJobSpec,
-    BuildRequest, FocusTarget, LayerRelationship, LayerRelationships, RecipeDependencies, Screen,
-    Severity, TaskId, TaskInfo,
+    BuildRequest, FocusTarget, LayerInspectorMode, LayerRelationship, LayerRelationships,
+    RecipeDependencies, Screen, Severity, TaskId, TaskInfo,
 };
 
 #[derive(Debug)]
@@ -499,6 +499,34 @@ pub fn errors_action(key: Input) -> Option<Action> {
         Input::Down | Input::Char('j') => Some(Action::SelectError { delta: 1 }),
         Input::Enter => Some(Action::JumpToSelectedError),
         Input::Char('o') => Some(Action::OpenSelectedErrorSource),
+        _ => None,
+    }
+}
+pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
+    if searching {
+        return match key {
+            Input::Char(character) => Some(Action::AppendMetadataQuery(character)),
+            Input::Backspace => Some(Action::BackspaceMetadataQuery),
+            Input::Enter | Input::Esc => Some(Action::FinishMetadataSearch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectLayerBrowserEntry { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectLayerBrowserEntry { delta: 1 }),
+        Input::Enter => Some(Action::LayerBrowserEnter),
+        Input::Right | Input::Char('l') => Some(Action::LayerBrowserExpand),
+        Input::Left | Input::Char('h') => Some(Action::LayerBrowserUp),
+        Input::Esc => Some(Action::CloseLayerBrowser),
+        Input::Char('r') => Some(Action::RefreshLayerBrowser),
+        Input::Char('e') => Some(Action::EditSelectedLayerBrowserFile),
+        Input::Char('.') => Some(Action::ToggleLayerBrowserHidden),
+        Input::Char('/') => Some(Action::BeginMetadataSearch),
+        Input::Char('g') => Some(Action::SetLayerInspectorMode(LayerInspectorMode::Git)),
+        Input::Char('m') => Some(Action::SetLayerInspectorMode(LayerInspectorMode::Metadata)),
+        Input::Char('d') => Some(Action::SetLayerInspectorMode(
+            LayerInspectorMode::Dependencies,
+        )),
         _ => None,
     }
 }
@@ -1040,6 +1068,29 @@ mod tests {
         assert_eq!(
             errors_action(Input::Char('o')),
             Some(Action::OpenSelectedErrorSource)
+        );
+    }
+    #[test]
+    fn layer_tree_maps_lazy_navigation_hidden_refresh_and_inspector_modes() {
+        assert_eq!(
+            layer_tree_action(false, Input::Right),
+            Some(Action::LayerBrowserExpand)
+        );
+        assert_eq!(
+            layer_tree_action(false, Input::Left),
+            Some(Action::LayerBrowserUp)
+        );
+        assert_eq!(
+            layer_tree_action(false, Input::Char('.')),
+            Some(Action::ToggleLayerBrowserHidden)
+        );
+        assert_eq!(
+            layer_tree_action(false, Input::Char('g')),
+            Some(Action::SetLayerInspectorMode(LayerInspectorMode::Git))
+        );
+        assert_eq!(
+            layer_tree_action(true, Input::Char('b')),
+            Some(Action::AppendMetadataQuery('b'))
         );
     }
     #[test]

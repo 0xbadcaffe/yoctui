@@ -1,7 +1,7 @@
 //! Domain model and pure state transitions. BitBake remains authoritative.
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{HashMap, HashSet, VecDeque},
     fmt,
     path::PathBuf,
     time::{Duration, SystemTime},
@@ -692,10 +692,39 @@ pub struct LayerRelationship {
     pub overlays: Vec<String>,
     pub appends: Vec<String>,
 }
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum GitFileState {
+    Clean,
+    Modified,
+    Untracked,
+    Ignored,
+    #[default]
+    Unavailable,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum PreviewKind {
+    Text,
+    Binary,
+    #[default]
+    Unavailable,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum LayerInspectorMode {
+    #[default]
+    Preview,
+    Git,
+    Metadata,
+    Dependencies,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct LayerBrowserEntry {
     pub path: PathBuf,
     pub is_dir: bool,
+    pub depth: usize,
+    pub is_hidden: bool,
+    pub size: Option<u64>,
+    pub modified: Option<SystemTime>,
+    pub git: GitFileState,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LayerBrowser {
@@ -703,8 +732,75 @@ pub struct LayerBrowser {
     pub root: PathBuf,
     pub directory: PathBuf,
     pub entries: Vec<LayerBrowserEntry>,
+    pub nodes: HashMap<PathBuf, Vec<LayerBrowserEntry>>,
+    pub expanded: HashSet<PathBuf>,
+    pub show_hidden: bool,
     pub selection: usize,
     pub preview: String,
+    pub preview_kind: PreviewKind,
+    pub preview_truncated: bool,
+    pub inspector_mode: LayerInspectorMode,
+}
+impl LayerBrowser {
+    pub fn new(layer: String, root: PathBuf) -> Self {
+        let mut expanded = HashSet::new();
+        expanded.insert(root.clone());
+        Self {
+            layer,
+            directory: root.clone(),
+            root,
+            entries: Vec::new(),
+            nodes: HashMap::new(),
+            expanded,
+            show_hidden: false,
+            selection: 0,
+            preview: String::new(),
+            preview_kind: PreviewKind::Unavailable,
+            preview_truncated: false,
+            inspector_mode: LayerInspectorMode::Preview,
+        }
+    }
+    pub fn selected_entry(&self) -> Option<&LayerBrowserEntry> {
+        self.entries.get(self.selection)
+    }
+    fn rebuild(&mut self, preferred: Option<&PathBuf>) {
+        fn collect(
+            directory: &PathBuf,
+            depth: usize,
+            nodes: &HashMap<PathBuf, Vec<LayerBrowserEntry>>,
+            expanded: &HashSet<PathBuf>,
+            show_hidden: bool,
+            output: &mut Vec<LayerBrowserEntry>,
+        ) {
+            let Some(children) = nodes.get(directory) else {
+                return;
+            };
+            for child in children {
+                if child.is_hidden && !show_hidden {
+                    continue;
+                }
+                let mut visible = child.clone();
+                visible.depth = depth;
+                output.push(visible);
+                if child.is_dir && expanded.contains(&child.path) {
+                    collect(&child.path, depth + 1, nodes, expanded, show_hidden, output);
+                }
+            }
+        }
+        let mut entries = Vec::new();
+        collect(
+            &self.root,
+            0,
+            &self.nodes,
+            &self.expanded,
+            self.show_hidden,
+            &mut entries,
+        );
+        self.entries = entries;
+        self.selection = preferred
+            .and_then(|path| self.entries.iter().position(|entry| &entry.path == path))
+            .unwrap_or_else(|| self.selection.min(self.entries.len().saturating_sub(1)));
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ImagePicker {
@@ -1490,10 +1586,19 @@ pub enum Action {
     SelectLayerBrowserEntry {
         delta: isize,
     },
+    LayerBrowserExpand,
     LayerBrowserEnter,
     LayerBrowserUp,
+    CloseLayerBrowser,
     RefreshLayerBrowser,
-    LoadLayerBrowserPreview(String),
+    ToggleLayerBrowserHidden,
+    SetLayerInspectorMode(LayerInspectorMode),
+    LoadLayerBrowserPreview {
+        path: PathBuf,
+        content: String,
+        kind: PreviewKind,
+        truncated: bool,
+    },
     EditSelectedLayerBrowserFile,
     BeginLayerRelationships,
     LayerRelationshipsLoaded(LayerRelationships),
@@ -1719,6 +1824,22 @@ fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenConfiguration => Action::Open(Screen::Configuration),
         CommandId::OpenSettings => Action::Open(Screen::Settings),
         CommandId::OpenHelp => Action::Open(Screen::Help),
+    }
+}
+
+fn select_first_matching_layer_entry(app: &mut App) {
+    let query = app.metadata_query.to_ascii_lowercase();
+    if let Some(browser) = app.layer_browser.as_mut()
+        && let Some(index) = browser.entries.iter().position(|entry| {
+            query.is_empty()
+                || entry
+                    .path
+                    .to_string_lossy()
+                    .to_ascii_lowercase()
+                    .contains(&query)
+        })
+    {
+        browser.selection = index;
     }
 }
 
@@ -3008,20 +3129,39 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             layer,
             root,
             directory,
-            entries,
+            mut entries,
         } => {
-            app.layer_browser = Some(LayerBrowser {
-                layer,
-                root,
-                directory,
-                entries,
-                selection: 0,
-                preview: String::new(),
+            entries.sort_by_key(|entry| {
+                (
+                    !entry.is_dir,
+                    entry.path.file_name().map(|name| name.to_owned()),
+                )
             });
+            let preferred = app
+                .layer_browser
+                .as_ref()
+                .and_then(LayerBrowser::selected_entry)
+                .map(|entry| entry.path.clone());
+            if let Some(browser) = app
+                .layer_browser
+                .as_mut()
+                .filter(|browser| browser.layer == layer && browser.root == root)
+            {
+                browser.directory = directory.clone();
+                browser.nodes.insert(directory.clone(), entries);
+                browser.expanded.insert(directory);
+                browser.rebuild(preferred.as_ref());
+            } else {
+                let mut browser = LayerBrowser::new(layer, root);
+                browser.directory = directory.clone();
+                browser.nodes.insert(directory, entries);
+                browser.rebuild(None);
+                app.layer_browser = Some(browser);
+            }
             if let Some(path) = app
                 .layer_browser
                 .as_ref()
-                .and_then(|browser| browser.entries.first())
+                .and_then(LayerBrowser::selected_entry)
                 .filter(|entry| !entry.is_dir)
                 .map(|entry| entry.path.clone())
             {
@@ -3029,18 +3169,41 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::SelectLayerBrowserEntry { delta } => {
+            let query = app.metadata_query.to_ascii_lowercase();
             let path = if let Some(browser) = app.layer_browser.as_mut() {
-                browser.selection = if delta.is_negative() {
-                    browser.selection.saturating_sub(delta.unsigned_abs())
-                } else {
-                    browser
-                        .selection
-                        .saturating_add(delta as usize)
-                        .min(browser.entries.len().saturating_sub(1))
-                };
-                browser
+                let matches = browser
                     .entries
-                    .get(browser.selection)
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, entry)| {
+                        query.is_empty()
+                            || entry
+                                .path
+                                .to_string_lossy()
+                                .to_ascii_lowercase()
+                                .contains(&query)
+                    })
+                    .map(|(index, _)| index)
+                    .collect::<Vec<_>>();
+                let position = matches
+                    .iter()
+                    .position(|index| *index == browser.selection)
+                    .unwrap_or(0);
+                let position = if delta.is_negative() {
+                    position.saturating_sub(delta.unsigned_abs())
+                } else {
+                    position
+                        .saturating_add(delta as usize)
+                        .min(matches.len().saturating_sub(1))
+                };
+                browser.selection = matches.get(position).copied().unwrap_or(0);
+                if browser.selected_entry().is_some_and(|entry| entry.is_dir) {
+                    browser.preview.clear();
+                    browser.preview_kind = PreviewKind::Unavailable;
+                    browser.preview_truncated = false;
+                }
+                browser
+                    .selected_entry()
                     .filter(|entry| !entry.is_dir)
                     .map(|entry| entry.path.clone())
             } else {
@@ -3050,59 +3213,129 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return Some(Effect::LoadLayerBrowserPreview(path));
             }
         }
-        Action::LayerBrowserEnter => {
-            if let Some(browser) = app.layer_browser.as_ref()
-                && let Some(entry) = browser.entries.get(browser.selection)
-                && entry.is_dir
-            {
+        Action::LayerBrowserExpand => {
+            let selected = app
+                .layer_browser
+                .as_ref()
+                .and_then(LayerBrowser::selected_entry)
+                .cloned();
+            if let Some(entry) = selected.filter(|entry| entry.is_dir) {
+                let browser = app.layer_browser.as_mut().expect("browser was selected");
+                if browser.expanded.contains(&entry.path) {
+                    return None;
+                }
+                if browser.nodes.contains_key(&entry.path) {
+                    browser.expanded.insert(entry.path.clone());
+                    browser.rebuild(Some(&entry.path));
+                    return None;
+                }
                 return Some(Effect::LoadLayerBrowserDirectory {
                     layer: browser.layer.clone(),
                     root: browser.root.clone(),
-                    directory: entry.path.clone(),
+                    directory: entry.path,
                 });
             }
         }
+        Action::LayerBrowserEnter => {
+            let selected = app
+                .layer_browser
+                .as_ref()
+                .and_then(LayerBrowser::selected_entry)
+                .cloned();
+            if let Some(entry) = selected.filter(|entry| entry.is_dir) {
+                let browser = app.layer_browser.as_mut().expect("browser was selected");
+                if browser.expanded.remove(&entry.path) {
+                    browser.rebuild(Some(&entry.path));
+                    return None;
+                }
+                if browser.nodes.contains_key(&entry.path) {
+                    browser.expanded.insert(entry.path.clone());
+                    browser.rebuild(Some(&entry.path));
+                    return None;
+                }
+                return Some(Effect::LoadLayerBrowserDirectory {
+                    layer: browser.layer.clone(),
+                    root: browser.root.clone(),
+                    directory: entry.path,
+                });
+            }
+            return update(app, Action::EditSelectedLayerBrowserFile);
+        }
         Action::LayerBrowserUp => {
-            if let Some(browser) = app.layer_browser.as_ref()
-                && browser.directory != browser.root
+            if let Some(browser) = app.layer_browser.as_mut()
+                && let Some(entry) = browser.selected_entry().cloned()
             {
+                if entry.is_dir && browser.expanded.remove(&entry.path) {
+                    browser.rebuild(Some(&entry.path));
+                } else if let Some(parent) = entry.path.parent()
+                    && parent != browser.root
+                    && let Some(index) = browser
+                        .entries
+                        .iter()
+                        .position(|candidate| candidate.path == parent)
+                {
+                    browser.selection = index;
+                }
+            }
+        }
+        Action::CloseLayerBrowser => app.layer_browser = None,
+        Action::RefreshLayerBrowser => {
+            if let Some(browser) = app.layer_browser.as_ref() {
                 let directory = browser
-                    .directory
-                    .parent()
-                    .unwrap_or(&browser.root)
-                    .to_path_buf();
+                    .selected_entry()
+                    .map(|entry| {
+                        if entry.is_dir {
+                            entry.path.clone()
+                        } else {
+                            entry.path.parent().unwrap_or(&browser.root).to_path_buf()
+                        }
+                    })
+                    .unwrap_or_else(|| browser.root.clone());
                 return Some(Effect::LoadLayerBrowserDirectory {
                     layer: browser.layer.clone(),
                     root: browser.root.clone(),
                     directory,
                 });
             }
-            app.layer_browser = None;
         }
-        Action::RefreshLayerBrowser => {
-            if let Some(browser) = app.layer_browser.as_ref() {
-                return Some(Effect::LoadLayerBrowserDirectory {
-                    layer: browser.layer.clone(),
-                    root: browser.root.clone(),
-                    directory: browser.directory.clone(),
-                });
+        Action::ToggleLayerBrowserHidden => {
+            if let Some(browser) = app.layer_browser.as_mut() {
+                let selected = browser.selected_entry().map(|entry| entry.path.clone());
+                browser.show_hidden = !browser.show_hidden;
+                browser.rebuild(selected.as_ref());
             }
         }
-        Action::LoadLayerBrowserPreview(preview) => {
+        Action::SetLayerInspectorMode(mode) => {
             if let Some(browser) = app.layer_browser.as_mut() {
-                browser.preview = preview;
+                browser.inspector_mode = mode;
+            }
+        }
+        Action::LoadLayerBrowserPreview {
+            path,
+            content,
+            kind,
+            truncated,
+        } => {
+            if let Some(browser) = app.layer_browser.as_mut()
+                && browser
+                    .selected_entry()
+                    .is_some_and(|entry| entry.path == path && !entry.is_dir)
+            {
+                browser.preview = content;
+                browser.preview_kind = kind;
+                browser.preview_truncated = truncated;
             }
         }
         Action::EditSelectedLayerBrowserFile => {
             if let Some(browser) = app.layer_browser.as_ref()
-                && let Some(entry) = browser.entries.get(browser.selection)
+                && let Some(entry) = browser.selected_entry()
                 && !entry.is_dir
-                && let Some(name) = entry.path.file_name()
+                && let Ok(file) = entry.path.strip_prefix(&browser.root)
             {
                 return Some(Effect::OpenLayerBrowserEditor {
                     layer: browser.layer.clone(),
-                    root: browser.directory.clone(),
-                    file: PathBuf::from(name),
+                    root: browser.root.clone(),
+                    file: file.to_path_buf(),
                 });
             }
             app.notification = Some("Select a file to edit.".into());
@@ -3204,12 +3437,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.recipe_selection = 0;
             app.layer_selection = 0;
             app.config_selection = 0;
+            select_first_matching_layer_entry(app);
         }
         Action::BackspaceMetadataQuery if app.metadata_searching => {
             app.metadata_query.pop();
             app.recipe_selection = 0;
             app.layer_selection = 0;
             app.config_selection = 0;
+            select_first_matching_layer_entry(app);
         }
         Action::FinishMetadataSearch => app.metadata_searching = false,
         Action::AppendLogQuery(_)
@@ -4562,7 +4797,7 @@ mod tests {
         );
     }
     #[test]
-    fn layer_browser_descends_and_returns_to_the_parent_directory() {
+    fn layer_tree_loads_children_lazily_and_collapses_without_losing_parent() {
         let mut app = App::new(10, 1_000);
         app.workspace.layers.push(Layer {
             name: "meta-demo".into(),
@@ -4586,6 +4821,7 @@ mod tests {
                 entries: vec![LayerBrowserEntry {
                     path: "/layers/meta-demo/recipes-core".into(),
                     is_dir: true,
+                    ..LayerBrowserEntry::default()
                 }],
             },
         );
@@ -4603,17 +4839,126 @@ mod tests {
                 layer: "meta-demo".into(),
                 root: "/layers/meta-demo".into(),
                 directory: "/layers/meta-demo/recipes-core".into(),
-                entries: vec![],
+                entries: vec![LayerBrowserEntry {
+                    path: "/layers/meta-demo/recipes-core/demo.bb".into(),
+                    ..LayerBrowserEntry::default()
+                }],
             },
         );
-        assert_eq!(
-            update(&mut app, Action::LayerBrowserUp),
-            Some(Effect::LoadLayerBrowserDirectory {
+        let browser = app.layer_browser.as_ref().unwrap();
+        assert_eq!(browser.entries.len(), 2);
+        assert_eq!(browser.entries[0].depth, 0);
+        assert_eq!(browser.entries[1].depth, 1);
+        assert!(
+            browser
+                .nodes
+                .contains_key(&PathBuf::from("/layers/meta-demo/recipes-core"))
+        );
+        let _ = update(&mut app, Action::LayerBrowserUp);
+        assert_eq!(app.layer_browser.as_ref().unwrap().entries.len(), 1);
+    }
+    #[test]
+    fn layer_tree_hidden_filter_and_search_keep_selection_bounded() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(
+            &mut app,
+            Action::LoadLayerBrowserDirectory {
                 layer: "meta-demo".into(),
                 root: "/layers/meta-demo".into(),
                 directory: "/layers/meta-demo".into(),
+                entries: vec![
+                    LayerBrowserEntry {
+                        path: "/layers/meta-demo/.hidden".into(),
+                        is_hidden: true,
+                        ..LayerBrowserEntry::default()
+                    },
+                    LayerBrowserEntry {
+                        path: "/layers/meta-demo/visible.bb".into(),
+                        ..LayerBrowserEntry::default()
+                    },
+                ],
+            },
+        );
+        assert_eq!(app.layer_browser.as_ref().unwrap().entries.len(), 1);
+        let _ = update(&mut app, Action::ToggleLayerBrowserHidden);
+        assert_eq!(app.layer_browser.as_ref().unwrap().entries.len(), 2);
+        let _ = update(&mut app, Action::BeginMetadataSearch);
+        let _ = update(&mut app, Action::AppendMetadataQuery('v'));
+        let _ = update(
+            &mut app,
+            Action::SelectLayerBrowserEntry { delta: isize::MAX },
+        );
+        assert_eq!(
+            app.layer_browser
+                .as_ref()
+                .unwrap()
+                .selected_entry()
+                .unwrap()
+                .path,
+            PathBuf::from("/layers/meta-demo/visible.bb")
+        );
+    }
+    #[test]
+    fn layer_tree_ignores_stale_preview_and_tracks_binary_metadata() {
+        let mut app = App::new(10, 1_000);
+        let path = PathBuf::from("/layers/meta-demo/image.bin");
+        let _ = update(
+            &mut app,
+            Action::LoadLayerBrowserDirectory {
+                layer: "meta-demo".into(),
+                root: "/layers/meta-demo".into(),
+                directory: "/layers/meta-demo".into(),
+                entries: vec![LayerBrowserEntry {
+                    path: path.clone(),
+                    size: Some(100_000),
+                    git: GitFileState::Untracked,
+                    ..LayerBrowserEntry::default()
+                }],
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::LoadLayerBrowserPreview {
+                path: PathBuf::from("/layers/meta-demo/stale.bb"),
+                content: "stale".into(),
+                kind: PreviewKind::Text,
+                truncated: false,
+            },
+        );
+        assert!(app.layer_browser.as_ref().unwrap().preview.is_empty());
+        let _ = update(
+            &mut app,
+            Action::LoadLayerBrowserPreview {
+                path,
+                content: String::new(),
+                kind: PreviewKind::Binary,
+                truncated: true,
+            },
+        );
+        let browser = app.layer_browser.as_ref().unwrap();
+        assert_eq!(browser.preview_kind, PreviewKind::Binary);
+        assert!(browser.preview_truncated);
+    }
+    #[test]
+    fn layer_tree_external_editor_effect_is_typed_and_missing_selection_is_visible() {
+        let mut app = App::new(10, 1_000);
+        let mut browser = LayerBrowser::new("meta-demo".into(), "/layers/meta-demo".into());
+        browser.entries.push(LayerBrowserEntry {
+            path: "/layers/meta-demo/recipes-demo/demo/demo.bb".into(),
+            ..LayerBrowserEntry::default()
+        });
+        app.layer_browser = Some(browser);
+        assert_eq!(
+            update(&mut app, Action::EditSelectedLayerBrowserFile),
+            Some(Effect::OpenLayerBrowserEditor {
+                layer: "meta-demo".into(),
+                root: "/layers/meta-demo".into(),
+                file: "recipes-demo/demo/demo.bb".into(),
             })
         );
+        app.layer_browser.as_mut().unwrap().entries.clear();
+        assert_eq!(update(&mut app, Action::EditSelectedLayerBrowserFile), None);
+        assert_eq!(app.notification.as_deref(), Some("Select a file to edit."));
     }
     #[test]
     fn configuration_selection_stays_in_workspace_bounds() {
