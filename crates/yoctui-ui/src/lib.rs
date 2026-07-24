@@ -1842,6 +1842,30 @@ mod tests {
         );
     }
     #[test]
+    fn persistent_shell_degrades_across_supported_terminal_widths() {
+        for (width, height, expected) in [
+            (140, 30, "Inspector"),
+            (100, 24, "Navigator"),
+            (80, 24, "Build"),
+        ] {
+            let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+            terminal
+                .draw(|frame| render(frame, &App::new(10, 1_000)))
+                .unwrap();
+            let output = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>();
+            assert!(
+                output.contains(expected),
+                "{width}x{height} should show {expected}"
+            );
+        }
+    }
+    #[test]
     fn formats_error_timestamp_without_panicking() {
         assert_eq!(timestamp_text(UNIX_EPOCH), "0s since Unix epoch");
     }
