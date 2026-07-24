@@ -179,6 +179,11 @@ Rules:
 - arrow keys affect only the focused region
 - `Esc`: close dialog, cancel transient mode, or return focus outward
 - dialogs trap focus until closed
+- opening a dialog or command palette remembers the active pane; transitions
+  between nested modal states keep that return target, and closing the final
+  modal restores it
+- pane navigation and workspace activation actions are ignored while modal
+  focus is trapped
 - inactive panes remain visible but use subdued styling
 - focus must be visibly obvious in every theme
 

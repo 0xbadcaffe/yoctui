@@ -2,53 +2,58 @@
 
 ## Active task
 
-**ID:** FOCUS-001
-**Title:** Complete the shared focus router and modal focus trapping
+**ID:** DIALOG-001
+**Title:** Implement the unified typed dialog stack
 
 ## Objective
 
-Make Navigator, Workspace, Inspector, Dialog, and CommandPalette use one
-predictable focus router across every workspace and transient interaction,
-including restoration to the exact prior pane after a modal closes.
+Replace the independent boolean/optional modal fields with one typed dialog
+state and explicit transitions, while preserving all existing build, image,
+recipe, Devtool, BBMASK, editor, quit, and completion behavior.
 
 ## Required work
 
-1. Inspect every focus assignment in the reducer, application input mapping,
-   CLI dispatch loop, and renderer before changing state.
-2. Centralize entry to and exit from Dialog and CommandPalette focus so the
-   prior non-modal focus target is recorded and restored.
-3. Ensure Tab and Shift+Tab cycle Navigator, Workspace, and Inspector in both
-   directions with wraparound.
-4. Ensure arrow keys and activation keys affect only the focused region.
-5. Make Esc close the innermost transient mode or return focus outward without
-   replacing the active workspace.
-6. Ensure every dialog and the command palette trap focus until closed,
-   including when other workspace state such as the layer browser is active.
-7. Preserve responsive pane focus and visible focus styling after dialogs
-   close and across workspace changes.
-8. Add reducer tests for focus entry/restoration and invalid transitions,
-   application/CLI input-routing tests, and Ratatui tests for visible focus and
-   modal trapping.
-9. Update `docs/ui-spec.md` in the same commit if the shared routing contract
-   needs clarification.
+1. Inventory every modal field, renderer branch, reducer action, input branch,
+   confirmation effect, and existing test before changing representation.
+2. Define a typed `Dialog` model whose variants carry the state required by
+   each modal workflow; use a stack only where asynchronous or nested dialogs
+   genuinely require more than one retained modal.
+3. Make opening, transitioning, confirming, cancelling, and dismissing dialogs
+   explicit reducer transitions with invalid transitions leaving state intact.
+4. Preserve the focus router's exact return target until the final dialog
+   closes.
+5. Route input through the active typed dialog before navigator, workspace, or
+   inspector input.
+6. Render from the typed dialog state without testing a long precedence chain
+   of unrelated App fields.
+7. Keep destructive previews and confirmations unchanged, including exact
+   commands and affected targets.
+8. Ensure backend events continue to update the persistent shell while a
+   dialog is open; asynchronous completion dialogs must not lose an active
+   user dialog.
+9. Add reducer transition/failure tests, app/CLI input-routing tests, and
+   Ratatui tests for every dialog family and narrow terminals.
+10. Update `docs/ui-spec.md` and `docs/architecture.md` if the explicit dialog
+    contract or component boundary needs clarification.
 
 ## Definition of done
 
-- Exactly one focus target is active.
-- Pane cycling is bidirectional, bounded by wraparound, and modal-safe.
-- Dialog and command-palette close paths restore the exact prior pane.
-- Modal input cannot reach navigator or workspace actions.
-- Esc follows the specified transient-mode and outward-focus behavior.
-- Focus is visibly distinguishable at all responsive breakpoints.
+- One typed source of truth determines the active dialog and retained stack.
+- Every existing modal workflow renders and dispatches through that state.
+- Invalid confirm/cancel/input actions do not mutate unrelated state.
+- Destructive operations retain preview and explicit confirmation.
+- Focus trapping/restoration remains correct through nested transitions.
+- Backend completion arriving under another dialog is retained and shown next.
 - Task-specific and baseline verification pass.
 - Registry/status documents are updated and the next eligible task is active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model focus
-cargo test -p yoctui-app focus
+cargo test -p yoctui-model dialog
+cargo test -p yoctui-app dialog
 cargo test -p yoctui-ui dialog
+cargo test -p yoctui -- dialog
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -58,4 +63,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`DIALOG-001 — Implement the unified typed dialog stack`
+`THEME-001 — Complete built-in semantic themes`

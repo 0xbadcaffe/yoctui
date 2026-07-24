@@ -1945,7 +1945,7 @@ fn help(frame: &mut Frame, area: Rect) {
 mod tests {
     use super::*;
     use ratatui::{Terminal, backend::TestBackend};
-    use yoctui_model::BuildRequest;
+    use yoctui_model::{Action, BuildRequest, update};
 
     fn rendered_text(app: &App, width: u16, height: u16) -> String {
         let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
@@ -2109,6 +2109,23 @@ mod tests {
         });
         confirmation.focus = FocusTarget::Dialog;
         let _ = rendered_text(&confirmation, 80, 24);
+    }
+    #[test]
+    fn dialog_focus_is_trapped_then_visibly_restored_to_inspector() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Inspector;
+        let _ = update(&mut app, Action::OpenBuildOptions);
+
+        let dialog = rendered_text(&app, 100, 24);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        assert!(dialog.contains("Image build options"));
+        assert!(!dialog.contains("Panes:"));
+
+        let _ = update(&mut app, Action::CloseBuildOptions);
+        let restored = rendered_text(&app, 100, 24);
+        assert_eq!(app.focus, FocusTarget::Inspector);
+        assert!(restored.contains("Inspector"));
+        assert!(!restored.contains("Image build options"));
     }
     #[test]
     fn formats_error_timestamp_without_panicking() {
