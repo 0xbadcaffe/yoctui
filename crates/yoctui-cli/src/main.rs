@@ -1337,7 +1337,15 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
             let Some(input) = input_from_key(k) else {
                 continue;
             };
-            if app.recipe_editor.is_some() {
+            if app.command_palette_open {
+                let _ = match input {
+                    Input::Up => update(&mut app, Action::SelectCommandPalette { delta: -1 }),
+                    Input::Down => update(&mut app, Action::SelectCommandPalette { delta: 1 }),
+                    Input::Enter => update(&mut app, Action::ActivateCommandPalette),
+                    Input::Esc => update(&mut app, Action::CloseCommandPalette),
+                    _ => None,
+                };
+            } else if app.recipe_editor.is_some() {
                 let effect = match input {
                     Input::Esc => update(&mut app, Action::CloseRecipeEditor),
                     Input::Up => update(&mut app, Action::SelectRecipeEditorFile { delta: -1 }),
@@ -1870,6 +1878,7 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlC),
         KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlS),
         KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlB),
+        KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlP),
         KeyCode::Tab => Some(Input::Tab),
         KeyCode::BackTab => Some(Input::BackTab),
         KeyCode::Char(character) => Some(Input::Char(character)),

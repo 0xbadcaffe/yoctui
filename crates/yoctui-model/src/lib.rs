@@ -392,6 +392,8 @@ pub struct App {
     pub should_quit: bool,
     pub quit_confirm: bool,
     pub notification: Option<String>,
+    pub command_palette_open: bool,
+    pub command_palette_selection: usize,
     pub build_options_open: bool,
     pub build_completion_open: bool,
     pub build_target_editing: bool,
@@ -446,6 +448,8 @@ impl App {
             should_quit: false,
             quit_confirm: false,
             notification: None,
+            command_palette_open: false,
+            command_palette_selection: 0,
             build_options_open: false,
             build_completion_open: false,
             build_target_editing: false,
@@ -490,6 +494,12 @@ pub enum Action {
         backwards: bool,
     },
     Focus(FocusTarget),
+    OpenCommandPalette,
+    SelectCommandPalette {
+        delta: isize,
+    },
+    ActivateCommandPalette,
+    CloseCommandPalette,
     OpenBuildOptions,
     CloseBuildOptions,
     OpenImagePicker(Vec<String>),
@@ -693,6 +703,37 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.focus = FocusTarget::Workspace;
         }
         Action::Focus(target) => app.focus = target,
+        Action::OpenCommandPalette => {
+            app.command_palette_open = true;
+            app.command_palette_selection = 0;
+            app.focus = FocusTarget::CommandPalette;
+        }
+        Action::SelectCommandPalette { delta } => {
+            app.command_palette_selection = if delta.is_negative() {
+                app.command_palette_selection
+                    .saturating_sub(delta.unsigned_abs())
+            } else {
+                app.command_palette_selection
+                    .saturating_add(delta as usize)
+                    .min(5)
+            };
+        }
+        Action::ActivateCommandPalette => {
+            match app.command_palette_selection {
+                0 => app.build_options_open = true,
+                1 => app.screen = Screen::Layers,
+                2 => app.screen = Screen::Recipes,
+                3 => app.screen = Screen::Logs,
+                4 => app.screen = Screen::Errors,
+                _ => app.screen = Screen::Help,
+            };
+            app.command_palette_open = false;
+            app.focus = FocusTarget::Workspace;
+        }
+        Action::CloseCommandPalette => {
+            app.command_palette_open = false;
+            app.focus = FocusTarget::Workspace;
+        }
         Action::CycleFocus { backwards } => {
             const TARGETS: [FocusTarget; 3] = [
                 FocusTarget::Navigator,

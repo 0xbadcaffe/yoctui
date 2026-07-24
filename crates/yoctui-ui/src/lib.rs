@@ -322,6 +322,49 @@ pub fn render(frame: &mut Frame, app: &App) {
     );
     if let Some(editor) = app.recipe_editor.as_ref() {
         recipe_editor(frame, app, editor, area);
+    } else if app.command_palette_open {
+        let commands = [
+            "Build image",
+            "Open Layers",
+            "Open Recipes",
+            "Open Logs",
+            "Open Errors",
+            "Open Help",
+        ];
+        let items = commands
+            .iter()
+            .enumerate()
+            .map(|(index, command)| {
+                format!(
+                    "{} {}",
+                    if index == app.command_palette_selection {
+                        ">"
+                    } else {
+                        " "
+                    },
+                    command
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        let popup = Rect::new(
+            area.width / 4,
+            area.height / 4,
+            area.width / 2,
+            area.height / 2,
+        );
+        frame.render_widget(Clear, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Commands\n\n{items}\n\nUp/Down select  Enter run  Esc cancel"
+            ))
+            .block(
+                Block::default()
+                    .title("Command palette")
+                    .borders(Borders::ALL),
+            ),
+            popup,
+        );
     } else if app.build_completion_open {
         build_completion_popup(frame, app, area);
     } else if matches!(
