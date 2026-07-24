@@ -1,0 +1,358 @@
+version = 1
+project = "Yoctui"
+status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
+
+# Statuses in this initial registry are deliberately conservative.
+# GOV-001 must reconcile them against the current master branch before feature work resumes.
+
+[[task]]
+id = "GOV-001"
+milestone = "M0"
+title = "Reconcile governance roadmap with current repository"
+status = "IN_PROGRESS"
+priority = 1
+required = true
+depends_on = []
+verify = ["./scripts/verify-roadmap.sh", "cargo test -p yoctui-model -p yoctui-ui -p yoctui-app"]
+notes = "Inspect recent shell, focus, themes, task animation, Layers, Tasks, Images, and Settings commits."
+
+[[task]]
+id = "GOV-002"
+milestone = "M0"
+title = "Keep one valid active task"
+status = "DONE"
+priority = 2
+required = true
+depends_on = []
+verify = ["./scripts/verify-roadmap.sh"]
+notes = "docs/current-task.md exists and identifies one task."
+
+[[task]]
+id = "ARCH-001"
+milestone = "M0"
+title = "Document component boundaries and state flow"
+status = "DONE"
+priority = 3
+required = true
+depends_on = []
+verify = ["test -s docs/architecture.md"]
+notes = "Expanded architecture contract."
+
+[[task]]
+id = "UI-SHELL-001"
+milestone = "M2"
+title = "Persistent Header Navigator Workspace Inspector Footer shell"
+status = "IN_PROGRESS"
+priority = 10
+required = true
+depends_on = ["GOV-001"]
+verify = ["cargo test -p yoctui-ui responsive_shell"]
+notes = "Reconcile existing implementation and remaining responsive behavior."
+
+[[task]]
+id = "UI-RESP-001"
+milestone = "M2"
+title = "Responsive wide medium narrow and too-small layouts"
+status = "IN_PROGRESS"
+priority = 11
+required = true
+depends_on = ["UI-SHELL-001"]
+verify = ["cargo test -p yoctui-ui responsive"]
+notes = "All supported dimensions must render without panic."
+
+[[task]]
+id = "FOCUS-001"
+milestone = "M2"
+title = "Shared focus router and modal focus trapping"
+status = "IN_PROGRESS"
+priority = 12
+required = true
+depends_on = ["UI-SHELL-001"]
+verify = ["cargo test -p yoctui-model focus", "cargo test -p yoctui-ui dialog"]
+notes = "Reconcile existing focus commits; full dialog stack remains."
+
+[[task]]
+id = "DIALOG-001"
+milestone = "M2"
+title = "Unified typed dialog stack"
+status = "NOT_STARTED"
+priority = 13
+required = true
+depends_on = ["FOCUS-001"]
+verify = ["cargo test -p yoctui-model dialog", "cargo test -p yoctui-ui dialog"]
+notes = "All dialogs use typed model state and semantic snapshots."
+
+[[task]]
+id = "THEME-001"
+milestone = "M2"
+title = "Built-in semantic themes"
+status = "IN_PROGRESS"
+priority = 14
+required = true
+depends_on = ["UI-SHELL-001"]
+verify = ["cargo test -p yoctui-ui theme"]
+notes = "dark light matrix-green high-contrast monochrome."
+
+[[task]]
+id = "SETTINGS-001"
+milestone = "M2"
+title = "Interactive settings editing and persistence"
+status = "NOT_STARTED"
+priority = 15
+required = true
+depends_on = ["THEME-001", "DIALOG-001"]
+verify = ["cargo test -p yoctui-model settings", "cargo test -p yoctui-app settings"]
+notes = "Theme, animation, reduced motion, pane sizes, header/footer, mouse, icons, workspace."
+
+[[task]]
+id = "ANIM-001"
+milestone = "M2"
+title = "Indeterminate task animation and reduced motion"
+status = "IN_PROGRESS"
+priority = 16
+required = true
+depends_on = ["UI-SHELL-001"]
+verify = ["cargo test -p yoctui-ui animation"]
+notes = "Must not imply false numeric progress."
+
+[[task]]
+id = "JOB-001"
+milestone = "M2"
+title = "Persistent background-job domain model"
+status = "NOT_STARTED"
+priority = 20
+required = true
+depends_on = ["GOV-001"]
+verify = ["cargo test -p yoctui-model background_job"]
+notes = "Shared lifecycle for builds, QEMU, Wic, SDK, tests, and maintenance."
+
+[[task]]
+id = "JOB-002"
+milestone = "M2"
+title = "Background-job effect execution and cancellation"
+status = "NOT_STARTED"
+priority = 21
+required = true
+depends_on = ["JOB-001"]
+verify = ["cargo test -p yoctui-app background_job", "cargo test -p yoctui-bitbake cancellation"]
+notes = "Jobs continue while navigating."
+
+[[task]]
+id = "BB-001"
+milestone = "M1"
+title = "Real BitBake smoke harness"
+status = "NOT_STARTED"
+priority = 30
+required = true
+depends_on = ["JOB-002"]
+verify = ["./scripts/verify-live-bitbake.sh"]
+notes = "Workspace, queries, build, events, completion, cancellation, shutdown."
+
+[[task]]
+id = "BB-002"
+milestone = "M1"
+title = "Typed backend-to-model event boundary"
+status = "IN_PROGRESS"
+priority = 31
+required = true
+depends_on = ["GOV-001"]
+verify = ["./scripts/verify-ui-spec.sh", "cargo test -p yoctui-bitbake typed_event"]
+notes = "No raw backend parsing in Ratatui widgets."
+
+[[task]]
+id = "LOG-001"
+milestone = "M1"
+title = "Bounded searchable logs"
+status = "IN_PROGRESS"
+priority = 32
+required = true
+depends_on = ["BB-002"]
+verify = ["cargo test -p yoctui-model log", "cargo test -p yoctui-ui log"]
+notes = "Follow, pause, wrap, filters, search, eviction details."
+
+[[task]]
+id = "ERR-001"
+milestone = "M1"
+title = "Structured error investigation"
+status = "IN_PROGRESS"
+priority = 33
+required = true
+depends_on = ["BB-002"]
+verify = ["cargo test -p yoctui-model error", "cargo test -p yoctui-ui error"]
+notes = "Details, source, context, log jump, cross-screen navigation."
+
+[[task]]
+id = "LAYERS-001"
+milestone = "M3"
+title = "Lazy Layers tree and contextual inspector"
+status = "IN_PROGRESS"
+priority = 40
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-ui layer_tree"]
+notes = "Expansion, collapse, refresh, hidden files, preview, Git state, large files."
+
+[[task]]
+id = "RECIPES-001"
+milestone = "M3"
+title = "Complete recipes workspace actions"
+status = "IN_PROGRESS"
+priority = 41
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-ui recipes", "cargo test -p yoctui-app recipe_action"]
+notes = "Search, build, clean, cleansstate, menuconfig, Devtool."
+
+[[task]]
+id = "CONFIG-001"
+milestone = "M3"
+title = "Configuration provenance workspace"
+status = "IN_PROGRESS"
+priority = 42
+required = true
+depends_on = ["BB-001"]
+verify = ["cargo test -p yoctui-ui config", "cargo test -p yoctui-bitbake variable"]
+notes = "Live provenance is required."
+
+[[task]]
+id = "DEVTOOL-001"
+milestone = "M3"
+title = "Complete Devtool lifecycle"
+status = "IN_PROGRESS"
+priority = 43
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-app devtool"]
+notes = "modify, edit, build, update-recipe, finish, deploy-target, reset, status, Git."
+
+[[task]]
+id = "DEP-001"
+milestone = "M3"
+title = "Dependency exploration and why-built workflow"
+status = "NOT_STARTED"
+priority = 44
+required = true
+depends_on = ["BB-001"]
+verify = ["cargo test -p yoctui-bitbake dependency", "cargo test -p yoctui-ui dependency"]
+notes = "Recipe/task paths and oe-depends-dot integration."
+
+[[task]]
+id = "SIG-001"
+milestone = "M3"
+title = "Signature dump and comparison workflows"
+status = "IN_PROGRESS"
+priority = 45
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-app signature"]
+notes = "bitbake-dumpsig and bitbake-diffsigs."
+
+[[task]]
+id = "PKG-001"
+milestone = "M3"
+title = "Package data browser"
+status = "IN_PROGRESS"
+priority = 46
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-app pkgdata"]
+notes = "Ownership, runtime dependencies, reverse dependencies, image membership."
+
+[[task]]
+id = "QEMU-001"
+milestone = "M4"
+title = "Managed runqemu workflow"
+status = "NOT_STARTED"
+priority = 50
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-app qemu", "cargo test -p yoctui-ui qemu"]
+notes = "Detection, dialog, background process, console, logs, cancellation."
+
+[[task]]
+id = "WIC-001"
+milestone = "M4"
+title = "Wic image workflow"
+status = "NOT_STARTED"
+priority = 51
+required = true
+depends_on = ["JOB-002", "DIALOG-001"]
+verify = ["cargo test -p yoctui-app wic"]
+notes = "Creation, kickstart preview, output inspection, protected device writing."
+
+[[task]]
+id = "SDK-001"
+milestone = "M4"
+title = "SDK build and artifact workflow"
+status = "NOT_STARTED"
+priority = 52
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-app sdk"]
+notes = "populate SDK/ext SDK, artifacts, publication, extracted SDK."
+
+[[task]]
+id = "TEST-001"
+milestone = "M5"
+title = "Unified test execution and results"
+status = "NOT_STARTED"
+priority = 60
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-app test_workflow"]
+notes = "selftests, testimage, testsdk, ptest, resulttool."
+
+[[task]]
+id = "SEC-001"
+milestone = "M5"
+title = "CVE and SPDX workflows"
+status = "NOT_STARTED"
+priority = 61
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-app security_workflow"]
+notes = "CVE mapping/checks, reports, SBOM generation and viewing."
+
+[[task]]
+id = "QA-001"
+milestone = "M5"
+title = "Recipe, kernel, and layer QA workflows"
+status = "NOT_STARTED"
+priority = 62
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-app qa_workflow"]
+notes = "kernel config, URI, patch, license, yocto-check-layer."
+
+[[task]]
+id = "MAINT-001"
+milestone = "M6"
+title = "Advanced maintenance workflows"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["JOB-002", "DIALOG-001"]
+verify = ["cargo test -p yoctui-app maintenance"]
+notes = "sstate, PR service, hash server, locked sigs, archive, build comparison."
+
+[[task]]
+id = "HARDEN-001"
+milestone = "M7"
+title = "Complete test and analysis matrix"
+status = "IN_PROGRESS"
+priority = 80
+required = true
+depends_on = ["GOV-001"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings"]
+notes = "Property, fuzz, stress, terminal, sanitizer, Valgrind, profiling, flamegraph."
+
+[[task]]
+id = "DOC-001"
+milestone = "M7"
+title = "Complete operator and compatibility documentation"
+status = "IN_PROGRESS"
+priority = 81
+required = true
+depends_on = ["BB-001"]
+verify = ["test -s docs/compatibility.md", "test -s README.md"]
+notes = "Fresh-checkout, live matrix, workflows, troubleshooting."
