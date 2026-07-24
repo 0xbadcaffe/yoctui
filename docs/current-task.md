@@ -2,48 +2,50 @@
 
 ## Active task
 
-**ID:** THEME-001
-**Title:** Complete built-in semantic themes
+**ID:** SETTINGS-001
+**Title:** Implement interactive settings editing and persistence
 
 ## Objective
 
-Complete the five built-in themes so every shell region, status, severity,
-selection, focus, progress, dialog, and disabled state is rendered through
-named semantic roles rather than scattered direct colors.
+Turn the read-only Settings workspace into a typed interactive editor whose
+changes apply immediately where appropriate and persist through the existing
+configuration/session boundary.
 
 ## Required work
 
-1. Inventory direct `Color` and `Style` construction in `yoctui-ui` before
-   changing the representation.
-2. Define a semantic theme palette for all five built-in themes: Dark, Light,
-   Matrix Green, High Contrast, and Monochrome.
-3. Cover foreground/background, border, focused border, selection, disabled,
-   info, success, warning, error, progress, text accent, and code syntax roles.
-4. Route shell, workspace, inspector, footer, dialogs, notifications, gauges,
-   tables, logs, and source previews through those roles.
-5. Preserve `--no-color` behavior using terminal attributes and readable
-   monochrome contrast without relying on color.
-6. Ensure focus and selection remain visibly distinct in every theme and on
-   narrow layouts.
-7. Add deterministic TestBackend coverage for semantic roles, all theme
-   variants, no-color mode, dialogs, progress, and severity rendering.
-8. Update `docs/ui-spec.md` with the final semantic role contract.
+1. Inventory existing configuration precedence, `FileConfig`, session state,
+   Settings rendering, and theme/animation/reduced-motion actions.
+2. Define typed settings rows and reducer actions for selection and editing.
+3. Support theme, animation speed, reduced motion, color enablement, log wrap,
+   and log follow without an unstructured text editor.
+4. Apply preview-safe visual settings immediately and preserve focus/selection.
+5. Persist accepted values through the CLI-owned configuration or session
+   boundary without overwriting unrelated user configuration.
+6. Surface write failures as typed notices while retaining the in-memory value
+   and a retryable dirty state.
+7. Keep CLI/config/environment precedence explicit and documented.
+8. Add model reducer tests, app input mapping tests, CLI persistence/failure
+   tests, and Settings TestBackend coverage including narrow terminals.
+9. Update `docs/ui-spec.md` and `docs/architecture.md` for the persistence
+   contract.
 
 ## Definition of done
 
-- UI code no longer uses scattered direct colors for product state.
-- Every built-in theme supplies every semantic role.
-- Focus, selection, severity, progress, disabled state, and dialogs are
-  distinguishable in all themes.
-- `--no-color` and Monochrome remain readable and deterministic.
-- Existing layouts and behavior remain unchanged.
+- Settings are selected and changed through typed actions.
+- Supported visual/log preferences update predictably without leaving the TUI.
+- Accepted settings survive restart through the documented precedence model.
+- Persistence failures are visible and do not silently discard dirty state.
+- Narrow Settings rendering is safe and exposes the active value and controls.
 - Task-specific and baseline verification pass.
 - Registry/status documents are updated and the next eligible task is active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui theme
+cargo test -p yoctui-model settings
+cargo test -p yoctui-app settings
+cargo test -p yoctui-ui settings
+cargo test -p yoctui -- settings
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -53,4 +55,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`SETTINGS-001 — Implement interactive settings editing and persistence`
+`ANIM-001 — Complete indeterminate task animation and reduced motion`

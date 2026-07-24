@@ -86,12 +86,12 @@ notes = "One typed FIFO dialog queue now owns build, image, recipe, Devtool, BBM
 id = "THEME-001"
 milestone = "M2"
 title = "Built-in semantic themes"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 14
 required = true
 depends_on = ["UI-SHELL-001"]
 verify = ["cargo test -p yoctui-ui theme"]
-notes = "All five theme names, configuration parsing, and focus/selection roles exist from 88816bd. Full semantic color roles and interactive switching remain."
+notes = "One complete semantic palette now covers all five themes, shell/background, borders, selection, disabled state, status, severity, progress, dialogs, notifications, and syntax. Monochrome/no-color attributes and TestBackend coverage are complete in this commit."
 
 [[task]]
 id = "SETTINGS-001"
@@ -101,7 +101,7 @@ status = "IN_PROGRESS"
 priority = 15
 required = true
 depends_on = ["THEME-001", "DIALOG-001"]
-verify = ["cargo test -p yoctui-model settings", "cargo test -p yoctui-app settings"]
+verify = ["cargo test -p yoctui-model settings", "cargo test -p yoctui-app settings", "cargo test -p yoctui-ui settings", "cargo test -p yoctui -- settings"]
 notes = "Read-only Settings workspace added by 32b7983 and theme/animation preferences load from config. Interactive editing and complete persistence remain."
 
 [[task]]

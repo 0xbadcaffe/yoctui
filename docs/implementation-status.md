@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Built-in semantic themes. Unified dialogs, shared focus routing, responsive layouts, persistent jobs, and the first live BitBake compatibility matrix are complete.
+Interactive settings and preference persistence. Semantic themes, unified dialogs, shared focus routing, responsive layouts, persistent jobs, and the first live BitBake compatibility matrix are complete.
 
 ## Current task
 
@@ -39,7 +39,7 @@ See `docs/current-task.md`.
 | Focus routing | DONE | Bidirectional pane cycling, modal input trapping, nested-modal return targets, exact pane restoration, quit cancellation, and responsive focus rendering are covered |
 | Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |
 | Command palette | IN_PROGRESS | Ctrl+P overlay, selection, and activation exist (`457f176`); search, contextual availability, explanations, and direct tests remain |
-| Themes | IN_PROGRESS | Five built-in names and focus/selection roles exist (`88816bd`); complete semantic roles and interactive persistence remain |
+| Themes | DONE | Five complete semantic palettes cover shell, focus, selection, status, severity, progress, dialogs, notifications, and syntax; monochrome/no-color use terminal attributes |
 | Task animation | IN_PROGRESS | Tick-driven fast/slow indeterminate frames and reduced-motion suppression exist (`3f69c16`); direct behavior tests remain |
 | Background-job model | DONE | Stable IDs, typed lifecycle/context/progress/result/error, bounded output/history, cancellation capability, and reducer coverage are implemented |
 | Background build execution | DONE | Confirmed builds allocate one job; typed events drive lifecycle/output; navigation persists; failure, cancellation rejection/acknowledgement, and backend loss are covered |
@@ -53,14 +53,14 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `THEME-001` — built-in semantic themes
-2. `SETTINGS-001` — interactive settings and persistence
-3. `ANIM-001` — complete task animation and reduced motion
-4. `PALETTE-001` — searchable contextual command palette
-5. `TASKS-001` — complete live Tasks workspace
-6. `LAYERS-001` — complete lazy layer tree and inspector
-7. `IMAGES-001` — complete image artifact workspace
-8. `DEP-001` — dependency exploration
+1. `SETTINGS-001` — interactive settings and persistence
+2. `ANIM-001` — complete task animation and reduced motion
+3. `PALETTE-001` — searchable contextual command palette
+4. `TASKS-001` — complete live Tasks workspace
+5. `LAYERS-001` — complete lazy layer tree and inspector
+6. `IMAGES-001` — complete image artifact workspace
+7. `DEP-001` — dependency exploration
+8. `QEMU-001` — managed QEMU workflow
 
 ## Rules
 
