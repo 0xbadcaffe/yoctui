@@ -294,28 +294,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         .block(Block::default().borders(Borders::ALL)),
         chunks[0],
     );
-    let panes = if area.width >= 130 {
-        Layout::horizontal([
-            Constraint::Length(22),
-            Constraint::Percentage(43),
-            Constraint::Min(28),
-        ])
-        .split(chunks[1])
-    } else if area.width >= 100 {
-        Layout::horizontal([Constraint::Length(22), Constraint::Min(40)]).split(chunks[1])
-    } else {
-        Layout::horizontal([Constraint::Min(1)]).split(chunks[1])
-    };
-    if panes.len() == 3 {
-        navigator(frame, app, panes[0]);
-        workspace(frame, app, panes[1]);
-        inspector(frame, app, panes[2]);
-    } else if panes.len() == 2 {
-        navigator(frame, app, panes[0]);
-        workspace(frame, app, panes[1]);
-    } else {
-        workspace(frame, app, panes[0]);
-    }
+    responsive_shell(frame, app, chunks[1], area.width);
     let footer_style = if app.color_enabled {
         Style::default().fg(theme_focus_color(app))
     } else {
@@ -651,6 +630,62 @@ pub fn render(frame: &mut Frame, app: &App) {
             popup,
         );
     }
+}
+
+fn responsive_shell(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {
+    if terminal_width >= 130 {
+        let panes = Layout::horizontal([
+            Constraint::Length(22),
+            Constraint::Percentage(43),
+            Constraint::Min(28),
+        ])
+        .split(area);
+        navigator(frame, app, panes[0]);
+        workspace(frame, app, panes[1]);
+        inspector(frame, app, panes[2]);
+    } else if terminal_width >= 100 {
+        let panes = Layout::horizontal([Constraint::Length(22), Constraint::Min(40)]).split(area);
+        navigator(frame, app, panes[0]);
+        workspace(frame, app, panes[1]);
+        if app.focus == FocusTarget::Inspector {
+            frame.render_widget(Clear, panes[1]);
+            inspector(frame, app, panes[1]);
+        }
+    } else {
+        let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(area);
+        pane_switcher(frame, app, rows[0]);
+        match app.focus {
+            FocusTarget::Navigator => navigator(frame, app, rows[1]),
+            FocusTarget::Inspector => inspector(frame, app, rows[1]),
+            FocusTarget::Workspace | FocusTarget::Dialog | FocusTarget::CommandPalette => {
+                workspace(frame, app, rows[1]);
+            }
+        }
+    }
+}
+
+fn pane_switcher(frame: &mut Frame, app: &App, area: Rect) {
+    let label = |target: FocusTarget, name: &str| {
+        if app.focus == target {
+            format!("[{name}]")
+        } else {
+            name.to_owned()
+        }
+    };
+    frame.render_widget(
+        Paragraph::new(format!(
+            "Panes: {}  {}  {}  Tab/Shift+Tab",
+            label(FocusTarget::Navigator, "Navigator"),
+            label(FocusTarget::Workspace, "Workspace"),
+            label(FocusTarget::Inspector, "Inspector"),
+        ))
+        .style(if app.color_enabled {
+            Style::default().fg(theme_focus_color(app))
+        } else {
+            Style::default()
+        }),
+        area,
+    );
 }
 
 fn pane_block<'a>(app: &App, title: &'a str, focused: bool) -> Block<'a> {
@@ -1911,6 +1946,19 @@ mod tests {
     use super::*;
     use ratatui::{Terminal, backend::TestBackend};
     use yoctui_model::BuildRequest;
+
+    fn rendered_text(app: &App, width: u16, height: u16) -> String {
+        let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+        terminal.draw(|frame| render(frame, app)).unwrap();
+        terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect()
+    }
+
     #[test]
     fn renders_small_terminal() {
         let mut terminal = Terminal::new(TestBackend::new(62, 18)).unwrap();
@@ -1947,6 +1995,120 @@ mod tests {
                 "{width}x{height} should show {expected}"
             );
         }
+    }
+    #[test]
+    fn responsive_shell_uses_semantic_content_at_every_breakpoint() {
+        let mut app = App::new(10, 1_000);
+
+        let wide = rendered_text(&app, 130, 24);
+        assert!(wide.contains("Navigator"));
+        assert!(wide.contains("Build"));
+        assert!(wide.contains("Inspector"));
+
+        let medium = rendered_text(&app, 129, 24);
+        assert!(medium.contains("Navigator"));
+        assert!(medium.contains("Build"));
+        assert!(!medium.contains("Inspector"));
+
+        app.focus = FocusTarget::Inspector;
+        let medium_inspector = rendered_text(&app, 100, 24);
+        assert!(medium_inspector.contains("Navigator"));
+        assert!(medium_inspector.contains("Inspector"));
+
+        app.focus = FocusTarget::Workspace;
+        let narrow_workspace = rendered_text(&app, 99, 24);
+        assert!(narrow_workspace.contains("Panes: Navigator  [Workspace]  Inspector"));
+        assert!(narrow_workspace.contains("Build"));
+
+        app.focus = FocusTarget::Navigator;
+        let narrow_navigator = rendered_text(&app, 80, 24);
+        assert!(narrow_navigator.contains("Panes: [Navigator]  Workspace  Inspector"));
+        assert!(narrow_navigator.contains("Dashboard"));
+
+        app.focus = FocusTarget::Inspector;
+        let narrow_inspector = rendered_text(&app, 80, 24);
+        assert!(narrow_inspector.contains("Panes: Navigator  Workspace  [Inspector]"));
+        assert!(narrow_inspector.contains("Select an item in the workspace"));
+
+        let too_small = rendered_text(&app, 79, 23);
+        assert!(too_small.contains("Yoctui needs at least 80x24"));
+        assert!(too_small.contains("Current terminal: 79x23"));
+    }
+    #[test]
+    fn responsive_resize_preserves_the_selected_pane() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Inspector;
+        let mut terminal = Terminal::new(TestBackend::new(130, 24)).unwrap();
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+
+        terminal.backend_mut().resize(100, 24);
+        terminal.autoresize().unwrap();
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let medium = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(medium.contains("Inspector"));
+
+        terminal.backend_mut().resize(80, 24);
+        terminal.autoresize().unwrap();
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let narrow = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(narrow.contains("[Inspector]"));
+        assert_eq!(app.focus, FocusTarget::Inspector);
+    }
+    #[test]
+    fn responsive_all_screens_and_dialogs_render_at_boundary_sizes() {
+        let screens = [
+            Screen::Dashboard,
+            Screen::Tasks,
+            Screen::BuildHistory,
+            Screen::Dependencies,
+            Screen::LayerRelationships,
+            Screen::Recipes,
+            Screen::Images,
+            Screen::Layers,
+            Screen::Configuration,
+            Screen::Bbmask,
+            Screen::Logs,
+            Screen::Errors,
+            Screen::Help,
+            Screen::Settings,
+        ];
+        for screen in screens {
+            for (width, height) in [(130, 24), (129, 24), (100, 24), (99, 24), (80, 24)] {
+                let mut app = App::new(10, 1_000);
+                app.screen = screen;
+                let _ = rendered_text(&app, width, height);
+            }
+        }
+
+        let mut build_options = App::new(10, 1_000);
+        build_options.build_options_open = true;
+        build_options.focus = FocusTarget::Dialog;
+        let _ = rendered_text(&build_options, 80, 24);
+
+        let mut palette = App::new(10, 1_000);
+        palette.command_palette_open = true;
+        palette.focus = FocusTarget::CommandPalette;
+        let _ = rendered_text(&palette, 80, 24);
+
+        let mut confirmation = App::new(10, 1_000);
+        confirmation.recipe_task_confirmation = Some(BuildRequest {
+            targets: vec!["base-files".into()],
+            task: Some("listtasks".into()),
+        });
+        confirmation.focus = FocusTarget::Dialog;
+        let _ = rendered_text(&confirmation, 80, 24);
     }
     #[test]
     fn formats_error_timestamp_without_panicking() {

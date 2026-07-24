@@ -2,53 +2,53 @@
 
 ## Active task
 
-**ID:** UI-RESP-001
-**Title:** Complete responsive wide, medium, narrow, and too-small layouts
+**ID:** FOCUS-001
+**Title:** Complete the shared focus router and modal focus trapping
 
 ## Objective
 
-Implement the complete responsive shell behavior specified in
-`docs/ui-spec.md`: three persistent panes on wide terminals, navigator plus
-workspace with a toggleable inspector on medium terminals, a visible
-one-pane switcher on narrow terminals, and a safe resize message below the
-minimum size.
+Make Navigator, Workspace, Inspector, Dialog, and CommandPalette use one
+predictable focus router across every workspace and transient interaction,
+including restoration to the exact prior pane after a modal closes.
 
 ## Required work
 
-1. Inspect the current shell renderer, application focus/navigation model,
-   input mapping, and existing breakpoint tests before changing code.
-2. Define stable wide, medium, narrow, and too-small breakpoint behavior
-   without duplicating screen-specific layouts.
-3. Keep Navigator, Workspace, and Inspector visible together in wide mode.
-4. Keep Navigator and Workspace visible in medium mode and provide a
-   keyboard-accessible inspector overlay or tab.
-5. Render one pane at a time in narrow mode with a visible pane switcher and
-   keyboard navigation among Navigator, Workspace, and Inspector.
-6. Preserve existing modal focus trapping and do not let responsive pane
-   controls bypass dialogs.
-7. Ensure every supported screen and relevant dialog renders without panic at
-   boundary dimensions and after resize transitions.
-8. Add reducer/input tests for pane selection and Ratatui `TestBackend` tests
-   for semantic content at every breakpoint.
-9. Update `docs/ui-spec.md` in the same commit if implementation requires a
-   more precise intentional shortcut or breakpoint contract.
+1. Inspect every focus assignment in the reducer, application input mapping,
+   CLI dispatch loop, and renderer before changing state.
+2. Centralize entry to and exit from Dialog and CommandPalette focus so the
+   prior non-modal focus target is recorded and restored.
+3. Ensure Tab and Shift+Tab cycle Navigator, Workspace, and Inspector in both
+   directions with wraparound.
+4. Ensure arrow keys and activation keys affect only the focused region.
+5. Make Esc close the innermost transient mode or return focus outward without
+   replacing the active workspace.
+6. Ensure every dialog and the command palette trap focus until closed,
+   including when other workspace state such as the layer browser is active.
+7. Preserve responsive pane focus and visible focus styling after dialogs
+   close and across workspace changes.
+8. Add reducer tests for focus entry/restoration and invalid transitions,
+   application/CLI input-routing tests, and Ratatui tests for visible focus and
+   modal trapping.
+9. Update `docs/ui-spec.md` in the same commit if the shared routing contract
+   needs clarification.
 
 ## Definition of done
 
-- Wide, medium, narrow, and too-small behavior matches `docs/ui-spec.md`.
-- Medium terminals can reveal and dismiss the Inspector without losing the
-  underlying workspace.
-- Narrow terminals visibly identify and switch the active pane.
-- Resize transitions clamp or preserve pane state safely.
-- No supported screen or dialog panics at tested boundary dimensions.
+- Exactly one focus target is active.
+- Pane cycling is bidirectional, bounded by wraparound, and modal-safe.
+- Dialog and command-palette close paths restore the exact prior pane.
+- Modal input cannot reach navigator or workspace actions.
+- Esc follows the specified transient-mode and outward-focus behavior.
+- Focus is visibly distinguishable at all responsive breakpoints.
 - Task-specific and baseline verification pass.
 - Registry/status documents are updated and the next eligible task is active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui responsive
-cargo test -p yoctui-app responsive
+cargo test -p yoctui-model focus
+cargo test -p yoctui-app focus
+cargo test -p yoctui-ui dialog
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -58,4 +58,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`FOCUS-001 — Complete the shared focus router and modal focus trapping`
+`DIALOG-001 — Implement the unified typed dialog stack`
