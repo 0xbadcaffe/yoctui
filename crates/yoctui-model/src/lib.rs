@@ -45,6 +45,15 @@ pub enum Screen {
     Errors,
     Help,
 }
+/// The one active target in Yoctui's persistent workbench shell.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum FocusTarget {
+    Navigator,
+    Workspace,
+    Inspector,
+    Dialog,
+    CommandPalette,
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BuildStatus {
     Idle,
@@ -328,6 +337,7 @@ impl LogState {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
     pub screen: Screen,
+    pub focus: FocusTarget,
     pub backend: String,
     pub color_enabled: bool,
     pub workspace: Workspace,
@@ -376,6 +386,7 @@ impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
             screen: Screen::Dashboard,
+            focus: FocusTarget::Workspace,
             backend: "unknown".into(),
             color_enabled: true,
             workspace: Workspace::default(),
@@ -431,6 +442,10 @@ impl App {
 pub enum Action {
     Tick,
     Open(Screen),
+    CycleFocus {
+        backwards: bool,
+    },
+    Focus(FocusTarget),
     OpenBuildOptions,
     CloseBuildOptions,
     OpenImagePicker(Vec<String>),
@@ -610,7 +625,28 @@ fn prepare_build(app: &mut App, target: Option<String>) {
 
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     match action {
-        Action::Open(s) => app.screen = s,
+        Action::Open(s) => {
+            app.screen = s;
+            app.focus = FocusTarget::Workspace;
+        }
+        Action::Focus(target) => app.focus = target,
+        Action::CycleFocus { backwards } => {
+            const TARGETS: [FocusTarget; 3] = [
+                FocusTarget::Navigator,
+                FocusTarget::Workspace,
+                FocusTarget::Inspector,
+            ];
+            let current = TARGETS
+                .iter()
+                .position(|target| *target == app.focus)
+                .unwrap_or(1);
+            let next = if backwards {
+                (current + TARGETS.len() - 1) % TARGETS.len()
+            } else {
+                (current + 1) % TARGETS.len()
+            };
+            app.focus = TARGETS[next];
+        }
         Action::OpenBuildOptions => app.build_options_open = true,
         Action::CloseBuildOptions => app.build_options_open = false,
         Action::OpenImagePicker(mut images) => {

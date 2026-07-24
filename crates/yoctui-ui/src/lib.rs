@@ -4,7 +4,9 @@ use ratatui::{
     widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap},
 };
 use std::time::{SystemTime, UNIX_EPOCH};
-use yoctui_model::{App, LayerBrowser, RecipeEditor, Screen, Severity, format_duration};
+use yoctui_model::{
+    App, FocusTarget, LayerBrowser, RecipeEditor, Screen, Severity, format_duration,
+};
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
     let query = query.to_lowercase();
@@ -170,16 +172,19 @@ fn footer_shortcuts(app: &App) -> &'static str {
 
 pub fn render(frame: &mut Frame, app: &App) {
     let area = frame.area();
-    if area.width < 30 || area.height < 8 {
+    if area.width < 80 || area.height < 24 {
         frame.render_widget(
-            Paragraph::new("Terminal too small\nResize to at least 30x8")
+            Paragraph::new(format!(
+                "Yoctui needs at least 80x24.\nCurrent terminal: {}x{}.\nResize the terminal or press Q to quit.",
+                area.width, area.height
+            ))
                 .block(Block::default().borders(Borders::ALL)),
             area,
         );
         return;
     }
     let chunks = Layout::vertical([
-        Constraint::Length(3),
+        Constraint::Length(4),
         Constraint::Min(1),
         Constraint::Length(1),
     ])
@@ -188,38 +193,63 @@ pub fn render(frame: &mut Frame, app: &App) {
         .elapsed()
         .map(format_duration)
         .unwrap_or_else(|| "--:--:--".into());
+    let machine = app
+        .workspace
+        .variables
+        .get("MACHINE")
+        .map_or("unknown", String::as_str);
+    let distro = app
+        .workspace
+        .variables
+        .get("DISTRO")
+        .map_or("unknown", String::as_str);
+    let disk = app.host_telemetry.disk_available_bytes.map_or_else(
+        || "Disk --".into(),
+        |bytes| format!("Disk {}", format_bytes(bytes)),
+    );
     frame.render_widget(
         Paragraph::new(format!(
-            " Yoctui | {:?} | {} | {} | Yocto: {} | warnings: {} errors: {}",
-            app.screen,
-            app.build.status,
-            elapsed,
+            " Yoctui | {:?} | Yocto: {} | Target {} | MACHINE {} | DISTRO {}\n Status {:?} | Tasks {}/{} | Active {} | W {} | E {} | {} | CPU {} | {}",
+            app.backend,
             active_yocto(app),
+            app.build.target.as_deref().unwrap_or("not selected"),
+            machine,
+            distro,
+            app.build.status,
+            app.build.completed,
+            app.build.total.map_or_else(|| "?".into(), |total| total.to_string()),
+            app.tasks.len(),
             app.build.warnings,
-            app.build.errors
+            app.build.errors,
+            elapsed,
+            app.host_telemetry.cpu_utilization_percent.map_or_else(|| "CPU --".into(), |cpu| format!("CPU {cpu}%")),
+            disk,
         ))
         .block(Block::default().borders(Borders::ALL)),
         chunks[0],
     );
-    match app.screen {
-        Screen::Dashboard => dashboard(frame, app, chunks[1]),
-        Screen::BuildHistory => build_history(frame, app, chunks[1]),
-        Screen::Dependencies => dependencies(frame, app, chunks[1]),
-        Screen::LayerRelationships => layer_relationships(frame, app, chunks[1]),
-        Screen::Logs => logs(frame, app, chunks[1]),
-        Screen::Errors => errors(frame, app, chunks[1]),
-        Screen::Recipes => recipes(frame, app, chunks[1]),
-        Screen::Layers => {
-            if let Some(browser) = app.layer_browser.as_ref() {
-                layer_browser(frame, app, browser, chunks[1]);
-            } else {
-                layers(frame, app, chunks[1]);
-            }
-        }
-        Screen::Configuration => config(frame, app, chunks[1]),
-        Screen::Bbmask => bbmask(frame, app, chunks[1]),
-        Screen::Help => help(frame, chunks[1]),
+    let panes = if area.width >= 130 {
+        Layout::horizontal([
+            Constraint::Length(22),
+            Constraint::Percentage(43),
+            Constraint::Min(28),
+        ])
+        .split(chunks[1])
+    } else if area.width >= 100 {
+        Layout::horizontal([Constraint::Length(22), Constraint::Min(40)]).split(chunks[1])
+    } else {
+        Layout::horizontal([Constraint::Min(1)]).split(chunks[1])
     };
+    if panes.len() == 3 {
+        navigator(frame, app, panes[0]);
+        workspace(frame, app, panes[1]);
+        inspector(frame, app, panes[2]);
+    } else if panes.len() == 2 {
+        navigator(frame, app, panes[0]);
+        workspace(frame, app, panes[1]);
+    } else {
+        workspace(frame, app, panes[0]);
+    }
     let footer_style = if app.color_enabled {
         Style::default().fg(Color::DarkGray)
     } else {
@@ -520,6 +550,81 @@ pub fn render(frame: &mut Frame, app: &App) {
             popup,
         );
     }
+}
+
+fn pane_block(title: &str, focused: bool) -> Block<'_> {
+    let style = if focused {
+        Style::default().fg(Color::Cyan)
+    } else {
+        Style::default().fg(Color::DarkGray)
+    };
+    Block::default()
+        .title(title)
+        .borders(Borders::ALL)
+        .border_style(style)
+}
+
+fn navigator(frame: &mut Frame, app: &App, area: Rect) {
+    let entries = [
+        ("Dashboard", Screen::Dashboard),
+        ("Layers", Screen::Layers),
+        ("Recipes", Screen::Recipes),
+        ("Tasks", Screen::Dashboard),
+        ("Logs", Screen::Logs),
+        ("Errors", Screen::Errors),
+        ("Configuration", Screen::Configuration),
+        ("Dependencies", Screen::Dependencies),
+        ("Devtool", Screen::Recipes),
+        ("Maintenance", Screen::Bbmask),
+        ("Settings", Screen::Help),
+    ];
+    let text = entries
+        .iter()
+        .map(|(name, screen)| format!("{} {}", if *screen == app.screen { "▶" } else { " " }, name))
+        .collect::<Vec<_>>()
+        .join("\n");
+    frame.render_widget(
+        Paragraph::new(text).block(pane_block("Navigator", app.focus == FocusTarget::Navigator)),
+        area,
+    );
+}
+
+fn workspace(frame: &mut Frame, app: &App, area: Rect) {
+    match app.screen {
+        Screen::Dashboard => dashboard(frame, app, area),
+        Screen::BuildHistory => build_history(frame, app, area),
+        Screen::Dependencies => dependencies(frame, app, area),
+        Screen::LayerRelationships => layer_relationships(frame, app, area),
+        Screen::Logs => logs(frame, app, area),
+        Screen::Errors => errors(frame, app, area),
+        Screen::Recipes => recipes(frame, app, area),
+        Screen::Layers => {
+            if let Some(browser) = app.layer_browser.as_ref() {
+                layer_browser(frame, app, browser, area)
+            } else {
+                layers(frame, app, area)
+            }
+        }
+        Screen::Configuration => config(frame, app, area),
+        Screen::Bbmask => bbmask(frame, app, area),
+        Screen::Help => help(frame, area),
+    }
+}
+
+fn inspector(frame: &mut Frame, app: &App, area: Rect) {
+    let details = format!(
+        "Workspace: {:?}\nFocus: {:?}\n\nTarget: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
+        app.screen,
+        app.focus,
+        app.build.target.as_deref().unwrap_or("not selected"),
+        app.build.status
+    );
+    frame.render_widget(
+        Paragraph::new(details)
+            .block(pane_block("Inspector", app.focus == FocusTarget::Inspector))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
 }
 
 fn build_progress_popup(frame: &mut Frame, app: &App, area: Rect) {
@@ -1545,7 +1650,7 @@ mod tests {
     use yoctui_model::BuildRequest;
     #[test]
     fn renders_small_terminal() {
-        let mut terminal = Terminal::new(TestBackend::new(20, 5)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(62, 18)).unwrap();
         terminal.draw(|f| render(f, &App::new(1, 1))).unwrap();
         assert!(
             terminal
@@ -1553,7 +1658,7 @@ mod tests {
                 .buffer()
                 .content
                 .iter()
-                .any(|c| c.symbol() == "T")
+                .any(|c| c.symbol() == "Y")
         );
     }
     #[test]
@@ -1576,7 +1681,7 @@ mod tests {
     fn renders_notification() {
         let mut app = App::new(1, 1);
         app.notification = Some("Backend unavailable".into());
-        let mut terminal = Terminal::new(TestBackend::new(80, 20)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(140, 30)).unwrap();
         terminal.draw(|f| render(f, &app)).unwrap();
         let screen = terminal
             .backend()
@@ -1589,7 +1694,7 @@ mod tests {
     }
     #[test]
     fn dashboard_renders_backend_and_build_metrics() {
-        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(160, 32)).unwrap();
         let mut app = App::new(10, 1_000);
         app.backend = "bridge".into();
         app.build.completed = 3;
@@ -1613,7 +1718,7 @@ mod tests {
     }
     #[test]
     fn bbmask_footer_shows_its_edit_shortcut() {
-        let mut terminal = Terminal::new(TestBackend::new(160, 20)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(300, 40)).unwrap();
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Bbmask;
         terminal.draw(|frame| render(frame, &app)).unwrap();
@@ -1628,7 +1733,7 @@ mod tests {
     }
     #[test]
     fn dashboard_renders_host_cpu_and_build_disk_space() {
-        let mut terminal = Terminal::new(TestBackend::new(120, 20)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(300, 40)).unwrap();
         let mut app = App::new(10, 1_000);
         app.host_telemetry.cpu_utilization_percent = Some(42);
         app.host_telemetry.disk_available_bytes = Some(8 * 1024 * 1024 * 1024);
@@ -1641,7 +1746,7 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(output.contains("Host CPU: 42%"));
-        assert!(output.contains("Build disk free: 8.0 GiB"));
+        assert!(output.contains("Disk 8.0 GiB"));
     }
     #[test]
     fn dashboard_renders_parse_progress() {
@@ -1780,7 +1885,7 @@ mod tests {
     }
     #[test]
     fn renders_build_target_editor() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 20)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(140, 30)).unwrap();
         let mut app = App::new(10, 1_000);
         app.build_target_editing = true;
         app.build_target_input = "core-image-minimal".into();
@@ -1797,7 +1902,7 @@ mod tests {
     }
     #[test]
     fn renders_machine_aware_build_options() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 20)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(140, 30)).unwrap();
         let mut app = App::new(10, 1_000);
         app.build_options_open = true;
         app.build.target = Some("core-image-minimal".into());
@@ -1818,7 +1923,7 @@ mod tests {
     }
     #[test]
     fn logs_identify_evicted_warnings_and_errors() {
-        let mut terminal = Terminal::new(TestBackend::new(160, 20)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(300, 30)).unwrap();
         let mut app = App::new(1, 1_000);
         app.screen = Screen::Logs;
         app.logs.dropped = 3;
@@ -1836,7 +1941,7 @@ mod tests {
     }
     #[test]
     fn renders_recipe_task_confirmation() {
-        let mut terminal = Terminal::new(TestBackend::new(80, 20)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(140, 30)).unwrap();
         let mut app = App::new(10, 1_000);
         app.recipe_task_confirmation = Some(BuildRequest {
             targets: vec!["busybox".into()],
@@ -2068,7 +2173,7 @@ mod tests {
     }
     #[test]
     fn bbmask_renders_effective_patterns_and_provenance() {
-        let mut terminal = Terminal::new(TestBackend::new(100, 20)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(160, 30)).unwrap();
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Bbmask;
         app.workspace
@@ -2091,7 +2196,7 @@ mod tests {
     }
     #[test]
     fn bbmask_edit_preview_shows_the_exact_assignment() {
-        let mut terminal = Terminal::new(TestBackend::new(100, 20)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(160, 30)).unwrap();
         let mut app = App::new(10, 1_000);
         app.bbmask_confirmation = Some("meta-broken/.*".into());
         terminal.draw(|frame| render(frame, &app)).unwrap();
