@@ -712,7 +712,19 @@ Recipe actions use dialogs:
 - CVE check
 - SPDX generation
 
-Destructive actions require explicit confirmation.
+The default recipe build opens a typed confirmation immediately. Standard
+task routes for `clean`, `cleansstate`, `devshell`, `menuconfig`,
+`diffconfig`, and `diffsigs` are available only when the selected recipe's
+authoritative task metadata advertises them. `f` opens a focus-trapping task
+picker populated from that same metadata; its force toggle cannot be supplied
+as raw text. Every confirmation previews the exact target, task, and force
+intent before it creates a persistent build job. The process and bridge
+backends preserve the typed target/task/force fields when invoking BitBake.
+
+Destructive, forced, and otherwise unusual task execution requires explicit
+confirmation. Empty or stale selection, unavailable task metadata, unsupported
+tasks, malformed task names, and a duplicate active build stay inert and
+produce an actionable notification.
 
 Unavailable actions are shown disabled with an explanation in the footer or inspector.
 

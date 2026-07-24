@@ -423,7 +423,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
         }
         Screen::LayerRelationships => "Esc dashboard | y layers | ? help | q quit",
         Screen::Recipes => {
-            "↑/↓ select | Enter inspect | / search | g dependencies | b build | C clean | M menuconfig | S cleansstate | d Devtool | u update | F finish | P deploy | D reset"
+            "↑/↓ select | Enter inspect | b build | f force task | C clean | S cleansstate | M menuconfig | v devshell | K diffconfig | z diffsigs | g deps | / search"
         }
         Screen::Images => {
             "↑/↓ select | b build selected image | i image picker | Tab focus | q quit"
@@ -533,17 +533,45 @@ pub fn render(frame: &mut Frame, app: &App) {
                 .block(Block::default().title("Confirm quit").borders(Borders::ALL)),
             popup,
         )
+    } else if let Some(Dialog::RecipeTaskPicker(picker)) = app.active_dialog() {
+        let popup = Rect::new(
+            area.width / 4,
+            area.height / 4,
+            area.width / 2,
+            area.height / 2,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Table::new(
+                picker.tasks.iter().enumerate().map(|(index, task)| {
+                    Row::new([task.as_str()]).style(selected_style(app, index == picker.selection))
+                }),
+                [Constraint::Min(1)],
+            )
+            .header(Row::new(["Authoritative BitBake tasks"]).style(Style::default().bold()))
+            .block(
+                Block::default()
+                    .title(format!(
+                        "{} task: {}",
+                        if picker.force { "Force" } else { "Run" },
+                        picker.recipe
+                    ))
+                    .borders(Borders::ALL),
+            ),
+            popup,
+        );
     } else if let Some(Dialog::RecipeTaskConfirmation(request)) = app.active_dialog() {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Run `bitbake {} {}`?\n\nPress Enter to continue or Esc to cancel.",
+                "Run `bitbake {}{} {}`?\n\nPress Enter to continue or Esc to cancel.",
+                if request.force { "-f " } else { "" },
+                request.targets.join(" "),
                 request
                     .task
                     .as_deref()
-                    .map_or(String::new(), |task| format!("-c {task}")),
-                request.targets.join(" ")
+                    .map_or(String::new(), |task| format!("-c {task}"))
             ))
             .block(
                 Block::default()
@@ -2252,13 +2280,46 @@ fn recipe_inspector(app: &App, recipe: &Recipe) -> String {
         .map(|task| format!("{} ({:?})", task.task, task.state))
         .collect::<Vec<_>>();
     let reported_tasks = metadata.and_then(|metadata| metadata.tasks.as_ref());
+    let standard_tasks = [
+        "clean",
+        "cleansstate",
+        "devshell",
+        "menuconfig",
+        "diffconfig",
+        "diffsigs",
+    ];
+    let (enabled, disabled): (Vec<_>, Vec<_>) = standard_tasks.into_iter().partition(|task| {
+        reported_tasks.is_some_and(|tasks| {
+            let canonical = format!("do_{task}");
+            tasks
+                .iter()
+                .any(|candidate| candidate == task || candidate == &canonical)
+        })
+    });
+    let task_capabilities = if reported_tasks.is_none() {
+        "Task actions unavailable until metadata is loaded.".into()
+    } else {
+        format!(
+            "Task actions enabled: {}\nTask actions unavailable: {}",
+            if enabled.is_empty() {
+                "none".into()
+            } else {
+                enabled.join(", ")
+            },
+            if disabled.is_empty() {
+                "none".into()
+            } else {
+                disabled.join(", ")
+            }
+        )
+    };
     let tasks = if active_tasks.is_empty() {
         recipe_values("Tasks", reported_tasks)
     } else {
         format!("Active tasks: {}", active_tasks.join(", "))
     };
     format!(
-        "Recipe: {}\nResolved version: {}\nPreferred version: {}\nProvider layer: {}\nProvider file: {}\nAppends: {}\nWorkspace/Devtool: {}\nBuild: {}\nDetail: {load_state}\n\nDependencies: {}\nRuntime dependencies: {}\nReverse dependencies: unavailable\n{tasks}\n{}\n{}\n{}\n{}",
+        "Recipe: {}\nResolved version: {}\nPreferred version: {}\nProvider layer: {}\nProvider file: {}\nAppends: {}\nWorkspace/Devtool: {}\nBuild: {}\nDetail: {load_state}\n{task_capabilities}\n\nDependencies: {}\nRuntime dependencies: {}\nReverse dependencies: unavailable\n{tasks}\n{}\n{}\n{}\n{}",
         recipe.name,
         recipe.version.as_deref().unwrap_or("unavailable"),
         recipe.preferred_version.as_deref().unwrap_or("unavailable"),
@@ -3298,6 +3359,7 @@ mod tests {
             .push_back(Dialog::RecipeTaskConfirmation(BuildRequest {
                 targets: vec!["base-files".into()],
                 task: Some("listtasks".into()),
+                force: false,
             }));
         confirmation.focus = FocusTarget::Dialog;
         let _ = rendered_text(&confirmation, 80, 24);
@@ -3325,6 +3387,7 @@ mod tests {
                 Dialog::RecipeTaskConfirmation(BuildRequest {
                     targets: vec!["busybox".into()],
                     task: None,
+                    force: false,
                 }),
                 "Confirm recipe task",
             ),
@@ -3740,6 +3803,7 @@ mod tests {
             .push_back(Dialog::RecipeTaskConfirmation(BuildRequest {
                 targets: vec!["busybox".into()],
                 task: Some("cleansstate".into()),
+                force: false,
             }));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
@@ -4099,6 +4163,48 @@ mod tests {
                 assert!(output.contains("demo"));
                 assert!(output.contains("unavailable"));
             }
+        }
+    }
+    #[test]
+    fn recipe_bitbake_action_renders_task_picker_and_exact_forced_confirmation() {
+        for (width, height) in [(120, 30), (90, 25)] {
+            let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+            let mut app = App::new(10, 1_000);
+            app.dialogs
+                .push_back(Dialog::RecipeTaskPicker(yoctui_model::RecipeTaskPicker {
+                    recipe: "busybox".into(),
+                    tasks: vec!["clean".into(), "compile".into(), "devshell".into()],
+                    selection: 1,
+                    force: true,
+                }));
+            terminal.draw(|frame| render(frame, &app)).unwrap();
+            let output = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>();
+            assert!(output.contains("Force task: busybox"));
+            assert!(output.contains("Authoritative BitBake tasks"));
+            assert!(output.contains("compile"));
+
+            app.dialogs.clear();
+            app.dialogs
+                .push_back(Dialog::RecipeTaskConfirmation(BuildRequest {
+                    targets: vec!["busybox".into()],
+                    task: Some("compile".into()),
+                    force: true,
+                }));
+            terminal.draw(|frame| render(frame, &app)).unwrap();
+            let output = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>();
+            assert!(output.contains("bitbake -f busybox -c compile"));
         }
     }
     #[test]

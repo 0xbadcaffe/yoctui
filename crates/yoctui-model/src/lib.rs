@@ -157,17 +157,20 @@ pub enum Severity {
 pub struct BuildRequest {
     pub targets: Vec<String>,
     pub task: Option<String>,
+    pub force: bool,
 }
 impl BuildRequest {
     pub fn validate(&self) -> Result<(), AppError> {
+        let valid_name = |value: &str| {
+            !value.is_empty()
+                && !matches!(value, "." | "..")
+                && value.chars().all(|character| {
+                    character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | '+')
+                })
+        };
         if self.targets.is_empty()
-            || self.targets.iter().any(|x| {
-                x.is_empty()
-                    || matches!(x.as_str(), "." | "..")
-                    || !x
-                        .chars()
-                        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '-' | '_' | '.' | '+'))
-            })
+            || self.targets.iter().any(|x| !valid_name(x))
+            || self.task.as_deref().is_some_and(|task| !valid_name(task))
         {
             return Err(AppError::new(
                 "Configuration",
@@ -411,12 +414,20 @@ pub struct RecipeEditor {
     pub dirty: bool,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecipeTaskPicker {
+    pub recipe: String,
+    pub tasks: Vec<String>,
+    pub selection: usize,
+    pub force: bool,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
     BuildOptions,
     BuildCompletion,
     BuildTarget { input: String, task: Option<String> },
     ImagePicker(ImagePicker),
     RecipeTaskConfirmation(BuildRequest),
+    RecipeTaskPicker(RecipeTaskPicker),
     DevtoolResetConfirmation(String),
     DevtoolUpdateConfirmation(String),
     DevtoolFinish { recipe: String, destination: String },
@@ -1564,6 +1575,19 @@ pub enum Action {
     BeginSelectedRecipeClean,
     BeginSelectedRecipeMenuConfig,
     BeginSelectedRecipeCleanState,
+    BeginSelectedRecipeDevshell,
+    BeginSelectedRecipeDiffconfig,
+    BeginSelectedRecipeDiffsigs,
+    BeginSelectedRecipeForceTask,
+    BeginSelectedRecipeTask {
+        task: Option<String>,
+        force: bool,
+    },
+    SelectRecipeTask {
+        delta: isize,
+    },
+    PreviewSelectedRecipeTask,
+    CancelRecipeTaskPicker,
     BeginSelectedRecipeDevtoolModify,
     BeginSelectedRecipeDevtoolReset,
     BeginSelectedRecipeDevtoolUpdateRecipe,
@@ -1912,6 +1936,46 @@ fn select_first_matching_recipe(app: &mut App) {
     }
 }
 
+fn begin_recipe_task(app: &mut App, task: Option<String>, force: bool) {
+    let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) else {
+        app.notification = Some("No recipe is selected for this task.".into());
+        return;
+    };
+    if let Some(task) = task.as_deref() {
+        let Some(metadata) = app.recipe_metadata.get(&recipe.name) else {
+            app.notification =
+                Some("Load selected recipe metadata with Enter before choosing a task.".into());
+            return;
+        };
+        let Some(tasks) = metadata.tasks.as_ref() else {
+            app.notification =
+                Some("The backend cannot report tasks for the selected recipe.".into());
+            return;
+        };
+        let canonical = format!("do_{task}");
+        if !tasks
+            .iter()
+            .any(|candidate| candidate == task || candidate == &canonical)
+        {
+            app.notification = Some(format!(
+                "Task {task} is not reported for recipe {}.",
+                recipe.name
+            ));
+            return;
+        }
+    }
+    let request = BuildRequest {
+        targets: vec![recipe.name.clone()],
+        task,
+        force,
+    };
+    if let Err(error) = request.validate() {
+        app.notification = Some(error.to_string());
+    } else {
+        open_dialog(app, Dialog::RecipeTaskConfirmation(request));
+    }
+}
+
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     if modal_focus(app).is_some()
         && matches!(
@@ -2132,6 +2196,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     Dialog::RecipeTaskConfirmation(BuildRequest {
                         targets: vec![target],
                         task: None,
+                        force: false,
                     }),
                 );
             } else {
@@ -2176,6 +2241,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 let request = BuildRequest {
                     targets: vec![input.clone()],
                     task: task.clone(),
+                    force: false,
                 };
                 if let Err(error) = request.validate() {
                     app.notification = Some(error.to_string());
@@ -2760,55 +2826,99 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.recipe_selection = matches.get(position).copied().unwrap_or(0);
         }
         Action::BeginSelectedRecipeBuild => {
-            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                open_dialog(
-                    app,
-                    Dialog::RecipeTaskConfirmation(BuildRequest {
-                        targets: vec![recipe.name.clone()],
-                        task: None,
-                    }),
-                );
-            } else {
-                app.notification = Some("No recipe is selected to build.".into());
-            }
+            begin_recipe_task(app, None, false);
         }
         Action::BeginSelectedRecipeClean => {
-            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                open_dialog(
-                    app,
-                    Dialog::BuildTarget {
-                        input: recipe.name.clone(),
-                        task: Some("clean".into()),
-                    },
-                );
-            } else {
-                app.notification = Some("No recipe is selected to clean.".into());
-            }
+            begin_recipe_task(app, Some("clean".into()), false);
         }
         Action::BeginSelectedRecipeMenuConfig => {
-            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                open_dialog(
-                    app,
-                    Dialog::BuildTarget {
-                        input: recipe.name.clone(),
-                        task: Some("menuconfig".into()),
-                    },
-                );
-            } else {
-                app.notification = Some("No recipe is selected for menuconfig.".into());
-            }
+            begin_recipe_task(app, Some("menuconfig".into()), false);
         }
         Action::BeginSelectedRecipeCleanState => {
-            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
+            begin_recipe_task(app, Some("cleansstate".into()), false);
+        }
+        Action::BeginSelectedRecipeDevshell => {
+            begin_recipe_task(app, Some("devshell".into()), false);
+        }
+        Action::BeginSelectedRecipeDiffconfig => {
+            begin_recipe_task(app, Some("diffconfig".into()), false);
+        }
+        Action::BeginSelectedRecipeDiffsigs => {
+            begin_recipe_task(app, Some("diffsigs".into()), false);
+        }
+        Action::BeginSelectedRecipeTask { task, force } => {
+            begin_recipe_task(app, task, force);
+        }
+        Action::BeginSelectedRecipeForceTask => {
+            let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) else {
+                app.notification = Some("No recipe is selected for forced task execution.".into());
+                return None;
+            };
+            let Some(tasks) = app
+                .recipe_metadata
+                .get(&recipe.name)
+                .and_then(|metadata| metadata.tasks.as_ref())
+            else {
+                app.notification = Some(
+                    "Load authoritative recipe tasks with Enter before forcing a task.".into(),
+                );
+                return None;
+            };
+            let mut tasks = tasks
+                .iter()
+                .map(|task| task.strip_prefix("do_").unwrap_or(task).to_owned())
+                .filter(|task| {
+                    !task.is_empty()
+                        && task.chars().all(|character| {
+                            character.is_ascii_alphanumeric()
+                                || matches!(character, '-' | '_' | '.' | '+')
+                        })
+                })
+                .collect::<Vec<_>>();
+            tasks.sort();
+            tasks.dedup();
+            if tasks.is_empty() {
+                app.notification =
+                    Some("BitBake reported no forceable tasks for this recipe.".into());
+            } else {
                 open_dialog(
                     app,
-                    Dialog::RecipeTaskConfirmation(BuildRequest {
-                        targets: vec![recipe.name.clone()],
-                        task: Some("cleansstate".into()),
+                    Dialog::RecipeTaskPicker(RecipeTaskPicker {
+                        recipe: recipe.name.clone(),
+                        tasks,
+                        selection: 0,
+                        force: true,
                     }),
                 );
-            } else {
-                app.notification = Some("No recipe is selected to clean state.".into());
+            }
+        }
+        Action::SelectRecipeTask { delta } => {
+            if let Some(Dialog::RecipeTaskPicker(picker)) = app.active_dialog_mut() {
+                picker.selection = if delta.is_negative() {
+                    picker.selection.saturating_sub(delta.unsigned_abs())
+                } else {
+                    picker
+                        .selection
+                        .saturating_add(delta as usize)
+                        .min(picker.tasks.len().saturating_sub(1))
+                };
+            }
+        }
+        Action::PreviewSelectedRecipeTask => {
+            if let Some(Dialog::RecipeTaskPicker(picker)) = app.active_dialog()
+                && let Some(task) = picker.tasks.get(picker.selection)
+            {
+                let request = BuildRequest {
+                    targets: vec![picker.recipe.clone()],
+                    task: Some(task.clone()),
+                    force: picker.force,
+                };
+                replace_dialog(app, Dialog::RecipeTaskConfirmation(request));
+            }
+        }
+        Action::CancelRecipeTaskPicker => {
+            if matches!(app.active_dialog(), Some(Dialog::RecipeTaskPicker(_))) {
+                close_dialog(app);
             }
         }
         Action::BeginSelectedRecipeDevtoolModify => {
@@ -2816,6 +2926,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 let request = BuildRequest {
                     targets: vec![recipe.name.clone()],
                     task: None,
+                    force: false,
                 };
                 if let Err(error) = request.validate() {
                     app.notification = Some(error.to_string());
@@ -2831,6 +2942,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 let request = BuildRequest {
                     targets: vec![recipe.name.clone()],
                     task: None,
+                    force: false,
                 };
                 if let Err(error) = request.validate() {
                     app.notification = Some(error.to_string());
@@ -4360,6 +4472,7 @@ mod tests {
                 Action::Start(BuildRequest {
                     targets: vec!["bad target".into()],
                     task: None,
+                    force: false,
                 }),
             )
             .is_none()
@@ -4368,6 +4481,7 @@ mod tests {
         let request = BuildRequest {
             targets: vec!["busybox".into()],
             task: Some("compile".into()),
+            force: false,
         };
         assert_eq!(
             update(&mut app, Action::Start(request.clone())),
@@ -4441,6 +4555,7 @@ mod tests {
         let request = BuildRequest {
             targets: vec!["busybox".into()],
             task: None,
+            force: false,
         };
         assert_eq!(
             update(&mut app, Action::Start(request.clone())),
@@ -4772,6 +4887,117 @@ mod tests {
         assert!(!app.recipe_metadata_errors.contains_key("alpha"));
     }
     #[test]
+    fn recipe_bitbake_action_uses_authoritative_tasks_picker_and_confirmation() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes.push(Recipe {
+            name: "busybox".into(),
+            ..Recipe::default()
+        });
+        app.recipe_metadata.insert(
+            "busybox".into(),
+            RecipeMetadata {
+                recipe: "busybox".into(),
+                tasks: Some(
+                    [
+                        "do_clean",
+                        "do_cleansstate",
+                        "do_devshell",
+                        "do_diffconfig",
+                        "do_diffsigs",
+                        "do_menuconfig",
+                    ]
+                    .into_iter()
+                    .map(str::to_owned)
+                    .collect(),
+                ),
+                ..RecipeMetadata::default()
+            },
+        );
+
+        let actions = [
+            (Action::BeginSelectedRecipeClean, "clean"),
+            (Action::BeginSelectedRecipeCleanState, "cleansstate"),
+            (Action::BeginSelectedRecipeMenuConfig, "menuconfig"),
+            (Action::BeginSelectedRecipeDevshell, "devshell"),
+            (Action::BeginSelectedRecipeDiffconfig, "diffconfig"),
+            (Action::BeginSelectedRecipeDiffsigs, "diffsigs"),
+        ];
+        for (action, expected) in actions {
+            app.dialogs.clear();
+            let _ = update(&mut app, action);
+            assert!(matches!(
+                app.active_dialog(),
+                Some(Dialog::RecipeTaskConfirmation(BuildRequest {
+                    targets,
+                    task: Some(task),
+                    force: false,
+                })) if targets == &vec!["busybox".to_owned()] && task == expected
+            ));
+        }
+
+        app.dialogs.clear();
+        let _ = update(&mut app, Action::BeginSelectedRecipeForceTask);
+        let Some(Dialog::RecipeTaskPicker(picker)) = app.active_dialog() else {
+            panic!("authoritative task picker did not open");
+        };
+        assert!(picker.force);
+        assert_eq!(picker.tasks[0], "clean");
+        let _ = update(&mut app, Action::SelectRecipeTask { delta: 3 });
+        let _ = update(&mut app, Action::PreviewSelectedRecipeTask);
+        let Some(Dialog::RecipeTaskConfirmation(request)) = app.active_dialog() else {
+            panic!("forced task was not previewed");
+        };
+        assert!(request.force);
+        assert_eq!(request.targets, vec!["busybox"]);
+        let request = request.clone();
+        assert_eq!(
+            update(&mut app, Action::ConfirmRecipeTask),
+            Some(Effect::Start(request))
+        );
+    }
+
+    #[test]
+    fn recipe_bitbake_action_rejects_unavailable_and_malformed_tasks() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes.push(Recipe {
+            name: "demo".into(),
+            ..Recipe::default()
+        });
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevshell);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Load selected recipe metadata with Enter before choosing a task.")
+        );
+        app.recipe_metadata.insert(
+            "demo".into(),
+            RecipeMetadata {
+                recipe: "demo".into(),
+                tasks: Some(vec!["do_build".into(), "bad task".into()]),
+                ..RecipeMetadata::default()
+            },
+        );
+        app.notification = None;
+        let _ = update(&mut app, Action::BeginSelectedRecipeMenuConfig);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Task menuconfig is not reported for recipe demo.")
+        );
+        app.notification = None;
+        let _ = update(
+            &mut app,
+            Action::BeginSelectedRecipeTask {
+                task: Some("bad task".into()),
+                force: true,
+            },
+        );
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("invalid build target"))
+        );
+        assert!(app.active_dialog().is_none());
+    }
+    #[test]
     fn selected_recipe_build_requires_confirmation() {
         let mut app = App::new(10, 1_000);
         app.workspace.recipes = vec![Recipe {
@@ -4786,6 +5012,7 @@ mod tests {
             Some(&Dialog::RecipeTaskConfirmation(BuildRequest {
                 targets: vec!["busybox".into()],
                 task: None,
+                force: false,
             }))
         );
     }
@@ -4798,11 +5025,22 @@ mod tests {
             layer: None,
             ..Recipe::default()
         }];
+        app.recipe_metadata.insert(
+            "busybox".into(),
+            RecipeMetadata {
+                recipe: "busybox".into(),
+                tasks: Some(vec!["do_clean".into()]),
+                ..RecipeMetadata::default()
+            },
+        );
         let _ = update(&mut app, Action::BeginSelectedRecipeClean);
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::BuildTarget { input, task })
-                if input == "busybox" && task.as_deref() == Some("clean")
+            Some(Dialog::RecipeTaskConfirmation(BuildRequest {
+                targets,
+                task: Some(task),
+                force: false,
+            })) if targets == &vec!["busybox".to_owned()] && task == "clean"
         ));
     }
     #[test]
@@ -4814,11 +5052,22 @@ mod tests {
             layer: None,
             ..Recipe::default()
         }];
+        app.recipe_metadata.insert(
+            "busybox".into(),
+            RecipeMetadata {
+                recipe: "busybox".into(),
+                tasks: Some(vec!["do_menuconfig".into()]),
+                ..RecipeMetadata::default()
+            },
+        );
         let _ = update(&mut app, Action::BeginSelectedRecipeMenuConfig);
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::BuildTarget { input, task })
-                if input == "busybox" && task.as_deref() == Some("menuconfig")
+            Some(Dialog::RecipeTaskConfirmation(BuildRequest {
+                targets,
+                task: Some(task),
+                force: false,
+            })) if targets == &vec!["busybox".to_owned()] && task == "menuconfig"
         ));
     }
     #[test]
@@ -5005,6 +5254,14 @@ mod tests {
             layer: None,
             ..Recipe::default()
         }];
+        app.recipe_metadata.insert(
+            "busybox".into(),
+            RecipeMetadata {
+                recipe: "busybox".into(),
+                tasks: Some(vec!["do_cleansstate".into()]),
+                ..RecipeMetadata::default()
+            },
+        );
         let _ = update(&mut app, Action::BeginSelectedRecipeCleanState);
         assert!(matches!(
             app.active_dialog(),
@@ -5017,6 +5274,7 @@ mod tests {
             Some(Effect::Start(BuildRequest {
                 targets: vec!["busybox".into()],
                 task: Some("cleansstate".into()),
+                force: false,
             }))
         );
         assert_eq!(app.build.status, BuildStatus::LoadingWorkspace);
@@ -5326,6 +5584,7 @@ mod tests {
             Some(&Dialog::RecipeTaskConfirmation(BuildRequest {
                 targets: vec!["core-image-minimal".into()],
                 task: None,
+                force: false,
             }))
         );
     }
@@ -5345,6 +5604,7 @@ mod tests {
             Some(&Dialog::RecipeTaskConfirmation(BuildRequest {
                 targets: vec!["core-image-minimal".into()],
                 task: None,
+                force: false,
             }))
         );
     }
@@ -5775,7 +6035,8 @@ mod tests {
         assert!(
             BuildRequest {
                 targets: vec!["core-image-minimal".into()],
-                task: None
+                task: None,
+                force: false,
             }
             .validate()
             .is_ok()
@@ -5783,7 +6044,8 @@ mod tests {
         assert!(
             BuildRequest {
                 targets: vec!["bad target".into()],
-                task: None
+                task: None,
+                force: false,
             }
             .validate()
             .is_err()
@@ -5791,7 +6053,8 @@ mod tests {
         assert!(
             BuildRequest {
                 targets: vec!["..".into()],
-                task: None
+                task: None,
+                force: false,
             }
             .validate()
             .is_err()

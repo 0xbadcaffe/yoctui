@@ -2,54 +2,55 @@
 
 ## Active task
 
-**ID:** RECIPE-BITBAKE-001
-**Title:** Complete typed recipe BitBake operations
+**ID:** RECIPE-NAV-001
+**Title:** Complete recipe file, log, patch, and Devtool routes
 
 ## Objective
 
-Complete build and standard BitBake task operations for the selected recipe
-using typed task selection, confirmation, and persistent background execution.
+Complete authoritative navigation from the selected recipe to its provider
+file, task logs, patches, and existing typed Devtool workflows.
 
 ## Required work
 
-1. Inventory existing build, clean, cleansstate, menuconfig, build-target
-   dialogs, `BuildRequest`, coordinator/job lifecycle, CLI routes, and tests.
-2. Define one typed recipe-task operation model for default build, arbitrary
-   force task, clean, cleansstate, devshell, menuconfig, diffconfig, and
-   diffsigs.
-3. Populate task choices from authoritative selected-recipe metadata and keep
-   known standard tasks visible only when supported or clearly explained.
-4. Add a task picker/confirmation workflow that previews the exact
-   `bitbake <recipe> -c <task>` intent without exposing an unstructured shell
-   command.
-5. Require explicit confirmation for clean, cleansstate, forced, or otherwise
-   unusual task execution.
-6. Start confirmed operations through the existing persistent build-job
-   coordinator so navigation, output, cancellation, and terminal outcomes
-   remain observable.
-7. Reject empty/stale selections, unsupported tasks, duplicate active jobs,
-   and malformed task names with actionable messages.
-8. Cover reducer, input, dialogs, coordinator/CLI routing, failure,
-   cancellation, and responsive modes with tests named
-   `recipe_bitbake_action`.
+1. Inventory existing editor, retained task-log, patch-preview, Devtool dialog,
+   effect, CLI, and Recipes Inspector behavior before adding routes.
+2. Open the selected recipe's authoritative provider through the configured
+   editor effect, preserving the application and surfacing missing-path,
+   missing-editor, and process failures.
+3. Add a typed task-log picker when more than one retained log belongs to the
+   selected recipe; open the selected existing log and explain empty, evicted,
+   or missing paths without guessing.
+4. Add a typed patch picker/review route backed by authoritative selected
+   recipe metadata. Resolve only supported local patch paths and explain
+   unavailable or remote-only entries.
+5. Integrate the existing typed Devtool modify, update-recipe, finish, reset,
+   and deploy-target routes with the absolute selected recipe identity.
+6. Show route availability and exact disabled explanations in the Recipes
+   Inspector/footer. All pickers trap focus and degrade safely at every
+   responsive breakpoint.
+7. Cover reducer, input, editor/process failures, dialogs, Devtool routing, and
+   responsive modes with tests named `recipe_navigation`.
 
 ## Definition of done
 
-- Every standard Recipes BitBake operation has a typed route.
-- Task choices use authoritative task metadata and never interpolate raw input.
-- Exact target/task intent is previewed before unusual/destructive execution.
-- Confirmed work uses persistent job state and remains navigable/cancellable.
-- Invalid, unsupported, duplicate, failed, and cancelled paths are visible.
+- Provider, retained task-log, and supported local patch routes use
+  authoritative typed paths.
+- Multiple logs or patches use focus-trapping typed pickers.
+- Missing, evicted, unsupported, remote, and process-failure states are visible
+  and never fabricate paths.
+- Existing Devtool operations are reachable from the absolute selected recipe
+  and retain their confirmation/error semantics.
+- Responsive Recipes views expose route availability and disabled reasons.
 - Task-specific and baseline verification pass.
 - Registry/status documents are updated and the next eligible task is active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model recipe_bitbake_action
-cargo test -p yoctui-app recipe_bitbake_action
-cargo test -p yoctui-ui recipe_bitbake_action
-cargo test -p yoctui -- recipe_bitbake_action
+cargo test -p yoctui-model recipe_navigation
+cargo test -p yoctui-app recipe_navigation
+cargo test -p yoctui-ui recipe_navigation
+cargo test -p yoctui -- recipe_navigation
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -59,4 +60,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`RECIPE-NAV-001 — Complete recipe file, log, patch, and Devtool routes`
+`RECIPE-QA-001 — Add recipe CVE and SPDX background actions`

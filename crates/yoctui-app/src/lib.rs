@@ -547,6 +547,10 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Enter => Some(Action::BeginSelectedRecipeMetadata),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
         Input::Char('g') => Some(Action::BeginSelectedRecipeDependencies),
+        Input::Char('f') => Some(Action::BeginSelectedRecipeForceTask),
+        Input::Char('v') => Some(Action::BeginSelectedRecipeDevshell),
+        Input::Char('K') => Some(Action::BeginSelectedRecipeDiffconfig),
+        Input::Char('z') => Some(Action::BeginSelectedRecipeDiffsigs),
         _ => None,
     }
 }
@@ -566,6 +570,7 @@ mod tests {
         BuildRequest {
             targets: vec!["core-image-minimal".into()],
             task: None,
+            force: false,
         }
     }
 
@@ -1134,6 +1139,45 @@ mod tests {
         assert_eq!(
             recipes_workspace_action(true, Input::Backspace),
             Some(Action::BackspaceMetadataQuery)
+        );
+    }
+    #[test]
+    fn recipe_bitbake_action_maps_standard_and_forced_task_controls() {
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('f')),
+            Some(Action::BeginSelectedRecipeForceTask)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('v')),
+            Some(Action::BeginSelectedRecipeDevshell)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('K')),
+            Some(Action::BeginSelectedRecipeDiffconfig)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('z')),
+            Some(Action::BeginSelectedRecipeDiffsigs)
+        );
+        let request = BuildRequest {
+            targets: vec!["busybox".into()],
+            task: Some("compile".into()),
+            force: true,
+        };
+        let mut coordinator = BuildJobCoordinator::default();
+        let actions = coordinator
+            .queue_build(&request, SystemTime::UNIX_EPOCH)
+            .unwrap();
+        assert!(matches!(
+            &actions[0],
+            Action::QueueBackgroundJob(spec)
+                if spec.context.target.as_deref() == Some("busybox")
+                    && spec.context.task.as_deref() == Some("compile")
+        ));
+        assert!(
+            coordinator
+                .queue_build(&request, SystemTime::UNIX_EPOCH)
+                .is_none()
         );
     }
     #[test]

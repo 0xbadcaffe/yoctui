@@ -330,8 +330,14 @@ impl BitBakeBackend for ProcessBackend {
             .validate()
             .map_err(|e| BackendError::Bridge(e.to_string()))?;
         let mut cmd = TokioCommand::new(&self.executable);
-        cmd.args(&self.arguments)
-            .args(&request.targets)
+        cmd.args(&self.arguments);
+        if request.force {
+            cmd.arg("-f");
+        }
+        if let Some(task) = request.task.as_ref() {
+            cmd.args(["-c", task]);
+        }
+        cmd.args(&request.targets)
             .current_dir(&self.build_dir)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
@@ -964,6 +970,7 @@ impl BitBakeBackend for BridgeBackend {
         self.command(Command::StartBuild {
             targets: request.targets,
             task: request.task,
+            force: request.force,
         })
         .await
     }
@@ -1188,6 +1195,7 @@ mod tests {
             .start_build(BuildRequest {
                 targets: vec!["core-image-minimal".into()],
                 task: None,
+                force: false,
             })
             .await
             .unwrap();
@@ -1212,6 +1220,35 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn recipe_bitbake_action_process_backend_preserves_force_task_and_target_arguments() {
+        let script = fixture_script("fake-recipe-task");
+        fs::write(&script, "#!/bin/sh\nprintf '%s\\n' \"$*\"\n").unwrap();
+        let mut permissions = fs::metadata(&script).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&script, permissions).unwrap();
+        let mut backend = shell_backend(script.clone());
+        backend
+            .start_build(BuildRequest {
+                targets: vec!["busybox".into()],
+                task: Some("compile".into()),
+                force: true,
+            })
+            .await
+            .unwrap();
+        let output = loop {
+            match backend.next_event().await.unwrap() {
+                BackendEvent::Log(entry) => break entry.message,
+                BackendEvent::BuildCompleted { .. } => {
+                    panic!("process completed before its arguments were observed")
+                }
+                _ => {}
+            }
+        };
+        fs::remove_file(script).unwrap();
+        assert_eq!(output, "-f -c compile busybox");
+    }
+
+    #[tokio::test]
     async fn process_backend_cancellation_acknowledges_a_hung_child() {
         let script = fixture_script("hung-bitbake");
         fs::write(&script, "#!/bin/sh\nsleep 30\n").unwrap();
@@ -1223,6 +1260,7 @@ mod tests {
             .start_build(BuildRequest {
                 targets: vec!["core-image-minimal".into()],
                 task: None,
+                force: false,
             })
             .await
             .unwrap();
@@ -1261,6 +1299,7 @@ mod tests {
             .start_build(BuildRequest {
                 targets: vec!["core-image-minimal".into()],
                 task: None,
+                force: false,
             })
             .await
             .unwrap();
@@ -1287,6 +1326,7 @@ mod tests {
             .start_build(BuildRequest {
                 targets: vec!["core-image-minimal".into()],
                 task: None,
+                force: false,
             })
             .await
             .unwrap();
