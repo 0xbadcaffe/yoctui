@@ -569,6 +569,25 @@ Required features:
 
 The selected log entry appears in the inspector with full multiline content and metadata.
 
+Controls:
+
+- `↑`/`↓` or `k`/`j` selects an older/newer visible entry and pauses follow
+- `f` toggles live follow; resuming selects the newest matching entry
+- `w` toggles wrap; horizontal offset resets when wrap is enabled
+- `←`/`→` scrolls horizontally only while wrap is disabled
+- `/` starts incremental search; `Enter` or `Esc` finishes it
+- `n`/`N` selects the next/previous search match
+- `s`, `R`, `T`, and `B` cycle severity, recipe, task, and build filters
+- `o` opens the selected source path in the configured editor
+- `C` copies structured selected-entry details when a supported clipboard tool
+  is available
+
+Retention prefers warnings, errors, cancellation records, disconnects, and
+final results over ordinary informational entries. Repeated adjacent ordinary
+entries may be coalesced. Evicted warning/error counts and the coalesced count
+remain visible. If only protected records exceed a configured limit, eviction
+is still bounded and explicitly counted.
+
 ---
 
 ## 14. Errors workspace

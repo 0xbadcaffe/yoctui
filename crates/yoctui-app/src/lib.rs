@@ -465,6 +465,34 @@ pub fn tasks_action(editing: bool, key: Input) -> Option<Action> {
         _ => None,
     }
 }
+pub fn logs_action(searching: bool, key: Input) -> Option<Action> {
+    if searching {
+        return match key {
+            Input::Char(character) => Some(Action::AppendLogQuery(character)),
+            Input::Backspace => Some(Action::BackspaceLogQuery),
+            Input::Enter | Input::Esc => Some(Action::FinishLogSearch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::ScrollLogs { delta: 1 }),
+        Input::Down | Input::Char('j') => Some(Action::ScrollLogs { delta: -1 }),
+        Input::Left => Some(Action::ScrollLogsHorizontally { delta: -8 }),
+        Input::Right => Some(Action::ScrollLogsHorizontally { delta: 8 }),
+        Input::Char('f') => Some(Action::ToggleLogFollow),
+        Input::Char('w') => Some(Action::ToggleLogWrap),
+        Input::Char('s') => Some(Action::CycleLogSeverity),
+        Input::Char('/') => Some(Action::BeginLogSearch),
+        Input::Char('n') => Some(Action::NextLogMatch),
+        Input::Char('N') => Some(Action::PreviousLogMatch),
+        Input::Char('R') => Some(Action::CycleLogRecipeFilter),
+        Input::Char('T') => Some(Action::CycleLogTaskFilter),
+        Input::Char('B') => Some(Action::CycleLogBuildFilter),
+        Input::Char('o') => Some(Action::OpenSelectedLogSource),
+        Input::Char('C') => Some(Action::CopySelectedLog),
+        _ => None,
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -514,6 +542,8 @@ mod tests {
             task: Some("do_compile".into()),
             path: None,
             timestamp: SystemTime::UNIX_EPOCH + Duration::from_secs(2),
+            build: None,
+            protected: false,
         };
         apply_actions(
             &mut app,
@@ -953,6 +983,30 @@ mod tests {
         assert_eq!(key_action(Input::Char('f')), Some(Action::ToggleLogFollow));
         assert_eq!(key_action(Input::Char('w')), Some(Action::ToggleLogWrap));
         assert_eq!(key_action(Input::Up), Some(Action::ScrollLogs { delta: 1 }));
+    }
+    #[test]
+    fn log_workspace_maps_selection_search_filters_and_selected_actions() {
+        assert_eq!(
+            logs_action(false, Input::Up),
+            Some(Action::ScrollLogs { delta: 1 })
+        );
+        assert_eq!(
+            logs_action(false, Input::Char('B')),
+            Some(Action::CycleLogBuildFilter)
+        );
+        assert_eq!(
+            logs_action(false, Input::Char('o')),
+            Some(Action::OpenSelectedLogSource)
+        );
+        assert_eq!(
+            logs_action(false, Input::Char('C')),
+            Some(Action::CopySelectedLog)
+        );
+        assert_eq!(
+            logs_action(true, Input::Char('x')),
+            Some(Action::AppendLogQuery('x'))
+        );
+        assert_eq!(logs_action(true, Input::Esc), Some(Action::FinishLogSearch));
     }
     #[test]
     fn enter_dismisses_notification() {

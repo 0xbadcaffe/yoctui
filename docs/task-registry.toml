@@ -185,12 +185,12 @@ notes = "Typed workspace and metadata payloads now flow protocol -> backend -> a
 id = "LOG-001"
 milestone = "M1"
 title = "Bounded searchable logs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 32
 required = true
 depends_on = ["BB-002"]
-verify = ["cargo test -p yoctui-model log", "cargo test -p yoctui-ui log"]
-notes = "Follow, pause, wrap, filters, search, eviction details."
+verify = ["cargo test -p yoctui-model log", "cargo test -p yoctui-ui log", "cargo test -p yoctui-app log"]
+notes = "Bounded retention now prefers protected diagnostics, safely truncates oversized entries, coalesces repeated ordinary output, and exposes all pressure counters. Typed selection drives follow/pause, bounded scrolling, incremental search, next/previous matches, severity/recipe/task/build filters, full Inspector metadata, persisted build filter, source editing, and clipboard effects with responsive TestBackend coverage."
 
 [[task]]
 id = "ERR-001"
@@ -200,7 +200,7 @@ status = "IN_PROGRESS"
 priority = 33
 required = true
 depends_on = ["BB-002"]
-verify = ["cargo test -p yoctui-model error", "cargo test -p yoctui-ui error"]
+verify = ["cargo test -p yoctui-model error", "cargo test -p yoctui-ui error", "cargo test -p yoctui-app error"]
 notes = "Details, source, context, log jump, cross-screen navigation."
 
 [[task]]

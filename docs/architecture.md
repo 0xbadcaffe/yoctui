@@ -204,6 +204,21 @@ Navigation must not stop a job. Jobs continue while the user changes workspaces.
 
 Indeterminate activity must never imply false numeric progress.
 
+## Log retention and selection
+
+`yoctui-model::LogState` owns byte/entry bounds, protected-record preference,
+ordinary-entry coalescing, pause horizons, filters, search, and the selected
+filtered index. Warnings, errors, and typed cancellation/disconnect/final
+records are protected from eviction while ordinary records remain. If the
+configured bound contains only protected records, the oldest record is evicted
+and its severity counter remains observable.
+
+Each retained log carries its typed build target, recipe, task, source path,
+timestamp, and protection state. `yoctui-ui` renders only the selected typed
+entry in the Inspector. Source opening and clipboard copying are typed effects
+executed by the CLI; clipboard execution probes `wl-copy`, `xclip`, then `xsel`
+without invoking a shell and reports unsupported environments visibly.
+
 ## Dialog architecture
 
 Dialogs are typed model values, not ad-hoc widget-local state.

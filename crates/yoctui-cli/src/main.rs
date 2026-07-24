@@ -13,8 +13,9 @@ use ratatui::Terminal;
 use serde::{Deserialize, Serialize};
 use std::{
     env, fs, io,
+    io::Write as _,
     path::{Path, PathBuf},
-    process::Command as ProcessCommand,
+    process::{Command as ProcessCommand, Stdio},
     time::{Duration, Instant, SystemTime},
 };
 #[cfg(unix)]
@@ -22,7 +23,8 @@ use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
-    BuildJobCoordinator, Input, focus_action, key_action, settings_action, tasks_action,
+    BuildJobCoordinator, Input, focus_action, key_action, logs_action, settings_action,
+    tasks_action,
 };
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
@@ -111,6 +113,8 @@ struct Session {
     log_recipe_filter: Option<String>,
     #[serde(default)]
     log_task_filter: Option<String>,
+    #[serde(default)]
+    log_build_filter: Option<String>,
     #[serde(default)]
     log_wrap: Option<bool>,
     #[serde(default)]
@@ -797,6 +801,40 @@ async fn open_in_editor(
     }
 }
 
+async fn copy_to_clipboard(app: &mut App, content: String) {
+    let result = tokio::task::spawn_blocking(move || -> Result<&'static str> {
+        let candidates: [(&str, &[&str]); 3] = [
+            ("wl-copy", &[]),
+            ("xclip", &["-selection", "clipboard"]),
+            ("xsel", &["--clipboard", "--input"]),
+        ];
+        for (program, args) in candidates {
+            let Ok(mut child) = ProcessCommand::new(program)
+                .args(args)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()
+            else {
+                continue;
+            };
+            if let Some(stdin) = child.stdin.as_mut() {
+                stdin.write_all(content.as_bytes())?;
+            }
+            if child.wait()?.success() {
+                return Ok(program);
+            }
+        }
+        anyhow::bail!("install wl-copy, xclip, or xsel and provide a graphical clipboard")
+    })
+    .await;
+    app.notification = Some(match result {
+        Ok(Ok(program)) => format!("Selected log details copied with {program}."),
+        Ok(Err(error)) => format!("Could not copy selected log details: {error}"),
+        Err(error) => format!("Clipboard task failed: {error}"),
+    });
+}
+
 async fn open_yocto_shell(guard: &TerminalGuard, app: &mut App) {
     let shell = env::var_os("SHELL").unwrap_or_else(|| "/bin/sh".into());
     if let Err(error) = guard.suspend() {
@@ -1280,6 +1318,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     app.logs.filter = session.log_filter;
     app.logs.recipe_filter = session.log_recipe_filter.clone();
     app.logs.task_filter = session.log_task_filter.clone();
+    app.logs.build_filter = session.log_build_filter.clone();
     app.logs.wrap = session.log_wrap.unwrap_or(false);
     app.logs.follow = session.log_follow.unwrap_or(true);
     let session_build_dir = build_dir.clone();
@@ -1627,6 +1666,19 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 let action =
                     tasks_action(app.task_filter_editing, input).expect("Tasks action was checked");
                 let _ = update(&mut app, action);
+            } else if app.screen == Screen::Logs && logs_action(app.logs.searching, input).is_some()
+            {
+                let action =
+                    logs_action(app.logs.searching, input).expect("Logs action was checked");
+                match update(&mut app, action) {
+                    Some(Effect::OpenInEditor(path)) => {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                    Some(Effect::CopyToClipboard(content)) => {
+                        copy_to_clipboard(&mut app, content).await;
+                    }
+                    _ => {}
+                }
             } else if input == Input::Char('!') {
                 open_yocto_shell(&guard, &mut app).await;
             } else if input == Input::Char('i') {
@@ -1885,6 +1937,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     session.log_filter = app.logs.filter;
     session.log_recipe_filter = app.logs.recipe_filter;
     session.log_task_filter = app.logs.task_filter;
+    session.log_build_filter = app.logs.build_filter;
     session.log_wrap = Some(app.logs.wrap);
     session.log_follow = Some(app.logs.follow);
     session.theme = Some(app.theme);
@@ -1970,6 +2023,7 @@ mod tests {
                 log_filter: Some(Severity::Warning),
                 log_recipe_filter: Some("busybox".into()),
                 log_task_filter: Some("do_compile".into()),
+                log_build_filter: Some("core-image-minimal".into()),
                 log_wrap: Some(true),
                 log_follow: Some(false),
                 theme: Some(Theme::MatrixGreen),
@@ -1989,6 +2043,7 @@ mod tests {
                 log_filter: Some(Severity::Warning),
                 log_recipe_filter: Some("busybox".into()),
                 log_task_filter: Some("do_compile".into()),
+                log_build_filter: Some("core-image-minimal".into()),
                 log_wrap: Some(true),
                 log_follow: Some(false),
                 theme: Some(Theme::MatrixGreen),

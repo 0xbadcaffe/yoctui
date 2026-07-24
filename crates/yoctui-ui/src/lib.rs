@@ -215,6 +215,17 @@ fn selected_style(app: &App, active: bool) -> Style {
         Style::default()
     }
 }
+fn selected_log_style(app: &App, severity: Severity) -> Style {
+    let palette = ThemePalette::for_app(app);
+    let style = severity_style(app, severity);
+    if palette.attribute_only {
+        style.add_modifier(Modifier::REVERSED | Modifier::BOLD)
+    } else {
+        style
+            .bg(palette.selection_background)
+            .add_modifier(Modifier::BOLD)
+    }
+}
 
 fn severity_style(app: &App, severity: Severity) -> Style {
     let palette = ThemePalette::for_app(app);
@@ -410,7 +421,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "e edit BBMASK | Enter preview/confirm | Esc cancel/dashboard | v configuration | ? help | q quit"
         }
         Screen::Logs => {
-            "↑/↓ scroll | ←/→ horizontal | f follow | w wrap | s severity | R/T filters | / search | Esc dashboard | ? help | q quit"
+            "↑/↓ select | ←/→ horizontal | f follow | w wrap | s severity | R/T/B filters | / search | n/N match | o source | C copy"
         }
         Screen::Errors => {
             "↑/↓ select | Enter logs | o open source | Esc dashboard | ? help | q quit"
@@ -1058,9 +1069,24 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
                     )
                 },
             ),
-        Screen::Logs => app.logs.entries.back().map_or_else(
+        Screen::Logs => app.logs.selected().map_or_else(
             || "No logs retained.".into(),
-            |entry| format!("{:?}\n{}", entry.severity, entry.message),
+            |entry| {
+                format!(
+                    "Time: {}\nSeverity: {:?}\nBuild: {}\nRecipe: {}\nTask: {}\nSource: {}\nProtected: {}\n\n{}",
+                    timestamp_text(entry.timestamp),
+                    entry.severity,
+                    entry.build.as_deref().unwrap_or("unavailable"),
+                    entry.recipe.as_deref().unwrap_or("unavailable"),
+                    entry.task.as_deref().unwrap_or("unavailable"),
+                    entry
+                        .path
+                        .as_ref()
+                        .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+                    if entry.protected { "yes" } else { "no" },
+                    entry.message,
+                )
+            },
         ),
         Screen::Tasks => app.selected_task_row().map_or_else(
             || "No task selected.\n\nTask details appear as typed BitBake events arrive.".into(),
@@ -1818,7 +1844,9 @@ fn format_bytes(bytes: u64) -> String {
     }
 }
 fn logs(frame: &mut Frame, app: &App, area: Rect) {
-    let mut visible = app
+    let chunks = Layout::vertical([Constraint::Length(6), Constraint::Min(3)]).split(area);
+    let log_area = chunks[1];
+    let all_visible = app
         .logs
         .filtered()
         .filter(|l| {
@@ -1826,10 +1854,14 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
                 || matches!(l.severity, Severity::Warning | Severity::Error)
         })
         .collect::<Vec<_>>();
-    let height = area.height.saturating_sub(3) as usize;
-    let end = visible.len().saturating_sub(app.logs.scroll_offset);
+    let height = log_area.height.saturating_sub(3) as usize;
+    let selection = app.logs.selection.min(all_visible.len().saturating_sub(1));
+    let end = selection
+        .saturating_add(1)
+        .max(height)
+        .min(all_visible.len());
     let start = end.saturating_sub(height);
-    visible = visible[start..end].to_vec();
+    let visible = &all_visible[start..end];
     let mode = format!(
         "{} | {} | {}",
         if app.logs.follow {
@@ -1850,61 +1882,84 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
                 app.logs.recipe_filter.as_deref().unwrap_or("all"),
                 app.logs.task_filter.as_deref().unwrap_or("all")
             )
+            + &format!(
+                " | build: {}",
+                app.logs.build_filter.as_deref().unwrap_or("all")
+            )
     );
-    let title = if app.logs.dropped > 0 {
+    let pressure = if app.logs.dropped > 0 || app.logs.coalesced > 0 {
         format!(
-            "Logs ({mode}; {} older entries evicted, including {} warnings and {} errors; retained: {}/{})",
+            "{} evicted [W {} E {}], {} coalesced; retained {}/{} bytes",
             app.logs.dropped,
             app.logs.dropped_warnings,
             app.logs.dropped_errors,
+            app.logs.coalesced,
             app.logs.retained_bytes,
             app.logs.max_bytes
         )
     } else {
         format!(
-            "Logs ({mode}; retained: {}/{})",
+            "No eviction or coalescing; retained {}/{} bytes",
             app.logs.retained_bytes, app.logs.max_bytes
         )
     };
-    let title = if app.logs.searching {
-        format!("{title} | search: {}_", app.logs.query)
+    let search = if app.logs.searching {
+        format!("search: {}_", app.logs.query)
     } else if app.logs.query.is_empty() {
-        title
+        "search: none".into()
     } else {
-        format!("{title} | search: {}", app.logs.query)
+        format!("search: {}", app.logs.query)
     };
+    let search = app
+        .logs
+        .match_position()
+        .map_or(search.clone(), |(current, count)| {
+            format!("{search} | selected {current}/{count}")
+        });
+    frame.render_widget(
+        Paragraph::new(format!("{mode}\n{pressure}\n{search}"))
+            .block(Block::default().title("Log status").borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+        chunks[0],
+    );
     if app.logs.wrap {
-        let text = Text::from(
-            visible
-                .iter()
-                .rev()
-                .take(height)
-                .rev()
-                .map(|log| {
-                    Line::styled(
-                        format!(
-                            "{:?} {} {}",
-                            log.severity,
-                            log.recipe.as_deref().unwrap_or(""),
-                            log.message
-                        ),
-                        severity_style(app, log.severity),
+        let mut lines = Vec::new();
+        for (offset, log) in visible.iter().enumerate() {
+            let selected = start + offset == selection;
+            for (line_index, message) in log.message.lines().enumerate() {
+                let prefix = if line_index == 0 {
+                    format!(
+                        "{} {:?} {} ",
+                        if selected { "▶" } else { " " },
+                        log.severity,
+                        log.recipe.as_deref().unwrap_or("")
                     )
-                })
-                .collect::<Vec<_>>(),
-        );
+                } else {
+                    "    ".into()
+                };
+                let style = if selected {
+                    selected_log_style(app, log.severity)
+                } else {
+                    severity_style(app, log.severity)
+                };
+                lines.push(Line::styled(format!("{prefix}{message}"), style));
+            }
+        }
+        let text = Text::from(lines);
         frame.render_widget(
             Paragraph::new(text)
-                .block(Block::default().title(title).borders(Borders::ALL))
+                .block(Block::default().title("Logs").borders(Borders::ALL))
                 .wrap(Wrap { trim: false }),
-            area,
+            log_area,
         );
         return;
     }
-    let rows = visible.into_iter().rev().take(height).rev().map(|l| {
+    let rows = visible.iter().enumerate().map(|(offset, l)| {
+        let selected = start + offset == selection;
         Row::new(vec![
             Cell::from(format!("{:?}", l.severity)),
             Cell::from(l.recipe.as_deref().unwrap_or("")),
+            Cell::from(l.task.as_deref().unwrap_or("")),
             Cell::from(
                 l.message
                     .chars()
@@ -1912,23 +1967,28 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
                     .collect::<String>(),
             ),
         ])
-        .style(severity_style(app, l.severity))
+        .style(if selected {
+            selected_log_style(app, l.severity)
+        } else {
+            severity_style(app, l.severity)
+        })
     });
     frame.render_widget(
         Table::new(
             rows,
             [
                 Constraint::Length(9),
+                Constraint::Length(16),
                 Constraint::Length(18),
                 Constraint::Min(10),
             ],
         )
         .header(
-            Row::new(["Level", "Recipe", "Message"])
+            Row::new(["Level", "Recipe", "Task", "Message"])
                 .style(Style::default().add_modifier(Modifier::BOLD)),
         )
-        .block(Block::default().title(title).borders(Borders::ALL)),
-        area,
+        .block(Block::default().title("Logs").borders(Borders::ALL)),
+        log_area,
     )
 }
 fn errors(frame: &mut Frame, app: &App, area: Rect) {
@@ -2501,6 +2561,8 @@ mod tests {
             task: Some("do_compile".into()),
             path: None,
             timestamp: SystemTime::UNIX_EPOCH,
+            build: None,
+            protected: false,
         });
         terminal.draw(|frame| render(frame, &app)).unwrap();
         assert!(
@@ -3202,7 +3264,7 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(output.contains("including 1 warnings and 2 errors"));
+        assert!(output.contains("3 evicted [W 1 E 2]"));
     }
     #[test]
     fn renders_recipe_task_confirmation() {
@@ -3595,6 +3657,70 @@ mod tests {
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains("progress unknown"), "{output}");
         assert!(!output.contains("0%"), "{output}");
+        let _ = rendered_text(&app, 50, 16);
+    }
+
+    #[test]
+    fn log_workspace_selection_drives_full_multiline_inspector_details() {
+        let mut app = App::new(20, 4_000);
+        app.screen = Screen::Logs;
+        app.logs.insert(yoctui_model::LogEntry {
+            severity: Severity::Error,
+            message: "compile failed\ncompiler context line".into(),
+            recipe: Some("busybox".into()),
+            task: Some("do_compile".into()),
+            path: Some("/tmp/log.do_compile".into()),
+            timestamp: SystemTime::UNIX_EPOCH,
+            build: Some("core-image-minimal".into()),
+            protected: true,
+        });
+        app.logs.insert(yoctui_model::LogEntry {
+            severity: Severity::Info,
+            message: "later output".into(),
+            recipe: None,
+            task: None,
+            path: None,
+            timestamp: SystemTime::UNIX_EPOCH,
+            build: Some("core-image-minimal".into()),
+            protected: false,
+        });
+        app.logs.follow = false;
+        app.logs.selection = 0;
+        let output = rendered_text(&app, 180, 34);
+        assert!(output.contains("do_compile"), "{output}");
+        assert!(output.contains("Source: /tmp/log.do_compile"), "{output}");
+        assert!(output.contains("compiler context line"), "{output}");
+        assert!(output.contains("Build: core-image-minimal"), "{output}");
+    }
+
+    #[test]
+    fn log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely() {
+        let mut app = App::new(20, 4_000);
+        app.screen = Screen::Logs;
+        app.logs.wrap = true;
+        app.logs.searching = true;
+        app.logs.query = "needle".into();
+        app.logs.recipe_filter = Some("busybox".into());
+        app.logs.task_filter = Some("do_compile".into());
+        app.logs.build_filter = Some("core-image-minimal".into());
+        app.logs.coalesced = 7;
+        app.logs.dropped = 3;
+        app.logs.dropped_warnings = 0;
+        app.logs.dropped_errors = 0;
+        app.logs.insert(yoctui_model::LogEntry {
+            severity: Severity::Info,
+            message: "needle in a long wrapped line".into(),
+            recipe: Some("busybox".into()),
+            task: Some("do_compile".into()),
+            path: None,
+            timestamp: SystemTime::UNIX_EPOCH,
+            build: Some("core-image-minimal".into()),
+            protected: false,
+        });
+        let output = rendered_text(&app, 220, 24);
+        assert!(output.contains("7 coalesced"), "{output}");
+        assert!(output.contains("search: needle_"), "{output}");
+        assert!(output.contains("build: core-image-minimal"), "{output}");
         let _ = rendered_text(&app, 50, 16);
     }
 }
