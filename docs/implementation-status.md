@@ -8,7 +8,7 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 - [NOT_STARTED] Refactor disconnected screens into the persistent Navigator / Workspace / Inspector shell defined by `docs/ui-spec.md`. Verification: Ratatui `TestBackend` layout tests at wide, medium, narrow, and too-small terminal sizes.
 - [NOT_STARTED] Implement the shared focus router and dialog stack. Verification: keyboard navigation tests for `Tab`, `Shift+Tab`, `Esc`, modal focus trapping, and context-specific actions.
 - [NOT_STARTED] Implement the shared context-sensitive footer shortcut bar. Verification: screen/focus/dialog shortcut snapshot or semantic rendering tests.
-- [NOT_STARTED] Implement theme and preference infrastructure with built-in `dark`, `light`, `matrix-green`, `high-contrast`, and `monochrome` themes. Verification: configuration tests and semantic color-role rendering tests.
+- [IN_PROGRESS] Implement theme and preference infrastructure with built-in `dark`, `light`, `matrix-green`, `high-contrast`, and `monochrome` themes. Semantic focus/selection roles and configuration parsing: pending commit. Persistence and full preference surface remain.
 - [NOT_STARTED] Implement configurable fast task animations and a reduced-motion mode without implying false numeric progress. Verification: deterministic animation-frame tests and redraw-rate benchmarks.
 
 ## Foundation and naming

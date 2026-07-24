@@ -26,7 +26,7 @@ use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend
 use yoctui_model::{
     Action, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry, LayerBrowserEntry,
     LayerRelationship, LayerRelationships, RecipeDependencies, Screen, Severity, TaskId, TaskInfo,
-    update,
+    Theme, update,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -75,6 +75,7 @@ struct FileConfig {
     default_target: Option<String>,
     editor: Option<String>,
     color: Option<bool>,
+    theme: Option<Theme>,
 }
 
 #[derive(Debug)]
@@ -89,6 +90,7 @@ struct Config {
     editor: Option<String>,
     log_level: String,
     color: bool,
+    theme: Theme,
     session_path: Option<PathBuf>,
 }
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -377,6 +379,7 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
             .or_else(|| env::var("YOCTUI_LOG_LEVEL").ok())
             .unwrap_or_else(|| "info".into()),
         color: !cli.no_color && file.color.unwrap_or(true),
+        theme: file.theme.unwrap_or_default(),
         session_path: session_path(configured_path.as_deref()),
     })
 }
@@ -1246,6 +1249,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
         refresh,
         cancellation_timeout,
         color,
+        theme,
         editor,
         session_path,
         ..
@@ -1255,6 +1259,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
     let mut app = App::new(log_entries, log_bytes);
     app.backend = backend_kind.to_string();
     app.color_enabled = color;
+    app.theme = theme;
     app.screen = session.last_screen.unwrap_or(Screen::Dashboard);
     app.logs.filter = session.log_filter;
     app.logs.recipe_filter = session.log_recipe_filter;
