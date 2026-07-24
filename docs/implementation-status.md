@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete the searchable Recipes workspace and contextual Inspector. Authoritative typed recipe summary/detail metadata now passes live BitBake validation; the lazy Layers tree, structured error investigation, bounded searchable logs, live Tasks workspace, typed backend boundary, and persistent workbench are complete.
+Complete typed recipe actions. Authoritative recipe metadata, stable search/selection, summary rows, and the contextual Recipes Inspector are complete alongside the lazy Layers tree and persistent workbench.
 
 ## Current task
 
@@ -48,7 +48,7 @@ See `docs/current-task.md`.
 | Logs workspace | DONE | Protected-diagnostic retention, bounded bytes/entries, safe truncation, coalescing, pressure counters, follow/pause, both-axis scrolling, search, all filters, selected Inspector, source opening, and clipboard effects are covered |
 | Errors workspace | DONE | Stable structured diagnostics drive the full list and Inspector, exact retained-log and source navigation, related context, visible loss counters, and actionable success/warning/failure/cancellation/backend-loss outcomes |
 | Layers workspace | DONE | Every configured layer stays visible above a stable-path lazy tree; priority, compatibility, active/Git state, subtree refresh, hidden/search filtering, typed Inspector modes, safe 64 KiB text/binary previews, and responsive failure-safe rendering are tested |
-| Recipes workspace | IN_PROGRESS | Typed summary/detail metadata is live-validated for resolved provider/version, appends, tasks, sources, patches, and packages; searchable rows, full Inspector sections, and remaining actions are incomplete |
+| Recipes workspace | IN_PROGRESS | Live-validated typed metadata, identity-stable search/selection, complete summary rows, loading/error states, contextual detail sections, responsive rendering, and typed task/build enrichment are done; remaining recipe actions are incomplete |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
@@ -57,10 +57,9 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `RECIPES-UI-001` — complete searchable Recipes Inspector
-2. `RECIPES-ACTIONS-001` — complete typed recipe actions
-3. `CONFIG-001` — complete configuration provenance and editing
-4. `DEVTOOL-001` — complete Devtool lifecycle
+1. `RECIPES-ACTIONS-001` — complete typed recipe actions
+2. `CONFIG-001` — complete configuration provenance and editing
+3. `DEVTOOL-001` — complete Devtool lifecycle
 
 ## Rules
 

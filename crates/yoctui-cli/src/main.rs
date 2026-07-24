@@ -1787,6 +1787,19 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 if let Some(Effect::OpenInEditor(path)) = update(&mut app, action) {
                     open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                 }
+            } else if app.metadata_searching {
+                match input {
+                    Input::Char(character) => {
+                        let _ = update(&mut app, Action::AppendMetadataQuery(character));
+                    }
+                    Input::Enter | Input::Esc => {
+                        let _ = update(&mut app, Action::FinishMetadataSearch);
+                    }
+                    Input::Backspace => {
+                        let _ = update(&mut app, Action::BackspaceMetadataQuery);
+                    }
+                    _ => {}
+                }
             } else if input == Input::Char('!') {
                 open_yocto_shell(&guard, &mut app).await;
             } else if input == Input::Char('i') {
@@ -1871,13 +1884,18 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 if let Some(Effect::GetRecipeMetadata(recipe)) =
                     update(&mut app, Action::BeginSelectedRecipeMetadata)
                 {
-                    match backend.get_recipe_metadata(recipe).await {
+                    match backend.get_recipe_metadata(recipe.clone()).await {
                         Ok(metadata) => {
                             let _ = update(&mut app, Action::RecipeMetadataLoaded(metadata));
                         }
                         Err(error) => {
-                            app.notification =
-                                Some(format!("Recipe metadata is unavailable: {error}"));
+                            let _ = update(
+                                &mut app,
+                                Action::RecipeMetadataFailed {
+                                    recipe,
+                                    message: error.to_string(),
+                                },
+                            );
                         }
                     }
                 }
@@ -1978,19 +1996,6 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             ) && input == Input::Char('/')
             {
                 let _ = update(&mut app, Action::BeginMetadataSearch);
-            } else if app.metadata_searching {
-                match input {
-                    Input::Char(character) => {
-                        let _ = update(&mut app, Action::AppendMetadataQuery(character));
-                    }
-                    Input::Enter | Input::Esc => {
-                        let _ = update(&mut app, Action::FinishMetadataSearch);
-                    }
-                    Input::Backspace => {
-                        let _ = update(&mut app, Action::BackspaceMetadataQuery);
-                    }
-                    _ => {}
-                }
             } else if app.logs.searching {
                 match input {
                     Input::Char(character) => {
