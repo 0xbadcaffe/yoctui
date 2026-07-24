@@ -682,6 +682,15 @@ per-recipe build status, or history, remain explicitly unavailable until a
 typed source provides them. Inventory refresh preserves selection by recipe
 name and removes details for recipes that disappeared.
 
+Recipe rows show resolved and preferred version separately, provider layer,
+append count, workspace/Devtool status, and build status. Search matches recipe
+name, both versions, layer, and provider path; the selected absolute recipe
+identity is shared by rendering and every action. Typed active/completed tasks
+and the current build may enrich build status without parsing logs. The
+Inspector distinguishes not loaded, loading, failed, unavailable, available
+empty, and populated details, and always lists dependencies, reverse
+dependencies, tasks, metadata sources, patches, package outputs, and history.
+
 Recipe actions use dialogs:
 
 - build

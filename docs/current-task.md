@@ -2,52 +2,54 @@
 
 ## Active task
 
-**ID:** RECIPES-UI-001
-**Title:** Complete searchable Recipes Inspector
+**ID:** RECIPES-ACTIONS-001
+**Title:** Complete typed recipe actions
 
 ## Objective
 
-Render the authoritative recipe summary/detail model as a bounded searchable
-Recipes workspace and contextual Inspector across all responsive modes.
+Complete the Recipes workspace's specified operations using typed actions,
+capability-aware dialogs/effects, explicit destructive confirmation, and
+persistent background jobs.
 
 ## Required work
 
-1. Inventory the existing recipe table, metadata search, selection, global
-   Inspector, dependency view, footer, responsive layouts, and tests.
-2. Render recipe name, preferred/resolved version, providing layer, append
-   count, workspace/Devtool state, and current build state without inventing
-   unavailable data.
-3. Make search/filter match names, versions, layers, and provider paths while
-   keeping selection stable by recipe identity across filtering and refresh.
-4. Lazily request selected recipe detail and show loading, available-empty,
-   unavailable, and failure states distinctly.
-5. Populate contextual sections for dependencies/reverse dependencies, tasks,
-   metadata sources, patches, package outputs, and history from typed state.
-6. Derive current per-recipe task/build state only from typed active/completed
-   tasks and build history; do not copy or parse log text.
-7. Keep unavailable operations visible with explanations in the Inspector or
-   footer.
-8. Cover empty, large, filtered, refreshed, partial/failed metadata, active
-   build, and every responsive mode with reducer, input, and `TestBackend`
-   tests named `recipes_workspace`.
+1. Inventory every existing recipe build/task, editor/log, dependency,
+   Devtool, process/bridge, confirmation, background-job, and test path.
+2. Implement build and force-task selection, clean, cleansstate, devshell,
+   menuconfig, diffconfig, and diffsigs as typed actions/effects.
+3. Implement open recipe/provider, open selected task log, and patch review
+   using authoritative paths with visible missing-path/tool failures.
+4. Complete Devtool modify, update-recipe, finish, reset, and deploy-target
+   integration without duplicating the dedicated Devtool lifecycle task.
+5. Implement CVE check and SPDX generation as observable background
+   operations.
+6. Require preview and explicit confirmation for destructive or unusual
+   operations; disabled actions remain visible with concrete capability
+   explanations.
+7. Keep long-running operations observable across navigation and cancellable
+   where the underlying tool supports cancellation.
+8. Cover normal, unsupported, malformed input, launch failure, cancellation,
+   confirmation, and every responsive dialog mode with tests named
+   `recipe_action`.
 
 ## Definition of done
 
-- Rows expose every required summary field with honest unavailable values.
-- Filtering and selection are stable, bounded, and deterministic.
-- `Enter` refreshes only the selected recipe's typed detail.
-- Inspector sections distinguish unavailable, empty, and populated values.
-- Build/task state is derived only from authoritative typed state.
-- Wide, medium, narrow, and too-small rendering never panic.
+- Every Recipes action in `docs/ui-spec.md` has a typed route.
+- Destructive operations cannot execute without explicit confirmation.
+- Unsupported actions are disabled/explained rather than silently ignored.
+- Long-running operations use persistent job state and do not block the shell.
+- Paths and task names come from authoritative typed metadata.
+- Failure and cancellation outcomes remain visible and actionable.
 - Task-specific and baseline verification pass.
-- Registry/status documents are updated and the next eligible task is active.
+- The parent Recipes task is closed and the next eligible task is active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model recipes_workspace
-cargo test -p yoctui-ui recipes_workspace
-cargo test -p yoctui-app recipes_workspace
+cargo test -p yoctui-model recipe_action
+cargo test -p yoctui-app recipe_action
+cargo test -p yoctui-ui recipe_action
+cargo test -p yoctui -- recipe_action
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -57,4 +59,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`RECIPES-ACTIONS-001 — Complete typed recipe actions`
+`CONFIG-001 — Complete configuration provenance workspace`

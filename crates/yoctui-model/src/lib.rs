@@ -1094,6 +1094,8 @@ pub struct App {
     pub layer_relationships: Option<LayerRelationships>,
     pub recipe_sources: HashMap<String, Vec<PathBuf>>,
     pub recipe_metadata: HashMap<String, RecipeMetadata>,
+    pub recipe_metadata_loading: HashSet<String>,
+    pub recipe_metadata_errors: HashMap<String, String>,
     pub layer_browser: Option<LayerBrowser>,
     pub dialogs: VecDeque<Dialog>,
     pub tasks: HashMap<TaskId, TaskInfo>,
@@ -1141,6 +1143,8 @@ impl App {
             layer_relationships: None,
             recipe_sources: HashMap::new(),
             recipe_metadata: HashMap::new(),
+            recipe_metadata_loading: HashSet::new(),
+            recipe_metadata_errors: HashMap::new(),
             layer_browser: None,
             dialogs: VecDeque::new(),
             tasks: HashMap::new(),
@@ -1568,6 +1572,10 @@ pub enum Action {
     BeginSelectedRecipeDependencies,
     BeginSelectedRecipeMetadata,
     RecipeMetadataLoaded(RecipeMetadata),
+    RecipeMetadataFailed {
+        recipe: String,
+        message: String,
+    },
     DependenciesLoaded(RecipeDependencies),
     SelectDependency {
         delta: isize,
@@ -1875,6 +1883,32 @@ fn select_first_matching_layer_entry(app: &mut App) {
         })
     {
         browser.selection = index;
+    }
+}
+
+fn recipe_matches_query(recipe: &Recipe, query: &str) -> bool {
+    let query = query.to_ascii_lowercase();
+    query.is_empty()
+        || [
+            Some(recipe.name.as_str()),
+            recipe.version.as_deref(),
+            recipe.preferred_version.as_deref(),
+            recipe.layer.as_deref(),
+            recipe.file.as_ref().and_then(|path| path.to_str()),
+        ]
+        .into_iter()
+        .flatten()
+        .any(|value| value.to_ascii_lowercase().contains(&query))
+}
+
+fn select_first_matching_recipe(app: &mut App) {
+    if let Some(index) = app
+        .workspace
+        .recipes
+        .iter()
+        .position(|recipe| recipe_matches_query(recipe, &app.metadata_query))
+    {
+        app.recipe_selection = index;
     }
 }
 
@@ -2704,13 +2738,26 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some("The selected diagnostic has no source log path.".into());
         }
         Action::SelectRecipe { delta } => {
-            app.recipe_selection = if delta.is_negative() {
-                app.recipe_selection.saturating_sub(delta.unsigned_abs())
+            let matches = app
+                .workspace
+                .recipes
+                .iter()
+                .enumerate()
+                .filter(|(_, recipe)| recipe_matches_query(recipe, &app.metadata_query))
+                .map(|(index, _)| index)
+                .collect::<Vec<_>>();
+            let position = matches
+                .iter()
+                .position(|index| *index == app.recipe_selection)
+                .unwrap_or(0);
+            let position = if delta.is_negative() {
+                position.saturating_sub(delta.unsigned_abs())
             } else {
-                app.recipe_selection
+                position
                     .saturating_add(delta as usize)
-                    .min(app.workspace.recipes.len().saturating_sub(1))
+                    .min(matches.len().saturating_sub(1))
             };
+            app.recipe_selection = matches.get(position).copied().unwrap_or(0);
         }
         Action::BeginSelectedRecipeBuild => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
@@ -2846,18 +2893,30 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::BeginSelectedRecipeMetadata => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
+                app.recipe_metadata_loading.insert(recipe.name.clone());
+                app.recipe_metadata_errors.remove(&recipe.name);
                 return Some(Effect::GetRecipeMetadata(recipe.name.clone()));
             }
             app.notification = Some("No recipe is selected for metadata inspection.".into());
         }
         Action::RecipeMetadataLoaded(metadata) => {
             let recipe = metadata.recipe.clone();
+            app.recipe_metadata_loading.remove(&recipe);
+            app.recipe_metadata_errors.remove(&recipe);
             if let Some(sources) = metadata.sources.as_ref() {
                 app.recipe_sources.insert(recipe.clone(), sources.clone());
             } else {
                 app.recipe_sources.remove(&recipe);
             }
             app.recipe_metadata.insert(recipe, metadata);
+        }
+        Action::RecipeMetadataFailed { recipe, message } => {
+            app.recipe_metadata_loading.remove(&recipe);
+            app.recipe_metadata_errors
+                .insert(recipe.clone(), message.clone());
+            app.notification = Some(format!(
+                "Recipe metadata for {recipe} is unavailable: {message}"
+            ));
         }
         Action::DependenciesLoaded(dependencies) => {
             app.screen = Screen::Dependencies;
@@ -3488,6 +3547,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.layer_selection = 0;
             app.config_selection = 0;
             select_first_matching_layer_entry(app);
+            select_first_matching_recipe(app);
         }
         Action::BackspaceMetadataQuery if app.metadata_searching => {
             app.metadata_query.pop();
@@ -3495,6 +3555,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.layer_selection = 0;
             app.config_selection = 0;
             select_first_matching_layer_entry(app);
+            select_first_matching_recipe(app);
         }
         Action::FinishMetadataSearch => app.metadata_searching = false,
         Action::AppendLogQuery(_)
@@ -3550,6 +3611,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.recipe_metadata
                 .retain(|recipe, _| names.contains(recipe));
             app.recipe_sources
+                .retain(|recipe, _| names.contains(recipe));
+            app.recipe_metadata_loading
+                .retain(|recipe| names.contains(recipe));
+            app.recipe_metadata_errors
                 .retain(|recipe, _| names.contains(recipe));
             app.recipe_selection = selected
                 .and_then(|selected| {
@@ -4625,6 +4690,86 @@ mod tests {
         assert!(!app.recipe_sources.contains_key("busybox"));
         assert_eq!(metadata.workspace_status, None);
         assert_eq!(metadata.history, None);
+    }
+    #[test]
+    fn recipes_workspace_filter_selection_refresh_and_failure_are_identity_stable() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(
+            &mut app,
+            Action::RecipesLoaded(vec![
+                Recipe {
+                    name: "alpha".into(),
+                    version: Some("1".into()),
+                    layer: Some("core".into()),
+                    ..Recipe::default()
+                },
+                Recipe {
+                    name: "busybox".into(),
+                    version: Some("1.36".into()),
+                    layer: Some("base".into()),
+                    file: Some("/layers/base/recipes-core/busybox.bb".into()),
+                    ..Recipe::default()
+                },
+                Recipe {
+                    name: "zlib".into(),
+                    version: Some("1.3".into()),
+                    layer: Some("core".into()),
+                    ..Recipe::default()
+                },
+            ]),
+        );
+        let _ = update(&mut app, Action::BeginMetadataSearch);
+        for character in "base".chars() {
+            let _ = update(&mut app, Action::AppendMetadataQuery(character));
+        }
+        assert_eq!(app.recipe_selection, 1);
+        let _ = update(&mut app, Action::SelectRecipe { delta: isize::MAX });
+        assert_eq!(app.recipe_selection, 1);
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedRecipeMetadata),
+            Some(Effect::GetRecipeMetadata("busybox".into()))
+        );
+        assert!(app.recipe_metadata_loading.contains("busybox"));
+        let _ = update(
+            &mut app,
+            Action::RecipeMetadataFailed {
+                recipe: "busybox".into(),
+                message: "server unavailable".into(),
+            },
+        );
+        assert!(!app.recipe_metadata_loading.contains("busybox"));
+        assert_eq!(
+            app.recipe_metadata_errors
+                .get("busybox")
+                .map(String::as_str),
+            Some("server unavailable")
+        );
+        app.recipe_metadata_errors
+            .insert("alpha".into(), "stale".into());
+
+        let _ = update(
+            &mut app,
+            Action::RecipesLoaded(vec![
+                Recipe {
+                    name: "busybox".into(),
+                    version: Some("1.37".into()),
+                    layer: Some("base".into()),
+                    ..Recipe::default()
+                },
+                Recipe {
+                    name: "new".into(),
+                    ..Recipe::default()
+                },
+            ]),
+        );
+        assert_eq!(app.workspace.recipes[app.recipe_selection].name, "busybox");
+        assert_eq!(
+            app.recipe_metadata_errors
+                .get("busybox")
+                .map(String::as_str),
+            Some("server unavailable")
+        );
+        assert!(!app.recipe_metadata_errors.contains_key("alpha"));
     }
     #[test]
     fn selected_recipe_build_requires_confirmation() {

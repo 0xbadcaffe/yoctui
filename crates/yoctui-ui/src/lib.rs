@@ -5,8 +5,9 @@ use ratatui::{
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 use yoctui_model::{
-    App, Dialog, FocusTarget, GitFileState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode,
-    PreviewKind, RecipeEditor, Screen, Severity, TaskFilterField, TaskRow, TaskState, Theme,
+    App, BuildStatus, Dialog, FocusTarget, GitFileState, LayerBrowser, LayerBrowserEntry,
+    LayerInspectorMode, PreviewKind, Recipe, RecipeBuildStatus, RecipeEditor,
+    RecipeWorkspaceStatus, Screen, Severity, TaskFilterField, TaskRow, TaskState, Theme,
     format_duration,
 };
 
@@ -422,7 +423,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
         }
         Screen::LayerRelationships => "Esc dashboard | y layers | ? help | q quit",
         Screen::Recipes => {
-            "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | g graph | d Devtool edit | u update-recipe | F finish | P deploy | D reset | / search | Esc dashboard | ? help | q quit"
+            "↑/↓ select | Enter inspect | / search | g dependencies | b build | C clean | M menuconfig | S cleansstate | d Devtool | u update | F finish | P deploy | D reset"
         }
         Screen::Images => {
             "↑/↓ select | b build selected image | i image picker | Tab focus | q quit"
@@ -1035,14 +1036,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
     let details = match app.screen {
         Screen::Recipes => app.workspace.recipes.get(app.recipe_selection).map_or_else(
             || "No recipe selected.".into(),
-            |recipe| {
-                format!(
-                    "Recipe: {}\nVersion: {}\nLayer: {}\n\nUse b to build or g for dependencies.",
-                    recipe.name,
-                    recipe.version.as_deref().unwrap_or("unknown"),
-                    recipe.layer.as_deref().unwrap_or("unknown")
-                )
-            },
+            |recipe| recipe_inspector(app, recipe),
         ),
         Screen::Layers => app.layer_browser.as_ref().map_or_else(
             || {
@@ -2152,41 +2146,226 @@ fn diagnostic_detail(app: &App, log: &yoctui_model::LogEntry) -> String {
         },
     )
 }
-fn recipes(frame: &mut Frame, app: &App, area: Rect) {
-    let mut recipes = app.workspace.recipes.iter().collect::<Vec<_>>();
-    recipes.sort_by(|left, right| left.name.cmp(&right.name));
-    recipes.retain(|recipe| {
-        matches_metadata(
-            &app.metadata_query,
-            &[
-                recipe.name.as_str(),
-                recipe.version.as_deref().unwrap_or(""),
-                recipe.layer.as_deref().unwrap_or(""),
-            ],
+fn recipe_build_state(app: &App, recipe: &str) -> String {
+    if let Some(task) = app.tasks.values().find(|task| task.recipe == recipe) {
+        return format!("{:?}", task.state).to_ascii_lowercase();
+    }
+    if let Some(task) = app
+        .completed_tasks
+        .iter()
+        .find(|task| task.task.recipe == recipe)
+    {
+        return format!("{:?}", task.task.state).to_ascii_lowercase();
+    }
+    if app.build.target.as_deref() == Some(recipe) {
+        return match app.build.status {
+            BuildStatus::Idle | BuildStatus::LoadingWorkspace => "idle",
+            BuildStatus::Parsing => "parsing",
+            BuildStatus::Running => "running",
+            BuildStatus::Cancelling => "cancelling",
+            BuildStatus::Completed => "succeeded",
+            BuildStatus::Cancelled => "cancelled",
+            BuildStatus::Failed => "failed",
+        }
+        .into();
+    }
+    app.recipe_metadata
+        .get(recipe)
+        .and_then(|metadata| metadata.build_status)
+        .map_or_else(
+            || "unavailable".into(),
+            |status| {
+                match status {
+                    RecipeBuildStatus::Idle => "idle",
+                    RecipeBuildStatus::Queued => "queued",
+                    RecipeBuildStatus::Running => "running",
+                    RecipeBuildStatus::Succeeded => "succeeded",
+                    RecipeBuildStatus::Failed => "failed",
+                    RecipeBuildStatus::Cancelled => "cancelled",
+                }
+                .into()
+            },
         )
-    });
+}
+
+fn recipe_workspace_state(app: &App, recipe: &str) -> &'static str {
+    app.recipe_metadata
+        .get(recipe)
+        .and_then(|metadata| metadata.workspace_status)
+        .map_or("unavailable", |status| match status {
+            RecipeWorkspaceStatus::Clean => "clean",
+            RecipeWorkspaceStatus::Modified => "modified",
+        })
+}
+
+fn recipe_values(label: &str, values: Option<&Vec<String>>) -> String {
+    let value = values.map_or_else(
+        || "unavailable".into(),
+        |values| {
+            if values.is_empty() {
+                "none".into()
+            } else {
+                values.join(", ")
+            }
+        },
+    );
+    format!("{label}: {value}")
+}
+
+fn recipe_paths(label: &str, values: Option<&Vec<std::path::PathBuf>>) -> String {
+    let value = values.map_or_else(
+        || "unavailable".into(),
+        |values| {
+            if values.is_empty() {
+                "none".into()
+            } else {
+                values
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join("\n  ")
+            }
+        },
+    );
+    format!("{label}: {value}")
+}
+
+fn recipe_inspector(app: &App, recipe: &Recipe) -> String {
+    let load_state = if app.recipe_metadata_loading.contains(&recipe.name) {
+        "loading selected recipe metadata…".into()
+    } else if let Some(error) = app.recipe_metadata_errors.get(&recipe.name) {
+        format!("metadata unavailable: {error}")
+    } else if app.recipe_metadata.contains_key(&recipe.name) {
+        "metadata loaded".into()
+    } else {
+        "not loaded; press Enter to inspect".into()
+    };
+    let metadata = app.recipe_metadata.get(&recipe.name);
+    let dependencies = app
+        .dependencies
+        .as_ref()
+        .filter(|dependencies| dependencies.recipe == recipe.name);
+    let active_tasks = app
+        .tasks
+        .values()
+        .filter(|task| task.recipe == recipe.name)
+        .map(|task| format!("{} ({:?})", task.task, task.state))
+        .collect::<Vec<_>>();
+    let reported_tasks = metadata.and_then(|metadata| metadata.tasks.as_ref());
+    let tasks = if active_tasks.is_empty() {
+        recipe_values("Tasks", reported_tasks)
+    } else {
+        format!("Active tasks: {}", active_tasks.join(", "))
+    };
+    format!(
+        "Recipe: {}\nResolved version: {}\nPreferred version: {}\nProvider layer: {}\nProvider file: {}\nAppends: {}\nWorkspace/Devtool: {}\nBuild: {}\nDetail: {load_state}\n\nDependencies: {}\nRuntime dependencies: {}\nReverse dependencies: unavailable\n{tasks}\n{}\n{}\n{}\n{}",
+        recipe.name,
+        recipe.version.as_deref().unwrap_or("unavailable"),
+        recipe.preferred_version.as_deref().unwrap_or("unavailable"),
+        recipe.layer.as_deref().unwrap_or("unavailable"),
+        recipe
+            .file
+            .as_ref()
+            .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+        recipe
+            .append_count
+            .map_or_else(|| "unavailable".into(), |count| count.to_string()),
+        recipe_workspace_state(app, &recipe.name),
+        recipe_build_state(app, &recipe.name),
+        dependencies.map_or_else(
+            || "unavailable; press g to query".into(),
+            |value| if value.build.is_empty() {
+                "none".into()
+            } else {
+                value.build.join(", ")
+            }
+        ),
+        dependencies.map_or_else(
+            || "unavailable".into(),
+            |value| if value.runtime.is_empty() {
+                "none".into()
+            } else {
+                value.runtime.join(", ")
+            }
+        ),
+        recipe_paths(
+            "Metadata sources",
+            metadata.and_then(|value| value.sources.as_ref())
+        ),
+        recipe_values("Patches", metadata.and_then(|value| value.patches.as_ref())),
+        recipe_values(
+            "Package outputs",
+            metadata.and_then(|value| value.packages.as_ref())
+        ),
+        recipe_values("History", metadata.and_then(|value| value.history.as_ref())),
+    )
+}
+
+fn recipes(frame: &mut Frame, app: &App, area: Rect) {
+    let recipes = app
+        .workspace
+        .recipes
+        .iter()
+        .enumerate()
+        .filter(|(_, recipe)| {
+            matches_metadata(
+                &app.metadata_query,
+                &[
+                    recipe.name.as_str(),
+                    recipe.version.as_deref().unwrap_or(""),
+                    recipe.preferred_version.as_deref().unwrap_or(""),
+                    recipe.layer.as_deref().unwrap_or(""),
+                    recipe
+                        .file
+                        .as_ref()
+                        .and_then(|path| path.to_str())
+                        .unwrap_or(""),
+                ],
+            )
+        })
+        .collect::<Vec<_>>();
     let recipe_count = recipes.len();
-    let selected = recipes.get(app.recipe_selection).copied();
-    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(5)]).split(area);
+    let selected = app.workspace.recipes.get(app.recipe_selection);
+    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(12)]).split(area);
     frame.render_widget(
         Table::new(
-            recipes.into_iter().enumerate().map(|(index, recipe)| {
+            recipes.into_iter().map(|(index, recipe)| {
                 Row::new(vec![
                     Cell::from(recipe.name.as_str()),
-                    Cell::from(recipe.version.as_deref().unwrap_or("")),
-                    Cell::from(recipe.layer.as_deref().unwrap_or("")),
+                    Cell::from(recipe.version.as_deref().unwrap_or("?")),
+                    Cell::from(recipe.preferred_version.as_deref().unwrap_or("?")),
+                    Cell::from(recipe.layer.as_deref().unwrap_or("?")),
+                    Cell::from(
+                        recipe
+                            .append_count
+                            .map_or_else(|| "?".into(), |count| count.to_string()),
+                    ),
+                    Cell::from(recipe_workspace_state(app, &recipe.name)),
+                    Cell::from(recipe_build_state(app, &recipe.name)),
                 ])
                 .style(selected_style(app, index == app.recipe_selection))
             }),
             [
-                Constraint::Percentage(40),
-                Constraint::Percentage(25),
-                Constraint::Percentage(35),
+                Constraint::Min(12),
+                Constraint::Length(10),
+                Constraint::Length(10),
+                Constraint::Length(10),
+                Constraint::Length(4),
+                Constraint::Length(11),
+                Constraint::Length(10),
             ],
         )
         .header(
-            Row::new(["Recipe", "Version", "Layer"])
-                .style(Style::default().add_modifier(Modifier::BOLD)),
+            Row::new([
+                "Recipe",
+                "Resolved",
+                "Preferred",
+                "Layer",
+                "App",
+                "Workspace",
+                "Build",
+            ])
+            .style(Style::default().add_modifier(Modifier::BOLD)),
         )
         .block(
             Block::default()
@@ -2204,24 +2383,16 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     );
     let detail = selected.map_or_else(
         || "No recipes supplied by the backend.".into(),
-        |recipe| {
-            format!(
-                "Recipe: {}\nVersion: {}\nLayer: {}",
-                recipe.name,
-                recipe.version.as_deref().unwrap_or("unknown"),
-                recipe.layer.as_deref().unwrap_or("unknown")
-            )
-        },
+        |recipe| recipe_inspector(app, recipe),
     );
     frame.render_widget(
-        Paragraph::new(format!(
-            "{detail}\n\nb builds.  C cleans.  M runs menuconfig.  S requests cleansstate.  d opens a devtool workspace.  D resets it."
-        ))
-        .block(
-            Block::default()
-                .title("Selected recipe")
-                .borders(Borders::ALL),
-        ),
+        Paragraph::new(detail)
+            .block(
+                Block::default()
+                    .title("Selected recipe Inspector")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
         chunks[1],
     );
 }
@@ -3810,7 +3981,7 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(output.contains("Recipe: busybox"));
-        assert!(output.contains("Version: 1.36"));
+        assert!(output.contains("Resolved version: 1.36"));
 
         app.screen = Screen::Layers;
         let mut browser = LayerBrowser::new("meta".into(), "/layers/meta".into());
@@ -3832,6 +4003,103 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Path: /layers/meta/conf/layer.conf"));
         assert!(output.contains("BBFILE_COLLECTIONS"));
+    }
+    #[test]
+    fn recipes_workspace_renders_authoritative_summary_and_inspector_sections() {
+        let mut terminal = Terminal::new(TestBackend::new(180, 38)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Recipes;
+        app.workspace.recipes = vec![
+            yoctui_model::Recipe {
+                name: "alpha".into(),
+                ..yoctui_model::Recipe::default()
+            },
+            yoctui_model::Recipe {
+                name: "busybox".into(),
+                version: Some("1.36".into()),
+                preferred_version: Some("1.36%".into()),
+                layer: Some("core".into()),
+                file: Some("/layers/meta/recipes-core/busybox/busybox_1.36.bb".into()),
+                append_count: Some(2),
+            },
+        ];
+        app.recipe_selection = 1;
+        app.metadata_query = "busy".into();
+        app.recipe_metadata.insert(
+            "busybox".into(),
+            yoctui_model::RecipeMetadata {
+                recipe: "busybox".into(),
+                workspace_status: Some(yoctui_model::RecipeWorkspaceStatus::Modified),
+                build_status: None,
+                tasks: Some(vec!["do_build".into(), "do_compile".into()]),
+                sources: Some(vec![
+                    "/layers/meta/recipes-core/busybox/busybox_1.36.bb".into(),
+                ]),
+                patches: Some(vec!["file://security.patch".into()]),
+                packages: Some(vec!["busybox".into(), "busybox-src".into()]),
+                history: None,
+            },
+        );
+        app.dependencies = Some(yoctui_model::RecipeDependencies {
+            recipe: "busybox".into(),
+            build: vec!["virtual/libc".into()],
+            runtime: vec!["busybox-udhcpc".into()],
+        });
+        app.tasks.insert(
+            yoctui_model::TaskId("busybox:do_compile".into()),
+            yoctui_model::TaskInfo {
+                id: yoctui_model::TaskId("busybox:do_compile".into()),
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                state: TaskState::Active,
+                ..yoctui_model::TaskInfo::default()
+            },
+        );
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Recipes (shown: 1 of 2)"));
+        assert!(output.contains("Resolved"));
+        assert!(output.contains("Preferred"));
+        assert!(output.contains("Provider file"));
+        assert!(output.contains("Workspace/Devtool: modified"));
+        assert!(output.contains("Active tasks: do_compile"));
+        assert!(output.contains("virtual/libc"));
+        assert!(output.contains("security.patch"));
+        assert!(output.contains("busybox-src"));
+        assert!(output.contains("History: unavailable"));
+    }
+
+    #[test]
+    fn recipes_workspace_partial_failure_and_all_responsive_modes_are_safe() {
+        for (width, height) in [(160, 30), (110, 28), (90, 25), (70, 20)] {
+            let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+            let mut app = App::new(10, 1_000);
+            app.screen = Screen::Recipes;
+            app.workspace.recipes.push(yoctui_model::Recipe {
+                name: "demo".into(),
+                ..yoctui_model::Recipe::default()
+            });
+            app.recipe_metadata_errors
+                .insert("demo".into(), "metadata service unavailable".into());
+            terminal.draw(|frame| render(frame, &app)).unwrap();
+            if width >= 80 && height >= 24 {
+                let output = terminal
+                    .backend()
+                    .buffer()
+                    .content
+                    .iter()
+                    .map(|cell| cell.symbol())
+                    .collect::<String>();
+                assert!(output.contains("demo"));
+                assert!(output.contains("unavailable"));
+            }
+        }
     }
     #[test]
     fn build_completion_is_modal_but_running_builds_keep_the_shell_visible() {

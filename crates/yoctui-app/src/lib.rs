@@ -532,6 +532,24 @@ pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
         _ => None,
     }
 }
+pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
+    if searching {
+        return match key {
+            Input::Char(character) => Some(Action::AppendMetadataQuery(character)),
+            Input::Backspace => Some(Action::BackspaceMetadataQuery),
+            Input::Enter | Input::Esc => Some(Action::FinishMetadataSearch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectRecipe { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectRecipe { delta: 1 }),
+        Input::Enter => Some(Action::BeginSelectedRecipeMetadata),
+        Input::Char('/') => Some(Action::BeginMetadataSearch),
+        Input::Char('g') => Some(Action::BeginSelectedRecipeDependencies),
+        _ => None,
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1093,6 +1111,29 @@ mod tests {
         assert_eq!(
             layer_tree_action(true, Input::Char('b')),
             Some(Action::AppendMetadataQuery('b'))
+        );
+    }
+    #[test]
+    fn recipes_workspace_maps_search_selection_detail_and_dependencies() {
+        assert_eq!(
+            recipes_workspace_action(false, Input::Down),
+            Some(Action::SelectRecipe { delta: 1 })
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Enter),
+            Some(Action::BeginSelectedRecipeMetadata)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('g')),
+            Some(Action::BeginSelectedRecipeDependencies)
+        );
+        assert_eq!(
+            recipes_workspace_action(true, Input::Char('b')),
+            Some(Action::AppendMetadataQuery('b'))
+        );
+        assert_eq!(
+            recipes_workspace_action(true, Input::Backspace),
+            Some(Action::BackspaceMetadataQuery)
         );
     }
     #[test]

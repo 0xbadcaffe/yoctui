@@ -240,18 +240,18 @@ notes = "Protocol v1 now defaults old summaries safely and carries resolved prov
 id = "RECIPES-UI-001"
 milestone = "M3"
 title = "Complete searchable Recipes Inspector"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 41
 required = true
 depends_on = ["RECIPES-META-001"]
 verify = ["cargo test -p yoctui-model recipes_workspace", "cargo test -p yoctui-ui recipes_workspace", "cargo test -p yoctui-app recipes_workspace"]
-notes = "Bounded filters and selection, authoritative rows, contextual Inspector sections, responsive and unavailable states."
+notes = "Absolute recipe identity now drives search, rendering, metadata loads, dependencies, and actions. Rows and Inspector expose all summary/detail fields, explicit load/error/empty/unavailable states, and typed task/build enrichment across responsive modes."
 
 [[task]]
 id = "RECIPES-ACTIONS-001"
 milestone = "M3"
 title = "Complete typed recipe actions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 42
 required = true
 depends_on = ["RECIPES-UI-001", "JOB-002"]
