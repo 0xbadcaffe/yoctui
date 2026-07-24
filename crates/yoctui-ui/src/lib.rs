@@ -202,7 +202,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
     }
     match app.screen {
         Screen::Dashboard => {
-            "↑/↓ package progress | i image | b build image | B options | ! shell | c cancel | r recipes | y layers | v config | x BBMASK | ? help | q quit"
+            "F5 build | Ctrl+P commands | Tab focus | ↑/↓ package progress | i image | ! shell | c cancel | r recipes | y layers | ? help | q quit"
         }
         Screen::BuildHistory => "↑/↓ select | Esc dashboard | ? help | q quit",
         Screen::Dependencies => {
