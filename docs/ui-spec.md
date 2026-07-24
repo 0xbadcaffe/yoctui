@@ -577,6 +577,7 @@ Build completion behavior:
 - zero errors: success notification
 - warnings only: warning summary notification
 - errors: prominent failure notification with direct action to open Errors
+- cancelled build: cancellation summary distinct from build failure
 - pressing `Enter` on a failure notification opens the selected error
 
 ---

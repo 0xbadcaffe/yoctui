@@ -872,10 +872,10 @@ fn build_completion_popup(frame: &mut Frame, app: &App, area: Rect) {
         width,
         9,
     );
-    let result = if app.build.status == yoctui_model::BuildStatus::Completed {
-        "completed successfully"
-    } else {
-        "failed"
+    let result = match app.build.status {
+        yoctui_model::BuildStatus::Completed => "completed successfully",
+        yoctui_model::BuildStatus::Cancelled => "was cancelled",
+        _ => "failed",
     };
     frame.render_widget(Clear, popup);
     frame.render_widget(
@@ -2469,6 +2469,24 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Build finished"));
         assert!(output.contains("Press any key"));
+    }
+    #[test]
+    fn build_cancellation_completion_is_distinct_from_failure() {
+        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.build.target = Some("core-image-minimal".into());
+        app.build.status = yoctui_model::BuildStatus::Cancelled;
+        app.build_completion_open = true;
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Build was cancelled"));
+        assert!(!output.contains("Build failed"));
     }
     #[test]
     fn configuration_renders_bridge_provenance() {

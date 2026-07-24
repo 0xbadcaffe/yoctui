@@ -4,5 +4,6 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 [dependencies]
+yoctui-bitbake = { path = "../yoctui-bitbake" }
 yoctui-model = { path = "../yoctui-model" }
 yoctui-protocol = { path = "../yoctui-protocol" }

@@ -152,18 +152,18 @@ notes = "Typed lifecycle, context, progress, bounded output/history, result/erro
 id = "JOB-002"
 milestone = "M2"
 title = "Background-job effect execution and cancellation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 21
 required = true
 depends_on = ["JOB-001"]
 verify = ["cargo test -p yoctui-app background_job", "cargo test -p yoctui-bitbake cancellation"]
-notes = "Jobs continue while navigating."
+notes = "BuildJobCoordinator maps typed backend events into persistent job lifecycle/output, preserves navigation, distinguishes cancellation/failure/loss, and has app plus fake-process cancellation coverage in this commit."
 
 [[task]]
 id = "BB-001"
 milestone = "M1"
 title = "Real BitBake smoke harness"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 30
 required = true
 depends_on = ["JOB-002"]
