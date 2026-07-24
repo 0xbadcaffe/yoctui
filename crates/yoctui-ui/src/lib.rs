@@ -213,6 +213,9 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Recipes => {
             "↑/↓ select | b build | C clean | M menuconfig | S cleansstate | g graph | d Devtool edit | u update-recipe | F finish | P deploy | D reset | / search | Esc dashboard | ? help | q quit"
         }
+        Screen::Images => {
+            "↑/↓ select | b build selected image | i image picker | Tab focus | q quit"
+        }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
@@ -666,6 +669,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
         ("Dashboard", Screen::Dashboard),
         ("Layers", Screen::Layers),
         ("Recipes", Screen::Recipes),
+        ("Images", Screen::Images),
         ("Tasks", Screen::Tasks),
         ("Logs", Screen::Logs),
         ("Errors", Screen::Errors),
@@ -711,6 +715,7 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Logs => logs(frame, app, area),
         Screen::Errors => errors(frame, app, area),
         Screen::Recipes => recipes(frame, app, area),
+        Screen::Images => images_workspace(frame, app, area),
         Screen::Layers => {
             if let Some(browser) = app.layer_browser.as_ref() {
                 layer_browser(frame, app, browser, area)
@@ -1145,6 +1150,39 @@ fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
         Paragraph::new(format!("Overall: {}/{} complete | {} active\n\nRecipe                       Task                     Progress\n{lines}", app.build.completed, app.build.total.map_or_else(|| "?".into(), |total| total.to_string()), tasks.len()))
             .block(Block::default().title("Live Tasks").borders(Borders::ALL))
             .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let images = app
+        .workspace
+        .recipes
+        .iter()
+        .filter(|recipe| recipe.name.contains("image"))
+        .collect::<Vec<_>>();
+    let text = if images.is_empty() {
+        "No image recipes were discovered in the active layers.".into()
+    } else {
+        images
+            .iter()
+            .map(|recipe| {
+                format!(
+                    "{:<36} {:<14} {}",
+                    recipe.name,
+                    recipe.version.as_deref().unwrap_or("unknown"),
+                    recipe.layer.as_deref().unwrap_or("unknown")
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    frame.render_widget(
+        Paragraph::new(format!(
+            "Image target                         Version        Layer\n{text}"
+        ))
+        .block(Block::default().title("Images").borders(Borders::ALL))
+        .wrap(Wrap { trim: false }),
         area,
     );
 }
