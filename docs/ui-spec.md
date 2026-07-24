@@ -1042,6 +1042,23 @@ Theme changes apply immediately and persist.
 
 ### Preferences
 
+The Settings workspace is a typed row editor. `Up`/`Down` (or `j`/`k`) selects
+a row; `Left`/`Right` or `Enter` changes its value. The supported rows are:
+
+- theme
+- animation speed
+- reduced motion
+- color enablement
+- log wrapping
+- log following
+
+Changes preview immediately and are atomically saved to `session.toml`.
+`config.toml` is a user-authored default and is never rewritten by the TUI.
+Session values override configuration defaults for these interactive rows;
+hard CLI overrides such as `--no-color` remain authoritative. A failed save
+keeps the previewed value, marks Settings as unsaved, and shows a notice.
+Pressing `r` retries the atomic save without changing the previewed value.
+
 Persist:
 
 - theme

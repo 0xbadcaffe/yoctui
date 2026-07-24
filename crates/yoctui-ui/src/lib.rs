@@ -410,7 +410,9 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ select | Enter logs | o open source | Esc dashboard | ? help | q quit"
         }
         Screen::Help => "Esc dashboard | q quit",
-        Screen::Settings => "Ctrl+P commands | Tab focus | q quit",
+        Screen::Settings => {
+            "↑/↓ select | ←/→ change | r retry save | Ctrl+P commands | Tab focus | q quit"
+        }
     }
 }
 
@@ -1406,17 +1408,49 @@ fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let rows = [
+        ("Theme", format!("{:?}", app.theme)),
+        ("Animation speed", format!("{:?}", app.animation_speed)),
+        ("Reduced motion", app.reduced_motion.to_string()),
+        ("Color", app.color_enabled.to_string()),
+        ("Log wrap", app.logs.wrap.to_string()),
+        ("Log follow", app.logs.follow.to_string()),
+    ];
+    let chunks = Layout::vertical([Constraint::Min(8), Constraint::Length(4)]).split(area);
     frame.render_widget(
-        Paragraph::new(format!(
-            "Theme: {:?}\nColor: {}\nAnimation speed: {:?}\nReduced motion: {}\n\nSettings are loaded from $XDG_CONFIG_HOME/yoctui/config.toml.\nUse Ctrl+P to discover available workspace commands.",
-            app.theme,
-            if app.color_enabled { "enabled" } else { "disabled" },
-            app.animation_speed,
-            app.reduced_motion,
-        ))
-        .block(Block::default().title("Settings").borders(Borders::ALL))
-        .wrap(Wrap { trim: false }),
-        area,
+        Table::new(
+            rows.into_iter().enumerate().map(|(index, (name, value))| {
+                Row::new([name.to_owned(), value])
+                    .style(selected_style(app, index == app.settings_selection))
+            }),
+            [Constraint::Percentage(55), Constraint::Percentage(45)],
+        )
+        .header(
+            Row::new(["Setting", "Active value"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(
+            Block::default()
+                .title(if app.settings_dirty {
+                    "Settings (not saved)"
+                } else {
+                    "Settings"
+                })
+                .borders(Borders::ALL),
+        ),
+        chunks[0],
+    );
+    frame.render_widget(
+        Paragraph::new(
+            "↑/↓ or j/k select  ←/→ or Enter change  r retry unsaved changes\nChanges apply immediately and are saved to Yoctui's session preferences.\nCLI flags override session values; session values override config.toml defaults.",
+        )
+        .block(
+            Block::default()
+                .title("Settings controls")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true }),
+        chunks[1],
     );
 }
 
@@ -2273,6 +2307,29 @@ mod tests {
                 .iter()
                 .any(|cell| cell.fg == Color::LightRed)
         );
+    }
+
+    #[test]
+    fn settings_workspace_renders_typed_rows_and_controls_on_narrow_terminals() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Settings;
+        app.settings_selection = 5;
+        app.settings_dirty = true;
+        app.theme = Theme::MatrixGreen;
+        app.animation_speed = yoctui_model::AnimationSpeed::Slow;
+        app.reduced_motion = true;
+        app.logs.follow = false;
+
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("Settings (not saved)"));
+        assert!(output.contains("Theme"));
+        assert!(output.contains("MatrixGreen"));
+        assert!(output.contains("Animation speed"));
+        assert!(output.contains("Reduced motion"));
+        assert!(output.contains("Log wrap"));
+        assert!(output.contains("Log follow"));
+        assert!(output.contains("select"));
+        assert!(output.contains("change"));
     }
 
     #[test]

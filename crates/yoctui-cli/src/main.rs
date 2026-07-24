@@ -21,7 +21,7 @@ use std::{
 use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
-use yoctui_app::{BuildJobCoordinator, Input, focus_action, key_action};
+use yoctui_app::{BuildJobCoordinator, Input, focus_action, key_action, settings_action};
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, Dialog, Effect,
@@ -97,7 +97,7 @@ struct Config {
     reduced_motion: bool,
     session_path: Option<PathBuf>,
 }
-#[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 struct Session {
     #[serde(default)]
     last_target: Option<String>,
@@ -110,7 +110,17 @@ struct Session {
     #[serde(default)]
     log_task_filter: Option<String>,
     #[serde(default)]
-    log_wrap: bool,
+    log_wrap: Option<bool>,
+    #[serde(default)]
+    log_follow: Option<bool>,
+    #[serde(default)]
+    theme: Option<Theme>,
+    #[serde(default)]
+    animation_speed: Option<AnimationSpeed>,
+    #[serde(default)]
+    reduced_motion: Option<bool>,
+    #[serde(default)]
+    color_enabled: Option<bool>,
     #[serde(default)]
     last_backend: Option<Backend>,
     #[serde(default)]
@@ -304,8 +314,24 @@ fn write_session(path: Option<&Path>, session: &Session) -> Result<()> {
             format!("could not create session directory {}", directory.display())
         })?;
     }
-    fs::write(path, toml::to_string(session)?)
-        .with_context(|| format!("could not write session file {}", path.display()))
+    let temporary = path.with_extension("toml.tmp");
+    fs::write(&temporary, toml::to_string(session)?)
+        .with_context(|| format!("could not write session file {}", temporary.display()))?;
+    fs::rename(&temporary, path)
+        .with_context(|| format!("could not replace session file {}", path.display()))
+}
+
+fn persist_settings(path: Option<&Path>, session: &mut Session, app: &App) -> Result<()> {
+    let mut updated = session.clone();
+    updated.theme = Some(app.theme);
+    updated.animation_speed = Some(app.animation_speed);
+    updated.reduced_motion = Some(app.reduced_motion);
+    updated.color_enabled = Some(app.color_enabled);
+    updated.log_wrap = Some(app.logs.wrap);
+    updated.log_follow = Some(app.logs.follow);
+    write_session(path, &updated)?;
+    *session = updated;
+    Ok(())
 }
 
 fn env_usize(name: &str) -> Result<Option<usize>> {
@@ -382,10 +408,16 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
             .clone()
             .or_else(|| env::var("YOCTUI_LOG_LEVEL").ok())
             .unwrap_or_else(|| "info".into()),
-        color: !cli.no_color && file.color.unwrap_or(true),
-        theme: file.theme.unwrap_or_default(),
-        animation_speed: file.animation_speed.unwrap_or_default(),
-        reduced_motion: file.reduced_motion.unwrap_or(false),
+        color: !cli.no_color && session.color_enabled.or(file.color).unwrap_or(true),
+        theme: session.theme.or(file.theme).unwrap_or_default(),
+        animation_speed: session
+            .animation_speed
+            .or(file.animation_speed)
+            .unwrap_or_default(),
+        reduced_motion: session
+            .reduced_motion
+            .or(file.reduced_motion)
+            .unwrap_or(false),
         session_path: session_path(configured_path.as_deref()),
     })
 }
@@ -1217,7 +1249,7 @@ async fn devtool_reset(guard: &TerminalGuard, app: &mut App, build_dir: &Path, r
     }
 }
 
-async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<()> {
+async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Result<()> {
     let Config {
         backend: backend_kind,
         build_dir,
@@ -1243,9 +1275,10 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
     app.reduced_motion = reduced_motion;
     app.screen = session.last_screen.unwrap_or(Screen::Dashboard);
     app.logs.filter = session.log_filter;
-    app.logs.recipe_filter = session.log_recipe_filter;
-    app.logs.task_filter = session.log_task_filter;
-    app.logs.wrap = session.log_wrap;
+    app.logs.recipe_filter = session.log_recipe_filter.clone();
+    app.logs.task_filter = session.log_task_filter.clone();
+    app.logs.wrap = session.log_wrap.unwrap_or(false);
+    app.logs.follow = session.log_follow.unwrap_or(true);
     let session_build_dir = build_dir.clone();
     let mut backend =
         select_backend_with_timeout(backend_kind.clone(), build_dir, Some(cancellation_timeout))
@@ -1562,6 +1595,24 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 if let Some(Effect::Start(request)) = effect {
                     begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
                 }
+            } else if app.notification.is_some()
+                && !(app.screen == Screen::Settings
+                    && app.settings_dirty
+                    && input == Input::Char('r'))
+            {
+                if matches!(input, Input::Enter | Input::Esc) {
+                    let _ = update(&mut app, Action::DismissNotification);
+                }
+            } else if app.screen == Screen::Settings && settings_action(input).is_some() {
+                let action = settings_action(input).expect("settings action was checked");
+                if matches!(update(&mut app, action), Some(Effect::PersistSettings)) {
+                    let result = persist_settings(session_path.as_deref(), &mut session, &app);
+                    let persistence_action = match result {
+                        Ok(()) => Action::SettingsPersisted,
+                        Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
+                    };
+                    let _ = update(&mut app, persistence_action);
+                }
             } else if input == Input::Char('!') {
                 open_yocto_shell(&guard, &mut app).await;
             } else if input == Input::Char('i') {
@@ -1815,26 +1866,27 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
         }
     }
     backend.shutdown().await?;
-    write_session(
-        session_path.as_deref(),
-        &Session {
-            last_target: app.build.target,
-            last_screen: Some(app.screen),
-            log_filter: app.logs.filter,
-            log_recipe_filter: app.logs.recipe_filter,
-            log_task_filter: app.logs.task_filter,
-            log_wrap: app.logs.wrap,
-            last_backend: Some(backend_kind),
-            recent_build_dirs: std::iter::once(session_build_dir)
-                .chain(session.recent_build_dirs)
-                .fold(Vec::new(), |mut directories, directory| {
-                    if !directories.contains(&directory) && directories.len() < 10 {
-                        directories.push(directory);
-                    }
-                    directories
-                }),
-        },
-    )?;
+    session.last_target = app.build.target;
+    session.last_screen = Some(app.screen);
+    session.log_filter = app.logs.filter;
+    session.log_recipe_filter = app.logs.recipe_filter;
+    session.log_task_filter = app.logs.task_filter;
+    session.log_wrap = Some(app.logs.wrap);
+    session.log_follow = Some(app.logs.follow);
+    session.theme = Some(app.theme);
+    session.animation_speed = Some(app.animation_speed);
+    session.reduced_motion = Some(app.reduced_motion);
+    session.color_enabled = Some(app.color_enabled);
+    session.last_backend = Some(backend_kind);
+    session.recent_build_dirs = std::iter::once(session_build_dir)
+        .chain(session.recent_build_dirs)
+        .fold(Vec::new(), |mut directories, directory| {
+            if !directories.contains(&directory) && directories.len() < 10 {
+                directories.push(directory);
+            }
+            directories
+        });
+    write_session(session_path.as_deref(), &session)?;
     Ok(())
 }
 
@@ -1904,7 +1956,12 @@ mod tests {
                 log_filter: Some(Severity::Warning),
                 log_recipe_filter: Some("busybox".into()),
                 log_task_filter: Some("do_compile".into()),
-                log_wrap: true,
+                log_wrap: Some(true),
+                log_follow: Some(false),
+                theme: Some(Theme::MatrixGreen),
+                animation_speed: Some(AnimationSpeed::Slow),
+                reduced_motion: Some(true),
+                color_enabled: Some(true),
                 last_backend: Some(Backend::Process),
                 recent_build_dirs: vec![PathBuf::from("/build")],
             },
@@ -1918,13 +1975,106 @@ mod tests {
                 log_filter: Some(Severity::Warning),
                 log_recipe_filter: Some("busybox".into()),
                 log_task_filter: Some("do_compile".into()),
-                log_wrap: true,
+                log_wrap: Some(true),
+                log_follow: Some(false),
+                theme: Some(Theme::MatrixGreen),
+                animation_speed: Some(AnimationSpeed::Slow),
+                reduced_motion: Some(true),
+                color_enabled: Some(true),
                 last_backend: Some(Backend::Process),
                 recent_build_dirs: vec![PathBuf::from("/build")],
             }
         );
         fs::remove_file(&path).unwrap();
         fs::remove_dir(&directory).unwrap();
+    }
+
+    #[test]
+    fn settings_session_overrides_config_but_cli_no_color_remains_authoritative() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-settings-precedence-{}", std::process::id()));
+        fs::create_dir_all(&directory).unwrap();
+        let config_path = directory.join("config.toml");
+        fs::write(
+            &config_path,
+            "theme = 'dark'\nanimation_speed = 'fast'\nreduced_motion = false\ncolor = true\n",
+        )
+        .unwrap();
+        let cli = Cli::try_parse_from([
+            "yoctui",
+            "--config",
+            config_path.to_str().unwrap(),
+            "--no-color",
+        ])
+        .unwrap();
+        let session = Session {
+            theme: Some(Theme::MatrixGreen),
+            animation_speed: Some(AnimationSpeed::Slow),
+            reduced_motion: Some(true),
+            color_enabled: Some(true),
+            ..Session::default()
+        };
+
+        let resolved = resolve_config(&cli, &session).unwrap();
+        assert_eq!(resolved.theme, Theme::MatrixGreen);
+        assert_eq!(resolved.animation_speed, AnimationSpeed::Slow);
+        assert!(resolved.reduced_motion);
+        assert!(!resolved.color);
+
+        fs::remove_file(config_path).unwrap();
+        fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
+    fn settings_persistence_preserves_unrelated_session_fields() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-settings-save-{}", std::process::id()));
+        let path = directory.join("session.toml");
+        let mut session = Session {
+            last_target: Some("core-image-minimal".into()),
+            recent_build_dirs: vec![PathBuf::from("/build")],
+            ..Session::default()
+        };
+        let mut app = App::new(10, 1_000);
+        app.theme = Theme::HighContrast;
+        app.animation_speed = AnimationSpeed::Slow;
+        app.reduced_motion = true;
+        app.color_enabled = false;
+        app.logs.wrap = true;
+        app.logs.follow = false;
+
+        persist_settings(Some(&path), &mut session, &app).unwrap();
+        let saved = read_session(Some(&path)).unwrap();
+        assert_eq!(saved.last_target.as_deref(), Some("core-image-minimal"));
+        assert_eq!(saved.recent_build_dirs, [PathBuf::from("/build")]);
+        assert_eq!(saved.theme, Some(Theme::HighContrast));
+        assert_eq!(saved.animation_speed, Some(AnimationSpeed::Slow));
+        assert_eq!(saved.reduced_motion, Some(true));
+        assert_eq!(saved.color_enabled, Some(false));
+        assert_eq!(saved.log_wrap, Some(true));
+        assert_eq!(saved.log_follow, Some(false));
+
+        fs::remove_file(path).unwrap();
+        fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
+    fn settings_persistence_failure_does_not_replace_session_state() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-settings-failure-{}", std::process::id()));
+        fs::write(&directory, "not a directory").unwrap();
+        let path = directory.join("session.toml");
+        let mut session = Session {
+            theme: Some(Theme::Dark),
+            ..Session::default()
+        };
+        let mut app = App::new(10, 1_000);
+        app.theme = Theme::Light;
+
+        assert!(persist_settings(Some(&path), &mut session, &app).is_err());
+        assert_eq!(session.theme, Some(Theme::Dark));
+
+        fs::remove_file(directory).unwrap();
     }
 
     #[test]

@@ -246,14 +246,22 @@ UI rendering must not infer error types from raw strings.
 Precedence:
 
 ```text
-CLI
-> YOCTUI_* environment
-> config.toml
-> session.toml
-> built-in defaults
+startup/runtime fields:
+CLI > YOCTUI_* environment > config.toml > session.toml > built-in defaults
+
+interactive visual/log preferences:
+CLI hard overrides > session.toml > config.toml defaults > built-in defaults
 ```
 
-Persist only user preferences and recent valid workspace references. Do not persist transient secrets or unbounded logs.
+The model owns typed Settings selection, immediate preview state, and a dirty
+bit. A settings change returns a persistence effect. The CLI merges only the
+supported preference fields into a cloned session value and atomically
+replaces `session.toml`; it never rewrites `config.toml`. Successful writes
+clear the dirty bit. Failed writes leave the previewed value and dirty state
+intact and dispatch a visible failure notice.
+
+Persist only user preferences and recent valid workspace references. Do not
+persist transient secrets or unbounded logs.
 
 ## Terminal ownership
 

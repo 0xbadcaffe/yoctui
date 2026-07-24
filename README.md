@@ -149,9 +149,9 @@ The bridge protocol is NDJSON on standard I/O. The included bridge safely negoti
 
 In the Recipes screen, press `g` to inspect the selected recipe's build and runtime dependencies. Use Up/Down and Enter to open a dependency recipe that is present in the workspace. This view is intentionally available only when the active BitBake server supports the bridge's `get_dependencies` capability; Yoctui does not infer dependencies itself.
 
-Configuration is read from `$XDG_CONFIG_HOME/yoctui/config.toml` (or `~/.config/yoctui/config.toml`). CLI flags override `YOCTUI_*` environment variables, which override the configuration file, which overrides the most recent session, which overrides built-in defaults. Supported values include `backend`, `build_dir`, `log_retention_entries`, `log_retention_bytes`, `refresh_ms`, `default_target`, `editor`, `color`, and `cancellation_timeout_ms`.
+Configuration is read from `$XDG_CONFIG_HOME/yoctui/config.toml` (or `~/.config/yoctui/config.toml`). For startup/runtime fields, CLI flags override `YOCTUI_*` environment variables, which override the configuration file, then the most recent session and built-in defaults. Interactive visual/log preferences saved from Settings override configuration defaults on the next run; hard CLI overrides such as `--no-color` remain authoritative. Supported values include `backend`, `build_dir`, `log_retention_entries`, `log_retention_bytes`, `refresh_ms`, `default_target`, `editor`, `color`, `theme`, `animation_speed`, `reduced_motion`, and `cancellation_timeout_ms`.
 
-Interactive sessions are stored beside the configuration file in `session.toml`. Yoctui restores the last target, screen, log filters and wrapping preference, selected backend, and up to ten recent existing build directories. Deleting this file safely resets those preferences.
+Interactive sessions are stored beside the configuration file in `session.toml`. Yoctui restores the last target, screen, log filters, wrap/follow modes, theme, animation speed, reduced-motion and color preferences, selected backend, and up to ten recent existing build directories. Settings changes are applied immediately and saved atomically without rewriting `config.toml`. Deleting `session.toml` safely resets those preferences.
 
 ## Development checks
 
