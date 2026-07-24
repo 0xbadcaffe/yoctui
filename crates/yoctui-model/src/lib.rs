@@ -54,6 +54,19 @@ pub enum FocusTarget {
     Dialog,
     CommandPalette,
 }
+const NAVIGATOR_SCREENS: [Screen; 11] = [
+    Screen::Dashboard,
+    Screen::Layers,
+    Screen::Recipes,
+    Screen::Dashboard,
+    Screen::Logs,
+    Screen::Errors,
+    Screen::Configuration,
+    Screen::Dependencies,
+    Screen::Recipes,
+    Screen::Bbmask,
+    Screen::Help,
+];
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BuildStatus {
     Idle,
@@ -338,6 +351,7 @@ impl LogState {
 pub struct App {
     pub screen: Screen,
     pub focus: FocusTarget,
+    pub navigator_selection: usize,
     pub backend: String,
     pub color_enabled: bool,
     pub workspace: Workspace,
@@ -387,6 +401,7 @@ impl App {
         Self {
             screen: Screen::Dashboard,
             focus: FocusTarget::Workspace,
+            navigator_selection: 0,
             backend: "unknown".into(),
             color_enabled: true,
             workspace: Workspace::default(),
@@ -442,6 +457,10 @@ impl App {
 pub enum Action {
     Tick,
     Open(Screen),
+    SelectNavigator {
+        delta: isize,
+    },
+    ActivateNavigator,
     CycleFocus {
         backwards: bool,
     },
@@ -627,6 +646,25 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     match action {
         Action::Open(s) => {
             app.screen = s;
+            app.focus = FocusTarget::Workspace;
+            if let Some(index) = NAVIGATOR_SCREENS
+                .iter()
+                .position(|candidate| *candidate == s)
+            {
+                app.navigator_selection = index;
+            }
+        }
+        Action::SelectNavigator { delta } => {
+            app.navigator_selection = if delta.is_negative() {
+                app.navigator_selection.saturating_sub(delta.unsigned_abs())
+            } else {
+                app.navigator_selection
+                    .saturating_add(delta as usize)
+                    .min(NAVIGATOR_SCREENS.len().saturating_sub(1))
+            };
+        }
+        Action::ActivateNavigator => {
+            app.screen = NAVIGATOR_SCREENS[app.navigator_selection];
             app.focus = FocusTarget::Workspace;
         }
         Action::Focus(target) => app.focus = target,
@@ -1629,6 +1667,20 @@ mod tests {
         l.insert(log("c"));
         assert_eq!(l.entries.len(), 2);
         assert_eq!(l.dropped, 1)
+    }
+    #[test]
+    fn navigator_selection_and_focus_cycle_are_bounded() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::Focus(FocusTarget::Navigator));
+        let _ = update(&mut app, Action::SelectNavigator { delta: 100 });
+        assert_eq!(app.navigator_selection, NAVIGATOR_SCREENS.len() - 1);
+        let _ = update(&mut app, Action::ActivateNavigator);
+        assert_eq!(app.screen, Screen::Help);
+        assert_eq!(app.focus, FocusTarget::Workspace);
+        let _ = update(&mut app, Action::CycleFocus { backwards: false });
+        assert_eq!(app.focus, FocusTarget::Inspector);
+        let _ = update(&mut app, Action::CycleFocus { backwards: true });
+        assert_eq!(app.focus, FocusTarget::Workspace);
     }
     #[test]
     fn parse_progress_tracks_current_and_total() {

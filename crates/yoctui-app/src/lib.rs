@@ -60,6 +60,10 @@ mod tests {
             Some(Action::Open(Screen::Logs))
         );
         assert_eq!(
+            key_action(Input::Tab),
+            Some(Action::CycleFocus { backwards: false })
+        );
+        assert_eq!(
             key_action(Input::Char('x')),
             Some(Action::Open(Screen::Bbmask))
         );

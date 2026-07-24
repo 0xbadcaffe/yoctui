@@ -136,6 +136,12 @@ fn source_preview(content: &str, file_name: &str, color_enabled: bool) -> Text<'
 }
 
 fn footer_shortcuts(app: &App) -> &'static str {
+    if app.focus == FocusTarget::Navigator {
+        return "j/k or ↑/↓ select | Enter open | Tab workspace | Shift+Tab inspector | q quit";
+    }
+    if app.focus == FocusTarget::Inspector {
+        return "Tab navigator | Shift+Tab workspace | ↑/↓ scroll inspector | / search | q quit";
+    }
     if app.layer_browser.is_some() {
         return "↑/↓ select | Enter descend | Esc up | e edit file | Ctrl+S save | ? help | q quit";
     }
@@ -580,7 +586,18 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
     ];
     let text = entries
         .iter()
-        .map(|(name, screen)| format!("{} {}", if *screen == app.screen { "▶" } else { " " }, name))
+        .enumerate()
+        .map(|(index, (name, _))| {
+            format!(
+                "{} {}",
+                if index == app.navigator_selection {
+                    "▶"
+                } else {
+                    " "
+                },
+                name
+            )
+        })
         .collect::<Vec<_>>()
         .join("\n");
     frame.render_widget(
