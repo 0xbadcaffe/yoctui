@@ -298,9 +298,53 @@ title = "Configuration provenance workspace"
 status = "IN_PROGRESS"
 priority = 42
 required = true
+depends_on = ["CONFIG-META-001", "CONFIG-UI-001", "CONFIG-ACTIONS-001", "CONFIG-EDIT-001"]
+verify = ["cargo test -p yoctui-protocol config_", "cargo test -p yoctui-bitbake config_", "cargo test -p yoctui-model config_", "cargo test -p yoctui-app config_", "cargo test -p yoctui-ui config_", "cargo test -p yoctui -- config_"]
+notes = "Parent gate for authoritative variable detail, the responsive browser, typed navigation/comparison, and previewed editing. Live provenance is required."
+
+[[task]]
+id = "CONFIG-META-001"
+milestone = "M3"
+title = "Add authoritative typed variable detail"
+status = "IN_PROGRESS"
+priority = 42
+required = true
 depends_on = ["BB-001"]
-verify = ["cargo test -p yoctui-ui config", "cargo test -p yoctui-bitbake variable"]
-notes = "Live provenance is required."
+verify = ["cargo test -p yoctui-protocol config_metadata", "cargo test -p yoctui-bitbake config_metadata", "cargo test -p yoctui-model config_metadata", "python3 -m pytest bridge/tests -k config_metadata"]
+notes = "Selected-variable detail: effective/unexpanded values, scope, provenance history operations, overrides, and explicit unavailable fields, with live Tinfoil evidence."
+
+[[task]]
+id = "CONFIG-UI-001"
+milestone = "M3"
+title = "Complete searchable Configuration Inspector"
+status = "NOT_STARTED"
+priority = 42
+required = true
+depends_on = ["CONFIG-META-001"]
+verify = ["cargo test -p yoctui-model config_workspace", "cargo test -p yoctui-app config_workspace", "cargo test -p yoctui-ui config_workspace"]
+notes = "Stable absolute variable identity, lazy detail, search, loading/error/empty states, provenance operations, and responsive rendering."
+
+[[task]]
+id = "CONFIG-ACTIONS-001"
+milestone = "M3"
+title = "Add typed configuration copy, source, and compare actions"
+status = "NOT_STARTED"
+priority = 42
+required = true
+depends_on = ["CONFIG-UI-001"]
+verify = ["cargo test -p yoctui-model config_action", "cargo test -p yoctui-app config_action", "cargo test -p yoctui-ui config_action", "cargo test -p yoctui -- config_action"]
+notes = "Copy effective/unexpanded values, authoritative defining-source selection, recipe scope selection, and supported typed comparisons with disabled explanations."
+
+[[task]]
+id = "CONFIG-EDIT-001"
+milestone = "M3"
+title = "Add previewed configuration editing and refresh"
+status = "NOT_STARTED"
+priority = 42
+required = true
+depends_on = ["CONFIG-ACTIONS-001"]
+verify = ["cargo test -p yoctui-model config_edit", "cargo test -p yoctui-app config_edit", "cargo test -p yoctui-ui config_edit", "cargo test -p yoctui -- config_edit"]
+notes = "Read-only default, allowlisted assignment editing, exact local.conf preview, explicit confirmation, atomic write, refresh, and failure preservation."
 
 [[task]]
 id = "DEVTOOL-001"

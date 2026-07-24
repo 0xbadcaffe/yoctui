@@ -2,50 +2,56 @@
 
 ## Active task
 
-**ID:** CONFIG-001
-**Title:** Configuration provenance workspace
+**ID:** CONFIG-META-001
+**Title:** Add authoritative typed variable detail
 
 ## Objective
 
-Complete the read-only-by-default configuration workspace with authoritative
-values, provenance, scope, search/navigation actions, and safe editing.
+Extend the protocol and backend boundary with authoritative selected-variable
+detail, including BitBake provenance history and explicit unavailable fields.
 
 ## Required work
 
-1. Inventory existing workspace variables, provenance chains, variable bridge
-   queries, search, selection, source opening, BBMASK editing, and tests before
-   adding behavior.
-2. If the required Configuration scope is not atomic, split `CONFIG-001` into
-   dependency-ordered child tasks and commit that governance change before
-   implementation.
-3. Show effective and unexpanded values where supported, global or
-   recipe-specific scope, full provenance chains, overrides, and
-   append/prepend/remove operations without deriving them from display text.
-4. Add typed search, copy, defining-source navigation, and supported comparison
-   workflows with explicit unavailable reasons.
-5. Keep the workspace read-only by default. Any edit must use a dedicated
-   preview-and-confirm dialog and refresh authoritative metadata afterward.
-6. Preserve stable selection and safe responsive behavior across refresh,
-   partial failure, empty data, and narrow terminals.
-7. Add unit, bridge/fake-process, app, CLI, and TestBackend coverage appropriate
-   to each atomic child task.
+1. Inventory the current `GetVariable` command/event, backend `VariableValue`,
+   bridge Tinfoil query, varhistory use, workspace summary maps, app
+   normalization, and compatibility tests.
+2. Define version-compatible typed variable detail carrying the variable name,
+   optional recipe scope, effective value, unexpanded value, provenance
+   operations/chain, override context, and field-level unavailability.
+3. Obtain expanded and unexpanded values through supported datastore calls.
+   Normalize `varhistory.variable()` entries into typed operations with file,
+   line, operation, and value when BitBake supplies them; do not parse display
+   strings in Rust.
+4. Preserve backward compatibility for older bridge payloads and mocked server
+   adapters. Missing fields remain `None` or empty according to the typed
+   contract.
+5. Normalize protocol detail through `yoctui-bitbake` into pure model state;
+   stale recipe/name responses must not overwrite a different selection.
+6. Add protocol round-trip, adapter, reducer, bridge fake-Tinfoil, malformed
+   payload, and relevant failure tests named `config_metadata`.
+7. Validate the detail query against the available live BitBake/Poky workspace
+   and record the exact version, variable, scope, and returned fields. Do not
+   claim unsupported fields from mocked tests.
 
 ## Definition of done
 
-- Every required Configuration field has a typed authoritative source or an
-  explicit unavailable state.
-- Search, copy, source opening, and supported comparison use typed actions.
-- Editing is previewed, explicitly confirmed, and followed by refresh.
-- Selection and focus remain stable across refresh and responsive modes.
-- Live provenance is validated; mocked data alone is not completion evidence.
+- Variable detail crosses protocol, backend, app, and reducer boundaries as
+  typed data.
+- Effective/unexpanded values, scope, provenance operations, and overrides are
+  authoritative or explicitly unavailable.
+- Old payloads and unsupported BitBake fields degrade safely.
+- Failure and stale-response behavior is covered.
+- Live Tinfoil provenance evidence is recorded.
 - Task-specific and baseline verification pass.
 - Registry/status documents are updated and the next eligible task is active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui config
-cargo test -p yoctui-bitbake variable
+cargo test -p yoctui-protocol config_metadata
+cargo test -p yoctui-bitbake config_metadata
+cargo test -p yoctui-model config_metadata
+python3 -m pytest bridge/tests -k config_metadata
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -55,4 +61,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`DEVTOOL-001 — Complete Devtool lifecycle`
+`CONFIG-UI-001 — Complete searchable Configuration Inspector`

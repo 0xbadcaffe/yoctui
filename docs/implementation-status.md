@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete the configuration provenance workspace. The Recipes workspace is complete with typed BitBake, navigation, Devtool, CVE, and SPDX actions alongside the lazy Layers tree and persistent workbench.
+Add authoritative typed variable detail. The Recipes workspace is complete with typed BitBake, navigation, Devtool, CVE, and SPDX actions alongside the lazy Layers tree and persistent workbench.
 
 ## Current task
 
@@ -57,8 +57,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `CONFIG-001` — complete configuration provenance and editing
-2. `DEVTOOL-001` — complete Devtool lifecycle
+1. `CONFIG-META-001` — add authoritative typed variable detail
+2. `CONFIG-UI-001` — complete searchable Configuration Inspector
+3. `CONFIG-ACTIONS-001` — add typed copy, source, and compare actions
+4. `CONFIG-EDIT-001` — add previewed configuration editing and refresh
+5. `DEVTOOL-001` — complete Devtool lifecycle
 
 ## Rules
 
