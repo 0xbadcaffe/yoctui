@@ -10,7 +10,14 @@ YOCTUI_LIVE_BUILD_DIR=/absolute/path/to/initialized/build \
 ./scripts/verify-live-bitbake.sh
 ```
 
-The default safe normal operation is `base-files:do_listtasks`. The harness then starts and immediately cancels `core-image-minimal`. Override these with `YOCTUI_LIVE_TARGET`, `YOCTUI_LIVE_TASK`, and `YOCTUI_LIVE_CANCEL_TARGET`. A bitbake-setup build may provide `build/init-build-env`; otherwise source the environment first or set `YOCTUI_OE_INIT_BUILD_ENV` to the checkout's `oe-init-build-env`.
+The default safe normal operation first validates the selected recipe's
+resolved provider/version, append count, task list, metadata sources, and
+package outputs, then runs `base-files:do_listtasks`. The harness next starts
+and immediately cancels `core-image-minimal`. Override these with
+`YOCTUI_LIVE_TARGET`, `YOCTUI_LIVE_TASK`, and
+`YOCTUI_LIVE_CANCEL_TARGET`. A bitbake-setup build may provide
+`build/init-build-env`; otherwise source the environment first or set
+`YOCTUI_OE_INIT_BUILD_ENV` to the checkout's `oe-init-build-env`.
 
 `scripts/test-terminal.sh` starts Yoctui in a Linux pseudo-terminal, sends a quit key, and asserts that alternate-screen and cursor hide/show sequences are both emitted.
 # Completion gate

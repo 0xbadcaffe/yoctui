@@ -148,8 +148,41 @@ def main():
 
         correlation = driver.send({"type": "list_recipes", "filter": args.target})
         recipes, _ = driver.wait_for(correlation, "recipes")
-        if not any(item.get("name") == args.target for item in recipes["recipes"]):
+        selected_recipe = next(
+            (
+                item
+                for item in recipes["recipes"]
+                if item.get("name") == args.target
+            ),
+            None,
+        )
+        if selected_recipe is None:
             raise SmokeFailure(f"live recipe listing did not contain {args.target}")
+        if not selected_recipe.get("version") or not selected_recipe.get("file"):
+            raise SmokeFailure(
+                "live recipe summary did not expose its resolved version and provider file"
+            )
+        if not isinstance(selected_recipe.get("append_count"), int):
+            raise SmokeFailure("live recipe summary did not expose an append count")
+        summary["recipe_provider"] = selected_recipe["file"]
+        summary["recipe_version"] = selected_recipe["version"]
+
+        correlation = driver.send(
+            {"type": "get_recipe_metadata", "recipe": args.target}
+        )
+        metadata_event, _ = driver.wait_for(correlation, "recipe_metadata")
+        metadata = metadata_event.get("data", {})
+        if metadata.get("recipe") != args.target:
+            raise SmokeFailure("live recipe metadata identified a different recipe")
+        if not isinstance(metadata.get("tasks"), list) or not metadata["tasks"]:
+            raise SmokeFailure("live recipe metadata did not expose authoritative tasks")
+        if not isinstance(metadata.get("sources"), list) or not metadata["sources"]:
+            raise SmokeFailure("live recipe metadata did not expose metadata source paths")
+        if not isinstance(metadata.get("packages"), list) or not metadata["packages"]:
+            raise SmokeFailure("live recipe metadata did not expose package outputs")
+        summary["recipe_task_count"] = len(metadata["tasks"])
+        summary["recipe_source_count"] = len(metadata["sources"])
+        summary["recipe_package_count"] = len(metadata["packages"])
 
         correlation = driver.send({"type": "list_layers"})
         layers, _ = driver.wait_for(correlation, "layers")

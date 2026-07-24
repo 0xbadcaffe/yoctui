@@ -80,6 +80,16 @@ normalization boundary from `BackendEvent` to reducer `Action` values, and the
 model reducer is the sole owner of resulting state changes. Initial discovery
 and refresh responses use the same reducer actions as streamed events.
 
+Recipe discovery is split into a bounded summary query and a selected-recipe
+detail query. Summary records carry the resolved version, provider path/layer,
+and append count from BitBake's provider/cache tables. A typed
+`GetRecipeMetadata` request parses only the selected provider and returns
+optional tasks, metadata sources/appends, patch URIs, package outputs,
+workspace/build state, and history. `None` means the active backend cannot
+authoritatively provide that field; an available empty list means BitBake
+reported no values. Inventory refresh preserves stable recipe-name selection
+and evicts detail state for recipes no longer present.
+
 Unknown future protocol events normalize to an ignored event and do not imply a
 backend disconnect. Missing task progress remains unknown rather than becoming
 zero. Terminal build events emit one primary build-state action and one
@@ -362,7 +372,7 @@ Mocked tests prove adapter logic, not live compatibility.
 A Yocto/BitBake release may be listed as supported only after:
 
 - workspace inspection
-- variable, recipe, and layer queries
+- variable, recipe summary/detail, and layer queries
 - build start
 - task and parse event normalization
 - normal completion

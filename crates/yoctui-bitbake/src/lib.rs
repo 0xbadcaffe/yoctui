@@ -11,10 +11,14 @@ use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, Command as TokioCommand},
 };
-use yoctui_model::{BuildRequest, Layer, LogEntry, Recipe, Severity, TaskStats, Workspace};
+use yoctui_model::{
+    BuildRequest, Layer, LogEntry, Recipe, RecipeBuildStatus, RecipeMetadata,
+    RecipeWorkspaceStatus, Severity, TaskStats, Workspace,
+};
 use yoctui_protocol::{
     Command, Envelope, Event, LayerData, LayerRelationshipData, MAX_LINE_BYTES, ProtocolError,
-    RecipeData, TaskStatsData, VERSION, decode_line, encode_line,
+    RecipeBuildStatusData, RecipeData, RecipeWorkspaceStatusData, TaskStatsData, VERSION,
+    decode_line, encode_line,
 };
 
 const MAX_PROCESS_LINE_BYTES: usize = 1024 * 1024;
@@ -105,6 +109,7 @@ pub enum BackendEvent {
         recipe: String,
         paths: Vec<PathBuf>,
     },
+    RecipeMetadata(RecipeMetadata),
     LayerRelationships(Vec<LayerRelationship>),
     BuildStarted,
     ParseProgress {
@@ -184,6 +189,8 @@ pub trait BitBakeBackend: Send {
         recipe: String,
     ) -> Result<RecipeDependencies, BackendError>;
     async fn get_recipe_sources(&mut self, recipe: String) -> Result<Vec<PathBuf>, BackendError>;
+    async fn get_recipe_metadata(&mut self, recipe: String)
+    -> Result<RecipeMetadata, BackendError>;
     async fn get_layer_relationships(&mut self) -> Result<Vec<LayerRelationship>, BackendError>;
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError>;
     async fn cancel_build(&mut self) -> Result<(), BackendError>;
@@ -305,6 +312,15 @@ impl BitBakeBackend for ProcessBackend {
     }
     async fn get_recipe_sources(&mut self, _recipe: String) -> Result<Vec<PathBuf>, BackendError> {
         Err(BackendError::Bridge("the process backend cannot inspect authoritative recipe source paths; use the Yoctui bridge".into()))
+    }
+    async fn get_recipe_metadata(
+        &mut self,
+        _recipe: String,
+    ) -> Result<RecipeMetadata, BackendError> {
+        Err(BackendError::Bridge(
+            "the process backend cannot inspect authoritative recipe metadata; use the Yoctui bridge"
+                .into(),
+        ))
     }
     async fn get_layer_relationships(&mut self) -> Result<Vec<LayerRelationship>, BackendError> {
         Err(BackendError::Bridge("the process backend cannot inspect authoritative layer relationships; use the Yoctui bridge".into()))
@@ -539,6 +555,9 @@ impl BridgeBackend {
                         name: recipe.name,
                         version: recipe.version,
                         layer: recipe.layer,
+                        preferred_version: recipe.preferred_version,
+                        file: recipe.file.map(PathBuf::from),
+                        append_count: recipe.append_count,
                     })
                     .collect(),
             }),
@@ -550,10 +569,16 @@ impl BridgeBackend {
                              name,
                              version,
                              layer,
+                             preferred_version,
+                             file,
+                             append_count,
                          }| Recipe {
                             name,
                             version,
                             layer,
+                            preferred_version,
+                            file: file.map(PathBuf::from),
+                            append_count,
                         },
                     )
                     .collect(),
@@ -596,6 +621,28 @@ impl BridgeBackend {
                 recipe,
                 paths: paths.into_iter().map(PathBuf::from).collect(),
             },
+            Event::RecipeMetadata { data } => BackendEvent::RecipeMetadata(RecipeMetadata {
+                recipe: data.recipe,
+                workspace_status: data.workspace_status.map(|status| match status {
+                    RecipeWorkspaceStatusData::Clean => RecipeWorkspaceStatus::Clean,
+                    RecipeWorkspaceStatusData::Modified => RecipeWorkspaceStatus::Modified,
+                }),
+                build_status: data.build_status.map(|status| match status {
+                    RecipeBuildStatusData::Idle => RecipeBuildStatus::Idle,
+                    RecipeBuildStatusData::Queued => RecipeBuildStatus::Queued,
+                    RecipeBuildStatusData::Running => RecipeBuildStatus::Running,
+                    RecipeBuildStatusData::Succeeded => RecipeBuildStatus::Succeeded,
+                    RecipeBuildStatusData::Failed => RecipeBuildStatus::Failed,
+                    RecipeBuildStatusData::Cancelled => RecipeBuildStatus::Cancelled,
+                }),
+                tasks: data.tasks,
+                sources: data
+                    .sources
+                    .map(|paths| paths.into_iter().map(PathBuf::from).collect()),
+                patches: data.patches,
+                packages: data.packages,
+                history: data.history,
+            }),
             Event::LayerRelationships { layers } => BackendEvent::LayerRelationships(
                 layers
                     .into_iter()
@@ -870,6 +917,32 @@ impl BitBakeBackend for BridgeBackend {
             }
         }
     }
+    async fn get_recipe_metadata(
+        &mut self,
+        recipe: String,
+    ) -> Result<RecipeMetadata, BackendError> {
+        self.command(Command::GetRecipeMetadata {
+            recipe: recipe.clone(),
+        })
+        .await?;
+        loop {
+            match self.next_event().await? {
+                BackendEvent::RecipeMetadata(metadata) if metadata.recipe == recipe => {
+                    return Ok(metadata);
+                }
+                BackendEvent::RecipeMetadata(_) => continue,
+                BackendEvent::CommandFailed { code, message } => {
+                    return Err(BackendError::Bridge(format!("{code}: {message}")));
+                }
+                BackendEvent::Disconnected => {
+                    return Err(BackendError::Bridge(
+                        "bridge disconnected while reading recipe metadata".into(),
+                    ));
+                }
+                _ => continue,
+            }
+        }
+    }
     async fn get_layer_relationships(&mut self) -> Result<Vec<LayerRelationship>, BackendError> {
         self.command(Command::GetLayerRelationships).await?;
         loop {
@@ -991,6 +1064,9 @@ mod tests {
                     name: "base-files".into(),
                     version: None,
                     layer: Some("core".into()),
+                    preferred_version: None,
+                    file: Some("/poky/meta/recipes-core/base-files/base-files.bb".into()),
+                    append_count: Some(0),
                 }],
             },
         };
@@ -1000,6 +1076,34 @@ mod tests {
         assert_eq!(workspace.build_dir, Some(PathBuf::from("/build")));
         assert_eq!(workspace.layers[0].path, PathBuf::from("/poky/meta"));
         assert_eq!(workspace.recipes[0].name, "base-files");
+    }
+    #[test]
+    fn recipe_metadata_converts_typed_statuses_and_paths() {
+        let event = Event::RecipeMetadata {
+            data: yoctui_protocol::RecipeMetadataData {
+                recipe: "busybox".into(),
+                workspace_status: Some(RecipeWorkspaceStatusData::Modified),
+                build_status: Some(RecipeBuildStatusData::Running),
+                tasks: Some(vec!["do_compile".into()]),
+                sources: Some(vec!["/layers/meta/busybox.bb".into()]),
+                patches: Some(vec!["file://fix.patch".into()]),
+                packages: Some(vec!["busybox".into()]),
+                history: None,
+            },
+        };
+        let BackendEvent::RecipeMetadata(metadata) = BridgeBackend::event(event).unwrap() else {
+            panic!("recipe metadata event was not preserved");
+        };
+        assert_eq!(
+            metadata.workspace_status,
+            Some(RecipeWorkspaceStatus::Modified)
+        );
+        assert_eq!(metadata.build_status, Some(RecipeBuildStatus::Running));
+        assert_eq!(
+            metadata.sources,
+            Some(vec![PathBuf::from("/layers/meta/busybox.bb")])
+        );
+        assert_eq!(metadata.history, None);
     }
     #[test]
     fn live_tasks_preserves_queue_statistics_and_task_details() {

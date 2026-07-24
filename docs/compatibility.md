@@ -14,6 +14,12 @@ The following live combination was observed on 2026-07-24 with `scripts/verify-l
 - normal smoke operation: `base-files:do_listtasks`
 - cancellation target: `core-image-minimal`
 
-That run exercised real workspace inspection, MACHINE lookup, recipe and layer inventories, parse progress, task and log events, normal completion, cancellation, and bridge shutdown. This is an observed development snapshot, not a claim that every BitBake 2.x or Poky snapshot is supported.
+That run exercised real workspace inspection, MACHINE lookup, recipe and layer
+inventories, and selected `base-files` recipe metadata. BitBake reported the
+resolved `3.0.14` provider file, zero applied appends, 39 tasks, one metadata
+source, and four package outputs. The same run covered parse progress, task and
+log events, normal completion, cancellation, and bridge shutdown. This is an
+observed development snapshot, not a claim that every BitBake 2.x or Poky
+snapshot is supported.
 
 The repository also retains mocked-module coverage for older adapter shapes. Mocked tests prove adapter and framing logic only; they are never counted as live compatibility evidence. Unknown native events remain visible as diagnostics rather than being guessed.

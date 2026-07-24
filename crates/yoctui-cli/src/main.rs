@@ -1867,6 +1867,20 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         }
                     }
                 }
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Enter {
+                if let Some(Effect::GetRecipeMetadata(recipe)) =
+                    update(&mut app, Action::BeginSelectedRecipeMetadata)
+                {
+                    match backend.get_recipe_metadata(recipe).await {
+                        Ok(metadata) => {
+                            let _ = update(&mut app, Action::RecipeMetadataLoaded(metadata));
+                        }
+                        Err(error) => {
+                            app.notification =
+                                Some(format!("Recipe metadata is unavailable: {error}"));
+                        }
+                    }
+                }
             } else if input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginCurrentImageBuild);
             } else if app.screen == yoctui_model::Screen::Recipes

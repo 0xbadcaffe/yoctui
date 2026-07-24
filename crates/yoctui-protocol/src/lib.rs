@@ -76,6 +76,9 @@ pub enum Command {
     GetRecipeSources {
         recipe: String,
     },
+    GetRecipeMetadata {
+        recipe: String,
+    },
     GetLayerRelationships,
     Shutdown,
 }
@@ -85,6 +88,49 @@ pub struct RecipeData {
     pub name: String,
     pub version: Option<String>,
     pub layer: Option<String>,
+    #[serde(default)]
+    pub preferred_version: Option<String>,
+    #[serde(default)]
+    pub file: Option<String>,
+    #[serde(default)]
+    pub append_count: Option<usize>,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum RecipeWorkspaceStatusData {
+    Clean,
+    Modified,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum RecipeBuildStatusData {
+    Idle,
+    Queued,
+    Running,
+    Succeeded,
+    Failed,
+    Cancelled,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct RecipeMetadataData {
+    pub recipe: String,
+    #[serde(default)]
+    pub workspace_status: Option<RecipeWorkspaceStatusData>,
+    #[serde(default)]
+    pub build_status: Option<RecipeBuildStatusData>,
+    #[serde(default)]
+    pub tasks: Option<Vec<String>>,
+    #[serde(default)]
+    pub sources: Option<Vec<String>>,
+    #[serde(default)]
+    pub patches: Option<Vec<String>>,
+    #[serde(default)]
+    pub packages: Option<Vec<String>>,
+    #[serde(default)]
+    pub history: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -156,6 +202,9 @@ pub enum Event {
     RecipeSources {
         recipe: String,
         paths: Vec<String>,
+    },
+    RecipeMetadata {
+        data: RecipeMetadataData,
     },
     LayerRelationships {
         layers: Vec<LayerRelationshipData>,
@@ -302,6 +351,9 @@ mod tests {
                     name: "base-files".into(),
                     version: Some("3.0".into()),
                     layer: Some("core".into()),
+                    preferred_version: None,
+                    file: Some("/poky/meta/recipes-core/base-files/base-files.bb".into()),
+                    append_count: Some(0),
                 }],
             },
         };
@@ -317,6 +369,41 @@ mod tests {
                 .message,
             event
         );
+    }
+    #[test]
+    fn recipe_metadata_round_trips_and_old_recipe_payloads_default_safely() {
+        let event = Event::RecipeMetadata {
+            data: RecipeMetadataData {
+                recipe: "busybox".into(),
+                workspace_status: Some(RecipeWorkspaceStatusData::Modified),
+                build_status: None,
+                tasks: Some(vec!["do_build".into(), "do_compile".into()]),
+                sources: Some(vec!["/layers/meta/recipes-core/busybox/busybox.bb".into()]),
+                patches: Some(vec!["file://fix.patch".into()]),
+                packages: Some(vec!["busybox".into(), "busybox-src".into()]),
+                history: None,
+            },
+        };
+        let envelope = Envelope {
+            protocol_version: VERSION,
+            sequence: 7,
+            correlation_id: Some("recipe-metadata".into()),
+            message: event.clone(),
+        };
+        assert_eq!(
+            decode_line::<Event>(&encode_line(&envelope).unwrap(), None)
+                .unwrap()
+                .message,
+            event
+        );
+
+        let old = br#"{"protocol_version":1,"sequence":8,"message":{"type":"recipes","recipes":[{"name":"busybox","version":"1.36","layer":"core"}]}}"#;
+        let Event::Recipes { recipes } = decode_line::<Event>(old, None).unwrap().message else {
+            panic!("old recipe payload changed type");
+        };
+        assert_eq!(recipes[0].preferred_version, None);
+        assert_eq!(recipes[0].file, None);
+        assert_eq!(recipes[0].append_count, None);
     }
 
     #[test]

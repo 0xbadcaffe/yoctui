@@ -229,18 +229,18 @@ notes = "Parent completion gate for authoritative recipe metadata, the searchabl
 id = "RECIPES-META-001"
 milestone = "M3"
 title = "Add authoritative typed recipe metadata"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 40
 required = true
 depends_on = ["BB-002"]
 verify = ["cargo test -p yoctui-protocol recipe_metadata", "cargo test -p yoctui-bitbake recipe_metadata", "cargo test -p yoctui-model recipe_metadata", "python3 -m pytest bridge/tests -k recipe_metadata"]
-notes = "Preferred/resolved versions, provider, append/workspace/build state, tasks, sources, patches, packages, history, capability visibility."
+notes = "Protocol v1 now defaults old summaries safely and carries resolved provider/version/append summaries plus lazy typed detail. Real BitBake 2.19.0/Poky 6.0.99 returned the base-files 3.0.14 provider, 39 tasks, one metadata source, and four packages; unavailable workspace/build/history fields remain None."
 
 [[task]]
 id = "RECIPES-UI-001"
 milestone = "M3"
 title = "Complete searchable Recipes Inspector"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 41
 required = true
 depends_on = ["RECIPES-META-001"]

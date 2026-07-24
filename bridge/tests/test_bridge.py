@@ -129,6 +129,15 @@ class BridgeProtocolTests(unittest.TestCase):
             [{"name": "busybox", "version": "1.36.0-r0", "layer": None}],
         )
 
+    def test_recipe_metadata_unavailable_is_a_typed_error(self) -> None:
+        result = run_bridge(
+            b'{"protocol_version":1,"sequence":1,"message":{"type":"get_recipe_metadata","recipe":"busybox"}}'
+        )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "command_failed")
+        self.assertEqual(message["code"], "bitbake_server_unavailable")
+        self.assertIn("get_recipe_metadata", message["message"])
+
     def test_layer_reports_supply_recipe_ownership_and_paths(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             command = Path(directory, "bitbake-layers")
@@ -416,7 +425,7 @@ server = Server()
         self.assertTrue(completion["success"])
         self.assertEqual(completion["exit_code"], 0)
 
-    def test_tinfoil_package_is_used_for_live_metadata_queries(self) -> None:
+    def test_recipe_metadata_uses_tinfoil_authoritative_queries(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             package = Path(directory, "bb")
             package.mkdir()
@@ -429,16 +438,22 @@ server = Server()
 class Data:
  varhistory = History()
  def getVar(self, name):
-  return {"BBLAYERS": "/layers/meta", "TOPDIR": "/build", "COREBASE": "/layers", "MACHINE": "qemux86-64", "DISTRO_VERSION": "6.0.99", "BBMULTICONFIG": ""}.get(name)
+  return {"BBLAYERS": "/layers/meta", "TOPDIR": "/build", "COREBASE": "/layers", "MACHINE": "qemux86-64", "DISTRO_VERSION": "6.0.99", "BBMULTICONFIG": "", "__BBTASKS": ["do_build", "do_compile"], "PACKAGES": "base-files base-files-doc", "SRC_URI": "file://fix.patch file://config"}.get(name)
 class Tinfoil:
  def __init__(self, **kwargs): self.config_data = Data()
  def prepare(self, **kwargs): pass
  def parse_recipes(self): pass
+ def parse_recipe(self, recipe): return Data()
+ def parse_recipe_file(self, path): return Data()
+ def get_recipe_file(self, recipe): return "/layers/meta/recipes-core/base-files/base-files_3.0.14.bb"
+ def get_file_appends(self, path): return ["/layers/meta-extra/recipes-core/base-files/base-files_%.bbappend"]
  def shutdown(self): pass
  def run_command(self, command, *args, **kwargs):
   if command == "getLayerPriorities": return [("core", "", "^/layers/meta/", 5)]
-  if command == "getRecipes": return [("base-files", ["/layers/meta/recipes-core/base-files/base-files.bb"])]
-  if command == "getRecipeVersions": return {"/layers/meta/recipes-core/base-files/base-files.bb": ("", "3.0.14", "r0")}
+  if command == "getRecipes": return [("base-files", ["/layers/meta/recipes-core/base-files/base-files_3.0.14.bb"])]
+  if command == "getRecipeVersions": return {"/layers/meta/recipes-core/base-files/base-files_3.0.14.bb": ("", "3.0.14", "r0")}
+  if command == "findProviders": return ({}, {"base-files": (("", "3.0.14", "r0"), "/layers/meta/recipes-core/base-files/base-files_3.0.14.bb")}, {})
+  if command == "getAllAppends": return [("base-files_%.bb", "/layers/meta-extra/recipes-core/base-files/base-files_%.bbappend")]
   return None
 """,
                 encoding="utf-8",
@@ -446,7 +461,8 @@ class Tinfoil:
             result = run_bridge(
                 b'{"protocol_version":1,"sequence":1,"message":{"type":"inspect_workspace"}}',
                 b'{"protocol_version":1,"sequence":2,"message":{"type":"list_recipes","filter":"base-files"}}',
-                b'{"protocol_version":1,"sequence":3,"message":{"type":"shutdown"}}',
+                b'{"protocol_version":1,"sequence":3,"message":{"type":"get_recipe_metadata","recipe":"base-files"}}',
+                b'{"protocol_version":1,"sequence":4,"message":{"type":"shutdown"}}',
                 environment={"PYTHONPATH": directory},
             )
         messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
@@ -454,7 +470,19 @@ class Tinfoil:
         self.assertEqual(messages[0]["data"]["layers"][0]["name"], "core")
         self.assertEqual(messages[1]["recipes"][0]["version"], "3.0.14")
         self.assertEqual(messages[1]["recipes"][0]["layer"], "core")
-        self.assertEqual(messages[2]["type"], "bridge_shutdown")
+        self.assertEqual(
+            messages[1]["recipes"][0]["file"],
+            "/layers/meta/recipes-core/base-files/base-files_3.0.14.bb",
+        )
+        self.assertEqual(messages[1]["recipes"][0]["append_count"], 1)
+        self.assertEqual(messages[2]["type"], "recipe_metadata")
+        self.assertEqual(messages[2]["data"]["tasks"], ["do_build", "do_compile"])
+        self.assertEqual(messages[2]["data"]["patches"], ["file://fix.patch"])
+        self.assertEqual(
+            messages[2]["data"]["packages"], ["base-files", "base-files-doc"]
+        )
+        self.assertIsNone(messages[2]["data"]["history"])
+        self.assertEqual(messages[3]["type"], "bridge_shutdown")
 
     def test_parent_eof_exits_cleanly(self) -> None:
         result = run_bridge()
