@@ -468,6 +468,19 @@ Filters:
 - worker
 - duration threshold
 
+Task controls:
+
+- `↑`/`↓` or `k`/`j` moves the bounded task selection
+- `f` cycles all, active, waiting, completed, and failed state filters
+- `F` selects the recipe, task, or worker text-filter field
+- `/` edits the selected text filter; `Enter` or `Esc` finishes editing
+- `d` cycles all, one-second, ten-second, and one-minute duration thresholds
+
+When BitBake reports a total without individual queued-task identities, the
+workspace shows one honest aggregate waiting row. It must not invent recipe,
+task, worker, or timing metadata for those queued tasks. The Inspector labels
+unavailable task fields explicitly.
+
 ---
 
 ## 12. BitBake output consumption

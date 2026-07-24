@@ -86,6 +86,14 @@ zero. Terminal build events emit one primary build-state action and one
 persistent-job lifecycle action. Boundary verification rejects backend,
 protocol, and raw JSON dependencies in `yoctui-ui`.
 
+Live task monitoring also subscribes to BitBake runqueue-start events. The
+bridge normalizes their copied runqueue statistics into typed queued-task
+events, allowing the model to retain BitBake's authoritative completed/total
+counts and derive an aggregate waiting count. Recipe task-start events enrich
+the same task identity with PID, worker, and source-log details when BitBake
+provides them. Widgets render that typed state and never infer details from log
+text.
+
 ### `yoctui-app`
 
 Owns:

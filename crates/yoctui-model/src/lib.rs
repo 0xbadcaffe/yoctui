@@ -178,19 +178,127 @@ impl BuildRequest {
         Ok(())
     }
 }
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub struct TaskId(pub String);
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum TaskState {
+    Waiting,
+    #[default]
+    Active,
+    Completed,
+    Failed,
+    Cancelled,
+    Lost,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TaskStats {
+    pub completed: usize,
+    pub total: usize,
+    pub active: usize,
+    pub failed: usize,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct TaskInfo {
     pub id: TaskId,
     pub recipe: String,
     pub task: String,
     pub progress: Option<u8>,
+    #[serde(default)]
+    pub state: TaskState,
+    #[serde(default)]
+    pub worker: Option<String>,
+    #[serde(default)]
+    pub pid: Option<u32>,
+    #[serde(default)]
+    pub started: Option<SystemTime>,
+    #[serde(default)]
+    pub finished: Option<SystemTime>,
+    #[serde(default)]
+    pub dependencies: Vec<TaskId>,
+    #[serde(default)]
+    pub log_path: Option<PathBuf>,
+    #[serde(default)]
+    pub cancellation: Option<String>,
+    #[serde(default)]
+    pub stats: Option<TaskStats>,
+}
+impl TaskInfo {
+    pub fn active(id: TaskId, recipe: String, task: String) -> Self {
+        Self {
+            id,
+            recipe,
+            task,
+            progress: None,
+            state: TaskState::Active,
+            worker: None,
+            pid: None,
+            started: Some(SystemTime::now()),
+            finished: None,
+            dependencies: Vec::new(),
+            log_path: None,
+            cancellation: None,
+            stats: None,
+        }
+    }
+    pub fn elapsed_at(&self, now: SystemTime) -> Option<Duration> {
+        let end = self.finished.unwrap_or(now);
+        self.started
+            .and_then(|started| end.duration_since(started).ok())
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CompletedTask {
     pub task: TaskInfo,
     pub success: bool,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TaskStateFilter {
+    #[default]
+    All,
+    Active,
+    Waiting,
+    Completed,
+    Failed,
+}
+impl TaskStateFilter {
+    fn next(self) -> Self {
+        match self {
+            Self::All => Self::Active,
+            Self::Active => Self::Waiting,
+            Self::Waiting => Self::Completed,
+            Self::Completed => Self::Failed,
+            Self::Failed => Self::All,
+        }
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TaskFilterField {
+    #[default]
+    Recipe,
+    Task,
+    Worker,
+}
+impl TaskFilterField {
+    fn next(self) -> Self {
+        match self {
+            Self::Recipe => Self::Task,
+            Self::Task => Self::Worker,
+            Self::Worker => Self::Recipe,
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct TaskFilters {
+    pub state: TaskStateFilter,
+    pub recipe: String,
+    pub task: String,
+    pub worker: String,
+    pub minimum_duration: Option<Duration>,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TaskRow {
+    Task(Box<TaskInfo>),
+    WaitingSummary(usize),
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DevtoolFinishRequest {
@@ -709,6 +817,9 @@ pub struct App {
     pub tasks: HashMap<TaskId, TaskInfo>,
     pub completed_tasks: VecDeque<CompletedTask>,
     pub task_progress_scroll: usize,
+    pub task_filters: TaskFilters,
+    pub task_filter_field: TaskFilterField,
+    pub task_filter_editing: bool,
     pub logs: LogState,
     pub should_quit: bool,
     pub notification: Option<String>,
@@ -752,6 +863,9 @@ impl App {
             tasks: HashMap::new(),
             completed_tasks: VecDeque::new(),
             task_progress_scroll: 0,
+            task_filters: TaskFilters::default(),
+            task_filter_field: TaskFilterField::default(),
+            task_filter_editing: false,
             logs: LogState::new(max_entries, max_bytes),
             should_quit: false,
             notification: None,
@@ -770,6 +884,100 @@ impl App {
         self.build
             .started
             .and_then(|s| SystemTime::now().duration_since(s).ok())
+    }
+    pub fn waiting_task_count(&self) -> usize {
+        if matches!(
+            self.build.status,
+            BuildStatus::Completed | BuildStatus::Cancelled | BuildStatus::Failed
+        ) {
+            return 0;
+        }
+        self.build.total.map_or(0, |total| {
+            total.saturating_sub(self.build.completed.saturating_add(self.tasks.len()))
+        })
+    }
+    pub fn visible_task_rows(&self) -> Vec<TaskRow> {
+        let now = SystemTime::now();
+        let state_matches = |state: TaskState| match self.task_filters.state {
+            TaskStateFilter::All => true,
+            TaskStateFilter::Active => state == TaskState::Active,
+            TaskStateFilter::Waiting => state == TaskState::Waiting,
+            TaskStateFilter::Completed => state == TaskState::Completed,
+            TaskStateFilter::Failed => {
+                matches!(
+                    state,
+                    TaskState::Failed | TaskState::Cancelled | TaskState::Lost
+                )
+            }
+        };
+        let text_matches = |task: &TaskInfo| {
+            contains_case_insensitive(&task.recipe, &self.task_filters.recipe)
+                && contains_case_insensitive(&task.task, &self.task_filters.task)
+                && contains_case_insensitive(
+                    task.worker.as_deref().unwrap_or(""),
+                    &self.task_filters.worker,
+                )
+                && self.task_filters.minimum_duration.is_none_or(|minimum| {
+                    task.elapsed_at(now)
+                        .is_some_and(|elapsed| elapsed >= minimum)
+                })
+        };
+        let retained = self
+            .tasks
+            .values()
+            .cloned()
+            .chain(self.completed_tasks.iter().map(|completed| {
+                let mut task = completed.task.clone();
+                if matches!(task.state, TaskState::Active | TaskState::Waiting) {
+                    task.state = if completed.success {
+                        TaskState::Completed
+                    } else {
+                        TaskState::Failed
+                    };
+                }
+                task
+            }));
+        let mut rows = retained
+            .filter(|task| state_matches(task.state) && text_matches(task))
+            .map(|task| TaskRow::Task(Box::new(task)))
+            .collect::<Vec<_>>();
+        rows.sort_by(|left, right| {
+            let TaskRow::Task(left) = left else {
+                return std::cmp::Ordering::Less;
+            };
+            let TaskRow::Task(right) = right else {
+                return std::cmp::Ordering::Greater;
+            };
+            (
+                task_state_order(left.state),
+                left.recipe.as_str(),
+                left.task.as_str(),
+                left.id.0.as_str(),
+            )
+                .cmp(&(
+                    task_state_order(right.state),
+                    right.recipe.as_str(),
+                    right.task.as_str(),
+                    right.id.0.as_str(),
+                ))
+        });
+        let waiting = self.waiting_task_count();
+        let waiting_filter_matches = matches!(
+            self.task_filters.state,
+            TaskStateFilter::All | TaskStateFilter::Waiting
+        ) && self.task_filters.recipe.is_empty()
+            && self.task_filters.task.is_empty()
+            && self.task_filters.worker.is_empty()
+            && self.task_filters.minimum_duration.is_none();
+        if waiting > 0 && waiting_filter_matches {
+            rows.push(TaskRow::WaitingSummary(waiting));
+        }
+        rows
+    }
+    pub fn selected_task_row(&self) -> Option<TaskRow> {
+        self.visible_task_rows()
+            .get(self.task_progress_scroll)
+            .cloned()
     }
     pub fn active_dialog(&self) -> Option<&Dialog> {
         self.dialogs.front()
@@ -900,6 +1108,17 @@ impl App {
             .collect()
     }
 }
+fn contains_case_insensitive(value: &str, query: &str) -> bool {
+    query.is_empty() || value.to_lowercase().contains(&query.to_lowercase())
+}
+fn task_state_order(state: TaskState) -> u8 {
+    match state {
+        TaskState::Active => 0,
+        TaskState::Waiting => 1,
+        TaskState::Failed | TaskState::Cancelled | TaskState::Lost => 2,
+        TaskState::Completed => 3,
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     Tick,
@@ -992,6 +1211,7 @@ pub enum Action {
         total: Option<u64>,
     },
     TaskStarted(TaskInfo),
+    TaskQueued(TaskInfo),
     TaskProgress {
         id: TaskId,
         progress: Option<u8>,
@@ -1003,6 +1223,13 @@ pub enum Action {
     ScrollBuildTasks {
         delta: isize,
     },
+    CycleTaskStateFilter,
+    CycleTaskFilterField,
+    BeginTaskFilterEdit,
+    AppendTaskFilter(char),
+    BackspaceTaskFilter,
+    FinishTaskFilterEdit,
+    CycleTaskDurationFilter,
     Log(LogEntry),
     BuildCompleted {
         success: bool,
@@ -1164,6 +1391,29 @@ fn prepare_build(app: &mut App, target: Option<String>) {
     app.tasks.clear();
     app.completed_tasks.clear();
     app.task_progress_scroll = 0;
+}
+
+fn clamp_task_selection(app: &mut App) {
+    app.task_progress_scroll = app
+        .task_progress_scroll
+        .min(app.visible_task_rows().len().saturating_sub(1));
+}
+
+fn archive_unfinished_tasks(app: &mut App, state: TaskState, cancellation: Option<&str>) {
+    let finished = SystemTime::now();
+    for (_, mut task) in app.tasks.drain() {
+        task.state = state;
+        task.finished = Some(finished);
+        task.cancellation = cancellation.map(str::to_owned);
+        app.completed_tasks.push_back(CompletedTask {
+            task,
+            success: false,
+        });
+    }
+    while app.completed_tasks.len() > MAX_COMPLETED_TASKS {
+        app.completed_tasks.pop_front();
+    }
+    clamp_task_selection(app);
 }
 
 fn is_pane_focus(target: FocusTarget) -> bool {
@@ -1646,7 +1896,25 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.build.parse_total = total;
         }
         Action::TaskStarted(t) => {
-            app.tasks.insert(t.id.clone(), t);
+            let mut task = t;
+            if let Some(stats) = task.stats {
+                app.build.completed = app.build.completed.max(stats.completed);
+                app.build.total = (stats.total > 0).then_some(stats.total);
+            }
+            task.state = TaskState::Active;
+            task.started.get_or_insert_with(SystemTime::now);
+            app.tasks.insert(task.id.clone(), task);
+            clamp_task_selection(app);
+        }
+        Action::TaskQueued(t) => {
+            let mut task = t;
+            if let Some(stats) = task.stats {
+                app.build.completed = app.build.completed.max(stats.completed);
+                app.build.total = (stats.total > 0).then_some(stats.total);
+            }
+            task.state = TaskState::Waiting;
+            app.tasks.insert(task.id.clone(), task);
+            clamp_task_selection(app);
         }
         Action::TaskProgress { id, progress } => {
             if let Some(t) = app.tasks.get_mut(&id) {
@@ -1656,6 +1924,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::TaskCompleted { id, success } => {
             if let Some(mut task) = app.tasks.remove(&id) {
                 task.progress = Some(100);
+                task.state = if success {
+                    TaskState::Completed
+                } else {
+                    TaskState::Failed
+                };
+                task.finished = Some(SystemTime::now());
                 app.completed_tasks
                     .push_back(CompletedTask { task, success });
                 if app.completed_tasks.len() > MAX_COMPLETED_TASKS {
@@ -1663,9 +1937,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 }
                 app.build.completed += 1;
             }
+            clamp_task_selection(app);
         }
         Action::ScrollBuildTasks { delta } => {
-            let task_count = app.tasks.len() + app.completed_tasks.len();
+            let task_count = app.visible_task_rows().len();
             app.task_progress_scroll = if delta.is_negative() {
                 app.task_progress_scroll
                     .saturating_sub(delta.unsigned_abs())
@@ -1674,6 +1949,52 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .saturating_add(delta as usize)
                     .min(task_count.saturating_sub(1))
             };
+        }
+        Action::CycleTaskStateFilter => {
+            app.task_filters.state = app.task_filters.state.next();
+            clamp_task_selection(app);
+        }
+        Action::CycleTaskFilterField => {
+            app.task_filter_field = app.task_filter_field.next();
+        }
+        Action::BeginTaskFilterEdit => {
+            app.task_filter_editing = true;
+        }
+        Action::AppendTaskFilter(character) => {
+            if app.task_filter_editing {
+                match app.task_filter_field {
+                    TaskFilterField::Recipe => app.task_filters.recipe.push(character),
+                    TaskFilterField::Task => app.task_filters.task.push(character),
+                    TaskFilterField::Worker => app.task_filters.worker.push(character),
+                }
+                clamp_task_selection(app);
+            }
+        }
+        Action::BackspaceTaskFilter => {
+            if app.task_filter_editing {
+                match app.task_filter_field {
+                    TaskFilterField::Recipe => app.task_filters.recipe.pop(),
+                    TaskFilterField::Task => app.task_filters.task.pop(),
+                    TaskFilterField::Worker => app.task_filters.worker.pop(),
+                };
+                clamp_task_selection(app);
+            }
+        }
+        Action::FinishTaskFilterEdit => {
+            app.task_filter_editing = false;
+        }
+        Action::CycleTaskDurationFilter => {
+            app.task_filters.minimum_duration = match app.task_filters.minimum_duration {
+                None => Some(Duration::from_secs(1)),
+                Some(duration) if duration == Duration::from_secs(1) => {
+                    Some(Duration::from_secs(10))
+                }
+                Some(duration) if duration == Duration::from_secs(10) => {
+                    Some(Duration::from_secs(60))
+                }
+                Some(_) => None,
+            };
+            clamp_task_selection(app);
         }
         Action::Log(l) => {
             match l.severity {
@@ -1687,11 +2008,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::BuildCompleted { success, exit_code } => {
+            archive_unfinished_tasks(app, TaskState::Lost, Some("build ended"));
             app.build.status = if success {
                 BuildStatus::Completed
             } else {
                 BuildStatus::Failed
             };
+            if success && let Some(total) = app.build.total {
+                app.build.completed = total;
+            }
             app.build.exit_code = exit_code;
             app.build_history.push_back(BuildRecord {
                 target: app.build.target.clone(),
@@ -1706,9 +2031,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.build_history.pop_front();
             }
             app.build_history_selection = 0;
+            clamp_task_selection(app);
             enqueue_build_completion(app);
         }
         Action::BuildCancelled { exit_code } => {
+            archive_unfinished_tasks(app, TaskState::Cancelled, Some("cancelled"));
             app.build.status = BuildStatus::Cancelled;
             app.build.exit_code = exit_code;
             app.build_history.push_back(BuildRecord {
@@ -1724,11 +2051,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.build_history.pop_front();
             }
             app.build_history_selection = 0;
+            clamp_task_selection(app);
             enqueue_build_completion(app);
         }
         Action::BuildCancellationRejected(message) => {
             if app.build.status == BuildStatus::Cancelling {
                 app.build.status = BuildStatus::Running;
+            }
+            for task in app.tasks.values_mut() {
+                task.cancellation = None;
             }
             app.notification = Some(format!(
                 "Could not cancel the active build: {message}. The build may still be running."
@@ -1755,6 +2086,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 BuildStatus::Running | BuildStatus::Parsing
             ) {
                 app.build.status = BuildStatus::Cancelling;
+                for task in app.tasks.values_mut() {
+                    task.cancellation = Some("cancellation requested".into());
+                }
                 return Some(Effect::Cancel);
             }
         }
@@ -3319,6 +3653,7 @@ mod tests {
                 recipe: "busybox".into(),
                 task: "do_compile".into(),
                 progress: None,
+                ..TaskInfo::default()
             }),
         );
         let _ = update(
@@ -3371,6 +3706,7 @@ mod tests {
                 recipe: "old".into(),
                 task: "task".into(),
                 progress: Some(50),
+                ..TaskInfo::default()
             },
         );
         let request = BuildRequest {
@@ -4077,6 +4413,7 @@ mod tests {
                 recipe: "base-files".into(),
                 task: "do_install".into(),
                 progress: None,
+                ..TaskInfo::default()
             }),
         );
         let _ = update(
@@ -4150,6 +4487,7 @@ mod tests {
                 recipe: "busybox".into(),
                 task: "do_compile".into(),
                 progress: None,
+                ..TaskInfo::default()
             }),
         );
         let _ = update(
@@ -4176,6 +4514,7 @@ mod tests {
                     recipe: recipe.into(),
                     task: "do_compile".into(),
                     progress: None,
+                    ..TaskInfo::default()
                 }),
             );
             let _ = update(&mut app, Action::TaskCompleted { id, success: true });
@@ -4275,5 +4614,96 @@ mod tests {
             .validate()
             .is_err()
         );
+    }
+
+    #[test]
+    fn live_tasks_reducer_keeps_honest_counts_filters_and_bounded_selection() {
+        let mut app = App::new(20, 2_000);
+        let first = TaskId("busybox:do_compile".into());
+        let second = TaskId("openssl:do_install".into());
+        let mut busybox = TaskInfo::active(first.clone(), "busybox".into(), "do_compile".into());
+        busybox.worker = Some("worker-1".into());
+        busybox.stats = Some(TaskStats {
+            completed: 1,
+            total: 5,
+            active: 1,
+            failed: 0,
+        });
+        let _ = update(&mut app, Action::TaskStarted(busybox));
+        let mut openssl = TaskInfo::active(second.clone(), "openssl".into(), "do_install".into());
+        openssl.worker = Some("worker-2".into());
+        let _ = update(&mut app, Action::TaskStarted(openssl));
+        assert_eq!(app.build.completed, 1);
+        assert_eq!(app.build.total, Some(5));
+        assert_eq!(app.waiting_task_count(), 2);
+        assert!(matches!(
+            app.visible_task_rows().last(),
+            Some(TaskRow::WaitingSummary(2))
+        ));
+
+        let _ = update(
+            &mut app,
+            Action::TaskCompleted {
+                id: second,
+                success: false,
+            },
+        );
+        let _ = update(&mut app, Action::CycleTaskStateFilter);
+        assert_eq!(app.task_filters.state, TaskStateFilter::Active);
+        assert_eq!(app.visible_task_rows().len(), 1);
+        for _ in 0..3 {
+            let _ = update(&mut app, Action::CycleTaskStateFilter);
+        }
+        assert_eq!(app.task_filters.state, TaskStateFilter::Failed);
+        assert!(matches!(
+            app.visible_task_rows().as_slice(),
+            [TaskRow::Task(task)] if task.recipe == "openssl" && task.state == TaskState::Failed
+        ));
+
+        app.task_progress_scroll = 99;
+        let _ = update(&mut app, Action::CycleTaskDurationFilter);
+        assert_eq!(app.task_progress_scroll, 0);
+        let _ = update(
+            &mut app,
+            Action::TaskCompleted {
+                id: first,
+                success: true,
+            },
+        );
+        assert!(app.task_progress_scroll <= app.visible_task_rows().len().saturating_sub(1));
+        let _ = update(
+            &mut app,
+            Action::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        );
+        assert_eq!(app.build.completed, 5);
+        assert_eq!(app.waiting_task_count(), 0);
+    }
+
+    #[test]
+    fn live_tasks_filter_supports_recipe_task_worker_and_duration() {
+        let mut app = App::new(20, 2_000);
+        let mut task = TaskInfo::active(
+            TaskId("linux-yocto:do_compile_kernel".into()),
+            "linux-yocto".into(),
+            "do_compile_kernel".into(),
+        );
+        task.worker = Some("remote-7".into());
+        task.started = Some(SystemTime::UNIX_EPOCH);
+        task.finished = Some(SystemTime::UNIX_EPOCH + Duration::from_secs(20));
+        task.state = TaskState::Completed;
+        app.completed_tasks.push_back(CompletedTask {
+            task,
+            success: true,
+        });
+        app.task_filters.recipe = "LINUX".into();
+        app.task_filters.task = "kernel".into();
+        app.task_filters.worker = "REMOTE".into();
+        app.task_filters.minimum_duration = Some(Duration::from_secs(10));
+        assert_eq!(app.visible_task_rows().len(), 1);
+        app.task_filters.minimum_duration = Some(Duration::from_secs(60));
+        assert!(app.visible_task_rows().is_empty());
     }
 }

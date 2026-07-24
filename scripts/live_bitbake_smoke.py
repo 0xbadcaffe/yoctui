@@ -167,9 +167,21 @@ def main():
         completion, build_events = driver.wait_for(correlation, "build_completed")
         require_event_types(
             build_events,
-            {"build_started", "parse_progress", "task_started", "log"},
+            {"build_started", "parse_progress", "task_queued", "task_started", "log"},
             "normal build",
         )
+        queued = [
+            event for event in build_events if event.get("type") == "task_queued"
+        ]
+        if not any(
+            isinstance(event.get("stats"), dict)
+            and isinstance(event["stats"].get("total"), int)
+            and event["stats"]["total"] > 0
+            for event in queued
+        ):
+            raise SmokeFailure(
+                "live queued-task events did not expose a positive authoritative task total"
+            )
         if not completion.get("success"):
             raise SmokeFailure(
                 f"live build failed with exit code {completion.get('exit_code')}"

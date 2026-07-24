@@ -342,6 +342,10 @@ class TaskStarted:
  def __init__(self): self.pn = "busybox"; self.task = "do_compile"; self.pid = 42
 class TaskSucceeded:
  def __init__(self): self.pn = "busybox"; self.task = "do_compile"
+class Stats:
+ def __init__(self): self.completed = 3; self.total = 10; self.active = 1; self.failed = 0
+class runQueueTaskStarted:
+ def __init__(self): self.taskfile = "/layers/meta/recipes-core/busybox/busybox_1.36.bb"; self.taskname = "do_compile"; self.stats = Stats()
 class ParseProgress:
  def __init__(self): self.current = 8; self.total = 20
 class Warning:
@@ -352,7 +356,7 @@ class BuildCompleted:
  def __init__(self): self.success = False; self.returncode = 1
 class Connection:
  def start_build(self, targets, task): pass
- def drain_events(self): return [ParseProgress(), Warning(), Error(), TaskStarted(), TaskSucceeded(), BuildCompleted()]
+ def drain_events(self): return [ParseProgress(), Warning(), Error(), runQueueTaskStarted(), TaskStarted(), TaskSucceeded(), BuildCompleted()]
 class Server:
  def connect(self): return Connection()
 server = Server()
@@ -371,6 +375,7 @@ server = Server()
                 "parse_progress",
                 "log",
                 "log",
+                "task_queued",
                 "task_started",
                 "task_completed",
                 "build_completed",
@@ -380,9 +385,11 @@ server = Server()
         self.assertEqual(messages[1]["total"], 20)
         self.assertEqual(messages[2]["level"], "warning")
         self.assertEqual(messages[3]["level"], "error")
-        self.assertEqual(messages[4]["pid"], 42)
-        self.assertTrue(messages[5]["success"])
-        self.assertEqual(messages[6]["exit_code"], 1)
+        self.assertEqual(messages[4]["recipe"], "busybox")
+        self.assertEqual(messages[4]["stats"]["total"], 10)
+        self.assertEqual(messages[5]["pid"], 42)
+        self.assertTrue(messages[6]["success"])
+        self.assertEqual(messages[7]["exit_code"], 1)
 
     def test_real_build_completion_shape_infers_success_from_failures(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

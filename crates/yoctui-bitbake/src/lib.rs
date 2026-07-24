@@ -11,10 +11,10 @@ use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, Command as TokioCommand},
 };
-use yoctui_model::{BuildRequest, Layer, LogEntry, Recipe, Severity, Workspace};
+use yoctui_model::{BuildRequest, Layer, LogEntry, Recipe, Severity, TaskStats, Workspace};
 use yoctui_protocol::{
     Command, Envelope, Event, LayerData, LayerRelationshipData, MAX_LINE_BYTES, ProtocolError,
-    RecipeData, VERSION, decode_line, encode_line,
+    RecipeData, TaskStatsData, VERSION, decode_line, encode_line,
 };
 
 const MAX_PROCESS_LINE_BYTES: usize = 1024 * 1024;
@@ -112,9 +112,19 @@ pub enum BackendEvent {
         total: Option<u64>,
     },
     Log(LogEntry),
+    TaskQueued {
+        recipe: String,
+        task: String,
+        worker: Option<String>,
+        stats: Option<TaskStats>,
+    },
     TaskStarted {
         recipe: String,
         task: String,
+        pid: Option<u32>,
+        worker: Option<String>,
+        log_path: Option<PathBuf>,
+        stats: Option<TaskStats>,
     },
     TaskProgress {
         recipe: String,
@@ -608,7 +618,32 @@ impl BridgeBackend {
             Event::ParseProgress { current, total } => {
                 BackendEvent::ParseProgress { current, total }
             }
-            Event::TaskStarted { recipe, task, .. } => BackendEvent::TaskStarted { recipe, task },
+            Event::TaskQueued {
+                recipe,
+                task,
+                worker,
+                stats,
+            } => BackendEvent::TaskQueued {
+                recipe,
+                task,
+                worker,
+                stats: task_stats(stats),
+            },
+            Event::TaskStarted {
+                recipe,
+                task,
+                pid,
+                worker,
+                log_path,
+                stats,
+            } => BackendEvent::TaskStarted {
+                recipe,
+                task,
+                pid,
+                worker,
+                log_path: log_path.map(PathBuf::from),
+                stats: task_stats(stats),
+            },
             Event::TaskProgress {
                 recipe,
                 task,
@@ -674,6 +709,15 @@ impl BridgeBackend {
             Event::HelloAck { .. } | Event::Unknown => BackendEvent::Ignored,
         })
     }
+}
+
+fn task_stats(data: Option<TaskStatsData>) -> Option<TaskStats> {
+    data.map(|stats| TaskStats {
+        completed: stats.completed,
+        total: stats.total,
+        active: stats.active,
+        failed: stats.failed,
+    })
 }
 #[async_trait]
 impl BitBakeBackend for BridgeBackend {
@@ -940,6 +984,45 @@ mod tests {
         assert_eq!(workspace.build_dir, Some(PathBuf::from("/build")));
         assert_eq!(workspace.layers[0].path, PathBuf::from("/poky/meta"));
         assert_eq!(workspace.recipes[0].name, "base-files");
+    }
+    #[test]
+    fn live_tasks_preserves_queue_statistics_and_task_details() {
+        let queued = BridgeBackend::event(Event::TaskQueued {
+            recipe: "busybox".into(),
+            task: "do_compile".into(),
+            worker: Some("worker-1".into()),
+            stats: Some(TaskStatsData {
+                completed: 3,
+                total: 10,
+                active: 2,
+                failed: 1,
+            }),
+        })
+        .unwrap();
+        assert!(matches!(
+            queued,
+            BackendEvent::TaskQueued {
+                stats: Some(TaskStats { total: 10, .. }),
+                ..
+            }
+        ));
+        let started = BridgeBackend::event(Event::TaskStarted {
+            recipe: "busybox".into(),
+            task: "do_compile".into(),
+            pid: Some(42),
+            worker: Some("worker-1".into()),
+            log_path: Some("/tmp/log.do_compile".into()),
+            stats: None,
+        })
+        .unwrap();
+        assert!(matches!(
+            started,
+            BackendEvent::TaskStarted {
+                pid: Some(42),
+                log_path: Some(path),
+                ..
+            } if path.as_os_str() == "/tmp/log.do_compile"
+        ));
     }
     #[test]
     fn invalid_utf8_output_is_preserved_lossily() {

@@ -130,12 +130,12 @@ notes = "A typed 14-command catalog now owns deterministic ordering, case-insens
 id = "TASKS-001"
 milestone = "M2"
 title = "Complete live Tasks workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 18
 required = true
 depends_on = ["UI-SHELL-001", "BB-002"]
-verify = ["cargo test -p yoctui-model live_tasks", "cargo test -p yoctui-ui live_tasks", "cargo test -p yoctui-app live_tasks"]
-notes = "Active-task workspace and persistent navigation added by 854f798 and 4db7369. Overall progress, completed/waiting rows, filters, selection, inspector details, and direct tests remain."
+verify = ["cargo test -p yoctui-model live_tasks", "cargo test -p yoctui-ui live_tasks", "cargo test -p yoctui-app live_tasks", "cargo test -p yoctui-bitbake live_tasks"]
+notes = "Typed runqueue statistics drive honest overall and aggregate waiting progress; active, completed, failed, cancelled, and lost rows, all specified filters, bounded selection, contextual task inspection, responsive rendering, and typed input are covered. The live harness passed against BitBake 2.19.0 / Poky 6.0.99 with task_queued, task_started, and positive authoritative task totals."
 
 [[task]]
 id = "JOB-001"

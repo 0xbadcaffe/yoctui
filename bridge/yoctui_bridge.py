@@ -70,6 +70,8 @@ class TinfoilConnection:
         "bb.build.TaskFailed",
         "bb.build.TaskFailedSilent",
         "bb.build.TaskProgress",
+        "bb.runqueue.runQueueTaskStarted",
+        "bb.runqueue.sceneQueueTaskStarted",
         "logging.LogRecord",
     ]
 
@@ -865,12 +867,36 @@ def event_value(event, *names, default=None):
     return default
 
 
+def normalized_task_stats(event):
+    stats = event_value(event, "stats")
+    if stats is None:
+        return None
+    values = {
+        name: event_value(stats, name)
+        for name in ("completed", "total", "active", "failed")
+    }
+    if not all(isinstance(value, int) and value >= 0 for value in values.values()):
+        return None
+    return values
+
+
+def task_recipe(event):
+    recipe = event_value(event, "recipe", "pn")
+    if isinstance(recipe, str):
+        return recipe
+    task_file = event_value(event, "taskfile")
+    if not isinstance(task_file, str):
+        return None
+    stem = os.path.basename(task_file).removesuffix(".bb")
+    return re.sub(r"_[0-9].*$", "", stem) or None
+
+
 def normalize_event(event):
     kind = event_value(event, "type", "event_type")
     if not isinstance(kind, str) and event is not None:
         kind = type(event).__name__
     normalized_kind = kind.lower() if isinstance(kind, str) else None
-    recipe = event_value(event, "recipe", "pn")
+    recipe = task_recipe(event)
     task = event_value(event, "task", "taskname")
     if normalized_kind in ("buildstarted", "build_started"):
         return {"type": "build_started"}
@@ -933,11 +959,26 @@ def normalize_event(event):
     if normalized_kind in ("taskstarted", "task_started") and all(
         isinstance(value, str) for value in (recipe, task)
     ):
+        pid = event_value(event, "pid")
+        worker = event_value(event, "worker")
         return {
             "type": "task_started",
             "recipe": recipe,
             "task": task,
-            "pid": event_value(event, "pid"),
+            "pid": pid if isinstance(pid, int) and pid >= 0 else None,
+            "worker": str(worker) if worker is not None else None,
+            "log_path": event_value(event, "logfile"),
+            "stats": normalized_task_stats(event),
+        }
+    if normalized_kind in ("runqueuetaskstarted", "scenequeuetaskstarted") and all(
+        isinstance(value, str) for value in (recipe, task)
+    ):
+        return {
+            "type": "task_queued",
+            "recipe": recipe,
+            "task": task,
+            "worker": None,
+            "stats": normalized_task_stats(event),
         }
     if normalized_kind in ("taskprogress", "task_progress") and all(
         isinstance(value, str) for value in (recipe, task)
