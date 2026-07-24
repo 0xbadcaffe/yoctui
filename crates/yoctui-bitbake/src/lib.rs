@@ -218,6 +218,7 @@ pub fn classify_output(line: String) -> LogEntry {
         Severity::Info
     };
     LogEntry {
+        id: 0,
         severity,
         message: clean,
         recipe: None,
@@ -226,6 +227,7 @@ pub fn classify_output(line: String) -> LogEntry {
         timestamp: SystemTime::now(),
         build: None,
         protected: false,
+        diagnostic: None,
     }
 }
 pub struct ProcessBackend {
@@ -677,6 +679,7 @@ impl BridgeBackend {
                     _ => Severity::Info,
                 };
                 BackendEvent::Log(LogEntry {
+                    id: 0,
                     severity,
                     message,
                     recipe,
@@ -685,9 +688,11 @@ impl BridgeBackend {
                     timestamp: SystemTime::now(),
                     build: None,
                     protected: false,
+                    diagnostic: None,
                 })
             }
             Event::Warning { message } => BackendEvent::Log(LogEntry {
+                id: 0,
                 severity: Severity::Warning,
                 message,
                 recipe: None,
@@ -696,8 +701,10 @@ impl BridgeBackend {
                 timestamp: SystemTime::now(),
                 build: None,
                 protected: true,
+                diagnostic: None,
             }),
             Event::Error { message } => BackendEvent::Log(LogEntry {
+                id: 0,
                 severity: Severity::Error,
                 message,
                 recipe: None,
@@ -706,6 +713,7 @@ impl BridgeBackend {
                 timestamp: SystemTime::now(),
                 build: None,
                 protected: true,
+                diagnostic: None,
             }),
             Event::BuildCompleted { success, exit_code } => {
                 BackendEvent::BuildCompleted { success, exit_code }

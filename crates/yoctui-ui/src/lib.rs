@@ -1088,6 +1088,14 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
                 )
             },
         ),
+        Screen::Errors => app
+            .logs
+            .diagnostics()
+            .nth(app.error_selection)
+            .map_or_else(
+                || "No retained warnings or errors.".into(),
+                |entry| diagnostic_detail(app, entry),
+            ),
         Screen::Tasks => app.selected_task_row().map_or_else(
             || "No task selected.\n\nTask details appear as typed BitBake events arrive.".into(),
             |row| match row {
@@ -1230,10 +1238,15 @@ fn build_completion_popup(frame: &mut Frame, app: &App, area: Rect) {
         yoctui_model::BuildStatus::Cancelled => "was cancelled",
         _ => "failed",
     };
+    let action = if app.build.status == yoctui_model::BuildStatus::Failed && app.build.errors > 0 {
+        "Press Enter to investigate Errors; any other key returns to Yoctui."
+    } else {
+        "Press any key to return to Yoctui."
+    };
     clear_popup(frame, app, popup);
     frame.render_widget(
         Paragraph::new(format!(
-            "Build {} for {}.\n\nTasks completed: {}\nWarnings: {}    Errors: {}    Exit code: {}\nElapsed: {}\n\nPress any key to return to Yoctui.",
+            "Build {} for {}.\n\nTasks completed: {}\nWarnings: {}    Errors: {}    Exit code: {}\nElapsed: {}\n\n{}",
             result,
             app.build.target.as_deref().unwrap_or("unknown target"),
             app.build.completed,
@@ -1241,6 +1254,7 @@ fn build_completion_popup(frame: &mut Frame, app: &App, area: Rect) {
             app.build.errors,
             app.build.exit_code.map_or_else(|| "unknown".into(), |code| code.to_string()),
             app.elapsed().map(format_duration).unwrap_or_else(|| "unknown".into()),
+            action,
         ))
         .style(build_status_style(app))
         .block(Block::default().title("Build finished").borders(Borders::ALL))
@@ -1992,71 +2006,61 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
     )
 }
 fn errors(frame: &mut Frame, app: &App, area: Rect) {
-    let errors = app
-        .logs
-        .filtered()
-        .filter(|log| matches!(log.severity, Severity::Warning | Severity::Error))
-        .collect::<Vec<_>>();
+    let errors = app.logs.diagnostics().collect::<Vec<_>>();
     let selected = errors.get(app.error_selection).copied();
-    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(8)]).split(area);
-    let rows = errors
-        .into_iter()
-        .rev()
-        .take(area.height.saturating_sub(3) as usize)
-        .rev()
-        .enumerate()
-        .map(|(index, log)| {
-            let severity = severity_style(app, log.severity);
-            let selected = selected_style(app, index == app.error_selection);
-            Row::new(vec![
-                Cell::from(format!("{:?}", log.severity)),
-                Cell::from(log.recipe.as_deref().unwrap_or("")),
-                Cell::from(log.task.as_deref().unwrap_or("")),
-                Cell::from(
-                    log.path
-                        .as_deref()
-                        .map_or_else(String::new, |path| path.display().to_string()),
-                ),
-                Cell::from(log.message.as_str()),
-            ])
-            .style(severity.patch(selected))
-        });
+    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(12)]).split(area);
+    let height = chunks[0].height.saturating_sub(3) as usize;
+    let selection = app.error_selection.min(errors.len().saturating_sub(1));
+    let end = selection.saturating_add(1).max(height).min(errors.len());
+    let start = end.saturating_sub(height);
+    let rows = errors[start..end].iter().enumerate().map(|(offset, log)| {
+        let index = start + offset;
+        let diagnostic = log.diagnostic.as_ref();
+        Row::new(vec![
+            Cell::from(timestamp_text(log.timestamp)),
+            Cell::from(format!("{:?}", log.severity)),
+            Cell::from(log.recipe.as_deref().unwrap_or("")),
+            Cell::from(log.task.as_deref().unwrap_or("")),
+            Cell::from(diagnostic.map_or("", |value| value.summary.as_str())),
+            Cell::from(log.build.as_deref().unwrap_or("")),
+        ])
+        .style(if index == selection {
+            selected_log_style(app, log.severity)
+        } else {
+            severity_style(app, log.severity)
+        })
+    });
     frame.render_widget(
         Table::new(
             rows,
             [
+                Constraint::Length(14),
                 Constraint::Length(9),
+                Constraint::Length(14),
                 Constraint::Length(16),
-                Constraint::Length(16),
-                Constraint::Length(22),
-                Constraint::Min(12),
+                Constraint::Min(18),
+                Constraint::Length(20),
             ],
         )
         .header(
-            Row::new(["Level", "Recipe", "Task", "Location", "Message"])
+            Row::new(["Time", "Severity", "Recipe", "Task", "Summary", "Build"])
                 .style(Style::default().add_modifier(Modifier::BOLD)),
         )
         .block(
             Block::default()
-                .title("Errors and warnings (from retained logs)")
+                .title(format!(
+                    "Errors and warnings ({} retained; {} warning / {} error records evicted)",
+                    errors.len(),
+                    app.logs.dropped_warnings,
+                    app.logs.dropped_errors,
+                ))
                 .borders(Borders::ALL),
         ),
         chunks[0],
     );
     let detail = selected.map_or_else(
         || "No retained warnings or errors.".into(),
-        |log| {
-            format!(
-                "{}\nrecipe: {}  task: {}\ntimestamp: {}\nlocation: {}",
-                log.message,
-                log.recipe.as_deref().unwrap_or("unknown"),
-                log.task.as_deref().unwrap_or("unknown"),
-                timestamp_text(log.timestamp),
-                log.path
-                    .as_deref()
-                    .map_or_else(|| "unknown".into(), |path| path.display().to_string())
-            )
-        },
+        |log| diagnostic_detail(app, log),
     );
     frame.render_widget(
         Paragraph::new(format!(
@@ -2070,6 +2074,58 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
         .wrap(Wrap { trim: false }),
         chunks[1],
     );
+}
+
+fn diagnostic_detail(app: &App, log: &yoctui_model::LogEntry) -> String {
+    let diagnostic = log.diagnostic.as_ref();
+    let metadata = diagnostic.map_or_else(
+        || "unavailable".into(),
+        |value| {
+            value
+                .event_metadata
+                .iter()
+                .map(|(name, value)| format!("{name}={value}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        },
+    );
+    let suggestions = diagnostic.map_or_else(
+        || "No suggested actions are available.".into(),
+        |value| value.suggestions.join("\n- "),
+    );
+    let related = app
+        .logs
+        .diagnostics()
+        .filter(|candidate| {
+            candidate.id != log.id
+                && ((log.recipe.is_some() && candidate.recipe == log.recipe)
+                    || (log.task.is_some() && candidate.task == log.task)
+                    || (log.build.is_some() && candidate.build == log.build))
+        })
+        .filter_map(|candidate| candidate.diagnostic.as_ref())
+        .map(|value| value.summary.as_str())
+        .take(3)
+        .collect::<Vec<_>>();
+    format!(
+        "Category: {}\nSummary: {}\nTime: {}\nBuild: {}\nRecipe: {}  Task: {}\nSource log: {}\nEvent metadata: {}\n\nFull message:\n{}\n\nSuggested actions:\n- {}\n\nRelated diagnostics:\n{}",
+        diagnostic.map_or("unavailable", |value| value.category.as_str()),
+        diagnostic.map_or("unavailable", |value| value.summary.as_str()),
+        timestamp_text(log.timestamp),
+        log.build.as_deref().unwrap_or("unavailable"),
+        log.recipe.as_deref().unwrap_or("unavailable"),
+        log.task.as_deref().unwrap_or("unavailable"),
+        log.path
+            .as_ref()
+            .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+        metadata,
+        log.message,
+        suggestions,
+        if related.is_empty() {
+            "none".into()
+        } else {
+            related.join("\n")
+        },
+    )
 }
 fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     let mut recipes = app.workspace.recipes.iter().collect::<Vec<_>>();
@@ -2555,6 +2611,7 @@ mod tests {
 
         app.screen = Screen::Logs;
         app.logs.insert(yoctui_model::LogEntry {
+            id: 0,
             severity: Severity::Error,
             message: "compile failed".into(),
             recipe: Some("busybox".into()),
@@ -2563,6 +2620,7 @@ mod tests {
             timestamp: SystemTime::UNIX_EPOCH,
             build: None,
             protected: false,
+            diagnostic: None,
         });
         terminal.draw(|frame| render(frame, &app)).unwrap();
         assert!(
@@ -3665,6 +3723,7 @@ mod tests {
         let mut app = App::new(20, 4_000);
         app.screen = Screen::Logs;
         app.logs.insert(yoctui_model::LogEntry {
+            id: 0,
             severity: Severity::Error,
             message: "compile failed\ncompiler context line".into(),
             recipe: Some("busybox".into()),
@@ -3673,8 +3732,10 @@ mod tests {
             timestamp: SystemTime::UNIX_EPOCH,
             build: Some("core-image-minimal".into()),
             protected: true,
+            diagnostic: None,
         });
         app.logs.insert(yoctui_model::LogEntry {
+            id: 0,
             severity: Severity::Info,
             message: "later output".into(),
             recipe: None,
@@ -3683,6 +3744,7 @@ mod tests {
             timestamp: SystemTime::UNIX_EPOCH,
             build: Some("core-image-minimal".into()),
             protected: false,
+            diagnostic: None,
         });
         app.logs.follow = false;
         app.logs.selection = 0;
@@ -3708,6 +3770,7 @@ mod tests {
         app.logs.dropped_warnings = 0;
         app.logs.dropped_errors = 0;
         app.logs.insert(yoctui_model::LogEntry {
+            id: 0,
             severity: Severity::Info,
             message: "needle in a long wrapped line".into(),
             recipe: Some("busybox".into()),
@@ -3716,11 +3779,81 @@ mod tests {
             timestamp: SystemTime::UNIX_EPOCH,
             build: Some("core-image-minimal".into()),
             protected: false,
+            diagnostic: None,
         });
         let output = rendered_text(&app, 220, 24);
         assert!(output.contains("7 coalesced"), "{output}");
         assert!(output.contains("search: needle_"), "{output}");
         assert!(output.contains("build: core-image-minimal"), "{output}");
         let _ = rendered_text(&app, 50, 16);
+    }
+
+    #[test]
+    fn error_workspace_renders_structured_columns_inspector_and_related_entries() {
+        let mut app = App::new(20, 4_000);
+        app.screen = Screen::Errors;
+        app.build.target = Some("core-image-minimal".into());
+        let mut first = yoctui_model::LogEntry {
+            id: 0,
+            severity: Severity::Error,
+            message: "compile failed\nfull compiler context".into(),
+            recipe: Some("busybox".into()),
+            task: Some("do_compile".into()),
+            path: Some("/tmp/log.do_compile".into()),
+            timestamp: SystemTime::UNIX_EPOCH,
+            build: None,
+            protected: true,
+            diagnostic: None,
+        };
+        first.build = app.build.target.clone();
+        app.logs.insert(first);
+        app.logs.insert(yoctui_model::LogEntry {
+            id: 0,
+            severity: Severity::Warning,
+            message: "busybox follow-up warning".into(),
+            recipe: Some("busybox".into()),
+            task: Some("do_package".into()),
+            path: None,
+            timestamp: SystemTime::UNIX_EPOCH,
+            build: Some("core-image-minimal".into()),
+            protected: true,
+            diagnostic: None,
+        });
+        let output = rendered_text(&app, 220, 36);
+        assert!(output.contains("Time"), "{output}");
+        assert!(output.contains("Severity"), "{output}");
+        assert!(output.contains("Summary"), "{output}");
+        assert!(output.contains("Category: BitBake error"), "{output}");
+        assert!(output.contains("full compiler context"), "{output}");
+        assert!(output.contains("Suggested actions"), "{output}");
+        assert!(output.contains("busybox follow-up warning"), "{output}");
+        assert!(output.contains("/tmp/log.do_compile"), "{output}");
+    }
+
+    #[test]
+    fn error_workspace_and_actionable_failure_completion_are_narrow_safe() {
+        let mut app = App::new(20, 4_000);
+        app.screen = Screen::Errors;
+        app.logs.insert(yoctui_model::LogEntry {
+            id: 0,
+            severity: Severity::Error,
+            message: "backend connection lost".into(),
+            recipe: None,
+            task: None,
+            path: None,
+            timestamp: SystemTime::UNIX_EPOCH,
+            build: None,
+            protected: true,
+            diagnostic: None,
+        });
+        let _ = rendered_text(&app, 50, 16);
+        app.build.status = yoctui_model::BuildStatus::Failed;
+        app.build.errors = 1;
+        app.dialogs.push_back(Dialog::BuildCompletion);
+        let output = rendered_text(&app, 100, 24);
+        assert!(
+            output.contains("Press Enter to investigate Errors"),
+            "{output}"
+        );
     }
 }

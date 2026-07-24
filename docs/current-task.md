@@ -2,47 +2,48 @@
 
 ## Active task
 
-**ID:** ERR-001
-**Title:** Complete structured error investigation
+**ID:** LAYERS-001
+**Title:** Complete lazy Layers tree and contextual Inspector
 
 ## Objective
 
-Turn warnings and errors into the complete structured investigation workspace
-specified by `docs/ui-spec.md`, with direct navigation to related logs and
-source paths.
+Complete the IDE-style configured-layer tree and file/directory Inspector
+specified by `docs/ui-spec.md` without eagerly scanning the Yocto source tree.
 
 ## Required work
 
-1. Inventory existing warning/error retention, selection, rendering, input,
-   completion notification, and log-jump behavior.
-2. Represent normalized category, summary, full message, build session,
-   recipe, task, source path/log, event metadata, suggestions, and related
-   diagnostic identity as typed model state.
-3. Render the specified time, severity, recipe, task, summary, and build
-   session columns with bounded selection.
-4. Populate the Inspector with complete multiline details, category, source,
-   event context, suggested actions, and related entries.
-5. Make `Enter` jump to the exact matching log context without replacing the
-   user's query with the whole diagnostic message.
-6. Open the selected source file/log through a typed editor effect and report
-   missing paths visibly.
-7. Implement completion notifications for success, warnings-only, errors, and
-   cancellation; `Enter` on failure opens the selected Errors context.
-8. Preserve structured warnings/errors when ordinary logs are dropped and
-   expose any diagnostic loss honestly.
-9. Render empty, multiline, narrow, and backend-loss cases safely in every
-   theme.
-10. Add reducer, input-mapping, integration, and Ratatui `TestBackend` coverage
-    named `error`.
+1. Inventory the existing configured-layer list, one-directory browser,
+   preview loader, editor effects, relationships, metadata search, and tests.
+2. Represent a lazily loaded expandable/collapsible tree with stable path
+   identity and bounded selection; never recursively scan unopened subtrees.
+3. Keep every configured layer visible with priority, compatibility, and
+   active-build highlighting.
+4. Sort directories before files and implement hidden-file toggling without
+   losing the current path or selection.
+5. Filter configured layers, loaded paths, and filenames through the existing
+   search workflow.
+6. Detect modified, untracked, ignored/generated, and clean state with Git
+   where available; make missing Git visible rather than fatal.
+7. Populate the contextual Inspector for directories and files with full path,
+   size, modification/Git state, relationships, and safe preview metadata.
+8. Add line-numbered, syntax-aware text previews; identify binary content and
+   truncate/stream large files at a documented bound.
+9. Implement the specified expand/collapse/open, editor, refresh, hidden, Git,
+   metadata, and dependency input routes as typed actions/effects.
+10. Cover empty layers, deep lazy navigation, refresh, hidden files, Git,
+    binary/large previews, external-open failures, and all responsive modes
+    with reducer, integration, input, and `TestBackend` tests named
+    `layer_tree`.
 
 ## Definition of done
 
-- Warnings and errors are structured, bounded, selectable investigation rows.
-- All specified list and Inspector metadata is typed and visible.
-- Exact log-context and source navigation work without text parsing.
-- Completion outcomes produce distinct actionable notifications.
-- Diagnostic retention/loss remains observable under pressure.
-- Responsive and multiline rendering never panics.
+- All configured layers remain visible and only expanded paths are scanned.
+- Tree expansion/collapse, hidden toggling, filtering, refresh, and selection
+  are bounded and deterministic.
+- Active, compatibility, priority, relationships, and Git state are visible.
+- File/directory Inspector content is safe for text, binary, and large files.
+- Every specified keyboard operation maps through typed actions/effects.
+- Responsive rendering and external-tool failures never panic.
 - Reducer, integration, input-mapping, and TestBackend checks pass.
 - Task-specific and baseline verification pass.
 - Registry/status documents are updated and the next eligible task is active.
@@ -50,9 +51,10 @@ source paths.
 ## Verification
 
 ```bash
-cargo test -p yoctui-model error
-cargo test -p yoctui-ui error
-cargo test -p yoctui-app error
+cargo test -p yoctui-model layer_tree
+cargo test -p yoctui-ui layer_tree
+cargo test -p yoctui-app layer_tree
+cargo test -p yoctui -- layer_tree
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -62,4 +64,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`LAYERS-001 — Complete lazy Layers tree and contextual Inspector`
+`RECIPES-001 — Complete recipes workspace actions`

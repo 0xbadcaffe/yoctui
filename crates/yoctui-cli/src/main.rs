@@ -23,8 +23,8 @@ use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
-    BuildJobCoordinator, Input, focus_action, key_action, logs_action, settings_action,
-    tasks_action,
+    BuildJobCoordinator, Input, errors_action, focus_action, key_action, logs_action,
+    settings_action, tasks_action,
 };
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
@@ -1594,7 +1594,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     _ => None,
                 };
             } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
-                let _ = update(&mut app, Action::DismissBuildCompletion);
+                let action = if input == Input::Enter
+                    && app.build.status == BuildStatus::Failed
+                    && app.build.errors > 0
+                {
+                    Action::OpenBuildCompletionErrors
+                } else {
+                    Action::DismissBuildCompletion
+                };
+                let _ = update(&mut app, action);
             } else if matches!(app.active_dialog(), Some(Dialog::ImagePicker(_))) {
                 let _ = match input {
                     Input::Up => update(&mut app, Action::SelectImage { delta: -1 }),
@@ -1647,7 +1655,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     && app.settings_dirty
                     && input == Input::Char('r'))
             {
-                if matches!(input, Input::Enter | Input::Esc) {
+                if input == Input::Enter {
+                    let _ = update(&mut app, Action::ActivateNotification);
+                } else if input == Input::Esc {
                     let _ = update(&mut app, Action::DismissNotification);
                 }
             } else if app.screen == Screen::Settings && settings_action(input).is_some() {
@@ -1678,6 +1688,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         copy_to_clipboard(&mut app, content).await;
                     }
                     _ => {}
+                }
+            } else if app.screen == Screen::Errors && errors_action(input).is_some() {
+                let action = errors_action(input).expect("Errors action was checked");
+                if let Some(Effect::OpenInEditor(path)) = update(&mut app, action) {
+                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                 }
             } else if input == Input::Char('!') {
                 open_yocto_shell(&guard, &mut app).await;
@@ -1761,19 +1776,6 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
             } else if input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginCurrentImageBuild);
-            } else if app.screen == yoctui_model::Screen::Errors
-                && matches!(input, Input::Up | Input::Down)
-            {
-                let delta = if input == Input::Up { -1 } else { 1 };
-                let _ = update(&mut app, Action::SelectError { delta });
-            } else if app.screen == yoctui_model::Screen::Errors && input == Input::Enter {
-                let _ = update(&mut app, Action::JumpToSelectedError);
-            } else if app.screen == yoctui_model::Screen::Errors && input == Input::Char('o') {
-                if let Some(Effect::OpenInEditor(path)) =
-                    update(&mut app, Action::OpenSelectedErrorSource)
-                {
-                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                }
             } else if app.screen == yoctui_model::Screen::Recipes
                 && matches!(input, Input::Up | Input::Down)
             {

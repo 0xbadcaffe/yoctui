@@ -624,6 +624,17 @@ Build completion behavior:
 - cancelled build: cancellation summary distinct from build failure
 - pressing `Enter` on a failure notification opens the selected error
 
+Each retained warning/error has a stable session identity and typed category,
+summary, event metadata, and suggested actions. `Enter` on a selected
+diagnostic opens that exact retained entry in Logs without overwriting the
+user's existing query or filters. `o` opens its source path when present.
+`↑`/`↓` or `k`/`j` changes the bounded diagnostic selection.
+
+The completion dialog uses the same outcome distinctions as notifications.
+For failures with retained diagnostics, `Enter` opens Errors while any other
+key dismisses the dialog. Backend loss is an actionable failure diagnostic,
+not an empty error state.
+
 ---
 
 ## 15. Recipes workspace

@@ -312,7 +312,18 @@ pub struct DevtoolDeployRequest {
 }
 const MAX_COMPLETED_TASKS: usize = 1_024;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DiagnosticInfo {
+    pub category: String,
+    pub summary: String,
+    #[serde(default)]
+    pub event_metadata: Vec<(String, String)>,
+    #[serde(default)]
+    pub suggestions: Vec<String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct LogEntry {
+    #[serde(default)]
+    pub id: u64,
     pub severity: Severity,
     pub message: String,
     pub recipe: Option<String>,
@@ -323,6 +334,8 @@ pub struct LogEntry {
     pub build: Option<String>,
     #[serde(default)]
     pub protected: bool,
+    #[serde(default)]
+    pub diagnostic: Option<DiagnosticInfo>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub struct Workspace {
@@ -737,6 +750,8 @@ pub struct LogState {
     pub scroll_offset: usize,
     pub horizontal_offset: usize,
     pub selection: usize,
+    pub jump_target: Option<u64>,
+    next_id: u64,
 }
 impl LogState {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
@@ -761,9 +776,16 @@ impl LogState {
             scroll_offset: 0,
             horizontal_offset: 0,
             selection: 0,
+            jump_target: None,
+            next_id: 1,
         }
     }
     pub fn insert(&mut self, mut entry: LogEntry) {
+        if entry.diagnostic.is_none()
+            && matches!(entry.severity, Severity::Warning | Severity::Error)
+        {
+            entry.diagnostic = Some(diagnostic_for_entry(&entry));
+        }
         if self.max_entries == 0 || self.max_bytes == 0 {
             self.record_drop(&entry);
             return;
@@ -799,6 +821,10 @@ impl LogState {
                 entry.message.push_str(suffix);
             }
         }
+        if entry.id == 0 {
+            entry.id = self.next_id;
+            self.next_id = self.next_id.wrapping_add(1).max(1);
+        }
         let bytes = entry.message.len();
         self.retained_bytes += bytes;
         self.entries.push_back(entry);
@@ -827,21 +853,27 @@ impl LogState {
         let query = self.query.to_lowercase();
         let visible_len = self.paused_len.unwrap_or(self.entries.len());
         self.entries.iter().take(visible_len).filter(move |e| {
-            self.filter.is_none_or(|s| s == e.severity)
-                && self
-                    .recipe_filter
-                    .as_ref()
-                    .is_none_or(|recipe| e.recipe.as_ref() == Some(recipe))
-                && self
-                    .task_filter
-                    .as_ref()
-                    .is_none_or(|task| e.task.as_ref() == Some(task))
-                && self
-                    .build_filter
-                    .as_ref()
-                    .is_none_or(|build| e.build.as_ref() == Some(build))
-                && (query.is_empty() || e.message.to_lowercase().contains(&query))
+            self.jump_target == Some(e.id)
+                || (self.filter.is_none_or(|s| s == e.severity)
+                    && self
+                        .recipe_filter
+                        .as_ref()
+                        .is_none_or(|recipe| e.recipe.as_ref() == Some(recipe))
+                    && self
+                        .task_filter
+                        .as_ref()
+                        .is_none_or(|task| e.task.as_ref() == Some(task))
+                    && self
+                        .build_filter
+                        .as_ref()
+                        .is_none_or(|build| e.build.as_ref() == Some(build))
+                    && (query.is_empty() || e.message.to_lowercase().contains(&query)))
         })
+    }
+    pub fn diagnostics(&self) -> impl Iterator<Item = &LogEntry> {
+        self.entries
+            .iter()
+            .filter(|entry| entry.diagnostic.is_some())
     }
     pub fn selected(&self) -> Option<&LogEntry> {
         self.filtered().nth(self.selection)
@@ -869,6 +901,45 @@ impl LogState {
             .filtered()
             .count()
             .saturating_sub(self.selection.saturating_add(1));
+    }
+}
+fn diagnostic_for_entry(entry: &LogEntry) -> DiagnosticInfo {
+    let summary = entry
+        .message
+        .lines()
+        .find(|line| !line.trim().is_empty())
+        .unwrap_or("Diagnostic without a message")
+        .trim()
+        .chars()
+        .take(120)
+        .collect();
+    let mut event_metadata = vec![
+        ("severity".into(), format!("{:?}", entry.severity)),
+        ("protected".into(), entry.protected.to_string()),
+    ];
+    if let Some(build) = entry.build.as_ref() {
+        event_metadata.push(("build".into(), build.clone()));
+    }
+    if let Some(path) = entry.path.as_ref() {
+        event_metadata.push(("source".into(), path.display().to_string()));
+    }
+    let mut suggestions = vec!["Inspect the matching retained log context.".into()];
+    if entry.path.is_some() {
+        suggestions.push("Open the source log and inspect surrounding output.".into());
+    }
+    if entry.recipe.is_some() {
+        suggestions.push("Inspect the recipe task and its metadata.".into());
+    }
+    DiagnosticInfo {
+        category: match entry.severity {
+            Severity::Warning => "BitBake warning",
+            Severity::Error => "BitBake error",
+            Severity::Trace | Severity::Info => "Build diagnostic",
+        }
+        .into(),
+        summary,
+        event_metadata,
+        suggestions,
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1323,6 +1394,7 @@ pub enum Action {
     },
     BuildCancellationRejected(String),
     DismissBuildCompletion,
+    OpenBuildCompletionErrors,
     SelectBuildHistory {
         delta: isize,
     },
@@ -1441,6 +1513,7 @@ pub enum Action {
     BackspaceMetadataQuery,
     FinishMetadataSearch,
     Notify(String),
+    ActivateNotification,
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -1505,6 +1578,7 @@ fn archive_unfinished_tasks(app: &mut App, state: TaskState, cancellation: Optio
 fn insert_system_log(app: &mut App, severity: Severity, message: String) {
     let build = app.build.target.clone();
     app.logs.insert(LogEntry {
+        id: 0,
         severity,
         message,
         recipe: None,
@@ -1513,7 +1587,11 @@ fn insert_system_log(app: &mut App, severity: Severity, message: String) {
         timestamp: SystemTime::now(),
         build,
         protected: true,
+        diagnostic: None,
     });
+    app.error_selection = app
+        .error_selection
+        .min(app.logs.diagnostics().count().saturating_sub(1));
     if app.logs.follow {
         app.logs.selection = app.logs.filtered().count().saturating_sub(1);
         app.logs.scroll_offset = 0;
@@ -2134,6 +2212,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             entry.build = entry.build.or_else(|| app.build.target.clone());
             entry.protected |= matches!(entry.severity, Severity::Warning | Severity::Error);
             app.logs.insert(entry);
+            app.error_selection = app
+                .error_selection
+                .min(app.logs.diagnostics().count().saturating_sub(1));
             if app.logs.follow {
                 app.logs.selection = app.logs.filtered().count().saturating_sub(1);
                 app.logs.scroll_offset = 0;
@@ -2146,6 +2227,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             } else {
                 BuildStatus::Failed
             };
+            if !success {
+                app.build.errors = app.build.errors.max(1);
+            }
             if success && let Some(total) = app.build.total {
                 app.build.completed = total;
             }
@@ -2178,6 +2262,21 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.build_history_selection = 0;
             clamp_task_selection(app);
             enqueue_build_completion(app);
+            app.notification = Some(if success {
+                if app.build.warnings > 0 {
+                    format!(
+                        "Build completed with {} warning(s). Open Errors to investigate.",
+                        app.build.warnings
+                    )
+                } else {
+                    "Build completed successfully with no errors.".into()
+                }
+            } else {
+                format!(
+                    "Build failed with {} error(s). Press Enter to open Errors.",
+                    app.build.errors
+                )
+            });
         }
         Action::BuildCancelled { exit_code } => {
             archive_unfinished_tasks(app, TaskState::Cancelled, Some("cancelled"));
@@ -2206,6 +2305,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.build_history_selection = 0;
             clamp_task_selection(app);
             enqueue_build_completion(app);
+            app.notification =
+                Some("Build was cancelled; this is distinct from a build failure.".into());
         }
         Action::BuildCancellationRejected(message) => {
             if app.build.status == BuildStatus::Cancelling {
@@ -2227,6 +2328,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
                 close_dialog(app);
             }
+        }
+        Action::OpenBuildCompletionErrors => {
+            if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
+                close_dialog(app);
+            }
+            app.screen = Screen::Errors;
+            app.error_selection = app.logs.diagnostics().count().saturating_sub(1);
+            app.notification = None;
         }
         Action::SelectBuildHistory { delta } => {
             app.build_history_selection = if delta.is_negative() {
@@ -2276,6 +2385,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 Some(Severity::Warning) => Some(Severity::Error),
                 Some(Severity::Error) | Some(Severity::Trace) => None,
             };
+            app.logs.jump_target = None;
             app.logs.clamp_selection();
         }
         Action::ScrollLogs { delta } => {
@@ -2293,6 +2403,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.logs.scroll_offset = count.saturating_sub(app.logs.selection.saturating_add(1));
         }
         Action::BeginLogSearch => {
+            app.logs.jump_target = None;
             app.logs.searching = true;
             app.logs.follow = false;
             app.logs.paused_len = Some(app.logs.entries.len());
@@ -2347,6 +2458,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             };
         }
         Action::CycleLogRecipeFilter => {
+            app.logs.jump_target = None;
             let mut values = app
                 .logs
                 .entries
@@ -2359,6 +2471,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.logs.clamp_selection();
         }
         Action::CycleLogTaskFilter => {
+            app.logs.jump_target = None;
             let mut values = app
                 .logs
                 .entries
@@ -2371,6 +2484,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.logs.clamp_selection();
         }
         Action::CycleLogBuildFilter => {
+            app.logs.jump_target = None;
             let mut values = app
                 .logs
                 .entries
@@ -2395,12 +2509,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some("No log entry is selected to copy.".into());
         }
         Action::SelectError { delta } => {
-            let count = app
-                .logs
-                .entries
-                .iter()
-                .filter(|entry| matches!(entry.severity, Severity::Warning | Severity::Error))
-                .count();
+            let count = app.logs.diagnostics().count();
             app.error_selection = if delta.is_negative() {
                 app.error_selection.saturating_sub(delta.unsigned_abs())
             } else {
@@ -2410,26 +2519,29 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             };
         }
         Action::JumpToSelectedError => {
-            if let Some(entry) = app
-                .logs
-                .entries
-                .iter()
-                .filter(|entry| matches!(entry.severity, Severity::Warning | Severity::Error))
-                .nth(app.error_selection)
-            {
-                app.logs.query = entry.message.clone();
-                app.logs.filter = Some(entry.severity);
+            let id = {
+                app.logs
+                    .diagnostics()
+                    .nth(app.error_selection)
+                    .map(|entry| entry.id)
+            };
+            if let Some(id) = id {
+                app.logs.jump_target = Some(id);
                 app.logs.follow = false;
+                app.logs.paused_len = Some(app.logs.entries.len());
+                let selection = app
+                    .logs
+                    .filtered()
+                    .position(|entry| entry.id == id)
+                    .unwrap_or(0);
+                let count = app.logs.filtered().count();
+                app.logs.selection = selection;
+                app.logs.scroll_offset = count.saturating_sub(selection.saturating_add(1));
                 app.screen = Screen::Logs;
             }
         }
         Action::OpenSelectedErrorSource => {
-            let selected = app
-                .logs
-                .entries
-                .iter()
-                .filter(|entry| matches!(entry.severity, Severity::Warning | Severity::Error))
-                .nth(app.error_selection);
+            let selected = app.logs.diagnostics().nth(app.error_selection);
             if let Some(path) = selected.and_then(|entry| entry.path.clone()) {
                 return Some(Effect::OpenInEditor(path));
             }
@@ -3109,6 +3221,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::AppendMetadataQuery(_)
         | Action::BackspaceMetadataQuery => {}
         Action::Notify(message) => app.notification = Some(message),
+        Action::ActivateNotification => {
+            if app.build.status == BuildStatus::Failed && app.logs.diagnostics().next().is_some() {
+                app.screen = Screen::Errors;
+                app.error_selection = app.logs.diagnostics().count().saturating_sub(1);
+            }
+            app.notification = None;
+        }
         Action::DismissNotification => app.notification = None,
         Action::Quit => {
             if matches!(
@@ -3169,7 +3288,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             let message = e.to_string();
             insert_system_log(app, Severity::Error, message.clone());
             app.notification = Some(message);
-            app.build.status = BuildStatus::Failed
+            app.build.status = BuildStatus::Failed;
+            app.build.errors = app.build.errors.max(1);
         }
         Action::Tick if !app.reduced_motion => {
             app.animation_frame = app.animation_frame.wrapping_add(1)
@@ -3245,6 +3365,7 @@ mod tests {
     use proptest::prelude::*;
     fn log(message: &str) -> LogEntry {
         LogEntry {
+            id: 0,
             severity: Severity::Info,
             message: message.into(),
             recipe: None,
@@ -3253,10 +3374,12 @@ mod tests {
             timestamp: SystemTime::now(),
             build: None,
             protected: false,
+            diagnostic: None,
         }
     }
     fn tagged_log(recipe: &str, task: &str, severity: Severity, message: &str) -> LogEntry {
         LogEntry {
+            id: 0,
             severity,
             message: message.into(),
             recipe: Some(recipe.into()),
@@ -3265,6 +3388,7 @@ mod tests {
             timestamp: SystemTime::now(),
             build: None,
             protected: false,
+            diagnostic: None,
         }
     }
     fn background_job_spec(id: u64, cancellation_supported: bool) -> BackgroundJobSpec {
@@ -3987,7 +4111,7 @@ mod tests {
         assert_eq!(app.build_history[0].errors, 1);
     }
     #[test]
-    fn selected_error_jumps_to_filtered_logs() {
+    fn selected_error_jumps_to_exact_log_without_replacing_user_filters() {
         let mut app = App::new(10, 1_000);
         let _ = update(
             &mut app,
@@ -3998,11 +4122,17 @@ mod tests {
                 "compile failed",
             )),
         );
+        app.logs.query = "user query".into();
+        app.logs.filter = Some(Severity::Warning);
         let _ = update(&mut app, Action::Open(Screen::Errors));
         let _ = update(&mut app, Action::JumpToSelectedError);
         assert_eq!(app.screen, Screen::Logs);
-        assert_eq!(app.logs.query, "compile failed");
-        assert_eq!(app.logs.filter, Some(Severity::Error));
+        assert_eq!(app.logs.query, "user query");
+        assert_eq!(app.logs.filter, Some(Severity::Warning));
+        assert_eq!(
+            app.logs.selected().map(|entry| entry.message.as_str()),
+            Some("compile failed")
+        );
     }
     #[test]
     fn selected_error_opens_its_source_path() {
@@ -4014,6 +4144,113 @@ mod tests {
         assert_eq!(
             update(&mut app, Action::OpenSelectedErrorSource),
             Some(Effect::OpenInEditor(PathBuf::from("/tmp/log.do_compile")))
+        );
+    }
+    #[test]
+    fn error_entries_gain_typed_category_summary_metadata_and_suggestions() {
+        let mut app = App::new(10, 1_000);
+        app.build.target = Some("core-image-minimal".into());
+        let mut entry = tagged_log(
+            "busybox",
+            "do_compile",
+            Severity::Error,
+            "compile failed\nfull compiler context",
+        );
+        entry.path = Some(PathBuf::from("/tmp/log.do_compile"));
+        let _ = update(&mut app, Action::Log(entry));
+        let retained = app.logs.diagnostics().next().unwrap();
+        let diagnostic = retained.diagnostic.as_ref().unwrap();
+        assert_eq!(diagnostic.category, "BitBake error");
+        assert_eq!(diagnostic.summary, "compile failed");
+        assert!(
+            diagnostic
+                .event_metadata
+                .iter()
+                .any(|(name, value)| name == "build" && value == "core-image-minimal")
+        );
+        assert!(diagnostic.suggestions.len() >= 2);
+        assert_eq!(retained.build.as_deref(), Some("core-image-minimal"));
+    }
+    #[test]
+    fn error_completion_outcomes_are_distinct_and_actionable() {
+        let mut success = App::new(10, 1_000);
+        let _ = update(
+            &mut success,
+            Action::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        );
+        assert!(
+            success
+                .notification
+                .as_deref()
+                .is_some_and(|message| message.contains("successfully"))
+        );
+
+        let mut warning = App::new(10, 1_000);
+        let _ = update(
+            &mut warning,
+            Action::Log(tagged_log(
+                "busybox",
+                "do_compile",
+                Severity::Warning,
+                "deprecated option",
+            )),
+        );
+        let _ = update(
+            &mut warning,
+            Action::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        );
+        assert!(
+            warning
+                .notification
+                .as_deref()
+                .is_some_and(|message| message.contains("warning"))
+        );
+
+        let mut failed = App::new(10, 1_000);
+        let _ = update(
+            &mut failed,
+            Action::Log(tagged_log(
+                "busybox",
+                "do_compile",
+                Severity::Error,
+                "compile failed",
+            )),
+        );
+        let _ = update(
+            &mut failed,
+            Action::BuildCompleted {
+                success: false,
+                exit_code: Some(1),
+            },
+        );
+        assert!(
+            failed
+                .notification
+                .as_deref()
+                .is_some_and(|message| message.contains("Press Enter"))
+        );
+        let _ = update(&mut failed, Action::OpenBuildCompletionErrors);
+        assert_eq!(failed.screen, Screen::Errors);
+        assert!(failed.active_dialog().is_none());
+
+        let mut cancelled = App::new(10, 1_000);
+        let _ = update(
+            &mut cancelled,
+            Action::BuildCancelled {
+                exit_code: Some(130),
+            },
+        );
+        assert!(
+            cancelled
+                .notification
+                .as_deref()
+                .is_some_and(|message| message.contains("distinct"))
         );
     }
     #[test]

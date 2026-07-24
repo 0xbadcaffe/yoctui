@@ -407,7 +407,7 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Tab => Some(Action::CycleFocus { backwards: false }),
         Input::BackTab => Some(Action::CycleFocus { backwards: true }),
         Input::Char('Y') => Some(Action::ConfirmQuit),
-        Input::Enter => Some(Action::DismissNotification),
+        Input::Enter => Some(Action::ActivateNotification),
         Input::Esc => Some(Action::Open(Screen::Dashboard)),
         _ => None,
     }
@@ -493,6 +493,15 @@ pub fn logs_action(searching: bool, key: Input) -> Option<Action> {
         _ => None,
     }
 }
+pub fn errors_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectError { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectError { delta: 1 }),
+        Input::Enter => Some(Action::JumpToSelectedError),
+        Input::Char('o') => Some(Action::OpenSelectedErrorSource),
+        _ => None,
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -536,6 +545,7 @@ mod tests {
         );
         let _ = update(&mut app, Action::Open(Screen::Layers));
         let log = yoctui_model::LogEntry {
+            id: 0,
             severity: Severity::Warning,
             message: "cache miss".into(),
             recipe: Some("busybox".into()),
@@ -544,6 +554,7 @@ mod tests {
             timestamp: SystemTime::UNIX_EPOCH + Duration::from_secs(2),
             build: None,
             protected: false,
+            diagnostic: None,
         };
         apply_actions(
             &mut app,
@@ -1009,12 +1020,27 @@ mod tests {
         assert_eq!(logs_action(true, Input::Esc), Some(Action::FinishLogSearch));
     }
     #[test]
-    fn enter_dismisses_notification() {
-        assert_eq!(key_action(Input::Enter), Some(Action::DismissNotification));
+    fn enter_activates_contextual_notification() {
+        assert_eq!(key_action(Input::Enter), Some(Action::ActivateNotification));
     }
     #[test]
     fn maps_severity_filter_control() {
         assert_eq!(key_action(Input::Char('s')), Some(Action::CycleLogSeverity));
+    }
+    #[test]
+    fn error_workspace_maps_selection_log_jump_and_source_open() {
+        assert_eq!(
+            errors_action(Input::Up),
+            Some(Action::SelectError { delta: -1 })
+        );
+        assert_eq!(
+            errors_action(Input::Enter),
+            Some(Action::JumpToSelectedError)
+        );
+        assert_eq!(
+            errors_action(Input::Char('o')),
+            Some(Action::OpenSelectedErrorSource)
+        );
     }
     #[test]
     fn maps_recipe_and_task_filter_controls() {
