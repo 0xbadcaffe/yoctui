@@ -1348,6 +1348,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Input::Down => update(&mut app, Action::SelectCommandPalette { delta: 1 }),
                     Input::Enter => update(&mut app, Action::ActivateCommandPalette),
                     Input::Esc => update(&mut app, Action::CloseCommandPalette),
+                    Input::Backspace => update(&mut app, Action::BackspaceCommandPaletteQuery),
+                    Input::Char(character) => {
+                        update(&mut app, Action::AppendCommandPaletteQuery(character))
+                    }
                     _ => None,
                 };
             } else if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
@@ -2167,6 +2171,26 @@ mod tests {
         assert!(matches!(app.active_dialog(), Some(Dialog::BuildOptions)));
         assert_eq!(app.navigator_selection, selection);
         assert_eq!(app.focus, yoctui_model::FocusTarget::Dialog);
+    }
+
+    #[test]
+    fn command_palette_input_decodes_search_edit_and_activation_keys() {
+        assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::Char('p'), KeyModifiers::CONTROL)),
+            Some(Input::CtrlP)
+        );
+        assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::NONE)),
+            Some(Input::Char('x'))
+        );
+        assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE)),
+            Some(Input::Backspace)
+        );
+        assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)),
+            Some(Input::Enter)
+        );
     }
 
     #[cfg(unix)]

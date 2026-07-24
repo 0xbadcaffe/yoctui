@@ -207,6 +207,19 @@ Each dialog defines:
 
 Modal dialogs trap focus. Destructive actions show the exact command or configuration change before confirmation.
 
+## Command catalog architecture
+
+The command palette is a typed model-owned catalog. Each entry has a stable
+identifier, label, description, shortcut, deterministic order, and optional
+disabled reason derived from current model context. The reducer owns the
+query, filtered selection, activation, and focus transitions. Disabled or
+empty activation is inert; enabled activation dispatches the same typed action
+used by the corresponding shortcut.
+
+The application layer maps palette keystrokes, the CLI routes them before
+workspace input, and the UI renders filtered model entries. Neither input nor
+rendering code maintains a separate command list or availability rule.
+
 ## Tool integration contract
 
 Each Yocto tool integration should contain:

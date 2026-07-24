@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Searchable contextual command palette. Animation, interactive settings, semantic themes, unified dialogs, shared focus routing, responsive layouts, persistent jobs, and the first live BitBake compatibility matrix are complete.
+Typed backend-to-model event boundary. The command palette, animation, interactive settings, semantic themes, unified dialogs, responsive workbench, persistent jobs, and first live BitBake matrix are complete.
 
 ## Current task
 
@@ -38,7 +38,7 @@ See `docs/current-task.md`.
 | Responsive layouts | DONE | Wide three-pane mode, medium Inspector overlay, narrow visible pane switcher, too-small messaging, resize preservation, and all-screen boundary tests are complete |
 | Focus routing | DONE | Bidirectional pane cycling, modal input trapping, nested-modal return targets, exact pane restoration, quit cancellation, and responsive focus rendering are covered |
 | Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |
-| Command palette | IN_PROGRESS | Ctrl+P overlay, selection, and activation exist (`457f176`); search, contextual availability, explanations, and direct tests remain |
+| Command palette | DONE | Typed catalog, case-insensitive search, contextual availability, disabled explanations, inert invalid activation, focus restore, themes, and narrow rendering are covered |
 | Themes | DONE | Five complete semantic palettes cover shell, focus, selection, status, severity, progress, dialogs, notifications, and syntax; monochrome/no-color use terminal attributes |
 | Task animation | DONE | UI-tick fast/slow cadence, stable reduced-motion activity, honest unknown progress, and nonanimated determinate/terminal rows have reducer and TestBackend coverage |
 | Background-job model | DONE | Stable IDs, typed lifecycle/context/progress/result/error, bounded output/history, cancellation capability, and reducer coverage are implemented |
@@ -53,14 +53,14 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `PALETTE-001` — searchable contextual command palette
-2. `BB-002` — typed backend-to-model event boundary
-3. `LAYERS-001` — complete lazy layer tree and inspector
-4. `RECIPES-001` — complete recipe actions and inspector
-5. `CONFIG-001` — complete configuration provenance and editing
-6. `DEVTOOL-001` — complete Devtool lifecycle
-7. `DEP-001` — dependency exploration
-8. `IMAGES-001` — complete image artifact workspace
+1. `BB-002` — typed backend-to-model event boundary
+2. `TASKS-001` — complete live Tasks workspace
+3. `LOG-001` — complete bounded searchable logs
+4. `ERROR-001` — complete error workspace
+5. `LAYERS-001` — complete lazy layer tree and inspector
+6. `RECIPES-001` — complete recipe actions and inspector
+7. `CONFIG-001` — complete configuration provenance and editing
+8. `DEVTOOL-001` — complete Devtool lifecycle
 
 ## Rules
 

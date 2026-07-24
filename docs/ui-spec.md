@@ -892,6 +892,26 @@ Commands are filtered by context and availability.
 
 Unavailable commands remain discoverable but explain their requirements.
 
+The palette uses one typed catalog with stable ordering. Each result shows:
+
+- action label
+- concise description
+- existing shortcut, or `none`
+- selected state
+- `unavailable` state and its exact requirement
+
+Typing filters case-insensitively across labels, descriptions, and shortcuts.
+`Backspace` edits the query, `Up`/`Down` moves through filtered results,
+`Enter` activates an available result, and `Esc` closes the palette. Empty
+results show an explicit message. Activating an unavailable command or an
+empty result changes no application state.
+
+Palette input is routed before dialog and workspace input and remains
+focus-trapped. Opening records the exact active pane. Closing without a
+command restores that pane; navigation commands move focus to their selected
+workspace, while commands that open dialogs preserve the original pane return
+target through the dialog workflow.
+
 ---
 
 ## 24. Footer and keyboard shortcuts
