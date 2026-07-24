@@ -6,10 +6,10 @@ Status values: `NOT_STARTED`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
 
 - [IN_PROGRESS] Follow `docs/ui-spec.md` as the authoritative UI, navigation, focus, dialog, theme, animation, and keyboard-shortcut contract. Verification: UI contract tests plus `./scripts/verify-ui-spec.sh`. The agent must update `docs/ui-spec.md` in the same commit as any intentional UI behavior change.
 - [NOT_STARTED] Refactor disconnected screens into the persistent Navigator / Workspace / Inspector shell defined by `docs/ui-spec.md`. Verification: Ratatui `TestBackend` layout tests at wide, medium, narrow, and too-small terminal sizes.
-- [NOT_STARTED] Implement the shared focus router and dialog stack. Verification: keyboard navigation tests for `Tab`, `Shift+Tab`, `Esc`, modal focus trapping, and context-specific actions.
-- [NOT_STARTED] Implement the shared context-sensitive footer shortcut bar. Verification: screen/focus/dialog shortcut snapshot or semantic rendering tests.
-- [IN_PROGRESS] Implement theme and preference infrastructure with built-in `dark`, `light`, `matrix-green`, `high-contrast`, and `monochrome` themes. Semantic focus/selection roles and configuration parsing: pending commit. Persistence and full preference surface remain.
-- [IN_PROGRESS] Implement configurable fast task animations and a reduced-motion mode without implying false numeric progress. Tick-driven indeterminate task frames, `fast`/`slow` configuration, and reduced-motion suppression: pending commit. Benchmarks remain.
+- [IN_PROGRESS] Implement the shared focus router and dialog stack. Navigator/workspace/inspector cycling, modal focus trapping, and command palette foundations: `4f0d7eb`, `457f176`, `5e4bbd9`. Full dialog stack remains.
+- [IN_PROGRESS] Implement the shared context-sensitive footer shortcut bar. Screen and focus-specific footer strings: `4f0d7eb`; dialog semantic snapshots remain.
+- [IN_PROGRESS] Implement theme and preference infrastructure with built-in `dark`, `light`, `matrix-green`, `high-contrast`, and `monochrome` themes. Semantic focus/selection roles and configuration parsing: `88816bd`. Persistence and full preference surface remain.
+- [IN_PROGRESS] Implement configurable fast task animations and a reduced-motion mode without implying false numeric progress. Tick-driven indeterminate task frames, `fast`/`slow` configuration, and reduced-motion suppression: `3f69c16`. Benchmarks remain.
 
 ## Foundation and naming
 
