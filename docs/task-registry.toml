@@ -218,12 +218,12 @@ notes = "The pinned configured-layer inventory, stable-path cached lazy tree, su
 id = "RECIPES-001"
 milestone = "M3"
 title = "Complete recipes workspace actions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["RECIPES-META-001", "RECIPES-UI-001", "RECIPES-ACTIONS-001"]
 verify = ["cargo test -p yoctui-ui recipes", "cargo test -p yoctui-app recipe_action"]
-notes = "Parent completion gate for authoritative recipe metadata, the searchable Inspector, and typed recipe actions."
+notes = "Authoritative live-validated metadata, the identity-stable searchable Inspector, typed BitBake/navigation/Devtool/QA actions, responsive disabled reasons, and persistent outcomes now satisfy the complete Recipes workspace gate."
 
 [[task]]
 id = "RECIPES-META-001"
@@ -251,12 +251,12 @@ notes = "Absolute recipe identity now drives search, rendering, metadata loads, 
 id = "RECIPES-ACTIONS-001"
 milestone = "M3"
 title = "Complete typed recipe actions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["RECIPE-BITBAKE-001", "RECIPE-NAV-001", "RECIPE-QA-001"]
-verify = ["cargo test -p yoctui-model recipe_action", "cargo test -p yoctui-app recipe_action", "cargo test -p yoctui-ui recipe_action", "cargo test -p yoctui -- recipe_action"]
-notes = "Parent completion gate for standard BitBake operations, authoritative navigation/Devtool routes, and QA/SPDX background jobs."
+verify = ["cargo test -p yoctui-model recipe_", "cargo test -p yoctui-app recipe_", "cargo test -p yoctui-ui recipe_", "cargo test -p yoctui -- recipe_"]
+notes = "Standard BitBake operations, authoritative provider/log/patch navigation, existing Devtool routes, and capability-aware CVE/SPDX background jobs are complete with reducer, app, CLI, and TestBackend coverage."
 
 [[task]]
 id = "RECIPE-BITBAKE-001"
@@ -284,12 +284,12 @@ notes = "Authoritative provider/editor, retained task-log and BitBake-resolved l
 id = "RECIPE-QA-001"
 milestone = "M3"
 title = "Add recipe CVE and SPDX background actions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 42
 required = true
 depends_on = ["RECIPE-NAV-001", "JOB-002"]
 verify = ["cargo test -p yoctui-model recipe_qa_action", "cargo test -p yoctui-app recipe_qa_action", "cargo test -p yoctui-ui recipe_qa_action", "cargo test -p yoctui -- recipe_qa_action"]
-notes = "Capability-aware cve_check and create-spdx operations with confirmation, retained output, completion, failure, and cancellation."
+notes = "Authoritative do_cve_check/do_create_spdx capability gates, exact typed confirmation, distinct persistent CVE/SPDX jobs, retained output, honest absent artifacts, and success/failure/cancellation/backend-loss coverage are complete."
 
 [[task]]
 id = "CONFIG-001"

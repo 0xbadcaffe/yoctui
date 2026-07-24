@@ -12,6 +12,7 @@ use yoctui_model::{
 pub struct BuildJobCoordinator {
     next_job_id: u64,
     active_job: Option<BackgroundJobId>,
+    active_kind: Option<BackgroundJobKind>,
     cancellation_requested: bool,
 }
 impl Default for BuildJobCoordinator {
@@ -19,6 +20,7 @@ impl Default for BuildJobCoordinator {
         Self {
             next_job_id: 1,
             active_job: None,
+            active_kind: None,
             cancellation_requested: false,
         }
     }
@@ -41,18 +43,42 @@ impl BuildJobCoordinator {
         self.active_job = Some(id);
         self.cancellation_requested = false;
         let target = request.targets.first().cloned();
-        let title = match request.task.as_deref() {
-            Some(task) => format!("Build {}:{task}", request.targets.join(" ")),
-            None => format!("Build {}", request.targets.join(" ")),
+        let (kind, title, workspace, recipe) = match request.task.as_deref() {
+            Some("cve_check") => (
+                BackgroundJobKind::CveCheck,
+                format!("CVE check {}", request.targets.join(" ")),
+                Screen::Recipes,
+                target.clone(),
+            ),
+            Some("create_spdx") => (
+                BackgroundJobKind::Spdx,
+                format!("SPDX generation {}", request.targets.join(" ")),
+                Screen::Recipes,
+                target.clone(),
+            ),
+            Some(task) => (
+                BackgroundJobKind::Build,
+                format!("Build {}:{task}", request.targets.join(" ")),
+                Screen::Tasks,
+                None,
+            ),
+            None => (
+                BackgroundJobKind::Build,
+                format!("Build {}", request.targets.join(" ")),
+                Screen::Tasks,
+                None,
+            ),
         };
+        self.active_kind = Some(kind);
         Some(vec![
             Action::QueueBackgroundJob(BackgroundJobSpec {
                 id,
-                kind: BackgroundJobKind::Build,
+                kind,
                 title,
                 context: BackgroundJobContext {
-                    workspace: Some(Screen::Tasks),
+                    workspace: Some(workspace),
                     target,
+                    recipe,
                     task: request.task.clone(),
                     ..BackgroundJobContext::default()
                 },
@@ -68,6 +94,7 @@ impl BuildJobCoordinator {
 
     pub fn start_failed(&mut self, message: String, finished_at: SystemTime) -> Vec<Action> {
         self.active_job.take().map_or_else(Vec::new, |id| {
+            self.active_kind = None;
             self.cancellation_requested = false;
             vec![Action::FailBackgroundJob {
                 id,
@@ -112,6 +139,7 @@ impl BuildJobCoordinator {
         let Some(id) = self.active_job.take() else {
             return Vec::new();
         };
+        self.active_kind = None;
         self.cancellation_requested = false;
         vec![
             Action::Failure(AppError::new(
@@ -162,6 +190,7 @@ impl BuildJobCoordinator {
             }],
             BackendEvent::BuildCompleted { success, exit_code } => {
                 self.active_job = None;
+                let kind = self.active_kind.take().unwrap_or(BackgroundJobKind::Build);
                 let cancellation_requested = self.cancellation_requested;
                 self.cancellation_requested = false;
                 if cancellation_requested && !success {
@@ -173,7 +202,16 @@ impl BuildJobCoordinator {
                     vec![Action::SucceedBackgroundJob {
                         id,
                         result: BackgroundJobResult {
-                            summary: "BitBake build completed successfully".into(),
+                            summary: match kind {
+                                BackgroundJobKind::CveCheck => {
+                                    "CVE check completed; BitBake reported no result path".into()
+                                }
+                                BackgroundJobKind::Spdx => {
+                                    "SPDX generation completed; BitBake reported no result path"
+                                        .into()
+                                }
+                                _ => "BitBake build completed successfully".into(),
+                            },
                             artifacts: Vec::new(),
                         },
                         finished_at: timestamp,
@@ -191,6 +229,7 @@ impl BuildJobCoordinator {
             }
             BackendEvent::CommandFailed { code, message } => {
                 self.active_job = None;
+                self.active_kind = None;
                 self.cancellation_requested = false;
                 vec![Action::FailBackgroundJob {
                     id,
@@ -203,6 +242,7 @@ impl BuildJobCoordinator {
             }
             BackendEvent::Disconnected => {
                 self.active_job = None;
+                self.active_kind = None;
                 self.cancellation_requested = false;
                 vec![Action::LoseBackgroundJob {
                     id,
@@ -554,6 +594,8 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('v') => Some(Action::BeginSelectedRecipeDevshell),
         Input::Char('K') => Some(Action::BeginSelectedRecipeDiffconfig),
         Input::Char('z') => Some(Action::BeginSelectedRecipeDiffsigs),
+        Input::Char('V') => Some(Action::BeginSelectedRecipeCveCheck),
+        Input::Char('X') => Some(Action::BeginSelectedRecipeSpdx),
         Input::Char('d') => Some(Action::BeginSelectedRecipeDevtoolModify),
         Input::Char('u') => Some(Action::BeginSelectedRecipeDevtoolUpdateRecipe),
         Input::Char('F') => Some(Action::BeginSelectedRecipeDevtoolFinish),
@@ -1221,6 +1263,112 @@ mod tests {
         assert_eq!(
             recipes_workspace_action(false, Input::Char('D')),
             Some(Action::BeginSelectedRecipeDevtoolReset)
+        );
+    }
+    #[test]
+    fn recipe_qa_action_maps_capabilities_and_persists_terminal_job_outcomes() {
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('V')),
+            Some(Action::BeginSelectedRecipeCveCheck)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('X')),
+            Some(Action::BeginSelectedRecipeSpdx)
+        );
+
+        let cve = BuildRequest {
+            targets: vec!["busybox".into()],
+            task: Some("cve_check".into()),
+            force: false,
+        };
+        let mut coordinator = BuildJobCoordinator::default();
+        let mut app = App::new(20, 4_000);
+        let queued = coordinator
+            .queue_build(&cve, SystemTime::UNIX_EPOCH)
+            .unwrap();
+        assert!(matches!(
+            &queued[0],
+            Action::QueueBackgroundJob(spec)
+                if spec.kind == BackgroundJobKind::CveCheck
+                    && spec.context.workspace == Some(Screen::Recipes)
+                    && spec.context.recipe.as_deref() == Some("busybox")
+                    && spec.context.task.as_deref() == Some("cve_check")
+        ));
+        for action in queued {
+            let _ = yoctui_model::update(&mut app, action);
+        }
+        for action in coordinator
+            .actions_for_backend_event(BackendEvent::BuildStarted, SystemTime::UNIX_EPOCH)
+        {
+            let _ = yoctui_model::update(&mut app, action);
+        }
+        for action in coordinator.actions_for_backend_event(
+            BackendEvent::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+            SystemTime::UNIX_EPOCH,
+        ) {
+            let _ = yoctui_model::update(&mut app, action);
+        }
+        let cve_job = app.background_jobs.jobs.back().unwrap();
+        assert_eq!(cve_job.status, BackgroundJobStatus::Succeeded);
+        assert!(
+            cve_job
+                .result
+                .as_ref()
+                .unwrap()
+                .summary
+                .contains("no result path")
+        );
+        assert!(cve_job.result.as_ref().unwrap().artifacts.is_empty());
+
+        let spdx = BuildRequest {
+            targets: vec!["busybox".into()],
+            task: Some("create_spdx".into()),
+            force: false,
+        };
+        for action in coordinator
+            .queue_build(&spdx, SystemTime::UNIX_EPOCH)
+            .unwrap()
+        {
+            let _ = yoctui_model::update(&mut app, action);
+        }
+        assert!(
+            coordinator
+                .queue_build(&spdx, SystemTime::UNIX_EPOCH)
+                .is_none()
+        );
+        let cancellation = coordinator.request_cancellation().unwrap();
+        let _ = yoctui_model::update(&mut app, cancellation);
+        for action in coordinator.actions_for_backend_event(
+            BackendEvent::BuildCompleted {
+                success: false,
+                exit_code: Some(130),
+            },
+            SystemTime::UNIX_EPOCH,
+        ) {
+            let _ = yoctui_model::update(&mut app, action);
+        }
+        assert_eq!(
+            app.background_jobs.jobs.back().unwrap().status,
+            BackgroundJobStatus::Cancelled
+        );
+
+        for action in coordinator
+            .queue_build(&cve, SystemTime::UNIX_EPOCH)
+            .unwrap()
+        {
+            let _ = yoctui_model::update(&mut app, action);
+        }
+        for action in coordinator
+            .actions_for_backend_event(BackendEvent::Disconnected, SystemTime::UNIX_EPOCH)
+        {
+            let _ = yoctui_model::update(&mut app, action);
+        }
+        assert_eq!(
+            app.background_jobs.jobs.back().unwrap().status,
+            BackgroundJobStatus::Lost
         );
     }
     #[test]

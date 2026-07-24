@@ -740,6 +740,16 @@ The same Recipes workspace exposes typed Devtool modify, update-recipe,
 finish, deploy-target, and reset routes for the absolute selected recipe
 identity. Existing preview and confirmation requirements remain in force.
 
+`V` starts a selected-recipe CVE check only when authoritative metadata
+reports `do_cve_check`; `X` starts SPDX generation only when it reports
+`do_create_spdx`. Each route opens the existing typed confirmation with the
+exact `cve_check` or `create_spdx` BitBake task and then creates a distinct,
+cancellable persistent QA job. The Recipes Inspector shows both capability
+reasons and the latest matching QA job's status, progress, warning/error
+counts, retained outcome, and reported artifacts. A successful task with no
+typed artifact path says `none reported`; Yoctui never guesses a CVE report or
+SPDX output directory from console text.
+
 Unavailable actions are shown disabled with an explanation in the footer or inspector.
 
 ---

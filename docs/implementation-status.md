@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete recipe CVE and SPDX background actions. Typed recipe BitBake operations, authoritative provider/log/patch navigation, stable search/selection, summary rows, and the contextual Recipes Inspector are complete alongside the lazy Layers tree and persistent workbench.
+Complete the configuration provenance workspace. The Recipes workspace is complete with typed BitBake, navigation, Devtool, CVE, and SPDX actions alongside the lazy Layers tree and persistent workbench.
 
 ## Current task
 
@@ -24,7 +24,7 @@ See `docs/current-task.md`.
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
 | M1 BitBake cockpit | IN_PROGRESS | Typed background build execution and live BitBake 2.19.0 Tinfoil validation exist; remaining typed cockpit workflows are incomplete |
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
-| M3 Development workbench | IN_PROGRESS | Lazy layer browsing is complete; Recipes, config provenance, and Devtool are partial; signatures and package data have not started |
+| M3 Development workbench | IN_PROGRESS | Lazy Layers and Recipes workspaces are complete; configuration provenance and Devtool remain partial; signatures and package data have not started |
 | M4 Images/SDK/QEMU/Wic | IN_PROGRESS | Image-recipe listing and build selection exist; artifact, SDK, QEMU, and Wic workflows remain |
 | M5 Testing/QA/Security | NOT_STARTED | Coverage infrastructure exists; product workflows remain |
 | M6 Maintenance | NOT_STARTED | Partial diagnostics only |
@@ -48,7 +48,7 @@ See `docs/current-task.md`.
 | Logs workspace | DONE | Protected-diagnostic retention, bounded bytes/entries, safe truncation, coalescing, pressure counters, follow/pause, both-axis scrolling, search, all filters, selected Inspector, source opening, and clipboard effects are covered |
 | Errors workspace | DONE | Stable structured diagnostics drive the full list and Inspector, exact retained-log and source navigation, related context, visible loss counters, and actionable success/warning/failure/cancellation/backend-loss outcomes |
 | Layers workspace | DONE | Every configured layer stays visible above a stable-path lazy tree; priority, compatibility, active/Git state, subtree refresh, hidden/search filtering, typed Inspector modes, safe 64 KiB text/binary previews, and responsive failure-safe rendering are tested |
-| Recipes workspace | IN_PROGRESS | Live-validated typed metadata, identity-stable Inspector states, typed BitBake operations, authoritative provider/log/local-patch navigation, editor failure handling, and integrated Devtool routes are done; CVE/SPDX actions remain |
+| Recipes workspace | DONE | Live-validated typed metadata, identity-stable Inspector states, typed BitBake operations, provider/log/local-patch navigation, editor failures, integrated Devtool routes, and persistent capability-aware CVE/SPDX actions are covered |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
@@ -57,9 +57,8 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `RECIPE-QA-001` — add recipe CVE and SPDX background actions
-2. `CONFIG-001` — complete configuration provenance and editing
-3. `DEVTOOL-001` — complete Devtool lifecycle
+1. `CONFIG-001` — complete configuration provenance and editing
+2. `DEVTOOL-001` — complete Devtool lifecycle
 
 ## Rules
 
