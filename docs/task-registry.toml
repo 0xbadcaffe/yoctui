@@ -64,12 +64,12 @@ notes = "Wide three-pane, medium Inspector overlay, narrow visible pane switcher
 id = "FOCUS-001"
 milestone = "M2"
 title = "Shared focus router and modal focus trapping"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 12
 required = true
 depends_on = ["UI-SHELL-001"]
-verify = ["cargo test -p yoctui-model focus", "cargo test -p yoctui-ui dialog"]
-notes = "Navigator/workspace/inspector cycling and modal input dispatch exist in 4f0d7eb and 5e4bbd9. Dialog focus state and restoration are not yet unified."
+verify = ["cargo test -p yoctui-model focus", "cargo test -p yoctui-app focus", "cargo test -p yoctui-ui dialog", "cargo test -p yoctui -- focus"]
+notes = "Central focus synchronization records and restores the exact pane across nested modal transitions, rejects pane actions while trapped, orders dialog input ahead of layer-browser state, and has reducer/app/CLI/UI coverage in this commit."
 
 [[task]]
 id = "DIALOG-001"

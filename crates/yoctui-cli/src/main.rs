@@ -21,7 +21,7 @@ use std::{
 use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
-use yoctui_app::{BuildJobCoordinator, Input, key_action};
+use yoctui_app::{BuildJobCoordinator, Input, focus_action, key_action};
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry,
@@ -1355,34 +1355,21 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     }
                     _ => {}
                 }
-            } else if app.focus == yoctui_model::FocusTarget::Navigator {
+            } else if matches!(
+                app.focus,
+                yoctui_model::FocusTarget::Navigator | yoctui_model::FocusTarget::Inspector
+            ) {
+                if let Some(action) = focus_action(app.focus, input) {
+                    let _ = update(&mut app, action);
+                }
+            } else if app.quit_confirm {
                 let _ = match input {
-                    Input::Up | Input::Char('k') => {
-                        update(&mut app, Action::SelectNavigator { delta: -1 })
-                    }
-                    Input::Down | Input::Char('j') => {
-                        update(&mut app, Action::SelectNavigator { delta: 1 })
-                    }
-                    Input::Enter => update(&mut app, Action::ActivateNavigator),
-                    Input::Tab => update(&mut app, Action::CycleFocus { backwards: false }),
-                    Input::BackTab => update(&mut app, Action::CycleFocus { backwards: true }),
-                    Input::Esc => update(
-                        &mut app,
-                        Action::Focus(yoctui_model::FocusTarget::Workspace),
-                    ),
+                    Input::Char('Y') => update(&mut app, Action::ConfirmQuit),
+                    Input::Esc => update(&mut app, Action::CancelQuit),
                     _ => None,
                 };
-            } else if app.focus == yoctui_model::FocusTarget::Inspector {
-                let _ = match input {
-                    Input::Tab => update(&mut app, Action::CycleFocus { backwards: false }),
-                    Input::BackTab => update(&mut app, Action::CycleFocus { backwards: true }),
-                    Input::Esc => update(
-                        &mut app,
-                        Action::Focus(yoctui_model::FocusTarget::Workspace),
-                    ),
-                    _ => None,
-                };
-            } else if app.layer_browser.is_some() {
+            } else if app.layer_browser.is_some() && app.focus != yoctui_model::FocusTarget::Dialog
+            {
                 let effect = match input {
                     Input::Tab => update(&mut app, Action::CycleFocus { backwards: false }),
                     Input::BackTab => update(&mut app, Action::CycleFocus { backwards: true }),
@@ -1988,6 +1975,22 @@ mod tests {
     fn ctrl_c_is_not_the_regular_cancel_key() {
         let key = KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL);
         assert_eq!(input_from_key(key), Some(Input::CtrlC));
+    }
+
+    #[test]
+    fn focus_keys_decode_without_losing_direction() {
+        assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::Tab, KeyModifiers::NONE)),
+            Some(Input::Tab)
+        );
+        assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::BackTab, KeyModifiers::SHIFT)),
+            Some(Input::BackTab)
+        );
+        assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE)),
+            Some(Input::Esc)
+        );
     }
 
     #[cfg(unix)]

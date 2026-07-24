@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Shared focus routing and modal focus restoration. Responsive layouts, persistent jobs, and the first live BitBake compatibility matrix are complete.
+Unified typed dialog state. Shared focus routing, responsive layouts, persistent jobs, and the first live BitBake compatibility matrix are complete.
 
 ## Current task
 
@@ -36,7 +36,8 @@ See `docs/current-task.md`.
 |---|---|---|
 | Persistent application shell | DONE | Header, Navigator, Workspace, Inspector, and Footer remain visible during builds (`fc1b1ae`, `4db7369`); breakpoint TestBackend coverage is in `88b4aa7` |
 | Responsive layouts | DONE | Wide three-pane mode, medium Inspector overlay, narrow visible pane switcher, too-small messaging, resize preservation, and all-screen boundary tests are complete |
-| Focus and dialogs | IN_PROGRESS | Focus cycling and modal key trapping exist (`4f0d7eb`, `5e4bbd9`); dialogs are still separate App fields without unified focus restoration |
+| Focus routing | DONE | Bidirectional pane cycling, modal input trapping, nested-modal return targets, exact pane restoration, quit cancellation, and responsive focus rendering are covered |
+| Dialogs | IN_PROGRESS | Build, image, recipe, Devtool, BBMASK, notification, and completion overlays exist; dialog state remains split across ad-hoc App fields |
 | Command palette | IN_PROGRESS | Ctrl+P overlay, selection, and activation exist (`457f176`); search, contextual availability, explanations, and direct tests remain |
 | Themes | IN_PROGRESS | Five built-in names and focus/selection roles exist (`88816bd`); complete semantic roles and interactive persistence remain |
 | Task animation | IN_PROGRESS | Tick-driven fast/slow indeterminate frames and reduced-motion suppression exist (`3f69c16`); direct behavior tests remain |
@@ -52,15 +53,14 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `FOCUS-001` — complete shared focus routing
-2. `DIALOG-001` — unified typed dialog stack
-3. `PALETTE-001` — searchable contextual command palette
-4. `TASKS-001` — complete live Tasks workspace
-5. `SETTINGS-001` — interactive settings and persistence
-6. `LAYERS-001` — complete lazy layer tree and inspector
-7. `IMAGES-001` — complete image artifact workspace
-8. `DEP-001` — dependency exploration
-9. `QEMU-001` — managed QEMU workflow
+1. `DIALOG-001` — unified typed dialog stack
+2. `PALETTE-001` — searchable contextual command palette
+3. `TASKS-001` — complete live Tasks workspace
+4. `SETTINGS-001` — interactive settings and persistence
+5. `LAYERS-001` — complete lazy layer tree and inspector
+6. `IMAGES-001` — complete image artifact workspace
+7. `DEP-001` — dependency exploration
+8. `QEMU-001` — managed QEMU workflow
 
 ## Rules
 

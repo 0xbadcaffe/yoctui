@@ -619,6 +619,7 @@ impl LogState {
 pub struct App {
     pub screen: Screen,
     pub focus: FocusTarget,
+    pub focus_return: Option<FocusTarget>,
     pub navigator_selection: usize,
     pub backend: String,
     pub color_enabled: bool,
@@ -676,6 +677,7 @@ impl App {
         Self {
             screen: Screen::Dashboard,
             focus: FocusTarget::Workspace,
+            focus_return: None,
             navigator_selection: 0,
             backend: "unknown".into(),
             color_enabled: true,
@@ -955,6 +957,7 @@ pub enum Action {
     DismissNotification,
     Quit,
     ConfirmQuit,
+    CancelQuit,
     WorkspaceLoaded(Workspace),
     HostTelemetryUpdated(HostTelemetry),
     Failure(AppError),
@@ -977,11 +980,77 @@ fn prepare_build(app: &mut App, target: Option<String>) {
     app.task_progress_scroll = 0;
 }
 
+fn is_pane_focus(target: FocusTarget) -> bool {
+    matches!(
+        target,
+        FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector
+    )
+}
+
+fn dialog_is_open(app: &App) -> bool {
+    app.recipe_editor.is_some()
+        || app.build_completion_open
+        || app.quit_confirm
+        || app.recipe_task_confirmation.is_some()
+        || app.devtool_reset_confirmation.is_some()
+        || app.devtool_update_confirmation.is_some()
+        || app.devtool_finish_recipe.is_some()
+        || app.devtool_finish_confirmation.is_some()
+        || app.devtool_deploy_recipe.is_some()
+        || app.devtool_deploy_confirmation.is_some()
+        || app.bbmask_editing
+        || app.bbmask_confirmation.is_some()
+        || app.image_picker.is_some()
+        || app.build_options_open
+        || app.build_target_editing
+}
+
+fn modal_focus(app: &App) -> Option<FocusTarget> {
+    if app.command_palette_open {
+        Some(FocusTarget::CommandPalette)
+    } else if dialog_is_open(app) {
+        Some(FocusTarget::Dialog)
+    } else {
+        None
+    }
+}
+
+fn synchronize_focus(app: &mut App) {
+    if let Some(target) = modal_focus(app) {
+        if app.focus_return.is_none() && is_pane_focus(app.focus) {
+            app.focus_return = Some(app.focus);
+        }
+        app.focus = target;
+    } else if let Some(target) = app.focus_return.take() {
+        app.focus = target;
+    } else if !is_pane_focus(app.focus) {
+        app.focus = FocusTarget::Workspace;
+    }
+}
+
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
+    if modal_focus(app).is_some()
+        && matches!(
+            &action,
+            Action::Open(_)
+                | Action::SelectNavigator { .. }
+                | Action::ActivateNavigator
+                | Action::CycleFocus { .. }
+                | Action::Focus(
+                    FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector
+                )
+                | Action::OpenCommandPalette
+                | Action::OpenBuildOptions
+                | Action::OpenImagePicker(_)
+        )
+    {
+        return None;
+    }
     match action {
         Action::Open(s) => {
             app.screen = s;
             app.focus = FocusTarget::Workspace;
+            app.focus_return = None;
             if let Some(index) = NAVIGATOR_SCREENS
                 .iter()
                 .position(|candidate| *candidate == s)
@@ -1001,12 +1070,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::ActivateNavigator => {
             app.screen = NAVIGATOR_SCREENS[app.navigator_selection];
             app.focus = FocusTarget::Workspace;
+            app.focus_return = None;
         }
         Action::Focus(target) => app.focus = target,
         Action::OpenCommandPalette => {
             app.command_palette_open = true;
             app.command_palette_selection = 0;
-            app.focus = FocusTarget::CommandPalette;
         }
         Action::SelectCommandPalette { delta } => {
             app.command_palette_selection = if delta.is_negative() {
@@ -1019,6 +1088,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             };
         }
         Action::ActivateCommandPalette => {
+            if !app.command_palette_open {
+                return None;
+            }
             match app.command_palette_selection {
                 0 => app.build_options_open = true,
                 1 => app.screen = Screen::Layers,
@@ -1028,11 +1100,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 _ => app.screen = Screen::Help,
             };
             app.command_palette_open = false;
-            app.focus = FocusTarget::Workspace;
         }
         Action::CloseCommandPalette => {
             app.command_palette_open = false;
-            app.focus = FocusTarget::Workspace;
         }
         Action::CycleFocus { backwards } => {
             if matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette) {
@@ -1056,11 +1126,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::OpenBuildOptions => {
             app.build_options_open = true;
-            app.focus = FocusTarget::Dialog;
         }
         Action::CloseBuildOptions => {
             app.build_options_open = false;
-            app.focus = FocusTarget::Workspace;
         }
         Action::OpenImagePicker(mut images) => {
             images.sort();
@@ -1076,7 +1144,6 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     Some("No image recipes were discovered in the active layers.".into());
             } else {
                 app.image_picker = Some(ImagePicker { images, selection });
-                app.focus = FocusTarget::Dialog;
             }
         }
         Action::SelectImage { delta } => {
@@ -1097,11 +1164,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             {
                 app.build.target = Some(image.clone());
             }
-            app.focus = FocusTarget::Workspace;
         }
         Action::CancelImagePicker => {
             app.image_picker = None;
-            app.focus = FocusTarget::Workspace;
         }
         Action::BeginCurrentImageBuild => {
             if app
@@ -1125,14 +1190,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.build_task = None;
             app.build_options_open = false;
             app.build_target_editing = true;
-            app.focus = FocusTarget::Dialog;
         }
         Action::BeginBuildTargetTask(task) => {
             app.build_target_input = app.build.target.clone().unwrap_or_default();
             app.build_task = task;
             app.build_options_open = false;
             app.build_target_editing = true;
-            app.focus = FocusTarget::Dialog;
         }
         Action::AppendBuildTarget(character) if app.build_target_editing => {
             app.build_target_input.push(character);
@@ -1651,18 +1714,21 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::ConfirmRecipeTask => {
             if let Some(request) = app.recipe_task_confirmation.take() {
                 prepare_build(app, request.targets.first().cloned());
+                synchronize_focus(app);
                 return Some(Effect::Start(request));
             }
         }
         Action::CancelRecipeTask => app.recipe_task_confirmation = None,
         Action::ConfirmDevtoolReset => {
             if let Some(recipe) = app.devtool_reset_confirmation.take() {
+                synchronize_focus(app);
                 return Some(Effect::DevtoolReset(recipe));
             }
         }
         Action::CancelDevtoolReset => app.devtool_reset_confirmation = None,
         Action::ConfirmDevtoolUpdateRecipe => {
             if let Some(recipe) = app.devtool_update_confirmation.take() {
+                synchronize_focus(app);
                 return Some(Effect::DevtoolUpdateRecipe(recipe));
             }
         }
@@ -1693,6 +1759,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::ConfirmDevtoolFinish => {
             if let Some(request) = app.devtool_finish_confirmation.take() {
+                synchronize_focus(app);
                 return Some(Effect::DevtoolFinish(request));
             }
         }
@@ -1720,6 +1787,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::ConfirmDevtoolDeploy => {
             if let Some(request) = app.devtool_deploy_confirmation.take() {
+                synchronize_focus(app);
                 return Some(Effect::DevtoolDeploy(request));
             }
         }
@@ -1743,6 +1811,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .as_ref()
                 .and_then(RecipeEditor::selected_path)
             {
+                synchronize_focus(app);
                 return Some(Effect::LoadRecipeEditorFile(path));
             }
             app.notification = Some("The Devtool workspace contains no editable files.".into());
@@ -2024,6 +2093,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::CancelBbmaskEdit => app.bbmask_editing = false,
         Action::ConfirmBbmaskWrite => {
             if let Some(value) = app.bbmask_confirmation.take() {
+                synchronize_focus(app);
                 return Some(Effect::WriteBbmask(value));
             }
         }
@@ -2073,6 +2143,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::ConfirmQuit => app.should_quit = true,
+        Action::CancelQuit => app.quit_confirm = false,
         Action::WorkspaceLoaded(w) => app.workspace = w,
         Action::HostTelemetryUpdated(telemetry) => app.host_telemetry = telemetry,
         Action::Failure(e) => {
@@ -2084,6 +2155,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::Tick => {}
     }
+    synchronize_focus(app);
     None
 }
 
@@ -2525,6 +2597,85 @@ mod tests {
         let _ = update(&mut app, Action::CycleFocus { backwards: false });
         assert_eq!(app.focus, FocusTarget::Inspector);
         let _ = update(&mut app, Action::CycleFocus { backwards: false });
+        assert_eq!(app.focus, FocusTarget::Navigator);
+    }
+    #[test]
+    fn focus_restores_exact_pane_after_nested_dialog_transitions() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Inspector;
+
+        let _ = update(&mut app, Action::OpenBuildOptions);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        assert_eq!(app.focus_return, Some(FocusTarget::Inspector));
+
+        let _ = update(&mut app, Action::BeginBuildTargetEdit);
+        assert!(!app.build_options_open);
+        assert!(app.build_target_editing);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        assert_eq!(app.focus_return, Some(FocusTarget::Inspector));
+
+        let _ = update(&mut app, Action::CancelBuildTargetEdit);
+        assert_eq!(app.focus, FocusTarget::Inspector);
+        assert_eq!(app.focus_return, None);
+    }
+    #[test]
+    fn focus_command_palette_restores_or_transitions_without_leaking_input() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Navigator;
+
+        let _ = update(&mut app, Action::OpenCommandPalette);
+        assert_eq!(app.focus, FocusTarget::CommandPalette);
+        assert_eq!(app.focus_return, Some(FocusTarget::Navigator));
+
+        let original_screen = app.screen;
+        let original_selection = app.navigator_selection;
+        let _ = update(&mut app, Action::Open(Screen::Logs));
+        let _ = update(&mut app, Action::SelectNavigator { delta: 1 });
+        let _ = update(&mut app, Action::Focus(FocusTarget::Workspace));
+        assert_eq!(app.screen, original_screen);
+        assert_eq!(app.navigator_selection, original_selection);
+        assert_eq!(app.focus, FocusTarget::CommandPalette);
+
+        let _ = update(&mut app, Action::ActivateCommandPalette);
+        assert!(app.build_options_open);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        assert_eq!(app.focus_return, Some(FocusTarget::Navigator));
+        let _ = update(&mut app, Action::CloseBuildOptions);
+        assert_eq!(app.focus, FocusTarget::Navigator);
+    }
+    #[test]
+    fn focus_async_dialog_waits_behind_palette_then_restores() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Inspector;
+        let _ = update(&mut app, Action::OpenCommandPalette);
+        let _ = update(
+            &mut app,
+            Action::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        );
+        assert!(app.build_completion_open);
+        assert_eq!(app.focus, FocusTarget::CommandPalette);
+
+        let _ = update(&mut app, Action::CloseCommandPalette);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        let _ = update(&mut app, Action::DismissBuildCompletion);
+        assert_eq!(app.focus, FocusTarget::Inspector);
+    }
+    #[test]
+    fn focus_quit_confirmation_traps_and_restores() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Navigator;
+        app.build.status = BuildStatus::Running;
+        let _ = update(&mut app, Action::Quit);
+        assert!(app.quit_confirm);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+
+        let _ = update(&mut app, Action::Open(Screen::Logs));
+        assert_eq!(app.screen, Screen::Dashboard);
+        let _ = update(&mut app, Action::CancelQuit);
+        assert!(!app.quit_confirm);
         assert_eq!(app.focus, FocusTarget::Navigator);
     }
     #[test]

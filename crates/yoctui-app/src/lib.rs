@@ -4,7 +4,7 @@ use yoctui_bitbake::BackendEvent;
 use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
     BackgroundJobOutputEntry, BackgroundJobProgress, BackgroundJobResult, BackgroundJobSpec,
-    BuildRequest, Screen, Severity, TaskId, TaskInfo,
+    BuildRequest, FocusTarget, Screen, Severity, TaskId, TaskInfo,
 };
 
 #[derive(Debug)]
@@ -357,6 +357,29 @@ pub fn key_action(key: Input) -> Option<Action> {
         _ => None,
     }
 }
+
+pub fn focus_action(focus: FocusTarget, key: Input) -> Option<Action> {
+    match (focus, key) {
+        (FocusTarget::Navigator, Input::Up | Input::Char('k')) => {
+            Some(Action::SelectNavigator { delta: -1 })
+        }
+        (FocusTarget::Navigator, Input::Down | Input::Char('j')) => {
+            Some(Action::SelectNavigator { delta: 1 })
+        }
+        (FocusTarget::Navigator, Input::Enter) => Some(Action::ActivateNavigator),
+        (FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector, Input::Tab) => {
+            Some(Action::CycleFocus { backwards: false })
+        }
+        (
+            FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector,
+            Input::BackTab,
+        ) => Some(Action::CycleFocus { backwards: true }),
+        (FocusTarget::Navigator | FocusTarget::Inspector, Input::Esc) => {
+            Some(Action::Focus(FocusTarget::Workspace))
+        }
+        _ => None,
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -637,6 +660,35 @@ mod tests {
         assert_eq!(
             key_action(Input::BackTab),
             Some(Action::CycleFocus { backwards: true })
+        );
+    }
+    #[test]
+    fn focus_navigation_keys_are_typed_before_cli_routing() {
+        assert_eq!(
+            key_action(Input::Tab),
+            Some(Action::CycleFocus { backwards: false })
+        );
+        assert_eq!(
+            key_action(Input::BackTab),
+            Some(Action::CycleFocus { backwards: true })
+        );
+        assert_eq!(
+            key_action(Input::Esc),
+            Some(Action::Open(Screen::Dashboard))
+        );
+        assert_eq!(
+            focus_action(FocusTarget::Navigator, Input::Up),
+            Some(Action::SelectNavigator { delta: -1 })
+        );
+        assert_eq!(
+            focus_action(FocusTarget::Inspector, Input::Up),
+            None,
+            "inspector arrows must not leak into workspace actions"
+        );
+        assert_eq!(
+            focus_action(FocusTarget::Dialog, Input::Tab),
+            None,
+            "modal input is handled only by the active dialog"
         );
     }
     #[test]
