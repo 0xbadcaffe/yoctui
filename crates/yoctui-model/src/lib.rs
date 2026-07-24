@@ -1035,6 +1035,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.focus = FocusTarget::Workspace;
         }
         Action::CycleFocus { backwards } => {
+            if matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette) {
+                return None;
+            }
             const TARGETS: [FocusTarget; 3] = [
                 FocusTarget::Navigator,
                 FocusTarget::Workspace,
@@ -2506,6 +2509,23 @@ mod tests {
         assert_eq!(app.focus, FocusTarget::Inspector);
         let _ = update(&mut app, Action::CycleFocus { backwards: true });
         assert_eq!(app.focus, FocusTarget::Workspace);
+    }
+    #[test]
+    fn responsive_pane_focus_cycle_cannot_escape_modal_focus() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Dialog;
+        let _ = update(&mut app, Action::CycleFocus { backwards: false });
+        assert_eq!(app.focus, FocusTarget::Dialog);
+
+        app.focus = FocusTarget::CommandPalette;
+        let _ = update(&mut app, Action::CycleFocus { backwards: true });
+        assert_eq!(app.focus, FocusTarget::CommandPalette);
+
+        app.focus = FocusTarget::Workspace;
+        let _ = update(&mut app, Action::CycleFocus { backwards: false });
+        assert_eq!(app.focus, FocusTarget::Inspector);
+        let _ = update(&mut app, Action::CycleFocus { backwards: false });
+        assert_eq!(app.focus, FocusTarget::Navigator);
     }
     #[test]
     fn parse_progress_tracks_current_and_total() {

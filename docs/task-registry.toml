@@ -53,12 +53,12 @@ notes = "Persistent five-region shell and non-blocking build navigation implemen
 id = "UI-RESP-001"
 milestone = "M2"
 title = "Responsive wide medium narrow and too-small layouts"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 11
 required = true
 depends_on = ["UI-SHELL-001"]
-verify = ["cargo test -p yoctui-ui responsive"]
-notes = "All supported dimensions must render without panic."
+verify = ["cargo test -p yoctui-ui responsive", "cargo test -p yoctui-app responsive", "cargo test -p yoctui-model responsive"]
+notes = "Wide three-pane, medium Inspector overlay, narrow visible pane switcher, modal-safe focus cycling, resize preservation, all-screen boundary, and minimum-size dialog coverage are complete in this commit."
 
 [[task]]
 id = "FOCUS-001"

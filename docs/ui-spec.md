@@ -1022,17 +1022,24 @@ Do not persist live BitBake state as authoritative state.
 
 ### Wide terminal
 
-Use navigator + workspace + inspector.
+At widths of 130 columns and above, use navigator + workspace + inspector.
 
 ### Medium terminal
 
-Keep navigator and workspace; inspector becomes a toggleable overlay or tab.
+At widths from 100 through 129 columns, keep navigator and workspace. Focusing
+the Inspector with Tab or Shift+Tab replaces the workspace region with an
+Inspector overlay; Shift+Tab or Esc returns to the workspace and Tab continues
+the focus cycle.
 
 ### Narrow terminal
 
-Use one pane at a time with a visible pane switcher.
+At widths from 80 through 99 columns, use one pane at a time with a visible
+Navigator / Workspace / Inspector switcher. Tab and Shift+Tab cycle the active
+pane. The same focus selection is retained across resize transitions.
 
 ### Too small
+
+Widths below 80 columns or heights below 24 rows show only the resize message.
 
 Show:
 

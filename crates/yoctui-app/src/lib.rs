@@ -629,6 +629,17 @@ mod tests {
         );
     }
     #[test]
+    fn responsive_pane_shortcuts_map_to_focus_cycle() {
+        assert_eq!(
+            key_action(Input::Tab),
+            Some(Action::CycleFocus { backwards: false })
+        );
+        assert_eq!(
+            key_action(Input::BackTab),
+            Some(Action::CycleFocus { backwards: true })
+        );
+    }
+    #[test]
     fn maps_log_controls() {
         assert_eq!(key_action(Input::Char('f')), Some(Action::ToggleLogFollow));
         assert_eq!(key_action(Input::Char('w')), Some(Action::ToggleLogWrap));
