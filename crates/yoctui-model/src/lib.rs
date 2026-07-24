@@ -633,6 +633,7 @@ pub enum Action {
     },
     LayerBrowserEnter,
     LayerBrowserUp,
+    RefreshLayerBrowser,
     LoadLayerBrowserPreview(String),
     EditSelectedLayerBrowserFile,
     BeginLayerRelationships,
@@ -1508,6 +1509,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 });
             }
             app.layer_browser = None;
+        }
+        Action::RefreshLayerBrowser => {
+            if let Some(browser) = app.layer_browser.as_ref() {
+                return Some(Effect::LoadLayerBrowserDirectory {
+                    layer: browser.layer.clone(),
+                    root: browser.root.clone(),
+                    directory: browser.directory.clone(),
+                });
+            }
         }
         Action::LoadLayerBrowserPreview(preview) => {
             if let Some(browser) = app.layer_browser.as_mut() {

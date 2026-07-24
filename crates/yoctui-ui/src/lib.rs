@@ -198,7 +198,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
         return "Tab navigator | Shift+Tab workspace | ↑/↓ scroll inspector | / search | q quit";
     }
     if app.layer_browser.is_some() {
-        return "↑/↓ select | Enter/→ descend | Esc/← up | e edit file | Ctrl+S save | ? help | q quit";
+        return "↑/↓ select | Enter/→ descend | Esc/← up | r refresh | e edit file | Ctrl+S save | ? help | q quit";
     }
     match app.screen {
         Screen::Dashboard => {
