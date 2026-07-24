@@ -703,6 +703,7 @@ pub struct App {
     pub dependencies: Option<RecipeDependencies>,
     pub dependency_selection: usize,
     pub layer_relationships: Option<LayerRelationships>,
+    pub recipe_sources: HashMap<String, Vec<PathBuf>>,
     pub layer_browser: Option<LayerBrowser>,
     pub dialogs: VecDeque<Dialog>,
     pub tasks: HashMap<TaskId, TaskInfo>,
@@ -745,6 +746,7 @@ impl App {
             dependencies: None,
             dependency_selection: 0,
             layer_relationships: None,
+            recipe_sources: HashMap::new(),
             layer_browser: None,
             dialogs: VecDeque::new(),
             tasks: HashMap::new(),
@@ -992,7 +994,7 @@ pub enum Action {
     TaskStarted(TaskInfo),
     TaskProgress {
         id: TaskId,
-        progress: u8,
+        progress: Option<u8>,
     },
     TaskCompleted {
         id: TaskId,
@@ -1131,6 +1133,17 @@ pub enum Action {
     ConfirmQuit,
     CancelQuit,
     WorkspaceLoaded(Workspace),
+    RecipesLoaded(Vec<Recipe>),
+    LayersLoaded(Vec<Layer>),
+    VariableLoaded {
+        name: String,
+        value: Option<String>,
+        provenance: Option<String>,
+    },
+    RecipeSourcesLoaded {
+        recipe: String,
+        paths: Vec<PathBuf>,
+    },
     HostTelemetryUpdated(HostTelemetry),
     Failure(AppError),
 }
@@ -1637,7 +1650,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::TaskProgress { id, progress } => {
             if let Some(t) = app.tasks.get_mut(&id) {
-                t.progress = Some(progress)
+                t.progress = progress.map(|value| value.min(100))
             }
         }
         Action::TaskCompleted { id, success } => {
@@ -2562,6 +2575,39 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::WorkspaceLoaded(w) => app.workspace = w,
+        Action::RecipesLoaded(mut recipes) => {
+            recipes.sort_by(|left, right| left.name.cmp(&right.name));
+            app.workspace.recipes = recipes;
+            app.recipe_selection = app
+                .recipe_selection
+                .min(app.workspace.recipes.len().saturating_sub(1));
+        }
+        Action::LayersLoaded(mut layers) => {
+            layers.sort_by(|left, right| left.name.cmp(&right.name));
+            app.workspace.layers = layers;
+            app.layer_selection = app
+                .layer_selection
+                .min(app.workspace.layers.len().saturating_sub(1));
+        }
+        Action::VariableLoaded {
+            name,
+            value,
+            provenance,
+        } => {
+            if let Some(value) = value {
+                app.workspace.variables.insert(name.clone(), value);
+            } else {
+                app.workspace.variables.remove(&name);
+            }
+            if let Some(provenance) = provenance {
+                app.workspace.variable_provenance.insert(name, provenance);
+            } else {
+                app.workspace.variable_provenance.remove(&name);
+            }
+        }
+        Action::RecipeSourcesLoaded { recipe, paths } => {
+            app.recipe_sources.insert(recipe, paths);
+        }
         Action::HostTelemetryUpdated(telemetry) => app.host_telemetry = telemetry,
         Action::Failure(e) => {
             app.notification = Some(e.to_string());
@@ -3279,7 +3325,7 @@ mod tests {
             &mut app,
             Action::TaskProgress {
                 id: id.clone(),
-                progress: 50,
+                progress: Some(50),
             },
         );
         let _ = update(&mut app, Action::TaskCompleted { id, success: true });
@@ -3973,6 +4019,82 @@ mod tests {
         app.reduced_motion = true;
         let _ = update(&mut app, Action::Tick);
         assert_eq!(app.animation_frame, 2);
+    }
+    #[test]
+    fn typed_event_actions_update_metadata_and_preserve_unknown_progress() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(
+            &mut app,
+            Action::RecipesLoaded(vec![
+                Recipe {
+                    name: "zlib".into(),
+                    version: None,
+                    layer: Some("core".into()),
+                },
+                Recipe {
+                    name: "base-files".into(),
+                    version: None,
+                    layer: Some("core".into()),
+                },
+            ]),
+        );
+        let _ = update(
+            &mut app,
+            Action::LayersLoaded(vec![Layer {
+                name: "core".into(),
+                path: "/poky/meta".into(),
+                priority: Some(5),
+            }]),
+        );
+        let _ = update(
+            &mut app,
+            Action::VariableLoaded {
+                name: "MACHINE".into(),
+                value: Some("qemux86-64".into()),
+                provenance: Some("/build/conf/local.conf:1".into()),
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::RecipeSourcesLoaded {
+                recipe: "base-files".into(),
+                paths: vec!["/poky/meta/recipes-core/base-files/base-files.bb".into()],
+            },
+        );
+        assert_eq!(app.workspace.recipes[0].name, "base-files");
+        assert_eq!(app.workspace.layers[0].path, PathBuf::from("/poky/meta"));
+        assert_eq!(app.workspace.variables["MACHINE"], "qemux86-64");
+        assert_eq!(
+            app.recipe_sources["base-files"][0],
+            PathBuf::from("/poky/meta/recipes-core/base-files/base-files.bb")
+        );
+
+        let id = TaskId("base-files:do_install".into());
+        let _ = update(
+            &mut app,
+            Action::TaskStarted(TaskInfo {
+                id: id.clone(),
+                recipe: "base-files".into(),
+                task: "do_install".into(),
+                progress: None,
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::TaskProgress {
+                id: id.clone(),
+                progress: None,
+            },
+        );
+        assert_eq!(app.tasks[&id].progress, None);
+        let _ = update(
+            &mut app,
+            Action::TaskProgress {
+                id: id.clone(),
+                progress: Some(250),
+            },
+        );
+        assert_eq!(app.tasks[&id].progress, Some(100));
     }
     #[test]
     fn bbmask_editing_requires_a_preview_and_confirmation() {

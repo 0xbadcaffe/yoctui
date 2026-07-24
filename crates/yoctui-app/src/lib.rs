@@ -4,7 +4,8 @@ use yoctui_bitbake::BackendEvent;
 use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
     BackgroundJobOutputEntry, BackgroundJobProgress, BackgroundJobResult, BackgroundJobSpec,
-    BuildRequest, FocusTarget, Screen, Severity, TaskId, TaskInfo,
+    BuildRequest, FocusTarget, LayerRelationship, LayerRelationships, RecipeDependencies, Screen,
+    Severity, TaskId, TaskInfo,
 };
 
 #[derive(Debug)]
@@ -222,7 +223,8 @@ impl BuildJobCoordinator {
             | BackendEvent::ParseProgress { .. }
             | BackendEvent::TaskStarted { .. }
             | BackendEvent::TaskProgress { .. }
-            | BackendEvent::TaskCompleted { .. } => Vec::new(),
+            | BackendEvent::TaskCompleted { .. }
+            | BackendEvent::Ignored => Vec::new(),
         }
     }
 
@@ -295,12 +297,45 @@ pub fn model_action_from_backend_event(event: BackendEvent) -> Option<Action> {
             "backend disconnected",
             "restart Yoctui and inspect the backend diagnostics",
         ))),
-        BackendEvent::Recipes(_)
-        | BackendEvent::Layers(_)
-        | BackendEvent::Variable { .. }
-        | BackendEvent::Dependencies { .. }
-        | BackendEvent::RecipeSources { .. }
-        | BackendEvent::LayerRelationships(_) => None,
+        BackendEvent::Recipes(recipes) => Some(Action::RecipesLoaded(recipes)),
+        BackendEvent::Layers(layers) => Some(Action::LayersLoaded(layers)),
+        BackendEvent::Variable {
+            name,
+            value,
+            provenance,
+        } => Some(Action::VariableLoaded {
+            name,
+            value,
+            provenance,
+        }),
+        BackendEvent::Dependencies {
+            recipe,
+            build,
+            runtime,
+        } => Some(Action::DependenciesLoaded(RecipeDependencies {
+            recipe,
+            build,
+            runtime,
+        })),
+        BackendEvent::RecipeSources { recipe, paths } => {
+            Some(Action::RecipeSourcesLoaded { recipe, paths })
+        }
+        BackendEvent::LayerRelationships(layers) => {
+            Some(Action::LayerRelationshipsLoaded(LayerRelationships {
+                layers: layers
+                    .into_iter()
+                    .map(|layer| LayerRelationship {
+                        name: layer.name,
+                        priority: layer.priority,
+                        compatible: layer.compatible,
+                        depends: layer.depends,
+                        overlays: layer.overlays,
+                        appends: layer.appends,
+                    })
+                    .collect(),
+            }))
+        }
+        BackendEvent::Ignored => None,
     }
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -466,6 +501,103 @@ mod tests {
         assert_eq!(job.output.len(), 1);
         assert_eq!(job.warnings, 1);
         assert_eq!(coordinator.active_job_id(), None);
+    }
+
+    #[test]
+    fn typed_event_maps_every_metadata_family_and_ignores_future_events() {
+        assert!(matches!(
+            model_action_from_backend_event(BackendEvent::Recipes(vec![])),
+            Some(Action::RecipesLoaded(_))
+        ));
+        assert!(matches!(
+            model_action_from_backend_event(BackendEvent::Layers(vec![])),
+            Some(Action::LayersLoaded(_))
+        ));
+        assert!(matches!(
+            model_action_from_backend_event(BackendEvent::Variable {
+                name: "MACHINE".into(),
+                value: Some("qemux86-64".into()),
+                provenance: Some("conf/local.conf:1".into()),
+            }),
+            Some(Action::VariableLoaded { .. })
+        ));
+        assert!(matches!(
+            model_action_from_backend_event(BackendEvent::Dependencies {
+                recipe: "busybox".into(),
+                build: vec![],
+                runtime: vec![],
+            }),
+            Some(Action::DependenciesLoaded(_))
+        ));
+        assert!(matches!(
+            model_action_from_backend_event(BackendEvent::RecipeSources {
+                recipe: "busybox".into(),
+                paths: vec!["/workspace/busybox".into()],
+            }),
+            Some(Action::RecipeSourcesLoaded { .. })
+        ));
+        assert!(matches!(
+            model_action_from_backend_event(BackendEvent::LayerRelationships(vec![])),
+            Some(Action::LayerRelationshipsLoaded(_))
+        ));
+        assert_eq!(model_action_from_backend_event(BackendEvent::Ignored), None);
+    }
+
+    #[test]
+    fn typed_event_terminal_events_emit_primary_and_job_actions_once() {
+        let mut coordinator = BuildJobCoordinator::default();
+        coordinator
+            .queue_build(&request(), SystemTime::UNIX_EPOCH)
+            .unwrap();
+        let completed = coordinator.actions_for_backend_event(
+            BackendEvent::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+            SystemTime::UNIX_EPOCH,
+        );
+        assert_eq!(
+            completed
+                .iter()
+                .filter(|action| matches!(action, Action::BuildCompleted { .. }))
+                .count(),
+            1
+        );
+        assert_eq!(
+            completed
+                .iter()
+                .filter(|action| matches!(action, Action::SucceedBackgroundJob { .. }))
+                .count(),
+            1
+        );
+        assert_eq!(completed.len(), 2);
+
+        let mut coordinator = BuildJobCoordinator::default();
+        coordinator
+            .queue_build(&request(), SystemTime::UNIX_EPOCH)
+            .unwrap();
+        let failed = coordinator.actions_for_backend_event(
+            BackendEvent::CommandFailed {
+                code: "parse".into(),
+                message: "bad metadata".into(),
+            },
+            SystemTime::UNIX_EPOCH,
+        );
+        assert_eq!(
+            failed
+                .iter()
+                .filter(|action| matches!(action, Action::Failure(_)))
+                .count(),
+            1
+        );
+        assert_eq!(
+            failed
+                .iter()
+                .filter(|action| matches!(action, Action::FailBackgroundJob { .. }))
+                .count(),
+            1
+        );
+        assert_eq!(failed.len(), 2);
     }
 
     #[test]

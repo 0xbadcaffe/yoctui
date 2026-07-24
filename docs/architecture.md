@@ -71,6 +71,21 @@ BitBake diagnostics go to standard error. The environment-only and mocked
 connection paths are test/diagnostic fallbacks and are not live compatibility
 evidence.
 
+### Backend event normalization boundary
+
+`yoctui-protocol` owns typed wire payloads, including the complete workspace
+snapshot. `yoctui-bitbake` translates each protocol event into a typed
+`BackendEvent`; it does not mutate application state. `yoctui-app` is the sole
+normalization boundary from `BackendEvent` to reducer `Action` values, and the
+model reducer is the sole owner of resulting state changes. Initial discovery
+and refresh responses use the same reducer actions as streamed events.
+
+Unknown future protocol events normalize to an ignored event and do not imply a
+backend disconnect. Missing task progress remains unknown rather than becoming
+zero. Terminal build events emit one primary build-state action and one
+persistent-job lifecycle action. Boundary verification rejects backend,
+protocol, and raw JSON dependencies in `yoctui-ui`.
+
 ### `yoctui-app`
 
 Owns:

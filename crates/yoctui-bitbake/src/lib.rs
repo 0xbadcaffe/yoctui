@@ -119,7 +119,7 @@ pub enum BackendEvent {
     TaskProgress {
         recipe: String,
         task: String,
-        progress: u8,
+        progress: Option<u8>,
     },
     TaskCompleted {
         recipe: String,
@@ -134,6 +134,7 @@ pub enum BackendEvent {
         code: String,
         message: String,
     },
+    Ignored,
     Disconnected,
 }
 
@@ -500,11 +501,33 @@ impl BridgeBackend {
     }
     fn event(event: Event) -> Result<BackendEvent, BackendError> {
         Ok(match event {
-            Event::Workspace { data } => {
-                BackendEvent::Workspace(serde_json::from_value(data).map_err(|error| {
-                    BackendError::Bridge(format!("invalid workspace response: {error}"))
-                })?)
-            }
+            Event::Workspace { data } => BackendEvent::Workspace(Workspace {
+                build_dir: data.build_dir.map(PathBuf::from),
+                source_dir: data.source_dir.map(PathBuf::from),
+                variables: data.variables,
+                variable_provenance: data.variable_provenance,
+                variable_provenance_chain: data.variable_provenance_chain,
+                bitbake_version: data.bitbake_version,
+                release: data.release,
+                layers: data
+                    .layers
+                    .into_iter()
+                    .map(|layer| Layer {
+                        name: layer.name,
+                        path: PathBuf::from(layer.path),
+                        priority: layer.priority,
+                    })
+                    .collect(),
+                recipes: data
+                    .recipes
+                    .into_iter()
+                    .map(|recipe| Recipe {
+                        name: recipe.name,
+                        version: recipe.version,
+                        layer: recipe.layer,
+                    })
+                    .collect(),
+            }),
             Event::Recipes { recipes } => BackendEvent::Recipes(
                 recipes
                     .into_iter()
@@ -593,7 +616,7 @@ impl BridgeBackend {
             } => BackendEvent::TaskProgress {
                 recipe,
                 task,
-                progress: progress.unwrap_or(0),
+                progress,
             },
             Event::TaskCompleted {
                 recipe,
@@ -647,9 +670,8 @@ impl BridgeBackend {
             Event::CommandFailed { code, message } | Event::ProtocolError { code, message } => {
                 BackendEvent::CommandFailed { code, message }
             }
-            Event::BridgeShutdown | Event::HelloAck { .. } | Event::Unknown => {
-                BackendEvent::Disconnected
-            }
+            Event::BridgeShutdown => BackendEvent::Disconnected,
+            Event::HelloAck { .. } | Event::Unknown => BackendEvent::Ignored,
         })
     }
 }
@@ -864,6 +886,60 @@ mod tests {
             classify_output("WARNING: x".into()).severity,
             Severity::Warning
         )
+    }
+    #[test]
+    fn typed_event_preserves_unknown_progress_and_ignores_future_events() {
+        assert!(matches!(
+            BridgeBackend::event(Event::TaskProgress {
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                progress: None,
+            })
+            .unwrap(),
+            BackendEvent::TaskProgress { progress: None, .. }
+        ));
+        assert!(matches!(
+            BridgeBackend::event(Event::Unknown).unwrap(),
+            BackendEvent::Ignored
+        ));
+        assert!(matches!(
+            BridgeBackend::event(Event::BridgeShutdown).unwrap(),
+            BackendEvent::Disconnected
+        ));
+    }
+
+    #[test]
+    fn typed_event_workspace_converts_wire_paths_and_metadata() {
+        let event = Event::Workspace {
+            data: yoctui_protocol::WorkspaceData {
+                build_dir: Some("/build".into()),
+                source_dir: Some("/poky".into()),
+                variables: std::collections::HashMap::from([(
+                    "MACHINE".into(),
+                    "qemux86-64".into(),
+                )]),
+                variable_provenance: std::collections::HashMap::new(),
+                variable_provenance_chain: std::collections::HashMap::new(),
+                bitbake_version: Some("2.19.0".into()),
+                release: Some("6.0".into()),
+                layers: vec![LayerData {
+                    name: "core".into(),
+                    path: "/poky/meta".into(),
+                    priority: Some(5),
+                }],
+                recipes: vec![RecipeData {
+                    name: "base-files".into(),
+                    version: None,
+                    layer: Some("core".into()),
+                }],
+            },
+        };
+        let BackendEvent::Workspace(workspace) = BridgeBackend::event(event).unwrap() else {
+            panic!("workspace event was not preserved");
+        };
+        assert_eq!(workspace.build_dir, Some(PathBuf::from("/build")));
+        assert_eq!(workspace.layers[0].path, PathBuf::from("/poky/meta"));
+        assert_eq!(workspace.recipes[0].name, "base-files");
     }
     #[test]
     fn invalid_utf8_output_is_preserved_lossily() {

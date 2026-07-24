@@ -174,12 +174,12 @@ notes = "Production Tinfoil bridge and opt-in harness validated BitBake 2.19.0 /
 id = "BB-002"
 milestone = "M1"
 title = "Typed backend-to-model event boundary"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 31
 required = true
 depends_on = ["GOV-001"]
 verify = ["./scripts/verify-ui-spec.sh", "cargo test -p yoctui-protocol typed_event", "cargo test -p yoctui-bitbake typed_event", "cargo test -p yoctui-app typed_event", "cargo test -p yoctui-model typed_event"]
-notes = "No raw backend parsing in Ratatui widgets."
+notes = "Typed workspace and metadata payloads now flow protocol -> backend -> app normalization -> reducer. Initial and refresh discovery use reducer actions, missing progress remains unknown, future events are ignored safely, terminal events update primary and job state exactly once, and UI boundary enforcement rejects raw backend parsing."
 
 [[task]]
 id = "LOG-001"

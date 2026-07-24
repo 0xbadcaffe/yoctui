@@ -2,53 +2,53 @@
 
 ## Active task
 
-**ID:** BB-002
-**Title:** Complete the typed backend-to-model event boundary
+**ID:** TASKS-001
+**Title:** Complete the live Tasks workspace
 
 ## Objective
 
-Enforce one complete typed boundary from BitBake/process/bridge adapters through
-application event mapping into reducer actions, with no raw backend parsing or
-state mutation in UI widgets.
+Turn the existing active-task list into the complete live build monitor
+specified by `docs/ui-spec.md`, driven entirely by typed model state.
 
 ## Required work
 
-1. Inventory every backend event variant, protocol event, app mapping branch,
-   reducer action, and widget consumer before changing the boundary.
-2. Ensure protocol and backend events carry typed workspace, recipe, layer,
-   variable, dependency, relationship, parse, task, log, completion,
-   cancellation, command-failure, and disconnect data.
-3. Centralize backend-event-to-model-action normalization in `yoctui-app`.
-4. Remove any raw backend/process/protocol parsing from CLI orchestration,
-   model reducers, and Ratatui widgets.
-5. Preserve unknown/new protocol-event safety without inventing model state.
-6. Ensure malformed, oversized, out-of-order, and disconnected input produces
-   typed failure/loss behavior rather than panics or silent state mutation.
-7. Verify build-job lifecycle actions and primary model actions are both
-   emitted exactly once for every relevant backend terminal event.
-8. Add typed-event tests in protocol, bitbake, app, model, and UI boundary
-   enforcement tests as applicable.
-9. Update `docs/architecture.md` if normalization ownership needs
-   clarification.
+1. Inventory the existing task, build, selection, filter, and inspector state
+   before adding fields or actions.
+2. Represent active, waiting, completed, and failed task rows in typed model
+   state without parsing backend text in widgets.
+3. Compute honest overall completed/total progress and summary counts.
+4. Add bounded selection and preserve it safely as task rows arrive, complete,
+   fail, or are evicted.
+5. Implement the specified active, waiting, completed, failed, recipe, task,
+   worker, and duration-threshold filters.
+6. Populate the contextual Inspector from the selected task with available
+   live log, metadata, recipe, PID, timing, dependency, source-log, and
+   cancellation state; label unavailable values honestly.
+7. Keep the workspace useful in wide, medium, narrow, idle, running, completed,
+   failed, cancelled, and backend-loss states.
+8. Map typed keyboard input for selection and filter interaction through
+   `yoctui-app`.
+9. Add reducer, input-mapping, and Ratatui `TestBackend` coverage named
+   `live_tasks`.
 
 ## Definition of done
 
-- Every backend event reaches the model through a typed app mapping.
-- Terminal events update both build state and the persistent job exactly once.
-- UI widgets consume typed model state and never parse backend text.
-- Unknown/malformed/disconnected input is safe and observable.
-- Boundary enforcement and typed-event tests pass.
+- Overall progress and task-state counts are accurate and never fabricate
+  completion.
+- Every specified task state and filter is visible and testable.
+- Selection is bounded and drives contextual Inspector content.
+- Task rows and Inspector consume typed model state only.
+- Responsive and terminal build states render without panic.
+- Reducer, input-mapping, and TestBackend tests cover the complete workspace.
 - Task-specific and baseline verification pass.
 - Registry/status documents are updated and the next eligible task is active.
 
 ## Verification
 
 ```bash
-./scripts/verify-ui-spec.sh
-cargo test -p yoctui-protocol typed_event
-cargo test -p yoctui-bitbake typed_event
-cargo test -p yoctui-app typed_event
-cargo test -p yoctui-model typed_event
+cargo test -p yoctui-model live_tasks
+cargo test -p yoctui-ui live_tasks
+cargo test -p yoctui-app live_tasks
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -58,4 +58,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`TASKS-001 — Complete the live Tasks workspace`
+`LOG-001 — Complete bounded searchable logs`

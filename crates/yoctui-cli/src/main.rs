@@ -1043,14 +1043,15 @@ async fn refresh_workspace(
         Ok(workspace) => {
             let _ = update(app, Action::WorkspaceLoaded(workspace));
             match backend.list_recipes(None).await {
-                Ok(mut recipes) => {
-                    recipes.sort_by(|left, right| left.name.cmp(&right.name));
-                    app.workspace.recipes = recipes;
+                Ok(recipes) => {
+                    let _ = update(app, Action::RecipesLoaded(recipes));
                 }
                 Err(error) => app.notification = Some(format!("Recipes unavailable: {error}")),
             }
             match backend.list_layers().await {
-                Ok(layers) => app.workspace.layers = layers,
+                Ok(layers) => {
+                    let _ = update(app, Action::LayersLoaded(layers));
+                }
                 Err(error) => app.notification = Some(format!("Layers unavailable: {error}")),
             }
             if app.notification.is_none() {
@@ -1287,14 +1288,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         Ok(workspace) => {
             let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
             match backend.list_recipes(None).await {
-                Ok(mut recipes) => {
-                    recipes.sort_by(|left, right| left.name.cmp(&right.name));
-                    app.workspace.recipes = recipes;
+                Ok(recipes) => {
+                    let _ = update(&mut app, Action::RecipesLoaded(recipes));
                 }
                 Err(error) => app.notification = Some(format!("Recipes unavailable: {error}")),
             }
             match backend.list_layers().await {
-                Ok(layers) => app.workspace.layers = layers,
+                Ok(layers) => {
+                    let _ = update(&mut app, Action::LayersLoaded(layers));
+                }
                 Err(error) => app.notification = Some(format!("Layers unavailable: {error}")),
             }
         }
@@ -2087,9 +2089,12 @@ mod tests {
             yoctui_app::model_action_from_backend_event(BackendEvent::TaskProgress {
                 recipe: "busybox".into(),
                 task: "do_compile".into(),
-                progress: 25,
+                progress: Some(25),
             }),
-            Some(Action::TaskProgress { progress: 25, .. })
+            Some(Action::TaskProgress {
+                progress: Some(25),
+                ..
+            })
         ));
     }
 

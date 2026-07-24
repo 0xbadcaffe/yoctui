@@ -1,5 +1,6 @@
 //! Versioned, newline-delimited JSON protocol shared with the Python bridge.
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use thiserror::Error;
 pub const VERSION: u32 = 1;
 pub const MAX_LINE_BYTES: usize = 1024 * 1024;
@@ -101,6 +102,24 @@ pub struct LayerRelationshipData {
     pub overlays: Vec<String>,
     pub appends: Vec<String>,
 }
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct WorkspaceData {
+    pub build_dir: Option<String>,
+    pub source_dir: Option<String>,
+    #[serde(default)]
+    pub variables: HashMap<String, String>,
+    #[serde(default)]
+    pub variable_provenance: HashMap<String, String>,
+    #[serde(default)]
+    pub variable_provenance_chain: HashMap<String, Vec<String>>,
+    pub bitbake_version: Option<String>,
+    #[serde(default)]
+    pub release: Option<String>,
+    #[serde(default)]
+    pub layers: Vec<LayerData>,
+    #[serde(default)]
+    pub recipes: Vec<RecipeData>,
+}
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Event {
@@ -108,7 +127,7 @@ pub enum Event {
         bitbake_version: Option<String>,
     },
     Workspace {
-        data: serde_json::Value,
+        data: WorkspaceData,
     },
     Recipes {
         recipes: Vec<RecipeData>,
@@ -241,6 +260,42 @@ mod tests {
             decode_line::<Event>(v, None).unwrap().message,
             Event::Unknown
         )
+    }
+    #[test]
+    fn typed_event_workspace_round_trips_without_untyped_json() {
+        let event = Event::Workspace {
+            data: WorkspaceData {
+                build_dir: Some("/build".into()),
+                source_dir: Some("/poky".into()),
+                variables: HashMap::from([("MACHINE".into(), "qemux86-64".into())]),
+                variable_provenance: HashMap::new(),
+                variable_provenance_chain: HashMap::new(),
+                bitbake_version: Some("2.19.0".into()),
+                release: Some("6.0".into()),
+                layers: vec![LayerData {
+                    name: "core".into(),
+                    path: "/poky/meta".into(),
+                    priority: Some(5),
+                }],
+                recipes: vec![RecipeData {
+                    name: "base-files".into(),
+                    version: Some("3.0".into()),
+                    layer: Some("core".into()),
+                }],
+            },
+        };
+        let envelope = Envelope {
+            protocol_version: VERSION,
+            sequence: 4,
+            correlation_id: None,
+            message: event.clone(),
+        };
+        assert_eq!(
+            decode_line::<Event>(&encode_line(&envelope).unwrap(), None)
+                .unwrap()
+                .message,
+            event
+        );
     }
 
     #[test]
