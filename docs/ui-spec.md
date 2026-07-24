@@ -422,7 +422,9 @@ Rules:
 - animation speed is configurable
 - default animation should feel fast and energetic
 - animation must remain readable over SSH and low-refresh terminals
-- a reduced-motion preference disables or slows animation
+- reduced motion freezes unknown-progress activity to the stable word `active`
+- unknown progress is labeled `progress unknown` and never rendered as `0%`
+- determinate, completed, and failed rows never show indeterminate animation
 
 Suggested frames:
 
