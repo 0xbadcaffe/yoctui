@@ -64,6 +64,13 @@ pub enum Theme {
     HighContrast,
     Monochrome,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+#[serde(rename_all = "kebab-case")]
+pub enum AnimationSpeed {
+    Slow,
+    #[default]
+    Fast,
+}
 const NAVIGATOR_SCREENS: [Screen; 11] = [
     Screen::Dashboard,
     Screen::Layers,
@@ -365,6 +372,9 @@ pub struct App {
     pub backend: String,
     pub color_enabled: bool,
     pub theme: Theme,
+    pub animation_speed: AnimationSpeed,
+    pub reduced_motion: bool,
+    pub animation_frame: u64,
     pub workspace: Workspace,
     pub host_telemetry: HostTelemetry,
     pub build: BuildState,
@@ -416,6 +426,9 @@ impl App {
             backend: "unknown".into(),
             color_enabled: true,
             theme: Theme::Dark,
+            animation_speed: AnimationSpeed::Fast,
+            reduced_motion: false,
+            animation_frame: 0,
             workspace: Workspace::default(),
             host_telemetry: HostTelemetry::default(),
             build: BuildState::default(),
@@ -1584,6 +1597,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::Failure(e) => {
             app.notification = Some(e.to_string());
             app.build.status = BuildStatus::Failed
+        }
+        Action::Tick if !app.reduced_motion => {
+            app.animation_frame = app.animation_frame.wrapping_add(1)
         }
         Action::Tick => {}
     }

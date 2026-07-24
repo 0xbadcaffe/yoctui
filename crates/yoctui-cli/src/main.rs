@@ -24,9 +24,9 @@ use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{Input, key_action};
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
-    Action, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry, LayerBrowserEntry,
-    LayerRelationship, LayerRelationships, RecipeDependencies, Screen, Severity, TaskId, TaskInfo,
-    Theme, update,
+    Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry,
+    LayerBrowserEntry, LayerRelationship, LayerRelationships, RecipeDependencies, Screen, Severity,
+    TaskId, TaskInfo, Theme, update,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -76,6 +76,8 @@ struct FileConfig {
     editor: Option<String>,
     color: Option<bool>,
     theme: Option<Theme>,
+    animation_speed: Option<AnimationSpeed>,
+    reduced_motion: Option<bool>,
 }
 
 #[derive(Debug)]
@@ -91,6 +93,8 @@ struct Config {
     log_level: String,
     color: bool,
     theme: Theme,
+    animation_speed: AnimationSpeed,
+    reduced_motion: bool,
     session_path: Option<PathBuf>,
 }
 #[derive(Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -380,6 +384,8 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
             .unwrap_or_else(|| "info".into()),
         color: !cli.no_color && file.color.unwrap_or(true),
         theme: file.theme.unwrap_or_default(),
+        animation_speed: file.animation_speed.unwrap_or_default(),
+        reduced_motion: file.reduced_motion.unwrap_or(false),
         session_path: session_path(configured_path.as_deref()),
     })
 }
@@ -1250,6 +1256,8 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
         cancellation_timeout,
         color,
         theme,
+        animation_speed,
+        reduced_motion,
         editor,
         session_path,
         ..
@@ -1260,6 +1268,8 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
     app.backend = backend_kind.to_string();
     app.color_enabled = color;
     app.theme = theme;
+    app.animation_speed = animation_speed;
+    app.reduced_motion = reduced_motion;
     app.screen = session.last_screen.unwrap_or(Screen::Dashboard);
     app.logs.filter = session.log_filter;
     app.logs.recipe_filter = session.log_recipe_filter;
@@ -1319,6 +1329,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
             let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry));
             next_telemetry_sample = Instant::now() + Duration::from_secs(1);
         }
+        let _ = update(&mut app, Action::Tick);
         terminal.draw(|f| render(f, &app))?;
         if event::poll(refresh)?
             && let Event::Key(k) = event::read()?
