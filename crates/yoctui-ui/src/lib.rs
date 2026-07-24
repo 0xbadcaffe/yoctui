@@ -33,46 +33,223 @@ fn timestamp_text(timestamp: SystemTime) -> String {
     )
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct ThemePalette {
+    foreground: Color,
+    background: Color,
+    border: Color,
+    focused_border: Color,
+    selection_foreground: Color,
+    selection_background: Color,
+    disabled: Color,
+    info: Color,
+    success: Color,
+    warning: Color,
+    error: Color,
+    progress: Color,
+    accent: Color,
+    syntax_keyword: Color,
+    syntax_name: Color,
+    syntax_operator: Color,
+    syntax_value: Color,
+    syntax_comment: Color,
+    attribute_only: bool,
+}
+
+impl ThemePalette {
+    fn for_app(app: &App) -> Self {
+        if !app.color_enabled {
+            return Self::monochrome();
+        }
+        match app.theme {
+            Theme::Dark => Self {
+                foreground: Color::Gray,
+                background: Color::Reset,
+                border: Color::DarkGray,
+                focused_border: Color::Cyan,
+                selection_foreground: Color::White,
+                selection_background: Color::DarkGray,
+                disabled: Color::DarkGray,
+                info: Color::LightBlue,
+                success: Color::Green,
+                warning: Color::Yellow,
+                error: Color::Red,
+                progress: Color::LightBlue,
+                accent: Color::Magenta,
+                syntax_keyword: Color::LightBlue,
+                syntax_name: Color::Yellow,
+                syntax_operator: Color::Magenta,
+                syntax_value: Color::Green,
+                syntax_comment: Color::DarkGray,
+                attribute_only: false,
+            },
+            Theme::Light => Self {
+                foreground: Color::Black,
+                background: Color::White,
+                border: Color::Gray,
+                focused_border: Color::Blue,
+                selection_foreground: Color::White,
+                selection_background: Color::Blue,
+                disabled: Color::DarkGray,
+                info: Color::Blue,
+                success: Color::Green,
+                warning: Color::Rgb(160, 96, 0),
+                error: Color::Red,
+                progress: Color::Blue,
+                accent: Color::Magenta,
+                syntax_keyword: Color::Blue,
+                syntax_name: Color::Rgb(160, 96, 0),
+                syntax_operator: Color::Magenta,
+                syntax_value: Color::Green,
+                syntax_comment: Color::DarkGray,
+                attribute_only: false,
+            },
+            Theme::MatrixGreen => Self {
+                foreground: Color::Green,
+                background: Color::Black,
+                border: Color::DarkGray,
+                focused_border: Color::LightGreen,
+                selection_foreground: Color::Black,
+                selection_background: Color::Green,
+                disabled: Color::DarkGray,
+                info: Color::LightGreen,
+                success: Color::LightGreen,
+                warning: Color::Yellow,
+                error: Color::LightRed,
+                progress: Color::Green,
+                accent: Color::LightGreen,
+                syntax_keyword: Color::LightGreen,
+                syntax_name: Color::Green,
+                syntax_operator: Color::White,
+                syntax_value: Color::LightGreen,
+                syntax_comment: Color::DarkGray,
+                attribute_only: false,
+            },
+            Theme::HighContrast => Self {
+                foreground: Color::White,
+                background: Color::Black,
+                border: Color::White,
+                focused_border: Color::Yellow,
+                selection_foreground: Color::Black,
+                selection_background: Color::White,
+                disabled: Color::Gray,
+                info: Color::Cyan,
+                success: Color::LightGreen,
+                warning: Color::Yellow,
+                error: Color::LightRed,
+                progress: Color::Cyan,
+                accent: Color::Yellow,
+                syntax_keyword: Color::Cyan,
+                syntax_name: Color::Yellow,
+                syntax_operator: Color::Magenta,
+                syntax_value: Color::LightGreen,
+                syntax_comment: Color::Gray,
+                attribute_only: false,
+            },
+            Theme::Monochrome => Self::monochrome(),
+        }
+    }
+
+    fn monochrome() -> Self {
+        Self {
+            foreground: Color::Reset,
+            background: Color::Reset,
+            border: Color::Reset,
+            focused_border: Color::Reset,
+            selection_foreground: Color::Reset,
+            selection_background: Color::Reset,
+            disabled: Color::Reset,
+            info: Color::Reset,
+            success: Color::Reset,
+            warning: Color::Reset,
+            error: Color::Reset,
+            progress: Color::Reset,
+            accent: Color::Reset,
+            syntax_keyword: Color::Reset,
+            syntax_name: Color::Reset,
+            syntax_operator: Color::Reset,
+            syntax_value: Color::Reset,
+            syntax_comment: Color::Reset,
+            attribute_only: true,
+        }
+    }
+
+    fn base(self) -> Style {
+        Style::default().fg(self.foreground).bg(self.background)
+    }
+
+    fn focus(self) -> Style {
+        let style = Style::default().fg(self.focused_border);
+        if self.attribute_only {
+            style.add_modifier(Modifier::BOLD)
+        } else {
+            style
+        }
+    }
+
+    fn selected(self) -> Style {
+        if self.attribute_only {
+            Style::default().add_modifier(Modifier::REVERSED)
+        } else {
+            Style::default()
+                .fg(self.selection_foreground)
+                .bg(self.selection_background)
+        }
+    }
+
+    fn role(self, color: Color, modifier: Modifier) -> Style {
+        let style = Style::default().fg(color);
+        if self.attribute_only {
+            style.add_modifier(modifier)
+        } else {
+            style
+        }
+    }
+}
+
 fn selected_style(app: &App, active: bool) -> Style {
-    if !active {
-        Style::default()
-    } else if app.color_enabled {
-        Style::default()
-            .bg(theme_selected_background(app.theme))
-            .fg(theme_selected_foreground(app.theme))
+    if active {
+        ThemePalette::for_app(app).selected()
     } else {
-        Style::default().add_modifier(Modifier::REVERSED)
+        Style::default()
     }
 }
 
-fn theme_selected_background(theme: Theme) -> Color {
-    match theme {
-        Theme::Dark => Color::DarkGray,
-        Theme::Light => Color::Gray,
-        Theme::MatrixGreen => Color::Green,
-        Theme::HighContrast => Color::White,
-        Theme::Monochrome => Color::Reset,
+fn severity_style(app: &App, severity: Severity) -> Style {
+    let palette = ThemePalette::for_app(app);
+    match severity {
+        Severity::Trace => palette.role(palette.disabled, Modifier::DIM),
+        Severity::Info => palette.role(palette.info, Modifier::ITALIC),
+        Severity::Warning => palette.role(palette.warning, Modifier::BOLD),
+        Severity::Error => palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED),
     }
 }
 
-fn theme_selected_foreground(theme: Theme) -> Color {
-    match theme {
-        Theme::MatrixGreen | Theme::HighContrast => Color::Black,
-        _ => Color::Reset,
+fn build_status_style(app: &App) -> Style {
+    let palette = ThemePalette::for_app(app);
+    match app.build.status {
+        yoctui_model::BuildStatus::Completed => palette.role(palette.success, Modifier::BOLD),
+        yoctui_model::BuildStatus::Cancelled => palette.role(palette.warning, Modifier::BOLD),
+        yoctui_model::BuildStatus::Failed => {
+            palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED)
+        }
+        yoctui_model::BuildStatus::LoadingWorkspace
+        | yoctui_model::BuildStatus::Parsing
+        | yoctui_model::BuildStatus::Running
+        | yoctui_model::BuildStatus::Cancelling => palette.role(palette.progress, Modifier::BOLD),
+        yoctui_model::BuildStatus::Idle => palette.role(palette.disabled, Modifier::DIM),
     }
 }
 
-fn theme_focus_color(app: &App) -> Color {
-    if !app.color_enabled {
-        return Color::Reset;
-    }
-    match app.theme {
-        Theme::Dark => Color::Cyan,
-        Theme::Light => Color::Blue,
-        Theme::MatrixGreen => Color::LightGreen,
-        Theme::HighContrast => Color::Yellow,
-        Theme::Monochrome => Color::Reset,
-    }
+fn clear_popup(frame: &mut Frame, app: &App, area: Rect) {
+    frame.render_widget(Clear, area);
+    let palette = ThemePalette::for_app(app);
+    frame.render_widget(
+        Block::default()
+            .style(palette.base())
+            .border_style(palette.focus()),
+        area,
+    );
 }
 
 fn active_yocto(app: &App) -> String {
@@ -93,12 +270,13 @@ fn active_yocto(app: &App) -> String {
     format!("{release} @ {location}")
 }
 
-fn source_preview(content: &str, file_name: &str, color_enabled: bool) -> Text<'static> {
+fn source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
     let bitbake_source = ["bb", "bbappend", "inc", "conf"]
         .iter()
         .any(|extension| file_name.ends_with(&format!(".{extension}")));
     let markdown = file_name.ends_with(".md") || file_name.ends_with(".markdown");
-    if !color_enabled || (!bitbake_source && !markdown) {
+    let palette = ThemePalette::for_app(app);
+    if palette.attribute_only || (!bitbake_source && !markdown) {
         return Text::from(content.to_owned());
     }
     Text::from(
@@ -107,9 +285,9 @@ fn source_preview(content: &str, file_name: &str, color_enabled: bool) -> Text<'
             .map(|line| {
                 if markdown {
                     let style = if line.starts_with('#') {
-                        Style::default().fg(Color::LightBlue)
+                        Style::default().fg(palette.syntax_keyword)
                     } else if line.starts_with("```") {
-                        Style::default().fg(Color::Magenta)
+                        Style::default().fg(palette.syntax_operator)
                     } else {
                         Style::default()
                     };
@@ -133,7 +311,7 @@ fn source_preview(content: &str, file_name: &str, color_enabled: bool) -> Text<'
                     let keyword_end = trimmed.find(char::is_whitespace).unwrap_or(trimmed.len());
                     spans.push(Span::styled(
                         trimmed[..keyword_end].to_owned(),
-                        Style::default().fg(Color::LightBlue),
+                        Style::default().fg(palette.syntax_keyword),
                     ));
                     spans.push(Span::raw(trimmed[keyword_end..].to_owned()));
                 } else if let Some(equals) = trimmed.find('=') {
@@ -142,15 +320,15 @@ fn source_preview(content: &str, file_name: &str, color_enabled: bool) -> Text<'
                         .len();
                     spans.push(Span::styled(
                         trimmed[..lhs_end].to_owned(),
-                        Style::default().fg(Color::Yellow),
+                        Style::default().fg(palette.syntax_name),
                     ));
                     spans.push(Span::styled(
                         trimmed[lhs_end..=equals].to_owned(),
-                        Style::default().fg(Color::Magenta),
+                        Style::default().fg(palette.syntax_operator),
                     ));
                     spans.push(Span::styled(
                         trimmed[equals + 1..].to_owned(),
-                        Style::default().fg(Color::Green),
+                        Style::default().fg(palette.syntax_value),
                     ));
                 } else {
                     spans.push(Span::raw(trimmed.to_owned()));
@@ -158,7 +336,7 @@ fn source_preview(content: &str, file_name: &str, color_enabled: bool) -> Text<'
                 if let Some(comment) = comment {
                     spans.push(Span::styled(
                         format!("#{comment}"),
-                        Style::default().fg(Color::DarkGray),
+                        Style::default().fg(palette.syntax_comment),
                     ));
                 }
                 Line::from(spans)
@@ -238,6 +416,8 @@ fn footer_shortcuts(app: &App) -> &'static str {
 
 pub fn render(frame: &mut Frame, app: &App) {
     let area = frame.area();
+    let palette = ThemePalette::for_app(app);
+    frame.render_widget(Block::default().style(palette.base()), area);
     if area.width < 80 || area.height < 24 {
         frame.render_widget(
             Paragraph::new(format!(
@@ -291,17 +471,16 @@ pub fn render(frame: &mut Frame, app: &App) {
             app.host_telemetry.cpu_utilization_percent.map_or_else(|| "CPU --".into(), |cpu| format!("CPU {cpu}%")),
             disk,
         ))
-        .block(Block::default().borders(Borders::ALL)),
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_style(build_status_style(app)),
+        ),
         chunks[0],
     );
     responsive_shell(frame, app, chunks[1], area.width);
-    let footer_style = if app.color_enabled {
-        Style::default().fg(theme_focus_color(app))
-    } else {
-        Style::default()
-    };
     frame.render_widget(
-        Paragraph::new(footer_shortcuts(app)).style(footer_style),
+        Paragraph::new(footer_shortcuts(app)).style(palette.focus()),
         chunks[2],
     );
     if app.command_palette_open {
@@ -335,7 +514,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             area.width / 2,
             area.height / 2,
         );
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "Commands\n\n{items}\n\nUp/Down select  Enter run  Esc cancel"
@@ -353,7 +532,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         build_completion_popup(frame, app, area);
     } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 3);
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new("Build is active. Press Y to quit UI, or Esc to continue.")
                 .block(Block::default().title("Confirm quit").borders(Borders::ALL)),
@@ -361,7 +540,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         )
     } else if let Some(Dialog::RecipeTaskConfirmation(request)) = app.active_dialog() {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "Run `bitbake {} {}`?\n\nPress Enter to continue or Esc to cancel.",
@@ -381,7 +560,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         );
     } else if let Some(Dialog::DevtoolResetConfirmation(recipe)) = app.active_dialog() {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "Run `devtool reset {recipe}`?\n\nThis removes the Devtool workspace. Press Enter to continue or Esc to cancel."
@@ -396,7 +575,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         );
     } else if let Some(Dialog::DevtoolUpdateConfirmation(recipe)) = app.active_dialog() {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "Run `devtool update-recipe {recipe}`?\n\nThis updates recipe metadata from the Devtool workspace. Press Enter to continue or Esc to cancel."
@@ -417,7 +596,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             width,
             7,
         );
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "Run `devtool finish {} {}`?\n\nThis exports Devtool changes into the destination layer.\n\nEnter continues; Esc cancels.",
@@ -440,7 +619,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             width,
             7,
         );
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "Run `devtool deploy-target {} {}`?\n\nThis deploys the recipe output to the specified target.\n\nEnter continues; Esc cancels.",
@@ -462,7 +641,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             width,
             6,
         );
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "Recipe: {recipe}\nDeployment target: {}_\n\nEnter previews the command; Esc cancels.",
@@ -488,7 +667,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             width,
             6,
         );
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "Recipe: {recipe}\nDestination layer: {}_\n\nEnter previews the command; Esc cancels.",
@@ -510,7 +689,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             width,
             7,
         );
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "Append this exact assignment to $BUILDDIR/conf/local.conf:\n\n{}\n\nEnter writes and refreshes configuration; Esc cancels.",
@@ -528,7 +707,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             width,
             6,
         );
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "BBMASK: {}_\n\nEnter previews the exact local.conf assignment; Esc cancels.",
@@ -569,7 +748,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             })
             .collect::<Vec<_>>()
             .join("\n");
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "Active MACHINE: {machine}\n\n{images}\n\nUp/Down select  Enter choose image  Esc cancel"
@@ -591,7 +770,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             width,
             10,
         );
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "Machine: {machine}\nCurrent image target: {}\n\nb  Build image\nc  Clean image\nm  Run menuconfig\ne  Enter a different image target\n\nEsc closes this menu.",
@@ -608,7 +787,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             width,
             5,
         );
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
                 "Target: {}_\nTask: {}\n\nEnter starts the build; Esc cancels.",
@@ -619,6 +798,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             popup,
         );
     } else if let Some(notification) = app.notification.as_deref() {
+        let palette = ThemePalette::for_app(app);
         let width = area.width.saturating_sub(8).clamp(24, 80);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
@@ -626,10 +806,16 @@ pub fn render(frame: &mut Frame, app: &App) {
             width,
             5,
         );
-        frame.render_widget(Clear, popup);
+        clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!("{notification}\n\nPress Enter to dismiss."))
-                .block(Block::default().title("Notice").borders(Borders::ALL))
+                .style(palette.role(palette.info, Modifier::BOLD))
+                .block(
+                    Block::default()
+                        .title("Notice")
+                        .borders(Borders::ALL)
+                        .border_style(palette.role(palette.accent, Modifier::BOLD)),
+                )
                 .wrap(Wrap { trim: true }),
             popup,
         );
@@ -683,20 +869,17 @@ fn pane_switcher(frame: &mut Frame, app: &App, area: Rect) {
             label(FocusTarget::Workspace, "Workspace"),
             label(FocusTarget::Inspector, "Inspector"),
         ))
-        .style(if app.color_enabled {
-            Style::default().fg(theme_focus_color(app))
-        } else {
-            Style::default()
-        }),
+        .style(ThemePalette::for_app(app).focus()),
         area,
     );
 }
 
 fn pane_block<'a>(app: &App, title: &'a str, focused: bool) -> Block<'a> {
+    let palette = ThemePalette::for_app(app);
     let style = if focused {
-        Style::default().fg(theme_focus_color(app))
+        palette.focus()
     } else {
-        Style::default().fg(Color::DarkGray)
+        Style::default().fg(palette.border)
     };
     Block::default()
         .title(title)
@@ -887,7 +1070,7 @@ fn build_progress_popup(frame: &mut Frame, app: &App, area: Rect) {
         ),
         _ => "not parsing".into(),
     };
-    frame.render_widget(Clear, popup);
+    clear_popup(frame, app, popup);
     frame.render_widget(
         Paragraph::new(format!(
             "Target: {}\nStatus: {:?}    Tasks: {} complete, {} active\nParse: {parse}    CPU: {cpu}    Free disk: {disk}\n\nActive recipe tasks:\n{}\n\nBitBake is running. c cancels the build.",
@@ -916,7 +1099,7 @@ fn build_completion_popup(frame: &mut Frame, app: &App, area: Rect) {
         yoctui_model::BuildStatus::Cancelled => "was cancelled",
         _ => "failed",
     };
-    frame.render_widget(Clear, popup);
+    clear_popup(frame, app, popup);
     frame.render_widget(
         Paragraph::new(format!(
             "Build {} for {}.\n\nTasks completed: {}\nWarnings: {}    Errors: {}    Exit code: {}\nElapsed: {}\n\nPress any key to return to Yoctui.",
@@ -928,6 +1111,7 @@ fn build_completion_popup(frame: &mut Frame, app: &App, area: Rect) {
             app.build.exit_code.map_or_else(|| "unknown".into(), |code| code.to_string()),
             app.elapsed().map(format_duration).unwrap_or_else(|| "unknown".into()),
         ))
+        .style(build_status_style(app))
         .block(Block::default().title("Build finished").borders(Borders::ALL))
         .wrap(Wrap { trim: true }),
         popup,
@@ -942,7 +1126,7 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         width,
         height,
     );
-    frame.render_widget(Clear, popup);
+    clear_popup(frame, app, popup);
     let columns =
         Layout::horizontal([Constraint::Percentage(35), Constraint::Percentage(65)]).split(popup);
     let files = editor
@@ -984,7 +1168,7 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         editor.content.clone()
     };
     frame.render_widget(
-        Paragraph::new(source_preview(&content, &selected, app.color_enabled))
+        Paragraph::new(source_preview(&content, &selected, app))
             .block(
                 Block::default()
                     .title(format!("{selected} ({mode}{modified})"))
@@ -1001,11 +1185,7 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
     );
     frame.render_widget(
         Paragraph::new("↑/↓ file  Enter/e edit  Ctrl+S save  Esc return to Yoctui").style(
-            if app.color_enabled {
-                Style::default().fg(Color::DarkGray)
-            } else {
-                Style::default()
-            },
+            ThemePalette::for_app(app).role(ThemePalette::for_app(app).disabled, Modifier::DIM),
         ),
         footer,
     );
@@ -1118,18 +1298,15 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
             } else {
                 task.progress.unwrap_or(0).min(100)
             };
-            let color = if app.color_enabled {
-                if *completed == Some(false) {
-                    Color::Red
-                } else if progress >= 100 {
-                    Color::Green
-                } else if progress >= 75 {
-                    Color::Yellow
-                } else {
-                    Color::LightBlue
-                }
+            let palette = ThemePalette::for_app(app);
+            let progress_style = if *completed == Some(false) {
+                palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED)
+            } else if progress >= 100 {
+                palette.role(palette.success, Modifier::BOLD)
+            } else if progress >= 75 {
+                palette.role(palette.warning, Modifier::BOLD)
             } else {
-                Color::Reset
+                palette.role(palette.progress, Modifier::BOLD)
             };
             frame.render_widget(
                 Gauge::default()
@@ -1145,7 +1322,7 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
                             None => "",
                         }
                     ))
-                    .gauge_style(Style::default().fg(color)),
+                    .gauge_style(progress_style),
                 row,
             );
         }
@@ -1460,21 +1637,25 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         format!("{title} | search: {}", app.logs.query)
     };
     if app.logs.wrap {
-        let text = visible
-            .iter()
-            .rev()
-            .take(height)
-            .rev()
-            .map(|log| {
-                format!(
-                    "{:?} {} {}",
-                    log.severity,
-                    log.recipe.as_deref().unwrap_or(""),
-                    log.message
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
+        let text = Text::from(
+            visible
+                .iter()
+                .rev()
+                .take(height)
+                .rev()
+                .map(|log| {
+                    Line::styled(
+                        format!(
+                            "{:?} {} {}",
+                            log.severity,
+                            log.recipe.as_deref().unwrap_or(""),
+                            log.message
+                        ),
+                        severity_style(app, log.severity),
+                    )
+                })
+                .collect::<Vec<_>>(),
+        );
         frame.render_widget(
             Paragraph::new(text)
                 .block(Block::default().title(title).borders(Borders::ALL))
@@ -1494,6 +1675,7 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
                     .collect::<String>(),
             ),
         ])
+        .style(severity_style(app, l.severity))
     });
     frame.render_widget(
         Table::new(
@@ -1527,6 +1709,8 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
         .rev()
         .enumerate()
         .map(|(index, log)| {
+            let severity = severity_style(app, log.severity);
+            let selected = selected_style(app, index == app.error_selection);
             Row::new(vec![
                 Cell::from(format!("{:?}", log.severity)),
                 Cell::from(log.recipe.as_deref().unwrap_or("")),
@@ -1538,7 +1722,7 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
                 ),
                 Cell::from(log.message.as_str()),
             ])
-            .style(selected_style(app, index == app.error_selection))
+            .style(severity.patch(selected))
         });
     frame.render_widget(
         Table::new(
@@ -1725,7 +1909,7 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
         .and_then(|entry| entry.path.file_name())
         .map_or("", |name| name.to_str().unwrap_or(""));
     frame.render_widget(
-        Paragraph::new(source_preview(&preview, selected_name, app.color_enabled))
+        Paragraph::new(source_preview(&preview, selected_name, app))
             .block(Block::default().title(title).borders(Borders::ALL))
             .wrap(Wrap { trim: false }),
         chunks[1],
@@ -1771,9 +1955,11 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
                 ])
                 .style({
                     let mut style = selected_style(app, index == app.layer_selection);
-                    if app.color_enabled {
-                        style = style.fg(Color::Green);
-                    } else {
+                    let palette = ThemePalette::for_app(app);
+                    if index != app.layer_selection {
+                        style = style.fg(palette.success);
+                    }
+                    if palette.attribute_only {
                         style = style.add_modifier(Modifier::BOLD);
                     }
                     style
@@ -1961,6 +2147,132 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect()
+    }
+
+    #[test]
+    fn theme_palettes_define_distinct_semantic_roles() {
+        for theme in [
+            Theme::Dark,
+            Theme::Light,
+            Theme::MatrixGreen,
+            Theme::HighContrast,
+            Theme::Monochrome,
+        ] {
+            let mut app = App::new(10, 1_000);
+            app.theme = theme;
+            let palette = ThemePalette::for_app(&app);
+            let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+            terminal.draw(|frame| render(frame, &app)).unwrap();
+            assert!(
+                terminal
+                    .backend()
+                    .buffer()
+                    .content
+                    .iter()
+                    .any(|cell| cell.bg == palette.background)
+            );
+            if theme == Theme::Monochrome {
+                assert!(palette.attribute_only);
+                assert!(palette.focus().add_modifier.contains(Modifier::BOLD));
+                assert!(palette.selected().add_modifier.contains(Modifier::REVERSED));
+            } else {
+                assert!(!palette.attribute_only);
+                assert_ne!(palette.focused_border, palette.border);
+                assert_ne!(palette.selection_background, palette.background);
+                assert_ne!(palette.error, palette.success);
+                assert_ne!(palette.warning, palette.info);
+            }
+        }
+    }
+
+    #[test]
+    fn theme_no_color_uses_attributes_for_focus_selection_and_severity() {
+        let mut app = App::new(10, 1_000);
+        app.theme = Theme::Light;
+        app.color_enabled = false;
+        let palette = ThemePalette::for_app(&app);
+
+        assert!(palette.attribute_only);
+        assert_eq!(palette.foreground, Color::Reset);
+        assert!(palette.focus().add_modifier.contains(Modifier::BOLD));
+        assert!(
+            selected_style(&app, true)
+                .add_modifier
+                .contains(Modifier::REVERSED)
+        );
+        assert!(
+            severity_style(&app, Severity::Error)
+                .add_modifier
+                .contains(Modifier::UNDERLINED)
+        );
+        assert_ne!(
+            severity_style(&app, Severity::Warning).add_modifier,
+            severity_style(&app, Severity::Trace).add_modifier
+        );
+
+        app.focus = FocusTarget::Navigator;
+        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        assert!(terminal.backend().buffer().content.iter().any(|cell| {
+            cell.modifier.contains(Modifier::REVERSED) || cell.modifier.contains(Modifier::BOLD)
+        }));
+    }
+
+    #[test]
+    fn theme_light_shell_and_dialog_apply_the_semantic_background() {
+        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.theme = Theme::Light;
+        app.dialogs.push_back(Dialog::BuildOptions);
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let buffer = terminal.backend().buffer();
+
+        assert!(buffer.content.iter().any(|cell| cell.bg == Color::White));
+        assert!(buffer.content.iter().any(|cell| cell.fg == Color::Blue));
+    }
+
+    #[test]
+    fn theme_progress_and_log_severity_use_semantic_roles() {
+        let mut terminal = Terminal::new(TestBackend::new(140, 30)).unwrap();
+        let mut app = App::new(10, 1_000);
+        app.theme = Theme::HighContrast;
+        app.tasks.insert(
+            yoctui_model::TaskId("busybox:do_compile".into()),
+            yoctui_model::TaskInfo {
+                id: yoctui_model::TaskId("busybox:do_compile".into()),
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                progress: Some(50),
+            },
+        );
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        assert!(
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .any(|cell| cell.fg == Color::Cyan)
+        );
+
+        app.screen = Screen::Logs;
+        app.logs.insert(yoctui_model::LogEntry {
+            severity: Severity::Error,
+            message: "compile failed".into(),
+            recipe: Some("busybox".into()),
+            task: Some("do_compile".into()),
+            path: None,
+            timestamp: SystemTime::UNIX_EPOCH,
+        });
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        assert!(
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .any(|cell| cell.fg == Color::LightRed)
+        );
     }
 
     #[test]
@@ -2658,7 +2970,8 @@ mod tests {
     }
     #[test]
     fn bitbake_preview_highlights_assignments_and_comments() {
-        let preview = source_preview("SUMMARY = \"demo\" # explanation", "demo.bb", true);
+        let app = App::new(10, 1_000);
+        let preview = source_preview("SUMMARY = \"demo\" # explanation", "demo.bb", &app);
         assert_eq!(preview.lines[0].spans[0].style.fg, Some(Color::Yellow));
         assert_eq!(preview.lines[0].spans[1].style.fg, Some(Color::Magenta));
         assert_eq!(preview.lines[0].spans[2].style.fg, Some(Color::Green));

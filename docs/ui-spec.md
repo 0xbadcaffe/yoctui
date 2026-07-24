@@ -999,6 +999,37 @@ Suggested semantics:
 
 Themes must preserve semantic distinctions. Errors cannot become indistinguishable from success.
 
+### Semantic roles
+
+Rendering uses one complete palette per built-in theme. Widgets select a role,
+not a terminal color:
+
+- foreground and background
+- inactive and focused borders
+- selected foreground and background
+- disabled or subdued text
+- informational accent
+- success, warning, and error
+- determinate and indeterminate progress
+- general text accent
+- source keyword, name, operator, value, and comment
+
+The persistent shell, workspaces, Inspector, Footer, dialogs, notifications,
+tables, gauges, logs, build status, and source preview use these roles. A
+theme must provide every role. Adding a role requires updating all built-in
+themes and deterministic TestBackend coverage.
+
+`monochrome` and `--no-color` use terminal attributes instead of color:
+
+- focused elements are bold
+- selections use reverse video
+- disabled text is dim
+- warnings are bold
+- errors are bold and underlined
+
+These modes must not depend on the terminal's default foreground/background
+pair to distinguish focus, selection, severity, or progress.
+
 ### Theme switching
 
 Theme can be changed through:
