@@ -221,6 +221,7 @@ pub struct ProcessBackend {
     arguments: Vec<OsString>,
     child: Option<Child>,
     output: Option<tokio::sync::mpsc::Receiver<LogEntry>>,
+    build_started_pending: bool,
     cancellation_timeout: Duration,
     #[cfg(unix)]
     process_group: Option<i32>,
@@ -241,6 +242,7 @@ impl ProcessBackend {
             arguments,
             child: None,
             output: None,
+            build_started_pending: false,
             cancellation_timeout: Duration::from_secs(5),
             #[cfg(unix)]
             process_group: None,
@@ -323,6 +325,7 @@ impl BitBakeBackend for ProcessBackend {
         drop(tx);
         self.child = Some(child);
         self.output = Some(rx);
+        self.build_started_pending = true;
         Ok(())
     }
     async fn cancel_build(&mut self) -> Result<(), BackendError> {
@@ -347,6 +350,10 @@ impl BitBakeBackend for ProcessBackend {
         Ok(())
     }
     async fn next_event(&mut self) -> Result<BackendEvent, BackendError> {
+        if self.build_started_pending {
+            self.build_started_pending = false;
+            return Ok(BackendEvent::BuildStarted);
+        }
         if let Some(output) = self.output.as_mut()
             && let Some(line) = output.recv().await
         {
@@ -926,7 +933,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn process_backend_cancels_a_hung_child() {
+    async fn process_backend_cancellation_acknowledges_a_hung_child() {
         let script = fixture_script("hung-bitbake");
         fs::write(&script, "#!/bin/sh\nsleep 30\n").unwrap();
         let mut permissions = fs::metadata(&script).unwrap().permissions();
@@ -944,6 +951,17 @@ mod tests {
             .await
             .unwrap()
             .unwrap();
+        loop {
+            if let BackendEvent::BuildCompleted { success, .. } =
+                tokio::time::timeout(Duration::from_secs(2), backend.next_event())
+                    .await
+                    .unwrap()
+                    .unwrap()
+            {
+                assert!(!success);
+                break;
+            }
+        }
         fs::remove_file(script).unwrap();
     }
 

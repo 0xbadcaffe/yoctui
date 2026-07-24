@@ -2155,6 +2155,7 @@ dependencies = [
 name = "yoctui-app"
 version = "0.1.0"
 dependencies = [
+ "yoctui-bitbake",
  "yoctui-model",
  "yoctui-protocol",
 ]

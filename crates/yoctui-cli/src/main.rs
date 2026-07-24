@@ -15,18 +15,18 @@ use std::{
     env, fs, io,
     path::{Path, PathBuf},
     process::Command as ProcessCommand,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime},
 };
 #[cfg(unix)]
 use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
-use yoctui_app::{Input, key_action};
+use yoctui_app::{BuildJobCoordinator, Input, key_action};
 use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, Effect, HostTelemetry,
     LayerBrowserEntry, LayerRelationship, LayerRelationships, RecipeDependencies, Screen, Severity,
-    TaskId, TaskInfo, Theme, update,
+    Theme, update,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -609,42 +609,50 @@ async fn headless(
     let mut backend = select_backend(backend_kind, build_dir.clone()).await?;
     let result = async {
         let mut app = App::new(log_entries, log_bytes);
+        let mut build_jobs = BuildJobCoordinator::default();
         let workspace = backend.inspect_workspace().await?;
         let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
         if targets.is_empty() {
             println!("headless inspection completed");
             return Ok(());
         }
-        backend
-            .start_build(BuildRequest {
-                targets,
-                task: None,
-            })
-            .await
-            .context("could not start bitbake")?;
+        let request = BuildRequest {
+            targets,
+            task: None,
+        };
+        if let Some(actions) = build_jobs.queue_build(&request, SystemTime::now()) {
+            for action in actions {
+                let _ = update(&mut app, action);
+            }
+        }
+        if let Err(error) = backend.start_build(request).await {
+            for action in build_jobs.start_failed(error.to_string(), SystemTime::now()) {
+                let _ = update(&mut app, action);
+            }
+            return Err(error).context("could not start bitbake");
+        }
         loop {
-            match backend.next_event().await? {
-                BackendEvent::Log(l) => {
-                    println!("{}", l.message);
-                    let _ = update(&mut app, Action::Log(l));
+            let event = backend.next_event().await?;
+            if let BackendEvent::Log(entry) = &event {
+                println!("{}", entry.message);
+            }
+            let completion = match &event {
+                BackendEvent::BuildCompleted { success, exit_code } => Some((*success, *exit_code)),
+                _ => None,
+            };
+            for action in build_jobs.actions_for_backend_event(event, SystemTime::now()) {
+                let _ = update(&mut app, action);
+            }
+            if let Some((success, exit_code)) = completion {
+                println!(
+                    "build {}{}",
+                    if success { "completed" } else { "failed" },
+                    exit_code.map_or_else(String::new, |code| format!(" (exit code {code})"))
+                );
+                if success {
+                    return Ok(());
                 }
-                BackendEvent::BuildCompleted { success, exit_code } => {
-                    let _ = update(&mut app, Action::BuildCompleted { success, exit_code });
-                    println!(
-                        "build {}{}",
-                        if success { "completed" } else { "failed" },
-                        exit_code.map_or_else(String::new, |code| format!(" (exit code {code})"))
-                    );
-                    if success {
-                        return Ok(());
-                    }
-                    return Err(anyhow::anyhow!("BitBake build failed"));
-                }
-                event => {
-                    if let Some(action) = action_from_event(event) {
-                        let _ = update(&mut app, action);
-                    }
-                }
+                return Err(anyhow::anyhow!("BitBake build failed"));
             }
         }
     }
@@ -653,59 +661,6 @@ async fn headless(
     result?;
     shutdown?;
     Ok(())
-}
-
-fn action_from_event(event: BackendEvent) -> Option<Action> {
-    match event {
-        BackendEvent::Workspace(workspace) => Some(Action::WorkspaceLoaded(workspace)),
-        BackendEvent::BuildStarted => Some(Action::BuildStarted),
-        BackendEvent::ParseProgress { current, total } => {
-            Some(Action::ParseProgress { current, total })
-        }
-        BackendEvent::TaskStarted { recipe, task } => {
-            let id = TaskId(format!("{recipe}:{task}"));
-            Some(Action::TaskStarted(TaskInfo {
-                id,
-                recipe,
-                task,
-                progress: None,
-            }))
-        }
-        BackendEvent::TaskProgress {
-            recipe,
-            task,
-            progress,
-        } => Some(Action::TaskProgress {
-            id: TaskId(format!("{recipe}:{task}")),
-            progress,
-        }),
-        BackendEvent::TaskCompleted {
-            recipe,
-            task,
-            success,
-        } => Some(Action::TaskCompleted {
-            id: TaskId(format!("{recipe}:{task}")),
-            success,
-        }),
-        BackendEvent::CommandFailed { code, message } => Some(Action::Failure(AppError::new(
-            "BitBake",
-            format!("{code}: {message}"),
-            "inspect the bridge or BitBake diagnostics",
-        ))),
-        BackendEvent::Disconnected => Some(Action::Failure(AppError::new(
-            "Bridge",
-            "backend disconnected",
-            "restart Yoctui and inspect the backend diagnostics",
-        ))),
-        BackendEvent::Recipes(_)
-        | BackendEvent::Layers(_)
-        | BackendEvent::Variable { .. }
-        | BackendEvent::Dependencies { .. }
-        | BackendEvent::RecipeSources { .. }
-        | BackendEvent::LayerRelationships(_)
-        | BackendEvent::Log(_)
-        | BackendEvent::BuildCompleted { .. } => None,
-    }
 }
 
 async fn select_backend(backend: Backend, build_dir: PathBuf) -> Result<Box<dyn BitBakeBackend>> {
@@ -744,12 +699,28 @@ async fn select_backend_with_timeout(
     }
 }
 
-async fn begin_build(backend: &mut Box<dyn BitBakeBackend>, app: &mut App, request: BuildRequest) {
+async fn begin_build(
+    backend: &mut Box<dyn BitBakeBackend>,
+    app: &mut App,
+    build_jobs: &mut BuildJobCoordinator,
+    request: BuildRequest,
+) {
+    let Some(actions) = build_jobs.queue_build(&request, SystemTime::now()) else {
+        let _ = update(
+            app,
+            Action::Notify("A build background job is already active.".into()),
+        );
+        return;
+    };
+    for action in actions {
+        let _ = update(app, action);
+    }
     match backend.start_build(request).await {
-        Ok(()) => {
-            let _ = update(app, Action::BuildStarted);
-        }
+        Ok(()) => {}
         Err(error) => {
+            for action in build_jobs.start_failed(error.to_string(), SystemTime::now()) {
+                let _ = update(app, action);
+            }
             let _ = update(
                 app,
                 Action::Failure(AppError::new(
@@ -1308,6 +1279,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
     if !targets.is_empty() {
         app.build.target = targets.first().cloned()
     }
+    let mut build_jobs = BuildJobCoordinator::default();
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
     #[cfg(unix)]
@@ -1549,7 +1521,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     _ => None,
                 };
                 if let Some(Effect::Start(request)) = effect {
-                    begin_build(&mut backend, &mut app, request).await;
+                    begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
                 }
             } else if app.build_options_open {
                 let effect = match input {
@@ -1566,7 +1538,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     _ => None,
                 };
                 if let Some(Effect::Start(request)) = effect {
-                    begin_build(&mut backend, &mut app, request).await;
+                    begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
                 }
             } else if app.build_target_editing {
                 let effect = match input {
@@ -1579,7 +1551,7 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                     _ => None,
                 };
                 if let Some(Effect::Start(request)) = effect {
-                    begin_build(&mut backend, &mut app, request).await;
+                    begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
                 }
             } else if input == Input::Char('!') {
                 open_yocto_shell(&guard, &mut app).await;
@@ -1799,36 +1771,35 @@ async fn tui(config: Config, targets: Vec<String>, session: Session) -> Result<(
                 }
             } else if let Some(action) = key_action(input) {
                 if matches!(action, Action::Cancel) {
-                    if let Some(Effect::Cancel) = update(&mut app, action)
-                        && let Err(error) = backend.cancel_build().await
-                    {
-                        let _ = update(
-                            &mut app,
-                            Action::Failure(AppError::new(
-                                "Cancellation",
-                                error.to_string(),
-                                "check whether BitBake is still running",
-                            )),
-                        );
+                    if let Some(Effect::Cancel) = update(&mut app, action) {
+                        if let Some(job_action) = build_jobs.request_cancellation() {
+                            let _ = update(&mut app, job_action);
+                        }
+                        if let Err(error) = backend.cancel_build().await {
+                            for action in
+                                build_jobs.cancellation_failed(error.to_string(), SystemTime::now())
+                            {
+                                let _ = update(&mut app, action);
+                            }
+                        }
                     }
                 } else {
                     let _ = update(&mut app, action);
                 }
             }
         }
-        if let Ok(Ok(event)) =
-            tokio::time::timeout(Duration::from_millis(1), backend.next_event()).await
-        {
-            match event {
-                BackendEvent::BuildCompleted { success, exit_code } => {
-                    let _ = update(&mut app, Action::BuildCompleted { success, exit_code });
-                }
-                event => {
-                    if let Some(action) = action_from_event(event) {
-                        let _ = update(&mut app, action);
-                    }
+        match tokio::time::timeout(Duration::from_millis(1), backend.next_event()).await {
+            Ok(Ok(event)) => {
+                for action in build_jobs.actions_for_backend_event(event, SystemTime::now()) {
+                    let _ = update(&mut app, action);
                 }
             }
+            Ok(Err(error)) => {
+                for action in build_jobs.backend_lost(error.to_string(), SystemTime::now()) {
+                    let _ = update(&mut app, action);
+                }
+            }
+            Err(_) => {}
         }
         if app.should_quit {
             break;
@@ -1950,7 +1921,7 @@ mod tests {
     #[test]
     fn normalizes_task_progress_event() {
         assert!(matches!(
-            action_from_event(BackendEvent::TaskProgress {
+            yoctui_app::model_action_from_backend_event(BackendEvent::TaskProgress {
                 recipe: "busybox".into(),
                 task: "do_compile".into(),
                 progress: 25,

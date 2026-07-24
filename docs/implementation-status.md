@@ -22,8 +22,8 @@ See `docs/current-task.md`.
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
-| M1 BitBake cockpit | IN_PROGRESS | Strong mocked/process foundation; live matrix incomplete |
-| M2 Persistent workbench | IN_PROGRESS | Persistent shell and background-job domain model are complete; execution, responsive modes, palette, Tasks, preferences, and dialogs remain partial |
+| M1 BitBake cockpit | IN_PROGRESS | Typed background build execution and strong mocked/process coverage exist; live matrix incomplete |
+| M2 Persistent workbench | IN_PROGRESS | Persistent shell and background build jobs are complete; responsive modes, palette, Tasks, preferences, and dialogs remain partial |
 | M3 Development workbench | IN_PROGRESS | Recipes, lazy layer browsing, config provenance, and Devtool are partial; signatures and package data have not started |
 | M4 Images/SDK/QEMU/Wic | IN_PROGRESS | Image-recipe listing and build selection exist; artifact, SDK, QEMU, and Wic workflows remain |
 | M5 Testing/QA/Security | NOT_STARTED | Coverage infrastructure exists; product workflows remain |
@@ -41,6 +41,7 @@ See `docs/current-task.md`.
 | Themes | IN_PROGRESS | Five built-in names and focus/selection roles exist (`88816bd`); complete semantic roles and interactive persistence remain |
 | Task animation | IN_PROGRESS | Tick-driven fast/slow indeterminate frames and reduced-motion suppression exist (`3f69c16`); direct behavior tests remain |
 | Background-job model | DONE | Stable IDs, typed lifecycle/context/progress/result/error, bounded output/history, cancellation capability, and reducer coverage are implemented |
+| Background build execution | DONE | Confirmed builds allocate one job; typed events drive lifecycle/output; navigation persists; failure, cancellation rejection/acknowledgement, and backend loss are covered |
 | Layers workspace | IN_PROGRESS | Lazy directory descent, parent navigation, subtree refresh, file preview, and editing exist (`a7512fa`, `c7128a6`); hidden files, Git state, and safe large-file handling remain |
 | Tasks workspace | IN_PROGRESS | Active task list and persistent navigation exist (`854f798`); completed/waiting rows, filters, inspector selection, and direct tests remain |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
@@ -50,18 +51,17 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `JOB-002` — job effect execution and cancellation
-2. `BB-001` — real BitBake smoke harness
-3. `UI-RESP-001` — complete responsive shell matrix
-4. `FOCUS-001` — complete shared focus routing
-5. `DIALOG-001` — unified typed dialog stack
-6. `PALETTE-001` — searchable contextual command palette
-7. `TASKS-001` — complete live Tasks workspace
-8. `SETTINGS-001` — interactive settings and persistence
-9. `LAYERS-001` — complete lazy layer tree and inspector
-10. `IMAGES-001` — complete image artifact workspace
-11. `DEP-001` — dependency exploration
-12. `QEMU-001` — managed QEMU workflow
+1. `BB-001` — real BitBake smoke harness
+2. `UI-RESP-001` — complete responsive shell matrix
+3. `FOCUS-001` — complete shared focus routing
+4. `DIALOG-001` — unified typed dialog stack
+5. `PALETTE-001` — searchable contextual command palette
+6. `TASKS-001` — complete live Tasks workspace
+7. `SETTINGS-001` — interactive settings and persistence
+8. `LAYERS-001` — complete lazy layer tree and inspector
+9. `IMAGES-001` — complete image artifact workspace
+10. `DEP-001` — dependency exploration
+11. `QEMU-001` — managed QEMU workflow
 
 ## Rules
 

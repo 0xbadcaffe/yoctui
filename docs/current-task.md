@@ -2,39 +2,37 @@
 
 ## Active task
 
-**ID:** JOB-002
-**Title:** Add background-job effect execution and cancellation
+**ID:** BB-001
+**Title:** Add the real BitBake smoke harness
 
 ## Objective
 
-Connect the existing asynchronous build execution path to the shared background-job model so build lifecycle, output, completion, failure, and cancellation remain observable while the user navigates other workspaces.
+Create and run a live, explicitly configured smoke harness that validates Yoctui against a real initialized Yocto/BitBake environment without treating mocked tests as compatibility evidence.
 
 ## Required work
 
-1. Inspect the existing CLI build loop, `yoctui-app` effect boundary, and backend cancellation adapters before changing them.
-2. Allocate a stable background-job ID when a confirmed build is started.
-3. Drive the job through queued, starting, running, progress/output, and terminal states from typed backend events.
-4. Associate the current target and Tasks workspace context with the job.
-5. Keep event handling and cancellation active while the user changes workspaces.
-6. Map cancellation request, acknowledgement, backend failure, and disconnect/loss without reporting false success.
-7. Add app orchestration tests and fake backend/process cancellation tests for success, failure, cancellation, and navigation persistence.
-8. Preserve the existing typed backend boundary and do not parse raw process text in UI code.
+1. Inspect the compatibility document, existing bridge/process adapters, CLI smoke scripts, and any available initialized build directories.
+2. Add `scripts/verify-live-bitbake.sh` with explicit environment inputs and safe preflight diagnostics.
+3. Exercise real workspace inspection, variable lookup, recipe listing, layer listing, build start, parse/task/log events, normal completion, cancellation, and bridge shutdown.
+4. Record the exact BitBake/Yocto versions and backend used only after successful live validation.
+5. Keep the live target configurable; use a documented small target by default only when the caller explicitly enables the live test.
+6. Never substitute mocked modules, the process fixture backend, or synthetic events for the live matrix.
+7. Add deterministic harness self-tests for configuration and failure reporting where they do not claim compatibility.
+8. If no usable initialized environment exists, mark this task `BLOCKED` with exact discovery commands and reproduction details, then continue with the next eligible task.
 
 ## Definition of done
 
-- A confirmed build creates exactly one background job.
-- Typed backend events update that job without widget parsing.
-- The job remains active and inspectable across workspace changes.
-- Normal completion, build failure, cancellation acknowledgement, cancellation failure, and backend loss produce correct terminal states.
-- Existing build controls continue to work.
-- Fake integration coverage passes without claiming live BitBake compatibility.
-- Registry and human-readable status are updated after verification.
+- The live harness rejects missing or uninitialized build directories clearly.
+- A real bridge-backed workspace, metadata queries, build, events, completion, cancellation, and shutdown are exercised.
+- Compatibility documentation records only actually observed versions.
+- Harness self-tests and the configured live run pass.
+- Mock-only evidence is never presented as live support.
+- Registry and human-readable status are updated after verification or an exact external blocker is recorded.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app background_job
-cargo test -p yoctui-bitbake cancellation
+./scripts/verify-live-bitbake.sh
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -44,4 +42,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`BB-001 — Add the real BitBake smoke harness`
+`UI-RESP-001 — Complete the responsive shell matrix`

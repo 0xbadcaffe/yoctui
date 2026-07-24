@@ -96,6 +96,7 @@ pub enum BuildStatus {
     Running,
     Cancelling,
     Completed,
+    Cancelled,
     Failed,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -787,6 +788,9 @@ pub enum Action {
     RequestBackgroundJobCancellation {
         id: BackgroundJobId,
     },
+    RejectBackgroundJobCancellation {
+        id: BackgroundJobId,
+    },
     SucceedBackgroundJob {
         id: BackgroundJobId,
         result: BackgroundJobResult,
@@ -828,6 +832,10 @@ pub enum Action {
         success: bool,
         exit_code: Option<i32>,
     },
+    BuildCancelled {
+        exit_code: Option<i32>,
+    },
+    BuildCancellationRejected(String),
     DismissBuildCompletion,
     SelectBuildHistory {
         delta: isize,
@@ -943,6 +951,7 @@ pub enum Action {
     AppendMetadataQuery(char),
     BackspaceMetadataQuery,
     FinishMetadataSearch,
+    Notify(String),
     DismissNotification,
     Quit,
     ConfirmQuit,
@@ -1179,6 +1188,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::RequestBackgroundJobCancellation { id } => {
             app.background_jobs.request_cancellation(id);
         }
+        Action::RejectBackgroundJobCancellation { id } => {
+            app.background_jobs
+                .update_if(id, &[BackgroundJobStatus::Cancelling], |job| {
+                    job.status = BackgroundJobStatus::Running
+                })
+        }
         Action::SucceedBackgroundJob {
             id,
             result,
@@ -1304,6 +1319,32 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
             app.build_history_selection = 0;
             app.build_completion_open = true;
+        }
+        Action::BuildCancelled { exit_code } => {
+            app.build.status = BuildStatus::Cancelled;
+            app.build.exit_code = exit_code;
+            app.build_history.push_back(BuildRecord {
+                target: app.build.target.clone(),
+                success: false,
+                exit_code,
+                elapsed: app.elapsed(),
+                completed_tasks: app.build.completed,
+                warnings: app.build.warnings,
+                errors: app.build.errors,
+            });
+            if app.build_history.len() > MAX_BUILD_HISTORY {
+                app.build_history.pop_front();
+            }
+            app.build_history_selection = 0;
+            app.build_completion_open = true;
+        }
+        Action::BuildCancellationRejected(message) => {
+            if app.build.status == BuildStatus::Cancelling {
+                app.build.status = BuildStatus::Running;
+            }
+            app.notification = Some(format!(
+                "Could not cancel the active build: {message}. The build may still be running."
+            ));
         }
         Action::DismissBuildCompletion => app.build_completion_open = false,
         Action::SelectBuildHistory { delta } => {
@@ -2016,6 +2057,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::AppendDevtoolDeployTarget(_)
         | Action::BackspaceDevtoolDeployTarget
         | Action::PreviewDevtoolDeploy => {}
+        Action::Notify(message) => app.notification = Some(message),
         Action::DismissNotification => app.notification = None,
         Action::Quit => {
             if matches!(
@@ -2306,6 +2348,22 @@ mod tests {
             BackgroundJobStatus::Running
         );
         assert_eq!(app.background_jobs.ignored_transitions, ignored_before + 1);
+    }
+    #[test]
+    fn background_job_rejected_cancellation_returns_to_running() {
+        let mut app = App::new(10, 1_000);
+        let id = BackgroundJobId(1);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(1, true)),
+        );
+        run_background_job(&mut app, 1);
+        let _ = update(&mut app, Action::RequestBackgroundJobCancellation { id });
+        let _ = update(&mut app, Action::RejectBackgroundJobCancellation { id });
+        assert_eq!(
+            app.background_jobs.get(id).unwrap().status,
+            BackgroundJobStatus::Running
+        );
     }
     #[test]
     fn background_job_invalid_transitions_leave_state_unchanged() {
