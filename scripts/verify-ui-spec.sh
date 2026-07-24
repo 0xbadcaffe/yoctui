@@ -5,12 +5,19 @@ test -f docs/ui-spec.md
 
 for required in \
   'FocusTarget' \
-  'Navigator' \
-  'Inspector' \
   'CycleFocus' \
-  'footer_shortcuts'; do
-  if ! rg -q "$required" docs/ui-spec.md crates; then
+  'Theme' \
+  'AnimationSpeed' \
+  'OpenCommandPalette'; do
+  if ! rg -q "$required" crates/yoctui-model crates/yoctui-app; then
     echo "UI contract requirement missing: $required" >&2
+    exit 1
+  fi
+done
+
+for required in 'Navigator' 'Inspector' 'footer_shortcuts' 'task_activity'; do
+  if ! rg -q "$required" crates/yoctui-ui; then
+    echo "UI renderer requirement missing: $required" >&2
     exit 1
   fi
 done
