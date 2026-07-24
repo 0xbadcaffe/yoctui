@@ -423,7 +423,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
         }
         Screen::LayerRelationships => "Esc dashboard | y layers | ? help | q quit",
         Screen::Recipes => {
-            "↑/↓ select | Enter inspect | b build | f force task | C clean | S cleansstate | M menuconfig | v devshell | K diffconfig | z diffsigs | g deps | / search"
+            "↑/↓ select | Enter inspect | e provider | o task logs | p patches | b build | f force | C/S clean | M menuconfig | d modify | u update | F finish | P deploy | D reset | / search"
         }
         Screen::Images => {
             "↑/↓ select | b build selected image | i image picker | Tab focus | q quit"
@@ -556,6 +556,65 @@ pub fn render(frame: &mut Frame, app: &App) {
                         if picker.force { "Force" } else { "Run" },
                         picker.recipe
                     ))
+                    .borders(Borders::ALL),
+            ),
+            popup,
+        );
+    } else if let Some(Dialog::RecipeTaskLogPicker(picker)) = app.active_dialog() {
+        let popup = Rect::new(
+            area.width / 5,
+            area.height / 4,
+            area.width * 3 / 5,
+            area.height / 2,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Table::new(
+                picker.logs.iter().enumerate().map(|(index, log)| {
+                    Row::new([
+                        Cell::from(log.task.as_str()),
+                        Cell::from(format!("{:?}", log.state)),
+                        Cell::from(log.path.display().to_string()),
+                    ])
+                    .style(selected_style(app, index == picker.selection))
+                }),
+                [
+                    Constraint::Length(20),
+                    Constraint::Length(12),
+                    Constraint::Min(20),
+                ],
+            )
+            .header(
+                Row::new(["Task", "State", "Authoritative log path"])
+                    .style(Style::default().bold()),
+            )
+            .block(
+                Block::default()
+                    .title(format!("{} retained task logs", picker.recipe))
+                    .borders(Borders::ALL),
+            ),
+            popup,
+        );
+    } else if let Some(Dialog::RecipePatchPicker(picker)) = app.active_dialog() {
+        let popup = Rect::new(
+            area.width / 5,
+            area.height / 4,
+            area.width * 3 / 5,
+            area.height / 2,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Table::new(
+                picker.patches.iter().enumerate().map(|(index, patch)| {
+                    Row::new([patch.display().to_string()])
+                        .style(selected_style(app, index == picker.selection))
+                }),
+                [Constraint::Min(20)],
+            )
+            .header(Row::new(["Authoritative local patch"]).style(Style::default().bold()))
+            .block(
+                Block::default()
+                    .title(format!("{} patch review", picker.recipe))
                     .borders(Borders::ALL),
             ),
             popup,
@@ -2313,13 +2372,47 @@ fn recipe_inspector(app: &App, recipe: &Recipe) -> String {
             }
         )
     };
+    let retained_log_count = app
+        .tasks
+        .values()
+        .chain(app.completed_tasks.iter().map(|completed| &completed.task))
+        .filter(|task| task.recipe == recipe.name && task.log_path.is_some())
+        .count();
+    let patch_capability = match metadata.and_then(|value| value.patches.as_ref()) {
+        None => "unavailable until metadata is loaded".into(),
+        Some(patches) if patches.is_empty() => "unavailable (BitBake reported none)".into(),
+        Some(patches) => {
+            let local = patches
+                .iter()
+                .filter(|patch| std::path::Path::new(patch).is_absolute())
+                .count();
+            if local == 0 {
+                "unavailable (remote or unresolved paths)".into()
+            } else {
+                format!("enabled ({local} local)")
+            }
+        }
+    };
+    let navigation_capabilities = format!(
+        "Navigation: provider {}; task logs {}; patches {patch_capability}\nDevtool: modify/update/finish/deploy/reset routes enabled; missing tools are reported when launched.",
+        if recipe.file.is_some() {
+            "enabled"
+        } else {
+            "unavailable (provider path not reported)"
+        },
+        if retained_log_count == 0 {
+            "unavailable (no retained path)".into()
+        } else {
+            format!("enabled ({retained_log_count})")
+        },
+    );
     let tasks = if active_tasks.is_empty() {
         recipe_values("Tasks", reported_tasks)
     } else {
         format!("Active tasks: {}", active_tasks.join(", "))
     };
     format!(
-        "Recipe: {}\nResolved version: {}\nPreferred version: {}\nProvider layer: {}\nProvider file: {}\nAppends: {}\nWorkspace/Devtool: {}\nBuild: {}\nDetail: {load_state}\n{task_capabilities}\n\nDependencies: {}\nRuntime dependencies: {}\nReverse dependencies: unavailable\n{tasks}\n{}\n{}\n{}\n{}",
+        "Recipe: {}\nResolved version: {}\nPreferred version: {}\nProvider layer: {}\nProvider file: {}\nAppends: {}\nWorkspace/Devtool: {}\nBuild: {}\nDetail: {load_state}\n{task_capabilities}\n{navigation_capabilities}\n\nDependencies: {}\nRuntime dependencies: {}\nReverse dependencies: unavailable\n{tasks}\n{}\n{}\n{}\n{}",
         recipe.name,
         recipe.version.as_deref().unwrap_or("unavailable"),
         recipe.preferred_version.as_deref().unwrap_or("unavailable"),
@@ -2951,7 +3044,7 @@ fn bbmask_assignment(value: &str) -> String {
     )
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: b build, C clean, M menuconfig, S cleansstate, g server dependency graph, d devtool-edit, u update-recipe, F finish, P deploy, D reset selected recipe\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: e provider, o task logs, p patches, b/f tasks, d modify, u update-recipe, F finish, P deploy, D reset\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
@@ -4206,6 +4299,70 @@ mod tests {
                 .collect::<String>();
             assert!(output.contains("bitbake -f busybox -c compile"));
         }
+    }
+    #[test]
+    fn recipe_navigation_renders_log_patch_pickers_and_disabled_reasons_responsively() {
+        for (width, height) in [(160, 32), (110, 28), (90, 25)] {
+            let mut app = App::new(10, 1_000);
+            app.dialogs.push_back(Dialog::RecipeTaskLogPicker(
+                yoctui_model::RecipeTaskLogPicker {
+                    recipe: "busybox".into(),
+                    logs: vec![
+                        yoctui_model::RecipeTaskLogChoice {
+                            task: "do_compile".into(),
+                            state: TaskState::Failed,
+                            path: "/tmp/log.do_compile".into(),
+                        },
+                        yoctui_model::RecipeTaskLogChoice {
+                            task: "do_install".into(),
+                            state: TaskState::Completed,
+                            path: "/tmp/log.do_install".into(),
+                        },
+                    ],
+                    selection: 1,
+                },
+            ));
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("busybox retained task logs"), "{output}");
+            assert!(output.contains("/tmp/log.do_install"), "{output}");
+
+            app.dialogs.clear();
+            app.dialogs
+                .push_back(Dialog::RecipePatchPicker(yoctui_model::RecipePatchPicker {
+                    recipe: "busybox".into(),
+                    patches: vec!["/layers/meta/recipes-core/busybox/files/fix.patch".into()],
+                    selection: 0,
+                }));
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("busybox patch review"), "{output}");
+            assert!(output.contains("fix.patch"), "{output}");
+        }
+
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Recipes;
+        app.workspace.recipes.push(yoctui_model::Recipe {
+            name: "demo".into(),
+            ..yoctui_model::Recipe::default()
+        });
+        app.recipe_metadata.insert(
+            "demo".into(),
+            yoctui_model::RecipeMetadata {
+                recipe: "demo".into(),
+                patches: Some(vec!["file://unresolved.patch".into()]),
+                ..yoctui_model::RecipeMetadata::default()
+            },
+        );
+        let output = rendered_text(&app, 160, 36);
+        assert!(
+            output.contains("provider unavailable (provider path not reported)"),
+            "{output}"
+        );
+        assert!(
+            output.contains("patches unavailable (remote or")
+                && output.contains("unresolved paths)"),
+            "{output}"
+        );
+        assert!(output.contains("Devtool: modify/update/finish"), "{output}");
     }
     #[test]
     fn build_completion_is_modal_but_running_builds_keep_the_shell_visible() {

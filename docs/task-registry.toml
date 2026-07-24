@@ -273,18 +273,18 @@ notes = "Build, metadata-backed force-task selection, clean, cleansstate, devshe
 id = "RECIPE-NAV-001"
 milestone = "M3"
 title = "Complete recipe file, log, patch, and Devtool routes"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 41
 required = true
 depends_on = ["RECIPE-BITBAKE-001"]
 verify = ["cargo test -p yoctui-model recipe_navigation", "cargo test -p yoctui-app recipe_navigation", "cargo test -p yoctui-ui recipe_navigation", "cargo test -p yoctui -- recipe_navigation"]
-notes = "Authoritative provider/editor, selected task log, patch review, missing-path/tool failures, disabled explanations, and existing Devtool route integration."
+notes = "Authoritative provider/editor, retained task-log and BitBake-resolved local patch pickers, stale/missing/editor failure reporting, responsive disabled explanations, and existing typed Devtool route integration are complete."
 
 [[task]]
 id = "RECIPE-QA-001"
 milestone = "M3"
 title = "Add recipe CVE and SPDX background actions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 42
 required = true
 depends_on = ["RECIPE-NAV-001", "JOB-002"]

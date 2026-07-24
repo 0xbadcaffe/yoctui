@@ -546,11 +546,19 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Down | Input::Char('j') => Some(Action::SelectRecipe { delta: 1 }),
         Input::Enter => Some(Action::BeginSelectedRecipeMetadata),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
+        Input::Char('e') => Some(Action::OpenSelectedRecipeProvider),
+        Input::Char('o') => Some(Action::BeginSelectedRecipeTaskLog),
+        Input::Char('p') => Some(Action::BeginSelectedRecipePatchReview),
         Input::Char('g') => Some(Action::BeginSelectedRecipeDependencies),
         Input::Char('f') => Some(Action::BeginSelectedRecipeForceTask),
         Input::Char('v') => Some(Action::BeginSelectedRecipeDevshell),
         Input::Char('K') => Some(Action::BeginSelectedRecipeDiffconfig),
         Input::Char('z') => Some(Action::BeginSelectedRecipeDiffsigs),
+        Input::Char('d') => Some(Action::BeginSelectedRecipeDevtoolModify),
+        Input::Char('u') => Some(Action::BeginSelectedRecipeDevtoolUpdateRecipe),
+        Input::Char('F') => Some(Action::BeginSelectedRecipeDevtoolFinish),
+        Input::Char('P') => Some(Action::BeginSelectedRecipeDevtoolDeploy),
+        Input::Char('D') => Some(Action::BeginSelectedRecipeDevtoolReset),
         _ => None,
     }
 }
@@ -1178,6 +1186,41 @@ mod tests {
             coordinator
                 .queue_build(&request, SystemTime::UNIX_EPOCH)
                 .is_none()
+        );
+    }
+    #[test]
+    fn recipe_navigation_maps_files_logs_patches_and_devtool_routes() {
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('e')),
+            Some(Action::OpenSelectedRecipeProvider)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('o')),
+            Some(Action::BeginSelectedRecipeTaskLog)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('p')),
+            Some(Action::BeginSelectedRecipePatchReview)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('d')),
+            Some(Action::BeginSelectedRecipeDevtoolModify)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('u')),
+            Some(Action::BeginSelectedRecipeDevtoolUpdateRecipe)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('F')),
+            Some(Action::BeginSelectedRecipeDevtoolFinish)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('P')),
+            Some(Action::BeginSelectedRecipeDevtoolDeploy)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('D')),
+            Some(Action::BeginSelectedRecipeDevtoolReset)
         );
     }
     #[test]

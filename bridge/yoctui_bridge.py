@@ -326,11 +326,25 @@ class TinfoilConnection:
         tasks = datastore.getVar("__BBTASKS") or []
         packages = (datastore.getVar("PACKAGES") or "").split()
         source_uri = (datastore.getVar("SRC_URI") or "").split()
-        patches = [
+        patch_uris = [
             value
             for value in source_uri
             if value.split(";", 1)[0].endswith((".patch", ".diff"))
         ]
+        patches = []
+        try:
+            fetch = importlib.import_module("bb.fetch2").Fetch(source_uri, datastore)
+        except Exception:
+            fetch = None
+        for value in patch_uris:
+            uri = value.split(";", 1)[0]
+            if uri.startswith("file://") and fetch is not None:
+                try:
+                    patches.append(fetch.localpath(value))
+                    continue
+                except Exception:
+                    pass
+            patches.append(value)
         return {
             "recipe": recipe,
             "workspace_status": None,

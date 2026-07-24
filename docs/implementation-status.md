@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete recipe navigation and Devtool routes. Typed recipe BitBake operations, authoritative metadata, stable search/selection, summary rows, and the contextual Recipes Inspector are complete alongside the lazy Layers tree and persistent workbench.
+Complete recipe CVE and SPDX background actions. Typed recipe BitBake operations, authoritative provider/log/patch navigation, stable search/selection, summary rows, and the contextual Recipes Inspector are complete alongside the lazy Layers tree and persistent workbench.
 
 ## Current task
 
@@ -48,7 +48,7 @@ See `docs/current-task.md`.
 | Logs workspace | DONE | Protected-diagnostic retention, bounded bytes/entries, safe truncation, coalescing, pressure counters, follow/pause, both-axis scrolling, search, all filters, selected Inspector, source opening, and clipboard effects are covered |
 | Errors workspace | DONE | Stable structured diagnostics drive the full list and Inspector, exact retained-log and source navigation, related context, visible loss counters, and actionable success/warning/failure/cancellation/backend-loss outcomes |
 | Layers workspace | DONE | Every configured layer stays visible above a stable-path lazy tree; priority, compatibility, active/Git state, subtree refresh, hidden/search filtering, typed Inspector modes, safe 64 KiB text/binary previews, and responsive failure-safe rendering are tested |
-| Recipes workspace | IN_PROGRESS | Live-validated typed metadata, identity-stable search/selection, complete Inspector states, and typed build/force/clean/cleansstate/devshell/menuconfig/diffconfig/diffsigs operations with persistent jobs are done; file/log/patch/Devtool and QA actions remain |
+| Recipes workspace | IN_PROGRESS | Live-validated typed metadata, identity-stable Inspector states, typed BitBake operations, authoritative provider/log/local-patch navigation, editor failure handling, and integrated Devtool routes are done; CVE/SPDX actions remain |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
@@ -57,10 +57,9 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `RECIPE-NAV-001` — complete recipe file, log, patch, and Devtool routes
-2. `RECIPE-QA-001` — add recipe CVE and SPDX background actions
-3. `CONFIG-001` — complete configuration provenance and editing
-4. `DEVTOOL-001` — complete Devtool lifecycle
+1. `RECIPE-QA-001` — add recipe CVE and SPDX background actions
+2. `CONFIG-001` — complete configuration provenance and editing
+3. `DEVTOOL-001` — complete Devtool lifecycle
 
 ## Rules
 

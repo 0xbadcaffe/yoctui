@@ -421,6 +421,24 @@ pub struct RecipeTaskPicker {
     pub force: bool,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecipeTaskLogChoice {
+    pub task: String,
+    pub state: TaskState,
+    pub path: PathBuf,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecipeTaskLogPicker {
+    pub recipe: String,
+    pub logs: Vec<RecipeTaskLogChoice>,
+    pub selection: usize,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecipePatchPicker {
+    pub recipe: String,
+    pub patches: Vec<PathBuf>,
+    pub selection: usize,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
     BuildOptions,
     BuildCompletion,
@@ -428,6 +446,8 @@ pub enum Dialog {
     ImagePicker(ImagePicker),
     RecipeTaskConfirmation(BuildRequest),
     RecipeTaskPicker(RecipeTaskPicker),
+    RecipeTaskLogPicker(RecipeTaskLogPicker),
+    RecipePatchPicker(RecipePatchPicker),
     DevtoolResetConfirmation(String),
     DevtoolUpdateConfirmation(String),
     DevtoolFinish { recipe: String, destination: String },
@@ -1588,6 +1608,19 @@ pub enum Action {
     },
     PreviewSelectedRecipeTask,
     CancelRecipeTaskPicker,
+    OpenSelectedRecipeProvider,
+    BeginSelectedRecipeTaskLog,
+    SelectRecipeTaskLog {
+        delta: isize,
+    },
+    OpenSelectedRecipeTaskLog,
+    CancelRecipeTaskLogPicker,
+    BeginSelectedRecipePatchReview,
+    SelectRecipePatch {
+        delta: isize,
+    },
+    OpenSelectedRecipePatch,
+    CancelRecipePatchPicker,
     BeginSelectedRecipeDevtoolModify,
     BeginSelectedRecipeDevtoolReset,
     BeginSelectedRecipeDevtoolUpdateRecipe,
@@ -2918,6 +2951,158 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::CancelRecipeTaskPicker => {
             if matches!(app.active_dialog(), Some(Dialog::RecipeTaskPicker(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::OpenSelectedRecipeProvider => {
+            let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) else {
+                app.notification = Some("No recipe is selected to open.".into());
+                return None;
+            };
+            if let Some(path) = recipe.file.clone() {
+                return Some(Effect::OpenInEditor(path));
+            }
+            app.notification = Some(format!(
+                "BitBake did not report an authoritative provider path for {}.",
+                recipe.name
+            ));
+        }
+        Action::BeginSelectedRecipeTaskLog => {
+            let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) else {
+                app.notification = Some("No recipe is selected for task-log inspection.".into());
+                return None;
+            };
+            let recipe_name = recipe.name.clone();
+            let mut logs = app
+                .tasks
+                .values()
+                .chain(app.completed_tasks.iter().map(|completed| &completed.task))
+                .filter(|task| task.recipe == recipe_name)
+                .filter_map(|task| {
+                    task.log_path.clone().map(|path| RecipeTaskLogChoice {
+                        task: task.task.clone(),
+                        state: task.state,
+                        path,
+                    })
+                })
+                .collect::<Vec<_>>();
+            logs.sort_by(|left, right| {
+                left.task
+                    .cmp(&right.task)
+                    .then_with(|| left.path.cmp(&right.path))
+            });
+            logs.dedup_by(|left, right| left.path == right.path);
+            match logs.len() {
+                0 => {
+                    app.notification = Some(format!(
+                        "No retained task log path is available for {recipe_name}; BitBake may not have reported one or it may have been evicted."
+                    ));
+                }
+                1 => return Some(Effect::OpenInEditor(logs.remove(0).path)),
+                _ => open_dialog(
+                    app,
+                    Dialog::RecipeTaskLogPicker(RecipeTaskLogPicker {
+                        recipe: recipe_name,
+                        logs,
+                        selection: 0,
+                    }),
+                ),
+            }
+        }
+        Action::SelectRecipeTaskLog { delta } => {
+            if let Some(Dialog::RecipeTaskLogPicker(picker)) = app.active_dialog_mut() {
+                picker.selection = if delta.is_negative() {
+                    picker.selection.saturating_sub(delta.unsigned_abs())
+                } else {
+                    picker
+                        .selection
+                        .saturating_add(delta as usize)
+                        .min(picker.logs.len().saturating_sub(1))
+                };
+            }
+        }
+        Action::OpenSelectedRecipeTaskLog => {
+            if let Some(Dialog::RecipeTaskLogPicker(picker)) = app.active_dialog()
+                && let Some(path) = picker
+                    .logs
+                    .get(picker.selection)
+                    .map(|choice| choice.path.clone())
+            {
+                close_dialog(app);
+                return Some(Effect::OpenInEditor(path));
+            }
+        }
+        Action::CancelRecipeTaskLogPicker => {
+            if matches!(app.active_dialog(), Some(Dialog::RecipeTaskLogPicker(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::BeginSelectedRecipePatchReview => {
+            let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) else {
+                app.notification = Some("No recipe is selected for patch review.".into());
+                return None;
+            };
+            let recipe_name = recipe.name.clone();
+            let Some(patches) = app
+                .recipe_metadata
+                .get(&recipe_name)
+                .and_then(|metadata| metadata.patches.as_ref())
+            else {
+                app.notification = Some(format!(
+                    "Load authoritative metadata for {recipe_name} with Enter before reviewing patches."
+                ));
+                return None;
+            };
+            let mut local_patches = patches
+                .iter()
+                .map(PathBuf::from)
+                .filter(|path| path.is_absolute())
+                .collect::<Vec<_>>();
+            local_patches.sort();
+            local_patches.dedup();
+            if local_patches.is_empty() {
+                app.notification = Some(if patches.is_empty() {
+                    format!("BitBake reported no patches for {recipe_name}.")
+                } else {
+                    format!(
+                        "The patches for {recipe_name} are remote or unresolved; no authoritative local path is available."
+                    )
+                });
+            } else if local_patches.len() == 1 {
+                return Some(Effect::OpenInEditor(local_patches.remove(0)));
+            } else {
+                open_dialog(
+                    app,
+                    Dialog::RecipePatchPicker(RecipePatchPicker {
+                        recipe: recipe_name,
+                        patches: local_patches,
+                        selection: 0,
+                    }),
+                );
+            }
+        }
+        Action::SelectRecipePatch { delta } => {
+            if let Some(Dialog::RecipePatchPicker(picker)) = app.active_dialog_mut() {
+                picker.selection = if delta.is_negative() {
+                    picker.selection.saturating_sub(delta.unsigned_abs())
+                } else {
+                    picker
+                        .selection
+                        .saturating_add(delta as usize)
+                        .min(picker.patches.len().saturating_sub(1))
+                };
+            }
+        }
+        Action::OpenSelectedRecipePatch => {
+            if let Some(Dialog::RecipePatchPicker(picker)) = app.active_dialog()
+                && let Some(path) = picker.patches.get(picker.selection).cloned()
+            {
+                close_dialog(app);
+                return Some(Effect::OpenInEditor(path));
+            }
+        }
+        Action::CancelRecipePatchPicker => {
+            if matches!(app.active_dialog(), Some(Dialog::RecipePatchPicker(_))) {
                 close_dialog(app);
             }
         }
@@ -6150,5 +6335,106 @@ mod tests {
         assert_eq!(app.visible_task_rows().len(), 1);
         app.task_filters.minimum_duration = Some(Duration::from_secs(60));
         assert!(app.visible_task_rows().is_empty());
+    }
+
+    #[test]
+    fn recipe_navigation_uses_authoritative_provider_logs_and_local_patches() {
+        let mut app = App::new(20, 4_000);
+        app.workspace.recipes.push(Recipe {
+            name: "busybox".into(),
+            file: Some("/layers/meta/recipes-core/busybox/busybox_1.0.bb".into()),
+            ..Recipe::default()
+        });
+        app.recipe_metadata.insert(
+            "busybox".into(),
+            RecipeMetadata {
+                recipe: "busybox".into(),
+                patches: Some(vec![
+                    "/layers/meta/recipes-core/busybox/files/a.patch".into(),
+                    "https://example.invalid/remote.diff".into(),
+                    "/layers/meta/recipes-core/busybox/files/b.patch".into(),
+                ]),
+                ..RecipeMetadata::default()
+            },
+        );
+        let mut active = TaskInfo::active(
+            TaskId("busybox:do_compile".into()),
+            "busybox".into(),
+            "do_compile".into(),
+        );
+        active.log_path = Some("/tmp/log.do_compile".into());
+        app.tasks.insert(active.id.clone(), active);
+        let mut completed = TaskInfo::active(
+            TaskId("busybox:do_install".into()),
+            "busybox".into(),
+            "do_install".into(),
+        );
+        completed.state = TaskState::Completed;
+        completed.log_path = Some("/tmp/log.do_install".into());
+        app.completed_tasks.push_back(CompletedTask {
+            task: completed,
+            success: true,
+        });
+
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedRecipeProvider),
+            Some(Effect::OpenInEditor(
+                "/layers/meta/recipes-core/busybox/busybox_1.0.bb".into()
+            ))
+        );
+        assert_eq!(update(&mut app, Action::BeginSelectedRecipeTaskLog), None);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::RecipeTaskLogPicker(picker)) if picker.logs.len() == 2
+        ));
+        let _ = update(&mut app, Action::SelectRecipeTaskLog { delta: 1 });
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedRecipeTaskLog),
+            Some(Effect::OpenInEditor("/tmp/log.do_install".into()))
+        );
+
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedRecipePatchReview),
+            None
+        );
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::RecipePatchPicker(picker)) if picker.patches.len() == 2
+        ));
+        let _ = update(&mut app, Action::SelectRecipePatch { delta: 1 });
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedRecipePatch),
+            Some(Effect::OpenInEditor(
+                "/layers/meta/recipes-core/busybox/files/b.patch".into()
+            ))
+        );
+    }
+
+    #[test]
+    fn recipe_navigation_explains_missing_and_remote_only_paths() {
+        let mut app = App::new(20, 4_000);
+        app.workspace.recipes.push(Recipe {
+            name: "demo".into(),
+            ..Recipe::default()
+        });
+        let _ = update(&mut app, Action::OpenSelectedRecipeProvider);
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("provider path")
+        );
+        let _ = update(&mut app, Action::BeginSelectedRecipeTaskLog);
+        assert!(app.notification.as_deref().unwrap().contains("evicted"));
+        app.recipe_metadata.insert(
+            "demo".into(),
+            RecipeMetadata {
+                recipe: "demo".into(),
+                patches: Some(vec!["file://unresolved.patch".into()]),
+                ..RecipeMetadata::default()
+            },
+        );
+        let _ = update(&mut app, Action::BeginSelectedRecipePatchReview);
+        assert!(app.notification.as_deref().unwrap().contains("unresolved"));
     }
 }

@@ -726,6 +726,20 @@ confirmation. Empty or stale selection, unavailable task metadata, unsupported
 tasks, malformed task names, and a duplicate active build stay inert and
 produce an actionable notification.
 
+`e` opens the selected recipe's provider file using the configured editor.
+`o` opens its retained task log directly or, when multiple authoritative log
+paths remain, opens a task/state/path picker. `p` does the same for
+BitBake-resolved local patch paths. Remote or unresolved patch URIs are shown
+as unavailable and are never converted into guessed filesystem paths. The
+pickers trap focus; `Up`/`Down` selects, `Enter` opens, and `Esc` returns to the
+exact prior pane. A path that disappeared after discovery, a missing editor,
+or a non-zero editor exit produces an actionable notification after the
+terminal is restored.
+
+The same Recipes workspace exposes typed Devtool modify, update-recipe,
+finish, deploy-target, and reset routes for the absolute selected recipe
+identity. Existing preview and confirmation requirements remain in force.
+
 Unavailable actions are shown disabled with an explanation in the footer or inspector.
 
 ---
