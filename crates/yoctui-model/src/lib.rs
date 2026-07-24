@@ -39,6 +39,7 @@ pub enum Screen {
     Dependencies,
     LayerRelationships,
     Recipes,
+    Images,
     Layers,
     Configuration,
     Bbmask,
@@ -72,10 +73,11 @@ pub enum AnimationSpeed {
     #[default]
     Fast,
 }
-const NAVIGATOR_SCREENS: [Screen; 11] = [
+const NAVIGATOR_SCREENS: [Screen; 12] = [
     Screen::Dashboard,
     Screen::Layers,
     Screen::Recipes,
+    Screen::Images,
     Screen::Tasks,
     Screen::Logs,
     Screen::Errors,
