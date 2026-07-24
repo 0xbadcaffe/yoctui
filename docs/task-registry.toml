@@ -2,19 +2,19 @@ version = 1
 project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
-# Statuses in this initial registry are deliberately conservative.
-# GOV-001 must reconcile them against the current master branch before feature work resumes.
+# Statuses reflect the implementation and test evidence present on master.
+# Broad tasks remain IN_PROGRESS until every behavior in their notes is verified.
 
 [[task]]
 id = "GOV-001"
 milestone = "M0"
 title = "Reconcile governance roadmap with current repository"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1
 required = true
 depends_on = []
 verify = ["./scripts/verify-roadmap.sh", "cargo test -p yoctui-model -p yoctui-ui -p yoctui-app"]
-notes = "Inspect recent shell, focus, themes, task animation, Layers, Tasks, Images, and Settings commits."
+notes = "Reconciled shell, focus, palette, themes, animation, Layers, Tasks, Images, and Settings evidence in this governance commit."
 
 [[task]]
 id = "GOV-002"
@@ -42,12 +42,12 @@ notes = "Expanded architecture contract."
 id = "UI-SHELL-001"
 milestone = "M2"
 title = "Persistent Header Navigator Workspace Inspector Footer shell"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 10
 required = true
 depends_on = ["GOV-001"]
-verify = ["cargo test -p yoctui-ui responsive_shell"]
-notes = "Reconcile existing implementation and remaining responsive behavior."
+verify = ["cargo test -p yoctui-ui persistent_shell_degrades_across_supported_terminal_widths"]
+notes = "Persistent five-region shell and non-blocking build navigation implemented by fc1b1ae and 4db7369; TestBackend breakpoint coverage added by 88b4aa7."
 
 [[task]]
 id = "UI-RESP-001"
@@ -69,18 +69,18 @@ priority = 12
 required = true
 depends_on = ["UI-SHELL-001"]
 verify = ["cargo test -p yoctui-model focus", "cargo test -p yoctui-ui dialog"]
-notes = "Reconcile existing focus commits; full dialog stack remains."
+notes = "Navigator/workspace/inspector cycling and modal input dispatch exist in 4f0d7eb and 5e4bbd9. Dialog focus state and restoration are not yet unified."
 
 [[task]]
 id = "DIALOG-001"
 milestone = "M2"
 title = "Unified typed dialog stack"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 13
 required = true
 depends_on = ["FOCUS-001"]
 verify = ["cargo test -p yoctui-model dialog", "cargo test -p yoctui-ui dialog"]
-notes = "All dialogs use typed model state and semantic snapshots."
+notes = "Build, image, recipe, Devtool, BBMASK, notification, and completion overlays exist with confirmation tests. They remain ad-hoc App fields rather than one typed dialog stack."
 
 [[task]]
 id = "THEME-001"
@@ -91,18 +91,18 @@ priority = 14
 required = true
 depends_on = ["UI-SHELL-001"]
 verify = ["cargo test -p yoctui-ui theme"]
-notes = "dark light matrix-green high-contrast monochrome."
+notes = "All five theme names, configuration parsing, and focus/selection roles exist from 88816bd. Full semantic color roles and interactive switching remain."
 
 [[task]]
 id = "SETTINGS-001"
 milestone = "M2"
 title = "Interactive settings editing and persistence"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 15
 required = true
 depends_on = ["THEME-001", "DIALOG-001"]
 verify = ["cargo test -p yoctui-model settings", "cargo test -p yoctui-app settings"]
-notes = "Theme, animation, reduced motion, pane sizes, header/footer, mouse, icons, workspace."
+notes = "Read-only Settings workspace added by 32b7983 and theme/animation preferences load from config. Interactive editing and complete persistence remain."
 
 [[task]]
 id = "ANIM-001"
@@ -113,7 +113,29 @@ priority = 16
 required = true
 depends_on = ["UI-SHELL-001"]
 verify = ["cargo test -p yoctui-ui animation"]
-notes = "Must not imply false numeric progress."
+notes = "Tick-driven indeterminate frames, fast/slow speed, and reduced-motion suppression exist from 3f69c16. Direct animation behavior tests remain."
+
+[[task]]
+id = "PALETTE-001"
+milestone = "M2"
+title = "Searchable contextual command palette"
+status = "IN_PROGRESS"
+priority = 17
+required = true
+depends_on = ["UI-SHELL-001"]
+verify = ["cargo test -p yoctui-model command_palette", "cargo test -p yoctui-ui command_palette", "cargo test -p yoctui-app command_palette"]
+notes = "Command palette overlay, selection, activation, and Ctrl+P routing added by 457f176. Search, context filtering, disabled-command explanations, and direct tests remain."
+
+[[task]]
+id = "TASKS-001"
+milestone = "M2"
+title = "Complete live Tasks workspace"
+status = "IN_PROGRESS"
+priority = 18
+required = true
+depends_on = ["UI-SHELL-001", "BB-002"]
+verify = ["cargo test -p yoctui-model live_tasks", "cargo test -p yoctui-ui live_tasks", "cargo test -p yoctui-app live_tasks"]
+notes = "Active-task workspace and persistent navigation added by 854f798 and 4db7369. Overall progress, completed/waiting rows, filters, selection, inspector details, and direct tests remain."
 
 [[task]]
 id = "JOB-001"
@@ -240,23 +262,34 @@ notes = "Recipe/task paths and oe-depends-dot integration."
 id = "SIG-001"
 milestone = "M3"
 title = "Signature dump and comparison workflows"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 45
 required = true
 depends_on = ["JOB-002"]
 verify = ["cargo test -p yoctui-app signature"]
-notes = "bitbake-dumpsig and bitbake-diffsigs."
+notes = "No signature dump or comparison adapter, typed workflow, UI, or tests are present."
 
 [[task]]
 id = "PKG-001"
 milestone = "M3"
 title = "Package data browser"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 46
 required = true
 depends_on = ["JOB-002"]
 verify = ["cargo test -p yoctui-app pkgdata"]
-notes = "Ownership, runtime dependencies, reverse dependencies, image membership."
+notes = "No oe-pkgdata-util adapter, package workspace, typed workflow, or tests are present."
+
+[[task]]
+id = "IMAGES-001"
+milestone = "M4"
+title = "Complete Images artifact workspace"
+status = "IN_PROGRESS"
+priority = 49
+required = true
+depends_on = ["UI-SHELL-001", "JOB-002"]
+verify = ["cargo test -p yoctui-model images_workspace", "cargo test -p yoctui-ui images_workspace", "cargo test -p yoctui-app image_action"]
+notes = "Image-recipe listing workspace added by 7fb89fb and image selection/build confirmation exists. Deploy artifacts, manifests, checksums, licenses, SBOM/Wic details, selection, inspector, and direct tests remain."
 
 [[task]]
 id = "QEMU-001"
