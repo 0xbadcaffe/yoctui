@@ -1879,6 +1879,7 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlS),
         KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlB),
         KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlP),
+        KeyCode::F(5) => Some(Input::F5),
         KeyCode::Tab => Some(Input::Tab),
         KeyCode::BackTab => Some(Input::BackTab),
         KeyCode::Char(character) => Some(Input::Char(character)),

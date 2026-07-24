@@ -8,6 +8,7 @@ pub enum Input {
     CtrlC,
     CtrlB,
     CtrlP,
+    F5,
     Tab,
     BackTab,
     CtrlS,
@@ -44,6 +45,7 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('?') => Some(Action::Open(Screen::Help)),
         Input::Char('q') | Input::CtrlC => Some(Action::Quit),
         Input::CtrlP => Some(Action::OpenCommandPalette),
+        Input::F5 => Some(Action::OpenBuildOptions),
         Input::Tab => Some(Action::CycleFocus { backwards: false }),
         Input::BackTab => Some(Action::CycleFocus { backwards: true }),
         Input::Char('Y') => Some(Action::ConfirmQuit),
@@ -65,6 +67,7 @@ mod tests {
             key_action(Input::Tab),
             Some(Action::CycleFocus { backwards: false })
         );
+        assert_eq!(key_action(Input::F5), Some(Action::OpenBuildOptions));
         assert_eq!(
             key_action(Input::Char('x')),
             Some(Action::Open(Screen::Bbmask))
