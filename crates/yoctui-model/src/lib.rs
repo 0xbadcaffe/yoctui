@@ -3010,6 +3010,38 @@ fn set_dependency_graph(app: &mut App, graph: DependencyGraph, limitations: Opti
         .filter(|selected| graph.contains(selected))
         .or_else(|| graph.contains(&graph.root).then(|| graph.root.clone()))
         .or_else(|| graph.nodes.first().map(|node| node.id.clone()));
+    app.dependencies = Some(RecipeDependencies {
+        recipe: graph.root.recipe_name().to_owned(),
+        build: graph
+            .edges
+            .iter()
+            .filter_map(|edge| {
+                if edge.from == graph.root && edge.kind == DependencyEdgeKind::Build {
+                    match &edge.to {
+                        DependencyNodeId::Recipe(recipe) => Some(recipe.clone()),
+                        DependencyNodeId::Task { .. } => None,
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect(),
+        runtime: graph
+            .edges
+            .iter()
+            .filter_map(|edge| {
+                if edge.from == graph.root && edge.kind == DependencyEdgeKind::Runtime {
+                    match &edge.to {
+                        DependencyNodeId::Recipe(recipe) => Some(recipe.clone()),
+                        DependencyNodeId::Task { .. } => None,
+                    }
+                } else {
+                    None
+                }
+            })
+            .collect(),
+    });
+    app.dependency_selection = 0;
     app.screen = Screen::Dependencies;
     app.dependency_graph = if let Some(limitations) = limitations {
         DependencyGraphState::Partial { graph, limitations }

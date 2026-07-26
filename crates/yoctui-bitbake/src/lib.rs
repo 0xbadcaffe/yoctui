@@ -8,22 +8,28 @@ use std::{
 };
 use thiserror::Error;
 use tokio::{
-    io::{AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader},
+    io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, Command as TokioCommand},
 };
 use yoctui_model::{
-    BuildRequest, DependencyGraph, DependencyNodeId, DevtoolCapability, DevtoolGitState,
-    DevtoolOperation, DevtoolOperationError, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace,
-    Layer, LogEntry, Recipe, RecipeBuildStatus, RecipeIdentity, RecipeMetadata,
-    RecipeWorkspaceStatus, Severity, TaskStats, VariableOperation, Workspace,
+    BuildRequest, DependencyEdge, DependencyEdgeKind, DependencyGraph, DependencyNode,
+    DependencyNodeId, DevtoolCapability, DevtoolGitState, DevtoolOperation, DevtoolOperationError,
+    DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Layer, LogEntry, Recipe,
+    RecipeBuildStatus, RecipeIdentity, RecipeMetadata, RecipeWorkspaceStatus, Severity, TaskStats,
+    VariableOperation, Workspace,
 };
 use yoctui_protocol::{
-    Command, Envelope, Event, LayerData, LayerRelationshipData, MAX_LINE_BYTES, ProtocolError,
-    RecipeBuildStatusData, RecipeData, RecipeWorkspaceStatusData, TaskStatsData, VERSION,
-    decode_line, encode_line,
+    Command, DependencyEdgeData, DependencyEdgeKindData, DependencyGraphData, DependencyNodeData,
+    DependencyNodeIdData, Envelope, Event, LayerData, LayerRelationshipData, MAX_LINE_BYTES,
+    ProtocolError, RecipeBuildStatusData, RecipeData, RecipeWorkspaceStatusData, TaskStatsData,
+    VERSION, decode_line, encode_line,
 };
 
 const MAX_PROCESS_LINE_BYTES: usize = 1024 * 1024;
+const MAX_DEPENDENCY_GRAPH_FILE_BYTES: u64 = 8 * 1024 * 1024;
+const MAX_DEPENDENCY_NODES: usize = 2_000;
+const MAX_DEPENDENCY_EDGES: usize = 4_000;
+const DEPENDENCY_GRAPH_TIMEOUT: Duration = Duration::from_secs(120);
 
 async fn read_output<R>(stream: R, sender: tokio::sync::mpsc::Sender<LogEntry>)
 where
@@ -870,6 +876,11 @@ pub struct RecipeDependencies {
     pub build: Vec<String>,
     pub runtime: Vec<String>,
 }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DependencyGraphResponse {
+    pub graph: DependencyGraph,
+    pub limitations: Vec<String>,
+}
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct LayerRelationship {
     pub name: String,
@@ -894,6 +905,10 @@ pub trait BitBakeBackend: Send {
         &mut self,
         recipe: String,
     ) -> Result<RecipeDependencies, BackendError>;
+    async fn get_dependency_graph(
+        &mut self,
+        recipe: String,
+    ) -> Result<DependencyGraphResponse, BackendError>;
     async fn get_recipe_sources(&mut self, recipe: String) -> Result<Vec<PathBuf>, BackendError>;
     async fn get_recipe_metadata(&mut self, recipe: String)
     -> Result<RecipeMetadata, BackendError>;
@@ -985,6 +1000,91 @@ impl ProcessBackend {
         let status = child.wait().await?;
         Ok((status.success(), status.code()))
     }
+
+    async fn generate_dependency_graph(
+        &self,
+        recipe: String,
+    ) -> Result<DependencyGraphResponse, BackendError> {
+        if self.child.is_some() {
+            return Err(BackendError::Bridge(
+                "dependency graph generation is unavailable during an active build".into(),
+            ));
+        }
+        BuildRequest {
+            targets: vec![recipe.clone()],
+            task: None,
+            force: false,
+        }
+        .validate()
+        .map_err(|error| BackendError::Bridge(error.to_string()))?;
+
+        let graph_path = self.build_dir.join("task-depends.dot");
+        match tokio::fs::remove_file(&graph_path).await {
+            Ok(()) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(error) => return Err(error.into()),
+        }
+
+        let mut command = TokioCommand::new(&self.executable);
+        command
+            .args(&self.arguments)
+            .arg("-g")
+            .arg(&recipe)
+            .current_dir(&self.build_dir)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .kill_on_drop(true);
+        let mut child = command.spawn()?;
+        let status = match tokio::time::timeout(DEPENDENCY_GRAPH_TIMEOUT, child.wait()).await {
+            Ok(status) => status?,
+            Err(_) => {
+                let _ = child.kill().await;
+                return Err(BackendError::Bridge(
+                    "BitBake dependency graph generation timed out after 120 seconds".into(),
+                ));
+            }
+        };
+        if !status.success() {
+            return Err(BackendError::Bridge(format!(
+                "BitBake dependency graph generation exited with {}",
+                status
+                    .code()
+                    .map_or_else(|| "no exit code".into(), |code| code.to_string())
+            )));
+        }
+
+        let metadata = tokio::fs::symlink_metadata(&graph_path).await?;
+        if metadata.file_type().is_symlink() || !metadata.is_file() {
+            return Err(BackendError::Bridge(
+                "BitBake dependency graph output is not a regular file".into(),
+            ));
+        }
+        if metadata.len() > MAX_DEPENDENCY_GRAPH_FILE_BYTES {
+            return Err(BackendError::Bridge(format!(
+                "BitBake dependency graph exceeds the {} byte limit",
+                MAX_DEPENDENCY_GRAPH_FILE_BYTES
+            )));
+        }
+        let canonical_build_dir = tokio::fs::canonicalize(&self.build_dir).await?;
+        let canonical_graph = tokio::fs::canonicalize(&graph_path).await?;
+        if canonical_graph.parent() != Some(canonical_build_dir.as_path()) {
+            return Err(BackendError::Bridge(
+                "BitBake dependency graph output escaped the build directory".into(),
+            ));
+        }
+        let mut bytes = Vec::with_capacity(metadata.len() as usize);
+        tokio::fs::File::open(&canonical_graph)
+            .await?
+            .take(MAX_DEPENDENCY_GRAPH_FILE_BYTES + 1)
+            .read_to_end(&mut bytes)
+            .await?;
+        if bytes.len() as u64 > MAX_DEPENDENCY_GRAPH_FILE_BYTES {
+            return Err(BackendError::Bridge(
+                "BitBake dependency graph grew beyond its byte limit while reading".into(),
+            ));
+        }
+        parse_task_dependency_dot(&recipe, &bytes)
+    }
 }
 #[async_trait]
 impl BitBakeBackend for ProcessBackend {
@@ -1015,6 +1115,12 @@ impl BitBakeBackend for ProcessBackend {
             "the process backend cannot inspect authoritative recipe dependencies; use the Yoctui bridge"
                 .into(),
         ))
+    }
+    async fn get_dependency_graph(
+        &mut self,
+        recipe: String,
+    ) -> Result<DependencyGraphResponse, BackendError> {
+        self.generate_dependency_graph(recipe).await
     }
     async fn get_recipe_sources(&mut self, _recipe: String) -> Result<Vec<PathBuf>, BackendError> {
         Err(BackendError::Bridge("the process backend cannot inspect authoritative recipe source paths; use the Yoctui bridge".into()))
@@ -1345,6 +1451,75 @@ impl BridgeBackend {
                 build,
                 runtime,
             },
+            Event::DependencyGraph { data } => {
+                let DependencyGraphData {
+                    root,
+                    nodes,
+                    edges,
+                    mut limitations,
+                } = data;
+                let root = dependency_node_id(root)?;
+                let mut dropped_paths = 0;
+                let nodes = nodes
+                    .into_iter()
+                    .map(|DependencyNodeData { id, provider, log }| {
+                        let provider = provider.map(PathBuf::from).and_then(|path| {
+                            if path.is_absolute() {
+                                Some(path)
+                            } else {
+                                dropped_paths += 1;
+                                None
+                            }
+                        });
+                        let log = log.map(PathBuf::from).and_then(|path| {
+                            if path.is_absolute() {
+                                Some(path)
+                            } else {
+                                dropped_paths += 1;
+                                None
+                            }
+                        });
+                        Ok(DependencyNode {
+                            id: dependency_node_id(id)?,
+                            provider,
+                            log,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, BackendError>>()?;
+                let edges = edges
+                    .into_iter()
+                    .map(|DependencyEdgeData { from, to, kind }| {
+                        Ok(DependencyEdge {
+                            from: dependency_node_id(from)?,
+                            to: dependency_node_id(to)?,
+                            kind: match kind {
+                                DependencyEdgeKindData::Build => DependencyEdgeKind::Build,
+                                DependencyEdgeKindData::Runtime => DependencyEdgeKind::Runtime,
+                                DependencyEdgeKindData::Task => DependencyEdgeKind::Task,
+                            },
+                        })
+                    })
+                    .collect::<Result<Vec<_>, BackendError>>()?;
+                let (graph, report) = DependencyGraph::normalize(
+                    root,
+                    nodes,
+                    edges,
+                    MAX_DEPENDENCY_NODES,
+                    MAX_DEPENDENCY_EDGES,
+                );
+                if report.is_partial() {
+                    limitations.push(format!(
+                        "Rust adapter bounds dropped {} nodes and {} edges",
+                        report.truncated_nodes, report.truncated_edges
+                    ));
+                }
+                if dropped_paths > 0 {
+                    limitations.push(format!(
+                        "Rust adapter dropped {dropped_paths} non-absolute provider or log paths"
+                    ));
+                }
+                BackendEvent::DependencyGraph { graph, limitations }
+            }
             Event::RecipeSources { recipe, paths } => BackendEvent::RecipeSources {
                 recipe,
                 paths: paths.into_iter().map(PathBuf::from).collect(),
@@ -1510,6 +1685,216 @@ fn task_stats(data: Option<TaskStatsData>) -> Option<TaskStats> {
         failed: stats.failed,
     })
 }
+
+fn dependency_node_id(data: DependencyNodeIdData) -> Result<DependencyNodeId, BackendError> {
+    if data.recipe.is_empty()
+        || data.recipe.len() > 512
+        || data.recipe.chars().any(char::is_whitespace)
+        || data.recipe.chars().any(char::is_control)
+        || data.task.as_ref().is_some_and(|task| {
+            task.is_empty()
+                || task.len() > 512
+                || task.chars().any(char::is_whitespace)
+                || task.chars().any(char::is_control)
+        })
+    {
+        return Err(BackendError::Bridge(
+            "protocol dependency graph contains an invalid node identity".into(),
+        ));
+    }
+    Ok(match data.task {
+        Some(task) => DependencyNodeId::task(data.recipe, task),
+        None => DependencyNodeId::recipe(data.recipe),
+    })
+}
+
+fn legacy_dependency_graph(
+    recipe: String,
+    build: Vec<String>,
+    runtime: Vec<String>,
+) -> DependencyGraphResponse {
+    let root = DependencyNodeId::recipe(recipe);
+    let edges = build
+        .into_iter()
+        .map(|dependency| DependencyEdge {
+            from: root.clone(),
+            to: DependencyNodeId::recipe(dependency),
+            kind: DependencyEdgeKind::Build,
+        })
+        .chain(runtime.into_iter().map(|dependency| DependencyEdge {
+            from: root.clone(),
+            to: DependencyNodeId::recipe(dependency),
+            kind: DependencyEdgeKind::Runtime,
+        }))
+        .collect();
+    let (graph, _) = DependencyGraph::normalize(
+        root,
+        Vec::new(),
+        edges,
+        MAX_DEPENDENCY_NODES,
+        MAX_DEPENDENCY_EDGES,
+    );
+    DependencyGraphResponse {
+        graph,
+        limitations: vec![
+            "Legacy bridge supplied direct recipe edges only; task dependencies are unavailable."
+                .into(),
+        ],
+    }
+}
+
+fn dot_quoted_id(line: &str) -> Result<(String, &str), BackendError> {
+    let Some(content) = line.strip_prefix('"') else {
+        return Err(BackendError::Bridge(
+            "malformed dependency graph identifier".into(),
+        ));
+    };
+    let mut value = String::new();
+    let mut escaped = false;
+    for (offset, character) in content.char_indices() {
+        if escaped {
+            match character {
+                '"' | '\\' => value.push(character),
+                _ => {
+                    return Err(BackendError::Bridge(
+                        "unsupported escape in dependency graph identifier".into(),
+                    ));
+                }
+            }
+            escaped = false;
+        } else if character == '\\' {
+            escaped = true;
+        } else if character == '"' {
+            return Ok((value, &content[offset + character.len_utf8()..]));
+        } else {
+            value.push(character);
+        }
+    }
+    Err(BackendError::Bridge(
+        "unterminated dependency graph identifier".into(),
+    ))
+}
+
+fn dependency_task_identity(value: String) -> Result<DependencyNodeId, BackendError> {
+    let Some((recipe, task)) = value.rsplit_once('.') else {
+        return Err(BackendError::Bridge(
+            "dependency graph task identity has no task separator".into(),
+        ));
+    };
+    if recipe.is_empty()
+        || task.is_empty()
+        || recipe.len() > 512
+        || task.len() > 512
+        || recipe.chars().any(char::is_whitespace)
+        || task.chars().any(char::is_whitespace)
+        || recipe.chars().any(char::is_control)
+        || task.chars().any(char::is_control)
+    {
+        return Err(BackendError::Bridge(
+            "dependency graph contains an invalid task identity".into(),
+        ));
+    }
+    Ok(DependencyNodeId::task(recipe, task))
+}
+
+fn parse_task_dependency_dot(
+    recipe: &str,
+    bytes: &[u8],
+) -> Result<DependencyGraphResponse, BackendError> {
+    let text = std::str::from_utf8(bytes)
+        .map_err(|_| BackendError::Bridge("dependency graph is not valid UTF-8".into()))?;
+    let root = DependencyNodeId::recipe(recipe);
+    let mut nodes = vec![DependencyNode::identity(root.clone())];
+    let mut edges = Vec::new();
+    let mut opened = false;
+    let mut closed = false;
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        if !opened {
+            if line != "digraph depends {" {
+                return Err(BackendError::Bridge(
+                    "dependency graph has an invalid header".into(),
+                ));
+            }
+            opened = true;
+            continue;
+        }
+        if line == "}" {
+            closed = true;
+            continue;
+        }
+        if closed {
+            return Err(BackendError::Bridge(
+                "dependency graph contains records after its closing brace".into(),
+            ));
+        }
+
+        let (source, remainder) = dot_quoted_id(line)?;
+        let remainder = remainder.trim_start();
+        if remainder.starts_with('[') {
+            if !remainder.trim_end_matches(';').ends_with(']') {
+                return Err(BackendError::Bridge(
+                    "dependency graph node contains malformed attributes".into(),
+                ));
+            }
+            nodes.push(DependencyNode::identity(dependency_task_identity(source)?));
+            continue;
+        }
+        let Some(remainder) = remainder.strip_prefix("->") else {
+            return Err(BackendError::Bridge(
+                "dependency graph contains an unsupported record".into(),
+            ));
+        };
+        let (destination, trailing) = dot_quoted_id(remainder.trim_start())?;
+        if !trailing.trim().trim_end_matches(';').is_empty() {
+            return Err(BackendError::Bridge(
+                "dependency graph edge contains unsupported attributes".into(),
+            ));
+        }
+        let from = dependency_task_identity(source)?;
+        let to = dependency_task_identity(destination)?;
+        nodes.push(DependencyNode::identity(from.clone()));
+        nodes.push(DependencyNode::identity(to.clone()));
+        edges.push(DependencyEdge {
+            from: from.clone(),
+            to: to.clone(),
+            kind: DependencyEdgeKind::Task,
+        });
+        if from.recipe_name() != to.recipe_name() {
+            edges.push(DependencyEdge {
+                from: DependencyNodeId::recipe(from.recipe_name()),
+                to: DependencyNodeId::recipe(to.recipe_name()),
+                kind: DependencyEdgeKind::Build,
+            });
+        }
+    }
+    if !opened || !closed {
+        return Err(BackendError::Bridge(
+            "dependency graph is incomplete".into(),
+        ));
+    }
+    let (graph, report) = DependencyGraph::normalize(
+        root,
+        nodes,
+        edges,
+        MAX_DEPENDENCY_NODES,
+        MAX_DEPENDENCY_EDGES,
+    );
+    let mut limitations = vec![
+        "The process backend task graph does not report runtime dependency edges.".into(),
+        "The process backend task graph does not report provider or task-log paths.".into(),
+    ];
+    if report.is_partial() {
+        limitations.push(format!(
+            "Dependency graph bounds dropped {} nodes and {} edges.",
+            report.truncated_nodes, report.truncated_edges
+        ));
+    }
+    Ok(DependencyGraphResponse { graph, limitations })
+}
 #[async_trait]
 impl BitBakeBackend for BridgeBackend {
     async fn inspect_workspace(&mut self) -> Result<Workspace, BackendError> {
@@ -1634,6 +2019,57 @@ impl BitBakeBackend for BridgeBackend {
                 _ => continue,
             }
         }
+    }
+    async fn get_dependency_graph(
+        &mut self,
+        recipe: String,
+    ) -> Result<DependencyGraphResponse, BackendError> {
+        self.command(Command::GetDependencyGraph {
+            recipe: recipe.clone(),
+        })
+        .await?;
+        loop {
+            match self.next_event().await? {
+                BackendEvent::DependencyGraph { graph, limitations }
+                    if graph.root.recipe_name() == recipe =>
+                {
+                    return Ok(DependencyGraphResponse { graph, limitations });
+                }
+                BackendEvent::DependencyGraph { graph, .. } => {
+                    return Err(BackendError::Bridge(format!(
+                        "bridge returned dependency graph root {} for requested recipe {recipe}",
+                        graph.root.recipe_name()
+                    )));
+                }
+                BackendEvent::Dependencies {
+                    recipe: returned,
+                    build,
+                    runtime,
+                } if returned == recipe => {
+                    return Ok(legacy_dependency_graph(recipe, build, runtime));
+                }
+                BackendEvent::CommandFailed { code, .. }
+                    if code == "invalid_request" || code == "unsupported_command" =>
+                {
+                    break;
+                }
+                BackendEvent::CommandFailed { code, message } => {
+                    return Err(BackendError::Bridge(format!("{code}: {message}")));
+                }
+                BackendEvent::Disconnected => {
+                    return Err(BackendError::Bridge(
+                        "bridge disconnected while reading the dependency graph".into(),
+                    ));
+                }
+                _ => continue,
+            }
+        }
+        let dependencies = self.get_dependencies(recipe.clone()).await?;
+        Ok(legacy_dependency_graph(
+            recipe,
+            dependencies.build,
+            dependencies.runtime,
+        ))
     }
     async fn get_recipe_sources(&mut self, recipe: String) -> Result<Vec<PathBuf>, BackendError> {
         self.command(Command::GetRecipeSources {
@@ -2238,6 +2674,67 @@ mod tests {
     }
 
     #[test]
+    fn dependency_graph_typed_event_converts_nodes_edges_and_limitations() {
+        let root = DependencyNodeIdData {
+            recipe: "image".into(),
+            task: None,
+        };
+        let task = DependencyNodeIdData {
+            recipe: "busybox".into(),
+            task: Some("do_compile".into()),
+        };
+        let event = Event::DependencyGraph {
+            data: DependencyGraphData {
+                root: root.clone(),
+                nodes: vec![DependencyNodeData {
+                    id: task.clone(),
+                    provider: Some("/layers/meta/busybox.bb".into()),
+                    log: Some("tmp/log.do_compile".into()),
+                }],
+                edges: vec![DependencyEdgeData {
+                    from: root,
+                    to: task.clone(),
+                    kind: DependencyEdgeKindData::Task,
+                }],
+                limitations: vec!["runtime unavailable".into()],
+            },
+        };
+        let BackendEvent::DependencyGraph { graph, limitations } =
+            BridgeBackend::event(event).unwrap()
+        else {
+            panic!("dependency graph event was not preserved");
+        };
+        assert_eq!(graph.root, DependencyNodeId::recipe("image"));
+        assert_eq!(
+            graph
+                .nodes
+                .iter()
+                .find(|node| node.id == DependencyNodeId::task("busybox", "do_compile"))
+                .and_then(|node| node.provider.as_deref()),
+            Some(Path::new("/layers/meta/busybox.bb"))
+        );
+        assert_eq!(graph.edges[0].kind, DependencyEdgeKind::Task);
+        assert_eq!(
+            graph
+                .nodes
+                .iter()
+                .find(|node| node.id == DependencyNodeId::task("busybox", "do_compile"))
+                .and_then(|node| node.log.as_ref()),
+            None
+        );
+        assert!(
+            limitations
+                .iter()
+                .any(|value| value == "runtime unavailable")
+        );
+        assert!(
+            limitations
+                .iter()
+                .any(|value| value.contains("non-absolute"))
+        );
+    }
+
+    #[test]
     fn typed_event_workspace_converts_wire_paths_and_metadata() {
         let event = Event::Workspace {
             data: yoctui_protocol::WorkspaceData {
@@ -2445,6 +2942,141 @@ mod tests {
                 .iter()
                 .any(|entry| entry.severity == Severity::Warning)
         );
+    }
+
+    #[test]
+    fn dependency_graph_dot_parser_normalizes_task_build_cycles_and_bounds() {
+        let graph = br#"digraph depends {
+"image.do_build" [label="image do_build"]
+"busybox.do_build" [label="busybox do_build"]
+"image.do_build" -> "busybox.do_build"
+"image.do_build" -> "busybox.do_build"
+"busybox.do_build" -> "image.do_build"
+}
+"#;
+        let response = parse_task_dependency_dot("image", graph).unwrap();
+        assert!(
+            response
+                .limitations
+                .iter()
+                .any(|value| value.contains("runtime"))
+        );
+        assert!(response.graph.edges.contains(&DependencyEdge {
+            from: DependencyNodeId::recipe("image"),
+            to: DependencyNodeId::recipe("busybox"),
+            kind: DependencyEdgeKind::Build,
+        }));
+        assert!(response.graph.edges.contains(&DependencyEdge {
+            from: DependencyNodeId::task("image", "do_build"),
+            to: DependencyNodeId::task("busybox", "do_build"),
+            kind: DependencyEdgeKind::Task,
+        }));
+        assert_eq!(
+            parse_task_dependency_dot("image", b"not a dot graph")
+                .unwrap_err()
+                .to_string(),
+            "bridge: dependency graph has an invalid header"
+        );
+
+        let mut bounded = String::from("digraph depends {\n");
+        for index in 0..=MAX_DEPENDENCY_EDGES {
+            bounded.push_str(&format!(
+                "\"image.do_{index}\" -> \"dep-{index}.do_build\"\n"
+            ));
+        }
+        bounded.push_str("}\n");
+        let response = parse_task_dependency_dot("image", bounded.as_bytes()).unwrap();
+        assert!(
+            response
+                .limitations
+                .iter()
+                .any(|value| value.contains("bounds dropped"))
+        );
+        assert!(response.graph.nodes.len() <= MAX_DEPENDENCY_NODES);
+        assert!(response.graph.edges.len() <= MAX_DEPENDENCY_EDGES);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn dependency_graph_process_backend_is_shell_free_and_rejects_failures() {
+        let root = fixture_script("dependency-graph-build");
+        fs::create_dir_all(&root).unwrap();
+        let script = root.join("fake-bitbake");
+        fs::write(
+            &script,
+            r#"#!/bin/sh
+test "$1" = "-g" || exit 8
+test "$2" = "image" || exit 9
+printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' > task-depends.dot
+"#,
+        )
+        .unwrap();
+        let mut permissions = fs::metadata(&script).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&script, permissions).unwrap();
+        let mut backend = ProcessBackend::with_executable(root.clone(), script.clone());
+        let response = backend.get_dependency_graph("image".into()).await.unwrap();
+        assert_eq!(response.graph.root, DependencyNodeId::recipe("image"));
+        assert!(
+            response
+                .graph
+                .edges
+                .iter()
+                .any(|edge| edge.kind == DependencyEdgeKind::Task
+                    && edge.to == DependencyNodeId::task("busybox", "do_build"))
+        );
+
+        fs::write(&script, "#!/bin/sh\nexit 7\n").unwrap();
+        let error = backend
+            .get_dependency_graph("image".into())
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("exited with 7"));
+
+        fs::write(&script, "#!/bin/sh\nexit 0\n").unwrap();
+        let error = backend
+            .get_dependency_graph("image".into())
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("No such file"));
+
+        let mut unavailable =
+            ProcessBackend::with_executable(root.clone(), root.join("missing-bitbake"));
+        let error = unavailable
+            .get_dependency_graph("image".into())
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("process:"));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn dependency_graph_process_backend_rejects_symlink_output() {
+        let root = fixture_script("dependency-graph-symlink");
+        fs::create_dir_all(&root).unwrap();
+        let outside = fixture_script("dependency-graph-outside");
+        fs::write(&outside, "digraph depends {\n}\n").unwrap();
+        let script = root.join("fake-bitbake");
+        fs::write(
+            &script,
+            format!(
+                "#!/bin/sh\nln -s '{}' task-depends.dot\n",
+                outside.display()
+            ),
+        )
+        .unwrap();
+        let mut permissions = fs::metadata(&script).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&script, permissions).unwrap();
+        let mut backend = ProcessBackend::with_executable(root.clone(), script);
+        let error = backend
+            .get_dependency_graph("image".into())
+            .await
+            .unwrap_err();
+        assert!(error.to_string().contains("not a regular file"));
+        fs::remove_dir_all(root).unwrap();
+        fs::remove_file(outside).unwrap();
     }
 
     #[tokio::test]

@@ -344,6 +344,93 @@ server = Server()
         self.assertEqual(message["build"], ["virtual/libc", "zlib"])
         self.assertEqual(message["runtime"], ["base-files"])
 
+    def test_dependency_graph_is_typed_bounded_and_identity_correlated(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                """__version__ = "2.8.1"
+class Connection:
+ def get_dependency_graph(self, recipe):
+  assert recipe == "image"
+  nodes = [{"id": {"recipe": "dep-%04d" % index}} for index in range(1600)]
+  nodes += [{"id": {"recipe": "image"}}, {"id": {"recipe": "image"}}]
+  return {
+   "root": {"recipe": "image"},
+   "nodes": nodes,
+   "edges": [
+    {"from": {"recipe": "image"}, "to": {"recipe": "dep-0001"}, "kind": "build"},
+    {"from": {"recipe": "image"}, "to": {"recipe": "dep-0001"}, "kind": "build"},
+   ],
+   "limitations": [],
+  }
+class Server:
+ def connect(self): return Connection()
+server = Server()
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"get_dependency_graph","recipe":"image"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "dependency_graph")
+        self.assertEqual(message["data"]["root"], {"recipe": "image"})
+        self.assertEqual(len(message["data"]["nodes"]), 1500)
+        self.assertEqual(len(message["data"]["edges"]), 1)
+        self.assertIn("bounds dropped", message["data"]["limitations"][0])
+
+    def test_dependency_graph_rejects_wrong_root_and_malformed_edges(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                """__version__ = "2.8.1"
+class Connection:
+ def get_dependency_graph(self, recipe):
+  return {
+   "root": {"recipe": "other"},
+   "nodes": [],
+   "edges": [{"from": {"recipe": recipe}, "to": {"recipe": "dep"}, "kind": "guessed"}],
+  }
+class Server:
+ def connect(self): return Connection()
+server = Server()
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"get_dependency_graph","recipe":"image"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "command_failed")
+        self.assertEqual(message["code"], "bitbake_server_unavailable")
+        self.assertIn("different root", message["message"])
+
+    def test_dependency_graph_falls_back_to_legacy_direct_edges(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                """__version__ = "2.8.1"
+class Connection:
+ def get_dependencies(self, recipe):
+  return {"build": ["zlib"], "runtime": ["base-files"]}
+class Server:
+ def connect(self): return Connection()
+server = Server()
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"get_dependency_graph","recipe":"busybox"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "dependency_graph")
+        self.assertEqual(
+            [edge["kind"] for edge in message["data"]["edges"]],
+            ["runtime", "build"],
+        )
+        self.assertIn("Legacy server", message["data"]["limitations"][0])
+
     def test_dependencies_without_a_server_capability_are_not_guessed(self) -> None:
         result = run_bridge(
             b'{"protocol_version":1,"sequence":1,"message":{"type":"get_dependencies","recipe":"busybox"}}'

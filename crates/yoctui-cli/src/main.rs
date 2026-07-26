@@ -39,8 +39,8 @@ use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
     DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
     LayerBrowserEntry, LayerInspectorMode, LayerRelationship, LayerRelationships, PreviewKind,
-    RecipeDependencies, RecipeIdentity, Screen, Severity, Theme, VariableDetail, VariableIdentity,
-    update, validate_config_edit_request,
+    RecipeIdentity, Screen, Severity, Theme, VariableDetail, VariableIdentity, update,
+    validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -2261,25 +2261,25 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 if let Some(Effect::GetDependencies(recipe)) =
                     update(&mut app, Action::BeginSelectedRecipeDependencies)
                 {
-                    match backend.get_dependencies(recipe.clone()).await {
-                        Ok(dependencies) => {
-                            let _ = update(
-                                &mut app,
-                                Action::DependenciesLoaded(RecipeDependencies {
-                                    recipe,
-                                    build: dependencies.build,
-                                    runtime: dependencies.runtime,
-                                }),
-                            );
+                    match backend.get_dependency_graph(recipe.clone()).await {
+                        Ok(response) => {
+                            let action = if response.limitations.is_empty() {
+                                Action::DependencyGraphLoaded(response.graph)
+                            } else {
+                                Action::DependencyGraphPartial {
+                                    graph: response.graph,
+                                    limitations: response.limitations,
+                                }
+                            };
+                            let _ = update(&mut app, action);
                         }
                         Err(error) => {
                             let _ = update(
                                 &mut app,
-                                Action::Failure(AppError::new(
-                                    "Dependencies",
-                                    error.to_string(),
-                                    "use a bridge connected to a BitBake server that supports get_dependencies",
-                                )),
+                                Action::DependencyGraphFailed {
+                                    root: yoctui_model::DependencyNodeId::recipe(recipe),
+                                    message: error.to_string(),
+                                },
                             );
                         }
                     }

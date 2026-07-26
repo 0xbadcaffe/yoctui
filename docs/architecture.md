@@ -90,6 +90,25 @@ parse those formats. The legacy direct build/runtime lists remain a temporary
 compatibility input while acquisition and workspace tasks migrate to the graph
 state.
 
+Capable bridges acquire dependency graphs through BitBake's structured
+`generateDepTreeEvent` server command. The Python boundary validates and
+bounds the `pn`, `depends`, `rdepends-pn`, `providermap`, and `tdepends`
+records, converts them to protocol node/edge data, preserves only absolute
+provider/log paths, and reports every dropped field or bound as a limitation.
+Protocol version 1 retains the legacy direct-dependencies event; a new graph
+command/event is additive, and the Rust bridge client falls back to the legacy
+query only when an older peer rejects the new command.
+
+The process backend invokes `bitbake -g <recipe>` directly without a shell,
+with a fixed timeout and discarded process output. It removes the known stale
+`task-depends.dot` before invocation, accepts only a bounded regular file whose
+canonical parent is the active build directory, and parses dot syntax inside
+`yoctui-bitbake`. That fallback derives typed task edges and cross-recipe build
+edges but explicitly reports runtime edges and provider/log paths unavailable.
+Live smoke validation exercises `generateDepTreeEvent` separately from mocked
+and fake-process coverage and records the BitBake version and returned graph
+families.
+
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore
 values, normalized varhistory operations (`op`, file, line, and detail), and

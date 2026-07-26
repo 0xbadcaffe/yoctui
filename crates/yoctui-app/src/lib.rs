@@ -1148,6 +1148,17 @@ mod tests {
             }),
             Some(Action::DependencyGraphLoaded(graph.clone()))
         );
+        let mut compatibility = App::new(10, 1_000);
+        let action = model_action_from_backend_event(BackendEvent::DependencyGraph {
+            graph: graph.clone(),
+            limitations: Vec::new(),
+        })
+        .unwrap();
+        let _ = update(&mut compatibility, action);
+        assert_eq!(
+            compatibility.dependencies.as_ref().unwrap().runtime,
+            ["busybox"]
+        );
         assert_eq!(
             model_action_from_backend_event(BackendEvent::DependencyGraph {
                 graph: graph.clone(),

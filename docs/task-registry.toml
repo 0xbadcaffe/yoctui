@@ -581,18 +581,18 @@ notes = "Typed recipe/task nodes and build/runtime/task edges now normalize dete
 id = "DEP-ADAPTER-001"
 milestone = "M3"
 title = "Acquire authoritative dependency graphs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 44
 required = true
 depends_on = ["DEP-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake dependency_graph", "python3 -m pytest bridge/tests -k dependenc"]
-notes = "Typed server or tool-adapter acquisition for recipe/runtime/task edges with bounded parsing, fake-process failures, and no widget parsing."
+notes = "Additive protocol graph events, structured generateDepTreeEvent acquisition, legacy fallback, and bounded shell-free bitbake -g task-dot parsing cover malformed, oversized, nonzero, missing-tool/output, and symlink-escape failures. Live BitBake 2.19.0 / Yocto 6.0.99 snapshot returned 962 nodes and 1779 build/runtime/task edges; focused and baseline checks pass."
 
 [[task]]
 id = "DEP-UI-001"
 milestone = "M3"
 title = "Integrate dependency and why-built workspace"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 44
 required = true
 depends_on = ["DEP-ADAPTER-001"]
