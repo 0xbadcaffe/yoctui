@@ -67,13 +67,12 @@ See `docs/current-task.md`.
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
 | Signature workspace | DONE | `Z` opens an authoritative focus-trapped task picker and responsive child workspace with exact record/sides, typed details/differences, provider navigation, and cancellable background execution |
 | Package data model | DONE | Exact identities, available-versus-unavailable fields, explicit bounded inventory/detail states, deterministic normalization, selection, stale correlation, search, dependency navigation, and typed event/effect mapping pass focused and baseline checks |
-| Package data adapter | NOT_STARTED | No bounded shell-free `oe-pkgdata-util` adapter or live package-data evidence exists; the current real build has the tool script but no generated pkgdata tree |
+| Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
 | Package data workspace | NOT_STARTED | No Navigator route, responsive workspace, input mapping, background coordination, or TestBackend coverage exists |
 
 ## Priority queue
 
-1. `PKG-ADAPTER-001` — acquire authoritative package data
-2. `PKG-UI-001` — integrate the package data workspace
+1. `PKG-UI-001` — integrate the package data workspace
 
 ## Rules
 

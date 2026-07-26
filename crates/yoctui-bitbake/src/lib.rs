@@ -1,7 +1,12 @@
 //! BitBake adapters. They execute BitBake; they never evaluate metadata themselves.
+mod package;
 mod signature;
 
 use async_trait::async_trait;
+pub use package::{
+    PackageDataAdapter, PackageDataAdapterError, PackageDataCancellation, PackageDataCommandSpec,
+    PackageDetailResponse, PackageInventoryResponse,
+};
 pub use signature::{
     SignatureAdapter, SignatureAdapterError, SignatureCancellation, SignatureCommandSpec,
     SignatureComparisonResponse, SignatureDumpResponse,
@@ -921,6 +926,26 @@ impl From<SignatureComparisonResponse> for BackendEvent {
         Self::SignatureComparison {
             request: response.request,
             differences: response.differences,
+            limitations: response.limitations,
+        }
+    }
+}
+
+impl From<PackageInventoryResponse> for BackendEvent {
+    fn from(response: PackageInventoryResponse) -> Self {
+        Self::PackageInventory {
+            request: response.request,
+            packages: response.packages,
+            limitations: response.limitations,
+        }
+    }
+}
+
+impl From<PackageDetailResponse> for BackendEvent {
+    fn from(response: PackageDetailResponse) -> Self {
+        Self::PackageDetail {
+            request: response.request,
+            detail: response.detail,
             limitations: response.limitations,
         }
     }
