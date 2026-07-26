@@ -2,47 +2,54 @@
 
 ## Active task
 
-**ID:** DEVTOOL-JOB-RUNNER-001
-**Title:** Add cancellable Devtool process streaming
+**ID:** DEVTOOL-JOB-LIFECYCLE-001
+**Title:** Integrate Devtool persistent job lifecycle
 
 ## Objective
 
-Execute one validated Devtool command asynchronously with bounded streamed
-stdout/stderr and deterministic cancellation/terminal events.
+Map typed Devtool operations and runner events into the existing persistent
+background-job reducer and CLI event loop without terminal suspension.
 
 ## Required work
 
-1. Inventory the ProcessBackend child/process-group, stream framing,
-   cancellation timeout/escalation, invalid UTF-8, and fake-process tests.
-2. Add a Devtool runner in `yoctui-bitbake` that accepts only a validated
-   `DevtoolCommandSpec` plus build directory.
-3. Spawn without a shell, pipe both streams, preserve stream identity, bound
-   oversized lines, and expose typed started/output/completed/failure events.
-4. Distinguish missing executable, spawn failure, nonzero exit, cancellation
-   acknowledgement, forced termination after timeout, and unexpected process
-   or event-channel loss.
-5. Use a Unix process group where available so cancellation covers descendants.
-6. Reject a second start while a child is active and make duplicate/late
-   cancellation inert.
-7. Keep retained job history/state out of this adapter task; the next child
-   maps runner events into the existing background-job reducer.
-8. Add fake-process adapter tests named `devtool_job_runner` for output,
-   invalid UTF-8, truncation, duplicate start, failures, and cancellation.
-9. Update architecture documentation for the process/event boundary.
+1. Inventory background-job reducer transitions/retention, build coordinator,
+   Devtool reducer effects/direct CLI helpers, cancellation routing, UI job
+   summaries, and asynchronous loop structure.
+2. Add a Devtool job coordinator that allocates stable IDs, creates
+   `BackgroundJobKind::Devtool` specs with operation/recipe context, rejects a
+   duplicate active operation, and maps every runner event to existing typed
+   background-job actions.
+3. Preserve stdout/stderr identity in retained output severity/context without
+   parsing UI text; mark truncation explicitly.
+4. Route start failures, nonzero exits, successful completion, acknowledged or
+   forced cancellation, runner loss, and cancellation failure to exact reducer
+   terminal states.
+5. Start and poll the runner asynchronously while normal navigation/rendering
+   continues; remove terminal suspension from migrated Devtool execution.
+6. Route cancellation only to the matching active Devtool job and keep
+   duplicate/late requests inert.
+7. Ensure completed Devtool output and outcome remain available after screen
+   navigation and do not interfere with an active BitBake job.
+8. Add reducer/app/CLI tests named `devtool_job_lifecycle` for success,
+   duplicate rejection, output retention, navigation, all failure/cancel/loss
+   outcomes, and independent BitBake coordination.
+9. Update architecture and UI specification for persistent Devtool behavior.
 
 ## Definition of done
 
-- Validated typed commands execute without a shell.
-- stdout/stderr stream as bounded typed events.
-- Every process and cancellation terminal outcome is distinct and tested.
-- No terminal suspension or model/UI mutation occurs in the adapter.
+- Devtool runner events use the existing persistent job reducer lifecycle.
+- TUI navigation/rendering remains active during Devtool execution.
+- Duplicate, cancellation, failure, and loss semantics are deterministic.
+- Devtool and BitBake active-job coordination cannot corrupt each other.
 - Focused and baseline verification pass.
-- Registry/status documents are updated and lifecycle integration is active.
+- Parent Devtool-jobs task is DONE and modify/edit/build becomes active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake devtool_job_runner
+cargo test -p yoctui-model devtool_job_lifecycle
+cargo test -p yoctui-app devtool_job_lifecycle
+cargo test -p yoctui -- devtool_job_lifecycle
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -52,4 +59,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`DEVTOOL-JOB-LIFECYCLE-001 — Integrate Devtool persistent job lifecycle`
+`DEVTOOL-MODIFY-001 — Complete Devtool modify, edit, and build workflow`
