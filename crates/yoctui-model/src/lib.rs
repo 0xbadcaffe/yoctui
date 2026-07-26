@@ -1,7 +1,7 @@
 //! Domain model and pure state transitions. BitBake remains authoritative.
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{HashMap, HashSet, VecDeque},
+    collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
     fmt,
     path::{Component, Path, PathBuf},
     time::{Duration, SystemTime},
@@ -1071,6 +1071,261 @@ pub struct RecipeDependencies {
     pub build: Vec<String>,
     pub runtime: Vec<String>,
 }
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum DependencyNodeId {
+    Recipe(String),
+    Task { recipe: String, task: String },
+}
+impl DependencyNodeId {
+    pub fn recipe(name: impl Into<String>) -> Self {
+        Self::Recipe(name.into())
+    }
+
+    pub fn task(recipe: impl Into<String>, task: impl Into<String>) -> Self {
+        Self::Task {
+            recipe: recipe.into(),
+            task: task.into(),
+        }
+    }
+
+    pub fn recipe_name(&self) -> &str {
+        match self {
+            Self::Recipe(recipe) | Self::Task { recipe, .. } => recipe,
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct DependencyNode {
+    pub id: DependencyNodeId,
+    pub provider: Option<PathBuf>,
+    pub log: Option<PathBuf>,
+}
+impl DependencyNode {
+    pub fn identity(id: DependencyNodeId) -> Self {
+        Self {
+            id,
+            provider: None,
+            log: None,
+        }
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum DependencyEdgeKind {
+    Build,
+    Runtime,
+    Task,
+}
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct DependencyEdge {
+    pub from: DependencyNodeId,
+    pub to: DependencyNodeId,
+    pub kind: DependencyEdgeKind,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct DependencyNormalizationReport {
+    pub duplicate_nodes: usize,
+    pub duplicate_edges: usize,
+    pub self_edges: usize,
+    pub synthesized_nodes: usize,
+    pub truncated_nodes: usize,
+    pub truncated_edges: usize,
+}
+impl DependencyNormalizationReport {
+    pub fn is_partial(&self) -> bool {
+        self.truncated_nodes > 0 || self.truncated_edges > 0
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DependencyGraph {
+    pub root: DependencyNodeId,
+    pub nodes: Vec<DependencyNode>,
+    pub edges: Vec<DependencyEdge>,
+}
+impl DependencyGraph {
+    pub fn normalize(
+        root: DependencyNodeId,
+        mut nodes: Vec<DependencyNode>,
+        mut edges: Vec<DependencyEdge>,
+        max_nodes: usize,
+        max_edges: usize,
+    ) -> (Self, DependencyNormalizationReport) {
+        let mut report = DependencyNormalizationReport::default();
+        nodes.sort();
+
+        let mut normalized_nodes = BTreeMap::new();
+        for node in nodes {
+            if normalized_nodes.contains_key(&node.id) {
+                report.duplicate_nodes += 1;
+                continue;
+            }
+            normalized_nodes.insert(node.id.clone(), node);
+        }
+        normalized_nodes
+            .entry(root.clone())
+            .or_insert_with(|| DependencyNode::identity(root.clone()));
+
+        let node_limit = max_nodes.max(1);
+        if normalized_nodes.len() > node_limit {
+            let removable = normalized_nodes
+                .keys()
+                .filter(|id| **id != root)
+                .skip(node_limit.saturating_sub(1))
+                .cloned()
+                .collect::<Vec<_>>();
+            report.truncated_nodes += removable.len();
+            for id in removable {
+                normalized_nodes.remove(&id);
+            }
+        }
+
+        edges.sort();
+        let mut unique_edges = BTreeSet::new();
+        for edge in edges {
+            if edge.from == edge.to {
+                report.self_edges += 1;
+                continue;
+            }
+            if !unique_edges.insert(edge.clone()) {
+                report.duplicate_edges += 1;
+            }
+        }
+
+        let mut normalized_edges = Vec::new();
+        for edge in unique_edges {
+            let missing = [&edge.from, &edge.to]
+                .into_iter()
+                .filter(|id| !normalized_nodes.contains_key(*id))
+                .cloned()
+                .collect::<BTreeSet<_>>();
+            if normalized_nodes.len() + missing.len() > node_limit {
+                report.truncated_edges += 1;
+                continue;
+            }
+            for id in missing {
+                normalized_nodes.insert(id.clone(), DependencyNode::identity(id));
+                report.synthesized_nodes += 1;
+            }
+            if normalized_edges.len() == max_edges {
+                report.truncated_edges += 1;
+                continue;
+            }
+            normalized_edges.push(edge);
+        }
+
+        (
+            Self {
+                root,
+                nodes: normalized_nodes.into_values().collect(),
+                edges: normalized_edges,
+            },
+            report,
+        )
+    }
+
+    pub fn contains(&self, id: &DependencyNodeId) -> bool {
+        self.nodes.iter().any(|node| &node.id == id)
+    }
+
+    pub fn incoming(&self, id: &DependencyNodeId) -> Vec<&DependencyEdge> {
+        self.edges.iter().filter(|edge| &edge.to == id).collect()
+    }
+
+    pub fn outgoing(&self, id: &DependencyNodeId) -> Vec<&DependencyEdge> {
+        self.edges.iter().filter(|edge| &edge.from == id).collect()
+    }
+
+    pub fn why_built(
+        &self,
+        target: &DependencyNodeId,
+        max_depth: usize,
+        max_visited: usize,
+    ) -> DependencyPathResult {
+        if !self.contains(target) {
+            return DependencyPathResult::Unreachable;
+        }
+        if self.root == *target {
+            return DependencyPathResult::Found(vec![self.root.clone()]);
+        }
+        if max_visited == 0 {
+            return DependencyPathResult::LimitReached;
+        }
+
+        let mut queue = VecDeque::from([(self.root.clone(), 0_usize)]);
+        let mut visited = BTreeSet::from([self.root.clone()]);
+        let mut parents = BTreeMap::new();
+        let mut limited = false;
+        while let Some((current, depth)) = queue.pop_front() {
+            if depth == max_depth {
+                limited |= !self.outgoing(&current).is_empty();
+                continue;
+            }
+            for edge in self.outgoing(&current) {
+                if visited.contains(&edge.to) {
+                    continue;
+                }
+                if visited.len() == max_visited {
+                    limited = true;
+                    break;
+                }
+                visited.insert(edge.to.clone());
+                parents.insert(edge.to.clone(), current.clone());
+                if edge.to == *target {
+                    let mut path = vec![target.clone()];
+                    let mut cursor = target;
+                    while let Some(parent) = parents.get(cursor) {
+                        path.push(parent.clone());
+                        cursor = parent;
+                    }
+                    path.reverse();
+                    return DependencyPathResult::Found(path);
+                }
+                queue.push_back((edge.to.clone(), depth + 1));
+            }
+        }
+        if limited {
+            DependencyPathResult::LimitReached
+        } else {
+            DependencyPathResult::Unreachable
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DependencyPathResult {
+    Found(Vec<DependencyNodeId>),
+    Unreachable,
+    LimitReached,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum DependencyGraphState {
+    #[default]
+    NotLoaded,
+    Loading {
+        root: DependencyNodeId,
+    },
+    AvailableEmpty {
+        root: DependencyNodeId,
+    },
+    Available(DependencyGraph),
+    Partial {
+        graph: DependencyGraph,
+        limitations: Vec<String>,
+    },
+    Failed {
+        root: DependencyNodeId,
+        message: String,
+    },
+}
+impl DependencyGraphState {
+    pub fn graph(&self) -> Option<&DependencyGraph> {
+        match self {
+            Self::Available(graph) | Self::Partial { graph, .. } => Some(graph),
+            Self::NotLoaded
+            | Self::Loading { .. }
+            | Self::AvailableEmpty { .. }
+            | Self::Failed { .. } => None,
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct LayerRelationships {
     pub layers: Vec<LayerRelationship>,
@@ -1452,6 +1707,8 @@ pub struct App {
     pub build_history_selection: usize,
     pub dependencies: Option<RecipeDependencies>,
     pub dependency_selection: usize,
+    pub dependency_graph: DependencyGraphState,
+    pub dependency_graph_selection: Option<DependencyNodeId>,
     pub layer_relationships: Option<LayerRelationships>,
     pub recipe_sources: HashMap<String, Vec<PathBuf>>,
     pub recipe_metadata: HashMap<String, RecipeMetadata>,
@@ -1507,6 +1764,8 @@ impl App {
             build_history_selection: 0,
             dependencies: None,
             dependency_selection: 0,
+            dependency_graph: DependencyGraphState::NotLoaded,
+            dependency_graph_selection: None,
             layer_relationships: None,
             recipe_sources: HashMap::new(),
             recipe_metadata: HashMap::new(),
@@ -1975,6 +2234,21 @@ pub enum Action {
     BeginSelectedRecipeDevtoolFinish,
     BeginSelectedRecipeDevtoolDeploy,
     BeginSelectedRecipeDependencies,
+    BeginDependencyGraph {
+        root: DependencyNodeId,
+    },
+    DependencyGraphLoaded(DependencyGraph),
+    DependencyGraphPartial {
+        graph: DependencyGraph,
+        limitations: Vec<String>,
+    },
+    DependencyGraphFailed {
+        root: DependencyNodeId,
+        message: String,
+    },
+    SelectDependencyGraphNode {
+        delta: isize,
+    },
     BeginSelectedRecipeMetadata,
     RecipeMetadataLoaded(RecipeMetadata),
     RecipeMetadataFailed {
@@ -2727,7 +3001,23 @@ fn resolve_config_source(app: &App, path: &Path) -> Result<PathBuf, String> {
                 "Cannot resolve relative configuration source {} without an active build directory.",
                 path.display()
             )
-        })
+    })
+}
+
+fn set_dependency_graph(app: &mut App, graph: DependencyGraph, limitations: Option<Vec<String>>) {
+    let previous = app.dependency_graph_selection.take();
+    app.dependency_graph_selection = previous
+        .filter(|selected| graph.contains(selected))
+        .or_else(|| graph.contains(&graph.root).then(|| graph.root.clone()))
+        .or_else(|| graph.nodes.first().map(|node| node.id.clone()));
+    app.screen = Screen::Dependencies;
+    app.dependency_graph = if let Some(limitations) = limitations {
+        DependencyGraphState::Partial { graph, limitations }
+    } else if graph.edges.is_empty() {
+        DependencyGraphState::AvailableEmpty { root: graph.root }
+    } else {
+        DependencyGraphState::Available(graph)
+    };
 }
 
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
@@ -3998,9 +4288,53 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::BeginSelectedRecipeDependencies => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                return Some(Effect::GetDependencies(recipe.name.clone()));
+                return update(
+                    app,
+                    Action::BeginDependencyGraph {
+                        root: DependencyNodeId::recipe(recipe.name.clone()),
+                    },
+                );
             }
             app.notification = Some("No recipe is selected for dependency inspection.".into());
+        }
+        Action::BeginDependencyGraph { root } => {
+            app.dependency_graph = DependencyGraphState::Loading { root: root.clone() };
+            app.dependency_graph_selection = Some(root.clone());
+            return Some(Effect::GetDependencies(root.recipe_name().to_owned()));
+        }
+        Action::DependencyGraphLoaded(graph) => {
+            set_dependency_graph(app, graph, None);
+        }
+        Action::DependencyGraphPartial { graph, limitations } => {
+            set_dependency_graph(app, graph, Some(limitations));
+        }
+        Action::DependencyGraphFailed { root, message } => {
+            app.dependency_graph = DependencyGraphState::Failed {
+                root: root.clone(),
+                message: message.clone(),
+            };
+            app.dependency_graph_selection = Some(root);
+            app.notification = Some(format!("Dependency graph is unavailable: {message}"));
+        }
+        Action::SelectDependencyGraphNode { delta } => {
+            let graph = app.dependency_graph.graph()?;
+            if graph.nodes.is_empty() {
+                app.dependency_graph_selection = None;
+                return None;
+            }
+            let current = app
+                .dependency_graph_selection
+                .as_ref()
+                .and_then(|selected| graph.nodes.iter().position(|node| &node.id == selected))
+                .unwrap_or(0);
+            let next = if delta.is_negative() {
+                current.saturating_sub(delta.unsigned_abs())
+            } else {
+                current
+                    .saturating_add(delta as usize)
+                    .min(graph.nodes.len().saturating_sub(1))
+            };
+            app.dependency_graph_selection = Some(graph.nodes[next].id.clone());
         }
         Action::BeginSelectedRecipeMetadata => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
@@ -4031,6 +4365,24 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::DependenciesLoaded(dependencies) => {
             app.screen = Screen::Dependencies;
+            let root = DependencyNodeId::recipe(dependencies.recipe.clone());
+            let edges = dependencies
+                .build
+                .iter()
+                .map(|name| DependencyEdge {
+                    from: root.clone(),
+                    to: DependencyNodeId::recipe(name),
+                    kind: DependencyEdgeKind::Build,
+                })
+                .chain(dependencies.runtime.iter().map(|name| DependencyEdge {
+                    from: root.clone(),
+                    to: DependencyNodeId::recipe(name),
+                    kind: DependencyEdgeKind::Runtime,
+                }))
+                .collect::<Vec<_>>();
+            let (graph, _) =
+                DependencyGraph::normalize(root, Vec::new(), edges, usize::MAX, usize::MAX);
+            set_dependency_graph(app, graph, None);
             app.dependencies = Some(dependencies);
             app.dependency_selection = 0;
         }
@@ -6567,6 +6919,191 @@ mod tests {
         let _ = update(&mut app, Action::OpenSelectedDependency);
         assert_eq!(app.screen, Screen::Recipes);
         assert_eq!(app.recipe_selection, 1);
+    }
+    #[test]
+    fn dependency_graph_normalizes_nodes_edges_and_reverse_lookup() {
+        let root = DependencyNodeId::recipe("image");
+        let library = DependencyNodeId::recipe("library");
+        let compile = DependencyNodeId::task("library", "do_compile");
+        let duplicate_library = DependencyNode {
+            id: library.clone(),
+            provider: Some(PathBuf::from("/z/library.bb")),
+            log: None,
+        };
+        let preferred_library = DependencyNode {
+            id: library.clone(),
+            provider: Some(PathBuf::from("/a/library.bb")),
+            log: None,
+        };
+        let build_edge = DependencyEdge {
+            from: root.clone(),
+            to: library.clone(),
+            kind: DependencyEdgeKind::Build,
+        };
+        let (graph, report) = DependencyGraph::normalize(
+            root.clone(),
+            vec![duplicate_library, preferred_library],
+            vec![
+                build_edge.clone(),
+                build_edge,
+                DependencyEdge {
+                    from: library.clone(),
+                    to: library.clone(),
+                    kind: DependencyEdgeKind::Runtime,
+                },
+                DependencyEdge {
+                    from: library.clone(),
+                    to: compile.clone(),
+                    kind: DependencyEdgeKind::Task,
+                },
+            ],
+            10,
+            10,
+        );
+
+        assert_eq!(report.duplicate_nodes, 1);
+        assert_eq!(report.duplicate_edges, 1);
+        assert_eq!(report.self_edges, 1);
+        assert_eq!(report.synthesized_nodes, 1);
+        assert!(!report.is_partial());
+        assert_eq!(
+            graph
+                .nodes
+                .iter()
+                .find(|node| node.id == library)
+                .and_then(|node| node.provider.as_deref()),
+            Some(Path::new("/a/library.bb"))
+        );
+        assert_eq!(graph.incoming(&compile).len(), 1);
+        assert_eq!(graph.incoming(&compile)[0].from, library);
+    }
+    #[test]
+    fn dependency_graph_finds_deterministic_bounded_paths_through_cycles() {
+        let root = DependencyNodeId::recipe("root");
+        let a = DependencyNodeId::recipe("a");
+        let b = DependencyNodeId::recipe("b");
+        let target = DependencyNodeId::recipe("target");
+        let isolated = DependencyNodeId::recipe("isolated");
+        let edge = |from: &DependencyNodeId, to: &DependencyNodeId| DependencyEdge {
+            from: from.clone(),
+            to: to.clone(),
+            kind: DependencyEdgeKind::Build,
+        };
+        let (graph, _) = DependencyGraph::normalize(
+            root.clone(),
+            vec![DependencyNode::identity(isolated.clone())],
+            vec![
+                edge(&root, &b),
+                edge(&b, &target),
+                edge(&root, &a),
+                edge(&a, &root),
+                edge(&a, &target),
+            ],
+            20,
+            20,
+        );
+
+        assert_eq!(
+            graph.why_built(&target, 4, 20),
+            DependencyPathResult::Found(vec![root.clone(), a, target.clone()])
+        );
+        assert_eq!(
+            graph.why_built(&target, 1, 20),
+            DependencyPathResult::LimitReached
+        );
+        assert_eq!(
+            graph.why_built(&target, 4, 1),
+            DependencyPathResult::LimitReached
+        );
+        assert_eq!(
+            graph.why_built(&isolated, 4, 20),
+            DependencyPathResult::Unreachable
+        );
+    }
+    #[test]
+    fn dependency_graph_reducer_preserves_identity_and_explicit_states() {
+        let root = DependencyNodeId::recipe("image");
+        let selected = DependencyNodeId::recipe("library");
+        let edge = DependencyEdge {
+            from: root.clone(),
+            to: selected.clone(),
+            kind: DependencyEdgeKind::Build,
+        };
+        let (graph, _) = DependencyGraph::normalize(root.clone(), Vec::new(), vec![edge], 10, 10);
+        let mut app = App::new(10, 1_000);
+
+        assert_eq!(
+            update(
+                &mut app,
+                Action::BeginDependencyGraph { root: root.clone() }
+            ),
+            Some(Effect::GetDependencies("image".into()))
+        );
+        assert_eq!(
+            app.dependency_graph,
+            DependencyGraphState::Loading { root: root.clone() }
+        );
+        let _ = update(&mut app, Action::DependencyGraphLoaded(graph.clone()));
+        app.dependency_graph_selection = Some(selected.clone());
+        let _ = update(
+            &mut app,
+            Action::DependencyGraphPartial {
+                graph: graph.clone(),
+                limitations: vec!["task edges unavailable".into()],
+            },
+        );
+        assert_eq!(app.dependency_graph_selection, Some(selected.clone()));
+        assert!(matches!(
+            app.dependency_graph,
+            DependencyGraphState::Partial { .. }
+        ));
+
+        let (without_selected, _) =
+            DependencyGraph::normalize(root.clone(), Vec::new(), Vec::new(), 10, 10);
+        let _ = update(&mut app, Action::DependencyGraphLoaded(without_selected));
+        assert_eq!(app.dependency_graph_selection, Some(root.clone()));
+        assert_eq!(
+            app.dependency_graph,
+            DependencyGraphState::AvailableEmpty { root: root.clone() }
+        );
+
+        let _ = update(
+            &mut app,
+            Action::DependencyGraphFailed {
+                root: root.clone(),
+                message: "backend failed".into(),
+            },
+        );
+        assert_eq!(
+            app.dependency_graph,
+            DependencyGraphState::Failed {
+                root,
+                message: "backend failed".into()
+            }
+        );
+    }
+    #[test]
+    fn dependency_graph_normalization_reports_hard_bounds() {
+        let root = DependencyNodeId::recipe("root");
+        let (graph, report) = DependencyGraph::normalize(
+            root.clone(),
+            vec![
+                DependencyNode::identity(DependencyNodeId::recipe("a")),
+                DependencyNode::identity(DependencyNodeId::recipe("b")),
+            ],
+            vec![DependencyEdge {
+                from: root.clone(),
+                to: DependencyNodeId::recipe("missing"),
+                kind: DependencyEdgeKind::Runtime,
+            }],
+            1,
+            1,
+        );
+        assert_eq!(graph.nodes, [DependencyNode::identity(root)]);
+        assert!(graph.edges.is_empty());
+        assert!(report.truncated_nodes >= 2);
+        assert_eq!(report.truncated_edges, 1);
+        assert!(report.is_partial());
     }
     #[test]
     fn devtool_target_reset_requires_authoritative_removable_source_and_confirmation() {

@@ -570,18 +570,18 @@ notes = "Parent gate split into typed graph/path state, authoritative acquisitio
 id = "DEP-MODEL-001"
 milestone = "M3"
 title = "Add typed dependency graph and why-built paths"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 44
 required = true
 depends_on = ["BB-001"]
 verify = ["cargo test -p yoctui-model dependency_graph", "cargo test -p yoctui-app dependency_graph"]
-notes = "Typed recipe/task nodes and edges, explicit load/partial/failure states, deterministic reverse edges and bounded why-built paths, stable selection/actions."
+notes = "Typed recipe/task nodes and build/runtime/task edges now normalize deterministically with explicit truncation, reverse lookup, cycle-safe bounded shortest why-built paths, explicit load/empty/partial/failure states, identity-stable reducer selection, legacy-list compatibility, and typed app event mapping; focused and baseline verification pass."
 
 [[task]]
 id = "DEP-ADAPTER-001"
 milestone = "M3"
 title = "Acquire authoritative dependency graphs"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 44
 required = true
 depends_on = ["DEP-MODEL-001"]
