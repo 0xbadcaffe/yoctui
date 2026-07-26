@@ -863,6 +863,15 @@ refresh preserves a still-present scope and returns to global if that recipe
 disappears; responses for a prior scope remain cached but cannot alter the
 active Inspector or its action availability.
 
+`c` opens a focus-trapping, read-only comparison between the selected
+variable's exact loaded global detail and active recipe-scoped detail.
+Effective and unexpanded fields each carry typed `equal`, `different`, or
+`unavailable` outcomes and show both values; an absent value is never treated
+as equal. `Enter` or `Esc` closes and restores the prior pane. Comparison stays
+disabled with a precise reason when no recipe scope is active, a scope
+disappeared, either identity is loading/failed/not loaded, or no variable is
+selected. Long values wrap safely in every responsive mode.
+
 Editing configuration requires a dedicated preview-and-confirm dialog.
 
 No silent edits.

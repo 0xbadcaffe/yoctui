@@ -23,9 +23,9 @@ use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
-    BuildJobCoordinator, Input, config_scope_picker_action, config_source_picker_action,
-    config_workspace_action, errors_action, focus_action, key_action, logs_action, settings_action,
-    tasks_action,
+    BuildJobCoordinator, Input, config_compare_dialog_action, config_scope_picker_action,
+    config_source_picker_action, config_workspace_action, errors_action, focus_action, key_action,
+    logs_action, settings_action, tasks_action,
 };
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolInspector, ProcessBackend, VariableValue,
@@ -1844,6 +1844,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 if let Some(Effect::GetVariable(identity)) = effect {
                     load_config_variable(&mut app, backend.as_mut(), identity).await;
                 }
+            } else if matches!(app.active_dialog(), Some(Dialog::ConfigComparison(_))) {
+                if let Some(action) = config_compare_dialog_action(input) {
+                    let _ = update(&mut app, action);
+                }
             } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
@@ -2159,7 +2163,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
             } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Enter {
                 inspect_selected_config_variable(&mut app, backend.as_mut()).await;
-            } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Char('s')
+            } else if app.screen == yoctui_model::Screen::Configuration
+                && matches!(input, Input::Char('s') | Input::Char('c'))
             {
                 if let Some(action) = config_workspace_action(false, input) {
                     let _ = update(&mut app, action);

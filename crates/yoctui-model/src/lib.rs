@@ -584,6 +584,25 @@ pub struct ConfigScopePicker {
     pub scopes: Vec<Option<String>>,
     pub selection: usize,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConfigComparisonOutcome {
+    Equal,
+    Different,
+    Unavailable,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfigComparisonField {
+    pub global: Option<String>,
+    pub recipe: Option<String>,
+    pub outcome: ConfigComparisonOutcome,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfigComparison {
+    pub variable: String,
+    pub recipe: String,
+    pub effective: ConfigComparisonField,
+    pub unexpanded: ConfigComparisonField,
+}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
     BuildOptions,
@@ -596,6 +615,7 @@ pub enum Dialog {
     RecipePatchPicker(RecipePatchPicker),
     ConfigSourcePicker(ConfigSourcePicker),
     ConfigScopePicker(ConfigScopePicker),
+    ConfigComparison(ConfigComparison),
     DevtoolResetConfirmation(String),
     DevtoolUpdateConfirmation(String),
     DevtoolFinish { recipe: String, destination: String },
@@ -1885,6 +1905,8 @@ pub enum Action {
     },
     ConfirmConfigScope,
     CancelConfigScopePicker,
+    OpenConfigComparison,
+    CloseConfigComparison,
     VariableDetailFailed {
         identity: VariableIdentity,
         message: String,
@@ -2325,6 +2347,75 @@ fn selected_config_sources(
 
 pub fn config_source_disabled_reason(app: &App) -> Option<String> {
     selected_config_sources(app).err()
+}
+
+fn comparison_field(global: Option<String>, recipe: Option<String>) -> ConfigComparisonField {
+    let outcome = match (&global, &recipe) {
+        (Some(global), Some(recipe)) if global == recipe => ConfigComparisonOutcome::Equal,
+        (Some(_), Some(_)) => ConfigComparisonOutcome::Different,
+        _ => ConfigComparisonOutcome::Unavailable,
+    };
+    ConfigComparisonField {
+        global,
+        recipe,
+        outcome,
+    }
+}
+
+pub fn config_comparison(app: &App) -> Result<ConfigComparison, String> {
+    let selected = selected_config_identity(app)
+        .ok_or_else(|| "No configuration variable is selected.".to_owned())?;
+    let recipe = app
+        .config_scope
+        .clone()
+        .ok_or_else(|| "Select a recipe scope with s before comparing.".to_owned())?;
+    if !app
+        .workspace
+        .recipes
+        .iter()
+        .any(|candidate| candidate.name == recipe)
+    {
+        return Err(format!("Recipe scope {recipe} is no longer available."));
+    }
+    let global_identity = VariableIdentity {
+        name: selected.name.clone(),
+        recipe: None,
+    };
+    let recipe_identity = VariableIdentity {
+        name: selected.name.clone(),
+        recipe: Some(recipe.clone()),
+    };
+    for identity in [&global_identity, &recipe_identity] {
+        let scope = identity.recipe.as_deref().unwrap_or("global");
+        if app.variable_detail_loading.contains(identity) {
+            return Err(format!("Detail for {scope} scope is still loading."));
+        }
+        if let Some(error) = app.variable_detail_errors.get(identity) {
+            return Err(format!("Detail for {scope} scope is unavailable: {error}"));
+        }
+    }
+    let global = app
+        .variable_details
+        .get(&global_identity)
+        .ok_or_else(|| format!("Load global detail for {} before comparing.", selected.name))?;
+    let scoped = app.variable_details.get(&recipe_identity).ok_or_else(|| {
+        format!(
+            "Load {recipe} detail for {} before comparing.",
+            selected.name
+        )
+    })?;
+    Ok(ConfigComparison {
+        variable: selected.name,
+        recipe,
+        effective: comparison_field(
+            global.effective_value.clone(),
+            scoped.effective_value.clone(),
+        ),
+        unexpanded: comparison_field(
+            global.unexpanded_value.clone(),
+            scoped.unexpanded_value.clone(),
+        ),
+    })
 }
 
 fn resolve_config_source(app: &App, path: &Path) -> Result<PathBuf, String> {
@@ -4313,6 +4404,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::CancelConfigScopePicker => {
             if matches!(app.active_dialog(), Some(Dialog::ConfigScopePicker(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::OpenConfigComparison => match config_comparison(app) {
+            Ok(comparison) => open_dialog(app, Dialog::ConfigComparison(comparison)),
+            Err(reason) => app.notification = Some(reason),
+        },
+        Action::CloseConfigComparison => {
+            if matches!(app.active_dialog(), Some(Dialog::ConfigComparison(_))) {
                 close_dialog(app);
             }
         }
@@ -7616,5 +7716,90 @@ mod tests {
             app.active_dialog(),
             Some(Dialog::ConfigScopePicker(picker)) if picker.scopes == [None]
         ));
+    }
+
+    #[test]
+    fn config_compare_reports_equal_different_and_unavailable_fields() {
+        let mut app = App::new(20, 4_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace.recipes.push(Recipe {
+            name: "base-files".into(),
+            ..Recipe::default()
+        });
+        app.config_scope = Some("base-files".into());
+        for (recipe, effective, unexpanded) in [
+            (None, Some("qemux86-64"), Some("${DEFAULT_MACHINE}")),
+            (Some("base-files"), Some("qemux86-64"), None),
+        ] {
+            let identity = VariableIdentity {
+                name: "MACHINE".into(),
+                recipe: recipe.map(str::to_owned),
+            };
+            app.variable_details.insert(
+                identity.clone(),
+                VariableDetail {
+                    identity,
+                    effective_value: effective.map(str::to_owned),
+                    unexpanded_value: unexpanded.map(str::to_owned),
+                    provenance: None,
+                    operations: vec![],
+                    active_overrides: vec![],
+                },
+            );
+        }
+        let comparison = config_comparison(&app).unwrap();
+        assert_eq!(comparison.effective.outcome, ConfigComparisonOutcome::Equal);
+        assert_eq!(
+            comparison.unexpanded.outcome,
+            ConfigComparisonOutcome::Unavailable
+        );
+        let _ = update(&mut app, Action::OpenConfigComparison);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::ConfigComparison(value)) if value == &comparison
+        ));
+        let _ = update(&mut app, Action::CloseConfigComparison);
+        assert!(app.active_dialog().is_none());
+
+        app.variable_details
+            .get_mut(&VariableIdentity {
+                name: "MACHINE".into(),
+                recipe: Some("base-files".into()),
+            })
+            .unwrap()
+            .effective_value = Some("qemuarm".into());
+        assert_eq!(
+            config_comparison(&app).unwrap().effective.outcome,
+            ConfigComparisonOutcome::Different
+        );
+    }
+
+    #[test]
+    fn config_compare_explains_scope_loading_and_missing_detail() {
+        let mut app = App::new(20, 4_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        assert_eq!(
+            config_comparison(&app),
+            Err("Select a recipe scope with s before comparing.".into())
+        );
+        app.workspace.recipes.push(Recipe {
+            name: "base-files".into(),
+            ..Recipe::default()
+        });
+        app.config_scope = Some("base-files".into());
+        let scoped = VariableIdentity {
+            name: "MACHINE".into(),
+            recipe: Some("base-files".into()),
+        };
+        app.variable_detail_loading.insert(scoped);
+        assert!(
+            config_comparison(&app)
+                .unwrap_err()
+                .contains("still loading")
+        );
     }
 }

@@ -629,6 +629,7 @@ pub fn config_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('C') => Some(Action::CopySelectedConfigEffective),
         Input::Char('U') => Some(Action::CopySelectedConfigUnexpanded),
         Input::Char('s') => Some(Action::OpenConfigScopePicker),
+        Input::Char('c') => Some(Action::OpenConfigComparison),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
         Input::Char('o') => Some(Action::OpenSelectedConfigSource),
         _ => None,
@@ -653,6 +654,10 @@ pub fn config_scope_picker_action(key: Input) -> Option<Action> {
         Input::Esc => Some(Action::CancelConfigScopePicker),
         _ => None,
     }
+}
+
+pub fn config_compare_dialog_action(key: Input) -> Option<Action> {
+    matches!(key, Input::Enter | Input::Esc).then_some(Action::CloseConfigComparison)
 }
 #[cfg(test)]
 mod tests {
@@ -1429,6 +1434,22 @@ mod tests {
         assert_eq!(
             config_scope_picker_action(Input::Esc),
             Some(Action::CancelConfigScopePicker)
+        );
+    }
+
+    #[test]
+    fn config_compare_shortcut_and_close_keys_are_typed() {
+        assert_eq!(
+            config_workspace_action(false, Input::Char('c')),
+            Some(Action::OpenConfigComparison)
+        );
+        assert_eq!(
+            config_compare_dialog_action(Input::Enter),
+            Some(Action::CloseConfigComparison)
+        );
+        assert_eq!(
+            config_compare_dialog_action(Input::Esc),
+            Some(Action::CloseConfigComparison)
         );
     }
     #[test]
