@@ -776,6 +776,29 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: true }),
             popup,
         );
+    } else if let Some(Dialog::DevtoolModifyConfirmation(identity)) = app.active_dialog() {
+        let width = area.width.saturating_sub(8).clamp(44, 100);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(7) / 2,
+            width,
+            7,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Run `devtool modify {}`?\n\nProvider: {}\n\nEnter continues; Esc cancels.",
+                identity.name,
+                identity.file.display()
+            ))
+            .block(
+                Block::default()
+                    .title("Confirm Devtool modify")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: true }),
+            popup,
+        );
     } else if let Some(Dialog::DevtoolResetConfirmation(recipe)) = app.active_dialog() {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
         clear_popup(frame, app, popup);
@@ -1555,9 +1578,10 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         1,
     );
     frame.render_widget(
-        Paragraph::new("↑/↓ file  Enter/e edit  Ctrl+S save  Esc return to Yoctui").style(
-            ThemePalette::for_app(app).role(ThemePalette::for_app(app).disabled, Modifier::DIM),
-        ),
+        Paragraph::new(
+            "↑/↓ file  Enter/e edit  Ctrl+S save  Ctrl+B build recipe  Esc return to Yoctui",
+        )
+        .style(ThemePalette::for_app(app).role(ThemePalette::for_app(app).disabled, Modifier::DIM)),
         footer,
     );
 }
@@ -3901,6 +3925,13 @@ mod tests {
                 "Confirm recipe task",
             ),
             (
+                Dialog::DevtoolModifyConfirmation(yoctui_model::RecipeIdentity {
+                    name: "busybox".into(),
+                    file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+                }),
+                "Confirm Devtool modify",
+            ),
+            (
                 Dialog::DevtoolResetConfirmation("busybox".into()),
                 "Confirm Devtool reset",
             ),
@@ -4402,7 +4433,21 @@ mod tests {
         assert!(output.contains("devtool deploy-target busybox qemuarm"));
     }
     #[test]
-    fn renders_recipe_editor_overlay() {
+    fn devtool_modify_renders_confirmation_and_workspace_editor_build_shortcut() {
+        let mut confirmation = App::new(10, 1_000);
+        confirmation
+            .dialogs
+            .push_back(Dialog::DevtoolModifyConfirmation(
+                yoctui_model::RecipeIdentity {
+                    name: "busybox".into(),
+                    file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+                },
+            ));
+        let output = rendered_text(&confirmation, 120, 30);
+        assert!(output.contains("Confirm Devtool modify"), "{output}");
+        assert!(output.contains("devtool modify busybox"), "{output}");
+        assert!(output.contains("busybox.bb"), "{output}");
+
         let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
         let mut app = App::new(10, 1_000);
         app.dialogs.push_back(Dialog::RecipeEditor(RecipeEditor {
@@ -4424,6 +4469,7 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Workspace file tree: busybox"));
         assert!(output.contains("int main() {}"));
+        assert!(output.contains("Ctrl+B build recipe"));
     }
     #[test]
     fn layer_tree_renders_configured_layers_git_state_and_numbered_preview() {

@@ -766,6 +766,25 @@ independent BitBake job, with graceful and forced cancellation distinguished.
 Missing tools, start failure, nonzero exit, cancellation failure, and runner
 loss remain distinct outcomes.
 
+`d` never guesses Devtool eligibility. When the exact selected recipe identity
+has no authoritative status, it directs the user to refresh with `t`; missing
+Devtool, status errors, and invalid workspace states remain disabled with their
+typed reason. A recipe reported outside the workspace opens a focus-trapping
+confirmation that previews the exact `devtool modify <recipe>` operation and
+provider path. A recipe already reported in the workspace opens its
+authoritative source tree directly.
+
+Successful modify completion refreshes the original recipe identity even when
+the user navigated elsewhere while the job ran. Only a refreshed absolute
+workspace source path may open the large two-pane workspace editor. Refresh
+failure, absent membership, a missing source directory, or file scan/load
+failure leaves the successful job and refreshed status visible with a
+recoverable notification. The editor retains the source tree on the left and
+syntax-aware selected-file preview/editing on the right. `Ctrl+S` saves;
+`Ctrl+B` refuses dirty content, otherwise closes the editor and opens the
+existing exact `bitbake <recipe>` confirmation. It never routes to an image
+build.
+
 `V` starts a selected-recipe CVE check only when authoritative metadata
 reports `do_cve_check`; `X` starts SPDX generation only when it reports
 `do_create_spdx`. Each route opens the existing typed confirmation with the
