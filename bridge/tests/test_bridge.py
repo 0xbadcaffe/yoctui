@@ -250,6 +250,76 @@ server = Server()
         self.assertEqual(message["value"], "qemuarm")
         self.assertEqual(message["provenance"], "conf/local.conf:12")
 
+    def test_config_metadata_uses_tinfoil_unexpanded_values_and_history(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory, "bb")
+            package.mkdir()
+            Path(package, "__init__.py").write_text(
+                '__version__ = "2.19.0"\n', encoding="utf-8"
+            )
+            Path(package, "tinfoil.py").write_text(
+                """class History:
+ def variable(self, name):
+  assert name == "MACHINE"
+  return [
+   {"op": "set", "file": "/layers/meta/conf/machine/include/qemu.inc", "line": 3, "detail": "${DEFAULT_MACHINE}"},
+   {"op": "append[qemux86-64]", "file": "/build/conf/local.conf", "line": 12, "detail": " qemux86-64"},
+   {"op": "set", "file": "/ignored", "line": 1, "detail": "flag", "flag": "doc"},
+  ]
+class Data:
+ varhistory = History()
+ def getVar(self, name, expand=True):
+  values = {"MACHINE": "qemux86-64" if expand else "${DEFAULT_MACHINE}", "OVERRIDES": "x86-64:qemux86-64:poky"}
+  return values.get(name)
+class Tinfoil:
+ def __init__(self, **kwargs): self.config_data = Data()
+ def prepare(self, **kwargs): pass
+ def parse_recipes(self): pass
+ def parse_recipe(self, recipe):
+  assert recipe == "base-files"
+  return Data()
+ def shutdown(self): pass
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"get_variable","name":"MACHINE","recipe":"base-files"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "variable")
+        self.assertEqual(message["recipe"], "base-files")
+        self.assertEqual(message["value"], "qemux86-64")
+        self.assertEqual(message["unexpanded_value"], "${DEFAULT_MACHINE}")
+        self.assertEqual(message["provenance"], "/build/conf/local.conf:12")
+        self.assertEqual(len(message["operations"]), 2)
+        self.assertEqual(message["operations"][1]["operation"], "append[qemux86-64]")
+        self.assertEqual(
+            message["active_overrides"], ["x86-64", "qemux86-64", "poky"]
+        )
+
+    def test_config_metadata_rejects_malformed_server_operations(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                """__version__ = "2.8.1"
+class Connection:
+ def get_variable(self, name, recipe):
+  return {"value": "qemuarm", "operations": [{"operation": "set", "line": "twelve"}]}
+class Server:
+ def connect(self): return Connection()
+server = Server()
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"get_variable","name":"MACHINE","recipe":null}}',
+                environment={"PYTHONPATH": directory},
+            )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "command_failed")
+        self.assertEqual(message["code"], "bitbake_server_unavailable")
+        self.assertIn("invalid variable operations", message["message"])
+
     def test_mocked_server_adapter_returns_authoritative_dependencies(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             Path(directory, "bb.py").write_text(

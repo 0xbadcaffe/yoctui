@@ -5,7 +5,7 @@ use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
     BackgroundJobOutputEntry, BackgroundJobProgress, BackgroundJobResult, BackgroundJobSpec,
     BuildRequest, FocusTarget, LayerInspectorMode, LayerRelationship, LayerRelationships,
-    RecipeDependencies, Screen, Severity, TaskId, TaskInfo,
+    RecipeDependencies, Screen, Severity, TaskId, TaskInfo, VariableDetail, VariableIdentity,
 };
 
 #[derive(Debug)]
@@ -362,13 +362,20 @@ pub fn model_action_from_backend_event(event: BackendEvent) -> Option<Action> {
         BackendEvent::Layers(layers) => Some(Action::LayersLoaded(layers)),
         BackendEvent::Variable {
             name,
+            recipe,
             value,
             provenance,
-        } => Some(Action::VariableLoaded {
-            name,
-            value,
+            unexpanded_value,
+            operations,
+            active_overrides,
+        } => Some(Action::VariableLoaded(VariableDetail {
+            identity: VariableIdentity { name, recipe },
+            effective_value: value,
+            unexpanded_value,
             provenance,
-        }),
+            operations,
+            active_overrides,
+        })),
         BackendEvent::Dependencies {
             recipe,
             build,
@@ -699,10 +706,14 @@ mod tests {
         assert!(matches!(
             model_action_from_backend_event(BackendEvent::Variable {
                 name: "MACHINE".into(),
+                recipe: None,
                 value: Some("qemux86-64".into()),
                 provenance: Some("conf/local.conf:1".into()),
+                unexpanded_value: Some("${DEFAULT_MACHINE}".into()),
+                operations: vec![],
+                active_overrides: vec![],
             }),
-            Some(Action::VariableLoaded { .. })
+            Some(Action::VariableLoaded(_))
         ));
         assert!(matches!(
             model_action_from_backend_event(BackendEvent::Dependencies {
@@ -1056,6 +1067,38 @@ mod tests {
                 stats: Some(yoctui_model::TaskStats { total: 10, .. }),
                 ..
             })) if worker == "worker-1"
+        ));
+    }
+    #[test]
+    fn config_metadata_normalizes_typed_scope_and_history_once() {
+        let action = model_action_from_backend_event(BackendEvent::Variable {
+            name: "PACKAGE_ARCH".into(),
+            recipe: Some("base-files".into()),
+            value: Some("qemux86_64".into()),
+            provenance: Some("/layers/meta/conf/machine/qemux86-64.conf:5".into()),
+            unexpanded_value: Some("${MACHINE_ARCH}".into()),
+            operations: vec![yoctui_model::VariableOperation {
+                operation: "set".into(),
+                file: Some("/layers/meta/conf/machine/qemux86-64.conf".into()),
+                line: Some(5),
+                value: Some("${MACHINE_ARCH}".into()),
+            }],
+            active_overrides: vec!["qemux86-64".into()],
+        });
+        assert!(matches!(
+            action,
+            Some(Action::VariableLoaded(VariableDetail {
+                identity: VariableIdentity {
+                    name,
+                    recipe: Some(recipe),
+                },
+                unexpanded_value: Some(unexpanded),
+                operations,
+                ..
+            })) if name == "PACKAGE_ARCH"
+                && recipe == "base-files"
+                && unexpanded == "${MACHINE_ARCH}"
+                && operations.len() == 1
         ));
     }
     #[test]

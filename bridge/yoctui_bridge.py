@@ -107,19 +107,37 @@ class TinfoilConnection:
             self.tinfoil.shutdown()
             self._prepare()
 
-    def _variable_provenance(self, datastore, name):
+    def _variable_operations(self, datastore, name):
         try:
             history = datastore.varhistory.variable(name) or []
         except Exception:
-            return None
-        sources = []
+            return []
+        operations = []
         for item in history:
             if not isinstance(item, dict) or "flag" in item:
                 continue
             path = item.get("file")
             line = item.get("line")
-            if isinstance(path, str):
-                sources.append(f"{path}:{line}" if isinstance(line, int) else path)
+            detail = item.get("detail")
+            operations.append(
+                {
+                    "operation": str(item.get("op") or "set"),
+                    "file": path if isinstance(path, str) else None,
+                    "line": line
+                    if isinstance(line, int) and not isinstance(line, bool)
+                    else None,
+                    "value": None if detail is None else str(detail),
+                }
+            )
+        return operations
+
+    def _variable_provenance(self, datastore, name):
+        sources = []
+        for operation in self._variable_operations(datastore, name):
+            path = operation["file"]
+            line = operation["line"]
+            if path is not None:
+                sources.append(f"{path}:{line}" if line is not None else path)
         return sources[-1] if sources else None
 
     def _layers(self):
@@ -272,9 +290,31 @@ class TinfoilConnection:
             self._ensure_recipes()
             datastore = self.tinfoil.parse_recipe(recipe)
         value = datastore.getVar(name)
+        unexpanded_value = datastore.getVar(name, False)
+        operations = self._variable_operations(datastore, name)
+        active_overrides = [
+            override
+            for override in str(datastore.getVar("OVERRIDES") or "").split(":")
+            if override
+        ]
         return {
+            "recipe": recipe,
             "value": None if value is None else str(value),
-            "provenance": self._variable_provenance(datastore, name),
+            "unexpanded_value": None
+            if unexpanded_value is None
+            else str(unexpanded_value),
+            "provenance": next(
+                (
+                    f"{operation['file']}:{operation['line']}"
+                    if operation["line"] is not None
+                    else operation["file"]
+                    for operation in reversed(operations)
+                    if operation["file"] is not None
+                ),
+                None,
+            ),
+            "operations": operations,
+            "active_overrides": active_overrides,
         }
 
     def get_dependencies(self, recipe):
@@ -526,10 +566,51 @@ class BitBakeAdapter:
         if isinstance(response, dict):
             value = response.get("value")
             provenance = response.get("provenance")
+            unexpanded_value = response.get("unexpanded_value")
+            operations = response.get("operations", [])
+            active_overrides = response.get("active_overrides", [])
+            scope = response.get("recipe", recipe)
             if (value is None or isinstance(value, str)) and (
                 provenance is None or isinstance(provenance, str)
-            ):
-                return {"value": value, "provenance": provenance}
+            ) and (unexpanded_value is None or isinstance(unexpanded_value, str)):
+                if scope is not None and not isinstance(scope, str):
+                    raise ServerUnavailable(
+                        f"BitBake server returned an invalid variable scope for {name}"
+                    )
+                if not isinstance(active_overrides, list) or not all(
+                    isinstance(item, str) for item in active_overrides
+                ):
+                    raise ServerUnavailable(
+                        f"BitBake server returned invalid active overrides for {name}"
+                    )
+                if not isinstance(operations, list) or not all(
+                    isinstance(item, dict)
+                    and isinstance(item.get("operation"), str)
+                    and (item.get("file") is None or isinstance(item.get("file"), str))
+                    and (
+                        item.get("line") is None
+                        or (
+                            isinstance(item.get("line"), int)
+                            and not isinstance(item.get("line"), bool)
+                        )
+                    )
+                    and (
+                        item.get("value") is None
+                        or isinstance(item.get("value"), str)
+                    )
+                    for item in operations
+                ):
+                    raise ServerUnavailable(
+                        f"BitBake server returned invalid variable operations for {name}"
+                    )
+                return {
+                    "recipe": scope,
+                    "value": value,
+                    "provenance": provenance,
+                    "unexpanded_value": unexpanded_value,
+                    "operations": operations,
+                    "active_overrides": active_overrides,
+                }
         raise ServerUnavailable(
             f"BitBake server returned an unsupported variable response for {name}"
         )
@@ -1335,6 +1416,7 @@ def handle(command, correlation_id, adapter):
                 {
                     "type": "variable",
                     "name": name,
+                    "recipe": recipe,
                     **variable,
                 },
                 correlation_id,
