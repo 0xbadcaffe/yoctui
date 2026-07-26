@@ -2,50 +2,52 @@
 
 ## Active task
 
-**ID:** CONFIG-EDIT-PREVIEW-001
-**Title:** Add allowlisted configuration edit preview
+**ID:** CONFIG-EDIT-WRITE-001
+**Title:** Write and refresh previewed configuration edits
 
 ## Objective
 
-Add a safe, focus-trapping value editor and exact `local.conf` assignment
-preview for explicitly allowlisted global configuration variables.
+Atomically apply the exact confirmed assignment to `conf/local.conf`, preserve
+the selected detail on failure, and refresh its authoritative value on success.
 
 ## Required work
 
-1. Inventory existing BBMASK preview/confirmation, variable detail/scope,
-   dialog focus, assignment validation, responsive rendering, and tests.
-2. Define the initial editable-variable allowlist in typed model code and keep
-   all other variables read-only with an exact reason. Recipe-scoped values are
-   never directly editable.
-3. Add an edit shortcut that opens a value editor prefilled from the exact
-   loaded global effective value. Loading, failure, not-loaded, absent value,
-   non-allowlisted variable, or recipe scope remains inert.
-4. Validate variable name/value as a single assignment value and reject
-   newline/control injection.
-5. Preview the exact quoted assignment and destination `build/conf/local.conf`
-   in a separate confirmation dialog. No write occurs in this task.
-6. `Enter` advances editor to preview and preview to a typed write effect;
-   `Esc` cancels and restores the exact prior pane.
-7. Render shortcut availability and both dialogs across responsive modes.
-8. Add reducer, app/input, and TestBackend tests named `config_edit_preview`.
-9. Update `docs/ui-spec.md` for allowlist, validation, preview, and focus.
+1. Inventory existing BBMASK writes, settings atomic persistence, variable
+   detail loading, effect execution, error notifications, and CLI tests.
+2. Accept only the exact typed request produced by the confirmation reducer;
+   revalidate the allowlisted global identity, destination, value, and
+   assignment at the filesystem boundary.
+3. Replace an active assignment for the exact variable or append one when it
+   is absent. Preserve unrelated content, comments, newline style, and file
+   permissions.
+4. Write through a same-directory temporary file and atomically rename it over
+   `conf/local.conf`; clean up a failed temporary write without damaging the
+   original.
+5. On success, request the exact global `VariableIdentity` again and update
+   the Inspector only from its authoritative backend response.
+6. On write or refresh failure, preserve the prior selected detail and report
+   an actionable notification.
+7. Add reducer/app/CLI tests named `config_edit_write` covering replacement,
+   append, validation, atomic failure, refresh success, and refresh failure.
+8. Perform external validation without leaving the live Yocto configuration
+   modified, and record the exact environment/result.
+9. Update specifications and status documents where behavior changes.
 
 ## Definition of done
 
-- Read-only default and allowlist are explicit and tested.
-- Exact selected global detail seeds a validated editor.
-- Confirmation previews destination and exact assignment before any effect.
-- Partial/error/injection states remain inert with precise reasons.
-- Focus and responsive rendering are covered.
-- Task-specific and baseline verification pass.
-- Registry/status documents are updated and the write task becomes active.
+- Confirmed edits use a validated typed request and atomic local.conf update.
+- Existing assignments are replaced without duplicating the active variable.
+- Unrelated content and file permissions are preserved.
+- Success refreshes the exact global detail; failures preserve prior state.
+- Unit, integration, and external validation pass.
+- Registry/status documents are updated and the next eligible task is active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model config_edit_preview
-cargo test -p yoctui-app config_edit_preview
-cargo test -p yoctui-ui config_edit_preview
+cargo test -p yoctui-model config_edit_write
+cargo test -p yoctui-app config_edit_write
+cargo test -p yoctui -- config_edit_write
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -55,4 +57,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`CONFIG-EDIT-WRITE-001 — Write and refresh previewed configuration edits`
+`DEVTOOL-JOBS-001 — Run Devtool operations as persistent jobs`

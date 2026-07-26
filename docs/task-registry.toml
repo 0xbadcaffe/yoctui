@@ -394,18 +394,18 @@ notes = "Parent gate split into focused preview/confirmation and atomic write/re
 id = "CONFIG-EDIT-PREVIEW-001"
 milestone = "M3"
 title = "Add allowlisted configuration edit preview"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 42
 required = true
 depends_on = ["CONFIG-ACTIONS-001"]
 verify = ["cargo test -p yoctui-model config_edit_preview", "cargo test -p yoctui-app config_edit_preview", "cargo test -p yoctui-ui config_edit_preview"]
-notes = "Read-only default, explicit allowlist, value editor, exact local.conf assignment preview, validation, confirmation, focus, and responsive states."
+notes = "MACHINE and DISTRO are the explicit global-only allowlist; E opens an authoritative prefilled editor, rejects control injection, and previews the exact escaped local.conf assignment before a typed write effect, with reducer/input/CLI/responsive TestBackend coverage."
 
 [[task]]
 id = "CONFIG-EDIT-WRITE-001"
 milestone = "M3"
 title = "Write and refresh previewed configuration edits"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 42
 required = true
 depends_on = ["CONFIG-EDIT-PREVIEW-001"]

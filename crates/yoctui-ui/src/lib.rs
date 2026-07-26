@@ -9,8 +9,8 @@ use yoctui_model::{
     DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget,
     GitFileState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PreviewKind, Recipe,
     RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity, TaskFilterField, TaskRow,
-    TaskState, Theme, VariableIdentity, config_comparison, config_source_disabled_reason,
-    format_duration, selected_config_copy_value,
+    TaskState, Theme, VariableIdentity, config_comparison, config_edit_disabled_reason,
+    config_source_disabled_reason, format_duration, selected_config_copy_value,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -434,7 +434,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
         Screen::Configuration => {
-            "↑/↓ select | Enter inspect | s scope | c compare | C copy effective | U copy unexpanded | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
+            "↑/↓ select | Enter inspect | s scope | c compare | C copy effective | U copy unexpanded | o source | E edit | / search | x BBMASK | Esc dashboard | ? help | q quit"
         }
         Screen::Bbmask => {
             "e edit BBMASK | Enter preview/confirm | Esc cancel/dashboard | v configuration | ? help | q quit"
@@ -595,6 +595,44 @@ pub fn render(frame: &mut Frame, app: &App) {
                     .title(format!("{} retained task logs", picker.recipe))
                     .borders(Borders::ALL),
             ),
+            popup,
+        );
+    } else if let Some(Dialog::ConfigEdit { identity, input }) = app.active_dialog() {
+        let popup = Rect::new(area.width / 6, area.height / 3, area.width * 2 / 3, 7);
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Variable: {}\nNew effective value:\n{}_\n\nEnter previews; Esc cancels.",
+                identity.name, input
+            ))
+            .block(
+                Block::default()
+                    .title("Edit global configuration")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+            popup,
+        );
+    } else if let Some(Dialog::ConfigEditConfirmation(request)) = app.active_dialog() {
+        let popup = Rect::new(
+            area.width / 8,
+            area.height / 4,
+            area.width * 3 / 4,
+            area.height / 2,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Destination:\n{}\n\nExact assignment:\n{}\n\nEnter confirms; Esc cancels.",
+                request.destination.display(),
+                request.assignment
+            ))
+            .block(
+                Block::default()
+                    .title("Preview configuration edit")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
             popup,
         );
     } else if let Some(Dialog::ConfigComparison(comparison)) = app.active_dialog() {
@@ -3296,7 +3334,12 @@ fn config_copy_status(app: &App) -> String {
         |reason| format!("c compare: disabled ({reason})"),
         |_| "c compare: enabled".into(),
     );
-    format!("{scope}\n{compare}\n{source}\n{copy}")
+    let edit = if config_edit_disabled_reason(app).is_none() {
+        "E edit: enabled"
+    } else {
+        "E edit: disabled"
+    };
+    format!("{scope} | {edit}\n{compare}\n{source}\n{copy}")
 }
 
 fn config(frame: &mut Frame, app: &App, area: Rect) {
@@ -5169,6 +5212,71 @@ mod tests {
             assert!(output.contains("base-files"), "{output}");
         }
     }
+
+    #[test]
+    fn config_edit_preview_renders_availability_editor_and_exact_confirmation_responsively() {
+        for (width, height) in [(140, 32), (100, 28), (90, 24)] {
+            let mut app = App::new(10, 1_000);
+            app.screen = Screen::Configuration;
+            app.workspace.build_dir = Some("/build".into());
+            app.workspace
+                .variables
+                .insert("MACHINE".into(), "qemux86-64".into());
+            let identity = yoctui_model::VariableIdentity {
+                name: "MACHINE".into(),
+                recipe: None,
+            };
+            app.variable_details.insert(
+                identity.clone(),
+                yoctui_model::VariableDetail {
+                    identity: identity.clone(),
+                    effective_value: Some("qemux86-64".into()),
+                    unexpanded_value: None,
+                    provenance: None,
+                    operations: vec![],
+                    active_overrides: vec![],
+                },
+            );
+
+            let output = rendered_text(&app, width, height);
+            if width >= 80 && height >= 24 {
+                assert!(output.contains("E edit:"), "{output}");
+                assert!(output.contains("enabled"), "{output}");
+            }
+
+            app.dialogs.push_back(Dialog::ConfigEdit {
+                identity: identity.clone(),
+                input: "qemux86-64".into(),
+            });
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Edit global configuration"), "{output}");
+            assert!(output.contains("qemux86-64"), "{output}");
+
+            app.dialogs.pop_back();
+            app.dialogs.push_back(Dialog::ConfigEditConfirmation(
+                yoctui_model::ConfigEditRequest {
+                    identity,
+                    value: "qemux86-64".into(),
+                    destination: "/build/conf/local.conf".into(),
+                    assignment: "MACHINE = \"qemux86-64\"".into(),
+                },
+            ));
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Preview configuration edit"), "{output}");
+            assert!(output.contains("/build/conf/local.conf"), "{output}");
+            assert!(output.contains("MACHINE = \"qemux86-64\""), "{output}");
+        }
+
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Configuration;
+        app.workspace
+            .variables
+            .insert("BB_NUMBER_THREADS".into(), "8".into());
+        let output = rendered_text(&app, 120, 28);
+        assert!(output.contains("E edit: disabled"), "{output}");
+        assert!(output.contains("read-only"), "{output}");
+    }
+
     #[test]
     fn bbmask_renders_effective_patterns_and_provenance() {
         let mut terminal = Terminal::new(TestBackend::new(160, 30)).unwrap();

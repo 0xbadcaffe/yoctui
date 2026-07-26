@@ -872,7 +872,19 @@ disabled with a precise reason when no recipe scope is active, a scope
 disappeared, either identity is loading/failed/not loaded, or no variable is
 selected. Long values wrap safely in every responsive mode.
 
-Editing configuration requires a dedicated preview-and-confirm dialog.
+Configuration remains read-only unless all edit prerequisites are satisfied.
+The initial explicit allowlist is `MACHINE` and `DISTRO`; every other variable
+shows a read-only reason. Editing is global-scope only and requires the exact
+selected identity's loaded effective value plus an active build directory.
+Recipe-scoped, loading, failed, not-loaded, and absent values remain inert.
+
+`E` opens a focus-trapping value editor prefilled from that authoritative
+effective value. `Enter` validates a single-line value, escaping quotes and
+backslashes, then opens a separate confirmation dialog. Newline and other
+control-character injection is rejected. The confirmation shows the exact
+destination `build/conf/local.conf` and exact quoted assignment before
+emitting a typed write request. `Esc` from either dialog performs no write and
+restores the exact prior pane. The preview phase itself never writes a file.
 
 No silent edits.
 
