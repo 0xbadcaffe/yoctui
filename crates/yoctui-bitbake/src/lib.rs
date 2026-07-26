@@ -1,5 +1,11 @@
 //! BitBake adapters. They execute BitBake; they never evaluate metadata themselves.
+mod signature;
+
 use async_trait::async_trait;
+pub use signature::{
+    SignatureAdapter, SignatureAdapterError, SignatureCancellation, SignatureCommandSpec,
+    SignatureComparisonResponse, SignatureDumpResponse,
+};
 use std::{
     ffi::OsString,
     path::{Path, PathBuf},
@@ -96,6 +102,8 @@ pub enum BackendError {
     Protocol(#[from] ProtocolError),
     #[error("bridge: {0}")]
     Bridge(String),
+    #[error("signature: {0}")]
+    Signature(#[from] SignatureAdapterError),
     #[error("backend is not running")]
     NotRunning,
 }
@@ -880,6 +888,26 @@ pub enum BackendEvent {
     Disconnected,
 }
 
+impl From<SignatureDumpResponse> for BackendEvent {
+    fn from(response: SignatureDumpResponse) -> Self {
+        Self::SignatureDump {
+            target: response.target,
+            records: response.records,
+            limitations: response.limitations,
+        }
+    }
+}
+
+impl From<SignatureComparisonResponse> for BackendEvent {
+    fn from(response: SignatureComparisonResponse) -> Self {
+        Self::SignatureComparison {
+            request: response.request,
+            differences: response.differences,
+            limitations: response.limitations,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct VariableValue {
     pub recipe: Option<String>,
@@ -928,6 +956,14 @@ pub trait BitBakeBackend: Send {
         &mut self,
         recipe: String,
     ) -> Result<DependencyGraphResponse, BackendError>;
+    async fn get_signature_dump(
+        &mut self,
+        target: SignatureTarget,
+    ) -> Result<SignatureDumpResponse, BackendError>;
+    async fn compare_signatures(
+        &mut self,
+        request: SignatureComparisonRequest,
+    ) -> Result<SignatureComparisonResponse, BackendError>;
     async fn get_recipe_sources(&mut self, recipe: String) -> Result<Vec<PathBuf>, BackendError>;
     async fn get_recipe_metadata(&mut self, recipe: String)
     -> Result<RecipeMetadata, BackendError>;
@@ -979,6 +1015,7 @@ pub fn classify_output(line: String) -> LogEntry {
 }
 pub struct ProcessBackend {
     build_dir: PathBuf,
+    signature_adapter: SignatureAdapter,
     executable: PathBuf,
     arguments: Vec<OsString>,
     child: Option<Child>,
@@ -999,6 +1036,7 @@ impl ProcessBackend {
 
     pub fn with_command(build_dir: PathBuf, executable: PathBuf, arguments: Vec<OsString>) -> Self {
         Self {
+            signature_adapter: SignatureAdapter::new(build_dir.clone()),
             build_dir,
             executable,
             arguments,
@@ -1141,6 +1179,34 @@ impl BitBakeBackend for ProcessBackend {
     ) -> Result<DependencyGraphResponse, BackendError> {
         self.generate_dependency_graph(recipe).await
     }
+    async fn get_signature_dump(
+        &mut self,
+        target: SignatureTarget,
+    ) -> Result<SignatureDumpResponse, BackendError> {
+        if self.child.is_some() {
+            return Err(BackendError::Bridge(
+                "signature inspection is unavailable during an active process-backend build".into(),
+            ));
+        }
+        self.signature_adapter
+            .dump(target)
+            .await
+            .map_err(Into::into)
+    }
+    async fn compare_signatures(
+        &mut self,
+        request: SignatureComparisonRequest,
+    ) -> Result<SignatureComparisonResponse, BackendError> {
+        if self.child.is_some() {
+            return Err(BackendError::Bridge(
+                "signature comparison is unavailable during an active process-backend build".into(),
+            ));
+        }
+        self.signature_adapter
+            .compare(request)
+            .await
+            .map_err(Into::into)
+    }
     async fn get_recipe_sources(&mut self, _recipe: String) -> Result<Vec<PathBuf>, BackendError> {
         Err(BackendError::Bridge("the process backend cannot inspect authoritative recipe source paths; use the Yoctui bridge".into()))
     }
@@ -1246,6 +1312,7 @@ pub struct BridgeBackend {
     lines: BufReader<tokio::process::ChildStdout>,
     sequence: u64,
     last_sequence: u64,
+    signature_adapter: SignatureAdapter,
 }
 impl BridgeBackend {
     pub async fn spawn(
@@ -1255,7 +1322,7 @@ impl BridgeBackend {
     ) -> Result<Self, BackendError> {
         let mut child = TokioCommand::new(python)
             .arg(script)
-            .current_dir(build_dir)
+            .current_dir(&build_dir)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
@@ -1274,6 +1341,7 @@ impl BridgeBackend {
             lines: BufReader::new(stdout),
             sequence: 0,
             last_sequence: 0,
+            signature_adapter: SignatureAdapter::new(build_dir),
         };
         backend.handshake().await?;
         Ok(backend)
@@ -2089,6 +2157,24 @@ impl BitBakeBackend for BridgeBackend {
             dependencies.build,
             dependencies.runtime,
         ))
+    }
+    async fn get_signature_dump(
+        &mut self,
+        target: SignatureTarget,
+    ) -> Result<SignatureDumpResponse, BackendError> {
+        self.signature_adapter
+            .dump(target)
+            .await
+            .map_err(Into::into)
+    }
+    async fn compare_signatures(
+        &mut self,
+        request: SignatureComparisonRequest,
+    ) -> Result<SignatureComparisonResponse, BackendError> {
+        self.signature_adapter
+            .compare(request)
+            .await
+            .map_err(Into::into)
     }
     async fn get_recipe_sources(&mut self, recipe: String) -> Result<Vec<PathBuf>, BackendError> {
         self.command(Command::GetRecipeSources {

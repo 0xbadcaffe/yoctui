@@ -625,18 +625,18 @@ notes = "Exact recipe/task/hash/path identities, explicit bounded dump/compariso
 id = "SIG-ADAPTER-001"
 milestone = "M3"
 title = "Acquire and compare authoritative BitBake signatures"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 45
 required = true
 depends_on = ["SIG-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake signature_adapter", "cargo test -p yoctui-app signature_adapter"]
-notes = "Shell-free bitbake-dumpsig/bitbake-diffsigs integration, bounded parsing, exact path/task correlation, failure coverage, and live validation."
+notes = "Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact recipe/task/hash correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 smoke found one autoconf-native do_fetch and one do_recipe_qa record, produced 113 typed differences, no dump limitations, and one explicit recursive-diffsigs limitation."
 
 [[task]]
 id = "SIG-UI-001"
 milestone = "M3"
 title = "Integrate signature dump and comparison workflows"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 45
 required = true
 depends_on = ["SIG-ADAPTER-001"]

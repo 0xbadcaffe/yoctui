@@ -2,60 +2,75 @@
 
 ## Active task
 
-**ID:** SIG-ADAPTER-001
-**Title:** Acquire and compare authoritative BitBake signatures
+**ID:** SIG-UI-001
+**Title:** Integrate signature dump and comparison workflows
 
 ## Objective
 
-Implement shell-free, bounded adapters that acquire exact BitBake recipe/task
-signature records and compare selected authoritative signature files, then emit
-only typed model data with honest partial and failure outcomes.
+Add an app-owned, responsive signature workspace launched from the selected
+recipe, with authoritative task selection, background dump/comparison
+execution, explicit states, deterministic navigation, and safe return to the
+Recipes workspace.
 
 ## Required work
 
-1. Inventory existing process runners, cancellation and output bounds, BitBake
-   command construction, configured build-directory handling, background jobs,
-   and typed signature event hooks before adding code.
-2. Inspect the locally available BitBake tools and current build metadata.
-   Record exact versions and commands used for live validation; do not infer
-   compatibility from mocked tests.
-3. Define shell-free command plans for signature generation/dump and comparison
-   using exact recipe, task, and authoritative absolute signature paths.
-   Reject invalid identifiers, relative paths, and paths outside the configured
-   build directory before process launch.
-4. Parse bounded `bitbake-dumpsig` and `bitbake-diffsigs` results in the adapter
-   into typed records and differences. Preserve unavailable data explicitly,
-   normalize duplicates deterministically, and never pass raw output to the
-   reducer or widgets.
-5. Correlate every result and failure to its exact dump target or comparison
-   request. Report truncation, malformed records, missing tools/files,
-   non-zero exits, cancellation, and unsupported tool behavior honestly.
-6. Integrate the adapter through typed backend events and app coordination
-   without blocking the UI thread or mutating model state directly.
-7. Add tests named `signature_adapter` using fake processes and fixtures for
-   success, empty output, malformed/duplicate/oversized output, non-zero exits,
-   missing tools/files, path escape, cancellation, and exact argument
-   construction.
-8. Run a live read-only smoke check against the available BitBake/Yocto build.
-   Record exact version, commands, observed record/difference coverage, and any
-   limitations in the task registry and implementation status.
-9. Update `docs/architecture.md` for the proven adapter/tool boundary.
+1. Inventory existing recipe shortcuts/dialogs, recipe task metadata, workspace
+   navigation/focus, responsive render helpers, footer hints, editor effects,
+   background polling, and current signature model/adapter behavior.
+2. Update `docs/ui-spec.md` before implementing the intentional behavior:
+   - `Z` from Recipes opens a focus-trapping signature task picker populated
+     only by the selected recipe's authoritative task metadata;
+   - `Enter` loads the chosen task and opens a dedicated signature workspace;
+   - `Esc` returns to Recipes when idle and requests cancellation while an
+     operation is running;
+   - `Up`/`Down` selects exact historical signature identities, `1`/`2` assigns
+     comparison sides, `c` compares, `r` refreshes, and `e` opens the selected
+     recipe provider;
+   - footer hints and explicit loading/empty/partial/failure content are always
+     visible when space permits.
+3. Add a typed Signature screen and task-picker state without exposing it as a
+   duplicate navigator entry. Preserve exact recipe/task identity and prior
+   workspace return context.
+4. Gate task selection on current authoritative recipe metadata. Empty, stale,
+   invalid, or unavailable selections remain inert with actionable notices.
+5. Keep signature input mapping in `yoctui-app`. Dialogs trap focus, selection
+   is identity-stable, incomplete/identical comparison sides cannot launch,
+   and stale results cannot replace a newer request.
+6. Render bounded signature records, selected variable/task-dependency detail,
+   comparison-side markers, and categorized differences from typed state only.
+   Wide layouts may use multiple panes; narrow layouts stack or compact safely
+   and never panic.
+7. Run dump and comparison adapters as cancellable Tokio background work so
+   terminal drawing and navigation remain responsive. Convert results and
+   failures through typed backend events/actions; never parse tool output in
+   CLI, app, or UI code.
+8. Route provider editing through the existing validated editor lifecycle.
+   Signature artifacts remain read-only data and are not opened as source text.
+9. Add tests named `signature_workspace` for reducer lifecycle, picker focus,
+   input mapping, disabled reasons, background result/failure/cancellation,
+   exact identity correlation, wide/narrow/very-small TestBackend rendering,
+   footer hints, explicit states, differences, and provider navigation.
+10. Update `docs/architecture.md` for background signature coordination if its
+    ownership boundary changes.
 
 ## Definition of done
 
-- Signature acquisition and comparison use validated shell-free process plans.
-- Only bounded typed records, differences, limitations, and exact failures cross
-  the backend boundary.
-- Fake-process coverage proves normal and relevant failure/cancellation paths.
-- A live BitBake smoke check records real tool behavior without overstating
-  support.
-- Focused and baseline verification pass.
+- A selected recipe can choose an authoritative task and enter the signature
+  workspace without launching a BitBake build task.
+- Typed dumps and comparisons run in the background, remain cancellable, and
+  preserve exact correlated state.
+- All required states, actions, hints, and responsive layouts are tested.
+- Provider editing uses the existing safe editor boundary.
+- Focused, parent-gate, and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake signature_adapter
-cargo test -p yoctui-app signature_adapter
+cargo test -p yoctui-model signature_workspace
+cargo test -p yoctui-app signature_workspace
+cargo test -p yoctui-ui signature_workspace
+cargo test -p yoctui -- signature_workspace
+cargo test -p yoctui-app signature
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -65,4 +80,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`SIG-UI-001 — Integrate signature dump and comparison workflows`
+`PKG-001 — Package data browser`
