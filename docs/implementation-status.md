@@ -65,9 +65,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DEP-001` — complete dependency exploration and why-built
-2. `SIG-001` — complete signature workflows
-3. `PKG-001` — complete package-data browser
+1. `DEP-MODEL-001` — add typed graphs and why-built path derivation
+2. `DEP-ADAPTER-001` — acquire authoritative graph data
+3. `DEP-UI-001` — integrate the responsive dependency workspace
+4. `SIG-001` — complete signature workflows
+5. `PKG-001` — complete package-data browser
 
 ## Rules
 
