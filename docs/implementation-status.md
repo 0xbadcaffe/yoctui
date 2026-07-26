@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete the Devtool lifecycle while live configuration-detail validation is externally blocked. The Recipes workspace is complete alongside the lazy Layers tree and persistent workbench.
+Add authoritative Devtool workspace and Git status while live configuration-detail validation is externally blocked. The Recipes workspace is complete alongside the lazy Layers tree and persistent workbench.
 
 ## Current task
 
@@ -58,11 +58,12 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DEVTOOL-001` — complete Devtool lifecycle
-2. `CONFIG-META-001` — run live Tinfoil validation after escalation is available
-3. `CONFIG-UI-001` — complete searchable Configuration Inspector after metadata validation
-4. `CONFIG-ACTIONS-001` — add typed copy, source, and compare actions
-5. `CONFIG-EDIT-001` — add previewed configuration editing and refresh
+1. `DEVTOOL-META-001` — add authoritative workspace and Git status
+2. `DEVTOOL-JOBS-001` — run Devtool operations as persistent jobs
+3. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
+4. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
+5. `DEVTOOL-TARGET-001` — complete deploy-target and reset
+6. `CONFIG-META-001` — run live Tinfoil validation after escalation is available
 
 ## Rules
 
