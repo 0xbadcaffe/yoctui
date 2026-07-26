@@ -11,8 +11,8 @@ Status values:
 
 ## Current phase
 
-Validate the completed typed configuration-detail path against the live Yocto
-build. Authoritative Devtool workspace and Git status are complete.
+Complete the searchable Configuration Inspector using the now live-validated
+typed variable-detail path.
 
 ## Current task
 
@@ -50,7 +50,7 @@ See `docs/current-task.md`.
 | Errors workspace | DONE | Stable structured diagnostics drive the full list and Inspector, exact retained-log and source navigation, related context, visible loss counters, and actionable success/warning/failure/cancellation/backend-loss outcomes |
 | Layers workspace | DONE | Every configured layer stays visible above a stable-path lazy tree; priority, compatibility, active/Git state, subtree refresh, hidden/search filtering, typed Inspector modes, safe 64 KiB text/binary previews, and responsive failure-safe rendering are tested |
 | Recipes workspace | DONE | Live-validated typed metadata, identity-stable Inspector states, typed BitBake operations, provider/log/local-patch navigation, editor failures, integrated Devtool routes, and persistent capability-aware CVE/SPDX actions are covered |
-| Configuration workspace | IN_PROGRESS | Typed scoped expanded/unexpanded detail, varhistory operations, active overrides, compatibility defaults, and local tests are complete; live Tinfoil validation is now active |
+| Configuration workspace | IN_PROGRESS | Typed scoped expanded/unexpanded detail, varhistory operations, active overrides, compatibility defaults, and live BitBake 2.19.0 validation are complete; the searchable Inspector and actions remain |
 | Devtool status | DONE | Absolute recipe identity, executable capability, workspace membership/source path, Git branch/head and dirty counts, typed partial/error states, shared disabled reasons, responsive rendering, fake-process tests, and a live no-workspace query are complete |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
@@ -60,12 +60,12 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `CONFIG-META-001` — validate typed variable detail against live Tinfoil
-2. `CONFIG-UI-001` — complete the searchable Configuration Inspector
-3. `CONFIG-ACTIONS-001` — add typed copy, source, and compare actions
-4. `CONFIG-EDIT-001` — add previewed configuration editing and refresh
-5. `DEVTOOL-JOBS-001` — run Devtool operations as persistent jobs
-6. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
+1. `CONFIG-UI-001` — complete the searchable Configuration Inspector
+2. `CONFIG-ACTIONS-001` — add typed copy, source, and compare actions
+3. `CONFIG-EDIT-001` — add previewed configuration editing and refresh
+4. `DEVTOOL-JOBS-001` — run Devtool operations as persistent jobs
+5. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
+6. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
 
 ## Rules
 
