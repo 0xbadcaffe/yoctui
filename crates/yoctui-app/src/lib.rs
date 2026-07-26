@@ -628,6 +628,7 @@ pub fn config_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Enter => Some(Action::BeginSelectedConfigDetail),
         Input::Char('C') => Some(Action::CopySelectedConfigEffective),
         Input::Char('U') => Some(Action::CopySelectedConfigUnexpanded),
+        Input::Char('s') => Some(Action::OpenConfigScopePicker),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
         Input::Char('o') => Some(Action::OpenSelectedConfigSource),
         _ => None,
@@ -640,6 +641,16 @@ pub fn config_source_picker_action(key: Input) -> Option<Action> {
         Input::Down | Input::Char('j') => Some(Action::SelectConfigSource { delta: 1 }),
         Input::Enter => Some(Action::OpenSelectedConfigSourceChoice),
         Input::Esc => Some(Action::CancelConfigSourcePicker),
+        _ => None,
+    }
+}
+
+pub fn config_scope_picker_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectConfigScope { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectConfigScope { delta: 1 }),
+        Input::Enter => Some(Action::ConfirmConfigScope),
+        Input::Esc => Some(Action::CancelConfigScopePicker),
         _ => None,
     }
 }
@@ -1398,6 +1409,26 @@ mod tests {
         assert_eq!(
             config_source_picker_action(Input::Esc),
             Some(Action::CancelConfigSourcePicker)
+        );
+    }
+
+    #[test]
+    fn config_scope_shortcut_and_picker_keys_are_typed() {
+        assert_eq!(
+            config_workspace_action(false, Input::Char('s')),
+            Some(Action::OpenConfigScopePicker)
+        );
+        assert_eq!(
+            config_scope_picker_action(Input::Down),
+            Some(Action::SelectConfigScope { delta: 1 })
+        );
+        assert_eq!(
+            config_scope_picker_action(Input::Enter),
+            Some(Action::ConfirmConfigScope)
+        );
+        assert_eq!(
+            config_scope_picker_action(Input::Esc),
+            Some(Action::CancelConfigScopePicker)
         );
     }
     #[test]

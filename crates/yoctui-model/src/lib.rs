@@ -579,6 +579,12 @@ pub struct ConfigSourcePicker {
     pub selection: usize,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfigScopePicker {
+    pub variable: String,
+    pub scopes: Vec<Option<String>>,
+    pub selection: usize,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
     BuildOptions,
     BuildCompletion,
@@ -589,6 +595,7 @@ pub enum Dialog {
     RecipeTaskLogPicker(RecipeTaskLogPicker),
     RecipePatchPicker(RecipePatchPicker),
     ConfigSourcePicker(ConfigSourcePicker),
+    ConfigScopePicker(ConfigScopePicker),
     DevtoolResetConfirmation(String),
     DevtoolUpdateConfirmation(String),
     DevtoolFinish { recipe: String, destination: String },
@@ -1293,6 +1300,7 @@ pub struct App {
     pub recipe_selection: usize,
     pub layer_selection: usize,
     pub config_selection: usize,
+    pub config_scope: Option<String>,
     pub metadata_query: String,
     pub metadata_searching: bool,
 }
@@ -1347,6 +1355,7 @@ impl App {
             recipe_selection: 0,
             layer_selection: 0,
             config_selection: 0,
+            config_scope: None,
             metadata_query: String::new(),
             metadata_searching: false,
         }
@@ -1870,6 +1879,12 @@ pub enum Action {
     },
     OpenSelectedConfigSourceChoice,
     CancelConfigSourcePicker,
+    OpenConfigScopePicker,
+    SelectConfigScope {
+        delta: isize,
+    },
+    ConfirmConfigScope,
+    CancelConfigScopePicker,
     VariableDetailFailed {
         identity: VariableIdentity,
         message: String,
@@ -2222,7 +2237,10 @@ fn filtered_config_identities(app: &App) -> Vec<VariableIdentity> {
 fn selected_config_identity(app: &App) -> Option<VariableIdentity> {
     filtered_config_identities(app)
         .get(app.config_selection)
-        .cloned()
+        .map(|identity| VariableIdentity {
+            name: identity.name.clone(),
+            recipe: app.config_scope.clone(),
+        })
 }
 
 pub fn selected_config_copy_value(app: &App, value: ConfigCopyValue) -> Result<&str, String> {
@@ -4230,6 +4248,74 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 close_dialog(app);
             }
         }
+        Action::OpenConfigScopePicker => {
+            let Some(identity) = selected_config_identity(app) else {
+                app.notification =
+                    Some("No configuration variable is selected for scope inspection.".into());
+                return None;
+            };
+            let mut recipes = app
+                .workspace
+                .recipes
+                .iter()
+                .map(|recipe| recipe.name.clone())
+                .collect::<Vec<_>>();
+            recipes.sort();
+            recipes.dedup();
+            let mut scopes = vec![None];
+            scopes.extend(recipes.into_iter().map(Some));
+            let selection = scopes
+                .iter()
+                .position(|scope| scope == &app.config_scope)
+                .unwrap_or(0);
+            open_dialog(
+                app,
+                Dialog::ConfigScopePicker(ConfigScopePicker {
+                    variable: identity.name,
+                    scopes,
+                    selection,
+                }),
+            );
+        }
+        Action::SelectConfigScope { delta } => {
+            if let Some(Dialog::ConfigScopePicker(picker)) = app.active_dialog_mut() {
+                picker.selection = if delta.is_negative() {
+                    picker.selection.saturating_sub(delta.unsigned_abs())
+                } else {
+                    picker
+                        .selection
+                        .saturating_add(delta as usize)
+                        .min(picker.scopes.len().saturating_sub(1))
+                };
+            }
+        }
+        Action::ConfirmConfigScope => {
+            let scope = if let Some(Dialog::ConfigScopePicker(picker)) = app.active_dialog() {
+                picker.scopes.get(picker.selection).cloned()
+            } else {
+                None
+            };
+            let Some(scope) = scope else {
+                app.notification = Some("The selected configuration scope is stale.".into());
+                return None;
+            };
+            app.config_scope = scope;
+            close_dialog(app);
+            synchronize_focus(app);
+            let Some(identity) = selected_config_identity(app) else {
+                app.notification =
+                    Some("No configuration variable is selected for scope inspection.".into());
+                return None;
+            };
+            app.variable_detail_loading.insert(identity.clone());
+            app.variable_detail_errors.remove(&identity);
+            return Some(Effect::GetVariable(identity));
+        }
+        Action::CancelConfigScopePicker => {
+            if matches!(app.active_dialog(), Some(Dialog::ConfigScopePicker(_))) {
+                close_dialog(app);
+            }
+        }
         Action::BeginBbmaskEdit => {
             let input = app
                 .workspace
@@ -4333,6 +4419,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::WorkspaceLoaded(w) => {
             let selected = selected_config_identity(app);
             app.workspace = w;
+            if app.config_scope.as_ref().is_some_and(|scope| {
+                !app.workspace
+                    .recipes
+                    .iter()
+                    .any(|recipe| &recipe.name == scope)
+            }) {
+                app.config_scope = None;
+            }
             let names = app
                 .workspace
                 .variables
@@ -4347,7 +4441,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .retain(|identity, _| names.contains(&identity.name));
             let identities = filtered_config_identities(app);
             app.config_selection = selected
-                .and_then(|selected| identities.iter().position(|identity| identity == &selected))
+                .and_then(|selected| {
+                    identities
+                        .iter()
+                        .position(|identity| identity.name == selected.name)
+                })
                 .unwrap_or_else(|| app.config_selection.min(identities.len().saturating_sub(1)));
         }
         Action::RecipesLoaded(mut recipes) => {
@@ -4362,6 +4460,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .map(|recipe| recipe.name.clone())
                 .collect::<HashSet<_>>();
             app.workspace.recipes = recipes;
+            if app
+                .config_scope
+                .as_ref()
+                .is_some_and(|scope| !names.contains(scope))
+            {
+                app.config_scope = None;
+            }
             app.recipe_metadata
                 .retain(|recipe, _| names.contains(recipe));
             app.recipe_sources
@@ -7433,5 +7538,83 @@ mod tests {
                 .unwrap()
                 .contains("unexpanded value")
         );
+    }
+
+    #[test]
+    fn config_scope_keeps_global_and_recipe_detail_independent() {
+        let mut app = App::new(20, 4_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace.recipes.push(Recipe {
+            name: "base-files".into(),
+            ..Recipe::default()
+        });
+        let global = VariableIdentity {
+            name: "MACHINE".into(),
+            recipe: None,
+        };
+        app.variable_details.insert(
+            global.clone(),
+            VariableDetail {
+                identity: global.clone(),
+                effective_value: Some("global-machine".into()),
+                unexpanded_value: None,
+                provenance: None,
+                operations: vec![],
+                active_overrides: vec![],
+            },
+        );
+        let _ = update(&mut app, Action::OpenConfigScopePicker);
+        let Some(Dialog::ConfigScopePicker(picker)) = app.active_dialog() else {
+            panic!("scope picker was not opened");
+        };
+        assert_eq!(picker.scopes, [None, Some("base-files".into())]);
+        let _ = update(&mut app, Action::SelectConfigScope { delta: 1 });
+        let scoped = match update(&mut app, Action::ConfirmConfigScope) {
+            Some(Effect::GetVariable(identity)) => identity,
+            effect => panic!("unexpected effect: {effect:?}"),
+        };
+        assert_eq!(scoped.recipe.as_deref(), Some("base-files"));
+        assert!(app.variable_detail_loading.contains(&scoped));
+        assert_eq!(
+            app.variable_details[&global].effective_value.as_deref(),
+            Some("global-machine")
+        );
+        let _ = update(
+            &mut app,
+            Action::VariableLoaded(VariableDetail {
+                identity: scoped.clone(),
+                effective_value: Some("recipe-machine".into()),
+                unexpanded_value: None,
+                provenance: None,
+                operations: vec![],
+                active_overrides: vec![],
+            }),
+        );
+        assert_eq!(
+            update(&mut app, Action::CopySelectedConfigEffective),
+            Some(Effect::CopyToClipboard("recipe-machine".into()))
+        );
+    }
+
+    #[test]
+    fn config_scope_falls_back_to_global_when_recipe_disappears() {
+        let mut app = App::new(20, 4_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace.recipes.push(Recipe {
+            name: "base-files".into(),
+            ..Recipe::default()
+        });
+        app.config_scope = Some("base-files".into());
+        let _ = update(&mut app, Action::RecipesLoaded(vec![]));
+        assert_eq!(app.config_scope, None);
+        let _ = update(&mut app, Action::OpenConfigScopePicker);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::ConfigScopePicker(picker)) if picker.scopes == [None]
+        ));
     }
 }

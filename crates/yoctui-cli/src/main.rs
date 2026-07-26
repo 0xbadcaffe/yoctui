@@ -23,8 +23,9 @@ use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
-    BuildJobCoordinator, Input, config_source_picker_action, config_workspace_action,
-    errors_action, focus_action, key_action, logs_action, settings_action, tasks_action,
+    BuildJobCoordinator, Input, config_scope_picker_action, config_source_picker_action,
+    config_workspace_action, errors_action, focus_action, key_action, logs_action, settings_action,
+    tasks_action,
 };
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolInspector, ProcessBackend, VariableValue,
@@ -926,10 +927,11 @@ fn config_variable_loaded_action(requested: VariableIdentity, variable: Variable
     })
 }
 
-async fn inspect_selected_config_variable(app: &mut App, backend: &mut dyn BitBakeBackend) {
-    let Some(Effect::GetVariable(identity)) = update(app, Action::BeginSelectedConfigDetail) else {
-        return;
-    };
+async fn load_config_variable(
+    app: &mut App,
+    backend: &mut dyn BitBakeBackend,
+    identity: VariableIdentity,
+) {
     match backend
         .get_variable(identity.name.clone(), identity.recipe.clone())
         .await
@@ -946,6 +948,12 @@ async fn inspect_selected_config_variable(app: &mut App, backend: &mut dyn BitBa
                 },
             );
         }
+    }
+}
+
+async fn inspect_selected_config_variable(app: &mut App, backend: &mut dyn BitBakeBackend) {
+    if let Some(Effect::GetVariable(identity)) = update(app, Action::BeginSelectedConfigDetail) {
+        load_config_variable(app, backend, identity).await;
     }
 }
 
@@ -1830,6 +1838,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 if let Some(Effect::OpenInEditor(path)) = effect {
                     open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                 }
+            } else if matches!(app.active_dialog(), Some(Dialog::ConfigScopePicker(_))) {
+                let effect =
+                    config_scope_picker_action(input).and_then(|action| update(&mut app, action));
+                if let Some(Effect::GetVariable(identity)) = effect {
+                    load_config_variable(&mut app, backend.as_mut(), identity).await;
+                }
             } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
@@ -2145,6 +2159,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
             } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Enter {
                 inspect_selected_config_variable(&mut app, backend.as_mut()).await;
+            } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Char('s')
+            {
+                if let Some(action) = config_workspace_action(false, input) {
+                    let _ = update(&mut app, action);
+                }
             } else if app.screen == yoctui_model::Screen::Configuration
                 && matches!(input, Input::Char('C') | Input::Char('U'))
             {
@@ -2660,6 +2679,30 @@ mod tests {
             Some(Effect::OpenInEditor("/build/conf/local.conf".into()))
         );
         assert!(app.active_dialog().is_none());
+    }
+
+    #[test]
+    fn config_scope_terminal_picker_emits_recipe_scoped_query() {
+        let mut app = App::new(10, 1_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace.recipes.push(yoctui_model::Recipe {
+            name: "base-files".into(),
+            ..yoctui_model::Recipe::default()
+        });
+        let _ = update(&mut app, Action::OpenConfigScopePicker);
+        let _ = config_scope_picker_action(Input::Down).and_then(|action| update(&mut app, action));
+        let effect =
+            config_scope_picker_action(Input::Enter).and_then(|action| update(&mut app, action));
+        assert_eq!(
+            effect,
+            Some(Effect::GetVariable(VariableIdentity {
+                name: "MACHINE".into(),
+                recipe: Some("base-files".into()),
+            }))
+        );
+        assert_eq!(app.config_scope.as_deref(), Some("base-files"));
     }
 
     #[test]

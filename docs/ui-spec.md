@@ -847,6 +847,22 @@ choice, a missing build directory, a disappeared file, or an editor failure
 stays inert and produces an exact explanation. Summary provenance remains
 visible context but is never parsed as the source-action authority.
 
+`s` opens a focus-trapping scope picker for the selected variable. Its first
+row is global scope and the remaining rows are sorted, deduplicated recipe
+names from the authoritative workspace inventory. `↑`/`↓` or `k`/`j` selects,
+`Enter` activates the scope and starts a typed detail request, and `Esc`
+restores the prior pane. An empty recipe inventory leaves global scope
+available and says that no recipe scopes were reported.
+
+The global summary table remains global; the active optional recipe scope is
+stored separately and combines with the selected variable name to form the
+Inspector's `VariableIdentity`. Loading, error, and loaded records remain
+independent per scope. Copy and defining-source actions automatically follow
+the active identity and never fall back to another scope. Recipe-inventory
+refresh preserves a still-present scope and returns to global if that recipe
+disappears; responses for a prior scope remain cached but cannot alter the
+active Inspector or its action availability.
+
 Editing configuration requires a dedicated preview-and-confirm dialog.
 
 No silent edits.
