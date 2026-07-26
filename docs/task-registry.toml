@@ -441,9 +441,42 @@ title = "Run Devtool operations as persistent background jobs"
 status = "IN_PROGRESS"
 priority = 43
 required = true
-depends_on = ["DEVTOOL-META-001", "JOB-002"]
+depends_on = ["DEVTOOL-JOB-SPEC-001", "DEVTOOL-JOB-RUNNER-001", "DEVTOOL-JOB-LIFECYCLE-001"]
 verify = ["cargo test -p yoctui-bitbake devtool_job", "cargo test -p yoctui-model devtool_job", "cargo test -p yoctui-app devtool_job", "cargo test -p yoctui -- devtool_job"]
-notes = "Typed argument construction, bounded stdout/stderr, lifecycle/progress, duplicate rejection, cancellation/escalation, missing executable, exit status, and backend-loss handling without terminal suspension."
+notes = "Parent gate split into typed command specification, cancellable output runner, and persistent lifecycle integration children."
+
+[[task]]
+id = "DEVTOOL-JOB-SPEC-001"
+milestone = "M3"
+title = "Define typed Devtool operation commands"
+status = "IN_PROGRESS"
+priority = 43
+required = true
+depends_on = ["DEVTOOL-META-001", "JOB-002"]
+verify = ["cargo test -p yoctui-model devtool_job_spec", "cargo test -p yoctui-bitbake devtool_job_spec"]
+notes = "Typed validated operations and shell-free exact argument construction for modify, update-recipe, finish, deploy-target, undeploy-target, and reset."
+
+[[task]]
+id = "DEVTOOL-JOB-RUNNER-001"
+milestone = "M3"
+title = "Add cancellable Devtool process streaming"
+status = "NOT_STARTED"
+priority = 43
+required = true
+depends_on = ["DEVTOOL-JOB-SPEC-001"]
+verify = ["cargo test -p yoctui-bitbake devtool_job_runner"]
+notes = "Fake-process coverage for bounded stdout/stderr, missing executable, exit status, cancellation acknowledgement/escalation, and process loss."
+
+[[task]]
+id = "DEVTOOL-JOB-LIFECYCLE-001"
+milestone = "M3"
+title = "Integrate Devtool persistent job lifecycle"
+status = "NOT_STARTED"
+priority = 43
+required = true
+depends_on = ["DEVTOOL-JOB-RUNNER-001"]
+verify = ["cargo test -p yoctui-model devtool_job_lifecycle", "cargo test -p yoctui-app devtool_job_lifecycle", "cargo test -p yoctui -- devtool_job_lifecycle"]
+notes = "Queue/run/output/terminal reducer integration, duplicate rejection, navigation persistence, cancellation routing, and backend/process-loss handling without terminal suspension."
 
 [[task]]
 id = "DEVTOOL-MODIFY-001"

@@ -59,10 +59,12 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DEVTOOL-JOBS-001` — run Devtool operations as persistent jobs
-2. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
-3. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
-4. `DEVTOOL-TARGET-001` — complete deploy-target and reset
+1. `DEVTOOL-JOB-SPEC-001` — define typed shell-free operations
+2. `DEVTOOL-JOB-RUNNER-001` — stream cancellable process output
+3. `DEVTOOL-JOB-LIFECYCLE-001` — integrate persistent job state
+4. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
+5. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
+6. `DEVTOOL-TARGET-001` — complete deploy-target and reset
 
 ## Rules
 
