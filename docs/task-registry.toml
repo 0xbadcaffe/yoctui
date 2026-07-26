@@ -449,18 +449,18 @@ notes = "Parent gate split into typed command specification, cancellable output 
 id = "DEVTOOL-JOB-SPEC-001"
 milestone = "M3"
 title = "Define typed Devtool operation commands"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-META-001", "JOB-002"]
 verify = ["cargo test -p yoctui-model devtool_job_spec", "cargo test -p yoctui-bitbake devtool_job_spec"]
-notes = "Typed validated operations and shell-free exact argument construction for modify, update-recipe, finish, deploy-target, undeploy-target, and reset."
+notes = "Model-owned validated modify/update-recipe/finish/deploy-target/undeploy-target/reset operations translate in yoctui-bitbake to exact shell-free OsString arguments, rejecting option/control ambiguity and relative finish destinations while preserving non-UTF-8 paths."
 
 [[task]]
 id = "DEVTOOL-JOB-RUNNER-001"
 milestone = "M3"
 title = "Add cancellable Devtool process streaming"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-JOB-SPEC-001"]

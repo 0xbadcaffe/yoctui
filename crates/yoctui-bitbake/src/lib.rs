@@ -12,9 +12,10 @@ use tokio::{
     process::{Child, ChildStdin, Command as TokioCommand},
 };
 use yoctui_model::{
-    BuildRequest, DevtoolCapability, DevtoolGitState, DevtoolStatus, DevtoolStatusError,
-    DevtoolWorkspace, Layer, LogEntry, Recipe, RecipeBuildStatus, RecipeIdentity, RecipeMetadata,
-    RecipeWorkspaceStatus, Severity, TaskStats, VariableOperation, Workspace,
+    BuildRequest, DevtoolCapability, DevtoolGitState, DevtoolOperation, DevtoolOperationError,
+    DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Layer, LogEntry, Recipe,
+    RecipeBuildStatus, RecipeIdentity, RecipeMetadata, RecipeWorkspaceStatus, Severity, TaskStats,
+    VariableOperation, Workspace,
 };
 use yoctui_protocol::{
     Command, Envelope, Event, LayerData, LayerRelationshipData, MAX_LINE_BYTES, ProtocolError,
@@ -96,6 +97,51 @@ pub enum BackendError {
 pub struct DevtoolInspector {
     devtool_program: PathBuf,
     git_program: PathBuf,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolCommandSpec {
+    pub executable: PathBuf,
+    pub arguments: Vec<OsString>,
+}
+impl DevtoolCommandSpec {
+    pub fn from_operation(operation: &DevtoolOperation) -> Result<Self, DevtoolOperationError> {
+        Self::with_executable(PathBuf::from("devtool"), operation)
+    }
+
+    pub fn with_executable(
+        executable: PathBuf,
+        operation: &DevtoolOperation,
+    ) -> Result<Self, DevtoolOperationError> {
+        operation.validate()?;
+        let recipe = OsString::from(operation.recipe());
+        let arguments = match operation {
+            DevtoolOperation::Modify { .. } => vec![OsString::from("modify"), recipe],
+            DevtoolOperation::UpdateRecipe { .. } => {
+                vec![OsString::from("update-recipe"), recipe]
+            }
+            DevtoolOperation::Finish { destination, .. } => vec![
+                OsString::from("finish"),
+                recipe,
+                destination.as_os_str().to_owned(),
+            ],
+            DevtoolOperation::DeployTarget { target, .. } => vec![
+                OsString::from("deploy-target"),
+                recipe,
+                OsString::from(target),
+            ],
+            DevtoolOperation::UndeployTarget { target, .. } => vec![
+                OsString::from("undeploy-target"),
+                recipe,
+                OsString::from(target),
+            ],
+            DevtoolOperation::Reset { .. } => vec![OsString::from("reset"), recipe],
+        };
+        Ok(Self {
+            executable,
+            arguments,
+        })
+    }
 }
 
 impl Default for DevtoolInspector {
@@ -1349,6 +1395,99 @@ mod tests {
             }
         );
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn devtool_job_spec_builds_exact_shell_free_arguments_for_every_operation() {
+        let cases = [
+            (
+                DevtoolOperation::Modify {
+                    recipe: "busybox".into(),
+                },
+                vec!["modify", "busybox"],
+            ),
+            (
+                DevtoolOperation::UpdateRecipe {
+                    recipe: "busybox".into(),
+                },
+                vec!["update-recipe", "busybox"],
+            ),
+            (
+                DevtoolOperation::Finish {
+                    recipe: "busybox".into(),
+                    destination: "/layers/meta-custom".into(),
+                },
+                vec!["finish", "busybox", "/layers/meta-custom"],
+            ),
+            (
+                DevtoolOperation::DeployTarget {
+                    recipe: "busybox".into(),
+                    target: "root@192.0.2.1:/opt".into(),
+                },
+                vec!["deploy-target", "busybox", "root@192.0.2.1:/opt"],
+            ),
+            (
+                DevtoolOperation::UndeployTarget {
+                    recipe: "busybox".into(),
+                    target: "root@192.0.2.1".into(),
+                },
+                vec!["undeploy-target", "busybox", "root@192.0.2.1"],
+            ),
+            (
+                DevtoolOperation::Reset {
+                    recipe: "busybox".into(),
+                },
+                vec!["reset", "busybox"],
+            ),
+        ];
+        for (operation, expected) in cases {
+            let command = DevtoolCommandSpec::from_operation(&operation).unwrap();
+            assert_eq!(command.executable, PathBuf::from("devtool"));
+            assert_eq!(
+                command.arguments,
+                expected.into_iter().map(OsString::from).collect::<Vec<_>>()
+            );
+        }
+    }
+
+    #[test]
+    fn devtool_job_spec_rejects_invalid_operations_before_process_construction() {
+        assert_eq!(
+            DevtoolCommandSpec::from_operation(&DevtoolOperation::Reset {
+                recipe: "--help".into(),
+            }),
+            Err(DevtoolOperationError::InvalidRecipe)
+        );
+        assert_eq!(
+            DevtoolCommandSpec::from_operation(&DevtoolOperation::DeployTarget {
+                recipe: "busybox".into(),
+                target: "root@host\n--help".into(),
+            }),
+            Err(DevtoolOperationError::InvalidTarget)
+        );
+        assert_eq!(
+            DevtoolCommandSpec::from_operation(&DevtoolOperation::Finish {
+                recipe: "busybox".into(),
+                destination: "meta-custom".into(),
+            }),
+            Err(DevtoolOperationError::RelativeFinishDestination)
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn devtool_job_spec_preserves_non_utf8_finish_destination() {
+        use std::os::unix::ffi::OsStringExt;
+
+        let mut bytes = b"/layers/meta-".to_vec();
+        bytes.push(0xff);
+        let destination = PathBuf::from(OsString::from_vec(bytes.clone()));
+        let command = DevtoolCommandSpec::from_operation(&DevtoolOperation::Finish {
+            recipe: "busybox".into(),
+            destination,
+        })
+        .unwrap();
+        assert_eq!(command.arguments[2], OsString::from_vec(bytes));
     }
 
     #[tokio::test]

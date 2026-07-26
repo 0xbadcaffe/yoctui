@@ -2,45 +2,47 @@
 
 ## Active task
 
-**ID:** DEVTOOL-JOB-SPEC-001
-**Title:** Define typed Devtool operation commands
+**ID:** DEVTOOL-JOB-RUNNER-001
+**Title:** Add cancellable Devtool process streaming
 
 ## Objective
 
-Define validated typed Devtool operations and exact shell-free argument
-construction shared by future background execution and workflow reducers.
+Execute one validated Devtool command asynchronously with bounded streamed
+stdout/stderr and deterministic cancellation/terminal events.
 
 ## Required work
 
-1. Inventory current Devtool request structs, reducer effects, direct CLI
-   argument lists, metadata identities, and validation helpers.
-2. Add a typed operation enum covering modify, update-recipe, finish,
-   deploy-target, undeploy-target, and reset.
-3. Carry each operation's required recipe, destination, or target as typed
-   fields; reject empty/control-bearing recipe and target values, relative
-   finish destinations, and irrelevant fields.
-4. Keep process-independent validation in `yoctui-model`.
-5. Translate each validated operation to an exact `devtool` argument vector
-   in `yoctui-bitbake`; never construct a shell command string.
-6. Preserve paths as `OsString`/`PathBuf` so non-UTF-8 destinations do not
-   require lossy conversion.
-7. Add model and adapter tests named `devtool_job_spec` for every operation
-   and relevant invalid input.
-8. Update architecture documentation for the typed command boundary.
+1. Inventory the ProcessBackend child/process-group, stream framing,
+   cancellation timeout/escalation, invalid UTF-8, and fake-process tests.
+2. Add a Devtool runner in `yoctui-bitbake` that accepts only a validated
+   `DevtoolCommandSpec` plus build directory.
+3. Spawn without a shell, pipe both streams, preserve stream identity, bound
+   oversized lines, and expose typed started/output/completed/failure events.
+4. Distinguish missing executable, spawn failure, nonzero exit, cancellation
+   acknowledgement, forced termination after timeout, and unexpected process
+   or event-channel loss.
+5. Use a Unix process group where available so cancellation covers descendants.
+6. Reject a second start while a child is active and make duplicate/late
+   cancellation inert.
+7. Keep retained job history/state out of this adapter task; the next child
+   maps runner events into the existing background-job reducer.
+8. Add fake-process adapter tests named `devtool_job_runner` for output,
+   invalid UTF-8, truncation, duplicate start, failures, and cancellation.
+9. Update architecture documentation for the process/event boundary.
 
 ## Definition of done
 
-- Every supported lifecycle operation has one typed representation.
-- Validation is deterministic and independent of process execution.
-- Exact argument vectors are shell-free and preserve destination paths.
+- Validated typed commands execute without a shell.
+- stdout/stderr stream as bounded typed events.
+- Every process and cancellation terminal outcome is distinct and tested.
+- No terminal suspension or model/UI mutation occurs in the adapter.
 - Focused and baseline verification pass.
-- Registry/status documents are updated and the runner child becomes active.
+- Registry/status documents are updated and lifecycle integration is active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model devtool_job_spec
-cargo test -p yoctui-bitbake devtool_job_spec
+cargo test -p yoctui-bitbake devtool_job_runner
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -50,4 +52,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`DEVTOOL-JOB-RUNNER-001 — Add cancellable Devtool process streaming`
+`DEVTOOL-JOB-LIFECYCLE-001 — Integrate Devtool persistent job lifecycle`
