@@ -139,6 +139,18 @@ or mutates signature state. Leaving an idle Signatures child workspace is a
 pure navigation action, while `Esc` during loading signals the adapter and
 keeps the correlated loading state until its cancelled result arrives.
 
+Package data state follows the same typed ownership boundary. Exact package
+identities key bounded, deterministically normalized inventory summaries and
+detail records. A typed field distinguishes unavailable metadata from an
+available empty value. Inventory and detail state separately distinguish
+not-loaded, loading, available-empty, available, partial, and failed results,
+and generation-tagged requests prevent stale responses from replacing newer
+data. `yoctui-model` owns package filtering, stable selection, detail caching,
+and navigation over typed forward or reverse runtime dependency identities.
+The future package-data adapter owns all `oe-pkgdata-util` discovery, execution,
+and output parsing; only typed summaries, details, limitations, or correlated
+errors may cross through `BackendEvent` and the app action mapping.
+
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore
 values, normalized varhistory operations (`op`, file, line, and detail), and
