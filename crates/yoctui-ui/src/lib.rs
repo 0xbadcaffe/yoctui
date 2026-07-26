@@ -863,19 +863,22 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: true }),
             popup,
         );
-    } else if let Some(Dialog::DevtoolDeployConfirmation(request)) = app.active_dialog() {
-        let width = area.width.saturating_sub(12).clamp(44, 100);
+    } else if let Some(Dialog::DevtoolDeployConfirmation(plan)) = app.active_dialog() {
+        let width = area.width.saturating_sub(8).clamp(44, 100);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
-            area.height.saturating_sub(7) / 2,
+            area.height.saturating_sub(8) / 2,
             width,
-            7,
+            8,
         );
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Run `devtool deploy-target {} {}`?\n\nThis deploys the recipe output to the specified target.\n\nEnter continues; Esc cancels.",
-                request.recipe, request.target
+                "Run `devtool deploy-target {} {}`?\n\nProvider: {}\nTarget: {}\n\nEnter continues; Esc cancels.",
+                plan.identity.name,
+                plan.target,
+                plan.identity.file.display(),
+                plan.target
             ))
             .block(
                 Block::default()
@@ -885,19 +888,21 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: true }),
             popup,
         );
-    } else if let Some(Dialog::DevtoolDeploy { recipe, target }) = app.active_dialog() {
+    } else if let Some(Dialog::DevtoolDeploy(draft)) = app.active_dialog() {
         let width = area.width.saturating_sub(12).clamp(44, 100);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
-            area.height.saturating_sub(6) / 2,
+            area.height.saturating_sub(8) / 2,
             width,
-            6,
+            8,
         );
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Recipe: {recipe}\nDeployment target: {}_\n\nEnter previews the command; Esc cancels.",
-                target
+                "Recipe: {}\nProvider: {}\nDeployment target: {}_\n\nEnter previews the command; Esc cancels.",
+                draft.identity.name,
+                draft.identity.file.display(),
+                draft.target
             ))
             .block(
                 Block::default()
@@ -3992,15 +3997,21 @@ mod tests {
                 "Confirm Devtool finish",
             ),
             (
-                Dialog::DevtoolDeploy {
-                    recipe: "busybox".into(),
+                Dialog::DevtoolDeploy(yoctui_model::DevtoolDeployDraft {
+                    identity: yoctui_model::RecipeIdentity {
+                        name: "busybox".into(),
+                        file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+                    },
                     target: "qemu".into(),
-                },
+                }),
                 "Devtool deploy target",
             ),
             (
-                Dialog::DevtoolDeployConfirmation(yoctui_model::DevtoolDeployRequest {
-                    recipe: "busybox".into(),
+                Dialog::DevtoolDeployConfirmation(yoctui_model::DevtoolDeployPlan {
+                    identity: yoctui_model::RecipeIdentity {
+                        name: "busybox".into(),
+                        file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+                    },
                     target: "qemu".into(),
                 }),
                 "Confirm Devtool deploy-target",
@@ -4483,12 +4494,34 @@ mod tests {
         assert!(output.contains("Configured layer: meta-demo"));
     }
     #[test]
-    fn renders_devtool_deploy_confirmation() {
+    fn devtool_target_deploy_renders_identity_entry_and_exact_confirmation() {
         let mut terminal = Terminal::new(TestBackend::new(120, 25)).unwrap();
         let mut app = App::new(10, 1_000);
+        let identity = yoctui_model::RecipeIdentity {
+            name: "busybox".into(),
+            file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+        };
+        app.dialogs
+            .push_back(Dialog::DevtoolDeploy(yoctui_model::DevtoolDeployDraft {
+                identity: identity.clone(),
+                target: "qemuarm".into(),
+            }));
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Devtool deploy target"));
+        assert!(output.contains("busybox.bb"));
+        assert!(output.contains("qemuarm"));
+
+        app.dialogs.clear();
         app.dialogs.push_back(Dialog::DevtoolDeployConfirmation(
-            yoctui_model::DevtoolDeployRequest {
-                recipe: "busybox".into(),
+            yoctui_model::DevtoolDeployPlan {
+                identity,
                 target: "qemuarm".into(),
             },
         ));
@@ -4502,6 +4535,7 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Confirm Devtool deploy-target"));
         assert!(output.contains("devtool deploy-target busybox qemuarm"));
+        assert!(output.contains("busybox.bb"));
     }
     #[test]
     fn devtool_modify_renders_confirmation_and_workspace_editor_build_shortcut() {
