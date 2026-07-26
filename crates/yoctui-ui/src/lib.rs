@@ -2681,13 +2681,48 @@ fn recipe_inspector(app: &App, recipe: &Recipe) -> String {
             )
         },
     );
+    let devtool_job = app
+        .background_jobs
+        .jobs
+        .iter()
+        .rev()
+        .find(|job| {
+            job.kind == BackgroundJobKind::Devtool
+                && job.context.recipe.as_deref() == Some(recipe.name.as_str())
+        })
+        .map_or_else(
+            || "Latest Devtool job: not run.".into(),
+            |job| {
+                let output = job.output.back().map_or_else(
+                    || "no retained output".into(),
+                    |entry| {
+                        format!(
+                            "{:?}: {}{}",
+                            entry.source,
+                            entry.message,
+                            if entry.truncated { " [truncated]" } else { "" }
+                        )
+                    },
+                );
+                let outcome = job
+                    .result
+                    .as_ref()
+                    .map(|result| result.summary.as_str())
+                    .or_else(|| job.error.as_ref().map(|error| error.summary.as_str()))
+                    .unwrap_or("in progress");
+                format!(
+                    "Latest Devtool job: {} [{:?}].\nDevtool output: {output}; outcome: {outcome}.",
+                    job.title, job.status
+                )
+            },
+        );
     let tasks = if active_tasks.is_empty() {
         recipe_values("Tasks", reported_tasks)
     } else {
         format!("Active tasks: {}", active_tasks.join(", "))
     };
     format!(
-        "Recipe: {}\nResolved version: {}\nPreferred version: {}\nProvider layer: {}\nProvider file: {}\nAppends: {}\nWorkspace/Devtool: {}\nBuild: {}\nDetail: {load_state}\n{task_capabilities}\n{navigation_capabilities}\n{qa_capabilities}\n{qa_job}\n\nDependencies: {}\nRuntime dependencies: {}\nReverse dependencies: unavailable\n{tasks}\n{}\n{}\n{}\n{}",
+        "Recipe: {}\nResolved version: {}\nPreferred version: {}\nProvider layer: {}\nProvider file: {}\nAppends: {}\nWorkspace/Devtool: {}\nBuild: {}\nDetail: {load_state}\n{task_capabilities}\n{navigation_capabilities}\n{qa_capabilities}\n{qa_job}\n{devtool_job}\n\nDependencies: {}\nRuntime dependencies: {}\nReverse dependencies: unavailable\n{tasks}\n{}\n{}\n{}\n{}",
         recipe.name,
         recipe.version.as_deref().unwrap_or("unavailable"),
         recipe.preferred_version.as_deref().unwrap_or("unavailable"),
@@ -4804,6 +4839,77 @@ mod tests {
                 assert!(output.contains("u update: disabled"), "{output}");
             }
         }
+    }
+    #[test]
+    fn devtool_job_lifecycle_renders_retained_stream_and_outcome() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Recipes;
+        app.workspace.recipes.push(yoctui_model::Recipe {
+            name: "demo".into(),
+            ..yoctui_model::Recipe::default()
+        });
+        let id = yoctui_model::BackgroundJobId(1_u64 << 63);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(yoctui_model::BackgroundJobSpec {
+                id,
+                kind: BackgroundJobKind::Devtool,
+                title: "Devtool modify demo".into(),
+                context: yoctui_model::BackgroundJobContext {
+                    workspace: Some(Screen::Recipes),
+                    recipe: Some("demo".into()),
+                    ..yoctui_model::BackgroundJobContext::default()
+                },
+                cancellation_supported: true,
+                queued_at: UNIX_EPOCH,
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::StartBackgroundJob {
+                id,
+                started_at: UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::RunBackgroundJob { id });
+        let _ = update(
+            &mut app,
+            Action::AppendBackgroundJobOutput {
+                id,
+                entry: yoctui_model::BackgroundJobOutputEntry {
+                    severity: Severity::Info,
+                    message: "workspace prepared".into(),
+                    source: yoctui_model::BackgroundJobOutputSource::Stderr,
+                    truncated: true,
+                    timestamp: UNIX_EPOCH,
+                },
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::SucceedBackgroundJob {
+                id,
+                result: yoctui_model::BackgroundJobResult {
+                    summary: "Devtool completed successfully".into(),
+                    artifacts: vec![],
+                },
+                finished_at: UNIX_EPOCH,
+            },
+        );
+
+        let output = rendered_text(&app, 200, 44);
+        assert!(
+            output.contains("Devtool modify demo [Succeeded]"),
+            "{output}"
+        );
+        assert!(
+            output.contains("Stderr: workspace prepared [truncated]"),
+            "{output}"
+        );
+        assert!(
+            output.contains("outcome: Devtool completed") && output.contains("successfully."),
+            "{output}"
+        );
     }
     #[test]
     fn recipe_qa_action_renders_capabilities_confirmation_and_honest_results() {

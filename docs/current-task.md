@@ -2,54 +2,52 @@
 
 ## Active task
 
-**ID:** DEVTOOL-JOB-LIFECYCLE-001
-**Title:** Integrate Devtool persistent job lifecycle
+**ID:** DEVTOOL-MODIFY-001
+**Title:** Complete Devtool modify, edit, and build workflow
 
 ## Objective
 
-Map typed Devtool operations and runner events into the existing persistent
-background-job reducer and CLI event loop without terminal suspension.
+Turn the persistent `devtool modify` operation into a capability-aware workflow
+that refreshes authoritative workspace state, opens the reported source tree for
+editing, and builds the workspace recipe without blocking navigation.
 
 ## Required work
 
-1. Inventory background-job reducer transitions/retention, build coordinator,
-   Devtool reducer effects/direct CLI helpers, cancellation routing, UI job
-   summaries, and asynchronous loop structure.
-2. Add a Devtool job coordinator that allocates stable IDs, creates
-   `BackgroundJobKind::Devtool` specs with operation/recipe context, rejects a
-   duplicate active operation, and maps every runner event to existing typed
-   background-job actions.
-3. Preserve stdout/stderr identity in retained output severity/context without
-   parsing UI text; mark truncation explicitly.
-4. Route start failures, nonzero exits, successful completion, acknowledged or
-   forced cancellation, runner loss, and cancellation failure to exact reducer
-   terminal states.
-5. Start and poll the runner asynchronously while normal navigation/rendering
-   continues; remove terminal suspension from migrated Devtool execution.
-6. Route cancellation only to the matching active Devtool job and keep
-   duplicate/late requests inert.
-7. Ensure completed Devtool output and outcome remain available after screen
-   navigation and do not interfere with an active BitBake job.
-8. Add reducer/app/CLI tests named `devtool_job_lifecycle` for success,
-   duplicate rejection, output retention, navigation, all failure/cancel/loss
-   outcomes, and independent BitBake coordination.
-9. Update architecture and UI specification for persistent Devtool behavior.
+1. Inventory existing Devtool availability, modify confirmation, persistent job
+   completion, editor launch, metadata refresh, and recipe build behavior before
+   changing code.
+2. Split this task in the registry first if the verified implementation cannot
+   remain one coherent commit.
+3. Start modify only for an authoritative available recipe that is not already
+   a workspace member; keep duplicate and disabled requests inert with an exact
+   reason.
+4. On successful modify completion, refresh authoritative Devtool metadata and
+   use only the reported absolute workspace source path.
+5. Open the configured editor on that source tree without losing persistent job
+   history; preserve recoverable state when refresh or editor launch fails.
+6. Allow the modified recipe to use the existing confirmed BitBake recipe-build
+   workflow while Devtool output and outcomes remain visible.
+7. Add model, app, CLI, and Ratatui TestBackend tests named `devtool_modify` for
+   success, existing membership, disabled capability, refresh/editor failures,
+   navigation retention, and workspace recipe build coordination.
+8. Update UI and architecture documents for every intentional behavior or
+   boundary change.
 
 ## Definition of done
 
-- Devtool runner events use the existing persistent job reducer lifecycle.
-- TUI navigation/rendering remains active during Devtool execution.
-- Duplicate, cancellation, failure, and loss semantics are deterministic.
-- Devtool and BitBake active-job coordination cannot corrupt each other.
+- Modify eligibility is derived from authoritative typed Devtool state.
+- Successful completion refreshes and uses the authoritative source path.
+- Editor failures are recoverable and do not erase the completed job.
+- A workspace recipe can be confirmed and built through the typed BitBake path.
 - Focused and baseline verification pass.
-- Parent Devtool-jobs task is DONE and modify/edit/build becomes active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model devtool_job_lifecycle
-cargo test -p yoctui-app devtool_job_lifecycle
-cargo test -p yoctui -- devtool_job_lifecycle
+cargo test -p yoctui-model devtool_modify
+cargo test -p yoctui-app devtool_modify
+cargo test -p yoctui-ui devtool_modify
+cargo test -p yoctui -- devtool_modify
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -59,4 +57,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`DEVTOOL-MODIFY-001 — Complete Devtool modify, edit, and build workflow`
+`DEVTOOL-PUBLISH-001 — Complete Devtool update-recipe and finish workflows`

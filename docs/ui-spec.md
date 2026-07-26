@@ -755,6 +755,17 @@ no modified, untracked, or conflicted files. Status responses are stored by
 recipe name plus absolute provider path, so a response for a prior selection
 does not replace the current recipe's state.
 
+Confirmed Devtool operations run as cancellable background jobs without
+suspending the terminal. The selected recipe Inspector shows the latest
+matching Devtool job, retained stdout/stderr identity, explicit truncation,
+status, and terminal outcome. Navigation remains available while the process
+runs, and the retained job remains visible after leaving and returning to the
+recipe. One Devtool operation may be active at a time; a duplicate request is
+inert with an explanation. `c` cancels the active Devtool job before any
+independent BitBake job, with graceful and forced cancellation distinguished.
+Missing tools, start failure, nonzero exit, cancellation failure, and runner
+loss remain distinct outcomes.
+
 `V` starts a selected-recipe CVE check only when authoritative metadata
 reports `do_cve_check`; `X` starts SPDX generation only when it reports
 `do_create_spdx`. Each route opens the existing typed confirmation with the
