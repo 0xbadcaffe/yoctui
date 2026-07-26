@@ -836,6 +836,17 @@ detail, and an absent value keep the action inert and show the exact disabled
 reason in the Inspector. Clipboard-tool failures remain actionable
 notifications from the CLI boundary.
 
+`o` opens defining sources only from the loaded detail's typed operations.
+When exactly one distinct file/line source exists it opens directly. Multiple
+sources open a focus-trapping picker showing operation, path, and line;
+`↑`/`↓` or `k`/`j` selects, `Enter` opens, and `Esc` restores the prior pane.
+Relative operation paths are resolved against the active build directory at
+the effect boundary, and parent traversal is rejected. Missing selection,
+loading, failed or not-loaded detail, no file-backed operation, a stale
+choice, a missing build directory, a disappeared file, or an editor failure
+stays inert and produces an exact explanation. Summary provenance remains
+visible context but is never parsed as the source-action authority.
+
 Editing configuration requires a dedicated preview-and-confirm dialog.
 
 No silent edits.

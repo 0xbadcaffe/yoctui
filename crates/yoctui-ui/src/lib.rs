@@ -9,7 +9,8 @@ use yoctui_model::{
     DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget,
     GitFileState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PreviewKind, Recipe,
     RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity, TaskFilterField, TaskRow,
-    TaskState, Theme, VariableIdentity, format_duration, selected_config_copy_value,
+    TaskState, Theme, VariableIdentity, config_source_disabled_reason, format_duration,
+    selected_config_copy_value,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -592,6 +593,45 @@ pub fn render(frame: &mut Frame, app: &App) {
             .block(
                 Block::default()
                     .title(format!("{} retained task logs", picker.recipe))
+                    .borders(Borders::ALL),
+            ),
+            popup,
+        );
+    } else if let Some(Dialog::ConfigSourcePicker(picker)) = app.active_dialog() {
+        let popup = Rect::new(
+            area.width / 8,
+            area.height / 4,
+            area.width * 3 / 4,
+            area.height / 2,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Table::new(
+                picker.sources.iter().enumerate().map(|(index, source)| {
+                    Row::new([
+                        Cell::from(source.operation.as_str()),
+                        Cell::from(source.path.display().to_string()),
+                        Cell::from(
+                            source
+                                .line
+                                .map_or_else(|| "—".into(), |line| line.to_string()),
+                        ),
+                    ])
+                    .style(selected_style(app, index == picker.selection))
+                }),
+                [
+                    Constraint::Length(12),
+                    Constraint::Min(20),
+                    Constraint::Length(7),
+                ],
+            )
+            .header(
+                Row::new(["Operation", "Authoritative source", "Line"])
+                    .style(Style::default().bold()),
+            )
+            .block(
+                Block::default()
+                    .title(format!("{} defining sources", picker.identity.name))
                     .borders(Borders::ALL),
             ),
             popup,
@@ -3168,7 +3208,7 @@ fn config_inspector(app: &App) -> String {
 }
 
 fn config_copy_status(app: &App) -> String {
-    [
+    let copy = [
         ("C effective", ConfigCopyValue::Effective),
         ("U unexpanded", ConfigCopyValue::Unexpanded),
     ]
@@ -3180,13 +3220,18 @@ fn config_copy_status(app: &App) -> String {
         )
     })
     .collect::<Vec<_>>()
-    .join(" | ")
+    .join(" | ");
+    let source = config_source_disabled_reason(app).map_or_else(
+        || "o source: enabled".into(),
+        |reason| format!("o source: disabled ({reason})"),
+    );
+    format!("{source}\n{copy}")
 }
 
 fn config(frame: &mut Frame, app: &App, area: Rect) {
     let variables = config_variables(app);
     let variable_count = variables.len();
-    let chunks = Layout::vertical([Constraint::Percentage(42), Constraint::Min(5)]).split(area);
+    let chunks = Layout::vertical([Constraint::Percentage(32), Constraint::Min(5)]).split(area);
     frame.render_widget(
         Table::new(
             variables
@@ -4924,6 +4969,46 @@ mod tests {
                 assert!(output.contains("C effective: enabled"), "{output}");
                 assert!(output.contains("U unexpanded: disabled"), "{output}");
             }
+        }
+    }
+
+    #[test]
+    fn config_source_renders_typed_picker_and_disabled_reason_responsively() {
+        for (width, height) in [(140, 30), (100, 26), (90, 24)] {
+            let mut app = App::new(10, 1_000);
+            app.screen = Screen::Configuration;
+            app.workspace
+                .variables
+                .insert("MACHINE".into(), "qemux86-64".into());
+            let unloaded = rendered_text(&app, width, height);
+            if width >= 80 && height >= 24 {
+                assert!(unloaded.contains("o source: disabled"), "{unloaded}");
+            }
+            app.dialogs.push_back(Dialog::ConfigSourcePicker(
+                yoctui_model::ConfigSourcePicker {
+                    identity: yoctui_model::VariableIdentity {
+                        name: "MACHINE".into(),
+                        recipe: None,
+                    },
+                    sources: vec![
+                        yoctui_model::ConfigSourceChoice {
+                            operation: "set".into(),
+                            path: "meta/conf/bitbake.conf".into(),
+                            line: Some(10),
+                        },
+                        yoctui_model::ConfigSourceChoice {
+                            operation: "override".into(),
+                            path: "conf/local.conf".into(),
+                            line: Some(12),
+                        },
+                    ],
+                    selection: 1,
+                },
+            ));
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("MACHINE defining sources"), "{output}");
+            assert!(output.contains("local.conf"), "{output}");
+            assert!(output.contains("12"), "{output}");
         }
     }
     #[test]
