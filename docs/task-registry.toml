@@ -339,18 +339,18 @@ notes = "Parent gate split into focused copy, defining-source, recipe-scope, and
 id = "CONFIG-COPY-001"
 milestone = "M3"
 title = "Add typed configuration value copy actions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 42
 required = true
 depends_on = ["CONFIG-UI-001"]
 verify = ["cargo test -p yoctui-model config_copy", "cargo test -p yoctui-app config_copy", "cargo test -p yoctui-ui config_copy", "cargo test -p yoctui -- config_copy"]
-notes = "Copy effective or unexpanded selected detail through typed clipboard effects with exact disabled explanations."
+notes = "Typed C/U routes copy only loaded effective/unexpanded detail for the exact selected identity through the shared clipboard effect; partial states stay inert with shared responsive disabled reasons and reducer/app/CLI/TestBackend coverage."
 
 [[task]]
 id = "CONFIG-SOURCE-001"
 milestone = "M3"
 title = "Add authoritative configuration source selection"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 42
 required = true
 depends_on = ["CONFIG-COPY-001"]

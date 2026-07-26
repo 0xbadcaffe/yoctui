@@ -376,6 +376,11 @@ pub struct VariableDetail {
     pub operations: Vec<VariableOperation>,
     pub active_overrides: Vec<String>,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ConfigCopyValue {
+    Effective,
+    Unexpanded,
+}
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct HostTelemetry {
     pub cpu_utilization_percent: Option<u8>,
@@ -1845,6 +1850,8 @@ pub enum Action {
         delta: isize,
     },
     BeginSelectedConfigDetail,
+    CopySelectedConfigEffective,
+    CopySelectedConfigUnexpanded,
     VariableDetailFailed {
         identity: VariableIdentity,
         message: String,
@@ -2198,6 +2205,39 @@ fn selected_config_identity(app: &App) -> Option<VariableIdentity> {
     filtered_config_identities(app)
         .get(app.config_selection)
         .cloned()
+}
+
+pub fn selected_config_copy_value(app: &App, value: ConfigCopyValue) -> Result<&str, String> {
+    let identity = selected_config_identity(app)
+        .ok_or_else(|| "No configuration variable is selected.".to_owned())?;
+    if app.variable_detail_loading.contains(&identity) {
+        return Err(format!(
+            "Configuration detail for {} is still loading.",
+            identity.name
+        ));
+    }
+    if let Some(error) = app.variable_detail_errors.get(&identity) {
+        return Err(format!(
+            "Configuration detail for {} is unavailable: {error}",
+            identity.name
+        ));
+    }
+    let detail = app.variable_details.get(&identity).ok_or_else(|| {
+        format!(
+            "Load authoritative detail for {} with Enter before copying.",
+            identity.name
+        )
+    })?;
+    match value {
+        ConfigCopyValue::Effective => detail
+            .effective_value
+            .as_deref()
+            .ok_or_else(|| format!("The effective value for {} is unavailable.", identity.name)),
+        ConfigCopyValue::Unexpanded => detail
+            .unexpanded_value
+            .as_deref()
+            .ok_or_else(|| format!("The unexpanded value for {} is unavailable.", identity.name)),
+    }
 }
 
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
@@ -4015,6 +4055,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.variable_detail_loading.insert(identity.clone());
             app.variable_detail_errors.remove(&identity);
             return Some(Effect::GetVariable(identity));
+        }
+        Action::CopySelectedConfigEffective => {
+            match selected_config_copy_value(app, ConfigCopyValue::Effective) {
+                Ok(value) => return Some(Effect::CopyToClipboard(value.to_owned())),
+                Err(reason) => app.notification = Some(reason),
+            }
+        }
+        Action::CopySelectedConfigUnexpanded => {
+            match selected_config_copy_value(app, ConfigCopyValue::Unexpanded) {
+                Ok(value) => return Some(Effect::CopyToClipboard(value.to_owned())),
+                Err(reason) => app.notification = Some(reason),
+            }
         }
         Action::VariableDetailFailed { identity, message } => {
             app.variable_detail_loading.remove(&identity);
@@ -7061,6 +7113,96 @@ mod tests {
         assert_eq!(
             selected_config_identity(&app).map(|identity| identity.name),
             Some("B".into())
+        );
+    }
+
+    #[test]
+    fn config_copy_uses_only_loaded_detail_for_the_exact_identity() {
+        let mut app = App::new(20, 4_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "summary-value".into());
+        assert_eq!(
+            update(&mut app, Action::CopySelectedConfigEffective),
+            None,
+            "the summary value must not be copied as authoritative detail"
+        );
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("with Enter"))
+        );
+        let identity = VariableIdentity {
+            name: "MACHINE".into(),
+            recipe: None,
+        };
+        app.variable_details.insert(
+            identity.clone(),
+            VariableDetail {
+                identity,
+                effective_value: Some("qemux86-64".into()),
+                unexpanded_value: Some("${DEFAULT_MACHINE}".into()),
+                provenance: None,
+                operations: vec![],
+                active_overrides: vec![],
+            },
+        );
+        assert_eq!(
+            update(&mut app, Action::CopySelectedConfigEffective),
+            Some(Effect::CopyToClipboard("qemux86-64".into()))
+        );
+        assert_eq!(
+            update(&mut app, Action::CopySelectedConfigUnexpanded),
+            Some(Effect::CopyToClipboard("${DEFAULT_MACHINE}".into()))
+        );
+    }
+
+    #[test]
+    fn config_copy_explains_loading_failure_and_absent_unexpanded_value() {
+        let mut app = App::new(20, 4_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        let identity = VariableIdentity {
+            name: "MACHINE".into(),
+            recipe: None,
+        };
+        app.variable_detail_loading.insert(identity.clone());
+        assert_eq!(update(&mut app, Action::CopySelectedConfigEffective), None);
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("still loading")
+        );
+        app.variable_detail_loading.clear();
+        app.variable_detail_errors
+            .insert(identity.clone(), "Tinfoil unavailable".into());
+        let _ = update(&mut app, Action::CopySelectedConfigEffective);
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("Tinfoil unavailable")
+        );
+        app.variable_detail_errors.clear();
+        app.variable_details.insert(
+            identity.clone(),
+            VariableDetail {
+                identity,
+                effective_value: Some("qemux86-64".into()),
+                unexpanded_value: None,
+                provenance: None,
+                operations: vec![],
+                active_overrides: vec![],
+            },
+        );
+        let _ = update(&mut app, Action::CopySelectedConfigUnexpanded);
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("unexpanded value")
         );
     }
 }

@@ -626,6 +626,8 @@ pub fn config_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Up | Input::Char('k') => Some(Action::SelectConfigVariable { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectConfigVariable { delta: 1 }),
         Input::Enter => Some(Action::BeginSelectedConfigDetail),
+        Input::Char('C') => Some(Action::CopySelectedConfigEffective),
+        Input::Char('U') => Some(Action::CopySelectedConfigUnexpanded),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
         Input::Char('o') => Some(Action::OpenSelectedConfigSource),
         _ => None,
@@ -1358,6 +1360,18 @@ mod tests {
         assert_eq!(
             config_workspace_action(true, Input::Char('M')),
             Some(Action::AppendMetadataQuery('M'))
+        );
+    }
+
+    #[test]
+    fn config_copy_shortcuts_are_typed() {
+        assert_eq!(
+            config_workspace_action(false, Input::Char('C')),
+            Some(Action::CopySelectedConfigEffective)
+        );
+        assert_eq!(
+            config_workspace_action(false, Input::Char('U')),
+            Some(Action::CopySelectedConfigUnexpanded)
         );
     }
     #[test]
