@@ -328,12 +328,12 @@ notes = "Filtered identity-stable selection, typed Enter refresh, scoped stale-r
 id = "CONFIG-ACTIONS-001"
 milestone = "M3"
 title = "Add typed configuration copy, source, and compare actions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 42
 required = true
 depends_on = ["CONFIG-COPY-001", "CONFIG-SOURCE-001", "CONFIG-SCOPE-001", "CONFIG-COMPARE-001"]
 verify = ["cargo test -p yoctui-model config_action", "cargo test -p yoctui-app config_action", "cargo test -p yoctui-ui config_action", "cargo test -p yoctui -- config_action"]
-notes = "Parent gate split into focused copy, defining-source, recipe-scope, and comparison tasks."
+notes = "Typed effective/unexpanded copy, defining-source selection, recipe scope, and global-vs-recipe comparison children are complete with shared identity-safe availability."
 
 [[task]]
 id = "CONFIG-COPY-001"
@@ -372,23 +372,45 @@ notes = "The s picker selects global or authoritative recipe inventory scope, em
 id = "CONFIG-COMPARE-001"
 milestone = "M3"
 title = "Compare typed configuration values"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 42
 required = true
 depends_on = ["CONFIG-SCOPE-001"]
 verify = ["cargo test -p yoctui-model config_compare", "cargo test -p yoctui-app config_compare", "cargo test -p yoctui-ui config_compare"]
-notes = "Compare loaded global and recipe-scoped effective/unexpanded values without raw text parsing, with explicit unsupported/partial states."
+notes = "The c dialog compares exact loaded global and active recipe identities with typed equal/different/unavailable effective and unexpanded outcomes, precise partial-state gating, focus restoration, and responsive tests."
 
 [[task]]
 id = "CONFIG-EDIT-001"
 milestone = "M3"
 title = "Add previewed configuration editing and refresh"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
+priority = 42
+required = true
+depends_on = ["CONFIG-EDIT-PREVIEW-001", "CONFIG-EDIT-WRITE-001"]
+verify = ["cargo test -p yoctui-model config_edit", "cargo test -p yoctui-app config_edit", "cargo test -p yoctui-ui config_edit", "cargo test -p yoctui -- config_edit"]
+notes = "Parent gate split into focused preview/confirmation and atomic write/refresh tasks."
+
+[[task]]
+id = "CONFIG-EDIT-PREVIEW-001"
+milestone = "M3"
+title = "Add allowlisted configuration edit preview"
+status = "IN_PROGRESS"
 priority = 42
 required = true
 depends_on = ["CONFIG-ACTIONS-001"]
-verify = ["cargo test -p yoctui-model config_edit", "cargo test -p yoctui-app config_edit", "cargo test -p yoctui-ui config_edit", "cargo test -p yoctui -- config_edit"]
-notes = "Read-only default, allowlisted assignment editing, exact local.conf preview, explicit confirmation, atomic write, refresh, and failure preservation."
+verify = ["cargo test -p yoctui-model config_edit_preview", "cargo test -p yoctui-app config_edit_preview", "cargo test -p yoctui-ui config_edit_preview"]
+notes = "Read-only default, explicit allowlist, value editor, exact local.conf assignment preview, validation, confirmation, focus, and responsive states."
+
+[[task]]
+id = "CONFIG-EDIT-WRITE-001"
+milestone = "M3"
+title = "Write and refresh previewed configuration edits"
+status = "NOT_STARTED"
+priority = 42
+required = true
+depends_on = ["CONFIG-EDIT-PREVIEW-001"]
+verify = ["cargo test -p yoctui-model config_edit_write", "cargo test -p yoctui-app config_edit_write", "cargo test -p yoctui -- config_edit_write"]
+notes = "Atomic local.conf assignment replacement/append, exact preview correlation, failure preservation, success refresh, and external live validation."
 
 [[task]]
 id = "DEVTOOL-001"

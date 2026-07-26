@@ -9,8 +9,8 @@ use yoctui_model::{
     DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget,
     GitFileState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PreviewKind, Recipe,
     RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity, TaskFilterField, TaskRow,
-    TaskState, Theme, VariableIdentity, config_source_disabled_reason, format_duration,
-    selected_config_copy_value,
+    TaskState, Theme, VariableIdentity, config_comparison, config_source_disabled_reason,
+    format_duration, selected_config_copy_value,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -434,7 +434,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
         Screen::Configuration => {
-            "↑/↓ select | Enter inspect | s scope | C copy effective | U copy unexpanded | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
+            "↑/↓ select | Enter inspect | s scope | c compare | C copy effective | U copy unexpanded | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
         }
         Screen::Bbmask => {
             "e edit BBMASK | Enter preview/confirm | Esc cancel/dashboard | v configuration | ? help | q quit"
@@ -595,6 +595,39 @@ pub fn render(frame: &mut Frame, app: &App) {
                     .title(format!("{} retained task logs", picker.recipe))
                     .borders(Borders::ALL),
             ),
+            popup,
+        );
+    } else if let Some(Dialog::ConfigComparison(comparison)) = app.active_dialog() {
+        let popup = Rect::new(
+            area.width / 8,
+            area.height / 5,
+            area.width * 3 / 4,
+            area.height * 3 / 5,
+        );
+        clear_popup(frame, app, popup);
+        let field = |name: &str, value: &yoctui_model::ConfigComparisonField| {
+            format!(
+                "{name}: {:?}\n  global: {}\n  {}: {}",
+                value.outcome,
+                value.global.as_deref().unwrap_or("unavailable"),
+                comparison.recipe,
+                value.recipe.as_deref().unwrap_or("unavailable")
+            )
+        };
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Variable: {}\nGlobal vs recipe {}\n\n{}\n\n{}\n\nEnter or Esc closes.",
+                comparison.variable,
+                comparison.recipe,
+                field("Effective", &comparison.effective),
+                field("Unexpanded", &comparison.unexpanded),
+            ))
+            .block(
+                Block::default()
+                    .title("Configuration comparison")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
             popup,
         );
     } else if let Some(Dialog::ConfigScopePicker(picker)) = app.active_dialog() {
@@ -3259,7 +3292,11 @@ fn config_copy_status(app: &App) -> String {
             app.config_scope.as_deref().unwrap_or("global")
         )
     };
-    format!("{scope}\n{source}\n{copy}")
+    let compare = config_comparison(app).map_or_else(
+        |reason| format!("c compare: disabled ({reason})"),
+        |_| "c compare: enabled".into(),
+    );
+    format!("{scope}\n{compare}\n{source}\n{copy}")
 }
 
 fn config(frame: &mut Frame, app: &App, area: Rect) {
@@ -5091,6 +5128,46 @@ mod tests {
         let output = rendered_text(&app, 120, 28);
         assert!(output.contains("global only"), "{output}");
         assert!(output.contains("no recipes reported"), "{output}");
+    }
+
+    #[test]
+    fn config_compare_renders_typed_outcomes_and_disabled_reason_responsively() {
+        for (width, height) in [(140, 32), (100, 28), (90, 24)] {
+            let mut app = App::new(10, 1_000);
+            app.screen = Screen::Configuration;
+            app.workspace
+                .variables
+                .insert("MACHINE".into(), "qemux86-64".into());
+            app.workspace.recipes.push(yoctui_model::Recipe {
+                name: "base-files".into(),
+                ..yoctui_model::Recipe::default()
+            });
+            app.config_scope = Some("base-files".into());
+            let unloaded = rendered_text(&app, width, height);
+            if width >= 80 && height >= 24 {
+                assert!(unloaded.contains("c compare: disabled"), "{unloaded}");
+            }
+            app.dialogs
+                .push_back(Dialog::ConfigComparison(yoctui_model::ConfigComparison {
+                    variable: "MACHINE".into(),
+                    recipe: "base-files".into(),
+                    effective: yoctui_model::ConfigComparisonField {
+                        global: Some("qemux86-64".into()),
+                        recipe: Some("qemux86-64".into()),
+                        outcome: yoctui_model::ConfigComparisonOutcome::Equal,
+                    },
+                    unexpanded: yoctui_model::ConfigComparisonField {
+                        global: Some("${DEFAULT_MACHINE}".into()),
+                        recipe: None,
+                        outcome: yoctui_model::ConfigComparisonOutcome::Unavailable,
+                    },
+                }));
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Configuration comparison"), "{output}");
+            assert!(output.contains("Effective: Equal"), "{output}");
+            assert!(output.contains("Unexpanded: Unavailable"), "{output}");
+            assert!(output.contains("base-files"), "{output}");
+        }
     }
     #[test]
     fn bbmask_renders_effective_patterns_and_provenance() {

@@ -2,47 +2,50 @@
 
 ## Active task
 
-**ID:** CONFIG-COMPARE-001
-**Title:** Compare typed configuration values
+**ID:** CONFIG-EDIT-PREVIEW-001
+**Title:** Add allowlisted configuration edit preview
 
 ## Objective
 
-Compare the selected variable's loaded global and active recipe-scoped values
-without parsing display text or fabricating missing data.
+Add a safe, focus-trapping value editor and exact `local.conf` assignment
+preview for explicitly allowlisted global configuration variables.
 
 ## Required work
 
-1. Inspect current scoped identity/detail state, dialog/focus patterns,
-   responsive rendering, action availability, and tests.
-2. Add a typed comparison record containing variable, global identity, recipe
-   identity, effective values, unexpanded values, and explicit equal,
-   different, or unavailable outcomes for each field.
-3. Make comparison available only when a recipe scope is active and both exact
-   global/scoped details are loaded. Loading, failed, not-loaded, missing
-   values, and disappeared scope receive precise disabled explanations.
-4. Open a focus-trapping read-only comparison dialog from a documented
-   shortcut; `Esc` or `Enter` closes and restores the exact prior pane.
-5. Render both scopes and field outcomes safely across responsive modes,
-   preserving long values through wrapping rather than truncating identity.
-6. Add reducer, app/input, and TestBackend tests named `config_compare`,
-   including equal, different, unavailable, stale, and narrow states.
-7. Update `docs/ui-spec.md` for the comparison interaction.
+1. Inventory existing BBMASK preview/confirmation, variable detail/scope,
+   dialog focus, assignment validation, responsive rendering, and tests.
+2. Define the initial editable-variable allowlist in typed model code and keep
+   all other variables read-only with an exact reason. Recipe-scoped values are
+   never directly editable.
+3. Add an edit shortcut that opens a value editor prefilled from the exact
+   loaded global effective value. Loading, failure, not-loaded, absent value,
+   non-allowlisted variable, or recipe scope remains inert.
+4. Validate variable name/value as a single assignment value and reject
+   newline/control injection.
+5. Preview the exact quoted assignment and destination `build/conf/local.conf`
+   in a separate confirmation dialog. No write occurs in this task.
+6. `Enter` advances editor to preview and preview to a typed write effect;
+   `Esc` cancels and restores the exact prior pane.
+7. Render shortcut availability and both dialogs across responsive modes.
+8. Add reducer, app/input, and TestBackend tests named `config_edit_preview`.
+9. Update `docs/ui-spec.md` for allowlist, validation, preview, and focus.
 
 ## Definition of done
 
-- Comparison is typed and tied to exact global/recipe identities.
-- Equal/different/unavailable outcomes are honest and deterministic.
-- Partial/stale states remain inert with visible reasons.
-- Dialog focus and responsive rendering are covered.
+- Read-only default and allowlist are explicit and tested.
+- Exact selected global detail seeds a validated editor.
+- Confirmation previews destination and exact assignment before any effect.
+- Partial/error/injection states remain inert with precise reasons.
+- Focus and responsive rendering are covered.
 - Task-specific and baseline verification pass.
-- Parent action task/status and the next eligible task are updated.
+- Registry/status documents are updated and the write task becomes active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model config_compare
-cargo test -p yoctui-app config_compare
-cargo test -p yoctui-ui config_compare
+cargo test -p yoctui-model config_edit_preview
+cargo test -p yoctui-app config_edit_preview
+cargo test -p yoctui-ui config_edit_preview
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -52,4 +55,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`CONFIG-EDIT-001 — Add previewed configuration editing and refresh`
+`CONFIG-EDIT-WRITE-001 — Write and refresh previewed configuration edits`
