@@ -809,6 +809,25 @@ Required:
 - open defining source
 - compare values between recipes or configurations where supported
 
+The workspace begins with the backend's effective global-variable summary and
+is read-only. `↑`/`↓` or `k`/`j` moves through the filtered, sorted variables;
+`/` edits the shared metadata search; and `Enter` lazily refreshes the selected
+global `VariableIdentity`. Selection remains attached to the same identity
+when a refreshed summary still contains it.
+
+The Inspector distinguishes not loaded, loading, failed, available-empty, and
+populated detail. Populated detail shows scope, effective and unexpanded
+values, provenance, active overrides, and every typed set/append/prepend/remove
+operation with its defining file, line, and value when supplied. Results and
+errors are keyed by variable name plus optional recipe scope. A scoped or stale
+response cannot complete or replace a selected global request.
+
+Wide mode may show the same selected detail in the persistent Inspector while
+the workspace keeps its table and detail region. Medium and narrow layouts
+retain the selected semantic pane and wrap long values and operation paths.
+Empty searches, missing metadata, partial operations, and backend failures
+remain explicit and never cause a panic.
+
 Editing configuration requires a dedicated preview-and-confirm dialog.
 
 No silent edits.

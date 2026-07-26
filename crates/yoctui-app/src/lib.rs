@@ -612,6 +612,25 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
         _ => None,
     }
 }
+
+pub fn config_workspace_action(searching: bool, key: Input) -> Option<Action> {
+    if searching {
+        return match key {
+            Input::Char(character) => Some(Action::AppendMetadataQuery(character)),
+            Input::Backspace => Some(Action::BackspaceMetadataQuery),
+            Input::Enter | Input::Esc => Some(Action::FinishMetadataSearch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectConfigVariable { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectConfigVariable { delta: 1 }),
+        Input::Enter => Some(Action::BeginSelectedConfigDetail),
+        Input::Char('/') => Some(Action::BeginMetadataSearch),
+        Input::Char('o') => Some(Action::OpenSelectedConfigSource),
+        _ => None,
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1319,6 +1338,26 @@ mod tests {
         assert_eq!(
             recipes_workspace_action(false, Input::Char('t')),
             Some(Action::BeginSelectedRecipeDevtoolStatus)
+        );
+    }
+
+    #[test]
+    fn config_workspace_maps_search_selection_and_lazy_detail() {
+        assert_eq!(
+            config_workspace_action(false, Input::Down),
+            Some(Action::SelectConfigVariable { delta: 1 })
+        );
+        assert_eq!(
+            config_workspace_action(false, Input::Enter),
+            Some(Action::BeginSelectedConfigDetail)
+        );
+        assert_eq!(
+            config_workspace_action(false, Input::Char('/')),
+            Some(Action::BeginMetadataSearch)
+        );
+        assert_eq!(
+            config_workspace_action(true, Input::Char('M')),
+            Some(Action::AppendMetadataQuery('M'))
         );
     }
     #[test]
