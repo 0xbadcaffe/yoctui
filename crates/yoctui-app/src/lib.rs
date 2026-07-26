@@ -604,6 +604,7 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('V') => Some(Action::BeginSelectedRecipeCveCheck),
         Input::Char('X') => Some(Action::BeginSelectedRecipeSpdx),
         Input::Char('d') => Some(Action::BeginSelectedRecipeDevtoolModify),
+        Input::Char('t') => Some(Action::BeginSelectedRecipeDevtoolStatus),
         Input::Char('u') => Some(Action::BeginSelectedRecipeDevtoolUpdateRecipe),
         Input::Char('F') => Some(Action::BeginSelectedRecipeDevtoolFinish),
         Input::Char('P') => Some(Action::BeginSelectedRecipeDevtoolDeploy),
@@ -1292,6 +1293,10 @@ mod tests {
             Some(Action::BeginSelectedRecipeDevtoolModify)
         );
         assert_eq!(
+            recipes_workspace_action(false, Input::Char('t')),
+            Some(Action::BeginSelectedRecipeDevtoolStatus)
+        );
+        assert_eq!(
             recipes_workspace_action(false, Input::Char('u')),
             Some(Action::BeginSelectedRecipeDevtoolUpdateRecipe)
         );
@@ -1306,6 +1311,14 @@ mod tests {
         assert_eq!(
             recipes_workspace_action(false, Input::Char('D')),
             Some(Action::BeginSelectedRecipeDevtoolReset)
+        );
+    }
+
+    #[test]
+    fn devtool_metadata_shortcut_requests_typed_status() {
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('t')),
+            Some(Action::BeginSelectedRecipeDevtoolStatus)
         );
     }
     #[test]

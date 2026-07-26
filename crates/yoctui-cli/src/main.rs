@@ -26,7 +26,9 @@ use yoctui_app::{
     BuildJobCoordinator, Input, errors_action, focus_action, key_action, logs_action,
     settings_action, tasks_action,
 };
-use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend, ProcessBackend};
+use yoctui_bitbake::{
+    BackendEvent, BitBakeBackend, BridgeBackend, DevtoolInspector, ProcessBackend,
+};
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, Dialog, Effect, GitFileState,
     HostTelemetry, LayerBrowserEntry, LayerInspectorMode, LayerRelationship, LayerRelationships,
@@ -896,6 +898,17 @@ async fn open_yocto_shell(guard: &TerminalGuard, app: &mut App) {
 
 fn devtool_source_dir(build_dir: &Path, recipe: &str) -> PathBuf {
     build_dir.join("workspace").join("sources").join(recipe)
+}
+
+async fn inspect_selected_devtool(app: &mut App, build_dir: &Path) {
+    if let Some(Effect::InspectDevtoolStatus(identity)) =
+        update(app, Action::BeginSelectedRecipeDevtoolStatus)
+    {
+        let status = DevtoolInspector::default()
+            .inspect(build_dir, identity)
+            .await;
+        let _ = update(app, Action::DevtoolStatusLoaded(status));
+    }
 }
 
 async fn devtool_modify(
@@ -1935,11 +1948,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             .await
                             .map(|root| (recipe, root))
                     }
+                    Some(Effect::OpenWorkspaceEditor { label, root }) => Some((label, root)),
                     _ => None,
                 };
                 if let Some((recipe, root)) = root {
                     open_workspace_editor(&mut app, recipe, root).await;
                 }
+            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('t') {
+                inspect_selected_devtool(&mut app, &session_build_dir).await;
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('D') {
                 let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolReset);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('u') {
@@ -1994,6 +2010,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         }
                     }
                 }
+                inspect_selected_devtool(&mut app, &session_build_dir).await;
             } else if input == Input::Char('b') {
                 let _ = update(&mut app, Action::BeginCurrentImageBuild);
             } else if app.screen == yoctui_model::Screen::Recipes

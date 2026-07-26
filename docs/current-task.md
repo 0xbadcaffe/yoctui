@@ -2,55 +2,46 @@
 
 ## Active task
 
-**ID:** DEVTOOL-META-001
-**Title:** Add authoritative Devtool workspace and Git status
+**ID:** CONFIG-META-001
+**Title:** Add authoritative typed variable detail
 
 ## Objective
 
-Add typed, authoritative Devtool capability, workspace membership/path, and
-Git state for Recipes and Devtool views.
+Complete the required live Tinfoil validation for the already implemented
+typed configuration-variable detail path.
 
 ## Required work
 
-1. Inventory current recipe workspace-status fields, Devtool source path
-   assumptions, process ownership, Git scanning, Recipes Inspector rendering,
-   and tests.
-2. Define typed capability and status records for Devtool executable
-   availability, recipe workspace membership/path, and Git repository state:
-   branch/head, clean/dirty, modified/untracked/conflicted counts, and explicit
-   unavailable/error reasons.
-3. Implement external Devtool/Git inspection in the backend adapter boundary.
-   Parse process output there and emit typed model data; widgets and reducers
-   must not parse raw text.
-4. Correlate status by absolute recipe identity and ignore stale responses.
-   Missing workspace directories, non-Git sources, missing executables,
-   malformed output, and non-zero exits must remain distinct.
-5. Render status and exact action availability/disabled reasons in Recipes and
-   the Devtool view across responsive modes.
-6. Add fake-process, reducer, app, and TestBackend tests named
-   `devtool_metadata`, including partial/malformed/error states.
-7. Validate status against the available live Yocto Devtool workspace when
-   external build-directory access is available; otherwise document the exact
-   external blocker without marking the task done.
+1. Reinspect the typed protocol, bridge, adapter, app, and model implementation
+   without reimplementing behavior that already exists.
+2. Run the focused configuration metadata tests.
+3. Against the existing qemux86-64 Yocto build, use Tinfoil in
+   configuration-only mode to query `MACHINE` and record:
+   - expanded value
+   - unexpanded value
+   - normalized variable history operations
+   - active `OVERRIDES`
+   - BitBake version
+4. Confirm the live values are representable by the existing typed payload and
+   model identity without widget-side parsing.
+5. Record the exact live evidence in the registry and implementation status.
 
 ## Definition of done
 
-- Devtool and Git status cross the backend boundary as typed data.
-- Absolute recipe identity drives status and availability.
-- Missing tool/workspace/Git, dirty/untracked/conflicted, malformed, and failed
-  states are distinct.
-- Recipes and Devtool views render responsive status and disabled reasons.
-- Live status evidence is recorded or the task remains explicitly blocked.
-- Task-specific and baseline verification pass.
+- Focused and baseline verification pass.
+- Live Tinfoil returns expanded/unexpanded `MACHINE`, history, overrides, and
+  version data from the existing build.
+- The typed bridge path can represent the live result honestly.
 - Registry/status documents are updated and the next eligible task is active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake devtool_metadata
-cargo test -p yoctui-model devtool_metadata
-cargo test -p yoctui-app devtool_metadata
-cargo test -p yoctui-ui devtool_metadata
+cargo test -p yoctui-protocol config_metadata
+cargo test -p yoctui-bitbake config_metadata
+cargo test -p yoctui-app config_metadata
+cargo test -p yoctui-model config_metadata
+python3 -m pytest bridge/tests -k config_metadata
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -60,4 +51,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`DEVTOOL-JOBS-001 — Run Devtool operations as persistent background jobs`
+`CONFIG-UI-001 — Complete searchable Configuration Inspector`

@@ -739,6 +739,21 @@ terminal is restored.
 The same Recipes workspace exposes typed Devtool modify, update-recipe,
 finish, deploy-target, and reset routes for the absolute selected recipe
 identity. Existing preview and confirmation requirements remain in force.
+`t` refreshes Devtool status directly, and `Enter` refreshes it after recipe
+metadata. The Recipes and Devtool Inspector shows executable availability,
+workspace membership and absolute source path, and Git branch, head,
+clean/dirty state, and modified/untracked/conflicted counts. Missing
+executables, a missing workspace source directory, a non-Git source, failed
+commands, and malformed output are distinct states.
+
+The Inspector derives every Devtool action's enabled state and disabled reason
+from that typed status. A recipe outside the workspace may be modified but
+cannot be updated, finished, deployed, or reset. A missing workspace source
+may be reset but not edited or published. An existing source opens directly
+for editing with `d`; finish remains disabled until Git reports a commit and
+no modified, untracked, or conflicted files. Status responses are stored by
+recipe name plus absolute provider path, so a response for a prior selection
+does not replace the current recipe's state.
 
 `V` starts a selected-recipe CVE check only when authoritative metadata
 reports `do_cve_check`; `X` starts SPDX generation only when it reports

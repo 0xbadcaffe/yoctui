@@ -125,6 +125,16 @@ Successful QA completion retains an empty artifact list unless a typed backend
 event supplies paths; widgets must describe that as no path reported and must
 not extract filesystem locations from log text.
 
+Devtool workspace inspection is a typed external-tool adapter in
+`yoctui-bitbake`. It invokes `devtool status` in the active build directory,
+normalizes membership and source paths, and then invokes Git porcelain-v2
+status only for an existing workspace source. Raw Devtool and Git records do
+not cross into the reducer or widgets. Missing executables, missing source
+directories, non-repositories, non-zero exits, and malformed records remain
+separate model states. The model keys requests and results by recipe name plus
+absolute provider path and owns the shared action-availability rules used by
+both reducer routing and UI explanations.
+
 Unknown future protocol events normalize to an ignored event and do not imply a
 backend disconnect. Missing task progress remains unknown rather than becoming
 zero. Terminal build events emit one primary build-state action and one
