@@ -306,18 +306,18 @@ notes = "Parent gate for authoritative variable detail, the responsive browser, 
 id = "CONFIG-META-001"
 milestone = "M3"
 title = "Add authoritative typed variable detail"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 42
 required = true
 depends_on = ["BB-001"]
 verify = ["cargo test -p yoctui-protocol config_metadata", "cargo test -p yoctui-bitbake config_metadata", "cargo test -p yoctui-app config_metadata", "cargo test -p yoctui-model config_metadata", "python3 -m pytest bridge/tests -k config_metadata"]
-notes = "Typed implementation and all local/baseline tests pass. External build-directory access became available during DEVTOOL-META-001 live validation; rerun the required Tinfoil config-only MACHINE query and record expanded/unexpanded value, varhistory operations, OVERRIDES, and BitBake version."
+notes = "Live bridge/Tinfoil validation passed against BitBake 2.19.0 in the qemux86-64 build: MACHINE expanded/unexpanded to qemux86-64, provenance was build/conf/toolcfg.conf:6, the typed set operation retained that file/line/value, and active overrides included linux, x86-64, qemuall, qemux86-64, poky, class-target, libc-glibc, and forcevariable. A live OVERRIDES query also preserved its unexpanded expression and bitbake.conf:803 operation. Focused and baseline tests pass."
 
 [[task]]
 id = "CONFIG-UI-001"
 milestone = "M3"
 title = "Complete searchable Configuration Inspector"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 42
 required = true
 depends_on = ["CONFIG-META-001"]
