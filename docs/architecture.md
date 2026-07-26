@@ -116,9 +116,19 @@ data, preserves identity selection, correlates request results, and derives
 deterministic typed base-hash, changed-value, dependency, and unavailable-field
 differences. Not-loaded, loading, available-empty, available, partial, and
 failed outcomes remain distinct for both dump and comparison workflows.
-Adapters may later parse `bitbake-dumpsig` or `bitbake-diffsigs`, but raw tool
-output and inferred filesystem paths must not cross into reducer or widget
-code.
+The signature adapter performs a bounded, deterministic scan of the configured
+build's `tmp/stamps` tree for exact recipe/task `sigdata` or `siginfo`
+artifacts. It rejects symlinks, relative paths, hash/path mismatches, and
+canonical paths outside the build directory. It executes `bitbake-dumpsig`
+and `bitbake-diffsigs -c never` directly without a shell, drains bounded
+standard output and error streams, enforces a timeout, and supports explicit
+process-group cancellation. Dump output is normalized into typed values,
+task hashes, and task dependencies; comparison output is combined with a
+deterministic comparison of the two typed dumps so multiline changes remain
+representable. Unsupported recursive `diffsigs` detail is reported as a
+limitation. Only typed responses or correlated errors cross the backend/app
+boundary; raw tool output and paths inferred from log text never reach reducer
+or widget code.
 
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore

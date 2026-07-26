@@ -64,15 +64,14 @@ See `docs/current-task.md`.
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
-| Signature adapter | IN_PROGRESS | Shell-free authoritative acquisition/comparison, bounded parsing, exact correlation, failure coverage, and live validation remain |
-| Signature workspace | NOT_STARTED | Responsive selectors, dump/difference views, persistent job context, actions, and source navigation remain |
+| Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
+| Signature workspace | IN_PROGRESS | Responsive task selection, dump/difference views, background execution, actions, and source navigation remain |
 | Package data browser | NOT_STARTED | No `oe-pkgdata-util` adapter, workspace, typed workflow, or tests are present |
 
 ## Priority queue
 
-1. `SIG-ADAPTER-001` — acquire and compare authoritative signatures
-2. `SIG-UI-001` — integrate responsive signature workflows
-3. `PKG-001` — complete package-data browser
+1. `SIG-UI-001` — integrate responsive signature workflows
+2. `PKG-001` — complete package-data browser
 
 ## Rules
 
