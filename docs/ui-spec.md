@@ -828,6 +828,14 @@ retain the selected semantic pane and wrap long values and operation paths.
 Empty searches, missing metadata, partial operations, and backend failures
 remain explicit and never cause a panic.
 
+`C` copies the selected detail's effective value and `U` copies its unexpanded
+value through the shared typed clipboard effect. These actions use only loaded
+detail for the exact selected `VariableIdentity`; the summary-table value is
+never used as a fallback. Missing selection, loading, failed or not-yet-loaded
+detail, and an absent value keep the action inert and show the exact disabled
+reason in the Inspector. Clipboard-tool failures remain actionable
+notifications from the CLI boundary.
+
 Editing configuration requires a dedicated preview-and-confirm dialog.
 
 No silent edits.

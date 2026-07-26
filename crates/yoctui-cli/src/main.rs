@@ -949,6 +949,10 @@ async fn inspect_selected_config_variable(app: &mut App, backend: &mut dyn BitBa
     }
 }
 
+fn config_copy_effect(app: &mut App, input: Input) -> Option<Effect> {
+    config_workspace_action(false, input).and_then(|action| update(app, action))
+}
+
 async fn devtool_modify(
     guard: &TerminalGuard,
     app: &mut App,
@@ -2135,6 +2139,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
             } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Enter {
                 inspect_selected_config_variable(&mut app, backend.as_mut()).await;
+            } else if app.screen == yoctui_model::Screen::Configuration
+                && matches!(input, Input::Char('C') | Input::Char('U'))
+            {
+                if let Some(Effect::CopyToClipboard(content)) = config_copy_effect(&mut app, input)
+                {
+                    copy_to_clipboard(&mut app, content).await;
+                }
             } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Char('o')
             {
                 if let Some(Effect::OpenInEditor(path)) =
@@ -2585,6 +2596,37 @@ mod tests {
                 && operations.len() == 1
                 && active_overrides == ["qemux86-64"]
         ));
+    }
+
+    #[test]
+    fn config_copy_terminal_route_emits_existing_clipboard_effect() {
+        let mut app = App::new(10, 1_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        let identity = VariableIdentity {
+            name: "MACHINE".into(),
+            recipe: None,
+        };
+        app.variable_details.insert(
+            identity.clone(),
+            VariableDetail {
+                identity,
+                effective_value: Some("qemux86-64".into()),
+                unexpanded_value: Some("${DEFAULT_MACHINE}".into()),
+                provenance: None,
+                operations: vec![],
+                active_overrides: vec![],
+            },
+        );
+        assert_eq!(
+            config_copy_effect(&mut app, Input::Char('C')),
+            Some(Effect::CopyToClipboard("qemux86-64".into()))
+        );
+        assert_eq!(
+            config_copy_effect(&mut app, Input::Char('U')),
+            Some(Effect::CopyToClipboard("${DEFAULT_MACHINE}".into()))
+        );
     }
 
     #[test]

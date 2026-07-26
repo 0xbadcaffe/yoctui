@@ -5,11 +5,11 @@ use ratatui::{
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 use yoctui_model::{
-    App, BackgroundJobKind, BuildStatus, DevtoolAction, DevtoolCapability, DevtoolGitState,
-    DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget, GitFileState,
-    LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PreviewKind, Recipe, RecipeBuildStatus,
-    RecipeEditor, RecipeIdentity, Screen, Severity, TaskFilterField, TaskRow, TaskState, Theme,
-    VariableIdentity, format_duration,
+    App, BackgroundJobKind, BuildStatus, ConfigCopyValue, DevtoolAction, DevtoolCapability,
+    DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget,
+    GitFileState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PreviewKind, Recipe,
+    RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity, TaskFilterField, TaskRow,
+    TaskState, Theme, VariableIdentity, format_duration, selected_config_copy_value,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -433,7 +433,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
         Screen::Configuration => {
-            "↑/↓ select | Enter inspect | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
+            "↑/↓ select | Enter inspect | C copy effective | U copy unexpanded | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
         }
         Screen::Bbmask => {
             "e edit BBMASK | Enter preview/confirm | Esc cancel/dashboard | v configuration | ? help | q quit"
@@ -3088,11 +3088,12 @@ fn config_variables(app: &App) -> Vec<(&String, &String)> {
 fn config_inspector(app: &App) -> String {
     let variables = config_variables(app);
     let Some((name, summary_value)) = variables.get(app.config_selection).copied() else {
-        return if app.workspace.variables.is_empty() {
-            "No configuration variables supplied by the backend.".into()
+        let state = if app.workspace.variables.is_empty() {
+            "No configuration variables supplied by the backend."
         } else {
-            "No configuration variables match the active search.".into()
+            "No configuration variables match the active search."
         };
+        return format!("{state}\n\n{}", config_copy_status(app));
     };
     let identity = VariableIdentity {
         name: name.clone(),
@@ -3100,17 +3101,20 @@ fn config_inspector(app: &App) -> String {
     };
     if app.variable_detail_loading.contains(&identity) {
         return format!(
-            "Variable: {name}\nEffective summary: {summary_value}\n\nLoading authoritative detail…"
+            "Variable: {name}\nEffective summary: {summary_value}\n\nLoading authoritative detail…\n\n{}",
+            config_copy_status(app)
         );
     }
     if let Some(error) = app.variable_detail_errors.get(&identity) {
         return format!(
-            "Variable: {name}\nEffective summary: {summary_value}\n\nDetail unavailable: {error}\nPress Enter to retry."
+            "Variable: {name}\nEffective summary: {summary_value}\n\nDetail unavailable: {error}\nPress Enter to retry.\n\n{}",
+            config_copy_status(app)
         );
     }
     let Some(detail) = app.variable_details.get(&identity) else {
         return format!(
-            "Variable: {name}\nEffective summary: {summary_value}\nScope: global\n\nDetail not loaded; press Enter to inspect."
+            "Variable: {name}\nEffective summary: {summary_value}\nScope: global\n\nDetail not loaded; press Enter to inspect.\n\n{}",
+            config_copy_status(app)
         );
     };
     let operations = if detail.operations.is_empty() {
@@ -3143,7 +3147,7 @@ fn config_inspector(app: &App) -> String {
             .join("\n  ")
     };
     format!(
-        "Variable: {}\nScope: {}\nEffective value: {}\nUnexpanded value: {}\nProvenance: {}\nActive overrides: {}\nOperations:\n  {}",
+        "Variable: {}\nScope: {}\nEffective value: {}\nUnexpanded value: {}\n{}\nProvenance: {}\nActive overrides: {}\nOperations:\n  {}",
         detail.identity.name,
         detail
             .identity
@@ -3152,6 +3156,7 @@ fn config_inspector(app: &App) -> String {
             .map_or("global", |recipe| recipe),
         detail.effective_value.as_deref().unwrap_or("unavailable"),
         detail.unexpanded_value.as_deref().unwrap_or("unavailable"),
+        config_copy_status(app),
         detail.provenance.as_deref().unwrap_or("unavailable"),
         if detail.active_overrides.is_empty() {
             "none reported".into()
@@ -3160,6 +3165,22 @@ fn config_inspector(app: &App) -> String {
         },
         operations,
     )
+}
+
+fn config_copy_status(app: &App) -> String {
+    [
+        ("C effective", ConfigCopyValue::Effective),
+        ("U unexpanded", ConfigCopyValue::Unexpanded),
+    ]
+    .into_iter()
+    .map(|(label, value)| {
+        selected_config_copy_value(app, value).map_or_else(
+            |reason| format!("{label}: disabled ({reason})"),
+            |_| format!("{label}: enabled"),
+        )
+    })
+    .collect::<Vec<_>>()
+    .join(" | ")
 }
 
 fn config(frame: &mut Frame, app: &App, area: Rect) {
@@ -4871,6 +4892,37 @@ mod tests {
                 assert!(output.contains("Unexpanded value: unavailable"), "{output}");
                 assert!(output.contains("Operations:"), "{output}");
                 assert!(output.contains("none reported"), "{output}");
+            }
+        }
+    }
+
+    #[test]
+    fn config_copy_renders_shortcuts_and_exact_availability_responsively() {
+        for (width, height) in [(160, 32), (110, 28), (90, 24)] {
+            let mut app = App::new(10, 1_000);
+            app.screen = Screen::Configuration;
+            app.workspace
+                .variables
+                .insert("MACHINE".into(), "qemux86-64".into());
+            let identity = yoctui_model::VariableIdentity {
+                name: "MACHINE".into(),
+                recipe: None,
+            };
+            app.variable_details.insert(
+                identity.clone(),
+                yoctui_model::VariableDetail {
+                    identity,
+                    effective_value: Some("qemux86-64".into()),
+                    unexpanded_value: None,
+                    provenance: None,
+                    operations: vec![],
+                    active_overrides: vec![],
+                },
+            );
+            let output = rendered_text(&app, width, height);
+            if width >= 80 && height >= 24 {
+                assert!(output.contains("C effective: enabled"), "{output}");
+                assert!(output.contains("U unexpanded: disabled"), "{output}");
             }
         }
     }
