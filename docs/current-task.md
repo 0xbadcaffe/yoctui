@@ -2,49 +2,51 @@
 
 ## Active task
 
-**ID:** DEVTOOL-UPDATE-001
-**Title:** Complete Devtool update-recipe workflow
+**ID:** DEVTOOL-FINISH-001
+**Title:** Complete Devtool finish workflow
 
 ## Objective
 
-Require authoritative eligibility and an exact preview for update-recipe, then
-refresh the original recipe identity after successful persistent completion
-without losing retained output or failure context.
+Finish a clean committed Devtool workspace into an authoritative configured
+layer using a typed native path, exact confirmation, persistent execution, and
+original-identity refresh.
 
 ## Required work
 
-1. Inventory existing update-recipe availability, dialog state, command
-   specification, persistent completion, and status refresh behavior.
-2. Require the exact selected `RecipeIdentity` to have authoritative available,
-   present workspace state; missing or stale state remains inert with a precise
-   reason.
-3. Make the focus-trapping confirmation retain the identity and preview the
-   exact `devtool update-recipe <recipe>` operation plus provider path.
-4. Preserve the original identity while the persistent job runs and refresh
-   only that identity after successful completion, independent of navigation.
-5. Keep nonzero, cancellation, runner-loss, and refresh-failure output/outcomes
-   retained and actionable.
-6. Add adapter, model, app, CLI, and Ratatui TestBackend tests named
-   `devtool_publish_update`.
-7. Update UI and architecture documents for intentional behavior and boundary
+1. Inventory finish eligibility, Git-state policy, current free-text
+   destination dialog, configured layer metadata, command specification,
+   persistent completion, and refresh behavior.
+2. Require exact authoritative recipe identity, present workspace source, and
+   clean committed Git state; preserve precise partial-state disabled reasons.
+3. Replace arbitrary destination entry with a focus-trapping picker populated
+   only from authoritative configured layers with absolute native paths.
+4. Preview the exact `devtool finish <recipe> <destination>` intent, provider
+   path, and selected configured layer before explicit confirmation.
+5. Preserve native path bytes through the process specification and reject
+   empty, relative, stale, or unconfigured destinations before execution.
+6. Refresh the original recipe identity after successful persistent completion
+   and retain job output/outcome plus prior actionable state on failure.
+7. Add adapter, model, app, CLI, and Ratatui TestBackend tests named
+   `devtool_publish_finish`.
+8. Update UI and architecture documents for intentional behavior and boundary
    changes.
 
 ## Definition of done
 
-- Unknown, unavailable, and non-workspace recipes cannot start update-recipe.
-- The confirmation shows exact typed intent and provider identity.
-- Success refreshes the original identity without erasing the persistent job.
-- Failures preserve typed status, output, and actionable context.
+- Only an authoritative clean committed workspace can begin finish.
+- Destination selection cannot escape the configured layer inventory.
+- Confirmation shows exact recipe, provider, layer, and native destination.
+- Success refreshes the original identity; failures preserve durable context.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake devtool_publish_update
-cargo test -p yoctui-model devtool_publish_update
-cargo test -p yoctui-app devtool_publish_update
-cargo test -p yoctui-ui devtool_publish_update
-cargo test -p yoctui -- devtool_publish_update
+cargo test -p yoctui-bitbake devtool_publish_finish
+cargo test -p yoctui-model devtool_publish_finish
+cargo test -p yoctui-app devtool_publish_finish
+cargo test -p yoctui-ui devtool_publish_finish
+cargo test -p yoctui -- devtool_publish_finish
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -54,4 +56,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`DEVTOOL-FINISH-001 — Complete Devtool finish workflow`
+`DEVTOOL-TARGET-001 — Complete Devtool deploy-target and reset workflows`

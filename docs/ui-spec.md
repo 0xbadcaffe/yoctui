@@ -785,6 +785,15 @@ syntax-aware selected-file preview/editing on the right. `Ctrl+S` saves;
 existing exact `bitbake <recipe>` confirmation. It never routes to an image
 build.
 
+`u` follows the same exact-identity rule for update-recipe. Unknown status,
+missing Devtool, status errors, non-membership, and missing workspace sources
+remain inert with the typed reason. An eligible recipe opens a focus-trapping
+confirmation showing both `devtool update-recipe <recipe>` and the absolute
+provider path. Successful persistent completion refreshes the original recipe
+identity even after navigation and reports the refreshed workspace state.
+Nonzero exit, cancellation, runner loss, or status-refresh failure leaves the
+retained job output and prior actionable context intact.
+
 `V` starts a selected-recipe CVE check only when authoritative metadata
 reports `do_cve_check`; `X` starts SPDX generation only when it reports
 `do_create_spdx`. Each route opens the existing typed confirmation with the

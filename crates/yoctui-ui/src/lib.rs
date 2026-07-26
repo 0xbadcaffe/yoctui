@@ -814,12 +814,20 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: true }),
             popup,
         );
-    } else if let Some(Dialog::DevtoolUpdateConfirmation(recipe)) = app.active_dialog() {
-        let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
+    } else if let Some(Dialog::DevtoolUpdateConfirmation(identity)) = app.active_dialog() {
+        let width = area.width.saturating_sub(8).clamp(44, 100);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(7) / 2,
+            width,
+            7,
+        );
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Run `devtool update-recipe {recipe}`?\n\nThis updates recipe metadata from the Devtool workspace. Press Enter to continue or Esc to cancel."
+                "Run `devtool update-recipe {}`?\n\nProvider: {}\n\nEnter continues; Esc cancels.",
+                identity.name,
+                identity.file.display()
             ))
             .block(
                 Block::default()
@@ -3936,7 +3944,10 @@ mod tests {
                 "Confirm Devtool reset",
             ),
             (
-                Dialog::DevtoolUpdateConfirmation("busybox".into()),
+                Dialog::DevtoolUpdateConfirmation(yoctui_model::RecipeIdentity {
+                    name: "busybox".into(),
+                    file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+                }),
                 "Confirm Devtool update-recipe",
             ),
             (
@@ -4374,11 +4385,15 @@ mod tests {
         assert!(output.contains("devtool reset busybox"));
     }
     #[test]
-    fn renders_devtool_update_recipe_confirmation() {
-        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+    fn devtool_publish_update_renders_exact_identity_confirmation() {
+        let mut terminal = Terminal::new(TestBackend::new(120, 25)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.dialogs
-            .push_back(Dialog::DevtoolUpdateConfirmation("busybox".into()));
+        app.dialogs.push_back(Dialog::DevtoolUpdateConfirmation(
+            yoctui_model::RecipeIdentity {
+                name: "busybox".into(),
+                file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+            },
+        ));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -4389,6 +4404,7 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Confirm Devtool update-recipe"));
         assert!(output.contains("devtool update-recipe busybox"));
+        assert!(output.contains("busybox.bb"));
     }
     #[test]
     fn renders_devtool_finish_confirmation() {

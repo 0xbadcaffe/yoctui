@@ -855,6 +855,14 @@ pub fn devtool_modify_confirmation_action(key: Input) -> Option<Action> {
     }
 }
 
+pub fn devtool_update_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmDevtoolUpdateRecipe),
+        Input::Esc => Some(Action::CancelDevtoolUpdateRecipe),
+        _ => None,
+    }
+}
+
 pub fn recipe_editor_action(editing: bool, key: Input) -> Option<Action> {
     match key {
         Input::Esc => Some(Action::CloseRecipeEditor),
@@ -1785,6 +1793,19 @@ mod tests {
             recipe_editor_action(true, Input::Enter),
             Some(Action::AppendRecipeEditor('\n'))
         );
+    }
+
+    #[test]
+    fn devtool_publish_update_routes_only_confirmation_keys() {
+        assert_eq!(
+            devtool_update_confirmation_action(Input::Enter),
+            Some(Action::ConfirmDevtoolUpdateRecipe)
+        );
+        assert_eq!(
+            devtool_update_confirmation_action(Input::Esc),
+            Some(Action::CancelDevtoolUpdateRecipe)
+        );
+        assert_eq!(devtool_update_confirmation_action(Input::Char('u')), None);
     }
 
     #[test]
