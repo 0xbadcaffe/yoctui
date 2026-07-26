@@ -23,19 +23,21 @@ use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
-    BuildJobCoordinator, Input, config_compare_dialog_action, config_edit_confirmation_action,
-    config_edit_dialog_action, config_scope_picker_action, config_source_picker_action,
-    config_workspace_action, errors_action, focus_action, key_action, logs_action, settings_action,
-    tasks_action,
+    BuildJobCoordinator, DevtoolJobCoordinator, Input, config_compare_dialog_action,
+    config_edit_confirmation_action, config_edit_dialog_action, config_scope_picker_action,
+    config_source_picker_action, config_workspace_action, errors_action, focus_action, key_action,
+    logs_action, settings_action, tasks_action,
 };
 use yoctui_bitbake::{
-    BackendEvent, BitBakeBackend, BridgeBackend, DevtoolInspector, ProcessBackend, VariableValue,
+    BackendEvent, BitBakeBackend, BridgeBackend, DevtoolCommandSpec, DevtoolInspector,
+    DevtoolJobRunner, DevtoolRunnerEvent, ProcessBackend, VariableValue,
 };
 use yoctui_model::{
-    Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest, Dialog,
-    Effect, GitFileState, HostTelemetry, LayerBrowserEntry, LayerInspectorMode, LayerRelationship,
-    LayerRelationships, PreviewKind, RecipeDependencies, Screen, Severity, Theme, VariableDetail,
-    VariableIdentity, update, validate_config_edit_request,
+    Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
+    DevtoolOperation, Dialog, Effect, GitFileState, HostTelemetry, LayerBrowserEntry,
+    LayerInspectorMode, LayerRelationship, LayerRelationships, PreviewKind, RecipeDependencies,
+    Screen, Severity, Theme, VariableDetail, VariableIdentity, update,
+    validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -777,6 +779,84 @@ async fn begin_build(
     }
 }
 
+async fn begin_devtool_job(
+    app: &mut App,
+    coordinator: &mut DevtoolJobCoordinator,
+    runner: &mut Option<DevtoolJobRunner>,
+    build_dir: &Path,
+    cancellation_timeout: Duration,
+    operation: DevtoolOperation,
+) {
+    let Some(actions) = coordinator.queue(operation.clone(), SystemTime::now()) else {
+        let _ = update(
+            app,
+            Action::Notify("A Devtool background job is already active.".into()),
+        );
+        return;
+    };
+    for action in actions {
+        let _ = update(app, action);
+    }
+    let command = match DevtoolCommandSpec::from_operation(&operation) {
+        Ok(command) => command,
+        Err(error) => {
+            for action in coordinator.start_failed(error.to_string(), SystemTime::now()) {
+                let _ = update(app, action);
+            }
+            return;
+        }
+    };
+    let mut started = DevtoolJobRunner::new(build_dir.to_path_buf())
+        .with_cancellation_timeout(cancellation_timeout);
+    match started.start(command).await {
+        Ok(()) => *runner = Some(started),
+        Err(error) => {
+            for action in coordinator.start_failed(error.to_string(), SystemTime::now()) {
+                let _ = update(app, action);
+            }
+        }
+    }
+}
+
+async fn poll_devtool_job(
+    app: &mut App,
+    coordinator: &mut DevtoolJobCoordinator,
+    runner: &mut Option<DevtoolJobRunner>,
+) {
+    let Some(active) = runner.as_mut() else {
+        return;
+    };
+    match tokio::time::timeout(Duration::from_millis(1), active.next_event()).await {
+        Ok(Ok(event)) => {
+            let terminal = matches!(
+                event,
+                DevtoolRunnerEvent::Completed { .. }
+                    | DevtoolRunnerEvent::Failed { .. }
+                    | DevtoolRunnerEvent::Cancelled { .. }
+                    | DevtoolRunnerEvent::Lost { .. }
+            );
+            for action in coordinator.actions_for_event(event, SystemTime::now()) {
+                let _ = update(app, action);
+            }
+            if terminal {
+                *runner = None;
+            }
+        }
+        Ok(Err(error)) => {
+            for action in coordinator.actions_for_event(
+                DevtoolRunnerEvent::Lost {
+                    message: error.to_string(),
+                },
+                SystemTime::now(),
+            ) {
+                let _ = update(app, action);
+            }
+            *runner = None;
+        }
+        Err(_) => {}
+    }
+}
+
 fn editor_path_error(path: &Path) -> Option<String> {
     match path.try_exists() {
         Ok(true) => None,
@@ -899,10 +979,6 @@ async fn open_yocto_shell(guard: &TerminalGuard, app: &mut App) {
     }
 }
 
-fn devtool_source_dir(build_dir: &Path, recipe: &str) -> PathBuf {
-    build_dir.join("workspace").join("sources").join(recipe)
-}
-
 async fn inspect_selected_devtool(app: &mut App, build_dir: &Path) {
     if let Some(Effect::InspectDevtoolStatus(identity)) =
         update(app, Action::BeginSelectedRecipeDevtoolStatus)
@@ -960,56 +1036,6 @@ async fn inspect_selected_config_variable(app: &mut App, backend: &mut dyn BitBa
 
 fn config_copy_effect(app: &mut App, input: Input) -> Option<Effect> {
     config_workspace_action(false, input).and_then(|action| update(app, action))
-}
-
-async fn devtool_modify(
-    guard: &TerminalGuard,
-    app: &mut App,
-    build_dir: &Path,
-    recipe: String,
-) -> Option<PathBuf> {
-    let source_dir = devtool_source_dir(build_dir, &recipe);
-    let build_dir = build_dir.to_path_buf();
-    if let Err(error) = guard.suspend() {
-        app.notification = Some(format!(
-            "Could not suspend the terminal for devtool: {error}"
-        ));
-        return None;
-    }
-    let result = tokio::task::spawn_blocking(move || -> Result<PathBuf> {
-        if !source_dir.is_dir() {
-            let status = ProcessCommand::new("devtool")
-                .args(["modify", &recipe])
-                .current_dir(build_dir)
-                .status()
-                .context("could not start devtool modify")?;
-            if !status.success() {
-                anyhow::bail!("devtool modify exited with {status}");
-            }
-        }
-        Ok(source_dir)
-    })
-    .await;
-    let resume_result = guard.resume();
-    if let Err(error) = resume_result {
-        app.notification = Some(format!(
-            "Could not restore the terminal after devtool: {error}"
-        ));
-        None
-    } else {
-        match result {
-            Ok(Ok(source_dir)) => Some(source_dir),
-            Ok(Err(error)) => {
-                app.notification =
-                    Some(format!("Could not prepare the Devtool workspace: {error}"));
-                None
-            }
-            Err(error) => {
-                app.notification = Some(format!("Devtool task failed: {error}"));
-                None
-            }
-        }
-    }
 }
 
 fn recipe_editor_files(root: &Path) -> Result<Vec<PathBuf>> {
@@ -1482,190 +1508,6 @@ async fn refresh_workspace(
     }
 }
 
-async fn devtool_update_recipe(
-    guard: &TerminalGuard,
-    app: &mut App,
-    build_dir: &Path,
-    recipe: String,
-) -> bool {
-    let build_dir = build_dir.to_path_buf();
-    if let Err(error) = guard.suspend() {
-        app.notification = Some(format!(
-            "Could not suspend the terminal for devtool: {error}"
-        ));
-        return false;
-    }
-    let result = tokio::task::spawn_blocking(move || -> Result<()> {
-        let status = ProcessCommand::new("devtool")
-            .args(["update-recipe", &recipe])
-            .current_dir(build_dir)
-            .status()
-            .context("could not start devtool update-recipe")?;
-        if !status.success() {
-            anyhow::bail!("devtool update-recipe exited with {status}");
-        }
-        Ok(())
-    })
-    .await;
-    let resume_result = guard.resume();
-    if let Err(error) = resume_result {
-        app.notification = Some(format!(
-            "Could not restore the terminal after devtool: {error}"
-        ));
-        false
-    } else {
-        match result {
-            Ok(Ok(())) => true,
-            Ok(Err(error)) => {
-                app.notification = Some(format!("Could not update recipe via devtool: {error}"));
-                false
-            }
-            Err(error) => {
-                app.notification = Some(format!("Devtool task failed: {error}"));
-                false
-            }
-        }
-    }
-}
-
-async fn devtool_finish(
-    guard: &TerminalGuard,
-    app: &mut App,
-    build_dir: &Path,
-    request: yoctui_model::DevtoolFinishRequest,
-) -> bool {
-    if !request.destination.is_dir() {
-        app.notification = Some(format!(
-            "Devtool finish destination is not a directory: {}",
-            request.destination.display()
-        ));
-        return false;
-    }
-    let build_dir = build_dir.to_path_buf();
-    if let Err(error) = guard.suspend() {
-        app.notification = Some(format!(
-            "Could not suspend the terminal for devtool: {error}"
-        ));
-        return false;
-    }
-    let result = tokio::task::spawn_blocking(move || -> Result<()> {
-        let status = ProcessCommand::new("devtool")
-            .arg("finish")
-            .arg(&request.recipe)
-            .arg(&request.destination)
-            .current_dir(build_dir)
-            .status()
-            .context("could not start devtool finish")?;
-        if !status.success() {
-            anyhow::bail!("devtool finish exited with {status}");
-        }
-        Ok(())
-    })
-    .await;
-    let resume_result = guard.resume();
-    if let Err(error) = resume_result {
-        app.notification = Some(format!(
-            "Could not restore the terminal after devtool: {error}"
-        ));
-        false
-    } else {
-        match result {
-            Ok(Ok(())) => true,
-            Ok(Err(error)) => {
-                app.notification = Some(format!("Could not finish via devtool: {error}"));
-                false
-            }
-            Err(error) => {
-                app.notification = Some(format!("Devtool task failed: {error}"));
-                false
-            }
-        }
-    }
-}
-
-async fn devtool_deploy(
-    guard: &TerminalGuard,
-    app: &mut App,
-    build_dir: &Path,
-    request: yoctui_model::DevtoolDeployRequest,
-) {
-    let build_dir = build_dir.to_path_buf();
-    if let Err(error) = guard.suspend() {
-        app.notification = Some(format!(
-            "Could not suspend the terminal for devtool: {error}"
-        ));
-        return;
-    }
-    let result = tokio::task::spawn_blocking(move || -> Result<()> {
-        let status = ProcessCommand::new("devtool")
-            .arg("deploy-target")
-            .arg(&request.recipe)
-            .arg(&request.target)
-            .current_dir(build_dir)
-            .status()
-            .context("could not start devtool deploy-target")?;
-        if !status.success() {
-            anyhow::bail!("devtool deploy-target exited with {status}");
-        }
-        Ok(())
-    })
-    .await;
-    let resume_result = guard.resume();
-    if let Err(error) = resume_result {
-        app.notification = Some(format!(
-            "Could not restore the terminal after devtool: {error}"
-        ));
-    } else {
-        match result {
-            Ok(Ok(())) => {
-                app.notification = Some("Devtool deployment completed.".into());
-            }
-            Ok(Err(error)) => {
-                app.notification = Some(format!("Could not deploy via devtool: {error}"));
-            }
-            Err(error) => {
-                app.notification = Some(format!("Devtool task failed: {error}"));
-            }
-        }
-    }
-}
-
-async fn devtool_reset(guard: &TerminalGuard, app: &mut App, build_dir: &Path, recipe: String) {
-    let build_dir = build_dir.to_path_buf();
-    if let Err(error) = guard.suspend() {
-        app.notification = Some(format!(
-            "Could not suspend the terminal for devtool: {error}"
-        ));
-        return;
-    }
-    let result = tokio::task::spawn_blocking(move || -> Result<()> {
-        let status = ProcessCommand::new("devtool")
-            .args(["reset", &recipe])
-            .current_dir(build_dir)
-            .status()
-            .context("could not start devtool reset")?;
-        if !status.success() {
-            anyhow::bail!("devtool reset exited with {status}");
-        }
-        Ok(())
-    })
-    .await;
-    let resume_result = guard.resume();
-    if let Err(error) = resume_result {
-        app.notification = Some(format!(
-            "Could not restore the terminal after devtool: {error}"
-        ));
-    } else {
-        match result {
-            Ok(Ok(())) => app.notification = Some("Devtool workspace reset.".into()),
-            Ok(Err(error)) => {
-                app.notification = Some(format!("Could not reset via devtool: {error}"))
-            }
-            Err(error) => app.notification = Some(format!("Devtool task failed: {error}")),
-        }
-    }
-}
-
 async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Result<()> {
     let Config {
         backend: backend_kind,
@@ -1732,6 +1574,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         app.build.target = targets.first().cloned()
     }
     let mut build_jobs = BuildJobCoordinator::default();
+    let mut devtool_jobs = DevtoolJobCoordinator::default();
+    let mut devtool_runner = None;
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
     #[cfg(unix)]
@@ -1886,7 +1730,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     _ => None,
                 };
                 if let Some(Effect::DevtoolReset(recipe)) = effect {
-                    devtool_reset(&guard, &mut app, &session_build_dir, recipe).await;
+                    begin_devtool_job(
+                        &mut app,
+                        &mut devtool_jobs,
+                        &mut devtool_runner,
+                        &session_build_dir,
+                        cancellation_timeout,
+                        DevtoolOperation::Reset { recipe },
+                    )
+                    .await;
                 }
             } else if matches!(
                 app.active_dialog(),
@@ -1897,13 +1749,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Input::Esc => update(&mut app, Action::CancelDevtoolUpdateRecipe),
                     _ => None,
                 };
-                if let Some(Effect::DevtoolUpdateRecipe(recipe)) = effect
-                    && devtool_update_recipe(&guard, &mut app, &session_build_dir, recipe).await
-                {
-                    refresh_workspace(
-                        &mut backend,
+                if let Some(Effect::DevtoolUpdateRecipe(recipe)) = effect {
+                    begin_devtool_job(
                         &mut app,
-                        "Devtool recipe metadata updated and workspace refreshed.",
+                        &mut devtool_jobs,
+                        &mut devtool_runner,
+                        &session_build_dir,
+                        cancellation_timeout,
+                        DevtoolOperation::UpdateRecipe { recipe },
                     )
                     .await;
                 }
@@ -1916,13 +1769,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Input::Esc => update(&mut app, Action::CancelDevtoolFinishConfirmation),
                     _ => None,
                 };
-                if let Some(Effect::DevtoolFinish(request)) = effect
-                    && devtool_finish(&guard, &mut app, &session_build_dir, request).await
-                {
-                    refresh_workspace(
-                        &mut backend,
+                if let Some(Effect::DevtoolFinish(request)) = effect {
+                    begin_devtool_job(
                         &mut app,
-                        "Devtool changes finished and workspace refreshed.",
+                        &mut devtool_jobs,
+                        &mut devtool_runner,
+                        &session_build_dir,
+                        cancellation_timeout,
+                        request.into(),
                     )
                     .await;
                 }
@@ -1946,7 +1800,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     _ => None,
                 };
                 if let Some(Effect::DevtoolDeploy(request)) = effect {
-                    devtool_deploy(&guard, &mut app, &session_build_dir, request).await;
+                    begin_devtool_job(
+                        &mut app,
+                        &mut devtool_jobs,
+                        &mut devtool_runner,
+                        &session_build_dir,
+                        cancellation_timeout,
+                        request.into(),
+                    )
+                    .await;
                 }
             } else if matches!(app.active_dialog(), Some(Dialog::DevtoolDeploy { .. })) {
                 let _ = match input {
@@ -2229,9 +2091,16 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('d') {
                 let root = match update(&mut app, Action::BeginSelectedRecipeDevtoolModify) {
                     Some(Effect::DevtoolModify(recipe)) => {
-                        devtool_modify(&guard, &mut app, &session_build_dir, recipe.clone())
-                            .await
-                            .map(|root| (recipe, root))
+                        begin_devtool_job(
+                            &mut app,
+                            &mut devtool_jobs,
+                            &mut devtool_runner,
+                            &session_build_dir,
+                            cancellation_timeout,
+                            DevtoolOperation::Modify { recipe },
+                        )
+                        .await;
+                        None
                     }
                     Some(Effect::OpenWorkspaceEditor { label, root }) => Some((label, root)),
                     _ => None,
@@ -2430,7 +2299,23 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
             } else if let Some(action) = key_action(input) {
                 if matches!(action, Action::Cancel) {
-                    if let Some(Effect::Cancel) = update(&mut app, action) {
+                    if devtool_jobs.active_job_id().is_some() {
+                        if let Some(job_action) = devtool_jobs.request_cancellation() {
+                            let _ = update(&mut app, job_action);
+                        }
+                        let cancellation = if let Some(runner) = devtool_runner.as_mut() {
+                            runner.cancel().await.map(|_| ())
+                        } else {
+                            Err(yoctui_bitbake::DevtoolRunnerError::NotRunning)
+                        };
+                        if let Err(error) = cancellation {
+                            for action in devtool_jobs
+                                .cancellation_failed(error.to_string(), SystemTime::now())
+                            {
+                                let _ = update(&mut app, action);
+                            }
+                        }
+                    } else if let Some(Effect::Cancel) = update(&mut app, action) {
                         if let Some(job_action) = build_jobs.request_cancellation() {
                             let _ = update(&mut app, job_action);
                         }
@@ -2447,6 +2332,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
             }
         }
+        poll_devtool_job(&mut app, &mut devtool_jobs, &mut devtool_runner).await;
         match tokio::time::timeout(Duration::from_millis(1), backend.next_event()).await {
             Ok(Ok(event)) => {
                 for action in build_jobs.actions_for_backend_event(event, SystemTime::now()) {
@@ -2984,14 +2870,6 @@ mod tests {
     }
 
     #[test]
-    fn devtool_source_path_uses_the_standard_workspace_layout() {
-        assert_eq!(
-            devtool_source_dir(Path::new("/build"), "busybox"),
-            PathBuf::from("/build/workspace/sources/busybox")
-        );
-    }
-
-    #[test]
     fn config_workspace_terminal_result_preserves_typed_scope_and_history() {
         let action = config_variable_loaded_action(
             VariableIdentity {
@@ -3289,5 +3167,54 @@ mod tests {
                 Some(expected)
             );
         }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn devtool_job_lifecycle_cli_polling_retains_output_during_navigation() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let script =
+            std::env::temp_dir().join(format!("yoctui-devtool-lifecycle-{}", std::process::id()));
+        fs::write(&script, "#!/bin/sh\nprintf 'background output\\n'\n").unwrap();
+        let mut permissions = fs::metadata(&script).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&script, permissions).unwrap();
+
+        let operation = DevtoolOperation::Reset {
+            recipe: "busybox".into(),
+        };
+        let command = DevtoolCommandSpec::with_executable(script.clone(), &operation).unwrap();
+        let mut coordinator = DevtoolJobCoordinator::default();
+        let mut app = App::new(10, 1_000);
+        for action in coordinator
+            .queue(operation, SystemTime::UNIX_EPOCH)
+            .unwrap()
+        {
+            let _ = update(&mut app, action);
+        }
+        let id = coordinator.active_job_id().unwrap();
+        let mut started = DevtoolJobRunner::new(std::env::temp_dir());
+        started.start(command).await.unwrap();
+        let mut runner = Some(started);
+        app.screen = Screen::Dashboard;
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while runner.is_some() {
+                poll_devtool_job(&mut app, &mut coordinator, &mut runner).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+
+        let job = app.background_jobs.get(id).unwrap();
+        assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Succeeded);
+        assert_eq!(job.output[0].message, "background output");
+        assert_eq!(
+            job.output[0].source,
+            yoctui_model::BackgroundJobOutputSource::Stdout
+        );
+        assert_eq!(app.screen, Screen::Dashboard);
+        fs::remove_file(script).unwrap();
     }
 }

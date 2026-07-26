@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Add allowlisted, previewed configuration editing.
+Complete the persistent Devtool modify, edit, and build workflow.
 
 ## Current task
 
@@ -24,7 +24,7 @@ See `docs/current-task.md`.
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
 | M1 BitBake cockpit | IN_PROGRESS | Typed background build execution and live BitBake 2.19.0 Tinfoil validation exist; remaining typed cockpit workflows are incomplete |
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
-| M3 Development workbench | IN_PROGRESS | Lazy Layers and Recipes workspaces and authoritative Devtool status are complete; configuration provenance and the Devtool lifecycle remain partial; signatures and package data have not started |
+| M3 Development workbench | IN_PROGRESS | Layers, Recipes, Configuration, authoritative Devtool status, and persistent Devtool process execution are complete; operation-specific Devtool workflows, signatures, and package data remain |
 | M4 Images/SDK/QEMU/Wic | IN_PROGRESS | Image-recipe listing and build selection exist; artifact, SDK, QEMU, and Wic workflows remain |
 | M5 Testing/QA/Security | NOT_STARTED | Coverage infrastructure exists; product workflows remain |
 | M6 Maintenance | NOT_STARTED | Partial diagnostics only |
@@ -51,6 +51,7 @@ See `docs/current-task.md`.
 | Recipes workspace | DONE | Live-validated typed metadata, identity-stable Inspector states, typed BitBake operations, provider/log/local-patch navigation, editor failures, integrated Devtool routes, and persistent capability-aware CVE/SPDX actions are covered |
 | Configuration workspace | DONE | Live-validated metadata, searchable responsive detail, typed copy/source/scope/compare actions, and allowlisted previewed atomic local.conf edits with exact refresh are complete |
 | Devtool status | DONE | Absolute recipe identity, executable capability, workspace membership/source path, Git branch/head and dirty counts, typed partial/error states, shared disabled reasons, responsive rendering, fake-process tests, and a live no-workspace query are complete |
+| Persistent Devtool jobs | DONE | Typed shell-free operations stream bounded stdout/stderr into durable background jobs; navigation, cancellation, all terminal outcomes, runner loss, and independent BitBake coordination are covered |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
@@ -59,10 +60,9 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DEVTOOL-JOB-LIFECYCLE-001` — integrate persistent job state
-2. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
-3. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
-4. `DEVTOOL-TARGET-001` — complete deploy-target and reset
+1. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
+2. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
+3. `DEVTOOL-TARGET-001` — complete deploy-target and reset
 
 ## Rules
 

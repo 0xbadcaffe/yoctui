@@ -438,12 +438,12 @@ notes = "Typed absolute recipe identity, executable capability, workspace member
 id = "DEVTOOL-JOBS-001"
 milestone = "M3"
 title = "Run Devtool operations as persistent background jobs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-JOB-SPEC-001", "DEVTOOL-JOB-RUNNER-001", "DEVTOOL-JOB-LIFECYCLE-001"]
 verify = ["cargo test -p yoctui-bitbake devtool_job", "cargo test -p yoctui-model devtool_job", "cargo test -p yoctui-app devtool_job", "cargo test -p yoctui -- devtool_job"]
-notes = "Parent gate split into typed command specification, cancellable output runner, and persistent lifecycle integration children."
+notes = "Typed shell-free command specs, the cancellable bounded-output process runner, and persistent reducer/CLI lifecycle integration are complete with independent BitBake coordination."
 
 [[task]]
 id = "DEVTOOL-JOB-SPEC-001"
@@ -471,18 +471,18 @@ notes = "The shell-free runner emits typed started/stdout/stderr/completed/faile
 id = "DEVTOOL-JOB-LIFECYCLE-001"
 milestone = "M3"
 title = "Integrate Devtool persistent job lifecycle"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-JOB-RUNNER-001"]
 verify = ["cargo test -p yoctui-model devtool_job_lifecycle", "cargo test -p yoctui-app devtool_job_lifecycle", "cargo test -p yoctui -- devtool_job_lifecycle"]
-notes = "Queue/run/output/terminal reducer integration, duplicate rejection, navigation persistence, cancellation routing, and backend/process-loss handling without terminal suspension."
+notes = "Queue/run/output/terminal reducer integration, duplicate rejection, typed stdout/stderr retention, navigation persistence, cancellation routing, backend/process-loss handling, independent BitBake coordination, and TestBackend result rendering pass without terminal suspension."
 
 [[task]]
 id = "DEVTOOL-MODIFY-001"
 milestone = "M3"
 title = "Complete Devtool modify, edit, and build workflow"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-JOBS-001"]

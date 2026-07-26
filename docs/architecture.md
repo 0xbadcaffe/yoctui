@@ -163,6 +163,17 @@ group, waits for a configured interval, then records forced `SIGKILL`
 escalation when needed. The adapter neither retains job history nor mutates
 application state.
 
+`DevtoolJobCoordinator` maps those runner events into the existing
+`BackgroundJobKind::Devtool` reducer transitions. Its stable IDs occupy a
+disjoint high namespace from BitBake coordinator IDs, so both job types may
+run without state collisions. Retained output carries typed backend, stdout,
+or stderr origin and an explicit truncation bit. The CLI owns one runner,
+non-blockingly polls it beside backend and keyboard events, and routes `c` to
+the active Devtool coordinator before independent BitBake cancellation.
+Start, output, success, nonzero exit, cancellation, cancellation rejection,
+and loss all use existing background-job actions; no runner mutates model or
+widget state directly.
+
 Unknown future protocol events normalize to an ignored event and do not imply a
 backend disconnect. Missing task progress remains unknown rather than becoming
 zero. Terminal build events emit one primary build-state action and one

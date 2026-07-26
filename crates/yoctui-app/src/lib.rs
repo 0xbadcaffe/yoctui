@@ -1,11 +1,12 @@
 //! Application-owned input mapping, keeping terminal concerns outside the reducer.
 use std::time::SystemTime;
-use yoctui_bitbake::BackendEvent;
+use yoctui_bitbake::{BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent};
 use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
-    BackgroundJobOutputEntry, BackgroundJobProgress, BackgroundJobResult, BackgroundJobSpec,
-    BuildRequest, FocusTarget, LayerInspectorMode, LayerRelationship, LayerRelationships,
-    RecipeDependencies, Screen, Severity, TaskId, TaskInfo, VariableDetail, VariableIdentity,
+    BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
+    BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
+    LayerInspectorMode, LayerRelationship, LayerRelationships, RecipeDependencies, Screen,
+    Severity, TaskId, TaskInfo, VariableDetail, VariableIdentity,
 };
 
 #[derive(Debug)]
@@ -127,6 +128,8 @@ impl BuildJobCoordinator {
                 entry: BackgroundJobOutputEntry {
                     severity: Severity::Error,
                     message: format!("Cancellation request failed: {message}"),
+                    source: BackgroundJobOutputSource::Backend,
+                    truncated: false,
                     timestamp,
                 },
             },
@@ -185,6 +188,8 @@ impl BuildJobCoordinator {
                 entry: BackgroundJobOutputEntry {
                     severity: entry.severity,
                     message: entry.message.clone(),
+                    source: BackgroundJobOutputSource::Backend,
+                    truncated: false,
                     timestamp: entry.timestamp,
                 },
             }],
@@ -290,6 +295,235 @@ impl BuildJobCoordinator {
         };
         actions.extend(self.job_actions_for_event(&event, timestamp));
         actions
+    }
+}
+
+#[derive(Debug)]
+pub struct DevtoolJobCoordinator {
+    next_job_id: u64,
+    active_job: Option<BackgroundJobId>,
+    active_operation: Option<DevtoolOperation>,
+    cancellation_requested: bool,
+}
+impl Default for DevtoolJobCoordinator {
+    fn default() -> Self {
+        Self {
+            next_job_id: 1_u64 << 63,
+            active_job: None,
+            active_operation: None,
+            cancellation_requested: false,
+        }
+    }
+}
+impl DevtoolJobCoordinator {
+    pub fn active_job_id(&self) -> Option<BackgroundJobId> {
+        self.active_job
+    }
+
+    pub fn active_operation(&self) -> Option<&DevtoolOperation> {
+        self.active_operation.as_ref()
+    }
+
+    pub fn queue(
+        &mut self,
+        operation: DevtoolOperation,
+        queued_at: SystemTime,
+    ) -> Option<Vec<Action>> {
+        if self.active_job.is_some() || operation.validate().is_err() {
+            return None;
+        }
+        let id = BackgroundJobId(self.next_job_id);
+        self.next_job_id = self.next_job_id.checked_add(1).unwrap_or(1_u64 << 63);
+        let recipe = operation.recipe().to_owned();
+        let (label, target, path) = match &operation {
+            DevtoolOperation::Modify { .. } => ("modify", None, None),
+            DevtoolOperation::UpdateRecipe { .. } => ("update-recipe", None, None),
+            DevtoolOperation::Finish { destination, .. } => {
+                ("finish", None, Some(destination.clone()))
+            }
+            DevtoolOperation::DeployTarget { target, .. } => {
+                ("deploy-target", Some(target.clone()), None)
+            }
+            DevtoolOperation::UndeployTarget { target, .. } => {
+                ("undeploy-target", Some(target.clone()), None)
+            }
+            DevtoolOperation::Reset { .. } => ("reset", None, None),
+        };
+        self.active_job = Some(id);
+        self.active_operation = Some(operation);
+        self.cancellation_requested = false;
+        Some(vec![
+            Action::QueueBackgroundJob(BackgroundJobSpec {
+                id,
+                kind: BackgroundJobKind::Devtool,
+                title: format!("Devtool {label} {recipe}"),
+                context: BackgroundJobContext {
+                    workspace: Some(Screen::Recipes),
+                    target,
+                    recipe: Some(recipe),
+                    path,
+                    ..BackgroundJobContext::default()
+                },
+                cancellation_supported: true,
+                queued_at,
+            }),
+            Action::StartBackgroundJob {
+                id,
+                started_at: queued_at,
+            },
+        ])
+    }
+
+    pub fn start_failed(&mut self, message: String, finished_at: SystemTime) -> Vec<Action> {
+        let Some(id) = self.active_job.take() else {
+            return Vec::new();
+        };
+        self.active_operation = None;
+        self.cancellation_requested = false;
+        vec![Action::FailBackgroundJob {
+            id,
+            error: BackgroundJobError {
+                summary: "Could not start Devtool".into(),
+                detail: Some(message),
+            },
+            finished_at,
+        }]
+    }
+
+    pub fn request_cancellation(&mut self) -> Option<Action> {
+        let id = self.active_job?;
+        if self.cancellation_requested {
+            return None;
+        }
+        self.cancellation_requested = true;
+        Some(Action::RequestBackgroundJobCancellation { id })
+    }
+
+    pub fn cancellation_failed(&mut self, message: String, timestamp: SystemTime) -> Vec<Action> {
+        let Some(id) = self.active_job else {
+            return Vec::new();
+        };
+        self.cancellation_requested = false;
+        vec![
+            Action::AppendBackgroundJobOutput {
+                id,
+                entry: BackgroundJobOutputEntry {
+                    severity: Severity::Error,
+                    message: format!("Devtool cancellation failed: {message}"),
+                    source: BackgroundJobOutputSource::Backend,
+                    truncated: false,
+                    timestamp,
+                },
+            },
+            Action::RejectBackgroundJobCancellation { id },
+        ]
+    }
+
+    pub fn actions_for_event(
+        &mut self,
+        event: DevtoolRunnerEvent,
+        timestamp: SystemTime,
+    ) -> Vec<Action> {
+        let Some(id) = self.active_job else {
+            return Vec::new();
+        };
+        match event {
+            DevtoolRunnerEvent::Started => vec![Action::RunBackgroundJob { id }],
+            DevtoolRunnerEvent::Output {
+                stream,
+                line,
+                truncated,
+            } => vec![Action::AppendBackgroundJobOutput {
+                id,
+                entry: BackgroundJobOutputEntry {
+                    severity: Severity::Info,
+                    message: line,
+                    source: match stream {
+                        DevtoolOutputStream::Stdout => BackgroundJobOutputSource::Stdout,
+                        DevtoolOutputStream::Stderr => BackgroundJobOutputSource::Stderr,
+                    },
+                    truncated,
+                    timestamp,
+                },
+            }],
+            DevtoolRunnerEvent::Completed { exit_code } => {
+                self.active_job = None;
+                self.active_operation = None;
+                self.cancellation_requested = false;
+                vec![Action::SucceedBackgroundJob {
+                    id,
+                    result: BackgroundJobResult {
+                        summary: exit_code.map_or_else(
+                            || "Devtool completed successfully".into(),
+                            |code| format!("Devtool completed successfully (exit code {code})"),
+                        ),
+                        artifacts: Vec::new(),
+                    },
+                    finished_at: timestamp,
+                }]
+            }
+            DevtoolRunnerEvent::Failed { exit_code } => {
+                self.active_job = None;
+                self.active_operation = None;
+                self.cancellation_requested = false;
+                vec![Action::FailBackgroundJob {
+                    id,
+                    error: BackgroundJobError {
+                        summary: "Devtool failed".into(),
+                        detail: exit_code.map(|code| format!("exit code {code}")),
+                    },
+                    finished_at: timestamp,
+                }]
+            }
+            DevtoolRunnerEvent::Cancelled { forced, exit_code } => {
+                self.active_job = None;
+                self.active_operation = None;
+                self.cancellation_requested = false;
+                let mut actions = Vec::new();
+                if forced {
+                    actions.push(Action::AppendBackgroundJobOutput {
+                        id,
+                        entry: BackgroundJobOutputEntry {
+                            severity: Severity::Warning,
+                            message: "Devtool cancellation required forced termination".into(),
+                            source: BackgroundJobOutputSource::Backend,
+                            truncated: false,
+                            timestamp,
+                        },
+                    });
+                }
+                if let Some(code) = exit_code {
+                    actions.push(Action::AppendBackgroundJobOutput {
+                        id,
+                        entry: BackgroundJobOutputEntry {
+                            severity: Severity::Info,
+                            message: format!("Devtool cancellation exit code {code}"),
+                            source: BackgroundJobOutputSource::Backend,
+                            truncated: false,
+                            timestamp,
+                        },
+                    });
+                }
+                actions.push(Action::CancelBackgroundJob {
+                    id,
+                    finished_at: timestamp,
+                });
+                actions
+            }
+            DevtoolRunnerEvent::Lost { message } => {
+                self.active_job = None;
+                self.active_operation = None;
+                self.cancellation_requested = false;
+                vec![Action::LoseBackgroundJob {
+                    id,
+                    error: BackgroundJobError {
+                        summary: "Devtool process lost".into(),
+                        detail: Some(message),
+                    },
+                    finished_at: timestamp,
+                }]
+            }
+        }
     }
 }
 
@@ -1503,6 +1737,121 @@ mod tests {
             Some(Action::CancelConfigEditConfirmation)
         );
         assert_eq!(config_edit_confirmation_action(Input::Char('E')), None);
+    }
+
+    #[test]
+    fn devtool_job_lifecycle_maps_runner_events_and_stays_independent_from_bitbake() {
+        let now = SystemTime::UNIX_EPOCH;
+        let mut devtool = DevtoolJobCoordinator::default();
+        let operation = DevtoolOperation::Reset {
+            recipe: "busybox".into(),
+        };
+        let actions = devtool.queue(operation.clone(), now).unwrap();
+        let id = devtool.active_job_id().unwrap();
+        assert_eq!(id, BackgroundJobId(1_u64 << 63));
+        assert_eq!(devtool.active_operation(), Some(&operation));
+        assert!(devtool.queue(operation, now).is_none());
+
+        let mut build = BuildJobCoordinator::default();
+        let build_actions = build
+            .queue_build(
+                &BuildRequest {
+                    targets: vec!["core-image-minimal".into()],
+                    task: None,
+                    force: false,
+                },
+                now,
+            )
+            .unwrap();
+        assert_eq!(build.active_job_id(), Some(BackgroundJobId(1)));
+        assert_ne!(build.active_job_id(), devtool.active_job_id());
+
+        let mut app = yoctui_model::App::new(10, 1_000);
+        for action in actions.into_iter().chain(build_actions) {
+            let _ = yoctui_model::update(&mut app, action);
+        }
+        for action in devtool.actions_for_event(DevtoolRunnerEvent::Started, now) {
+            let _ = yoctui_model::update(&mut app, action);
+        }
+        for action in devtool.actions_for_event(
+            DevtoolRunnerEvent::Output {
+                stream: DevtoolOutputStream::Stderr,
+                line: "progress".into(),
+                truncated: true,
+            },
+            now,
+        ) {
+            let _ = yoctui_model::update(&mut app, action);
+        }
+        app.screen = Screen::Dashboard;
+        for action in
+            devtool.actions_for_event(DevtoolRunnerEvent::Completed { exit_code: Some(0) }, now)
+        {
+            let _ = yoctui_model::update(&mut app, action);
+        }
+        let job = app.background_jobs.get(id).unwrap();
+        assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Succeeded);
+        assert_eq!(job.output[0].source, BackgroundJobOutputSource::Stderr);
+        assert!(job.output[0].truncated);
+        assert_eq!(app.screen, Screen::Dashboard);
+        assert_eq!(build.active_job_id(), Some(BackgroundJobId(1)));
+    }
+
+    #[test]
+    fn devtool_job_lifecycle_maps_start_failure_cancel_failure_cancel_and_loss() {
+        let now = SystemTime::UNIX_EPOCH;
+        let operation = DevtoolOperation::Reset {
+            recipe: "busybox".into(),
+        };
+
+        let mut coordinator = DevtoolJobCoordinator::default();
+        let id = {
+            let _ = coordinator.queue(operation.clone(), now);
+            coordinator.active_job_id().unwrap()
+        };
+        assert!(matches!(
+            coordinator.start_failed("missing".into(), now).as_slice(),
+            [Action::FailBackgroundJob { id: failed, .. }] if *failed == id
+        ));
+
+        let mut coordinator = DevtoolJobCoordinator::default();
+        let _ = coordinator.queue(operation.clone(), now);
+        assert!(matches!(
+            coordinator.request_cancellation(),
+            Some(Action::RequestBackgroundJobCancellation { .. })
+        ));
+        assert!(coordinator.request_cancellation().is_none());
+        let rejected = coordinator.cancellation_failed("signal".into(), now);
+        assert!(matches!(
+            rejected.last(),
+            Some(Action::RejectBackgroundJobCancellation { .. })
+        ));
+        assert!(matches!(
+            coordinator
+                .actions_for_event(
+                    DevtoolRunnerEvent::Cancelled {
+                        forced: true,
+                        exit_code: None,
+                    },
+                    now,
+                )
+                .last(),
+            Some(Action::CancelBackgroundJob { .. })
+        ));
+
+        let mut coordinator = DevtoolJobCoordinator::default();
+        let _ = coordinator.queue(operation, now);
+        assert!(matches!(
+            coordinator
+                .actions_for_event(
+                    DevtoolRunnerEvent::Lost {
+                        message: "channel".into(),
+                    },
+                    now,
+                )
+                .as_slice(),
+            [Action::LoseBackgroundJob { .. }]
+        ));
     }
 
     #[test]

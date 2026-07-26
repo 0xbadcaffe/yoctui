@@ -832,9 +832,17 @@ pub struct BackgroundJobSpec {
     pub queued_at: SystemTime,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BackgroundJobOutputSource {
+    Backend,
+    Stdout,
+    Stderr,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BackgroundJobOutputEntry {
     pub severity: Severity,
     pub message: String,
+    pub source: BackgroundJobOutputSource,
+    pub truncated: bool,
     pub timestamp: SystemTime,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -5114,6 +5122,8 @@ mod tests {
                 entry: BackgroundJobOutputEntry {
                     severity: Severity::Warning,
                     message: "cache miss".into(),
+                    source: BackgroundJobOutputSource::Backend,
+                    truncated: false,
                     timestamp: SystemTime::UNIX_EPOCH + Duration::from_secs(2),
                 },
             },
@@ -5352,6 +5362,8 @@ mod tests {
                 entry: BackgroundJobOutputEntry {
                     severity: Severity::Warning,
                     message: "abc".into(),
+                    source: BackgroundJobOutputSource::Backend,
+                    truncated: false,
                     timestamp: SystemTime::UNIX_EPOCH,
                 },
             },
@@ -5363,6 +5375,8 @@ mod tests {
                 entry: BackgroundJobOutputEntry {
                     severity: Severity::Error,
                     message: "de".into(),
+                    source: BackgroundJobOutputSource::Backend,
+                    truncated: false,
                     timestamp: SystemTime::UNIX_EPOCH,
                 },
             },
@@ -7645,6 +7659,8 @@ mod tests {
                 entry: BackgroundJobOutputEntry {
                     severity: Severity::Warning,
                     message: "CVE-2026-0001 requires review".into(),
+                    source: BackgroundJobOutputSource::Backend,
+                    truncated: false,
                     timestamp: SystemTime::UNIX_EPOCH,
                 },
             },
@@ -8340,5 +8356,65 @@ mod tests {
             .validate(),
             Err(DevtoolOperationError::RelativeFinishDestination)
         );
+    }
+
+    #[test]
+    fn devtool_job_lifecycle_retains_typed_output_and_outcome_across_navigation() {
+        let mut app = App::new(10, 1_000);
+        let id = BackgroundJobId(1_u64 << 63);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(BackgroundJobSpec {
+                id,
+                kind: BackgroundJobKind::Devtool,
+                title: "Devtool reset busybox".into(),
+                context: BackgroundJobContext {
+                    workspace: Some(Screen::Recipes),
+                    recipe: Some("busybox".into()),
+                    ..BackgroundJobContext::default()
+                },
+                cancellation_supported: true,
+                queued_at: SystemTime::UNIX_EPOCH,
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::StartBackgroundJob {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::RunBackgroundJob { id });
+        let _ = update(
+            &mut app,
+            Action::AppendBackgroundJobOutput {
+                id,
+                entry: BackgroundJobOutputEntry {
+                    severity: Severity::Info,
+                    message: "workspace reset".into(),
+                    source: BackgroundJobOutputSource::Stderr,
+                    truncated: true,
+                    timestamp: SystemTime::UNIX_EPOCH,
+                },
+            },
+        );
+        let _ = update(&mut app, Action::Open(Screen::Dashboard));
+        let _ = update(
+            &mut app,
+            Action::SucceedBackgroundJob {
+                id,
+                result: BackgroundJobResult {
+                    summary: "Devtool completed successfully".into(),
+                    artifacts: vec![],
+                },
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let job = app.background_jobs.get(id).unwrap();
+        assert_eq!(job.status, BackgroundJobStatus::Succeeded);
+        assert_eq!(job.context.recipe.as_deref(), Some("busybox"));
+        assert_eq!(job.output[0].source, BackgroundJobOutputSource::Stderr);
+        assert!(job.output[0].truncated);
+        assert_eq!(app.screen, Screen::Dashboard);
     }
 }
