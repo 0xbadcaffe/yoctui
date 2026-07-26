@@ -562,9 +562,42 @@ title = "Dependency exploration and why-built workflow"
 status = "IN_PROGRESS"
 priority = 44
 required = true
-depends_on = ["BB-001"]
+depends_on = ["DEP-MODEL-001", "DEP-ADAPTER-001", "DEP-UI-001"]
 verify = ["cargo test -p yoctui-bitbake dependency", "cargo test -p yoctui-ui dependency"]
-notes = "Recipe/task paths and oe-depends-dot integration."
+notes = "Parent gate split into typed graph/path state, authoritative acquisition, and responsive workspace integration."
+
+[[task]]
+id = "DEP-MODEL-001"
+milestone = "M3"
+title = "Add typed dependency graph and why-built paths"
+status = "IN_PROGRESS"
+priority = 44
+required = true
+depends_on = ["BB-001"]
+verify = ["cargo test -p yoctui-model dependency_graph", "cargo test -p yoctui-app dependency_graph"]
+notes = "Typed recipe/task nodes and edges, explicit load/partial/failure states, deterministic reverse edges and bounded why-built paths, stable selection/actions."
+
+[[task]]
+id = "DEP-ADAPTER-001"
+milestone = "M3"
+title = "Acquire authoritative dependency graphs"
+status = "NOT_STARTED"
+priority = 44
+required = true
+depends_on = ["DEP-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake dependency_graph", "python3 -m pytest bridge/tests -k dependenc"]
+notes = "Typed server or tool-adapter acquisition for recipe/runtime/task edges with bounded parsing, fake-process failures, and no widget parsing."
+
+[[task]]
+id = "DEP-UI-001"
+milestone = "M3"
+title = "Integrate dependency and why-built workspace"
+status = "NOT_STARTED"
+priority = 44
+required = true
+depends_on = ["DEP-ADAPTER-001"]
+verify = ["cargo test -p yoctui-model dependency_workspace", "cargo test -p yoctui-app dependency_workspace", "cargo test -p yoctui-ui dependency_workspace", "cargo test -p yoctui -- dependency_workspace"]
+notes = "Responsive list/tree and Inspector, typed load/empty/partial/failure states, stable navigation to recipe/provider/task/log context, and why-built path selection."
 
 [[task]]
 id = "SIG-001"

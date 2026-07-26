@@ -2,48 +2,49 @@
 
 ## Active task
 
-**ID:** DEP-001
-**Title:** Dependency exploration and why-built workflow
+**ID:** DEP-MODEL-001
+**Title:** Add typed dependency graph and why-built paths
 
 ## Objective
 
-Turn the existing dependency summary into an authoritative navigable
-recipe/task dependency workspace with why-built paths and explicit partial
-states.
+Define pure typed recipe/task graph state with deterministic reverse-edge and
+why-built path derivation, explicit partial states, and stable reducer
+selection independent of any raw backend format.
 
 ## Required work
 
-1. Inventory existing dependency model/events/backend methods, Recipes routing,
-   workspace selection/rendering, and retained build task context.
-2. Split this task in the registry first if authoritative graph acquisition,
-   path derivation, and UI integration cannot remain one coherent commit.
-3. Use typed backend or tool-adapter data for recipe/task edges; widgets must
-   not parse raw BitBake or dot output.
-4. Represent direct build/runtime dependencies, reverse dependencies, and
-   why-built paths with stable typed identities and explicit unavailable,
-   loading, empty, partial, and failed states.
-5. Provide bounded selection/navigation from a dependency to its recipe,
-   provider, task/log context, or why-built path when authoritative data exists.
-6. Add fake adapter/integration, reducer/app, and responsive Ratatui
-   TestBackend tests named `dependency`.
-7. Update UI and architecture documents for intentional behavior and boundary
-   changes.
+1. Inventory the current flat `RecipeDependencies`, dependency reducer actions,
+   selection/navigation, and backend event normalization.
+2. Add stable typed recipe/task node identities and edge kinds for build,
+   runtime, and task dependencies; normalize duplicate/self/unknown edges
+   deterministically.
+3. Represent not loaded, loading, available-empty, partial, and failed graph
+   states without fabricated values.
+4. Derive reverse edges and one deterministic bounded shortest why-built path
+   from typed edges only, including cycles and unreachable nodes.
+5. Preserve selected identity across refresh where possible and clamp safely
+   when nodes disappear.
+6. Add typed reducer actions for request, success, partial success, and failure;
+   keep existing direct dependency compatibility until adapter/UI migration.
+7. Add model and app tests named `dependency_graph` for normalization,
+   reverse edges, shortest paths, cycles, bounds, partial/failure states,
+   selection stability, and typed event mapping.
+8. Update architecture documentation for the graph ownership boundary.
 
 ## Definition of done
 
-- Dependency edges and paths come from typed authoritative data.
-- Direct, reverse, runtime, and why-built states are distinguishable.
-- Navigation is stable, bounded, responsive, and honest about missing data.
+- Pure model state owns normalized graph identities, edges, reverse lookup, and
+  bounded why-built paths.
+- Every load and partial state is explicit.
+- Selection is identity-stable and narrow-safe.
+- No model or UI code parses raw BitBake/dot text.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake dependency
-cargo test -p yoctui-model dependency
-cargo test -p yoctui-app dependency
-cargo test -p yoctui-ui dependency
-cargo test -p yoctui -- dependency
+cargo test -p yoctui-model dependency_graph
+cargo test -p yoctui-app dependency_graph
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -53,4 +54,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`SIG-001 — Signature dump and comparison workflows`
+`DEP-ADAPTER-001 — Acquire authoritative dependency graphs`
