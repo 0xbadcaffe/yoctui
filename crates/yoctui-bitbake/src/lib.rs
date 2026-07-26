@@ -101,8 +101,8 @@ pub struct DevtoolInspector {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DevtoolCommandSpec {
-    pub executable: PathBuf,
-    pub arguments: Vec<OsString>,
+    executable: PathBuf,
+    arguments: Vec<OsString>,
 }
 impl DevtoolCommandSpec {
     pub fn from_operation(operation: &DevtoolOperation) -> Result<Self, DevtoolOperationError> {
@@ -141,6 +141,411 @@ impl DevtoolCommandSpec {
             executable,
             arguments,
         })
+    }
+
+    pub fn executable(&self) -> &Path {
+        &self.executable
+    }
+
+    pub fn arguments(&self) -> &[OsString] {
+        &self.arguments
+    }
+}
+
+const MAX_DEVTOOL_LINE_BYTES: usize = 64 * 1024;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DevtoolOutputStream {
+    Stdout,
+    Stderr,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DevtoolRunnerEvent {
+    Started,
+    Output {
+        stream: DevtoolOutputStream,
+        line: String,
+        truncated: bool,
+    },
+    Completed {
+        exit_code: Option<i32>,
+    },
+    Failed {
+        exit_code: Option<i32>,
+    },
+    Cancelled {
+        forced: bool,
+        exit_code: Option<i32>,
+    },
+    Lost {
+        message: String,
+    },
+}
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum DevtoolRunnerError {
+    #[error("a Devtool process or unconsumed terminal event is already active")]
+    Busy,
+    #[error("Devtool executable is missing: {0}")]
+    MissingExecutable(PathBuf),
+    #[error("could not start Devtool: {0}")]
+    Spawn(String),
+    #[error("Devtool process stream is unavailable: {0:?}")]
+    StreamUnavailable(DevtoolOutputStream),
+    #[error("Devtool runner is not active")]
+    NotRunning,
+    #[error("Devtool process control failed: {0}")]
+    ProcessControl(String),
+}
+#[derive(Debug)]
+enum DevtoolPipeEvent {
+    Output {
+        stream: DevtoolOutputStream,
+        line: String,
+        truncated: bool,
+    },
+    Failed {
+        stream: DevtoolOutputStream,
+        message: String,
+    },
+}
+
+async fn read_devtool_output<R>(
+    stream: R,
+    kind: DevtoolOutputStream,
+    sender: tokio::sync::mpsc::Sender<DevtoolPipeEvent>,
+) where
+    R: AsyncRead + Unpin,
+{
+    let mut reader = BufReader::new(stream);
+    let mut bytes = Vec::new();
+    let mut truncated = false;
+    loop {
+        let buffer = match reader.fill_buf().await {
+            Ok(buffer) => buffer,
+            Err(error) => {
+                let _ = sender
+                    .send(DevtoolPipeEvent::Failed {
+                        stream: kind,
+                        message: error.to_string(),
+                    })
+                    .await;
+                break;
+            }
+        };
+        if buffer.is_empty() {
+            if (!bytes.is_empty() || truncated)
+                && sender
+                    .send(DevtoolPipeEvent::Output {
+                        stream: kind,
+                        line: output_text(&bytes),
+                        truncated,
+                    })
+                    .await
+                    .is_err()
+            {
+                break;
+            }
+            break;
+        }
+        let newline = buffer.iter().position(|byte| *byte == b'\n');
+        let take = newline.unwrap_or(buffer.len());
+        if !truncated {
+            let remaining = MAX_DEVTOOL_LINE_BYTES.saturating_sub(bytes.len());
+            bytes.extend_from_slice(&buffer[..take.min(remaining)]);
+            truncated = take > remaining;
+        }
+        reader.consume(take + usize::from(newline.is_some()));
+        if newline.is_some() {
+            if sender
+                .send(DevtoolPipeEvent::Output {
+                    stream: kind,
+                    line: output_text(&bytes),
+                    truncated,
+                })
+                .await
+                .is_err()
+            {
+                break;
+            }
+            bytes.clear();
+            truncated = false;
+        }
+    }
+}
+
+pub struct DevtoolJobRunner {
+    build_dir: PathBuf,
+    child: Option<Child>,
+    output: Option<tokio::sync::mpsc::Receiver<DevtoolPipeEvent>>,
+    streams_drained: bool,
+    started_pending: bool,
+    terminal_pending: Option<DevtoolRunnerEvent>,
+    cancellation_timeout: Duration,
+    cancellation_requested: bool,
+    #[cfg(unix)]
+    process_group: Option<i32>,
+}
+impl DevtoolJobRunner {
+    pub fn new(build_dir: PathBuf) -> Self {
+        Self {
+            build_dir,
+            child: None,
+            output: None,
+            streams_drained: true,
+            started_pending: false,
+            terminal_pending: None,
+            cancellation_timeout: Duration::from_secs(5),
+            cancellation_requested: false,
+            #[cfg(unix)]
+            process_group: None,
+        }
+    }
+
+    pub fn with_cancellation_timeout(mut self, timeout: Duration) -> Self {
+        self.cancellation_timeout = timeout;
+        self
+    }
+
+    pub fn is_active(&self) -> bool {
+        self.child.is_some()
+    }
+
+    pub async fn start(&mut self, command: DevtoolCommandSpec) -> Result<(), DevtoolRunnerError> {
+        if self.child.is_some()
+            || self.started_pending
+            || self.terminal_pending.is_some()
+            || self.output.is_some()
+        {
+            return Err(DevtoolRunnerError::Busy);
+        }
+        if !self.build_dir.is_dir() {
+            return Err(DevtoolRunnerError::Spawn(format!(
+                "build directory does not exist: {}",
+                self.build_dir.display()
+            )));
+        }
+        let mut process = TokioCommand::new(&command.executable);
+        process
+            .args(&command.arguments)
+            .current_dir(&self.build_dir)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        #[cfg(unix)]
+        process.process_group(0);
+        let mut child = process.spawn().map_err(|error| {
+            if error.kind() == std::io::ErrorKind::NotFound {
+                DevtoolRunnerError::MissingExecutable(command.executable.clone())
+            } else {
+                DevtoolRunnerError::Spawn(error.to_string())
+            }
+        })?;
+        #[cfg(unix)]
+        {
+            self.process_group = child.id().map(|id| id as i32);
+        }
+        let Some(stdout) = child.stdout.take() else {
+            let _ = child.kill().await;
+            return Err(DevtoolRunnerError::StreamUnavailable(
+                DevtoolOutputStream::Stdout,
+            ));
+        };
+        let Some(stderr) = child.stderr.take() else {
+            let _ = child.kill().await;
+            return Err(DevtoolRunnerError::StreamUnavailable(
+                DevtoolOutputStream::Stderr,
+            ));
+        };
+        let (sender, receiver) = tokio::sync::mpsc::channel(1024);
+        tokio::spawn(read_devtool_output(
+            stdout,
+            DevtoolOutputStream::Stdout,
+            sender.clone(),
+        ));
+        tokio::spawn(read_devtool_output(
+            stderr,
+            DevtoolOutputStream::Stderr,
+            sender.clone(),
+        ));
+        drop(sender);
+        self.child = Some(child);
+        self.output = Some(receiver);
+        self.streams_drained = false;
+        self.started_pending = true;
+        self.cancellation_requested = false;
+        Ok(())
+    }
+
+    pub async fn next_event(&mut self) -> Result<DevtoolRunnerEvent, DevtoolRunnerError> {
+        if self.started_pending {
+            self.started_pending = false;
+            return Ok(DevtoolRunnerEvent::Started);
+        }
+        if self.output.is_none() && !self.streams_drained && self.child.is_some() {
+            if let Some(child) = self.child.as_mut() {
+                let _ = child.kill().await;
+                let _ = child.wait().await;
+            }
+            self.child = None;
+            self.streams_drained = true;
+            #[cfg(unix)]
+            {
+                self.process_group = None;
+            }
+            return Ok(DevtoolRunnerEvent::Lost {
+                message: "Devtool output event channel was lost".into(),
+            });
+        }
+        if let Some(receiver) = self.output.as_mut() {
+            match receiver.recv().await {
+                Some(DevtoolPipeEvent::Output {
+                    stream,
+                    line,
+                    truncated,
+                }) => {
+                    return Ok(DevtoolRunnerEvent::Output {
+                        stream,
+                        line,
+                        truncated,
+                    });
+                }
+                Some(DevtoolPipeEvent::Failed { stream, message }) => {
+                    if let Some(child) = self.child.as_mut() {
+                        let _ = child.kill().await;
+                        let _ = child.wait().await;
+                    }
+                    self.child = None;
+                    self.output = None;
+                    self.streams_drained = true;
+                    #[cfg(unix)]
+                    {
+                        self.process_group = None;
+                    }
+                    return Ok(DevtoolRunnerEvent::Lost {
+                        message: format!("{stream:?} stream failed: {message}"),
+                    });
+                }
+                None => {
+                    self.output = None;
+                    self.streams_drained = true;
+                }
+            }
+        }
+        if let Some(event) = self.terminal_pending.take() {
+            return Ok(event);
+        }
+        let Some(child) = self.child.as_mut() else {
+            return Err(DevtoolRunnerError::NotRunning);
+        };
+        let status = match child.wait().await {
+            Ok(status) => status,
+            Err(error) => {
+                self.child = None;
+                self.cancellation_requested = false;
+                #[cfg(unix)]
+                {
+                    self.process_group = None;
+                }
+                return Ok(DevtoolRunnerEvent::Lost {
+                    message: format!("Devtool process wait failed: {error}"),
+                });
+            }
+        };
+        self.child = None;
+        self.cancellation_requested = false;
+        #[cfg(unix)]
+        {
+            self.process_group = None;
+        }
+        if status.success() {
+            Ok(DevtoolRunnerEvent::Completed {
+                exit_code: status.code(),
+            })
+        } else {
+            Ok(DevtoolRunnerEvent::Failed {
+                exit_code: status.code(),
+            })
+        }
+    }
+
+    pub async fn cancel(&mut self) -> Result<bool, DevtoolRunnerError> {
+        if self.cancellation_requested {
+            return Ok(false);
+        }
+        let Some(child) = self.child.as_mut() else {
+            return Ok(false);
+        };
+        self.cancellation_requested = true;
+        let mut forced = false;
+        #[cfg(unix)]
+        let status =
+            if let Some(process_group) = self.process_group {
+                // SAFETY: the group is the child PID created by `process_group(0)`, so the
+                // negative PID targets only the spawned Devtool process group.
+                let signal = unsafe { libc::kill(-process_group, libc::SIGTERM) };
+                if signal != 0 {
+                    child
+                        .start_kill()
+                        .map_err(|error| DevtoolRunnerError::ProcessControl(error.to_string()))?;
+                    forced = true;
+                }
+                match tokio::time::timeout(self.cancellation_timeout, child.wait()).await {
+                    Ok(result) => result
+                        .map_err(|error| DevtoolRunnerError::ProcessControl(error.to_string()))?,
+                    Err(_) => {
+                        // SAFETY: same child-owned process group as the graceful signal.
+                        let _ = unsafe { libc::kill(-process_group, libc::SIGKILL) };
+                        forced = true;
+                        child.wait().await.map_err(|error| {
+                            DevtoolRunnerError::ProcessControl(error.to_string())
+                        })?
+                    }
+                }
+            } else {
+                forced = true;
+                child
+                    .kill()
+                    .await
+                    .map_err(|error| DevtoolRunnerError::ProcessControl(error.to_string()))?;
+                child
+                    .wait()
+                    .await
+                    .map_err(|error| DevtoolRunnerError::ProcessControl(error.to_string()))?
+            };
+        #[cfg(not(unix))]
+        let status = {
+            forced = true;
+            child
+                .kill()
+                .await
+                .map_err(|error| DevtoolRunnerError::ProcessControl(error.to_string()))?;
+            child
+                .wait()
+                .await
+                .map_err(|error| DevtoolRunnerError::ProcessControl(error.to_string()))?
+        };
+        self.child = None;
+        self.cancellation_requested = false;
+        #[cfg(unix)]
+        {
+            self.process_group = None;
+        }
+        self.terminal_pending = Some(DevtoolRunnerEvent::Cancelled {
+            forced,
+            exit_code: status.code(),
+        });
+        Ok(true)
+    }
+}
+impl Drop for DevtoolJobRunner {
+    fn drop(&mut self) {
+        #[cfg(unix)]
+        if let Some(process_group) = self.process_group {
+            // SAFETY: this is the child-owned process group created by `start`.
+            let _ = unsafe { libc::kill(-process_group, libc::SIGKILL) };
+        }
+        if let Some(child) = self.child.as_mut() {
+            let _ = child.start_kill();
+        }
     }
 }
 
@@ -1343,6 +1748,23 @@ mod tests {
         )
     }
 
+    #[cfg(unix)]
+    fn fake_devtool_command(name: &str, body: &str) -> (PathBuf, DevtoolCommandSpec) {
+        let script = fixture_script(name);
+        fs::write(&script, format!("#!/bin/sh\n{body}\n")).unwrap();
+        let mut permissions = fs::metadata(&script).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&script, permissions).unwrap();
+        let command = DevtoolCommandSpec::with_executable(
+            script.clone(),
+            &DevtoolOperation::Modify {
+                recipe: "busybox".into(),
+            },
+        )
+        .unwrap();
+        (script, command)
+    }
+
     #[tokio::test]
     async fn devtool_metadata_fake_process_reports_workspace_and_dirty_git_state() {
         let root = fixture_script("devtool-workspace");
@@ -1442,9 +1864,9 @@ mod tests {
         ];
         for (operation, expected) in cases {
             let command = DevtoolCommandSpec::from_operation(&operation).unwrap();
-            assert_eq!(command.executable, PathBuf::from("devtool"));
+            assert_eq!(command.executable(), Path::new("devtool"));
             assert_eq!(
-                command.arguments,
+                command.arguments(),
                 expected.into_iter().map(OsString::from).collect::<Vec<_>>()
             );
         }
@@ -1487,7 +1909,157 @@ mod tests {
             destination,
         })
         .unwrap();
-        assert_eq!(command.arguments[2], OsString::from_vec(bytes));
+        assert_eq!(command.arguments()[2], OsString::from_vec(bytes));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn devtool_job_runner_streams_bounded_stdout_stderr_and_invalid_utf8() {
+        let (script, command) = fake_devtool_command(
+            "devtool-runner-output",
+            "printf 'stdout line\\n'\nprintf 'stderr line\\n' >&2\nprintf '\\377bad\\n'\nhead -c 70000 /dev/zero | tr '\\000' x\nprintf '\\n'",
+        );
+        let mut runner = DevtoolJobRunner::new(std::env::temp_dir());
+        runner.start(command).await.unwrap();
+        assert_eq!(
+            runner.next_event().await.unwrap(),
+            DevtoolRunnerEvent::Started
+        );
+        let mut output = Vec::new();
+        loop {
+            match runner.next_event().await.unwrap() {
+                DevtoolRunnerEvent::Output {
+                    stream,
+                    line,
+                    truncated,
+                } => output.push((stream, line, truncated)),
+                DevtoolRunnerEvent::Completed { exit_code } => {
+                    assert_eq!(exit_code, Some(0));
+                    break;
+                }
+                event => panic!("unexpected runner event: {event:?}"),
+            }
+        }
+        assert!(output.iter().any(|(stream, line, _)| {
+            *stream == DevtoolOutputStream::Stdout && line == "stdout line"
+        }));
+        assert!(output.iter().any(|(stream, line, _)| {
+            *stream == DevtoolOutputStream::Stderr && line == "stderr line"
+        }));
+        assert!(output.iter().any(|(_, line, _)| line.contains('\u{fffd}')));
+        let (_, truncated_line, truncated) = output
+            .iter()
+            .find(|(_, _, truncated)| *truncated)
+            .expect("oversized output was not marked truncated");
+        assert!(*truncated);
+        assert!(truncated_line.len() <= MAX_DEVTOOL_LINE_BYTES);
+        fs::remove_file(script).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn devtool_job_runner_rejects_duplicate_missing_and_failed_processes() {
+        let (script, command) =
+            fake_devtool_command("devtool-runner-failure", "printf 'failed\\n' >&2\nexit 7");
+        let mut runner = DevtoolJobRunner::new(std::env::temp_dir());
+        runner.start(command.clone()).await.unwrap();
+        assert_eq!(runner.start(command).await, Err(DevtoolRunnerError::Busy));
+        loop {
+            if let DevtoolRunnerEvent::Failed { exit_code } = runner.next_event().await.unwrap() {
+                assert_eq!(exit_code, Some(7));
+                break;
+            }
+        }
+        fs::remove_file(script).unwrap();
+
+        let missing = fixture_script("missing-devtool-runner");
+        let command = DevtoolCommandSpec::with_executable(
+            missing.clone(),
+            &DevtoolOperation::Reset {
+                recipe: "busybox".into(),
+            },
+        )
+        .unwrap();
+        let mut runner = DevtoolJobRunner::new(std::env::temp_dir());
+        assert_eq!(
+            runner.start(command).await,
+            Err(DevtoolRunnerError::MissingExecutable(missing))
+        );
+
+        let non_executable = fixture_script("non-executable-devtool-runner");
+        fs::write(&non_executable, "#!/bin/sh\nexit 0\n").unwrap();
+        let command = DevtoolCommandSpec::with_executable(
+            non_executable.clone(),
+            &DevtoolOperation::Reset {
+                recipe: "busybox".into(),
+            },
+        )
+        .unwrap();
+        assert!(matches!(
+            runner.start(command).await,
+            Err(DevtoolRunnerError::Spawn(_))
+        ));
+        fs::remove_file(non_executable).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn devtool_job_runner_acknowledges_and_escalates_cancellation() {
+        for (name, trap, expected_forced) in [
+            ("devtool-runner-graceful", "trap 'exit 0' TERM", false),
+            ("devtool-runner-forced", "trap '' TERM", true),
+        ] {
+            let (script, command) = fake_devtool_command(
+                name,
+                &format!("{trap}\nprintf 'ready\\n'\nwhile :; do sleep 1; done"),
+            );
+            let mut runner = DevtoolJobRunner::new(std::env::temp_dir())
+                .with_cancellation_timeout(Duration::from_millis(40));
+            runner.start(command).await.unwrap();
+            assert_eq!(
+                runner.next_event().await.unwrap(),
+                DevtoolRunnerEvent::Started
+            );
+            loop {
+                if matches!(
+                    runner.next_event().await.unwrap(),
+                    DevtoolRunnerEvent::Output { ref line, .. } if line == "ready"
+                ) {
+                    break;
+                }
+            }
+            assert!(runner.cancel().await.unwrap());
+            assert!(!runner.cancel().await.unwrap());
+            loop {
+                if let DevtoolRunnerEvent::Cancelled { forced, .. } =
+                    runner.next_event().await.unwrap()
+                {
+                    assert_eq!(forced, expected_forced);
+                    break;
+                }
+            }
+            fs::remove_file(script).unwrap();
+        }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn devtool_job_runner_reports_unexpected_event_channel_loss() {
+        let (script, command) =
+            fake_devtool_command("devtool-runner-channel-loss", "printf 'ready\\n'\nsleep 30");
+        let mut runner = DevtoolJobRunner::new(std::env::temp_dir());
+        runner.start(command).await.unwrap();
+        assert_eq!(
+            runner.next_event().await.unwrap(),
+            DevtoolRunnerEvent::Started
+        );
+        runner.output = None;
+        assert!(matches!(
+            runner.next_event().await.unwrap(),
+            DevtoolRunnerEvent::Lost { message } if message.contains("channel")
+        ));
+        assert!(!runner.is_active());
+        fs::remove_file(script).unwrap();
     }
 
     #[tokio::test]

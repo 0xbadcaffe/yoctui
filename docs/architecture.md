@@ -153,6 +153,16 @@ constructs a shell command, and path arguments retain their native OS
 representation. Process streaming and job lifecycle are separate layers built
 on this command specification.
 
+`DevtoolJobRunner` is the asynchronous process boundary for that specification.
+It starts exactly one shell-free child in the active build directory, assigns
+a child process group on Unix, and emits typed started, stream-tagged output,
+completed, failed, cancelled, and lost events. stdout and stderr use a bounded
+channel; individual lines are capped and explicitly marked truncated, with
+invalid UTF-8 preserved lossily. Cancellation sends `SIGTERM` to the child
+group, waits for a configured interval, then records forced `SIGKILL`
+escalation when needed. The adapter neither retains job history nor mutates
+application state.
+
 Unknown future protocol events normalize to an ignored event and do not imply a
 backend disconnect. Missing task progress remains unknown rather than becoming
 zero. Terminal build events emit one primary build-state action and one

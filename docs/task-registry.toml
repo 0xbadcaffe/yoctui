@@ -460,18 +460,18 @@ notes = "Model-owned validated modify/update-recipe/finish/deploy-target/undeplo
 id = "DEVTOOL-JOB-RUNNER-001"
 milestone = "M3"
 title = "Add cancellable Devtool process streaming"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-JOB-SPEC-001"]
 verify = ["cargo test -p yoctui-bitbake devtool_job_runner"]
-notes = "Fake-process coverage for bounded stdout/stderr, missing executable, exit status, cancellation acknowledgement/escalation, and process loss."
+notes = "The shell-free runner emits typed started/stdout/stderr/completed/failed/cancelled/lost events through a bounded channel, caps lines at 64 KiB, preserves invalid UTF-8 lossily, rejects duplicates, distinguishes start failures, and uses Unix process-group TERM/KILL cancellation with fake-process coverage."
 
 [[task]]
 id = "DEVTOOL-JOB-LIFECYCLE-001"
 milestone = "M3"
 title = "Integrate Devtool persistent job lifecycle"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-JOB-RUNNER-001"]
