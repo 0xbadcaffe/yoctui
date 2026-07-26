@@ -12,8 +12,9 @@ use yoctui_model::{
     DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction, DevtoolCapability,
     DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget,
     GitFileState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PreviewKind, Recipe,
-    RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity, TaskFilterField, TaskRow,
-    TaskState, Theme, VariableIdentity, config_comparison, config_edit_disabled_reason,
+    RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity, SignatureComparisonState,
+    SignatureDifferenceCategory, SignatureDumpState, TaskFilterField, TaskRow, TaskState, Theme,
+    VariableIdentity, config_comparison, config_edit_disabled_reason,
     config_source_disabled_reason, format_duration, selected_config_copy_value,
 };
 
@@ -407,6 +408,9 @@ fn task_activity(app: &App, task_progress: Option<u8>) -> &'static str {
 }
 
 fn footer_shortcuts(app: &App) -> &'static str {
+    if app.screen == Screen::Signatures {
+        return "↑/↓ select | 1/2 sides | c compare | r refresh | e provider | Esc back/cancel";
+    }
     if app.focus == FocusTarget::Navigator {
         return "j/k or ↑/↓ select | Enter open | Tab workspace | Shift+Tab inspector | q quit";
     }
@@ -427,9 +431,12 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Dependencies => {
             "↑/↓ or j/k select | Enter recipe | o provider | L task log | r refresh | Tab focus | Esc dashboard"
         }
+        Screen::Signatures => {
+            "↑/↓ select | 1/2 sides | c compare | r refresh | e provider | Esc back/cancel"
+        }
         Screen::LayerRelationships => "Esc dashboard | y layers | ? help | q quit",
         Screen::Recipes => {
-            "↑/↓ select | Enter inspect | t Devtool status | e provider | o logs | p patches | b/f tasks | V CVE | X SPDX | C/S clean | M menuconfig | d modify | u update | F finish | P deploy | D reset | / search"
+            "↑/↓ select | Enter inspect | z task/Z signatures | e provider | o logs | p patches | b/f tasks | V CVE | X SPDX | d modify | u update | F finish | P deploy | D reset | / search"
         }
         Screen::Images => {
             "↑/↓ select | b build selected image | i image picker | Tab focus | q quit"
@@ -539,6 +546,29 @@ pub fn render(frame: &mut Frame, app: &App) {
                 .block(Block::default().title("Confirm quit").borders(Borders::ALL)),
             popup,
         )
+    } else if let Some(Dialog::SignatureTaskPicker(picker)) = app.active_dialog() {
+        let popup = Rect::new(
+            area.width / 4,
+            area.height / 4,
+            area.width / 2,
+            area.height / 2,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Table::new(
+                picker.tasks.iter().enumerate().map(|(index, task)| {
+                    Row::new([task.as_str()]).style(selected_style(app, index == picker.selection))
+                }),
+                [Constraint::Min(1)],
+            )
+            .header(Row::new(["Authoritative signature tasks"]).style(Style::default().bold()))
+            .block(
+                Block::default()
+                    .title(format!("Inspect signatures: {}", picker.recipe.name))
+                    .borders(Borders::ALL),
+            ),
+            popup,
+        );
     } else if let Some(Dialog::RecipeTaskPicker(picker)) = app.active_dialog() {
         let popup = Rect::new(
             area.width / 4,
@@ -1186,6 +1216,10 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn responsive_shell(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {
+    if app.screen == Screen::Signatures {
+        signatures_workspace(frame, app, area, terminal_width);
+        return;
+    }
     if terminal_width >= 130 {
         let panes = Layout::horizontal([
             Constraint::Length(22),
@@ -1250,6 +1284,237 @@ fn pane_block<'a>(app: &App, title: &'a str, focused: bool) -> Block<'a> {
         .border_style(style)
 }
 
+fn signatures_workspace(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {
+    if terminal_width >= 110 {
+        let panes = Layout::horizontal([Constraint::Percentage(40), Constraint::Percentage(60)])
+            .split(area);
+        signature_records(frame, app, panes[0]);
+        signature_detail(frame, app, panes[1]);
+    } else {
+        let panes =
+            Layout::vertical([Constraint::Percentage(44), Constraint::Percentage(56)]).split(area);
+        signature_records(frame, app, panes[0]);
+        signature_detail(frame, app, panes[1]);
+    }
+}
+
+fn signature_target_label(app: &App) -> String {
+    app.signature_dump.target().map_or_else(
+        || "no target".into(),
+        |target| format!("{}:{}", target.recipe, target.task),
+    )
+}
+
+fn signature_comparison_sides(
+    state: &SignatureComparisonState,
+) -> (
+    Option<&yoctui_model::SignatureIdentity>,
+    Option<&yoctui_model::SignatureIdentity>,
+) {
+    match state {
+        SignatureComparisonState::NotSelected => (None, None),
+        SignatureComparisonState::Ready { left, right } => (left.as_ref(), right.as_ref()),
+        SignatureComparisonState::Loading { request }
+        | SignatureComparisonState::AvailableEmpty { request }
+        | SignatureComparisonState::Available { request, .. }
+        | SignatureComparisonState::Partial { request, .. }
+        | SignatureComparisonState::Failed { request, .. } => {
+            (Some(&request.left), Some(&request.right))
+        }
+    }
+}
+
+fn signature_records(frame: &mut Frame, app: &App, area: Rect) {
+    let title = format!("Signatures — {}", signature_target_label(app));
+    let block = pane_block(app, &title, app.focus == FocusTarget::Workspace);
+    let records = app.signature_dump.records();
+    let text = match &app.signature_dump {
+        SignatureDumpState::NotLoaded => {
+            "Signatures have not been loaded.\n\nReturn to Recipes and press Z.".into()
+        }
+        SignatureDumpState::Loading { .. } => {
+            "Loading authoritative signature artifacts…\n\nEsc requests cancellation.".into()
+        }
+        SignatureDumpState::AvailableEmpty { .. } => {
+            "BitBake reported no signature artifacts for this recipe/task.".into()
+        }
+        SignatureDumpState::Failed { message, .. } => {
+            format!("Signature dump failed:\n{message}\n\nr retries; Esc returns to Recipes.")
+        }
+        SignatureDumpState::Available { .. } | SignatureDumpState::Partial { .. } => {
+            let (left, right) = signature_comparison_sides(&app.signature_comparison);
+            let mut lines = records
+                .unwrap_or_default()
+                .iter()
+                .map(|record| {
+                    let selected = app.signature_selection.as_ref() == Some(&record.identity);
+                    let side = match (
+                        left == Some(&record.identity),
+                        right == Some(&record.identity),
+                    ) {
+                        (true, true) => "12",
+                        (true, false) => "1 ",
+                        (false, true) => " 2",
+                        (false, false) => "  ",
+                    };
+                    format!(
+                        "{} [{}] {}\n    {}",
+                        if selected { ">" } else { " " },
+                        side,
+                        record
+                            .identity
+                            .hash
+                            .as_deref()
+                            .unwrap_or("hash unavailable"),
+                        record.identity.path.as_ref().map_or_else(
+                            || "path unavailable".into(),
+                            |path| path.display().to_string()
+                        )
+                    )
+                })
+                .collect::<Vec<_>>();
+            if let SignatureDumpState::Partial { limitations, .. } = &app.signature_dump {
+                lines.push(String::new());
+                lines.push("Partial result:".into());
+                lines.extend(limitations.iter().map(|value| format!("! {value}")));
+            }
+            lines.join("\n")
+        }
+    };
+    frame.render_widget(
+        Paragraph::new(text).block(block).wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn signature_detail(frame: &mut Frame, app: &App, area: Rect) {
+    frame.render_widget(
+        Paragraph::new(signature_detail_text(app))
+            .block(pane_block(
+                app,
+                "Selected record and comparison",
+                app.focus == FocusTarget::Inspector,
+            ))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn signature_detail_text(app: &App) -> String {
+    let selected = app.signature_dump.records().and_then(|records| {
+        app.signature_selection
+            .as_ref()
+            .and_then(|identity| records.iter().find(|record| &record.identity == identity))
+    });
+    let mut lines = Vec::new();
+    if let Some(record) = selected {
+        lines.extend([
+            format!(
+                "Hash: {}",
+                record.identity.hash.as_deref().unwrap_or("unavailable")
+            ),
+            format!(
+                "Base hash: {}",
+                record.base_hash.as_deref().unwrap_or("unavailable")
+            ),
+            format!(
+                "Task hash: {}",
+                record.task_hash.as_deref().unwrap_or("unavailable")
+            ),
+            String::new(),
+            format!("Variables ({})", record.variables.len()),
+        ]);
+        lines.extend(record.variables.iter().take(120).map(|value| {
+            format!(
+                "{} = {}",
+                value.name,
+                value.value.as_deref().unwrap_or("unavailable")
+            )
+        }));
+        if record.variables.len() > 120 {
+            lines.push(format!(
+                "… {} more bounded variables",
+                record.variables.len() - 120
+            ));
+        }
+        lines.push(String::new());
+        lines.push(format!("Task dependencies ({})", record.dependencies.len()));
+        lines.extend(
+            record
+                .dependencies
+                .iter()
+                .take(80)
+                .map(|dependency| format!("• {dependency}")),
+        );
+        if record.dependencies.len() > 80 {
+            lines.push(format!(
+                "… {} more bounded dependencies",
+                record.dependencies.len() - 80
+            ));
+        }
+    } else {
+        lines.push("No current signature record is selected.".into());
+    }
+    lines.push(String::new());
+    lines.push("Comparison".into());
+    match &app.signature_comparison {
+        SignatureComparisonState::NotSelected => {
+            lines.push("Assign two records with 1 and 2.".into());
+        }
+        SignatureComparisonState::Ready { left, right } => {
+            lines.push(format!(
+                "1: {}\n2: {}",
+                left.as_ref()
+                    .and_then(|identity| identity.hash.as_deref())
+                    .unwrap_or("not selected"),
+                right
+                    .as_ref()
+                    .and_then(|identity| identity.hash.as_deref())
+                    .unwrap_or("not selected")
+            ));
+        }
+        SignatureComparisonState::Loading { .. } => {
+            lines.push("Comparing authoritative signature artifacts…".into());
+        }
+        SignatureComparisonState::AvailableEmpty { .. } => {
+            lines.push("No typed differences were found.".into());
+        }
+        SignatureComparisonState::Failed { message, .. } => {
+            lines.push(format!("Comparison failed: {message}"));
+        }
+        SignatureComparisonState::Available { differences, .. }
+        | SignatureComparisonState::Partial { differences, .. } => {
+            lines.extend(differences.iter().take(160).map(|difference| {
+                let category = match difference.category {
+                    SignatureDifferenceCategory::BaseHash => "hash",
+                    SignatureDifferenceCategory::ChangedValue => "value",
+                    SignatureDifferenceCategory::Dependency => "dependency",
+                    SignatureDifferenceCategory::Unavailable => "unavailable",
+                };
+                format!(
+                    "[{category}] {}: {} → {}",
+                    difference.key,
+                    difference.left.as_deref().unwrap_or("unavailable"),
+                    difference.right.as_deref().unwrap_or("unavailable")
+                )
+            }));
+            if differences.len() > 160 {
+                lines.push(format!(
+                    "… {} more bounded differences",
+                    differences.len() - 160
+                ));
+            }
+            if let SignatureComparisonState::Partial { limitations, .. } = &app.signature_comparison
+            {
+                lines.push(String::new());
+                lines.push("Partial comparison:".into());
+                lines.extend(limitations.iter().map(|value| format!("! {value}")));
+            }
+        }
+    }
+    lines.join("\n")
+}
+
 fn navigator(frame: &mut Frame, app: &App, area: Rect) {
     let entries = [
         ("Dashboard", Screen::Dashboard),
@@ -1297,6 +1562,7 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Tasks => tasks_workspace(frame, app, area),
         Screen::BuildHistory => build_history(frame, app, area),
         Screen::Dependencies => dependencies(frame, app, area),
+        Screen::Signatures => signature_records(frame, app, area),
         Screen::LayerRelationships => layer_relationships(frame, app, area),
         Screen::Logs => logs(frame, app, area),
         Screen::Errors => errors(frame, app, area),
@@ -1438,6 +1704,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
             },
         ),
         Screen::Dependencies => dependency_inspector(app),
+        Screen::Signatures => signature_detail_text(app),
         _ => format!(
             "Target: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
             app.build.target.as_deref().unwrap_or("not selected"),
@@ -3734,7 +4001,7 @@ fn bbmask_assignment(value: &str) -> String {
     )
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
 }
 #[cfg(test)]
 mod tests {
@@ -6074,5 +6341,113 @@ mod tests {
             output.contains("Press Enter to investigate Errors"),
             "{output}"
         );
+    }
+
+    #[test]
+    fn signature_workspace_renders_typed_records_differences_limitations_and_footer() {
+        let target = yoctui_model::SignatureTarget {
+            recipe: "busybox".into(),
+            task: "do_compile".into(),
+        };
+        let left = yoctui_model::SignatureIdentity {
+            target: target.clone(),
+            hash: Some("aaa".into()),
+            path: Some("/build/tmp/stamps/busybox/do_compile.sigdata.aaa".into()),
+        };
+        let right = yoctui_model::SignatureIdentity {
+            target: target.clone(),
+            hash: Some("bbb".into()),
+            path: Some("/build/tmp/stamps/busybox/do_compile.sigdata.bbb".into()),
+        };
+        let mut app = App::new(20, 4_000);
+        app.screen = Screen::Signatures;
+        app.signature_selection = Some(left.clone());
+        app.signature_dump = SignatureDumpState::Partial {
+            target,
+            records: vec![
+                yoctui_model::SignatureRecord {
+                    identity: left.clone(),
+                    base_hash: Some("base-aaa".into()),
+                    task_hash: Some("aaa".into()),
+                    variables: vec![yoctui_model::SignatureValue {
+                        name: "CC".into(),
+                        value: Some("gcc".into()),
+                    }],
+                    dependencies: vec!["busybox:do_configure=dep-a".into()],
+                },
+                yoctui_model::SignatureRecord {
+                    identity: right.clone(),
+                    base_hash: Some("base-bbb".into()),
+                    task_hash: Some("bbb".into()),
+                    variables: Vec::new(),
+                    dependencies: Vec::new(),
+                },
+            ],
+            limitations: vec!["one malformed artifact was omitted".into()],
+        };
+        app.signature_comparison = SignatureComparisonState::Partial {
+            request: yoctui_model::SignatureComparisonRequest { left, right },
+            differences: vec![yoctui_model::SignatureDifference {
+                category: SignatureDifferenceCategory::ChangedValue,
+                key: "CC".into(),
+                left: Some("gcc".into()),
+                right: Some("clang".into()),
+            }],
+            limitations: vec!["recursive detail unavailable".into()],
+        };
+
+        let wide = rendered_text(&app, 160, 34);
+        assert!(wide.contains("Signatures"), "{wide}");
+        assert!(wide.contains("busybox:do_compile"), "{wide}");
+        assert!(wide.contains("base-aaa"), "{wide}");
+        assert!(wide.contains("CC = gcc"), "{wide}");
+        assert!(wide.contains("[value] CC: gcc"), "{wide}");
+        assert!(wide.contains("one malformed artifact"), "{wide}");
+        assert!(wide.contains("recursive detail unavailable"), "{wide}");
+        assert!(wide.contains("1/2 sides"), "{wide}");
+
+        let narrow = rendered_text(&app, 90, 30);
+        assert!(narrow.contains("Signatures"), "{narrow}");
+        assert!(narrow.contains("Selected record"), "{narrow}");
+        let tiny = rendered_text(&app, 50, 16);
+        assert!(tiny.contains("needs at least 80x24"), "{tiny}");
+    }
+
+    #[test]
+    fn signature_workspace_renders_explicit_loading_empty_failure_and_picker_states() {
+        let target = yoctui_model::SignatureTarget {
+            recipe: "busybox".into(),
+            task: "do_fetch".into(),
+        };
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Signatures;
+        app.signature_dump = SignatureDumpState::Loading {
+            target: target.clone(),
+        };
+        assert!(rendered_text(&app, 100, 24).contains("Loading authoritative signature artifacts"));
+        app.signature_dump = SignatureDumpState::AvailableEmpty {
+            target: target.clone(),
+        };
+        assert!(rendered_text(&app, 100, 24).contains("no signature artifacts"));
+        app.signature_dump = SignatureDumpState::Failed {
+            target,
+            message: "tool missing".into(),
+        };
+        assert!(rendered_text(&app, 100, 24).contains("tool missing"));
+
+        app.screen = Screen::Recipes;
+        app.dialogs.push_back(Dialog::SignatureTaskPicker(
+            yoctui_model::SignatureTaskPicker {
+                recipe: RecipeIdentity {
+                    name: "busybox".into(),
+                    file: "/layers/meta/busybox.bb".into(),
+                },
+                tasks: vec!["do_fetch".into(), "do_compile".into()],
+                selection: 1,
+            },
+        ));
+        let picker = rendered_text(&app, 80, 24);
+        assert!(picker.contains("Inspect signatures: busybox"), "{picker}");
+        assert!(picker.contains("Authoritative signature tasks"), "{picker}");
     }
 }

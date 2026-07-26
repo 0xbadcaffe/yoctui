@@ -65,13 +65,12 @@ See `docs/current-task.md`.
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
-| Signature workspace | IN_PROGRESS | Responsive task selection, dump/difference views, background execution, actions, and source navigation remain |
+| Signature workspace | DONE | `Z` opens an authoritative focus-trapped task picker and responsive child workspace with exact record/sides, typed details/differences, provider navigation, and cancellable background execution |
 | Package data browser | NOT_STARTED | No `oe-pkgdata-util` adapter, workspace, typed workflow, or tests are present |
 
 ## Priority queue
 
-1. `SIG-UI-001` — integrate responsive signature workflows
-2. `PKG-001` — complete package-data browser
+1. `PKG-001` — complete package-data browser
 
 ## Rules
 
