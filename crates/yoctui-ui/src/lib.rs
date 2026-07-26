@@ -5,9 +5,10 @@ use ratatui::{
 };
 use std::time::{SystemTime, UNIX_EPOCH};
 use yoctui_model::{
-    App, BackgroundJobKind, BuildStatus, Dialog, FocusTarget, GitFileState, LayerBrowser,
-    LayerBrowserEntry, LayerInspectorMode, PreviewKind, Recipe, RecipeBuildStatus, RecipeEditor,
-    RecipeWorkspaceStatus, Screen, Severity, TaskFilterField, TaskRow, TaskState, Theme,
+    App, BackgroundJobKind, BuildStatus, DevtoolAction, DevtoolCapability, DevtoolGitState,
+    DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget, GitFileState,
+    LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PreviewKind, Recipe, RecipeBuildStatus,
+    RecipeEditor, RecipeIdentity, Screen, Severity, TaskFilterField, TaskRow, TaskState, Theme,
     format_duration,
 };
 
@@ -423,7 +424,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
         }
         Screen::LayerRelationships => "Esc dashboard | y layers | ? help | q quit",
         Screen::Recipes => {
-            "↑/↓ select | Enter inspect | e provider | o logs | p patches | b/f tasks | V CVE | X SPDX | C/S clean | M menuconfig | d modify | u update | F finish | P deploy | D reset | / search"
+            "↑/↓ select | Enter inspect | t Devtool status | e provider | o logs | p patches | b/f tasks | V CVE | X SPDX | C/S clean | M menuconfig | d modify | u update | F finish | P deploy | D reset | / search"
         }
         Screen::Images => {
             "↑/↓ select | b build selected image | i image picker | Tab focus | q quit"
@@ -2275,14 +2276,105 @@ fn recipe_build_state(app: &App, recipe: &str) -> String {
         )
 }
 
-fn recipe_workspace_state(app: &App, recipe: &str) -> &'static str {
-    app.recipe_metadata
-        .get(recipe)
-        .and_then(|metadata| metadata.workspace_status)
-        .map_or("unavailable", |status| match status {
-            RecipeWorkspaceStatus::Clean => "clean",
-            RecipeWorkspaceStatus::Modified => "modified",
+fn recipe_workspace_state(app: &App, recipe: &Recipe) -> String {
+    let identity = recipe.file.as_ref().and_then(|file| {
+        file.is_absolute().then(|| RecipeIdentity {
+            name: recipe.name.clone(),
+            file: file.clone(),
         })
+    });
+    let Some(identity) = identity else {
+        return "unavailable (absolute provider path not reported)".into();
+    };
+    if app.devtool_status_loading.contains(&identity) {
+        return "loading authoritative status…".into();
+    }
+    let Some(status) = app.devtool_statuses.get(&identity) else {
+        return "not inspected; press t (or Enter)".into();
+    };
+    if status.capability == DevtoolCapability::MissingExecutable {
+        return "Devtool executable missing; all actions disabled".into();
+    }
+    if let Some(error) = &status.error {
+        return match error {
+            DevtoolStatusError::InvalidRecipeIdentity => {
+                "invalid recipe identity; all actions disabled".into()
+            }
+            DevtoolStatusError::DevtoolFailed { exit_code, message } => format!(
+                "status failed (exit {}): {message}; all actions disabled",
+                exit_code.map_or_else(|| "unavailable".into(), |code| code.to_string())
+            ),
+            DevtoolStatusError::MalformedOutput { line } => {
+                format!("malformed Devtool output: {line}; all actions disabled")
+            }
+        };
+    }
+    let state = match &status.workspace {
+        DevtoolWorkspace::NotMember => "not in workspace".into(),
+        DevtoolWorkspace::MissingDirectory { source_path } => {
+            format!("workspace source missing: {}", source_path.display())
+        }
+        DevtoolWorkspace::Present {
+            source_path,
+            recipe_file,
+        } => {
+            let git = match &status.git {
+                DevtoolGitState::Available {
+                    branch,
+                    head,
+                    modified,
+                    untracked,
+                    conflicted,
+                } => format!(
+                    "Git branch {}, head {}, {}, modified {modified}, untracked {untracked}, conflicted {conflicted}",
+                    branch.as_deref().unwrap_or("detached"),
+                    head.as_deref().unwrap_or("initial"),
+                    if modified + untracked + conflicted == 0 {
+                        "clean"
+                    } else {
+                        "dirty"
+                    }
+                ),
+                DevtoolGitState::MissingExecutable => "Git executable missing".into(),
+                DevtoolGitState::NotRepository => "source is not a Git repository".into(),
+                DevtoolGitState::Failed { exit_code, message } => format!(
+                    "Git status failed (exit {}): {message}",
+                    exit_code.map_or_else(|| "unavailable".into(), |code| code.to_string())
+                ),
+                DevtoolGitState::Malformed { message } => {
+                    format!("malformed Git status: {message}")
+                }
+                DevtoolGitState::NotApplicable => "Git status not applicable".into(),
+            };
+            format!(
+                "member at {}\nWorkspace recipe: {}\n{git}",
+                source_path.display(),
+                recipe_file
+                    .as_ref()
+                    .map_or_else(|| "unavailable".into(), |path| path.display().to_string())
+            )
+        }
+    };
+    format!("{state}\n{}", devtool_action_status(status))
+}
+
+fn devtool_action_status(status: &DevtoolStatus) -> String {
+    [
+        ("d modify/edit", DevtoolAction::ModifyOrEdit),
+        ("u update", DevtoolAction::UpdateRecipe),
+        ("F finish", DevtoolAction::Finish),
+        ("P deploy", DevtoolAction::Deploy),
+        ("D reset", DevtoolAction::Reset),
+    ]
+    .into_iter()
+    .map(|(label, action)| {
+        status.disabled_reason(action).map_or_else(
+            || format!("{label}: enabled"),
+            |reason| format!("{label}: disabled ({reason})"),
+        )
+    })
+    .collect::<Vec<_>>()
+    .join(" | ")
 }
 
 fn recipe_values(label: &str, values: Option<&Vec<String>>) -> String {
@@ -2394,7 +2486,7 @@ fn recipe_inspector(app: &App, recipe: &Recipe) -> String {
         }
     };
     let navigation_capabilities = format!(
-        "Navigation: provider {}; task logs {}; patches {patch_capability}\nDevtool: modify/update/finish/deploy/reset routes enabled; missing tools are reported when launched.",
+        "Navigation: provider {}; task logs {}; patches {patch_capability}\nDevtool availability is authoritative above; press t to refresh.",
         if recipe.file.is_some() {
             "enabled"
         } else {
@@ -2488,7 +2580,7 @@ fn recipe_inspector(app: &App, recipe: &Recipe) -> String {
         recipe
             .append_count
             .map_or_else(|| "unavailable".into(), |count| count.to_string()),
-        recipe_workspace_state(app, &recipe.name),
+        recipe_workspace_state(app, recipe),
         recipe_build_state(app, &recipe.name),
         dependencies.map_or_else(
             || "unavailable; press g to query".into(),
@@ -2558,7 +2650,7 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
                             .append_count
                             .map_or_else(|| "?".into(), |count| count.to_string()),
                     ),
-                    Cell::from(recipe_workspace_state(app, &recipe.name)),
+                    Cell::from(recipe_workspace_state(app, recipe)),
                     Cell::from(recipe_build_state(app, &recipe.name)),
                 ])
                 .style(selected_style(app, index == app.recipe_selection))
@@ -4227,7 +4319,7 @@ mod tests {
     }
     #[test]
     fn recipes_workspace_renders_authoritative_summary_and_inspector_sections() {
-        let mut terminal = Terminal::new(TestBackend::new(180, 38)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(180, 44)).unwrap();
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Recipes;
         app.workspace.recipes = vec![
@@ -4261,6 +4353,29 @@ mod tests {
                 history: None,
             },
         );
+        let identity = yoctui_model::RecipeIdentity {
+            name: "busybox".into(),
+            file: "/layers/meta/recipes-core/busybox/busybox_1.36.bb".into(),
+        };
+        app.devtool_statuses.insert(
+            identity.clone(),
+            yoctui_model::DevtoolStatus {
+                identity,
+                capability: yoctui_model::DevtoolCapability::Available,
+                workspace: yoctui_model::DevtoolWorkspace::Present {
+                    source_path: "/build/workspace/sources/busybox".into(),
+                    recipe_file: Some("/layers/meta/recipes-core/busybox/busybox_1.36.bb".into()),
+                },
+                git: yoctui_model::DevtoolGitState::Available {
+                    branch: Some("devtool".into()),
+                    head: Some("abc123".into()),
+                    modified: 1,
+                    untracked: 0,
+                    conflicted: 0,
+                },
+                error: None,
+            },
+        );
         app.dependencies = Some(yoctui_model::RecipeDependencies {
             recipe: "busybox".into(),
             build: vec!["virtual/libc".into()],
@@ -4288,7 +4403,8 @@ mod tests {
         assert!(output.contains("Resolved"));
         assert!(output.contains("Preferred"));
         assert!(output.contains("Provider file"));
-        assert!(output.contains("Workspace/Devtool: modified"));
+        assert!(output.contains("Workspace/Devtool: member at"));
+        assert!(output.contains("Git branch devtool"));
         assert!(output.contains("Active tasks: do_compile"));
         assert!(output.contains("virtual/libc"));
         assert!(output.contains("security.patch"));
@@ -4426,7 +4542,43 @@ mod tests {
                 && output.contains("unresolved paths)"),
             "{output}"
         );
-        assert!(output.contains("Devtool: modify/update/finish"), "{output}");
+        assert!(
+            output.contains("Devtool availability is authoritative"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn devtool_metadata_renders_typed_partial_and_disabled_states_responsively() {
+        for (width, height) in [(160, 34), (110, 28), (90, 25)] {
+            let mut app = App::new(10, 1_000);
+            app.screen = Screen::Recipes;
+            let file = std::path::PathBuf::from("/layers/core/demo.bb");
+            app.workspace.recipes.push(yoctui_model::Recipe {
+                name: "demo".into(),
+                file: Some(file.clone()),
+                ..yoctui_model::Recipe::default()
+            });
+            let identity = yoctui_model::RecipeIdentity {
+                name: "demo".into(),
+                file,
+            };
+            app.devtool_statuses.insert(
+                identity.clone(),
+                yoctui_model::DevtoolStatus {
+                    identity,
+                    capability: yoctui_model::DevtoolCapability::Available,
+                    workspace: yoctui_model::DevtoolWorkspace::NotMember,
+                    git: yoctui_model::DevtoolGitState::NotApplicable,
+                    error: None,
+                },
+            );
+            let output = rendered_text(&app, width, height);
+            if width >= 80 && height >= 24 {
+                assert!(output.contains("not in workspace"), "{output}");
+                assert!(output.contains("u update: disabled"), "{output}");
+            }
+        }
     }
     #[test]
     fn recipe_qa_action_renders_capabilities_confirmation_and_honest_results() {

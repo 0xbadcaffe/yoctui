@@ -306,12 +306,12 @@ notes = "Parent gate for authoritative variable detail, the responsive browser, 
 id = "CONFIG-META-001"
 milestone = "M3"
 title = "Add authoritative typed variable detail"
-status = "BLOCKED"
+status = "IN_PROGRESS"
 priority = 42
 required = true
 depends_on = ["BB-001"]
 verify = ["cargo test -p yoctui-protocol config_metadata", "cargo test -p yoctui-bitbake config_metadata", "cargo test -p yoctui-app config_metadata", "cargo test -p yoctui-model config_metadata", "python3 -m pytest bridge/tests -k config_metadata"]
-notes = "Typed implementation and all local/baseline tests pass. BLOCKED only on required live evidence: from /home/bspguy-dev/src/bitbake/bitbake-builds/yoctui-qemux86-64/build, a Tinfoil config-only MACHINE query needs to create bitbake.lock/socket outside the workspace; sandbox execution failed with 'directory is not writable', and the escalated retry was rejected because approval review hit its usage limit until 2026-07-28 20:08. Re-run with PYTHONPATH=/home/bspguy-dev/src/bitbake/lib and PATH=/home/bspguy-dev/src/bitbake/bin:$PATH, recording expanded/unexpanded MACHINE, varhistory.variable('MACHINE'), OVERRIDES, and BitBake version."
+notes = "Typed implementation and all local/baseline tests pass. External build-directory access became available during DEVTOOL-META-001 live validation; rerun the required Tinfoil config-only MACHINE query and record expanded/unexpanded value, varhistory operations, OVERRIDES, and BitBake version."
 
 [[task]]
 id = "CONFIG-UI-001"
@@ -361,12 +361,12 @@ notes = "Parent gate for authoritative status/Git state, persistent process exec
 id = "DEVTOOL-META-001"
 milestone = "M3"
 title = "Add authoritative Devtool workspace and Git status"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["JOB-002"]
 verify = ["cargo test -p yoctui-bitbake devtool_metadata", "cargo test -p yoctui-model devtool_metadata", "cargo test -p yoctui-app devtool_metadata", "cargo test -p yoctui-ui devtool_metadata"]
-notes = "Typed capability, workspace membership/path, recipe association, Git branch/head/dirty/conflict state, explicit unavailable/error states, fake-process coverage, and live validation."
+notes = "Typed absolute recipe identity, executable capability, workspace membership/path, Git porcelain-v2 branch/head/dirty/conflict state, shared action availability, fake-process/error coverage, responsive rendering, and live `devtool status` validation against the qemux86-64 build are complete."
 
 [[task]]
 id = "DEVTOOL-JOBS-001"

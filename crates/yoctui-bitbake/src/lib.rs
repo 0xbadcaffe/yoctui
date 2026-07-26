@@ -2,7 +2,7 @@
 use async_trait::async_trait;
 use std::{
     ffi::OsString,
-    path::PathBuf,
+    path::{Path, PathBuf},
     process::Stdio,
     time::{Duration, SystemTime},
 };
@@ -12,7 +12,8 @@ use tokio::{
     process::{Child, ChildStdin, Command as TokioCommand},
 };
 use yoctui_model::{
-    BuildRequest, Layer, LogEntry, Recipe, RecipeBuildStatus, RecipeMetadata,
+    BuildRequest, DevtoolCapability, DevtoolGitState, DevtoolStatus, DevtoolStatusError,
+    DevtoolWorkspace, Layer, LogEntry, Recipe, RecipeBuildStatus, RecipeIdentity, RecipeMetadata,
     RecipeWorkspaceStatus, Severity, TaskStats, VariableOperation, Workspace,
 };
 use yoctui_protocol::{
@@ -89,6 +90,244 @@ pub enum BackendError {
     Bridge(String),
     #[error("backend is not running")]
     NotRunning,
+}
+
+#[derive(Debug, Clone)]
+pub struct DevtoolInspector {
+    devtool_program: PathBuf,
+    git_program: PathBuf,
+}
+
+impl Default for DevtoolInspector {
+    fn default() -> Self {
+        Self {
+            devtool_program: "devtool".into(),
+            git_program: "git".into(),
+        }
+    }
+}
+
+impl DevtoolInspector {
+    pub fn with_programs(devtool_program: PathBuf, git_program: PathBuf) -> Self {
+        Self {
+            devtool_program,
+            git_program,
+        }
+    }
+
+    pub async fn inspect(&self, build_dir: &Path, identity: RecipeIdentity) -> DevtoolStatus {
+        if !identity.file.is_absolute() {
+            return DevtoolStatus {
+                identity,
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::NotMember,
+                git: DevtoolGitState::NotApplicable,
+                error: Some(DevtoolStatusError::InvalidRecipeIdentity),
+            };
+        }
+
+        let output = TokioCommand::new(&self.devtool_program)
+            .arg("status")
+            .current_dir(build_dir)
+            .output()
+            .await;
+        let output = match output {
+            Ok(output) => output,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return DevtoolStatus {
+                    identity,
+                    capability: DevtoolCapability::MissingExecutable,
+                    workspace: DevtoolWorkspace::NotMember,
+                    git: DevtoolGitState::NotApplicable,
+                    error: None,
+                };
+            }
+            Err(error) => {
+                return DevtoolStatus {
+                    identity,
+                    capability: DevtoolCapability::Available,
+                    workspace: DevtoolWorkspace::NotMember,
+                    git: DevtoolGitState::NotApplicable,
+                    error: Some(DevtoolStatusError::DevtoolFailed {
+                        exit_code: None,
+                        message: error.to_string(),
+                    }),
+                };
+            }
+        };
+        if !output.status.success() {
+            return DevtoolStatus {
+                identity,
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::NotMember,
+                git: DevtoolGitState::NotApplicable,
+                error: Some(DevtoolStatusError::DevtoolFailed {
+                    exit_code: output.status.code(),
+                    message: output_text(&output.stderr),
+                }),
+            };
+        }
+        let stdout = match String::from_utf8(output.stdout) {
+            Ok(stdout) => stdout,
+            Err(error) => {
+                return DevtoolStatus {
+                    identity,
+                    capability: DevtoolCapability::Available,
+                    workspace: DevtoolWorkspace::NotMember,
+                    git: DevtoolGitState::NotApplicable,
+                    error: Some(DevtoolStatusError::MalformedOutput {
+                        line: error.to_string(),
+                    }),
+                };
+            }
+        };
+        let entries = match parse_devtool_status(&stdout) {
+            Ok(entries) => entries,
+            Err(line) => {
+                return DevtoolStatus {
+                    identity,
+                    capability: DevtoolCapability::Available,
+                    workspace: DevtoolWorkspace::NotMember,
+                    git: DevtoolGitState::NotApplicable,
+                    error: Some(DevtoolStatusError::MalformedOutput { line }),
+                };
+            }
+        };
+        let Some((source_path, recipe_file)) = entries
+            .into_iter()
+            .find(|(recipe, _, _)| recipe == &identity.name)
+            .map(|(_, source_path, recipe_file)| (source_path, recipe_file))
+        else {
+            return DevtoolStatus {
+                identity,
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::NotMember,
+                git: DevtoolGitState::NotApplicable,
+                error: None,
+            };
+        };
+        if !source_path.is_dir() {
+            return DevtoolStatus {
+                identity,
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::MissingDirectory { source_path },
+                git: DevtoolGitState::NotApplicable,
+                error: None,
+            };
+        }
+        let git = inspect_git(&self.git_program, &source_path).await;
+        DevtoolStatus {
+            identity,
+            capability: DevtoolCapability::Available,
+            workspace: DevtoolWorkspace::Present {
+                source_path,
+                recipe_file,
+            },
+            git,
+            error: None,
+        }
+    }
+}
+
+fn parse_devtool_status(output: &str) -> Result<Vec<(String, PathBuf, Option<PathBuf>)>, String> {
+    output
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| {
+            let (recipe, value) = line.split_once(": ").ok_or_else(|| line.to_owned())?;
+            if recipe.is_empty() || value.is_empty() {
+                return Err(line.to_owned());
+            }
+            let (source, recipe_file) = value
+                .strip_suffix(')')
+                .and_then(|value| value.rsplit_once(" ("))
+                .map_or((value, None), |(source, recipe_file)| {
+                    (source, Some(PathBuf::from(recipe_file)))
+                });
+            let source = PathBuf::from(source);
+            if !source.is_absolute() {
+                return Err(line.to_owned());
+            }
+            Ok((recipe.to_owned(), source, recipe_file))
+        })
+        .collect()
+}
+
+async fn inspect_git(program: &Path, source_path: &Path) -> DevtoolGitState {
+    let output = TokioCommand::new(program)
+        .arg("-C")
+        .arg(source_path)
+        .args(["status", "--porcelain=v2", "--branch"])
+        .output()
+        .await;
+    let output = match output {
+        Ok(output) => output,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return DevtoolGitState::MissingExecutable;
+        }
+        Err(error) => {
+            return DevtoolGitState::Failed {
+                exit_code: None,
+                message: error.to_string(),
+            };
+        }
+    };
+    if !output.status.success() {
+        let message = output_text(&output.stderr);
+        if message
+            .to_ascii_lowercase()
+            .contains("not a git repository")
+        {
+            return DevtoolGitState::NotRepository;
+        }
+        return DevtoolGitState::Failed {
+            exit_code: output.status.code(),
+            message,
+        };
+    }
+    let output = match String::from_utf8(output.stdout) {
+        Ok(output) => output,
+        Err(error) => {
+            return DevtoolGitState::Malformed {
+                message: error.to_string(),
+            };
+        }
+    };
+    parse_git_status(&output).unwrap_or_else(|message| DevtoolGitState::Malformed { message })
+}
+
+fn parse_git_status(output: &str) -> Result<DevtoolGitState, String> {
+    let mut branch = None;
+    let mut head = None;
+    let mut modified = 0;
+    let mut untracked = 0;
+    let mut conflicted = 0;
+    for line in output.lines().filter(|line| !line.is_empty()) {
+        if let Some(value) = line.strip_prefix("# branch.head ") {
+            branch = (value != "(detached)").then(|| value.to_owned());
+        } else if let Some(value) = line.strip_prefix("# branch.oid ") {
+            head = (value != "(initial)").then(|| value.to_owned());
+        } else if line.starts_with("# branch.") {
+            continue;
+        } else if line.starts_with("1 ") || line.starts_with("2 ") {
+            modified += 1;
+        } else if line.starts_with("u ") {
+            conflicted += 1;
+        } else if line.starts_with("? ") {
+            untracked += 1;
+        } else if line.starts_with("! ") {
+            continue;
+        } else {
+            return Err(format!("unrecognized Git status record: {line}"));
+        }
+    }
+    Ok(DevtoolGitState::Available {
+        branch,
+        head,
+        modified,
+        untracked,
+        conflicted,
+    })
 }
 #[derive(Debug, Clone)]
 pub enum BackendEvent {
@@ -1057,6 +1296,114 @@ mod tests {
             vec![script.into_os_string()],
         )
     }
+
+    #[tokio::test]
+    async fn devtool_metadata_fake_process_reports_workspace_and_dirty_git_state() {
+        let root = fixture_script("devtool-workspace");
+        let source = root.join("sources/busybox");
+        fs::create_dir_all(&source).unwrap();
+        let devtool = root.join("devtool");
+        let git = root.join("git");
+        fs::write(
+            &devtool,
+            format!(
+                "#!/bin/sh\nprintf '%s\\n' 'busybox: {} (/layers/core/busybox_1.0.bb)'\n",
+                source.display()
+            ),
+        )
+        .unwrap();
+        fs::write(
+            &git,
+            "#!/bin/sh\nprintf '%s\\n' '# branch.oid abc123' '# branch.head work' '1 .M N... 100644 100644 100644 abc abc file.c' '? new.txt' 'u UU N... 100644 100644 100644 100644 abc abc abc conflict.c'\n",
+        )
+        .unwrap();
+        for script in [&devtool, &git] {
+            let mut permissions = fs::metadata(script).unwrap().permissions();
+            permissions.set_mode(0o700);
+            fs::set_permissions(script, permissions).unwrap();
+        }
+        let identity = RecipeIdentity {
+            name: "busybox".into(),
+            file: "/layers/core/busybox_1.0.bb".into(),
+        };
+        let status = DevtoolInspector::with_programs(devtool, git)
+            .inspect(&root, identity.clone())
+            .await;
+        assert_eq!(status.identity, identity);
+        assert_eq!(status.capability, DevtoolCapability::Available);
+        assert_eq!(
+            status.workspace,
+            DevtoolWorkspace::Present {
+                source_path: source,
+                recipe_file: Some("/layers/core/busybox_1.0.bb".into()),
+            }
+        );
+        assert_eq!(
+            status.git,
+            DevtoolGitState::Available {
+                branch: Some("work".into()),
+                head: Some("abc123".into()),
+                modified: 1,
+                untracked: 1,
+                conflicted: 1,
+            }
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn devtool_metadata_distinguishes_missing_tool_and_workspace_directory() {
+        let root = fixture_script("devtool-missing");
+        fs::create_dir_all(&root).unwrap();
+        let identity = RecipeIdentity {
+            name: "busybox".into(),
+            file: "/layers/core/busybox_1.0.bb".into(),
+        };
+        let missing = DevtoolInspector::with_programs(
+            root.join("does-not-exist"),
+            root.join("does-not-exist-either"),
+        )
+        .inspect(&root, identity.clone())
+        .await;
+        assert_eq!(missing.capability, DevtoolCapability::MissingExecutable);
+
+        let devtool = root.join("devtool");
+        let absent_source = root.join("sources/absent");
+        fs::write(
+            &devtool,
+            format!(
+                "#!/bin/sh\nprintf '%s\\n' 'busybox: {}'\n",
+                absent_source.display()
+            ),
+        )
+        .unwrap();
+        let mut permissions = fs::metadata(&devtool).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&devtool, permissions).unwrap();
+        let status = DevtoolInspector::with_programs(devtool, root.join("git"))
+            .inspect(&root, identity)
+            .await;
+        assert_eq!(
+            status.workspace,
+            DevtoolWorkspace::MissingDirectory {
+                source_path: absent_source
+            }
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn devtool_metadata_rejects_malformed_external_records() {
+        assert_eq!(
+            parse_devtool_status("busybox relative/path"),
+            Err("busybox relative/path".into())
+        );
+        assert_eq!(
+            parse_git_status("unexpected"),
+            Err("unrecognized Git status record: unexpected".into())
+        );
+    }
+
     #[test]
     fn ansi_and_severity() {
         assert_eq!(strip_ansi("\x1b[31merror: bad\x1b[0m"), "error: bad");

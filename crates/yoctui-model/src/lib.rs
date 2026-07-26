@@ -404,6 +404,108 @@ pub enum RecipeWorkspaceStatus {
     Clean,
     Modified,
 }
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct RecipeIdentity {
+    pub name: String,
+    pub file: PathBuf,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DevtoolCapability {
+    Available,
+    MissingExecutable,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DevtoolWorkspace {
+    NotMember,
+    MissingDirectory {
+        source_path: PathBuf,
+    },
+    Present {
+        source_path: PathBuf,
+        recipe_file: Option<PathBuf>,
+    },
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DevtoolGitState {
+    NotApplicable,
+    MissingExecutable,
+    NotRepository,
+    Available {
+        branch: Option<String>,
+        head: Option<String>,
+        modified: usize,
+        untracked: usize,
+        conflicted: usize,
+    },
+    Failed {
+        exit_code: Option<i32>,
+        message: String,
+    },
+    Malformed {
+        message: String,
+    },
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DevtoolStatusError {
+    InvalidRecipeIdentity,
+    DevtoolFailed {
+        exit_code: Option<i32>,
+        message: String,
+    },
+    MalformedOutput {
+        line: String,
+    },
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolStatus {
+    pub identity: RecipeIdentity,
+    pub capability: DevtoolCapability,
+    pub workspace: DevtoolWorkspace,
+    pub git: DevtoolGitState,
+    pub error: Option<DevtoolStatusError>,
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DevtoolAction {
+    ModifyOrEdit,
+    UpdateRecipe,
+    Finish,
+    Deploy,
+    Reset,
+}
+impl DevtoolStatus {
+    pub fn disabled_reason(&self, action: DevtoolAction) -> Option<String> {
+        if self.capability == DevtoolCapability::MissingExecutable {
+            return Some("Devtool executable is missing.".into());
+        }
+        if let Some(error) = &self.error {
+            return Some(format!("Devtool status is unavailable: {error:?}."));
+        }
+        match (&self.workspace, action) {
+            (DevtoolWorkspace::NotMember, DevtoolAction::ModifyOrEdit) => None,
+            (DevtoolWorkspace::NotMember, _) => {
+                Some("Recipe is not in the Devtool workspace.".into())
+            }
+            (DevtoolWorkspace::MissingDirectory { .. }, DevtoolAction::Reset) => None,
+            (DevtoolWorkspace::MissingDirectory { .. }, _) => {
+                Some("Devtool workspace source directory is missing.".into())
+            }
+            (DevtoolWorkspace::Present { .. }, DevtoolAction::Finish) => match &self.git {
+                DevtoolGitState::Available {
+                    head: Some(_),
+                    modified: 0,
+                    untracked: 0,
+                    conflicted: 0,
+                    ..
+                } => None,
+                DevtoolGitState::Available { .. } => {
+                    Some("Commit all workspace changes before Devtool finish.".into())
+                }
+                _ => Some("Authoritative Git status is unavailable.".into()),
+            },
+            (DevtoolWorkspace::Present { .. }, _) => None,
+        }
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RecipeBuildStatus {
     Idle,
@@ -1148,6 +1250,8 @@ pub struct App {
     pub layer_relationships: Option<LayerRelationships>,
     pub recipe_sources: HashMap<String, Vec<PathBuf>>,
     pub recipe_metadata: HashMap<String, RecipeMetadata>,
+    pub devtool_statuses: HashMap<RecipeIdentity, DevtoolStatus>,
+    pub devtool_status_loading: HashSet<RecipeIdentity>,
     pub variable_details: HashMap<VariableIdentity, VariableDetail>,
     pub recipe_metadata_loading: HashSet<String>,
     pub recipe_metadata_errors: HashMap<String, String>,
@@ -1198,6 +1302,8 @@ impl App {
             layer_relationships: None,
             recipe_sources: HashMap::new(),
             recipe_metadata: HashMap::new(),
+            devtool_statuses: HashMap::new(),
+            devtool_status_loading: HashSet::new(),
             variable_details: HashMap::new(),
             recipe_metadata_loading: HashSet::new(),
             recipe_metadata_errors: HashMap::new(),
@@ -1649,6 +1755,8 @@ pub enum Action {
     OpenSelectedRecipePatch,
     CancelRecipePatchPicker,
     BeginSelectedRecipeDevtoolModify,
+    BeginSelectedRecipeDevtoolStatus,
+    DevtoolStatusLoaded(DevtoolStatus),
     BeginSelectedRecipeDevtoolReset,
     BeginSelectedRecipeDevtoolUpdateRecipe,
     BeginSelectedRecipeDevtoolFinish,
@@ -2030,6 +2138,31 @@ fn begin_recipe_task(app: &mut App, task: Option<String>, force: bool) {
     } else {
         open_dialog(app, Dialog::RecipeTaskConfirmation(request));
     }
+}
+
+fn selected_recipe_identity(app: &App) -> Result<RecipeIdentity, &'static str> {
+    let recipe = app
+        .workspace
+        .recipes
+        .get(app.recipe_selection)
+        .ok_or("No recipe is selected for Devtool status.")?;
+    let file = recipe
+        .file
+        .clone()
+        .ok_or("The selected recipe has no authoritative provider path.")?;
+    if !file.is_absolute() {
+        return Err("The selected recipe provider path is not absolute.");
+    }
+    Ok(RecipeIdentity {
+        name: recipe.name.clone(),
+        file,
+    })
+}
+
+fn selected_devtool_status(app: &App) -> Option<&DevtoolStatus> {
+    selected_recipe_identity(app)
+        .ok()
+        .and_then(|identity| app.devtool_statuses.get(&identity))
 }
 
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
@@ -3136,6 +3269,20 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::BeginSelectedRecipeDevtoolModify => {
+            if let Some(status) = selected_devtool_status(app) {
+                if let Some(reason) = status.disabled_reason(DevtoolAction::ModifyOrEdit) {
+                    app.notification = Some(reason);
+                    return None;
+                }
+                if let DevtoolWorkspace::Present { source_path, .. } = &status.workspace {
+                    let recipe = status.identity.name.clone();
+                    let root = source_path.clone();
+                    return Some(Effect::OpenWorkspaceEditor {
+                        label: recipe,
+                        root,
+                    });
+                }
+            }
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
                 let request = BuildRequest {
                     targets: vec![recipe.name.clone()],
@@ -3151,7 +3298,24 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some("No recipe is selected for devtool modification.".into());
             }
         }
+        Action::BeginSelectedRecipeDevtoolStatus => match selected_recipe_identity(app) {
+            Ok(identity) => {
+                app.devtool_status_loading.insert(identity.clone());
+                return Some(Effect::InspectDevtoolStatus(identity));
+            }
+            Err(message) => app.notification = Some(message.into()),
+        },
+        Action::DevtoolStatusLoaded(status) => {
+            app.devtool_status_loading.remove(&status.identity);
+            app.devtool_statuses.insert(status.identity.clone(), status);
+        }
         Action::BeginSelectedRecipeDevtoolReset => {
+            if let Some(reason) = selected_devtool_status(app)
+                .and_then(|status| status.disabled_reason(DevtoolAction::Reset))
+            {
+                app.notification = Some(reason);
+                return None;
+            }
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
                 let request = BuildRequest {
                     targets: vec![recipe.name.clone()],
@@ -3168,6 +3332,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::BeginSelectedRecipeDevtoolUpdateRecipe => {
+            if let Some(reason) = selected_devtool_status(app)
+                .and_then(|status| status.disabled_reason(DevtoolAction::UpdateRecipe))
+            {
+                app.notification = Some(reason);
+                return None;
+            }
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
                 open_dialog(app, Dialog::DevtoolUpdateConfirmation(recipe.name.clone()));
             } else {
@@ -3175,6 +3345,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::BeginSelectedRecipeDevtoolFinish => {
+            if let Some(reason) = selected_devtool_status(app)
+                .and_then(|status| status.disabled_reason(DevtoolAction::Finish))
+            {
+                app.notification = Some(reason);
+                return None;
+            }
             let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) else {
                 app.notification = Some("No recipe is selected for devtool finish.".into());
                 return None;
@@ -3199,6 +3375,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             );
         }
         Action::BeginSelectedRecipeDevtoolDeploy => {
+            if let Some(reason) = selected_devtool_status(app)
+                .and_then(|status| status.disabled_reason(DevtoolAction::Deploy))
+            {
+                app.notification = Some(reason);
+                return None;
+            }
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
                 open_dialog(
                     app,
@@ -4054,6 +4236,7 @@ pub enum Effect {
     DevtoolUpdateRecipe(String),
     DevtoolFinish(DevtoolFinishRequest),
     DevtoolDeploy(DevtoolDeployRequest),
+    InspectDevtoolStatus(RecipeIdentity),
     GetDependencies(String),
     GetRecipeMetadata(String),
     GetLayerRelationships,
@@ -6662,5 +6845,77 @@ mod tests {
             Some("all")
         );
         assert_eq!(app.variable_details.get(&global.identity), Some(&global));
+    }
+
+    #[test]
+    fn devtool_metadata_uses_absolute_identity_and_ignores_other_recipe_status() {
+        let mut app = App::new(20, 4_000);
+        app.workspace.recipes = vec![
+            Recipe {
+                name: "busybox".into(),
+                file: Some("/layers/core/recipes-core/busybox/busybox_1.0.bb".into()),
+                ..Recipe::default()
+            },
+            Recipe {
+                name: "bash".into(),
+                file: Some("/layers/core/recipes-extended/bash/bash_5.0.bb".into()),
+                ..Recipe::default()
+            },
+        ];
+        let busybox = match update(&mut app, Action::BeginSelectedRecipeDevtoolStatus) {
+            Some(Effect::InspectDevtoolStatus(identity)) => identity,
+            effect => panic!("unexpected effect: {effect:?}"),
+        };
+        assert!(app.devtool_status_loading.contains(&busybox));
+
+        let bash = RecipeIdentity {
+            name: "bash".into(),
+            file: "/layers/core/recipes-extended/bash/bash_5.0.bb".into(),
+        };
+        let _ = update(
+            &mut app,
+            Action::DevtoolStatusLoaded(DevtoolStatus {
+                identity: bash.clone(),
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::NotMember,
+                git: DevtoolGitState::NotApplicable,
+                error: None,
+            }),
+        );
+        assert!(
+            app.devtool_status_loading.contains(&busybox),
+            "a response for another absolute recipe identity is stale for the selection"
+        );
+        assert_eq!(app.devtool_statuses[&bash].identity, bash);
+        assert!(
+            app.devtool_statuses[&bash]
+                .disabled_reason(DevtoolAction::ModifyOrEdit)
+                .is_none()
+        );
+        assert_eq!(
+            app.devtool_statuses[&bash]
+                .disabled_reason(DevtoolAction::UpdateRecipe)
+                .as_deref(),
+            Some("Recipe is not in the Devtool workspace.")
+        );
+    }
+
+    #[test]
+    fn devtool_metadata_rejects_missing_or_relative_provider_identity() {
+        let mut app = App::new(20, 4_000);
+        app.workspace.recipes.push(Recipe {
+            name: "busybox".into(),
+            file: Some("recipes-core/busybox.bb".into()),
+            ..Recipe::default()
+        });
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedRecipeDevtoolStatus),
+            None
+        );
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("The selected recipe provider path is not absolute.")
+        );
+        assert!(app.devtool_status_loading.is_empty());
     }
 }
