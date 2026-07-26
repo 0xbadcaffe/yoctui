@@ -37,6 +37,7 @@ pub enum Screen {
     Tasks,
     BuildHistory,
     Dependencies,
+    Signatures,
     LayerRelationships,
     Recipes,
     Images,
@@ -683,6 +684,12 @@ pub struct RecipeTaskPicker {
     pub force: bool,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SignatureTaskPicker {
+    pub recipe: RecipeIdentity,
+    pub tasks: Vec<String>,
+    pub selection: usize,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecipeTaskLogChoice {
     pub task: String,
     pub state: TaskState,
@@ -755,6 +762,7 @@ pub enum Dialog {
     ImagePicker(ImagePicker),
     RecipeTaskConfirmation(BuildRequest),
     RecipeTaskPicker(RecipeTaskPicker),
+    SignatureTaskPicker(SignatureTaskPicker),
     RecipeTaskLogPicker(RecipeTaskLogPicker),
     RecipePatchPicker(RecipePatchPicker),
     ConfigSourcePicker(ConfigSourcePicker),
@@ -2061,6 +2069,7 @@ pub struct App {
     pub signature_dump: SignatureDumpState,
     pub signature_selection: Option<SignatureIdentity>,
     pub signature_comparison: SignatureComparisonState,
+    pub signature_recipe: Option<RecipeIdentity>,
     pub layer_relationships: Option<LayerRelationships>,
     pub recipe_sources: HashMap<String, Vec<PathBuf>>,
     pub recipe_metadata: HashMap<String, RecipeMetadata>,
@@ -2121,6 +2130,7 @@ impl App {
             signature_dump: SignatureDumpState::NotLoaded,
             signature_selection: None,
             signature_comparison: SignatureComparisonState::NotSelected,
+            signature_recipe: None,
             layer_relationships: None,
             recipe_sources: HashMap::new(),
             recipe_metadata: HashMap::new(),
@@ -2554,6 +2564,7 @@ pub enum Action {
     BeginSelectedRecipeDevshell,
     BeginSelectedRecipeDiffconfig,
     BeginSelectedRecipeDiffsigs,
+    BeginSelectedRecipeSignatures,
     BeginSelectedRecipeCveCheck,
     BeginSelectedRecipeSpdx,
     BeginSelectedRecipeForceTask,
@@ -2566,6 +2577,11 @@ pub enum Action {
     },
     PreviewSelectedRecipeTask,
     CancelRecipeTaskPicker,
+    SelectSignatureTask {
+        delta: isize,
+    },
+    ConfirmSignatureTask,
+    CancelSignatureTaskPicker,
     OpenSelectedRecipeProvider,
     BeginSelectedRecipeTaskLog,
     SelectRecipeTaskLog {
@@ -2609,6 +2625,9 @@ pub enum Action {
     OpenSelectedDependencyProvider,
     OpenSelectedDependencyTaskLog,
     BeginSignatureDump(SignatureTarget),
+    RefreshSignatureDump,
+    LeaveSignatureWorkspace,
+    OpenSignatureProvider,
     SignatureDumpLoaded {
         target: SignatureTarget,
         records: Vec<SignatureRecord>,
@@ -3502,6 +3521,25 @@ fn set_signature_dump(
     };
 }
 
+fn begin_signature_dump(app: &mut App, target: SignatureTarget) -> Option<Effect> {
+    if let Err(message) = target.validate() {
+        app.notification = Some(message.into());
+        return None;
+    }
+    app.signature_dump = SignatureDumpState::Loading {
+        target: target.clone(),
+    };
+    Some(Effect::GetSignatureDump(target))
+}
+
+fn signature_operation_is_loading(app: &App) -> bool {
+    matches!(app.signature_dump, SignatureDumpState::Loading { .. })
+        || matches!(
+            app.signature_comparison,
+            SignatureComparisonState::Loading { .. }
+        )
+}
+
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     if modal_focus(app).is_some()
         && matches!(
@@ -4372,6 +4410,53 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::BeginSelectedRecipeDiffsigs => {
             begin_recipe_task(app, Some("diffsigs".into()), false);
         }
+        Action::BeginSelectedRecipeSignatures => {
+            let identity = match selected_recipe_identity(app) {
+                Ok(identity) => identity,
+                Err(message) => {
+                    app.notification = Some(message.replace("Devtool status", "signatures"));
+                    return None;
+                }
+            };
+            let Some(tasks) = app
+                .recipe_metadata
+                .get(&identity.name)
+                .and_then(|metadata| metadata.tasks.as_ref())
+            else {
+                app.notification = Some(
+                    "Load authoritative recipe tasks with Enter before inspecting signatures."
+                        .into(),
+                );
+                return None;
+            };
+            let mut tasks = tasks
+                .iter()
+                .filter(|task| {
+                    SignatureTarget {
+                        recipe: identity.name.clone(),
+                        task: (*task).clone(),
+                    }
+                    .validate()
+                    .is_ok()
+                })
+                .cloned()
+                .collect::<Vec<_>>();
+            tasks.sort();
+            tasks.dedup();
+            if tasks.is_empty() {
+                app.notification =
+                    Some("BitBake reported no valid signature tasks for this recipe.".into());
+                return None;
+            }
+            open_dialog(
+                app,
+                Dialog::SignatureTaskPicker(SignatureTaskPicker {
+                    recipe: identity,
+                    tasks,
+                    selection: 0,
+                }),
+            );
+        }
         Action::BeginSelectedRecipeCveCheck => {
             begin_recipe_task(app, Some("cve_check".into()), false);
         }
@@ -4450,6 +4535,48 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::CancelRecipeTaskPicker => {
             if matches!(app.active_dialog(), Some(Dialog::RecipeTaskPicker(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::SelectSignatureTask { delta } => {
+            if let Some(Dialog::SignatureTaskPicker(picker)) = app.active_dialog_mut() {
+                picker.selection = if delta.is_negative() {
+                    picker.selection.saturating_sub(delta.unsigned_abs())
+                } else {
+                    picker
+                        .selection
+                        .saturating_add(delta as usize)
+                        .min(picker.tasks.len().saturating_sub(1))
+                };
+            }
+        }
+        Action::ConfirmSignatureTask => {
+            let Some(Dialog::SignatureTaskPicker(picker)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            let Some(task) = picker.tasks.get(picker.selection).cloned() else {
+                app.notification = Some("No authoritative signature task is selected.".into());
+                return None;
+            };
+            let target = SignatureTarget {
+                recipe: picker.recipe.name.clone(),
+                task,
+            };
+            if let Err(message) = target.validate() {
+                app.notification = Some(message.into());
+                return None;
+            }
+            close_dialog(app);
+            app.screen = Screen::Signatures;
+            app.focus = FocusTarget::Workspace;
+            app.focus_return = None;
+            app.signature_recipe = Some(picker.recipe);
+            app.signature_selection = None;
+            app.signature_comparison = SignatureComparisonState::NotSelected;
+            return begin_signature_dump(app, target);
+        }
+        Action::CancelSignatureTaskPicker => {
+            if matches!(app.active_dialog(), Some(Dialog::SignatureTaskPicker(_))) {
                 close_dialog(app);
             }
         }
@@ -4896,14 +5023,45 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 Some("The selected task dependency has no authoritative log path.".into());
         }
         Action::BeginSignatureDump(target) => {
-            if let Err(message) = target.validate() {
-                app.notification = Some(message.into());
+            return begin_signature_dump(app, target);
+        }
+        Action::RefreshSignatureDump => {
+            let Some(target) = app.signature_dump.target().cloned() else {
+                app.notification = Some("No signature target is available to refresh.".into());
+                return None;
+            };
+            if signature_operation_is_loading(app) {
+                app.notification = Some("A signature operation is already running.".into());
                 return None;
             }
-            app.signature_dump = SignatureDumpState::Loading {
-                target: target.clone(),
+            return begin_signature_dump(app, target);
+        }
+        Action::LeaveSignatureWorkspace => {
+            if signature_operation_is_loading(app) {
+                return Some(Effect::CancelSignatureOperation);
+            }
+            if let Some(identity) = app.signature_recipe.as_ref()
+                && let Some(index) = app.workspace.recipes.iter().position(|recipe| {
+                    recipe.name == identity.name && recipe.file.as_ref() == Some(&identity.file)
+                })
+            {
+                app.recipe_selection = index;
+            }
+            app.screen = Screen::Recipes;
+            app.focus = FocusTarget::Workspace;
+        }
+        Action::OpenSignatureProvider => {
+            let Some(identity) = app.signature_recipe.as_ref() else {
+                app.notification =
+                    Some("No signature recipe provider is available to open.".into());
+                return None;
             };
-            return Some(Effect::GetSignatureDump(target));
+            if !identity.file.is_absolute() {
+                app.notification =
+                    Some("The signature recipe provider path is not absolute.".into());
+                return None;
+            }
+            return Some(Effect::OpenInEditor(identity.file.clone()));
         }
         Action::SignatureDumpLoaded { target, records } => {
             if !matches!(
@@ -6301,6 +6459,7 @@ pub enum Effect {
     GetDependencies(String),
     GetSignatureDump(SignatureTarget),
     CompareSignatures(SignatureComparisonRequest),
+    CancelSignatureOperation,
     GetRecipeMetadata(String),
     GetVariable(VariableIdentity),
     WriteConfigAssignment(ConfigEditRequest),
@@ -10474,5 +10633,170 @@ mod tests {
         assert_eq!(job.output[0].source, BackgroundJobOutputSource::Stderr);
         assert!(job.output[0].truncated);
         assert_eq!(app.screen, Screen::Dashboard);
+    }
+
+    #[test]
+    fn signature_workspace_uses_authoritative_task_picker_and_exact_provider_identity() {
+        let provider = PathBuf::from("/layers/meta/recipes-core/busybox/busybox.bb");
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Recipes;
+        app.focus = FocusTarget::Inspector;
+        app.workspace.recipes.push(Recipe {
+            name: "busybox".into(),
+            file: Some(provider.clone()),
+            ..Recipe::default()
+        });
+
+        let _ = update(&mut app, Action::BeginSelectedRecipeSignatures);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Load authoritative recipe tasks with Enter before inspecting signatures.")
+        );
+        app.notification = None;
+        app.recipe_metadata.insert(
+            "busybox".into(),
+            RecipeMetadata {
+                recipe: "busybox".into(),
+                tasks: Some(vec![
+                    "do_fetch".into(),
+                    "bad task".into(),
+                    "do_compile".into(),
+                    "do_compile".into(),
+                ]),
+                ..RecipeMetadata::default()
+            },
+        );
+
+        let _ = update(&mut app, Action::BeginSelectedRecipeSignatures);
+        let Some(Dialog::SignatureTaskPicker(picker)) = app.active_dialog() else {
+            panic!("signature task picker was not opened");
+        };
+        assert_eq!(picker.recipe.name, "busybox");
+        assert_eq!(picker.recipe.file, provider);
+        assert_eq!(picker.tasks, ["do_compile", "do_fetch"]);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+
+        let _ = update(&mut app, Action::SelectSignatureTask { delta: 1 });
+        assert_eq!(
+            update(&mut app, Action::ConfirmSignatureTask),
+            Some(Effect::GetSignatureDump(SignatureTarget {
+                recipe: "busybox".into(),
+                task: "do_fetch".into(),
+            }))
+        );
+        assert_eq!(app.screen, Screen::Signatures);
+        assert_eq!(app.focus, FocusTarget::Workspace);
+        assert!(app.active_dialog().is_none());
+        assert_eq!(
+            update(&mut app, Action::LeaveSignatureWorkspace),
+            Some(Effect::CancelSignatureOperation)
+        );
+
+        let target = SignatureTarget {
+            recipe: "busybox".into(),
+            task: "do_fetch".into(),
+        };
+        let record = signature_record(
+            "busybox",
+            "do_fetch",
+            "aaa",
+            "/build/tmp/stamps/busybox/do_fetch.sigdata.aaa",
+        );
+        let _ = update(
+            &mut app,
+            Action::SignatureDumpLoaded {
+                target,
+                records: vec![record],
+            },
+        );
+        assert_eq!(
+            update(&mut app, Action::OpenSignatureProvider),
+            Some(Effect::OpenInEditor(provider))
+        );
+        let _ = update(&mut app, Action::LeaveSignatureWorkspace);
+        assert_eq!(app.screen, Screen::Recipes);
+        assert_eq!(app.recipe_selection, 0);
+    }
+
+    #[test]
+    fn signature_workspace_refresh_comparison_and_stale_results_remain_correlated() {
+        let target = SignatureTarget {
+            recipe: "busybox".into(),
+            task: "do_compile".into(),
+        };
+        let left = signature_record(
+            "busybox",
+            "do_compile",
+            "aaa",
+            "/build/tmp/stamps/busybox/do_compile.sigdata.aaa",
+        );
+        let right = signature_record(
+            "busybox",
+            "do_compile",
+            "bbb",
+            "/build/tmp/stamps/busybox/do_compile.sigdata.bbb",
+        );
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Signatures;
+        let _ = update(&mut app, Action::BeginSignatureDump(target.clone()));
+        let _ = update(
+            &mut app,
+            Action::SignatureDumpLoaded {
+                target: target.clone(),
+                records: vec![left.clone(), right.clone()],
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::SetSelectedSignatureComparisonSide(SignatureComparisonSide::Left),
+        );
+        let _ = update(&mut app, Action::SelectSignatureRecord { delta: 1 });
+        let _ = update(
+            &mut app,
+            Action::SetSelectedSignatureComparisonSide(SignatureComparisonSide::Right),
+        );
+        let request = SignatureComparisonRequest {
+            left: left.identity,
+            right: right.identity,
+        };
+        assert_eq!(
+            update(&mut app, Action::BeginSignatureComparison),
+            Some(Effect::CompareSignatures(request.clone()))
+        );
+        assert_eq!(
+            update(&mut app, Action::RefreshSignatureDump),
+            None,
+            "refresh is inert while a comparison is loading"
+        );
+        let stale = SignatureComparisonRequest {
+            left: request.right.clone(),
+            right: request.left.clone(),
+        };
+        let _ = update(
+            &mut app,
+            Action::SignatureComparisonLoaded {
+                request: stale,
+                differences: Vec::new(),
+            },
+        );
+        assert!(matches!(
+            app.signature_comparison,
+            SignatureComparisonState::Loading { .. }
+        ));
+        let _ = update(
+            &mut app,
+            Action::SignatureComparisonLoaded {
+                request,
+                differences: Vec::new(),
+            },
+        );
+        assert!(matches!(
+            app.signature_comparison,
+            SignatureComparisonState::AvailableEmpty { .. }
+        ));
+        assert_eq!(
+            update(&mut app, Action::RefreshSignatureDump),
+            Some(Effect::GetSignatureDump(target))
+        );
     }
 }

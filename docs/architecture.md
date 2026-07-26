@@ -130,6 +130,15 @@ limitation. Only typed responses or correlated errors cross the backend/app
 boundary; raw tool output and paths inferred from log text never reach reducer
 or widget code.
 
+The CLI owns the short-lived Tokio task and cancellation handle for one active
+signature dump or comparison. It clones the configured adapter into that task,
+continues terminal drawing and input polling, and converts the terminal result
+back into a correlated typed `BackendEvent`. The app mapping then emits the
+same reducer actions used by backend events; the CLI never parses signatures
+or mutates signature state. Leaving an idle Signatures child workspace is a
+pure navigation action, while `Esc` during loading signals the adapter and
+keeps the correlated loading state until its cancelled result arrives.
+
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore
 values, normalized varhistory operations (`op`, file, line, and detail), and

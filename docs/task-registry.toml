@@ -603,12 +603,12 @@ notes = "Graph-only typed rows, explicit load/empty/partial/failure rendering, r
 id = "SIG-001"
 milestone = "M3"
 title = "Signature dump and comparison workflows"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 45
 required = true
 depends_on = ["SIG-MODEL-001", "SIG-ADAPTER-001", "SIG-UI-001"]
 verify = ["cargo test -p yoctui-app signature"]
-notes = "Parent gate split into typed signature state, shell-free authoritative adapters, and responsive dump/comparison workflow integration."
+notes = "Typed signature state, shell-free authoritative adapters, responsive task-picker/workspace integration, background cancellation, provider navigation, and focused parent verification are complete."
 
 [[task]]
 id = "SIG-MODEL-001"
@@ -636,18 +636,18 @@ notes = "Shell-free bounded dumpsig/diffsigs adapters validate canonical artifac
 id = "SIG-UI-001"
 milestone = "M3"
 title = "Integrate signature dump and comparison workflows"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 45
 required = true
 depends_on = ["SIG-ADAPTER-001"]
 verify = ["cargo test -p yoctui-model signature_workspace", "cargo test -p yoctui-app signature_workspace", "cargo test -p yoctui-ui signature_workspace", "cargo test -p yoctui -- signature_workspace"]
-notes = "Typed recipe action, selectors and confirmations, responsive dump/difference rendering, persistent job/result context, and authoritative source navigation."
+notes = "Uppercase Z opens an authoritative focus-trapped task picker and a non-navigator child workspace with identity-stable records/sides, typed details/differences, responsive layouts, provider navigation, and cancellable background execution. Focused, parent, and baseline checks pass."
 
 [[task]]
 id = "PKG-001"
 milestone = "M3"
 title = "Package data browser"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 46
 required = true
 depends_on = ["JOB-002"]

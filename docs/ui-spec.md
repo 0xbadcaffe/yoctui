@@ -726,6 +726,48 @@ confirmation. Empty or stale selection, unavailable task metadata, unsupported
 tasks, malformed task names, and a duplicate active build stay inert and
 produce an actionable notification.
 
+`z` remains the ordinary confirmed BitBake `diffsigs` task shortcut when that
+task is advertised by recipe metadata. `Z` opens the separate signature
+inspection workflow and never launches a BitBake build task. It first opens a
+focus-trapping task picker populated only from the exact selected recipe's
+authoritative task metadata. `Up`/`Down` moves, `Enter` requests the chosen
+recipe/task dump and opens the Signatures child workspace, and `Esc` restores
+the prior Recipes pane. Missing, stale, empty, or invalid metadata leaves the
+workspace unchanged and produces an actionable notice.
+
+The Signatures child workspace is not a duplicate Navigator entry. Its header
+always names the exact recipe and task. The record pane lists each bounded
+historical signature by hash and authoritative path and marks the selected
+comparison sides as `1`, `2`, or both. The detail pane shows the selected
+record's base/task hashes, typed variables, and task dependencies. The
+comparison pane groups typed base-hash, changed-value, dependency, and
+unavailable-field differences. Signature artifacts are read-only and are not
+opened as source text.
+
+Signature workspace keys are:
+
+- `Up`/`Down`: select an exact historical identity
+- `1` / `2`: assign the selected identity to that comparison side
+- `c`: compare two complete, distinct sides
+- `r`: refresh the exact recipe/task dump
+- `e`: open the selected recipe provider through the normal validated editor
+- `Esc`: return to Recipes while idle, or request cancellation while a dump or
+  comparison is running
+
+Dump and comparison work runs asynchronously and remains cancellable so
+terminal drawing and navigation continue. Results are correlated to the exact
+target or comparison request; a late result cannot replace newer state. The
+workspace renders not-loaded, loading, available-empty, available, partial,
+and failed states explicitly. Partial views retain usable typed data and show
+every bounded limitation. Missing tools/files, path rejection, nonzero exits,
+timeouts, and cancellation are visible outcomes rather than empty success.
+
+At wide sizes, records occupy the left pane and selected detail/comparison
+content occupies the right. Narrow layouts stack these regions; very small
+layouts show a compact state and shortcut summary without panicking. The
+context footer is `↑↓ Select  1/2 Sides  C Compare  R Refresh  E Provider  Esc
+Back/Cancel`, dimming actions that are unavailable.
+
 `e` opens the selected recipe's provider file using the configured editor.
 `o` opens its retained task log directly or, when multiple authoritative log
 paths remain, opens a task/state/path picker. `p` does the same for
