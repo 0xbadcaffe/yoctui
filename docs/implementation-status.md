@@ -24,7 +24,7 @@ See `docs/current-task.md`.
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
 | M1 BitBake cockpit | IN_PROGRESS | Typed background build execution and live BitBake 2.19.0 Tinfoil validation exist; remaining typed cockpit workflows are incomplete |
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
-| M3 Development workbench | IN_PROGRESS | Layers, Recipes, Configuration, Devtool, and dependency why-built workflows are complete; signatures and package data remain |
+| M3 Development workbench | IN_PROGRESS | Layers, Recipes, Configuration, Devtool, dependency why-built, and signature workflows are complete; package data remains |
 | M4 Images/SDK/QEMU/Wic | IN_PROGRESS | Image-recipe listing and build selection exist; artifact, SDK, QEMU, and Wic workflows remain |
 | M5 Testing/QA/Security | NOT_STARTED | Coverage infrastructure exists; product workflows remain |
 | M6 Maintenance | NOT_STARTED | Partial diagnostics only |
@@ -66,11 +66,15 @@ See `docs/current-task.md`.
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
 | Signature workspace | DONE | `Z` opens an authoritative focus-trapped task picker and responsive child workspace with exact record/sides, typed details/differences, provider navigation, and cancellable background execution |
-| Package data browser | NOT_STARTED | No `oe-pkgdata-util` adapter, workspace, typed workflow, or tests are present |
+| Package data model | IN_PROGRESS | Pure identities, explicit inventory/detail states, bounded normalization, selection, correlation, and dependency navigation remain |
+| Package data adapter | NOT_STARTED | No bounded shell-free `oe-pkgdata-util` adapter or live package-data evidence exists; the current real build has the tool script but no generated pkgdata tree |
+| Package data workspace | NOT_STARTED | No Navigator route, responsive workspace, input mapping, background coordination, or TestBackend coverage exists |
 
 ## Priority queue
 
-1. `PKG-001` — complete package-data browser
+1. `PKG-MODEL-001` — add typed package data state
+2. `PKG-ADAPTER-001` — acquire authoritative package data
+3. `PKG-UI-001` — integrate the package data workspace
 
 ## Rules
 
