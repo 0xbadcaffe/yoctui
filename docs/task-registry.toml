@@ -353,9 +353,64 @@ title = "Complete Devtool lifecycle"
 status = "IN_PROGRESS"
 priority = 43
 required = true
+depends_on = ["DEVTOOL-META-001", "DEVTOOL-JOBS-001", "DEVTOOL-MODIFY-001", "DEVTOOL-PUBLISH-001", "DEVTOOL-TARGET-001"]
+verify = ["cargo test -p yoctui-bitbake devtool_", "cargo test -p yoctui-model devtool_", "cargo test -p yoctui-app devtool_", "cargo test -p yoctui-ui devtool_", "cargo test -p yoctui -- devtool_"]
+notes = "Parent gate for authoritative status/Git state, persistent process execution, modify/edit/build, update/finish, deploy-target, and reset."
+
+[[task]]
+id = "DEVTOOL-META-001"
+milestone = "M3"
+title = "Add authoritative Devtool workspace and Git status"
+status = "IN_PROGRESS"
+priority = 43
+required = true
 depends_on = ["JOB-002"]
-verify = ["cargo test -p yoctui-app devtool"]
-notes = "modify, edit, build, update-recipe, finish, deploy-target, reset, status, Git."
+verify = ["cargo test -p yoctui-bitbake devtool_metadata", "cargo test -p yoctui-model devtool_metadata", "cargo test -p yoctui-app devtool_metadata", "cargo test -p yoctui-ui devtool_metadata"]
+notes = "Typed capability, workspace membership/path, recipe association, Git branch/head/dirty/conflict state, explicit unavailable/error states, fake-process coverage, and live validation."
+
+[[task]]
+id = "DEVTOOL-JOBS-001"
+milestone = "M3"
+title = "Run Devtool operations as persistent background jobs"
+status = "NOT_STARTED"
+priority = 43
+required = true
+depends_on = ["DEVTOOL-META-001", "JOB-002"]
+verify = ["cargo test -p yoctui-bitbake devtool_job", "cargo test -p yoctui-model devtool_job", "cargo test -p yoctui-app devtool_job", "cargo test -p yoctui -- devtool_job"]
+notes = "Typed argument construction, bounded stdout/stderr, lifecycle/progress, duplicate rejection, cancellation/escalation, missing executable, exit status, and backend-loss handling without terminal suspension."
+
+[[task]]
+id = "DEVTOOL-MODIFY-001"
+milestone = "M3"
+title = "Complete Devtool modify, edit, and build workflow"
+status = "NOT_STARTED"
+priority = 43
+required = true
+depends_on = ["DEVTOOL-JOBS-001"]
+verify = ["cargo test -p yoctui-model devtool_modify", "cargo test -p yoctui-app devtool_modify", "cargo test -p yoctui-ui devtool_modify", "cargo test -p yoctui -- devtool_modify"]
+notes = "Capability-aware modify, persistent completion, authoritative source tree/editor, workspace recipe build, refresh, and recoverable partial states."
+
+[[task]]
+id = "DEVTOOL-PUBLISH-001"
+milestone = "M3"
+title = "Complete Devtool update-recipe and finish workflows"
+status = "NOT_STARTED"
+priority = 43
+required = true
+depends_on = ["DEVTOOL-MODIFY-001"]
+verify = ["cargo test -p yoctui-model devtool_publish", "cargo test -p yoctui-app devtool_publish", "cargo test -p yoctui-ui devtool_publish", "cargo test -p yoctui -- devtool_publish"]
+notes = "Exact previews, validated destinations, confirmation, persistent export jobs, Git-aware dirty/conflict handling, refresh-on-success, and failure preservation."
+
+[[task]]
+id = "DEVTOOL-TARGET-001"
+milestone = "M3"
+title = "Complete Devtool deploy-target and reset workflows"
+status = "NOT_STARTED"
+priority = 43
+required = true
+depends_on = ["DEVTOOL-PUBLISH-001"]
+verify = ["cargo test -p yoctui-model devtool_target", "cargo test -p yoctui-app devtool_target", "cargo test -p yoctui-ui devtool_target", "cargo test -p yoctui -- devtool_target"]
+notes = "Validated target, exact deploy/reset preview, confirmation, persistent jobs, cancellation where supported, terminal outcomes, and authoritative refresh."
 
 [[task]]
 id = "DEP-001"
