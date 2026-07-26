@@ -49,7 +49,7 @@ See `docs/current-task.md`.
 | Errors workspace | DONE | Stable structured diagnostics drive the full list and Inspector, exact retained-log and source navigation, related context, visible loss counters, and actionable success/warning/failure/cancellation/backend-loss outcomes |
 | Layers workspace | DONE | Every configured layer stays visible above a stable-path lazy tree; priority, compatibility, active/Git state, subtree refresh, hidden/search filtering, typed Inspector modes, safe 64 KiB text/binary previews, and responsive failure-safe rendering are tested |
 | Recipes workspace | DONE | Live-validated typed metadata, identity-stable Inspector states, typed BitBake operations, provider/log/local-patch navigation, editor failures, integrated Devtool routes, and persistent capability-aware CVE/SPDX actions are covered |
-| Configuration workspace | IN_PROGRESS | Live-validated metadata, searchable responsive detail, typed copy/source/scope/compare actions, and allowlisted exact edit preview are complete; atomic write and refresh remain |
+| Configuration workspace | DONE | Live-validated metadata, searchable responsive detail, typed copy/source/scope/compare actions, and allowlisted previewed atomic local.conf edits with exact refresh are complete |
 | Devtool status | DONE | Absolute recipe identity, executable capability, workspace membership/source path, Git branch/head and dirty counts, typed partial/error states, shared disabled reasons, responsive rendering, fake-process tests, and a live no-workspace query are complete |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
@@ -59,11 +59,10 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `CONFIG-EDIT-WRITE-001` — atomically write and refresh edits
-2. `DEVTOOL-JOBS-001` — run Devtool operations as persistent jobs
-3. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
-4. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
-5. `DEVTOOL-TARGET-001` — complete deploy-target and reset
+1. `DEVTOOL-JOBS-001` — run Devtool operations as persistent jobs
+2. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
+3. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
+4. `DEVTOOL-TARGET-001` — complete deploy-target and reset
 
 ## Rules
 

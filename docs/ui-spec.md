@@ -882,9 +882,14 @@ Recipe-scoped, loading, failed, not-loaded, and absent values remain inert.
 effective value. `Enter` validates a single-line value, escaping quotes and
 backslashes, then opens a separate confirmation dialog. Newline and other
 control-character injection is rejected. The confirmation shows the exact
-destination `build/conf/local.conf` and exact quoted assignment before
-emitting a typed write request. `Esc` from either dialog performs no write and
-restores the exact prior pane. The preview phase itself never writes a file.
+destination `build/conf/local.conf` and exact quoted assignment. Its `Enter`
+revalidates the typed request, replaces the exact active variable assignment
+or appends it when absent through a permission-preserving atomic rename, then
+refreshes that exact global identity from BitBake. A write failure leaves the
+file and prior detail untouched; a refresh failure retains the prior detail
+and reports that the write succeeded. `Esc` from either dialog performs no
+write and restores the exact prior pane. Editing never writes before the
+second, preview-confirming `Enter`.
 
 No silent edits.
 

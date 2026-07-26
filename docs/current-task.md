@@ -2,52 +2,51 @@
 
 ## Active task
 
-**ID:** CONFIG-EDIT-WRITE-001
-**Title:** Write and refresh previewed configuration edits
+**ID:** DEVTOOL-JOBS-001
+**Title:** Run Devtool operations as persistent background jobs
 
 ## Objective
 
-Atomically apply the exact confirmed assignment to `conf/local.conf`, preserve
-the selected detail on failure, and refresh its authoritative value on success.
+Replace terminal-suspending Devtool execution with typed, cancellable,
+persistent background jobs whose output and terminal outcomes survive
+navigation.
 
 ## Required work
 
-1. Inventory existing BBMASK writes, settings atomic persistence, variable
-   detail loading, effect execution, error notifications, and CLI tests.
-2. Accept only the exact typed request produced by the confirmation reducer;
-   revalidate the allowlisted global identity, destination, value, and
-   assignment at the filesystem boundary.
-3. Replace an active assignment for the exact variable or append one when it
-   is absent. Preserve unrelated content, comments, newline style, and file
-   permissions.
-4. Write through a same-directory temporary file and atomically rename it over
-   `conf/local.conf`; clean up a failed temporary write without damaging the
-   original.
-5. On success, request the exact global `VariableIdentity` again and update
-   the Inspector only from its authoritative backend response.
-6. On write or refresh failure, preserve the prior selected detail and report
-   an actionable notification.
-7. Add reducer/app/CLI tests named `config_edit_write` covering replacement,
-   append, validation, atomic failure, refresh success, and refresh failure.
-8. Perform external validation without leaving the live Yocto configuration
-   modified, and record the exact environment/result.
-9. Update specifications and status documents where behavior changes.
+1. Inventory the existing background-job model/coordinator, Devtool status and
+   direct process helpers, typed effects, cancellation, bounded output, and
+   tests before writing code.
+2. Split this task into coherent child tasks in the registry if the inventory
+   confirms argument construction/process execution and lifecycle integration
+   cannot remain one small commit.
+3. Define typed Devtool operation/argument construction without shell command
+   strings or UI text parsing.
+4. Execute Devtool without suspending the TUI and retain bounded stdout/stderr,
+   running state, exit status, and actionable errors.
+5. Reject duplicate active operations and cover missing executable, nonzero
+   exit, cancellation acknowledgement/escalation, and backend/process loss.
+6. Reuse the persistent background-job lifecycle and cancellation semantics
+   rather than creating a parallel untyped runner.
+7. Add adapter, reducer, app, and CLI tests named `devtool_job`.
+8. Update architecture/specification/status documents with intentional
+   behavior changes.
 
 ## Definition of done
 
-- Confirmed edits use a validated typed request and atomic local.conf update.
-- Existing assignments are replaced without duplicating the active variable.
-- Unrelated content and file permissions are preserved.
-- Success refreshes the exact global detail; failures preserve prior state.
-- Unit, integration, and external validation pass.
+- Devtool argument construction is typed and shell-free.
+- Operations run in the background without terminal suspension.
+- Output and terminal state remain visible after navigation.
+- Duplicate, cancellation, failure, missing-tool, and loss states are tested.
+- Task-specific and baseline verification pass.
 - Registry/status documents are updated and the next eligible task is active.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model config_edit_write
-cargo test -p yoctui-app config_edit_write
-cargo test -p yoctui -- config_edit_write
+cargo test -p yoctui-bitbake devtool_job
+cargo test -p yoctui-model devtool_job
+cargo test -p yoctui-app devtool_job
+cargo test -p yoctui -- devtool_job
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -57,4 +56,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`DEVTOOL-JOBS-001 — Run Devtool operations as persistent jobs`
+`DEVTOOL-MODIFY-001 — Complete Devtool modify, edit, and build workflow`
