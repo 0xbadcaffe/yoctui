@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Add authoritative typed variable detail. The Recipes workspace is complete with typed BitBake, navigation, Devtool, CVE, and SPDX actions alongside the lazy Layers tree and persistent workbench.
+Complete the Devtool lifecycle while live configuration-detail validation is externally blocked. The Recipes workspace is complete alongside the lazy Layers tree and persistent workbench.
 
 ## Current task
 
@@ -49,6 +49,7 @@ See `docs/current-task.md`.
 | Errors workspace | DONE | Stable structured diagnostics drive the full list and Inspector, exact retained-log and source navigation, related context, visible loss counters, and actionable success/warning/failure/cancellation/backend-loss outcomes |
 | Layers workspace | DONE | Every configured layer stays visible above a stable-path lazy tree; priority, compatibility, active/Git state, subtree refresh, hidden/search filtering, typed Inspector modes, safe 64 KiB text/binary previews, and responsive failure-safe rendering are tested |
 | Recipes workspace | DONE | Live-validated typed metadata, identity-stable Inspector states, typed BitBake operations, provider/log/local-patch navigation, editor failures, integrated Devtool routes, and persistent capability-aware CVE/SPDX actions are covered |
+| Configuration workspace | BLOCKED | Typed scoped expanded/unexpanded detail, varhistory operations, active overrides, compatibility defaults, and local tests are complete; a live Tinfoil query cannot create its lock/socket in the external build directory because escalation usage is exhausted until 2026-07-28 20:08 |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
@@ -57,11 +58,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `CONFIG-META-001` — add authoritative typed variable detail
-2. `CONFIG-UI-001` — complete searchable Configuration Inspector
-3. `CONFIG-ACTIONS-001` — add typed copy, source, and compare actions
-4. `CONFIG-EDIT-001` — add previewed configuration editing and refresh
-5. `DEVTOOL-001` — complete Devtool lifecycle
+1. `DEVTOOL-001` — complete Devtool lifecycle
+2. `CONFIG-META-001` — run live Tinfoil validation after escalation is available
+3. `CONFIG-UI-001` — complete searchable Configuration Inspector after metadata validation
+4. `CONFIG-ACTIONS-001` — add typed copy, source, and compare actions
+5. `CONFIG-EDIT-001` — add previewed configuration editing and refresh
 
 ## Rules
 

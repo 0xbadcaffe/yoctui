@@ -355,6 +355,27 @@ pub struct Workspace {
     pub layers: Vec<Layer>,
     pub recipes: Vec<Recipe>,
 }
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct VariableIdentity {
+    pub name: String,
+    pub recipe: Option<String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VariableOperation {
+    pub operation: String,
+    pub file: Option<PathBuf>,
+    pub line: Option<u32>,
+    pub value: Option<String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VariableDetail {
+    pub identity: VariableIdentity,
+    pub effective_value: Option<String>,
+    pub unexpanded_value: Option<String>,
+    pub provenance: Option<String>,
+    pub operations: Vec<VariableOperation>,
+    pub active_overrides: Vec<String>,
+}
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct HostTelemetry {
     pub cpu_utilization_percent: Option<u8>,
@@ -1127,6 +1148,7 @@ pub struct App {
     pub layer_relationships: Option<LayerRelationships>,
     pub recipe_sources: HashMap<String, Vec<PathBuf>>,
     pub recipe_metadata: HashMap<String, RecipeMetadata>,
+    pub variable_details: HashMap<VariableIdentity, VariableDetail>,
     pub recipe_metadata_loading: HashSet<String>,
     pub recipe_metadata_errors: HashMap<String, String>,
     pub layer_browser: Option<LayerBrowser>,
@@ -1176,6 +1198,7 @@ impl App {
             layer_relationships: None,
             recipe_sources: HashMap::new(),
             recipe_metadata: HashMap::new(),
+            variable_details: HashMap::new(),
             recipe_metadata_loading: HashSet::new(),
             recipe_metadata_errors: HashMap::new(),
             layer_browser: None,
@@ -1730,11 +1753,7 @@ pub enum Action {
     WorkspaceLoaded(Workspace),
     RecipesLoaded(Vec<Recipe>),
     LayersLoaded(Vec<Layer>),
-    VariableLoaded {
-        name: String,
-        value: Option<String>,
-        provenance: Option<String>,
-    },
+    VariableLoaded(VariableDetail),
     RecipeSourcesLoaded {
         recipe: String,
         paths: Vec<PathBuf>,
@@ -3942,21 +3961,41 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .layer_selection
                 .min(app.workspace.layers.len().saturating_sub(1));
         }
-        Action::VariableLoaded {
-            name,
-            value,
-            provenance,
-        } => {
-            if let Some(value) = value {
-                app.workspace.variables.insert(name.clone(), value);
-            } else {
-                app.workspace.variables.remove(&name);
+        Action::VariableLoaded(detail) => {
+            if detail.identity.recipe.is_none() {
+                if let Some(value) = detail.effective_value.clone() {
+                    app.workspace
+                        .variables
+                        .insert(detail.identity.name.clone(), value);
+                } else {
+                    app.workspace.variables.remove(&detail.identity.name);
+                }
+                if let Some(provenance) = detail.provenance.clone() {
+                    app.workspace
+                        .variable_provenance
+                        .insert(detail.identity.name.clone(), provenance);
+                } else {
+                    app.workspace
+                        .variable_provenance
+                        .remove(&detail.identity.name);
+                }
+                app.workspace.variable_provenance_chain.insert(
+                    detail.identity.name.clone(),
+                    detail
+                        .operations
+                        .iter()
+                        .filter_map(|operation| {
+                            operation.file.as_ref().map(|file| {
+                                operation.line.map_or_else(
+                                    || file.display().to_string(),
+                                    |line| format!("{}:{line}", file.display()),
+                                )
+                            })
+                        })
+                        .collect(),
+                );
             }
-            if let Some(provenance) = provenance {
-                app.workspace.variable_provenance.insert(name, provenance);
-            } else {
-                app.workspace.variable_provenance.remove(&name);
-            }
+            app.variable_details.insert(detail.identity.clone(), detail);
         }
         Action::RecipeSourcesLoaded { recipe, paths } => {
             app.recipe_sources.insert(recipe, paths);
@@ -5932,11 +5971,17 @@ mod tests {
         );
         let _ = update(
             &mut app,
-            Action::VariableLoaded {
-                name: "MACHINE".into(),
-                value: Some("qemux86-64".into()),
+            Action::VariableLoaded(VariableDetail {
+                identity: VariableIdentity {
+                    name: "MACHINE".into(),
+                    recipe: None,
+                },
+                effective_value: Some("qemux86-64".into()),
+                unexpanded_value: None,
                 provenance: Some("/build/conf/local.conf:1".into()),
-            },
+                operations: vec![],
+                active_overrides: vec![],
+            }),
         );
         let _ = update(
             &mut app,
@@ -6564,5 +6609,58 @@ mod tests {
             "CVE-2026-0001 requires review"
         );
         assert!(job.result.as_ref().unwrap().artifacts.is_empty());
+    }
+
+    #[test]
+    fn config_metadata_keeps_global_and_recipe_scopes_typed_and_independent() {
+        let mut app = App::new(20, 4_000);
+        let global = VariableDetail {
+            identity: VariableIdentity {
+                name: "PACKAGE_ARCH".into(),
+                recipe: None,
+            },
+            effective_value: Some("qemux86_64".into()),
+            unexpanded_value: Some("${MACHINE_ARCH}".into()),
+            provenance: Some("/build/conf/local.conf:8".into()),
+            operations: vec![VariableOperation {
+                operation: "set".into(),
+                file: Some("/build/conf/local.conf".into()),
+                line: Some(8),
+                value: Some("${MACHINE_ARCH}".into()),
+            }],
+            active_overrides: vec!["qemux86-64".into()],
+        };
+        let _ = update(&mut app, Action::VariableLoaded(global.clone()));
+        assert_eq!(app.workspace.variables["PACKAGE_ARCH"], "qemux86_64");
+        assert_eq!(
+            app.workspace.variable_provenance_chain["PACKAGE_ARCH"],
+            ["/build/conf/local.conf:8"]
+        );
+
+        let recipe = VariableDetail {
+            identity: VariableIdentity {
+                name: "PACKAGE_ARCH".into(),
+                recipe: Some("base-files".into()),
+            },
+            effective_value: Some("all".into()),
+            unexpanded_value: None,
+            provenance: None,
+            operations: vec![],
+            active_overrides: vec![],
+        };
+        let _ = update(&mut app, Action::VariableLoaded(recipe.clone()));
+        assert_eq!(
+            app.workspace.variables["PACKAGE_ARCH"], "qemux86_64",
+            "a scoped response must not overwrite global summary state"
+        );
+        assert_eq!(
+            app.variable_details
+                .get(&recipe.identity)
+                .unwrap()
+                .effective_value
+                .as_deref(),
+            Some("all")
+        );
+        assert_eq!(app.variable_details.get(&global.identity), Some(&global));
     }
 }

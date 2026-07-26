@@ -80,6 +80,15 @@ normalization boundary from `BackendEvent` to reducer `Action` values, and the
 model reducer is the sole owner of resulting state changes. Initial discovery
 and refresh responses use the same reducer actions as streamed events.
 
+Selected configuration variables use a version-compatible typed detail
+payload. It carries global or recipe scope, expanded and unexpanded datastore
+values, normalized varhistory operations (`op`, file, line, and detail), and
+the active `OVERRIDES` context. The Python bridge is the only component that
+interprets Tinfoil varhistory dictionaries. Rust converts paths and stores
+detail by `(name, recipe)` identity, so a recipe-scoped or stale response
+cannot overwrite the global workspace summary. Older bridge responses default
+new fields to unavailable/empty without fabricating history.
+
 Recipe discovery is split into a bounded summary query and a selected-recipe
 detail query. Summary records carry the resolved version, provider path/layer,
 and append count from BitBake's provider/cache tables. A typed

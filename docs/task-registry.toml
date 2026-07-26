@@ -306,12 +306,12 @@ notes = "Parent gate for authoritative variable detail, the responsive browser, 
 id = "CONFIG-META-001"
 milestone = "M3"
 title = "Add authoritative typed variable detail"
-status = "IN_PROGRESS"
+status = "BLOCKED"
 priority = 42
 required = true
 depends_on = ["BB-001"]
-verify = ["cargo test -p yoctui-protocol config_metadata", "cargo test -p yoctui-bitbake config_metadata", "cargo test -p yoctui-model config_metadata", "python3 -m pytest bridge/tests -k config_metadata"]
-notes = "Selected-variable detail: effective/unexpanded values, scope, provenance history operations, overrides, and explicit unavailable fields, with live Tinfoil evidence."
+verify = ["cargo test -p yoctui-protocol config_metadata", "cargo test -p yoctui-bitbake config_metadata", "cargo test -p yoctui-app config_metadata", "cargo test -p yoctui-model config_metadata", "python3 -m pytest bridge/tests -k config_metadata"]
+notes = "Typed implementation and all local/baseline tests pass. BLOCKED only on required live evidence: from /home/bspguy-dev/src/bitbake/bitbake-builds/yoctui-qemux86-64/build, a Tinfoil config-only MACHINE query needs to create bitbake.lock/socket outside the workspace; sandbox execution failed with 'directory is not writable', and the escalated retry was rejected because approval review hit its usage limit until 2026-07-28 20:08. Re-run with PYTHONPATH=/home/bspguy-dev/src/bitbake/lib and PATH=/home/bspguy-dev/src/bitbake/bin:$PATH, recording expanded/unexpanded MACHINE, varhistory.variable('MACHINE'), OVERRIDES, and BitBake version."
 
 [[task]]
 id = "CONFIG-UI-001"
