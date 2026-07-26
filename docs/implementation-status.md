@@ -11,8 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete the searchable Configuration Inspector using the now live-validated
-typed variable-detail path.
+Add typed copy actions to the completed searchable Configuration Inspector.
 
 ## Current task
 
@@ -50,7 +49,7 @@ See `docs/current-task.md`.
 | Errors workspace | DONE | Stable structured diagnostics drive the full list and Inspector, exact retained-log and source navigation, related context, visible loss counters, and actionable success/warning/failure/cancellation/backend-loss outcomes |
 | Layers workspace | DONE | Every configured layer stays visible above a stable-path lazy tree; priority, compatibility, active/Git state, subtree refresh, hidden/search filtering, typed Inspector modes, safe 64 KiB text/binary previews, and responsive failure-safe rendering are tested |
 | Recipes workspace | DONE | Live-validated typed metadata, identity-stable Inspector states, typed BitBake operations, provider/log/local-patch navigation, editor failures, integrated Devtool routes, and persistent capability-aware CVE/SPDX actions are covered |
-| Configuration workspace | IN_PROGRESS | Typed scoped expanded/unexpanded detail, varhistory operations, active overrides, compatibility defaults, and live BitBake 2.19.0 validation are complete; the searchable Inspector and actions remain |
+| Configuration workspace | IN_PROGRESS | Live-validated metadata and the searchable, identity-stable responsive Inspector are complete; copy, source, recipe-scope, compare, and previewed-edit actions remain |
 | Devtool status | DONE | Absolute recipe identity, executable capability, workspace membership/source path, Git branch/head and dirty counts, typed partial/error states, shared disabled reasons, responsive rendering, fake-process tests, and a live no-workspace query are complete |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
@@ -60,12 +59,12 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `CONFIG-UI-001` — complete the searchable Configuration Inspector
-2. `CONFIG-ACTIONS-001` — add typed copy, source, and compare actions
-3. `CONFIG-EDIT-001` — add previewed configuration editing and refresh
-4. `DEVTOOL-JOBS-001` — run Devtool operations as persistent jobs
-5. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
-6. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
+1. `CONFIG-COPY-001` — add typed effective/unexpanded copy actions
+2. `CONFIG-SOURCE-001` — add authoritative defining-source selection
+3. `CONFIG-SCOPE-001` — add recipe-scoped inspection
+4. `CONFIG-COMPARE-001` — compare typed configuration values
+5. `CONFIG-EDIT-001` — add previewed configuration editing and refresh
+6. `DEVTOOL-JOBS-001` — run Devtool operations as persistent jobs
 
 ## Rules
 

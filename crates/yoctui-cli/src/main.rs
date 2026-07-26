@@ -23,16 +23,17 @@ use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
-    BuildJobCoordinator, Input, errors_action, focus_action, key_action, logs_action,
-    settings_action, tasks_action,
+    BuildJobCoordinator, Input, config_workspace_action, errors_action, focus_action, key_action,
+    logs_action, settings_action, tasks_action,
 };
 use yoctui_bitbake::{
-    BackendEvent, BitBakeBackend, BridgeBackend, DevtoolInspector, ProcessBackend,
+    BackendEvent, BitBakeBackend, BridgeBackend, DevtoolInspector, ProcessBackend, VariableValue,
 };
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, Dialog, Effect, GitFileState,
     HostTelemetry, LayerBrowserEntry, LayerInspectorMode, LayerRelationship, LayerRelationships,
-    PreviewKind, RecipeDependencies, Screen, Severity, Theme, update,
+    PreviewKind, RecipeDependencies, Screen, Severity, Theme, VariableDetail, VariableIdentity,
+    update,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -908,6 +909,43 @@ async fn inspect_selected_devtool(app: &mut App, build_dir: &Path) {
             .inspect(build_dir, identity)
             .await;
         let _ = update(app, Action::DevtoolStatusLoaded(status));
+    }
+}
+
+fn config_variable_loaded_action(requested: VariableIdentity, variable: VariableValue) -> Action {
+    Action::VariableLoaded(VariableDetail {
+        identity: VariableIdentity {
+            name: requested.name,
+            recipe: variable.recipe,
+        },
+        effective_value: variable.value,
+        unexpanded_value: variable.unexpanded_value,
+        provenance: variable.provenance,
+        operations: variable.operations,
+        active_overrides: variable.active_overrides,
+    })
+}
+
+async fn inspect_selected_config_variable(app: &mut App, backend: &mut dyn BitBakeBackend) {
+    let Some(Effect::GetVariable(identity)) = update(app, Action::BeginSelectedConfigDetail) else {
+        return;
+    };
+    match backend
+        .get_variable(identity.name.clone(), identity.recipe.clone())
+        .await
+    {
+        Ok(variable) => {
+            let _ = update(app, config_variable_loaded_action(identity, variable));
+        }
+        Err(error) => {
+            let _ = update(
+                app,
+                Action::VariableDetailFailed {
+                    identity,
+                    message: error.to_string(),
+                },
+            );
+        }
     }
 }
 
@@ -2087,10 +2125,16 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 }
             } else if app.screen == yoctui_model::Screen::Configuration
-                && matches!(input, Input::Up | Input::Down)
+                && matches!(
+                    input,
+                    Input::Up | Input::Down | Input::Char('k') | Input::Char('j')
+                )
             {
-                let delta = if input == Input::Up { -1 } else { 1 };
-                let _ = update(&mut app, Action::SelectConfigVariable { delta });
+                if let Some(action) = config_workspace_action(false, input) {
+                    let _ = update(&mut app, action);
+                }
+            } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Enter {
+                inspect_selected_config_variable(&mut app, backend.as_mut()).await;
             } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Char('o')
             {
                 if let Some(Effect::OpenInEditor(path)) =
@@ -2501,6 +2545,46 @@ mod tests {
             devtool_source_dir(Path::new("/build"), "busybox"),
             PathBuf::from("/build/workspace/sources/busybox")
         );
+    }
+
+    #[test]
+    fn config_workspace_terminal_result_preserves_typed_scope_and_history() {
+        let action = config_variable_loaded_action(
+            VariableIdentity {
+                name: "MACHINE".into(),
+                recipe: None,
+            },
+            VariableValue {
+                recipe: Some("base-files".into()),
+                value: Some("qemux86-64".into()),
+                provenance: Some("/build/conf/local.conf:3".into()),
+                unexpanded_value: Some("${DEFAULT_MACHINE}".into()),
+                operations: vec![yoctui_model::VariableOperation {
+                    operation: "set".into(),
+                    file: Some("/build/conf/local.conf".into()),
+                    line: Some(3),
+                    value: Some("${DEFAULT_MACHINE}".into()),
+                }],
+                active_overrides: vec!["qemux86-64".into()],
+            },
+        );
+        assert!(matches!(
+            action,
+            Action::VariableLoaded(VariableDetail {
+                identity: VariableIdentity {
+                    name,
+                    recipe: Some(recipe),
+                },
+                unexpanded_value: Some(unexpanded),
+                operations,
+                active_overrides,
+                ..
+            }) if name == "MACHINE"
+                && recipe == "base-files"
+                && unexpanded == "${DEFAULT_MACHINE}"
+                && operations.len() == 1
+                && active_overrides == ["qemux86-64"]
+        ));
     }
 
     #[test]

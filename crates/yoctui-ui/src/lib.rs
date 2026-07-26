@@ -9,7 +9,7 @@ use yoctui_model::{
     DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget, GitFileState,
     LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PreviewKind, Recipe, RecipeBuildStatus,
     RecipeEditor, RecipeIdentity, Screen, Severity, TaskFilterField, TaskRow, TaskState, Theme,
-    format_duration,
+    VariableIdentity, format_duration,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -433,7 +433,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
         Screen::Configuration => {
-            "↑/↓ select | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
+            "↑/↓ select | Enter inspect | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
         }
         Screen::Bbmask => {
             "e edit BBMASK | Enter preview/confirm | Esc cancel/dashboard | v configuration | ? help | q quit"
@@ -1159,23 +1159,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
                 )
             },
         ),
-        Screen::Configuration => app
-            .workspace
-            .variables
-            .iter()
-            .nth(app.config_selection)
-            .map_or_else(
-                || "No configuration variable selected.".into(),
-                |(name, value)| {
-                    format!(
-                        "{name} = {value}\n\n{}",
-                        app.workspace
-                            .variable_provenance
-                            .get(name)
-                            .map_or("No provenance available.", String::as_str)
-                    )
-                },
-            ),
+        Screen::Configuration => config_inspector(app),
         Screen::Logs => app.logs.selected().map_or_else(
             || "No logs retained.".into(),
             |entry| {
@@ -3092,15 +3076,96 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
         chunks[1],
     );
 }
-fn config(frame: &mut Frame, app: &App, area: Rect) {
+fn config_variables(app: &App) -> Vec<(&String, &String)> {
     let mut variables = app.workspace.variables.iter().collect::<Vec<_>>();
     variables.sort_by_key(|(name, _)| *name);
     variables.retain(|(name, value)| {
         matches_metadata(&app.metadata_query, &[name.as_str(), value.as_str()])
     });
+    variables
+}
+
+fn config_inspector(app: &App) -> String {
+    let variables = config_variables(app);
+    let Some((name, summary_value)) = variables.get(app.config_selection).copied() else {
+        return if app.workspace.variables.is_empty() {
+            "No configuration variables supplied by the backend.".into()
+        } else {
+            "No configuration variables match the active search.".into()
+        };
+    };
+    let identity = VariableIdentity {
+        name: name.clone(),
+        recipe: None,
+    };
+    if app.variable_detail_loading.contains(&identity) {
+        return format!(
+            "Variable: {name}\nEffective summary: {summary_value}\n\nLoading authoritative detail…"
+        );
+    }
+    if let Some(error) = app.variable_detail_errors.get(&identity) {
+        return format!(
+            "Variable: {name}\nEffective summary: {summary_value}\n\nDetail unavailable: {error}\nPress Enter to retry."
+        );
+    }
+    let Some(detail) = app.variable_details.get(&identity) else {
+        return format!(
+            "Variable: {name}\nEffective summary: {summary_value}\nScope: global\n\nDetail not loaded; press Enter to inspect."
+        );
+    };
+    let operations = if detail.operations.is_empty() {
+        "none reported".into()
+    } else {
+        detail
+            .operations
+            .iter()
+            .map(|operation| {
+                let source = operation.file.as_ref().map_or_else(
+                    || "source unavailable".into(),
+                    |file| {
+                        operation.line.map_or_else(
+                            || file.display().to_string(),
+                            |line| format!("{}:{line}", file.display()),
+                        )
+                    },
+                );
+                format!(
+                    "{} @ {}{}",
+                    operation.operation,
+                    source,
+                    operation
+                        .value
+                        .as_ref()
+                        .map_or_else(String::new, |value| format!(" = {value}"))
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n  ")
+    };
+    format!(
+        "Variable: {}\nScope: {}\nEffective value: {}\nUnexpanded value: {}\nProvenance: {}\nActive overrides: {}\nOperations:\n  {}",
+        detail.identity.name,
+        detail
+            .identity
+            .recipe
+            .as_deref()
+            .map_or("global", |recipe| recipe),
+        detail.effective_value.as_deref().unwrap_or("unavailable"),
+        detail.unexpanded_value.as_deref().unwrap_or("unavailable"),
+        detail.provenance.as_deref().unwrap_or("unavailable"),
+        if detail.active_overrides.is_empty() {
+            "none reported".into()
+        } else {
+            detail.active_overrides.join(", ")
+        },
+        operations,
+    )
+}
+
+fn config(frame: &mut Frame, app: &App, area: Rect) {
+    let variables = config_variables(app);
     let variable_count = variables.len();
-    let selected = variables.get(app.config_selection).copied();
-    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(9)]).split(area);
+    let chunks = Layout::vertical([Constraint::Percentage(42), Constraint::Min(5)]).split(area);
     frame.render_widget(
         Table::new(
             variables
@@ -3130,30 +3195,10 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
         ),
         chunks[0],
     );
-    let detail = selected.map_or_else(
-        || "No configuration variables supplied by the backend.".into(),
-        |(name, value)| {
-            let chain = app
-                .workspace
-                .variable_provenance_chain
-                .get(name)
-                .filter(|chain| !chain.is_empty())
-                .map_or_else(
-                    || "backend did not provide an original/append/override chain".into(),
-                    |chain| chain.join("\n  -> "),
-                );
-            format!(
-                "Variable: {name}\nEffective value: {value}\nProvenance: {}\nSource chain:\n  {chain}",
-                app.workspace
-                    .variable_provenance
-                    .get(name)
-                    .map_or("backend did not provide source provenance", String::as_str)
-            )
-        },
-    );
+    let detail = config_inspector(app);
     frame.render_widget(
         Paragraph::new(format!(
-            "{detail}\n\no opens the provenance source file when available."
+            "{detail}\n\nEnter refreshes detail; o opens provenance when available."
         ))
         .block(
             Block::default()
@@ -4738,6 +4783,34 @@ mod tests {
                 "conf/local.conf:12".into(),
             ],
         );
+        let identity = yoctui_model::VariableIdentity {
+            name: "MACHINE".into(),
+            recipe: None,
+        };
+        app.variable_details.insert(
+            identity.clone(),
+            yoctui_model::VariableDetail {
+                identity,
+                effective_value: Some("qemuarm".into()),
+                unexpanded_value: Some("${DEFAULT_MACHINE}".into()),
+                provenance: Some("conf/local.conf:12".into()),
+                operations: vec![
+                    yoctui_model::VariableOperation {
+                        operation: "set".into(),
+                        file: Some("meta/conf/bitbake.conf".into()),
+                        line: Some(1),
+                        value: Some("${DEFAULT_MACHINE}".into()),
+                    },
+                    yoctui_model::VariableOperation {
+                        operation: "set".into(),
+                        file: Some("conf/local.conf".into()),
+                        line: Some(12),
+                        value: Some("qemuarm".into()),
+                    },
+                ],
+                active_overrides: vec!["qemuarm".into(), "poky".into()],
+            },
+        );
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -4748,6 +4821,58 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("conf/local.conf:12"));
         assert!(output.contains("meta/conf/bitbake.conf:1"));
+    }
+
+    #[test]
+    fn config_workspace_renders_lazy_partial_and_error_states_responsively() {
+        for (width, height) in [(160, 30), (110, 26), (90, 24), (70, 20)] {
+            let mut app = App::new(10, 1_000);
+            app.screen = Screen::Configuration;
+            app.workspace
+                .variables
+                .insert("MACHINE".into(), "qemux86-64".into());
+            let identity = yoctui_model::VariableIdentity {
+                name: "MACHINE".into(),
+                recipe: None,
+            };
+            app.variable_detail_loading.insert(identity.clone());
+            let output = rendered_text(&app, width, height);
+            if width >= 80 && height >= 24 {
+                assert!(output.contains("Loading authoritative detail"), "{output}");
+            }
+
+            app.variable_detail_loading.clear();
+            app.variable_detail_errors
+                .insert(identity, "Tinfoil unavailable".into());
+            let output = rendered_text(&app, width, height);
+            if width >= 80 && height >= 24 {
+                assert!(output.contains("Detail unavailable"), "{output}");
+                assert!(output.contains("Tinfoil unavailable"), "{output}");
+            }
+
+            app.variable_detail_errors.clear();
+            let identity = yoctui_model::VariableIdentity {
+                name: "MACHINE".into(),
+                recipe: None,
+            };
+            app.variable_details.insert(
+                identity.clone(),
+                yoctui_model::VariableDetail {
+                    identity,
+                    effective_value: Some("qemux86-64".into()),
+                    unexpanded_value: None,
+                    provenance: None,
+                    operations: vec![],
+                    active_overrides: vec![],
+                },
+            );
+            let output = rendered_text(&app, width, height);
+            if width >= 110 && height >= 24 {
+                assert!(output.contains("Unexpanded value: unavailable"), "{output}");
+                assert!(output.contains("Operations:"), "{output}");
+                assert!(output.contains("none reported"), "{output}");
+            }
+        }
     }
     #[test]
     fn bbmask_renders_effective_patterns_and_provenance() {

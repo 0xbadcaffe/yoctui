@@ -1253,6 +1253,8 @@ pub struct App {
     pub devtool_statuses: HashMap<RecipeIdentity, DevtoolStatus>,
     pub devtool_status_loading: HashSet<RecipeIdentity>,
     pub variable_details: HashMap<VariableIdentity, VariableDetail>,
+    pub variable_detail_loading: HashSet<VariableIdentity>,
+    pub variable_detail_errors: HashMap<VariableIdentity, String>,
     pub recipe_metadata_loading: HashSet<String>,
     pub recipe_metadata_errors: HashMap<String, String>,
     pub layer_browser: Option<LayerBrowser>,
@@ -1305,6 +1307,8 @@ impl App {
             devtool_statuses: HashMap::new(),
             devtool_status_loading: HashSet::new(),
             variable_details: HashMap::new(),
+            variable_detail_loading: HashSet::new(),
+            variable_detail_errors: HashMap::new(),
             recipe_metadata_loading: HashSet::new(),
             recipe_metadata_errors: HashMap::new(),
             layer_browser: None,
@@ -1840,6 +1844,11 @@ pub enum Action {
     SelectConfigVariable {
         delta: isize,
     },
+    BeginSelectedConfigDetail,
+    VariableDetailFailed {
+        identity: VariableIdentity,
+        message: String,
+    },
     OpenSelectedConfigSource,
     BeginBbmaskEdit,
     AppendBbmask(char),
@@ -2163,6 +2172,32 @@ fn selected_devtool_status(app: &App) -> Option<&DevtoolStatus> {
     selected_recipe_identity(app)
         .ok()
         .and_then(|identity| app.devtool_statuses.get(&identity))
+}
+
+fn filtered_config_identities(app: &App) -> Vec<VariableIdentity> {
+    let query = app.metadata_query.to_ascii_lowercase();
+    let mut identities = app
+        .workspace
+        .variables
+        .iter()
+        .filter(|(name, value)| {
+            query.is_empty()
+                || name.to_ascii_lowercase().contains(&query)
+                || value.to_ascii_lowercase().contains(&query)
+        })
+        .map(|(name, _)| VariableIdentity {
+            name: name.clone(),
+            recipe: None,
+        })
+        .collect::<Vec<_>>();
+    identities.sort_by(|left, right| left.name.cmp(&right.name));
+    identities
+}
+
+fn selected_config_identity(app: &App) -> Option<VariableIdentity> {
+    filtered_config_identities(app)
+        .get(app.config_selection)
+        .cloned()
 }
 
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
@@ -3963,22 +3998,39 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.screen = Screen::LayerRelationships;
         }
         Action::SelectConfigVariable { delta } => {
+            let count = filtered_config_identities(app).len();
             app.config_selection = if delta.is_negative() {
                 app.config_selection.saturating_sub(delta.unsigned_abs())
             } else {
                 app.config_selection
                     .saturating_add(delta as usize)
-                    .min(app.workspace.variables.len().saturating_sub(1))
+                    .min(count.saturating_sub(1))
             };
         }
+        Action::BeginSelectedConfigDetail => {
+            let Some(identity) = selected_config_identity(app) else {
+                app.notification = Some("No configuration variable is selected to inspect.".into());
+                return None;
+            };
+            app.variable_detail_loading.insert(identity.clone());
+            app.variable_detail_errors.remove(&identity);
+            return Some(Effect::GetVariable(identity));
+        }
+        Action::VariableDetailFailed { identity, message } => {
+            app.variable_detail_loading.remove(&identity);
+            app.variable_detail_errors
+                .insert(identity.clone(), message.clone());
+            app.notification = Some(format!(
+                "Configuration detail for {} is unavailable: {message}",
+                identity.name
+            ));
+        }
         Action::OpenSelectedConfigSource => {
-            let mut variables = app.workspace.variables.iter().collect::<Vec<_>>();
-            variables.sort_by_key(|(name, _)| *name);
-            let Some((name, _)) = variables.get(app.config_selection) else {
+            let Some(identity) = selected_config_identity(app) else {
                 app.notification = Some("No configuration variable is selected to open.".into());
                 return None;
             };
-            let Some(provenance) = app.workspace.variable_provenance.get(*name) else {
+            let Some(provenance) = app.workspace.variable_provenance.get(&identity.name) else {
                 app.notification =
                     Some("The selected variable has no file-backed provenance.".into());
                 return None;
@@ -4103,7 +4155,26 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 close_dialog(app);
             }
         }
-        Action::WorkspaceLoaded(w) => app.workspace = w,
+        Action::WorkspaceLoaded(w) => {
+            let selected = selected_config_identity(app);
+            app.workspace = w;
+            let names = app
+                .workspace
+                .variables
+                .keys()
+                .cloned()
+                .collect::<HashSet<_>>();
+            app.variable_details
+                .retain(|identity, _| names.contains(&identity.name));
+            app.variable_detail_loading
+                .retain(|identity| names.contains(&identity.name));
+            app.variable_detail_errors
+                .retain(|identity, _| names.contains(&identity.name));
+            let identities = filtered_config_identities(app);
+            app.config_selection = selected
+                .and_then(|selected| identities.iter().position(|identity| identity == &selected))
+                .unwrap_or_else(|| app.config_selection.min(identities.len().saturating_sub(1)));
+        }
         Action::RecipesLoaded(mut recipes) => {
             let selected = app
                 .workspace
@@ -4144,6 +4215,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .min(app.workspace.layers.len().saturating_sub(1));
         }
         Action::VariableLoaded(detail) => {
+            app.variable_detail_loading.remove(&detail.identity);
+            app.variable_detail_errors.remove(&detail.identity);
             if detail.identity.recipe.is_none() {
                 if let Some(value) = detail.effective_value.clone() {
                     app.workspace
@@ -4239,6 +4312,7 @@ pub enum Effect {
     InspectDevtoolStatus(RecipeIdentity),
     GetDependencies(String),
     GetRecipeMetadata(String),
+    GetVariable(VariableIdentity),
     GetLayerRelationships,
     LoadRecipeEditorFile(PathBuf),
     SaveRecipeEditorFile {
@@ -6917,5 +6991,76 @@ mod tests {
             Some("The selected recipe provider path is not absolute.")
         );
         assert!(app.devtool_status_loading.is_empty());
+    }
+
+    #[test]
+    fn config_workspace_lazy_detail_is_identity_correlated_and_search_bounded() {
+        let mut app = App::new(20, 4_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace
+            .variables
+            .insert("DISTRO".into(), "poky".into());
+        app.metadata_query = "machine".into();
+        let identity = match update(&mut app, Action::BeginSelectedConfigDetail) {
+            Some(Effect::GetVariable(identity)) => identity,
+            effect => panic!("unexpected effect: {effect:?}"),
+        };
+        assert_eq!(identity.name, "MACHINE");
+        assert_eq!(identity.recipe, None);
+        assert!(app.variable_detail_loading.contains(&identity));
+
+        let scoped = VariableDetail {
+            identity: VariableIdentity {
+                name: "MACHINE".into(),
+                recipe: Some("base-files".into()),
+            },
+            effective_value: Some("qemux86-64".into()),
+            unexpanded_value: None,
+            provenance: None,
+            operations: vec![],
+            active_overrides: vec![],
+        };
+        let _ = update(&mut app, Action::VariableLoaded(scoped.clone()));
+        assert!(
+            app.variable_detail_loading.contains(&identity),
+            "a scoped response must not complete the selected global request"
+        );
+        assert_eq!(app.variable_details.get(&scoped.identity), Some(&scoped));
+
+        let _ = update(&mut app, Action::SelectConfigVariable { delta: 99 });
+        assert_eq!(app.config_selection, 0);
+        let _ = update(
+            &mut app,
+            Action::VariableDetailFailed {
+                identity: identity.clone(),
+                message: "server unavailable".into(),
+            },
+        );
+        assert!(!app.variable_detail_loading.contains(&identity));
+        assert_eq!(
+            app.variable_detail_errors
+                .get(&identity)
+                .map(String::as_str),
+            Some("server unavailable")
+        );
+    }
+
+    #[test]
+    fn config_workspace_refresh_preserves_selected_variable_identity() {
+        let mut app = App::new(20, 4_000);
+        app.workspace.variables.insert("A".into(), "one".into());
+        app.workspace.variables.insert("B".into(), "two".into());
+        app.config_selection = 1;
+        let mut workspace = Workspace::default();
+        workspace.variables.insert("B".into(), "updated".into());
+        workspace.variables.insert("C".into(), "three".into());
+        let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
+        assert_eq!(app.config_selection, 0);
+        assert_eq!(
+            selected_config_identity(&app).map(|identity| identity.name),
+            Some("B".into())
+        );
     }
 }
