@@ -202,6 +202,15 @@ argument vector, preserving non-UTF-8 path bytes. The CLI retains the original
 recipe identity separately while the job runs and refreshes it only after a
 successful `Finish` terminal event.
 
+Deploy-target uses model-owned `DevtoolDeployDraft` and
+`DevtoolDeployPlan` values so the absolute recipe identity cannot be replaced
+by navigation or reconstructed from display text. The reducer invokes the
+shared `DevtoolOperation` validation before preview and again before emitting
+the effect. The adapter receives only the validated recipe/target argument
+vector. The CLI retains the original identity until a successful typed
+`DeployTarget` event and then refreshes it through `DevtoolInspector`; failure
+events do not overwrite prior authoritative status.
+
 Unknown future protocol events normalize to an ignored event and do not imply a
 backend disconnect. Missing task progress remains unknown rather than becoming
 zero. Terminal build events emit one primary build-state action and one

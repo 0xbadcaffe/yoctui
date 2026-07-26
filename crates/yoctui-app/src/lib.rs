@@ -881,6 +881,24 @@ pub fn devtool_finish_confirmation_action(key: Input) -> Option<Action> {
     }
 }
 
+pub fn devtool_deploy_dialog_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Char(character) => Some(Action::AppendDevtoolDeployTarget(character)),
+        Input::Backspace => Some(Action::BackspaceDevtoolDeployTarget),
+        Input::Enter => Some(Action::PreviewDevtoolDeploy),
+        Input::Esc => Some(Action::CancelDevtoolDeploy),
+        _ => None,
+    }
+}
+
+pub fn devtool_deploy_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmDevtoolDeploy),
+        Input::Esc => Some(Action::CancelDevtoolDeployConfirmation),
+        _ => None,
+    }
+}
+
 pub fn recipe_editor_action(editing: bool, key: Input) -> Option<Action> {
     match key {
         Input::Esc => Some(Action::CloseRecipeEditor),
@@ -1847,6 +1865,30 @@ mod tests {
         assert_eq!(
             devtool_finish_confirmation_action(Input::Esc),
             Some(Action::CancelDevtoolFinishConfirmation)
+        );
+    }
+
+    #[test]
+    fn devtool_target_deploy_routes_entry_and_confirmation_keys() {
+        assert_eq!(
+            devtool_deploy_dialog_action(Input::Char('q')),
+            Some(Action::AppendDevtoolDeployTarget('q'))
+        );
+        assert_eq!(
+            devtool_deploy_dialog_action(Input::Backspace),
+            Some(Action::BackspaceDevtoolDeployTarget)
+        );
+        assert_eq!(
+            devtool_deploy_dialog_action(Input::Enter),
+            Some(Action::PreviewDevtoolDeploy)
+        );
+        assert_eq!(
+            devtool_deploy_confirmation_action(Input::Enter),
+            Some(Action::ConfirmDevtoolDeploy)
+        );
+        assert_eq!(
+            devtool_deploy_confirmation_action(Input::Esc),
+            Some(Action::CancelDevtoolDeployConfirmation)
         );
     }
 

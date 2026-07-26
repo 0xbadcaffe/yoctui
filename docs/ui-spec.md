@@ -810,6 +810,21 @@ original identity; removal from the Devtool workspace is a valid refreshed
 state. Command, cancellation, runner, and refresh failures retain the durable
 job and actionable prior state.
 
+`P` requires the exact authoritative recipe identity and a present workspace
+source before opening target entry. The draft retains that identity while the
+user enters exactly one non-option target value; empty values, whitespace,
+control characters, and option-like values are rejected before confirmation.
+The focus-trapping confirmation shows the exact
+`devtool deploy-target <recipe> <target>` intent, absolute provider path, and
+target, then revalidates eligibility and target syntax immediately before
+execution.
+
+Deploy-target runs as the same persistent cancellable Devtool job, preserving
+stream identity, graceful/forced cancellation, nonzero failure, runner loss,
+and navigation retention. A successful terminal event refreshes only the
+original recipe identity. Process or refresh failure leaves prior
+authoritative status and durable job context available.
+
 `V` starts a selected-recipe CVE check only when authoritative metadata
 reports `do_cve_check`; `X` starts SPDX generation only when it reports
 `do_create_spdx`. Each route opens the existing typed confirmation with the

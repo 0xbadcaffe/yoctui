@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete persistent Devtool deploy-target and reset workflows.
+Complete the persistent destructive Devtool reset workflow.
 
 ## Current task
 
@@ -55,6 +55,7 @@ See `docs/current-task.md`.
 | Devtool modify/edit/build | DONE | Exact-identity status gates an explicit modify preview; successful persistent completion refreshes the authoritative source tree, opens the two-pane editor, and routes saved Ctrl+B requests through confirmed recipe builds |
 | Devtool update-recipe | DONE | Exact-identity workspace eligibility gates a provider-aware confirmation; persistent success refreshes the original identity after navigation while failures retain prior status and job output |
 | Devtool finish | DONE | Clean committed workspace eligibility gates an absolute configured-layer picker and exact provider/layer/path confirmation; native paths survive the adapter and completion refreshes the original identity |
+| Devtool deploy-target | DONE | Exact-identity workspace eligibility and validated target drafts gate provider-aware confirmation; persistent success refreshes the original identity and failures retain status/job context |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
@@ -63,8 +64,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DEVTOOL-DEPLOY-001` — complete deploy-target
-2. `DEVTOOL-RESET-001` — complete reset
+1. `DEVTOOL-RESET-001` — complete reset
 
 ## Rules
 

@@ -1943,6 +1943,31 @@ mod tests {
         assert_eq!(command.arguments()[2], OsString::from_vec(bytes));
     }
 
+    #[test]
+    fn devtool_target_deploy_validates_before_exact_shell_free_arguments() {
+        let operation = DevtoolOperation::DeployTarget {
+            recipe: "busybox".into(),
+            target: "root@192.0.2.1:/opt/demo".into(),
+        };
+        let command = DevtoolCommandSpec::from_operation(&operation).unwrap();
+        assert_eq!(command.executable(), Path::new("devtool"));
+        assert_eq!(
+            command.arguments(),
+            [
+                OsString::from("deploy-target"),
+                OsString::from("busybox"),
+                OsString::from("root@192.0.2.1:/opt/demo"),
+            ]
+        );
+        assert_eq!(
+            DevtoolCommandSpec::from_operation(&DevtoolOperation::DeployTarget {
+                recipe: "busybox".into(),
+                target: "--help".into(),
+            }),
+            Err(DevtoolOperationError::InvalidTarget)
+        );
+    }
+
     #[cfg(unix)]
     #[test]
     fn devtool_job_spec_preserves_non_utf8_finish_destination() {

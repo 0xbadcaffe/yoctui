@@ -333,6 +333,24 @@ pub struct DevtoolDeployRequest {
     pub target: String,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolDeployDraft {
+    pub identity: RecipeIdentity,
+    pub target: String,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolDeployPlan {
+    pub identity: RecipeIdentity,
+    pub target: String,
+}
+impl DevtoolDeployPlan {
+    pub fn request(&self) -> DevtoolDeployRequest {
+        DevtoolDeployRequest {
+            recipe: self.identity.name.clone(),
+            target: self.target.clone(),
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DevtoolOperation {
     Modify {
         recipe: String,
@@ -740,11 +758,8 @@ pub enum Dialog {
     DevtoolUpdateConfirmation(RecipeIdentity),
     DevtoolFinishPicker(DevtoolFinishPicker),
     DevtoolFinishConfirmation(DevtoolFinishPlan),
-    DevtoolDeploy {
-        recipe: String,
-        target: String,
-    },
-    DevtoolDeployConfirmation(DevtoolDeployRequest),
+    DevtoolDeploy(DevtoolDeployDraft),
+    DevtoolDeployConfirmation(DevtoolDeployPlan),
     BbmaskEdit {
         input: String,
     },
@@ -3937,23 +3952,30 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             );
         }
         Action::BeginSelectedRecipeDevtoolDeploy => {
-            if let Some(reason) = selected_devtool_status(app)
-                .and_then(|status| status.disabled_reason(DevtoolAction::Deploy))
-            {
+            let identity = match selected_recipe_identity(app) {
+                Ok(identity) => identity,
+                Err(message) => {
+                    app.notification = Some(message.into());
+                    return None;
+                }
+            };
+            let Some(status) = app.devtool_statuses.get(&identity) else {
+                app.notification = Some(
+                    "Refresh authoritative Devtool status with t before deploy-target.".into(),
+                );
+                return None;
+            };
+            if let Some(reason) = status.disabled_reason(DevtoolAction::Deploy) {
                 app.notification = Some(reason);
                 return None;
             }
-            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                open_dialog(
-                    app,
-                    Dialog::DevtoolDeploy {
-                        recipe: recipe.name.clone(),
-                        target: String::new(),
-                    },
-                );
-            } else {
-                app.notification = Some("No recipe is selected for devtool deploy-target.".into());
-            }
+            open_dialog(
+                app,
+                Dialog::DevtoolDeploy(DevtoolDeployDraft {
+                    identity,
+                    target: String::new(),
+                }),
+            );
         }
         Action::BeginSelectedRecipeDependencies => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
@@ -4169,40 +4191,51 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::AppendDevtoolDeployTarget(character) => {
-            if let Some(Dialog::DevtoolDeploy { target, .. }) = app.active_dialog_mut() {
-                target.push(character);
+            if let Some(Dialog::DevtoolDeploy(draft)) = app.active_dialog_mut() {
+                draft.target.push(character);
             }
         }
         Action::BackspaceDevtoolDeployTarget => {
-            if let Some(Dialog::DevtoolDeploy { target, .. }) = app.active_dialog_mut() {
-                target.pop();
+            if let Some(Dialog::DevtoolDeploy(draft)) = app.active_dialog_mut() {
+                draft.target.pop();
             }
         }
         Action::PreviewDevtoolDeploy => {
-            if let Some(Dialog::DevtoolDeploy { recipe, target }) = app.active_dialog() {
-                let recipe = recipe.clone();
-                let target = target.trim().to_owned();
-                if target.is_empty() || target.contains(char::is_whitespace) {
-                    app.notification =
-                        Some("Enter one deployment target without whitespace.".into());
-                } else {
-                    replace_dialog(
-                        app,
-                        Dialog::DevtoolDeployConfirmation(DevtoolDeployRequest { recipe, target }),
-                    );
+            if let Some(Dialog::DevtoolDeploy(draft)) = app.active_dialog() {
+                let plan = DevtoolDeployPlan {
+                    identity: draft.identity.clone(),
+                    target: draft.target.clone(),
+                };
+                if let Err(error) = DevtoolOperation::from(plan.request()).validate() {
+                    app.notification = Some(error.to_string());
+                    return None;
                 }
+                replace_dialog(app, Dialog::DevtoolDeployConfirmation(plan));
             }
         }
         Action::CancelDevtoolDeploy => {
-            if matches!(app.active_dialog(), Some(Dialog::DevtoolDeploy { .. })) {
+            if matches!(app.active_dialog(), Some(Dialog::DevtoolDeploy(_))) {
                 close_dialog(app);
             }
         }
         Action::ConfirmDevtoolDeploy => {
-            if let Some(Dialog::DevtoolDeployConfirmation(request)) = app.active_dialog().cloned() {
+            if let Some(Dialog::DevtoolDeployConfirmation(plan)) = app.active_dialog().cloned() {
+                let Some(status) = app.devtool_statuses.get(&plan.identity) else {
+                    app.notification =
+                        Some("Authoritative Devtool status expired; refresh with t.".into());
+                    return None;
+                };
+                if let Some(reason) = status.disabled_reason(DevtoolAction::Deploy) {
+                    app.notification = Some(reason);
+                    return None;
+                }
+                if let Err(error) = DevtoolOperation::from(plan.request()).validate() {
+                    app.notification = Some(error.to_string());
+                    return None;
+                }
                 close_dialog(app);
                 synchronize_focus(app);
-                return Some(Effect::DevtoolDeploy(request));
+                return Some(Effect::DevtoolDeploy(plan));
             }
         }
         Action::CancelDevtoolDeployConfirmation => {
@@ -5123,7 +5156,7 @@ pub enum Effect {
     DevtoolReset(String),
     DevtoolUpdateRecipe(RecipeIdentity),
     DevtoolFinish(DevtoolFinishPlan),
-    DevtoolDeploy(DevtoolDeployRequest),
+    DevtoolDeploy(DevtoolDeployPlan),
     InspectDevtoolStatus(RecipeIdentity),
     GetDependencies(String),
     GetRecipeMetadata(String),
@@ -6674,26 +6707,65 @@ mod tests {
         );
     }
     #[test]
-    fn devtool_deploy_requires_a_target_and_confirmation() {
+    fn devtool_target_deploy_requires_authoritative_workspace_and_validated_confirmation() {
         let mut app = App::new(10, 1_000);
+        let identity = RecipeIdentity {
+            name: "busybox".into(),
+            file: PathBuf::from("/layers/meta/recipes-core/busybox/busybox.bb"),
+        };
         app.workspace.recipes = vec![Recipe {
             name: "busybox".into(),
-            version: None,
-            layer: None,
+            file: Some(identity.file.clone()),
             ..Recipe::default()
         }];
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolDeploy);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Refresh authoritative Devtool status with t before deploy-target.")
+        );
+        app.devtool_statuses.insert(
+            identity.clone(),
+            DevtoolStatus {
+                identity: identity.clone(),
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::Present {
+                    source_path: PathBuf::from("/build/workspace/sources/busybox"),
+                    recipe_file: Some(identity.file.clone()),
+                },
+                git: DevtoolGitState::NotRepository,
+                error: None,
+            },
+        );
         let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolDeploy);
         let _ = update(&mut app, Action::AppendDevtoolDeployTarget('q'));
         let _ = update(&mut app, Action::AppendDevtoolDeployTarget('e'));
         let _ = update(&mut app, Action::AppendDevtoolDeployTarget('m'));
         let _ = update(&mut app, Action::AppendDevtoolDeployTarget('u'));
         let _ = update(&mut app, Action::PreviewDevtoolDeploy);
+        let plan = DevtoolDeployPlan {
+            identity: identity.clone(),
+            target: "qemu".into(),
+        };
+        assert_eq!(
+            app.active_dialog(),
+            Some(&Dialog::DevtoolDeployConfirmation(plan.clone()))
+        );
         assert_eq!(
             update(&mut app, Action::ConfirmDevtoolDeploy),
-            Some(Effect::DevtoolDeploy(DevtoolDeployRequest {
-                recipe: "busybox".into(),
-                target: "qemu".into(),
-            }))
+            Some(Effect::DevtoolDeploy(plan))
+        );
+
+        app.dialogs
+            .push_back(Dialog::DevtoolDeploy(DevtoolDeployDraft {
+                identity,
+                target: "--help".into(),
+            }));
+        assert_eq!(update(&mut app, Action::PreviewDevtoolDeploy), None);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some(
+                "Devtool target must be one non-option value without whitespace or control characters"
+            )
         );
     }
     #[test]
