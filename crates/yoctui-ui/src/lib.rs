@@ -434,7 +434,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
         Screen::Configuration => {
-            "↑/↓ select | Enter inspect | C copy effective | U copy unexpanded | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
+            "↑/↓ select | Enter inspect | s scope | C copy effective | U copy unexpanded | o open provenance | / search | x BBMASK | Esc dashboard | ? help | q quit"
         }
         Screen::Bbmask => {
             "e edit BBMASK | Enter preview/confirm | Esc cancel/dashboard | v configuration | ? help | q quit"
@@ -593,6 +593,30 @@ pub fn render(frame: &mut Frame, app: &App) {
             .block(
                 Block::default()
                     .title(format!("{} retained task logs", picker.recipe))
+                    .borders(Borders::ALL),
+            ),
+            popup,
+        );
+    } else if let Some(Dialog::ConfigScopePicker(picker)) = app.active_dialog() {
+        let popup = Rect::new(
+            area.width / 5,
+            area.height / 4,
+            area.width * 3 / 5,
+            area.height / 2,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Table::new(
+                picker.scopes.iter().enumerate().map(|(index, scope)| {
+                    Row::new([scope.as_deref().unwrap_or("(global)")])
+                        .style(selected_style(app, index == picker.selection))
+                }),
+                [Constraint::Min(20)],
+            )
+            .header(Row::new(["Variable scope"]).style(Style::default().bold()))
+            .block(
+                Block::default()
+                    .title(format!("{} scope", picker.variable))
                     .borders(Borders::ALL),
             ),
             popup,
@@ -3137,7 +3161,7 @@ fn config_inspector(app: &App) -> String {
     };
     let identity = VariableIdentity {
         name: name.clone(),
-        recipe: None,
+        recipe: app.config_scope.clone(),
     };
     if app.variable_detail_loading.contains(&identity) {
         return format!(
@@ -3153,7 +3177,8 @@ fn config_inspector(app: &App) -> String {
     }
     let Some(detail) = app.variable_details.get(&identity) else {
         return format!(
-            "Variable: {name}\nEffective summary: {summary_value}\nScope: global\n\nDetail not loaded; press Enter to inspect.\n\n{}",
+            "Variable: {name}\nEffective summary: {summary_value}\nScope: {}\n\nDetail not loaded; press Enter to inspect.\n\n{}",
+            app.config_scope.as_deref().unwrap_or("global"),
             config_copy_status(app)
         );
     };
@@ -3225,7 +3250,16 @@ fn config_copy_status(app: &App) -> String {
         || "o source: enabled".into(),
         |reason| format!("o source: disabled ({reason})"),
     );
-    format!("{source}\n{copy}")
+    let scope = if app.workspace.recipes.is_empty() {
+        "s scope: global only (no recipes reported)".into()
+    } else {
+        format!(
+            "s scope: enabled ({} recipes; active {})",
+            app.workspace.recipes.len(),
+            app.config_scope.as_deref().unwrap_or("global")
+        )
+    };
+    format!("{scope}\n{source}\n{copy}")
 }
 
 fn config(frame: &mut Frame, app: &App, area: Rect) {
@@ -5010,6 +5044,53 @@ mod tests {
             assert!(output.contains("local.conf"), "{output}");
             assert!(output.contains("12"), "{output}");
         }
+    }
+
+    #[test]
+    fn config_scope_renders_picker_active_identity_and_global_fallback() {
+        for (width, height) in [(140, 32), (100, 28), (90, 24)] {
+            let mut app = App::new(10, 1_000);
+            app.screen = Screen::Configuration;
+            app.workspace
+                .variables
+                .insert("MACHINE".into(), "global-summary".into());
+            app.workspace.recipes.push(yoctui_model::Recipe {
+                name: "base-files".into(),
+                ..yoctui_model::Recipe::default()
+            });
+            app.config_scope = Some("base-files".into());
+            let identity = yoctui_model::VariableIdentity {
+                name: "MACHINE".into(),
+                recipe: Some("base-files".into()),
+            };
+            app.variable_detail_errors
+                .insert(identity, "scoped Tinfoil failure".into());
+            let output = rendered_text(&app, width, height);
+            if width >= 80 && height >= 24 {
+                assert!(output.contains("scoped Tinfoil failure"), "{output}");
+                assert!(output.contains("active base-files"), "{output}");
+            }
+
+            app.dialogs
+                .push_back(Dialog::ConfigScopePicker(yoctui_model::ConfigScopePicker {
+                    variable: "MACHINE".into(),
+                    scopes: vec![None, Some("base-files".into())],
+                    selection: 1,
+                }));
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("MACHINE scope"), "{output}");
+            assert!(output.contains("(global)"), "{output}");
+            assert!(output.contains("base-files"), "{output}");
+        }
+
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Configuration;
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        let output = rendered_text(&app, 120, 28);
+        assert!(output.contains("global only"), "{output}");
+        assert!(output.contains("no recipes reported"), "{output}");
     }
     #[test]
     fn bbmask_renders_effective_patterns_and_provenance() {

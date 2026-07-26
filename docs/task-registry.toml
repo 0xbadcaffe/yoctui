@@ -361,18 +361,18 @@ notes = "The o route now uses exact loaded operation file/line identities, opens
 id = "CONFIG-SCOPE-001"
 milestone = "M3"
 title = "Add recipe-scoped configuration inspection"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 42
 required = true
 depends_on = ["CONFIG-SOURCE-001"]
 verify = ["cargo test -p yoctui-model config_scope", "cargo test -p yoctui-app config_scope", "cargo test -p yoctui-ui config_scope", "cargo test -p yoctui -- config_scope"]
-notes = "Choose supported recipe scope, request typed detail, retain global/scoped identities independently, and explain unavailable scope."
+notes = "The s picker selects global or authoritative recipe inventory scope, emits exact typed queries, retains independent scoped lifecycle/detail, resets disappeared recipes to global, and makes copy/source follow the active identity with reducer/app/CLI/TestBackend coverage."
 
 [[task]]
 id = "CONFIG-COMPARE-001"
 milestone = "M3"
 title = "Compare typed configuration values"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 42
 required = true
 depends_on = ["CONFIG-SCOPE-001"]
