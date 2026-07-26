@@ -63,7 +63,8 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DEVTOOL-TARGET-001` — complete deploy-target and reset
+1. `DEVTOOL-DEPLOY-001` — complete deploy-target
+2. `DEVTOOL-RESET-001` — complete reset
 
 ## Rules
 
