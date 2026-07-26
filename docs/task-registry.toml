@@ -614,18 +614,18 @@ notes = "Parent gate split into typed signature state, shell-free authoritative 
 id = "SIG-MODEL-001"
 milestone = "M3"
 title = "Add typed signature dump and comparison state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 45
 required = true
 depends_on = ["JOB-002"]
 verify = ["cargo test -p yoctui-model signature_model", "cargo test -p yoctui-app signature_model"]
-notes = "Pure typed recipe/task signature identities, explicit acquisition/comparison states, deterministic bounded differences, and reducer lifecycle."
+notes = "Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping pass focused and baseline checks."
 
 [[task]]
 id = "SIG-ADAPTER-001"
 milestone = "M3"
 title = "Acquire and compare authoritative BitBake signatures"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 45
 required = true
 depends_on = ["SIG-MODEL-001"]

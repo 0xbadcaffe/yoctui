@@ -63,15 +63,16 @@ See `docs/current-task.md`.
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
-| Signature workflows | IN_PROGRESS | Split into pure typed state, authoritative shell-free acquisition/comparison, and responsive workflow integration |
+| Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
+| Signature adapter | IN_PROGRESS | Shell-free authoritative acquisition/comparison, bounded parsing, exact correlation, failure coverage, and live validation remain |
+| Signature workspace | NOT_STARTED | Responsive selectors, dump/difference views, persistent job context, actions, and source navigation remain |
 | Package data browser | NOT_STARTED | No `oe-pkgdata-util` adapter, workspace, typed workflow, or tests are present |
 
 ## Priority queue
 
-1. `SIG-MODEL-001` — add typed signature state and reducer lifecycle
-2. `SIG-ADAPTER-001` — acquire and compare authoritative signatures
-3. `SIG-UI-001` — integrate responsive signature workflows
-4. `PKG-001` — complete package-data browser
+1. `SIG-ADAPTER-001` — acquire and compare authoritative signatures
+2. `SIG-UI-001` — integrate responsive signature workflows
+3. `PKG-001` — complete package-data browser
 
 ## Rules
 

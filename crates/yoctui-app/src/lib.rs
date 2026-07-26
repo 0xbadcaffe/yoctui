@@ -265,6 +265,10 @@ impl BuildJobCoordinator {
             | BackendEvent::Dependencies { .. }
             | BackendEvent::DependencyGraph { .. }
             | BackendEvent::DependencyGraphFailed { .. }
+            | BackendEvent::SignatureDump { .. }
+            | BackendEvent::SignatureDumpFailed { .. }
+            | BackendEvent::SignatureComparison { .. }
+            | BackendEvent::SignatureComparisonFailed { .. }
             | BackendEvent::RecipeSources { .. }
             | BackendEvent::RecipeMetadata(_)
             | BackendEvent::LayerRelationships(_)
@@ -630,6 +634,45 @@ pub fn model_action_from_backend_event(event: BackendEvent) -> Option<Action> {
         }
         BackendEvent::DependencyGraphFailed { root, message } => {
             Some(Action::DependencyGraphFailed { root, message })
+        }
+        BackendEvent::SignatureDump {
+            target,
+            records,
+            limitations,
+        } => {
+            if limitations.is_empty() {
+                Some(Action::SignatureDumpLoaded { target, records })
+            } else {
+                Some(Action::SignatureDumpPartial {
+                    target,
+                    records,
+                    limitations,
+                })
+            }
+        }
+        BackendEvent::SignatureDumpFailed { target, message } => {
+            Some(Action::SignatureDumpFailed { target, message })
+        }
+        BackendEvent::SignatureComparison {
+            request,
+            differences,
+            limitations,
+        } => {
+            if limitations.is_empty() {
+                Some(Action::SignatureComparisonLoaded {
+                    request,
+                    differences,
+                })
+            } else {
+                Some(Action::SignatureComparisonPartial {
+                    request,
+                    differences,
+                    limitations,
+                })
+            }
+        }
+        BackendEvent::SignatureComparisonFailed { request, message } => {
+            Some(Action::SignatureComparisonFailed { request, message })
         }
         BackendEvent::RecipeSources { recipe, paths } => {
             Some(Action::RecipeSourcesLoaded { recipe, paths })
@@ -1016,7 +1059,8 @@ mod tests {
     use std::time::Duration;
     use yoctui_model::{
         App, BackgroundJobStatus, BuildStatus, DependencyEdge, DependencyEdgeKind, DependencyGraph,
-        DependencyGraphState, DependencyNodeId, update,
+        DependencyGraphState, DependencyNodeId, SignatureComparisonRequest, SignatureDifference,
+        SignatureDifferenceCategory, SignatureIdentity, SignatureRecord, SignatureTarget, update,
     };
 
     fn apply_actions(app: &mut App, actions: Vec<Action>) {
@@ -1202,6 +1246,79 @@ mod tests {
             app.dependency_graph,
             DependencyGraphState::Failed { .. }
         ));
+    }
+    #[test]
+    fn signature_model_typed_events_map_dump_comparison_partial_and_failure() {
+        let target = SignatureTarget {
+            recipe: "busybox".into(),
+            task: "do_compile".into(),
+        };
+        let identity = SignatureIdentity {
+            target: target.clone(),
+            hash: Some("abc".into()),
+            path: Some("/tmp/busybox.sigdata".into()),
+        };
+        let record = SignatureRecord {
+            identity: identity.clone(),
+            base_hash: Some("base".into()),
+            task_hash: Some("task".into()),
+            variables: Vec::new(),
+            dependencies: Vec::new(),
+        };
+        assert_eq!(
+            model_action_from_backend_event(BackendEvent::SignatureDump {
+                target: target.clone(),
+                records: vec![record.clone()],
+                limitations: Vec::new(),
+            }),
+            Some(Action::SignatureDumpLoaded {
+                target: target.clone(),
+                records: vec![record.clone()],
+            })
+        );
+        assert!(matches!(
+            model_action_from_backend_event(BackendEvent::SignatureDump {
+                target: target.clone(),
+                records: vec![record],
+                limitations: vec!["partial".into()],
+            }),
+            Some(Action::SignatureDumpPartial { .. })
+        ));
+        let request = SignatureComparisonRequest {
+            left: identity.clone(),
+            right: SignatureIdentity {
+                hash: Some("def".into()),
+                path: Some("/tmp/busybox-old.sigdata".into()),
+                ..identity
+            },
+        };
+        let difference = SignatureDifference {
+            category: SignatureDifferenceCategory::ChangedValue,
+            key: "CC".into(),
+            left: Some("gcc".into()),
+            right: Some("clang".into()),
+        };
+        assert_eq!(
+            model_action_from_backend_event(BackendEvent::SignatureComparison {
+                request: request.clone(),
+                differences: vec![difference.clone()],
+                limitations: Vec::new(),
+            }),
+            Some(Action::SignatureComparisonLoaded {
+                request: request.clone(),
+                differences: vec![difference],
+            })
+        );
+        assert_eq!(
+            model_action_from_backend_event(BackendEvent::SignatureComparisonFailed {
+                request: request.clone(),
+                message: "tool failed".into(),
+            }),
+            Some(Action::SignatureComparisonFailed {
+                request,
+                message: "tool failed".into(),
+            })
+        );
     }
 
     #[test]
