@@ -147,9 +147,18 @@ not-loaded, loading, available-empty, available, partial, and failed results,
 and generation-tagged requests prevent stale responses from replacing newer
 data. `yoctui-model` owns package filtering, stable selection, detail caching,
 and navigation over typed forward or reverse runtime dependency identities.
-The future package-data adapter owns all `oe-pkgdata-util` discovery, execution,
-and output parsing; only typed summaries, details, limitations, or correlated
-errors may cross through `BackendEvent` and the app action mapping.
+The package-data adapter owns all `oe-pkgdata-util` discovery, execution, and
+output parsing. It validates a real generated `tmp/pkgdata` directory and
+either an explicit tool path or a bounded deterministic `scripts/oe-pkgdata-util`
+search beneath the build parent. Symlinks, relative paths, and invalid file
+types are rejected. Inventory, package-info, file-list, and runtime-dependency
+queries use exact argument vectors without a shell, bounded output and line
+counts, fixed-size argument batches, a timeout, and cancellable child process
+groups. Forward dependencies come from authoritative `RDEPENDS`; reverse
+dependencies are derived from that same bounded inventory. Provider recipe
+paths and image membership stay unavailable until an authoritative source
+exposes them. Only typed summaries, details, limitations, or correlated errors
+cross through `BackendEvent` and the app action mapping.
 
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore

@@ -669,18 +669,18 @@ notes = "Exact package identities, available-versus-unavailable fields, explicit
 id = "PKG-ADAPTER-001"
 milestone = "M3"
 title = "Acquire authoritative package data"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 46
 required = true
 depends_on = ["PKG-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake pkgdata_adapter", "cargo test -p yoctui-app pkgdata_adapter"]
-notes = "Shell-free bounded oe-pkgdata-util plans/parsing, validated pkgdata roots, exact correlation, cancellation/failure coverage, and honest live validation."
+notes = "Validated shell-free oe-pkgdata-util discovery and exact batched commands return typed bounded inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The opt-in live smoke was attempted against /home/bspguy-dev/src/bitbake/bitbake-builds/yoctui-qemux86-64/build but generated build/tmp/pkgdata is absent, so no live package-data compatibility is claimed."
 
 [[task]]
 id = "PKG-UI-001"
 milestone = "M3"
 title = "Integrate the package data workspace"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 46
 required = true
 depends_on = ["PKG-ADAPTER-001"]
