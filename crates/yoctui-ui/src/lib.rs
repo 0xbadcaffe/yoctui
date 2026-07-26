@@ -799,12 +799,21 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: true }),
             popup,
         );
-    } else if let Some(Dialog::DevtoolResetConfirmation(recipe)) = app.active_dialog() {
-        let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 5);
+    } else if let Some(Dialog::DevtoolResetConfirmation(plan)) = app.active_dialog() {
+        let width = area.width.saturating_sub(8).clamp(44, 100);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(9) / 2,
+            width,
+            9,
+        );
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Run `devtool reset {recipe}`?\n\nThis removes the Devtool workspace. Press Enter to continue or Esc to cancel."
+                "Run `devtool reset {}`?\n\nProvider: {}\nWorkspace source to remove: {}\n\nThis removes the Devtool workspace. Enter continues; Esc cancels.",
+                plan.identity.name,
+                plan.identity.file.display(),
+                plan.source_path.display()
             ))
             .block(
                 Block::default()
@@ -3957,7 +3966,13 @@ mod tests {
                 "Confirm Devtool modify",
             ),
             (
-                Dialog::DevtoolResetConfirmation("busybox".into()),
+                Dialog::DevtoolResetConfirmation(yoctui_model::DevtoolResetPlan {
+                    identity: yoctui_model::RecipeIdentity {
+                        name: "busybox".into(),
+                        file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+                    },
+                    source_path: "/build/workspace/sources/busybox".into(),
+                }),
                 "Confirm Devtool reset",
             ),
             (
@@ -4406,11 +4421,18 @@ mod tests {
         assert!(output.contains("cleansstate"));
     }
     #[test]
-    fn renders_devtool_reset_confirmation() {
-        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+    fn devtool_target_reset_renders_exact_destructive_identity_confirmation() {
+        let mut terminal = Terminal::new(TestBackend::new(120, 25)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.dialogs
-            .push_back(Dialog::DevtoolResetConfirmation("busybox".into()));
+        app.dialogs.push_back(Dialog::DevtoolResetConfirmation(
+            yoctui_model::DevtoolResetPlan {
+                identity: yoctui_model::RecipeIdentity {
+                    name: "busybox".into(),
+                    file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+                },
+                source_path: "/build/workspace/sources/busybox".into(),
+            },
+        ));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -4421,6 +4443,8 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Confirm Devtool reset"));
         assert!(output.contains("devtool reset busybox"));
+        assert!(output.contains("busybox.bb"));
+        assert!(output.contains("/build/workspace/sources/busybox"));
     }
     #[test]
     fn devtool_publish_update_renders_exact_identity_confirmation() {

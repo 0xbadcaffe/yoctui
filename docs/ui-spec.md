@@ -825,6 +825,20 @@ and navigation retention. A successful terminal event refreshes only the
 original recipe identity. Process or refresh failure leaves prior
 authoritative status and durable job context available.
 
+`D` is the destructive reset route. It requires the exact authoritative recipe
+identity and either a present workspace source or an explicitly reported
+missing workspace directory. Non-membership, missing Devtool, status errors,
+relative source paths, and stale source changes remain inert. The
+focus-trapping confirmation shows the exact `devtool reset <recipe>` intent,
+absolute provider path, and workspace source path that will be removed, then
+revalidates all three immediately before execution.
+
+Reset uses a persistent cancellable Devtool job with retained stream identity
+and distinct graceful/forced cancellation, nonzero failure, and runner-loss
+outcomes. Successful completion refreshes the original identity; `not in
+workspace` is the expected terminal state. A refresh that still reports a
+workspace or that fails remains explicit without erasing the durable job.
+
 `V` starts a selected-recipe CVE check only when authoritative metadata
 reports `do_cve_check`; `X` starts SPDX generation only when it reports
 `do_create_spdx`. Each route opens the existing typed confirmation with the

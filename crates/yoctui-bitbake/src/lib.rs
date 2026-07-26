@@ -1968,6 +1968,19 @@ mod tests {
         );
     }
 
+    #[test]
+    fn devtool_target_reset_uses_exact_shell_free_arguments() {
+        let command = DevtoolCommandSpec::from_operation(&DevtoolOperation::Reset {
+            recipe: "busybox".into(),
+        })
+        .unwrap();
+        assert_eq!(command.executable(), Path::new("devtool"));
+        assert_eq!(
+            command.arguments(),
+            [OsString::from("reset"), OsString::from("busybox")]
+        );
+    }
+
     #[cfg(unix)]
     #[test]
     fn devtool_job_spec_preserves_non_utf8_finish_destination() {

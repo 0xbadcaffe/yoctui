@@ -416,12 +416,12 @@ notes = "The CLI revalidates typed identity/value/destination/assignment, replac
 id = "DEVTOOL-001"
 milestone = "M3"
 title = "Complete Devtool lifecycle"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-META-001", "DEVTOOL-JOBS-001", "DEVTOOL-MODIFY-001", "DEVTOOL-PUBLISH-001", "DEVTOOL-TARGET-001"]
 verify = ["cargo test -p yoctui-bitbake devtool_", "cargo test -p yoctui-model devtool_", "cargo test -p yoctui-app devtool_", "cargo test -p yoctui-ui devtool_", "cargo test -p yoctui -- devtool_"]
-notes = "Parent gate for authoritative status/Git state, persistent process execution, modify/edit/build, update/finish, deploy-target, and reset."
+notes = "Authoritative status/Git state, persistent cancellable execution, modify/edit/build, update-recipe, configured-layer finish, deploy-target, and destructive reset all pass adapter, model, app, CLI, TestBackend, and baseline verification."
 
 [[task]]
 id = "DEVTOOL-META-001"
@@ -526,12 +526,12 @@ notes = "Clean committed Git eligibility, absolute configured-layer picker, stal
 id = "DEVTOOL-TARGET-001"
 milestone = "M3"
 title = "Complete Devtool deploy-target and reset workflows"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-DEPLOY-001", "DEVTOOL-RESET-001"]
 verify = ["cargo test -p yoctui-model devtool_target", "cargo test -p yoctui-app devtool_target", "cargo test -p yoctui-ui devtool_target", "cargo test -p yoctui -- devtool_target"]
-notes = "Parent gate split into atomic deploy-target and reset workflows so their different eligibility, validation, and post-success states are verified independently."
+notes = "Exact-identity deploy-target and reset children validate and revalidate typed destructive/target intent, run persistently with durable outcomes, and refresh the original identity after success."
 
 [[task]]
 id = "DEVTOOL-DEPLOY-001"
@@ -548,18 +548,18 @@ notes = "Exact-identity workspace eligibility, identity-retaining target draft/p
 id = "DEVTOOL-RESET-001"
 milestone = "M3"
 title = "Complete Devtool reset workflow"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-DEPLOY-001"]
 verify = ["cargo test -p yoctui-bitbake devtool_target_reset", "cargo test -p yoctui-model devtool_target_reset", "cargo test -p yoctui-app devtool_target_reset", "cargo test -p yoctui-ui devtool_target_reset", "cargo test -p yoctui -- devtool_target_reset"]
-notes = "Exact-identity destructive preview, persistent execution/cancellation/outcomes, original-identity removal refresh, and retained failure context."
+notes = "Exact-identity removable-source eligibility, provider/source destructive confirmation, stale-source revalidation, shell-free arguments, persistent failure retention, and expected NotMember success refresh pass all focused and baseline checks."
 
 [[task]]
 id = "DEP-001"
 milestone = "M3"
 title = "Dependency exploration and why-built workflow"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 44
 required = true
 depends_on = ["BB-001"]
