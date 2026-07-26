@@ -12,10 +12,10 @@ use tokio::{
     process::{Child, ChildStdin, Command as TokioCommand},
 };
 use yoctui_model::{
-    BuildRequest, DevtoolCapability, DevtoolGitState, DevtoolOperation, DevtoolOperationError,
-    DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Layer, LogEntry, Recipe,
-    RecipeBuildStatus, RecipeIdentity, RecipeMetadata, RecipeWorkspaceStatus, Severity, TaskStats,
-    VariableOperation, Workspace,
+    BuildRequest, DependencyGraph, DependencyNodeId, DevtoolCapability, DevtoolGitState,
+    DevtoolOperation, DevtoolOperationError, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace,
+    Layer, LogEntry, Recipe, RecipeBuildStatus, RecipeIdentity, RecipeMetadata,
+    RecipeWorkspaceStatus, Severity, TaskStats, VariableOperation, Workspace,
 };
 use yoctui_protocol::{
     Command, Envelope, Event, LayerData, LayerRelationshipData, MAX_LINE_BYTES, ProtocolError,
@@ -798,6 +798,14 @@ pub enum BackendEvent {
         recipe: String,
         build: Vec<String>,
         runtime: Vec<String>,
+    },
+    DependencyGraph {
+        graph: DependencyGraph,
+        limitations: Vec<String>,
+    },
+    DependencyGraphFailed {
+        root: DependencyNodeId,
+        message: String,
     },
     RecipeSources {
         recipe: String,

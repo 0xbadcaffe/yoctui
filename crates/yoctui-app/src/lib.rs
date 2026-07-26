@@ -263,6 +263,8 @@ impl BuildJobCoordinator {
             | BackendEvent::Layers(_)
             | BackendEvent::Variable { .. }
             | BackendEvent::Dependencies { .. }
+            | BackendEvent::DependencyGraph { .. }
+            | BackendEvent::DependencyGraphFailed { .. }
             | BackendEvent::RecipeSources { .. }
             | BackendEvent::RecipeMetadata(_)
             | BackendEvent::LayerRelationships(_)
@@ -619,6 +621,16 @@ pub fn model_action_from_backend_event(event: BackendEvent) -> Option<Action> {
             build,
             runtime,
         })),
+        BackendEvent::DependencyGraph { graph, limitations } => {
+            if limitations.is_empty() {
+                Some(Action::DependencyGraphLoaded(graph))
+            } else {
+                Some(Action::DependencyGraphPartial { graph, limitations })
+            }
+        }
+        BackendEvent::DependencyGraphFailed { root, message } => {
+            Some(Action::DependencyGraphFailed { root, message })
+        }
         BackendEvent::RecipeSources { recipe, paths } => {
             Some(Action::RecipeSourcesLoaded { recipe, paths })
         }
@@ -991,7 +1003,10 @@ pub fn config_edit_confirmation_action(key: Input) -> Option<Action> {
 mod tests {
     use super::*;
     use std::time::Duration;
-    use yoctui_model::{App, BackgroundJobStatus, BuildStatus, update};
+    use yoctui_model::{
+        App, BackgroundJobStatus, BuildStatus, DependencyEdge, DependencyEdgeKind, DependencyGraph,
+        DependencyGraphState, DependencyNodeId, update,
+    };
 
     fn apply_actions(app: &mut App, actions: Vec<Action>) {
         for action in actions {
@@ -1111,6 +1126,60 @@ mod tests {
             Some(Action::LayerRelationshipsLoaded(_))
         ));
         assert_eq!(model_action_from_backend_event(BackendEvent::Ignored), None);
+    }
+    #[test]
+    fn dependency_graph_typed_events_map_success_partial_and_failure() {
+        let root = DependencyNodeId::recipe("core-image-minimal");
+        let (graph, _) = DependencyGraph::normalize(
+            root.clone(),
+            Vec::new(),
+            vec![DependencyEdge {
+                from: root.clone(),
+                to: DependencyNodeId::recipe("busybox"),
+                kind: DependencyEdgeKind::Runtime,
+            }],
+            10,
+            10,
+        );
+        assert_eq!(
+            model_action_from_backend_event(BackendEvent::DependencyGraph {
+                graph: graph.clone(),
+                limitations: Vec::new(),
+            }),
+            Some(Action::DependencyGraphLoaded(graph.clone()))
+        );
+        assert_eq!(
+            model_action_from_backend_event(BackendEvent::DependencyGraph {
+                graph: graph.clone(),
+                limitations: vec!["task graph unavailable".into()],
+            }),
+            Some(Action::DependencyGraphPartial {
+                graph,
+                limitations: vec!["task graph unavailable".into()],
+            })
+        );
+        assert_eq!(
+            model_action_from_backend_event(BackendEvent::DependencyGraphFailed {
+                root: root.clone(),
+                message: "query failed".into(),
+            }),
+            Some(Action::DependencyGraphFailed {
+                root,
+                message: "query failed".into(),
+            })
+        );
+
+        let mut app = App::new(10, 1_000);
+        let action = model_action_from_backend_event(BackendEvent::DependencyGraphFailed {
+            root: DependencyNodeId::recipe("image"),
+            message: "offline".into(),
+        })
+        .unwrap();
+        let _ = update(&mut app, action);
+        assert!(matches!(
+            app.dependency_graph,
+            DependencyGraphState::Failed { .. }
+        ));
     }
 
     #[test]

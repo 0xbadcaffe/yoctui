@@ -57,6 +57,8 @@ See `docs/current-task.md`.
 | Devtool finish | DONE | Clean committed workspace eligibility gates an absolute configured-layer picker and exact provider/layer/path confirmation; native paths survive the adapter and completion refreshes the original identity |
 | Devtool deploy-target | DONE | Exact-identity workspace eligibility and validated target drafts gate provider-aware confirmation; persistent success refreshes the original identity and failures retain status/job context |
 | Devtool reset | DONE | Exact-identity removable workspace status gates provider/source destructive confirmation; persistent success refreshes expected non-membership while failures retain durable context |
+| Dependency graph model | DONE | Typed recipe/task identities and build/runtime/task edges normalize deterministically; reverse lookup, cycle-safe bounded shortest why-built paths, explicit partial/failure states, selection stability, and typed app event mapping pass focused and baseline tests |
+| Dependency graph acquisition | IN_PROGRESS | Authoritative server/tool acquisition, bounded raw-format parsing at the adapter boundary, and live validation remain |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
@@ -65,11 +67,10 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DEP-MODEL-001` — add typed graphs and why-built path derivation
-2. `DEP-ADAPTER-001` — acquire authoritative graph data
-3. `DEP-UI-001` — integrate the responsive dependency workspace
-4. `SIG-001` — complete signature workflows
-5. `PKG-001` — complete package-data browser
+1. `DEP-ADAPTER-001` — acquire authoritative graph data
+2. `DEP-UI-001` — integrate the responsive dependency workspace
+3. `SIG-001` — complete signature workflows
+4. `PKG-001` — complete package-data browser
 
 ## Rules
 

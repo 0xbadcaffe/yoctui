@@ -80,6 +80,16 @@ normalization boundary from `BackendEvent` to reducer `Action` values, and the
 model reducer is the sole owner of resulting state changes. Initial discovery
 and refresh responses use the same reducer actions as streamed events.
 
+Dependency graphs cross that boundary only as typed recipe/task node identities
+and typed build, runtime, or task edges. `yoctui-model` owns deterministic
+normalization, identity-stable selection, reverse-edge lookup, and bounded
+shortest why-built path derivation. Its state distinguishes not-loaded,
+loading, available-empty, available, partial, and failed results. Adapters own
+all BitBake, dot, and external-tool parsing; reducers and widgets must never
+parse those formats. The legacy direct build/runtime lists remain a temporary
+compatibility input while acquisition and workspace tasks migrate to the graph
+state.
+
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore
 values, normalized varhistory operations (`op`, file, line, and detail), and
