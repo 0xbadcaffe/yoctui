@@ -650,9 +650,42 @@ title = "Package data browser"
 status = "IN_PROGRESS"
 priority = 46
 required = true
-depends_on = ["JOB-002"]
+depends_on = ["PKG-MODEL-001", "PKG-ADAPTER-001", "PKG-UI-001"]
 verify = ["cargo test -p yoctui-app pkgdata"]
-notes = "No oe-pkgdata-util adapter, package workspace, typed workflow, or tests are present."
+notes = "Parent gate split into typed package state, authoritative shell-free acquisition, and responsive package workspace integration."
+
+[[task]]
+id = "PKG-MODEL-001"
+milestone = "M3"
+title = "Add typed package data state"
+status = "IN_PROGRESS"
+priority = 46
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-model pkgdata_model", "cargo test -p yoctui-app pkgdata_model"]
+notes = "Pure package identities, explicit inventory/detail states, bounded deterministic normalization, selection, correlation, dependency navigation, and typed event/effect mapping."
+
+[[task]]
+id = "PKG-ADAPTER-001"
+milestone = "M3"
+title = "Acquire authoritative package data"
+status = "NOT_STARTED"
+priority = 46
+required = true
+depends_on = ["PKG-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake pkgdata_adapter", "cargo test -p yoctui-app pkgdata_adapter"]
+notes = "Shell-free bounded oe-pkgdata-util plans/parsing, validated pkgdata roots, exact correlation, cancellation/failure coverage, and honest live validation."
+
+[[task]]
+id = "PKG-UI-001"
+milestone = "M3"
+title = "Integrate the package data workspace"
+status = "NOT_STARTED"
+priority = 46
+required = true
+depends_on = ["PKG-ADAPTER-001"]
+verify = ["cargo test -p yoctui-model pkgdata_workspace", "cargo test -p yoctui-app pkgdata_workspace", "cargo test -p yoctui-ui pkgdata_workspace", "cargo test -p yoctui -- pkgdata_workspace"]
+notes = "Navigator route, app-owned search/selection/refresh/dependency navigation, responsive typed detail, background execution, footer hints, and provider/recipe actions."
 
 [[task]]
 id = "IMAGES-001"
