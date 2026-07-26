@@ -1,4 +1,7 @@
 //! Domain model and pure state transitions. BitBake remains authoritative.
+mod package;
+
+pub use package::*;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
@@ -2070,6 +2073,12 @@ pub struct App {
     pub signature_selection: Option<SignatureIdentity>,
     pub signature_comparison: SignatureComparisonState,
     pub signature_recipe: Option<RecipeIdentity>,
+    pub package_inventory: PackageInventoryState,
+    pub package_selection: Option<PackageIdentity>,
+    pub package_details: HashMap<PackageIdentity, PackageDetailState>,
+    pub package_query: String,
+    pub package_searching: bool,
+    pub package_request_generation: u64,
     pub layer_relationships: Option<LayerRelationships>,
     pub recipe_sources: HashMap<String, Vec<PathBuf>>,
     pub recipe_metadata: HashMap<String, RecipeMetadata>,
@@ -2131,6 +2140,12 @@ impl App {
             signature_selection: None,
             signature_comparison: SignatureComparisonState::NotSelected,
             signature_recipe: None,
+            package_inventory: PackageInventoryState::NotLoaded,
+            package_selection: None,
+            package_details: HashMap::new(),
+            package_query: String::new(),
+            package_searching: false,
+            package_request_generation: 0,
             layer_relationships: None,
             recipe_sources: HashMap::new(),
             recipe_metadata: HashMap::new(),
@@ -2262,6 +2277,38 @@ impl App {
         self.visible_task_rows()
             .get(self.task_progress_scroll)
             .cloned()
+    }
+    pub fn filtered_packages(&self) -> Vec<&PackageSummary> {
+        let query = self.package_query.to_ascii_lowercase();
+        self.package_inventory
+            .packages()
+            .unwrap_or_default()
+            .iter()
+            .filter(|package| {
+                query.is_empty()
+                    || [
+                        Some(package.identity.name.as_str()),
+                        package.recipe.available().map(String::as_str),
+                        package.version.available().map(String::as_str),
+                        package.license.available().map(String::as_str),
+                        package.provider.available().and_then(|path| path.to_str()),
+                    ]
+                    .into_iter()
+                    .flatten()
+                    .any(|value| value.to_ascii_lowercase().contains(&query))
+            })
+            .collect()
+    }
+    pub fn selected_package(&self) -> Option<&PackageSummary> {
+        let selected = self.package_selection.as_ref()?;
+        self.filtered_packages()
+            .into_iter()
+            .find(|package| &package.identity == selected)
+    }
+    pub fn selected_package_detail(&self) -> Option<&PackageDetailState> {
+        self.package_selection
+            .as_ref()
+            .and_then(|identity| self.package_details.get(identity))
     }
     pub fn active_dialog(&self) -> Option<&Dialog> {
         self.dialogs.front()
@@ -2658,6 +2705,45 @@ pub enum Action {
     SignatureComparisonFailed {
         request: SignatureComparisonRequest,
         message: String,
+    },
+    BeginPackageInventory,
+    PackageInventoryLoaded {
+        request: PackageInventoryRequest,
+        packages: Vec<PackageSummary>,
+    },
+    PackageInventoryPartial {
+        request: PackageInventoryRequest,
+        packages: Vec<PackageSummary>,
+        limitations: Vec<String>,
+    },
+    PackageInventoryFailed {
+        request: PackageInventoryRequest,
+        message: String,
+    },
+    SelectPackage {
+        delta: isize,
+    },
+    BeginPackageSearch,
+    AppendPackageQuery(char),
+    BackspacePackageQuery,
+    FinishPackageSearch,
+    BeginSelectedPackageDetail,
+    PackageDetailLoaded {
+        request: PackageDetailRequest,
+        detail: PackageDetail,
+    },
+    PackageDetailPartial {
+        request: PackageDetailRequest,
+        detail: PackageDetail,
+        limitations: Vec<String>,
+    },
+    PackageDetailFailed {
+        request: PackageDetailRequest,
+        message: String,
+    },
+    OpenPackageDependency {
+        identity: PackageIdentity,
+        reverse: bool,
     },
     BeginSelectedRecipeMetadata,
     RecipeMetadataLoaded(RecipeMetadata),
@@ -3537,6 +3623,101 @@ fn signature_operation_is_loading(app: &App) -> bool {
         || matches!(
             app.signature_comparison,
             SignatureComparisonState::Loading { .. }
+        )
+}
+
+fn next_package_generation(app: &mut App) -> u64 {
+    app.package_request_generation = app.package_request_generation.wrapping_add(1);
+    if app.package_request_generation == 0 {
+        app.package_request_generation = 1;
+    }
+    app.package_request_generation
+}
+
+fn normalize_package_limitations(mut limitations: Vec<String>) -> Vec<String> {
+    limitations.retain(|limitation| !limitation.is_empty());
+    limitations.sort();
+    limitations.dedup();
+    limitations.truncate(MAX_PACKAGE_LIMITATIONS);
+    limitations
+}
+
+fn append_package_normalization_limitations(
+    limitations: &mut Vec<String>,
+    report: &PackageNormalizationReport,
+) {
+    if report.invalid_records > 0 || report.invalid_fields > 0 {
+        limitations.push(format!(
+            "Model validation dropped {} package record(s) and {} field value(s).",
+            report.invalid_records, report.invalid_fields
+        ));
+    }
+    if report.truncated_records > 0
+        || report.truncated_files > 0
+        || report.truncated_dependencies > 0
+        || report.truncated_image_memberships > 0
+    {
+        limitations.push(format!(
+            "Model bounds truncated {} package(s), {} file(s), {} dependency value(s), and {} image membership value(s).",
+            report.truncated_records,
+            report.truncated_files,
+            report.truncated_dependencies,
+            report.truncated_image_memberships
+        ));
+    }
+}
+
+fn set_package_selection_to_current_or_first(app: &mut App, previous: Option<PackageIdentity>) {
+    let visible = app
+        .filtered_packages()
+        .into_iter()
+        .map(|package| package.identity.clone())
+        .collect::<Vec<_>>();
+    app.package_selection = previous
+        .filter(|identity| visible.contains(identity))
+        .or_else(|| visible.first().cloned());
+}
+
+fn set_package_inventory(
+    app: &mut App,
+    request: PackageInventoryRequest,
+    packages: Vec<PackageSummary>,
+    limitations: Option<Vec<String>>,
+) {
+    let previous = app.package_selection.take();
+    let (packages, report) = normalize_package_summaries(packages, MAX_PACKAGE_RECORDS);
+    let identities = packages
+        .iter()
+        .map(|package| package.identity.clone())
+        .collect::<BTreeSet<_>>();
+    app.package_details
+        .retain(|identity, _| identities.contains(identity));
+    let mut limitations = limitations.unwrap_or_default();
+    append_package_normalization_limitations(&mut limitations, &report);
+    let limitations = normalize_package_limitations(limitations);
+    app.package_inventory = if packages.is_empty() && limitations.is_empty() {
+        PackageInventoryState::AvailableEmpty { request }
+    } else if limitations.is_empty() {
+        PackageInventoryState::Available { request, packages }
+    } else {
+        PackageInventoryState::Partial {
+            request,
+            packages,
+            limitations,
+        }
+    };
+    set_package_selection_to_current_or_first(app, previous);
+}
+
+fn package_detail_is_empty(detail: &PackageDetail) -> bool {
+    matches!(&detail.files, PackageField::Available(files) if files.is_empty())
+        && matches!(
+            &detail.runtime_dependencies,
+            PackageField::Available(dependencies) if dependencies.is_empty()
+        )
+        && matches!(
+            &detail.reverse_dependencies,
+            PackageField::Available(dependencies) if dependencies.is_empty()
         )
 }
 
@@ -5239,6 +5420,216 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             };
             app.notification = Some(format!("Signature comparison failed: {message}"));
         }
+        Action::BeginPackageInventory => {
+            let request = PackageInventoryRequest {
+                generation: next_package_generation(app),
+            };
+            app.package_inventory = PackageInventoryState::Loading { request };
+            return Some(Effect::GetPackageInventory(request));
+        }
+        Action::PackageInventoryLoaded { request, packages } => {
+            if !matches!(
+                app.package_inventory,
+                PackageInventoryState::Loading { request: pending } if pending == request
+            ) {
+                return None;
+            }
+            set_package_inventory(app, request, packages, None);
+        }
+        Action::PackageInventoryPartial {
+            request,
+            packages,
+            limitations,
+        } => {
+            if !matches!(
+                app.package_inventory,
+                PackageInventoryState::Loading { request: pending } if pending == request
+            ) {
+                return None;
+            }
+            set_package_inventory(app, request, packages, Some(limitations));
+        }
+        Action::PackageInventoryFailed { request, message } => {
+            if !matches!(
+                app.package_inventory,
+                PackageInventoryState::Loading { request: pending } if pending == request
+            ) {
+                return None;
+            }
+            app.package_inventory = PackageInventoryState::Failed {
+                request,
+                message: message.clone(),
+            };
+            app.notification = Some(format!("Package inventory is unavailable: {message}"));
+        }
+        Action::SelectPackage { delta } => {
+            let visible = app
+                .filtered_packages()
+                .into_iter()
+                .map(|package| package.identity.clone())
+                .collect::<Vec<_>>();
+            if visible.is_empty() {
+                app.package_selection = None;
+                return None;
+            }
+            let current = app
+                .package_selection
+                .as_ref()
+                .and_then(|identity| visible.iter().position(|candidate| candidate == identity))
+                .unwrap_or(0);
+            let next = if delta.is_negative() {
+                current.saturating_sub(delta.unsigned_abs())
+            } else {
+                current
+                    .saturating_add(delta as usize)
+                    .min(visible.len().saturating_sub(1))
+            };
+            app.package_selection = Some(visible[next].clone());
+        }
+        Action::BeginPackageSearch => app.package_searching = true,
+        Action::AppendPackageQuery(character) => {
+            if !character.is_control() && app.package_query.len() < 256 {
+                app.package_query.push(character);
+                set_package_selection_to_current_or_first(app, app.package_selection.clone());
+            }
+        }
+        Action::BackspacePackageQuery => {
+            app.package_query.pop();
+            set_package_selection_to_current_or_first(app, app.package_selection.clone());
+        }
+        Action::FinishPackageSearch => app.package_searching = false,
+        Action::BeginSelectedPackageDetail => {
+            let Some(identity) = app
+                .selected_package()
+                .map(|package| package.identity.clone())
+            else {
+                app.notification = Some("No current package is selected for inspection.".into());
+                return None;
+            };
+            let request = PackageDetailRequest {
+                identity: identity.clone(),
+                generation: next_package_generation(app),
+            };
+            app.package_details.insert(
+                identity,
+                PackageDetailState::Loading {
+                    request: request.clone(),
+                },
+            );
+            return Some(Effect::GetPackageDetail(request));
+        }
+        Action::PackageDetailLoaded { request, detail } => {
+            if !app.package_details.get(&request.identity).is_some_and(
+                |state| matches!(state, PackageDetailState::Loading { request: pending } if pending == &request),
+            ) {
+                return None;
+            }
+            let (detail, report) = normalize_package_detail(&request.identity, detail);
+            let Some(detail) = detail else {
+                app.package_details.insert(
+                    request.identity.clone(),
+                    PackageDetailState::Failed {
+                        request,
+                        message: "backend returned detail for a different or invalid package"
+                            .into(),
+                    },
+                );
+                return None;
+            };
+            let mut limitations = Vec::new();
+            append_package_normalization_limitations(&mut limitations, &report);
+            let limitations = normalize_package_limitations(limitations);
+            let state = if !limitations.is_empty() {
+                PackageDetailState::Partial {
+                    request,
+                    detail,
+                    limitations,
+                }
+            } else if package_detail_is_empty(&detail) {
+                PackageDetailState::AvailableEmpty { request }
+            } else {
+                PackageDetailState::Available { request, detail }
+            };
+            app.package_details
+                .insert(state.request().unwrap().identity.clone(), state);
+        }
+        Action::PackageDetailPartial {
+            request,
+            detail,
+            mut limitations,
+        } => {
+            if !app.package_details.get(&request.identity).is_some_and(
+                |state| matches!(state, PackageDetailState::Loading { request: pending } if pending == &request),
+            ) {
+                return None;
+            }
+            let (detail, report) = normalize_package_detail(&request.identity, detail);
+            let Some(detail) = detail else {
+                app.package_details.insert(
+                    request.identity.clone(),
+                    PackageDetailState::Failed {
+                        request,
+                        message: "backend returned detail for a different or invalid package"
+                            .into(),
+                    },
+                );
+                return None;
+            };
+            append_package_normalization_limitations(&mut limitations, &report);
+            let limitations = normalize_package_limitations(limitations);
+            app.package_details.insert(
+                request.identity.clone(),
+                PackageDetailState::Partial {
+                    request,
+                    detail,
+                    limitations,
+                },
+            );
+        }
+        Action::PackageDetailFailed { request, message } => {
+            if !app.package_details.get(&request.identity).is_some_and(
+                |state| matches!(state, PackageDetailState::Loading { request: pending } if pending == &request),
+            ) {
+                return None;
+            }
+            app.package_details.insert(
+                request.identity.clone(),
+                PackageDetailState::Failed {
+                    request,
+                    message: message.clone(),
+                },
+            );
+            app.notification = Some(format!("Package detail is unavailable: {message}"));
+        }
+        Action::OpenPackageDependency { identity, reverse } => {
+            let available = app
+                .selected_package_detail()
+                .and_then(PackageDetailState::detail)
+                .and_then(|detail| {
+                    if reverse {
+                        detail.reverse_dependencies.available()
+                    } else {
+                        detail.runtime_dependencies.available()
+                    }
+                })
+                .is_some_and(|dependencies| dependencies.contains(&identity));
+            if !available {
+                app.notification = Some(
+                    "The requested package dependency is not in the current typed detail.".into(),
+                );
+                return None;
+            }
+            if app
+                .package_inventory
+                .packages()
+                .is_some_and(|packages| packages.iter().any(|package| package.identity == identity))
+            {
+                app.package_selection = Some(identity);
+            } else {
+                app.notification =
+                    Some("The dependency is not present in the current package inventory.".into());
+            }
+        }
         Action::BeginSelectedRecipeMetadata => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
                 app.recipe_metadata_loading.insert(recipe.name.clone());
@@ -6460,6 +6851,8 @@ pub enum Effect {
     GetSignatureDump(SignatureTarget),
     CompareSignatures(SignatureComparisonRequest),
     CancelSignatureOperation,
+    GetPackageInventory(PackageInventoryRequest),
+    GetPackageDetail(PackageDetailRequest),
     GetRecipeMetadata(String),
     GetVariable(VariableIdentity),
     WriteConfigAssignment(ConfigEditRequest),
@@ -10797,6 +11190,251 @@ mod tests {
         assert_eq!(
             update(&mut app, Action::RefreshSignatureDump),
             Some(Effect::GetSignatureDump(target))
+        );
+    }
+
+    fn package_summary(name: &str, recipe: &str) -> PackageSummary {
+        PackageSummary {
+            identity: PackageIdentity::new(name),
+            recipe: PackageField::Available(recipe.into()),
+            provider: PackageField::Available(format!("/layers/meta/recipes/{recipe}.bb").into()),
+            version: PackageField::Available("1.0".into()),
+            installed_size_bytes: PackageField::Unavailable,
+            license: PackageField::Unavailable,
+            image_membership: PackageField::Available(Vec::new()),
+        }
+    }
+
+    #[test]
+    fn pkgdata_model_reducer_correlates_inventory_states_search_and_selection() {
+        let mut app = App::new(10, 1_000);
+        assert_eq!(
+            update(&mut app, Action::BeginPackageInventory),
+            Some(Effect::GetPackageInventory(PackageInventoryRequest {
+                generation: 1
+            }))
+        );
+        let request = PackageInventoryRequest { generation: 1 };
+        let _ = update(
+            &mut app,
+            Action::PackageInventoryLoaded {
+                request: PackageInventoryRequest { generation: 99 },
+                packages: vec![package_summary("stale", "stale")],
+            },
+        );
+        assert_eq!(
+            app.package_inventory,
+            PackageInventoryState::Loading { request }
+        );
+        let mut invalid_field = package_summary("libc6", "glibc");
+        invalid_field.provider = PackageField::Available("relative.bb".into());
+        let _ = update(
+            &mut app,
+            Action::PackageInventoryLoaded {
+                request,
+                packages: vec![
+                    package_summary("busybox", "busybox"),
+                    invalid_field,
+                    package_summary("busybox", "zzz"),
+                ],
+            },
+        );
+        assert!(matches!(
+            app.package_inventory,
+            PackageInventoryState::Partial { .. }
+        ));
+        assert_eq!(app.package_selection, Some(PackageIdentity::new("busybox")));
+
+        let _ = update(&mut app, Action::BeginPackageSearch);
+        let _ = update(&mut app, Action::AppendPackageQuery('G'));
+        let _ = update(&mut app, Action::AppendPackageQuery('L'));
+        assert_eq!(app.package_selection, Some(PackageIdentity::new("libc6")));
+        assert_eq!(app.filtered_packages().len(), 1);
+        let _ = update(&mut app, Action::BackspacePackageQuery);
+        let _ = update(&mut app, Action::FinishPackageSearch);
+        assert!(!app.package_searching);
+
+        let _ = update(&mut app, Action::BeginPackageInventory);
+        let request = PackageInventoryRequest { generation: 2 };
+        let _ = update(
+            &mut app,
+            Action::PackageInventoryLoaded {
+                request,
+                packages: vec![package_summary("libc6", "glibc")],
+            },
+        );
+        assert_eq!(app.package_selection, Some(PackageIdentity::new("libc6")));
+
+        let _ = update(&mut app, Action::BeginPackageInventory);
+        let request = PackageInventoryRequest { generation: 3 };
+        let _ = update(
+            &mut app,
+            Action::PackageInventoryLoaded {
+                request,
+                packages: Vec::new(),
+            },
+        );
+        assert_eq!(
+            app.package_inventory,
+            PackageInventoryState::AvailableEmpty { request }
+        );
+        assert_eq!(app.package_selection, None);
+
+        let _ = update(&mut app, Action::BeginPackageInventory);
+        let request = PackageInventoryRequest { generation: 4 };
+        let _ = update(
+            &mut app,
+            Action::PackageInventoryFailed {
+                request,
+                message: "pkgdata missing".into(),
+            },
+        );
+        assert_eq!(
+            app.package_inventory,
+            PackageInventoryState::Failed {
+                request,
+                message: "pkgdata missing".into()
+            }
+        );
+    }
+
+    #[test]
+    fn pkgdata_model_detail_states_and_dependency_navigation_are_exact() {
+        let mut app = App::new(10, 1_000);
+        let inventory_request = PackageInventoryRequest { generation: 1 };
+        app.package_inventory = PackageInventoryState::Loading {
+            request: inventory_request,
+        };
+        let _ = update(
+            &mut app,
+            Action::PackageInventoryLoaded {
+                request: inventory_request,
+                packages: vec![
+                    package_summary("busybox", "busybox"),
+                    package_summary("libc6", "glibc"),
+                    package_summary("init", "init"),
+                ],
+            },
+        );
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedPackageDetail),
+            Some(Effect::GetPackageDetail(PackageDetailRequest {
+                identity: PackageIdentity::new("busybox"),
+                generation: 1,
+            }))
+        );
+        let request = PackageDetailRequest {
+            identity: PackageIdentity::new("busybox"),
+            generation: 1,
+        };
+        let detail = PackageDetail {
+            identity: request.identity.clone(),
+            files: PackageField::Available(vec!["/bin/busybox".into()]),
+            runtime_dependencies: PackageField::Available(vec![PackageIdentity::new("libc6")]),
+            reverse_dependencies: PackageField::Available(vec![PackageIdentity::new("init")]),
+        };
+        let _ = update(
+            &mut app,
+            Action::PackageDetailLoaded {
+                request: PackageDetailRequest {
+                    generation: 99,
+                    ..request.clone()
+                },
+                detail: detail.clone(),
+            },
+        );
+        assert!(matches!(
+            app.selected_package_detail(),
+            Some(PackageDetailState::Loading { .. })
+        ));
+        let _ = update(
+            &mut app,
+            Action::PackageDetailPartial {
+                request: request.clone(),
+                detail,
+                limitations: vec!["license unavailable".into()],
+            },
+        );
+        assert!(matches!(
+            app.selected_package_detail(),
+            Some(PackageDetailState::Partial { .. })
+        ));
+
+        let _ = update(
+            &mut app,
+            Action::OpenPackageDependency {
+                identity: PackageIdentity::new("libc6"),
+                reverse: false,
+            },
+        );
+        assert_eq!(app.package_selection, Some(PackageIdentity::new("libc6")));
+        app.package_selection = Some(PackageIdentity::new("busybox"));
+        let _ = update(
+            &mut app,
+            Action::OpenPackageDependency {
+                identity: PackageIdentity::new("init"),
+                reverse: true,
+            },
+        );
+        assert_eq!(app.package_selection, Some(PackageIdentity::new("init")));
+        app.package_selection = Some(PackageIdentity::new("busybox"));
+        let _ = update(
+            &mut app,
+            Action::OpenPackageDependency {
+                identity: PackageIdentity::new("not-present"),
+                reverse: false,
+            },
+        );
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("not in the current typed detail"))
+        );
+
+        app.package_selection = Some(PackageIdentity::new("libc6"));
+        let effect = update(&mut app, Action::BeginSelectedPackageDetail).unwrap();
+        let Effect::GetPackageDetail(empty_request) = effect else {
+            panic!("expected package detail effect");
+        };
+        let empty = PackageDetail {
+            identity: empty_request.identity.clone(),
+            files: PackageField::Available(Vec::new()),
+            runtime_dependencies: PackageField::Available(Vec::new()),
+            reverse_dependencies: PackageField::Available(Vec::new()),
+        };
+        let _ = update(
+            &mut app,
+            Action::PackageDetailLoaded {
+                request: empty_request.clone(),
+                detail: empty,
+            },
+        );
+        assert_eq!(
+            app.package_details.get(&empty_request.identity),
+            Some(&PackageDetailState::AvailableEmpty {
+                request: empty_request.clone()
+            })
+        );
+
+        app.package_selection = Some(PackageIdentity::new("init"));
+        let Effect::GetPackageDetail(failed_request) =
+            update(&mut app, Action::BeginSelectedPackageDetail).unwrap()
+        else {
+            panic!("expected package detail effect");
+        };
+        let _ = update(
+            &mut app,
+            Action::PackageDetailFailed {
+                request: failed_request.clone(),
+                message: "tool failed".into(),
+            },
+        );
+        assert_eq!(
+            app.package_details.get(&failed_request.identity),
+            Some(&PackageDetailState::Failed {
+                request: failed_request,
+                message: "tool failed".into()
+            })
         );
     }
 }

@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete signature dump and comparison workflows.
+Complete the package data browser.
 
 ## Current task
 
@@ -66,15 +66,14 @@ See `docs/current-task.md`.
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
 | Signature workspace | DONE | `Z` opens an authoritative focus-trapped task picker and responsive child workspace with exact record/sides, typed details/differences, provider navigation, and cancellable background execution |
-| Package data model | IN_PROGRESS | Pure identities, explicit inventory/detail states, bounded normalization, selection, correlation, and dependency navigation remain |
+| Package data model | DONE | Exact identities, available-versus-unavailable fields, explicit bounded inventory/detail states, deterministic normalization, selection, stale correlation, search, dependency navigation, and typed event/effect mapping pass focused and baseline checks |
 | Package data adapter | NOT_STARTED | No bounded shell-free `oe-pkgdata-util` adapter or live package-data evidence exists; the current real build has the tool script but no generated pkgdata tree |
 | Package data workspace | NOT_STARTED | No Navigator route, responsive workspace, input mapping, background coordination, or TestBackend coverage exists |
 
 ## Priority queue
 
-1. `PKG-MODEL-001` — add typed package data state
-2. `PKG-ADAPTER-001` — acquire authoritative package data
-3. `PKG-UI-001` — integrate the package data workspace
+1. `PKG-ADAPTER-001` — acquire authoritative package data
+2. `PKG-UI-001` — integrate the package data workspace
 
 ## Rules
 

@@ -20,10 +20,10 @@ use tokio::{
 use yoctui_model::{
     BuildRequest, DependencyEdge, DependencyEdgeKind, DependencyGraph, DependencyNode,
     DependencyNodeId, DevtoolCapability, DevtoolGitState, DevtoolOperation, DevtoolOperationError,
-    DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Layer, LogEntry, Recipe,
-    RecipeBuildStatus, RecipeIdentity, RecipeMetadata, RecipeWorkspaceStatus, Severity,
-    SignatureComparisonRequest, SignatureDifference, SignatureRecord, SignatureTarget, TaskStats,
-    VariableOperation, Workspace,
+    DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Layer, LogEntry, PackageDetail,
+    PackageDetailRequest, PackageInventoryRequest, PackageSummary, Recipe, RecipeBuildStatus,
+    RecipeIdentity, RecipeMetadata, RecipeWorkspaceStatus, Severity, SignatureComparisonRequest,
+    SignatureDifference, SignatureRecord, SignatureTarget, TaskStats, VariableOperation, Workspace,
 };
 use yoctui_protocol::{
     Command, DependencyEdgeData, DependencyEdgeKindData, DependencyGraphData, DependencyNodeData,
@@ -838,6 +838,24 @@ pub enum BackendEvent {
     },
     SignatureComparisonFailed {
         request: SignatureComparisonRequest,
+        message: String,
+    },
+    PackageInventory {
+        request: PackageInventoryRequest,
+        packages: Vec<PackageSummary>,
+        limitations: Vec<String>,
+    },
+    PackageInventoryFailed {
+        request: PackageInventoryRequest,
+        message: String,
+    },
+    PackageDetail {
+        request: PackageDetailRequest,
+        detail: PackageDetail,
+        limitations: Vec<String>,
+    },
+    PackageDetailFailed {
+        request: PackageDetailRequest,
         message: String,
     },
     RecipeSources {
