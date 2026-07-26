@@ -837,20 +837,23 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: true }),
             popup,
         );
-    } else if let Some(Dialog::DevtoolFinishConfirmation(request)) = app.active_dialog() {
+    } else if let Some(Dialog::DevtoolFinishConfirmation(plan)) = app.active_dialog() {
         let width = area.width.saturating_sub(12).clamp(44, 100);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
-            area.height.saturating_sub(7) / 2,
+            area.height.saturating_sub(9) / 2,
             width,
-            7,
+            9,
         );
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Run `devtool finish {} {}`?\n\nThis exports Devtool changes into the destination layer.\n\nEnter continues; Esc cancels.",
-                request.recipe,
-                request.destination.display()
+                "Run `devtool finish {} {}`?\n\nProvider: {}\nConfigured layer: {}\nDestination: {}\n\nEnter continues; Esc cancels.",
+                plan.identity.name,
+                plan.layer.path.display(),
+                plan.identity.file.display(),
+                plan.layer.name,
+                plan.layer.path.display()
             ))
             .block(
                 Block::default()
@@ -904,30 +907,39 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: false }),
             popup,
         );
-    } else if let Some(Dialog::DevtoolFinish {
-        recipe,
-        destination,
-    }) = app.active_dialog()
-    {
+    } else if let Some(Dialog::DevtoolFinishPicker(picker)) = app.active_dialog() {
         let width = area.width.saturating_sub(12).clamp(44, 100);
+        let height = (picker.layers.len() as u16)
+            .saturating_add(5)
+            .min(area.height.saturating_sub(4))
+            .max(7);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
-            area.height.saturating_sub(6) / 2,
+            area.height.saturating_sub(height) / 2,
             width,
-            6,
+            height,
         );
         clear_popup(frame, app, popup);
         frame.render_widget(
-            Paragraph::new(format!(
-                "Recipe: {recipe}\nDestination layer: {}_\n\nEnter previews the command; Esc cancels.",
-                destination
-            ))
+            Table::new(
+                picker.layers.iter().enumerate().map(|(index, layer)| {
+                    Row::new([layer.name.clone(), layer.path.display().to_string()])
+                        .style(selected_style(app, index == picker.selection))
+                }),
+                [Constraint::Length(24), Constraint::Min(20)],
+            )
+            .header(
+                Row::new(["Configured layer", "Absolute destination"])
+                    .style(Style::default().bold()),
+            )
             .block(
                 Block::default()
-                    .title("Devtool finish destination")
+                    .title(format!(
+                        "Devtool finish {} — ↑/↓ select, Enter preview, Esc cancel",
+                        picker.identity.name
+                    ))
                     .borders(Borders::ALL),
-            )
-            .wrap(Wrap { trim: false }),
+            ),
             popup,
         );
     } else if let Some(Dialog::BbmaskConfirmation(value)) = app.active_dialog() {
@@ -3951,16 +3963,31 @@ mod tests {
                 "Confirm Devtool update-recipe",
             ),
             (
-                Dialog::DevtoolFinish {
-                    recipe: "busybox".into(),
-                    destination: "/layers/meta".into(),
-                },
-                "Devtool finish destination",
+                Dialog::DevtoolFinishPicker(yoctui_model::DevtoolFinishPicker {
+                    identity: yoctui_model::RecipeIdentity {
+                        name: "busybox".into(),
+                        file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+                    },
+                    layers: vec![yoctui_model::Layer {
+                        name: "meta".into(),
+                        path: "/layers/meta".into(),
+                        priority: Some(5),
+                    }],
+                    selection: 0,
+                }),
+                "Devtool finish busybox",
             ),
             (
-                Dialog::DevtoolFinishConfirmation(yoctui_model::DevtoolFinishRequest {
-                    recipe: "busybox".into(),
-                    destination: "/layers/meta".into(),
+                Dialog::DevtoolFinishConfirmation(yoctui_model::DevtoolFinishPlan {
+                    identity: yoctui_model::RecipeIdentity {
+                        name: "busybox".into(),
+                        file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+                    },
+                    layer: yoctui_model::Layer {
+                        name: "meta".into(),
+                        path: "/layers/meta".into(),
+                        priority: Some(5),
+                    },
                 }),
                 "Confirm Devtool finish",
             ),
@@ -4407,14 +4434,40 @@ mod tests {
         assert!(output.contains("busybox.bb"));
     }
     #[test]
-    fn renders_devtool_finish_confirmation() {
+    fn devtool_publish_finish_renders_configured_picker_and_exact_confirmation() {
         let mut terminal = Terminal::new(TestBackend::new(120, 25)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.dialogs.push_back(Dialog::DevtoolFinishConfirmation(
-            yoctui_model::DevtoolFinishRequest {
-                recipe: "busybox".into(),
-                destination: "/layers/meta-demo".into(),
+        let identity = yoctui_model::RecipeIdentity {
+            name: "busybox".into(),
+            file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+        };
+        let layer = yoctui_model::Layer {
+            name: "meta-demo".into(),
+            path: "/layers/meta-demo".into(),
+            priority: Some(7),
+        };
+        app.dialogs.push_back(Dialog::DevtoolFinishPicker(
+            yoctui_model::DevtoolFinishPicker {
+                identity: identity.clone(),
+                layers: vec![layer.clone()],
+                selection: 0,
             },
+        ));
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Configured layer"));
+        assert!(output.contains("meta-demo"));
+        assert!(output.contains("/layers/meta-demo"));
+
+        app.dialogs.clear();
+        app.dialogs.push_back(Dialog::DevtoolFinishConfirmation(
+            yoctui_model::DevtoolFinishPlan { identity, layer },
         ));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
@@ -4426,6 +4479,8 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Confirm Devtool finish"));
         assert!(output.contains("devtool finish busybox /layers/meta-demo"));
+        assert!(output.contains("busybox.bb"));
+        assert!(output.contains("Configured layer: meta-demo"));
     }
     #[test]
     fn renders_devtool_deploy_confirmation() {

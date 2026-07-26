@@ -794,6 +794,22 @@ identity even after navigation and reports the refreshed workspace state.
 Nonzero exit, cancellation, runner loss, or status-refresh failure leaves the
 retained job output and prior actionable context intact.
 
+`F` requires the exact authoritative recipe identity, a present workspace
+source, and Git status with a commit and no modified, untracked, or conflicted
+files. It opens a focus-trapping picker containing only configured layers whose
+reported paths are absolute; the recipe's provider layer is selected when it
+is available. `Up`/`Down` changes the layer, `Enter` previews, and `Esc`
+cancels. There is no free-text finish destination.
+
+The finish confirmation shows the exact
+`devtool finish <recipe> <native-destination>` intent, provider path,
+configured layer name, and destination. Confirmation revalidates both
+eligibility and current configured-layer membership, so stale, relative, or
+unconfigured paths stay inert. Successful persistent completion refreshes the
+original identity; removal from the Devtool workspace is a valid refreshed
+state. Command, cancellation, runner, and refresh failures retain the durable
+job and actionable prior state.
+
 `V` starts a selected-recipe CVE check only when authoritative metadata
 reports `do_cve_check`; `X` starts SPDX generation only when it reports
 `do_create_spdx`. Each route opens the existing typed confirmation with the

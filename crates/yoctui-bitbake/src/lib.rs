@@ -1910,6 +1910,39 @@ mod tests {
         );
     }
 
+    #[test]
+    fn devtool_publish_finish_uses_exact_shell_free_arguments() {
+        let command = DevtoolCommandSpec::from_operation(&DevtoolOperation::Finish {
+            recipe: "busybox".into(),
+            destination: "/layers/meta-demo".into(),
+        })
+        .unwrap();
+        assert_eq!(command.executable(), Path::new("devtool"));
+        assert_eq!(
+            command.arguments(),
+            [
+                OsString::from("finish"),
+                OsString::from("busybox"),
+                OsString::from("/layers/meta-demo"),
+            ]
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn devtool_publish_finish_preserves_native_destination_bytes() {
+        use std::os::unix::ffi::OsStringExt;
+
+        let mut bytes = b"/layers/meta-".to_vec();
+        bytes.push(0xfe);
+        let command = DevtoolCommandSpec::from_operation(&DevtoolOperation::Finish {
+            recipe: "busybox".into(),
+            destination: PathBuf::from(OsString::from_vec(bytes.clone())),
+        })
+        .unwrap();
+        assert_eq!(command.arguments()[2], OsString::from_vec(bytes));
+    }
+
     #[cfg(unix)]
     #[test]
     fn devtool_job_spec_preserves_non_utf8_finish_destination() {

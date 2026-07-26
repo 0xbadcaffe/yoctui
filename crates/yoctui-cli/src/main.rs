@@ -25,7 +25,8 @@ use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
     BuildJobCoordinator, DevtoolJobCoordinator, Input, config_compare_dialog_action,
     config_edit_confirmation_action, config_edit_dialog_action, config_scope_picker_action,
-    config_source_picker_action, config_workspace_action, devtool_modify_confirmation_action,
+    config_source_picker_action, config_workspace_action, devtool_finish_confirmation_action,
+    devtool_finish_picker_action, devtool_modify_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, key_action, logs_action,
     recipe_editor_action, settings_action, tasks_action,
 };
@@ -1069,6 +1070,28 @@ fn apply_completed_devtool_update_status(app: &mut App, status: yoctui_model::De
     app.notification = Some(notification);
 }
 
+async fn complete_devtool_finish(app: &mut App, build_dir: &Path, identity: RecipeIdentity) {
+    let status = DevtoolInspector::default()
+        .inspect(build_dir, identity)
+        .await;
+    apply_completed_devtool_finish_status(app, status);
+}
+
+fn apply_completed_devtool_finish_status(app: &mut App, status: yoctui_model::DevtoolStatus) {
+    let notification = if let Some(error) = &status.error {
+        format!("Devtool finish completed, but authoritative status refresh failed: {error:?}")
+    } else if let DevtoolWorkspace::MissingDirectory { source_path } = &status.workspace {
+        format!(
+            "Devtool finish completed, but the refreshed workspace source is missing: {}",
+            source_path.display()
+        )
+    } else {
+        "Devtool finish completed and workspace status was refreshed.".into()
+    };
+    let _ = update(app, Action::DevtoolStatusLoaded(status));
+    app.notification = Some(notification);
+}
+
 fn config_variable_loaded_action(requested: VariableIdentity, variable: VariableValue) -> Action {
     Action::VariableLoaded(VariableDetail {
         identity: VariableIdentity {
@@ -1657,6 +1680,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     let mut devtool_runner = None;
     let mut pending_devtool_modify = None;
     let mut pending_devtool_update = None;
+    let mut pending_devtool_finish = None;
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
     #[cfg(unix)]
@@ -1846,13 +1870,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 app.active_dialog(),
                 Some(Dialog::DevtoolFinishConfirmation(_))
             ) {
-                let effect = match input {
-                    Input::Enter => update(&mut app, Action::ConfirmDevtoolFinish),
-                    Input::Esc => update(&mut app, Action::CancelDevtoolFinishConfirmation),
-                    _ => None,
-                };
-                if let Some(Effect::DevtoolFinish(request)) = effect {
-                    begin_devtool_job(
+                let effect = devtool_finish_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(Effect::DevtoolFinish(plan)) = effect {
+                    let request = plan.request();
+                    if begin_devtool_job(
                         &mut app,
                         &mut devtool_jobs,
                         &mut devtool_runner,
@@ -1860,18 +1882,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         cancellation_timeout,
                         request.into(),
                     )
-                    .await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::DevtoolFinish { .. })) {
-                let _ = match input {
-                    Input::Char(character) => {
-                        update(&mut app, Action::AppendDevtoolFinishDestination(character))
+                    .await
+                    {
+                        pending_devtool_finish = Some(plan.identity);
                     }
-                    Input::Backspace => update(&mut app, Action::BackspaceDevtoolFinishDestination),
-                    Input::Enter => update(&mut app, Action::PreviewDevtoolFinish),
-                    Input::Esc => update(&mut app, Action::CancelDevtoolFinish),
-                    _ => None,
-                };
+                }
+            } else if matches!(app.active_dialog(), Some(Dialog::DevtoolFinishPicker(_))) {
+                let _ =
+                    devtool_finish_picker_action(input).and_then(|action| update(&mut app, action));
             } else if matches!(
                 app.active_dialog(),
                 Some(Dialog::DevtoolDeployConfirmation(_))
@@ -2423,9 +2441,19 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     complete_devtool_update(&mut app, &session_build_dir, identity).await;
                 }
             }
+            Some(DevtoolOperation::Finish { recipe, .. })
+                if pending_devtool_finish
+                    .as_ref()
+                    .is_some_and(|identity| identity.name == recipe) =>
+            {
+                if let Some(identity) = pending_devtool_finish.take() {
+                    complete_devtool_finish(&mut app, &session_build_dir, identity).await;
+                }
+            }
             _ if devtool_jobs.active_operation().is_none() => {
                 pending_devtool_modify = None;
                 pending_devtool_update = None;
+                pending_devtool_finish = None;
             }
             _ => {}
         }
@@ -3566,6 +3594,121 @@ mod tests {
         );
         assert_eq!(
             app.background_jobs.get(id).unwrap().status,
+            yoctui_model::BackgroundJobStatus::Failed
+        );
+    }
+
+    #[tokio::test]
+    async fn devtool_publish_finish_refreshes_original_identity_and_retains_job_context() {
+        let identity = RecipeIdentity {
+            name: "busybox".into(),
+            file: PathBuf::from("/layers/meta/recipes-core/busybox/busybox.bb"),
+        };
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Dashboard;
+        let id = yoctui_model::BackgroundJobId((1_u64 << 63) + 100);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(yoctui_model::BackgroundJobSpec {
+                id,
+                kind: yoctui_model::BackgroundJobKind::Devtool,
+                title: "Devtool finish busybox".into(),
+                context: yoctui_model::BackgroundJobContext {
+                    recipe: Some("busybox".into()),
+                    path: Some(PathBuf::from("/layers/meta-demo")),
+                    ..yoctui_model::BackgroundJobContext::default()
+                },
+                cancellation_supported: true,
+                queued_at: SystemTime::UNIX_EPOCH,
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::StartBackgroundJob {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::RunBackgroundJob { id });
+        let _ = update(
+            &mut app,
+            Action::SucceedBackgroundJob {
+                id,
+                result: yoctui_model::BackgroundJobResult {
+                    summary: "Devtool completed successfully".into(),
+                    artifacts: vec![],
+                },
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let refreshed = yoctui_model::DevtoolStatus {
+            identity: identity.clone(),
+            capability: yoctui_model::DevtoolCapability::Available,
+            workspace: DevtoolWorkspace::NotMember,
+            git: yoctui_model::DevtoolGitState::NotApplicable,
+            error: None,
+        };
+        apply_completed_devtool_finish_status(&mut app, refreshed.clone());
+        assert_eq!(app.devtool_statuses.get(&identity), Some(&refreshed));
+        assert_eq!(app.screen, Screen::Dashboard);
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("status was refreshed"))
+        );
+        apply_completed_devtool_finish_status(
+            &mut app,
+            yoctui_model::DevtoolStatus {
+                identity: identity.clone(),
+                capability: yoctui_model::DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::NotMember,
+                git: yoctui_model::DevtoolGitState::NotApplicable,
+                error: Some(yoctui_model::DevtoolStatusError::DevtoolFailed {
+                    exit_code: Some(5),
+                    message: "refresh failed".into(),
+                }),
+            },
+        );
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("status refresh failed"))
+        );
+        assert_eq!(
+            app.background_jobs.get(id).unwrap().status,
+            yoctui_model::BackgroundJobStatus::Succeeded
+        );
+
+        let operation = DevtoolOperation::Finish {
+            recipe: "busybox".into(),
+            destination: PathBuf::from("/layers/meta-demo"),
+        };
+        let command = DevtoolCommandSpec::with_executable("/bin/false".into(), &operation).unwrap();
+        let mut coordinator = DevtoolJobCoordinator::default();
+        for action in coordinator
+            .queue(operation, SystemTime::UNIX_EPOCH)
+            .unwrap()
+        {
+            let _ = update(&mut app, action);
+        }
+        let failed_id = coordinator.active_job_id().unwrap();
+        let mut started = DevtoolJobRunner::new(std::env::temp_dir());
+        started.start(command).await.unwrap();
+        let mut runner = Some(started);
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while runner.is_some() {
+                assert!(
+                    poll_devtool_job(&mut app, &mut coordinator, &mut runner)
+                        .await
+                        .is_none()
+                );
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert_eq!(
+            app.background_jobs.get(failed_id).unwrap().status,
             yoctui_model::BackgroundJobStatus::Failed
         );
     }

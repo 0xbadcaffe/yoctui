@@ -493,12 +493,12 @@ notes = "Exact-identity status gating, modify confirmation, persistent completio
 id = "DEVTOOL-PUBLISH-001"
 milestone = "M3"
 title = "Complete Devtool update-recipe and finish workflows"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-UPDATE-001", "DEVTOOL-FINISH-001"]
 verify = ["cargo test -p yoctui-model devtool_publish", "cargo test -p yoctui-app devtool_publish", "cargo test -p yoctui-ui devtool_publish", "cargo test -p yoctui -- devtool_publish"]
-notes = "Parent gate split into atomic update-recipe and finish children so exact refresh and configured-layer destination behavior are verified independently."
+notes = "Update-recipe and finish children provide exact-identity eligibility, persistent success refresh, durable failure context, and configured-layer-only native finish destinations."
 
 [[task]]
 id = "DEVTOOL-UPDATE-001"
@@ -515,18 +515,18 @@ notes = "Exact-identity authoritative eligibility, provider-aware confirmation, 
 id = "DEVTOOL-FINISH-001"
 milestone = "M3"
 title = "Complete Devtool finish workflow"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-UPDATE-001"]
 verify = ["cargo test -p yoctui-bitbake devtool_publish_finish", "cargo test -p yoctui-model devtool_publish_finish", "cargo test -p yoctui-app devtool_publish_finish", "cargo test -p yoctui-ui devtool_publish_finish", "cargo test -p yoctui -- devtool_publish_finish"]
-notes = "Git-aware eligibility, configured-layer native-path selection, exact preview, persistent execution, original-identity refresh, and failure/output retention."
+notes = "Clean committed Git eligibility, absolute configured-layer picker, stale/unconfigured revalidation, provider/layer/path confirmation, native-byte adapter preservation, persistent success refresh, and failure context pass all focused and baseline checks."
 
 [[task]]
 id = "DEVTOOL-TARGET-001"
 milestone = "M3"
 title = "Complete Devtool deploy-target and reset workflows"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-PUBLISH-001"]
