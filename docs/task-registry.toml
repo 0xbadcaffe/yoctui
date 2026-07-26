@@ -350,18 +350,18 @@ notes = "Typed C/U routes copy only loaded effective/unexpanded detail for the e
 id = "CONFIG-SOURCE-001"
 milestone = "M3"
 title = "Add authoritative configuration source selection"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 42
 required = true
 depends_on = ["CONFIG-COPY-001"]
 verify = ["cargo test -p yoctui-model config_source", "cargo test -p yoctui-app config_source", "cargo test -p yoctui-ui config_source", "cargo test -p yoctui -- config_source"]
-notes = "Select defining operations by typed file/line identity and open only authoritative paths with partial/error handling."
+notes = "The o route now uses exact loaded operation file/line identities, opens one source directly or a focus-trapping multi-source picker, bounds relative paths to the build directory, restores focus, and reports all partial/stale/editor states with reducer/app/CLI/TestBackend coverage."
 
 [[task]]
 id = "CONFIG-SCOPE-001"
 milestone = "M3"
 title = "Add recipe-scoped configuration inspection"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 42
 required = true
 depends_on = ["CONFIG-SOURCE-001"]

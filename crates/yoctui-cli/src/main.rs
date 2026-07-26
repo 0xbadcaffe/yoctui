@@ -23,8 +23,8 @@ use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
-    BuildJobCoordinator, Input, config_workspace_action, errors_action, focus_action, key_action,
-    logs_action, settings_action, tasks_action,
+    BuildJobCoordinator, Input, config_source_picker_action, config_workspace_action,
+    errors_action, focus_action, key_action, logs_action, settings_action, tasks_action,
 };
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolInspector, ProcessBackend, VariableValue,
@@ -1824,6 +1824,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 if let Some(Effect::OpenInEditor(path)) = effect {
                     open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                 }
+            } else if matches!(app.active_dialog(), Some(Dialog::ConfigSourcePicker(_))) {
+                let effect =
+                    config_source_picker_action(input).and_then(|action| update(&mut app, action));
+                if let Some(Effect::OpenInEditor(path)) = effect {
+                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                }
             } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
@@ -2627,6 +2633,33 @@ mod tests {
             config_copy_effect(&mut app, Input::Char('U')),
             Some(Effect::CopyToClipboard("${DEFAULT_MACHINE}".into()))
         );
+    }
+
+    #[test]
+    fn config_source_terminal_picker_routes_authoritative_path() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.build_dir = Some("/build".into());
+        app.dialogs.push_back(Dialog::ConfigSourcePicker(
+            yoctui_model::ConfigSourcePicker {
+                identity: VariableIdentity {
+                    name: "MACHINE".into(),
+                    recipe: None,
+                },
+                sources: vec![yoctui_model::ConfigSourceChoice {
+                    operation: "set".into(),
+                    path: "conf/local.conf".into(),
+                    line: Some(12),
+                }],
+                selection: 0,
+            },
+        ));
+        let effect =
+            config_source_picker_action(Input::Enter).and_then(|action| update(&mut app, action));
+        assert_eq!(
+            effect,
+            Some(Effect::OpenInEditor("/build/conf/local.conf".into()))
+        );
+        assert!(app.active_dialog().is_none());
     }
 
     #[test]

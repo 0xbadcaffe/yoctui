@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fmt,
-    path::PathBuf,
+    path::{Component, Path, PathBuf},
     time::{Duration, SystemTime},
 };
 use thiserror::Error;
@@ -566,6 +566,18 @@ pub struct RecipePatchPicker {
     pub patches: Vec<PathBuf>,
     pub selection: usize,
 }
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ConfigSourceChoice {
+    pub operation: String,
+    pub path: PathBuf,
+    pub line: Option<u32>,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfigSourcePicker {
+    pub identity: VariableIdentity,
+    pub sources: Vec<ConfigSourceChoice>,
+    pub selection: usize,
+}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
     BuildOptions,
@@ -576,6 +588,7 @@ pub enum Dialog {
     RecipeTaskPicker(RecipeTaskPicker),
     RecipeTaskLogPicker(RecipeTaskLogPicker),
     RecipePatchPicker(RecipePatchPicker),
+    ConfigSourcePicker(ConfigSourcePicker),
     DevtoolResetConfirmation(String),
     DevtoolUpdateConfirmation(String),
     DevtoolFinish { recipe: String, destination: String },
@@ -1852,6 +1865,11 @@ pub enum Action {
     BeginSelectedConfigDetail,
     CopySelectedConfigEffective,
     CopySelectedConfigUnexpanded,
+    SelectConfigSource {
+        delta: isize,
+    },
+    OpenSelectedConfigSourceChoice,
+    CancelConfigSourcePicker,
     VariableDetailFailed {
         identity: VariableIdentity,
         message: String,
@@ -2238,6 +2256,84 @@ pub fn selected_config_copy_value(app: &App, value: ConfigCopyValue) -> Result<&
             .as_deref()
             .ok_or_else(|| format!("The unexpanded value for {} is unavailable.", identity.name)),
     }
+}
+
+fn selected_config_sources(
+    app: &App,
+) -> Result<(VariableIdentity, Vec<ConfigSourceChoice>), String> {
+    let identity = selected_config_identity(app)
+        .ok_or_else(|| "No configuration variable is selected.".to_owned())?;
+    if app.variable_detail_loading.contains(&identity) {
+        return Err(format!(
+            "Configuration detail for {} is still loading.",
+            identity.name
+        ));
+    }
+    if let Some(error) = app.variable_detail_errors.get(&identity) {
+        return Err(format!(
+            "Configuration detail for {} is unavailable: {error}",
+            identity.name
+        ));
+    }
+    let detail = app.variable_details.get(&identity).ok_or_else(|| {
+        format!(
+            "Load authoritative detail for {} with Enter before opening a source.",
+            identity.name
+        )
+    })?;
+    let mut seen = HashSet::new();
+    let sources = detail
+        .operations
+        .iter()
+        .filter_map(|operation| {
+            let path = operation.file.clone()?;
+            (!path.as_os_str().is_empty() && seen.insert((path.clone(), operation.line))).then(
+                || ConfigSourceChoice {
+                    operation: operation.operation.clone(),
+                    path,
+                    line: operation.line,
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+    if sources.is_empty() {
+        return Err(format!(
+            "No file-backed defining operation is available for {}.",
+            identity.name
+        ));
+    }
+    Ok((identity, sources))
+}
+
+pub fn config_source_disabled_reason(app: &App) -> Option<String> {
+    selected_config_sources(app).err()
+}
+
+fn resolve_config_source(app: &App, path: &Path) -> Result<PathBuf, String> {
+    if path.is_absolute() {
+        return Ok(path.to_path_buf());
+    }
+    if path.components().any(|component| {
+        matches!(
+            component,
+            Component::ParentDir | Component::RootDir | Component::Prefix(_)
+        )
+    }) {
+        return Err(format!(
+            "Relative configuration source escapes the build directory: {}.",
+            path.display()
+        ));
+    }
+    app.workspace
+        .build_dir
+        .as_ref()
+        .map(|build_dir| build_dir.join(path))
+        .ok_or_else(|| {
+            format!(
+                "Cannot resolve relative configuration source {} without an active build directory.",
+                path.display()
+            )
+        })
 }
 
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
@@ -4077,34 +4173,61 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 identity.name
             ));
         }
-        Action::OpenSelectedConfigSource => {
-            let Some(identity) = selected_config_identity(app) else {
-                app.notification = Some("No configuration variable is selected to open.".into());
-                return None;
-            };
-            let Some(provenance) = app.workspace.variable_provenance.get(&identity.name) else {
-                app.notification =
-                    Some("The selected variable has no file-backed provenance.".into());
-                return None;
-            };
-            let source = provenance
-                .rsplit_once(':')
-                .filter(|(_, line)| line.chars().all(|character| character.is_ascii_digit()))
-                .map_or(provenance.as_str(), |(path, _)| path);
-            let path = PathBuf::from(source);
-            if path.as_os_str().is_empty() {
-                app.notification =
-                    Some("The selected variable has no file-backed provenance.".into());
-            } else {
-                let path = if path.is_relative() {
-                    app.workspace
-                        .build_dir
-                        .as_ref()
-                        .map_or(path.clone(), |build_dir| build_dir.join(path))
+        Action::OpenSelectedConfigSource => match selected_config_sources(app) {
+            Ok((_, sources)) if sources.len() == 1 => {
+                match resolve_config_source(app, &sources[0].path) {
+                    Ok(path) => return Some(Effect::OpenInEditor(path)),
+                    Err(reason) => app.notification = Some(reason),
+                }
+            }
+            Ok((identity, sources)) => {
+                open_dialog(
+                    app,
+                    Dialog::ConfigSourcePicker(ConfigSourcePicker {
+                        identity,
+                        sources,
+                        selection: 0,
+                    }),
+                );
+            }
+            Err(reason) => app.notification = Some(reason),
+        },
+        Action::SelectConfigSource { delta } => {
+            if let Some(Dialog::ConfigSourcePicker(picker)) = app.active_dialog_mut() {
+                picker.selection = if delta.is_negative() {
+                    picker.selection.saturating_sub(delta.unsigned_abs())
                 } else {
-                    path
+                    picker
+                        .selection
+                        .saturating_add(delta as usize)
+                        .min(picker.sources.len().saturating_sub(1))
                 };
-                return Some(Effect::OpenInEditor(path));
+            }
+        }
+        Action::OpenSelectedConfigSourceChoice => {
+            let path = app.active_dialog().and_then(|dialog| match dialog {
+                Dialog::ConfigSourcePicker(picker) => picker
+                    .sources
+                    .get(picker.selection)
+                    .map(|source| source.path.clone()),
+                _ => None,
+            });
+            if let Some(path) = path {
+                match resolve_config_source(app, &path) {
+                    Ok(path) => {
+                        close_dialog(app);
+                        synchronize_focus(app);
+                        return Some(Effect::OpenInEditor(path));
+                    }
+                    Err(reason) => app.notification = Some(reason),
+                }
+            } else {
+                app.notification = Some("The selected configuration source is stale.".into());
+            }
+        }
+        Action::CancelConfigSourcePicker => {
+            if matches!(app.active_dialog(), Some(Dialog::ConfigSourcePicker(_))) {
+                close_dialog(app);
             }
         }
         Action::BeginBbmaskEdit => {
@@ -6050,20 +6173,126 @@ mod tests {
         assert_eq!(app.config_selection, 0);
     }
     #[test]
-    fn selected_configuration_source_opens_relative_provenance_path() {
+    fn config_source_opens_single_typed_relative_operation() {
         let mut app = App::new(10, 1_000);
         app.workspace.build_dir = Some(PathBuf::from("/build"));
         app.workspace
             .variables
             .insert("MACHINE".into(), "qemuarm".into());
-        app.workspace
-            .variable_provenance
-            .insert("MACHINE".into(), "conf/local.conf:12".into());
+        let identity = VariableIdentity {
+            name: "MACHINE".into(),
+            recipe: None,
+        };
+        app.variable_details.insert(
+            identity.clone(),
+            VariableDetail {
+                identity,
+                effective_value: Some("qemuarm".into()),
+                unexpanded_value: None,
+                provenance: Some("conf/local.conf:12".into()),
+                operations: vec![VariableOperation {
+                    operation: "set".into(),
+                    file: Some("conf/local.conf".into()),
+                    line: Some(12),
+                    value: Some("qemuarm".into()),
+                }],
+                active_overrides: vec![],
+            },
+        );
         assert_eq!(
             update(&mut app, Action::OpenSelectedConfigSource),
             Some(Effect::OpenInEditor(PathBuf::from(
                 "/build/conf/local.conf"
             )))
+        );
+    }
+
+    #[test]
+    fn config_source_picker_uses_typed_operation_line_and_restores_focus() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Inspector;
+        app.workspace.build_dir = Some("/build".into());
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemuarm".into());
+        let identity = VariableIdentity {
+            name: "MACHINE".into(),
+            recipe: None,
+        };
+        app.variable_details.insert(
+            identity.clone(),
+            VariableDetail {
+                identity,
+                effective_value: Some("qemuarm".into()),
+                unexpanded_value: None,
+                provenance: None,
+                operations: vec![
+                    VariableOperation {
+                        operation: "set".into(),
+                        file: Some("meta/conf/bitbake.conf".into()),
+                        line: Some(10),
+                        value: None,
+                    },
+                    VariableOperation {
+                        operation: "override".into(),
+                        file: Some("conf/local.conf".into()),
+                        line: Some(12),
+                        value: None,
+                    },
+                ],
+                active_overrides: vec![],
+            },
+        );
+        assert_eq!(update(&mut app, Action::OpenSelectedConfigSource), None);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        let Some(Dialog::ConfigSourcePicker(picker)) = app.active_dialog() else {
+            panic!("source picker was not opened");
+        };
+        assert_eq!(picker.sources[1].operation, "override");
+        assert_eq!(picker.sources[1].line, Some(12));
+        let _ = update(&mut app, Action::SelectConfigSource { delta: 1 });
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedConfigSourceChoice),
+            Some(Effect::OpenInEditor("/build/conf/local.conf".into()))
+        );
+        assert_eq!(app.focus, FocusTarget::Inspector);
+    }
+
+    #[test]
+    fn config_source_rejects_escape_and_explains_unloaded_detail() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.build_dir = Some("/build".into());
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemuarm".into());
+        assert_eq!(update(&mut app, Action::OpenSelectedConfigSource), None);
+        assert!(app.notification.as_deref().unwrap().contains("with Enter"));
+        let identity = VariableIdentity {
+            name: "MACHINE".into(),
+            recipe: None,
+        };
+        app.variable_details.insert(
+            identity.clone(),
+            VariableDetail {
+                identity,
+                effective_value: Some("qemuarm".into()),
+                unexpanded_value: None,
+                provenance: None,
+                operations: vec![VariableOperation {
+                    operation: "set".into(),
+                    file: Some("../outside.conf".into()),
+                    line: Some(1),
+                    value: None,
+                }],
+                active_overrides: vec![],
+            },
+        );
+        let _ = update(&mut app, Action::OpenSelectedConfigSource);
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("escapes the build directory")
         );
     }
     #[test]

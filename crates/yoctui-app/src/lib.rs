@@ -633,6 +633,16 @@ pub fn config_workspace_action(searching: bool, key: Input) -> Option<Action> {
         _ => None,
     }
 }
+
+pub fn config_source_picker_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectConfigSource { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectConfigSource { delta: 1 }),
+        Input::Enter => Some(Action::OpenSelectedConfigSourceChoice),
+        Input::Esc => Some(Action::CancelConfigSourcePicker),
+        _ => None,
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1372,6 +1382,22 @@ mod tests {
         assert_eq!(
             config_workspace_action(false, Input::Char('U')),
             Some(Action::CopySelectedConfigUnexpanded)
+        );
+    }
+
+    #[test]
+    fn config_source_picker_keys_are_modal_and_typed() {
+        assert_eq!(
+            config_source_picker_action(Input::Down),
+            Some(Action::SelectConfigSource { delta: 1 })
+        );
+        assert_eq!(
+            config_source_picker_action(Input::Enter),
+            Some(Action::OpenSelectedConfigSourceChoice)
+        );
+        assert_eq!(
+            config_source_picker_action(Input::Esc),
+            Some(Action::CancelConfigSourcePicker)
         );
     }
     #[test]
