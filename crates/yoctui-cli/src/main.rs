@@ -25,8 +25,9 @@ use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
     BuildJobCoordinator, DevtoolJobCoordinator, Input, config_compare_dialog_action,
     config_edit_confirmation_action, config_edit_dialog_action, config_scope_picker_action,
-    config_source_picker_action, config_workspace_action, devtool_deploy_confirmation_action,
-    devtool_deploy_dialog_action, devtool_finish_confirmation_action, devtool_finish_picker_action,
+    config_source_picker_action, config_workspace_action, dependency_workspace_action,
+    devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
+    devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, key_action, logs_action,
     recipe_editor_action, settings_action, tasks_action,
@@ -1190,6 +1191,31 @@ async fn inspect_selected_config_variable(app: &mut App, backend: &mut dyn BitBa
     }
 }
 
+async fn load_dependency_graph(app: &mut App, backend: &mut dyn BitBakeBackend, recipe: String) {
+    match backend.get_dependency_graph(recipe.clone()).await {
+        Ok(response) => {
+            let action = if response.limitations.is_empty() {
+                Action::DependencyGraphLoaded(response.graph)
+            } else {
+                Action::DependencyGraphPartial {
+                    graph: response.graph,
+                    limitations: response.limitations,
+                }
+            };
+            let _ = update(app, action);
+        }
+        Err(error) => {
+            let _ = update(
+                app,
+                Action::DependencyGraphFailed {
+                    root: yoctui_model::DependencyNodeId::recipe(recipe),
+                    message: error.to_string(),
+                },
+            );
+        }
+    }
+}
+
 fn config_copy_effect(app: &mut App, input: Input) -> Option<Effect> {
     config_workspace_action(false, input).and_then(|action| update(app, action))
 }
@@ -2163,6 +2189,20 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 if let Some(Effect::OpenInEditor(path)) = update(&mut app, action) {
                     open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                 }
+            } else if app.screen == Screen::Dependencies
+                && dependency_workspace_action(input).is_some()
+            {
+                let action =
+                    dependency_workspace_action(input).expect("Dependency action was checked");
+                match update(&mut app, action) {
+                    Some(Effect::GetDependencies(recipe)) => {
+                        load_dependency_graph(&mut app, backend.as_mut(), recipe).await;
+                    }
+                    Some(Effect::OpenInEditor(path)) => {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                    _ => {}
+                }
             } else if app.metadata_searching {
                 match input {
                     Input::Char(character) => {
@@ -2232,13 +2272,6 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             {
                 let delta = if input == Input::Up { -1 } else { 1 };
                 let _ = update(&mut app, Action::SelectBuildHistory { delta });
-            } else if app.screen == yoctui_model::Screen::Dependencies
-                && matches!(input, Input::Up | Input::Down)
-            {
-                let delta = if input == Input::Up { -1 } else { 1 };
-                let _ = update(&mut app, Action::SelectDependency { delta });
-            } else if app.screen == yoctui_model::Screen::Dependencies && input == Input::Enter {
-                let _ = update(&mut app, Action::OpenSelectedDependency);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('d') {
                 let root = match update(&mut app, Action::BeginSelectedRecipeDevtoolModify) {
                     Some(Effect::OpenWorkspaceEditor { label, root }) => Some((label, root)),
@@ -2261,28 +2294,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 if let Some(Effect::GetDependencies(recipe)) =
                     update(&mut app, Action::BeginSelectedRecipeDependencies)
                 {
-                    match backend.get_dependency_graph(recipe.clone()).await {
-                        Ok(response) => {
-                            let action = if response.limitations.is_empty() {
-                                Action::DependencyGraphLoaded(response.graph)
-                            } else {
-                                Action::DependencyGraphPartial {
-                                    graph: response.graph,
-                                    limitations: response.limitations,
-                                }
-                            };
-                            let _ = update(&mut app, action);
-                        }
-                        Err(error) => {
-                            let _ = update(
-                                &mut app,
-                                Action::DependencyGraphFailed {
-                                    root: yoctui_model::DependencyNodeId::recipe(recipe),
-                                    message: error.to_string(),
-                                },
-                            );
-                        }
-                    }
+                    load_dependency_graph(&mut app, backend.as_mut(), recipe).await;
                 }
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Enter {
                 if let Some(Effect::GetRecipeMetadata(recipe)) =
@@ -3305,6 +3317,24 @@ mod tests {
             yoctui_app::recipes_workspace_action(false, devshell),
             Some(Action::BeginSelectedRecipeDevshell)
         );
+    }
+
+    #[test]
+    fn dependency_workspace_terminal_keys_decode_to_typed_routes() {
+        for (code, expected) in [
+            (KeyCode::Up, Action::SelectDependencyGraphNode { delta: -1 }),
+            (
+                KeyCode::Down,
+                Action::SelectDependencyGraphNode { delta: 1 },
+            ),
+            (KeyCode::Enter, Action::OpenSelectedDependencyRecipe),
+            (KeyCode::Char('o'), Action::OpenSelectedDependencyProvider),
+            (KeyCode::Char('L'), Action::OpenSelectedDependencyTaskLog),
+            (KeyCode::Char('r'), Action::RefreshDependencyGraph),
+        ] {
+            let input = input_from_key(KeyEvent::new(code, KeyModifiers::NONE)).unwrap();
+            assert_eq!(dependency_workspace_action(input), Some(expected));
+        }
     }
 
     #[test]

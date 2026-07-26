@@ -559,12 +559,12 @@ notes = "Exact-identity removable-source eligibility, provider/source destructiv
 id = "DEP-001"
 milestone = "M3"
 title = "Dependency exploration and why-built workflow"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 44
 required = true
 depends_on = ["DEP-MODEL-001", "DEP-ADAPTER-001", "DEP-UI-001"]
 verify = ["cargo test -p yoctui-bitbake dependency", "cargo test -p yoctui-ui dependency"]
-notes = "Parent gate split into typed graph/path state, authoritative acquisition, and responsive workspace integration."
+notes = "Typed graph/path state, authoritative structured and bounded fallback acquisition, and the responsive graph-only workspace all pass focused, baseline, and live BitBake verification."
 
 [[task]]
 id = "DEP-MODEL-001"
@@ -592,23 +592,56 @@ notes = "Additive protocol graph events, structured generateDepTreeEvent acquisi
 id = "DEP-UI-001"
 milestone = "M3"
 title = "Integrate dependency and why-built workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 44
 required = true
 depends_on = ["DEP-ADAPTER-001"]
 verify = ["cargo test -p yoctui-model dependency_workspace", "cargo test -p yoctui-app dependency_workspace", "cargo test -p yoctui-ui dependency_workspace", "cargo test -p yoctui -- dependency_workspace"]
-notes = "Responsive list/tree and Inspector, typed load/empty/partial/failure states, stable navigation to recipe/provider/task/log context, and why-built path selection."
+notes = "Graph-only typed rows, explicit load/empty/partial/failure rendering, reverse/outgoing Inspector context, bounded why-built paths, identity-stable selection, authoritative recipe/provider/log actions, app-owned input, and responsive TestBackend coverage pass all checks."
 
 [[task]]
 id = "SIG-001"
 milestone = "M3"
 title = "Signature dump and comparison workflows"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
+priority = 45
+required = true
+depends_on = ["SIG-MODEL-001", "SIG-ADAPTER-001", "SIG-UI-001"]
+verify = ["cargo test -p yoctui-app signature"]
+notes = "Parent gate split into typed signature state, shell-free authoritative adapters, and responsive dump/comparison workflow integration."
+
+[[task]]
+id = "SIG-MODEL-001"
+milestone = "M3"
+title = "Add typed signature dump and comparison state"
+status = "IN_PROGRESS"
 priority = 45
 required = true
 depends_on = ["JOB-002"]
-verify = ["cargo test -p yoctui-app signature"]
-notes = "No signature dump or comparison adapter, typed workflow, UI, or tests are present."
+verify = ["cargo test -p yoctui-model signature_model", "cargo test -p yoctui-app signature_model"]
+notes = "Pure typed recipe/task signature identities, explicit acquisition/comparison states, deterministic bounded differences, and reducer lifecycle."
+
+[[task]]
+id = "SIG-ADAPTER-001"
+milestone = "M3"
+title = "Acquire and compare authoritative BitBake signatures"
+status = "NOT_STARTED"
+priority = 45
+required = true
+depends_on = ["SIG-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake signature_adapter", "cargo test -p yoctui-app signature_adapter"]
+notes = "Shell-free bitbake-dumpsig/bitbake-diffsigs integration, bounded parsing, exact path/task correlation, failure coverage, and live validation."
+
+[[task]]
+id = "SIG-UI-001"
+milestone = "M3"
+title = "Integrate signature dump and comparison workflows"
+status = "NOT_STARTED"
+priority = 45
+required = true
+depends_on = ["SIG-ADAPTER-001"]
+verify = ["cargo test -p yoctui-model signature_workspace", "cargo test -p yoctui-app signature_workspace", "cargo test -p yoctui-ui signature_workspace", "cargo test -p yoctui -- signature_workspace"]
+notes = "Typed recipe action, selectors and confirmations, responsive dump/difference rendering, persistent job/result context, and authoritative source navigation."
 
 [[task]]
 id = "PKG-001"

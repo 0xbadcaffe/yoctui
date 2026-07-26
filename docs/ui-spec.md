@@ -868,10 +868,67 @@ This workspace integrates:
 
 Layout:
 
-- center: navigable dependency list/tree
-- inspector: selected node details and path explanation
+- center: navigable typed dependency rows
+- inspector: selected node details, reverse/outgoing context, limitations, and
+  path explanation
 
 Graph rendering must degrade gracefully in terminals. A tree/path view is mandatory; a visual graph is optional.
+
+The center rows come only from normalized `DependencyGraphState` nodes and use
+their deterministic model order. Each row shows recipe or task kind, its exact
+identity, and incoming/outgoing edge counts. Build, runtime, and task edge
+families are named in the Inspector; widgets never infer an edge from names,
+logs, or provider paths. `↑`/`↓` or `k`/`j` changes the selected typed identity.
+Selection survives refresh when that identity remains, otherwise it returns to
+the graph root (or the first reported node if no root node exists).
+
+The Inspector always shows:
+
+- exact root and selected recipe/task identity
+- absolute provider and task-log paths when supplied, otherwise `unavailable`
+- sorted incoming edges as reverse-dependency context
+- sorted outgoing edges as dependency context
+- every adapter limitation
+- one deterministic shortest root-to-selection why-built path, bounded to 64
+  edges and 4,096 visited nodes
+
+The path is rendered as ordered typed identities and edge kinds. Root
+selection says `root selected`; a disconnected node says `unreachable from
+root`; exhausting either bound says `path limit reached`. Cycles never repeat
+nodes or hang. Long identities, paths, and limitation text wrap or truncate
+within the active responsive pane.
+
+Workspace shortcuts:
+
+- `↑`/`↓` or `k`/`j`: select a typed node
+- `Enter`: open the selected node's owning recipe in Recipes when that exact
+  recipe exists in the authoritative inventory
+- `o`: open only the selected node's absolute typed provider path
+- `L`: open only the selected task's absolute typed log path
+- `r`: refresh the same typed graph root
+- `Tab`/`Shift+Tab`: use the global pane focus cycle
+- `Esc`: return to Dashboard through the global action
+
+Missing inventory entries, provider paths, or task logs leave the action inert
+and show an exact notification. `o` never guesses a recipe file from layer
+layout, and `L` never searches console text. Recipe nodes may expose a provider
+but never a task log unless the backend explicitly supplies one.
+
+State presentation is explicit:
+
+- not loaded: explain that Recipes `g` starts dependency inspection
+- loading: show the exact requested root and no stale graph rows
+- available-empty: show the root and `no dependency edges reported`
+- available: show the typed rows and Inspector
+- partial: show the typed rows plus every limitation
+- failed: show the requested root and exact failure; stale graph data is not
+  presented as current
+
+Wide mode uses the persistent Inspector. Medium Inspector overlay and narrow
+pane switching retain the same selected identity and content. The global
+too-small view remains authoritative below 80×24. All supported breakpoint
+sizes must render empty, partial, cyclic, deeply bounded, and long-path data
+without panic.
 
 ---
 
