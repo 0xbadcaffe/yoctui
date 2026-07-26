@@ -313,6 +313,91 @@ pub struct DevtoolDeployRequest {
     pub recipe: String,
     pub target: String,
 }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DevtoolOperation {
+    Modify {
+        recipe: String,
+    },
+    UpdateRecipe {
+        recipe: String,
+    },
+    Finish {
+        recipe: String,
+        destination: PathBuf,
+    },
+    DeployTarget {
+        recipe: String,
+        target: String,
+    },
+    UndeployTarget {
+        recipe: String,
+        target: String,
+    },
+    Reset {
+        recipe: String,
+    },
+}
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum DevtoolOperationError {
+    #[error("Devtool recipe must be one non-option value without whitespace or control characters")]
+    InvalidRecipe,
+    #[error("Devtool target must be one non-option value without whitespace or control characters")]
+    InvalidTarget,
+    #[error("Devtool finish destination must be an absolute path")]
+    RelativeFinishDestination,
+}
+impl DevtoolOperation {
+    pub fn recipe(&self) -> &str {
+        match self {
+            Self::Modify { recipe }
+            | Self::UpdateRecipe { recipe }
+            | Self::Finish { recipe, .. }
+            | Self::DeployTarget { recipe, .. }
+            | Self::UndeployTarget { recipe, .. }
+            | Self::Reset { recipe } => recipe,
+        }
+    }
+
+    pub fn validate(&self) -> Result<(), DevtoolOperationError> {
+        let valid_token = |value: &str| {
+            !value.is_empty()
+                && !value.starts_with('-')
+                && value
+                    .chars()
+                    .all(|character| !character.is_whitespace() && !character.is_control())
+        };
+        if !valid_token(self.recipe()) {
+            return Err(DevtoolOperationError::InvalidRecipe);
+        }
+        match self {
+            Self::Finish { destination, .. } if !destination.is_absolute() => {
+                Err(DevtoolOperationError::RelativeFinishDestination)
+            }
+            Self::DeployTarget { target, .. } | Self::UndeployTarget { target, .. }
+                if !valid_token(target) =>
+            {
+                Err(DevtoolOperationError::InvalidTarget)
+            }
+            _ => Ok(()),
+        }
+    }
+}
+impl From<DevtoolFinishRequest> for DevtoolOperation {
+    fn from(request: DevtoolFinishRequest) -> Self {
+        Self::Finish {
+            recipe: request.recipe,
+            destination: request.destination,
+        }
+    }
+}
+impl From<DevtoolDeployRequest> for DevtoolOperation {
+    fn from(request: DevtoolDeployRequest) -> Self {
+        Self::DeployTarget {
+            recipe: request.recipe,
+            target: request.target,
+        }
+    }
+}
 const MAX_COMPLETED_TASKS: usize = 1_024;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DiagnosticInfo {
@@ -8192,6 +8277,68 @@ mod tests {
                 .as_deref()
                 .unwrap()
                 .contains("permission denied")
+        );
+    }
+
+    #[test]
+    fn devtool_job_spec_validates_every_typed_operation() {
+        let operations = [
+            DevtoolOperation::Modify {
+                recipe: "busybox".into(),
+            },
+            DevtoolOperation::UpdateRecipe {
+                recipe: "busybox".into(),
+            },
+            DevtoolOperation::Finish {
+                recipe: "busybox".into(),
+                destination: "/layers/meta-custom".into(),
+            },
+            DevtoolOperation::DeployTarget {
+                recipe: "busybox".into(),
+                target: "root@192.0.2.1:/opt".into(),
+            },
+            DevtoolOperation::UndeployTarget {
+                recipe: "busybox".into(),
+                target: "root@192.0.2.1".into(),
+            },
+            DevtoolOperation::Reset {
+                recipe: "busybox".into(),
+            },
+        ];
+        for operation in operations {
+            assert_eq!(operation.recipe(), "busybox");
+            assert_eq!(operation.validate(), Ok(()));
+        }
+    }
+
+    #[test]
+    fn devtool_job_spec_rejects_ambiguous_tokens_and_relative_finish_destinations() {
+        for recipe in ["", "busy box", "busy\nbox", "--help"] {
+            assert_eq!(
+                DevtoolOperation::Modify {
+                    recipe: recipe.into(),
+                }
+                .validate(),
+                Err(DevtoolOperationError::InvalidRecipe)
+            );
+        }
+        for target in ["", "root@host /opt", "root@host\n--help", "--help"] {
+            assert_eq!(
+                DevtoolOperation::DeployTarget {
+                    recipe: "busybox".into(),
+                    target: target.into(),
+                }
+                .validate(),
+                Err(DevtoolOperationError::InvalidTarget)
+            );
+        }
+        assert_eq!(
+            DevtoolOperation::Finish {
+                recipe: "busybox".into(),
+                destination: "meta-custom".into(),
+            }
+            .validate(),
+            Err(DevtoolOperationError::RelativeFinishDestination)
         );
     }
 }

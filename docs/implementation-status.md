@@ -59,12 +59,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DEVTOOL-JOB-SPEC-001` — define typed shell-free operations
-2. `DEVTOOL-JOB-RUNNER-001` — stream cancellable process output
-3. `DEVTOOL-JOB-LIFECYCLE-001` — integrate persistent job state
-4. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
-5. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
-6. `DEVTOOL-TARGET-001` — complete deploy-target and reset
+1. `DEVTOOL-JOB-RUNNER-001` — stream cancellable process output
+2. `DEVTOOL-JOB-LIFECYCLE-001` — integrate persistent job state
+3. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
+4. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
+5. `DEVTOOL-TARGET-001` — complete deploy-target and reset
 
 ## Rules
 

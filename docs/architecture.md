@@ -144,6 +144,15 @@ separate model states. The model keys requests and results by recipe name plus
 absolute provider path and owns the shared action-availability rules used by
 both reducer routing and UI explanations.
 
+Devtool execution requests use one model-owned `DevtoolOperation` enum for
+modify, update-recipe, finish, deploy-target, undeploy-target, and reset.
+Process-independent validation rejects ambiguous recipe/target tokens and
+relative finish destinations. `yoctui-bitbake` alone translates a validated
+operation to an executable plus `Vec<OsString>` argument vector; it never
+constructs a shell command, and path arguments retain their native OS
+representation. Process streaming and job lifecycle are separate layers built
+on this command specification.
+
 Unknown future protocol events normalize to an ignored event and do not imply a
 backend disconnect. Missing task progress remains unknown rather than becoming
 zero. Terminal build events emit one primary build-state action and one
