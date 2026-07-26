@@ -1325,6 +1325,16 @@ impl DependencyGraphState {
             | Self::Failed { .. } => None,
         }
     }
+
+    pub fn root(&self) -> Option<&DependencyNodeId> {
+        match self {
+            Self::NotLoaded => None,
+            Self::Loading { root } | Self::AvailableEmpty { root } | Self::Failed { root, .. } => {
+                Some(root)
+            }
+            Self::Available(graph) | Self::Partial { graph, .. } => Some(&graph.root),
+        }
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct LayerRelationships {
@@ -2249,6 +2259,10 @@ pub enum Action {
     SelectDependencyGraphNode {
         delta: isize,
     },
+    RefreshDependencyGraph,
+    OpenSelectedDependencyRecipe,
+    OpenSelectedDependencyProvider,
+    OpenSelectedDependencyTaskLog,
     BeginSelectedRecipeMetadata,
     RecipeMetadataLoaded(RecipeMetadata),
     RecipeMetadataFailed {
@@ -4367,6 +4381,83 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .min(graph.nodes.len().saturating_sub(1))
             };
             app.dependency_graph_selection = Some(graph.nodes[next].id.clone());
+        }
+        Action::RefreshDependencyGraph => {
+            let Some(root) = app.dependency_graph.root().cloned() else {
+                app.notification = Some("No dependency graph root is available to refresh.".into());
+                return None;
+            };
+            return update(app, Action::BeginDependencyGraph { root });
+        }
+        Action::OpenSelectedDependencyRecipe => {
+            let identity = match &app.dependency_graph {
+                DependencyGraphState::Available(graph)
+                | DependencyGraphState::Partial { graph, .. } => app
+                    .dependency_graph_selection
+                    .as_ref()
+                    .filter(|selected| graph.contains(selected))
+                    .cloned(),
+                DependencyGraphState::AvailableEmpty { root } => Some(root.clone()),
+                DependencyGraphState::NotLoaded
+                | DependencyGraphState::Loading { .. }
+                | DependencyGraphState::Failed { .. } => None,
+            };
+            let Some(identity) = identity else {
+                app.notification =
+                    Some("No current dependency graph node is available to open.".into());
+                return None;
+            };
+            let recipe = identity.recipe_name();
+            if let Some(index) = app
+                .workspace
+                .recipes
+                .iter()
+                .position(|candidate| candidate.name == recipe)
+            {
+                app.recipe_selection = index;
+                app.screen = Screen::Recipes;
+            } else {
+                app.notification = Some(format!(
+                    "{recipe} is in the dependency graph but not in the authoritative recipe inventory."
+                ));
+            }
+        }
+        Action::OpenSelectedDependencyProvider => {
+            let selected = app.dependency_graph_selection.as_ref();
+            let provider = app.dependency_graph.graph().and_then(|graph| {
+                graph
+                    .nodes
+                    .iter()
+                    .find(|node| Some(&node.id) == selected)
+                    .and_then(|node| node.provider.clone())
+                    .filter(|path| path.is_absolute())
+            });
+            if let Some(provider) = provider {
+                return Some(Effect::OpenInEditor(provider));
+            }
+            app.notification =
+                Some("The selected dependency node has no authoritative provider path.".into());
+        }
+        Action::OpenSelectedDependencyTaskLog => {
+            let selected = app.dependency_graph_selection.as_ref();
+            if !matches!(selected, Some(DependencyNodeId::Task { .. })) {
+                app.notification =
+                    Some("Task logs are available only for typed task dependency nodes.".into());
+                return None;
+            }
+            let log = app.dependency_graph.graph().and_then(|graph| {
+                graph
+                    .nodes
+                    .iter()
+                    .find(|node| Some(&node.id) == selected)
+                    .and_then(|node| node.log.clone())
+                    .filter(|path| path.is_absolute())
+            });
+            if let Some(log) = log {
+                return Some(Effect::OpenInEditor(log));
+            }
+            app.notification =
+                Some("The selected task dependency has no authoritative log path.".into());
         }
         Action::BeginSelectedRecipeMetadata => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
@@ -7136,6 +7227,65 @@ mod tests {
         assert!(report.truncated_nodes >= 2);
         assert_eq!(report.truncated_edges, 1);
         assert!(report.is_partial());
+    }
+    #[test]
+    fn dependency_workspace_routes_only_typed_identity_provider_and_task_log() {
+        let root = DependencyNodeId::recipe("image");
+        let task = DependencyNodeId::task("busybox", "do_compile");
+        let (graph, _) = DependencyGraph::normalize(
+            root.clone(),
+            vec![DependencyNode {
+                id: task.clone(),
+                provider: Some(PathBuf::from("/layers/meta/busybox.bb")),
+                log: Some(PathBuf::from("/build/tmp/log.do_compile")),
+            }],
+            vec![DependencyEdge {
+                from: root.clone(),
+                to: task.clone(),
+                kind: DependencyEdgeKind::Task,
+            }],
+            10,
+            10,
+        );
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes = vec![Recipe {
+            name: "busybox".into(),
+            ..Recipe::default()
+        }];
+        let _ = update(&mut app, Action::DependencyGraphLoaded(graph));
+        app.dependency_graph_selection = Some(task);
+
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedDependencyProvider),
+            Some(Effect::OpenInEditor(PathBuf::from(
+                "/layers/meta/busybox.bb"
+            )))
+        );
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedDependencyTaskLog),
+            Some(Effect::OpenInEditor(PathBuf::from(
+                "/build/tmp/log.do_compile"
+            )))
+        );
+        let _ = update(&mut app, Action::OpenSelectedDependencyRecipe);
+        assert_eq!(app.screen, Screen::Recipes);
+        assert_eq!(app.recipe_selection, 0);
+
+        let _ = update(&mut app, Action::Open(Screen::Dependencies));
+        assert_eq!(
+            update(&mut app, Action::RefreshDependencyGraph),
+            Some(Effect::GetDependencies("image".into()))
+        );
+        assert_eq!(
+            app.dependency_graph,
+            DependencyGraphState::Loading { root: root.clone() }
+        );
+        assert_eq!(app.dependency_graph_selection, Some(root));
+        let _ = update(&mut app, Action::OpenSelectedDependencyTaskLog);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Task logs are available only for typed task dependency nodes.")
+        );
     }
     #[test]
     fn devtool_target_reset_requires_authoritative_removable_source_and_confirmation() {

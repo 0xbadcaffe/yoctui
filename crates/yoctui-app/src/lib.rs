@@ -797,6 +797,17 @@ pub fn errors_action(key: Input) -> Option<Action> {
         _ => None,
     }
 }
+pub fn dependency_workspace_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectDependencyGraphNode { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectDependencyGraphNode { delta: 1 }),
+        Input::Enter => Some(Action::OpenSelectedDependencyRecipe),
+        Input::Char('o') => Some(Action::OpenSelectedDependencyProvider),
+        Input::Char('L') => Some(Action::OpenSelectedDependencyTaskLog),
+        Input::Char('r') => Some(Action::RefreshDependencyGraph),
+        _ => None,
+    }
+}
 pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
     if searching {
         return match key {
@@ -1689,6 +1700,34 @@ mod tests {
             recipes_workspace_action(true, Input::Backspace),
             Some(Action::BackspaceMetadataQuery)
         );
+    }
+    #[test]
+    fn dependency_workspace_maps_typed_navigation_refresh_and_open_actions() {
+        assert_eq!(
+            dependency_workspace_action(Input::Up),
+            Some(Action::SelectDependencyGraphNode { delta: -1 })
+        );
+        assert_eq!(
+            dependency_workspace_action(Input::Char('j')),
+            Some(Action::SelectDependencyGraphNode { delta: 1 })
+        );
+        assert_eq!(
+            dependency_workspace_action(Input::Enter),
+            Some(Action::OpenSelectedDependencyRecipe)
+        );
+        assert_eq!(
+            dependency_workspace_action(Input::Char('o')),
+            Some(Action::OpenSelectedDependencyProvider)
+        );
+        assert_eq!(
+            dependency_workspace_action(Input::Char('L')),
+            Some(Action::OpenSelectedDependencyTaskLog)
+        );
+        assert_eq!(
+            dependency_workspace_action(Input::Char('r')),
+            Some(Action::RefreshDependencyGraph)
+        );
+        assert_eq!(dependency_workspace_action(Input::Char('x')), None);
     }
     #[test]
     fn recipe_bitbake_action_maps_standard_and_forced_task_controls() {

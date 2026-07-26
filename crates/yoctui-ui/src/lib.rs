@@ -3,9 +3,13 @@ use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap},
 };
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::{
+    collections::HashMap,
+    time::{SystemTime, UNIX_EPOCH},
+};
 use yoctui_model::{
-    App, BackgroundJobKind, BuildStatus, ConfigCopyValue, DevtoolAction, DevtoolCapability,
+    App, BackgroundJobKind, BuildStatus, ConfigCopyValue, DependencyEdgeKind, DependencyGraph,
+    DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction, DevtoolCapability,
     DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget,
     GitFileState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PreviewKind, Recipe,
     RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity, TaskFilterField, TaskRow,
@@ -421,7 +425,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
         }
         Screen::BuildHistory => "↑/↓ select | Esc dashboard | ? help | q quit",
         Screen::Dependencies => {
-            "↑/↓ select | Enter recipe | Esc dashboard | r recipes | ? help | q quit"
+            "↑/↓ or j/k select | Enter recipe | o provider | L task log | r refresh | Tab focus | Esc dashboard"
         }
         Screen::LayerRelationships => "Esc dashboard | y layers | ? help | q quit",
         Screen::Recipes => {
@@ -1433,6 +1437,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
                 }
             },
         ),
+        Screen::Dependencies => dependency_inspector(app),
         _ => format!(
             "Target: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
             app.build.target.as_deref().unwrap_or("not selected"),
@@ -2050,47 +2055,258 @@ fn build_history(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
+fn dependency_identity_text(identity: &DependencyNodeId) -> String {
+    match identity {
+        DependencyNodeId::Recipe(recipe) => recipe.clone(),
+        DependencyNodeId::Task { recipe, task } => format!("{recipe}:{task}"),
+    }
+}
+
+fn dependency_kind_text(identity: &DependencyNodeId) -> &'static str {
+    match identity {
+        DependencyNodeId::Recipe(_) => "recipe",
+        DependencyNodeId::Task { .. } => "task",
+    }
+}
+
+fn dependency_edge_kind_text(kind: DependencyEdgeKind) -> &'static str {
+    match kind {
+        DependencyEdgeKind::Build => "build",
+        DependencyEdgeKind::Runtime => "runtime",
+        DependencyEdgeKind::Task => "task",
+    }
+}
+
+fn dependency_edge_context(
+    graph: &DependencyGraph,
+    selected: &DependencyNodeId,
+    incoming: bool,
+) -> String {
+    let edges = if incoming {
+        graph.incoming(selected)
+    } else {
+        graph.outgoing(selected)
+    };
+    if edges.is_empty() {
+        return "none reported".into();
+    }
+    let total = edges.len();
+    let mut values = edges
+        .into_iter()
+        .take(8)
+        .map(|edge| {
+            let identity = if incoming { &edge.from } else { &edge.to };
+            format!(
+                "{}: {}",
+                dependency_edge_kind_text(edge.kind),
+                dependency_identity_text(identity)
+            )
+        })
+        .collect::<Vec<_>>();
+    if total > values.len() {
+        values.push(format!("… {} more", total - values.len()));
+    }
+    values.join("\n")
+}
+
+fn dependency_why_built(graph: &DependencyGraph, selected: &DependencyNodeId) -> String {
+    match graph.why_built(selected, 64, 4_096) {
+        DependencyPathResult::Found(path) if path.len() == 1 => "root selected".into(),
+        DependencyPathResult::Found(path) => {
+            let mut text = dependency_identity_text(&path[0]);
+            for pair in path.windows(2) {
+                let kind = graph
+                    .edges
+                    .iter()
+                    .find(|edge| edge.from == pair[0] && edge.to == pair[1])
+                    .map_or("unknown", |edge| dependency_edge_kind_text(edge.kind));
+                text.push_str(&format!(
+                    "\n  --{kind}--> {}",
+                    dependency_identity_text(&pair[1])
+                ));
+            }
+            text
+        }
+        DependencyPathResult::Unreachable => "unreachable from root".into(),
+        DependencyPathResult::LimitReached => "path limit reached".into(),
+    }
+}
+
+fn dependency_inspector(app: &App) -> String {
+    match &app.dependency_graph {
+        DependencyGraphState::NotLoaded => {
+            "Dependency graph: not loaded\n\nSelect a recipe in Recipes and press g.".into()
+        }
+        DependencyGraphState::Loading { root } => format!(
+            "Dependency graph: loading\nRoot: {}\n\nNo stale graph is shown while the authoritative query runs.",
+            dependency_identity_text(root)
+        ),
+        DependencyGraphState::AvailableEmpty { root } => format!(
+            "Root: {}\nState: available-empty\n\nNo dependency edges reported.",
+            dependency_identity_text(root)
+        ),
+        DependencyGraphState::Failed { root, message } => format!(
+            "Root: {}\nState: failed\n\n{message}\n\nNo stale graph is presented as current.",
+            dependency_identity_text(root)
+        ),
+        DependencyGraphState::Available(graph) | DependencyGraphState::Partial { graph, .. } => {
+            let selected = app
+                .dependency_graph_selection
+                .as_ref()
+                .and_then(|identity| graph.nodes.iter().find(|node| &node.id == identity));
+            let Some(node) = selected else {
+                return format!(
+                    "Root: {}\n\nNo dependency node is selected.",
+                    dependency_identity_text(&graph.root)
+                );
+            };
+            let limitations = match &app.dependency_graph {
+                DependencyGraphState::Partial { limitations, .. } if !limitations.is_empty() => {
+                    limitations
+                        .iter()
+                        .map(|value| format!("- {value}"))
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                }
+                _ => "none".into(),
+            };
+            format!(
+                "Root: {}\nSelected: {} ({})\nProvider: {}\nTask log: {}\n\nReverse / incoming:\n{}\n\nDependencies / outgoing:\n{}\n\nWhy built:\n{}\n\nLimitations:\n{}",
+                dependency_identity_text(&graph.root),
+                dependency_identity_text(&node.id),
+                dependency_kind_text(&node.id),
+                node.provider
+                    .as_ref()
+                    .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+                node.log
+                    .as_ref()
+                    .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+                dependency_edge_context(graph, &node.id, true),
+                dependency_edge_context(graph, &node.id, false),
+                dependency_why_built(graph, &node.id),
+                limitations,
+            )
+        }
+    }
+}
+
 fn dependencies(frame: &mut Frame, app: &App, area: Rect) {
-    let Some(dependencies) = app.dependencies.as_ref() else {
-        frame.render_widget(
-            Paragraph::new("No recipe dependency data is loaded. Select a recipe and press g.")
+    let (graph, partial) = match &app.dependency_graph {
+        DependencyGraphState::NotLoaded => {
+            frame.render_widget(
+                Paragraph::new(
+                    "Dependency graph is not loaded.\n\nSelect a recipe in Recipes and press g.",
+                )
                 .block(
                     Block::default()
-                        .title("Dependency graph")
+                        .title("Dependency graph · not loaded")
                         .borders(Borders::ALL),
-                ),
-            area,
-        );
-        return;
+                )
+                .wrap(Wrap { trim: false }),
+                area,
+            );
+            return;
+        }
+        DependencyGraphState::Loading { root } => {
+            frame.render_widget(
+                Paragraph::new(format!(
+                    "Loading authoritative dependency graph for {}…\n\nStale rows are hidden.",
+                    dependency_identity_text(root)
+                ))
+                .block(
+                    Block::default()
+                        .title("Dependency graph · loading")
+                        .borders(Borders::ALL),
+                )
+                .wrap(Wrap { trim: false }),
+                area,
+            );
+            return;
+        }
+        DependencyGraphState::AvailableEmpty { root } => {
+            frame.render_widget(
+                Paragraph::new(format!(
+                    "Root: {}\n\nNo dependency edges reported.",
+                    dependency_identity_text(root)
+                ))
+                .block(
+                    Block::default()
+                        .title("Dependency graph · available-empty")
+                        .borders(Borders::ALL),
+                )
+                .wrap(Wrap { trim: false }),
+                area,
+            );
+            return;
+        }
+        DependencyGraphState::Failed { root, message } => {
+            frame.render_widget(
+                Paragraph::new(format!(
+                    "Root: {}\n\n{message}\n\nNo stale graph is presented as current.",
+                    dependency_identity_text(root)
+                ))
+                .block(
+                    Block::default()
+                        .title("Dependency graph · failed")
+                        .borders(Borders::ALL),
+                )
+                .wrap(Wrap { trim: false }),
+                area,
+            );
+            return;
+        }
+        DependencyGraphState::Available(graph) => (graph, false),
+        DependencyGraphState::Partial { graph, .. } => (graph, true),
     };
-    let rows = dependencies
-        .build
-        .iter()
-        .map(|name| ("build", name.as_str()))
-        .chain(
-            dependencies
-                .runtime
-                .iter()
-                .map(|name| ("runtime", name.as_str())),
-        )
-        .collect::<Vec<_>>();
+
+    let mut counts: HashMap<&DependencyNodeId, (usize, usize)> = HashMap::new();
+    for edge in &graph.edges {
+        counts.entry(&edge.from).or_default().1 += 1;
+        counts.entry(&edge.to).or_default().0 += 1;
+    }
+    let selected_index = app
+        .dependency_graph_selection
+        .as_ref()
+        .and_then(|selected| graph.nodes.iter().position(|node| &node.id == selected))
+        .unwrap_or(0);
+    let capacity = area.height.saturating_sub(3).max(1) as usize;
+    let start = selected_index.saturating_add(1).saturating_sub(capacity);
+    let end = graph.nodes.len().min(start.saturating_add(capacity));
+    let rows = graph.nodes[start..end].iter().map(|node| {
+        let (incoming, outgoing) = counts.get(&node.id).copied().unwrap_or_default();
+        Row::new(vec![
+            Cell::from(dependency_kind_text(&node.id)),
+            Cell::from(dependency_identity_text(&node.id)),
+            Cell::from(incoming.to_string()),
+            Cell::from(outgoing.to_string()),
+        ])
+        .style(selected_style(
+            app,
+            app.dependency_graph_selection.as_ref() == Some(&node.id),
+        ))
+    });
     frame.render_widget(
         Table::new(
-            rows.iter().enumerate().map(|(index, (kind, name))| {
-                Row::new(vec![Cell::from(*kind), Cell::from(*name)])
-                    .style(selected_style(app, index == app.dependency_selection))
-            }),
-            [Constraint::Length(12), Constraint::Min(1)],
+            rows,
+            [
+                Constraint::Length(8),
+                Constraint::Min(18),
+                Constraint::Length(4),
+                Constraint::Length(4),
+            ],
         )
         .header(
-            Row::new(["Kind", "Dependency"]).style(Style::default().add_modifier(Modifier::BOLD)),
+            Row::new(["Kind", "Identity", "In", "Out"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
         )
         .block(
             Block::default()
                 .title(format!(
-                    "Dependency graph: {} ({} edges, server supplied)",
-                    dependencies.recipe,
-                    rows.len()
+                    "Dependency graph: {} · {} nodes · {} edges{}",
+                    dependency_identity_text(&graph.root),
+                    graph.nodes.len(),
+                    graph.edges.len(),
+                    if partial { " · partial" } else { "" }
                 ))
                 .borders(Borders::ALL),
         ),
@@ -4261,26 +4477,95 @@ mod tests {
         assert!(output.contains("Completed package tasks: 42"));
     }
     #[test]
-    fn dependencies_render_server_supplied_values() {
-        let mut terminal = Terminal::new(TestBackend::new(120, 25)).unwrap();
+    fn dependency_workspace_renders_typed_partial_graph_paths_and_responsive_states() {
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Dependencies;
-        app.dependencies = Some(yoctui_model::RecipeDependencies {
-            recipe: "busybox".into(),
-            build: vec!["virtual/libc".into()],
-            runtime: vec!["base-files".into()],
-        });
-        terminal.draw(|frame| render(frame, &app)).unwrap();
-        let output = terminal
-            .backend()
-            .buffer()
-            .content
-            .iter()
-            .map(|cell| cell.symbol())
-            .collect::<String>();
+        let root = DependencyNodeId::recipe("image");
+        let task = DependencyNodeId::task("busybox", "do_compile");
+        let orphan = DependencyNodeId::recipe("orphan");
+        let (graph, _) = DependencyGraph::normalize(
+            root.clone(),
+            vec![
+                yoctui_model::DependencyNode {
+                    id: task.clone(),
+                    provider: Some("/layers/meta/busybox.bb".into()),
+                    log: Some("/build/tmp/log.do_compile".into()),
+                },
+                yoctui_model::DependencyNode::identity(orphan.clone()),
+            ],
+            vec![
+                yoctui_model::DependencyEdge {
+                    from: root.clone(),
+                    to: task.clone(),
+                    kind: DependencyEdgeKind::Task,
+                },
+                yoctui_model::DependencyEdge {
+                    from: task.clone(),
+                    to: root.clone(),
+                    kind: DependencyEdgeKind::Task,
+                },
+            ],
+            100,
+            100,
+        );
+        app.dependency_graph = DependencyGraphState::Partial {
+            graph,
+            limitations: vec!["runtime edges unavailable".into()],
+        };
+        app.dependency_graph_selection = Some(task);
+        let output = rendered_text(&app, 160, 36);
         assert!(output.contains("Dependency graph"));
-        assert!(output.contains("virtual/libc"));
-        assert!(output.contains("base-files"));
+        assert!(output.contains("busybox:do_compile"));
+        assert!(output.contains("runtime edges unavailable"));
+        assert!(output.contains("--task-->"));
+        assert!(output.contains("/layers/meta/busybox.bb"));
+        assert!(output.contains("Reverse / incoming"));
+        for width in [129, 100, 80] {
+            let output = rendered_text(&app, width, 24);
+            assert!(output.contains("Dependency graph"));
+        }
+
+        app.focus = FocusTarget::Inspector;
+        app.dependency_graph_selection = Some(orphan);
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("unreachable from root"));
+
+        app.focus = FocusTarget::Workspace;
+        app.dependency_graph = DependencyGraphState::NotLoaded;
+        assert!(rendered_text(&app, 80, 24).contains("not loaded"));
+        app.dependency_graph = DependencyGraphState::Loading { root: root.clone() };
+        assert!(rendered_text(&app, 80, 24).contains("Stale rows are hidden"));
+        app.dependency_graph = DependencyGraphState::AvailableEmpty { root: root.clone() };
+        assert!(rendered_text(&app, 80, 24).contains("No dependency edges reported"));
+        app.dependency_graph = DependencyGraphState::Failed {
+            root,
+            message: "server unavailable".into(),
+        };
+        assert!(rendered_text(&app, 80, 24).contains("server unavailable"));
+    }
+    #[test]
+    fn dependency_workspace_reports_path_bounds_without_panicking() {
+        let root = DependencyNodeId::recipe("node-0");
+        let mut nodes = Vec::new();
+        let mut edges = Vec::new();
+        for index in 1..=66 {
+            let previous = DependencyNodeId::recipe(format!("node-{}", index - 1));
+            let current = DependencyNodeId::recipe(format!("node-{index}"));
+            nodes.push(yoctui_model::DependencyNode::identity(current.clone()));
+            edges.push(yoctui_model::DependencyEdge {
+                from: previous,
+                to: current,
+                kind: DependencyEdgeKind::Build,
+            });
+        }
+        let selected = DependencyNodeId::recipe("node-66");
+        let (graph, _) = DependencyGraph::normalize(root, nodes, edges, 100, 100);
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Dependencies;
+        app.focus = FocusTarget::Inspector;
+        app.dependency_graph = DependencyGraphState::Available(graph);
+        app.dependency_graph_selection = Some(selected);
+        assert!(rendered_text(&app, 80, 24).contains("path limit reached"));
     }
     #[test]
     fn dashboard_renders_colored_task_progress_labels() {

@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete dependency exploration and why-built workflows.
+Complete signature dump and comparison workflows.
 
 ## Current task
 
@@ -24,7 +24,7 @@ See `docs/current-task.md`.
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
 | M1 BitBake cockpit | IN_PROGRESS | Typed background build execution and live BitBake 2.19.0 Tinfoil validation exist; remaining typed cockpit workflows are incomplete |
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
-| M3 Development workbench | IN_PROGRESS | Layers, Recipes, Configuration, and the full authoritative persistent Devtool lifecycle are complete; dependency why-built, signatures, and package data remain |
+| M3 Development workbench | IN_PROGRESS | Layers, Recipes, Configuration, Devtool, and dependency why-built workflows are complete; signatures and package data remain |
 | M4 Images/SDK/QEMU/Wic | IN_PROGRESS | Image-recipe listing and build selection exist; artifact, SDK, QEMU, and Wic workflows remain |
 | M5 Testing/QA/Security | NOT_STARTED | Coverage infrastructure exists; product workflows remain |
 | M6 Maintenance | NOT_STARTED | Partial diagnostics only |
@@ -59,18 +59,19 @@ See `docs/current-task.md`.
 | Devtool reset | DONE | Exact-identity removable workspace status gates provider/source destructive confirmation; persistent success refreshes expected non-membership while failures retain durable context |
 | Dependency graph model | DONE | Typed recipe/task identities and build/runtime/task edges normalize deterministically; reverse lookup, cycle-safe bounded shortest why-built paths, explicit partial/failure states, selection stability, and typed app event mapping pass focused and baseline tests |
 | Dependency graph acquisition | DONE | Additive typed protocol events use structured `generateDepTreeEvent`; legacy peers fall back honestly and the shell-free `bitbake -g` adapter bounds and validates task-dot output. Live BitBake 2.19.0 / Yocto 6.0.99 snapshot returned 962 nodes and 1,779 build/runtime/task edges |
-| Dependency workspace | IN_PROGRESS | Responsive typed graph navigation, why-built Inspector paths, reverse context, and provider/task/log actions remain |
+| Dependency workspace | DONE | Graph-only typed rows, explicit state rendering, reverse/outgoing Inspector context, bounded why-built paths, identity-stable navigation, authoritative recipe/provider/log actions, and responsive boundary tests are complete |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
-| Signature workflows | NOT_STARTED | No adapter, typed workflow, UI, or tests are present |
+| Signature workflows | IN_PROGRESS | Split into pure typed state, authoritative shell-free acquisition/comparison, and responsive workflow integration |
 | Package data browser | NOT_STARTED | No `oe-pkgdata-util` adapter, workspace, typed workflow, or tests are present |
 
 ## Priority queue
 
-1. `DEP-UI-001` — integrate the responsive dependency workspace
-2. `SIG-001` — complete signature workflows
-3. `PKG-001` — complete package-data browser
+1. `SIG-MODEL-001` — add typed signature state and reducer lifecycle
+2. `SIG-ADAPTER-001` — acquire and compare authoritative signatures
+3. `SIG-UI-001` — integrate responsive signature workflows
+4. `PKG-001` — complete package-data browser
 
 ## Rules
 
