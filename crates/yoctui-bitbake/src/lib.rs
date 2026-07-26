@@ -1755,13 +1755,14 @@ mod tests {
         let mut permissions = fs::metadata(&script).unwrap().permissions();
         permissions.set_mode(0o700);
         fs::set_permissions(&script, permissions).unwrap();
-        let command = DevtoolCommandSpec::with_executable(
-            script.clone(),
-            &DevtoolOperation::Modify {
-                recipe: "busybox".into(),
-            },
-        )
-        .unwrap();
+        let command = DevtoolCommandSpec {
+            executable: PathBuf::from("/bin/sh"),
+            arguments: vec![
+                script.clone().into_os_string(),
+                OsString::from("modify"),
+                OsString::from("busybox"),
+            ],
+        };
         (script, command)
     }
 

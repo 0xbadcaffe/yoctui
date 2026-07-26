@@ -174,6 +174,16 @@ Start, output, success, nonzero exit, cancellation, cancellation rejection,
 and loss all use existing background-job actions; no runner mutates model or
 widget state directly.
 
+The modify workflow retains the absolute `RecipeIdentity` from its
+authoritative eligibility check separately from the process argument. On a
+successful typed runner completion, the CLI re-runs `DevtoolInspector` for that
+original identity and feeds the refreshed status through the reducer before it
+scans or opens any workspace path. The model owns the modify confirmation and
+workspace-editor recipe-build transition; `Ctrl+B` therefore produces the
+same typed `BuildRequest` confirmation and background BitBake coordinator path
+as a Recipes workspace build. Refresh and editor failures update recoverable
+model notifications without rewriting the retained Devtool job.
+
 Unknown future protocol events normalize to an ignored event and do not imply a
 backend disconnect. Missing task progress remains unknown rather than becoming
 zero. Terminal build events emit one primary build-state action and one

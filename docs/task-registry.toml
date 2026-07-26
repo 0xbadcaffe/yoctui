@@ -482,18 +482,18 @@ notes = "Queue/run/output/terminal reducer integration, duplicate rejection, typ
 id = "DEVTOOL-MODIFY-001"
 milestone = "M3"
 title = "Complete Devtool modify, edit, and build workflow"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-JOBS-001"]
 verify = ["cargo test -p yoctui-model devtool_modify", "cargo test -p yoctui-app devtool_modify", "cargo test -p yoctui-ui devtool_modify", "cargo test -p yoctui -- devtool_modify"]
-notes = "Capability-aware modify, persistent completion, authoritative source tree/editor, workspace recipe build, refresh, and recoverable partial states."
+notes = "Exact-identity status gating, modify confirmation, persistent completion refresh, authoritative two-pane workspace editing, dirty-save protection, Ctrl+B typed recipe build confirmation, and recoverable refresh/source/editor failures are covered across model, app, CLI, and TestBackend tests."
 
 [[task]]
 id = "DEVTOOL-PUBLISH-001"
 milestone = "M3"
 title = "Complete Devtool update-recipe and finish workflows"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-MODIFY-001"]

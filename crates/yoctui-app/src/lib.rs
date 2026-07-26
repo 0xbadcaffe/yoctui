@@ -847,6 +847,29 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
     }
 }
 
+pub fn devtool_modify_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmDevtoolModify),
+        Input::Esc => Some(Action::CancelDevtoolModify),
+        _ => None,
+    }
+}
+
+pub fn recipe_editor_action(editing: bool, key: Input) -> Option<Action> {
+    match key {
+        Input::Esc => Some(Action::CloseRecipeEditor),
+        Input::Up => Some(Action::SelectRecipeEditorFile { delta: -1 }),
+        Input::Down => Some(Action::SelectRecipeEditorFile { delta: 1 }),
+        Input::Enter if editing => Some(Action::AppendRecipeEditor('\n')),
+        Input::Enter | Input::Char('e') if !editing => Some(Action::ToggleRecipeEditorEditing),
+        Input::CtrlS => Some(Action::SaveRecipeEditor),
+        Input::CtrlB => Some(Action::BeginRecipeEditorBuild),
+        Input::Backspace => Some(Action::BackspaceRecipeEditor),
+        Input::Char(character) => Some(Action::AppendRecipeEditor(character)),
+        _ => None,
+    }
+}
+
 pub fn config_workspace_action(searching: bool, key: Input) -> Option<Action> {
     if searching {
         return match key {
@@ -1737,6 +1760,31 @@ mod tests {
             Some(Action::CancelConfigEditConfirmation)
         );
         assert_eq!(config_edit_confirmation_action(Input::Char('E')), None);
+    }
+
+    #[test]
+    fn devtool_modify_routes_confirmation_and_workspace_editor_build_keys() {
+        assert_eq!(
+            devtool_modify_confirmation_action(Input::Enter),
+            Some(Action::ConfirmDevtoolModify)
+        );
+        assert_eq!(
+            devtool_modify_confirmation_action(Input::Esc),
+            Some(Action::CancelDevtoolModify)
+        );
+        assert_eq!(devtool_modify_confirmation_action(Input::Char('b')), None);
+        assert_eq!(
+            recipe_editor_action(false, Input::CtrlB),
+            Some(Action::BeginRecipeEditorBuild)
+        );
+        assert_eq!(
+            recipe_editor_action(false, Input::Enter),
+            Some(Action::ToggleRecipeEditorEditing)
+        );
+        assert_eq!(
+            recipe_editor_action(true, Input::Enter),
+            Some(Action::AppendRecipeEditor('\n'))
+        );
     }
 
     #[test]

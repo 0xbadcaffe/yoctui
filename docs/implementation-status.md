@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete the persistent Devtool modify, edit, and build workflow.
+Complete the persistent Devtool update-recipe and finish workflows.
 
 ## Current task
 
@@ -52,6 +52,7 @@ See `docs/current-task.md`.
 | Configuration workspace | DONE | Live-validated metadata, searchable responsive detail, typed copy/source/scope/compare actions, and allowlisted previewed atomic local.conf edits with exact refresh are complete |
 | Devtool status | DONE | Absolute recipe identity, executable capability, workspace membership/source path, Git branch/head and dirty counts, typed partial/error states, shared disabled reasons, responsive rendering, fake-process tests, and a live no-workspace query are complete |
 | Persistent Devtool jobs | DONE | Typed shell-free operations stream bounded stdout/stderr into durable background jobs; navigation, cancellation, all terminal outcomes, runner loss, and independent BitBake coordination are covered |
+| Devtool modify/edit/build | DONE | Exact-identity status gates an explicit modify preview; successful persistent completion refreshes the authoritative source tree, opens the two-pane editor, and routes saved Ctrl+B requests through confirmed recipe builds |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
@@ -60,9 +61,8 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DEVTOOL-MODIFY-001` — complete modify, edit, and build
-2. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
-3. `DEVTOOL-TARGET-001` — complete deploy-target and reset
+1. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
+2. `DEVTOOL-TARGET-001` — complete deploy-target and reset
 
 ## Rules
 

@@ -25,8 +25,9 @@ use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
     BuildJobCoordinator, DevtoolJobCoordinator, Input, config_compare_dialog_action,
     config_edit_confirmation_action, config_edit_dialog_action, config_scope_picker_action,
-    config_source_picker_action, config_workspace_action, errors_action, focus_action, key_action,
-    logs_action, settings_action, tasks_action,
+    config_source_picker_action, config_workspace_action, devtool_modify_confirmation_action,
+    errors_action, focus_action, key_action, logs_action, recipe_editor_action, settings_action,
+    tasks_action,
 };
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolCommandSpec, DevtoolInspector,
@@ -34,10 +35,10 @@ use yoctui_bitbake::{
 };
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
-    DevtoolOperation, Dialog, Effect, GitFileState, HostTelemetry, LayerBrowserEntry,
-    LayerInspectorMode, LayerRelationship, LayerRelationships, PreviewKind, RecipeDependencies,
-    Screen, Severity, Theme, VariableDetail, VariableIdentity, update,
-    validate_config_edit_request,
+    DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
+    LayerBrowserEntry, LayerInspectorMode, LayerRelationship, LayerRelationships, PreviewKind,
+    RecipeDependencies, RecipeIdentity, Screen, Severity, Theme, VariableDetail, VariableIdentity,
+    update, validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -786,13 +787,13 @@ async fn begin_devtool_job(
     build_dir: &Path,
     cancellation_timeout: Duration,
     operation: DevtoolOperation,
-) {
+) -> bool {
     let Some(actions) = coordinator.queue(operation.clone(), SystemTime::now()) else {
         let _ = update(
             app,
             Action::Notify("A Devtool background job is already active.".into()),
         );
-        return;
+        return false;
     };
     for action in actions {
         let _ = update(app, action);
@@ -803,17 +804,21 @@ async fn begin_devtool_job(
             for action in coordinator.start_failed(error.to_string(), SystemTime::now()) {
                 let _ = update(app, action);
             }
-            return;
+            return false;
         }
     };
     let mut started = DevtoolJobRunner::new(build_dir.to_path_buf())
         .with_cancellation_timeout(cancellation_timeout);
     match started.start(command).await {
-        Ok(()) => *runner = Some(started),
+        Ok(()) => {
+            *runner = Some(started);
+            true
+        }
         Err(error) => {
             for action in coordinator.start_failed(error.to_string(), SystemTime::now()) {
                 let _ = update(app, action);
             }
+            false
         }
     }
 }
@@ -822,12 +827,13 @@ async fn poll_devtool_job(
     app: &mut App,
     coordinator: &mut DevtoolJobCoordinator,
     runner: &mut Option<DevtoolJobRunner>,
-) {
-    let Some(active) = runner.as_mut() else {
-        return;
-    };
+) -> Option<DevtoolOperation> {
+    let active = runner.as_mut()?;
     match tokio::time::timeout(Duration::from_millis(1), active.next_event()).await {
         Ok(Ok(event)) => {
+            let completed_operation = matches!(event, DevtoolRunnerEvent::Completed { .. })
+                .then(|| coordinator.active_operation().cloned())
+                .flatten();
             let terminal = matches!(
                 event,
                 DevtoolRunnerEvent::Completed { .. }
@@ -841,6 +847,7 @@ async fn poll_devtool_job(
             if terminal {
                 *runner = None;
             }
+            completed_operation
         }
         Ok(Err(error)) => {
             for action in coordinator.actions_for_event(
@@ -852,8 +859,9 @@ async fn poll_devtool_job(
                 let _ = update(app, action);
             }
             *runner = None;
+            None
         }
-        Err(_) => {}
+        Err(_) => None,
     }
 }
 
@@ -987,6 +995,46 @@ async fn inspect_selected_devtool(app: &mut App, build_dir: &Path) {
             .inspect(build_dir, identity)
             .await;
         let _ = update(app, Action::DevtoolStatusLoaded(status));
+    }
+}
+
+async fn complete_devtool_modify(app: &mut App, build_dir: &Path, identity: RecipeIdentity) {
+    let status = DevtoolInspector::default()
+        .inspect(build_dir, identity)
+        .await;
+    apply_completed_devtool_modify_status(app, status).await;
+}
+
+async fn apply_completed_devtool_modify_status(app: &mut App, status: yoctui_model::DevtoolStatus) {
+    let editor = if let Some(error) = &status.error {
+        app.notification = Some(format!(
+            "Devtool modify completed, but authoritative status refresh failed: {error:?}"
+        ));
+        None
+    } else {
+        match &status.workspace {
+            DevtoolWorkspace::Present { source_path, .. } => {
+                Some((status.identity.name.clone(), source_path.clone()))
+            }
+            DevtoolWorkspace::MissingDirectory { source_path } => {
+                app.notification = Some(format!(
+                    "Devtool modify completed, but the reported workspace source is missing: {}",
+                    source_path.display()
+                ));
+                None
+            }
+            DevtoolWorkspace::NotMember => {
+                app.notification = Some(
+                    "Devtool modify completed, but the recipe is not reported in the workspace."
+                        .into(),
+                );
+                None
+            }
+        }
+    };
+    let _ = update(app, Action::DevtoolStatusLoaded(status));
+    if let Some((recipe, root)) = editor {
+        open_workspace_editor(app, recipe, root).await;
     }
 }
 
@@ -1576,6 +1624,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     let mut build_jobs = BuildJobCoordinator::default();
     let mut devtool_jobs = DevtoolJobCoordinator::default();
     let mut devtool_runner = None;
+    let mut pending_devtool_modify = None;
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
     #[cfg(unix)]
@@ -1618,32 +1667,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     _ => None,
                 };
             } else if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
-                let effect = match input {
-                    Input::Esc => update(&mut app, Action::CloseRecipeEditor),
-                    Input::Up => update(&mut app, Action::SelectRecipeEditorFile { delta: -1 }),
-                    Input::Down => update(&mut app, Action::SelectRecipeEditorFile { delta: 1 }),
-                    Input::Enter
-                        if app
-                            .active_dialog()
-                            .is_some_and(|dialog| matches!(dialog, Dialog::RecipeEditor(editor) if editor.editing)) =>
-                    {
-                        update(&mut app, Action::AppendRecipeEditor('\n'))
-                    }
-                    Input::Enter | Input::Char('e')
-                        if app
-                            .active_dialog()
-                            .is_some_and(|dialog| matches!(dialog, Dialog::RecipeEditor(editor) if !editor.editing)) =>
-                    {
-                        update(&mut app, Action::ToggleRecipeEditorEditing)
-                    }
-                    Input::CtrlS => update(&mut app, Action::SaveRecipeEditor),
-                    Input::CtrlB => update(&mut app, Action::BeginCurrentImageBuild),
-                    Input::Backspace => update(&mut app, Action::BackspaceRecipeEditor),
-                    Input::Char(character) => {
-                        update(&mut app, Action::AppendRecipeEditor(character))
-                    }
-                    _ => None,
-                };
+                let editing = app.active_dialog().is_some_and(
+                    |dialog| matches!(dialog, Dialog::RecipeEditor(editor) if editor.editing),
+                );
+                let effect = recipe_editor_action(editing, input)
+                    .and_then(|action| update(&mut app, action));
                 match effect {
                     Some(Effect::LoadRecipeEditorFile(path)) => {
                         load_recipe_editor_file(&mut app, path).await;
@@ -1652,6 +1680,27 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         save_recipe_editor_file(&mut app, path, content).await;
                     }
                     _ => {}
+                }
+            } else if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolModifyConfirmation(_))
+            ) {
+                let effect = devtool_modify_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(Effect::DevtoolModify(identity)) = effect {
+                    let recipe = identity.name.clone();
+                    if begin_devtool_job(
+                        &mut app,
+                        &mut devtool_jobs,
+                        &mut devtool_runner,
+                        &session_build_dir,
+                        cancellation_timeout,
+                        DevtoolOperation::Modify { recipe },
+                    )
+                    .await
+                    {
+                        pending_devtool_modify = Some(identity);
+                    }
                 }
             } else if matches!(
                 app.focus,
@@ -2090,18 +2139,6 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 let _ = update(&mut app, Action::OpenSelectedDependency);
             } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('d') {
                 let root = match update(&mut app, Action::BeginSelectedRecipeDevtoolModify) {
-                    Some(Effect::DevtoolModify(recipe)) => {
-                        begin_devtool_job(
-                            &mut app,
-                            &mut devtool_jobs,
-                            &mut devtool_runner,
-                            &session_build_dir,
-                            cancellation_timeout,
-                            DevtoolOperation::Modify { recipe },
-                        )
-                        .await;
-                        None
-                    }
                     Some(Effect::OpenWorkspaceEditor { label, root }) => Some((label, root)),
                     _ => None,
                 };
@@ -2332,7 +2369,21 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
             }
         }
-        poll_devtool_job(&mut app, &mut devtool_jobs, &mut devtool_runner).await;
+        let completed_devtool =
+            poll_devtool_job(&mut app, &mut devtool_jobs, &mut devtool_runner).await;
+        if matches!(
+            completed_devtool,
+            Some(DevtoolOperation::Modify { ref recipe })
+                if pending_devtool_modify
+                    .as_ref()
+                    .is_some_and(|identity| &identity.name == recipe)
+        ) {
+            if let Some(identity) = pending_devtool_modify.take() {
+                complete_devtool_modify(&mut app, &session_build_dir, identity).await;
+            }
+        } else if devtool_jobs.active_operation().is_none() {
+            pending_devtool_modify = None;
+        }
         match tokio::time::timeout(Duration::from_millis(1), backend.next_event()).await {
             Ok(Ok(event)) => {
                 for action in build_jobs.actions_for_backend_event(event, SystemTime::now()) {
@@ -3198,9 +3249,13 @@ mod tests {
         started.start(command).await.unwrap();
         let mut runner = Some(started);
         app.screen = Screen::Dashboard;
+        let mut completed = None;
         tokio::time::timeout(Duration::from_secs(2), async {
             while runner.is_some() {
-                poll_devtool_job(&mut app, &mut coordinator, &mut runner).await;
+                let result = poll_devtool_job(&mut app, &mut coordinator, &mut runner).await;
+                if result.is_some() {
+                    completed = result;
+                }
                 tokio::task::yield_now().await;
             }
         })
@@ -3214,7 +3269,158 @@ mod tests {
             job.output[0].source,
             yoctui_model::BackgroundJobOutputSource::Stdout
         );
+        assert_eq!(
+            completed,
+            Some(DevtoolOperation::Reset {
+                recipe: "busybox".into()
+            })
+        );
         assert_eq!(app.screen, Screen::Dashboard);
         fs::remove_file(script).unwrap();
+    }
+
+    #[tokio::test]
+    async fn devtool_modify_completion_uses_authoritative_source_and_preserves_failures() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-devtool-modify-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+        fs::create_dir_all(&directory).unwrap();
+        fs::write(directory.join("main.c"), "int main(void) { return 0; }\n").unwrap();
+        let identity = RecipeIdentity {
+            name: "busybox".into(),
+            file: PathBuf::from("/layers/meta/recipes-core/busybox/busybox.bb"),
+        };
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes.push(yoctui_model::Recipe {
+            name: identity.name.clone(),
+            file: Some(identity.file.clone()),
+            ..yoctui_model::Recipe::default()
+        });
+        let job_id = yoctui_model::BackgroundJobId(1_u64 << 63);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(yoctui_model::BackgroundJobSpec {
+                id: job_id,
+                kind: yoctui_model::BackgroundJobKind::Devtool,
+                title: "Devtool modify busybox".into(),
+                context: yoctui_model::BackgroundJobContext {
+                    recipe: Some("busybox".into()),
+                    ..yoctui_model::BackgroundJobContext::default()
+                },
+                cancellation_supported: true,
+                queued_at: SystemTime::UNIX_EPOCH,
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::StartBackgroundJob {
+                id: job_id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::RunBackgroundJob { id: job_id });
+        let _ = update(
+            &mut app,
+            Action::SucceedBackgroundJob {
+                id: job_id,
+                result: yoctui_model::BackgroundJobResult {
+                    summary: "Devtool completed successfully".into(),
+                    artifacts: vec![],
+                },
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+
+        apply_completed_devtool_modify_status(
+            &mut app,
+            yoctui_model::DevtoolStatus {
+                identity: identity.clone(),
+                capability: yoctui_model::DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::Present {
+                    source_path: directory.clone(),
+                    recipe_file: Some(identity.file.clone()),
+                },
+                git: yoctui_model::DevtoolGitState::NotRepository,
+                error: None,
+            },
+        )
+        .await;
+        assert!(app.devtool_statuses.contains_key(&identity));
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::RecipeEditor(editor))
+                if editor.recipe == "busybox"
+                    && editor.root == directory
+                    && editor.content.contains("int main")
+        ));
+        assert_eq!(
+            app.background_jobs.get(job_id).unwrap().status,
+            yoctui_model::BackgroundJobStatus::Succeeded
+        );
+
+        let _ = update(&mut app, Action::CloseRecipeEditor);
+        let missing = directory.join("missing");
+        apply_completed_devtool_modify_status(
+            &mut app,
+            yoctui_model::DevtoolStatus {
+                identity: identity.clone(),
+                capability: yoctui_model::DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::MissingDirectory {
+                    source_path: missing.clone(),
+                },
+                git: yoctui_model::DevtoolGitState::NotApplicable,
+                error: None,
+            },
+        )
+        .await;
+        assert!(app.active_dialog().is_none());
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains(&missing.display().to_string()))
+        );
+        apply_completed_devtool_modify_status(
+            &mut app,
+            yoctui_model::DevtoolStatus {
+                identity: identity.clone(),
+                capability: yoctui_model::DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::NotMember,
+                git: yoctui_model::DevtoolGitState::NotApplicable,
+                error: Some(yoctui_model::DevtoolStatusError::DevtoolFailed {
+                    exit_code: Some(7),
+                    message: "status failed".into(),
+                }),
+            },
+        )
+        .await;
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("status refresh failed"))
+        );
+        apply_completed_devtool_modify_status(
+            &mut app,
+            yoctui_model::DevtoolStatus {
+                identity: identity.clone(),
+                capability: yoctui_model::DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::Present {
+                    source_path: missing,
+                    recipe_file: Some(identity.file),
+                },
+                git: yoctui_model::DevtoolGitState::NotApplicable,
+                error: None,
+            },
+        )
+        .await;
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("Could not list workspace files"))
+        );
+        assert_eq!(
+            app.background_jobs.get(job_id).unwrap().status,
+            yoctui_model::BackgroundJobStatus::Succeeded
+        );
+        fs::remove_dir_all(directory).unwrap();
     }
 }

@@ -716,6 +716,7 @@ pub enum Dialog {
         input: String,
     },
     ConfigEditConfirmation(ConfigEditRequest),
+    DevtoolModifyConfirmation(RecipeIdentity),
     DevtoolResetConfirmation(String),
     DevtoolUpdateConfirmation(String),
     DevtoolFinish {
@@ -1922,6 +1923,8 @@ pub enum Action {
     OpenSelectedRecipePatch,
     CancelRecipePatchPicker,
     BeginSelectedRecipeDevtoolModify,
+    ConfirmDevtoolModify,
+    CancelDevtoolModify,
     BeginSelectedRecipeDevtoolStatus,
     DevtoolStatusLoaded(DevtoolStatus),
     BeginSelectedRecipeDevtoolReset,
@@ -1954,6 +1957,7 @@ pub enum Action {
     BackspaceRecipeEditor,
     SaveRecipeEditor,
     RecipeEditorSaved,
+    BeginRecipeEditorBuild,
     CloseRecipeEditor,
     ConfirmRecipeTask,
     CancelRecipeTask,
@@ -2308,8 +2312,13 @@ fn select_first_matching_recipe(app: &mut App) {
     }
 }
 
-fn begin_recipe_task(app: &mut App, task: Option<String>, force: bool) {
-    let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) else {
+fn begin_recipe_task_for(app: &mut App, recipe_name: &str, task: Option<String>, force: bool) {
+    let Some(recipe) = app
+        .workspace
+        .recipes
+        .iter()
+        .find(|recipe| recipe.name == recipe_name)
+    else {
         app.notification = Some("No recipe is selected for this task.".into());
         return;
     };
@@ -2346,6 +2355,19 @@ fn begin_recipe_task(app: &mut App, task: Option<String>, force: bool) {
     } else {
         open_dialog(app, Dialog::RecipeTaskConfirmation(request));
     }
+}
+
+fn begin_recipe_task(app: &mut App, task: Option<String>, force: bool) {
+    let Some(recipe_name) = app
+        .workspace
+        .recipes
+        .get(app.recipe_selection)
+        .map(|recipe| recipe.name.clone())
+    else {
+        app.notification = Some("No recipe is selected for this task.".into());
+        return;
+    };
+    begin_recipe_task_for(app, &recipe_name, task, force);
 }
 
 fn selected_recipe_identity(app: &App) -> Result<RecipeIdentity, &'static str> {
@@ -3774,34 +3796,29 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::BeginSelectedRecipeDevtoolModify => {
-            if let Some(status) = selected_devtool_status(app) {
-                if let Some(reason) = status.disabled_reason(DevtoolAction::ModifyOrEdit) {
-                    app.notification = Some(reason);
+            let identity = match selected_recipe_identity(app) {
+                Ok(identity) => identity,
+                Err(message) => {
+                    app.notification = Some(message.into());
                     return None;
                 }
-                if let DevtoolWorkspace::Present { source_path, .. } = &status.workspace {
-                    let recipe = status.identity.name.clone();
-                    let root = source_path.clone();
-                    return Some(Effect::OpenWorkspaceEditor {
-                        label: recipe,
-                        root,
-                    });
-                }
+            };
+            let Some(status) = app.devtool_statuses.get(&identity) else {
+                app.notification =
+                    Some("Refresh authoritative Devtool status with t before modifying.".into());
+                return None;
+            };
+            if let Some(reason) = status.disabled_reason(DevtoolAction::ModifyOrEdit) {
+                app.notification = Some(reason);
+                return None;
             }
-            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                let request = BuildRequest {
-                    targets: vec![recipe.name.clone()],
-                    task: None,
-                    force: false,
-                };
-                if let Err(error) = request.validate() {
-                    app.notification = Some(error.to_string());
-                } else {
-                    return Some(Effect::DevtoolModify(recipe.name.clone()));
-                }
-            } else {
-                app.notification = Some("No recipe is selected for devtool modification.".into());
+            if let DevtoolWorkspace::Present { source_path, .. } = &status.workspace {
+                return Some(Effect::OpenWorkspaceEditor {
+                    label: identity.name,
+                    root: source_path.clone(),
+                });
             }
+            open_dialog(app, Dialog::DevtoolModifyConfirmation(identity));
         }
         Action::BeginSelectedRecipeDevtoolStatus => match selected_recipe_identity(app) {
             Ok(identity) => {
@@ -3983,6 +4000,22 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::CancelRecipeTask => {
             if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::ConfirmDevtoolModify => {
+            if let Some(Dialog::DevtoolModifyConfirmation(identity)) = app.active_dialog().cloned()
+            {
+                close_dialog(app);
+                synchronize_focus(app);
+                return Some(Effect::DevtoolModify(identity));
+            }
+        }
+        Action::CancelDevtoolModify => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolModifyConfirmation(_))
+            ) {
                 close_dialog(app);
             }
         }
@@ -4206,6 +4239,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
                 editor.dirty = false;
                 app.notification = Some("Recipe file saved. Press Esc to return to Yoctui.".into());
+            }
+        }
+        Action::BeginRecipeEditorBuild => {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog().cloned() {
+                if editor.dirty {
+                    app.notification =
+                        Some("Save workspace changes before starting the recipe build.".into());
+                } else {
+                    let recipe = editor.recipe;
+                    close_dialog(app);
+                    begin_recipe_task_for(app, &recipe, None, false);
+                }
             }
         }
         Action::CloseRecipeEditor => {
@@ -5007,7 +5052,7 @@ pub enum Effect {
         root: PathBuf,
         file: PathBuf,
     },
-    DevtoolModify(String),
+    DevtoolModify(RecipeIdentity),
     DevtoolReset(String),
     DevtoolUpdateRecipe(String),
     DevtoolFinish(DevtoolFinishRequest),
@@ -6272,17 +6317,78 @@ mod tests {
         ));
     }
     #[test]
-    fn selected_recipe_requests_devtool_modification() {
+    fn devtool_modify_requires_authoritative_status_and_confirmation() {
         let mut app = App::new(10, 1_000);
+        let identity = RecipeIdentity {
+            name: "busybox".into(),
+            file: PathBuf::from("/layers/meta/recipes-core/busybox/busybox.bb"),
+        };
         app.workspace.recipes = vec![Recipe {
             name: "busybox".into(),
-            version: None,
-            layer: None,
+            file: Some(identity.file.clone()),
             ..Recipe::default()
         }];
         assert_eq!(
             update(&mut app, Action::BeginSelectedRecipeDevtoolModify),
-            Some(Effect::DevtoolModify("busybox".into()))
+            None
+        );
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Refresh authoritative Devtool status with t before modifying.")
+        );
+        app.devtool_statuses.insert(
+            identity.clone(),
+            DevtoolStatus {
+                identity: identity.clone(),
+                capability: DevtoolCapability::MissingExecutable,
+                workspace: DevtoolWorkspace::NotMember,
+                git: DevtoolGitState::NotApplicable,
+                error: None,
+            },
+        );
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolModify);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Devtool executable is missing.")
+        );
+        app.devtool_statuses.insert(
+            identity.clone(),
+            DevtoolStatus {
+                identity: identity.clone(),
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::NotMember,
+                git: DevtoolGitState::NotApplicable,
+                error: None,
+            },
+        );
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolModify);
+        assert_eq!(
+            app.active_dialog(),
+            Some(&Dialog::DevtoolModifyConfirmation(identity.clone()))
+        );
+        assert_eq!(
+            update(&mut app, Action::ConfirmDevtoolModify),
+            Some(Effect::DevtoolModify(identity.clone()))
+        );
+        app.devtool_statuses.insert(
+            identity.clone(),
+            DevtoolStatus {
+                identity,
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::Present {
+                    source_path: PathBuf::from("/build/workspace/sources/busybox"),
+                    recipe_file: None,
+                },
+                git: DevtoolGitState::NotRepository,
+                error: None,
+            },
+        );
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedRecipeDevtoolModify),
+            Some(Effect::OpenWorkspaceEditor {
+                label: "busybox".into(),
+                root: PathBuf::from("/build/workspace/sources/busybox"),
+            })
         );
     }
     #[test]
@@ -6418,8 +6524,12 @@ mod tests {
         );
     }
     #[test]
-    fn recipe_editor_loads_edits_and_saves_selected_file() {
+    fn devtool_modify_editor_loads_saves_and_builds_selected_recipe() {
         let mut app = App::new(10, 1_000);
+        app.workspace.recipes.push(Recipe {
+            name: "busybox".into(),
+            ..Recipe::default()
+        });
         let root = PathBuf::from("/build/workspace/sources/busybox");
         assert_eq!(
             update(
@@ -6438,12 +6548,28 @@ mod tests {
         );
         let _ = update(&mut app, Action::ToggleRecipeEditorEditing);
         let _ = update(&mut app, Action::AppendRecipeEditor('\n'));
+        let _ = update(&mut app, Action::BeginRecipeEditorBuild);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Save workspace changes before starting the recipe build.")
+        );
+        assert!(matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))));
         assert_eq!(
             update(&mut app, Action::SaveRecipeEditor),
             Some(Effect::SaveRecipeEditorFile {
                 path: root.join("main.c"),
                 content: "int main() {}\n".into(),
             })
+        );
+        let _ = update(&mut app, Action::RecipeEditorSaved);
+        let _ = update(&mut app, Action::BeginRecipeEditorBuild);
+        assert_eq!(
+            app.active_dialog(),
+            Some(&Dialog::RecipeTaskConfirmation(BuildRequest {
+                targets: vec!["busybox".into()],
+                task: None,
+                force: false,
+            }))
         );
     }
     #[test]
