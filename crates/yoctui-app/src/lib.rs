@@ -863,6 +863,24 @@ pub fn devtool_update_confirmation_action(key: Input) -> Option<Action> {
     }
 }
 
+pub fn devtool_finish_picker_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectDevtoolFinishLayer { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectDevtoolFinishLayer { delta: 1 }),
+        Input::Enter => Some(Action::PreviewDevtoolFinish),
+        Input::Esc => Some(Action::CancelDevtoolFinish),
+        _ => None,
+    }
+}
+
+pub fn devtool_finish_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmDevtoolFinish),
+        Input::Esc => Some(Action::CancelDevtoolFinishConfirmation),
+        _ => None,
+    }
+}
+
 pub fn recipe_editor_action(editing: bool, key: Input) -> Option<Action> {
     match key {
         Input::Esc => Some(Action::CloseRecipeEditor),
@@ -1806,6 +1824,30 @@ mod tests {
             Some(Action::CancelDevtoolUpdateRecipe)
         );
         assert_eq!(devtool_update_confirmation_action(Input::Char('u')), None);
+    }
+
+    #[test]
+    fn devtool_publish_finish_routes_picker_and_confirmation_keys() {
+        assert_eq!(
+            devtool_finish_picker_action(Input::Up),
+            Some(Action::SelectDevtoolFinishLayer { delta: -1 })
+        );
+        assert_eq!(
+            devtool_finish_picker_action(Input::Down),
+            Some(Action::SelectDevtoolFinishLayer { delta: 1 })
+        );
+        assert_eq!(
+            devtool_finish_picker_action(Input::Enter),
+            Some(Action::PreviewDevtoolFinish)
+        );
+        assert_eq!(
+            devtool_finish_confirmation_action(Input::Enter),
+            Some(Action::ConfirmDevtoolFinish)
+        );
+        assert_eq!(
+            devtool_finish_confirmation_action(Input::Esc),
+            Some(Action::CancelDevtoolFinishConfirmation)
+        );
     }
 
     #[test]

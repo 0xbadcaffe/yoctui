@@ -2,51 +2,50 @@
 
 ## Active task
 
-**ID:** DEVTOOL-FINISH-001
-**Title:** Complete Devtool finish workflow
+**ID:** DEVTOOL-TARGET-001
+**Title:** Complete Devtool deploy-target and reset workflows
 
 ## Objective
 
-Finish a clean committed Devtool workspace into an authoritative configured
-layer using a typed native path, exact confirmation, persistent execution, and
-original-identity refresh.
+Complete capability-aware persistent deploy-target and reset operations with
+validated intent, exact confirmations, deterministic cancellation/outcomes,
+and authoritative status refresh.
 
 ## Required work
 
-1. Inventory finish eligibility, Git-state policy, current free-text
-   destination dialog, configured layer metadata, command specification,
-   persistent completion, and refresh behavior.
-2. Require exact authoritative recipe identity, present workspace source, and
-   clean committed Git state; preserve precise partial-state disabled reasons.
-3. Replace arbitrary destination entry with a focus-trapping picker populated
-   only from authoritative configured layers with absolute native paths.
-4. Preview the exact `devtool finish <recipe> <destination>` intent, provider
-   path, and selected configured layer before explicit confirmation.
-5. Preserve native path bytes through the process specification and reject
-   empty, relative, stale, or unconfigured destinations before execution.
-6. Refresh the original recipe identity after successful persistent completion
-   and retain job output/outcome plus prior actionable state on failure.
+1. Inventory deploy/reset eligibility, target validation, dialogs, command
+   specs, persistent completion, cancellation, and refresh behavior.
+2. Split this task in the registry first if deploy-target and reset cannot be
+   implemented and verified as one coherent commit.
+3. Require exact authoritative recipe identity and operation-specific workspace
+   states, preserving precise disabled reasons.
+4. Validate deploy targets as one non-option value, preview the exact
+   deploy-target or reset intent, and require explicit confirmation.
+5. Preserve persistent stream output, cancellation mode, terminal outcomes,
+   and actionable context for both operations.
+6. Refresh the original identity after successful reset and after target
+   operations where authoritative workspace state may change.
 7. Add adapter, model, app, CLI, and Ratatui TestBackend tests named
-   `devtool_publish_finish`.
+   `devtool_target`.
 8. Update UI and architecture documents for intentional behavior and boundary
    changes.
 
 ## Definition of done
 
-- Only an authoritative clean committed workspace can begin finish.
-- Destination selection cannot escape the configured layer inventory.
-- Confirmation shows exact recipe, provider, layer, and native destination.
-- Success refreshes the original identity; failures preserve durable context.
+- Deploy-target and reset use exact authoritative eligibility and previews.
+- Invalid target and stale status requests remain inert.
+- Persistent success, failure, cancellation, and loss remain distinguishable.
+- Success refreshes the original identity without erasing durable job context.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake devtool_publish_finish
-cargo test -p yoctui-model devtool_publish_finish
-cargo test -p yoctui-app devtool_publish_finish
-cargo test -p yoctui-ui devtool_publish_finish
-cargo test -p yoctui -- devtool_publish_finish
+cargo test -p yoctui-bitbake devtool_target
+cargo test -p yoctui-model devtool_target
+cargo test -p yoctui-app devtool_target
+cargo test -p yoctui-ui devtool_target
+cargo test -p yoctui -- devtool_target
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -56,4 +55,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`DEVTOOL-TARGET-001 — Complete Devtool deploy-target and reset workflows`
+`DEP-001 — Dependency exploration and why-built workflow`

@@ -193,6 +193,15 @@ authoritative status. The refresh result enters through
 `Action::DevtoolStatusLoaded`, and refresh errors remain notifications beside
 the durable job result.
 
+Finish uses a model-owned `DevtoolFinishPicker` and `DevtoolFinishPlan`.
+Picker entries are cloned from typed configured `Layer` records and retain
+native `PathBuf` values; the reducer filters relative paths and revalidates the
+selected name/path pair immediately before emitting the effect. Only the
+bitbake adapter converts the plan's request into the shell-free Devtool
+argument vector, preserving non-UTF-8 path bytes. The CLI retains the original
+recipe identity separately while the job runs and refreshes it only after a
+successful `Finish` terminal event.
+
 Unknown future protocol events normalize to an ignored event and do not imply a
 backend disconnect. Missing task progress remains unknown rather than becoming
 zero. Terminal build events emit one primary build-state action and one

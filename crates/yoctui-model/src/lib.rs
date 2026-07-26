@@ -309,6 +309,25 @@ pub struct DevtoolFinishRequest {
     pub destination: PathBuf,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolFinishPicker {
+    pub identity: RecipeIdentity,
+    pub layers: Vec<Layer>,
+    pub selection: usize,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolFinishPlan {
+    pub identity: RecipeIdentity,
+    pub layer: Layer,
+}
+impl DevtoolFinishPlan {
+    pub fn request(&self) -> DevtoolFinishRequest {
+        DevtoolFinishRequest {
+            recipe: self.identity.name.clone(),
+            destination: self.layer.path.clone(),
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DevtoolDeployRequest {
     pub recipe: String,
     pub target: String,
@@ -719,11 +738,8 @@ pub enum Dialog {
     DevtoolModifyConfirmation(RecipeIdentity),
     DevtoolResetConfirmation(String),
     DevtoolUpdateConfirmation(RecipeIdentity),
-    DevtoolFinish {
-        recipe: String,
-        destination: String,
-    },
-    DevtoolFinishConfirmation(DevtoolFinishRequest),
+    DevtoolFinishPicker(DevtoolFinishPicker),
+    DevtoolFinishConfirmation(DevtoolFinishPlan),
     DevtoolDeploy {
         recipe: String,
         target: String,
@@ -1965,8 +1981,9 @@ pub enum Action {
     CancelDevtoolReset,
     ConfirmDevtoolUpdateRecipe,
     CancelDevtoolUpdateRecipe,
-    AppendDevtoolFinishDestination(char),
-    BackspaceDevtoolFinishDestination,
+    SelectDevtoolFinishLayer {
+        delta: isize,
+    },
     PreviewDevtoolFinish,
     CancelDevtoolFinish,
     ConfirmDevtoolFinish,
@@ -3874,33 +3891,49 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             open_dialog(app, Dialog::DevtoolUpdateConfirmation(identity));
         }
         Action::BeginSelectedRecipeDevtoolFinish => {
-            if let Some(reason) = selected_devtool_status(app)
-                .and_then(|status| status.disabled_reason(DevtoolAction::Finish))
-            {
+            let identity = match selected_recipe_identity(app) {
+                Ok(identity) => identity,
+                Err(message) => {
+                    app.notification = Some(message.into());
+                    return None;
+                }
+            };
+            let Some(status) = app.devtool_statuses.get(&identity) else {
+                app.notification =
+                    Some("Refresh authoritative Devtool status with t before finish.".into());
+                return None;
+            };
+            if let Some(reason) = status.disabled_reason(DevtoolAction::Finish) {
                 app.notification = Some(reason);
                 return None;
             }
-            let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) else {
-                app.notification = Some("No recipe is selected for devtool finish.".into());
+            let layers = app
+                .workspace
+                .layers
+                .iter()
+                .filter(|layer| layer.path.is_absolute())
+                .cloned()
+                .collect::<Vec<_>>();
+            if layers.is_empty() {
+                app.notification =
+                    Some("No configured layer has an absolute finish destination.".into());
                 return None;
-            };
-            let recipe_name = recipe.name.clone();
-            let layer_name = recipe.layer.clone();
-            let destination = layer_name
-                .as_deref()
-                .and_then(|layer| {
-                    app.workspace
-                        .layers
-                        .iter()
-                        .find(|candidate| candidate.name == layer)
-                })
-                .map_or_else(String::new, |layer| layer.path.display().to_string());
+            }
+            let provider_layer = app
+                .workspace
+                .recipes
+                .get(app.recipe_selection)
+                .and_then(|recipe| recipe.layer.as_deref());
+            let selection = provider_layer
+                .and_then(|name| layers.iter().position(|layer| layer.name == name))
+                .unwrap_or(0);
             open_dialog(
                 app,
-                Dialog::DevtoolFinish {
-                    recipe: recipe_name,
-                    destination,
-                },
+                Dialog::DevtoolFinishPicker(DevtoolFinishPicker {
+                    identity,
+                    layers,
+                    selection,
+                }),
             );
         }
         Action::BeginSelectedRecipeDevtoolDeploy => {
@@ -4057,48 +4090,74 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 close_dialog(app);
             }
         }
-        Action::AppendDevtoolFinishDestination(character) => {
-            if let Some(Dialog::DevtoolFinish { destination, .. }) = app.active_dialog_mut() {
-                destination.push(character);
-            }
-        }
-        Action::BackspaceDevtoolFinishDestination => {
-            if let Some(Dialog::DevtoolFinish { destination, .. }) = app.active_dialog_mut() {
-                destination.pop();
+        Action::SelectDevtoolFinishLayer { delta } => {
+            if let Some(Dialog::DevtoolFinishPicker(picker)) = app.active_dialog_mut() {
+                picker.selection = if delta.is_negative() {
+                    picker.selection.saturating_sub(delta.unsigned_abs())
+                } else {
+                    picker
+                        .selection
+                        .saturating_add(delta as usize)
+                        .min(picker.layers.len().saturating_sub(1))
+                };
             }
         }
         Action::PreviewDevtoolFinish => {
-            if let Some(Dialog::DevtoolFinish {
-                recipe,
-                destination,
-            }) = app.active_dialog()
-            {
-                let recipe = recipe.clone();
-                let destination = destination.trim().to_owned();
-                if destination.is_empty() {
+            if let Some(Dialog::DevtoolFinishPicker(picker)) = app.active_dialog() {
+                let Some(layer) = picker.layers.get(picker.selection).cloned() else {
+                    app.notification = Some("Select a configured finish layer.".into());
+                    return None;
+                };
+                if !layer.path.is_absolute()
+                    || !app.workspace.layers.iter().any(|configured| {
+                        configured.name == layer.name && configured.path == layer.path
+                    })
+                {
                     app.notification =
-                        Some("Enter a destination layer directory for devtool finish.".into());
-                } else {
-                    replace_dialog(
-                        app,
-                        Dialog::DevtoolFinishConfirmation(DevtoolFinishRequest {
-                            recipe,
-                            destination: PathBuf::from(destination),
-                        }),
-                    );
+                        Some("The selected finish layer is no longer configured.".into());
+                    return None;
                 }
+                replace_dialog(
+                    app,
+                    Dialog::DevtoolFinishConfirmation(DevtoolFinishPlan {
+                        identity: picker.identity.clone(),
+                        layer,
+                    }),
+                );
             }
         }
         Action::CancelDevtoolFinish => {
-            if matches!(app.active_dialog(), Some(Dialog::DevtoolFinish { .. })) {
+            if matches!(app.active_dialog(), Some(Dialog::DevtoolFinishPicker(_))) {
                 close_dialog(app);
             }
         }
         Action::ConfirmDevtoolFinish => {
-            if let Some(Dialog::DevtoolFinishConfirmation(request)) = app.active_dialog().cloned() {
+            if let Some(Dialog::DevtoolFinishConfirmation(plan)) = app.active_dialog().cloned() {
+                let Some(status) = app.devtool_statuses.get(&plan.identity) else {
+                    app.notification =
+                        Some("Authoritative Devtool status expired; refresh with t.".into());
+                    return None;
+                };
+                if let Some(reason) = status.disabled_reason(DevtoolAction::Finish) {
+                    app.notification = Some(reason);
+                    return None;
+                }
+                if !plan.layer.path.is_absolute()
+                    || !app.workspace.layers.iter().any(|configured| {
+                        configured.name == plan.layer.name && configured.path == plan.layer.path
+                    })
+                {
+                    app.notification =
+                        Some("The selected finish layer is no longer configured.".into());
+                    return None;
+                }
+                if let Err(error) = DevtoolOperation::from(plan.request()).validate() {
+                    app.notification = Some(error.to_string());
+                    return None;
+                }
                 close_dialog(app);
                 synchronize_focus(app);
-                return Some(Effect::DevtoolFinish(request));
+                return Some(Effect::DevtoolFinish(plan));
             }
         }
         Action::CancelDevtoolFinishConfirmation => {
@@ -5063,7 +5122,7 @@ pub enum Effect {
     DevtoolModify(RecipeIdentity),
     DevtoolReset(String),
     DevtoolUpdateRecipe(RecipeIdentity),
-    DevtoolFinish(DevtoolFinishRequest),
+    DevtoolFinish(DevtoolFinishPlan),
     DevtoolDeploy(DevtoolDeployRequest),
     InspectDevtoolStatus(RecipeIdentity),
     GetDependencies(String),
@@ -6511,34 +6570,107 @@ mod tests {
         );
     }
     #[test]
-    fn devtool_finish_prefills_the_selected_recipe_layer_and_requires_confirmation() {
+    fn devtool_publish_finish_requires_clean_status_and_configured_layer_confirmation() {
         let mut app = App::new(10, 1_000);
-        app.workspace.layers = vec![Layer {
+        let destination = Layer {
             name: "meta-demo".into(),
             path: PathBuf::from("/layers/meta-demo"),
-            priority: None,
-        }];
+            priority: Some(7),
+        };
+        app.workspace.layers = vec![
+            Layer {
+                name: "meta-core".into(),
+                path: PathBuf::from("/layers/meta-core"),
+                priority: Some(5),
+            },
+            destination.clone(),
+            Layer {
+                name: "relative".into(),
+                path: PathBuf::from("layers/relative"),
+                priority: None,
+            },
+        ];
+        let identity = RecipeIdentity {
+            name: "busybox".into(),
+            file: PathBuf::from("/layers/meta-core/recipes-core/busybox/busybox.bb"),
+        };
         app.workspace.recipes = vec![Recipe {
             name: "busybox".into(),
-            version: None,
             layer: Some("meta-demo".into()),
+            file: Some(identity.file.clone()),
             ..Recipe::default()
         }];
         let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolFinish);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Refresh authoritative Devtool status with t before finish.")
+        );
+        app.devtool_statuses.insert(
+            identity.clone(),
+            DevtoolStatus {
+                identity: identity.clone(),
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::Present {
+                    source_path: PathBuf::from("/build/workspace/sources/busybox"),
+                    recipe_file: Some(identity.file.clone()),
+                },
+                git: DevtoolGitState::Available {
+                    branch: Some("devtool".into()),
+                    head: Some("abc123".into()),
+                    modified: 1,
+                    untracked: 0,
+                    conflicted: 0,
+                },
+                error: None,
+            },
+        );
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolFinish);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Commit all workspace changes before Devtool finish.")
+        );
+        app.devtool_statuses.get_mut(&identity).unwrap().git = DevtoolGitState::Available {
+            branch: Some("devtool".into()),
+            head: Some("abc123".into()),
+            modified: 0,
+            untracked: 0,
+            conflicted: 0,
+        };
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolFinish);
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::DevtoolFinish {
-                recipe,
-                destination
-            }) if recipe == "busybox" && destination == "/layers/meta-demo"
+            Some(Dialog::DevtoolFinishPicker(picker))
+                if picker.identity == identity
+                    && picker.layers.len() == 2
+                    && picker.layers[picker.selection] == destination
         ));
         let _ = update(&mut app, Action::PreviewDevtoolFinish);
+        let plan = DevtoolFinishPlan {
+            identity: identity.clone(),
+            layer: destination.clone(),
+        };
+        assert_eq!(
+            app.active_dialog(),
+            Some(&Dialog::DevtoolFinishConfirmation(plan.clone()))
+        );
         assert_eq!(
             update(&mut app, Action::ConfirmDevtoolFinish),
-            Some(Effect::DevtoolFinish(DevtoolFinishRequest {
-                recipe: "busybox".into(),
-                destination: PathBuf::from("/layers/meta-demo"),
-            }))
+            Some(Effect::DevtoolFinish(plan))
+        );
+
+        app.dialogs
+            .push_back(Dialog::DevtoolFinishConfirmation(DevtoolFinishPlan {
+                identity,
+                layer: Layer {
+                    name: "meta-rogue".into(),
+                    path: PathBuf::from("/tmp/meta-rogue"),
+                    priority: None,
+                },
+            }));
+        assert_eq!(update(&mut app, Action::ConfirmDevtoolFinish), None);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("The selected finish layer is no longer configured.")
         );
     }
     #[test]
