@@ -1937,6 +1937,20 @@ pub enum Action {
     CancelConfigEdit,
     ConfirmConfigEdit,
     CancelConfigEditConfirmation,
+    ConfigEditWriteSucceeded {
+        identity: VariableIdentity,
+    },
+    ConfigEditWriteFailed {
+        identity: VariableIdentity,
+        message: String,
+    },
+    ConfigEditRefreshSucceeded {
+        identity: VariableIdentity,
+    },
+    ConfigEditRefreshFailed {
+        identity: VariableIdentity,
+        message: String,
+    },
     VariableDetailFailed {
         identity: VariableIdentity,
         message: String,
@@ -2500,12 +2514,40 @@ pub fn config_edit_disabled_reason(app: &App) -> Option<String> {
     config_edit_context(app).err()
 }
 
-fn config_assignment(name: &str, value: &str) -> Result<String, String> {
+pub fn config_edit_assignment(name: &str, value: &str) -> Result<String, String> {
     if value.chars().any(char::is_control) {
         return Err("Configuration values cannot contain newlines or control characters.".into());
     }
     let escaped = value.replace('\\', "\\\\").replace('"', "\\\"");
     Ok(format!("{name} = \"{escaped}\""))
+}
+
+pub fn validate_config_edit_request(
+    request: &ConfigEditRequest,
+    build_dir: &Path,
+) -> Result<(), String> {
+    if request.identity.recipe.is_some() {
+        return Err("Recipe-scoped configuration edits are not allowed.".into());
+    }
+    if !EDITABLE_CONFIG_VARIABLES.contains(&request.identity.name.as_str()) {
+        return Err(format!(
+            "{} is read-only; editable variables are {}.",
+            request.identity.name,
+            EDITABLE_CONFIG_VARIABLES.join(", ")
+        ));
+    }
+    let expected_destination = build_dir.join("conf/local.conf");
+    if request.destination != expected_destination {
+        return Err(format!(
+            "Configuration edit destination must be {}.",
+            expected_destination.display()
+        ));
+    }
+    let expected_assignment = config_edit_assignment(&request.identity.name, &request.value)?;
+    if request.assignment != expected_assignment {
+        return Err("Configuration edit assignment does not match the confirmed value.".into());
+    }
+    Ok(())
 }
 
 fn resolve_config_source(app: &App, path: &Path) -> Result<PathBuf, String> {
@@ -4535,7 +4577,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 _ => None,
             });
             let (identity, value) = edit?;
-            match config_assignment(&identity.name, &value) {
+            match config_edit_assignment(&identity.name, &value) {
                 Ok(assignment) => {
                     let Some(build_dir) = app.workspace.build_dir.as_ref() else {
                         app.notification =
@@ -4571,6 +4613,38 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             if matches!(app.active_dialog(), Some(Dialog::ConfigEditConfirmation(_))) {
                 close_dialog(app);
             }
+        }
+        Action::ConfigEditWriteSucceeded { identity } => {
+            if identity.recipe.is_some()
+                || !EDITABLE_CONFIG_VARIABLES.contains(&identity.name.as_str())
+            {
+                app.notification =
+                    Some("The completed configuration edit identity is invalid.".into());
+                return None;
+            }
+            app.variable_detail_loading.insert(identity.clone());
+            app.variable_detail_errors.remove(&identity);
+            app.notification = Some(format!(
+                "{} was saved; refreshing authoritative configuration detail.",
+                identity.name
+            ));
+            return Some(Effect::GetVariable(identity));
+        }
+        Action::ConfigEditWriteFailed { identity, message } => {
+            app.notification = Some(format!(
+                "Could not save configuration variable {}: {message}",
+                identity.name
+            ));
+        }
+        Action::ConfigEditRefreshSucceeded { identity } => {
+            app.notification = Some(format!("{} saved and refreshed.", identity.name));
+        }
+        Action::ConfigEditRefreshFailed { identity, message } => {
+            app.variable_detail_loading.remove(&identity);
+            app.notification = Some(format!(
+                "{} was saved, but authoritative refresh failed: {message}",
+                identity.name
+            ));
         }
         Action::BeginBbmaskEdit => {
             let input = app
@@ -8031,7 +8105,7 @@ mod tests {
         assert!(app.active_dialog().is_none());
 
         assert_eq!(
-            config_assignment("MACHINE", "qemu\nMALICIOUS = \"1\""),
+            config_edit_assignment("MACHINE", "qemu\nMALICIOUS = \"1\""),
             Err("Configuration values cannot contain newlines or control characters.".into())
         );
         app.config_scope = Some("base-files".into());
@@ -8039,6 +8113,85 @@ mod tests {
             config_edit_disabled_reason(&app)
                 .unwrap()
                 .contains("Recipe-scoped")
+        );
+    }
+
+    #[test]
+    fn config_edit_write_revalidates_request_and_preserves_detail_on_failures() {
+        let identity = VariableIdentity {
+            name: "MACHINE".into(),
+            recipe: None,
+        };
+        let request = ConfigEditRequest {
+            identity: identity.clone(),
+            value: "qemux86-64".into(),
+            destination: "/build/conf/local.conf".into(),
+            assignment: "MACHINE = \"qemux86-64\"".into(),
+        };
+        assert_eq!(
+            validate_config_edit_request(&request, Path::new("/build")),
+            Ok(())
+        );
+
+        let mut tampered = request.clone();
+        tampered.assignment = "MACHINE = \"injected\"".into();
+        assert!(
+            validate_config_edit_request(&tampered, Path::new("/build"))
+                .unwrap_err()
+                .contains("does not match")
+        );
+        let mut scoped = request.clone();
+        scoped.identity.recipe = Some("base-files".into());
+        assert!(
+            validate_config_edit_request(&scoped, Path::new("/build"))
+                .unwrap_err()
+                .contains("Recipe-scoped")
+        );
+
+        let mut app = App::new(10, 1_000);
+        let detail = VariableDetail {
+            identity: identity.clone(),
+            effective_value: Some("old".into()),
+            unexpanded_value: None,
+            provenance: None,
+            operations: vec![],
+            active_overrides: vec![],
+        };
+        app.variable_details
+            .insert(identity.clone(), detail.clone());
+        assert_eq!(
+            update(
+                &mut app,
+                Action::ConfigEditWriteSucceeded {
+                    identity: identity.clone(),
+                },
+            ),
+            Some(Effect::GetVariable(identity.clone()))
+        );
+        assert!(app.variable_detail_loading.contains(&identity));
+        let _ = update(
+            &mut app,
+            Action::ConfigEditRefreshFailed {
+                identity: identity.clone(),
+                message: "bridge unavailable".into(),
+            },
+        );
+        assert_eq!(app.variable_details.get(&identity), Some(&detail));
+        assert!(!app.variable_detail_loading.contains(&identity));
+
+        let _ = update(
+            &mut app,
+            Action::ConfigEditWriteFailed {
+                identity: identity.clone(),
+                message: "permission denied".into(),
+            },
+        );
+        assert_eq!(app.variable_details.get(&identity), Some(&detail));
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("permission denied")
         );
     }
 }

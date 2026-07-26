@@ -1491,6 +1491,20 @@ mod tests {
             Some(Action::ConfirmConfigEdit)
         );
     }
+
+    #[test]
+    fn config_edit_write_confirmation_is_modal_and_cancellable() {
+        assert_eq!(
+            config_edit_confirmation_action(Input::Enter),
+            Some(Action::ConfirmConfigEdit)
+        );
+        assert_eq!(
+            config_edit_confirmation_action(Input::Esc),
+            Some(Action::CancelConfigEditConfirmation)
+        );
+        assert_eq!(config_edit_confirmation_action(Input::Char('E')), None);
+    }
+
     #[test]
     fn recipe_qa_action_maps_capabilities_and_persists_terminal_job_outcomes() {
         assert_eq!(

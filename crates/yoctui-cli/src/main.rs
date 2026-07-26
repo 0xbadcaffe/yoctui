@@ -32,10 +32,10 @@ use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolInspector, ProcessBackend, VariableValue,
 };
 use yoctui_model::{
-    Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, Dialog, Effect, GitFileState,
-    HostTelemetry, LayerBrowserEntry, LayerInspectorMode, LayerRelationship, LayerRelationships,
-    PreviewKind, RecipeDependencies, Screen, Severity, Theme, VariableDetail, VariableIdentity,
-    update,
+    Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest, Dialog,
+    Effect, GitFileState, HostTelemetry, LayerBrowserEntry, LayerInspectorMode, LayerRelationship,
+    LayerRelationships, PreviewKind, RecipeDependencies, Screen, Severity, Theme, VariableDetail,
+    VariableIdentity, update, validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -1248,6 +1248,208 @@ async fn write_bbmask(build_dir: &Path, value: String) -> Result<()> {
     .context("BBMASK write task failed")?
 }
 
+fn is_exact_config_assignment(line: &str, name: &str) -> bool {
+    let line = line.trim_end_matches('\r').trim_start();
+    if line.starts_with('#') {
+        return false;
+    }
+    let Some(remainder) = line.strip_prefix(name) else {
+        return false;
+    };
+    if !remainder.chars().next().is_some_and(char::is_whitespace) {
+        return false;
+    }
+    let expression = remainder.trim_start();
+    ["??=", "?=", ":=", "+=", "=+", ".=", "=.", "="]
+        .iter()
+        .any(|operator| expression.starts_with(operator))
+}
+
+fn replace_config_assignment(content: &str, name: &str, assignment: &str) -> String {
+    let mut output = String::with_capacity(content.len().max(assignment.len()) + 1);
+    let mut replaced = false;
+    for segment in content.split_inclusive('\n') {
+        let ending = if segment.ends_with("\r\n") {
+            "\r\n"
+        } else if segment.ends_with('\n') {
+            "\n"
+        } else {
+            ""
+        };
+        let body = segment
+            .strip_suffix(ending)
+            .expect("the detected line ending is a suffix");
+        if is_exact_config_assignment(body, name) {
+            if !replaced {
+                output.push_str(assignment);
+                output.push_str(ending);
+                replaced = true;
+            }
+        } else {
+            output.push_str(segment);
+        }
+    }
+    if replaced {
+        return output;
+    }
+
+    let ending = if content.contains("\r\n") {
+        "\r\n"
+    } else {
+        "\n"
+    };
+    if !output.is_empty() && !output.ends_with('\n') {
+        output.push_str(ending);
+    }
+    output.push_str(assignment);
+    output.push_str(ending);
+    output
+}
+
+fn write_config_assignment_atomic(build_dir: &Path, request: &ConfigEditRequest) -> Result<()> {
+    validate_config_edit_request(request, build_dir).map_err(anyhow::Error::msg)?;
+    let destination = &request.destination;
+    let metadata = fs::metadata(destination)
+        .with_context(|| format!("could not inspect {}", destination.display()))?;
+    if !metadata.is_file() {
+        anyhow::bail!("{} is not a regular file", destination.display());
+    }
+    let content = fs::read_to_string(destination)
+        .with_context(|| format!("could not read {}", destination.display()))?;
+    let updated = replace_config_assignment(&content, &request.identity.name, &request.assignment);
+    let parent = destination
+        .parent()
+        .context("configuration destination has no parent directory")?;
+    let file_name = destination
+        .file_name()
+        .and_then(|name| name.to_str())
+        .context("configuration destination file name is not valid UTF-8")?;
+    let nonce = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let mut temporary = None;
+    for attempt in 0..16 {
+        let candidate = parent.join(format!(
+            ".{file_name}.yoctui-{}-{nonce}-{attempt}.tmp",
+            std::process::id()
+        ));
+        match fs::OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&candidate)
+        {
+            Ok(file) => {
+                temporary = Some((candidate, file));
+                break;
+            }
+            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {}
+            Err(error) => {
+                return Err(error).with_context(|| {
+                    format!(
+                        "could not create temporary configuration file in {}",
+                        parent.display()
+                    )
+                });
+            }
+        }
+    }
+    let (temporary_path, mut temporary_file) =
+        temporary.context("could not allocate a unique temporary configuration file")?;
+    let write_result = (|| -> Result<()> {
+        temporary_file
+            .set_permissions(metadata.permissions())
+            .with_context(|| {
+                format!(
+                    "could not preserve permissions on {}",
+                    temporary_path.display()
+                )
+            })?;
+        temporary_file
+            .write_all(updated.as_bytes())
+            .with_context(|| format!("could not write {}", temporary_path.display()))?;
+        temporary_file
+            .sync_all()
+            .with_context(|| format!("could not sync {}", temporary_path.display()))?;
+        drop(temporary_file);
+        fs::rename(&temporary_path, destination)
+            .with_context(|| format!("could not atomically replace {}", destination.display()))?;
+        if let Ok(directory) = fs::File::open(parent) {
+            let _ = directory.sync_all();
+        }
+        Ok(())
+    })();
+    if write_result.is_err() {
+        let _ = fs::remove_file(&temporary_path);
+    }
+    write_result
+}
+
+async fn write_config_assignment(build_dir: &Path, request: ConfigEditRequest) -> Result<()> {
+    let build_dir = build_dir.to_path_buf();
+    tokio::task::spawn_blocking(move || write_config_assignment_atomic(&build_dir, &request))
+        .await
+        .context("configuration write task failed")?
+}
+
+fn finish_config_edit_refresh(
+    app: &mut App,
+    identity: VariableIdentity,
+    result: std::result::Result<VariableValue, yoctui_bitbake::BackendError>,
+) {
+    match result {
+        Ok(variable) => {
+            let _ = update(
+                app,
+                config_variable_loaded_action(identity.clone(), variable),
+            );
+            let _ = update(app, Action::ConfigEditRefreshSucceeded { identity });
+        }
+        Err(error) => {
+            let _ = update(
+                app,
+                Action::ConfigEditRefreshFailed {
+                    identity,
+                    message: error.to_string(),
+                },
+            );
+        }
+    }
+}
+
+async fn execute_config_edit_write(
+    backend: &mut dyn BitBakeBackend,
+    app: &mut App,
+    build_dir: &Path,
+    request: ConfigEditRequest,
+) {
+    let identity = request.identity.clone();
+    match write_config_assignment(build_dir, request).await {
+        Ok(()) => {
+            if let Some(Effect::GetVariable(identity)) = update(
+                app,
+                Action::ConfigEditWriteSucceeded {
+                    identity: identity.clone(),
+                },
+            ) {
+                let result = backend
+                    .get_variable(identity.name.clone(), identity.recipe.clone())
+                    .await;
+                finish_config_edit_refresh(app, identity, result);
+            }
+        }
+        Err(error) => {
+            let _ = update(
+                app,
+                Action::ConfigEditWriteFailed {
+                    identity,
+                    message: error.to_string(),
+                },
+            );
+        }
+    }
+}
+
 async fn refresh_workspace(
     backend: &mut Box<dyn BitBakeBackend>,
     app: &mut App,
@@ -1855,10 +2057,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
             } else if matches!(app.active_dialog(), Some(Dialog::ConfigEditConfirmation(_))) {
                 if let Some(action) = config_edit_confirmation_action(input)
-                    && update(&mut app, action).is_some()
+                    && let Some(Effect::WriteConfigAssignment(request)) = update(&mut app, action)
                 {
-                    app.notification =
-                        Some("Configuration edit preview confirmed; no file was written.".into());
+                    execute_config_edit_write(
+                        backend.as_mut(),
+                        &mut app,
+                        &session_build_dir,
+                        request,
+                    )
+                    .await;
                 }
             } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
                 let effect = match input {
@@ -2527,6 +2734,187 @@ mod tests {
         fs::remove_file(local_conf).unwrap();
         fs::remove_dir(conf_dir).unwrap();
         fs::remove_dir(build_dir).unwrap();
+    }
+
+    fn config_edit_request(build_dir: &Path, name: &str, value: &str) -> ConfigEditRequest {
+        ConfigEditRequest {
+            identity: VariableIdentity {
+                name: name.into(),
+                recipe: None,
+            },
+            value: value.into(),
+            destination: build_dir.join("conf/local.conf"),
+            assignment: yoctui_model::config_edit_assignment(name, value).unwrap(),
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn config_edit_write_replaces_or_appends_atomically_with_permissions_and_crlf() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let build_dir =
+            std::env::temp_dir().join(format!("yoctui-config-edit-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&build_dir);
+        let conf_dir = build_dir.join("conf");
+        fs::create_dir_all(&conf_dir).unwrap();
+        let local_conf = conf_dir.join("local.conf");
+        fs::write(
+            &local_conf,
+            "# MACHINE = \"commented\"\r\nMACHINE ??= \"old\"\r\nMACHINE = \"later\"\r\nMACHINE_EXTRA = \"keep\"\r\n",
+        )
+        .unwrap();
+        fs::set_permissions(&local_conf, fs::Permissions::from_mode(0o640)).unwrap();
+
+        write_config_assignment_atomic(
+            &build_dir,
+            &config_edit_request(&build_dir, "MACHINE", "qemux86-64"),
+        )
+        .unwrap();
+        let replaced = fs::read_to_string(&local_conf).unwrap();
+        assert!(replaced.contains("# MACHINE = \"commented\"\r\n"));
+        assert!(replaced.contains("MACHINE_EXTRA = \"keep\"\r\n"));
+        assert_eq!(replaced.matches("MACHINE = \"qemux86-64\"").count(), 1);
+        assert!(!replaced.replace("\r\n", "").contains('\n'));
+        assert_eq!(
+            fs::metadata(&local_conf).unwrap().permissions().mode() & 0o777,
+            0o640
+        );
+
+        write_config_assignment_atomic(
+            &build_dir,
+            &config_edit_request(&build_dir, "DISTRO", "poky"),
+        )
+        .unwrap();
+        let appended = fs::read_to_string(&local_conf).unwrap();
+        assert!(appended.ends_with("DISTRO = \"poky\"\r\n"));
+        assert!(!appended.replace("\r\n", "").contains('\n'));
+        fs::remove_dir_all(build_dir).unwrap();
+    }
+
+    #[test]
+    fn config_edit_write_rejects_tampering_and_leaves_failed_destination_untouched() {
+        let build_dir =
+            std::env::temp_dir().join(format!("yoctui-config-reject-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&build_dir);
+        fs::create_dir_all(build_dir.join("conf")).unwrap();
+        let local_conf = build_dir.join("conf/local.conf");
+        fs::write(&local_conf, "MACHINE = \"old\"\n").unwrap();
+        let original = fs::read(&local_conf).unwrap();
+        let mut request = config_edit_request(&build_dir, "MACHINE", "qemux86-64");
+        request.assignment = "MACHINE = \"tampered\"".into();
+        assert!(write_config_assignment_atomic(&build_dir, &request).is_err());
+        assert_eq!(fs::read(&local_conf).unwrap(), original);
+
+        let failed_build =
+            std::env::temp_dir().join(format!("yoctui-config-failure-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&failed_build);
+        let failed_destination = failed_build.join("conf/local.conf");
+        fs::create_dir_all(&failed_destination).unwrap();
+        let sentinel = failed_destination.join("sentinel");
+        fs::write(&sentinel, "unchanged").unwrap();
+        assert!(
+            write_config_assignment_atomic(
+                &failed_build,
+                &config_edit_request(&failed_build, "MACHINE", "qemux86-64"),
+            )
+            .is_err()
+        );
+        assert_eq!(fs::read_to_string(sentinel).unwrap(), "unchanged");
+        assert!(
+            fs::read_dir(failed_build.join("conf"))
+                .unwrap()
+                .all(|entry| !entry
+                    .unwrap()
+                    .file_name()
+                    .to_string_lossy()
+                    .contains(".yoctui-"))
+        );
+        fs::remove_dir_all(build_dir).unwrap();
+        fs::remove_dir_all(failed_build).unwrap();
+    }
+
+    #[test]
+    fn config_edit_write_refresh_success_replaces_detail_and_failure_preserves_it() {
+        let identity = VariableIdentity {
+            name: "MACHINE".into(),
+            recipe: None,
+        };
+        let mut app = App::new(10, 1_000);
+        let old = VariableDetail {
+            identity: identity.clone(),
+            effective_value: Some("old".into()),
+            unexpanded_value: None,
+            provenance: Some("conf/local.conf:1".into()),
+            operations: vec![],
+            active_overrides: vec![],
+        };
+        app.variable_details.insert(identity.clone(), old.clone());
+        let _ = update(
+            &mut app,
+            Action::ConfigEditWriteSucceeded {
+                identity: identity.clone(),
+            },
+        );
+        finish_config_edit_refresh(
+            &mut app,
+            identity.clone(),
+            Ok(VariableValue {
+                value: Some("qemux86-64".into()),
+                provenance: Some("conf/local.conf:1".into()),
+                ..VariableValue::default()
+            }),
+        );
+        assert_eq!(
+            app.variable_details[&identity].effective_value.as_deref(),
+            Some("qemux86-64")
+        );
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("MACHINE saved and refreshed.")
+        );
+
+        app.variable_details.insert(identity.clone(), old.clone());
+        let _ = update(
+            &mut app,
+            Action::ConfigEditWriteSucceeded {
+                identity: identity.clone(),
+            },
+        );
+        finish_config_edit_refresh(
+            &mut app,
+            identity.clone(),
+            Err(yoctui_bitbake::BackendError::Bridge("offline".into())),
+        );
+        assert_eq!(app.variable_details.get(&identity), Some(&old));
+        assert!(!app.variable_detail_loading.contains(&identity));
+        assert!(app.notification.as_deref().unwrap().contains("offline"));
+    }
+
+    #[test]
+    #[ignore = "requires YOCTUI_LIVE_BUILD_DIR; validates a copy and never writes the live file"]
+    fn config_edit_write_live_snapshot_is_validated_without_mutating_yocto() {
+        let live_build = PathBuf::from(
+            std::env::var("YOCTUI_LIVE_BUILD_DIR")
+                .expect("YOCTUI_LIVE_BUILD_DIR must identify an initialized Yocto build"),
+        );
+        let live_local_conf = live_build.join("conf/local.conf");
+        let live_before = fs::read(&live_local_conf).unwrap();
+        let snapshot_build =
+            std::env::temp_dir().join(format!("yoctui-config-live-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&snapshot_build);
+        fs::create_dir_all(snapshot_build.join("conf")).unwrap();
+        fs::write(snapshot_build.join("conf/local.conf"), &live_before).unwrap();
+
+        write_config_assignment_atomic(
+            &snapshot_build,
+            &config_edit_request(&snapshot_build, "MACHINE", "qemux86-64"),
+        )
+        .unwrap();
+        let snapshot = fs::read_to_string(snapshot_build.join("conf/local.conf")).unwrap();
+        assert!(snapshot.contains("MACHINE = \"qemux86-64\""));
+        assert_eq!(fs::read(&live_local_conf).unwrap(), live_before);
+        fs::remove_dir_all(snapshot_build).unwrap();
     }
 
     #[test]

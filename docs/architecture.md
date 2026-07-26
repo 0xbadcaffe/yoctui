@@ -89,6 +89,15 @@ detail by `(name, recipe)` identity, so a recipe-scoped or stale response
 cannot overwrite the global workspace summary. Older bridge responses default
 new fields to unavailable/empty without fabricating history.
 
+Confirmed configuration edits cross the model/CLI boundary as a typed request
+containing the global identity, value, exact escaped assignment, and
+`conf/local.conf` destination. The CLI revalidates all four fields against the
+active build directory, replaces only exact base-variable assignment lines,
+and writes a permission-preserving same-directory temporary file before an
+atomic rename. It then requests the same typed identity from the backend.
+Reducer actions alone own write/refresh lifecycle notifications and cached
+detail updates; a failed refresh does not discard the prior detail.
+
 Recipe discovery is split into a bounded summary query and a selected-recipe
 detail query. Summary records carry the resolved version, provider path/layer,
 and append count from BitBake's provider/cache tables. A typed
@@ -186,6 +195,7 @@ Owns:
 - headless command dispatch
 - shallow filesystem and Git inspection requested by typed layer-tree effects
 - bounded text/binary preview loading
+- validated atomic writes for confirmed local configuration effects
 
 The model owns the cached layer tree by stable paths, expansion state,
 selection, Git/file metadata, preview classification, and Inspector mode.

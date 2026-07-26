@@ -295,12 +295,12 @@ notes = "Authoritative do_cve_check/do_create_spdx capability gates, exact typed
 id = "CONFIG-001"
 milestone = "M3"
 title = "Configuration provenance workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 42
 required = true
 depends_on = ["CONFIG-META-001", "CONFIG-UI-001", "CONFIG-ACTIONS-001", "CONFIG-EDIT-001"]
 verify = ["cargo test -p yoctui-protocol config_", "cargo test -p yoctui-bitbake config_", "cargo test -p yoctui-model config_", "cargo test -p yoctui-app config_", "cargo test -p yoctui-ui config_", "cargo test -p yoctui -- config_"]
-notes = "Parent gate for authoritative variable detail, the responsive browser, typed navigation/comparison, and previewed editing. Live provenance is required."
+notes = "Authoritative live-validated variable detail, responsive search/inspection, typed copy/source/scope/comparison, and allowlisted previewed atomic edits are complete."
 
 [[task]]
 id = "CONFIG-META-001"
@@ -383,12 +383,12 @@ notes = "The c dialog compares exact loaded global and active recipe identities 
 id = "CONFIG-EDIT-001"
 milestone = "M3"
 title = "Add previewed configuration editing and refresh"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 42
 required = true
 depends_on = ["CONFIG-EDIT-PREVIEW-001", "CONFIG-EDIT-WRITE-001"]
 verify = ["cargo test -p yoctui-model config_edit", "cargo test -p yoctui-app config_edit", "cargo test -p yoctui-ui config_edit", "cargo test -p yoctui -- config_edit"]
-notes = "Parent gate split into focused preview/confirmation and atomic write/refresh tasks."
+notes = "The allowlisted global editor requires an exact preview, atomically updates local.conf, preserves unrelated content and permissions, and refreshes the exact typed identity."
 
 [[task]]
 id = "CONFIG-EDIT-PREVIEW-001"
@@ -405,12 +405,12 @@ notes = "MACHINE and DISTRO are the explicit global-only allowlist; E opens an a
 id = "CONFIG-EDIT-WRITE-001"
 milestone = "M3"
 title = "Write and refresh previewed configuration edits"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 42
 required = true
 depends_on = ["CONFIG-EDIT-PREVIEW-001"]
 verify = ["cargo test -p yoctui-model config_edit_write", "cargo test -p yoctui-app config_edit_write", "cargo test -p yoctui -- config_edit_write"]
-notes = "Atomic local.conf assignment replacement/append, exact preview correlation, failure preservation, success refresh, and external live validation."
+notes = "The CLI revalidates typed identity/value/destination/assignment, replaces or appends exact base-variable lines through a permission-preserving same-directory atomic rename, and refreshes only that identity. Synthetic CRLF/tamper/failure tests pass. A copied live BitBake 2.19.0 qemux86-64 local.conf passed the writer; a live bridge refresh returned MACHINE=qemux86-64 from conf/toolcfg.conf:6, and the live local.conf SHA-256 remained 94d5016d765dd1069e7f88a3f4428b2be145a21f2e2db8ccb58af3d26f0acd4c."
 
 [[task]]
 id = "DEVTOOL-001"
@@ -438,7 +438,7 @@ notes = "Typed absolute recipe identity, executable capability, workspace member
 id = "DEVTOOL-JOBS-001"
 milestone = "M3"
 title = "Run Devtool operations as persistent background jobs"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-META-001", "JOB-002"]
