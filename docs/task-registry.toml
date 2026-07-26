@@ -504,18 +504,18 @@ notes = "Parent gate split into atomic update-recipe and finish children so exac
 id = "DEVTOOL-UPDATE-001"
 milestone = "M3"
 title = "Complete Devtool update-recipe workflow"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-MODIFY-001"]
 verify = ["cargo test -p yoctui-bitbake devtool_publish_update", "cargo test -p yoctui-model devtool_publish_update", "cargo test -p yoctui-app devtool_publish_update", "cargo test -p yoctui-ui devtool_publish_update", "cargo test -p yoctui -- devtool_publish_update"]
-notes = "Exact-identity eligibility and preview, persistent execution, original-identity refresh on success, and failure/output retention."
+notes = "Exact-identity authoritative eligibility, provider-aware confirmation, shell-free arguments, persistent execution, original-identity success refresh after navigation, and nonzero/refresh failure retention pass adapter, model, app, CLI, and TestBackend coverage."
 
 [[task]]
 id = "DEVTOOL-FINISH-001"
 milestone = "M3"
 title = "Complete Devtool finish workflow"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 43
 required = true
 depends_on = ["DEVTOOL-UPDATE-001"]

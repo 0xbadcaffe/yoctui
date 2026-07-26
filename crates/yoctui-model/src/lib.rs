@@ -718,7 +718,7 @@ pub enum Dialog {
     ConfigEditConfirmation(ConfigEditRequest),
     DevtoolModifyConfirmation(RecipeIdentity),
     DevtoolResetConfirmation(String),
-    DevtoolUpdateConfirmation(String),
+    DevtoolUpdateConfirmation(RecipeIdentity),
     DevtoolFinish {
         recipe: String,
         destination: String,
@@ -3854,17 +3854,24 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::BeginSelectedRecipeDevtoolUpdateRecipe => {
-            if let Some(reason) = selected_devtool_status(app)
-                .and_then(|status| status.disabled_reason(DevtoolAction::UpdateRecipe))
-            {
+            let identity = match selected_recipe_identity(app) {
+                Ok(identity) => identity,
+                Err(message) => {
+                    app.notification = Some(message.into());
+                    return None;
+                }
+            };
+            let Some(status) = app.devtool_statuses.get(&identity) else {
+                app.notification = Some(
+                    "Refresh authoritative Devtool status with t before update-recipe.".into(),
+                );
+                return None;
+            };
+            if let Some(reason) = status.disabled_reason(DevtoolAction::UpdateRecipe) {
                 app.notification = Some(reason);
                 return None;
             }
-            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                open_dialog(app, Dialog::DevtoolUpdateConfirmation(recipe.name.clone()));
-            } else {
-                app.notification = Some("No recipe is selected for devtool update-recipe.".into());
-            }
+            open_dialog(app, Dialog::DevtoolUpdateConfirmation(identity));
         }
         Action::BeginSelectedRecipeDevtoolFinish => {
             if let Some(reason) = selected_devtool_status(app)
@@ -4035,10 +4042,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::ConfirmDevtoolUpdateRecipe => {
-            if let Some(Dialog::DevtoolUpdateConfirmation(recipe)) = app.active_dialog().cloned() {
+            if let Some(Dialog::DevtoolUpdateConfirmation(identity)) = app.active_dialog().cloned()
+            {
                 close_dialog(app);
                 synchronize_focus(app);
-                return Some(Effect::DevtoolUpdateRecipe(recipe));
+                return Some(Effect::DevtoolUpdateRecipe(identity));
             }
         }
         Action::CancelDevtoolUpdateRecipe => {
@@ -5054,7 +5062,7 @@ pub enum Effect {
     },
     DevtoolModify(RecipeIdentity),
     DevtoolReset(String),
-    DevtoolUpdateRecipe(String),
+    DevtoolUpdateRecipe(RecipeIdentity),
     DevtoolFinish(DevtoolFinishRequest),
     DevtoolDeploy(DevtoolDeployRequest),
     InspectDevtoolStatus(RecipeIdentity),
@@ -6448,25 +6456,58 @@ mod tests {
         );
     }
     #[test]
-    fn selected_recipe_requires_confirmation_before_devtool_update_recipe() {
+    fn devtool_publish_update_requires_authoritative_workspace_and_confirmation() {
         let mut app = App::new(10, 1_000);
+        let identity = RecipeIdentity {
+            name: "busybox".into(),
+            file: PathBuf::from("/layers/meta/recipes-core/busybox/busybox.bb"),
+        };
         app.workspace.recipes = vec![Recipe {
             name: "busybox".into(),
-            version: None,
-            layer: None,
+            file: Some(identity.file.clone()),
             ..Recipe::default()
         }];
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe);
         assert_eq!(
-            update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe),
-            None
+            app.notification.as_deref(),
+            Some("Refresh authoritative Devtool status with t before update-recipe.")
         );
+        app.devtool_statuses.insert(
+            identity.clone(),
+            DevtoolStatus {
+                identity: identity.clone(),
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::NotMember,
+                git: DevtoolGitState::NotApplicable,
+                error: None,
+            },
+        );
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Recipe is not in the Devtool workspace.")
+        );
+        app.devtool_statuses.insert(
+            identity.clone(),
+            DevtoolStatus {
+                identity: identity.clone(),
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::Present {
+                    source_path: PathBuf::from("/build/workspace/sources/busybox"),
+                    recipe_file: Some(identity.file.clone()),
+                },
+                git: DevtoolGitState::NotRepository,
+                error: None,
+            },
+        );
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe);
         assert_eq!(
             app.active_dialog(),
-            Some(&Dialog::DevtoolUpdateConfirmation("busybox".into()))
+            Some(&Dialog::DevtoolUpdateConfirmation(identity.clone()))
         );
         assert_eq!(
             update(&mut app, Action::ConfirmDevtoolUpdateRecipe),
-            Some(Effect::DevtoolUpdateRecipe("busybox".into()))
+            Some(Effect::DevtoolUpdateRecipe(identity))
         );
     }
     #[test]

@@ -184,6 +184,15 @@ same typed `BuildRequest` confirmation and background BitBake coordinator path
 as a Recipes workspace build. Refresh and editor failures update recoverable
 model notifications without rewriting the retained Devtool job.
 
+Update-recipe carries the same absolute `RecipeIdentity` from reducer
+eligibility through its confirmation and CLI pending-completion state, while
+the process adapter receives only the validated recipe token. A successful
+`UpdateRecipe` terminal event triggers a new inspection for that stored
+identity; non-success terminal events never replace the previously
+authoritative status. The refresh result enters through
+`Action::DevtoolStatusLoaded`, and refresh errors remain notifications beside
+the durable job result.
+
 Unknown future protocol events normalize to an ignored event and do not imply a
 backend disconnect. Missing task progress remains unknown rather than becoming
 zero. Terminal build events emit one primary build-state action and one
