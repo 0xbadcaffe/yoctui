@@ -2,52 +2,60 @@
 
 ## Active task
 
-**ID:** SIG-MODEL-001
-**Title:** Add typed signature dump and comparison state
+**ID:** SIG-ADAPTER-001
+**Title:** Acquire and compare authoritative BitBake signatures
 
 ## Objective
 
-Define pure typed recipe/task signature identities, explicit dump/comparison
-states, bounded deterministic differences, and reducer lifecycle independent of
-raw `bitbake-dumpsig` or `bitbake-diffsigs` output.
+Implement shell-free, bounded adapters that acquire exact BitBake recipe/task
+signature records and compare selected authoritative signature files, then emit
+only typed model data with honest partial and failure outcomes.
 
 ## Required work
 
-1. Inventory the existing recipe `diffsigs` task shortcut, build/background-job
-   state, available recipe/task metadata, screens/dialogs, and any signature
-   paths or parsing already present.
-2. Define stable typed signature identity using exact recipe, task, signature
-   hash, and authoritative absolute signature path where reported. Distinguish
-   unavailable fields instead of inventing them.
-3. Represent not-loaded, loading, available-empty, available, partial, and
-   failed dump state, plus explicit comparison selection and result states.
-4. Define typed bounded signature entries and deterministic difference
-   categories for changed values, dependencies, base hashes, and unavailable
-   fields. The model must not parse raw tool text.
-5. Preserve selected entry/signature identities across refresh and clamp
-   safely when data disappears.
-6. Add reducer actions for dump request/success/partial/failure, comparison
-   selection/request/success/failure, and clearing stale comparison results
-   when either input changes.
-7. Add model and app tests named `signature_model` for validation, bounds,
-   duplicate normalization, every explicit state, stable selection, stale
-   correlation, and typed event/effect mapping.
-8. Update `docs/architecture.md` for signature state ownership and the future
-   adapter boundary.
+1. Inventory existing process runners, cancellation and output bounds, BitBake
+   command construction, configured build-directory handling, background jobs,
+   and typed signature event hooks before adding code.
+2. Inspect the locally available BitBake tools and current build metadata.
+   Record exact versions and commands used for live validation; do not infer
+   compatibility from mocked tests.
+3. Define shell-free command plans for signature generation/dump and comparison
+   using exact recipe, task, and authoritative absolute signature paths.
+   Reject invalid identifiers, relative paths, and paths outside the configured
+   build directory before process launch.
+4. Parse bounded `bitbake-dumpsig` and `bitbake-diffsigs` results in the adapter
+   into typed records and differences. Preserve unavailable data explicitly,
+   normalize duplicates deterministically, and never pass raw output to the
+   reducer or widgets.
+5. Correlate every result and failure to its exact dump target or comparison
+   request. Report truncation, malformed records, missing tools/files,
+   non-zero exits, cancellation, and unsupported tool behavior honestly.
+6. Integrate the adapter through typed backend events and app coordination
+   without blocking the UI thread or mutating model state directly.
+7. Add tests named `signature_adapter` using fake processes and fixtures for
+   success, empty output, malformed/duplicate/oversized output, non-zero exits,
+   missing tools/files, path escape, cancellation, and exact argument
+   construction.
+8. Run a live read-only smoke check against the available BitBake/Yocto build.
+   Record exact version, commands, observed record/difference coverage, and any
+   limitations in the task registry and implementation status.
+9. Update `docs/architecture.md` for the proven adapter/tool boundary.
 
 ## Definition of done
 
-- Pure model state owns typed identities, bounded normalized dump entries,
-  comparison inputs/results, selection, and lifecycle.
-- Missing data and partial/failure outcomes remain explicit.
-- Reducers consume only typed data and effects; no raw tool output is parsed.
+- Signature acquisition and comparison use validated shell-free process plans.
+- Only bounded typed records, differences, limitations, and exact failures cross
+  the backend boundary.
+- Fake-process coverage proves normal and relevant failure/cancellation paths.
+- A live BitBake smoke check records real tool behavior without overstating
+  support.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model signature_model
-cargo test -p yoctui-app signature_model
+cargo test -p yoctui-bitbake signature_adapter
+cargo test -p yoctui-app signature_adapter
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -57,4 +65,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`SIG-ADAPTER-001 — Acquire and compare authoritative BitBake signatures`
+`SIG-UI-001 — Integrate signature dump and comparison workflows`

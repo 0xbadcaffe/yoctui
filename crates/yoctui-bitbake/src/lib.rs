@@ -15,7 +15,8 @@ use yoctui_model::{
     BuildRequest, DependencyEdge, DependencyEdgeKind, DependencyGraph, DependencyNode,
     DependencyNodeId, DevtoolCapability, DevtoolGitState, DevtoolOperation, DevtoolOperationError,
     DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Layer, LogEntry, Recipe,
-    RecipeBuildStatus, RecipeIdentity, RecipeMetadata, RecipeWorkspaceStatus, Severity, TaskStats,
+    RecipeBuildStatus, RecipeIdentity, RecipeMetadata, RecipeWorkspaceStatus, Severity,
+    SignatureComparisonRequest, SignatureDifference, SignatureRecord, SignatureTarget, TaskStats,
     VariableOperation, Workspace,
 };
 use yoctui_protocol::{
@@ -811,6 +812,24 @@ pub enum BackendEvent {
     },
     DependencyGraphFailed {
         root: DependencyNodeId,
+        message: String,
+    },
+    SignatureDump {
+        target: SignatureTarget,
+        records: Vec<SignatureRecord>,
+        limitations: Vec<String>,
+    },
+    SignatureDumpFailed {
+        target: SignatureTarget,
+        message: String,
+    },
+    SignatureComparison {
+        request: SignatureComparisonRequest,
+        differences: Vec<SignatureDifference>,
+        limitations: Vec<String>,
+    },
+    SignatureComparisonFailed {
+        request: SignatureComparisonRequest,
         message: String,
     },
     RecipeSources {

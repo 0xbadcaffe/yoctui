@@ -945,6 +945,8 @@ impl BackgroundJob {
 const MAX_BACKGROUND_JOBS: usize = 128;
 const MAX_BACKGROUND_JOB_OUTPUT_ENTRIES: usize = 512;
 const MAX_BACKGROUND_JOB_OUTPUT_BYTES: usize = 1024 * 1024;
+pub const MAX_SIGNATURE_RECORDS: usize = 256;
+pub const MAX_SIGNATURE_DIFFERENCES: usize = 4_096;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BackgroundJobs {
     pub jobs: VecDeque<BackgroundJob>,
@@ -1336,6 +1338,343 @@ impl DependencyGraphState {
         }
     }
 }
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SignatureTarget {
+    pub recipe: String,
+    pub task: String,
+}
+impl SignatureTarget {
+    pub fn validate(&self) -> Result<(), &'static str> {
+        if signature_component_is_valid(&self.recipe) && signature_component_is_valid(&self.task) {
+            Ok(())
+        } else {
+            Err("signature recipe and task must be non-empty tokens without whitespace or controls")
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SignatureIdentity {
+    pub target: SignatureTarget,
+    pub hash: Option<String>,
+    pub path: Option<PathBuf>,
+}
+impl SignatureIdentity {
+    pub fn validate(&self) -> Result<(), &'static str> {
+        self.target.validate()?;
+        if self.hash.as_ref().is_some_and(|hash| {
+            hash.is_empty()
+                || hash.len() > 256
+                || hash.chars().any(char::is_whitespace)
+                || hash.chars().any(char::is_control)
+        }) {
+            return Err("signature hashes must be bounded tokens");
+        }
+        if self.path.as_ref().is_some_and(|path| !path.is_absolute()) {
+            return Err("signature paths must be absolute");
+        }
+        Ok(())
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SignatureValue {
+    pub name: String,
+    pub value: Option<String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct SignatureRecord {
+    pub identity: SignatureIdentity,
+    pub base_hash: Option<String>,
+    pub task_hash: Option<String>,
+    pub variables: Vec<SignatureValue>,
+    pub dependencies: Vec<String>,
+}
+impl SignatureRecord {
+    fn normalize(mut self) -> Self {
+        self.variables.sort();
+        self.variables
+            .dedup_by(|left, right| left.name == right.name);
+        self.dependencies.sort();
+        self.dependencies.dedup();
+        self
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SignatureNormalizationReport {
+    pub duplicate_records: usize,
+    pub invalid_records: usize,
+    pub truncated_records: usize,
+}
+impl SignatureNormalizationReport {
+    pub fn is_partial(&self) -> bool {
+        self.invalid_records > 0 || self.truncated_records > 0
+    }
+}
+pub fn normalize_signature_records(
+    target: &SignatureTarget,
+    records: Vec<SignatureRecord>,
+    max_records: usize,
+) -> (Vec<SignatureRecord>, SignatureNormalizationReport) {
+    let mut report = SignatureNormalizationReport::default();
+    let mut normalized = BTreeMap::new();
+    for record in records {
+        if record.identity.target != *target || record.identity.validate().is_err() {
+            report.invalid_records += 1;
+            continue;
+        }
+        let record = record.normalize();
+        if let Some(existing) = normalized.get(&record.identity) {
+            report.duplicate_records += 1;
+            if &record < existing {
+                normalized.insert(record.identity.clone(), record);
+            }
+        } else {
+            normalized.insert(record.identity.clone(), record);
+        }
+    }
+    let mut records = normalized.into_values().collect::<Vec<_>>();
+    if records.len() > max_records {
+        report.truncated_records = records.len() - max_records;
+        records.truncate(max_records);
+    }
+    (records, report)
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum SignatureDumpState {
+    #[default]
+    NotLoaded,
+    Loading {
+        target: SignatureTarget,
+    },
+    AvailableEmpty {
+        target: SignatureTarget,
+    },
+    Available {
+        target: SignatureTarget,
+        records: Vec<SignatureRecord>,
+    },
+    Partial {
+        target: SignatureTarget,
+        records: Vec<SignatureRecord>,
+        limitations: Vec<String>,
+    },
+    Failed {
+        target: SignatureTarget,
+        message: String,
+    },
+}
+impl SignatureDumpState {
+    pub fn records(&self) -> Option<&[SignatureRecord]> {
+        match self {
+            Self::Available { records, .. } | Self::Partial { records, .. } => Some(records),
+            Self::NotLoaded
+            | Self::Loading { .. }
+            | Self::AvailableEmpty { .. }
+            | Self::Failed { .. } => None,
+        }
+    }
+
+    pub fn target(&self) -> Option<&SignatureTarget> {
+        match self {
+            Self::NotLoaded => None,
+            Self::Loading { target }
+            | Self::AvailableEmpty { target }
+            | Self::Available { target, .. }
+            | Self::Partial { target, .. }
+            | Self::Failed { target, .. } => Some(target),
+        }
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SignatureComparisonSide {
+    Left,
+    Right,
+}
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SignatureComparisonRequest {
+    pub left: SignatureIdentity,
+    pub right: SignatureIdentity,
+}
+impl SignatureComparisonRequest {
+    pub fn validate(&self) -> Result<(), &'static str> {
+        self.left.validate()?;
+        self.right.validate()?;
+        if self.left == self.right {
+            return Err("signature comparison requires two distinct identities");
+        }
+        Ok(())
+    }
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum SignatureDifferenceCategory {
+    BaseHash,
+    ChangedValue,
+    Dependency,
+    Unavailable,
+}
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct SignatureDifference {
+    pub category: SignatureDifferenceCategory,
+    pub key: String,
+    pub left: Option<String>,
+    pub right: Option<String>,
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct SignatureDifferenceReport {
+    pub duplicate_differences: usize,
+    pub truncated_differences: usize,
+}
+impl SignatureDifferenceReport {
+    pub fn is_partial(&self) -> bool {
+        self.truncated_differences > 0
+    }
+}
+pub fn normalize_signature_differences(
+    mut differences: Vec<SignatureDifference>,
+    max_differences: usize,
+) -> (Vec<SignatureDifference>, SignatureDifferenceReport) {
+    differences.sort();
+    let before = differences.len();
+    differences.dedup();
+    let mut report = SignatureDifferenceReport {
+        duplicate_differences: before - differences.len(),
+        ..SignatureDifferenceReport::default()
+    };
+    if differences.len() > max_differences {
+        report.truncated_differences = differences.len() - max_differences;
+        differences.truncate(max_differences);
+    }
+    (differences, report)
+}
+pub fn compare_signature_records(
+    left: &SignatureRecord,
+    right: &SignatureRecord,
+    max_differences: usize,
+) -> (Vec<SignatureDifference>, SignatureDifferenceReport) {
+    let mut differences = Vec::new();
+    signature_hash_difference(
+        &mut differences,
+        "base_hash",
+        left.base_hash.as_ref(),
+        right.base_hash.as_ref(),
+    );
+    signature_hash_difference(
+        &mut differences,
+        "task_hash",
+        left.task_hash.as_ref(),
+        right.task_hash.as_ref(),
+    );
+
+    let left_values = left
+        .variables
+        .iter()
+        .map(|value| (value.name.as_str(), value))
+        .collect::<BTreeMap<_, _>>();
+    let right_values = right
+        .variables
+        .iter()
+        .map(|value| (value.name.as_str(), value))
+        .collect::<BTreeMap<_, _>>();
+    for name in left_values
+        .keys()
+        .chain(right_values.keys())
+        .copied()
+        .collect::<BTreeSet<_>>()
+    {
+        let left = left_values.get(name).copied();
+        let right = right_values.get(name).copied();
+        if left.map(|value| &value.value) != right.map(|value| &value.value) {
+            differences.push(SignatureDifference {
+                category: if matches!((left, right), (Some(left), Some(right))
+                    if left.value.is_some() && right.value.is_some())
+                {
+                    SignatureDifferenceCategory::ChangedValue
+                } else {
+                    SignatureDifferenceCategory::Unavailable
+                },
+                key: name.to_owned(),
+                left: left.and_then(|value| value.value.clone()),
+                right: right.and_then(|value| value.value.clone()),
+            });
+        }
+    }
+
+    let left_dependencies = left
+        .dependencies
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    let right_dependencies = right
+        .dependencies
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    for dependency in left_dependencies.symmetric_difference(&right_dependencies) {
+        differences.push(SignatureDifference {
+            category: SignatureDifferenceCategory::Dependency,
+            key: (*dependency).to_owned(),
+            left: left_dependencies
+                .contains(dependency)
+                .then(|| "present".into()),
+            right: right_dependencies
+                .contains(dependency)
+                .then(|| "present".into()),
+        });
+    }
+    normalize_signature_differences(differences, max_differences)
+}
+fn signature_hash_difference(
+    differences: &mut Vec<SignatureDifference>,
+    key: &str,
+    left: Option<&String>,
+    right: Option<&String>,
+) {
+    if left != right {
+        differences.push(SignatureDifference {
+            category: if left.is_some() && right.is_some() {
+                SignatureDifferenceCategory::BaseHash
+            } else {
+                SignatureDifferenceCategory::Unavailable
+            },
+            key: key.into(),
+            left: left.cloned(),
+            right: right.cloned(),
+        });
+    }
+}
+fn signature_component_is_valid(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 512
+        && !value.chars().any(char::is_whitespace)
+        && !value.chars().any(char::is_control)
+}
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum SignatureComparisonState {
+    #[default]
+    NotSelected,
+    Ready {
+        left: Option<SignatureIdentity>,
+        right: Option<SignatureIdentity>,
+    },
+    Loading {
+        request: SignatureComparisonRequest,
+    },
+    AvailableEmpty {
+        request: SignatureComparisonRequest,
+    },
+    Available {
+        request: SignatureComparisonRequest,
+        differences: Vec<SignatureDifference>,
+    },
+    Partial {
+        request: SignatureComparisonRequest,
+        differences: Vec<SignatureDifference>,
+        limitations: Vec<String>,
+    },
+    Failed {
+        request: SignatureComparisonRequest,
+        message: String,
+    },
+}
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct LayerRelationships {
     pub layers: Vec<LayerRelationship>,
@@ -1719,6 +2058,9 @@ pub struct App {
     pub dependency_selection: usize,
     pub dependency_graph: DependencyGraphState,
     pub dependency_graph_selection: Option<DependencyNodeId>,
+    pub signature_dump: SignatureDumpState,
+    pub signature_selection: Option<SignatureIdentity>,
+    pub signature_comparison: SignatureComparisonState,
     pub layer_relationships: Option<LayerRelationships>,
     pub recipe_sources: HashMap<String, Vec<PathBuf>>,
     pub recipe_metadata: HashMap<String, RecipeMetadata>,
@@ -1776,6 +2118,9 @@ impl App {
             dependency_selection: 0,
             dependency_graph: DependencyGraphState::NotLoaded,
             dependency_graph_selection: None,
+            signature_dump: SignatureDumpState::NotLoaded,
+            signature_selection: None,
+            signature_comparison: SignatureComparisonState::NotSelected,
             layer_relationships: None,
             recipe_sources: HashMap::new(),
             recipe_metadata: HashMap::new(),
@@ -2263,6 +2608,38 @@ pub enum Action {
     OpenSelectedDependencyRecipe,
     OpenSelectedDependencyProvider,
     OpenSelectedDependencyTaskLog,
+    BeginSignatureDump(SignatureTarget),
+    SignatureDumpLoaded {
+        target: SignatureTarget,
+        records: Vec<SignatureRecord>,
+    },
+    SignatureDumpPartial {
+        target: SignatureTarget,
+        records: Vec<SignatureRecord>,
+        limitations: Vec<String>,
+    },
+    SignatureDumpFailed {
+        target: SignatureTarget,
+        message: String,
+    },
+    SelectSignatureRecord {
+        delta: isize,
+    },
+    SetSelectedSignatureComparisonSide(SignatureComparisonSide),
+    BeginSignatureComparison,
+    SignatureComparisonLoaded {
+        request: SignatureComparisonRequest,
+        differences: Vec<SignatureDifference>,
+    },
+    SignatureComparisonPartial {
+        request: SignatureComparisonRequest,
+        differences: Vec<SignatureDifference>,
+        limitations: Vec<String>,
+    },
+    SignatureComparisonFailed {
+        request: SignatureComparisonRequest,
+        message: String,
+    },
     BeginSelectedRecipeMetadata,
     RecipeMetadataLoaded(RecipeMetadata),
     RecipeMetadataFailed {
@@ -3063,6 +3440,65 @@ fn set_dependency_graph(app: &mut App, graph: DependencyGraph, limitations: Opti
         DependencyGraphState::AvailableEmpty { root: graph.root }
     } else {
         DependencyGraphState::Available(graph)
+    };
+}
+
+fn signature_comparison_inputs(
+    state: &SignatureComparisonState,
+) -> (Option<SignatureIdentity>, Option<SignatureIdentity>) {
+    match state {
+        SignatureComparisonState::NotSelected => (None, None),
+        SignatureComparisonState::Ready { left, right } => (left.clone(), right.clone()),
+        SignatureComparisonState::Loading { request }
+        | SignatureComparisonState::AvailableEmpty { request }
+        | SignatureComparisonState::Available { request, .. }
+        | SignatureComparisonState::Partial { request, .. }
+        | SignatureComparisonState::Failed { request, .. } => {
+            (Some(request.left.clone()), Some(request.right.clone()))
+        }
+    }
+}
+
+fn set_signature_dump(
+    app: &mut App,
+    target: SignatureTarget,
+    records: Vec<SignatureRecord>,
+    limitations: Option<Vec<String>>,
+) {
+    let (records, report) = normalize_signature_records(&target, records, MAX_SIGNATURE_RECORDS);
+    let identities = records
+        .iter()
+        .map(|record| record.identity.clone())
+        .collect::<BTreeSet<_>>();
+    app.signature_selection = app
+        .signature_selection
+        .take()
+        .filter(|selected| identities.contains(selected))
+        .or_else(|| records.first().map(|record| record.identity.clone()));
+
+    let (left, right) = signature_comparison_inputs(&app.signature_comparison);
+    app.signature_comparison = SignatureComparisonState::Ready {
+        left: left.filter(|identity| identities.contains(identity)),
+        right: right.filter(|identity| identities.contains(identity)),
+    };
+
+    let mut limitations = limitations.unwrap_or_default();
+    if report.is_partial() {
+        limitations.push(format!(
+            "Model bounds rejected {} invalid and truncated {} signature records.",
+            report.invalid_records, report.truncated_records
+        ));
+    }
+    app.signature_dump = if records.is_empty() && limitations.is_empty() {
+        SignatureDumpState::AvailableEmpty { target }
+    } else if limitations.is_empty() {
+        SignatureDumpState::Available { target, records }
+    } else {
+        SignatureDumpState::Partial {
+            target,
+            records,
+            limitations,
+        }
     };
 }
 
@@ -4459,6 +4895,192 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification =
                 Some("The selected task dependency has no authoritative log path.".into());
         }
+        Action::BeginSignatureDump(target) => {
+            if let Err(message) = target.validate() {
+                app.notification = Some(message.into());
+                return None;
+            }
+            app.signature_dump = SignatureDumpState::Loading {
+                target: target.clone(),
+            };
+            return Some(Effect::GetSignatureDump(target));
+        }
+        Action::SignatureDumpLoaded { target, records } => {
+            if !matches!(
+                &app.signature_dump,
+                SignatureDumpState::Loading { target: requested } if requested == &target
+            ) {
+                return None;
+            }
+            set_signature_dump(app, target, records, None);
+        }
+        Action::SignatureDumpPartial {
+            target,
+            records,
+            limitations,
+        } => {
+            if !matches!(
+                &app.signature_dump,
+                SignatureDumpState::Loading { target: requested } if requested == &target
+            ) {
+                return None;
+            }
+            set_signature_dump(app, target, records, Some(limitations));
+        }
+        Action::SignatureDumpFailed { target, message } => {
+            if !matches!(
+                &app.signature_dump,
+                SignatureDumpState::Loading { target: requested } if requested == &target
+            ) {
+                return None;
+            }
+            app.signature_dump = SignatureDumpState::Failed {
+                target,
+                message: message.clone(),
+            };
+            app.notification = Some(format!("Signature dump is unavailable: {message}"));
+        }
+        Action::SelectSignatureRecord { delta } => {
+            let records = app.signature_dump.records()?;
+            if records.is_empty() {
+                app.signature_selection = None;
+                return None;
+            }
+            let current = app
+                .signature_selection
+                .as_ref()
+                .and_then(|selected| {
+                    records
+                        .iter()
+                        .position(|record| &record.identity == selected)
+                })
+                .unwrap_or(0);
+            let next = if delta.is_negative() {
+                current.saturating_sub(delta.unsigned_abs())
+            } else {
+                current
+                    .saturating_add(delta as usize)
+                    .min(records.len().saturating_sub(1))
+            };
+            app.signature_selection = Some(records[next].identity.clone());
+        }
+        Action::SetSelectedSignatureComparisonSide(side) => {
+            let Some(selected) = app.signature_selection.clone() else {
+                app.notification = Some("No signature record is selected.".into());
+                return None;
+            };
+            if !app
+                .signature_dump
+                .records()
+                .is_some_and(|records| records.iter().any(|record| record.identity == selected))
+            {
+                app.notification =
+                    Some("The selected signature is not in the current dump result.".into());
+                return None;
+            }
+            let (mut left, mut right) = signature_comparison_inputs(&app.signature_comparison);
+            match side {
+                SignatureComparisonSide::Left => left = Some(selected),
+                SignatureComparisonSide::Right => right = Some(selected),
+            }
+            app.signature_comparison = SignatureComparisonState::Ready { left, right };
+        }
+        Action::BeginSignatureComparison => {
+            let (Some(left), Some(right)) = signature_comparison_inputs(&app.signature_comparison)
+            else {
+                app.notification =
+                    Some("Select both left and right signature records before comparing.".into());
+                return None;
+            };
+            let request = SignatureComparisonRequest { left, right };
+            if let Err(message) = request.validate() {
+                app.notification = Some(message.into());
+                return None;
+            }
+            if !app.signature_dump.records().is_some_and(|records| {
+                records.iter().any(|record| record.identity == request.left)
+                    && records
+                        .iter()
+                        .any(|record| record.identity == request.right)
+            }) {
+                app.notification = Some(
+                    "Both signature comparison inputs must be in the current dump result.".into(),
+                );
+                return None;
+            }
+            app.signature_comparison = SignatureComparisonState::Loading {
+                request: request.clone(),
+            };
+            return Some(Effect::CompareSignatures(request));
+        }
+        Action::SignatureComparisonLoaded {
+            request,
+            differences,
+        } => {
+            if !matches!(
+                &app.signature_comparison,
+                SignatureComparisonState::Loading { request: pending } if pending == &request
+            ) {
+                return None;
+            }
+            let (differences, report) =
+                normalize_signature_differences(differences, MAX_SIGNATURE_DIFFERENCES);
+            app.signature_comparison = if report.is_partial() {
+                SignatureComparisonState::Partial {
+                    request,
+                    differences,
+                    limitations: vec![format!(
+                        "Model bounds truncated {} signature differences.",
+                        report.truncated_differences
+                    )],
+                }
+            } else if differences.is_empty() {
+                SignatureComparisonState::AvailableEmpty { request }
+            } else {
+                SignatureComparisonState::Available {
+                    request,
+                    differences,
+                }
+            };
+        }
+        Action::SignatureComparisonPartial {
+            request,
+            differences,
+            mut limitations,
+        } => {
+            if !matches!(
+                &app.signature_comparison,
+                SignatureComparisonState::Loading { request: pending } if pending == &request
+            ) {
+                return None;
+            }
+            let (differences, report) =
+                normalize_signature_differences(differences, MAX_SIGNATURE_DIFFERENCES);
+            if report.is_partial() {
+                limitations.push(format!(
+                    "Model bounds truncated {} signature differences.",
+                    report.truncated_differences
+                ));
+            }
+            app.signature_comparison = SignatureComparisonState::Partial {
+                request,
+                differences,
+                limitations,
+            };
+        }
+        Action::SignatureComparisonFailed { request, message } => {
+            if !matches!(
+                &app.signature_comparison,
+                SignatureComparisonState::Loading { request: pending } if pending == &request
+            ) {
+                return None;
+            }
+            app.signature_comparison = SignatureComparisonState::Failed {
+                request,
+                message: message.clone(),
+            };
+            app.notification = Some(format!("Signature comparison failed: {message}"));
+        }
         Action::BeginSelectedRecipeMetadata => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
                 app.recipe_metadata_loading.insert(recipe.name.clone());
@@ -5677,6 +6299,8 @@ pub enum Effect {
     DevtoolDeploy(DevtoolDeployPlan),
     InspectDevtoolStatus(RecipeIdentity),
     GetDependencies(String),
+    GetSignatureDump(SignatureTarget),
+    CompareSignatures(SignatureComparisonRequest),
     GetRecipeMetadata(String),
     GetVariable(VariableIdentity),
     WriteConfigAssignment(ConfigEditRequest),
@@ -7285,6 +7909,273 @@ mod tests {
         assert_eq!(
             app.notification.as_deref(),
             Some("Task logs are available only for typed task dependency nodes.")
+        );
+    }
+    fn signature_record(recipe: &str, task: &str, hash: &str, path: &str) -> SignatureRecord {
+        SignatureRecord {
+            identity: SignatureIdentity {
+                target: SignatureTarget {
+                    recipe: recipe.into(),
+                    task: task.into(),
+                },
+                hash: Some(hash.into()),
+                path: Some(PathBuf::from(path)),
+            },
+            base_hash: Some(format!("base-{hash}")),
+            task_hash: Some(format!("task-{hash}")),
+            variables: Vec::new(),
+            dependencies: Vec::new(),
+        }
+    }
+    #[test]
+    fn signature_model_validates_normalizes_duplicates_and_bounds() {
+        let target = SignatureTarget {
+            recipe: "busybox".into(),
+            task: "do_compile".into(),
+        };
+        let mut preferred = signature_record("busybox", "do_compile", "aaa", "/tmp/aaa.sigdata");
+        preferred.variables = vec![
+            SignatureValue {
+                name: "Z".into(),
+                value: Some("last".into()),
+            },
+            SignatureValue {
+                name: "A".into(),
+                value: Some("first".into()),
+            },
+            SignatureValue {
+                name: "A".into(),
+                value: Some("second".into()),
+            },
+        ];
+        preferred.dependencies = vec!["z".into(), "a".into(), "a".into()];
+        let mut duplicate = preferred.clone();
+        duplicate.base_hash = Some("zzz".into());
+        let invalid = signature_record("other", "do_compile", "bad", "/tmp/bad.sigdata");
+        let overflow = signature_record("busybox", "do_compile", "ccc", "/tmp/ccc.sigdata");
+
+        let (records, report) =
+            normalize_signature_records(&target, vec![duplicate, invalid, overflow, preferred], 1);
+        assert_eq!(records.len(), 1);
+        assert_eq!(records[0].base_hash.as_deref(), Some("base-aaa"));
+        assert_eq!(
+            records[0].variables,
+            [
+                SignatureValue {
+                    name: "A".into(),
+                    value: Some("first".into())
+                },
+                SignatureValue {
+                    name: "Z".into(),
+                    value: Some("last".into())
+                }
+            ]
+        );
+        assert_eq!(records[0].dependencies, ["a", "z"]);
+        assert_eq!(report.duplicate_records, 1);
+        assert_eq!(report.invalid_records, 1);
+        assert_eq!(report.truncated_records, 1);
+        assert!(report.is_partial());
+
+        let relative = SignatureIdentity {
+            target,
+            hash: Some("abc".into()),
+            path: Some(PathBuf::from("relative.sigdata")),
+        };
+        assert_eq!(relative.validate(), Err("signature paths must be absolute"));
+    }
+    #[test]
+    fn signature_model_derives_deterministic_typed_differences() {
+        let mut left = signature_record("busybox", "do_compile", "left", "/tmp/left.sigdata");
+        left.base_hash = Some("base-left".into());
+        left.task_hash = Some("task-left".into());
+        left.variables = vec![
+            SignatureValue {
+                name: "CC".into(),
+                value: Some("gcc".into()),
+            },
+            SignatureValue {
+                name: "ONLY_LEFT".into(),
+                value: Some("yes".into()),
+            },
+        ];
+        left.dependencies = vec!["dep-left".into(), "dep-shared".into()];
+        let mut right = signature_record("busybox", "do_compile", "right", "/tmp/right.sigdata");
+        right.base_hash = Some("base-right".into());
+        right.task_hash = None;
+        right.variables = vec![SignatureValue {
+            name: "CC".into(),
+            value: Some("clang".into()),
+        }];
+        right.dependencies = vec!["dep-right".into(), "dep-shared".into()];
+
+        let (differences, report) = compare_signature_records(&left, &right, 20);
+        assert!(!report.is_partial());
+        assert!(differences.iter().any(|difference| {
+            difference.category == SignatureDifferenceCategory::BaseHash
+                && difference.key == "base_hash"
+        }));
+        assert!(differences.iter().any(|difference| {
+            difference.category == SignatureDifferenceCategory::ChangedValue
+                && difference.key == "CC"
+        }));
+        assert!(differences.iter().any(|difference| {
+            difference.category == SignatureDifferenceCategory::Unavailable
+                && difference.key == "ONLY_LEFT"
+        }));
+        assert_eq!(
+            differences
+                .iter()
+                .filter(|difference| {
+                    difference.category == SignatureDifferenceCategory::Dependency
+                })
+                .count(),
+            2
+        );
+        let (_, bounded) = compare_signature_records(&left, &right, 2);
+        assert!(bounded.is_partial());
+    }
+    #[test]
+    fn signature_model_reducer_correlates_states_selection_and_comparison() {
+        let target = SignatureTarget {
+            recipe: "busybox".into(),
+            task: "do_compile".into(),
+        };
+        let left = signature_record("busybox", "do_compile", "aaa", "/tmp/aaa.sigdata");
+        let right = signature_record("busybox", "do_compile", "bbb", "/tmp/bbb.sigdata");
+        let mut app = App::new(10, 1_000);
+        assert_eq!(
+            update(&mut app, Action::BeginSignatureDump(target.clone())),
+            Some(Effect::GetSignatureDump(target.clone()))
+        );
+        let stale_target = SignatureTarget {
+            recipe: "other".into(),
+            task: "do_compile".into(),
+        };
+        let _ = update(
+            &mut app,
+            Action::SignatureDumpLoaded {
+                target: stale_target,
+                records: vec![left.clone()],
+            },
+        );
+        assert!(matches!(
+            app.signature_dump,
+            SignatureDumpState::Loading { .. }
+        ));
+        let _ = update(
+            &mut app,
+            Action::SignatureDumpLoaded {
+                target: target.clone(),
+                records: vec![right.clone(), left.clone()],
+            },
+        );
+        assert_eq!(app.signature_selection, Some(left.identity.clone()));
+        assert!(matches!(
+            app.signature_dump,
+            SignatureDumpState::Available { .. }
+        ));
+
+        let _ = update(
+            &mut app,
+            Action::SetSelectedSignatureComparisonSide(SignatureComparisonSide::Left),
+        );
+        let _ = update(&mut app, Action::SelectSignatureRecord { delta: 1 });
+        assert_eq!(app.signature_selection, Some(right.identity.clone()));
+        let _ = update(
+            &mut app,
+            Action::SetSelectedSignatureComparisonSide(SignatureComparisonSide::Right),
+        );
+        let request = SignatureComparisonRequest {
+            left: left.identity.clone(),
+            right: right.identity.clone(),
+        };
+        assert_eq!(
+            update(&mut app, Action::BeginSignatureComparison),
+            Some(Effect::CompareSignatures(request.clone()))
+        );
+        let stale_request = SignatureComparisonRequest {
+            left: right.identity.clone(),
+            right: left.identity.clone(),
+        };
+        let _ = update(
+            &mut app,
+            Action::SignatureComparisonLoaded {
+                request: stale_request,
+                differences: Vec::new(),
+            },
+        );
+        assert!(matches!(
+            app.signature_comparison,
+            SignatureComparisonState::Loading { .. }
+        ));
+        let _ = update(
+            &mut app,
+            Action::SignatureComparisonLoaded {
+                request: request.clone(),
+                differences: vec![SignatureDifference {
+                    category: SignatureDifferenceCategory::ChangedValue,
+                    key: "CC".into(),
+                    left: Some("gcc".into()),
+                    right: Some("clang".into()),
+                }],
+            },
+        );
+        assert!(matches!(
+            app.signature_comparison,
+            SignatureComparisonState::Available { .. }
+        ));
+        let _ = update(
+            &mut app,
+            Action::SetSelectedSignatureComparisonSide(SignatureComparisonSide::Left),
+        );
+        assert!(matches!(
+            app.signature_comparison,
+            SignatureComparisonState::Ready { .. }
+        ));
+
+        let _ = update(&mut app, Action::BeginSignatureDump(target.clone()));
+        let _ = update(
+            &mut app,
+            Action::SignatureDumpPartial {
+                target: target.clone(),
+                records: vec![right.clone()],
+                limitations: vec!["one artifact unreadable".into()],
+            },
+        );
+        assert_eq!(app.signature_selection, Some(right.identity));
+        assert!(matches!(
+            app.signature_dump,
+            SignatureDumpState::Partial { .. }
+        ));
+        let _ = update(&mut app, Action::BeginSignatureDump(target.clone()));
+        let _ = update(
+            &mut app,
+            Action::SignatureDumpLoaded {
+                target: target.clone(),
+                records: Vec::new(),
+            },
+        );
+        assert_eq!(
+            app.signature_dump,
+            SignatureDumpState::AvailableEmpty {
+                target: target.clone()
+            }
+        );
+        let _ = update(&mut app, Action::BeginSignatureDump(target.clone()));
+        let _ = update(
+            &mut app,
+            Action::SignatureDumpFailed {
+                target: target.clone(),
+                message: "tool unavailable".into(),
+            },
+        );
+        assert_eq!(
+            app.signature_dump,
+            SignatureDumpState::Failed {
+                target,
+                message: "tool unavailable".into()
+            }
         );
     }
     #[test]

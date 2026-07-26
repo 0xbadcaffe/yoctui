@@ -109,6 +109,17 @@ Live smoke validation exercises `generateDepTreeEvent` separately from mocked
 and fake-process coverage and records the BitBake version and returned graph
 families.
 
+Signature dump and comparison state is also model-owned. Exact typed identities
+carry recipe, task, optional hash, and an optional absolute authoritative
+signature path. The model normalizes bounded records and variable/dependency
+data, preserves identity selection, correlates request results, and derives
+deterministic typed base-hash, changed-value, dependency, and unavailable-field
+differences. Not-loaded, loading, available-empty, available, partial, and
+failed outcomes remain distinct for both dump and comparison workflows.
+Adapters may later parse `bitbake-dumpsig` or `bitbake-diffsigs`, but raw tool
+output and inferred filesystem paths must not cross into reducer or widget
+code.
+
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore
 values, normalized varhistory operations (`op`, file, line, and detail), and
