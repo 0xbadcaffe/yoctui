@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete the persistent destructive Devtool reset workflow.
+Complete dependency exploration and why-built workflows.
 
 ## Current task
 
@@ -24,7 +24,7 @@ See `docs/current-task.md`.
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
 | M1 BitBake cockpit | IN_PROGRESS | Typed background build execution and live BitBake 2.19.0 Tinfoil validation exist; remaining typed cockpit workflows are incomplete |
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
-| M3 Development workbench | IN_PROGRESS | Layers, Recipes, Configuration, authoritative Devtool status, and persistent Devtool process execution are complete; operation-specific Devtool workflows, signatures, and package data remain |
+| M3 Development workbench | IN_PROGRESS | Layers, Recipes, Configuration, and the full authoritative persistent Devtool lifecycle are complete; dependency why-built, signatures, and package data remain |
 | M4 Images/SDK/QEMU/Wic | IN_PROGRESS | Image-recipe listing and build selection exist; artifact, SDK, QEMU, and Wic workflows remain |
 | M5 Testing/QA/Security | NOT_STARTED | Coverage infrastructure exists; product workflows remain |
 | M6 Maintenance | NOT_STARTED | Partial diagnostics only |
@@ -56,6 +56,7 @@ See `docs/current-task.md`.
 | Devtool update-recipe | DONE | Exact-identity workspace eligibility gates a provider-aware confirmation; persistent success refreshes the original identity after navigation while failures retain prior status and job output |
 | Devtool finish | DONE | Clean committed workspace eligibility gates an absolute configured-layer picker and exact provider/layer/path confirmation; native paths survive the adapter and completion refreshes the original identity |
 | Devtool deploy-target | DONE | Exact-identity workspace eligibility and validated target drafts gate provider-aware confirmation; persistent success refreshes the original identity and failures retain status/job context |
+| Devtool reset | DONE | Exact-identity removable workspace status gates provider/source destructive confirmation; persistent success refreshes expected non-membership while failures retain durable context |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
@@ -64,7 +65,9 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DEVTOOL-RESET-001` — complete reset
+1. `DEP-001` — complete dependency exploration and why-built
+2. `SIG-001` — complete signature workflows
+3. `PKG-001` — complete package-data browser
 
 ## Rules
 

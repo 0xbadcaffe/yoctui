@@ -211,6 +211,15 @@ vector. The CLI retains the original identity until a successful typed
 `DeployTarget` event and then refreshes it through `DevtoolInspector`; failure
 events do not overwrite prior authoritative status.
 
+Reset carries a model-owned `DevtoolResetPlan` containing the exact absolute
+recipe identity and authoritative workspace source slated for removal. The
+reducer compares that source against current typed status immediately before
+emitting the effect and validates the derived reset operation. The CLI retains
+the identity but passes only the validated recipe token to the process
+adapter. It refreshes on successful `Reset`; the resulting `NotMember` state is
+expected, while process and refresh failures preserve prior status and the
+persistent job record.
+
 Unknown future protocol events normalize to an ignored event and do not imply a
 backend disconnect. Missing task progress remains unknown rather than becoming
 zero. Terminal build events emit one primary build-state action and one

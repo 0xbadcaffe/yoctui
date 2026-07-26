@@ -351,6 +351,18 @@ impl DevtoolDeployPlan {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolResetPlan {
+    pub identity: RecipeIdentity,
+    pub source_path: PathBuf,
+}
+impl DevtoolResetPlan {
+    pub fn operation(&self) -> DevtoolOperation {
+        DevtoolOperation::Reset {
+            recipe: self.identity.name.clone(),
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DevtoolOperation {
     Modify {
         recipe: String,
@@ -754,7 +766,7 @@ pub enum Dialog {
     },
     ConfigEditConfirmation(ConfigEditRequest),
     DevtoolModifyConfirmation(RecipeIdentity),
-    DevtoolResetConfirmation(String),
+    DevtoolResetConfirmation(DevtoolResetPlan),
     DevtoolUpdateConfirmation(RecipeIdentity),
     DevtoolFinishPicker(DevtoolFinishPicker),
     DevtoolFinishConfirmation(DevtoolFinishPlan),
@@ -2421,12 +2433,6 @@ fn selected_recipe_identity(app: &App) -> Result<RecipeIdentity, &'static str> {
     })
 }
 
-fn selected_devtool_status(app: &App) -> Option<&DevtoolStatus> {
-    selected_recipe_identity(app)
-        .ok()
-        .and_then(|identity| app.devtool_statuses.get(&identity))
-}
-
 fn filtered_config_identities(app: &App) -> Vec<VariableIdentity> {
     let query = app.metadata_query.to_ascii_lowercase();
     let mut identities = app
@@ -3864,26 +3870,39 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.devtool_statuses.insert(status.identity.clone(), status);
         }
         Action::BeginSelectedRecipeDevtoolReset => {
-            if let Some(reason) = selected_devtool_status(app)
-                .and_then(|status| status.disabled_reason(DevtoolAction::Reset))
-            {
+            let identity = match selected_recipe_identity(app) {
+                Ok(identity) => identity,
+                Err(message) => {
+                    app.notification = Some(message.into());
+                    return None;
+                }
+            };
+            let Some(status) = app.devtool_statuses.get(&identity) else {
+                app.notification =
+                    Some("Refresh authoritative Devtool status with t before reset.".into());
+                return None;
+            };
+            if let Some(reason) = status.disabled_reason(DevtoolAction::Reset) {
                 app.notification = Some(reason);
                 return None;
             }
-            if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
-                let request = BuildRequest {
-                    targets: vec![recipe.name.clone()],
-                    task: None,
-                    force: false,
-                };
-                if let Err(error) = request.validate() {
-                    app.notification = Some(error.to_string());
-                } else {
-                    open_dialog(app, Dialog::DevtoolResetConfirmation(recipe.name.clone()));
-                }
-            } else {
-                app.notification = Some("No recipe is selected for devtool reset.".into());
+            let source_path = match &status.workspace {
+                DevtoolWorkspace::Present { source_path, .. }
+                | DevtoolWorkspace::MissingDirectory { source_path } => source_path.clone(),
+                DevtoolWorkspace::NotMember => return None,
+            };
+            if !source_path.is_absolute() {
+                app.notification =
+                    Some("The authoritative Devtool reset source path is not absolute.".into());
+                return None;
             }
+            open_dialog(
+                app,
+                Dialog::DevtoolResetConfirmation(DevtoolResetPlan {
+                    identity,
+                    source_path,
+                }),
+            );
         }
         Action::BeginSelectedRecipeDevtoolUpdateRecipe => {
             let identity = match selected_recipe_identity(app) {
@@ -4082,10 +4101,34 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::ConfirmDevtoolReset => {
-            if let Some(Dialog::DevtoolResetConfirmation(recipe)) = app.active_dialog().cloned() {
+            if let Some(Dialog::DevtoolResetConfirmation(plan)) = app.active_dialog().cloned() {
+                let Some(status) = app.devtool_statuses.get(&plan.identity) else {
+                    app.notification =
+                        Some("Authoritative Devtool status expired; refresh with t.".into());
+                    return None;
+                };
+                if let Some(reason) = status.disabled_reason(DevtoolAction::Reset) {
+                    app.notification = Some(reason);
+                    return None;
+                }
+                let current_source = match &status.workspace {
+                    DevtoolWorkspace::Present { source_path, .. }
+                    | DevtoolWorkspace::MissingDirectory { source_path } => source_path,
+                    DevtoolWorkspace::NotMember => return None,
+                };
+                if current_source != &plan.source_path || !current_source.is_absolute() {
+                    app.notification = Some(
+                        "The authoritative Devtool reset source changed; refresh with t.".into(),
+                    );
+                    return None;
+                }
+                if let Err(error) = plan.operation().validate() {
+                    app.notification = Some(error.to_string());
+                    return None;
+                }
                 close_dialog(app);
                 synchronize_focus(app);
-                return Some(Effect::DevtoolReset(recipe));
+                return Some(Effect::DevtoolReset(plan));
             }
         }
         Action::CancelDevtoolReset => {
@@ -5153,7 +5196,7 @@ pub enum Effect {
         file: PathBuf,
     },
     DevtoolModify(RecipeIdentity),
-    DevtoolReset(String),
+    DevtoolReset(DevtoolResetPlan),
     DevtoolUpdateRecipe(RecipeIdentity),
     DevtoolFinish(DevtoolFinishPlan),
     DevtoolDeploy(DevtoolDeployPlan),
@@ -6526,25 +6569,59 @@ mod tests {
         assert_eq!(app.recipe_selection, 1);
     }
     #[test]
-    fn selected_recipe_requires_confirmation_before_devtool_reset() {
+    fn devtool_target_reset_requires_authoritative_removable_source_and_confirmation() {
         let mut app = App::new(10, 1_000);
+        let identity = RecipeIdentity {
+            name: "busybox".into(),
+            file: PathBuf::from("/layers/meta/recipes-core/busybox/busybox.bb"),
+        };
+        let source_path = PathBuf::from("/build/workspace/sources/busybox");
         app.workspace.recipes = vec![Recipe {
             name: "busybox".into(),
-            version: None,
-            layer: None,
+            file: Some(identity.file.clone()),
             ..Recipe::default()
         }];
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolReset);
         assert_eq!(
-            update(&mut app, Action::BeginSelectedRecipeDevtoolReset),
-            None
+            app.notification.as_deref(),
+            Some("Refresh authoritative Devtool status with t before reset.")
         );
+        app.devtool_statuses.insert(
+            identity.clone(),
+            DevtoolStatus {
+                identity: identity.clone(),
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::Present {
+                    source_path: source_path.clone(),
+                    recipe_file: Some(identity.file.clone()),
+                },
+                git: DevtoolGitState::NotRepository,
+                error: None,
+            },
+        );
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolReset);
+        let plan = DevtoolResetPlan {
+            identity: identity.clone(),
+            source_path: source_path.clone(),
+        };
         assert_eq!(
             app.active_dialog(),
-            Some(&Dialog::DevtoolResetConfirmation("busybox".into()))
+            Some(&Dialog::DevtoolResetConfirmation(plan.clone()))
         );
+        app.devtool_statuses.get_mut(&identity).unwrap().workspace =
+            DevtoolWorkspace::MissingDirectory {
+                source_path: PathBuf::from("/build/workspace/sources/moved"),
+            };
+        assert_eq!(update(&mut app, Action::ConfirmDevtoolReset), None);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("The authoritative Devtool reset source changed; refresh with t.")
+        );
+        app.devtool_statuses.get_mut(&identity).unwrap().workspace =
+            DevtoolWorkspace::MissingDirectory { source_path };
         assert_eq!(
             update(&mut app, Action::ConfirmDevtoolReset),
-            Some(Effect::DevtoolReset("busybox".into()))
+            Some(Effect::DevtoolReset(plan))
         );
     }
     #[test]
