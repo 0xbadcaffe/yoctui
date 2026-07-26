@@ -2,55 +2,49 @@
 
 ## Active task
 
-**ID:** DEVTOOL-PUBLISH-001
-**Title:** Complete Devtool update-recipe and finish workflows
+**ID:** DEVTOOL-UPDATE-001
+**Title:** Complete Devtool update-recipe workflow
 
 ## Objective
 
-Provide capability-aware, explicitly previewed update-recipe and finish
-workflows whose persistent completion refreshes authoritative Devtool state
-without losing output or failure context.
+Require authoritative eligibility and an exact preview for update-recipe, then
+refresh the original recipe identity after successful persistent completion
+without losing retained output or failure context.
 
 ## Required work
 
-1. Inventory the existing status eligibility, dialogs, command specs,
-   persistent completion, layer destination selection, Git-state policy, and
-   refresh behavior before changing code.
-2. Split this task in the registry first if update-recipe and finish cannot be
-   implemented and verified as one coherent commit.
-3. Require the exact authoritative recipe identity and workspace state for both
-   operations; retain precise disabled reasons for missing tools, status errors,
-   absent sources, dirty/conflicted Git state, and invalid destinations.
-4. Preview the exact shell-free update-recipe or finish intent and require
-   explicit confirmation.
-5. Validate finish destinations against authoritative configured layer paths;
-   never accept a guessed or arbitrary raw path.
-6. Preserve persistent stdout/stderr and terminal outcomes, refresh the
-   original recipe identity after success, and retain recoverable state after
-   refresh or command failure.
-7. Add model, app, CLI, adapter, and Ratatui TestBackend tests named
-   `devtool_publish` for eligibility, previews, destination validation,
-   success/refresh, nonzero failure, navigation retention, and partial states.
-8. Update UI and architecture documents for every intentional behavior or
-   boundary change.
+1. Inventory existing update-recipe availability, dialog state, command
+   specification, persistent completion, and status refresh behavior.
+2. Require the exact selected `RecipeIdentity` to have authoritative available,
+   present workspace state; missing or stale state remains inert with a precise
+   reason.
+3. Make the focus-trapping confirmation retain the identity and preview the
+   exact `devtool update-recipe <recipe>` operation plus provider path.
+4. Preserve the original identity while the persistent job runs and refresh
+   only that identity after successful completion, independent of navigation.
+5. Keep nonzero, cancellation, runner-loss, and refresh-failure output/outcomes
+   retained and actionable.
+6. Add adapter, model, app, CLI, and Ratatui TestBackend tests named
+   `devtool_publish_update`.
+7. Update UI and architecture documents for intentional behavior and boundary
+   changes.
 
 ## Definition of done
 
-- Update-recipe and finish use authoritative typed eligibility.
-- Every execution follows an exact preview and explicit confirmation.
-- Finish destinations are configured layers and remain native absolute paths.
-- Successful completion refreshes the original identity; failures retain job
-  output, outcome, and actionable context.
+- Unknown, unavailable, and non-workspace recipes cannot start update-recipe.
+- The confirmation shows exact typed intent and provider identity.
+- Success refreshes the original identity without erasing the persistent job.
+- Failures preserve typed status, output, and actionable context.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake devtool_publish
-cargo test -p yoctui-model devtool_publish
-cargo test -p yoctui-app devtool_publish
-cargo test -p yoctui-ui devtool_publish
-cargo test -p yoctui -- devtool_publish
+cargo test -p yoctui-bitbake devtool_publish_update
+cargo test -p yoctui-model devtool_publish_update
+cargo test -p yoctui-app devtool_publish_update
+cargo test -p yoctui-ui devtool_publish_update
+cargo test -p yoctui -- devtool_publish_update
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -60,4 +54,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`DEVTOOL-TARGET-001 — Complete Devtool deploy-target and reset workflows`
+`DEVTOOL-FINISH-001 — Complete Devtool finish workflow`

@@ -496,9 +496,31 @@ title = "Complete Devtool update-recipe and finish workflows"
 status = "IN_PROGRESS"
 priority = 43
 required = true
-depends_on = ["DEVTOOL-MODIFY-001"]
+depends_on = ["DEVTOOL-UPDATE-001", "DEVTOOL-FINISH-001"]
 verify = ["cargo test -p yoctui-model devtool_publish", "cargo test -p yoctui-app devtool_publish", "cargo test -p yoctui-ui devtool_publish", "cargo test -p yoctui -- devtool_publish"]
-notes = "Exact previews, validated destinations, confirmation, persistent export jobs, Git-aware dirty/conflict handling, refresh-on-success, and failure preservation."
+notes = "Parent gate split into atomic update-recipe and finish children so exact refresh and configured-layer destination behavior are verified independently."
+
+[[task]]
+id = "DEVTOOL-UPDATE-001"
+milestone = "M3"
+title = "Complete Devtool update-recipe workflow"
+status = "IN_PROGRESS"
+priority = 43
+required = true
+depends_on = ["DEVTOOL-MODIFY-001"]
+verify = ["cargo test -p yoctui-bitbake devtool_publish_update", "cargo test -p yoctui-model devtool_publish_update", "cargo test -p yoctui-app devtool_publish_update", "cargo test -p yoctui-ui devtool_publish_update", "cargo test -p yoctui -- devtool_publish_update"]
+notes = "Exact-identity eligibility and preview, persistent execution, original-identity refresh on success, and failure/output retention."
+
+[[task]]
+id = "DEVTOOL-FINISH-001"
+milestone = "M3"
+title = "Complete Devtool finish workflow"
+status = "NOT_STARTED"
+priority = 43
+required = true
+depends_on = ["DEVTOOL-UPDATE-001"]
+verify = ["cargo test -p yoctui-bitbake devtool_publish_finish", "cargo test -p yoctui-model devtool_publish_finish", "cargo test -p yoctui-app devtool_publish_finish", "cargo test -p yoctui-ui devtool_publish_finish", "cargo test -p yoctui -- devtool_publish_finish"]
+notes = "Git-aware eligibility, configured-layer native-path selection, exact preview, persistent execution, original-identity refresh, and failure/output retention."
 
 [[task]]
 id = "DEVTOOL-TARGET-001"

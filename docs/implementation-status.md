@@ -61,8 +61,9 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DEVTOOL-PUBLISH-001` — complete update-recipe and finish
-2. `DEVTOOL-TARGET-001` — complete deploy-target and reset
+1. `DEVTOOL-UPDATE-001` — complete update-recipe
+2. `DEVTOOL-FINISH-001` — complete finish with configured-layer selection
+3. `DEVTOOL-TARGET-001` — complete deploy-target and reset
 
 ## Rules
 
