@@ -604,10 +604,20 @@ pub struct ConfigComparison {
     pub unexpanded: ConfigComparisonField,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ConfigEditRequest {
+    pub identity: VariableIdentity,
+    pub value: String,
+    pub destination: PathBuf,
+    pub assignment: String,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
     BuildOptions,
     BuildCompletion,
-    BuildTarget { input: String, task: Option<String> },
+    BuildTarget {
+        input: String,
+        task: Option<String>,
+    },
     ImagePicker(ImagePicker),
     RecipeTaskConfirmation(BuildRequest),
     RecipeTaskPicker(RecipeTaskPicker),
@@ -616,13 +626,26 @@ pub enum Dialog {
     ConfigSourcePicker(ConfigSourcePicker),
     ConfigScopePicker(ConfigScopePicker),
     ConfigComparison(ConfigComparison),
+    ConfigEdit {
+        identity: VariableIdentity,
+        input: String,
+    },
+    ConfigEditConfirmation(ConfigEditRequest),
     DevtoolResetConfirmation(String),
     DevtoolUpdateConfirmation(String),
-    DevtoolFinish { recipe: String, destination: String },
+    DevtoolFinish {
+        recipe: String,
+        destination: String,
+    },
     DevtoolFinishConfirmation(DevtoolFinishRequest),
-    DevtoolDeploy { recipe: String, target: String },
+    DevtoolDeploy {
+        recipe: String,
+        target: String,
+    },
     DevtoolDeployConfirmation(DevtoolDeployRequest),
-    BbmaskEdit { input: String },
+    BbmaskEdit {
+        input: String,
+    },
     BbmaskConfirmation(String),
     RecipeEditor(RecipeEditor),
     QuitConfirmation,
@@ -1907,6 +1930,13 @@ pub enum Action {
     CancelConfigScopePicker,
     OpenConfigComparison,
     CloseConfigComparison,
+    BeginConfigEdit,
+    AppendConfigEdit(char),
+    BackspaceConfigEdit,
+    PreviewConfigEdit,
+    CancelConfigEdit,
+    ConfirmConfigEdit,
+    CancelConfigEditConfirmation,
     VariableDetailFailed {
         identity: VariableIdentity,
         message: String,
@@ -2416,6 +2446,66 @@ pub fn config_comparison(app: &App) -> Result<ConfigComparison, String> {
             scoped.unexpanded_value.clone(),
         ),
     })
+}
+
+pub const EDITABLE_CONFIG_VARIABLES: &[&str] = &["DISTRO", "MACHINE"];
+
+fn config_edit_context(app: &App) -> Result<(VariableIdentity, String, PathBuf), String> {
+    if app.config_scope.is_some() {
+        return Err("Recipe-scoped configuration is read-only; select global scope.".into());
+    }
+    let identity = selected_config_identity(app)
+        .ok_or_else(|| "No configuration variable is selected.".to_owned())?;
+    if !EDITABLE_CONFIG_VARIABLES.contains(&identity.name.as_str()) {
+        return Err(format!(
+            "{} is read-only; editable variables are {}.",
+            identity.name,
+            EDITABLE_CONFIG_VARIABLES.join(", ")
+        ));
+    }
+    if app.variable_detail_loading.contains(&identity) {
+        return Err(format!(
+            "Configuration detail for {} is still loading.",
+            identity.name
+        ));
+    }
+    if let Some(error) = app.variable_detail_errors.get(&identity) {
+        return Err(format!(
+            "Configuration detail for {} is unavailable: {error}",
+            identity.name
+        ));
+    }
+    let detail = app.variable_details.get(&identity).ok_or_else(|| {
+        format!(
+            "Load authoritative detail for {} with Enter before editing.",
+            identity.name
+        )
+    })?;
+    let value = detail
+        .effective_value
+        .clone()
+        .ok_or_else(|| format!("The effective value for {} is unavailable.", identity.name))?;
+    let destination = app
+        .workspace
+        .build_dir
+        .as_ref()
+        .map(|build_dir| build_dir.join("conf/local.conf"))
+        .ok_or_else(|| {
+            "An active build directory is required for configuration editing.".to_owned()
+        })?;
+    Ok((identity, value, destination))
+}
+
+pub fn config_edit_disabled_reason(app: &App) -> Option<String> {
+    config_edit_context(app).err()
+}
+
+fn config_assignment(name: &str, value: &str) -> Result<String, String> {
+    if value.chars().any(char::is_control) {
+        return Err("Configuration values cannot contain newlines or control characters.".into());
+    }
+    let escaped = value.replace('\\', "\\\\").replace('"', "\\\"");
+    Ok(format!("{name} = \"{escaped}\""))
 }
 
 fn resolve_config_source(app: &App, path: &Path) -> Result<PathBuf, String> {
@@ -4416,6 +4506,72 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 close_dialog(app);
             }
         }
+        Action::BeginConfigEdit => match config_edit_context(app) {
+            Ok((identity, value, _)) => open_dialog(
+                app,
+                Dialog::ConfigEdit {
+                    identity,
+                    input: value,
+                },
+            ),
+            Err(reason) => app.notification = Some(reason),
+        },
+        Action::AppendConfigEdit(character) => {
+            if character.is_control() {
+                app.notification =
+                    Some("Configuration values cannot contain control characters.".into());
+            } else if let Some(Dialog::ConfigEdit { input, .. }) = app.active_dialog_mut() {
+                input.push(character);
+            }
+        }
+        Action::BackspaceConfigEdit => {
+            if let Some(Dialog::ConfigEdit { input, .. }) = app.active_dialog_mut() {
+                input.pop();
+            }
+        }
+        Action::PreviewConfigEdit => {
+            let edit = app.active_dialog().and_then(|dialog| match dialog {
+                Dialog::ConfigEdit { identity, input } => Some((identity.clone(), input.clone())),
+                _ => None,
+            });
+            let (identity, value) = edit?;
+            match config_assignment(&identity.name, &value) {
+                Ok(assignment) => {
+                    let Some(build_dir) = app.workspace.build_dir.as_ref() else {
+                        app.notification =
+                            Some("An active build directory is required for editing.".into());
+                        return None;
+                    };
+                    replace_dialog(
+                        app,
+                        Dialog::ConfigEditConfirmation(ConfigEditRequest {
+                            identity,
+                            value,
+                            destination: build_dir.join("conf/local.conf"),
+                            assignment,
+                        }),
+                    );
+                }
+                Err(reason) => app.notification = Some(reason),
+            }
+        }
+        Action::CancelConfigEdit => {
+            if matches!(app.active_dialog(), Some(Dialog::ConfigEdit { .. })) {
+                close_dialog(app);
+            }
+        }
+        Action::ConfirmConfigEdit => {
+            if let Some(Dialog::ConfigEditConfirmation(request)) = app.active_dialog().cloned() {
+                close_dialog(app);
+                synchronize_focus(app);
+                return Some(Effect::WriteConfigAssignment(request));
+            }
+        }
+        Action::CancelConfigEditConfirmation => {
+            if matches!(app.active_dialog(), Some(Dialog::ConfigEditConfirmation(_))) {
+                close_dialog(app);
+            }
+        }
         Action::BeginBbmaskEdit => {
             let input = app
                 .workspace
@@ -4693,6 +4849,7 @@ pub enum Effect {
     GetDependencies(String),
     GetRecipeMetadata(String),
     GetVariable(VariableIdentity),
+    WriteConfigAssignment(ConfigEditRequest),
     GetLayerRelationships,
     LoadRecipeEditorFile(PathBuf),
     SaveRecipeEditorFile {
@@ -7800,6 +7957,88 @@ mod tests {
             config_comparison(&app)
                 .unwrap_err()
                 .contains("still loading")
+        );
+    }
+
+    #[test]
+    fn config_edit_preview_requires_allowlisted_loaded_global_detail() {
+        let mut app = App::new(20, 4_000);
+        app.focus = FocusTarget::Inspector;
+        app.workspace.build_dir = Some("/build".into());
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        let identity = VariableIdentity {
+            name: "MACHINE".into(),
+            recipe: None,
+        };
+        app.variable_details.insert(
+            identity.clone(),
+            VariableDetail {
+                identity: identity.clone(),
+                effective_value: Some("qemux86-64".into()),
+                unexpanded_value: None,
+                provenance: None,
+                operations: vec![],
+                active_overrides: vec![],
+            },
+        );
+        let _ = update(&mut app, Action::BeginConfigEdit);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::ConfigEdit { identity: selected, input })
+                if selected == &identity && input == "qemux86-64"
+        ));
+        let _ = update(&mut app, Action::AppendConfigEdit('"'));
+        let _ = update(&mut app, Action::PreviewConfigEdit);
+        let Some(Dialog::ConfigEditConfirmation(request)) = app.active_dialog() else {
+            panic!("confirmation was not opened");
+        };
+        assert_eq!(request.destination, PathBuf::from("/build/conf/local.conf"));
+        assert_eq!(request.assignment, "MACHINE = \"qemux86-64\\\"\"");
+        let expected = request.clone();
+        assert_eq!(
+            update(&mut app, Action::ConfirmConfigEdit),
+            Some(Effect::WriteConfigAssignment(expected))
+        );
+        assert_eq!(app.focus, FocusTarget::Inspector);
+    }
+
+    #[test]
+    fn config_edit_preview_rejects_read_only_scope_and_control_injection() {
+        let mut app = App::new(20, 4_000);
+        app.workspace.build_dir = Some("/build".into());
+        app.workspace
+            .variables
+            .insert("BB_NUMBER_THREADS".into(), "8".into());
+        let identity = VariableIdentity {
+            name: "BB_NUMBER_THREADS".into(),
+            recipe: None,
+        };
+        app.variable_details.insert(
+            identity.clone(),
+            VariableDetail {
+                identity,
+                effective_value: Some("8".into()),
+                unexpanded_value: None,
+                provenance: None,
+                operations: vec![],
+                active_overrides: vec![],
+            },
+        );
+        let _ = update(&mut app, Action::BeginConfigEdit);
+        assert!(app.notification.as_deref().unwrap().contains("read-only"));
+        assert!(app.active_dialog().is_none());
+
+        assert_eq!(
+            config_assignment("MACHINE", "qemu\nMALICIOUS = \"1\""),
+            Err("Configuration values cannot contain newlines or control characters.".into())
+        );
+        app.config_scope = Some("base-files".into());
+        assert!(
+            config_edit_disabled_reason(&app)
+                .unwrap()
+                .contains("Recipe-scoped")
         );
     }
 }

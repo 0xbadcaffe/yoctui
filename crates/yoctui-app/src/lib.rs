@@ -630,6 +630,7 @@ pub fn config_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('U') => Some(Action::CopySelectedConfigUnexpanded),
         Input::Char('s') => Some(Action::OpenConfigScopePicker),
         Input::Char('c') => Some(Action::OpenConfigComparison),
+        Input::Char('E') => Some(Action::BeginConfigEdit),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
         Input::Char('o') => Some(Action::OpenSelectedConfigSource),
         _ => None,
@@ -658,6 +659,24 @@ pub fn config_scope_picker_action(key: Input) -> Option<Action> {
 
 pub fn config_compare_dialog_action(key: Input) -> Option<Action> {
     matches!(key, Input::Enter | Input::Esc).then_some(Action::CloseConfigComparison)
+}
+
+pub fn config_edit_dialog_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Char(character) => Some(Action::AppendConfigEdit(character)),
+        Input::Backspace => Some(Action::BackspaceConfigEdit),
+        Input::Enter => Some(Action::PreviewConfigEdit),
+        Input::Esc => Some(Action::CancelConfigEdit),
+        _ => None,
+    }
+}
+
+pub fn config_edit_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmConfigEdit),
+        Input::Esc => Some(Action::CancelConfigEditConfirmation),
+        _ => None,
+    }
 }
 #[cfg(test)]
 mod tests {
@@ -1450,6 +1469,26 @@ mod tests {
         assert_eq!(
             config_compare_dialog_action(Input::Esc),
             Some(Action::CloseConfigComparison)
+        );
+    }
+
+    #[test]
+    fn config_edit_preview_shortcut_and_dialog_keys_are_typed() {
+        assert_eq!(
+            config_workspace_action(false, Input::Char('E')),
+            Some(Action::BeginConfigEdit)
+        );
+        assert_eq!(
+            config_edit_dialog_action(Input::Char('x')),
+            Some(Action::AppendConfigEdit('x'))
+        );
+        assert_eq!(
+            config_edit_dialog_action(Input::Enter),
+            Some(Action::PreviewConfigEdit)
+        );
+        assert_eq!(
+            config_edit_confirmation_action(Input::Enter),
+            Some(Action::ConfirmConfigEdit)
         );
     }
     #[test]

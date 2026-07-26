@@ -23,9 +23,10 @@ use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
-    BuildJobCoordinator, Input, config_compare_dialog_action, config_scope_picker_action,
-    config_source_picker_action, config_workspace_action, errors_action, focus_action, key_action,
-    logs_action, settings_action, tasks_action,
+    BuildJobCoordinator, Input, config_compare_dialog_action, config_edit_confirmation_action,
+    config_edit_dialog_action, config_scope_picker_action, config_source_picker_action,
+    config_workspace_action, errors_action, focus_action, key_action, logs_action, settings_action,
+    tasks_action,
 };
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolInspector, ProcessBackend, VariableValue,
@@ -1848,6 +1849,17 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 if let Some(action) = config_compare_dialog_action(input) {
                     let _ = update(&mut app, action);
                 }
+            } else if matches!(app.active_dialog(), Some(Dialog::ConfigEdit { .. })) {
+                if let Some(action) = config_edit_dialog_action(input) {
+                    let _ = update(&mut app, action);
+                }
+            } else if matches!(app.active_dialog(), Some(Dialog::ConfigEditConfirmation(_))) {
+                if let Some(action) = config_edit_confirmation_action(input)
+                    && update(&mut app, action).is_some()
+                {
+                    app.notification =
+                        Some("Configuration edit preview confirmed; no file was written.".into());
+                }
             } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
                 let effect = match input {
                     Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
@@ -2164,7 +2176,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Enter {
                 inspect_selected_config_variable(&mut app, backend.as_mut()).await;
             } else if app.screen == yoctui_model::Screen::Configuration
-                && matches!(input, Input::Char('s') | Input::Char('c'))
+                && matches!(
+                    input,
+                    Input::Char('s') | Input::Char('c') | Input::Char('E')
+                )
             {
                 if let Some(action) = config_workspace_action(false, input) {
                     let _ = update(&mut app, action);
