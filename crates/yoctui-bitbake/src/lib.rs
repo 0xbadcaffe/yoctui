@@ -2011,10 +2011,10 @@ mod tests {
         ] {
             let (script, command) = fake_devtool_command(
                 name,
-                &format!("{trap}\nprintf 'ready\\n'\nwhile :; do sleep 1; done"),
+                &format!("{trap}\nprintf 'ready\\n'\nwhile :; do :; done"),
             );
             let mut runner = DevtoolJobRunner::new(std::env::temp_dir())
-                .with_cancellation_timeout(Duration::from_millis(40));
+                .with_cancellation_timeout(Duration::from_millis(250));
             runner.start(command).await.unwrap();
             assert_eq!(
                 runner.next_event().await.unwrap(),
