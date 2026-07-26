@@ -2,58 +2,64 @@
 
 ## Active task
 
-**ID:** DEP-ADAPTER-001
-**Title:** Acquire authoritative dependency graphs
+**ID:** DEP-UI-001
+**Title:** Integrate dependency and why-built workspace
 
 ## Objective
 
-Acquire bounded recipe and task dependency data from authoritative BitBake
-interfaces, normalize all raw formats inside adapter boundaries, and emit the
-typed graph states already owned by the model.
+Replace the legacy flat dependency screen with a responsive typed graph
+workspace that exposes recipe/task dependencies, reverse context, and an
+honest bounded why-built path without parsing backend text.
 
 ## Required work
 
-1. Inventory the current bridge `get_dependencies` request, Tinfoil datastore
-   fields, process-backend capabilities, protocol compatibility behavior, and
-   available `bitbake -g`/`oe-depends-dot` outputs.
-2. Define a backward-compatible typed graph protocol payload for recipe/task
-   nodes and build/runtime/task edges, including explicit limitations and
-   bounded counts.
-3. Prefer BitBake server/Tinfoil APIs where authoritative data is available;
-   use a shell-free bounded tool adapter only for graph information the server
-   cannot supply.
-4. Keep dot/text parsing exclusively in `yoctui-bitbake` or the Python bridge;
-   reject malformed, oversized, ambiguous, and path-escaping records without
-   leaking raw text into the app, model, or UI.
-5. Correlate every success, partial result, and failure with the requested
-   typed root identity. Do not fabricate task or runtime edges when the active
-   backend cannot report them.
-6. Preserve the legacy flat dependency response for compatibility while
-   routing capable backends through typed `DependencyGraph` events.
-7. Add fake-process, protocol round-trip/backward-compatibility, bridge, and
-   app normalization tests named `dependency_graph`; cover empty, partial,
-   malformed, bounded, nonzero-exit, and unavailable-tool cases.
-8. Add live-Yocto smoke coverage that records the exact BitBake release and
-   command/API exercised. If the external environment cannot supply the
-   required interface, mark only that validation BLOCKED with exact
-   reproduction details; do not claim live support from mocks.
-9. Update architecture documentation for the selected acquisition boundary.
+1. Inventory the existing flat dependency renderer, CLI-only key routing,
+   legacy selection/open behavior, footer shortcuts, Inspector integration,
+   and responsive breakpoints.
+2. Reconcile and expand `docs/ui-spec.md` before implementing details: define
+   graph row semantics, selection, why-built/reverse presentation, exact
+   shortcuts, open behavior, and all not-loaded/loading/empty/partial/failure
+   states.
+3. Render a deterministic navigable recipe/task list or tree from
+   `DependencyGraphState`; distinguish build, runtime, and task context without
+   inventing edges or percentages.
+4. Drive the persistent Inspector from the selected typed identity. Show exact
+   root/node identity, provider/log availability, incoming/reverse and outgoing
+   edge context, limitations, and one bounded shortest why-built path with
+   explicit unreachable/limit outcomes.
+5. Preserve selection by typed identity across refresh and keep navigation
+   bounded at every terminal size. Loading or failed refreshes must not expose
+   stale data as current.
+6. Route dependency input through `yoctui-app` typed actions rather than
+   CLI-only conditionals. Recipe navigation, provider opening, and task-log
+   opening must use only authoritative typed identities/paths and explain
+   unavailable actions.
+7. Preserve the persistent shell and semantic focus rules in wide, medium,
+   narrow, and too-small layouts. Long identities/paths and partial graphs must
+   wrap or truncate safely and never panic.
+8. Add reducer, app input, CLI integration, and Ratatui `TestBackend` tests
+   named `dependency_workspace` for all states, selection refresh/disappearance,
+   reverse/path/cycle/bound outcomes, action availability, focus, and boundary
+   widths.
+9. Remove legacy flat rendering/routing only after typed compatibility tests
+   prove the migration; keep the protocol legacy fallback in the adapter.
 
 ## Definition of done
 
-- Capable backends emit normalized typed graphs with honest limitations.
-- Raw BitBake, dot, and process output never crosses the adapter boundary.
-- Resource limits and all failure modes are explicit and tested.
-- Legacy peers remain compatible.
+- The Dependencies workspace consumes only typed model graph state.
+- Recipe/task, reverse-edge, limitation, and why-built information is visible
+  and honest at every supported breakpoint.
+- All actions are typed, identity-correlated, and path-authoritative.
+- No widget or CLI path parses raw BitBake/dot/process output.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake dependency_graph
-cargo test -p yoctui-protocol dependency_graph
-cargo test -p yoctui-app dependency_graph
-python3 -m pytest bridge/tests -k dependenc
+cargo test -p yoctui-model dependency_workspace
+cargo test -p yoctui-app dependency_workspace
+cargo test -p yoctui-ui dependency_workspace
+cargo test -p yoctui -- dependency_workspace
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -63,4 +69,4 @@ python3 -m pytest bridge/tests
 
 ## Next task
 
-`DEP-UI-001 — Integrate dependency and why-built workspace`
+`SIG-001 — Signature dump and comparison workflows`

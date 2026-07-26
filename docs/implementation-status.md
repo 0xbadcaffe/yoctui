@@ -58,7 +58,8 @@ See `docs/current-task.md`.
 | Devtool deploy-target | DONE | Exact-identity workspace eligibility and validated target drafts gate provider-aware confirmation; persistent success refreshes the original identity and failures retain status/job context |
 | Devtool reset | DONE | Exact-identity removable workspace status gates provider/source destructive confirmation; persistent success refreshes expected non-membership while failures retain durable context |
 | Dependency graph model | DONE | Typed recipe/task identities and build/runtime/task edges normalize deterministically; reverse lookup, cycle-safe bounded shortest why-built paths, explicit partial/failure states, selection stability, and typed app event mapping pass focused and baseline tests |
-| Dependency graph acquisition | IN_PROGRESS | Authoritative server/tool acquisition, bounded raw-format parsing at the adapter boundary, and live validation remain |
+| Dependency graph acquisition | DONE | Additive typed protocol events use structured `generateDepTreeEvent`; legacy peers fall back honestly and the shell-free `bitbake -g` adapter bounds and validates task-dot output. Live BitBake 2.19.0 / Yocto 6.0.99 snapshot returned 962 nodes and 1,779 build/runtime/task edges |
+| Dependency workspace | IN_PROGRESS | Responsive typed graph navigation, why-built Inspector paths, reverse context, and provider/task/log actions remain |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
@@ -67,10 +68,9 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `DEP-ADAPTER-001` — acquire authoritative graph data
-2. `DEP-UI-001` — integrate the responsive dependency workspace
-3. `SIG-001` — complete signature workflows
-4. `PKG-001` — complete package-data browser
+1. `DEP-UI-001` — integrate the responsive dependency workspace
+2. `SIG-001` — complete signature workflows
+3. `PKG-001` — complete package-data browser
 
 ## Rules
 

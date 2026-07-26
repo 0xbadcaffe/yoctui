@@ -184,6 +184,30 @@ def main():
         summary["recipe_source_count"] = len(metadata["sources"])
         summary["recipe_package_count"] = len(metadata["packages"])
 
+        correlation = driver.send(
+            {"type": "get_dependency_graph", "recipe": args.target}
+        )
+        dependency_event, _ = driver.wait_for(correlation, "dependency_graph")
+        dependency_graph = dependency_event.get("data", {})
+        if dependency_graph.get("root") != {"recipe": args.target}:
+            raise SmokeFailure("live dependency graph identified a different root")
+        nodes = dependency_graph.get("nodes")
+        edges = dependency_graph.get("edges")
+        if not isinstance(nodes, list) or not nodes:
+            raise SmokeFailure("live dependency graph did not expose typed nodes")
+        if not isinstance(edges, list) or not edges:
+            raise SmokeFailure("live dependency graph did not expose typed edges")
+        edge_kinds = {edge.get("kind") for edge in edges}
+        if "task" not in edge_kinds:
+            raise SmokeFailure("live dependency graph did not expose task edges")
+        summary["dependency_graph_api"] = "generateDepTreeEvent"
+        summary["dependency_node_count"] = len(nodes)
+        summary["dependency_edge_count"] = len(edges)
+        summary["dependency_edge_kinds"] = sorted(
+            kind for kind in edge_kinds if isinstance(kind, str)
+        )
+        summary["dependency_limitations"] = dependency_graph.get("limitations", [])
+
         correlation = driver.send({"type": "list_layers"})
         layers, _ = driver.wait_for(correlation, "layers")
         if not layers.get("layers"):
