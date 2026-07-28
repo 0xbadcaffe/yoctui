@@ -834,12 +834,12 @@ notes = "Pure bounded Wic identities retain exact capability/output/device reque
 id = "WIC-ADAPTER-001"
 milestone = "M4"
 title = "Discover kickstarts and execute Wic creation safely"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["WIC-ADAPTER-CAP-001", "WIC-ADAPTER-RUNNER-001"]
 verify = ["cargo test -p yoctui-bitbake wic_adapter", "cargo test -p yoctui-app wic_adapter"]
-notes = "Parent adapter gate split into canonical capability/kickstart/command construction and cancellable runner/exact output scanning."
+notes = "The combined adapter gate passes canonical bounded capability/kickstart/partition inspection, capability-bound shell-free command revalidation, persistent process deadlines, bounded typed streams, graceful/forced cancellation, and nanosecond exact new-output snapshot comparison. Fake coverage passes; the active source has no live Wic installation."
 
 [[task]]
 id = "WIC-ADAPTER-CAP-001"
