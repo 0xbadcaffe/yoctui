@@ -47,11 +47,24 @@ pub fn qemu_actions_for_runner_event(
             exit_code,
             finished_at: timestamp,
         }],
-        QemuRunnerEvent::Cancelled { exit_code } => vec![Action::CancelQemuSession {
-            id,
-            exit_code,
-            finished_at: timestamp,
-        }],
+        QemuRunnerEvent::Cancelled { forced, exit_code } => {
+            let mut actions = Vec::new();
+            if forced {
+                actions.push(Action::AppendQemuSessionOutput {
+                    id,
+                    stream: QemuOutputStream::Stderr,
+                    line: "runqemu cancellation required forced termination".into(),
+                    truncated: false,
+                    timestamp,
+                });
+            }
+            actions.push(Action::CancelQemuSession {
+                id,
+                exit_code,
+                finished_at: timestamp,
+            });
+            actions
+        }
         QemuRunnerEvent::CancellationRejected { message } => {
             vec![Action::RejectQemuSessionCancellation { id, message }]
         }
@@ -3058,6 +3071,49 @@ mod tests {
             vec![Action::RejectQemuSessionCancellation {
                 id,
                 message: "not running".into(),
+            }]
+        );
+    }
+    #[test]
+    fn qemu_adapter_normalizes_forced_cancellation_and_loss() {
+        let id = QemuSessionId(11);
+        let timestamp = SystemTime::UNIX_EPOCH;
+        assert_eq!(
+            qemu_actions_for_runner_event(
+                id,
+                QemuRunnerEvent::Cancelled {
+                    forced: true,
+                    exit_code: Some(137),
+                },
+                timestamp,
+            ),
+            vec![
+                Action::AppendQemuSessionOutput {
+                    id,
+                    stream: QemuOutputStream::Stderr,
+                    line: "runqemu cancellation required forced termination".into(),
+                    truncated: false,
+                    timestamp,
+                },
+                Action::CancelQemuSession {
+                    id,
+                    exit_code: Some(137),
+                    finished_at: timestamp,
+                }
+            ]
+        );
+        assert_eq!(
+            qemu_actions_for_runner_event(
+                id,
+                QemuRunnerEvent::Lost {
+                    message: "event channel lost".into(),
+                },
+                timestamp,
+            ),
+            vec![Action::LoseQemuSession {
+                id,
+                message: "event channel lost".into(),
+                finished_at: timestamp,
             }]
         );
     }

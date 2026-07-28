@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Detect and execute runqemu safely.
+Integrate managed QEMU dialogs and session view.
 
 ## Current task
 
@@ -66,8 +66,8 @@ See `docs/current-task.md`.
 | Image artifact adapter | DONE | Tinfoil/environment snapshots expose `DEPLOY_DIR_IMAGE`; the cancellable bounded adapter validates the machine/root, refuses symlinks and escapes, classifies deploy records, parses checksum associations, and reports partial data explicitly |
 | Images artifact UI | DONE | Retained recipe picker/build confirmation now coexists with correlated CLI-owned scans, search and exact selection, typed build/editor actions, explicit lifecycle/limitations, responsive Workspace/Inspector rendering, footer hints, and direct tests |
 | QEMU launch/session model | DONE | Typed capability, exact artifact-bound launch validation, deterministic preview/confirmation, stable shared-job lifecycle, bounded stream output, failures, stale events, and confirmed cancellation are covered |
-| QEMU adapter | IN_PROGRESS | Authoritative runqemu discovery, shell-free argument translation, bounded streaming, and process-group cancellation are the active task |
-| QEMU dialogs/session UI | NOT_STARTED | Responsive launch fields, confirmation, CLI coordination, attached output, and disabled reasons remain |
+| QEMU adapter | DONE | Canonical executable/artifact discovery, exact preview revalidation, shell-free native arguments, bounded stream events, success/failure/loss, duplicate rejection, and graceful/forced process-group cancellation are covered by fake processes; live compatibility is not claimed |
+| QEMU dialogs/session UI | IN_PROGRESS | Responsive launch fields, confirmation, CLI coordination, attached output, and disabled reasons are the active task |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -78,10 +78,9 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `QEMU-ADAPTER-001` — detect and execute runqemu safely
-2. `QEMU-UI-001` — integrate managed QEMU dialogs and session view
-3. `QEMU-001` — verify the complete managed QEMU parent gate
-4. `WIC-001` — add the Wic image workflow
+1. `QEMU-UI-001` — integrate managed QEMU dialogs and session view
+2. `QEMU-001` — verify the complete managed QEMU parent gate
+3. `WIC-001` — add the Wic image workflow
 
 ## Rules
 

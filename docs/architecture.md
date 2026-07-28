@@ -472,10 +472,24 @@ are derived from that shared job state.
 
 `yoctui-bitbake::QemuRunnerEvent` is the typed adapter-to-application event
 boundary. `yoctui-app::qemu_actions_for_runner_event` performs only mechanical
-event normalization to QEMU reducer actions. Executable inspection, argument
-translation, child/process-group ownership, streaming, and cancellation belong
-to the QEMU adapter child task; widget rendering and input mapping belong to
-the QEMU UI child task.
+event normalization to QEMU reducer actions. `QemuCapabilityInspector` accepts
+an explicit executable candidate or the active `PATH`, resolves it to a
+canonical executable, and correlates only canonical regular non-symlink
+root-filesystem/Wic files whose exact path and machine identity agree. Missing
+tool, missing compatible artifact, and failed inspection remain separate
+capability states.
+
+`QemuCommandSpec` revalidates the model request and every filesystem path, then
+requires the deterministic preview arguments to exactly equal its independent
+shell-free `Vec<OsString>` translation. `QemuJobRunner` owns one child in the
+active build directory and a Unix child process group. Its bounded channel and
+64 KiB line reader emit starting/started, stream-tagged output with explicit
+truncation, success/nonzero failure, cancellation, and loss events. Cancellation
+sends `SIGTERM`, waits a bounded interval, and records forced `SIGKILL`
+escalation. Neither inspector nor runner retains application history or mutates
+model/widget state. Widget rendering, effect coordination, and input mapping
+remain in the QEMU UI child task; fake runner tests do not establish live
+runqemu compatibility.
 
 ## Background-job model
 

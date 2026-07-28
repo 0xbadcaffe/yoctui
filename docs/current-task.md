@@ -2,55 +2,63 @@
 
 ## Active task
 
-**ID:** QEMU-ADAPTER-001
-**Title:** Detect and execute runqemu safely
+**ID:** QEMU-UI-001
+**Title:** Integrate managed QEMU dialogs and session view
 
 ## Objective
 
-Add authoritative runqemu capability inspection, exact shell-free command
-translation, bounded asynchronous process events, and process-group
-cancellation without integrating terminal UI or claiming live compatibility.
+Integrate capability-driven runqemu launch editing, deterministic confirmation,
+CLI-owned persistent execution/cancellation, and responsive attached session
+inspection into the Images workspace.
 
 ## Required work
 
-1. Inspect the existing Devtool process runner, image artifact adapter,
-   executable-discovery helpers, cancellation tests, and QEMU model boundary
-   before adding overlapping process code.
-2. Inspect runqemu only from explicit configured candidates or the active
-   process environment; distinguish available, missing tool, missing compatible
-   deployed image, and failed inspection.
-3. Correlate compatible images by exact typed artifact identity and supported
-   root-filesystem/Wic kind. Reject relative, missing, symlinked, escaped, or
-   stale paths instead of guessing.
-4. Translate a validated `QemuLaunchPreview` into an executable plus
-   `Vec<OsString>` argument vector. Never construct or invoke a shell command.
-5. Start at most one child in the active build directory, assign a process
-   group on Unix, and emit typed starting/started, bounded stream-tagged output,
-   completed, failed, cancelled, cancellation-rejected, and lost events.
-6. Bound individual output lines and event-channel retention, preserve invalid
-   UTF-8 lossily, and mark truncation explicitly.
-7. Cancel the child process group with graceful termination followed by bounded
-   forced escalation. Reject duplicate starts and duplicate cancellation.
-8. Keep process ownership in `yoctui-bitbake`; do not mutate model/UI state,
-   parse output in widgets, or add CLI/TUI routing in this child.
-9. Add fake-process tests named `qemu_adapter` for capability states, exact
-   arguments, unsafe paths/options, output bounds, nonzero exit, duplicate
-   start, cancellation, escalation, and process loss.
-10. Update `docs/architecture.md`, then mark the child done and hand off to
-    `QEMU-UI-001`.
+1. Inspect Images workspace rendering/input/effects, existing typed dialog
+   editors, Devtool CLI runner polling, and background-job views before adding
+   overlapping behavior.
+2. Inspect runqemu capability after authoritative image artifacts load or
+   refresh and preserve every distinct capability/disabled state.
+3. Add the documented Images shortcut and footer hint for launching the exact
+   selected compatible root-filesystem/Wic artifact. Unsupported selections,
+   missing tool/images, failed inspection, and active sessions must show stable
+   typed explanations.
+4. Render a focus-trapped responsive launch editor for machine/image, optional
+   kernel/rootfs, networking, display, serial, memory, and extra arguments.
+   Keep identity fields read-only and all editable fields bounded.
+5. Render the deterministic exact argument preview and require explicit
+   confirmation. `Esc` from draft/preview must close without starting.
+6. Execute `InspectQemuCapability`, `StartQemuSession`, and
+   `CancelQemuSession` effects in the CLI. Own and non-blockingly poll one
+   `QemuJobRunner` beside backend, keyboard, and other background work.
+7. Route typed runner events through app normalization, preserve sessions
+   across navigation, report start/cancellation failures, and never block
+   BitBake or Devtool coordination.
+8. Render the active/latest managed session in the Images Inspector with exact
+   request, lifecycle/timestamps, retained stdout/stderr, truncation/drop
+   counts, exit/error, and confirmed cancellation action.
+9. Cover explicit capability states, editor/preview/cancel keys, success,
+   nonzero failure, cancellation rejection/forced completion, process loss,
+   navigation persistence, and 80x24/100x30/160x40 TestBackend layouts in tests
+   named `qemu_workspace`.
+10. Update `docs/ui-spec.md` for exact shortcuts/focus/responsive behavior and
+    `docs/architecture.md` for CLI ownership, then mark the child done and hand
+    off to the `QEMU-001` parent gate.
 
 ## Definition of done
 
-- Capability inspection and process execution are typed, bounded, shell-free,
-  cancellable, and covered by fake integration tests.
-- No live runqemu compatibility is claimed from fake tests.
-- Focused and baseline checks pass.
+- A compatible selected image launches only after validated preview and
+  confirmation through the managed adapter.
+- Session lifecycle/output/cancellation remain responsive and visible.
+- Reducer, app, CLI, and TestBackend focused tests plus baseline checks pass.
+- No live runqemu compatibility is claimed from fake tests alone.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake qemu_adapter
-cargo test -p yoctui-app qemu_adapter
+cargo test -p yoctui-model qemu_workspace
+cargo test -p yoctui-app qemu_workspace
+cargo test -p yoctui-ui qemu_workspace
+cargo test -p yoctui -- qemu_workspace
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

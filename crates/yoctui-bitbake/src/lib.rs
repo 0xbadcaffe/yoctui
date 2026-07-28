@@ -1,6 +1,7 @@
 //! BitBake adapters. They execute BitBake; they never evaluate metadata themselves.
 mod image;
 mod package;
+mod qemu;
 mod signature;
 
 use async_trait::async_trait;
@@ -12,6 +13,7 @@ pub use package::{
     PackageDataAdapter, PackageDataAdapterError, PackageDataCancellation, PackageDataCommandSpec,
     PackageDetailResponse, PackageInventoryResponse,
 };
+pub use qemu::{QemuAdapterError, QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner};
 pub use signature::{
     SignatureAdapter, SignatureAdapterError, SignatureCancellation, SignatureCommandSpec,
     SignatureComparisonResponse, SignatureDumpResponse,
@@ -231,6 +233,7 @@ pub enum QemuRunnerEvent {
         exit_code: Option<i32>,
     },
     Cancelled {
+        forced: bool,
         exit_code: Option<i32>,
     },
     CancellationRejected {
