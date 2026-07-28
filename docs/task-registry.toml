@@ -834,12 +834,34 @@ notes = "Pure bounded Wic identities retain exact capability/output/device reque
 id = "WIC-ADAPTER-001"
 milestone = "M4"
 title = "Discover kickstarts and execute Wic creation safely"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
+priority = 51
+required = true
+depends_on = ["WIC-ADAPTER-CAP-001", "WIC-ADAPTER-RUNNER-001"]
+verify = ["cargo test -p yoctui-bitbake wic_adapter", "cargo test -p yoctui-app wic_adapter"]
+notes = "Parent adapter gate split into canonical capability/kickstart/command construction and cancellable runner/exact output scanning."
+
+[[task]]
+id = "WIC-ADAPTER-CAP-001"
+milestone = "M4"
+title = "Inspect Wic capability and construct creation commands"
+status = "IN_PROGRESS"
 priority = 51
 required = true
 depends_on = ["WIC-MODEL-001"]
-verify = ["cargo test -p yoctui-bitbake wic_adapter", "cargo test -p yoctui-app wic_adapter"]
-notes = "Discover canonical Wic/kickstart capability, parse bounded partition previews, independently construct exact cooked-mode arguments, run one cancellable process, and scan exact generated outputs."
+verify = ["cargo test -p yoctui-bitbake wic_adapter_capability", "cargo test -p yoctui-app wic_adapter_capability"]
+notes = "Discover canonical Wic and configured/canned kickstarts, bound partition previews and limitations, and independently construct exact shell-free cooked-mode commands."
+
+[[task]]
+id = "WIC-ADAPTER-RUNNER-001"
+milestone = "M4"
+title = "Run Wic creation and scan exact outputs"
+status = "NOT_STARTED"
+priority = 51
+required = true
+depends_on = ["WIC-ADAPTER-CAP-001"]
+verify = ["cargo test -p yoctui-bitbake wic_adapter_runner", "cargo test -p yoctui-app wic_adapter_runner"]
+notes = "Own one cancellable process group with bounded typed streams and scan only new canonical regular outputs beneath the exact requested directory."
 
 [[task]]
 id = "WIC-UI-MODEL-001"
