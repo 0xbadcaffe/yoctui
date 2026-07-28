@@ -2,6 +2,7 @@
 mod image;
 mod package;
 mod qemu;
+mod wic;
 
 pub use image::*;
 pub use package::*;
@@ -14,6 +15,7 @@ use std::{
     time::{Duration, SystemTime},
 };
 use thiserror::Error;
+pub use wic::*;
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum AppError {
@@ -2099,6 +2101,13 @@ pub struct App {
     pub qemu_capability: QemuCapability,
     pub qemu_sessions: VecDeque<QemuSession>,
     pub qemu_session_generation: u64,
+    pub wic_capability: WicCapability,
+    pub wic_outputs: WicOutputInventoryState,
+    pub wic_output_generation: u64,
+    pub wic_devices: WicDeviceInventoryState,
+    pub wic_device_generation: u64,
+    pub wic_sessions: VecDeque<WicSession>,
+    pub wic_session_generation: u64,
     pub layer_relationships: Option<LayerRelationships>,
     pub recipe_sources: HashMap<String, Vec<PathBuf>>,
     pub recipe_metadata: HashMap<String, RecipeMetadata>,
@@ -2177,6 +2186,13 @@ impl App {
             qemu_capability: QemuCapability::default(),
             qemu_sessions: VecDeque::new(),
             qemu_session_generation: 0,
+            wic_capability: WicCapability::default(),
+            wic_outputs: WicOutputInventoryState::default(),
+            wic_output_generation: 0,
+            wic_devices: WicDeviceInventoryState::default(),
+            wic_device_generation: 0,
+            wic_sessions: VecDeque::new(),
+            wic_session_generation: 0,
             layer_relationships: None,
             recipe_sources: HashMap::new(),
             recipe_metadata: HashMap::new(),
@@ -2379,6 +2395,19 @@ impl App {
     }
     pub fn latest_qemu_session(&self) -> Option<&QemuSession> {
         self.qemu_sessions.back()
+    }
+    pub fn wic_session(&self, id: WicSessionId) -> Option<&WicSession> {
+        self.wic_sessions.iter().find(|session| session.id == id)
+    }
+    pub fn active_wic_session(&self) -> Option<&WicSession> {
+        self.wic_sessions.iter().rev().find(|session| {
+            self.background_jobs
+                .get(session.background_job_id)
+                .is_some_and(|job| !job.status.is_terminal())
+        })
+    }
+    pub fn latest_wic_session(&self) -> Option<&WicSession> {
+        self.wic_sessions.back()
     }
     pub fn qemu_launch_unavailable_reason(&self) -> Option<String> {
         if self.active_qemu_session().is_some() {
@@ -2677,6 +2706,79 @@ pub enum Action {
     },
     CancelQemuSession {
         id: QemuSessionId,
+        exit_code: Option<i32>,
+        finished_at: SystemTime,
+    },
+    InspectWicCapability,
+    WicCapabilityLoaded(WicCapability),
+    BeginWicOutputInventory(WicOutputInventoryRequest),
+    WicOutputInventoryLoaded {
+        request: WicOutputInventoryRequest,
+        outputs: Vec<WicOutput>,
+        limitations: Vec<String>,
+    },
+    WicOutputInventoryFailed {
+        request: WicOutputInventoryRequest,
+        message: String,
+    },
+    BeginWicDeviceInventory(WicDeviceInventoryRequest),
+    WicDeviceInventoryLoaded {
+        request: WicDeviceInventoryRequest,
+        devices: Vec<WicDevice>,
+        limitations: Vec<String>,
+    },
+    WicDeviceInventoryFailed {
+        request: WicDeviceInventoryRequest,
+        message: String,
+    },
+    StartConfirmedWicCreate(WicCreatePreview),
+    StartConfirmedWicDeviceWrite {
+        image: WicOutputIdentity,
+        device: WicDeviceIdentity,
+        phrase: String,
+    },
+    WicSessionStarting {
+        id: WicSessionId,
+        started_at: SystemTime,
+    },
+    WicSessionRunning {
+        id: WicSessionId,
+    },
+    AppendWicSessionOutput {
+        id: WicSessionId,
+        stream: WicOutputStream,
+        line: String,
+        truncated: bool,
+        timestamp: SystemTime,
+    },
+    CompleteWicSession {
+        id: WicSessionId,
+        exit_code: i32,
+        outputs: Vec<WicOutput>,
+        limitations: Vec<String>,
+        finished_at: SystemTime,
+    },
+    FailWicSession {
+        id: WicSessionId,
+        message: String,
+        exit_code: Option<i32>,
+        finished_at: SystemTime,
+    },
+    LoseWicSession {
+        id: WicSessionId,
+        message: String,
+        finished_at: SystemTime,
+    },
+    ConfirmWicSessionCancellation {
+        id: WicSessionId,
+        acknowledge_incomplete_device: bool,
+    },
+    RejectWicSessionCancellation {
+        id: WicSessionId,
+        message: String,
+    },
+    CancelWicSession {
+        id: WicSessionId,
         exit_code: Option<i32>,
         finished_at: SystemTime,
     },
@@ -3902,6 +4004,100 @@ fn note_stale_qemu_event(app: &mut App) {
     app.background_jobs.ignored_transitions += 1;
 }
 
+const MAX_WIC_SESSIONS: usize = 32;
+const WIC_BACKGROUND_JOB_NAMESPACE: u64 = 2 << 62;
+
+fn next_wic_session_id(app: &mut App) -> WicSessionId {
+    app.wic_session_generation = app.wic_session_generation.wrapping_add(1);
+    if app.wic_session_generation == 0 {
+        app.wic_session_generation = 1;
+    }
+    WicSessionId(app.wic_session_generation)
+}
+
+fn wic_background_job_id(id: WicSessionId) -> BackgroundJobId {
+    BackgroundJobId(WIC_BACKGROUND_JOB_NAMESPACE | id.0)
+}
+
+fn wic_job_id(app: &App, id: WicSessionId) -> Option<BackgroundJobId> {
+    app.wic_session(id).map(|session| session.background_job_id)
+}
+
+fn mutate_wic_session(
+    app: &mut App,
+    id: WicSessionId,
+    mutation: impl FnOnce(&mut WicSession),
+) -> Option<BackgroundJobId> {
+    let session = app
+        .wic_sessions
+        .iter_mut()
+        .find(|session| session.id == id)?;
+    let job_id = session.background_job_id;
+    mutation(session);
+    Some(job_id)
+}
+
+fn note_stale_wic_event(app: &mut App) {
+    app.background_jobs.ignored_transitions += 1;
+}
+
+fn queue_wic_session(app: &mut App, operation: WicOperation) -> Option<Effect> {
+    if app.active_wic_session().is_some() {
+        app.notification = Some("A managed Wic operation is already active.".into());
+        return None;
+    }
+    while app.wic_sessions.len() >= MAX_WIC_SESSIONS {
+        let Some(index) = app.wic_sessions.iter().position(|session| {
+            app.background_jobs
+                .get(session.background_job_id)
+                .is_none_or(|job| job.status.is_terminal())
+        }) else {
+            app.notification = Some("The Wic operation history is full.".into());
+            return None;
+        };
+        app.wic_sessions.remove(index);
+    }
+    let id = next_wic_session_id(app);
+    let background_job_id = wic_background_job_id(id);
+    let (title, target, path) = match &operation {
+        WicOperation::Create(request) => (
+            format!("wic create {}", request.image),
+            Some(request.image.clone()),
+            Some(request.output_directory.clone()),
+        ),
+        WicOperation::Write(request) => (
+            format!("wic write {}", request.device.path.display()),
+            None,
+            Some(request.device.path.clone()),
+        ),
+    };
+    app.background_jobs.queue(BackgroundJobSpec {
+        id: background_job_id,
+        kind: BackgroundJobKind::Wic,
+        title,
+        context: BackgroundJobContext {
+            workspace: Some(Screen::Images),
+            target,
+            path,
+            ..BackgroundJobContext::default()
+        },
+        cancellation_supported: true,
+        queued_at: SystemTime::now(),
+    });
+    if app.background_jobs.get(background_job_id).is_none() {
+        app.notification = Some("The Wic operation could not be queued.".into());
+        return None;
+    }
+    app.wic_sessions.push_back(WicSession {
+        id,
+        background_job_id,
+        operation: operation.clone(),
+        exit_code: None,
+        error_detail: None,
+    });
+    Some(Effect::StartWicSession { id, operation })
+}
+
 fn normalize_image_artifact_limitations(mut limitations: Vec<String>) -> Vec<String> {
     limitations = limitations
         .into_iter()
@@ -4983,6 +5179,471 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .update_if(job_id, &[BackgroundJobStatus::Cancelling], |job| {
                     job.status = BackgroundJobStatus::Cancelled;
                     job.finished_at = Some(finished_at);
+                });
+        }
+        Action::InspectWicCapability => {
+            app.wic_capability = WicCapability::NotInspected;
+            return Some(Effect::InspectWicCapability);
+        }
+        Action::WicCapabilityLoaded(capability) => {
+            app.wic_capability = normalize_wic_capability(capability);
+        }
+        Action::BeginWicOutputInventory(request) => {
+            if let Err(message) = request.validate() {
+                app.notification = Some(format!("Wic outputs are unavailable: {message}."));
+                return None;
+            }
+            app.wic_output_generation = app.wic_output_generation.max(request.generation);
+            app.wic_outputs = WicOutputInventoryState::Loading {
+                request: request.clone(),
+            };
+            return Some(Effect::GetWicOutputs(request));
+        }
+        Action::WicOutputInventoryLoaded {
+            request,
+            outputs,
+            limitations,
+        } => {
+            if !matches!(
+                &app.wic_outputs,
+                WicOutputInventoryState::Loading { request: active }
+                    if active == &request
+            ) {
+                note_stale_wic_event(app);
+                return None;
+            }
+            match normalize_wic_outputs(&request.output_directory, outputs) {
+                Ok(outputs) => {
+                    let limitations = normalize_wic_limitations(limitations);
+                    app.wic_outputs = if limitations.is_empty() {
+                        WicOutputInventoryState::Available { request, outputs }
+                    } else {
+                        WicOutputInventoryState::Partial {
+                            request,
+                            outputs,
+                            limitations,
+                        }
+                    };
+                }
+                Err(message) => {
+                    app.wic_outputs = WicOutputInventoryState::Failed {
+                        request,
+                        message: message.into(),
+                    };
+                }
+            }
+        }
+        Action::WicOutputInventoryFailed { request, message } => {
+            if !matches!(
+                &app.wic_outputs,
+                WicOutputInventoryState::Loading { request: active }
+                    if active == &request
+            ) {
+                note_stale_wic_event(app);
+                return None;
+            }
+            app.wic_outputs = WicOutputInventoryState::Failed { request, message };
+        }
+        Action::BeginWicDeviceInventory(request) => {
+            if let Err(message) = request.validate() {
+                app.notification = Some(format!("Wic devices are unavailable: {message}."));
+                return None;
+            }
+            app.wic_device_generation = app.wic_device_generation.max(request.generation);
+            app.wic_devices = WicDeviceInventoryState::Loading {
+                request: request.clone(),
+            };
+            return Some(Effect::GetWicDevices(request));
+        }
+        Action::WicDeviceInventoryLoaded {
+            request,
+            devices,
+            limitations,
+        } => {
+            if !matches!(
+                &app.wic_devices,
+                WicDeviceInventoryState::Loading { request: active }
+                    if active == &request
+            ) {
+                note_stale_wic_event(app);
+                return None;
+            }
+            let devices = normalize_wic_devices(devices);
+            let limitations = normalize_wic_limitations(limitations);
+            app.wic_devices = if limitations.is_empty() {
+                WicDeviceInventoryState::Available { request, devices }
+            } else {
+                WicDeviceInventoryState::Partial {
+                    request,
+                    devices,
+                    limitations,
+                }
+            };
+        }
+        Action::WicDeviceInventoryFailed { request, message } => {
+            if !matches!(
+                &app.wic_devices,
+                WicDeviceInventoryState::Loading { request: active }
+                    if active == &request
+            ) {
+                note_stale_wic_event(app);
+                return None;
+            }
+            app.wic_devices = WicDeviceInventoryState::Failed { request, message };
+        }
+        Action::StartConfirmedWicCreate(preview) => {
+            let Some(output_directory) = preview.request.output_directory.to_str() else {
+                app.notification = Some("Wic output paths must be valid UTF-8.".into());
+                return None;
+            };
+            let draft = WicCreateDraft {
+                machine: preview.request.machine.clone(),
+                image: preview.request.image.clone(),
+                kickstart: preview.request.kickstart.clone(),
+                output_directory: output_directory.into(),
+                generate_bmap: preview.request.generate_bmap,
+                compression: preview.request.compression,
+            };
+            if draft.preview(&app.wic_capability).as_ref() != Ok(&preview) {
+                app.notification =
+                    Some("The Wic creation preview is stale or no longer valid.".into());
+                return None;
+            }
+            return queue_wic_session(app, WicOperation::Create(preview.request));
+        }
+        Action::StartConfirmedWicDeviceWrite {
+            image,
+            device,
+            phrase,
+        } => {
+            let (device_request, devices) = match &app.wic_devices {
+                WicDeviceInventoryState::Available {
+                    request, devices, ..
+                }
+                | WicDeviceInventoryState::Partial {
+                    request, devices, ..
+                } => (request, devices),
+                _ => {
+                    app.notification = Some("The Wic device inventory is unavailable.".into());
+                    return None;
+                }
+            };
+            if device_request.image != image {
+                app.notification =
+                    Some("The Wic device inventory belongs to a different image.".into());
+                return None;
+            }
+            let Some(device) = devices
+                .iter()
+                .find(|candidate| candidate.identity == device)
+            else {
+                app.notification = Some("The selected Wic device identity is stale.".into());
+                return None;
+            };
+            let outputs = match &app.wic_outputs {
+                WicOutputInventoryState::Available { outputs, .. }
+                | WicOutputInventoryState::Partial { outputs, .. } => outputs,
+                _ => {
+                    app.notification = Some("The Wic output inventory is unavailable.".into());
+                    return None;
+                }
+            };
+            let Some(output) = outputs.iter().find(|output| output.identity == image) else {
+                app.notification = Some("The selected Wic image identity is stale.".into());
+                return None;
+            };
+            if !matches!(output.kind, WicOutputKind::Wic | WicOutputKind::Direct) {
+                app.notification =
+                    Some("Only uncompressed .wic or .direct outputs can be written.".into());
+                return None;
+            }
+            match WicWritePreview::new(&app.wic_capability, image, device, &phrase) {
+                Ok(preview) => {
+                    return queue_wic_session(app, WicOperation::Write(preview.request));
+                }
+                Err(message) => app.notification = Some(message.into()),
+            }
+        }
+        Action::WicSessionStarting { id, started_at } => {
+            let Some(job_id) = wic_job_id(app, id) else {
+                note_stale_wic_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Queued], |job| {
+                    job.status = BackgroundJobStatus::Starting;
+                    job.started_at = Some(started_at);
+                });
+        }
+        Action::WicSessionRunning { id } => {
+            let Some(job_id) = wic_job_id(app, id) else {
+                note_stale_wic_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Starting], |job| {
+                    job.status = BackgroundJobStatus::Running;
+                });
+        }
+        Action::AppendWicSessionOutput {
+            id,
+            stream,
+            line,
+            truncated,
+            timestamp,
+        } => {
+            let Some(job_id) = wic_job_id(app, id) else {
+                note_stale_wic_event(app);
+                return None;
+            };
+            app.background_jobs.append_output(
+                job_id,
+                BackgroundJobOutputEntry {
+                    severity: if stream == WicOutputStream::Stderr {
+                        Severity::Warning
+                    } else {
+                        Severity::Info
+                    },
+                    message: line,
+                    source: if stream == WicOutputStream::Stderr {
+                        BackgroundJobOutputSource::Stderr
+                    } else {
+                        BackgroundJobOutputSource::Stdout
+                    },
+                    truncated,
+                    timestamp,
+                },
+            );
+        }
+        Action::CompleteWicSession {
+            id,
+            exit_code,
+            outputs,
+            limitations,
+            finished_at,
+        } => {
+            let Some(session) = app.wic_session(id).cloned() else {
+                note_stale_wic_event(app);
+                return None;
+            };
+            let Some(job) = app.background_jobs.get(session.background_job_id) else {
+                note_stale_wic_event(app);
+                return None;
+            };
+            if job.status != BackgroundJobStatus::Running {
+                note_stale_wic_event(app);
+                return None;
+            }
+            let job_id = mutate_wic_session(app, id, |session| session.exit_code = Some(exit_code))
+                .expect("session checked above");
+            if exit_code == 0 {
+                let artifacts = outputs
+                    .iter()
+                    .map(|output| output.identity.path.clone())
+                    .collect();
+                app.background_jobs
+                    .update_if(job_id, &[BackgroundJobStatus::Running], |job| {
+                        job.status = BackgroundJobStatus::Succeeded;
+                        job.finished_at = Some(finished_at);
+                        job.result = Some(BackgroundJobResult {
+                            summary: "Wic operation completed".into(),
+                            artifacts,
+                        });
+                    });
+                if let WicOperation::Create(request) = session.operation {
+                    let generation = app.wic_output_generation.wrapping_add(1).max(1);
+                    app.wic_output_generation = generation;
+                    let outputs = normalize_wic_outputs(&request.output_directory, outputs)
+                        .unwrap_or_default();
+                    let limitations = normalize_wic_limitations(limitations);
+                    app.wic_outputs = if limitations.is_empty() {
+                        WicOutputInventoryState::Available {
+                            request: WicOutputInventoryRequest {
+                                generation,
+                                output_directory: request.output_directory,
+                            },
+                            outputs,
+                        }
+                    } else {
+                        WicOutputInventoryState::Partial {
+                            request: WicOutputInventoryRequest {
+                                generation,
+                                output_directory: request.output_directory,
+                            },
+                            outputs,
+                            limitations,
+                        }
+                    };
+                }
+            } else {
+                let message = format!("exit code {exit_code}");
+                let _ = mutate_wic_session(app, id, |session| {
+                    session.error_detail = Some(message.clone())
+                });
+                app.background_jobs
+                    .update_if(job_id, &[BackgroundJobStatus::Running], |job| {
+                        job.status = BackgroundJobStatus::Failed;
+                        job.finished_at = Some(finished_at);
+                        job.error = Some(BackgroundJobError {
+                            summary: "Wic operation failed".into(),
+                            detail: Some(message),
+                        });
+                    });
+            }
+        }
+        Action::FailWicSession {
+            id,
+            message,
+            exit_code,
+            finished_at,
+        } => {
+            if !matches!(
+                wic_job_id(app, id).and_then(|job_id| app.background_jobs.get(job_id)),
+                Some(BackgroundJob {
+                    status: BackgroundJobStatus::Queued
+                        | BackgroundJobStatus::Starting
+                        | BackgroundJobStatus::Running
+                        | BackgroundJobStatus::Cancelling,
+                    ..
+                })
+            ) {
+                note_stale_wic_event(app);
+                return None;
+            }
+            let Some(job_id) = mutate_wic_session(app, id, |session| {
+                session.exit_code = exit_code;
+                session.error_detail = Some(message.clone());
+            }) else {
+                note_stale_wic_event(app);
+                return None;
+            };
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Queued,
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                    BackgroundJobStatus::Cancelling,
+                ],
+                |job| {
+                    job.status = BackgroundJobStatus::Failed;
+                    job.finished_at = Some(finished_at);
+                    job.error = Some(BackgroundJobError {
+                        summary: "Wic operation failed".into(),
+                        detail: Some(message),
+                    });
+                },
+            );
+        }
+        Action::LoseWicSession {
+            id,
+            message,
+            finished_at,
+        } => {
+            if !matches!(
+                wic_job_id(app, id).and_then(|job_id| app.background_jobs.get(job_id)),
+                Some(BackgroundJob {
+                    status: BackgroundJobStatus::Starting
+                        | BackgroundJobStatus::Running
+                        | BackgroundJobStatus::Cancelling,
+                    ..
+                })
+            ) {
+                note_stale_wic_event(app);
+                return None;
+            }
+            let Some(job_id) = mutate_wic_session(app, id, |session| {
+                session.error_detail = Some(message.clone())
+            }) else {
+                note_stale_wic_event(app);
+                return None;
+            };
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                    BackgroundJobStatus::Cancelling,
+                ],
+                |job| {
+                    job.status = BackgroundJobStatus::Lost;
+                    job.finished_at = Some(finished_at);
+                    job.error = Some(BackgroundJobError {
+                        summary: "Wic process was lost".into(),
+                        detail: Some(message),
+                    });
+                },
+            );
+        }
+        Action::ConfirmWicSessionCancellation {
+            id,
+            acknowledge_incomplete_device,
+        } => {
+            let Some(session) = app.wic_session(id) else {
+                note_stale_wic_event(app);
+                return None;
+            };
+            if matches!(session.operation, WicOperation::Write(_)) && !acknowledge_incomplete_device
+            {
+                app.notification = Some(
+                    "A device write cancellation requires the incomplete-device warning.".into(),
+                );
+                return None;
+            }
+            let job_id = session.background_job_id;
+            let before = app.background_jobs.get(job_id).map(|job| job.status);
+            app.background_jobs.request_cancellation(job_id);
+            if before == app.background_jobs.get(job_id).map(|job| job.status) {
+                app.notification = Some("The Wic cancellation request was rejected.".into());
+                return None;
+            }
+            return Some(Effect::CancelWicSession(id));
+        }
+        Action::RejectWicSessionCancellation { id, message } => {
+            let Some(job_id) = wic_job_id(app, id) else {
+                note_stale_wic_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Cancelling], |job| {
+                    job.status = BackgroundJobStatus::Running;
+                });
+            app.notification = Some(format!("Wic cancellation failed: {message}"));
+        }
+        Action::CancelWicSession {
+            id,
+            exit_code,
+            finished_at,
+        } => {
+            if !matches!(
+                wic_job_id(app, id).and_then(|job_id| app.background_jobs.get(job_id)),
+                Some(BackgroundJob {
+                    status: BackgroundJobStatus::Cancelling,
+                    ..
+                })
+            ) {
+                note_stale_wic_event(app);
+                return None;
+            }
+            let is_device_write = matches!(
+                app.wic_session(id).map(|session| &session.operation),
+                Some(WicOperation::Write(_))
+            );
+            let Some(job_id) = mutate_wic_session(app, id, |session| session.exit_code = exit_code)
+            else {
+                note_stale_wic_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Cancelling], |job| {
+                    job.status = BackgroundJobStatus::Cancelled;
+                    job.finished_at = Some(finished_at);
+                    if is_device_write {
+                        job.error = Some(BackgroundJobError {
+                            summary: "Wic device write cancelled".into(),
+                            detail: Some("The target device may be incomplete.".into()),
+                        });
+                    }
                 });
         }
         Action::BeginBuildTargetEdit => {
@@ -7986,6 +8647,14 @@ pub enum Effect {
         request: QemuLaunchRequest,
     },
     CancelQemuSession(QemuSessionId),
+    InspectWicCapability,
+    GetWicOutputs(WicOutputInventoryRequest),
+    GetWicDevices(WicDeviceInventoryRequest),
+    StartWicSession {
+        id: WicSessionId,
+        operation: WicOperation,
+    },
+    CancelWicSession(WicSessionId),
     GetRecipeMetadata(String),
     GetVariable(VariableIdentity),
     WriteConfigAssignment(ConfigEditRequest),
@@ -13233,6 +13902,234 @@ mod tests {
                 .get(app.qemu_session(id).expect("session").background_job_id)
                 .map(|job| job.status),
             Some(BackgroundJobStatus::Running)
+        );
+    }
+
+    fn wic_model_capability() -> WicCapability {
+        WicCapability::Available {
+            executable: "/opt/poky/scripts/wic".into(),
+            kickstarts: vec![WicKickstart {
+                identity: WicKickstartIdentity {
+                    name: "directdisk".into(),
+                    path: Some("/layers/meta/wic/directdisk.wks".into()),
+                },
+                source: "part / --source rootfs --fstype=ext4 --size=64".into(),
+                partitions: vec![WicPartitionSummary {
+                    mount_point: Some("/".into()),
+                    filesystem: Some("ext4".into()),
+                    source_plugin: Some("rootfs".into()),
+                    size_mib: Some(64),
+                    alignment_kib: None,
+                }],
+                limitations: Vec::new(),
+            }],
+            image_targets: vec!["core-image-minimal".into()],
+        }
+    }
+
+    #[test]
+    fn wic_model_reducer_correlates_creation_inventory_and_lifecycle() {
+        let mut app = App::new(20, 20_000);
+        app.wic_capability = wic_model_capability();
+        let draft = WicCreateDraft {
+            machine: "qemux86-64".into(),
+            image: "core-image-minimal".into(),
+            kickstart: WicKickstartIdentity {
+                name: "directdisk".into(),
+                path: Some("/layers/meta/wic/directdisk.wks".into()),
+            },
+            output_directory: "/build/wic-output".into(),
+            generate_bmap: true,
+            compression: WicCompression::None,
+        };
+        let preview = draft.preview(&app.wic_capability).unwrap();
+        let Some(Effect::StartWicSession { id, operation }) =
+            update(&mut app, Action::StartConfirmedWicCreate(preview))
+        else {
+            panic!("Wic start effect");
+        };
+        assert!(matches!(operation, WicOperation::Create(_)));
+        let background_job_id = app.wic_session(id).unwrap().background_job_id;
+        assert_eq!(
+            background_job_id,
+            BackgroundJobId(WIC_BACKGROUND_JOB_NAMESPACE | id.0)
+        );
+        assert_ne!(
+            background_job_id,
+            qemu_background_job_id(QemuSessionId(id.0))
+        );
+        let _ = update(
+            &mut app,
+            Action::WicSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::WicSessionRunning { id });
+        let _ = update(
+            &mut app,
+            Action::AppendWicSessionOutput {
+                id,
+                stream: WicOutputStream::Stdout,
+                line: "creating".into(),
+                truncated: false,
+                timestamp: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let output = WicOutput {
+            identity: WicOutputIdentity {
+                path: "/build/wic-output/image.wic".into(),
+                size_bytes: 1024,
+                modified_unix_seconds: 1,
+            },
+            kind: WicOutputKind::Wic,
+        };
+        let _ = update(
+            &mut app,
+            Action::CompleteWicSession {
+                id,
+                exit_code: 0,
+                outputs: vec![output.clone()],
+                limitations: vec!["dynamic partition size".into()],
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert_eq!(
+            app.background_jobs
+                .get(background_job_id)
+                .map(|job| job.status),
+            Some(BackgroundJobStatus::Succeeded)
+        );
+        assert!(matches!(
+            &app.wic_outputs,
+            WicOutputInventoryState::Partial { outputs, .. } if outputs == &vec![output]
+        ));
+
+        let ignored = app.background_jobs.ignored_transitions;
+        let _ = update(
+            &mut app,
+            Action::WicSessionRunning {
+                id: WicSessionId(99_999),
+            },
+        );
+        assert_eq!(app.background_jobs.ignored_transitions, ignored + 1);
+    }
+
+    #[test]
+    fn wic_model_device_write_requires_exact_phrase_and_cancellation_warning() {
+        let mut app = App::new(20, 20_000);
+        app.wic_capability = wic_model_capability();
+        let image = WicOutputIdentity {
+            path: "/build/wic-output/image.wic".into(),
+            size_bytes: 1024,
+            modified_unix_seconds: 1,
+        };
+        app.wic_outputs = WicOutputInventoryState::Available {
+            request: WicOutputInventoryRequest {
+                generation: 1,
+                output_directory: "/build/wic-output".into(),
+            },
+            outputs: vec![WicOutput {
+                identity: image.clone(),
+                kind: WicOutputKind::Wic,
+            }],
+        };
+        let device = WicDevice {
+            identity: WicDeviceIdentity {
+                path: "/dev/sdz".into(),
+                major_minor: "8:240".into(),
+                size_bytes: 2048,
+                model: Some("test".into()),
+                serial: None,
+                transport: Some("usb".into()),
+            },
+            removable: true,
+            writable: true,
+            read_only: false,
+            descendant_mounts: Vec::new(),
+            unavailable_reason: None,
+        };
+        app.wic_devices = WicDeviceInventoryState::Available {
+            request: WicDeviceInventoryRequest {
+                generation: 1,
+                image: image.clone(),
+            },
+            devices: vec![device.clone()],
+        };
+        assert!(
+            update(
+                &mut app,
+                Action::StartConfirmedWicDeviceWrite {
+                    image: image.clone(),
+                    device: device.identity.clone(),
+                    phrase: "WRITE /dev/sdy".into(),
+                },
+            )
+            .is_none()
+        );
+        let Some(Effect::StartWicSession { id, operation }) = update(
+            &mut app,
+            Action::StartConfirmedWicDeviceWrite {
+                image,
+                device: device.identity,
+                phrase: "WRITE /dev/sdz".into(),
+            },
+        ) else {
+            panic!("Wic write start effect");
+        };
+        assert!(matches!(operation, WicOperation::Write(_)));
+        let _ = update(
+            &mut app,
+            Action::WicSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::WicSessionRunning { id });
+        assert!(
+            update(
+                &mut app,
+                Action::ConfirmWicSessionCancellation {
+                    id,
+                    acknowledge_incomplete_device: false,
+                },
+            )
+            .is_none()
+        );
+        assert_eq!(
+            app.background_jobs
+                .get(app.wic_session(id).unwrap().background_job_id)
+                .map(|job| job.status),
+            Some(BackgroundJobStatus::Running)
+        );
+        assert_eq!(
+            update(
+                &mut app,
+                Action::ConfirmWicSessionCancellation {
+                    id,
+                    acknowledge_incomplete_device: true,
+                },
+            ),
+            Some(Effect::CancelWicSession(id))
+        );
+        let _ = update(
+            &mut app,
+            Action::CancelWicSession {
+                id,
+                exit_code: Some(130),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let job = app
+            .background_jobs
+            .get(app.wic_session(id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(job.status, BackgroundJobStatus::Cancelled);
+        assert!(
+            job.error
+                .as_ref()
+                .and_then(|error| error.detail.as_deref())
+                .is_some_and(|detail| detail.contains("incomplete"))
         );
     }
 }

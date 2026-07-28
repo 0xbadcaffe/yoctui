@@ -2,55 +2,54 @@
 
 ## Active task
 
-**ID:** WIC-MODEL-001
-**Title:** Add typed Wic creation and device-write state
+**ID:** WIC-ADAPTER-001
+**Title:** Discover kickstarts and execute Wic creation safely
 
 ## Objective
 
-Add the pure typed identities, bounded inventories, deterministic previews,
-shared-job lifecycle, and destructive confirmation state used by the Wic
-creation and device-write children.
+Add canonical Wic/kickstart capability discovery, bounded kickstart partition
+preview parsing, independent cooked-mode command revalidation, cancellable
+execution, and exact generated-output scanning.
 
 ## Required work
 
-1. Inspect the image, QEMU, and background-job model/reducer implementation
-   before writing code; reuse their lifecycle and correlation behavior.
-2. Add a dedicated pure `wic` model module for canonical tool, image,
-   kickstart, generated-output, and block-device identities.
-3. Add bounded typed capability, kickstart source/partition preview, output
-   inventory, and device inventory states with deterministic normalization and
-   explicit partial/failure/unavailable distinctions.
-4. Add exact cooked-mode creation and device-write requests, drafts, and
-   deterministic argument previews. Validate normalized absolute paths, typed
-   options, exact inventory membership, output bounds, and
-   `WRITE <canonical-device-path>` without filesystem access.
-5. Add stable Wic creation/write sessions backed by disjoint shared background
-   jobs, bounded stream-tagged output, stale-event rejection, all terminal
-   outcomes, cancellation confirmation, and a second write-cancellation
-   warning.
-6. Add reducer actions/effects and mechanical app normalization for capability,
-   inventories, start/cancel, output, and terminal events. Do not parse raw
-   adapter/process text in the app.
-7. Cover normal, invalid, stale, bounded, destructive-confirmation, and
-   lifecycle paths with `wic_model` tests.
-8. Update architecture only if implementation changes the reconciled boundary,
-   then mark the child done and hand off to `WIC-ADAPTER-001`.
+1. Inspect the QEMU/image adapters and current Wic scripts in the active Yocto
+   source before writing code.
+2. Add `yoctui-bitbake::wic` capability inspection for an explicit executable
+   or active PATH plus bounded deterministic `wic list images` parsing and
+   configured canonical `.wks`/`.wks.in` files.
+3. Read kickstart sources without following symlinks, bound bytes/lines, and
+   parse only typed `part`/`partition` fields needed by the preview. Preserve
+   unsupported/dynamic syntax as explicit limitations.
+4. Independently rebuild the exact cooked-mode native argument vector from a
+   model preview and reject path, identity, option, or argument tampering.
+5. Add a one-child process-group runner with bounded stdout/stderr, timeout,
+   graceful/forced cancellation, duplicate rejection, and typed events.
+6. Snapshot the output directory before launch and after successful completion;
+   return only new canonical regular non-symlink files beneath the exact root,
+   with typed kind, size, and modification time. Report empty/partial results
+   honestly.
+7. Add fake-process/filesystem tests named `wic_adapter` for discovery, parsing,
+   exact arguments, output scanning, malformed/oversized/symlink inputs, every
+   terminal outcome, and cancellation.
+8. Add mechanical app normalization for adapter events, run focused and
+   baseline checks, then mark the child done and hand off to
+   `WIC-UI-MODEL-001`. Do not claim live Wic compatibility from fake tests.
 
 ## Definition of done
 
-- All Wic domain/reducer state is pure, bounded, and identity-correlated.
-- Creation and write previews are deterministic and shell-free.
-- Device-write state cannot emit a start effect without exact typed phrase and
-  confirmation gates.
-- Shared jobs retain all lifecycle/output/terminal history without colliding
-  with BitBake, Devtool, or QEMU IDs.
+- Capability and kickstart previews are canonical, bounded, and typed.
+- Creation commands are independently validated and shell-free.
+- Runner output and lifecycle are bounded, cancellable, and typed.
+- Only exact new files under the requested output root become typed outputs.
+- Fake coverage is not presented as live compatibility.
 - Focused and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model wic_model
-cargo test -p yoctui-app wic_model
+cargo test -p yoctui-bitbake wic_adapter
+cargo test -p yoctui-app wic_adapter
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
