@@ -774,6 +774,9 @@ pub enum Dialog {
     QemuLaunch(QemuLaunchDialog),
     QemuLaunchConfirmation(QemuLaunchPreview),
     QemuCancellationConfirmation(QemuSessionId),
+    WicCreate(WicCreateDialog),
+    WicCreateConfirmation(WicCreatePreview),
+    WicCancellationConfirmation(WicSessionId),
     RecipeTaskConfirmation(BuildRequest),
     RecipeTaskPicker(RecipeTaskPicker),
     SignatureTaskPicker(SignatureTaskPicker),
@@ -2103,6 +2106,7 @@ pub struct App {
     pub qemu_session_generation: u64,
     pub wic_capability: WicCapability,
     pub wic_outputs: WicOutputInventoryState,
+    pub wic_output_selection: Option<WicOutputIdentity>,
     pub wic_output_generation: u64,
     pub wic_devices: WicDeviceInventoryState,
     pub wic_device_generation: u64,
@@ -2188,6 +2192,7 @@ impl App {
             qemu_session_generation: 0,
             wic_capability: WicCapability::default(),
             wic_outputs: WicOutputInventoryState::default(),
+            wic_output_selection: None,
             wic_output_generation: 0,
             wic_devices: WicDeviceInventoryState::default(),
             wic_device_generation: 0,
@@ -2408,6 +2413,51 @@ impl App {
     }
     pub fn latest_wic_session(&self) -> Option<&WicSession> {
         self.wic_sessions.back()
+    }
+    pub fn wic_output_rows(&self) -> &[WicOutput] {
+        match &self.wic_outputs {
+            WicOutputInventoryState::Available { outputs, .. }
+            | WicOutputInventoryState::Partial { outputs, .. } => outputs,
+            _ => &[],
+        }
+    }
+    pub fn selected_wic_output(&self) -> Option<&WicOutput> {
+        let selected = self.wic_output_selection.as_ref()?;
+        self.wic_output_rows()
+            .iter()
+            .find(|output| &output.identity == selected)
+    }
+    pub fn wic_create_unavailable_reason(&self) -> Option<String> {
+        if self.active_wic_session().is_some() {
+            return Some("A managed Wic operation is already active.".into());
+        }
+        let Some(artifact) = self.selected_image_artifact() else {
+            return Some("Select a deployed image artifact first.".into());
+        };
+        let WicCapability::Available {
+            kickstarts,
+            image_targets,
+            ..
+        } = &self.wic_capability
+        else {
+            return Some(match &self.wic_capability {
+                WicCapability::NotInspected => "Wic capability has not been inspected.".into(),
+                WicCapability::MissingTool => "wic is not available.".into(),
+                WicCapability::MissingKickstarts => "No Wic kickstarts are available.".into(),
+                WicCapability::Failed { message } => {
+                    format!("Wic capability inspection failed: {message}")
+                }
+                WicCapability::Available { .. } => unreachable!(),
+            });
+        };
+        if kickstarts.is_empty()
+            || !image_targets
+                .iter()
+                .any(|target| target == &artifact.identity.image)
+        {
+            return Some("The selected image is not in the inspected Wic capability.".into());
+        }
+        None
     }
     pub fn qemu_launch_unavailable_reason(&self) -> Option<String> {
         if self.active_qemu_session().is_some() {
@@ -2711,6 +2761,28 @@ pub enum Action {
     },
     InspectWicCapability,
     WicCapabilityLoaded(WicCapability),
+    BeginSelectedWicCreate,
+    SelectWicCreateField {
+        delta: isize,
+    },
+    ActivateWicCreateField,
+    CycleWicCreateChoice {
+        backwards: bool,
+    },
+    AppendWicCreateField(char),
+    BackspaceWicCreateField,
+    FinishWicCreateFieldEdit,
+    PreviewWicCreate,
+    CancelWicCreate,
+    CancelWicCreatePreview,
+    ConfirmWicCreate,
+    SelectWicOutput {
+        delta: isize,
+    },
+    OpenSelectedWicOutput,
+    BeginActiveWicSessionCancellation,
+    BeginActiveImageRuntimeCancellation,
+    CancelWicSessionCancellation,
     BeginWicOutputInventory(WicOutputInventoryRequest),
     WicOutputInventoryLoaded {
         request: WicOutputInventoryRequest,
@@ -4041,6 +4113,17 @@ fn note_stale_wic_event(app: &mut App) {
     app.background_jobs.ignored_transitions += 1;
 }
 
+fn reconcile_wic_output_selection(app: &mut App) {
+    let rows = app.wic_output_rows();
+    let selected_is_present = app
+        .wic_output_selection
+        .as_ref()
+        .is_some_and(|selected| rows.iter().any(|row| &row.identity == selected));
+    if !selected_is_present {
+        app.wic_output_selection = rows.first().map(|row| row.identity.clone());
+    }
+}
+
 fn queue_wic_session(app: &mut App, operation: WicOperation) -> Option<Effect> {
     if app.active_wic_session().is_some() {
         app.notification = Some("A managed Wic operation is already active.".into());
@@ -5188,6 +5271,170 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::WicCapabilityLoaded(capability) => {
             app.wic_capability = normalize_wic_capability(capability);
         }
+        Action::BeginSelectedWicCreate => {
+            if let Some(reason) = app.wic_create_unavailable_reason() {
+                app.notification = Some(reason);
+                return None;
+            }
+            let artifact = app
+                .selected_image_artifact()
+                .cloned()
+                .expect("checked above");
+            let WicCapability::Available { kickstarts, .. } = &app.wic_capability else {
+                unreachable!("checked above")
+            };
+            let output_directory = artifact
+                .identity
+                .path
+                .parent()
+                .unwrap_or(Path::new("/"))
+                .display()
+                .to_string();
+            open_dialog(
+                app,
+                Dialog::WicCreate(WicCreateDialog::new(WicCreateDraft {
+                    machine: artifact.identity.machine,
+                    image: artifact.identity.image,
+                    kickstart: kickstarts[0].identity.clone(),
+                    output_directory,
+                    generate_bmap: true,
+                    compression: WicCompression::None,
+                })),
+            );
+        }
+        Action::SelectWicCreateField { delta } => {
+            if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut()
+                && !dialog.editing
+            {
+                dialog.selected_field = dialog.selected_field.shifted(delta);
+            }
+        }
+        Action::ActivateWicCreateField => {
+            let capability = app.wic_capability.clone();
+            if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut() {
+                if dialog.selected_field.is_read_only() {
+                    app.notification = Some("Wic machine identity is read-only.".into());
+                } else if dialog.selected_field == WicCreateField::OutputDirectory {
+                    dialog.editing = true;
+                    dialog.validation_error = None;
+                } else if dialog.cycle_choice(&capability, false) {
+                    dialog.validation_error = None;
+                }
+            }
+        }
+        Action::CycleWicCreateChoice { backwards } => {
+            let capability = app.wic_capability.clone();
+            if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut()
+                && !dialog.editing
+                && dialog.cycle_choice(&capability, backwards)
+            {
+                dialog.validation_error = None;
+            }
+        }
+        Action::AppendWicCreateField(character) => {
+            if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut()
+                && dialog.editing
+                && !character.is_control()
+                && let Some((input, maximum)) = dialog.selected_text_mut()
+                && input.len() + character.len_utf8() <= maximum
+            {
+                input.push(character);
+                dialog.validation_error = None;
+            }
+        }
+        Action::BackspaceWicCreateField => {
+            if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut()
+                && dialog.editing
+                && let Some((input, _)) = dialog.selected_text_mut()
+            {
+                input.pop();
+                dialog.validation_error = None;
+            }
+        }
+        Action::FinishWicCreateFieldEdit => {
+            if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut() {
+                dialog.editing = false;
+            }
+        }
+        Action::PreviewWicCreate => {
+            let Some(Dialog::WicCreate(dialog)) = app.active_dialog().cloned() else {
+                app.notification = Some("No Wic creation draft is active.".into());
+                return None;
+            };
+            match dialog.draft.preview(&app.wic_capability) {
+                Ok(preview) => replace_dialog(app, Dialog::WicCreateConfirmation(preview)),
+                Err(message) => {
+                    if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut() {
+                        dialog.validation_error = Some(message.into());
+                    }
+                    app.notification = Some(message.into());
+                }
+            }
+        }
+        Action::CancelWicCreate => {
+            if matches!(app.active_dialog(), Some(Dialog::WicCreate(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::CancelWicCreatePreview => {
+            if matches!(app.active_dialog(), Some(Dialog::WicCreateConfirmation(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::ConfirmWicCreate => {
+            let Some(Dialog::WicCreateConfirmation(preview)) = app.active_dialog().cloned() else {
+                app.notification = Some("No Wic creation is awaiting confirmation.".into());
+                return None;
+            };
+            close_dialog(app);
+            return update(app, Action::StartConfirmedWicCreate(preview));
+        }
+        Action::SelectWicOutput { delta } => {
+            let rows = app.wic_output_rows();
+            if rows.is_empty() {
+                app.wic_output_selection = None;
+                return None;
+            }
+            let current = app
+                .wic_output_selection
+                .as_ref()
+                .and_then(|selected| rows.iter().position(|row| &row.identity == selected))
+                .unwrap_or(0);
+            let next = if delta.is_negative() {
+                current.saturating_sub(delta.unsigned_abs())
+            } else {
+                current.saturating_add(delta as usize).min(rows.len() - 1)
+            };
+            app.wic_output_selection = Some(rows[next].identity.clone());
+        }
+        Action::OpenSelectedWicOutput => {
+            let Some(output) = app.selected_wic_output() else {
+                app.notification = Some("Select a generated Wic output first.".into());
+                return None;
+            };
+            return Some(Effect::OpenInEditor(output.identity.path.clone()));
+        }
+        Action::BeginActiveWicSessionCancellation => {
+            let Some(id) = app.active_wic_session().map(|session| session.id) else {
+                app.notification = Some("No managed Wic operation is active.".into());
+                return None;
+            };
+            open_dialog(app, Dialog::WicCancellationConfirmation(id));
+        }
+        Action::BeginActiveImageRuntimeCancellation => {
+            if app.active_wic_session().is_some() {
+                return update(app, Action::BeginActiveWicSessionCancellation);
+            }
+            return update(app, Action::BeginActiveQemuSessionCancellation);
+        }
+        Action::CancelWicSessionCancellation => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::WicCancellationConfirmation(_))
+            ) {
+                close_dialog(app);
+            }
+        }
         Action::BeginWicOutputInventory(request) => {
             if let Err(message) = request.validate() {
                 app.notification = Some(format!("Wic outputs are unavailable: {message}."));
@@ -5232,6 +5479,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     };
                 }
             }
+            reconcile_wic_output_selection(app);
         }
         Action::WicOutputInventoryFailed { request, message } => {
             if !matches!(
@@ -5474,6 +5722,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                             limitations,
                         }
                     };
+                    reconcile_wic_output_selection(app);
                 }
             } else {
                 let message = format!("exit code {exit_code}");
@@ -5596,6 +5845,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             if before == app.background_jobs.get(job_id).map(|job| job.status) {
                 app.notification = Some("The Wic cancellation request was rejected.".into());
                 return None;
+            }
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::WicCancellationConfirmation(candidate)) if *candidate == id
+            ) {
+                close_dialog(app);
             }
             return Some(Effect::CancelWicSession(id));
         }
@@ -14130,6 +14385,107 @@ mod tests {
                 .as_ref()
                 .and_then(|error| error.detail.as_deref())
                 .is_some_and(|detail| detail.contains("incomplete"))
+        );
+    }
+
+    #[test]
+    fn wic_workspace_dialog_is_bounded_modal_and_stale_safe() {
+        let mut app = qemu_model_app();
+        app.wic_capability = wic_model_capability();
+        let _ = update(&mut app, Action::BeginSelectedWicCreate);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::WicCreate(WicCreateDialog {
+                selected_field: WicCreateField::Machine,
+                ..
+            }))
+        ));
+        let _ = update(&mut app, Action::SelectWicCreateField { delta: 3 });
+        let _ = update(&mut app, Action::ActivateWicCreateField);
+        for _ in 0..(MAX_WIC_OUTPUT_DIRECTORY_INPUT_BYTES + 10) {
+            let _ = update(&mut app, Action::AppendWicCreateField('x'));
+        }
+        let Some(Dialog::WicCreate(dialog)) = app.active_dialog() else {
+            panic!("Wic dialog");
+        };
+        assert_eq!(
+            dialog.draft.output_directory.len(),
+            MAX_WIC_OUTPUT_DIRECTORY_INPUT_BYTES
+        );
+        let _ = update(&mut app, Action::FinishWicCreateFieldEdit);
+        if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut() {
+            dialog.draft.output_directory = "relative/output".into();
+        }
+        let _ = update(&mut app, Action::PreviewWicCreate);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::WicCreate(WicCreateDialog {
+                validation_error: Some(_),
+                ..
+            }))
+        ));
+        let _ = update(&mut app, Action::CancelWicCreate);
+        assert!(app.active_dialog().is_none());
+        assert_eq!(app.focus, FocusTarget::Workspace);
+
+        let _ = update(&mut app, Action::BeginSelectedWicCreate);
+        let _ = update(&mut app, Action::PreviewWicCreate);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::WicCreateConfirmation(_))
+        ));
+        app.wic_capability = WicCapability::MissingTool;
+        assert!(update(&mut app, Action::ConfirmWicCreate).is_none());
+        assert!(app.active_wic_session().is_none());
+    }
+
+    #[test]
+    fn wic_workspace_output_selection_and_creation_cancellation_are_typed() {
+        let mut app = qemu_model_app();
+        app.wic_capability = wic_model_capability();
+        let _ = update(&mut app, Action::BeginSelectedWicCreate);
+        let _ = update(&mut app, Action::PreviewWicCreate);
+        let Some(Effect::StartWicSession { id, .. }) = update(&mut app, Action::ConfirmWicCreate)
+        else {
+            panic!("Wic start");
+        };
+        let _ = update(
+            &mut app,
+            Action::WicSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::WicSessionRunning { id });
+        let _ = update(&mut app, Action::BeginActiveImageRuntimeCancellation);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::WicCancellationConfirmation(candidate)) if *candidate == id
+        ));
+        let _ = update(&mut app, Action::CancelWicSessionCancellation);
+        assert!(app.active_dialog().is_none());
+
+        let output = WicOutput {
+            identity: WicOutputIdentity {
+                path: "/build/out/image.wic".into(),
+                size_bytes: 1,
+                modified_unix_seconds: 1,
+            },
+            kind: WicOutputKind::Wic,
+        };
+        app.wic_outputs = WicOutputInventoryState::Available {
+            request: WicOutputInventoryRequest {
+                generation: 1,
+                output_directory: "/build/out".into(),
+            },
+            outputs: vec![output.clone()],
+        };
+        let _ = update(&mut app, Action::SelectWicOutput { delta: 1 });
+        assert_eq!(app.wic_output_selection, Some(output.identity.clone()));
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedWicOutput),
+            Some(Effect::OpenInEditor(output.identity.path))
         );
     }
 }

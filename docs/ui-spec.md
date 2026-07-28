@@ -1357,8 +1357,10 @@ new regular non-symlink files canonically beneath the requested output
 directory and returns their exact path, kind, byte size, and modification time.
 Empty and partial output inventories remain honest. The Images Inspector shows
 the latest Wic request/job and generated outputs before general artifact
-metadata. `o` opens the selected generated output and `x` requests cancellation
-when a Wic creation job is active.
+metadata. `[`/`]` selects a generated output and `O` opens it; lower-case `o`
+continues to open the selected deployed artifact. `x` requests cancellation of
+the active managed Wic operation when one exists, otherwise it retains its
+managed-QEMU cancellation behavior.
 
 `D` on an exact uncompressed `.wic` or `.direct` generated/deployed image opens
 the protected removable-device flow. Device discovery is typed and bounded.
@@ -1387,7 +1389,8 @@ that requires an explicit opt-in hardware smoke test.
 All creation, preview, device picker, typed-phrase, command-preview, and
 cancellation dialogs trap focus and render safely at 80×24. The Images footer
 places `W create Wic` and `D write device` next to the existing lower-case `w`
-shortcut, which continues to open an already-associated Wic path.
+shortcut, which continues to open an already-associated Wic path. Generated
+output hints are `[/] select output` and `O open output`.
 
 ---
 
