@@ -977,12 +977,12 @@ notes = "A cancellable blocking adapter now validates the exact canonical SDK de
 id = "SDK-TOOLS-001"
 milestone = "M4"
 title = "Adapt SDK publication and native tools"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 52
 required = true
 depends_on = ["SDK-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake sdk_tool"]
-notes = "Resolve and validate oe-publish-sdk, oe-find-native-sysroot, and oe-run-native; independently reconstruct exact shell-free commands; validate extracted roots and child-only environments; stream bounded lifecycle/output/cancellation."
+notes = "The SDK tool adapter now discovers each canonical workspace tool independently, revalidates exact publication/native previews and identities, rejects stale installers/nonempty destinations/symlinks, parses one bounded strict extracted-SDK environment into a child-only map, and runs exact shell-free commands with bounded typed output, timeout, loss, nonzero, rejection, and graceful/forced cancellation outcomes. Eight fake-filesystem/process tests and all baseline checks pass; live SDK compatibility is not claimed."
 
 [[task]]
 id = "SDK-RENDER-001"
