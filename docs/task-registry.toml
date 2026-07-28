@@ -823,12 +823,12 @@ notes = "Parent gate split into typed Wic state, safe cooked-mode creation, resp
 id = "WIC-MODEL-001"
 milestone = "M4"
 title = "Add typed Wic creation and device-write state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["JOB-002", "IMAGES-MODEL-001"]
 verify = ["cargo test -p yoctui-model wic_model", "cargo test -p yoctui-app wic_model"]
-notes = "Add pure bounded identities, capability/inventory states, partition summaries, creation/write drafts and previews, shared-job lifecycle, stale-event correlation, and destructive confirmation gates."
+notes = "Pure bounded Wic identities retain exact capability/output/device request correlation, normalized kickstart partitions and limitations, deterministic cooked-mode creation/write previews, disjoint shared-job history, stale-event rejection, all terminal outcomes, exact WRITE phrase gating, and the additional incomplete-device cancellation acknowledgement. Mechanical app event normalization and baseline checks pass."
 
 [[task]]
 id = "WIC-ADAPTER-001"

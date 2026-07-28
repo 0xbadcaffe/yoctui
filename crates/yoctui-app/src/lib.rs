@@ -9,7 +9,106 @@ use yoctui_model::{
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
     LayerInspectorMode, LayerRelationship, LayerRelationships, QemuOutputStream, QemuSessionId,
     RecipeDependencies, Screen, Severity, TaskId, TaskInfo, VariableDetail, VariableIdentity,
+    WicOutput, WicOutputStream, WicSessionId,
 };
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WicSessionEvent {
+    Starting,
+    Started,
+    Output {
+        stream: WicOutputStream,
+        line: String,
+        truncated: bool,
+    },
+    Completed {
+        exit_code: i32,
+        outputs: Vec<WicOutput>,
+        limitations: Vec<String>,
+    },
+    Failed {
+        message: String,
+        exit_code: Option<i32>,
+    },
+    Cancelled {
+        forced: bool,
+        exit_code: Option<i32>,
+    },
+    CancellationRejected {
+        message: String,
+    },
+    Lost {
+        message: String,
+    },
+}
+
+pub fn wic_actions_for_session_event(
+    id: WicSessionId,
+    event: WicSessionEvent,
+    timestamp: SystemTime,
+) -> Vec<Action> {
+    match event {
+        WicSessionEvent::Starting => vec![Action::WicSessionStarting {
+            id,
+            started_at: timestamp,
+        }],
+        WicSessionEvent::Started => vec![Action::WicSessionRunning { id }],
+        WicSessionEvent::Output {
+            stream,
+            line,
+            truncated,
+        } => vec![Action::AppendWicSessionOutput {
+            id,
+            stream,
+            line,
+            truncated,
+            timestamp,
+        }],
+        WicSessionEvent::Completed {
+            exit_code,
+            outputs,
+            limitations,
+        } => vec![Action::CompleteWicSession {
+            id,
+            exit_code,
+            outputs,
+            limitations,
+            finished_at: timestamp,
+        }],
+        WicSessionEvent::Failed { message, exit_code } => vec![Action::FailWicSession {
+            id,
+            message,
+            exit_code,
+            finished_at: timestamp,
+        }],
+        WicSessionEvent::Cancelled { forced, exit_code } => {
+            let mut actions = Vec::new();
+            if forced {
+                actions.push(Action::AppendWicSessionOutput {
+                    id,
+                    stream: WicOutputStream::Stderr,
+                    line: "Wic cancellation required forced termination".into(),
+                    truncated: false,
+                    timestamp,
+                });
+            }
+            actions.push(Action::CancelWicSession {
+                id,
+                exit_code,
+                finished_at: timestamp,
+            });
+            actions
+        }
+        WicSessionEvent::CancellationRejected { message } => {
+            vec![Action::RejectWicSessionCancellation { id, message }]
+        }
+        WicSessionEvent::Lost { message } => vec![Action::LoseWicSession {
+            id,
+            message,
+            finished_at: timestamp,
+        }],
+    }
+}
 
 pub fn qemu_actions_for_runner_event(
     id: QemuSessionId,
@@ -3215,6 +3314,60 @@ mod tests {
         assert_eq!(
             qemu_cancellation_confirmation_action(Input::Esc),
             Some(Action::CancelQemuSessionCancellation)
+        );
+    }
+    #[test]
+    fn wic_model_normalizes_typed_session_events_without_parsing_output() {
+        let id = WicSessionId(7);
+        let timestamp = SystemTime::UNIX_EPOCH;
+        assert_eq!(
+            wic_actions_for_session_event(id, WicSessionEvent::Starting, timestamp),
+            vec![Action::WicSessionStarting {
+                id,
+                started_at: timestamp
+            }]
+        );
+        assert_eq!(
+            wic_actions_for_session_event(
+                id,
+                WicSessionEvent::Output {
+                    stream: WicOutputStream::Stderr,
+                    line: "raw adapter text".into(),
+                    truncated: true,
+                },
+                timestamp,
+            ),
+            vec![Action::AppendWicSessionOutput {
+                id,
+                stream: WicOutputStream::Stderr,
+                line: "raw adapter text".into(),
+                truncated: true,
+                timestamp,
+            }]
+        );
+        assert_eq!(
+            wic_actions_for_session_event(
+                id,
+                WicSessionEvent::Cancelled {
+                    forced: true,
+                    exit_code: Some(137),
+                },
+                timestamp,
+            ),
+            vec![
+                Action::AppendWicSessionOutput {
+                    id,
+                    stream: WicOutputStream::Stderr,
+                    line: "Wic cancellation required forced termination".into(),
+                    truncated: false,
+                    timestamp,
+                },
+                Action::CancelWicSession {
+                    id,
+                    exit_code: Some(137),
+                    finished_at: timestamp,
+                }
+            ]
         );
     }
     #[test]

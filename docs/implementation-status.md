@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Add typed Wic creation and device-write state.
+Discover kickstarts and execute Wic creation safely.
 
 ## Current task
 
@@ -68,7 +68,7 @@ See `docs/current-task.md`.
 | QEMU launch/session model | DONE | Typed capability, exact artifact-bound launch validation, deterministic preview/confirmation, stable shared-job lifecycle, bounded stream output, failures, stale events, and confirmed cancellation are covered |
 | QEMU adapter | DONE | Canonical executable/artifact discovery, exact preview revalidation, shell-free native arguments, bounded stream events, success/failure/loss, duplicate rejection, and graceful/forced process-group cancellation are covered by fake processes; live compatibility is not claimed |
 | QEMU dialogs/session UI | DONE | Bounded modal input, responsive capability/session rendering, and independent CLI-owned inspection/execution/polling/cancellation pass the complete cross-layer parent gate; fake runners do not establish live compatibility |
-| Wic workflow | IN_PROGRESS | The parent is split into typed state, cooked-mode discovery/execution, responsive creation UI/CLI, independently revalidated device discovery/writing, and protected write UI/CLI children; the typed model child is active |
+| Wic workflow | IN_PROGRESS | Pure typed creation/device state and lifecycle are complete; canonical Wic/kickstart discovery, bounded partition parsing, safe cooked-mode execution, and exact output scanning are active |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -79,14 +79,13 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `WIC-MODEL-001` — add typed Wic creation and device-write state
-2. `WIC-ADAPTER-001` — discover kickstarts and execute Wic creation safely
-3. `WIC-UI-MODEL-001` — add Wic workspace dialog and input state
-4. `WIC-UI-RENDER-001` — render responsive Wic creation and output UI
-5. `WIC-UI-CLI-001` — integrate Wic creation in the CLI
-6. `WIC-WRITE-ADAPTER-001` — discover and revalidate safe write devices
-7. `WIC-WRITE-UI-CLI-001` — integrate protected device writing
-8. `WIC-001` — verify the complete Wic parent gate
+1. `WIC-ADAPTER-001` — discover kickstarts and execute Wic creation safely
+2. `WIC-UI-MODEL-001` — add Wic workspace dialog and input state
+3. `WIC-UI-RENDER-001` — render responsive Wic creation and output UI
+4. `WIC-UI-CLI-001` — integrate Wic creation in the CLI
+5. `WIC-WRITE-ADAPTER-001` — discover and revalidate safe write devices
+6. `WIC-WRITE-UI-CLI-001` — integrate protected device writing
+7. `WIC-001` — verify the complete Wic parent gate
 
 ## Rules
 
