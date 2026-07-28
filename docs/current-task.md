@@ -2,44 +2,40 @@
 
 ## Active task
 
-**ID:** WIC-001
-**Title:** Wic image workflow
+**ID:** TEST-001
+**Title:** Unified test execution and results
 
 ## Objective
 
-Close the Wic parent completion gate by verifying all completed cooked-mode
-creation and protected device-writing child tasks together against the
-authoritative product, UI, and architecture contracts.
+Implement one unified, typed testing workflow for Yocto selftests, testimage,
+testsdk, ptest, and resulttool without reducing the product to an unstructured
+shell command surface.
 
 ## Required work
 
-1. Re-read every Wic requirement in `docs/ui-spec.md` and the completed Wic
-   child-task evidence.
-2. Run the complete Wic verification matrix and baseline checks without
-   weakening or bypassing any test.
-3. Reconcile only genuine remaining contract gaps; do not duplicate the
-   completed cross-layer implementation.
-4. Keep live Wic and removable-media safety claims explicitly separate from
-   fake filesystem, process, and device evidence.
-5. Mark the parent complete only when all child tasks and verification pass,
-   then select the next eligible highest-priority incomplete task.
+1. Inspect existing testing-related model, app, adapter, UI, CLI, and
+   documentation behavior before writing code.
+2. Reconcile the testing requirements in `docs/ui-spec.md`,
+   `docs/architecture.md`, and `docs/product-roadmap.md`.
+3. If the outcome is too large for one coherent commit, split `TEST-001` into
+   dependency-ordered atomic child tasks and select the first child.
+4. Cover pure state, reducer transitions, process/bridge integration, and
+   Ratatui TestBackend behavior as applicable.
+5. Keep test identities, execution lifecycle, retained results, comparison,
+   export, cancellation, failure, and unavailable-tool meaning typed.
+6. Do not claim live Yocto test compatibility from mocked evidence.
 
 ## Definition of done
 
-- All required Wic child tasks are `DONE`.
-- The combined Wic model, app, adapter, UI, and CLI verification passes.
-- The baseline checks pass.
-- Wic status and evidence are reconciled without claiming unperformed live
-  validation or hardware safety.
+- The task is split first when necessary to preserve coherent commits.
+- All specified test families have typed, reachable workflows.
+- Results, comparisons, export, lifecycle, and failures remain explicit.
+- Focused and baseline verification pass without unsupported live claims.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model wic
-cargo test -p yoctui-bitbake wic
-cargo test -p yoctui-app wic
-cargo test -p yoctui-ui wic
-cargo test -p yoctui -- wic
+cargo test -p yoctui-app test_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
