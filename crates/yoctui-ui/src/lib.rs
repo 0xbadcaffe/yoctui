@@ -17,8 +17,10 @@ use yoctui_model::{
     QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode, QemuSerialMode,
     QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity,
     SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, TaskFilterField,
-    TaskRow, TaskState, Theme, VariableIdentity, config_comparison, config_edit_disabled_reason,
-    config_source_disabled_reason, format_duration, selected_config_copy_value,
+    TaskRow, TaskState, Theme, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
+    WicCreateField, WicCreatePreview, WicKickstart, WicOperation, WicOutputInventoryState,
+    WicSessionId, config_comparison, config_edit_disabled_reason, config_source_disabled_reason,
+    format_duration, selected_config_copy_value,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -295,7 +297,7 @@ fn active_yocto(app: &App) -> String {
 }
 
 fn source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
-    let bitbake_source = ["bb", "bbappend", "inc", "conf"]
+    let bitbake_source = ["bb", "bbappend", "inc", "conf", "wks", "wks.in"]
         .iter()
         .any(|extension| file_name.ends_with(&format!(".{extension}")));
     let markdown = file_name.ends_with(".md") || file_name.ends_with(".markdown");
@@ -327,7 +329,14 @@ fn source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
                     spans.push(Span::raw(code[..indent_len].to_owned()));
                 }
                 if [
-                    "inherit", "require", "include", "export", "addtask", "deltask",
+                    "inherit",
+                    "require",
+                    "include",
+                    "export",
+                    "addtask",
+                    "deltask",
+                    "part",
+                    "partition",
                 ]
                 .iter()
                 .any(|keyword| trimmed.starts_with(keyword))
@@ -445,7 +454,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ select | Enter detail | / search | R refresh | D dep kind | [/] dep | d follow | u back | o recipe | e provider | c cancel"
         }
         Screen::Images => {
-            "↑/↓ select | Q launch QEMU | x cancel QEMU | / search | R refresh | c cancel scan | b build | i image picker | o artifact | m manifest | l license | s SPDX | w Wic"
+            "↑/↓ select | Q QEMU | W create Wic | x cancel | [/] output | O open output | / search | R refresh | c scan | b build | i image | o artifact | m manifest | l license | s SPDX | w Wic"
         }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
@@ -466,6 +475,14 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Settings => {
             "↑/↓ select | ←/→ change | r retry save | Ctrl+P commands | Tab focus | q quit"
         }
+    }
+}
+
+fn responsive_footer_shortcuts(app: &App, width: u16) -> &'static str {
+    if app.screen == Screen::Images && width <= 90 {
+        "↑↓ R refresh Q QEMU W create Wic x cancel [/] output O open output o artifact w Wic"
+    } else {
+        footer_shortcuts(app)
     }
 }
 
@@ -535,7 +552,7 @@ pub fn render(frame: &mut Frame, app: &App) {
     );
     responsive_shell(frame, app, chunks[1], area.width);
     frame.render_widget(
-        Paragraph::new(footer_shortcuts(app)).style(palette.focus()),
+        Paragraph::new(responsive_footer_shortcuts(app, area.width)).style(palette.focus()),
         chunks[2],
     );
     if app.command_palette_open {
@@ -548,6 +565,12 @@ pub fn render(frame: &mut Frame, app: &App) {
         qemu_launch_confirmation(frame, app, preview, area);
     } else if let Some(Dialog::QemuCancellationConfirmation(id)) = app.active_dialog() {
         qemu_cancellation_confirmation(frame, app, *id, area);
+    } else if let Some(Dialog::WicCreate(dialog)) = app.active_dialog() {
+        wic_create_dialog(frame, app, dialog, area);
+    } else if let Some(Dialog::WicCreateConfirmation(preview)) = app.active_dialog() {
+        wic_create_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::WicCancellationConfirmation(id)) = app.active_dialog() {
+        wic_cancellation_confirmation(frame, app, *id, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);
     } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
@@ -2380,6 +2403,226 @@ fn qemu_cancellation_confirmation(frame: &mut Frame, app: &App, id: QemuSessionI
     );
 }
 
+fn wic_field_value(dialog: &WicCreateDialog, field: WicCreateField) -> String {
+    match field {
+        WicCreateField::Machine => dialog.draft.machine.clone(),
+        WicCreateField::Image => dialog.draft.image.clone(),
+        WicCreateField::Kickstart => dialog.draft.kickstart.name.clone(),
+        WicCreateField::OutputDirectory => dialog.draft.output_directory.clone(),
+        WicCreateField::GenerateBmap => if dialog.draft.generate_bmap {
+            "yes"
+        } else {
+            "no"
+        }
+        .into(),
+        WicCreateField::Compression => match dialog.draft.compression {
+            WicCompression::None => "none",
+            WicCompression::Gzip => "gzip",
+            WicCompression::Bzip2 => "bzip2",
+            WicCompression::Xz => "xz",
+        }
+        .into(),
+    }
+}
+
+fn wic_partition_summary(kickstart: &WicKickstart) -> String {
+    if kickstart.partitions.is_empty() {
+        return "none reported".into();
+    }
+    kickstart
+        .partitions
+        .iter()
+        .enumerate()
+        .map(|(index, partition)| {
+            format!(
+                "{}: mount={} fs={} source={} size={} MiB align={} KiB",
+                index + 1,
+                partition.mount_point.as_deref().unwrap_or("unavailable"),
+                partition.filesystem.as_deref().unwrap_or("unavailable"),
+                partition.source_plugin.as_deref().unwrap_or("unavailable"),
+                partition
+                    .size_mib
+                    .map_or_else(|| "dynamic".into(), |value| value.to_string()),
+                partition
+                    .alignment_kib
+                    .map_or_else(|| "unavailable".into(), |value| value.to_string()),
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn wic_limitations(kickstart: &WicKickstart) -> String {
+    if kickstart.limitations.is_empty() {
+        "none".into()
+    } else {
+        kickstart.limitations.join("\n")
+    }
+}
+
+fn wic_create_dialog(frame: &mut Frame, app: &App, dialog: &WicCreateDialog, area: Rect) {
+    let popup = qemu_popup_rect(area, 100, 20);
+    clear_popup(frame, app, popup);
+    let fields = [
+        WicCreateField::Machine,
+        WicCreateField::Image,
+        WicCreateField::Kickstart,
+        WicCreateField::OutputDirectory,
+        WicCreateField::GenerateBmap,
+        WicCreateField::Compression,
+    ];
+    let labels = [
+        "Machine",
+        "Image",
+        "Kickstart",
+        "Output directory",
+        "Generate bmap",
+        "Compression",
+    ];
+    let rows = fields.into_iter().zip(labels).map(|(field, label)| {
+        let selected = dialog.selected_field == field;
+        let marker = if field.is_read_only() {
+            " [read-only]"
+        } else if selected && dialog.editing {
+            " [editing]"
+        } else {
+            ""
+        };
+        Row::new([format!("{label}{marker}"), wic_field_value(dialog, field)])
+            .style(selected_style(app, selected))
+    });
+    let title = if popup.width < 80 {
+        "Create Wic | p preview | Esc close"
+    } else {
+        "Create Wic | ↑/↓ field ←/→ choice Enter edit p preview Esc close"
+    };
+    frame.render_widget(
+        Table::new(rows, [Constraint::Length(27), Constraint::Min(1)])
+            .header(Row::new(["Field", "Value"]).style(Style::default().bold()))
+            .block(Block::default().title(title).borders(Borders::ALL)),
+        popup,
+    );
+    if let Some(message) = &dialog.validation_error {
+        let palette = ThemePalette::for_app(app);
+        frame.render_widget(
+            Paragraph::new(format!("Validation: {message}"))
+                .style(palette.role(palette.error, Modifier::BOLD))
+                .wrap(Wrap { trim: false }),
+            Rect::new(
+                popup.x.saturating_add(1),
+                popup.y + popup.height.saturating_sub(3),
+                popup.width.saturating_sub(2),
+                2.min(popup.height.saturating_sub(1)),
+            ),
+        );
+    }
+}
+
+fn wic_create_confirmation(frame: &mut Frame, app: &App, preview: &WicCreatePreview, area: Rect) {
+    let popup = qemu_popup_rect(area, 100, area.height.saturating_sub(2).min(30));
+    clear_popup(frame, app, popup);
+    let partitions = wic_partition_summary(&preview.kickstart);
+    let limitations = wic_limitations(&preview.kickstart);
+    let argv = preview
+        .argv
+        .iter()
+        .enumerate()
+        .map(|(index, argument)| format!("[{index}]={}", argument.display()))
+        .collect::<Vec<_>>()
+        .join("  ");
+    let source_line_count = preview.kickstart.source.lines().count();
+    let source_limit = if popup.height <= 22 { 2 } else { 6 };
+    let mut lines = vec![
+        Line::from(format!(
+            "Machine: {} | Image: {}",
+            preview.request.machine, preview.request.image
+        )),
+        Line::from(format!(
+            "Kickstart: {} | Output: {}",
+            preview.request.kickstart.name,
+            preview.request.output_directory.display()
+        )),
+        Line::from(""),
+        Line::from(format!(
+            "Kickstart source (showing {} of {} lines):",
+            source_line_count.min(source_limit),
+            source_line_count
+        )),
+    ];
+    let mut source = source_preview(
+        &preview
+            .kickstart
+            .source
+            .lines()
+            .take(source_limit)
+            .collect::<Vec<_>>()
+            .join("\n"),
+        preview
+            .kickstart
+            .identity
+            .path
+            .as_ref()
+            .and_then(|path| path.file_name())
+            .and_then(|name| name.to_str())
+            .unwrap_or("kickstart.wks"),
+        app,
+    );
+    lines.append(&mut source.lines);
+    lines.extend([
+        Line::from(""),
+        Line::from(format!("Partitions: {partitions}")),
+        Line::from(format!("Limitations: {limitations}")),
+        Line::from(""),
+        Line::from(format!("Exact argument vector: {argv}")),
+        Line::from(""),
+        Line::from("Enter confirms creation. Esc closes."),
+    ]);
+    frame.render_widget(
+        Paragraph::new(Text::from(lines))
+            .block(
+                Block::default()
+                    .title("Confirm managed Wic creation")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
+fn wic_cancellation_confirmation(frame: &mut Frame, app: &App, id: WicSessionId, area: Rect) {
+    let popup = qemu_popup_rect(area, 76, 8);
+    clear_popup(frame, app, popup);
+    let detail = app.wic_session(id).map_or_else(
+        || format!("Wic operation {} is unavailable.", id.0),
+        |session| match &session.operation {
+            WicOperation::Create(request) => format!(
+                "Cancel Wic creation {}?\nImage: {}\nOutput: {}",
+                id.0,
+                request.image,
+                request.output_directory.display()
+            ),
+            WicOperation::Write(request) => format!(
+                "Cancel Wic device write {}?\nImage: {}\nDevice: {}",
+                id.0,
+                request.image.path.display(),
+                request.device.path.display()
+            ),
+        },
+    );
+    frame.render_widget(
+        Paragraph::new(format!(
+            "{detail}\n\nEnter confirms cancellation. Esc keeps it running."
+        ))
+        .block(
+            Block::default()
+                .title("Confirm Wic cancellation")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
 fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let recipe_count = app
         .workspace
@@ -2569,11 +2812,12 @@ fn image_artifact_inspector_text(app: &App) -> String {
         },
     );
     format!(
-        "runqemu capability\n{}\nLaunch: {}\n\n{}\n\nSelected artifact\n{artifact_text}",
+        "runqemu capability\n{}\nLaunch: {}\n\n{}\n{}\nSelected artifact\n{artifact_text}",
         qemu_capability_text(app),
         app.qemu_launch_unavailable_reason()
             .unwrap_or_else(|| "ready for selected artifact (Q)".into()),
-        qemu_session_text(app)
+        qemu_session_text(app),
+        wic_inspector_text(app),
     )
 }
 
@@ -2676,6 +2920,218 @@ fn qemu_session_text(app: &App) -> String {
         job.output.len().min(80),
         job.dropped_output_entries,
         output,
+    )
+}
+
+fn wic_inspector_text(app: &App) -> String {
+    let capability = match &app.wic_capability {
+        WicCapability::NotInspected => "not inspected".into(),
+        WicCapability::MissingTool => "missing wic executable".into(),
+        WicCapability::MissingKickstarts => "no kickstarts available".into(),
+        WicCapability::Failed { message } => format!("inspection failed: {message}"),
+        WicCapability::Available {
+            executable,
+            kickstarts,
+            image_targets,
+        } => format!(
+            "available: {}\nKickstarts: {}\nImages: {}",
+            executable.display(),
+            kickstarts.len(),
+            image_targets.len()
+        ),
+    };
+    let readiness = app
+        .wic_create_unavailable_reason()
+        .unwrap_or_else(|| "ready for selected image (W)".into());
+    if app.latest_wic_session().is_none()
+        && matches!(app.wic_outputs, WicOutputInventoryState::NotLoaded)
+        && !matches!(app.wic_capability, WicCapability::Available { .. })
+    {
+        return format!("Wic: {capability} | Create disabled | Outputs not loaded");
+    }
+    let selected_kickstart = {
+        let selected_identity = match app.active_dialog() {
+            Some(Dialog::WicCreate(dialog)) => Some(&dialog.draft.kickstart),
+            Some(Dialog::WicCreateConfirmation(preview)) => Some(&preview.request.kickstart),
+            _ => app
+                .latest_wic_session()
+                .and_then(|session| match &session.operation {
+                    WicOperation::Create(request) => Some(&request.kickstart),
+                    WicOperation::Write(_) => None,
+                }),
+        };
+        match &app.wic_capability {
+            WicCapability::Available { kickstarts, .. } => selected_identity
+                .and_then(|identity| {
+                    kickstarts
+                        .iter()
+                        .find(|kickstart| kickstart.identity == *identity)
+                })
+                .or_else(|| kickstarts.first()),
+            _ => None,
+        }
+    };
+    let session = app.latest_wic_session().map_or_else(
+        || "Managed Wic operation\nNo operation has been started.".into(),
+        |session| {
+            let Some(job) = app.background_jobs.get(session.background_job_id) else {
+                return format!("Managed Wic operation {}\nLifecycle unavailable.", session.id.0);
+            };
+            let request = match &session.operation {
+                WicOperation::Create(request) => format!(
+                    "create image={} kickstart={} output={}",
+                    request.image,
+                    request.kickstart.name,
+                    request.output_directory.display()
+                ),
+                WicOperation::Write(request) => format!(
+                    "write image={} device={}",
+                    request.image.path.display(),
+                    request.device.path.display()
+                ),
+            };
+            let output = job
+                .output
+                .iter()
+                .rev()
+                .take(40)
+                .map(|entry| {
+                    let source = match entry.source {
+                        yoctui_model::BackgroundJobOutputSource::Backend => "backend",
+                        yoctui_model::BackgroundJobOutputSource::Stdout => "stdout",
+                        yoctui_model::BackgroundJobOutputSource::Stderr => "stderr",
+                    };
+                    format!(
+                        "[{source}] {}{}",
+                        entry.message,
+                        if entry.truncated { " [truncated]" } else { "" }
+                    )
+                })
+                .collect::<Vec<_>>()
+                .into_iter()
+                .rev()
+                .collect::<Vec<_>>()
+                .join("\n");
+            let result = job
+                .result
+                .as_ref()
+                .map_or_else(|| "none".into(), |result| result.summary.clone());
+            let error = job.error.as_ref().map_or_else(
+                || session.error_detail.as_deref().unwrap_or("none").into(),
+                |error| {
+                    error.detail.as_ref().map_or_else(
+                        || error.summary.clone(),
+                        |detail| format!("{}: {detail}", error.summary),
+                    )
+                },
+            );
+            format!(
+                "Managed Wic operation {}\nStatus: {}\nRequest: {}\nQueued: {}\nStarted: {}\nFinished: {}\nExit: {}\nResult: {}\nError: {}\nRetained output: {} entries / {} bytes (showing latest {})\nDropped output: {} entries\nWarnings: {} | Errors: {}\nOutput:\n{}",
+                session.id.0,
+                match job.status {
+                    BackgroundJobStatus::Queued => "queued",
+                    BackgroundJobStatus::Starting => "starting",
+                    BackgroundJobStatus::Running => "running",
+                    BackgroundJobStatus::Cancelling => "cancelling",
+                    BackgroundJobStatus::Succeeded => "succeeded",
+                    BackgroundJobStatus::Failed => "failed",
+                    BackgroundJobStatus::Cancelled => "cancelled",
+                    BackgroundJobStatus::Lost => "lost",
+                },
+                request,
+                timestamp_text(job.queued_at),
+                job.started_at
+                    .map(timestamp_text)
+                    .unwrap_or_else(|| "unavailable".into()),
+                job.finished_at
+                    .map(timestamp_text)
+                    .unwrap_or_else(|| "unavailable".into()),
+                session
+                    .exit_code
+                    .map_or_else(|| "unavailable".into(), |value| value.to_string()),
+                result,
+                error,
+                job.output.len(),
+                job.retained_output_bytes,
+                job.output.len().min(40),
+                job.dropped_output_entries,
+                job.warnings,
+                job.errors,
+                if output.is_empty() { "none" } else { &output },
+            )
+        },
+    );
+    let outputs = match &app.wic_outputs {
+        WicOutputInventoryState::NotLoaded => "not loaded".into(),
+        WicOutputInventoryState::Loading { request } => format!(
+            "loading generation {} beneath {}",
+            request.generation,
+            request.output_directory.display()
+        ),
+        WicOutputInventoryState::Failed { request, message } => format!(
+            "failed generation {} beneath {}: {message}",
+            request.generation,
+            request.output_directory.display()
+        ),
+        WicOutputInventoryState::Available { request, outputs }
+        | WicOutputInventoryState::Partial {
+            request, outputs, ..
+        } => {
+            let rows = if outputs.is_empty() {
+                "none generated".into()
+            } else {
+                outputs
+                    .iter()
+                    .map(|output| {
+                        let selected = app.wic_output_selection.as_ref() == Some(&output.identity);
+                        format!(
+                            "{} {:?} {} ({} bytes, {}s)",
+                            if selected { "▶" } else { " " },
+                            output.kind,
+                            output.identity.path.display(),
+                            output.identity.size_bytes,
+                            output.identity.modified_unix_seconds,
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            };
+            format!(
+                "generation {} beneath {}\n{}",
+                request.generation,
+                request.output_directory.display(),
+                rows
+            )
+        }
+    };
+    let limitations = match &app.wic_outputs {
+        WicOutputInventoryState::Partial { limitations, .. } => limitations.join("\n"),
+        _ => "none".into(),
+    };
+    let kickstart = selected_kickstart.map_or_else(
+        || "Selected kickstart\nunavailable".into(),
+        |kickstart| {
+            format!(
+                "Selected kickstart\nName: {}\nPath: {}\nSource (bounded to {} bytes):\n{}\nPartitions:\n{}\nLimitations:\n{}",
+                kickstart.identity.name,
+                kickstart
+                    .identity
+                    .path
+                    .as_ref()
+                    .map_or_else(|| "canned name".into(), |path| path.display().to_string()),
+                yoctui_model::MAX_WIC_SOURCE_BYTES,
+                if kickstart.source.is_empty() {
+                    "empty"
+                } else {
+                    &kickstart.source
+                },
+                wic_partition_summary(kickstart),
+                wic_limitations(kickstart),
+            )
+        },
+    );
+    format!(
+        "Wic capability\n{capability}\nCreate: {readiness}\n\n{session}\n\nGenerated outputs\n{outputs}\nLimitations: {limitations}\n\n{kickstart}"
     )
 }
 
@@ -5316,6 +5772,388 @@ mod tests {
             },
         );
         assert!(rendered_text(&cancelled, 160, 40).contains("Status: cancelled"));
+    }
+
+    fn wic_workspace_app() -> App {
+        let mut app = qemu_workspace_app();
+        app.wic_capability = WicCapability::Available {
+            executable: "/opt/poky/scripts/wic".into(),
+            kickstarts: vec![yoctui_model::WicKickstart {
+                identity: yoctui_model::WicKickstartIdentity {
+                    name: "directdisk".into(),
+                    path: Some("/layers/meta/wic/directdisk.wks".into()),
+                },
+                source: "part / --source=rootfs --fstype=ext4 --size=64".into(),
+                partitions: vec![yoctui_model::WicPartitionSummary {
+                    mount_point: Some("/".into()),
+                    filesystem: Some("ext4".into()),
+                    source_plugin: Some("rootfs".into()),
+                    size_mib: Some(64),
+                    alignment_kib: None,
+                }],
+                limitations: vec!["dynamic boot size".into()],
+            }],
+            image_targets: vec!["core-image-minimal".into()],
+        };
+        app
+    }
+
+    fn wic_running_workspace_app() -> (App, WicSessionId) {
+        let mut app = wic_workspace_app();
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::BeginSelectedWicCreate);
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::PreviewWicCreate);
+        let Some(yoctui_model::Effect::StartWicSession { id, .. }) =
+            yoctui_model::update(&mut app, yoctui_model::Action::ConfirmWicCreate)
+        else {
+            panic!("expected Wic session");
+        };
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::WicSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::WicSessionRunning { id });
+        (app, id)
+    }
+
+    #[test]
+    fn wic_workspace_renders_capability_dialogs_jobs_outputs_and_responsive_states() {
+        let mut app = wic_workspace_app();
+        for (width, height) in [(80, 24), (100, 30), (160, 40)] {
+            let output = rendered_text(&app, width, height);
+            if width == 160 {
+                assert!(output.contains("Wic capability"), "{output}");
+                assert!(output.contains("ready for selected image"), "{output}");
+            }
+        }
+        assert!(rendered_text(&app, 70, 20).contains("needs at least 80x24"));
+
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::BeginSelectedWicCreate);
+        for (width, height) in [(80, 24), (100, 30), (160, 40)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Create Wic"), "{output}");
+            assert!(output.contains("Machine [read-only]"), "{output}");
+        }
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::SelectWicCreateField { delta: 3 },
+        );
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::ActivateWicCreateField);
+        assert!(rendered_text(&app, 80, 24).contains("Output directory [editing]"));
+        if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut() {
+            dialog.draft.output_directory = "relative-output".into();
+        }
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::FinishWicCreateFieldEdit);
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::PreviewWicCreate);
+        assert!(rendered_text(&app, 80, 24).contains("Validation:"));
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::DismissNotification);
+        if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut() {
+            dialog.draft.output_directory = "/deploy/qemux86-64".into();
+        }
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::PreviewWicCreate);
+        for (width, height) in [(80, 24), (100, 30), (160, 40)] {
+            let confirmation = rendered_text(&app, width, height);
+            assert!(
+                confirmation.contains("Exact argument vector"),
+                "{confirmation}"
+            );
+            assert!(confirmation.contains("Partitions"), "{confirmation}");
+            assert!(
+                confirmation.contains("part / --source=rootfs"),
+                "{confirmation}"
+            );
+        }
+        let Some(yoctui_model::Effect::StartWicSession { id, .. }) =
+            yoctui_model::update(&mut app, yoctui_model::Action::ConfirmWicCreate)
+        else {
+            panic!("Wic start");
+        };
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::WicSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::WicSessionRunning { id });
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::AppendWicSessionOutput {
+                id,
+                stream: yoctui_model::WicOutputStream::Stderr,
+                line: "creation warning".into(),
+                truncated: true,
+                timestamp: SystemTime::UNIX_EPOCH,
+            },
+        );
+        app.dialogs
+            .push_front(Dialog::WicCancellationConfirmation(id));
+        assert!(rendered_text(&app, 80, 24).contains("Confirm Wic cancellation"));
+        app.dialogs.clear();
+        let output = yoctui_model::WicOutput {
+            identity: yoctui_model::WicOutputIdentity {
+                path: "/deploy/qemux86-64/core-image-minimal.wic".into(),
+                size_bytes: 4096,
+                modified_unix_seconds: 1,
+            },
+            kind: yoctui_model::WicOutputKind::Wic,
+        };
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::CompleteWicSession {
+                id,
+                exit_code: 0,
+                outputs: vec![output],
+                limitations: vec!["one dynamic field".into()],
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let rendered = rendered_text(&app, 160, 40);
+        assert!(rendered.contains("Status: succeeded"), "{rendered}");
+        assert!(rendered.contains("core-image-minimal.wic"), "{rendered}");
+        assert!(
+            rendered.contains("creation warning [truncated]"),
+            "{rendered}"
+        );
+
+        for capability in [
+            WicCapability::MissingTool,
+            WicCapability::MissingKickstarts,
+            WicCapability::Failed {
+                message: "inspection denied".into(),
+            },
+        ] {
+            app.wic_capability = capability;
+            let rendered = rendered_text(&app, 160, 40);
+            assert!(rendered.contains("Wic capability"));
+        }
+    }
+
+    #[test]
+    fn wic_workspace_renders_all_capability_inventory_and_terminal_states() {
+        let mut app = wic_workspace_app();
+        for (capability, expected) in [
+            (WicCapability::NotInspected, "not inspected"),
+            (WicCapability::MissingTool, "missing wic executable"),
+            (WicCapability::MissingKickstarts, "no kickstarts available"),
+            (
+                WicCapability::Failed {
+                    message: "permission denied".into(),
+                },
+                "inspection failed: permission denied",
+            ),
+        ] {
+            app.wic_capability = capability;
+            let rendered = rendered_text(&app, 160, 40);
+            assert!(rendered.contains(expected), "{rendered}");
+        }
+
+        let request = yoctui_model::WicOutputInventoryRequest {
+            generation: 7,
+            output_directory: "/deploy/qemux86-64".into(),
+        };
+        for (inventory, expected) in [
+            (WicOutputInventoryState::NotLoaded, "not loaded"),
+            (
+                WicOutputInventoryState::Loading {
+                    request: request.clone(),
+                },
+                "loading generation 7",
+            ),
+            (
+                WicOutputInventoryState::Failed {
+                    request: request.clone(),
+                    message: "scan denied".into(),
+                },
+                "failed generation 7",
+            ),
+            (
+                WicOutputInventoryState::Available {
+                    request: request.clone(),
+                    outputs: Vec::new(),
+                },
+                "none generated",
+            ),
+            (
+                WicOutputInventoryState::Partial {
+                    request,
+                    outputs: Vec::new(),
+                    limitations: vec!["symlink skipped".into()],
+                },
+                "symlink skipped",
+            ),
+        ] {
+            app.wic_outputs = inventory;
+            let rendered = rendered_text(&app, 160, 40);
+            assert!(rendered.contains(expected), "{rendered}");
+        }
+
+        let output = yoctui_model::WicOutput {
+            identity: yoctui_model::WicOutputIdentity {
+                path: "/deploy/qemux86-64/selected.direct".into(),
+                size_bytes: 8_192,
+                modified_unix_seconds: 9,
+            },
+            kind: yoctui_model::WicOutputKind::Direct,
+        };
+        app.wic_output_selection = Some(output.identity.clone());
+        app.wic_outputs = WicOutputInventoryState::Available {
+            request: yoctui_model::WicOutputInventoryRequest {
+                generation: 8,
+                output_directory: "/deploy/qemux86-64".into(),
+            },
+            outputs: vec![output],
+        };
+        let rendered = rendered_text(&app, 160, 40);
+        assert!(
+            rendered.contains("▶ Direct /deploy/qemux86-64/selected.direct (8192 bytes, 9s)"),
+            "{rendered}"
+        );
+
+        let mut lifecycle = wic_workspace_app();
+        let _ = yoctui_model::update(&mut lifecycle, yoctui_model::Action::BeginSelectedWicCreate);
+        let _ = yoctui_model::update(&mut lifecycle, yoctui_model::Action::PreviewWicCreate);
+        let Some(yoctui_model::Effect::StartWicSession {
+            id: lifecycle_id, ..
+        }) = yoctui_model::update(&mut lifecycle, yoctui_model::Action::ConfirmWicCreate)
+        else {
+            panic!("expected Wic session");
+        };
+        assert!(rendered_text(&lifecycle, 160, 40).contains("Status: queued"));
+        let _ = yoctui_model::update(
+            &mut lifecycle,
+            yoctui_model::Action::WicSessionStarting {
+                id: lifecycle_id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert!(rendered_text(&lifecycle, 160, 40).contains("Status: starting"));
+        let _ = yoctui_model::update(
+            &mut lifecycle,
+            yoctui_model::Action::WicSessionRunning { id: lifecycle_id },
+        );
+        assert!(rendered_text(&lifecycle, 160, 40).contains("Status: running"));
+        let _ = yoctui_model::update(
+            &mut lifecycle,
+            yoctui_model::Action::BeginActiveWicSessionCancellation,
+        );
+        let _ = yoctui_model::update(
+            &mut lifecycle,
+            yoctui_model::Action::ConfirmWicSessionCancellation {
+                id: lifecycle_id,
+                acknowledge_incomplete_device: false,
+            },
+        );
+        assert!(rendered_text(&lifecycle, 160, 40).contains("Status: cancelling"));
+
+        let (mut succeeded, succeeded_id) = wic_running_workspace_app();
+        let _ = yoctui_model::update(
+            &mut succeeded,
+            yoctui_model::Action::CompleteWicSession {
+                id: succeeded_id,
+                exit_code: 0,
+                outputs: Vec::new(),
+                limitations: Vec::new(),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert!(rendered_text(&succeeded, 160, 40).contains("Status: succeeded"));
+
+        let (mut failed, failed_id) = wic_running_workspace_app();
+        let _ = yoctui_model::update(
+            &mut failed,
+            yoctui_model::Action::FailWicSession {
+                id: failed_id,
+                message: "creator failed".into(),
+                exit_code: Some(2),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let rendered = rendered_text(&failed, 160, 40);
+        assert!(rendered.contains("Status: failed"), "{rendered}");
+        assert!(rendered.contains("creator failed"), "{rendered}");
+
+        let (mut lost, lost_id) = wic_running_workspace_app();
+        let _ = yoctui_model::update(
+            &mut lost,
+            yoctui_model::Action::LoseWicSession {
+                id: lost_id,
+                message: "creator disappeared".into(),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert!(rendered_text(&lost, 160, 40).contains("Status: lost"));
+
+        let (mut cancelled, cancelled_id) = wic_running_workspace_app();
+        let _ = yoctui_model::update(
+            &mut cancelled,
+            yoctui_model::Action::BeginActiveWicSessionCancellation,
+        );
+        let _ = yoctui_model::update(
+            &mut cancelled,
+            yoctui_model::Action::ConfirmWicSessionCancellation {
+                id: cancelled_id,
+                acknowledge_incomplete_device: false,
+            },
+        );
+        let _ = yoctui_model::update(
+            &mut cancelled,
+            yoctui_model::Action::CancelWicSession {
+                id: cancelled_id,
+                exit_code: Some(130),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert!(rendered_text(&cancelled, 160, 40).contains("Status: cancelled"));
+    }
+
+    #[test]
+    fn wic_workspace_handles_long_source_themes_and_exact_footer_hints() {
+        let mut app = wic_workspace_app();
+        if let WicCapability::Available { kickstarts, .. } = &mut app.wic_capability {
+            kickstarts[0].source = (0..200)
+                .map(|index| format!("part /p{index} --source=rootfs # row {index}"))
+                .collect::<Vec<_>>()
+                .join("\n");
+        }
+        for theme in [
+            Theme::Dark,
+            Theme::Light,
+            Theme::MatrixGreen,
+            Theme::HighContrast,
+            Theme::Monochrome,
+        ] {
+            app.theme = theme;
+            let _ = yoctui_model::update(&mut app, yoctui_model::Action::BeginSelectedWicCreate);
+            let _ = yoctui_model::update(&mut app, yoctui_model::Action::PreviewWicCreate);
+            let rendered = rendered_text(&app, 80, 24);
+            assert!(
+                rendered.contains("Confirm managed Wic creation"),
+                "{rendered}"
+            );
+            let _ = yoctui_model::update(&mut app, yoctui_model::Action::CancelWicCreatePreview);
+        }
+        let footer = footer_shortcuts(&app);
+        for expected in [
+            "Q QEMU",
+            "W create Wic",
+            "x cancel",
+            "[/] output",
+            "O open output",
+            "w Wic",
+        ] {
+            assert!(footer.contains(expected), "{footer}");
+        }
+        app.theme = Theme::Dark;
+        let preview = source_preview(
+            "part / --source=rootfs # root partition",
+            "directdisk.wks",
+            &app,
+        );
+        assert_ne!(preview.lines[0].spans[0].style, Style::default());
     }
 
     #[test]
