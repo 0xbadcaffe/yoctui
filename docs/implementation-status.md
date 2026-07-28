@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete the Images artifact workspace.
+Add typed image artifact state.
 
 ## Current task
 
@@ -62,6 +62,9 @@ See `docs/current-task.md`.
 | Dependency workspace | DONE | Graph-only typed rows, explicit state rendering, reverse/outgoing Inspector context, bounded why-built paths, identity-stable navigation, authoritative recipe/provider/log actions, and responsive boundary tests are complete |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
+| Image artifact model | IN_PROGRESS | Exact machine/image/path identities, bounded typed metadata, explicit lifecycle states, normalization, selection, search, and correlation are the active task |
+| Image artifact adapter | NOT_STARTED | Authoritative deploy-directory resolution and bounded typed artifact scanning remain |
+| Images artifact UI | NOT_STARTED | Asynchronous refresh, artifact selection/inspection, responsive rendering, open actions, and direct workspace tests remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -72,9 +75,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `IMAGES-001` — complete the Images artifact workspace
-2. `QEMU-001` — add a managed runqemu workflow
-3. `WIC-001` — add the Wic image workflow
+1. `IMAGES-MODEL-001` — add typed image artifact state
+2. `IMAGES-ADAPTER-001` — acquire authoritative deployed artifacts
+3. `IMAGES-UI-001` — integrate the responsive Images artifact workspace
+4. `IMAGES-001` — verify the complete Images parent gate
+5. `QEMU-001` — add a managed runqemu workflow
 
 ## Rules
 
