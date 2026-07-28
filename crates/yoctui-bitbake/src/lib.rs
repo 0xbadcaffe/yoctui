@@ -2,6 +2,7 @@
 mod image;
 mod package;
 mod qemu;
+mod sdk;
 mod signature;
 mod wic;
 
@@ -15,6 +16,10 @@ pub use package::{
     PackageDetailResponse, PackageInventoryResponse,
 };
 pub use qemu::{QemuAdapterError, QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner};
+pub use sdk::{
+    SdkArtifactAdapter, SdkArtifactAdapterError, SdkArtifactCancellation, SdkArtifactResponse,
+    SdkArtifactScanOutcome,
+};
 pub use signature::{
     SignatureAdapter, SignatureAdapterError, SignatureCancellation, SignatureCommandSpec,
     SignatureComparisonResponse, SignatureDumpResponse,
