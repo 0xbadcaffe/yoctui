@@ -469,7 +469,9 @@ impl WicDeviceIdentity {
     pub fn validate(&self) -> Result<(), &'static str> {
         if !absolute_normal_path(&self.path)
             || !self.path.starts_with("/dev")
+            || self.path.as_os_str().len() > 4_096
             || self.major_minor.is_empty()
+            || self.major_minor.len() > 32
             || !self
                 .major_minor
                 .chars()
@@ -479,7 +481,16 @@ impl WicDeviceIdentity {
                 "Wic device identities must use an exact normalized /dev path and major:minor",
             );
         }
-        if self.major_minor.matches(':').count() != 1
+        let valid_major_minor = self
+            .major_minor
+            .split_once(':')
+            .is_some_and(|(major, minor)| {
+                !major.is_empty()
+                    && !minor.is_empty()
+                    && major.chars().all(|character| character.is_ascii_digit())
+                    && minor.chars().all(|character| character.is_ascii_digit())
+            });
+        if !valid_major_minor
             || self
                 .model
                 .iter()
@@ -814,6 +825,9 @@ mod tests {
                 .unwrap_err()
                 .contains("mounted")
         );
+        let mut malformed = mounted.identity;
+        malformed.major_minor = "8:".into();
+        assert!(malformed.validate().is_err());
 
         let outputs = (0..(MAX_WIC_OUTPUTS + 10))
             .map(|index| WicOutput {

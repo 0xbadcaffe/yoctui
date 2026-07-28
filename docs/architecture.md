@@ -522,6 +522,27 @@ whole-device identity, removability, writability, capacity, mount descendants,
 and system/root-device exclusion. It executes `wic write` only when every typed
 safety invariant still agrees and never invokes `sudo`.
 
+Device discovery executes canonical `lsblk` directly with the fixed JSON,
+byte-size, full-path, and explicit-field argument vector. Both streams, elapsed
+time, record count, path and metadata lengths, mount count, candidate count,
+and reported limitations are bounded. Every recursive record is validated
+before filtering. Exactly one top-level whole-disk subtree must contain the
+current `/` mount; otherwise discovery fails closed. Only other top-level
+`disk` records backed by canonical non-symlink block nodes that can be opened
+for writing may cross the adapter boundary. Partitions, loops, device-mapper
+and optical records, mounted descendants, read-only/non-removable devices, and
+undersized devices are retained only as bounded exclusion explanations.
+
+The write runner accepts a model-confirmed `WicWriteRequest`, then repeats
+canonical image inspection and the complete device discovery immediately
+before spawning. The rediscovered identity must exactly match path,
+major/minor, capacity, model, serial, and transport as well as every eligibility
+flag. It then reuses the one-child kill-on-drop Wic runner with the exact native
+arguments `write`, image path, and device path; write completion deliberately
+does not run the creation-output scanner. Test-only fake-node policy exercises
+the safety classes without treating fake paths as live removable-media
+validation.
+
 App code maps keys and typed adapter events mechanically. Ratatui widgets render
 typed capability, partition, output, device, and job state without parsing
 kickstart text, process output, or device command output. The CLI owns at most

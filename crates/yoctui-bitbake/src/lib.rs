@@ -30,7 +30,10 @@ use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, Command as TokioCommand},
 };
-pub use wic::{WicAdapterError, WicCapabilityInspector, WicCreateCommandSpec, WicJobRunner};
+pub use wic::{
+    WicAdapterError, WicCapabilityInspector, WicCreateCommandSpec, WicDeviceInspector,
+    WicDeviceInventoryResponse, WicJobRunner, WicWriteCommandSpec,
+};
 use yoctui_model::{
     BuildRequest, DependencyEdge, DependencyEdgeKind, DependencyGraph, DependencyNode,
     DependencyNodeId, DevtoolCapability, DevtoolGitState, DevtoolOperation, DevtoolOperationError,
