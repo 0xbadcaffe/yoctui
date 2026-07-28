@@ -2,38 +2,52 @@
 
 ## Active task
 
-**ID:** IMAGES-001
-**Title:** Verify the complete Images artifact workspace
+**ID:** QEMU-001
+**Title:** Complete the managed runqemu workflow
 
 ## Objective
 
-Verify that the completed model, adapter, and UI children jointly satisfy the
-Images artifact workspace contract without overstating live compatibility.
+Add a typed managed runqemu workflow with explicit launch configuration,
+persistent process state, console/log inspection, and safe cancellation.
 
 ## Required work
 
-1. Re-read the three child task notes and inspect their implementation/tests.
-2. Run every parent verification command plus the full baseline.
-3. Confirm existing image recipe selection and build confirmation tests remain
-   green alongside artifact model, adapter, background, and TestBackend tests.
-4. Confirm the UI and architecture specifications match intentional behavior.
-5. Do not claim live deployed-artifact compatibility unless an initialized
-   build with authoritative `DEPLOY_DIR_IMAGE` is actually exercised.
-6. Mark the parent `DONE` only when every check passes, update status, select
-   `QEMU-001`, and commit the governance handoff.
+1. Inspect all existing shell/process/background-job, Images, dialog, and
+   terminal-lifecycle behavior before writing code.
+2. Reconcile this broad parent into atomic child tasks if it cannot be
+   completed as one coherent verified commit.
+3. Detect runqemu capability and compatible built image artifacts using only
+   authoritative workspace/adapter state.
+4. Add typed launch configuration and preview/confirmation for machine, image,
+   networking, serial/display, memory, and extra validated options.
+5. Execute runqemu without a shell as a persistent cancellable background
+   process with bounded stdout/stderr and distinct start/failure/exit/loss
+   states.
+6. Provide console/log inspection without suspending the persistent workbench;
+   terminal ownership must remain explicit and recoverable.
+7. Require explicit confirmation for launch and cancellation; prevent
+   duplicate active sessions.
+8. Render responsive dialogs/workspace state and stable disabled explanations
+   in every theme/no-color mode.
+9. Add model, app, adapter, CLI integration, and Ratatui TestBackend tests plus
+   live smoke validation when a compatible built image is available.
+10. Update `docs/ui-spec.md`, `docs/architecture.md`, registry, and status in
+    the same coherent commits.
 
 ## Definition of done
 
-- Every child is `DONE` with passing evidence.
-- The parent and baseline verification commands pass.
-- Documentation makes no unsupported live compatibility claim.
+- A configured runqemu session can be launched, inspected, and cancelled
+  through typed persistent state.
+- Unsupported/missing tools and images remain explicit and non-fatal.
+- Focused and baseline checks pass; live claims require live evidence.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model images_workspace
-cargo test -p yoctui-ui images_workspace
-cargo test -p yoctui-app image_action
+cargo test -p yoctui-model qemu
+cargo test -p yoctui-app qemu
+cargo test -p yoctui-ui qemu
+cargo test -p yoctui -- qemu
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

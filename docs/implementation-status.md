@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Verify the complete Images artifact workspace.
+Complete the managed runqemu workflow.
 
 ## Current task
 
@@ -25,7 +25,7 @@ See `docs/current-task.md`.
 | M1 BitBake cockpit | IN_PROGRESS | Typed background build execution and live BitBake 2.19.0 Tinfoil validation exist; remaining typed cockpit workflows are incomplete |
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
-| M4 Images/SDK/QEMU/Wic | IN_PROGRESS | Image-recipe listing and build selection exist; artifact, SDK, QEMU, and Wic workflows remain |
+| M4 Images/SDK/QEMU/Wic | IN_PROGRESS | The complete typed Images artifact workspace is done; SDK, QEMU, and Wic workflows remain |
 | M5 Testing/QA/Security | NOT_STARTED | Coverage infrastructure exists; product workflows remain |
 | M6 Maintenance | NOT_STARTED | Partial diagnostics only |
 | M7 Hardening | IN_PROGRESS | Coverage and profiling foundations exist |
@@ -61,7 +61,7 @@ See `docs/current-task.md`.
 | Dependency graph acquisition | DONE | Additive typed protocol events use structured `generateDepTreeEvent`; legacy peers fall back honestly and the shell-free `bitbake -g` adapter bounds and validates task-dot output. Live BitBake 2.19.0 / Yocto 6.0.99 snapshot returned 962 nodes and 1,779 build/runtime/task edges |
 | Dependency workspace | DONE | Graph-only typed rows, explicit state rendering, reverse/outgoing Inspector context, bounded why-built paths, identity-stable navigation, authoritative recipe/provider/log actions, and responsive boundary tests are complete |
 | Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
-| Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
+| Images workspace | DONE | Preserved recipe picker/build confirmation now coexists with bounded authoritative deploy scanning, typed artifacts/metadata, correlated cancellation, search/selection, responsive inspection, and exact build/editor actions. Live deployed-artifact compatibility is not claimed |
 | Image artifact model | DONE | Exact machine/image/path identities, typed available-versus-unavailable metadata, deterministic bounds, correlated lifecycle states, identity-stable selection/search, reducer effects, and app event normalization pass focused and baseline checks |
 | Image artifact adapter | DONE | Tinfoil/environment snapshots expose `DEPLOY_DIR_IMAGE`; the cancellable bounded adapter validates the machine/root, refuses symlinks and escapes, classifies deploy records, parses checksum associations, and reports partial data explicitly |
 | Images artifact UI | DONE | Retained recipe picker/build confirmation now coexists with correlated CLI-owned scans, search and exact selection, typed build/editor actions, explicit lifecycle/limitations, responsive Workspace/Inspector rendering, footer hints, and direct tests |
@@ -75,11 +75,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `IMAGES-001` — verify the complete Images parent gate
-2. `QEMU-001` — add a managed runqemu workflow
-3. `WIC-001` — add the Wic image workflow
-4. `SDK-001` — add the SDK artifact workflow
-5. `TEST-001` — add unified test execution and results
+1. `QEMU-001` — add a managed runqemu workflow
+2. `WIC-001` — add the Wic image workflow
+3. `SDK-001` — add the SDK artifact workflow
+4. `TEST-001` — add unified test execution and results
+5. `SEC-001` — add CVE and SPDX workflows
 
 ## Rules
 
