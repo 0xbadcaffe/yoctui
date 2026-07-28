@@ -1295,6 +1295,20 @@ does not close it.
 `Enter` confirms and `Esc` returns without changing the session. All three
 dialogs trap focus and restore the previous pane when closed.
 
+The Images Inspector presents runqemu before the longer selected-artifact
+metadata: capability/executable, launch readiness or exact disabled reason,
+then the latest session's exact request, lifecycle/timestamps, exit/result/
+error, retained/drop/truncation counts, and stream-tagged output. Artifact
+metadata follows it. This ordering keeps active session meaning visible in the
+wide Inspector. Medium and narrow modes use the existing Inspector overlay/
+pane switch without duplicating state.
+
+Launch and preview overlays use the available supported terminal area and
+remain usable at 80×24. Narrow launch titles retain `p preview` and `Esc close`;
+the full row selection/edit/read-only markers remain visible. The global
+below-80×24 resize message remains authoritative. The Images footer includes
+`Q launch QEMU` and `x cancel QEMU` before scan/build/artifact actions.
+
 ### Wic dialog
 
 Integrate:

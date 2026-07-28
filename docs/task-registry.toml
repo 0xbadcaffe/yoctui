@@ -790,18 +790,18 @@ notes = "Pure typed launch rows provide read-only identity, bounded text editing
 id = "QEMU-UI-RENDER-001"
 milestone = "M4"
 title = "Render responsive QEMU launch and session UI"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 50
 required = true
 depends_on = ["QEMU-UI-MODEL-001"]
 verify = ["cargo test -p yoctui-ui qemu_workspace"]
-notes = "Render capability states, launch editor/preview, latest session lifecycle/output/error details, cancellation confirmation, footer hints, and supported responsive layouts."
+notes = "Images renders capability/readiness and latest session lifecycle, exact request, timestamps, retained stream output, truncation/drop counts, result/error, and terminal outcomes before artifact details. Focus-trapped launch/preview/cancellation overlays and Q/x hints are safe at supported breakpoints."
 
 [[task]]
 id = "QEMU-UI-CLI-001"
 milestone = "M4"
 title = "Integrate QEMU capability and runner in the CLI"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 50
 required = true
 depends_on = ["QEMU-UI-RENDER-001"]

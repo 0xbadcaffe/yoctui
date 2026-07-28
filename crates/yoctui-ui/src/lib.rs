@@ -8,12 +8,14 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 use yoctui_model::{
-    App, BackgroundJobKind, BuildStatus, ConfigCopyValue, DependencyEdgeKind, DependencyGraph,
-    DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction, DevtoolCapability,
-    DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget,
-    GitFileState, ImageArtifactField, ImageArtifactInventoryState, LayerBrowser, LayerBrowserEntry,
-    LayerInspectorMode, PackageDetailState, PackageField, PackageIdentity, PackageInventoryState,
-    PreviewKind, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity,
+    App, BackgroundJobKind, BackgroundJobStatus, BuildStatus, ConfigCopyValue, DependencyEdgeKind,
+    DependencyGraph, DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction,
+    DevtoolCapability, DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace,
+    Dialog, FocusTarget, GitFileState, ImageArtifactField, ImageArtifactInventoryState,
+    LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PackageDetailState, PackageField,
+    PackageIdentity, PackageInventoryState, PreviewKind, QemuCapability, QemuDisplayMode,
+    QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode, QemuSerialMode,
+    QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity,
     SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, TaskFilterField,
     TaskRow, TaskState, Theme, VariableIdentity, config_comparison, config_edit_disabled_reason,
     config_source_disabled_reason, format_duration, selected_config_copy_value,
@@ -443,7 +445,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ select | Enter detail | / search | R refresh | D dep kind | [/] dep | d follow | u back | o recipe | e provider | c cancel"
         }
         Screen::Images => {
-            "↑/↓ select | / search | R refresh | c cancel | b build | i image picker | o artifact | m manifest | l license | s SPDX | w Wic"
+            "↑/↓ select | Q launch QEMU | x cancel QEMU | / search | R refresh | c cancel scan | b build | i image picker | o artifact | m manifest | l license | s SPDX | w Wic"
         }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
@@ -540,6 +542,12 @@ pub fn render(frame: &mut Frame, app: &App) {
         command_palette(frame, app, area);
     } else if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() {
         recipe_editor(frame, app, editor, area);
+    } else if let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog() {
+        qemu_launch_dialog(frame, app, dialog, area);
+    } else if let Some(Dialog::QemuLaunchConfirmation(preview)) = app.active_dialog() {
+        qemu_launch_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::QemuCancellationConfirmation(id)) = app.active_dialog() {
+        qemu_cancellation_confirmation(frame, app, *id, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);
     } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
@@ -2181,6 +2189,197 @@ fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
+fn qemu_popup_rect(area: Rect, preferred_width: u16, preferred_height: u16) -> Rect {
+    let width = preferred_width.min(area.width.saturating_sub(2)).max(1);
+    let height = preferred_height.min(area.height.saturating_sub(2)).max(1);
+    Rect::new(
+        area.x + area.width.saturating_sub(width) / 2,
+        area.y + area.height.saturating_sub(height) / 2,
+        width,
+        height,
+    )
+}
+
+fn qemu_launch_field_label(field: QemuLaunchField) -> &'static str {
+    match field {
+        QemuLaunchField::Machine => "Machine",
+        QemuLaunchField::Image => "Image",
+        QemuLaunchField::Kernel => "Kernel",
+        QemuLaunchField::Rootfs => "Root filesystem",
+        QemuLaunchField::Networking => "Networking",
+        QemuLaunchField::Memory => "Memory MiB",
+        QemuLaunchField::Display => "Display",
+        QemuLaunchField::Serial => "Serial",
+        QemuLaunchField::ExtraArguments => "Extra arguments",
+    }
+}
+
+fn qemu_launch_field_value(dialog: &QemuLaunchDialog, field: QemuLaunchField) -> String {
+    match field {
+        QemuLaunchField::Machine => dialog.draft.machine.clone(),
+        QemuLaunchField::Image => dialog.draft.image.path.display().to_string(),
+        QemuLaunchField::Kernel => {
+            if dialog.draft.kernel.is_empty() {
+                "not set".into()
+            } else {
+                dialog.draft.kernel.clone()
+            }
+        }
+        QemuLaunchField::Rootfs => {
+            if dialog.draft.rootfs.is_empty() {
+                "not set".into()
+            } else {
+                dialog.draft.rootfs.clone()
+            }
+        }
+        QemuLaunchField::Networking => match dialog.draft.networking {
+            QemuNetworkingMode::Slirp => "slirp",
+            QemuNetworkingMode::Tap => "tap",
+            QemuNetworkingMode::None => "none",
+        }
+        .into(),
+        QemuLaunchField::Memory => dialog.draft.memory_mib.clone(),
+        QemuLaunchField::Display => match dialog.draft.display {
+            QemuDisplayMode::Graphical => "graphical",
+            QemuDisplayMode::Nographic => "nographic",
+        }
+        .into(),
+        QemuLaunchField::Serial => match dialog.draft.serial {
+            QemuSerialMode::Stdio => "stdio",
+            QemuSerialMode::Telnet => "telnet",
+            QemuSerialMode::None => "none",
+        }
+        .into(),
+        QemuLaunchField::ExtraArguments => {
+            if dialog.draft.extra_arguments.is_empty() {
+                "none".into()
+            } else {
+                dialog.draft.extra_arguments.clone()
+            }
+        }
+    }
+}
+
+fn qemu_launch_dialog(frame: &mut Frame, app: &App, dialog: &QemuLaunchDialog, area: Rect) {
+    let popup = qemu_popup_rect(area, 100, 20);
+    clear_popup(frame, app, popup);
+    let palette = ThemePalette::for_app(app);
+    let fields = [
+        QemuLaunchField::Machine,
+        QemuLaunchField::Image,
+        QemuLaunchField::Kernel,
+        QemuLaunchField::Rootfs,
+        QemuLaunchField::Networking,
+        QemuLaunchField::Memory,
+        QemuLaunchField::Display,
+        QemuLaunchField::Serial,
+        QemuLaunchField::ExtraArguments,
+    ];
+    let rows = fields.into_iter().map(|field| {
+        let selected = dialog.selected_field == field;
+        let suffix = if field.is_read_only() {
+            " [read-only]"
+        } else if selected && dialog.editing {
+            " [editing]"
+        } else {
+            ""
+        };
+        Row::new([
+            format!("{}{}", qemu_launch_field_label(field), suffix),
+            qemu_launch_field_value(dialog, field),
+        ])
+        .style(selected_style(app, selected))
+    });
+    let mut title =
+        String::from("Launch runqemu | ↑/↓ field ←/→ choice Enter edit p preview Esc close");
+    if popup.width < 80 {
+        title = "Launch runqemu | p preview | Esc close".into();
+    }
+    frame.render_widget(
+        Table::new(rows, [Constraint::Length(23), Constraint::Min(1)])
+            .header(Row::new(["Field", "Value"]).style(Style::default().bold()))
+            .block(Block::default().title(title).borders(Borders::ALL)),
+        popup,
+    );
+    if let Some(message) = &dialog.validation_error {
+        let error = Rect::new(
+            popup.x.saturating_add(1),
+            popup.y + popup.height.saturating_sub(3),
+            popup.width.saturating_sub(2),
+            2.min(popup.height.saturating_sub(1)),
+        );
+        frame.render_widget(
+            Paragraph::new(format!("Validation: {message}"))
+                .style(palette.role(palette.error, Modifier::BOLD))
+                .wrap(Wrap { trim: false }),
+            error,
+        );
+    }
+}
+
+fn qemu_launch_confirmation(frame: &mut Frame, app: &App, preview: &QemuLaunchPreview, area: Rect) {
+    let popup = qemu_popup_rect(area, 100, 18);
+    clear_popup(frame, app, popup);
+    let mut lines = vec![
+        Line::from(format!("Machine: {}", preview.request.machine)),
+        Line::from(format!("Image: {}", preview.request.image.image)),
+        Line::from(format!(
+            "Artifact: {}",
+            preview.request.image.path.display()
+        )),
+        Line::from("Exact argument vector (one argument per line):"),
+    ];
+    lines.extend(
+        preview
+            .argv
+            .iter()
+            .enumerate()
+            .map(|(index, argument)| Line::from(format!("[{index}] {}", argument.display()))),
+    );
+    lines.push(Line::from(""));
+    lines.push(Line::from(
+        "Enter confirms launch. Esc closes without launch.",
+    ));
+    frame.render_widget(
+        Paragraph::new(lines)
+            .block(
+                Block::default()
+                    .title("Confirm managed runqemu launch")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
+fn qemu_cancellation_confirmation(frame: &mut Frame, app: &App, id: QemuSessionId, area: Rect) {
+    let popup = qemu_popup_rect(area, 72, 7);
+    clear_popup(frame, app, popup);
+    let detail = app.qemu_session(id).map_or_else(
+        || format!("Session {} is no longer available.", id.0),
+        |session| {
+            format!(
+                "Cancel managed session {}?\nImage: {}\nArtifact: {}",
+                id.0,
+                session.request.image.image,
+                session.request.image.path.display()
+            )
+        },
+    );
+    frame.render_widget(
+        Paragraph::new(format!(
+            "{detail}\n\nEnter confirms cancellation. Esc keeps it running."
+        ))
+        .block(
+            Block::default()
+                .title("Confirm runqemu cancellation")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
 fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let recipe_count = app
         .workspace
@@ -2290,9 +2489,6 @@ fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn image_artifact_inspector_text(app: &App) -> String {
-    let Some(artifact) = app.selected_image_artifact() else {
-        return "No deployed image artifact selected.\n\nUse i to select a buildable image recipe; press R to scan DEPLOY_DIR_IMAGE.".into();
-    };
     let paths = |field: &ImageArtifactField<Vec<std::path::PathBuf>>| {
         field.available().map_or_else(
             || "unavailable".into(),
@@ -2309,61 +2505,177 @@ fn image_artifact_inspector_text(app: &App) -> String {
             },
         )
     };
-    let checksums = artifact.checksums.available().map_or_else(
-        || "unavailable".into(),
-        |checksums| {
-            if checksums.is_empty() {
-                "none".into()
-            } else {
-                checksums
+    let artifact_text = app.selected_image_artifact().map_or_else(
+        || {
+            "No deployed image artifact selected.\nUse i to select a buildable image recipe; press R to scan DEPLOY_DIR_IMAGE.".into()
+        },
+        |artifact| {
+            let checksums = artifact.checksums.available().map_or_else(
+                || "unavailable".into(),
+                |checksums| {
+                    if checksums.is_empty() {
+                        "none".into()
+                    } else {
+                        checksums
+                            .iter()
+                            .map(|checksum| {
+                                format!(
+                                    "{} {} ({})",
+                                    checksum.algorithm,
+                                    checksum.digest,
+                                    checksum.source.display()
+                                )
+                            })
+                            .collect::<Vec<_>>()
+                            .join("\n")
+                    }
+                },
+            );
+            let deploy = app
+                .image_artifacts
+                .inventory()
+                .and_then(|inventory| inventory.deploy_directory.available())
+                .map_or_else(|| "unavailable".into(), |path| path.display().to_string());
+            let limitations = match &app.image_artifacts {
+                ImageArtifactInventoryState::Partial { limitations, .. } => limitations
                     .iter()
-                    .map(|checksum| {
-                        format!(
-                            "{} {} ({})",
-                            checksum.algorithm,
-                            checksum.digest,
-                            checksum.source.display()
-                        )
-                    })
+                    .map(|limitation| format!("! {limitation}"))
                     .collect::<Vec<_>>()
-                    .join("\n")
-            }
+                    .join("\n"),
+                _ => "none".into(),
+            };
+            format!(
+                "Machine: {}\nImage: {}\nKind: {}\nPath: {}\nDeploy directory: {}\nSize: {}\nTimestamp: {}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}\n\nLimitations:\n{}",
+                artifact.identity.machine,
+                artifact.identity.image,
+                artifact.kind.label(),
+                artifact.identity.path.display(),
+                deploy,
+                artifact
+                    .size_bytes
+                    .available()
+                    .map_or_else(|| "unavailable".into(), |value| format!("{value} bytes")),
+                artifact.modified_unix_seconds.available().map_or_else(
+                    || "unavailable".into(),
+                    |value| format!("{value}s since Unix epoch")
+                ),
+                checksums,
+                paths(&artifact.manifests),
+                paths(&artifact.licenses),
+                paths(&artifact.spdx),
+                paths(&artifact.wic_files),
+                limitations,
+            )
         },
     );
-    let deploy = app
-        .image_artifacts
-        .inventory()
-        .and_then(|inventory| inventory.deploy_directory.available())
-        .map_or_else(|| "unavailable".into(), |path| path.display().to_string());
-    let limitations = match &app.image_artifacts {
-        ImageArtifactInventoryState::Partial { limitations, .. } => limitations
-            .iter()
-            .map(|limitation| format!("! {limitation}"))
-            .collect::<Vec<_>>()
-            .join("\n"),
-        _ => "none".into(),
-    };
     format!(
-        "Machine: {}\nImage: {}\nKind: {}\nPath: {}\nDeploy directory: {}\nSize: {}\nTimestamp: {}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}\n\nLimitations:\n{}",
-        artifact.identity.machine,
-        artifact.identity.image,
-        artifact.kind.label(),
-        artifact.identity.path.display(),
-        deploy,
-        artifact
-            .size_bytes
-            .available()
-            .map_or_else(|| "unavailable".into(), |value| format!("{value} bytes")),
-        artifact.modified_unix_seconds.available().map_or_else(
-            || "unavailable".into(),
-            |value| format!("{value}s since Unix epoch")
+        "runqemu capability\n{}\nLaunch: {}\n\n{}\n\nSelected artifact\n{artifact_text}",
+        qemu_capability_text(app),
+        app.qemu_launch_unavailable_reason()
+            .unwrap_or_else(|| "ready for selected artifact (Q)".into()),
+        qemu_session_text(app)
+    )
+}
+
+fn qemu_capability_text(app: &App) -> String {
+    match &app.qemu_capability {
+        QemuCapability::NotInspected => "not inspected".into(),
+        QemuCapability::MissingTool => "missing runqemu executable".into(),
+        QemuCapability::MissingCompatibleImage => "no compatible deployed image".into(),
+        QemuCapability::Failed { message } => format!("inspection failed: {message}"),
+        QemuCapability::Available {
+            executable,
+            compatible_images,
+        } => format!(
+            "available: {}\nCompatible images: {}",
+            executable.display(),
+            compatible_images.len()
         ),
-        checksums,
-        paths(&artifact.manifests),
-        paths(&artifact.licenses),
-        paths(&artifact.spdx),
-        paths(&artifact.wic_files),
-        limitations,
+    }
+}
+
+fn qemu_session_text(app: &App) -> String {
+    let Some(session) = app.latest_qemu_session() else {
+        return "Managed runqemu session\nNo session has been launched.".into();
+    };
+    let Some(job) = app.background_jobs.get(session.background_job_id) else {
+        return format!(
+            "Managed runqemu session {}\nLifecycle record unavailable.",
+            session.id.0
+        );
+    };
+    let status = match job.status {
+        BackgroundJobStatus::Queued => "queued",
+        BackgroundJobStatus::Starting => "starting",
+        BackgroundJobStatus::Running => "running",
+        BackgroundJobStatus::Cancelling => "cancelling",
+        BackgroundJobStatus::Succeeded => "succeeded",
+        BackgroundJobStatus::Failed => "failed",
+        BackgroundJobStatus::Cancelled => "cancelled",
+        BackgroundJobStatus::Lost => "lost",
+    };
+    let mut retained = job.output.iter().rev().take(80).collect::<Vec<_>>();
+    retained.reverse();
+    let output = if retained.is_empty() {
+        "none".into()
+    } else {
+        retained
+            .into_iter()
+            .map(|entry| {
+                let source = match entry.source {
+                    yoctui_model::BackgroundJobOutputSource::Backend => "backend",
+                    yoctui_model::BackgroundJobOutputSource::Stdout => "stdout",
+                    yoctui_model::BackgroundJobOutputSource::Stderr => "stderr",
+                };
+                format!(
+                    "[{source}] {}{}",
+                    entry.message,
+                    if entry.truncated { " [truncated]" } else { "" }
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    let result = job
+        .result
+        .as_ref()
+        .map_or_else(|| "none".into(), |result| result.summary.clone());
+    let error = job.error.as_ref().map_or_else(
+        || session.error_detail.as_deref().unwrap_or("none").into(),
+        |error| {
+            error.detail.as_ref().map_or_else(
+                || error.summary.clone(),
+                |detail| format!("{}: {detail}", error.summary),
+            )
+        },
+    );
+    format!(
+        "Managed runqemu session {}\nStatus: {}\nMachine: {}\nImage: {}\nArtifact: {}\nNetworking: {:?}\nDisplay: {:?}\nSerial: {:?}\nMemory: {} MiB\nQueued: {}\nStarted: {}\nFinished: {}\nExit code: {}\nResult: {}\nError: {}\nRetained output: {} entries (showing latest {})\nDropped output: {} entries\n\nOutput:\n{}",
+        session.id.0,
+        status,
+        session.request.machine,
+        session.request.image.image,
+        session.request.image.path.display(),
+        session.request.networking,
+        session.request.display,
+        session.request.serial,
+        session.request.memory_mib,
+        timestamp_text(job.queued_at),
+        job.started_at
+            .map(timestamp_text)
+            .unwrap_or_else(|| "unavailable".into()),
+        job.finished_at
+            .map(timestamp_text)
+            .unwrap_or_else(|| "unavailable".into()),
+        session
+            .exit_code
+            .map_or_else(|| "unavailable".into(), |code| code.to_string()),
+        result,
+        error,
+        job.output.len(),
+        job.output.len().min(80),
+        job.dropped_output_entries,
+        output,
     )
 }
 
@@ -4773,6 +5085,237 @@ mod tests {
             message: "DEPLOY_DIR_IMAGE is unavailable".into(),
         };
         assert!(rendered_text(&app, 100, 25).contains("Artifact scan failed"));
+    }
+
+    fn qemu_workspace_app() -> App {
+        let mut app = App::new(20, 20_000);
+        app.screen = Screen::Images;
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        let identity = yoctui_model::ImageArtifactIdentity {
+            machine: "qemux86-64".into(),
+            image: "core-image-minimal".into(),
+            path: "/deploy/qemux86-64/core-image-minimal.wic".into(),
+        };
+        let artifact = yoctui_model::ImageArtifact {
+            identity: identity.clone(),
+            kind: yoctui_model::ImageArtifactKind::Wic,
+            size_bytes: ImageArtifactField::Available(8_192),
+            modified_unix_seconds: ImageArtifactField::Available(1_700_000_000),
+            checksums: ImageArtifactField::Unavailable,
+            manifests: ImageArtifactField::Unavailable,
+            licenses: ImageArtifactField::Unavailable,
+            spdx: ImageArtifactField::Unavailable,
+            wic_files: ImageArtifactField::Available(vec![identity.path.clone()]),
+        };
+        app.image_artifact_selection = Some(identity.clone());
+        app.image_artifacts = ImageArtifactInventoryState::Available {
+            request: yoctui_model::ImageArtifactRequest {
+                generation: 1,
+                machine: "qemux86-64".into(),
+            },
+            inventory: yoctui_model::ImageArtifactInventory {
+                machine: "qemux86-64".into(),
+                deploy_directory: ImageArtifactField::Available("/deploy/qemux86-64".into()),
+                artifacts: vec![artifact],
+            },
+        };
+        app.qemu_capability = QemuCapability::Available {
+            executable: "/opt/poky/scripts/runqemu".into(),
+            compatible_images: vec![identity],
+        };
+        app
+    }
+
+    fn qemu_running_workspace_app() -> (App, QemuSessionId) {
+        let mut app = qemu_workspace_app();
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::BeginSelectedQemuLaunch);
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::PreviewQemuLaunch);
+        let Some(yoctui_model::Effect::StartQemuSession { id, .. }) =
+            yoctui_model::update(&mut app, yoctui_model::Action::ConfirmQemuLaunch)
+        else {
+            panic!("expected session");
+        };
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::QemuSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::QemuSessionRunning { id });
+        app.focus = FocusTarget::Inspector;
+        (app, id)
+    }
+
+    #[test]
+    fn qemu_workspace_renders_capability_dialogs_session_and_responsive_states() {
+        let mut app = qemu_workspace_app();
+        app.focus = FocusTarget::Inspector;
+        for (width, height) in [(80, 24), (100, 30), (160, 40)] {
+            let output = rendered_text(&app, width, height);
+            if width == 160 {
+                assert!(output.contains("runqemu capability"), "{output}");
+                assert!(output.contains("ready for selected artifact"), "{output}");
+            }
+        }
+        assert!(rendered_text(&app, 70, 20).contains("needs at least 80x24"));
+
+        let artifact = app.selected_image_artifact().unwrap().clone();
+        let mut launch = QemuLaunchDialog::new(yoctui_model::QemuLaunchDraft::for_artifact(
+            artifact.identity,
+            artifact.kind,
+        ));
+        launch.selected_field = QemuLaunchField::Kernel;
+        launch.editing = true;
+        launch.draft.kernel = "relative/kernel".into();
+        launch.validation_error = Some("kernel path must be absolute".into());
+        app.dialogs.push_front(Dialog::QemuLaunch(launch.clone()));
+        for (width, height) in [(80, 24), (100, 30), (160, 40)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Launch runqemu"), "{output}");
+            assert!(output.contains("Kernel"), "{output}");
+            assert!(output.contains("editing"), "{output}");
+            assert!(output.contains("Validation"), "{output}");
+        }
+
+        app.dialogs.clear();
+        let preview = launch.draft.preview(&app.qemu_capability).unwrap_err();
+        assert!(preview.contains("normalized absolute"));
+        launch.draft.kernel.clear();
+        let preview = launch.draft.preview(&app.qemu_capability).unwrap();
+        app.dialogs
+            .push_front(Dialog::QemuLaunchConfirmation(preview));
+        let confirmation = rendered_text(&app, 100, 30);
+        assert!(
+            confirmation.contains("Exact argument vector"),
+            "{confirmation}"
+        );
+        assert!(confirmation.contains("qemumemory=1024"), "{confirmation}");
+
+        app.dialogs.clear();
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::BeginSelectedQemuLaunch);
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::PreviewQemuLaunch);
+        let Some(yoctui_model::Effect::StartQemuSession { id, .. }) =
+            yoctui_model::update(&mut app, yoctui_model::Action::ConfirmQemuLaunch)
+        else {
+            panic!("expected session");
+        };
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::QemuSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::QemuSessionRunning { id });
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::AppendQemuSessionOutput {
+                id,
+                stream: yoctui_model::QemuOutputStream::Stderr,
+                line: "guest warning".into(),
+                truncated: true,
+                timestamp: SystemTime::UNIX_EPOCH,
+            },
+        );
+        app.focus = FocusTarget::Inspector;
+        let running = rendered_text(&app, 160, 40);
+        assert!(running.contains("Status: running"), "{running}");
+        assert!(
+            running.contains("[stderr] guest warning [truncated]"),
+            "{running}"
+        );
+
+        app.dialogs
+            .push_front(Dialog::QemuCancellationConfirmation(id));
+        let cancellation = rendered_text(&app, 80, 24);
+        assert!(
+            cancellation.contains("Confirm runqemu cancellation"),
+            "{cancellation}"
+        );
+        app.dialogs.clear();
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::FailQemuSession {
+                id,
+                message: "display unavailable".into(),
+                exit_code: Some(1),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let failed = rendered_text(&app, 160, 40);
+        assert!(failed.contains("Status: failed"), "{failed}");
+        assert!(failed.contains("display unavailable"), "{failed}");
+
+        for capability in [
+            QemuCapability::MissingTool,
+            QemuCapability::MissingCompatibleImage,
+            QemuCapability::Failed {
+                message: "inspection denied".into(),
+            },
+        ] {
+            app.qemu_capability = capability;
+            let output = rendered_text(&app, 160, 40);
+            assert!(output.contains("runqemu capability"), "{output}");
+        }
+    }
+
+    #[test]
+    fn qemu_workspace_renders_each_terminal_session_outcome() {
+        let (mut succeeded, succeeded_id) = qemu_running_workspace_app();
+        let _ = yoctui_model::update(
+            &mut succeeded,
+            yoctui_model::Action::CompleteQemuSession {
+                id: succeeded_id,
+                exit_code: 0,
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert!(rendered_text(&succeeded, 160, 40).contains("Status: succeeded"));
+
+        let (mut failed, failed_id) = qemu_running_workspace_app();
+        let _ = yoctui_model::update(
+            &mut failed,
+            yoctui_model::Action::FailQemuSession {
+                id: failed_id,
+                message: "failed display".into(),
+                exit_code: Some(1),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert!(rendered_text(&failed, 160, 40).contains("Status: failed"));
+
+        let (mut lost, lost_id) = qemu_running_workspace_app();
+        let _ = yoctui_model::update(
+            &mut lost,
+            yoctui_model::Action::LoseQemuSession {
+                id: lost_id,
+                message: "runner lost".into(),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert!(rendered_text(&lost, 160, 40).contains("Status: lost"));
+
+        let (mut cancelled, cancelled_id) = qemu_running_workspace_app();
+        let _ = yoctui_model::update(
+            &mut cancelled,
+            yoctui_model::Action::BeginQemuSessionCancellation { id: cancelled_id },
+        );
+        let _ = yoctui_model::update(
+            &mut cancelled,
+            yoctui_model::Action::ConfirmQemuSessionCancellation,
+        );
+        let _ = yoctui_model::update(
+            &mut cancelled,
+            yoctui_model::Action::CancelQemuSession {
+                id: cancelled_id,
+                exit_code: Some(130),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert!(rendered_text(&cancelled, 160, 40).contains("Status: cancelled"));
     }
 
     #[test]

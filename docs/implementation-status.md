@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Render responsive QEMU launch and session UI.
+Integrate QEMU capability and runner in the CLI.
 
 ## Current task
 
@@ -67,7 +67,7 @@ See `docs/current-task.md`.
 | Images artifact UI | DONE | Retained recipe picker/build confirmation now coexists with correlated CLI-owned scans, search and exact selection, typed build/editor actions, explicit lifecycle/limitations, responsive Workspace/Inspector rendering, footer hints, and direct tests |
 | QEMU launch/session model | DONE | Typed capability, exact artifact-bound launch validation, deterministic preview/confirmation, stable shared-job lifecycle, bounded stream output, failures, stale events, and confirmed cancellation are covered |
 | QEMU adapter | DONE | Canonical executable/artifact discovery, exact preview revalidation, shell-free native arguments, bounded stream events, success/failure/loss, duplicate rejection, and graceful/forced process-group cancellation are covered by fake processes; live compatibility is not claimed |
-| QEMU dialogs/session UI | IN_PROGRESS | Dialog/input state is complete; responsive launch/session rendering is the active child, followed by CLI-owned capability/runner integration |
+| QEMU dialogs/session UI | IN_PROGRESS | Dialog/input state and responsive capability/session rendering are complete; CLI-owned inspection, execution, polling, and cancellation are the active child |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -78,11 +78,10 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `QEMU-UI-RENDER-001` — render responsive QEMU launch and session UI
-2. `QEMU-UI-CLI-001` — integrate QEMU capability and runner in the CLI
-3. `QEMU-UI-001` — verify the complete QEMU UI parent gate
-4. `QEMU-001` — verify the complete managed QEMU parent gate
-5. `WIC-001` — add the Wic image workflow
+1. `QEMU-UI-CLI-001` — integrate QEMU capability and runner in the CLI
+2. `QEMU-UI-001` — verify the complete QEMU UI parent gate
+3. `QEMU-001` — verify the complete managed QEMU parent gate
+4. `WIC-001` — add the Wic image workflow
 
 ## Rules
 
