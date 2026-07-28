@@ -790,7 +790,7 @@ pub enum Dialog {
     SdkBuildConfirmation(SdkBuildPreview),
     SdkPublish(SdkPublishDraft),
     SdkPublishConfirmation(SdkPublishPreview),
-    SdkNative(SdkNativeDraft),
+    SdkNative(SdkNativeDialog),
     SdkNativeConfirmation(SdkNativePreview),
     SdkCancellationConfirmation(SdkSessionId),
     RecipeTaskConfirmation(BuildRequest),
@@ -2850,6 +2850,7 @@ pub enum Action {
     AppendSdkArtifactQuery(char),
     BackspaceSdkArtifactQuery,
     FinishSdkArtifactSearch,
+    OpenSelectedSdkArtifact,
     SdkToolCapabilityLoaded(SdkToolCapability),
     BeginSelectedSdkPublish,
     AppendSdkPublishDestination(char),
@@ -2860,6 +2861,14 @@ pub enum Action {
     ConfirmSdkPublish,
     BeginSdkNative,
     UpdateSdkNativeDraft(SdkNativeDraft),
+    SelectSdkNativeField {
+        delta: isize,
+    },
+    ActivateSdkNativeField,
+    CycleSdkNativeMode,
+    AppendSdkNativeField(char),
+    BackspaceSdkNativeField,
+    FinishSdkNativeFieldEdit,
     PreviewSdkNative,
     CancelSdkNative,
     CancelSdkNativePreview,
@@ -5381,6 +5390,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::FinishSdkArtifactSearch => app.sdk_artifact_searching = false,
+        Action::OpenSelectedSdkArtifact => {
+            if let Some(path) = app
+                .selected_sdk_artifact()
+                .map(|artifact| artifact.identity.path.clone())
+            {
+                return Some(Effect::OpenInEditor(path));
+            }
+            app.notification = Some("No SDK artifact is selected.".into());
+        }
         Action::SdkToolCapabilityLoaded(capability) => app.sdk_tool_capability = capability,
         Action::BeginSelectedSdkPublish => {
             let Some(artifact) = app.selected_sdk_artifact() else {
@@ -5462,17 +5480,89 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             return queue_sdk_session(app, SdkOperation::Publish(preview.request));
         }
         Action::BeginSdkNative => {
-            open_dialog(app, Dialog::SdkNative(SdkNativeDraft::default()));
+            open_dialog(
+                app,
+                Dialog::SdkNative(SdkNativeDialog::new(SdkNativeDraft::default())),
+            );
         }
         Action::UpdateSdkNativeDraft(draft) => {
             if matches!(app.active_dialog(), Some(Dialog::SdkNative(_))) {
-                replace_dialog(app, Dialog::SdkNative(draft));
+                replace_dialog(app, Dialog::SdkNative(SdkNativeDialog::new(draft)));
+            }
+        }
+        Action::SelectSdkNativeField { delta } => {
+            if let Some(Dialog::SdkNative(dialog)) = app.active_dialog_mut()
+                && !dialog.editing
+            {
+                dialog.selected_field = dialog.selected_field.shifted(delta);
+                dialog.validation_error = None;
+            }
+        }
+        Action::ActivateSdkNativeField => {
+            if let Some(Dialog::SdkNative(dialog)) = app.active_dialog_mut() {
+                if dialog.selected_field == SdkNativeField::Mode {
+                    dialog.cycle_mode();
+                } else if dialog.selected_field == SdkNativeField::Tool
+                    && dialog.draft.mode == SdkNativeMode::FindSysroot
+                {
+                    dialog.validation_error =
+                        Some("Tool is not applicable in find-native-sysroot mode.".into());
+                } else {
+                    dialog.editing = true;
+                    dialog.validation_error = None;
+                }
+            }
+        }
+        Action::CycleSdkNativeMode => {
+            if let Some(Dialog::SdkNative(dialog)) = app.active_dialog_mut()
+                && !dialog.editing
+                && dialog.selected_field == SdkNativeField::Mode
+            {
+                dialog.cycle_mode();
+            }
+        }
+        Action::AppendSdkNativeField(character) => {
+            if let Some(Dialog::SdkNative(dialog)) = app.active_dialog_mut()
+                && dialog.editing
+                && !character.is_control()
+            {
+                let arguments = dialog.selected_field == SdkNativeField::Arguments;
+                if let Some((text, bound)) = dialog.selected_text_mut()
+                    && text.len() + character.len_utf8() <= bound
+                {
+                    text.push(character);
+                    if arguments {
+                        dialog.synchronize_arguments();
+                    }
+                    dialog.validation_error = None;
+                }
+            }
+        }
+        Action::BackspaceSdkNativeField => {
+            if let Some(Dialog::SdkNative(dialog)) = app.active_dialog_mut()
+                && dialog.editing
+            {
+                let arguments = dialog.selected_field == SdkNativeField::Arguments;
+                if let Some((text, _)) = dialog.selected_text_mut() {
+                    text.pop();
+                    if arguments {
+                        dialog.synchronize_arguments();
+                    }
+                    dialog.validation_error = None;
+                }
+            }
+        }
+        Action::FinishSdkNativeFieldEdit => {
+            if let Some(Dialog::SdkNative(dialog)) = app.active_dialog_mut() {
+                dialog.synchronize_arguments();
+                dialog.editing = false;
             }
         }
         Action::PreviewSdkNative => {
-            let Some(Dialog::SdkNative(draft)) = app.active_dialog().cloned() else {
+            let Some(Dialog::SdkNative(dialog)) = app.active_dialog().cloned() else {
                 return None;
             };
+            let draft = dialog.draft;
             let executable = app.sdk_tool_capability.executable_for(draft.mode);
             let request = executable.map(|executable| SdkNativeRequest {
                 executable,
@@ -15840,6 +15930,10 @@ mod tests {
             app.sdk_artifacts,
             SdkArtifactInventoryState::Partial { .. }
         ));
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedSdkArtifact),
+            Some(Effect::OpenInEditor(artifact.identity.path.clone()))
+        );
 
         let _ = update(&mut app, Action::BeginSelectedSdkPublish);
         if let Some(Dialog::SdkPublish(draft)) = app.active_dialog_mut() {
@@ -15887,6 +15981,30 @@ mod tests {
         let job = app.background_jobs.get(session.background_job_id).unwrap();
         assert_eq!(job.status, BackgroundJobStatus::Succeeded);
         assert!(job.output[0].truncated);
+
+        let _ = update(&mut app, Action::BeginSdkNative);
+        let _ = update(&mut app, Action::ActivateSdkNativeField);
+        let _ = update(&mut app, Action::SelectSdkNativeField { delta: 2 });
+        let _ = update(&mut app, Action::ActivateSdkNativeField);
+        for character in "cmake-native".chars() {
+            let _ = update(&mut app, Action::AppendSdkNativeField(character));
+        }
+        let _ = update(&mut app, Action::FinishSdkNativeFieldEdit);
+        let _ = update(&mut app, Action::SelectSdkNativeField { delta: 2 });
+        let _ = update(&mut app, Action::ActivateSdkNativeField);
+        for _ in 0..(MAX_SDK_NATIVE_ARGUMENT_INPUT_BYTES + 10) {
+            let _ = update(&mut app, Action::AppendSdkNativeField('x'));
+        }
+        let Some(Dialog::SdkNative(dialog)) = app.active_dialog() else {
+            panic!("SDK native dialog");
+        };
+        assert_eq!(dialog.draft.mode, SdkNativeMode::RunNative);
+        assert_eq!(dialog.draft.recipe, "cmake-native");
+        assert_eq!(
+            dialog.arguments_input.len(),
+            MAX_SDK_NATIVE_ARGUMENT_INPUT_BYTES
+        );
+        let _ = update(&mut app, Action::CancelSdkNative);
 
         let _ = update(&mut app, Action::BeginSdkNative);
         let _ = update(

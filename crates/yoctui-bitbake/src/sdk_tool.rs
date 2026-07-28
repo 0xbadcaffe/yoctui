@@ -1493,7 +1493,7 @@ mod tests {
         let preview = publish_preview(&adapter, &directory);
         executable(
             &preview.request.executable,
-            "#!/bin/sh\ntrap 'exit 0' TERM\nwhile :; do sleep 1; done\n",
+            "#!/bin/sh\ntrap 'exit 0' TERM\nprintf 'ready\\n'\nwhile :; do :; done\n",
         );
         let preview = SdkPublishPreview::new(
             preview.request.executable,
@@ -1508,6 +1508,10 @@ mod tests {
             runner.next_event().await.unwrap(),
             SdkToolRunnerEvent::Started
         );
+        assert!(matches!(
+            runner.next_event().await.unwrap(),
+            SdkToolRunnerEvent::Output { line, .. } if line == "ready"
+        ));
         assert!(runner.cancel().await.unwrap());
         assert!(matches!(
             runner.next_event().await.unwrap(),

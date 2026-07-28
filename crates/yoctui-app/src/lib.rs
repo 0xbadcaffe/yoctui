@@ -1332,6 +1332,7 @@ pub fn sdk_workspace_action(searching: bool, key: Input) -> Option<Action> {
         ))),
         Input::Char('P') => Some(Action::BeginSelectedSdkPublish),
         Input::Char('n') => Some(Action::BeginSdkNative),
+        Input::Char('o') => Some(Action::OpenSelectedSdkArtifact),
         Input::Char('c') => Some(Action::BeginActiveSdkSessionCancellation),
         _ => None,
     }
@@ -1363,9 +1364,24 @@ pub fn sdk_publish_confirmation_action(key: Input) -> Option<Action> {
     }
 }
 
-pub fn sdk_native_dialog_action(key: Input) -> Option<Action> {
+pub fn sdk_native_dialog_action(editing: bool, key: Input) -> Option<Action> {
+    if editing {
+        return match key {
+            Input::Char(character) => Some(Action::AppendSdkNativeField(character)),
+            Input::Backspace => Some(Action::BackspaceSdkNativeField),
+            Input::Enter => Some(Action::FinishSdkNativeFieldEdit),
+            Input::Esc => Some(Action::CancelSdkNative),
+            _ => None,
+        };
+    }
     match key {
-        Input::Enter => Some(Action::PreviewSdkNative),
+        Input::Up | Input::Char('k') => Some(Action::SelectSdkNativeField { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectSdkNativeField { delta: 1 }),
+        Input::Left | Input::Right | Input::Char('h') | Input::Char('l') => {
+            Some(Action::CycleSdkNativeMode)
+        }
+        Input::Enter => Some(Action::ActivateSdkNativeField),
+        Input::Char('p') => Some(Action::PreviewSdkNative),
         Input::Esc => Some(Action::CancelSdkNative),
         _ => None,
     }
@@ -3868,6 +3884,10 @@ mod tests {
             Some(Action::AppendSdkArtifactQuery('x'))
         );
         assert_eq!(
+            sdk_workspace_action(false, Input::Char('o')),
+            Some(Action::OpenSelectedSdkArtifact)
+        );
+        assert_eq!(
             sdk_build_confirmation_action(Input::Enter),
             Some(Action::ConfirmSdkBuild)
         );
@@ -3881,8 +3901,33 @@ mod tests {
             Some(Action::ConfirmSdkPublish)
         );
         assert_eq!(
-            sdk_native_dialog_action(Input::Esc),
+            sdk_native_dialog_action(false, Input::Esc),
             Some(Action::CancelSdkNative)
+        );
+        assert_eq!(
+            sdk_native_dialog_action(false, Input::Char('p')),
+            Some(Action::PreviewSdkNative)
+        );
+        assert_eq!(
+            sdk_native_dialog_action(false, Input::Down),
+            Some(Action::SelectSdkNativeField { delta: 1 })
+        );
+        assert_eq!(
+            sdk_native_dialog_action(false, Input::Enter),
+            Some(Action::ActivateSdkNativeField)
+        );
+        assert_eq!(
+            sdk_native_dialog_action(true, Input::Char('x')),
+            Some(Action::AppendSdkNativeField('x'))
+        );
+        assert_eq!(
+            sdk_native_dialog_action(true, Input::Enter),
+            Some(Action::FinishSdkNativeFieldEdit)
+        );
+        assert_eq!(
+            sdk_native_dialog_action(true, Input::Esc),
+            Some(Action::CancelSdkNative),
+            "Esc closes the dialog even while a field is being edited"
         );
         assert_eq!(
             sdk_cancellation_confirmation_action(Input::Enter),

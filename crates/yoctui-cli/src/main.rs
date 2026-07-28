@@ -3485,8 +3485,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         operation,
                     );
                 }
-            } else if matches!(app.active_dialog(), Some(Dialog::SdkNative(_))) {
-                let _ = sdk_native_dialog_action(input).and_then(|action| update(&mut app, action));
+            } else if let Some(Dialog::SdkNative(dialog)) = app.active_dialog() {
+                let editing = dialog.editing;
+                let _ = sdk_native_dialog_action(editing, input)
+                    .and_then(|action| update(&mut app, action));
             } else if matches!(app.active_dialog(), Some(Dialog::SdkNativeConfirmation(_))) {
                 let effect = sdk_native_confirmation_action(input)
                     .and_then(|action| update(&mut app, action));
@@ -4102,6 +4104,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         &mut sdk_capability_operation,
                         effect,
                     ),
+                    Some(Effect::OpenInEditor(path)) => {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
                     _ => {}
                 }
             } else if app.screen == Screen::Settings && settings_action(input).is_some() {
@@ -7195,7 +7200,7 @@ esac"#,
         for (name, body, expect_forced) in [
             (
                 "graceful-cancel",
-                "trap 'exit 0' TERM; printf 'ready\\n'; while :; do sleep 1; done",
+                "trap 'exit 0' TERM; printf 'ready\\n'; while :; do :; done",
                 false,
             ),
             (
@@ -7557,6 +7562,11 @@ esac"#,
         let mut scan = None;
         begin_sdk_artifact_operation(&mut app, Some(&artifact_adapter), &mut scan, effect);
         sdk_workflow_poll_scan(&mut app, &mut scan).await;
+        let open = sdk_workspace_action(false, Input::Char('o'))
+            .and_then(|action| update(&mut app, action));
+        assert!(
+            matches!(open, Some(Effect::OpenInEditor(path)) if path.to_string_lossy().ends_with(".sh"))
+        );
 
         let destination = directory.join("published");
         fs::create_dir(&destination).unwrap();
@@ -7615,6 +7625,14 @@ esac"#,
             capability => panic!("unexpected SDK capability: {capability:?}"),
         };
         let _ = update(&mut app, Action::BeginSdkNative);
+        let native_input = sdk_native_dialog_action(false, Input::Enter)
+            .and_then(|action| update(&mut app, action));
+        assert!(native_input.is_none());
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::SdkNative(dialog))
+                if dialog.draft.mode == yoctui_model::SdkNativeMode::RunNative
+        ));
         let _ = update(
             &mut app,
             Action::UpdateSdkNativeDraft(yoctui_model::SdkNativeDraft {
