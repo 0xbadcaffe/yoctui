@@ -34,22 +34,26 @@ use yoctui_app::{
     qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
     qemu_launch_confirmation_action, qemu_launch_dialog_action, recipe_editor_action,
     settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
+    wic_actions_for_runner_event, wic_cancellation_confirmation_action,
+    wic_create_confirmation_action, wic_create_dialog_action,
 };
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolCommandSpec, DevtoolInspector,
     DevtoolJobRunner, DevtoolRunnerEvent, ImageArtifactAdapter, ImageArtifactCancellation,
     PackageDataAdapter, PackageDataCancellation, ProcessBackend, QemuAdapterError,
     QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner, QemuRunnerEvent, SignatureAdapter,
-    SignatureCancellation, VariableValue,
+    SignatureCancellation, VariableValue, WicAdapterError, WicCapabilityInspector,
+    WicCreateCommandSpec, WicJobRunner, WicRunnerEvent,
 };
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
     DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
-    ImageArtifactRequest, LayerBrowserEntry, LayerInspectorMode, LayerRelationship,
-    LayerRelationships, PackageDetailRequest, PackageInventoryRequest, PreviewKind, QemuCapability,
-    QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest, QemuSessionId, RecipeIdentity, Screen,
-    Severity, SignatureComparisonRequest, SignatureTarget, Theme, VariableDetail, VariableIdentity,
-    update, validate_config_edit_request,
+    ImageArtifactInventoryState, ImageArtifactRequest, LayerBrowserEntry, LayerInspectorMode,
+    LayerRelationship, LayerRelationships, PackageDetailRequest, PackageInventoryRequest,
+    PreviewKind, QemuCapability, QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest,
+    QemuSessionId, RecipeIdentity, Screen, Severity, SignatureComparisonRequest, SignatureTarget,
+    Theme, VariableDetail, VariableIdentity, WicCapability, WicCreateDraft, WicCreatePreview,
+    WicCreateRequest, WicOperation, WicSessionId, update, validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -1104,6 +1108,227 @@ async fn poll_qemu_job(app: &mut App, operation: &mut Option<QemuCliOperation>) 
     }
 }
 
+struct WicCliOperation {
+    id: WicSessionId,
+    runner: Option<WicJobRunner>,
+    cancellation: Option<tokio::task::JoinHandle<(WicJobRunner, Result<bool, WicAdapterError>)>>,
+}
+
+fn wic_preview_for_request(
+    capability: &WicCapability,
+    request: &WicCreateRequest,
+) -> Result<WicCreatePreview, String> {
+    let output_directory = request
+        .output_directory
+        .to_str()
+        .ok_or_else(|| "Wic output directory is not valid UTF-8".to_owned())?;
+    let draft = WicCreateDraft {
+        machine: request.machine.clone(),
+        image: request.image.clone(),
+        kickstart: request.kickstart.clone(),
+        output_directory: output_directory.into(),
+        generate_bmap: request.generate_bmap,
+        compression: request.compression,
+    };
+    let preview = draft.preview(capability).map_err(str::to_owned)?;
+    if &preview.request != request {
+        return Err("Wic request changed while rebuilding its preview".into());
+    }
+    Ok(preview)
+}
+
+async fn begin_wic_job(
+    app: &mut App,
+    operation: &mut Option<WicCliOperation>,
+    build_dir: &Path,
+    cancellation_timeout: Duration,
+    id: WicSessionId,
+    requested_operation: WicOperation,
+) {
+    if operation.is_some() {
+        let _ = update(
+            app,
+            Action::FailWicSession {
+                id,
+                message: "another managed Wic process is already owned by the CLI".into(),
+                exit_code: None,
+                finished_at: SystemTime::now(),
+            },
+        );
+        return;
+    }
+    let WicOperation::Create(request) = requested_operation else {
+        let _ = update(
+            app,
+            Action::FailWicSession {
+                id,
+                message: "Wic device writing is not integrated in the CLI yet".into(),
+                exit_code: None,
+                finished_at: SystemTime::now(),
+            },
+        );
+        return;
+    };
+    let output_directory = request.output_directory.clone();
+    let start = wic_preview_for_request(&app.wic_capability, &request)
+        .map_err(WicAdapterError::InvalidRequest)
+        .and_then(|preview| WicCreateCommandSpec::from_preview(&preview, &app.wic_capability));
+    let command = match start {
+        Ok(command) => command,
+        Err(error) => {
+            let _ = update(
+                app,
+                Action::FailWicSession {
+                    id,
+                    message: error.to_string(),
+                    exit_code: None,
+                    finished_at: SystemTime::now(),
+                },
+            );
+            return;
+        }
+    };
+    let mut runner =
+        WicJobRunner::new(build_dir.to_path_buf()).with_cancellation_timeout(cancellation_timeout);
+    match runner.start(command, output_directory).await {
+        Ok(()) => {
+            *operation = Some(WicCliOperation {
+                id,
+                runner: Some(runner),
+                cancellation: None,
+            });
+        }
+        Err(error) => {
+            let _ = update(
+                app,
+                Action::FailWicSession {
+                    id,
+                    message: error.to_string(),
+                    exit_code: None,
+                    finished_at: SystemTime::now(),
+                },
+            );
+        }
+    }
+}
+
+fn begin_wic_cancellation(
+    app: &mut App,
+    operation: &mut Option<WicCliOperation>,
+    id: WicSessionId,
+) {
+    let Some(active) = operation.as_mut().filter(|active| active.id == id) else {
+        let _ = update(
+            app,
+            Action::RejectWicSessionCancellation {
+                id,
+                message: "the CLI does not own this Wic process".into(),
+            },
+        );
+        return;
+    };
+    if active.cancellation.is_some() {
+        let _ = update(
+            app,
+            Action::RejectWicSessionCancellation {
+                id,
+                message: "Wic cancellation is already in progress".into(),
+            },
+        );
+        return;
+    }
+    let Some(mut runner) = active.runner.take() else {
+        let _ = update(
+            app,
+            Action::RejectWicSessionCancellation {
+                id,
+                message: "the Wic runner is unavailable".into(),
+            },
+        );
+        return;
+    };
+    active.cancellation = Some(tokio::spawn(async move {
+        let result = runner.cancel().await;
+        (runner, result)
+    }));
+}
+
+async fn poll_wic_job(app: &mut App, operation: &mut Option<WicCliOperation>) {
+    let Some(active) = operation.as_mut() else {
+        return;
+    };
+    if active
+        .cancellation
+        .as_ref()
+        .is_some_and(tokio::task::JoinHandle::is_finished)
+    {
+        let handle = active.cancellation.take().expect("checked above");
+        match handle.await {
+            Ok((runner, Ok(_))) => active.runner = Some(runner),
+            Ok((runner, Err(error))) => {
+                active.runner = Some(runner);
+                let _ = update(
+                    app,
+                    Action::RejectWicSessionCancellation {
+                        id: active.id,
+                        message: error.to_string(),
+                    },
+                );
+            }
+            Err(error) => {
+                let id = active.id;
+                let _ = update(
+                    app,
+                    Action::LoseWicSession {
+                        id,
+                        message: format!("Wic cancellation task was lost: {error}"),
+                        finished_at: SystemTime::now(),
+                    },
+                );
+                *operation = None;
+                return;
+            }
+        }
+    }
+    if active.cancellation.is_some() {
+        return;
+    }
+    let Some(runner) = active.runner.as_mut() else {
+        return;
+    };
+    match tokio::time::timeout(Duration::from_millis(1), runner.next_event()).await {
+        Ok(Ok(event)) => {
+            let terminal = matches!(
+                event,
+                WicRunnerEvent::Completed { .. }
+                    | WicRunnerEvent::Failed { .. }
+                    | WicRunnerEvent::Cancelled { .. }
+                    | WicRunnerEvent::Lost { .. }
+            );
+            for action in wic_actions_for_runner_event(active.id, event, SystemTime::now()) {
+                let _ = update(app, action);
+            }
+            if terminal {
+                *operation = None;
+            }
+        }
+        Ok(Err(error)) => {
+            let id = active.id;
+            for action in wic_actions_for_runner_event(
+                id,
+                WicRunnerEvent::Lost {
+                    message: error.to_string(),
+                },
+                SystemTime::now(),
+            ) {
+                let _ = update(app, action);
+            }
+            *operation = None;
+        }
+        Err(_) => {}
+    }
+}
+
 #[derive(Debug, Clone)]
 enum SignatureOperationRequest {
     Dump(SignatureTarget),
@@ -1311,6 +1536,118 @@ struct ImageArtifactBackgroundOperation {
     handle: tokio::task::JoinHandle<BackendEvent>,
 }
 
+struct WicCapabilityBackgroundOperation {
+    image_generation: u64,
+    handle: tokio::task::JoinHandle<WicCapability>,
+}
+
+fn configure_wic_capability_inspector(
+    app: &App,
+    inspector: WicCapabilityInspector,
+) -> WicCapabilityInspector {
+    let configured_kickstarts = ["WKS_FILE", "WKS_FILES"]
+        .into_iter()
+        .filter_map(|name| app.workspace.variables.get(name))
+        .flat_map(|value| value.split_ascii_whitespace())
+        .map(PathBuf::from)
+        .filter(|path| path.is_absolute())
+        .collect();
+    let mut canned_roots = app
+        .workspace
+        .variables
+        .get("WKS_SEARCH_PATH")
+        .map_or_else(Vec::new, |value| env::split_paths(value).collect());
+    if let Some(directory) = app.workspace.variables.get("WKS_FILES_DIR") {
+        let directory = PathBuf::from(directory);
+        if directory.is_absolute() {
+            canned_roots.push(directory);
+        }
+    }
+    canned_roots.retain(|path| path.is_absolute());
+    canned_roots.sort();
+    canned_roots.dedup();
+    inspector.with_sources(configured_kickstarts, canned_roots)
+}
+
+fn wic_capability_inspector(app: &App) -> WicCapabilityInspector {
+    configure_wic_capability_inspector(app, WicCapabilityInspector::default())
+}
+
+fn image_artifact_generation(app: &App) -> Option<u64> {
+    match &app.image_artifacts {
+        ImageArtifactInventoryState::Loading { request }
+        | ImageArtifactInventoryState::AvailableEmpty { request, .. }
+        | ImageArtifactInventoryState::Available { request, .. }
+        | ImageArtifactInventoryState::Partial { request, .. }
+        | ImageArtifactInventoryState::Failed { request, .. } => Some(request.generation),
+        ImageArtifactInventoryState::NotLoaded => None,
+    }
+}
+
+fn begin_wic_capability_operation(
+    app: &mut App,
+    inspector: &WicCapabilityInspector,
+    operation: &mut Option<WicCapabilityBackgroundOperation>,
+    effect: Effect,
+) {
+    if !matches!(effect, Effect::InspectWicCapability) || operation.is_some() {
+        return;
+    }
+    let Some(inventory) = app.image_artifacts.inventory() else {
+        let _ = update(
+            app,
+            Action::WicCapabilityLoaded(WicCapability::Failed {
+                message: "image artifact inventory is unavailable".into(),
+            }),
+        );
+        return;
+    };
+    let Some(image_generation) = image_artifact_generation(app) else {
+        return;
+    };
+    let mut image_targets = inventory
+        .artifacts
+        .iter()
+        .map(|artifact| artifact.identity.image.clone())
+        .collect::<Vec<_>>();
+    image_targets.sort();
+    image_targets.dedup();
+    let inspector = inspector.clone();
+    let handle = tokio::spawn(async move { inspector.inspect(image_targets).await });
+    *operation = Some(WicCapabilityBackgroundOperation {
+        image_generation,
+        handle,
+    });
+}
+
+async fn poll_wic_capability_operation(
+    app: &mut App,
+    inspector: &WicCapabilityInspector,
+    operation: &mut Option<WicCapabilityBackgroundOperation>,
+) {
+    if !operation
+        .as_ref()
+        .is_some_and(|operation| operation.handle.is_finished())
+    {
+        return;
+    }
+    let Some(active) = operation.take() else {
+        return;
+    };
+    let active_generation = active.image_generation;
+    let capability = match active.handle.await {
+        Ok(capability) => capability,
+        Err(error) => WicCapability::Failed {
+            message: format!("Wic capability background task was lost: {error}"),
+        },
+    };
+    if image_artifact_generation(app) == Some(active_generation) {
+        let _ = update(app, Action::WicCapabilityLoaded(capability));
+    } else if app.image_artifacts.inventory().is_some() {
+        begin_wic_capability_operation(app, inspector, operation, Effect::InspectWicCapability);
+    }
+}
+
 fn execute_qemu_capability_effect(
     app: &mut App,
     inspector: &QemuCapabilityInspector,
@@ -1355,6 +1692,12 @@ fn begin_image_artifact_operation(
                 message: "image artifact inventory is unavailable".into(),
             }),
         );
+        let _ = update(
+            app,
+            Action::WicCapabilityLoaded(WicCapability::Failed {
+                message: "image artifact inventory is unavailable".into(),
+            }),
+        );
         return;
     };
     let cancellation = ImageArtifactCancellation::default();
@@ -1383,6 +1726,8 @@ async fn poll_image_artifact_operation(
     app: &mut App,
     operation: &mut Option<ImageArtifactBackgroundOperation>,
     qemu_inspector: &QemuCapabilityInspector,
+    wic_inspector: &WicCapabilityInspector,
+    wic_operation: &mut Option<WicCapabilityBackgroundOperation>,
 ) {
     if !operation
         .as_ref()
@@ -1414,8 +1759,17 @@ async fn poll_image_artifact_operation(
                 message: format!("image artifact inventory failed: {message}"),
             }),
         );
+        let _ = update(
+            app,
+            Action::WicCapabilityLoaded(WicCapability::Failed {
+                message: format!("image artifact inventory failed: {message}"),
+            }),
+        );
     } else if let Some(effect) = update(app, Action::InspectQemuCapability) {
         execute_qemu_capability_effect(app, qemu_inspector, effect);
+        if let Some(effect) = update(app, Action::InspectWicCapability) {
+            begin_wic_capability_operation(app, wic_inspector, wic_operation, effect);
+        }
     }
 }
 
@@ -2327,6 +2681,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     let mut image_artifact_operation = None;
     let qemu_inspector = QemuCapabilityInspector::default();
     let mut qemu_operation = None;
+    let wic_inspector = wic_capability_inspector(&app);
+    let mut wic_capability_operation = None;
+    let mut wic_operation = None;
     if app.screen == Screen::Packages
         && let Some(effect @ Effect::GetPackageInventory(_)) =
             update(&mut app, Action::BeginPackageInventory)
@@ -2355,9 +2712,18 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         }
         poll_signature_operation(&mut app, &mut signature_operation).await;
         poll_package_operation(&mut app, &mut package_operation).await;
-        poll_image_artifact_operation(&mut app, &mut image_artifact_operation, &qemu_inspector)
+        poll_image_artifact_operation(
+            &mut app,
+            &mut image_artifact_operation,
+            &qemu_inspector,
+            &wic_inspector,
+            &mut wic_capability_operation,
+        )
+        .await;
+        poll_wic_capability_operation(&mut app, &wic_inspector, &mut wic_capability_operation)
             .await;
         poll_qemu_job(&mut app, &mut qemu_operation).await;
+        poll_wic_job(&mut app, &mut wic_operation).await;
         if matches!(
             app.build.status,
             BuildStatus::LoadingWorkspace
@@ -2407,6 +2773,34 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         &mut package_operation,
                         effect,
                     );
+                }
+            } else if matches!(app.active_dialog(), Some(Dialog::WicCreate(_))) {
+                let editing = app.active_dialog().is_some_and(
+                    |dialog| matches!(dialog, Dialog::WicCreate(state) if state.editing),
+                );
+                let _ = wic_create_dialog_action(editing, input)
+                    .and_then(|action| update(&mut app, action));
+            } else if matches!(app.active_dialog(), Some(Dialog::WicCreateConfirmation(_))) {
+                let effect = wic_create_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(Effect::StartWicSession { id, operation }) = effect {
+                    begin_wic_job(
+                        &mut app,
+                        &mut wic_operation,
+                        &session_build_dir,
+                        cancellation_timeout,
+                        id,
+                        operation,
+                    )
+                    .await;
+                }
+            } else if let Some(Dialog::WicCancellationConfirmation(id)) =
+                app.active_dialog().cloned()
+            {
+                let effect = wic_cancellation_confirmation_action(id, input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(Effect::CancelWicSession(id)) = effect {
+                    begin_wic_cancellation(&mut app, &mut wic_operation, id);
                 }
             } else if matches!(app.active_dialog(), Some(Dialog::QemuLaunch(_))) {
                 let editing = app.active_dialog().is_some_and(
@@ -3322,6 +3716,18 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         let _ = operation.handle.await;
     }
     if let Some(mut operation) = qemu_operation.take() {
+        if let Some(handle) = operation.cancellation.take() {
+            handle.abort();
+            let _ = handle.await;
+        } else if let Some(mut runner) = operation.runner.take() {
+            let _ = runner.cancel().await;
+        }
+    }
+    if let Some(operation) = wic_capability_operation.take() {
+        operation.handle.abort();
+        let _ = operation.handle.await;
+    }
+    if let Some(mut operation) = wic_operation.take() {
         if let Some(handle) = operation.cancellation.take() {
             handle.abort();
             let _ = handle.await;
@@ -4988,6 +5394,8 @@ esac"#,
         let adapter = ImageArtifactAdapter::new(deploy);
         let qemu_inspector =
             QemuCapabilityInspector::with_executable(directory.join("missing-runqemu"));
+        let wic_inspector = WicCapabilityInspector::with_executable(directory.join("missing-wic"));
+        let mut wic_capability_operation = None;
         let mut app = App::new(10, 1_000);
         app.workspace
             .variables
@@ -4997,7 +5405,14 @@ esac"#,
         begin_image_artifact_operation(&mut app, Some(&adapter), &mut operation, effect);
         tokio::time::timeout(Duration::from_secs(2), async {
             while operation.is_some() {
-                poll_image_artifact_operation(&mut app, &mut operation, &qemu_inspector).await;
+                poll_image_artifact_operation(
+                    &mut app,
+                    &mut operation,
+                    &qemu_inspector,
+                    &wic_inspector,
+                    &mut wic_capability_operation,
+                )
+                .await;
                 tokio::task::yield_now().await;
             }
         })
@@ -5025,7 +5440,14 @@ esac"#,
         );
         tokio::time::timeout(Duration::from_secs(2), async {
             while operation.is_some() {
-                poll_image_artifact_operation(&mut app, &mut operation, &qemu_inspector).await;
+                poll_image_artifact_operation(
+                    &mut app,
+                    &mut operation,
+                    &qemu_inspector,
+                    &wic_inspector,
+                    &mut wic_capability_operation,
+                )
+                .await;
                 tokio::task::yield_now().await;
             }
         })
@@ -5036,6 +5458,9 @@ esac"#,
             yoctui_model::ImageArtifactInventoryState::Failed { ref message, .. }
                 if message.contains("cancelled")
         ));
+        if let Some(operation) = wic_capability_operation {
+            operation.handle.abort();
+        }
         fs::remove_dir_all(directory).unwrap();
     }
 
@@ -5323,5 +5748,342 @@ esac"#,
         assert_eq!(lost_job.status, yoctui_model::BackgroundJobStatus::Lost);
         fs::remove_dir_all(lost_directory).unwrap();
         fs::remove_dir_all(cancel_directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    async fn wic_workspace_fixture(name: &str, create_body: &str) -> (PathBuf, PathBuf, App) {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = std::env::temp_dir().join(format!(
+            "yoctui-wic-workspace-{}-{name}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let build_dir = directory.join("build");
+        let deploy = directory.join("deploy");
+        fs::create_dir_all(&build_dir).unwrap();
+        fs::create_dir_all(&deploy).unwrap();
+        let executable = directory.join("wic");
+        fs::write(
+            &executable,
+            format!("#!/bin/sh\nif [ \"$1\" = \"list\" ]; then exit 0; fi\n{create_body}\n"),
+        )
+        .unwrap();
+        let mut permissions = fs::metadata(&executable).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&executable, permissions).unwrap();
+        let kickstart = directory.join("directdisk.wks");
+        fs::write(
+            &kickstart,
+            "part / --source=rootfs --fstype=ext4 --size=64\n",
+        )
+        .unwrap();
+        let image_path = deploy.join("core-image-minimal.ext4");
+        fs::write(&image_path, b"rootfs").unwrap();
+        let identity = yoctui_model::ImageArtifactIdentity {
+            machine: "qemux86-64".into(),
+            image: "core-image-minimal".into(),
+            path: image_path,
+        };
+        let artifact = yoctui_model::ImageArtifact {
+            identity: identity.clone(),
+            kind: yoctui_model::ImageArtifactKind::RootFilesystem,
+            size_bytes: yoctui_model::ImageArtifactField::Available(6),
+            modified_unix_seconds: yoctui_model::ImageArtifactField::Unavailable,
+            checksums: yoctui_model::ImageArtifactField::Unavailable,
+            manifests: yoctui_model::ImageArtifactField::Unavailable,
+            licenses: yoctui_model::ImageArtifactField::Unavailable,
+            spdx: yoctui_model::ImageArtifactField::Unavailable,
+            wic_files: yoctui_model::ImageArtifactField::Unavailable,
+        };
+        let mut app = App::new(20, 20_000);
+        app.screen = Screen::Images;
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace
+            .variables
+            .insert("WKS_FILE".into(), kickstart.display().to_string());
+        app.image_artifact_selection = Some(identity);
+        app.image_artifacts = ImageArtifactInventoryState::Available {
+            request: ImageArtifactRequest {
+                generation: 1,
+                machine: "qemux86-64".into(),
+            },
+            inventory: yoctui_model::ImageArtifactInventory {
+                machine: "qemux86-64".into(),
+                deploy_directory: yoctui_model::ImageArtifactField::Available(deploy),
+                artifacts: vec![artifact],
+            },
+        };
+        let inspector = configure_wic_capability_inspector(
+            &app,
+            WicCapabilityInspector::with_executable(executable),
+        );
+        let effect = update(&mut app, Action::InspectWicCapability).unwrap();
+        let mut capability_operation = None;
+        begin_wic_capability_operation(&mut app, &inspector, &mut capability_operation, effect);
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while capability_operation.is_some() {
+                poll_wic_capability_operation(&mut app, &inspector, &mut capability_operation)
+                    .await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(
+            matches!(app.wic_capability, WicCapability::Available { .. }),
+            "{:?}",
+            app.wic_capability
+        );
+        (directory, build_dir, app)
+    }
+
+    fn wic_workspace_start_effect(app: &mut App) -> (WicSessionId, WicOperation) {
+        let _ = update(app, Action::BeginSelectedWicCreate);
+        let _ = update(app, Action::PreviewWicCreate);
+        let Some(Effect::StartWicSession { id, operation }) = update(app, Action::ConfirmWicCreate)
+        else {
+            panic!("expected Wic start effect");
+        };
+        (id, operation)
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn wic_workspace_cli_discovers_runs_scans_and_persists_across_navigation() {
+        let (directory, build_dir, mut app) = wic_workspace_fixture(
+            "success",
+            "printf '%s\\n' \"$@\"; printf 'wic' > \"$6/generated.wic\"; exit 0",
+        )
+        .await;
+        let WicCapability::Available { kickstarts, .. } = &app.wic_capability else {
+            panic!("available capability");
+        };
+        assert_eq!(
+            kickstarts[0].identity.path.as_deref(),
+            Some(directory.join("directdisk.wks").as_path())
+        );
+        assert_eq!(
+            wic_create_dialog_action(false, Input::Char('Q')),
+            None,
+            "modal Q input must not leak to the Images workspace"
+        );
+        let (id, operation_request) = wic_workspace_start_effect(&mut app);
+        let mut operation = None;
+        begin_wic_job(
+            &mut app,
+            &mut operation,
+            &build_dir,
+            Duration::from_millis(100),
+            id,
+            operation_request,
+        )
+        .await;
+        let duplicate = update(&mut app, Action::BeginSelectedWicCreate);
+        assert!(duplicate.is_none());
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("already active"))
+        );
+        let _ = update(&mut app, Action::DismissNotification);
+        app.screen = Screen::Logs;
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while operation.is_some() {
+                poll_wic_job(&mut app, &mut operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let session = app.wic_session(id).unwrap();
+        let job = app.background_jobs.get(session.background_job_id).unwrap();
+        assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Succeeded);
+        assert_eq!(app.screen, Screen::Logs);
+        assert!(
+            job.output
+                .iter()
+                .any(|entry| entry.message == "core-image-minimal")
+        );
+        let outputs = app.wic_output_rows();
+        assert_eq!(outputs.len(), 1);
+        assert_eq!(
+            outputs[0].identity.path,
+            directory.join("deploy/generated.wic")
+        );
+        assert_eq!(app.wic_output_selection, Some(outputs[0].identity.clone()));
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn wic_workspace_cli_reports_failure_graceful_and_forced_cancellation() {
+        let (failed_directory, failed_build, mut failed) =
+            wic_workspace_fixture("failure", "printf 'failed\\n' >&2; exit 9").await;
+        let (failed_id, failed_request) = wic_workspace_start_effect(&mut failed);
+        let mut failed_operation = None;
+        begin_wic_job(
+            &mut failed,
+            &mut failed_operation,
+            &failed_build,
+            Duration::from_millis(100),
+            failed_id,
+            failed_request,
+        )
+        .await;
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while failed_operation.is_some() {
+                poll_wic_job(&mut failed, &mut failed_operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let job = failed
+            .background_jobs
+            .get(failed.wic_session(failed_id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Failed);
+        assert_eq!(failed.wic_session(failed_id).unwrap().exit_code, Some(9));
+        fs::remove_dir_all(failed_directory).unwrap();
+
+        for (name, body, expect_forced) in [
+            (
+                "graceful-cancel",
+                "trap 'exit 0' TERM; printf 'ready\\n'; while :; do sleep 1; done",
+                false,
+            ),
+            (
+                "forced-cancel",
+                "trap '' TERM; printf 'ready\\n'; while :; do sleep 1; done",
+                true,
+            ),
+        ] {
+            let (directory, build_dir, mut app) = wic_workspace_fixture(name, body).await;
+            let (id, request) = wic_workspace_start_effect(&mut app);
+            let mut operation = None;
+            begin_wic_job(
+                &mut app,
+                &mut operation,
+                &build_dir,
+                Duration::from_millis(50),
+                id,
+                request,
+            )
+            .await;
+            tokio::time::timeout(Duration::from_secs(2), async {
+                loop {
+                    poll_wic_job(&mut app, &mut operation).await;
+                    let ready = app
+                        .wic_session(id)
+                        .and_then(|session| app.background_jobs.get(session.background_job_id))
+                        .is_some_and(|job| job.output.iter().any(|entry| entry.message == "ready"));
+                    if ready {
+                        break;
+                    }
+                    tokio::task::yield_now().await;
+                }
+            })
+            .await
+            .unwrap();
+            let _ = update(&mut app, Action::BeginActiveWicSessionCancellation);
+            let Some(Dialog::WicCancellationConfirmation(dialog_id)) = app.active_dialog().cloned()
+            else {
+                panic!("Wic cancellation dialog");
+            };
+            let effect = wic_cancellation_confirmation_action(dialog_id, Input::Enter)
+                .and_then(|action| update(&mut app, action));
+            let Some(Effect::CancelWicSession(effect_id)) = effect else {
+                panic!("Wic cancellation effect");
+            };
+            begin_wic_cancellation(&mut app, &mut operation, effect_id);
+            tokio::time::timeout(Duration::from_secs(2), async {
+                while operation.is_some() {
+                    poll_wic_job(&mut app, &mut operation).await;
+                    tokio::task::yield_now().await;
+                }
+            })
+            .await
+            .unwrap();
+            let job = app
+                .background_jobs
+                .get(app.wic_session(id).unwrap().background_job_id)
+                .unwrap();
+            assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Cancelled);
+            assert_eq!(
+                job.output
+                    .iter()
+                    .any(|entry| entry.message.contains("forced termination")),
+                expect_forced
+            );
+            fs::remove_dir_all(directory).unwrap();
+        }
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn wic_workspace_cli_reports_rejection_and_unexpected_runner_loss() {
+        let (reject_directory, _, mut rejected) = wic_workspace_fixture("reject", "sleep 30").await;
+        let (reject_id, _) = wic_workspace_start_effect(&mut rejected);
+        let _ = update(
+            &mut rejected,
+            Action::WicSessionStarting {
+                id: reject_id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut rejected, Action::WicSessionRunning { id: reject_id });
+        let _ = update(&mut rejected, Action::BeginActiveWicSessionCancellation);
+        let Some(Effect::CancelWicSession(effect_id)) = update(
+            &mut rejected,
+            Action::ConfirmWicSessionCancellation {
+                id: reject_id,
+                acknowledge_incomplete_device: false,
+            },
+        ) else {
+            panic!("Wic rejection effect");
+        };
+        let mut no_operation = None;
+        begin_wic_cancellation(&mut rejected, &mut no_operation, effect_id);
+        let job = rejected
+            .background_jobs
+            .get(rejected.wic_session(reject_id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Running);
+        fs::remove_dir_all(reject_directory).unwrap();
+
+        let (lost_directory, lost_build, mut lost) =
+            wic_workspace_fixture("lost", "sleep 30").await;
+        let (lost_id, lost_request) = wic_workspace_start_effect(&mut lost);
+        let mut lost_operation = None;
+        begin_wic_job(
+            &mut lost,
+            &mut lost_operation,
+            &lost_build,
+            Duration::from_millis(100),
+            lost_id,
+            lost_request,
+        )
+        .await;
+        poll_wic_job(&mut lost, &mut lost_operation).await;
+        poll_wic_job(&mut lost, &mut lost_operation).await;
+        let lost_handle = tokio::spawn(async {
+            std::future::pending::<(WicJobRunner, Result<bool, WicAdapterError>)>().await
+        });
+        lost_handle.abort();
+        lost_operation.as_mut().unwrap().cancellation = Some(lost_handle);
+        tokio::task::yield_now().await;
+        poll_wic_job(&mut lost, &mut lost_operation).await;
+        let job = lost
+            .background_jobs
+            .get(lost.wic_session(lost_id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Lost);
+        fs::remove_dir_all(lost_directory).unwrap();
     }
 }

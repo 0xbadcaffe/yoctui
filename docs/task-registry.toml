@@ -889,12 +889,12 @@ notes = "Responsive Images rendering now covers every typed Wic capability, outp
 id = "WIC-UI-CLI-001"
 milestone = "M4"
 title = "Integrate Wic creation capability and runner in the CLI"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["WIC-UI-RENDER-001"]
 verify = ["cargo test -p yoctui -- wic_workspace"]
-notes = "Execute discovery/create/cancel effects, route modal keys first, independently poll one Wic runner, and preserve exact output/job history across navigation."
+notes = "The CLI now generation-correlates asynchronous capability inspection from authoritative WKS workspace values, routes Wic modals before global input, independently rebuilds/revalidates exact creation previews, owns and nonblockingly polls one kill-on-drop runner, scans exact outputs, and handles success, nonzero failure, graceful/forced cancellation, rejection, duplicate prevention, and loss while preserving history across navigation. Fake integration and baseline checks pass; live Wic compatibility is not claimed."
 
 [[task]]
 id = "WIC-WRITE-ADAPTER-001"

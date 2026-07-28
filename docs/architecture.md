@@ -531,6 +531,18 @@ runner ownership only after a terminal event. Exact typed-phrase and command
 previews are model gates; the adapter's final revalidation is the authoritative
 write gate. Fake device/process coverage is not live removable-media evidence.
 
+The workspace bridge includes expanded `WKS_FILE`, `WKS_FILES`,
+`WKS_SEARCH_PATH`, and `WKS_FILES_DIR` values when BitBake reports them. The CLI
+accepts only absolute configured kickstart files and absolute search roots from
+those typed workspace values; relative or absent values are never expanded by
+guessing. Capability inspection runs in a generation-correlated Tokio task so a
+stale image inventory cannot replace current Wic capability. Both inspection
+and creation children use kill-on-drop process ownership. Creation reconstructs
+the typed preview from the retained request, requires the adapter's independent
+exact-argv revalidation, then polls starting, running, bounded stream output,
+completion/output scan, failure, cancellation, rejection, and loss events
+without blocking the terminal loop.
+
 ## Background-job model
 
 All long-running operations use one shared job abstraction.
