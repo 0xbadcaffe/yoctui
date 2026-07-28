@@ -33,6 +33,9 @@ use yoctui_app::{
     key_action, logs_action, model_action_from_backend_event, package_workspace_action,
     qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
     qemu_launch_confirmation_action, qemu_launch_dialog_action, recipe_editor_action,
+    sdk_actions_for_runner_event, sdk_build_confirmation_action,
+    sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
+    sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
     settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
     wic_actions_for_runner_event, wic_cancellation_confirmation_action,
     wic_create_confirmation_action, wic_create_dialog_action, wic_device_picker_action,
@@ -42,7 +45,9 @@ use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolCommandSpec, DevtoolInspector,
     DevtoolJobRunner, DevtoolRunnerEvent, ImageArtifactAdapter, ImageArtifactCancellation,
     PackageDataAdapter, PackageDataCancellation, ProcessBackend, QemuAdapterError,
-    QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner, QemuRunnerEvent, SignatureAdapter,
+    QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner, QemuRunnerEvent, SdkArtifactAdapter,
+    SdkArtifactCancellation, SdkArtifactScanOutcome, SdkToolAdapter, SdkToolAdapterError,
+    SdkToolCommandSpec, SdkToolJobRunner, SdkToolRunnerEvent, SignatureAdapter,
     SignatureCancellation, VariableValue, WicAdapterError, WicCapabilityInspector,
     WicCreateCommandSpec, WicDeviceInspector, WicDeviceInventoryResponse, WicJobRunner,
     WicRunnerEvent,
@@ -53,10 +58,11 @@ use yoctui_model::{
     ImageArtifactInventoryState, ImageArtifactRequest, LayerBrowserEntry, LayerInspectorMode,
     LayerRelationship, LayerRelationships, PackageDetailRequest, PackageInventoryRequest,
     PreviewKind, QemuCapability, QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest,
-    QemuSessionId, RecipeIdentity, Screen, Severity, SignatureComparisonRequest, SignatureTarget,
-    Theme, VariableDetail, VariableIdentity, WicCapability, WicCreateDraft, WicCreatePreview,
-    WicCreateRequest, WicDeviceInventoryRequest, WicOperation, WicSessionId, update,
-    validate_config_edit_request,
+    QemuSessionId, RecipeIdentity, Screen, SdkArtifactInventoryRequest, SdkNativePreview,
+    SdkOperation, SdkPublishPreview, SdkSessionId, SdkToolCapability, Severity,
+    SignatureComparisonRequest, SignatureTarget, Theme, VariableDetail, VariableIdentity,
+    WicCapability, WicCreateDraft, WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest,
+    WicOperation, WicSessionId, update, validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -769,19 +775,19 @@ async fn begin_build(
     app: &mut App,
     build_jobs: &mut BuildJobCoordinator,
     request: BuildRequest,
-) {
+) -> bool {
     let Some(actions) = build_jobs.queue_build(&request, SystemTime::now()) else {
         let _ = update(
             app,
             Action::Notify("A build background job is already active.".into()),
         );
-        return;
+        return false;
     };
     for action in actions {
         let _ = update(app, action);
     }
     match backend.start_build(request).await {
-        Ok(()) => {}
+        Ok(()) => true,
         Err(error) => {
             for action in build_jobs.start_failed(error.to_string(), SystemTime::now()) {
                 let _ = update(app, action);
@@ -794,6 +800,7 @@ async fn begin_build(
                     "check backend diagnostics and retry",
                 )),
             );
+            false
         }
     }
 }
@@ -880,6 +887,521 @@ async fn poll_devtool_job(
             None
         }
         Err(_) => None,
+    }
+}
+
+const SDK_TOOL_OPERATION_TIMEOUT: Duration = Duration::from_secs(30 * 60);
+
+struct SdkArtifactBackgroundOperation {
+    request: SdkArtifactInventoryRequest,
+    cancellation: SdkArtifactCancellation,
+    handle: tokio::task::JoinHandle<
+        Result<yoctui_bitbake::SdkArtifactResponse, yoctui_bitbake::SdkArtifactAdapterError>,
+    >,
+}
+
+struct SdkCapabilityBackgroundOperation {
+    handle: tokio::task::JoinHandle<SdkToolCapability>,
+}
+
+struct SdkCliOperation {
+    id: SdkSessionId,
+    operation: SdkOperation,
+    starting: Option<tokio::task::JoinHandle<(SdkToolJobRunner, Result<(), SdkToolAdapterError>)>>,
+    runner: Option<SdkToolJobRunner>,
+    timeout_wait: Option<
+        tokio::task::JoinHandle<(
+            SdkToolJobRunner,
+            Result<SdkToolRunnerEvent, SdkToolAdapterError>,
+        )>,
+    >,
+    cancellation:
+        Option<tokio::task::JoinHandle<(SdkToolJobRunner, Result<bool, SdkToolAdapterError>)>>,
+}
+
+fn sdk_tool_adapter_for_workspace(
+    app: &App,
+    build_directory: &Path,
+) -> Result<SdkToolAdapter, String> {
+    let build_directory = fs::canonicalize(build_directory)
+        .map_err(|error| format!("active build directory is unavailable: {error}"))?;
+    if !build_directory.is_dir() {
+        return Err("active build directory is not a canonical directory".into());
+    }
+    let sdk_deploy_root = app
+        .workspace
+        .variables
+        .get("SDK_DEPLOY")
+        .map(PathBuf::from)
+        .ok_or_else(|| "SDK_DEPLOY is unavailable from the active Yocto workspace".to_owned())?;
+    let mut workspace_roots = vec![build_directory.clone()];
+    if let Some(source_directory) = app.workspace.source_dir.as_ref() {
+        let source_directory = fs::canonicalize(source_directory)
+            .map_err(|error| format!("active Yocto source directory is unavailable: {error}"))?;
+        if !source_directory.is_dir() {
+            return Err("active Yocto source directory is not a canonical directory".into());
+        }
+        workspace_roots.push(source_directory);
+    }
+    workspace_roots.sort();
+    workspace_roots.dedup();
+    Ok(SdkToolAdapter::new(
+        build_directory,
+        sdk_deploy_root,
+        workspace_roots,
+    ))
+}
+
+fn begin_sdk_capability_operation(
+    app: &mut App,
+    adapter: Option<&SdkToolAdapter>,
+    operation: &mut Option<SdkCapabilityBackgroundOperation>,
+    effect: Effect,
+) {
+    if !matches!(effect, Effect::InspectSdkTools) {
+        return;
+    }
+    if let Some(stale) = operation.take() {
+        stale.handle.abort();
+    }
+    let Some(adapter) = adapter.cloned() else {
+        let _ = update(
+            app,
+            Action::SdkToolCapabilityLoaded(SdkToolCapability::Failed {
+                message: "SDK tools cannot be inspected without a canonical build directory, SDK_DEPLOY, and authoritative workspace roots".into(),
+            }),
+        );
+        return;
+    };
+    let handle = tokio::task::spawn_blocking(move || adapter.capability());
+    *operation = Some(SdkCapabilityBackgroundOperation { handle });
+}
+
+async fn poll_sdk_capability_operation(
+    app: &mut App,
+    operation: &mut Option<SdkCapabilityBackgroundOperation>,
+) {
+    if !operation
+        .as_ref()
+        .is_some_and(|operation| operation.handle.is_finished())
+    {
+        return;
+    }
+    let Some(operation) = operation.take() else {
+        return;
+    };
+    let capability = match operation.handle.await {
+        Ok(capability) => capability,
+        Err(error) => SdkToolCapability::Failed {
+            message: format!("SDK capability inspection task was lost: {error}"),
+        },
+    };
+    let _ = update(app, Action::SdkToolCapabilityLoaded(capability));
+}
+
+fn begin_sdk_artifact_operation(
+    app: &mut App,
+    adapter: Option<&SdkArtifactAdapter>,
+    operation: &mut Option<SdkArtifactBackgroundOperation>,
+    effect: Effect,
+) {
+    let Effect::GetSdkArtifacts(request) = effect else {
+        return;
+    };
+    if let Some(stale) = operation.take() {
+        stale.cancellation.cancel();
+        stale.handle.abort();
+    }
+    let Some(adapter) = adapter.cloned() else {
+        let _ = update(
+            app,
+            Action::SdkArtifactInventoryFailed {
+                request,
+                message: "SDK_DEPLOY is unavailable from the active Yocto workspace".into(),
+            },
+        );
+        return;
+    };
+    let cancellation = SdkArtifactCancellation::default();
+    let worker_cancellation = cancellation.clone();
+    let worker_request = request.clone();
+    let handle = tokio::spawn(async move {
+        adapter
+            .scan_with_cancellation(worker_request, worker_cancellation)
+            .await
+    });
+    *operation = Some(SdkArtifactBackgroundOperation {
+        request,
+        cancellation,
+        handle,
+    });
+}
+
+async fn poll_sdk_artifact_operation(
+    app: &mut App,
+    operation: &mut Option<SdkArtifactBackgroundOperation>,
+) {
+    if !operation
+        .as_ref()
+        .is_some_and(|operation| operation.handle.is_finished())
+    {
+        return;
+    }
+    let Some(operation) = operation.take() else {
+        return;
+    };
+    let action = match operation.handle.await {
+        Ok(Ok(response)) => match response.outcome {
+            SdkArtifactScanOutcome::Empty => Action::SdkArtifactInventoryLoaded {
+                request: response.request,
+                artifacts: Vec::new(),
+                limitations: Vec::new(),
+            },
+            SdkArtifactScanOutcome::Complete(artifacts) => Action::SdkArtifactInventoryLoaded {
+                request: response.request,
+                artifacts,
+                limitations: Vec::new(),
+            },
+            SdkArtifactScanOutcome::Partial {
+                artifacts,
+                limitations,
+            } => Action::SdkArtifactInventoryLoaded {
+                request: response.request,
+                artifacts,
+                limitations,
+            },
+        },
+        Ok(Err(error)) => Action::SdkArtifactInventoryFailed {
+            request: operation.request,
+            message: error.to_string(),
+        },
+        Err(error) => Action::SdkArtifactInventoryFailed {
+            request: operation.request,
+            message: format!("SDK artifact background task was lost: {error}"),
+        },
+    };
+    let _ = update(app, action);
+}
+
+fn sdk_command_for_operation(
+    adapter: &SdkToolAdapter,
+    operation: &SdkOperation,
+) -> Result<SdkToolCommandSpec, SdkToolAdapterError> {
+    match operation {
+        SdkOperation::Publish(request) => {
+            let preview = SdkPublishPreview::new(
+                request.executable.clone(),
+                request.artifact.clone(),
+                request.destination.clone(),
+            )
+            .map_err(|message| SdkToolAdapterError::InvalidRequest(message.into()))?;
+            adapter.publication_command(&preview)
+        }
+        SdkOperation::Native(request) => {
+            let preview = SdkNativePreview::new(request.clone())
+                .map_err(|message| SdkToolAdapterError::InvalidRequest(message.into()))?;
+            adapter.native_command(&preview)
+        }
+    }
+}
+
+fn begin_sdk_job(
+    app: &mut App,
+    owned: &mut Option<SdkCliOperation>,
+    adapter: Option<&SdkToolAdapter>,
+    cancellation_timeout: Duration,
+    operation_timeout: Duration,
+    id: SdkSessionId,
+    operation: SdkOperation,
+) {
+    if owned.is_some() {
+        let _ = update(
+            app,
+            Action::FailSdkSession {
+                id,
+                message: "another managed SDK tool process is already owned by the CLI".into(),
+                exit_code: None,
+                finished_at: SystemTime::now(),
+            },
+        );
+        return;
+    }
+    let Some(adapter) = adapter.cloned() else {
+        let _ = update(
+            app,
+            Action::FailSdkSession {
+                id,
+                message: "SDK tool execution is unavailable for the active workspace".into(),
+                exit_code: None,
+                finished_at: SystemTime::now(),
+            },
+        );
+        return;
+    };
+    let worker_operation = operation.clone();
+    let starting = tokio::spawn(async move {
+        let mut runner = SdkToolJobRunner::new()
+            .with_cancellation_timeout(cancellation_timeout)
+            .with_operation_timeout(operation_timeout);
+        let result = match sdk_command_for_operation(&adapter, &worker_operation) {
+            Ok(command) => runner.start(command).await,
+            Err(error) => Err(error),
+        };
+        (runner, result)
+    });
+    *owned = Some(SdkCliOperation {
+        id,
+        operation,
+        starting: Some(starting),
+        runner: None,
+        timeout_wait: None,
+        cancellation: None,
+    });
+}
+
+fn begin_sdk_cancellation(
+    app: &mut App,
+    operation: &mut Option<SdkCliOperation>,
+    id: SdkSessionId,
+) {
+    let Some(active) = operation.as_mut().filter(|active| active.id == id) else {
+        let _ = update(
+            app,
+            Action::RejectSdkSessionCancellation {
+                id,
+                message: "the CLI does not own this SDK tool process".into(),
+            },
+        );
+        return;
+    };
+    if active.cancellation.is_some() {
+        let _ = update(
+            app,
+            Action::RejectSdkSessionCancellation {
+                id,
+                message: "SDK tool cancellation is already in progress".into(),
+            },
+        );
+        return;
+    }
+    if active.timeout_wait.is_some() {
+        let _ = update(
+            app,
+            Action::RejectSdkSessionCancellation {
+                id,
+                message: "SDK tool timeout finalization is already in progress".into(),
+            },
+        );
+        return;
+    }
+    if let Some(starting) = active.starting.take() {
+        starting.abort();
+        let _ = update(
+            app,
+            Action::CancelSdkSession {
+                id,
+                exit_code: None,
+                finished_at: SystemTime::now(),
+            },
+        );
+        *operation = None;
+        return;
+    }
+    let Some(mut runner) = active.runner.take() else {
+        let _ = update(
+            app,
+            Action::RejectSdkSessionCancellation {
+                id,
+                message: "the SDK tool runner is unavailable".into(),
+            },
+        );
+        return;
+    };
+    active.cancellation = Some(tokio::spawn(async move {
+        let result = runner.cancel().await;
+        (runner, result)
+    }));
+}
+
+async fn poll_sdk_job(
+    app: &mut App,
+    operation: &mut Option<SdkCliOperation>,
+) -> Option<SdkOperation> {
+    let active = operation.as_mut()?;
+    if active
+        .starting
+        .as_ref()
+        .is_some_and(tokio::task::JoinHandle::is_finished)
+    {
+        let handle = active.starting.take().expect("checked above");
+        match handle.await {
+            Ok((runner, Ok(()))) => active.runner = Some(runner),
+            Ok((_, Err(error))) => {
+                let id = active.id;
+                let _ = update(
+                    app,
+                    Action::FailSdkSession {
+                        id,
+                        message: error.to_string(),
+                        exit_code: None,
+                        finished_at: SystemTime::now(),
+                    },
+                );
+                *operation = None;
+                return None;
+            }
+            Err(error) => {
+                let id = active.id;
+                let _ = update(
+                    app,
+                    Action::LoseSdkSession {
+                        id,
+                        message: format!("SDK tool startup task was lost: {error}"),
+                        finished_at: SystemTime::now(),
+                    },
+                );
+                *operation = None;
+                return None;
+            }
+        }
+    }
+    if active.starting.is_some() {
+        return None;
+    }
+    if active
+        .cancellation
+        .as_ref()
+        .is_some_and(tokio::task::JoinHandle::is_finished)
+    {
+        let handle = active.cancellation.take().expect("checked above");
+        match handle.await {
+            Ok((runner, Ok(_))) => active.runner = Some(runner),
+            Ok((runner, Err(error))) => {
+                active.runner = Some(runner);
+                let _ = update(
+                    app,
+                    Action::RejectSdkSessionCancellation {
+                        id: active.id,
+                        message: error.to_string(),
+                    },
+                );
+            }
+            Err(error) => {
+                let id = active.id;
+                let _ = update(
+                    app,
+                    Action::LoseSdkSession {
+                        id,
+                        message: format!("SDK tool cancellation task was lost: {error}"),
+                        finished_at: SystemTime::now(),
+                    },
+                );
+                *operation = None;
+                return None;
+            }
+        }
+    }
+    if active.cancellation.is_some() {
+        return None;
+    }
+    if active
+        .timeout_wait
+        .as_ref()
+        .is_some_and(tokio::task::JoinHandle::is_finished)
+    {
+        let handle = active.timeout_wait.take().expect("checked above");
+        let event = match handle.await {
+            Ok((_runner, Ok(event))) => event,
+            Ok((_runner, Err(error))) => SdkToolRunnerEvent::Lost {
+                message: error.to_string(),
+            },
+            Err(error) => SdkToolRunnerEvent::Lost {
+                message: format!("SDK timeout finalization task was lost: {error}"),
+            },
+        };
+        let id = active.id;
+        for action in sdk_actions_for_runner_event(id, event, SystemTime::now()) {
+            let _ = update(app, action);
+        }
+        *operation = None;
+        return None;
+    }
+    if active.timeout_wait.is_some() {
+        return None;
+    }
+    let runner = active.runner.as_mut()?;
+    if runner.operation_timeout_due_within(Duration::from_millis(2)) {
+        let mut runner = active.runner.take().expect("runner checked above");
+        active.timeout_wait = Some(tokio::spawn(async move {
+            let result = runner.next_event().await;
+            (runner, result)
+        }));
+        return None;
+    }
+    match tokio::time::timeout(Duration::from_millis(1), runner.next_event()).await {
+        Ok(Ok(event)) => {
+            let completed = matches!(event, SdkToolRunnerEvent::Completed { .. });
+            let terminal = completed
+                || matches!(
+                    event,
+                    SdkToolRunnerEvent::Failed { .. }
+                        | SdkToolRunnerEvent::Cancelled { .. }
+                        | SdkToolRunnerEvent::TimedOut { .. }
+                        | SdkToolRunnerEvent::Lost { .. }
+                );
+            let completed_operation = completed.then(|| active.operation.clone());
+            for action in sdk_actions_for_runner_event(active.id, event, SystemTime::now()) {
+                let _ = update(app, action);
+            }
+            if terminal {
+                *operation = None;
+            }
+            completed_operation
+        }
+        Ok(Err(error)) => {
+            let id = active.id;
+            for action in sdk_actions_for_runner_event(
+                id,
+                SdkToolRunnerEvent::Lost {
+                    message: error.to_string(),
+                },
+                SystemTime::now(),
+            ) {
+                let _ = update(app, action);
+            }
+            *operation = None;
+            None
+        }
+        Err(_) => None,
+    }
+}
+
+fn sdk_build_is_populate(request: &BuildRequest) -> bool {
+    matches!(
+        request.task.as_deref(),
+        Some("populate_sdk" | "populate_sdk_ext")
+    )
+}
+
+fn sdk_refresh_after_build_event(
+    app: &mut App,
+    pending_sdk_build: &mut Option<BuildRequest>,
+    event: &BackendEvent,
+) -> Option<Effect> {
+    match event {
+        BackendEvent::BuildCompleted { success: true, .. } => {
+            let request = pending_sdk_build.take()?;
+            sdk_build_is_populate(&request)
+                .then(|| update(app, Action::RefreshSdkArtifactInventory))
+                .flatten()
+        }
+        BackendEvent::BuildCompleted { success: false, .. }
+        | BackendEvent::CommandFailed { .. }
+        | BackendEvent::Disconnected => {
+            *pending_sdk_build = None;
+            None
+        }
+        _ => None,
     }
 }
 
@@ -2787,6 +3309,26 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         .map(PathBuf::from)
         .map(ImageArtifactAdapter::new);
     let mut image_artifact_operation = None;
+    let sdk_artifact_adapter = app
+        .workspace
+        .variables
+        .get("SDK_DEPLOY")
+        .map(PathBuf::from)
+        .map(SdkArtifactAdapter::new);
+    let sdk_tool_adapter = match sdk_tool_adapter_for_workspace(&app, &session_build_dir) {
+        Ok(adapter) => Some(adapter),
+        Err(message) => {
+            let _ = update(
+                &mut app,
+                Action::SdkToolCapabilityLoaded(SdkToolCapability::Failed { message }),
+            );
+            None
+        }
+    };
+    let mut sdk_artifact_operation = None;
+    let mut sdk_capability_operation = None;
+    let mut sdk_operation = None;
+    let mut pending_sdk_build = None;
     let qemu_inspector = QemuCapabilityInspector::default();
     let mut qemu_operation = None;
     let wic_inspector = wic_capability_inspector(&app);
@@ -2811,6 +3353,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             effect,
         );
     }
+    if sdk_tool_adapter.is_some() {
+        begin_sdk_capability_operation(
+            &mut app,
+            sdk_tool_adapter.as_ref(),
+            &mut sdk_capability_operation,
+            Effect::InspectSdkTools,
+        );
+    }
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
     #[cfg(unix)]
@@ -2830,6 +3380,19 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             &mut wic_capability_operation,
         )
         .await;
+        poll_sdk_artifact_operation(&mut app, &mut sdk_artifact_operation).await;
+        poll_sdk_capability_operation(&mut app, &mut sdk_capability_operation).await;
+        if let Some(completed) = poll_sdk_job(&mut app, &mut sdk_operation).await
+            && matches!(completed, SdkOperation::Publish(_))
+            && let Some(effect) = update(&mut app, Action::RefreshSdkArtifactInventory)
+        {
+            begin_sdk_artifact_operation(
+                &mut app,
+                sdk_artifact_adapter.as_ref(),
+                &mut sdk_artifact_operation,
+                effect,
+            );
+        }
         poll_wic_capability_operation(&mut app, &wic_inspector, &mut wic_capability_operation)
             .await;
         poll_wic_device_operation(&mut app, &mut wic_device_operation).await;
@@ -2841,7 +3404,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 | BuildStatus::Parsing
                 | BuildStatus::Running
                 | BuildStatus::Cancelling
-        ) || wic_operation.is_some())
+        ) || wic_operation.is_some()
+            || sdk_operation.is_some())
             && Instant::now() >= next_telemetry_sample
         {
             let telemetry = telemetry_sampler.sample(&session_build_dir);
@@ -2885,6 +3449,66 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         &mut package_operation,
                         effect,
                     );
+                } else if let Some(effect @ Effect::InspectSdkTools) = effect {
+                    begin_sdk_capability_operation(
+                        &mut app,
+                        sdk_tool_adapter.as_ref(),
+                        &mut sdk_capability_operation,
+                        effect,
+                    );
+                }
+            } else if matches!(app.active_dialog(), Some(Dialog::SdkBuildConfirmation(_))) {
+                let effect = sdk_build_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(Effect::Start(request)) = effect {
+                    let tracked = sdk_build_is_populate(&request);
+                    if begin_build(&mut backend, &mut app, &mut build_jobs, request.clone()).await
+                        && tracked
+                    {
+                        pending_sdk_build = Some(request);
+                    }
+                }
+            } else if matches!(app.active_dialog(), Some(Dialog::SdkPublish(_))) {
+                let _ =
+                    sdk_publish_dialog_action(input).and_then(|action| update(&mut app, action));
+            } else if matches!(app.active_dialog(), Some(Dialog::SdkPublishConfirmation(_))) {
+                let effect = sdk_publish_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(Effect::StartSdkSession { id, operation }) = effect {
+                    begin_sdk_job(
+                        &mut app,
+                        &mut sdk_operation,
+                        sdk_tool_adapter.as_ref(),
+                        cancellation_timeout,
+                        SDK_TOOL_OPERATION_TIMEOUT,
+                        id,
+                        operation,
+                    );
+                }
+            } else if matches!(app.active_dialog(), Some(Dialog::SdkNative(_))) {
+                let _ = sdk_native_dialog_action(input).and_then(|action| update(&mut app, action));
+            } else if matches!(app.active_dialog(), Some(Dialog::SdkNativeConfirmation(_))) {
+                let effect = sdk_native_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(Effect::StartSdkSession { id, operation }) = effect {
+                    begin_sdk_job(
+                        &mut app,
+                        &mut sdk_operation,
+                        sdk_tool_adapter.as_ref(),
+                        cancellation_timeout,
+                        SDK_TOOL_OPERATION_TIMEOUT,
+                        id,
+                        operation,
+                    );
+                }
+            } else if matches!(
+                app.active_dialog(),
+                Some(Dialog::SdkCancellationConfirmation(_))
+            ) {
+                let effect = sdk_cancellation_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(Effect::CancelSdkSession(id)) = effect {
+                    begin_sdk_cancellation(&mut app, &mut sdk_operation, id);
                 }
             } else if matches!(app.active_dialog(), Some(Dialog::WicCreate(_))) {
                 let editing = app.active_dialog().is_some_and(
@@ -3058,6 +3682,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             &mut app,
                             image_artifact_adapter.as_ref(),
                             &mut image_artifact_operation,
+                            effect,
+                        );
+                    } else if let Some(effect @ Effect::InspectSdkTools) = effect {
+                        begin_sdk_capability_operation(
+                            &mut app,
+                            sdk_tool_adapter.as_ref(),
+                            &mut sdk_capability_operation,
                             effect,
                         );
                     }
@@ -3441,6 +4072,36 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Effect::OpenInEditor(path)) => {
                         open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                     }
+                    _ => {}
+                }
+            } else if app.screen == Screen::Sdk
+                && sdk_workspace_action(app.sdk_artifact_searching, input).is_some()
+            {
+                let action = sdk_workspace_action(app.sdk_artifact_searching, input)
+                    .expect("SDK action was checked");
+                match update(&mut app, action) {
+                    Some(effect @ Effect::GetSdkArtifacts(_)) => begin_sdk_artifact_operation(
+                        &mut app,
+                        sdk_artifact_adapter.as_ref(),
+                        &mut sdk_artifact_operation,
+                        effect,
+                    ),
+                    Some(Effect::CancelSdkArtifactOperation) => {
+                        if let Some(operation) = sdk_artifact_operation.as_ref() {
+                            if operation.cancellation.cancel() {
+                                app.notification =
+                                    Some("SDK artifact cancellation requested.".into());
+                            }
+                        } else {
+                            app.notification = Some("No SDK artifact scan is running.".into());
+                        }
+                    }
+                    Some(effect @ Effect::InspectSdkTools) => begin_sdk_capability_operation(
+                        &mut app,
+                        sdk_tool_adapter.as_ref(),
+                        &mut sdk_capability_operation,
+                        effect,
+                    ),
                     _ => {}
                 }
             } else if app.screen == Screen::Settings && settings_action(input).is_some() {
@@ -3832,11 +4493,22 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         }
         match tokio::time::timeout(Duration::from_millis(1), backend.next_event()).await {
             Ok(Ok(event)) => {
+                let sdk_refresh =
+                    sdk_refresh_after_build_event(&mut app, &mut pending_sdk_build, &event);
                 for action in build_jobs.actions_for_backend_event(event, SystemTime::now()) {
                     let _ = update(&mut app, action);
                 }
+                if let Some(effect) = sdk_refresh {
+                    begin_sdk_artifact_operation(
+                        &mut app,
+                        sdk_artifact_adapter.as_ref(),
+                        &mut sdk_artifact_operation,
+                        effect,
+                    );
+                }
             }
             Ok(Err(error)) => {
+                pending_sdk_build = None;
                 for action in build_jobs.backend_lost(error.to_string(), SystemTime::now()) {
                     let _ = update(&mut app, action);
                 }
@@ -3854,6 +4526,28 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     if let Some(operation) = image_artifact_operation.take() {
         operation.cancellation.cancel();
         let _ = operation.handle.await;
+    }
+    if let Some(operation) = sdk_artifact_operation.take() {
+        operation.cancellation.cancel();
+        let _ = operation.handle.await;
+    }
+    if let Some(operation) = sdk_capability_operation.take() {
+        operation.handle.abort();
+        let _ = operation.handle.await;
+    }
+    if let Some(mut operation) = sdk_operation.take() {
+        if let Some(handle) = operation.starting.take() {
+            handle.abort();
+            let _ = handle.await;
+        } else if let Some(handle) = operation.timeout_wait.take() {
+            handle.abort();
+            let _ = handle.await;
+        } else if let Some(handle) = operation.cancellation.take() {
+            handle.abort();
+            let _ = handle.await;
+        } else if let Some(mut runner) = operation.runner.take() {
+            let _ = runner.cancel().await;
+        }
     }
     if let Some(mut operation) = qemu_operation.take() {
         if let Some(handle) = operation.cancellation.take() {
@@ -6640,5 +7334,594 @@ esac"#,
             .unwrap();
         assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Lost);
         fs::remove_dir_all(lost_directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    fn sdk_workflow_fixture(
+        name: &str,
+        publish_body: &str,
+        find_body: &str,
+        run_body: &str,
+    ) -> (PathBuf, PathBuf, SdkArtifactAdapter, SdkToolAdapter, App) {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = std::env::temp_dir().join(format!(
+            "yoctui-sdk-workflow-{}-{name}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let build = directory.join("build");
+        let source = directory.join("source");
+        let scripts = source.join("scripts");
+        let deploy = directory.join("deploy-sdk");
+        fs::create_dir_all(&build).unwrap();
+        fs::create_dir_all(&scripts).unwrap();
+        fs::create_dir_all(&deploy).unwrap();
+        for (tool, body) in [
+            ("oe-publish-sdk", publish_body),
+            ("oe-find-native-sysroot", find_body),
+            ("oe-run-native", run_body),
+        ] {
+            let path = scripts.join(tool);
+            fs::write(&path, format!("#!/bin/sh\n{body}\n")).unwrap();
+            let mut permissions = fs::metadata(&path).unwrap().permissions();
+            permissions.set_mode(0o700);
+            fs::set_permissions(path, permissions).unwrap();
+        }
+        fs::write(
+            deploy.join("poky-glibc-x86_64-core-image-minimal-qemux86-64.sh"),
+            b"installer",
+        )
+        .unwrap();
+
+        let build = fs::canonicalize(build).unwrap();
+        let source = fs::canonicalize(source).unwrap();
+        let deploy = fs::canonicalize(deploy).unwrap();
+        let mut app = App::new(100, 100_000);
+        app.screen = Screen::Sdk;
+        app.build.target = Some("core-image-minimal".into());
+        app.workspace.build_dir = Some(build.clone());
+        app.workspace.source_dir = Some(source.clone());
+        app.workspace
+            .variables
+            .insert("SDK_DEPLOY".into(), deploy.display().to_string());
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace
+            .variables
+            .insert("DISTRO".into(), "poky".into());
+        let artifact_adapter = SdkArtifactAdapter::new(deploy.clone());
+        let tool_adapter = SdkToolAdapter::new(build.clone(), deploy, vec![build.clone(), source]);
+        (directory, build, artifact_adapter, tool_adapter, app)
+    }
+
+    async fn sdk_workflow_poll_scan(
+        app: &mut App,
+        operation: &mut Option<SdkArtifactBackgroundOperation>,
+    ) {
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while operation.is_some() {
+                poll_sdk_artifact_operation(app, operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+    }
+
+    async fn sdk_workflow_poll_job(
+        app: &mut App,
+        operation: &mut Option<SdkCliOperation>,
+    ) -> Option<SdkOperation> {
+        tokio::time::timeout(Duration::from_secs(3), async {
+            let mut completed = None;
+            while operation.is_some() {
+                completed = poll_sdk_job(app, operation).await.or(completed);
+                tokio::task::yield_now().await;
+            }
+            completed
+        })
+        .await
+        .unwrap()
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn sdk_workflow_cli_inspects_capability_and_correlates_replaceable_scans() {
+        use std::os::unix::fs::symlink;
+
+        let (directory, _, artifact_adapter, tool_adapter, mut app) =
+            sdk_workflow_fixture("scan", "exit 0", "exit 0", "exit 0");
+        let mut capability = None;
+        begin_sdk_capability_operation(
+            &mut app,
+            Some(&tool_adapter),
+            &mut capability,
+            Effect::InspectSdkTools,
+        );
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while capability.is_some() {
+                poll_sdk_capability_operation(&mut app, &mut capability).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(matches!(
+            app.sdk_tool_capability,
+            SdkToolCapability::Available {
+                publish: Some(_),
+                find_sysroot: Some(_),
+                run_native: Some(_)
+            }
+        ));
+
+        let deploy = PathBuf::from(app.workspace.variables.get("SDK_DEPLOY").unwrap());
+        symlink("/outside-sdk", deploy.join("ignored-link")).unwrap();
+        let first_effect = update(&mut app, Action::BeginSdkArtifactInventory).unwrap();
+        let Effect::GetSdkArtifacts(first_request) = first_effect.clone() else {
+            panic!("expected SDK scan");
+        };
+        let mut scan = None;
+        begin_sdk_artifact_operation(&mut app, Some(&artifact_adapter), &mut scan, first_effect);
+
+        let replacement = SdkArtifactInventoryRequest {
+            generation: first_request.generation + 1,
+            ..first_request.clone()
+        };
+        app.sdk_artifacts = yoctui_model::SdkArtifactInventoryState::Loading {
+            request: replacement.clone(),
+        };
+        begin_sdk_artifact_operation(
+            &mut app,
+            Some(&artifact_adapter),
+            &mut scan,
+            Effect::GetSdkArtifacts(replacement.clone()),
+        );
+        let ignored_before = app.background_jobs.ignored_transitions;
+        let _ = update(
+            &mut app,
+            Action::SdkArtifactInventoryLoaded {
+                request: first_request,
+                artifacts: Vec::new(),
+                limitations: Vec::new(),
+            },
+        );
+        assert_eq!(app.background_jobs.ignored_transitions, ignored_before + 1);
+        sdk_workflow_poll_scan(&mut app, &mut scan).await;
+        assert!(matches!(
+            &app.sdk_artifacts,
+            yoctui_model::SdkArtifactInventoryState::Partial {
+                request,
+                artifacts,
+                limitations
+            } if request == &replacement
+                && artifacts.iter().any(|artifact| artifact.kind == yoctui_model::SdkArtifactKind::Installer)
+                && limitations.iter().any(|limitation| limitation.contains("symlink"))
+        ));
+
+        let failure_request = SdkArtifactInventoryRequest {
+            generation: replacement.generation + 1,
+            ..replacement
+        };
+        app.sdk_artifacts = yoctui_model::SdkArtifactInventoryState::Loading {
+            request: failure_request.clone(),
+        };
+        begin_sdk_artifact_operation(
+            &mut app,
+            None,
+            &mut scan,
+            Effect::GetSdkArtifacts(failure_request.clone()),
+        );
+        assert!(matches!(
+            &app.sdk_artifacts,
+            yoctui_model::SdkArtifactInventoryState::Failed { request, message }
+                if request == &failure_request && message.contains("SDK_DEPLOY")
+        ));
+
+        let cancel_effect = update(&mut app, Action::RefreshSdkArtifactInventory).unwrap();
+        begin_sdk_artifact_operation(&mut app, Some(&artifact_adapter), &mut scan, cancel_effect);
+        let Some(Effect::CancelSdkArtifactOperation) =
+            update(&mut app, Action::BeginActiveSdkSessionCancellation)
+        else {
+            panic!("expected independently routed SDK scan cancellation");
+        };
+        assert!(scan.as_ref().unwrap().cancellation.cancel());
+        sdk_workflow_poll_scan(&mut app, &mut scan).await;
+        assert!(matches!(
+            &app.sdk_artifacts,
+            yoctui_model::SdkArtifactInventoryState::Failed { message, .. }
+                if message.contains("cancelled")
+        ));
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn sdk_workflow_cli_runs_publish_and_native_with_output_refresh_and_navigation() {
+        let (directory, build, artifact_adapter, tool_adapter, mut app) = sdk_workflow_fixture(
+            "success",
+            "printf 'publish:%s\\n' \"$1\"; touch \"$2/published\"; exit 0",
+            "printf 'sysroot:%s\\n' \"$1\"; exit 0",
+            "printf 'child:%s args:%s\\n' \"$YOCTUI_SDK_CHILD_ONLY\" \"$*\"; exit 0",
+        );
+        let _ = update(
+            &mut app,
+            Action::SdkToolCapabilityLoaded(tool_adapter.capability()),
+        );
+        let effect = update(&mut app, Action::BeginSdkArtifactInventory).unwrap();
+        let mut scan = None;
+        begin_sdk_artifact_operation(&mut app, Some(&artifact_adapter), &mut scan, effect);
+        sdk_workflow_poll_scan(&mut app, &mut scan).await;
+
+        let destination = directory.join("published");
+        fs::create_dir(&destination).unwrap();
+        let _ = update(&mut app, Action::BeginSelectedSdkPublish);
+        for character in destination.to_string_lossy().chars() {
+            let _ = update(&mut app, Action::AppendSdkPublishDestination(character));
+        }
+        let _ = update(&mut app, Action::PreviewSdkPublish);
+        let Some(Effect::StartSdkSession { id, operation }) =
+            update(&mut app, Action::ConfirmSdkPublish)
+        else {
+            panic!("expected SDK publication");
+        };
+        let mut owned = None;
+        begin_sdk_job(
+            &mut app,
+            &mut owned,
+            Some(&tool_adapter),
+            Duration::from_millis(100),
+            Duration::from_secs(2),
+            id,
+            operation,
+        );
+        app.screen = Screen::Logs;
+        let completed = sdk_workflow_poll_job(&mut app, &mut owned).await;
+        assert!(matches!(completed, Some(SdkOperation::Publish(_))));
+        let job = app
+            .background_jobs
+            .get(app.sdk_session(id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Succeeded);
+        assert!(
+            job.output
+                .iter()
+                .any(|entry| entry.message.starts_with("publish:"))
+        );
+        assert_eq!(app.screen, Screen::Logs);
+        let generation = app.sdk_artifact_generation;
+        let refresh = update(&mut app, Action::RefreshSdkArtifactInventory).unwrap();
+        begin_sdk_artifact_operation(&mut app, Some(&artifact_adapter), &mut scan, refresh);
+        sdk_workflow_poll_scan(&mut app, &mut scan).await;
+        assert!(app.sdk_artifact_generation > generation);
+
+        let extracted = directory.join("extracted");
+        fs::create_dir(&extracted).unwrap();
+        fs::write(
+            extracted.join("environment-setup-x86_64-pokysdk-linux"),
+            "export YOCTUI_SDK_CHILD_ONLY=visible\n",
+        )
+        .unwrap();
+        let executable = match &app.sdk_tool_capability {
+            SdkToolCapability::Available {
+                run_native: Some(path),
+                ..
+            } => path.clone(),
+            capability => panic!("unexpected SDK capability: {capability:?}"),
+        };
+        let _ = update(&mut app, Action::BeginSdkNative);
+        let _ = update(
+            &mut app,
+            Action::UpdateSdkNativeDraft(yoctui_model::SdkNativeDraft {
+                mode: yoctui_model::SdkNativeMode::RunNative,
+                extracted_root: extracted.display().to_string(),
+                recipe: "busybox".into(),
+                tool: "sh".into(),
+                arguments: vec!["--version".into()],
+            }),
+        );
+        let _ = update(&mut app, Action::PreviewSdkNative);
+        let Some(Effect::StartSdkSession {
+            id: native_id,
+            operation: native_operation,
+        }) = update(&mut app, Action::ConfirmSdkNative)
+        else {
+            panic!("expected SDK native tool operation");
+        };
+        assert!(matches!(
+            &native_operation,
+            SdkOperation::Native(request)
+                if request.executable == executable && request.extracted_root.as_ref() == Some(&extracted)
+        ));
+        begin_sdk_job(
+            &mut app,
+            &mut owned,
+            Some(&tool_adapter),
+            Duration::from_millis(100),
+            Duration::from_secs(2),
+            native_id,
+            native_operation,
+        );
+        let _ = sdk_workflow_poll_job(&mut app, &mut owned).await;
+        let native_job = app
+            .background_jobs
+            .get(app.sdk_session(native_id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(
+            native_job.status,
+            yoctui_model::BackgroundJobStatus::Succeeded
+        );
+        assert!(
+            native_job
+                .output
+                .iter()
+                .any(|entry| entry.message == "child:visible args:busybox sh --version")
+        );
+        assert!(std::env::var_os("YOCTUI_SDK_CHILD_ONLY").is_none());
+
+        let populate = BuildRequest {
+            targets: vec!["core-image-minimal".into()],
+            task: Some("populate_sdk".into()),
+            force: false,
+        };
+        let mut pending = Some(populate);
+        let effect = sdk_refresh_after_build_event(
+            &mut app,
+            &mut pending,
+            &BackendEvent::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        );
+        assert!(matches!(effect, Some(Effect::GetSdkArtifacts(_))));
+        assert!(pending.is_none());
+        let mut test_pending = Some(BuildRequest {
+            targets: vec!["core-image-minimal".into()],
+            task: Some("testsdk".into()),
+            force: false,
+        });
+        assert!(
+            sdk_refresh_after_build_event(
+                &mut app,
+                &mut test_pending,
+                &BackendEvent::BuildCompleted {
+                    success: true,
+                    exit_code: Some(0),
+                },
+            )
+            .is_none()
+        );
+        assert!(test_pending.is_none());
+        assert!(build.is_dir());
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn sdk_workflow_cli_preserves_failure_timeout_cancel_rejection_and_loss() {
+        let (directory, _, artifact_adapter, tool_adapter, mut app) = sdk_workflow_fixture(
+            "terminal",
+            "printf 'publish failed\\n' >&2; exit 17",
+            "exit 0",
+            "trap '' TERM; printf 'ready\\n'; while :; do :; done",
+        );
+        let _ = update(
+            &mut app,
+            Action::SdkToolCapabilityLoaded(tool_adapter.capability()),
+        );
+        let effect = update(&mut app, Action::BeginSdkArtifactInventory).unwrap();
+        let mut scan = None;
+        begin_sdk_artifact_operation(&mut app, Some(&artifact_adapter), &mut scan, effect);
+        sdk_workflow_poll_scan(&mut app, &mut scan).await;
+
+        let destination = directory.join("failure-destination");
+        fs::create_dir(&destination).unwrap();
+        let _ = update(&mut app, Action::BeginSelectedSdkPublish);
+        for character in destination.to_string_lossy().chars() {
+            let _ = update(&mut app, Action::AppendSdkPublishDestination(character));
+        }
+        let _ = update(&mut app, Action::PreviewSdkPublish);
+        let Some(Effect::StartSdkSession { id, operation }) =
+            update(&mut app, Action::ConfirmSdkPublish)
+        else {
+            panic!("expected failing SDK publication");
+        };
+        let mut owned = None;
+        begin_sdk_job(
+            &mut app,
+            &mut owned,
+            Some(&tool_adapter),
+            Duration::from_millis(50),
+            Duration::from_secs(2),
+            id,
+            operation,
+        );
+        let _ = sdk_workflow_poll_job(&mut app, &mut owned).await;
+        let failed = app
+            .background_jobs
+            .get(app.sdk_session(id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(failed.status, yoctui_model::BackgroundJobStatus::Failed);
+        assert_eq!(app.sdk_session(id).unwrap().exit_code, Some(17));
+        assert!(
+            failed
+                .output
+                .iter()
+                .any(|entry| entry.message == "publish failed")
+        );
+
+        let _ = update(&mut app, Action::BeginSdkNative);
+        let _ = update(
+            &mut app,
+            Action::UpdateSdkNativeDraft(yoctui_model::SdkNativeDraft {
+                mode: yoctui_model::SdkNativeMode::RunNative,
+                extracted_root: String::new(),
+                recipe: "busybox".into(),
+                tool: "sh".into(),
+                arguments: Vec::new(),
+            }),
+        );
+        let _ = update(&mut app, Action::PreviewSdkNative);
+        let Some(Effect::StartSdkSession {
+            id: timeout_id,
+            operation: timeout_operation,
+        }) = update(&mut app, Action::ConfirmSdkNative)
+        else {
+            panic!("expected timed SDK native operation");
+        };
+        begin_sdk_job(
+            &mut app,
+            &mut owned,
+            Some(&tool_adapter),
+            Duration::from_millis(30),
+            Duration::from_millis(30),
+            timeout_id,
+            timeout_operation,
+        );
+        let _ = sdk_workflow_poll_job(&mut app, &mut owned).await;
+        let timed_out = app
+            .background_jobs
+            .get(app.sdk_session(timeout_id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(timed_out.status, yoctui_model::BackgroundJobStatus::Failed);
+        assert!(
+            timed_out
+                .error
+                .as_ref()
+                .and_then(|error| error.detail.as_deref())
+                .is_some_and(|detail| detail.contains("timed out"))
+        );
+
+        let _ = update(&mut app, Action::BeginSdkNative);
+        let _ = update(
+            &mut app,
+            Action::UpdateSdkNativeDraft(yoctui_model::SdkNativeDraft {
+                mode: yoctui_model::SdkNativeMode::RunNative,
+                extracted_root: String::new(),
+                recipe: "busybox".into(),
+                tool: "sh".into(),
+                arguments: Vec::new(),
+            }),
+        );
+        let _ = update(&mut app, Action::PreviewSdkNative);
+        let Some(Effect::StartSdkSession {
+            id: cancel_id,
+            operation: cancel_operation,
+        }) = update(&mut app, Action::ConfirmSdkNative)
+        else {
+            panic!("expected cancellable SDK native operation");
+        };
+        begin_sdk_job(
+            &mut app,
+            &mut owned,
+            Some(&tool_adapter),
+            Duration::from_millis(30),
+            Duration::from_secs(2),
+            cancel_id,
+            cancel_operation,
+        );
+        tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                let _ = poll_sdk_job(&mut app, &mut owned).await;
+                let ready = app
+                    .sdk_session(cancel_id)
+                    .and_then(|session| app.background_jobs.get(session.background_job_id))
+                    .is_some_and(|job| job.output.iter().any(|entry| entry.message == "ready"));
+                if ready {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let _ = update(&mut app, Action::BeginActiveSdkSessionCancellation);
+        let Some(Effect::CancelSdkSession(effect_id)) =
+            update(&mut app, Action::ConfirmSdkSessionCancellation)
+        else {
+            panic!("expected SDK cancellation");
+        };
+        begin_sdk_cancellation(&mut app, &mut owned, effect_id);
+        let _ = sdk_workflow_poll_job(&mut app, &mut owned).await;
+        let cancelled = app
+            .background_jobs
+            .get(app.sdk_session(cancel_id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(
+            cancelled.status,
+            yoctui_model::BackgroundJobStatus::Cancelled
+        );
+        assert!(
+            cancelled
+                .output
+                .iter()
+                .any(|entry| entry.message.contains("forced termination"))
+        );
+
+        let _ = update(&mut app, Action::BeginSdkNative);
+        let _ = update(
+            &mut app,
+            Action::UpdateSdkNativeDraft(yoctui_model::SdkNativeDraft {
+                mode: yoctui_model::SdkNativeMode::FindSysroot,
+                extracted_root: String::new(),
+                recipe: "busybox".into(),
+                tool: String::new(),
+                arguments: Vec::new(),
+            }),
+        );
+        let _ = update(&mut app, Action::PreviewSdkNative);
+        let Some(Effect::StartSdkSession {
+            id: rejected_id,
+            operation: rejected_operation,
+        }) = update(&mut app, Action::ConfirmSdkNative)
+        else {
+            panic!("expected rejected SDK operation");
+        };
+        let _ = update(
+            &mut app,
+            Action::SdkSessionStarting {
+                id: rejected_id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::SdkSessionRunning { id: rejected_id });
+        let _ = update(&mut app, Action::BeginActiveSdkSessionCancellation);
+        let Some(Effect::CancelSdkSession(rejected_effect_id)) =
+            update(&mut app, Action::ConfirmSdkSessionCancellation)
+        else {
+            panic!("expected rejected cancellation effect");
+        };
+        begin_sdk_cancellation(&mut app, &mut None, rejected_effect_id);
+        let rejected = app
+            .background_jobs
+            .get(app.sdk_session(rejected_id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(rejected.status, yoctui_model::BackgroundJobStatus::Running);
+
+        let lost_handle = tokio::spawn(async {
+            std::future::pending::<(SdkToolJobRunner, Result<(), SdkToolAdapterError>)>().await
+        });
+        lost_handle.abort();
+        let mut lost_operation = Some(SdkCliOperation {
+            id: rejected_id,
+            operation: rejected_operation,
+            starting: Some(lost_handle),
+            runner: None,
+            timeout_wait: None,
+            cancellation: None,
+        });
+        tokio::task::yield_now().await;
+        poll_sdk_job(&mut app, &mut lost_operation).await;
+        let lost = app
+            .background_jobs
+            .get(app.sdk_session(rejected_id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(lost.status, yoctui_model::BackgroundJobStatus::Lost);
+        fs::remove_dir_all(directory).unwrap();
     }
 }
