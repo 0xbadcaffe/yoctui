@@ -2,61 +2,63 @@
 
 ## Active task
 
-**ID:** WIC-UI-CLI-001
-**Title:** Integrate Wic creation capability and runner in the CLI
+**ID:** WIC-WRITE-ADAPTER-001
+**Title:** Discover and revalidate safe Wic write devices
 
 ## Objective
 
-Connect the typed Wic creation workflow to CLI-owned capability inspection,
-shell-free process execution, nonblocking polling, cancellation, and exact
-terminal history without coupling it to BitBake, image scans, or QEMU.
+Implement the adapter boundary for bounded removable-device discovery and
+immediately-before-spawn safety revalidation for shell-free `wic write`,
+without privilege escalation or live-device claims.
 
 ## Required work
 
-1. Inspect the existing CLI main loop, effect dispatch, image capability
-   refresh, managed-QEMU coordinator/polling, dialog-first key routing, and Wic
-   adapter APIs before editing; do not duplicate their lifecycle behavior.
-2. Inspect Wic capability for each exact normalized Images inventory and active
-   build context, including configured kickstart identities when authoritative
-   metadata provides them; dispatch the typed loaded result without guessing
-   missing Yocto paths.
-3. Execute `StartWicSession` by rebuilding and independently revalidating the
-   exact preview against the latest capability, then start one CLI-owned
-   `WicJobRunner` beneath the active build/output directory.
-4. Poll Wic runner events nonblockingly and normalize them through the existing
-   app boundary into starting/running, bounded stdout/stderr, success with exact
-   output inventory, nonzero failure, cancellation, rejection, and process-loss
-   reducer actions.
-5. Execute cancellation only for the exact active session, preserve its
-   confirmed request and background-job history across navigation, and keep Wic
-   ownership independent from the BitBake, image-scan, package, signature,
-   Devtool, and QEMU coordinators.
-6. Route Wic creation/preview/cancellation modal keys before global shortcuts so
-   no pane, build, QEMU, or artifact action leaks through focus trapping.
-7. Add `wic_workspace` CLI tests with fake capability/process seams for
-   discovery, exact arguments, modal routing, navigation persistence, output
-   scan, success, nonzero failure, graceful/forced cancellation, rejection,
-   duplicate start, and unexpected runner loss. Do not claim live Wic support
-   from these tests.
-8. Run focused and baseline checks, then mark the child done and hand off to the
-   next eligible highest-priority task.
+1. Inspect the existing Wic device/output/write model, exact write preview,
+   creation runner contracts, architecture safety rules, and adapter fake
+   process seams before editing; do not weaken model validation.
+2. Add a bounded typed whole-block-device discovery command using an explicit
+   executable candidate or canonical `PATH` resolution and shell-free
+   arguments. Parse only the documented machine-readable fields needed by the
+   model.
+3. Reject malformed, oversized, duplicate, partial, symlinked, partition,
+   loop/device-mapper/optical, non-removable, read-only, undersized, mounted, or
+   ambiguous records. Record safe non-fatal exclusions as explicit limitations.
+4. Determine and exclude the current system/root backing whole device without
+   guessing from display names. If that identity cannot be established, fail
+   closed rather than exposing uncertain candidates.
+5. Build an exact `wic write <image> <device>` command only from the model's
+   confirmed preview and independently revalidate the canonical regular image
+   plus the exact major/minor, capacity, model/serial/transport, removable,
+   writable, whole-device, descendant-mount, and system-device invariants
+   immediately before construction/spawn.
+6. Never invoke `sudo`, a shell, a partition path, or a stale device identity.
+   Surface missing tools, permissions, malformed data, timeouts, and safety
+   rejections as typed errors.
+7. Add `wic_device_write` adapter and app-boundary tests with fake discovery
+   records/processes for safe inventory, every rejection class, stale identity,
+   changed mounts/capacity/serial/major-minor, undersized image/device, exact
+   argv, nonzero failure, cancellation, output bounds, and loss. Tests must use
+   fake device paths and must not claim live hardware safety.
+8. Run focused and baseline checks, then mark the child done and hand off to
+   `WIC-WRITE-UI-CLI-001`.
 
 ## Definition of done
 
-- The real CLI owns one revalidated Wic creation runner and never invokes a
-  shell.
-- Modal keys are handled before global input and all runner outcomes become
-  typed persistent state.
-- Wic execution does not block the terminal loop or interfere with other
-  coordinators.
-- Fake integration coverage proves exact arguments and lifecycle behavior;
-  live compatibility remains unclaimed until a live Wic environment passes.
+- Discovery returns only bounded typed candidates that satisfy every current
+  safety invariant.
+- Write construction rechecks image and device identity immediately before use
+  and emits only exact shell-free arguments.
+- Unsafe, ambiguous, stale, privileged, and unsupported paths fail closed with
+  typed reasons.
+- Fake-device coverage is comprehensive and no live removable-media claim is
+  made.
 - Focused and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui -- wic_workspace
+cargo test -p yoctui-bitbake wic_device_write
+cargo test -p yoctui-app wic_device_write
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

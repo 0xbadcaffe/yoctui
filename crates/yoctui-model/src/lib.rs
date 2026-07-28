@@ -5283,6 +5283,20 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             let WicCapability::Available { kickstarts, .. } = &app.wic_capability else {
                 unreachable!("checked above")
             };
+            let kickstart = app
+                .workspace
+                .variables
+                .get("WKS_FILE")
+                .and_then(|configured| {
+                    let configured_path = Path::new(configured);
+                    kickstarts.iter().find(|kickstart| {
+                        kickstart.identity.name == *configured
+                            || kickstart.identity.path.as_deref() == Some(configured_path)
+                    })
+                })
+                .unwrap_or(&kickstarts[0])
+                .identity
+                .clone();
             let output_directory = artifact
                 .identity
                 .path
@@ -5295,7 +5309,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 Dialog::WicCreate(WicCreateDialog::new(WicCreateDraft {
                     machine: artifact.identity.machine,
                     image: artifact.identity.image,
-                    kickstart: kickstarts[0].identity.clone(),
+                    kickstart,
                     output_directory,
                     generate_bmap: true,
                     compression: WicCompression::None,
@@ -14392,14 +14406,35 @@ mod tests {
     fn wic_workspace_dialog_is_bounded_modal_and_stale_safe() {
         let mut app = qemu_model_app();
         app.wic_capability = wic_model_capability();
+        if let WicCapability::Available { kickstarts, .. } = &mut app.wic_capability {
+            kickstarts.push(WicKickstart {
+                identity: WicKickstartIdentity {
+                    name: "configured".into(),
+                    path: Some("/layers/custom/configured.wks".into()),
+                },
+                source: "part /boot --source=bootimg-partition".into(),
+                partitions: Vec::new(),
+                limitations: Vec::new(),
+            });
+        }
+        app.workspace
+            .variables
+            .insert("WKS_FILE".into(), "/layers/custom/configured.wks".into());
         let _ = update(&mut app, Action::BeginSelectedWicCreate);
         assert_eq!(app.focus, FocusTarget::Dialog);
         assert!(matches!(
             app.active_dialog(),
             Some(Dialog::WicCreate(WicCreateDialog {
                 selected_field: WicCreateField::Machine,
+                draft: WicCreateDraft {
+                    kickstart: WicKickstartIdentity {
+                        name,
+                        ..
+                    },
+                    ..
+                },
                 ..
-            }))
+            })) if name == "configured"
         ));
         let _ = update(&mut app, Action::SelectWicCreateField { delta: 3 });
         let _ = update(&mut app, Action::ActivateWicCreateField);

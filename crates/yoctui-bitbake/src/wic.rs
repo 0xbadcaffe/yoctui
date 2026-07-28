@@ -148,10 +148,13 @@ impl WicCapabilityInspector {
 }
 
 async fn list_canned(executable: &Path) -> Result<Vec<String>, WicAdapterError> {
-    let mut child = Command::new(executable)
+    let mut command = Command::new(executable);
+    command
         .args(["list", "images"])
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
+        .kill_on_drop(true);
+    let mut child = command
         .spawn()
         .map_err(|error| WicAdapterError::Capability(error.to_string()))?;
     let stdout = child.stdout.take().ok_or_else(|| {
@@ -579,7 +582,8 @@ impl WicJobRunner {
             .args(&command.arguments)
             .current_dir(&self.build_dir)
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped());
+            .stderr(Stdio::piped())
+            .kill_on_drop(true);
         #[cfg(unix)]
         process.process_group(0);
         let mut child = process

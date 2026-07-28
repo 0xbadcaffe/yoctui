@@ -79,6 +79,7 @@ class BridgeProtocolTests(unittest.TestCase):
             environment={
                 "DISTRO_VERSION": "5.0",
                 "DEPLOY_DIR_IMAGE": "/build/tmp/deploy/images/qemux86-64",
+                "WKS_FILE": "/layers/meta/wic/directdisk.wks",
                 "YOCTUI_VARIABLE_PROVENANCE_JSON": json.dumps(
                     {"MACHINE": "conf/local.conf:12"}
                 ),
@@ -95,6 +96,10 @@ class BridgeProtocolTests(unittest.TestCase):
         self.assertEqual(
             message["message"]["data"]["variables"]["DEPLOY_DIR_IMAGE"],
             "/build/tmp/deploy/images/qemux86-64",
+        )
+        self.assertEqual(
+            message["message"]["data"]["variables"]["WKS_FILE"],
+            "/layers/meta/wic/directdisk.wks",
         )
         self.assertEqual(
             message["message"]["data"]["variable_provenance"]["MACHINE"],
