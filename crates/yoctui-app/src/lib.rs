@@ -2,16 +2,94 @@
 use std::time::SystemTime;
 use yoctui_bitbake::{
     BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QemuRunnerEvent, QemuRunnerOutputStream,
-    WicDeviceInventoryResponse, WicRunnerEvent, WicRunnerOutputStream,
+    SdkToolRunnerEvent, WicDeviceInventoryResponse, WicRunnerEvent, WicRunnerOutputStream,
 };
 use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
     BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
     LayerInspectorMode, LayerRelationship, LayerRelationships, QemuOutputStream, QemuSessionId,
-    RecipeDependencies, Screen, SdkBuildAction, SdkKind, Severity, TaskId, TaskInfo,
-    VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream, WicSessionId,
+    RecipeDependencies, Screen, SdkBuildAction, SdkKind, SdkOutputStream, SdkSessionId, Severity,
+    TaskId, TaskInfo, VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream,
+    WicSessionId,
 };
+
+pub fn sdk_actions_for_runner_event(
+    id: SdkSessionId,
+    event: SdkToolRunnerEvent,
+    timestamp: SystemTime,
+) -> Vec<Action> {
+    match event {
+        SdkToolRunnerEvent::Started => vec![
+            Action::SdkSessionStarting {
+                id,
+                started_at: timestamp,
+            },
+            Action::SdkSessionRunning { id },
+        ],
+        SdkToolRunnerEvent::Output {
+            stream,
+            line,
+            truncated,
+        } => vec![Action::AppendSdkSessionOutput {
+            id,
+            stream,
+            line,
+            truncated,
+            timestamp,
+        }],
+        SdkToolRunnerEvent::Completed { exit_code } => vec![Action::CompleteSdkSession {
+            id,
+            exit_code: exit_code.unwrap_or(0),
+            artifacts: Vec::new(),
+            finished_at: timestamp,
+        }],
+        SdkToolRunnerEvent::Failed { exit_code } => vec![Action::FailSdkSession {
+            id,
+            message: exit_code.map_or_else(
+                || "SDK tool exited unsuccessfully without an exit code".into(),
+                |code| format!("SDK tool exited unsuccessfully with exit code {code}"),
+            ),
+            exit_code,
+            finished_at: timestamp,
+        }],
+        SdkToolRunnerEvent::Cancelled { forced, exit_code } => {
+            let mut actions = Vec::new();
+            if forced {
+                actions.push(Action::AppendSdkSessionOutput {
+                    id,
+                    stream: SdkOutputStream::Stderr,
+                    line: "SDK tool cancellation required forced termination".into(),
+                    truncated: false,
+                    timestamp,
+                });
+            }
+            actions.push(Action::CancelSdkSession {
+                id,
+                exit_code,
+                finished_at: timestamp,
+            });
+            actions
+        }
+        SdkToolRunnerEvent::CancellationRejected { message } => {
+            vec![Action::RejectSdkSessionCancellation { id, message }]
+        }
+        SdkToolRunnerEvent::TimedOut { forced, exit_code } => {
+            let mode = if forced { "forced" } else { "graceful" };
+            vec![Action::FailSdkSession {
+                id,
+                message: format!("SDK tool timed out; {mode} termination was used"),
+                exit_code,
+                finished_at: timestamp,
+            }]
+        }
+        SdkToolRunnerEvent::Lost { message } => vec![Action::LoseSdkSession {
+            id,
+            message,
+            finished_at: timestamp,
+        }],
+    }
+}
 
 pub fn wic_capability_action(capability: WicCapability) -> Action {
     Action::WicCapabilityLoaded(capability)
@@ -3810,5 +3888,33 @@ mod tests {
             sdk_cancellation_confirmation_action(Input::Enter),
             Some(Action::ConfirmSdkSessionCancellation)
         );
+        let id = SdkSessionId(7);
+        assert_eq!(
+            sdk_actions_for_runner_event(id, SdkToolRunnerEvent::Started, SystemTime::UNIX_EPOCH),
+            vec![
+                Action::SdkSessionStarting {
+                    id,
+                    started_at: SystemTime::UNIX_EPOCH
+                },
+                Action::SdkSessionRunning { id }
+            ]
+        );
+        assert!(matches!(
+            sdk_actions_for_runner_event(
+                id,
+                SdkToolRunnerEvent::TimedOut {
+                    forced: true,
+                    exit_code: None
+                },
+                SystemTime::UNIX_EPOCH
+            )
+            .as_slice(),
+            [Action::FailSdkSession {
+                id: SdkSessionId(7),
+                message,
+                exit_code: None,
+                ..
+            }] if message.contains("timed out") && message.contains("forced")
+        ));
     }
 }

@@ -830,6 +830,11 @@ impl SdkToolJobRunner {
         self.child.is_some()
     }
 
+    pub fn operation_timeout_due_within(&self, window: Duration) -> bool {
+        self.deadline
+            .is_some_and(|deadline| deadline <= Instant::now() + window)
+    }
+
     pub async fn start(&mut self, command: SdkToolCommandSpec) -> Result<(), SdkToolAdapterError> {
         if self.child.is_some()
             || self.started_pending

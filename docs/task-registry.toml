@@ -999,12 +999,12 @@ notes = "SDK now renders a typed responsive Workspace and Inspector with every i
 id = "SDK-CLI-001"
 milestone = "M4"
 title = "Integrate SDK execution in the CLI"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 52
 required = true
 depends_on = ["SDK-ARTIFACT-001", "SDK-TOOLS-001", "SDK-RENDER-001"]
 verify = ["cargo test -p yoctui -- sdk_workflow"]
-notes = "Route populate/test through managed BitBake, poll correlated artifact scans and SDK tool runners independently, refresh after success, preserve history across navigation, and cover cancellation/rejection/loss."
+notes = "The CLI now constructs SDK adapters from canonical active workspace identities, asynchronously inspects individual tools, owns replaceable correlated scans and one shell-free tool runner, routes populate/test through the existing BitBake coordinator, refreshes only after successful populate/publication, and independently polls output, timeout, cancellation/rejection, failure, and loss while navigation and telemetry continue. Focused fake integration and baseline checks pass; live SDK compatibility is not claimed."
 
 [[task]]
 id = "SDK-UI-CLI-001"

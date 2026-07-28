@@ -4854,6 +4854,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             {
                 return begin_image_artifact_inventory(app);
             }
+            if s == Screen::Sdk
+                && matches!(app.sdk_tool_capability, SdkToolCapability::NotInspected)
+            {
+                return Some(Effect::InspectSdkTools);
+            }
         }
         Action::SelectNavigator { delta } => {
             app.navigator_selection = if delta.is_negative() {
@@ -4877,6 +4882,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 && matches!(app.image_artifacts, ImageArtifactInventoryState::NotLoaded)
             {
                 return begin_image_artifact_inventory(app);
+            }
+            if app.screen == Screen::Sdk
+                && matches!(app.sdk_tool_capability, SdkToolCapability::NotInspected)
+            {
+                return Some(Effect::InspectSdkTools);
             }
         }
         Action::Focus(target) => app.focus = target,
@@ -5646,11 +5656,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             );
         }
         Action::BeginActiveSdkSessionCancellation => {
-            let Some(id) = app.active_sdk_session().map(|session| session.id) else {
-                app.notification = Some("No managed SDK tool operation is active.".into());
-                return None;
-            };
-            open_dialog(app, Dialog::SdkCancellationConfirmation(id));
+            if let Some(id) = app.active_sdk_session().map(|session| session.id) {
+                open_dialog(app, Dialog::SdkCancellationConfirmation(id));
+            } else if matches!(app.sdk_artifacts, SdkArtifactInventoryState::Loading { .. }) {
+                return Some(Effect::CancelSdkArtifactOperation);
+            } else {
+                app.notification = Some("No managed SDK operation is active.".into());
+            }
         }
         Action::ConfirmSdkSessionCancellation => {
             let Some(Dialog::SdkCancellationConfirmation(id)) = app.active_dialog().cloned() else {
@@ -9944,6 +9956,7 @@ pub enum Effect {
     GetImageArtifacts(ImageArtifactRequest),
     CancelImageArtifactOperation,
     GetSdkArtifacts(SdkArtifactInventoryRequest),
+    CancelSdkArtifactOperation,
     InspectSdkTools,
     StartSdkSession {
         id: SdkSessionId,
@@ -15747,7 +15760,11 @@ mod tests {
             .unwrap();
         app.focus = FocusTarget::Navigator;
         app.navigator_selection = sdk_index;
-        let _ = update(&mut app, Action::ActivateNavigator);
+        app.sdk_tool_capability = SdkToolCapability::NotInspected;
+        assert_eq!(
+            update(&mut app, Action::ActivateNavigator),
+            Some(Effect::InspectSdkTools)
+        );
         assert_eq!(app.screen, Screen::Sdk);
         let _ = update(
             &mut app,
@@ -15778,6 +15795,10 @@ mod tests {
         else {
             panic!("SDK inventory effect");
         };
+        assert_eq!(
+            update(&mut app, Action::BeginActiveSdkSessionCancellation),
+            Some(Effect::CancelSdkArtifactOperation)
+        );
         let stale = SdkArtifactInventoryRequest {
             generation: request.generation + 1,
             ..request.clone()
