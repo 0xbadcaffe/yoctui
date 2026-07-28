@@ -713,18 +713,18 @@ notes = "Exact machine/image/path identities, typed available-versus-unavailable
 id = "IMAGES-ADAPTER-001"
 milestone = "M4"
 title = "Acquire authoritative deployed image artifacts"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 49
 required = true
 depends_on = ["IMAGES-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake image_artifact_adapter", "cargo test -p yoctui-app image_artifact_adapter"]
-notes = "Resolve the configured deploy directory authoritatively, scan it deterministically with strict path and resource bounds, and return typed artifact, manifest, license, checksum, SPDX/SBOM, and Wic metadata with explicit limitations."
+notes = "Tinfoil/environment snapshots expose DEPLOY_DIR_IMAGE, and the cancellable depth-one adapter validates machine/root identity, refuses symlinks and escapes, bounds entries/time/checksum input, classifies typed deploy records, parses checksum associations, and reports partial data explicitly. Focused and baseline checks pass."
 
 [[task]]
 id = "IMAGES-UI-001"
 milestone = "M4"
 title = "Integrate the responsive Images artifact workspace"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 49
 required = true
 depends_on = ["IMAGES-ADAPTER-001"]

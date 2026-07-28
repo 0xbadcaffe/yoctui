@@ -2,57 +2,71 @@
 
 ## Active task
 
-**ID:** IMAGES-ADAPTER-001
-**Title:** Acquire authoritative deployed image artifacts
+**ID:** IMAGES-UI-001
+**Title:** Integrate the responsive Images artifact workspace
 
 ## Objective
 
-Add a deterministic, bounded adapter that resolves configured Yocto deploy
-locations and returns only typed image artifact inventory data.
+Combine the existing image recipe picker/build flow with asynchronous deployed
+artifact browsing and inspection in the persistent responsive workbench.
 
 ## Required work
 
-1. Inspect existing workspace variable acquisition, filesystem adapters,
-   cancellation patterns, image naming conventions, and tests before adding
-   overlapping behavior.
-2. Add authoritative `DEPLOY_DIR_IMAGE` acquisition to live Tinfoil and
-   environment workspace snapshots without locally evaluating BitBake syntax.
-3. Require an absolute configured deploy directory and exact request machine.
-   Canonicalize and constrain every traversed path; reject symlink escape,
-   non-directory, relative, missing, and machine-mismatch inputs explicitly.
-4. Scan deterministically without a shell and with strict entry, metadata-byte,
-   recursion-depth, and elapsed-time bounds. Do not block a Ratatui widget or
-   reducer.
-5. Classify image/rootfs, kernel, bootloader, Wic, manifest, license,
-   SPDX/SBOM, checksum, and other deploy records inside the adapter.
-6. Return byte size and modification time plus typed associated checksum,
-   manifest, license, SPDX/SBOM, and Wic paths. Unavailable data must remain
-   unavailable; do not infer paths from build logs.
-7. Parse bounded checksum files only in the adapter, validate digest records,
-   and report malformed, truncated, unsupported, or unassociated data as
-   explicit limitations.
-8. Add a cancellable adapter request/response boundary and conversion to the
-   existing typed `BackendEvent`; distinguish cancellation, timeout, empty
-   inventory, partial results, and failures.
-9. Add fake-filesystem/temp-directory tests named `image_artifact_adapter` for
-   normal, empty, partial, malformed, oversized, symlink, path-escape,
-   missing-directory, timeout/cancellation, and deterministic ordering paths.
-10. Update `docs/architecture.md` for adapter ownership, then update
-    registry/status and hand off to `IMAGES-UI-001`.
+1. Inspect the existing Images rendering, persistent-shell responsive helpers,
+   image picker/build routing, package/signature background coordinators, model,
+   adapter, and tests before adding overlapping behavior.
+2. Expand `docs/ui-spec.md` first with exact wide/medium/narrow layouts,
+   focus/selection behavior, explicit lifecycle states, shortcuts, Inspector
+   sections, contextual actions, and disabled explanations.
+3. Keep image recipe discovery and the `i` picker. In Images, `b` must build
+   the selected artifact's exact image target when one is selected, otherwise
+   preserve the existing current-image confirmation behavior.
+4. Entering Images starts one correlated artifact scan only from not-loaded
+   state. `R` refreshes, `c` cancels, and leaving the workspace never applies a
+   stale response.
+5. Keep the adapter in one cancellable CLI-owned Tokio task. Derive its
+   configured path only from typed `DEPLOY_DIR_IMAGE`; missing/invalid values
+   produce an explicit failed/unavailable state without blocking input.
+6. Add app-owned input mapping for artifact selection, search editing, refresh,
+   cancellation, exact image-target build selection, and authoritative open
+   actions. Dialogs continue to trap focus.
+7. Render recipe targets and deployed artifacts together without conflating
+   them. Show exact machine, kind, file name/path, size, timestamp, deploy
+   directory, checksums, manifests, licenses, SPDX/SBOM, Wic files, and all
+   limitations using only typed state.
+8. Render distinct not-loaded, loading, available-empty, available, partial,
+   failed, unavailable-field, and no-search-match states. No-color mode must
+   preserve semantics with text/attributes.
+9. Use the persistent shell: wide shows artifact list plus Inspector, medium
+   uses the existing Inspector overlay, narrow uses the visible pane switcher,
+   and too-small terminals use the shared safe message.
+10. Add contextual open-in-editor actions only for exact selected deployed
+    paths and associated paths. Missing selections/fields show stable disabled
+    reasons; never fabricate or parse paths in UI/app code.
+11. Add reducer, input, CLI integration, and Ratatui `TestBackend` tests named
+    `images_workspace`, covering background success/partial/failure/cancel,
+    build preservation, search/selection, open actions, all responsive modes,
+    light/dark/no-color, and narrow lifecycle states.
+12. Update `docs/architecture.md` for CLI coordination, then update
+    registry/status and hand off to the `IMAGES-001` parent verification.
 
 ## Definition of done
 
-- Configured deploy discovery is authoritative and version-compatible.
-- The adapter returns bounded typed artifacts and limitations without exposing
-  raw filesystem or checksum text to the model/UI.
-- Cancellation, timeout, malformed input, and path safety are tested.
+- Existing image picker and confirmed builds coexist with a usable typed
+  artifact workspace.
+- Scanning remains asynchronous, cancellable, correlated, and derived only
+  from authoritative workspace variables.
+- Responsive state, selection, inspection, search, build, and open actions are
+  tested without raw parsing in widgets.
 - Focused and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake image_artifact_adapter
-cargo test -p yoctui-app image_artifact_adapter
+cargo test -p yoctui-model images_workspace
+cargo test -p yoctui-app images_workspace
+cargo test -p yoctui-ui images_workspace
+cargo test -p yoctui -- images_workspace
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
