@@ -944,12 +944,12 @@ notes = "The CLI now owns replaceable generation-correlated device discovery plu
 id = "WIC-WRITE-UI-CLI-001"
 milestone = "M4"
 title = "Integrate protected Wic device writing"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["WIC-WRITE-MODEL-001", "WIC-WRITE-RENDER-001", "WIC-WRITE-CLI-001"]
 verify = ["cargo test -p yoctui-model wic_device_write", "cargo test -p yoctui-app wic_device_write", "cargo test -p yoctui-ui wic_device_write", "cargo test -p yoctui -- wic_device_write"]
-notes = "Parent gate for the typed device picker/phrase/preview model, responsive rendering, and independently polled adapter-revalidated CLI execution."
+notes = "The cross-layer parent gate passes together: fail-closed adapter discovery/revalidation, exact typed model state, modal app routing, responsive TestBackend rendering, and independently polled CLI discovery/start/write/cancellation all agree. Synthetic device/process tests cover terminal outcomes but do not establish live removable-media compatibility."
 
 [[task]]
 id = "SDK-001"

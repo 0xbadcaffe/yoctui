@@ -2,56 +2,42 @@
 
 ## Active task
 
-**ID:** WIC-WRITE-UI-CLI-001
-**Title:** Integrate protected Wic device writing
+**ID:** SDK-001
+**Title:** SDK build and artifact workflow
 
 ## Objective
 
-Close the protected Wic device-writing parent gate by verifying that the
-completed adapter, model, app, responsive UI, and CLI execution paths agree on
-one typed, fail-closed workflow.
+Provide typed standard-SDK and extensible-SDK build, artifact inspection,
+publication, and extracted-SDK workflows without turning the shell escape hatch
+into the primary UX.
 
 ## Required work
 
-1. Inspect the completed Wic write child tasks and confirm their exact identity,
-   lifecycle, dialog, rendering, and CLI ownership contracts agree.
-2. Run every focused cross-layer verification command. Add only genuinely
-   missing regression coverage; do not duplicate child behavior or weaken a
-   check.
-3. Verify discovery and write execution remain shell-free, bounded,
-   generation-correlated, nonblocking, and adapter-revalidated immediately
-   before spawn.
-4. Verify responsive/no-color dialogs, write history/telemetry, modal routing,
-   stronger cancellation acknowledgement, and every terminal outcome remain
-   covered across navigation.
-5. Keep the safety claim honest: fake node/process tests prove integration, not
-   live removable-media compatibility. Do not perform a hardware write.
-6. Run all baseline checks, reconcile roadmap/status documentation, and hand
-   off to the next eligible highest-priority task.
+1. Inspect existing build jobs, Images artifacts, background-job lifecycle,
+   command execution adapters, Navigator/workspace composition, UI
+   specification, and roadmap dependencies before editing.
+2. Reconcile the broad parent task with the repository's one-coherent-commit
+   task discipline. Split it into independently verifiable model/adapter,
+   rendering, CLI integration, and parent-gate children if those outcomes do
+   not already exist.
+3. Set the first eligible child task current and commit the governance split
+   before implementation.
+4. Preserve the architecture dependency direction and use typed identities,
+   previews, effects, lifecycle events, and bounded output throughout.
 
 ## Definition of done
 
-- All four focused Wic device-write suites pass together.
-- All baseline checks pass.
-- Adapter, model, app, UI, and CLI contracts agree without duplicate logic.
-- Documentation records the completed integration without a live-hardware
-  claim.
+- The SDK parent is decomposed into coherent dependency-ordered tasks.
+- Existing behavior is identified and reused.
+- The first implementation child has explicit files, behavior, tests,
+  documentation updates, and verification commands.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model wic_device_write
-cargo test -p yoctui-app wic_device_write
-cargo test -p yoctui-ui wic_device_write
-cargo test -p yoctui -- wic_device_write
-cargo fmt --all --check
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
 ```
 
 ## Next task
 
-Select the next eligible highest-priority incomplete task from
-`docs/task-registry.toml`.
+Select the first eligible SDK child from `docs/task-registry.toml`.
