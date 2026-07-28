@@ -801,12 +801,12 @@ notes = "Images renders capability/readiness and latest session lifecycle, exact
 id = "QEMU-UI-CLI-001"
 milestone = "M4"
 title = "Integrate QEMU capability and runner in the CLI"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 50
 required = true
 depends_on = ["QEMU-UI-RENDER-001"]
 verify = ["cargo test -p yoctui -- qemu_workspace"]
-notes = "Execute capability/start/cancel effects, non-blockingly poll the QEMU runner, normalize events, preserve navigation and independence from BitBake/Devtool, and cover terminal outcomes."
+notes = "The CLI refreshes capability from each exact normalized image inventory, rebuilds and revalidates launch previews, owns one shell-free runner, routes modal input before global shortcuts, and independently polls typed success, nonzero, graceful/forced cancellation, rejection, and loss outcomes. Fake integration and baseline checks pass; live runqemu compatibility is not claimed."
 
 [[task]]
 id = "WIC-001"

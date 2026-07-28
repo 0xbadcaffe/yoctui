@@ -491,6 +491,19 @@ model/widget state. Widget rendering, effect coordination, and input mapping
 remain in the QEMU UI child task; fake runner tests do not establish live
 runqemu compatibility.
 
+The CLI owns one optional managed QEMU operation independently of BitBake,
+Devtool, signature, package, and image-artifact operations. After every
+successful, partial, or empty image-artifact inventory update, it runs
+`QemuCapabilityInspector` against that exact normalized inventory; a refresh or
+failed inventory clears stale availability. Launch execution reconstructs the
+typed preview, creates `QemuCommandSpec`, and starts `QemuJobRunner` in the
+active build directory. The terminal loop polls its bounded event stream
+without waiting for process completion and normalizes events through
+`yoctui-app`; confirmed cancellation runs in a separate Tokio task so terminal
+input and other coordinators remain responsive. CLI ownership is released only
+after a terminal runner event or a lost cancellation task, while completed
+session history remains in the model.
+
 ## Background-job model
 
 All long-running operations use one shared job abstraction.

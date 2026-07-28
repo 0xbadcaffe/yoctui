@@ -31,22 +31,25 @@ use yoctui_app::{
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
     key_action, logs_action, model_action_from_backend_event, package_workspace_action,
-    recipe_editor_action, settings_action, signature_task_picker_action,
-    signature_workspace_action, tasks_action,
+    qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
+    qemu_launch_confirmation_action, qemu_launch_dialog_action, recipe_editor_action,
+    settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
 };
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolCommandSpec, DevtoolInspector,
     DevtoolJobRunner, DevtoolRunnerEvent, ImageArtifactAdapter, ImageArtifactCancellation,
-    PackageDataAdapter, PackageDataCancellation, ProcessBackend, SignatureAdapter,
+    PackageDataAdapter, PackageDataCancellation, ProcessBackend, QemuAdapterError,
+    QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner, QemuRunnerEvent, SignatureAdapter,
     SignatureCancellation, VariableValue,
 };
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
     DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
     ImageArtifactRequest, LayerBrowserEntry, LayerInspectorMode, LayerRelationship,
-    LayerRelationships, PackageDetailRequest, PackageInventoryRequest, PreviewKind, RecipeIdentity,
-    Screen, Severity, SignatureComparisonRequest, SignatureTarget, Theme, VariableDetail,
-    VariableIdentity, update, validate_config_edit_request,
+    LayerRelationships, PackageDetailRequest, PackageInventoryRequest, PreviewKind, QemuCapability,
+    QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest, QemuSessionId, RecipeIdentity, Screen,
+    Severity, SignatureComparisonRequest, SignatureTarget, Theme, VariableDetail, VariableIdentity,
+    update, validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -873,6 +876,234 @@ async fn poll_devtool_job(
     }
 }
 
+struct QemuCliOperation {
+    id: QemuSessionId,
+    runner: Option<QemuJobRunner>,
+    cancellation: Option<tokio::task::JoinHandle<(QemuJobRunner, Result<bool, QemuAdapterError>)>>,
+}
+
+fn qemu_preview_for_request(
+    capability: &QemuCapability,
+    request: &QemuLaunchRequest,
+) -> Result<QemuLaunchPreview, String> {
+    let kernel = request
+        .kernel
+        .as_ref()
+        .map(|path| {
+            path.to_str()
+                .map(str::to_owned)
+                .ok_or_else(|| "runqemu kernel path is not valid UTF-8".to_owned())
+        })
+        .transpose()?
+        .unwrap_or_default();
+    let rootfs = request
+        .rootfs
+        .as_ref()
+        .map(|path| {
+            path.to_str()
+                .map(str::to_owned)
+                .ok_or_else(|| "runqemu rootfs path is not valid UTF-8".to_owned())
+        })
+        .transpose()?
+        .unwrap_or_default();
+    let draft = QemuLaunchDraft {
+        machine: request.machine.clone(),
+        image: request.image.clone(),
+        artifact_kind: request.artifact_kind,
+        kernel,
+        rootfs,
+        networking: request.networking,
+        display: request.display,
+        serial: request.serial,
+        memory_mib: request.memory_mib.to_string(),
+        extra_arguments: request.extra_arguments.join(" "),
+    };
+    let preview = draft.preview(capability).map_err(str::to_owned)?;
+    if &preview.request != request {
+        return Err("runqemu request changed while rebuilding its preview".into());
+    }
+    Ok(preview)
+}
+
+async fn begin_qemu_job(
+    app: &mut App,
+    operation: &mut Option<QemuCliOperation>,
+    build_dir: &Path,
+    cancellation_timeout: Duration,
+    id: QemuSessionId,
+    request: QemuLaunchRequest,
+) {
+    if operation.is_some() {
+        let _ = update(
+            app,
+            Action::FailQemuSession {
+                id,
+                message: "another managed runqemu process is already owned by the CLI".into(),
+                exit_code: None,
+                finished_at: SystemTime::now(),
+            },
+        );
+        return;
+    }
+    let start = qemu_preview_for_request(&app.qemu_capability, &request)
+        .map_err(QemuAdapterError::InvalidRequest)
+        .and_then(|preview| QemuCommandSpec::from_preview(&preview));
+    let command = match start {
+        Ok(command) => command,
+        Err(error) => {
+            let _ = update(
+                app,
+                Action::FailQemuSession {
+                    id,
+                    message: error.to_string(),
+                    exit_code: None,
+                    finished_at: SystemTime::now(),
+                },
+            );
+            return;
+        }
+    };
+    let mut runner =
+        QemuJobRunner::new(build_dir.to_path_buf()).with_cancellation_timeout(cancellation_timeout);
+    match runner.start(command).await {
+        Ok(()) => {
+            *operation = Some(QemuCliOperation {
+                id,
+                runner: Some(runner),
+                cancellation: None,
+            });
+        }
+        Err(error) => {
+            let _ = update(
+                app,
+                Action::FailQemuSession {
+                    id,
+                    message: error.to_string(),
+                    exit_code: None,
+                    finished_at: SystemTime::now(),
+                },
+            );
+        }
+    }
+}
+
+fn begin_qemu_cancellation(
+    app: &mut App,
+    operation: &mut Option<QemuCliOperation>,
+    id: QemuSessionId,
+) {
+    let Some(active) = operation.as_mut().filter(|active| active.id == id) else {
+        let _ = update(
+            app,
+            Action::RejectQemuSessionCancellation {
+                id,
+                message: "the CLI does not own this runqemu process".into(),
+            },
+        );
+        return;
+    };
+    if active.cancellation.is_some() {
+        let _ = update(
+            app,
+            Action::RejectQemuSessionCancellation {
+                id,
+                message: "runqemu cancellation is already in progress".into(),
+            },
+        );
+        return;
+    }
+    let Some(mut runner) = active.runner.take() else {
+        let _ = update(
+            app,
+            Action::RejectQemuSessionCancellation {
+                id,
+                message: "the runqemu runner is unavailable".into(),
+            },
+        );
+        return;
+    };
+    active.cancellation = Some(tokio::spawn(async move {
+        let result = runner.cancel().await;
+        (runner, result)
+    }));
+}
+
+async fn poll_qemu_job(app: &mut App, operation: &mut Option<QemuCliOperation>) {
+    let Some(active) = operation.as_mut() else {
+        return;
+    };
+    if active
+        .cancellation
+        .as_ref()
+        .is_some_and(tokio::task::JoinHandle::is_finished)
+    {
+        let handle = active.cancellation.take().expect("checked above");
+        match handle.await {
+            Ok((runner, Ok(_))) => active.runner = Some(runner),
+            Ok((runner, Err(error))) => {
+                active.runner = Some(runner);
+                let _ = update(
+                    app,
+                    Action::RejectQemuSessionCancellation {
+                        id: active.id,
+                        message: error.to_string(),
+                    },
+                );
+            }
+            Err(error) => {
+                let id = active.id;
+                let _ = update(
+                    app,
+                    Action::LoseQemuSession {
+                        id,
+                        message: format!("runqemu cancellation task was lost: {error}"),
+                        finished_at: SystemTime::now(),
+                    },
+                );
+                *operation = None;
+                return;
+            }
+        }
+    }
+    if active.cancellation.is_some() {
+        return;
+    }
+    let Some(runner) = active.runner.as_mut() else {
+        return;
+    };
+    match tokio::time::timeout(Duration::from_millis(1), runner.next_event()).await {
+        Ok(Ok(event)) => {
+            let terminal = matches!(
+                event,
+                QemuRunnerEvent::Completed { .. }
+                    | QemuRunnerEvent::Failed { .. }
+                    | QemuRunnerEvent::Cancelled { .. }
+                    | QemuRunnerEvent::Lost { .. }
+            );
+            for action in qemu_actions_for_runner_event(active.id, event, SystemTime::now()) {
+                let _ = update(app, action);
+            }
+            if terminal {
+                *operation = None;
+            }
+        }
+        Ok(Err(error)) => {
+            let id = active.id;
+            for action in qemu_actions_for_runner_event(
+                id,
+                QemuRunnerEvent::Lost {
+                    message: error.to_string(),
+                },
+                SystemTime::now(),
+            ) {
+                let _ = update(app, action);
+            }
+            *operation = None;
+        }
+        Err(_) => {}
+    }
+}
+
 #[derive(Debug, Clone)]
 enum SignatureOperationRequest {
     Dump(SignatureTarget),
@@ -1080,6 +1311,23 @@ struct ImageArtifactBackgroundOperation {
     handle: tokio::task::JoinHandle<BackendEvent>,
 }
 
+fn execute_qemu_capability_effect(
+    app: &mut App,
+    inspector: &QemuCapabilityInspector,
+    effect: Effect,
+) {
+    if !matches!(effect, Effect::InspectQemuCapability) {
+        return;
+    }
+    let capability = app.image_artifacts.inventory().map_or_else(
+        || QemuCapability::Failed {
+            message: "image artifact inventory is unavailable".into(),
+        },
+        |inventory| inspector.inspect(&inventory.artifacts),
+    );
+    let _ = update(app, Action::QemuCapabilityLoaded(capability));
+}
+
 fn begin_image_artifact_operation(
     app: &mut App,
     adapter: Option<&ImageArtifactAdapter>,
@@ -1100,6 +1348,12 @@ fn begin_image_artifact_operation(
                 request,
                 message: "DEPLOY_DIR_IMAGE is unavailable from the active Yocto workspace".into(),
             },
+        );
+        let _ = update(
+            app,
+            Action::QemuCapabilityLoaded(QemuCapability::Failed {
+                message: "image artifact inventory is unavailable".into(),
+            }),
         );
         return;
     };
@@ -1128,6 +1382,7 @@ fn begin_image_artifact_operation(
 async fn poll_image_artifact_operation(
     app: &mut App,
     operation: &mut Option<ImageArtifactBackgroundOperation>,
+    qemu_inspector: &QemuCapabilityInspector,
 ) {
     if !operation
         .as_ref()
@@ -1145,8 +1400,22 @@ async fn poll_image_artifact_operation(
             message: format!("image artifact background task was lost: {error}"),
         },
     };
+    let failed_message = match &event {
+        BackendEvent::ImageArtifactsFailed { message, .. } => Some(message.clone()),
+        _ => None,
+    };
     if let Some(action) = model_action_from_backend_event(event) {
         let _ = update(app, action);
+    }
+    if let Some(message) = failed_message {
+        let _ = update(
+            app,
+            Action::QemuCapabilityLoaded(QemuCapability::Failed {
+                message: format!("image artifact inventory failed: {message}"),
+            }),
+        );
+    } else if let Some(effect) = update(app, Action::InspectQemuCapability) {
+        execute_qemu_capability_effect(app, qemu_inspector, effect);
     }
 }
 
@@ -2056,6 +2325,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         .map(PathBuf::from)
         .map(ImageArtifactAdapter::new);
     let mut image_artifact_operation = None;
+    let qemu_inspector = QemuCapabilityInspector::default();
+    let mut qemu_operation = None;
     if app.screen == Screen::Packages
         && let Some(effect @ Effect::GetPackageInventory(_)) =
             update(&mut app, Action::BeginPackageInventory)
@@ -2084,7 +2355,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         }
         poll_signature_operation(&mut app, &mut signature_operation).await;
         poll_package_operation(&mut app, &mut package_operation).await;
-        poll_image_artifact_operation(&mut app, &mut image_artifact_operation).await;
+        poll_image_artifact_operation(&mut app, &mut image_artifact_operation, &qemu_inspector)
+            .await;
+        poll_qemu_job(&mut app, &mut qemu_operation).await;
         if matches!(
             app.build.status,
             BuildStatus::LoadingWorkspace
@@ -2134,6 +2407,35 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         &mut package_operation,
                         effect,
                     );
+                }
+            } else if matches!(app.active_dialog(), Some(Dialog::QemuLaunch(_))) {
+                let editing = app.active_dialog().is_some_and(
+                    |dialog| matches!(dialog, Dialog::QemuLaunch(state) if state.editing),
+                );
+                let _ = qemu_launch_dialog_action(editing, input)
+                    .and_then(|action| update(&mut app, action));
+            } else if matches!(app.active_dialog(), Some(Dialog::QemuLaunchConfirmation(_))) {
+                let effect = qemu_launch_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(Effect::StartQemuSession { id, request }) = effect {
+                    begin_qemu_job(
+                        &mut app,
+                        &mut qemu_operation,
+                        &session_build_dir,
+                        cancellation_timeout,
+                        id,
+                        request,
+                    )
+                    .await;
+                }
+            } else if matches!(
+                app.active_dialog(),
+                Some(Dialog::QemuCancellationConfirmation(_))
+            ) {
+                let effect = qemu_cancellation_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(Effect::CancelQemuSession(id)) = effect {
+                    begin_qemu_cancellation(&mut app, &mut qemu_operation, id);
                 }
             } else if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
                 let editing = app.active_dialog().is_some_and(
@@ -3018,6 +3320,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     if let Some(operation) = image_artifact_operation.take() {
         operation.cancellation.cancel();
         let _ = operation.handle.await;
+    }
+    if let Some(mut operation) = qemu_operation.take() {
+        if let Some(handle) = operation.cancellation.take() {
+            handle.abort();
+            let _ = handle.await;
+        } else if let Some(mut runner) = operation.runner.take() {
+            let _ = runner.cancel().await;
+        }
     }
     backend.shutdown().await?;
     session.last_target = app.build.target;
@@ -4676,6 +4986,8 @@ esac"#,
         )
         .unwrap();
         let adapter = ImageArtifactAdapter::new(deploy);
+        let qemu_inspector =
+            QemuCapabilityInspector::with_executable(directory.join("missing-runqemu"));
         let mut app = App::new(10, 1_000);
         app.workspace
             .variables
@@ -4685,7 +4997,7 @@ esac"#,
         begin_image_artifact_operation(&mut app, Some(&adapter), &mut operation, effect);
         tokio::time::timeout(Duration::from_secs(2), async {
             while operation.is_some() {
-                poll_image_artifact_operation(&mut app, &mut operation).await;
+                poll_image_artifact_operation(&mut app, &mut operation, &qemu_inspector).await;
                 tokio::task::yield_now().await;
             }
         })
@@ -4713,7 +5025,7 @@ esac"#,
         );
         tokio::time::timeout(Duration::from_secs(2), async {
             while operation.is_some() {
-                poll_image_artifact_operation(&mut app, &mut operation).await;
+                poll_image_artifact_operation(&mut app, &mut operation, &qemu_inspector).await;
                 tokio::task::yield_now().await;
             }
         })
@@ -4725,5 +5037,291 @@ esac"#,
                 if message.contains("cancelled")
         ));
         fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    fn qemu_workspace_fixture(name: &str, body: &str) -> (PathBuf, PathBuf, App) {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = std::env::temp_dir().join(format!(
+            "yoctui-qemu-workspace-{}-{name}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let build_dir = directory.join("build");
+        let deploy = directory.join("qemux86-64");
+        fs::create_dir_all(&build_dir).unwrap();
+        fs::create_dir_all(&deploy).unwrap();
+        let executable = directory.join("runqemu");
+        fs::write(&executable, format!("#!/bin/sh\n{body}\n")).unwrap();
+        let mut permissions = fs::metadata(&executable).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&executable, permissions).unwrap();
+        let image_path = deploy.join("core-image-minimal.wic");
+        fs::write(&image_path, b"wic").unwrap();
+        let identity = yoctui_model::ImageArtifactIdentity {
+            machine: "qemux86-64".into(),
+            image: "core-image-minimal".into(),
+            path: image_path,
+        };
+        let artifact = yoctui_model::ImageArtifact {
+            identity: identity.clone(),
+            kind: yoctui_model::ImageArtifactKind::Wic,
+            size_bytes: yoctui_model::ImageArtifactField::Available(3),
+            modified_unix_seconds: yoctui_model::ImageArtifactField::Unavailable,
+            checksums: yoctui_model::ImageArtifactField::Unavailable,
+            manifests: yoctui_model::ImageArtifactField::Unavailable,
+            licenses: yoctui_model::ImageArtifactField::Unavailable,
+            spdx: yoctui_model::ImageArtifactField::Unavailable,
+            wic_files: yoctui_model::ImageArtifactField::Unavailable,
+        };
+        let mut app = App::new(20, 20_000);
+        app.screen = Screen::Images;
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.image_artifact_selection = Some(identity);
+        app.image_artifacts = yoctui_model::ImageArtifactInventoryState::Available {
+            request: ImageArtifactRequest {
+                generation: 1,
+                machine: "qemux86-64".into(),
+            },
+            inventory: yoctui_model::ImageArtifactInventory {
+                machine: "qemux86-64".into(),
+                deploy_directory: yoctui_model::ImageArtifactField::Available(deploy),
+                artifacts: vec![artifact],
+            },
+        };
+        execute_qemu_capability_effect(
+            &mut app,
+            &QemuCapabilityInspector::with_executable(executable),
+            Effect::InspectQemuCapability,
+        );
+        (directory, build_dir, app)
+    }
+
+    fn qemu_workspace_start_effect(app: &mut App) -> (QemuSessionId, QemuLaunchRequest) {
+        let _ = update(app, Action::BeginSelectedQemuLaunch);
+        let _ = update(app, Action::PreviewQemuLaunch);
+        let Some(Effect::StartQemuSession { id, request }) = update(app, Action::ConfirmQemuLaunch)
+        else {
+            panic!("expected QEMU start effect");
+        };
+        (id, request)
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn qemu_workspace_cli_refreshes_capability_and_runs_exact_request_across_navigation() {
+        let (directory, build_dir, mut app) =
+            qemu_workspace_fixture("success", "printf '%s\\n' \"$@\"; exit 0");
+        assert!(matches!(
+            app.qemu_capability,
+            QemuCapability::Available { .. }
+        ));
+        assert_eq!(
+            qemu_launch_dialog_action(false, Input::Char('Q')),
+            None,
+            "modal Q input must not leak to the Images workspace"
+        );
+        let (id, request) = qemu_workspace_start_effect(&mut app);
+        let mut operation = None;
+        begin_qemu_job(
+            &mut app,
+            &mut operation,
+            &build_dir,
+            Duration::from_millis(100),
+            id,
+            request.clone(),
+        )
+        .await;
+        app.screen = Screen::Logs;
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while operation.is_some() {
+                poll_qemu_job(&mut app, &mut operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let session = app.qemu_session(id).unwrap();
+        let job = app.background_jobs.get(session.background_job_id).unwrap();
+        assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Succeeded);
+        assert_eq!(app.screen, Screen::Logs);
+        assert!(
+            job.output
+                .iter()
+                .any(|entry| entry.message == request.image.path.display().to_string())
+        );
+        assert!(
+            job.output
+                .iter()
+                .any(|entry| entry.message == "qemumemory=1024")
+        );
+
+        let effect = update(&mut app, Action::RefreshImageArtifactInventory).unwrap();
+        let mut scan = None;
+        begin_image_artifact_operation(&mut app, None, &mut scan, effect);
+        assert!(matches!(app.qemu_capability, QemuCapability::Failed { .. }));
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn qemu_workspace_cli_reports_nonzero_rejection_forced_cancel_and_loss() {
+        let (failed_directory, build_dir, mut failed) =
+            qemu_workspace_fixture("failure", "printf 'failed\\n' >&2; exit 9");
+        let (failed_id, failed_request) = qemu_workspace_start_effect(&mut failed);
+        let mut failed_operation = None;
+        begin_qemu_job(
+            &mut failed,
+            &mut failed_operation,
+            &build_dir,
+            Duration::from_millis(100),
+            failed_id,
+            failed_request,
+        )
+        .await;
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while failed_operation.is_some() {
+                poll_qemu_job(&mut failed, &mut failed_operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let failed_job = failed
+            .background_jobs
+            .get(failed.qemu_session(failed_id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(failed_job.status, yoctui_model::BackgroundJobStatus::Failed);
+        assert_eq!(failed.qemu_session(failed_id).unwrap().exit_code, Some(9));
+        fs::remove_dir_all(failed_directory).unwrap();
+
+        let (cancel_directory, cancel_build_dir, mut cancelled) = qemu_workspace_fixture(
+            "cancel",
+            "trap '' TERM; printf 'ready\\n'; while :; do :; done",
+        );
+        let (cancel_id, cancel_request) = qemu_workspace_start_effect(&mut cancelled);
+        let mut cancel_operation = None;
+        begin_qemu_job(
+            &mut cancelled,
+            &mut cancel_operation,
+            &cancel_build_dir,
+            Duration::from_millis(100),
+            cancel_id,
+            cancel_request,
+        )
+        .await;
+        tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                poll_qemu_job(&mut cancelled, &mut cancel_operation).await;
+                let ready = cancelled
+                    .qemu_session(cancel_id)
+                    .and_then(|session| cancelled.background_jobs.get(session.background_job_id))
+                    .is_some_and(|job| job.output.iter().any(|entry| entry.message == "ready"));
+                if ready {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let _ = update(
+            &mut cancelled,
+            Action::BeginQemuSessionCancellation { id: cancel_id },
+        );
+        let Some(Effect::CancelQemuSession(effect_id)) =
+            update(&mut cancelled, Action::ConfirmQemuSessionCancellation)
+        else {
+            panic!("cancel effect");
+        };
+        begin_qemu_cancellation(&mut cancelled, &mut cancel_operation, effect_id);
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while cancel_operation.is_some() {
+                poll_qemu_job(&mut cancelled, &mut cancel_operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let cancel_job = cancelled
+            .background_jobs
+            .get(cancelled.qemu_session(cancel_id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(
+            cancel_job.status,
+            yoctui_model::BackgroundJobStatus::Cancelled
+        );
+        assert!(
+            cancel_job
+                .output
+                .iter()
+                .any(|entry| entry.message.contains("forced termination"))
+        );
+
+        let (reject_directory, _, mut rejected) = qemu_workspace_fixture("reject", "sleep 30");
+        let (reject_id, _) = qemu_workspace_start_effect(&mut rejected);
+        let _ = update(
+            &mut rejected,
+            Action::QemuSessionStarting {
+                id: reject_id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut rejected, Action::QemuSessionRunning { id: reject_id });
+        let _ = update(
+            &mut rejected,
+            Action::BeginQemuSessionCancellation { id: reject_id },
+        );
+        let Some(Effect::CancelQemuSession(reject_effect_id)) =
+            update(&mut rejected, Action::ConfirmQemuSessionCancellation)
+        else {
+            panic!("reject effect");
+        };
+        let mut no_operation = None;
+        begin_qemu_cancellation(&mut rejected, &mut no_operation, reject_effect_id);
+        let reject_job = rejected
+            .background_jobs
+            .get(rejected.qemu_session(reject_id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(
+            reject_job.status,
+            yoctui_model::BackgroundJobStatus::Running
+        );
+        fs::remove_dir_all(reject_directory).unwrap();
+
+        let (lost_directory, lost_build_dir, mut lost) = qemu_workspace_fixture("lost", "sleep 30");
+        let (lost_id, lost_request) = qemu_workspace_start_effect(&mut lost);
+        let mut lost_operation = None;
+        begin_qemu_job(
+            &mut lost,
+            &mut lost_operation,
+            &lost_build_dir,
+            Duration::from_millis(100),
+            lost_id,
+            lost_request,
+        )
+        .await;
+        poll_qemu_job(&mut lost, &mut lost_operation).await;
+        poll_qemu_job(&mut lost, &mut lost_operation).await;
+        let active = lost_operation.as_mut().unwrap();
+        drop(active.runner.take());
+        active.cancellation = Some(tokio::spawn(async {
+            panic!("synthetic cancellation task loss");
+        }));
+        tokio::task::yield_now().await;
+        poll_qemu_job(&mut lost, &mut lost_operation).await;
+        let lost_job = lost
+            .background_jobs
+            .get(lost.qemu_session(lost_id).unwrap().background_job_id)
+            .unwrap();
+        assert_eq!(lost_job.status, yoctui_model::BackgroundJobStatus::Lost);
+        fs::remove_dir_all(lost_directory).unwrap();
+        fs::remove_dir_all(cancel_directory).unwrap();
     }
 }
