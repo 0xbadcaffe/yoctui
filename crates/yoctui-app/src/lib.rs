@@ -9,8 +9,12 @@ use yoctui_model::{
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
     LayerInspectorMode, LayerRelationship, LayerRelationships, QemuOutputStream, QemuSessionId,
     RecipeDependencies, Screen, Severity, TaskId, TaskInfo, VariableDetail, VariableIdentity,
-    WicOutput, WicOutputStream, WicSessionId,
+    WicCapability, WicOutput, WicOutputStream, WicSessionId,
 };
+
+pub fn wic_capability_action(capability: WicCapability) -> Action {
+    Action::WicCapabilityLoaded(capability)
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum WicSessionEvent {
@@ -3368,6 +3372,14 @@ mod tests {
                     finished_at: timestamp,
                 }
             ]
+        );
+    }
+    #[test]
+    fn wic_adapter_capability_crosses_app_boundary_without_parsing() {
+        let capability = WicCapability::MissingKickstarts;
+        assert_eq!(
+            wic_capability_action(capability.clone()),
+            Action::WicCapabilityLoaded(capability)
         );
     }
     #[test]
