@@ -1274,17 +1274,166 @@ Every SDK shortcut remains visible; only its label is abbreviated.
 
 ### Testing
 
-Integrate:
+`Testing` is a first-class Navigator destination after `SDK`. It owns unified
+test launch context and structured results without duplicating SDK launch
+state or exposing an arbitrary command textbox. The persistent Header shows
+the active Yocto release, build directory, `MACHINE`, `DISTRO`, selected image,
+aggregate active-job state, CPU utilization, and build-filesystem space as on
+the other workspaces.
 
-- `resulttool`
-- `oe-selftest`
-- `bitbake-selftest`
-- `do_testimage`
-- `do_testsdk`
-- `do_testsdkext`
-- `ptest`
+The Testing Workspace has three typed views selected by `Tab`: `Launches`,
+`Results`, and `Comparison`. Each view retains its own exact selection and
+search state across navigation and resize. The Inspector follows the selected
+row. Before capability inspection completes, the Workspace says that testing
+capability and result acquisition are pending; missing tools, unsupported
+tasks, missing configuration, empty results, partial data, adapter failure,
+and cancellation are distinct states.
 
-Show regressions, newly failing tests, newly passing tests, logs, metadata, and JUnit export.
+#### Launches
+
+The Launches view contains these fixed typed families:
+
+- OE selftest (`oe-selftest`)
+- BitBake selftest (`bitbake-selftest`)
+- image runtime (`do_testimage`)
+- standard SDK (`do_testsdk`)
+- extensible SDK (`do_testsdkext`)
+- package tests (`ptest`)
+
+The Inspector explains the selected family's authoritative executable or
+BitBake task, current image/machine/distro binding, configuration
+prerequisites, selector, and exact disabled reason. It never claims that a
+test suite exists based only on a display name.
+
+`Enter` or `r` opens the selected family's launch dialog. OE selftest has an
+`All` or `Selected` scope, a bounded exact test identifier for Selected, and
+parallelism from 1 through 256. All maps to `oe-selftest -a`; Selected maps to
+`oe-selftest -r <identity>`, and optional parallelism maps to an indexed `-j`
+argument. BitBake selftest has an optional bounded exact unittest identity,
+typed verbose choice, and typed skip-network choice. Skip-network is a
+child-only `BB_SKIP_NETTESTS=yes` environment entry, never a mutation of the
+Yoctui process.
+
+Image runtime, standard SDK, and extensible SDK launches bind the current
+exact image target and use `BuildRequest` tasks `testimage`, `testsdk`, and
+`testsdkext` through the existing managed BitBake coordinator. `i` opens the
+existing machine-aware image picker. The SDK workspace may launch the two SDK
+tasks contextually, but Testing is the owner of unified result inspection and
+comparison.
+
+Ptest execution is available only when typed BitBake configuration confirms
+that the selected image includes ptest support and its authoritative
+`TEST_SUITES` includes the ptest runtime suite. It then uses that exact
+configured `do_testimage` request. Yoctui does not silently edit
+`DISTRO_FEATURES`, `EXTRA_IMAGE_FEATURES`, or `TEST_SUITES`, does not SSH to a
+guessed target, and does not substitute a host-side `ptest-runner` command.
+When prerequisites are absent, the row remains visible with the exact
+configuration explanation; imported ptest results remain supported.
+
+Every launch dialog begins on its first editable field. `↑`/`↓` or `k`/`j`
+moves without wrapping, `←`/`→` or `h`/`l` changes typed choices, and `Enter`
+begins or finishes bounded text input. `p` validates and opens a second
+confirmation overlay containing either the complete indexed shell-free
+argument/environment vector or the exact image/task/machine/distro
+`BuildRequest`. Only `Enter` in that preview starts execution. `Esc` closes
+either step without starting, including while editing. Dialogs trap focus and
+restore the previous pane.
+
+#### Execution lifecycle
+
+Every confirmed launch creates one stable `TestSession` associated with a
+shared background job. BitBake task families reuse the one existing build
+coordinator; selftests use one CLI-owned shell-free test runner. A session
+retains family, exact selector, active image/configuration identity, start and
+finish timestamps, bounded stdout/stderr, truncation/drop counts, exit status,
+structured result paths emitted by the adapter, and a distinct queued,
+starting, running, cancelling, succeeded, failed, cancelled, timed-out, or
+lost outcome. Navigating away never discards it.
+
+`x` opens cancellation confirmation for the active Testing-owned operation.
+Cancellation rejection restores the running state with a visible reason.
+Testing cancellation never targets an unrelated SDK, QEMU, Wic, Devtool,
+metadata, or artifact operation. Successful execution triggers import only
+for exact regular non-symlink result paths returned by the adapter. Success
+with no structured result is reported honestly and does not fabricate cases.
+
+#### Results
+
+`resulttool` capability is inspected independently. Results are local
+`testresults.json` records: each identity contains its canonical absolute
+path, byte size, modification timestamp, and bounded content fingerprint.
+Yoctui initially indexes only exact result paths emitted by managed sessions
+or explicitly selected through the import dialog. `I` opens that dialog for a
+normalized absolute regular file or directory. `R` rescans only retained
+validated roots. It never recursively searches the whole build tree or
+interprets a task log as structured results.
+
+The adapter owns JSON/resulttool parsing and normalization. The model receives
+bounded typed runs, suites, cases, status, duration, metadata, and exact
+related log paths. Case status is `passed`, `failed`, `skipped`, `error`, or
+`unknown`; missing status/duration/metadata remains unavailable. Inventory and
+import state distinguishes not loaded, loading, available empty, available,
+partial with limitations, failed, cancelled, timed out, and worker loss.
+Malformed or oversized records are skipped with visible bounded limitations,
+not converted into successful empty data.
+
+The Results Workspace shows one row per exact result identity with family,
+machine/image when authoritative, revision when present, pass/fail/skip/error
+counts, duration, and timestamp. `↑`/`↓` selects; `/` searches typed identity
+and metadata; `Enter` drills into that result's bounded suite/case rows and
+`Esc` returns one level. The Inspector shows exact metadata, counts, selected
+case status/duration, limitations, originating session, and related logs. `o`
+opens the exact selected result JSON and `l` opens the selected case's exact
+regular log through the configured editor. Missing paths leave the action
+inert with a stable explanation.
+
+#### Comparison and JUnit export
+
+`c` opens a two-step picker for distinct exact baseline and candidate result
+identities. The preview names both paths, fingerprints, machine/image/revision
+metadata, and the exact indexed resulttool operation before `Enter` starts it.
+Results are correlated to both identities; changing or removing either input
+makes the response stale.
+
+Comparison normalizes cases by exact suite and case identity:
+
+- `regression`: present in both, passed or skipped in the baseline, failed or
+  errored in the candidate
+- `new failure`: absent in the baseline and failed or errored in the candidate
+- `new pass`: failed or errored in the baseline and passed in the candidate
+- `removed`: present only in the baseline
+- `unchanged/other`: every remaining status transition
+
+The Comparison view shows category totals and selectable exact case
+transitions. Search and Inspector behavior match Results, including exact
+metadata/log paths and visible partial limitations. No filename, ordering, or
+free-form resulttool text determines a category in widgets.
+
+`J` in Results opens JUnit export for the selected exact result. The
+destination must be an absolute `.xml` path beneath an existing canonical
+directory, and the destination itself must not already exist. A second overlay
+shows the selected result fingerprint, destination, and exact indexed
+shell-free resulttool vector. `Enter` exports; `Esc` cancels. Success,
+nonzero failure, cancellation, timeout, stale input, and worker loss remain
+distinct, and Yoctui never guesses an overwrite policy.
+
+All Testing views and dialogs remain usable at 80×24. Wide mode uses
+Navigator/Workspace/Inspector; medium mode uses the normal Inspector overlay;
+narrow mode uses the visible pane switcher. Long identities, metadata, output,
+and limitations are bounded and wrapped. Themes and no-color mode preserve
+selection, status, category, and failure meaning with labels and attributes.
+
+The full Testing footer is:
+
+```text
+Tab view | ↑/↓ select | Enter open | r run | i image | / search | I import | R refresh | c compare | J JUnit | o result | l log | x cancel
+```
+
+At 90 columns and below it compacts to:
+
+```text
+Tab:view ↑↓ Enter r:run i:image /:find I/R:results c:compare J:JUnit o/l:open x:cancel
+```
 
 ---
 
