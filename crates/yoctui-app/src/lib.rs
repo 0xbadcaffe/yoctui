@@ -273,6 +273,8 @@ impl BuildJobCoordinator {
             | BackendEvent::PackageInventoryFailed { .. }
             | BackendEvent::PackageDetail { .. }
             | BackendEvent::PackageDetailFailed { .. }
+            | BackendEvent::ImageArtifacts { .. }
+            | BackendEvent::ImageArtifactsFailed { .. }
             | BackendEvent::RecipeSources { .. }
             | BackendEvent::RecipeMetadata(_)
             | BackendEvent::LayerRelationships(_)
@@ -714,6 +716,24 @@ pub fn model_action_from_backend_event(event: BackendEvent) -> Option<Action> {
         BackendEvent::PackageDetailFailed { request, message } => {
             Some(Action::PackageDetailFailed { request, message })
         }
+        BackendEvent::ImageArtifacts {
+            request,
+            inventory,
+            limitations,
+        } => {
+            if limitations.is_empty() {
+                Some(Action::ImageArtifactInventoryLoaded { request, inventory })
+            } else {
+                Some(Action::ImageArtifactInventoryPartial {
+                    request,
+                    inventory,
+                    limitations,
+                })
+            }
+        }
+        BackendEvent::ImageArtifactsFailed { request, message } => {
+            Some(Action::ImageArtifactInventoryFailed { request, message })
+        }
         BackendEvent::RecipeSources { recipe, paths } => {
             Some(Action::RecipeSourcesLoaded { recipe, paths })
         }
@@ -1152,10 +1172,11 @@ mod tests {
     use std::time::Duration;
     use yoctui_model::{
         App, BackgroundJobStatus, BuildStatus, DependencyEdge, DependencyEdgeKind, DependencyGraph,
-        DependencyGraphState, DependencyNodeId, PackageDetail, PackageDetailRequest, PackageField,
-        PackageIdentity, PackageInventoryRequest, PackageSummary, SignatureComparisonRequest,
-        SignatureDifference, SignatureDifferenceCategory, SignatureIdentity, SignatureRecord,
-        SignatureTarget, update,
+        DependencyGraphState, DependencyNodeId, ImageArtifact, ImageArtifactField,
+        ImageArtifactIdentity, ImageArtifactInventory, ImageArtifactKind, ImageArtifactRequest,
+        PackageDetail, PackageDetailRequest, PackageField, PackageIdentity,
+        PackageInventoryRequest, PackageSummary, SignatureComparisonRequest, SignatureDifference,
+        SignatureDifferenceCategory, SignatureIdentity, SignatureRecord, SignatureTarget, update,
     };
 
     fn apply_actions(app: &mut App, actions: Vec<Action>) {
@@ -1484,6 +1505,69 @@ mod tests {
             Some(Action::PackageDetailFailed {
                 request: detail_request,
                 message: "package was not found".into(),
+            })
+        );
+    }
+
+    #[test]
+    fn image_artifact_model_typed_events_map_success_partial_and_failure() {
+        let request = ImageArtifactRequest {
+            generation: 9,
+            machine: "qemux86-64".into(),
+        };
+        let artifact = ImageArtifact {
+            identity: ImageArtifactIdentity {
+                machine: request.machine.clone(),
+                image: "core-image-minimal".into(),
+                path: "/build/tmp/deploy/images/qemux86-64/core-image-minimal.wic".into(),
+            },
+            kind: ImageArtifactKind::Wic,
+            size_bytes: ImageArtifactField::Available(8_192),
+            modified_unix_seconds: ImageArtifactField::Available(1_700_000_000),
+            checksums: ImageArtifactField::Unavailable,
+            manifests: ImageArtifactField::Available(Vec::new()),
+            licenses: ImageArtifactField::Unavailable,
+            spdx: ImageArtifactField::Unavailable,
+            wic_files: ImageArtifactField::Available(Vec::new()),
+        };
+        let inventory = ImageArtifactInventory {
+            machine: request.machine.clone(),
+            deploy_directory: ImageArtifactField::Available(
+                "/build/tmp/deploy/images/qemux86-64".into(),
+            ),
+            artifacts: vec![artifact],
+        };
+        assert_eq!(
+            model_action_from_backend_event(BackendEvent::ImageArtifacts {
+                request: request.clone(),
+                inventory: inventory.clone(),
+                limitations: Vec::new(),
+            }),
+            Some(Action::ImageArtifactInventoryLoaded {
+                request: request.clone(),
+                inventory: inventory.clone(),
+            })
+        );
+        assert_eq!(
+            model_action_from_backend_event(BackendEvent::ImageArtifacts {
+                request: request.clone(),
+                inventory: inventory.clone(),
+                limitations: vec!["license metadata unavailable".into()],
+            }),
+            Some(Action::ImageArtifactInventoryPartial {
+                request: request.clone(),
+                inventory,
+                limitations: vec!["license metadata unavailable".into()],
+            })
+        );
+        assert_eq!(
+            model_action_from_backend_event(BackendEvent::ImageArtifactsFailed {
+                request: request.clone(),
+                message: "deploy directory is missing".into(),
+            }),
+            Some(Action::ImageArtifactInventoryFailed {
+                request,
+                message: "deploy directory is missing".into(),
             })
         );
     }

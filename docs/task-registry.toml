@@ -702,18 +702,18 @@ notes = "Parent gate split into typed artifact state, authoritative bounded depl
 id = "IMAGES-MODEL-001"
 milestone = "M4"
 title = "Add typed image artifact state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 49
 required = true
 depends_on = ["JOB-002"]
 verify = ["cargo test -p yoctui-model image_artifact_model", "cargo test -p yoctui-app image_artifact_model"]
-notes = "Define exact machine/image/path identities, bounded artifact metadata, explicit result states, deterministic normalization, identity-stable selection, search, and typed reducer/event boundaries without filesystem access."
+notes = "Exact machine/image/path identities, typed available-versus-unavailable artifact metadata, deterministic bounds, correlated lifecycle states, identity-stable selection/search, reducer effects, and app event normalization pass focused and baseline checks."
 
 [[task]]
 id = "IMAGES-ADAPTER-001"
 milestone = "M4"
 title = "Acquire authoritative deployed image artifacts"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 49
 required = true
 depends_on = ["IMAGES-MODEL-001"]

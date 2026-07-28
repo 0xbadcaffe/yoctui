@@ -1,6 +1,8 @@
 //! Domain model and pure state transitions. BitBake remains authoritative.
+mod image;
 mod package;
 
+pub use image::*;
 pub use package::*;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -2084,6 +2086,11 @@ pub struct App {
     pub package_dependency_reverse: bool,
     pub package_dependency_selection: usize,
     pub package_navigation: Vec<PackageIdentity>,
+    pub image_artifacts: ImageArtifactInventoryState,
+    pub image_artifact_selection: Option<ImageArtifactIdentity>,
+    pub image_artifact_query: String,
+    pub image_artifact_searching: bool,
+    pub image_artifact_request_generation: u64,
     pub layer_relationships: Option<LayerRelationships>,
     pub recipe_sources: HashMap<String, Vec<PathBuf>>,
     pub recipe_metadata: HashMap<String, RecipeMetadata>,
@@ -2154,6 +2161,11 @@ impl App {
             package_dependency_reverse: false,
             package_dependency_selection: 0,
             package_navigation: Vec::new(),
+            image_artifacts: ImageArtifactInventoryState::NotLoaded,
+            image_artifact_selection: None,
+            image_artifact_query: String::new(),
+            image_artifact_searching: false,
+            image_artifact_request_generation: 0,
             layer_relationships: None,
             recipe_sources: HashMap::new(),
             recipe_metadata: HashMap::new(),
@@ -2329,6 +2341,20 @@ impl App {
     pub fn selected_package_dependency(&self) -> Option<&PackageIdentity> {
         self.selected_package_dependencies()?
             .get(self.package_dependency_selection)
+    }
+    pub fn filtered_image_artifacts(&self) -> Vec<&ImageArtifact> {
+        self.image_artifacts
+            .artifacts()
+            .unwrap_or_default()
+            .iter()
+            .filter(|artifact| artifact.matches_query(&self.image_artifact_query))
+            .collect()
+    }
+    pub fn selected_image_artifact(&self) -> Option<&ImageArtifact> {
+        let selected = self.image_artifact_selection.as_ref()?;
+        self.filtered_image_artifacts()
+            .into_iter()
+            .find(|artifact| &artifact.identity == selected)
     }
     pub fn active_dialog(&self) -> Option<&Dialog> {
         self.dialogs.front()
@@ -2508,6 +2534,29 @@ pub enum Action {
     ConfirmImagePicker,
     CancelImagePicker,
     BeginCurrentImageBuild,
+    BeginImageArtifactInventory,
+    RefreshImageArtifactInventory,
+    CancelImageArtifactOperation,
+    ImageArtifactInventoryLoaded {
+        request: ImageArtifactRequest,
+        inventory: ImageArtifactInventory,
+    },
+    ImageArtifactInventoryPartial {
+        request: ImageArtifactRequest,
+        inventory: ImageArtifactInventory,
+        limitations: Vec<String>,
+    },
+    ImageArtifactInventoryFailed {
+        request: ImageArtifactRequest,
+        message: String,
+    },
+    SelectImageArtifact {
+        delta: isize,
+    },
+    BeginImageArtifactSearch,
+    AppendImageArtifactQuery(char),
+    BackspaceImageArtifactQuery,
+    FinishImageArtifactSearch,
     BeginBuildTargetEdit,
     BeginBuildTargetTask(Option<String>),
     AppendBuildTarget(char),
@@ -3656,6 +3705,126 @@ fn signature_operation_is_loading(app: &App) -> bool {
         )
 }
 
+fn next_image_artifact_generation(app: &mut App) -> u64 {
+    app.image_artifact_request_generation = app.image_artifact_request_generation.wrapping_add(1);
+    if app.image_artifact_request_generation == 0 {
+        app.image_artifact_request_generation = 1;
+    }
+    app.image_artifact_request_generation
+}
+
+fn begin_image_artifact_inventory(app: &mut App) -> Option<Effect> {
+    let machine = app
+        .workspace
+        .variables
+        .get("MACHINE")
+        .cloned()
+        .unwrap_or_default();
+    let request = ImageArtifactRequest {
+        generation: next_image_artifact_generation(app),
+        machine,
+    };
+    if let Err(message) = request.validate() {
+        app.notification = Some(format!("Image artifacts are unavailable: {message}."));
+        return None;
+    }
+    app.image_artifacts = ImageArtifactInventoryState::Loading {
+        request: request.clone(),
+    };
+    Some(Effect::GetImageArtifacts(request))
+}
+
+fn image_artifact_operation_is_loading(app: &App) -> bool {
+    matches!(
+        app.image_artifacts,
+        ImageArtifactInventoryState::Loading { .. }
+    )
+}
+
+fn normalize_image_artifact_limitations(mut limitations: Vec<String>) -> Vec<String> {
+    limitations = limitations
+        .into_iter()
+        .filter(|limitation| !limitation.is_empty() && !limitation.chars().any(char::is_control))
+        .map(|limitation| limitation.chars().take(2_048).collect())
+        .collect();
+    limitations.sort();
+    limitations.dedup();
+    limitations.truncate(MAX_IMAGE_ARTIFACT_LIMITATIONS);
+    limitations
+}
+
+fn append_image_artifact_normalization_limitations(
+    limitations: &mut Vec<String>,
+    report: &ImageArtifactNormalizationReport,
+) {
+    if report.invalid_records > 0 || report.invalid_fields > 0 {
+        limitations.push(format!(
+            "Model validation dropped {} image artifact record(s) and {} field value(s).",
+            report.invalid_records, report.invalid_fields
+        ));
+    }
+    if report.truncated_records > 0
+        || report.truncated_associated_files > 0
+        || report.truncated_checksums > 0
+    {
+        limitations.push(format!(
+            "Model bounds truncated {} image artifact(s), {} associated file(s), and {} checksum record(s).",
+            report.truncated_records,
+            report.truncated_associated_files,
+            report.truncated_checksums
+        ));
+    }
+}
+
+fn set_image_artifact_selection_to_current_or_first(
+    app: &mut App,
+    previous: Option<ImageArtifactIdentity>,
+) {
+    let visible = app
+        .filtered_image_artifacts()
+        .into_iter()
+        .map(|artifact| artifact.identity.clone())
+        .collect::<Vec<_>>();
+    app.image_artifact_selection = previous
+        .filter(|identity| visible.contains(identity))
+        .or_else(|| visible.first().cloned());
+}
+
+fn set_image_artifact_inventory(
+    app: &mut App,
+    request: ImageArtifactRequest,
+    inventory: ImageArtifactInventory,
+    limitations: Option<Vec<String>>,
+) {
+    let previous = app.image_artifact_selection.take();
+    let (inventory, report) =
+        normalize_image_artifact_inventory(&request, inventory, MAX_IMAGE_ARTIFACT_RECORDS);
+    let Some(inventory) = inventory else {
+        app.image_artifacts = ImageArtifactInventoryState::Failed {
+            request,
+            message: "backend returned image artifacts for a different or invalid machine".into(),
+        };
+        app.notification =
+            Some("Image artifact inventory failed model identity validation.".into());
+        return;
+    };
+    let mut limitations = limitations.unwrap_or_default();
+    append_image_artifact_normalization_limitations(&mut limitations, &report);
+    let limitations = normalize_image_artifact_limitations(limitations);
+    app.image_artifacts = if inventory.artifacts.is_empty() && limitations.is_empty() {
+        ImageArtifactInventoryState::AvailableEmpty { request, inventory }
+    } else if limitations.is_empty() {
+        ImageArtifactInventoryState::Available { request, inventory }
+    } else {
+        ImageArtifactInventoryState::Partial {
+            request,
+            inventory,
+            limitations,
+        }
+    };
+    set_image_artifact_selection_to_current_or_first(app, previous);
+}
+
 fn next_package_generation(app: &mut App) -> u64 {
     app.package_request_generation = app.package_request_generation.wrapping_add(1);
     if app.package_request_generation == 0 {
@@ -4048,6 +4217,103 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some("Select an image first with i.".into());
             }
         }
+        Action::BeginImageArtifactInventory | Action::RefreshImageArtifactInventory => {
+            if image_artifact_operation_is_loading(app) {
+                app.notification = Some("An image artifact operation is already running.".into());
+                return None;
+            }
+            return begin_image_artifact_inventory(app);
+        }
+        Action::CancelImageArtifactOperation => {
+            if image_artifact_operation_is_loading(app) {
+                return Some(Effect::CancelImageArtifactOperation);
+            }
+            app.notification = Some("No image artifact operation is running.".into());
+        }
+        Action::ImageArtifactInventoryLoaded { request, inventory } => {
+            if !matches!(
+                &app.image_artifacts,
+                ImageArtifactInventoryState::Loading { request: pending } if pending == &request
+            ) {
+                return None;
+            }
+            set_image_artifact_inventory(app, request, inventory, None);
+        }
+        Action::ImageArtifactInventoryPartial {
+            request,
+            inventory,
+            limitations,
+        } => {
+            if !matches!(
+                &app.image_artifacts,
+                ImageArtifactInventoryState::Loading { request: pending } if pending == &request
+            ) {
+                return None;
+            }
+            set_image_artifact_inventory(app, request, inventory, Some(limitations));
+        }
+        Action::ImageArtifactInventoryFailed { request, message } => {
+            if !matches!(
+                &app.image_artifacts,
+                ImageArtifactInventoryState::Loading { request: pending } if pending == &request
+            ) {
+                return None;
+            }
+            app.image_artifacts = ImageArtifactInventoryState::Failed {
+                request,
+                message: message.clone(),
+            };
+            app.notification = Some(format!(
+                "Image artifact inventory is unavailable: {message}"
+            ));
+        }
+        Action::SelectImageArtifact { delta } => {
+            let visible = app
+                .filtered_image_artifacts()
+                .into_iter()
+                .map(|artifact| artifact.identity.clone())
+                .collect::<Vec<_>>();
+            if visible.is_empty() {
+                app.image_artifact_selection = None;
+                return None;
+            }
+            let current = app
+                .image_artifact_selection
+                .as_ref()
+                .and_then(|identity| visible.iter().position(|candidate| candidate == identity))
+                .unwrap_or(0);
+            let next = if delta.is_negative() {
+                current.saturating_sub(delta.unsigned_abs())
+            } else {
+                current
+                    .saturating_add(delta as usize)
+                    .min(visible.len().saturating_sub(1))
+            };
+            app.image_artifact_selection = Some(visible[next].clone());
+        }
+        Action::BeginImageArtifactSearch => app.image_artifact_searching = true,
+        Action::AppendImageArtifactQuery(character) => {
+            if app.image_artifact_searching
+                && !character.is_control()
+                && app.image_artifact_query.len() < 256
+            {
+                app.image_artifact_query.push(character);
+                set_image_artifact_selection_to_current_or_first(
+                    app,
+                    app.image_artifact_selection.clone(),
+                );
+            }
+        }
+        Action::BackspaceImageArtifactQuery => {
+            if app.image_artifact_searching {
+                app.image_artifact_query.pop();
+                set_image_artifact_selection_to_current_or_first(
+                    app,
+                    app.image_artifact_selection.clone(),
+                );
+            }
+        }
+        Action::FinishImageArtifactSearch => app.image_artifact_searching = false,
         Action::BeginBuildTargetEdit => {
             replace_dialog(
                 app,
@@ -7041,6 +7307,8 @@ pub enum Effect {
     GetPackageInventory(PackageInventoryRequest),
     GetPackageDetail(PackageDetailRequest),
     CancelPackageOperation,
+    GetImageArtifacts(ImageArtifactRequest),
+    CancelImageArtifactOperation,
     GetRecipeMetadata(String),
     GetVariable(VariableIdentity),
     WriteConfigAssignment(ConfigEditRequest),
@@ -11723,5 +11991,165 @@ mod tests {
                 generation: 4
             }))
         );
+    }
+
+    #[test]
+    fn image_artifact_model_correlates_states_search_and_stable_selection() {
+        let make_artifact = |image: &str, suffix: &str, kind| ImageArtifact {
+            identity: ImageArtifactIdentity {
+                machine: "qemux86-64".into(),
+                image: image.into(),
+                path: format!("/build/tmp/deploy/images/qemux86-64/{image}.{suffix}").into(),
+            },
+            kind,
+            size_bytes: ImageArtifactField::Available(4_096),
+            modified_unix_seconds: ImageArtifactField::Available(1_700_000_000),
+            checksums: ImageArtifactField::Available(Vec::new()),
+            manifests: ImageArtifactField::Available(Vec::new()),
+            licenses: ImageArtifactField::Unavailable,
+            spdx: ImageArtifactField::Unavailable,
+            wic_files: ImageArtifactField::Available(Vec::new()),
+        };
+        let inventory = |artifacts| ImageArtifactInventory {
+            machine: "qemux86-64".into(),
+            deploy_directory: ImageArtifactField::Available(
+                "/build/tmp/deploy/images/qemux86-64".into(),
+            ),
+            artifacts,
+        };
+
+        let mut app = App::new(20, 20_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        let request = ImageArtifactRequest {
+            generation: 1,
+            machine: "qemux86-64".into(),
+        };
+        assert_eq!(
+            update(&mut app, Action::BeginImageArtifactInventory),
+            Some(Effect::GetImageArtifacts(request.clone()))
+        );
+        let minimal = make_artifact(
+            "core-image-minimal",
+            "rootfs.ext4",
+            ImageArtifactKind::RootFilesystem,
+        );
+        let sato = make_artifact("core-image-sato", "wic", ImageArtifactKind::Wic);
+        let _ = update(
+            &mut app,
+            Action::ImageArtifactInventoryLoaded {
+                request: request.clone(),
+                inventory: inventory(vec![sato.clone(), minimal.clone()]),
+            },
+        );
+        assert!(matches!(
+            app.image_artifacts,
+            ImageArtifactInventoryState::Available { .. }
+        ));
+        assert_eq!(app.image_artifact_selection, Some(minimal.identity.clone()));
+        let _ = update(&mut app, Action::SelectImageArtifact { delta: 1 });
+        assert_eq!(app.image_artifact_selection, Some(sato.identity.clone()));
+
+        assert_eq!(
+            update(&mut app, Action::RefreshImageArtifactInventory),
+            Some(Effect::GetImageArtifacts(ImageArtifactRequest {
+                generation: 2,
+                machine: "qemux86-64".into(),
+            }))
+        );
+        let _ = update(
+            &mut app,
+            Action::ImageArtifactInventoryLoaded {
+                request,
+                inventory: inventory(vec![minimal.clone()]),
+            },
+        );
+        assert!(matches!(
+            app.image_artifacts,
+            ImageArtifactInventoryState::Loading { .. }
+        ));
+        let request = ImageArtifactRequest {
+            generation: 2,
+            machine: "qemux86-64".into(),
+        };
+        let _ = update(
+            &mut app,
+            Action::ImageArtifactInventoryPartial {
+                request: request.clone(),
+                inventory: inventory(vec![minimal.clone(), sato.clone()]),
+                limitations: vec!["checksum metadata unavailable".into()],
+            },
+        );
+        assert!(matches!(
+            app.image_artifacts,
+            ImageArtifactInventoryState::Partial { .. }
+        ));
+        assert_eq!(app.image_artifact_selection, Some(sato.identity.clone()));
+
+        let _ = update(&mut app, Action::BeginImageArtifactSearch);
+        let _ = update(&mut app, Action::AppendImageArtifactQuery('m'));
+        let _ = update(&mut app, Action::AppendImageArtifactQuery('i'));
+        let _ = update(&mut app, Action::AppendImageArtifactQuery('n'));
+        assert_eq!(app.filtered_image_artifacts(), vec![&minimal]);
+        assert_eq!(app.image_artifact_selection, Some(minimal.identity.clone()));
+        let _ = update(&mut app, Action::FinishImageArtifactSearch);
+
+        app.image_artifact_query.clear();
+        let failed_request = ImageArtifactRequest {
+            generation: 3,
+            machine: "qemux86-64".into(),
+        };
+        let _ = update(&mut app, Action::RefreshImageArtifactInventory);
+        let _ = update(
+            &mut app,
+            Action::ImageArtifactInventoryFailed {
+                request: failed_request.clone(),
+                message: "deploy directory is unavailable".into(),
+            },
+        );
+        assert!(matches!(
+            app.image_artifacts,
+            ImageArtifactInventoryState::Failed { ref request, .. } if request == &failed_request
+        ));
+
+        let empty_request = ImageArtifactRequest {
+            generation: 4,
+            machine: "qemux86-64".into(),
+        };
+        let _ = update(&mut app, Action::RefreshImageArtifactInventory);
+        let _ = update(
+            &mut app,
+            Action::ImageArtifactInventoryLoaded {
+                request: empty_request,
+                inventory: inventory(Vec::new()),
+            },
+        );
+        assert!(matches!(
+            app.image_artifacts,
+            ImageArtifactInventoryState::AvailableEmpty { .. }
+        ));
+        assert_eq!(app.image_artifact_selection, None);
+
+        let invalid_request = ImageArtifactRequest {
+            generation: 5,
+            machine: "qemux86-64".into(),
+        };
+        let _ = update(&mut app, Action::RefreshImageArtifactInventory);
+        let _ = update(
+            &mut app,
+            Action::ImageArtifactInventoryLoaded {
+                request: invalid_request,
+                inventory: ImageArtifactInventory {
+                    machine: "qemuarm64".into(),
+                    deploy_directory: ImageArtifactField::Unavailable,
+                    artifacts: Vec::new(),
+                },
+            },
+        );
+        assert!(matches!(
+            app.image_artifacts,
+            ImageArtifactInventoryState::Failed { .. }
+        ));
     }
 }
