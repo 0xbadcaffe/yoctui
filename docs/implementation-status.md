@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Integrate the responsive Images artifact workspace.
+Verify the complete Images artifact workspace.
 
 ## Current task
 
@@ -64,7 +64,7 @@ See `docs/current-task.md`.
 | Images workspace | IN_PROGRESS | Image-recipe listing and confirmed image builds exist (`7fb89fb`); deploy artifacts, manifests, checksums, licenses, and inspector details remain |
 | Image artifact model | DONE | Exact machine/image/path identities, typed available-versus-unavailable metadata, deterministic bounds, correlated lifecycle states, identity-stable selection/search, reducer effects, and app event normalization pass focused and baseline checks |
 | Image artifact adapter | DONE | Tinfoil/environment snapshots expose `DEPLOY_DIR_IMAGE`; the cancellable bounded adapter validates the machine/root, refuses symlinks and escapes, classifies deploy records, parses checksum associations, and reports partial data explicitly |
-| Images artifact UI | IN_PROGRESS | Asynchronous refresh, artifact selection/inspection, responsive rendering, open actions, and direct workspace tests are the active task |
+| Images artifact UI | DONE | Retained recipe picker/build confirmation now coexists with correlated CLI-owned scans, search and exact selection, typed build/editor actions, explicit lifecycle/limitations, responsive Workspace/Inspector rendering, footer hints, and direct tests |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -75,11 +75,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `IMAGES-UI-001` — integrate the responsive Images artifact workspace
-2. `IMAGES-001` — verify the complete Images parent gate
-3. `QEMU-001` — add a managed runqemu workflow
-4. `WIC-001` — add the Wic image workflow
-5. `SDK-001` — add the SDK artifact workflow
+1. `IMAGES-001` — verify the complete Images parent gate
+2. `QEMU-001` — add a managed runqemu workflow
+3. `WIC-001` — add the Wic image workflow
+4. `SDK-001` — add the SDK artifact workflow
+5. `TEST-001` — add unified test execution and results
 
 ## Rules
 

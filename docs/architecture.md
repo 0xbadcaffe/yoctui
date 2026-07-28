@@ -199,6 +199,17 @@ unassociated data becomes a typed error or explicit limitation. The response
 converts directly to `BackendEvent::ImageArtifacts`; raw directory entries and
 checksum text never cross into `yoctui-app`, reducers, or widgets.
 
+The CLI constructs the image adapter only from the typed
+`DEPLOY_DIR_IMAGE` workspace variable and owns at most one short-lived scan
+task plus its cancellation token. Entering Images from not-loaded state and
+explicit refresh both consume the same reducer effect. Polling completion
+converts the typed response/error through the app normalization boundary;
+missing configuration becomes a correlated failed result, and stale
+generations remain reducer-inert. Rendering, keyboard input, telemetry, and
+BitBake jobs continue while scanning. Exact artifact and associated paths use
+the existing editor lifecycle, while selected-image builds reuse the normal
+confirmed `BuildRequest` and persistent BitBake job coordinator.
+
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore
 values, normalized varhistory operations (`op`, file, line, and detail), and

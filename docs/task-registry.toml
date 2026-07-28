@@ -724,12 +724,12 @@ notes = "Tinfoil/environment snapshots expose DEPLOY_DIR_IMAGE, and the cancella
 id = "IMAGES-UI-001"
 milestone = "M4"
 title = "Integrate the responsive Images artifact workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 49
 required = true
 depends_on = ["IMAGES-ADAPTER-001"]
 verify = ["cargo test -p yoctui-model images_workspace", "cargo test -p yoctui-app images_workspace", "cargo test -p yoctui-ui images_workspace", "cargo test -p yoctui -- images_workspace"]
-notes = "Combine existing image-recipe build selection with asynchronous artifact refresh, search, exact selection, responsive Inspector details, contextual open actions, honest disabled reasons, footer hints, and TestBackend coverage."
+notes = "Images now combines retained recipe picker/build confirmation with correlated CLI-owned scanning, search and exact selection, typed build/editor actions, explicit lifecycle/limitations, responsive Workspace/Inspector rendering, footer hints, and reducer/input/CLI/TestBackend coverage."
 
 [[task]]
 id = "QEMU-001"
