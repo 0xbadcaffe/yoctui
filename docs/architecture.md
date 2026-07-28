@@ -170,6 +170,21 @@ generations remain reducer-inert. The model owns bounded package navigation
 history plus dependency-kind/identity selection; the UI renders typed state
 and emits actions without reading adapter output.
 
+Deployed image artifact state is model-owned and keyed by the exact effective
+machine, image target, and absolute deployed path. A typed field distinguishes
+unavailable metadata from an available empty collection. Inventory lifecycle
+distinguishes not-loaded, loading, available-empty, available, partial, and
+failed results, while non-zero request generations make stale responses
+reducer-inert. Deterministic normalization rejects mismatched machine
+identities, relative or non-normalized paths, and paths outside an
+authoritatively supplied deploy directory. It also bounds artifact,
+associated-file, checksum, limitation, and search state. Artifact kind, byte
+size, modification timestamp, checksum records, manifest paths, license paths,
+SPDX/SBOM paths, Wic-related paths, and the deploy directory cross the app
+boundary only as typed data. The model owns search and identity-stable
+selection; it never scans the filesystem, and widgets must not classify file
+names or parse metadata.
+
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore
 values, normalized varhistory operations (`op`, file, line, and detail), and

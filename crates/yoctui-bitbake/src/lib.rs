@@ -25,9 +25,10 @@ use tokio::{
 use yoctui_model::{
     BuildRequest, DependencyEdge, DependencyEdgeKind, DependencyGraph, DependencyNode,
     DependencyNodeId, DevtoolCapability, DevtoolGitState, DevtoolOperation, DevtoolOperationError,
-    DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Layer, LogEntry, PackageDetail,
-    PackageDetailRequest, PackageInventoryRequest, PackageSummary, Recipe, RecipeBuildStatus,
-    RecipeIdentity, RecipeMetadata, RecipeWorkspaceStatus, Severity, SignatureComparisonRequest,
+    DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, ImageArtifactInventory,
+    ImageArtifactRequest, Layer, LogEntry, PackageDetail, PackageDetailRequest,
+    PackageInventoryRequest, PackageSummary, Recipe, RecipeBuildStatus, RecipeIdentity,
+    RecipeMetadata, RecipeWorkspaceStatus, Severity, SignatureComparisonRequest,
     SignatureDifference, SignatureRecord, SignatureTarget, TaskStats, VariableOperation, Workspace,
 };
 use yoctui_protocol::{
@@ -861,6 +862,15 @@ pub enum BackendEvent {
     },
     PackageDetailFailed {
         request: PackageDetailRequest,
+        message: String,
+    },
+    ImageArtifacts {
+        request: ImageArtifactRequest,
+        inventory: ImageArtifactInventory,
+        limitations: Vec<String>,
+    },
+    ImageArtifactsFailed {
+        request: ImageArtifactRequest,
         message: String,
     },
     RecipeSources {

@@ -2,54 +2,57 @@
 
 ## Active task
 
-**ID:** IMAGES-MODEL-001
-**Title:** Add typed image artifact state
+**ID:** IMAGES-ADAPTER-001
+**Title:** Acquire authoritative deployed image artifacts
 
 ## Objective
 
-Add pure, bounded domain state for authoritative deployed image artifacts
-without filesystem access, raw-output parsing, or changes to the existing
-image picker and confirmed build behavior.
+Add a deterministic, bounded adapter that resolves configured Yocto deploy
+locations and returns only typed image artifact inventory data.
 
 ## Required work
 
-1. Inspect existing image picker/build state, typed package/signature state
-   patterns, app event normalization, and tests before adding overlapping
-   behavior.
-2. Define exact artifact identity using machine, image target, and absolute
-   deployed path. Reject relative or identity-mismatched records.
-3. Represent artifact kind, byte size, modification timestamp, deploy path,
-   checksum records, manifests, licenses, SPDX/SBOM outputs, and Wic-related
-   files as typed available/unavailable data; do not infer meaning in widgets.
-4. Bound record counts, associated-file counts, text metadata, and
-   normalization reports. Sort and deduplicate deterministically.
-5. Add explicit not-loaded, loading, available-empty, available, partial, and
-   failed inventory states with request generation correlation.
-6. Add identity-stable selection and case-insensitive search across exact typed
-   fields. Preserve a selected identity across refresh when it still exists.
-7. Add typed reducer actions/effects and app backend-event mapping for request,
-   success, partial, failure, search, and selection. No reducer may read the
-   filesystem.
-8. Preserve existing `ImagePicker`, `BeginCurrentImageBuild`, and confirmed
-   build behavior unchanged.
-9. Add focused model and app tests named `image_artifact_model` for normal,
-   empty, partial, failed, stale, bounded, and invalid-identity paths.
-10. Update `docs/architecture.md` for the new typed ownership boundary, then
-    update registry/status and hand off to `IMAGES-ADAPTER-001`.
+1. Inspect existing workspace variable acquisition, filesystem adapters,
+   cancellation patterns, image naming conventions, and tests before adding
+   overlapping behavior.
+2. Add authoritative `DEPLOY_DIR_IMAGE` acquisition to live Tinfoil and
+   environment workspace snapshots without locally evaluating BitBake syntax.
+3. Require an absolute configured deploy directory and exact request machine.
+   Canonicalize and constrain every traversed path; reject symlink escape,
+   non-directory, relative, missing, and machine-mismatch inputs explicitly.
+4. Scan deterministically without a shell and with strict entry, metadata-byte,
+   recursion-depth, and elapsed-time bounds. Do not block a Ratatui widget or
+   reducer.
+5. Classify image/rootfs, kernel, bootloader, Wic, manifest, license,
+   SPDX/SBOM, checksum, and other deploy records inside the adapter.
+6. Return byte size and modification time plus typed associated checksum,
+   manifest, license, SPDX/SBOM, and Wic paths. Unavailable data must remain
+   unavailable; do not infer paths from build logs.
+7. Parse bounded checksum files only in the adapter, validate digest records,
+   and report malformed, truncated, unsupported, or unassociated data as
+   explicit limitations.
+8. Add a cancellable adapter request/response boundary and conversion to the
+   existing typed `BackendEvent`; distinguish cancellation, timeout, empty
+   inventory, partial results, and failures.
+9. Add fake-filesystem/temp-directory tests named `image_artifact_adapter` for
+   normal, empty, partial, malformed, oversized, symlink, path-escape,
+   missing-directory, timeout/cancellation, and deterministic ordering paths.
+10. Update `docs/architecture.md` for adapter ownership, then update
+    registry/status and hand off to `IMAGES-UI-001`.
 
 ## Definition of done
 
-- The model owns bounded, deterministic, correlated artifact state and exact
-  selection/search behavior.
-- App mapping crosses only typed artifact events and effects.
-- Existing image selection and build tests remain green.
+- Configured deploy discovery is authoritative and version-compatible.
+- The adapter returns bounded typed artifacts and limitations without exposing
+  raw filesystem or checksum text to the model/UI.
+- Cancellation, timeout, malformed input, and path safety are tested.
 - Focused and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model image_artifact_model
-cargo test -p yoctui-app image_artifact_model
+cargo test -p yoctui-bitbake image_artifact_adapter
+cargo test -p yoctui-app image_artifact_adapter
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
