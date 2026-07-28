@@ -771,9 +771,42 @@ title = "Integrate managed QEMU dialogs and session view"
 status = "IN_PROGRESS"
 priority = 50
 required = true
-depends_on = ["QEMU-ADAPTER-001"]
+depends_on = ["QEMU-UI-MODEL-001", "QEMU-UI-RENDER-001", "QEMU-UI-CLI-001"]
 verify = ["cargo test -p yoctui-model qemu_workspace", "cargo test -p yoctui-app qemu_workspace", "cargo test -p yoctui-ui qemu_workspace", "cargo test -p yoctui -- qemu_workspace"]
-notes = "Add capability-driven launch fields and confirmation, CLI-owned persistent execution/cancellation, attached bounded output, responsive session inspection, and stable disabled reasons."
+notes = "Parent gate split into dialog/input state, responsive rendering, and CLI-owned capability/runner integration."
+
+[[task]]
+id = "QEMU-UI-MODEL-001"
+milestone = "M4"
+title = "Add QEMU launch dialog and workspace input state"
+status = "IN_PROGRESS"
+priority = 50
+required = true
+depends_on = ["QEMU-ADAPTER-001"]
+verify = ["cargo test -p yoctui-model qemu_workspace", "cargo test -p yoctui-app qemu_workspace"]
+notes = "Add bounded field selection/editing, stable launch disabled reasons, preview/cancel actions, and session cancellation input mapping without process or rendering work."
+
+[[task]]
+id = "QEMU-UI-RENDER-001"
+milestone = "M4"
+title = "Render responsive QEMU launch and session UI"
+status = "NOT_STARTED"
+priority = 50
+required = true
+depends_on = ["QEMU-UI-MODEL-001"]
+verify = ["cargo test -p yoctui-ui qemu_workspace"]
+notes = "Render capability states, launch editor/preview, latest session lifecycle/output/error details, cancellation confirmation, footer hints, and supported responsive layouts."
+
+[[task]]
+id = "QEMU-UI-CLI-001"
+milestone = "M4"
+title = "Integrate QEMU capability and runner in the CLI"
+status = "NOT_STARTED"
+priority = 50
+required = true
+depends_on = ["QEMU-UI-RENDER-001"]
+verify = ["cargo test -p yoctui -- qemu_workspace"]
+notes = "Execute capability/start/cancel effects, non-blockingly poll the QEMU runner, normalize events, preserve navigation and independence from BitBake/Devtool, and cover terminal outcomes."
 
 [[task]]
 id = "WIC-001"
