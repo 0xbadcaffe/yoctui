@@ -8,20 +8,23 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 use yoctui_model::{
-    App, BackgroundJobKind, BackgroundJobStatus, BuildStatus, ConfigCopyValue, DependencyEdgeKind,
-    DependencyGraph, DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction,
-    DevtoolCapability, DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace,
-    Dialog, FocusTarget, GitFileState, ImageArtifactField, ImageArtifactInventoryState,
-    LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PackageDetailState, PackageField,
-    PackageIdentity, PackageInventoryState, PreviewKind, QemuCapability, QemuDisplayMode,
-    QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode, QemuSerialMode,
-    QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity,
-    SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, TaskFilterField,
-    TaskRow, TaskState, Theme, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
-    WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog,
-    WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog,
-    WicWritePreview, config_comparison, config_edit_disabled_reason, config_source_disabled_reason,
-    format_duration, selected_config_copy_value,
+    App, BackgroundJobKind, BackgroundJobOutputSource, BackgroundJobStatus, BuildStatus,
+    ConfigCopyValue, DependencyEdgeKind, DependencyGraph, DependencyGraphState, DependencyNodeId,
+    DependencyPathResult, DevtoolAction, DevtoolCapability, DevtoolGitState, DevtoolStatus,
+    DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget, GitFileState, ImageArtifactField,
+    ImageArtifactInventoryState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode,
+    PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PreviewKind,
+    QemuCapability, QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview,
+    QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor,
+    RecipeIdentity, Screen, SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind,
+    SdkNativeDraft, SdkNativeMode, SdkNativePreview, SdkOperation, SdkPublishDraft,
+    SdkPublishPreview, SdkSessionId, SdkToolCapability, Severity, SignatureComparisonState,
+    SignatureDifferenceCategory, SignatureDumpState, TaskFilterField, TaskRow, TaskState, Theme,
+    VariableIdentity, WicCapability, WicCompression, WicCreateDialog, WicCreateField,
+    WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart,
+    WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
+    config_comparison, config_edit_disabled_reason, config_source_disabled_reason, format_duration,
+    selected_config_copy_value,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -485,6 +488,8 @@ fn footer_shortcuts(app: &App) -> &'static str {
 fn responsive_footer_shortcuts(app: &App, width: u16) -> &'static str {
     if app.screen == Screen::Images && width <= 90 {
         "↑↓ R refresh Q QEMU W create Wic D write x cancel [/] output O open output o artifact w Wic"
+    } else if app.screen == Screen::Sdk && width <= 90 {
+        "↑↓ i:image s/E:SDK t/T:test R:scan P:publish n:native o:open c:cancel"
     } else {
         footer_shortcuts(app)
     }
@@ -585,6 +590,18 @@ pub fn render(frame: &mut Frame, app: &App) {
     }) = app.active_dialog()
     {
         wic_cancellation_confirmation(frame, app, *id, *incomplete_device_warning, area);
+    } else if let Some(Dialog::SdkBuildConfirmation(preview)) = app.active_dialog() {
+        sdk_build_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::SdkPublish(draft)) = app.active_dialog() {
+        sdk_publish_dialog(frame, app, draft, area);
+    } else if let Some(Dialog::SdkPublishConfirmation(preview)) = app.active_dialog() {
+        sdk_publish_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::SdkNative(draft)) = app.active_dialog() {
+        sdk_native_dialog(frame, app, draft, area);
+    } else if let Some(Dialog::SdkNativeConfirmation(preview)) = app.active_dialog() {
+        sdk_native_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::SdkCancellationConfirmation(id)) = app.active_dialog() {
+        sdk_cancellation_confirmation(frame, app, *id, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);
     } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
@@ -1620,14 +1637,7 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Recipes => recipes(frame, app, area),
         Screen::Packages => packages_workspace(frame, app, area),
         Screen::Images => images_workspace(frame, app, area),
-        Screen::Sdk => frame.render_widget(
-            Paragraph::new(
-                "SDK workspace model is ready. Artifact and operation rendering is pending.",
-            )
-            .block(Block::default().title("SDK").borders(Borders::ALL))
-            .wrap(Wrap { trim: false }),
-            area,
-        ),
+        Screen::Sdk => sdk_workspace(frame, app, area),
         Screen::Layers => {
             if let Some(browser) = app.layer_browser.as_ref() {
                 layer_browser(frame, app, browser, area)
@@ -1767,6 +1777,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Signatures => signature_detail_text(app),
         Screen::Packages => package_inspector_text(app),
         Screen::Images => image_artifact_inspector_text(app),
+        Screen::Sdk => sdk_inspector_text(app),
         _ => format!(
             "Target: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
             app.build.target.as_deref().unwrap_or("not selected"),
@@ -2244,6 +2255,594 @@ fn qemu_popup_rect(area: Rect, preferred_width: u16, preferred_height: u16) -> R
         width,
         height,
     )
+}
+
+fn sdk_kind_label(kind: SdkArtifactKind) -> &'static str {
+    match kind {
+        SdkArtifactKind::Installer => "installer",
+        SdkArtifactKind::Checksum => "checksum",
+        SdkArtifactKind::Manifest => "manifest",
+        SdkArtifactKind::Other => "other",
+    }
+}
+
+fn sdk_type_label(kind: Option<SdkKind>) -> &'static str {
+    match kind {
+        Some(SdkKind::Standard) => "standard",
+        Some(SdkKind::Extensible) => "extensible",
+        None => "unavailable",
+    }
+}
+
+fn sdk_inventory_root(app: &App) -> String {
+    let request_root = match &app.sdk_artifacts {
+        SdkArtifactInventoryState::Loading { request }
+        | SdkArtifactInventoryState::AvailableEmpty { request }
+        | SdkArtifactInventoryState::Available { request, .. }
+        | SdkArtifactInventoryState::Partial { request, .. }
+        | SdkArtifactInventoryState::Failed { request, .. } => Some(&request.root),
+        SdkArtifactInventoryState::NotLoaded => None,
+    };
+    request_root
+        .map(|path| path.display().to_string())
+        .or_else(|| app.workspace.variables.get("SDK_DEPLOY").cloned())
+        .unwrap_or_else(|| "unavailable".into())
+}
+
+fn sdk_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let machine = app
+        .workspace
+        .variables
+        .get("MACHINE")
+        .map_or("unavailable", String::as_str);
+    let distro = app
+        .workspace
+        .variables
+        .get("DISTRO")
+        .map_or("unavailable", String::as_str);
+    let target = app.build.target.as_deref().unwrap_or("not selected");
+    let root = sdk_inventory_root(app);
+    let mut lines = vec![
+        Line::from(format!(
+            "MACHINE {machine} | DISTRO {distro} | image {target}"
+        )),
+        Line::from(format!("SDK_DEPLOY {root}")),
+    ];
+    if app.sdk_artifact_searching {
+        lines.push(Line::from(format!("Search: {}_", app.sdk_artifact_query)));
+    } else if !app.sdk_artifact_query.is_empty() {
+        lines.push(Line::from(format!("Search: {}", app.sdk_artifact_query)));
+    }
+    lines.push(Line::from(
+        "  Kind       SDK type     Size       Modified     Published  Artifact",
+    ));
+    match &app.sdk_artifacts {
+        SdkArtifactInventoryState::NotLoaded => {
+            lines.push(Line::from(
+                "SDK artifacts are not loaded. Press R to scan SDK_DEPLOY.",
+            ));
+        }
+        SdkArtifactInventoryState::Loading { request } => {
+            lines.push(Line::from(format!(
+                "Loading SDK artifacts (generation {})…",
+                request.generation
+            )));
+        }
+        SdkArtifactInventoryState::AvailableEmpty { .. } => {
+            lines.push(Line::from(
+                "No SDK artifacts were found in the authoritative SDK_DEPLOY root.",
+            ));
+        }
+        SdkArtifactInventoryState::Failed { message, .. } => {
+            lines.push(Line::from(format!("SDK artifact scan failed: {message}")));
+        }
+        SdkArtifactInventoryState::Available { .. } | SdkArtifactInventoryState::Partial { .. } => {
+            let artifacts = app.filtered_sdk_artifacts();
+            if artifacts.is_empty() {
+                lines.push(Line::from("No SDK artifacts match the active search."));
+            } else {
+                let selected_index = artifacts
+                    .iter()
+                    .position(|artifact| {
+                        app.sdk_artifact_selection.as_ref() == Some(&artifact.identity)
+                    })
+                    .unwrap_or(0);
+                let capacity = usize::from(area.height.saturating_sub(7)).max(1);
+                let start = selected_index
+                    .saturating_sub(capacity / 2)
+                    .min(artifacts.len().saturating_sub(capacity));
+                for artifact in artifacts.into_iter().skip(start).take(capacity) {
+                    let selected = app.sdk_artifact_selection.as_ref() == Some(&artifact.identity);
+                    let published = artifact.published.map_or("unavailable", |published| {
+                        if published { "yes" } else { "no" }
+                    });
+                    let file = artifact.identity.path.file_name().map_or_else(
+                        || "unavailable".into(),
+                        |name| name.to_string_lossy().into_owned(),
+                    );
+                    lines.push(
+                        Line::from(format!(
+                            "{} {:<10} {:<12} {:<10} {:<12} {:<10} {}",
+                            if selected { "▶" } else { " " },
+                            sdk_kind_label(artifact.kind),
+                            sdk_type_label(artifact.sdk_kind),
+                            artifact.identity.size_bytes,
+                            artifact.identity.modified_unix_seconds,
+                            published,
+                            file,
+                        ))
+                        .style(selected_style(app, selected)),
+                    );
+                }
+            }
+            if let SdkArtifactInventoryState::Partial { limitations, .. } = &app.sdk_artifacts {
+                lines.push(Line::from(format!(
+                    "Partial SDK inventory: {} limitation(s); see Inspector.",
+                    limitations.len()
+                )));
+            }
+        }
+    }
+    frame.render_widget(
+        Paragraph::new(lines)
+            .block(pane_block(app, "SDK", app.focus == FocusTarget::Workspace))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn sdk_capability_text(app: &App) -> String {
+    match &app.sdk_tool_capability {
+        SdkToolCapability::NotInspected => "not inspected".into(),
+        SdkToolCapability::Failed { message } => format!("inspection failed: {message}"),
+        SdkToolCapability::Available {
+            publish,
+            find_sysroot,
+            run_native,
+        } => format!(
+            "oe-publish-sdk: {}\noe-find-native-sysroot: {}\noe-run-native: {}",
+            publish
+                .as_ref()
+                .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+            find_sysroot
+                .as_ref()
+                .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+            run_native
+                .as_ref()
+                .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+        ),
+    }
+}
+
+fn sdk_association_text(paths: &[std::path::PathBuf]) -> String {
+    if paths.is_empty() {
+        "none".into()
+    } else {
+        paths
+            .iter()
+            .map(|path| path.display().to_string())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+}
+
+fn background_status_label(status: BackgroundJobStatus) -> &'static str {
+    match status {
+        BackgroundJobStatus::Queued => "queued",
+        BackgroundJobStatus::Starting => "starting",
+        BackgroundJobStatus::Running => "running",
+        BackgroundJobStatus::Cancelling => "cancelling",
+        BackgroundJobStatus::Succeeded => "succeeded",
+        BackgroundJobStatus::Failed => "failed",
+        BackgroundJobStatus::Cancelled => "cancelled",
+        BackgroundJobStatus::Lost => "lost",
+    }
+}
+
+fn sdk_session_operation_text(operation: &SdkOperation) -> String {
+    match operation {
+        SdkOperation::Publish(request) => format!(
+            "publish\nInstaller: {}\nDestination: {}",
+            request.artifact.path.display(),
+            request.destination.display()
+        ),
+        SdkOperation::Native(request) => format!(
+            "{:?}\nWorkspace: {}\nRecipe: {}\nTool: {}\nArguments: {}",
+            request.mode,
+            request
+                .extracted_root
+                .as_ref()
+                .map_or("active build", |path| path
+                    .to_str()
+                    .unwrap_or("unavailable")),
+            request.recipe,
+            request.tool.as_deref().unwrap_or("unavailable"),
+            if request.arguments.is_empty() {
+                "none".into()
+            } else {
+                request.arguments.join(" ")
+            }
+        ),
+    }
+}
+
+fn sdk_session_text(app: &App) -> String {
+    let Some(session) = app.latest_sdk_session() else {
+        return "Managed SDK operation\nNo publication or native-tool operation has been started."
+            .into();
+    };
+    let Some(job) = app.background_jobs.get(session.background_job_id) else {
+        return format!(
+            "Managed SDK operation {}\nLifecycle record unavailable.",
+            session.id.0
+        );
+    };
+    let mut retained = job.output.iter().rev().take(80).collect::<Vec<_>>();
+    retained.reverse();
+    let output = if retained.is_empty() {
+        "none".into()
+    } else {
+        retained
+            .into_iter()
+            .map(|entry| {
+                let source = match entry.source {
+                    BackgroundJobOutputSource::Backend => "backend",
+                    BackgroundJobOutputSource::Stdout => "stdout",
+                    BackgroundJobOutputSource::Stderr => "stderr",
+                };
+                format!(
+                    "[{source}] {}{}",
+                    entry.message,
+                    if entry.truncated { " [truncated]" } else { "" }
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    let result = job
+        .result
+        .as_ref()
+        .map_or_else(|| "none".into(), |result| result.summary.clone());
+    let result_artifacts = job.result.as_ref().map_or_else(
+        || "none".into(),
+        |result| {
+            if result.artifacts.is_empty() {
+                "none".into()
+            } else {
+                result
+                    .artifacts
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            }
+        },
+    );
+    let error = job.error.as_ref().map_or_else(
+        || session.error_detail.as_deref().unwrap_or("none").into(),
+        |error| {
+            error.detail.as_ref().map_or_else(
+                || error.summary.clone(),
+                |detail| format!("{}: {detail}", error.summary),
+            )
+        },
+    );
+    let history = app
+        .sdk_sessions
+        .iter()
+        .rev()
+        .take(8)
+        .filter_map(|record| {
+            app.background_jobs
+                .get(record.background_job_id)
+                .map(|job| {
+                    format!(
+                        "#{} {} {}",
+                        record.id.0,
+                        match &record.operation {
+                            SdkOperation::Publish(_) => "publish",
+                            SdkOperation::Native(_) => "native",
+                        },
+                        background_status_label(job.status)
+                    )
+                })
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    format!(
+        "Managed SDK operation {}\nStatus: {}\n{}\nQueued: {}\nStarted: {}\nFinished: {}\nExit code: {}\nResult: {}\nResult artifacts:\n{}\nError: {}\nRetained output: {} entries (showing latest {})\nDropped output: {} entries\nWarnings: {}  Errors: {}\n\nOutput:\n{}\n\nRecent SDK history ({} retained):\n{}",
+        session.id.0,
+        background_status_label(job.status),
+        sdk_session_operation_text(&session.operation),
+        timestamp_text(job.queued_at),
+        job.started_at
+            .map(timestamp_text)
+            .unwrap_or_else(|| "unavailable".into()),
+        job.finished_at
+            .map(timestamp_text)
+            .unwrap_or_else(|| "unavailable".into()),
+        session
+            .exit_code
+            .map_or_else(|| "unavailable".into(), |code| code.to_string()),
+        result,
+        result_artifacts,
+        error,
+        job.output.len(),
+        job.output.len().min(80),
+        job.dropped_output_entries,
+        job.warnings,
+        job.errors,
+        output,
+        app.sdk_sessions.len(),
+        if history.is_empty() { "none" } else { &history },
+    )
+}
+
+fn sdk_inspector_text(app: &App) -> String {
+    let limitations = match &app.sdk_artifacts {
+        SdkArtifactInventoryState::Partial { limitations, .. } => limitations
+            .iter()
+            .map(|limitation| format!("! {limitation}"))
+            .collect::<Vec<_>>()
+            .join("\n"),
+        _ => "none".into(),
+    };
+    let artifact = app.selected_sdk_artifact().map_or_else(
+        || {
+            "No SDK artifact selected.\nPress R to scan SDK_DEPLOY or adjust the active search."
+                .into()
+        },
+        |artifact| {
+            format!(
+                "Path: {}\nKind: {}\nSDK type: {}\nMachine: {}\nHost tuple: {}\nTarget tuple: {}\nSize: {} bytes\nModified: {}s since Unix epoch\nPublished: {}\n\nChecksums:\n{}\n\nManifests:\n{}",
+                artifact.identity.path.display(),
+                sdk_kind_label(artifact.kind),
+                sdk_type_label(artifact.sdk_kind),
+                artifact.machine.as_deref().unwrap_or("unavailable"),
+                artifact.host_tuple.as_deref().unwrap_or("unavailable"),
+                artifact.target_tuple.as_deref().unwrap_or("unavailable"),
+                artifact.identity.size_bytes,
+                artifact.identity.modified_unix_seconds,
+                artifact.published.map_or("unavailable", |published| if published {
+                    "yes"
+                } else {
+                    "no"
+                }),
+                sdk_association_text(&artifact.checksums),
+                sdk_association_text(&artifact.manifests),
+            )
+        },
+    );
+    format!(
+        "SDK tool capability\n{}\n\n{}\n\nSelected artifact\n{}\n\nScan limitations\n{}",
+        sdk_capability_text(app),
+        sdk_session_text(app),
+        artifact,
+        limitations,
+    )
+}
+
+fn sdk_popup(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    title: &str,
+    content: String,
+    preferred_height: u16,
+) {
+    let popup = qemu_popup_rect(area, 92, preferred_height);
+    clear_popup(frame, app, popup);
+    frame.render_widget(
+        Paragraph::new(content)
+            .block(
+                Block::default()
+                    .title(title)
+                    .borders(Borders::ALL)
+                    .border_style(ThemePalette::for_app(app).focus()),
+            )
+            .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
+fn sdk_build_confirmation(
+    frame: &mut Frame,
+    app: &App,
+    preview: &yoctui_model::SdkBuildPreview,
+    area: Rect,
+) {
+    let action = match preview.action {
+        SdkBuildAction::Populate(SdkKind::Standard) => "populate standard SDK",
+        SdkBuildAction::Populate(SdkKind::Extensible) => "populate extensible SDK",
+        SdkBuildAction::Test(SdkKind::Standard) => "run testsdk",
+        SdkBuildAction::Test(SdkKind::Extensible) => "run testsdkext",
+    };
+    sdk_popup(
+        frame,
+        app,
+        area,
+        "Confirm SDK build",
+        format!(
+            "Action: {action}\nMachine: {}\nDistro: {}\nImage target: {}\nBitBake task: {}\n\nEnter starts the managed BitBake build.\nEsc closes without starting.",
+            preview.machine,
+            preview.distro,
+            preview.image,
+            preview.request.task.as_deref().unwrap_or("unavailable"),
+        ),
+        12,
+    );
+}
+
+fn sdk_publish_dialog(frame: &mut Frame, app: &App, draft: &SdkPublishDraft, area: Rect) {
+    let installer = app.selected_sdk_artifact().map_or_else(
+        || "unavailable".into(),
+        |artifact| artifact.identity.path.display().to_string(),
+    );
+    let validation = app
+        .sdk_tool_capability
+        .publish_executable()
+        .and_then(|executable| {
+            app.selected_sdk_artifact()
+                .ok_or("an installer selection is required")
+                .and_then(|artifact| {
+                    SdkPublishPreview::new(
+                        executable,
+                        artifact.identity.clone(),
+                        std::path::PathBuf::from(&draft.destination),
+                    )
+                    .map(|_| ())
+                })
+        })
+        .map_or_else(
+            |message| format!("Validation: {message}"),
+            |()| "Validation: ready for exact preview".into(),
+        );
+    sdk_popup(
+        frame,
+        app,
+        area,
+        "Publish SDK installer",
+        format!(
+            "Tool: {}\nInstaller [read-only]: {installer}\nDestination [editing]: {}_\n{validation}\n\nDestination must be an absolute canonical empty directory.\nEnter validates and opens the exact argument preview.\nEsc closes without publishing.",
+            app.sdk_tool_capability
+                .publish_executable()
+                .map_or_else(|_| "unavailable".into(), |path| path.display().to_string()),
+            draft.destination,
+        ),
+        13,
+    );
+}
+
+fn indexed_path_vector(paths: &[std::path::PathBuf]) -> String {
+    paths
+        .iter()
+        .enumerate()
+        .map(|(index, path)| format!("[{index}] {}", path.display()))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn sdk_publish_confirmation(frame: &mut Frame, app: &App, preview: &SdkPublishPreview, area: Rect) {
+    sdk_popup(
+        frame,
+        app,
+        area,
+        "Confirm SDK publication",
+        format!(
+            "Installer: {}\nDestination: {}\n\nExact indexed shell-free argument vector:\n{}\n\nNo overwrite policy is guessed.\nEnter starts the managed publication job.\nEsc closes without publishing.",
+            preview.request.artifact.path.display(),
+            preview.request.destination.display(),
+            indexed_path_vector(&preview.argv),
+        ),
+        18,
+    );
+}
+
+fn sdk_native_dialog(frame: &mut Frame, app: &App, draft: &SdkNativeDraft, area: Rect) {
+    let arguments = if draft.arguments.is_empty() {
+        "none".into()
+    } else {
+        draft
+            .arguments
+            .iter()
+            .take(16)
+            .cloned()
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
+    let validation = app
+        .sdk_tool_capability
+        .executable_for(draft.mode)
+        .and_then(|executable| {
+            yoctui_model::SdkNativePreview::new(yoctui_model::SdkNativeRequest {
+                executable,
+                mode: draft.mode,
+                extracted_root: (!draft.extracted_root.is_empty())
+                    .then(|| std::path::PathBuf::from(&draft.extracted_root)),
+                recipe: draft.recipe.clone(),
+                tool: (draft.mode == SdkNativeMode::RunNative).then(|| draft.tool.clone()),
+                arguments: draft.arguments.clone(),
+            })
+            .map(|_| ())
+        })
+        .map_or_else(
+            |message| format!("Validation: {message}"),
+            |()| "Validation: ready for exact preview".into(),
+        );
+    sdk_popup(
+        frame,
+        app,
+        area,
+        "SDK native tool",
+        format!(
+            "Mode: {:?}\nExecutable: {}\nWorkspace: {}\nRecipe: {}\nTool: {}\nArguments: {}\n{validation}\n\nEmpty workspace uses the active build; an extracted root requires exactly one validated environment-setup-* file.\nEnter validates and opens the exact argument preview.\nEsc closes without starting.",
+            draft.mode,
+            app.sdk_tool_capability
+                .executable_for(draft.mode)
+                .map_or_else(|_| "unavailable".into(), |path| path.display().to_string()),
+            if draft.extracted_root.is_empty() {
+                "active build"
+            } else {
+                &draft.extracted_root
+            },
+            if draft.recipe.is_empty() {
+                "unavailable"
+            } else {
+                &draft.recipe
+            },
+            if draft.mode == SdkNativeMode::FindSysroot {
+                "not applicable"
+            } else if draft.tool.is_empty() {
+                "unavailable"
+            } else {
+                &draft.tool
+            },
+            arguments,
+        ),
+        18,
+    );
+}
+
+fn sdk_native_confirmation(frame: &mut Frame, app: &App, preview: &SdkNativePreview, area: Rect) {
+    sdk_popup(
+        frame,
+        app,
+        area,
+        "Confirm SDK native tool",
+        format!(
+            "Mode: {:?}\nWorkspace: {}\nRecipe: {}\nTool: {}\n\nExact indexed shell-free argument vector:\n{}\n\nEnvironment changes apply only to the managed child.\nEnter starts the operation.\nEsc closes without starting.",
+            preview.request.mode,
+            preview
+                .request
+                .extracted_root
+                .as_ref()
+                .map_or("active build".into(), |path| path.display().to_string()),
+            preview.request.recipe,
+            preview.request.tool.as_deref().unwrap_or("not applicable"),
+            indexed_path_vector(&preview.argv),
+        ),
+        19,
+    );
+}
+
+fn sdk_cancellation_confirmation(frame: &mut Frame, app: &App, id: SdkSessionId, area: Rect) {
+    let operation = app
+        .sdk_session(id)
+        .map_or("unavailable", |session| match &session.operation {
+            SdkOperation::Publish(_) => "publication",
+            SdkOperation::Native(_) => "native tool",
+        });
+    sdk_popup(
+        frame,
+        app,
+        area,
+        "Confirm SDK cancellation",
+        format!(
+            "Cancel managed SDK {operation} operation #{}?\n\nRetained output and the terminal cancellation result remain in SDK history.\nEnter requests cancellation.\nEsc keeps the operation running.",
+            id.0
+        ),
+        9,
+    );
 }
 
 fn qemu_launch_field_label(field: QemuLaunchField) -> &'static str {
@@ -5911,6 +6510,303 @@ mod tests {
             message: "DEPLOY_DIR_IMAGE is unavailable".into(),
         };
         assert!(rendered_text(&app, 100, 25).contains("Artifact scan failed"));
+    }
+
+    fn sdk_workflow_ui_app() -> App {
+        let mut app = App::new(20, 20_000);
+        app.screen = Screen::Sdk;
+        app.focus = FocusTarget::Workspace;
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace
+            .variables
+            .insert("DISTRO".into(), "poky".into());
+        app.workspace
+            .variables
+            .insert("SDK_DEPLOY".into(), "/deploy/sdk".into());
+        app.build.target = Some("core-image-minimal".into());
+        let installer = yoctui_model::SdkArtifact {
+            identity: yoctui_model::SdkArtifactIdentity {
+                path: "/deploy/sdk/poky-core-image-minimal-toolchain.sh".into(),
+                size_bytes: 8_192,
+                modified_unix_seconds: 1_700_000_000,
+            },
+            kind: SdkArtifactKind::Installer,
+            sdk_kind: Some(SdkKind::Standard),
+            machine: Some("qemux86-64".into()),
+            host_tuple: Some("x86_64-pokysdk-linux".into()),
+            target_tuple: Some("x86_64-poky-linux".into()),
+            checksums: vec!["/deploy/sdk/poky-core-image-minimal-toolchain.sh.sha256".into()],
+            manifests: vec!["/deploy/sdk/poky-core-image-minimal-toolchain.target.manifest".into()],
+            published: None,
+        };
+        app.sdk_artifact_selection = Some(installer.identity.clone());
+        app.sdk_artifacts = SdkArtifactInventoryState::Available {
+            request: yoctui_model::SdkArtifactInventoryRequest {
+                generation: 1,
+                root: "/deploy/sdk".into(),
+                machine: "qemux86-64".into(),
+            },
+            artifacts: vec![installer],
+        };
+        app.sdk_tool_capability = SdkToolCapability::Available {
+            publish: Some("/workspace/scripts/oe-publish-sdk".into()),
+            find_sysroot: Some("/workspace/scripts/oe-find-native-sysroot".into()),
+            run_native: Some("/workspace/scripts/oe-run-native".into()),
+        };
+        app
+    }
+
+    fn sdk_workflow_running_ui_app() -> (App, SdkSessionId) {
+        let mut app = sdk_workflow_ui_app();
+        let _ = update(&mut app, Action::BeginSelectedSdkPublish);
+        if let Some(Dialog::SdkPublish(draft)) = app.active_dialog_mut() {
+            draft.destination = "/srv/sdk-publish".into();
+        }
+        let _ = update(&mut app, Action::PreviewSdkPublish);
+        let Some(yoctui_model::Effect::StartSdkSession { id, .. }) =
+            update(&mut app, Action::ConfirmSdkPublish)
+        else {
+            panic!("expected managed SDK session");
+        };
+        let _ = update(
+            &mut app,
+            Action::SdkSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::SdkSessionRunning { id });
+        app.focus = FocusTarget::Inspector;
+        (app, id)
+    }
+
+    #[test]
+    fn sdk_workflow_renders_every_inventory_state_and_responsive_selection() {
+        let mut app = sdk_workflow_ui_app();
+        let request = yoctui_model::SdkArtifactInventoryRequest {
+            generation: 2,
+            root: "/deploy/sdk".into(),
+            machine: "qemux86-64".into(),
+        };
+
+        app.sdk_artifacts = SdkArtifactInventoryState::NotLoaded;
+        assert!(rendered_text(&app, 100, 25).contains("not loaded"));
+        app.sdk_artifacts = SdkArtifactInventoryState::Loading {
+            request: request.clone(),
+        };
+        assert!(rendered_text(&app, 100, 25).contains("generation 2"));
+        app.sdk_artifacts = SdkArtifactInventoryState::AvailableEmpty {
+            request: request.clone(),
+        };
+        assert!(rendered_text(&app, 100, 25).contains("No SDK artifacts were found"));
+        app.sdk_artifacts = SdkArtifactInventoryState::Failed {
+            request: request.clone(),
+            message: "permission denied".into(),
+        };
+        assert!(rendered_text(&app, 100, 25).contains("permission denied"));
+
+        app = sdk_workflow_ui_app();
+        app.sdk_artifact_query = "missing".into();
+        assert!(rendered_text(&app, 100, 25).contains("No SDK artifacts match"));
+        app.sdk_artifact_query.clear();
+        app.sdk_artifact_searching = true;
+        let artifact = app.selected_sdk_artifact().unwrap().clone();
+        app.sdk_artifacts = SdkArtifactInventoryState::Partial {
+            request,
+            artifacts: vec![artifact],
+            limitations: vec!["one SDK symlink was not followed".into()],
+        };
+        app.focus = FocusTarget::Inspector;
+        for (width, height, theme, color) in [
+            (80, 24, Theme::Monochrome, false),
+            (100, 30, Theme::Light, true),
+            (160, 40, Theme::MatrixGreen, true),
+        ] {
+            app.theme = theme;
+            app.color_enabled = color;
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("SDK"), "{output}");
+            if width == 160 {
+                assert!(output.contains("Host tuple"), "{output}");
+                assert!(output.contains("x86_64-pokysdk-linux"), "{output}");
+                assert!(output.contains("Published: unavailable"), "{output}");
+                assert!(
+                    output.contains("one SDK symlink was not followed"),
+                    "{output}"
+                );
+            }
+        }
+        for (theme, color) in [
+            (Theme::Dark, true),
+            (Theme::Light, true),
+            (Theme::MatrixGreen, true),
+            (Theme::HighContrast, true),
+            (Theme::Monochrome, true),
+            (Theme::Dark, false),
+        ] {
+            app.theme = theme;
+            app.color_enabled = color;
+            let output = rendered_text(&app, 160, 40);
+            assert!(output.contains("SDK tool capability"), "{output}");
+            assert!(output.contains("Selected artifact"), "{output}");
+        }
+        app.focus = FocusTarget::Workspace;
+        app.color_enabled = false;
+        let mut terminal = Terminal::new(TestBackend::new(160, 40)).unwrap();
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        assert!(
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .any(|cell| cell.modifier.contains(Modifier::REVERSED))
+        );
+        let narrow = rendered_text(&app, 80, 24);
+        assert!(narrow.contains("s/E:SDK"), "{narrow}");
+        assert!(narrow.contains("c:cancel"), "{narrow}");
+    }
+
+    #[test]
+    fn sdk_workflow_renders_lifecycle_output_and_every_terminal_outcome() {
+        let (mut running, id) = sdk_workflow_running_ui_app();
+        let _ = update(
+            &mut running,
+            Action::AppendSdkSessionOutput {
+                id,
+                stream: yoctui_model::SdkOutputStream::Stderr,
+                line: "publication warning".into(),
+                truncated: true,
+                timestamp: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let output = rendered_text(&running, 180, 44);
+        assert!(output.contains("Status: running"), "{output}");
+        assert!(
+            output.contains("[stderr] publication warning [truncated]"),
+            "{output}"
+        );
+
+        let mut succeeded = running.clone();
+        let _ = update(
+            &mut succeeded,
+            Action::CompleteSdkSession {
+                id,
+                exit_code: 0,
+                artifacts: vec!["/srv/sdk-publish/toolchain.sh".into()],
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert!(rendered_text(&succeeded, 180, 44).contains("Status: succeeded"));
+
+        let (mut failed, failed_id) = sdk_workflow_running_ui_app();
+        let _ = update(
+            &mut failed,
+            Action::FailSdkSession {
+                id: failed_id,
+                message: "destination denied".into(),
+                exit_code: Some(7),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let output = rendered_text(&failed, 180, 44);
+        assert!(output.contains("Status: failed"), "{output}");
+        assert!(output.contains("destination denied"), "{output}");
+
+        let (mut lost, lost_id) = sdk_workflow_running_ui_app();
+        let _ = update(
+            &mut lost,
+            Action::LoseSdkSession {
+                id: lost_id,
+                message: "runner channel lost".into(),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert!(rendered_text(&lost, 180, 44).contains("Status: lost"));
+
+        let (mut cancelled, cancelled_id) = sdk_workflow_running_ui_app();
+        let _ = update(&mut cancelled, Action::BeginActiveSdkSessionCancellation);
+        let _ = update(&mut cancelled, Action::ConfirmSdkSessionCancellation);
+        let _ = update(
+            &mut cancelled,
+            Action::CancelSdkSession {
+                id: cancelled_id,
+                exit_code: Some(130),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert!(rendered_text(&cancelled, 180, 44).contains("Status: cancelled"));
+    }
+
+    #[test]
+    fn sdk_workflow_renders_all_dialogs_at_responsive_boundaries() {
+        let mut app = sdk_workflow_ui_app();
+        let _ = update(
+            &mut app,
+            Action::BeginSdkBuild(SdkBuildAction::Populate(SdkKind::Extensible)),
+        );
+        for (width, height) in [(80, 24), (100, 30), (160, 40)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Confirm SDK build"), "{output}");
+            assert!(output.contains("populate_sdk_ext"), "{output}");
+        }
+
+        app.dialogs.clear();
+        app.focus = FocusTarget::Workspace;
+        let _ = update(&mut app, Action::BeginSelectedSdkPublish);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        if let Some(Dialog::SdkPublish(draft)) = app.active_dialog_mut() {
+            draft.destination = format!("/srv/{}", "long-destination-".repeat(80));
+        }
+        assert!(rendered_text(&app, 80, 24).contains("Publish SDK installer"));
+        if let Some(Dialog::SdkPublish(draft)) = app.active_dialog_mut() {
+            draft.destination = "/srv/sdk-publish".into();
+        }
+        let _ = update(&mut app, Action::PreviewSdkPublish);
+        let publish = rendered_text(&app, 80, 24);
+        assert!(publish.contains("Confirm SDK publication"), "{publish}");
+        assert!(publish.contains("[0]"), "{publish}");
+
+        app.dialogs.clear();
+        app.focus = FocusTarget::Dialog;
+        let native_draft = SdkNativeDraft {
+            mode: SdkNativeMode::RunNative,
+            extracted_root: format!("/opt/{}", "sdk-root-".repeat(80)),
+            recipe: "cmake-native".into(),
+            tool: "cmake".into(),
+            arguments: vec!["--version".into(), "--trace".into()],
+        };
+        app.dialogs.push_front(Dialog::SdkNative(native_draft));
+        assert!(rendered_text(&app, 80, 24).contains("SDK native tool"));
+
+        let preview = yoctui_model::SdkNativePreview::new(yoctui_model::SdkNativeRequest {
+            executable: "/workspace/scripts/oe-run-native".into(),
+            mode: SdkNativeMode::RunNative,
+            extracted_root: Some("/opt/extracted-sdk".into()),
+            recipe: "cmake-native".into(),
+            tool: Some("cmake".into()),
+            arguments: vec!["--version".into(), "x".repeat(1024)],
+        })
+        .unwrap();
+        app.dialogs.clear();
+        app.dialogs
+            .push_front(Dialog::SdkNativeConfirmation(preview));
+        for (width, height) in [(80, 24), (100, 30), (160, 40)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Confirm SDK native tool"), "{output}");
+            assert!(output.contains("Exact indexed"), "{output}");
+        }
+
+        let (mut running, id) = sdk_workflow_running_ui_app();
+        running
+            .dialogs
+            .push_front(Dialog::SdkCancellationConfirmation(id));
+        running.focus = FocusTarget::Dialog;
+        let output = rendered_text(&running, 80, 24);
+        assert!(output.contains("Confirm SDK cancellation"), "{output}");
+        assert!(output.contains("Enter requests cancellation"), "{output}");
     }
 
     fn qemu_workspace_app() -> App {

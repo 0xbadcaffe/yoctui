@@ -1259,6 +1259,10 @@ wrapped. The SDK footer is:
 ↑/↓ select | i image | s standard | E extensible | t testsdk | T testsdkext | R refresh | P publish | n native | o open | c cancel
 ```
 
+At 90 columns and below, the one-line footer compacts these labels to
+`↑↓ i:image s/E:SDK t/T:test R:scan P:publish n:native o:open c:cancel`.
+Every SDK shortcut remains visible; only its label is abbreviated.
+
 ### Testing
 
 Integrate:
