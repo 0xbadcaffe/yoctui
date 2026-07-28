@@ -691,12 +691,12 @@ notes = "Packages is a Navigator destination with correlated background inventor
 id = "IMAGES-001"
 milestone = "M4"
 title = "Complete Images artifact workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 49
 required = true
 depends_on = ["IMAGES-MODEL-001", "IMAGES-ADAPTER-001", "IMAGES-UI-001"]
 verify = ["cargo test -p yoctui-model images_workspace", "cargo test -p yoctui-ui images_workspace", "cargo test -p yoctui-app image_action"]
-notes = "Parent gate split into typed artifact state, authoritative bounded deploy acquisition, and responsive workspace integration while preserving the existing image picker and confirmed build flow."
+notes = "Typed artifact state, authoritative bounded deploy acquisition, and responsive background workspace integration pass every child, parent, and baseline check while preserving the existing image picker and confirmed build flow. Live deployed-artifact compatibility is not claimed."
 
 [[task]]
 id = "IMAGES-MODEL-001"
@@ -735,7 +735,7 @@ notes = "Images now combines retained recipe picker/build confirmation with corr
 id = "QEMU-001"
 milestone = "M4"
 title = "Managed runqemu workflow"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 50
 required = true
 depends_on = ["JOB-002"]
