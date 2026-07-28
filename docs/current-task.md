@@ -2,49 +2,61 @@
 
 ## Active task
 
-**ID:** WIC-UI-RENDER-001
-**Title:** Render responsive Wic creation and output UI
+**ID:** WIC-UI-CLI-001
+**Title:** Integrate Wic creation capability and runner in the CLI
 
 ## Objective
 
-Render typed Wic capability, kickstart partitions, latest creation job,
-generated outputs, exact creation/confirmation/cancellation dialogs, and
-footer hints responsively in the Images workspace.
+Connect the typed Wic creation workflow to CLI-owned capability inspection,
+shell-free process execution, nonblocking polling, cancellation, and exact
+terminal history without coupling it to BitBake, image scans, or QEMU.
 
 ## Required work
 
-1. Inspect the Images Inspector, QEMU rendering, semantic theme roles, dialog
-   overlay helpers, and responsive TestBackend fixtures before editing.
-2. Render Wic capability/executable/readiness or exact disabled reason before
-   selected-artifact metadata without hiding QEMU state.
-3. Render the selected kickstart source/typed partition summary and explicit
-   dynamic/unsupported limitations without deriving new data in widgets.
-4. Render the latest Wic session request, lifecycle/timestamps, stream-tagged
-   bounded output/drop/truncation/result/error, then generated-output rows with
-   exact kind/path/size/time and visible selection.
-5. Render focus-trapped creation, exact command preview, and cancellation
-   overlays at every supported breakpoint; show read-only/editing/choice state,
-   validation, partition preview, and complete exact argv.
-6. Update the Images footer with `W create Wic`, shared `x cancel`, `[/] select
-   output`, and `O open output` while retaining QEMU and artifact hints.
-7. Add `wic_workspace` TestBackend coverage for every capability/inventory/job
-   state, all terminal outcomes, modal focus, long content, themes, 80x24,
-   medium/wide, and below-minimum terminals.
-8. Run focused and baseline checks, then mark the child done and hand off to
-   `WIC-UI-CLI-001`.
+1. Inspect the existing CLI main loop, effect dispatch, image capability
+   refresh, managed-QEMU coordinator/polling, dialog-first key routing, and Wic
+   adapter APIs before editing; do not duplicate their lifecycle behavior.
+2. Inspect Wic capability for each exact normalized Images inventory and active
+   build context, including configured kickstart identities when authoritative
+   metadata provides them; dispatch the typed loaded result without guessing
+   missing Yocto paths.
+3. Execute `StartWicSession` by rebuilding and independently revalidating the
+   exact preview against the latest capability, then start one CLI-owned
+   `WicJobRunner` beneath the active build/output directory.
+4. Poll Wic runner events nonblockingly and normalize them through the existing
+   app boundary into starting/running, bounded stdout/stderr, success with exact
+   output inventory, nonzero failure, cancellation, rejection, and process-loss
+   reducer actions.
+5. Execute cancellation only for the exact active session, preserve its
+   confirmed request and background-job history across navigation, and keep Wic
+   ownership independent from the BitBake, image-scan, package, signature,
+   Devtool, and QEMU coordinators.
+6. Route Wic creation/preview/cancellation modal keys before global shortcuts so
+   no pane, build, QEMU, or artifact action leaks through focus trapping.
+7. Add `wic_workspace` CLI tests with fake capability/process seams for
+   discovery, exact arguments, modal routing, navigation persistence, output
+   scan, success, nonzero failure, graceful/forced cancellation, rejection,
+   duplicate start, and unexpected runner loss. Do not claim live Wic support
+   from these tests.
+8. Run focused and baseline checks, then mark the child done and hand off to the
+   next eligible highest-priority task.
 
 ## Definition of done
 
-- Every typed Wic state has explicit responsive rendering.
-- Dialogs trap focus and remain usable at 80x24.
-- Widgets consume typed state without parsing Wic or kickstart text.
-- Footer hints exactly match implemented shortcuts.
+- The real CLI owns one revalidated Wic creation runner and never invokes a
+  shell.
+- Modal keys are handled before global input and all runner outcomes become
+  typed persistent state.
+- Wic execution does not block the terminal loop or interfere with other
+  coordinators.
+- Fake integration coverage proves exact arguments and lifecycle behavior;
+  live compatibility remains unclaimed until a live Wic environment passes.
 - Focused and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui wic_workspace
+cargo test -p yoctui -- wic_workspace
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

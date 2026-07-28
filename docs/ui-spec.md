@@ -1346,6 +1346,11 @@ display name. The preview shows a bounded syntax-highlighted kickstart source,
 each typed `part`/`partition` row, mount point, filesystem, source plugin, and
 explicit size/alignment where present. Unknown or variable-derived values are
 shown as `dynamic` or `unavailable`; Yoctui never fabricates a total image size.
+At 80×24 the preview retains a syntax-highlighted two-line source excerpt with
+the exact shown/total line count and compacts the indexed argument vector onto
+wrapped rows. Medium and wide previews expand the source excerpt. The complete
+bounded typed source and every typed partition remain in the Images Inspector;
+the preview never reparses source text to derive partition data.
 `Enter` in the command preview starts creation and `Esc` closes either step
 without starting a process.
 
@@ -1357,7 +1362,15 @@ new regular non-symlink files canonically beneath the requested output
 directory and returns their exact path, kind, byte size, and modification time.
 Empty and partial output inventories remain honest. The Images Inspector shows
 the latest Wic request/job and generated outputs before general artifact
-metadata. `[`/`]` selects a generated output and `O` opens it; lower-case `o`
+metadata. Capability/readiness precedes the latest operation; its status,
+timestamps, result/error, retained bytes/entries, drop counts, warning/error
+counts, and lowercase stream-tagged output are explicit. Generated inventory
+states retain their generation and requested output root. Output rows show kind,
+canonical path, byte size, modification time, and a visible selection marker.
+The selected kickstart identity, canonical path or canned-name status, bounded
+source, typed partitions, and adapter-reported limitations follow the generated
+outputs without hiding the managed-QEMU section. `[`/`]` selects a generated
+output and `O` opens it; lower-case `o`
 continues to open the selected deployed artifact. `x` requests cancellation of
 the active managed Wic operation when one exists, otherwise it retains its
 managed-QEMU cancellation behavior.
@@ -1390,7 +1403,11 @@ All creation, preview, device picker, typed-phrase, command-preview, and
 cancellation dialogs trap focus and render safely at 80×24. The Images footer
 places `W create Wic` and `D write device` next to the existing lower-case `w`
 shortcut, which continues to open an already-associated Wic path. Generated
-output hints are `[/] select output` and `O open output`.
+output hints are `[/] select output` and `O open output`. At 90 columns and
+below, the Images footer removes separators and abbreviates only the selection
+and open labels so refresh, QEMU, Wic creation/cancellation, generated-output
+selection/opening, deployed-artifact opening, and associated-Wic opening remain
+visible on one line.
 
 ---
 

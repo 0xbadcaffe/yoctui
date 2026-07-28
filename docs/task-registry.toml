@@ -878,12 +878,12 @@ notes = "Bounded modal creation rows provide read-only machine identity, typed i
 id = "WIC-UI-RENDER-001"
 milestone = "M4"
 title = "Render responsive Wic creation and output UI"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["WIC-UI-MODEL-001"]
 verify = ["cargo test -p yoctui-ui wic_workspace"]
-notes = "Render capability, partition preview, exact argument confirmation, persistent job output/results, generated outputs, footer hints, and all explicit responsive states."
+notes = "Responsive Images rendering now covers every typed Wic capability, output inventory, job lifecycle and terminal state; exact request/result/error/stream/drop details; selected output metadata; syntax-highlighted kickstart source and typed partitions; modal creation/preview/cancellation; validation/edit/read-only state; compact 80x24 footer hints; long content; and all semantic themes. Focused and baseline checks pass."
 
 [[task]]
 id = "WIC-UI-CLI-001"
