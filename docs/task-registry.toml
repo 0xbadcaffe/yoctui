@@ -694,9 +694,42 @@ title = "Complete Images artifact workspace"
 status = "IN_PROGRESS"
 priority = 49
 required = true
-depends_on = ["UI-SHELL-001", "JOB-002"]
+depends_on = ["IMAGES-MODEL-001", "IMAGES-ADAPTER-001", "IMAGES-UI-001"]
 verify = ["cargo test -p yoctui-model images_workspace", "cargo test -p yoctui-ui images_workspace", "cargo test -p yoctui-app image_action"]
-notes = "Image-recipe listing workspace added by 7fb89fb and image selection/build confirmation exists. Deploy artifacts, manifests, checksums, licenses, SBOM/Wic details, selection, inspector, and direct tests remain."
+notes = "Parent gate split into typed artifact state, authoritative bounded deploy acquisition, and responsive workspace integration while preserving the existing image picker and confirmed build flow."
+
+[[task]]
+id = "IMAGES-MODEL-001"
+milestone = "M4"
+title = "Add typed image artifact state"
+status = "IN_PROGRESS"
+priority = 49
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-model image_artifact_model", "cargo test -p yoctui-app image_artifact_model"]
+notes = "Define exact machine/image/path identities, bounded artifact metadata, explicit result states, deterministic normalization, identity-stable selection, search, and typed reducer/event boundaries without filesystem access."
+
+[[task]]
+id = "IMAGES-ADAPTER-001"
+milestone = "M4"
+title = "Acquire authoritative deployed image artifacts"
+status = "NOT_STARTED"
+priority = 49
+required = true
+depends_on = ["IMAGES-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake image_artifact_adapter", "cargo test -p yoctui-app image_artifact_adapter"]
+notes = "Resolve the configured deploy directory authoritatively, scan it deterministically with strict path and resource bounds, and return typed artifact, manifest, license, checksum, SPDX/SBOM, and Wic metadata with explicit limitations."
+
+[[task]]
+id = "IMAGES-UI-001"
+milestone = "M4"
+title = "Integrate the responsive Images artifact workspace"
+status = "NOT_STARTED"
+priority = 49
+required = true
+depends_on = ["IMAGES-ADAPTER-001"]
+verify = ["cargo test -p yoctui-model images_workspace", "cargo test -p yoctui-app images_workspace", "cargo test -p yoctui-ui images_workspace", "cargo test -p yoctui -- images_workspace"]
+notes = "Combine existing image-recipe build selection with asynchronous artifact refresh, search, exact selection, responsive Inspector details, contextual open actions, honest disabled reasons, footer hints, and TestBackend coverage."
 
 [[task]]
 id = "QEMU-001"

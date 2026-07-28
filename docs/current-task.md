@@ -2,48 +2,54 @@
 
 ## Active task
 
-**ID:** IMAGES-001
-**Title:** Complete Images artifact workspace
+**ID:** IMAGES-MODEL-001
+**Title:** Add typed image artifact state
 
 ## Objective
 
-Turn the existing image-recipe selection/build screen into an authoritative
-artifact workspace for deployed images and their associated metadata.
+Add pure, bounded domain state for authoritative deployed image artifacts
+without filesystem access, raw-output parsing, or changes to the existing
+image picker and confirmed build behavior.
 
 ## Required work
 
-1. Inspect the existing Images model, UI, build actions, deploy-directory
-   discovery, backend metadata, tests, and documentation before changing code.
-2. Reconcile this broad parent task into atomic child tasks if it cannot be
-   completed as one coherent verified commit.
-3. Preserve existing image recipe selection and confirmed build behavior.
-4. Acquire deployed image artifacts from the authoritative build deploy
-   directory with exact machine/image identities, bounded filesystem access,
-   and explicit loading, empty, partial, failed, and unavailable states.
-5. Represent artifact file sizes and timestamps plus manifests, licenses,
-   checksums, SPDX/SBOM outputs, Wic images, and deploy locations as typed data.
-6. Add identity-stable artifact selection, search/filtering, responsive
-   Workspace/Inspector rendering, contextual open actions, footer hints, and
-   honest disabled explanations.
-7. Keep scanning and expensive metadata work outside widgets and reducers.
-8. Add model, app, adapter/CLI, and Ratatui TestBackend tests as applicable.
-9. Update `docs/ui-spec.md` with every intentional UI behavior and
-   `docs/architecture.md` with component-boundary changes.
+1. Inspect existing image picker/build state, typed package/signature state
+   patterns, app event normalization, and tests before adding overlapping
+   behavior.
+2. Define exact artifact identity using machine, image target, and absolute
+   deployed path. Reject relative or identity-mismatched records.
+3. Represent artifact kind, byte size, modification timestamp, deploy path,
+   checksum records, manifests, licenses, SPDX/SBOM outputs, and Wic-related
+   files as typed available/unavailable data; do not infer meaning in widgets.
+4. Bound record counts, associated-file counts, text metadata, and
+   normalization reports. Sort and deduplicate deterministically.
+5. Add explicit not-loaded, loading, available-empty, available, partial, and
+   failed inventory states with request generation correlation.
+6. Add identity-stable selection and case-insensitive search across exact typed
+   fields. Preserve a selected identity across refresh when it still exists.
+7. Add typed reducer actions/effects and app backend-event mapping for request,
+   success, partial, failure, search, and selection. No reducer may read the
+   filesystem.
+8. Preserve existing `ImagePicker`, `BeginCurrentImageBuild`, and confirmed
+   build behavior unchanged.
+9. Add focused model and app tests named `image_artifact_model` for normal,
+   empty, partial, failed, stale, bounded, and invalid-identity paths.
+10. Update `docs/architecture.md` for the new typed ownership boundary, then
+    update registry/status and hand off to `IMAGES-ADAPTER-001`.
 
 ## Definition of done
 
-- Image recipe builds and deployed artifact inspection coexist in one
-  responsive typed workspace.
-- Artifact identities and metadata are authoritative, bounded, and explicit
-  about unavailable or partial results.
+- The model owns bounded, deterministic, correlated artifact state and exact
+  selection/search behavior.
+- App mapping crosses only typed artifact events and effects.
+- Existing image selection and build tests remain green.
 - Focused and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model images_workspace
-cargo test -p yoctui-ui images_workspace
-cargo test -p yoctui-app image_action
+cargo test -p yoctui-model image_artifact_model
+cargo test -p yoctui-app image_artifact_model
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
