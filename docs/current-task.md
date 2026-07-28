@@ -2,60 +2,64 @@
 
 ## Active task
 
-**ID:** SDK-RENDER-001
-**Title:** Render responsive SDK workspace
+**ID:** SDK-CLI-001
+**Title:** Integrate SDK execution in the CLI
 
 ## Objective
 
-Replace the SDK placeholder with the complete typed Workspace, Inspector,
-dialogs, lifecycle history, and contextual footer specified in
-`docs/ui-spec.md`, without parsing paths or process output in widgets.
+Connect the typed SDK effects to independently polled artifact scans, tool
+capability inspection, managed BitBake populate/test builds, and SDK
+publication/native runners while keeping terminal input, rendering, telemetry,
+and unrelated jobs responsive.
 
 ## Required work
 
-1. Inspect the completed SDK model/actions/dialog state, app key mapping,
-   semantic theme roles, responsive shell helpers, and the Images/QEMU/Wic
-   TestBackend patterns before writing code.
-2. Render SDK as a first-class Navigator destination with the exact active
-   machine, distro, selected image target, and authoritative SDK deploy root.
-   Explicitly render not-loaded, loading, available-empty, available, partial,
-   failed, search-empty, and selected-row states.
-3. Render typed artifact rows and Inspector detail for exact identity, kind,
-   optional SDK/machine/host/target/publication metadata, size/mtime,
-   checksum/manifest associations, scan limitations, capability state, and
-   retained SDK session/background-job lifecycle and stream-tagged output.
-   Missing metadata must say `unavailable`.
-4. Render all existing typed SDK populate/test confirmation, publication
-   destination/preview, native-tool draft/preview, and cancellation dialogs.
-   Dialogs must trap focus, show indexed exact previews, wrap bounded
-   paths/arguments, expose validation/disabled reasons, and remain usable at
-   80x24.
-5. Replace the placeholder footer with the exact contextual SDK shortcuts from
-   `docs/ui-spec.md`. Preserve selection/focus/lifecycle meaning across wide,
-   medium, narrow, too-small, all built-in themes, monochrome, and no-color
-   modes.
-6. Add focused Ratatui `TestBackend` tests named `sdk_workflow` covering every
-   inventory lifecycle, search/selection, unavailable metadata, partial
-   limitations, job terminal outcomes/output, all SDK dialogs, focus,
-   semantic selection, themes/no-color, long paths/arguments, and responsive
-   boundary sizes.
-7. Update `docs/ui-spec.md` only if an intentional behavior differs from its
-   current SDK contract. Update architecture only if ownership changes.
-8. Run focused and baseline checks, then hand off to `SDK-CLI-001`.
+1. Inspect the completed SDK model/effects, artifact and tool adapters, app
+   mappings, and existing image/package/signature/QEMU/Wic CLI coordinators
+   before writing code.
+2. Construct SDK adapters only from the active canonical build directory,
+   typed `SDK_DEPLOY`, and authoritative source/workspace roots. Route
+   `InspectSdkTools` into the typed capability state with individual missing
+   tools preserved.
+3. Own at most one replaceable generation-correlated SDK artifact scan and
+   cancellation token. Poll it independently; map empty/complete/partial,
+   invalid configuration, timeout, cancellation, and worker loss into the
+   existing typed reducer actions. Stale results must remain reducer-inert.
+4. Route SDK populate/test `BuildRequest` values through the existing managed
+   BitBake coordinator without introducing a parallel build lifecycle. Refresh
+   the exact SDK inventory only after a successful populate operation.
+5. Reconstruct publication/native `SdkToolCommandSpec` values through the
+   adapter immediately before spawn. Own one `SdkToolJobRunner`, poll typed
+   started/output/success/nonzero/timeout/loss events, and map them to the exact
+   `SdkSessionId` reducer actions. Refresh the inventory after successful
+   publication.
+6. Route cancellation to the SDK runner independently from BitBake, QEMU, Wic,
+   package, signature, and artifact-scan cancellation. Preserve rejection,
+   graceful/forced cancellation, exit codes, retained output, and navigation.
+7. Add focused CLI tests named `sdk_workflow` with fake filesystem/process
+   adapters covering capability, loading/empty/partial/failure scan outcomes,
+   replacement/stale results, populate/test reuse, publication/native
+   execution, child-only environment, output, success/nonzero/timeout,
+   graceful/forced cancellation, rejection, startup/runner loss, refresh, and
+   simultaneous navigation/telemetry polling. Do not claim live SDK support.
+8. Update architecture only if ownership differs from the Managed SDK
+   boundary. Run focused and baseline checks, then hand off to
+   `SDK-UI-CLI-001`.
 
 ## Definition of done
 
-- SDK Workspace and Inspector render only typed model state with all lifecycle
-  and unavailable states explicit.
-- Every specified SDK dialog and shortcut is visible, focus-safe, and
-  responsive at the supported 80x24 boundary.
-- No widget classifies filenames, parses output, or owns execution state.
-- Focused TestBackend and baseline verification pass.
+- Every SDK effect has a nonblocking CLI execution route with exact typed
+  correlation and no widget/backend state mutation.
+- SDK builds reuse the existing BitBake job lifecycle; scans and SDK tools are
+  independently cancellable and polled.
+- Success, failure, timeout, cancellation/rejection, and loss remain distinct,
+  durable, and navigation-safe.
+- Focused fake integration and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui sdk_workflow
+cargo test -p yoctui -- sdk_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

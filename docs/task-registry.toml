@@ -988,12 +988,12 @@ notes = "The SDK tool adapter now discovers each canonical workspace tool indepe
 id = "SDK-RENDER-001"
 milestone = "M4"
 title = "Render responsive SDK workspace"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 52
 required = true
 depends_on = ["SDK-MODEL-001"]
 verify = ["cargo test -p yoctui-ui sdk_workflow"]
-notes = "Render SDK Navigator/workspace/Inspector, explicit inventories and job history, populate/test/publication/native dialogs, exact previews, footer, themes, no-color, and 80x24 boundaries."
+notes = "SDK now renders a typed responsive Workspace and Inspector with every inventory state, exact selection/metadata/associations/limitations, capability and managed-session history, output and terminal outcomes. All six existing SDK dialogs show validation and exact previews; narrow shortcuts, all themes, no-color semantics, long inputs, and 80x24 boundaries pass focused TestBackend and baseline checks."
 
 [[task]]
 id = "SDK-CLI-001"
