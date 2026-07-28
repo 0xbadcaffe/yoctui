@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Implement unified test execution and result workflows.
+Specify the unified Testing workspace and its typed boundaries.
 
 ## Current task
 
@@ -26,7 +26,7 @@ See `docs/current-task.md`.
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
-| M5 Testing/QA/Security | NOT_STARTED | Coverage infrastructure exists; product workflows remain |
+| M5 Testing/QA/Security | IN_PROGRESS | Unified Testing is split into specification, model, adapters, rendering, CLI, and parent gates; security and QA remain |
 | M6 Maintenance | NOT_STARTED | Partial diagnostics only |
 | M7 Hardening | IN_PROGRESS | Coverage and profiling foundations exist |
 
@@ -70,6 +70,7 @@ See `docs/current-task.md`.
 | QEMU dialogs/session UI | DONE | Bounded modal input, responsive capability/session rendering, and independent CLI-owned inspection/execution/polling/cancellation pass the complete cross-layer parent gate; fake runners do not establish live compatibility |
 | Wic workflow | DONE | Cooked-mode creation and protected device writing pass the cross-layer gate: discovery/startup are independently polled, exact identities are revalidated immediately before spawn, responsive modal/history/telemetry state is durable, and all terminal outcomes are covered. Fake device/process coverage does not establish live Wic or removable-media compatibility |
 | SDK workflow | DONE | The parent gate passes across typed model/app state, authoritative artifact and shell-free tool adapters, responsive rendering, and independent CLI execution. It covers scans, capability inspection, managed BitBake populate/test reuse, exact artifact opening, publication/native child execution, a bounded keyboard-editable native form, timeout/cancellation/loss, success refresh, navigation, and telemetry. Fake scans/processes do not claim live SDK compatibility |
+| Testing workflow | IN_PROGRESS | `TEST-001` is split into atomic specification, typed execution/result models, selftest/BitBake/ptest and resulttool adapters, responsive rendering, CLI integration, and cross-layer gates. No product Testing workspace exists yet |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -80,7 +81,10 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `TEST-001` — unified test execution and results
+1. `TEST-SPEC-001` — define the unified Testing workspace and boundaries
+2. `TEST-MODEL-001` / `TEST-RESULT-MODEL-001` — typed execution and results
+3. `TEST-RUNNER-ADAPTER-001` / `TEST-RESULT-ADAPTER-001` — safe tool adapters
+4. `TEST-RENDER-001` / `TEST-CLI-001` / `TEST-UI-CLI-001` / `TEST-001` — close integration gates
 
 ## Rules
 

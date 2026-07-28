@@ -1029,15 +1029,103 @@ verify = ["cargo test -p yoctui-model sdk_workflow", "cargo test -p yoctui-app s
 notes = "The SDK parent gate passes the complete focused matrix and baseline at the committed cross-layer state. Populate SDK/ext SDK and contextual testsdk launches reuse the managed BitBake coordinator; correlated artifacts, configured-editor opening, shell-free publication and extracted/native execution, cancellation, refresh, responsive dialogs, and terminal outcomes agree across model, app, adapters, UI, and CLI. Fake filesystem/process evidence does not establish live SDK compatibility."
 
 [[task]]
-id = "TEST-001"
+id = "TEST-SPEC-001"
 milestone = "M5"
-title = "Unified test execution and results"
+title = "Specify unified testing workflows"
 status = "NOT_STARTED"
 priority = 60
 required = true
-depends_on = ["JOB-002"]
-verify = ["cargo test -p yoctui-app test_workflow"]
-notes = "selftests, testimage, testsdk, ptest, resulttool."
+depends_on = ["JOB-002", "SDK-001"]
+verify = ["./scripts/verify-roadmap.sh"]
+notes = "Define the typed Testing workspace, tool/task boundaries, exact identities, lifecycle, result comparison, JUnit export, responsive interaction, and honest live-validation requirements before implementation."
+
+[[task]]
+id = "TEST-MODEL-001"
+milestone = "M5"
+title = "Model typed test discovery and execution"
+status = "NOT_STARTED"
+priority = 60
+required = true
+depends_on = ["TEST-SPEC-001"]
+verify = ["cargo test -p yoctui-model test_workflow", "cargo test -p yoctui-app test_workflow"]
+notes = "Pure typed capability, catalog, launch preview, stable session, lifecycle, output, cancellation, and failure state for selftests, testimage, testsdk, testsdkext, and ptest."
+
+[[task]]
+id = "TEST-RESULT-MODEL-001"
+milestone = "M5"
+title = "Model typed test results and comparisons"
+status = "NOT_STARTED"
+priority = 60
+required = true
+depends_on = ["TEST-MODEL-001"]
+verify = ["cargo test -p yoctui-model test_results", "cargo test -p yoctui-app test_results"]
+notes = "Bounded exact result identities, correlated import states, normalized cases, regressions/new failures/new passes, metadata/log references, selection, and explicit JUnit export state."
+
+[[task]]
+id = "TEST-RUNNER-ADAPTER-001"
+milestone = "M5"
+title = "Adapt typed Yocto test execution"
+status = "NOT_STARTED"
+priority = 60
+required = true
+depends_on = ["TEST-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake test_runner", "cargo test -p yoctui-app test_runner"]
+notes = "Discover and revalidate supported selftest/ptest tools, construct exact shell-free commands, reuse managed BitBake tasks where authoritative, and emit bounded typed runner events with cancellation and terminal outcomes."
+
+[[task]]
+id = "TEST-RESULT-ADAPTER-001"
+milestone = "M5"
+title = "Adapt resulttool import comparison and export"
+status = "NOT_STARTED"
+priority = 60
+required = true
+depends_on = ["TEST-RESULT-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake test_results", "cargo test -p yoctui-app test_results"]
+notes = "Discover resulttool and authoritative result roots, import bounded typed records, compare exact result identities, retain limitations, and write deterministic JUnit through a validated destination."
+
+[[task]]
+id = "TEST-RENDER-001"
+milestone = "M5"
+title = "Render responsive Testing workspace"
+status = "NOT_STARTED"
+priority = 60
+required = true
+depends_on = ["TEST-RESULT-MODEL-001"]
+verify = ["cargo test -p yoctui-ui test_workflow"]
+notes = "Render typed launch, lifecycle, result inventory, regression comparison, logs/metadata, export, unavailable states, dialogs, footer hints, and 80x24 behavior."
+
+[[task]]
+id = "TEST-CLI-001"
+milestone = "M5"
+title = "Integrate testing execution in the CLI"
+status = "NOT_STARTED"
+priority = 60
+required = true
+depends_on = ["TEST-RUNNER-ADAPTER-001", "TEST-RESULT-ADAPTER-001", "TEST-RENDER-001"]
+verify = ["cargo test -p yoctui -- test_workflow"]
+notes = "Route test builds through the existing coordinator, own independent selftest/result operations, poll without blocking input, correlate refresh/import/export, and preserve navigation and terminal state."
+
+[[task]]
+id = "TEST-UI-CLI-001"
+milestone = "M5"
+title = "Integrate complete Testing workspace"
+status = "NOT_STARTED"
+priority = 60
+required = true
+depends_on = ["TEST-MODEL-001", "TEST-RESULT-MODEL-001", "TEST-RUNNER-ADAPTER-001", "TEST-RESULT-ADAPTER-001", "TEST-RENDER-001", "TEST-CLI-001"]
+verify = ["cargo test -p yoctui-model test_workflow", "cargo test -p yoctui-app test_workflow", "cargo test -p yoctui-bitbake test_", "cargo test -p yoctui-ui test_workflow", "cargo test -p yoctui -- test_workflow"]
+notes = "Cross-layer parent gate for every specified launch family, exact results, comparisons, export, responsive rendering, and independently polled CLI execution."
+
+[[task]]
+id = "TEST-001"
+milestone = "M5"
+title = "Unified test execution and results"
+status = "IN_PROGRESS"
+priority = 60
+required = true
+depends_on = ["TEST-UI-CLI-001"]
+verify = ["cargo test -p yoctui-model test_workflow", "cargo test -p yoctui-app test_workflow", "cargo test -p yoctui-bitbake test_", "cargo test -p yoctui-ui test_workflow", "cargo test -p yoctui -- test_workflow"]
+notes = "Parent completion gate split into specification, typed execution/result state, selftest/BitBake/ptest runners, resulttool import/comparison/JUnit export, responsive rendering, and CLI integration."
 
 [[task]]
 id = "SEC-001"

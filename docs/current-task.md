@@ -2,44 +2,40 @@
 
 ## Active task
 
-**ID:** TEST-001
-**Title:** Unified test execution and results
+**ID:** TEST-SPEC-001
+**Title:** Specify unified testing workflows
 
 ## Objective
 
-Implement one unified, typed testing workflow for Yocto selftests, testimage,
-testsdk, ptest, and resulttool without reducing the product to an unstructured
-shell command surface.
+Define the authoritative UI behavior and architecture boundaries for one
+typed Testing workspace covering oe-selftest, bitbake-selftest, testimage,
+testsdk, testsdkext, ptest, resulttool comparison, and JUnit export.
 
 ## Required work
 
-1. Inspect existing testing-related model, app, adapter, UI, CLI, and
-   documentation behavior before writing code.
-2. Reconcile the testing requirements in `docs/ui-spec.md`,
-   `docs/architecture.md`, and `docs/product-roadmap.md`.
-3. If the outcome is too large for one coherent commit, split `TEST-001` into
-   dependency-ordered atomic child tasks and select the first child.
-4. Cover pure state, reducer transitions, process/bridge integration, and
-   Ratatui TestBackend behavior as applicable.
-5. Keep test identities, execution lifecycle, retained results, comparison,
-   export, cancellation, failure, and unavailable-tool meaning typed.
-6. Do not claim live Yocto test compatibility from mocked evidence.
+1. Verify the official roles and invocation boundaries of each supported
+   Yocto/BitBake testing tool.
+2. Expand `docs/ui-spec.md` with exact workspace layout, typed selectors,
+   shortcuts, dialogs, focus, responsive behavior, lifecycle, result
+   comparison, log/metadata opening, and JUnit export.
+3. Add the managed Testing boundary to `docs/architecture.md`, preserving the
+   dependency direction and existing build/job coordinators.
+4. Reconcile `docs/product-roadmap.md` only where the detailed contract
+   requires clarification.
+5. Record honest unavailable, partial, failure, cancellation, and live
+   validation meaning. Never treat arbitrary shell text as the primary UX.
 
 ## Definition of done
 
-- The task is split first when necessary to preserve coherent commits.
-- All specified test families have typed, reachable workflows.
-- Results, comparisons, export, lifecycle, and failures remain explicit.
-- Focused and baseline verification pass without unsupported live claims.
+- UI behavior is complete enough to implement without inventing interactions.
+- Component ownership and execution boundaries are explicit.
+- Every tool family, result state, comparison category, and export outcome has
+  typed meaning.
+- The registry and status documents select `TEST-MODEL-001` next.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app test_workflow
-cargo fmt --all --check
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
 ```
 
