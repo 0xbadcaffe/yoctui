@@ -900,12 +900,12 @@ notes = "The CLI now generation-correlates asynchronous capability inspection fr
 id = "WIC-WRITE-ADAPTER-001"
 milestone = "M4"
 title = "Discover and revalidate safe Wic write devices"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["WIC-ADAPTER-001"]
 verify = ["cargo test -p yoctui-bitbake wic_device_write", "cargo test -p yoctui-app wic_device_write"]
-notes = "Parse bounded typed whole-device inventory, exclude unsafe/system/mounted/stale identities, independently revalidate image and device immediately before exact shell-free wic write execution, and never invoke sudo."
+notes = "Canonical bounded lsblk JSON discovery validates every record, fails closed on uncertain root identity, exposes only writable removable whole devices, and reports bounded exclusions. Exact image/device identity and every safety invariant are rediscovered immediately before the shell-free wic write spawn. Fake-device/process tests cover malformed/oversized/duplicate/unsafe/stale records, exact argv, timeout, nonzero failure, cancellation, truncation, and loss without claiming live hardware safety."
 
 [[task]]
 id = "WIC-WRITE-UI-CLI-001"
