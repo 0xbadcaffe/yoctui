@@ -2,63 +2,46 @@
 
 ## Active task
 
-**ID:** QEMU-UI-001
-**Title:** Integrate managed QEMU dialogs and session view
+**ID:** QEMU-UI-MODEL-001
+**Title:** Add QEMU launch dialog and workspace input state
 
 ## Objective
 
-Integrate capability-driven runqemu launch editing, deterministic confirmation,
-CLI-owned persistent execution/cancellation, and responsive attached session
-inspection into the Images workspace.
+Add pure bounded launch-field selection/editing, stable capability-driven
+availability reasons, modal preview/cancel transitions, and typed Images
+workspace/session input mapping without rendering or starting processes.
 
 ## Required work
 
-1. Inspect Images workspace rendering/input/effects, existing typed dialog
-   editors, Devtool CLI runner polling, and background-job views before adding
-   overlapping behavior.
-2. Inspect runqemu capability after authoritative image artifacts load or
-   refresh and preserve every distinct capability/disabled state.
-3. Add the documented Images shortcut and footer hint for launching the exact
-   selected compatible root-filesystem/Wic artifact. Unsupported selections,
-   missing tool/images, failed inspection, and active sessions must show stable
-   typed explanations.
-4. Render a focus-trapped responsive launch editor for machine/image, optional
-   kernel/rootfs, networking, display, serial, memory, and extra arguments.
-   Keep identity fields read-only and all editable fields bounded.
-5. Render the deterministic exact argument preview and require explicit
-   confirmation. `Esc` from draft/preview must close without starting.
-6. Execute `InspectQemuCapability`, `StartQemuSession`, and
-   `CancelQemuSession` effects in the CLI. Own and non-blockingly poll one
-   `QemuJobRunner` beside backend, keyboard, and other background work.
-7. Route typed runner events through app normalization, preserve sessions
-   across navigation, report start/cancellation failures, and never block
-   BitBake or Devtool coordination.
-8. Render the active/latest managed session in the Images Inspector with exact
-   request, lifecycle/timestamps, retained stdout/stderr, truncation/drop
-   counts, exit/error, and confirmed cancellation action.
-9. Cover explicit capability states, editor/preview/cancel keys, success,
-   nonzero failure, cancellation rejection/forced completion, process loss,
-   navigation persistence, and 80x24/100x30/160x40 TestBackend layouts in tests
-   named `qemu_workspace`.
-10. Update `docs/ui-spec.md` for exact shortcuts/focus/responsive behavior and
-    `docs/architecture.md` for CLI ownership, then mark the child done and hand
-    off to the `QEMU-001` parent gate.
+1. Inspect existing typed dialog editors, modal focus transitions, Images input
+   mapping, and QEMU launch/session types before changing state.
+2. Add typed launch-field selection and edit mode for read-only identity plus
+   kernel, rootfs, networking, display, serial, memory, and extra arguments.
+3. Bound every text-edit action and cycle only typed choice fields. Invalid
+   edits remain in the draft with a visible validation reason at preview time.
+4. Add stable typed launch availability/disabled reasons for capability state,
+   selection kind/identity, and duplicate active session.
+5. Map the documented Images launch shortcut, launch-dialog navigation/edit/
+   preview/cancel keys, preview confirmation/cancel keys, and session
+   cancellation confirmation keys to typed actions.
+6. Ensure all QEMU dialogs trap focus and `Esc` closes draft/preview/
+   cancellation without side effects.
+7. Add focused reducer and app tests named `qemu_workspace`.
+8. Update `docs/ui-spec.md` with exact shortcuts and field focus/edit behavior,
+   then mark the child done and hand off to `QEMU-UI-RENDER-001`.
 
 ## Definition of done
 
-- A compatible selected image launches only after validated preview and
-  confirmation through the managed adapter.
-- Session lifecycle/output/cancellation remain responsive and visible.
-- Reducer, app, CLI, and TestBackend focused tests plus baseline checks pass.
-- No live runqemu compatibility is claimed from fake tests alone.
+- QEMU launch input behavior is pure, bounded, focus-safe, and fully typed.
+- Stable disabled reasons and all dialog transitions are tested.
+- No rendering, process inspection, or process execution is added.
+- Focused and baseline checks pass.
 
 ## Verification
 
 ```bash
 cargo test -p yoctui-model qemu_workspace
 cargo test -p yoctui-app qemu_workspace
-cargo test -p yoctui-ui qemu_workspace
-cargo test -p yoctui -- qemu_workspace
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
