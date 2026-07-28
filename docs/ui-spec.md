@@ -1249,7 +1249,31 @@ Dialog fields:
 - serial console
 - extra arguments
 
-QEMU runs as a managed background job with an attached log/session view.
+The launch dialog opens only for an exact deployed root-filesystem or Wic
+artifact that appears in the latest typed runqemu capability result. Image and
+machine identity are read-only. Kernel and root-filesystem overrides must be
+normalized absolute paths. Memory is entered in MiB and is bounded from 128
+through 262,144. Networking, display, and serial console use typed choices;
+`nographic` without a serial connection is invalid. Extra arguments are at
+most 32 bounded runqemu keyword tokens: quoting, escaping, whitespace inside a
+token, leading option markers, control characters, and shell metacharacters
+are rejected.
+
+`Enter` validates the editable draft and replaces it with a deterministic
+argument preview. A second explicit confirmation starts the session. `Esc`
+from either launch step returns without starting a process. Missing runqemu,
+missing compatible images, failed capability inspection, stale artifact
+identity, and validation failures are distinct visible states and never fall
+back to a guessed command.
+
+QEMU runs as a managed background job with an attached log/session view. Only
+one managed runqemu session may be active. Its stable session identity retains
+the exact launch request while the shared background-job state owns
+queued/starting/running/cancelling/terminal timestamps, bounded typed stdout
+and stderr, result, and error. Cancellation requires its own confirmation
+dialog. Rejected cancellation restores the running state with a visible
+reason; success, nonzero exit, cancellation, and process loss remain distinct
+terminal results.
 
 ### Wic dialog
 

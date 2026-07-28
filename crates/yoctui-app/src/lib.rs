@@ -1,13 +1,67 @@
 //! Application-owned input mapping, keeping terminal concerns outside the reducer.
 use std::time::SystemTime;
-use yoctui_bitbake::{BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent};
+use yoctui_bitbake::{
+    BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QemuRunnerEvent, QemuRunnerOutputStream,
+};
 use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
     BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
-    LayerInspectorMode, LayerRelationship, LayerRelationships, RecipeDependencies, Screen,
-    Severity, TaskId, TaskInfo, VariableDetail, VariableIdentity,
+    LayerInspectorMode, LayerRelationship, LayerRelationships, QemuOutputStream, QemuSessionId,
+    RecipeDependencies, Screen, Severity, TaskId, TaskInfo, VariableDetail, VariableIdentity,
 };
+
+pub fn qemu_actions_for_runner_event(
+    id: QemuSessionId,
+    event: QemuRunnerEvent,
+    timestamp: SystemTime,
+) -> Vec<Action> {
+    match event {
+        QemuRunnerEvent::Starting => vec![Action::QemuSessionStarting {
+            id,
+            started_at: timestamp,
+        }],
+        QemuRunnerEvent::Started => vec![Action::QemuSessionRunning { id }],
+        QemuRunnerEvent::Output {
+            stream,
+            line,
+            truncated,
+        } => vec![Action::AppendQemuSessionOutput {
+            id,
+            stream: match stream {
+                QemuRunnerOutputStream::Stdout => QemuOutputStream::Stdout,
+                QemuRunnerOutputStream::Stderr => QemuOutputStream::Stderr,
+            },
+            line,
+            truncated,
+            timestamp,
+        }],
+        QemuRunnerEvent::Completed { exit_code } => vec![Action::CompleteQemuSession {
+            id,
+            exit_code,
+            finished_at: timestamp,
+        }],
+        QemuRunnerEvent::Failed { message, exit_code } => vec![Action::FailQemuSession {
+            id,
+            message,
+            exit_code,
+            finished_at: timestamp,
+        }],
+        QemuRunnerEvent::Cancelled { exit_code } => vec![Action::CancelQemuSession {
+            id,
+            exit_code,
+            finished_at: timestamp,
+        }],
+        QemuRunnerEvent::CancellationRejected { message } => {
+            vec![Action::RejectQemuSessionCancellation { id, message }]
+        }
+        QemuRunnerEvent::Lost { message } => vec![Action::LoseQemuSession {
+            id,
+            message,
+            finished_at: timestamp,
+        }],
+    }
+}
 
 #[derive(Debug)]
 pub struct BuildJobCoordinator {
@@ -2946,6 +3000,65 @@ mod tests {
         assert_eq!(
             images_workspace_action(true, Input::Esc),
             Some(Action::FinishImageArtifactSearch)
+        );
+    }
+    #[test]
+    fn qemu_model_normalizes_typed_runner_events_without_parsing_output() {
+        let id = QemuSessionId(7);
+        let timestamp = SystemTime::UNIX_EPOCH;
+        assert_eq!(
+            qemu_actions_for_runner_event(id, QemuRunnerEvent::Starting, timestamp),
+            vec![Action::QemuSessionStarting {
+                id,
+                started_at: timestamp
+            }]
+        );
+        assert_eq!(
+            qemu_actions_for_runner_event(
+                id,
+                QemuRunnerEvent::Output {
+                    stream: QemuRunnerOutputStream::Stderr,
+                    line: "verbatim runner output".into(),
+                    truncated: true,
+                },
+                timestamp,
+            ),
+            vec![Action::AppendQemuSessionOutput {
+                id,
+                stream: QemuOutputStream::Stderr,
+                line: "verbatim runner output".into(),
+                truncated: true,
+                timestamp,
+            }]
+        );
+        assert_eq!(
+            qemu_actions_for_runner_event(
+                id,
+                QemuRunnerEvent::Failed {
+                    message: "spawn failed".into(),
+                    exit_code: Some(127),
+                },
+                timestamp,
+            ),
+            vec![Action::FailQemuSession {
+                id,
+                message: "spawn failed".into(),
+                exit_code: Some(127),
+                finished_at: timestamp,
+            }]
+        );
+        assert_eq!(
+            qemu_actions_for_runner_event(
+                id,
+                QemuRunnerEvent::CancellationRejected {
+                    message: "not running".into(),
+                },
+                timestamp,
+            ),
+            vec![Action::RejectQemuSessionCancellation {
+                id,
+                message: "not running".into(),
+            }]
         );
     }
     #[test]

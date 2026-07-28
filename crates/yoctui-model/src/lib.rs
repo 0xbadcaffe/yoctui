@@ -1,9 +1,11 @@
 //! Domain model and pure state transitions. BitBake remains authoritative.
 mod image;
 mod package;
+mod qemu;
 
 pub use image::*;
 pub use package::*;
+pub use qemu::*;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
@@ -767,6 +769,9 @@ pub enum Dialog {
         task: Option<String>,
     },
     ImagePicker(ImagePicker),
+    QemuLaunch(QemuLaunchDraft),
+    QemuLaunchConfirmation(QemuLaunchPreview),
+    QemuCancellationConfirmation(QemuSessionId),
     RecipeTaskConfirmation(BuildRequest),
     RecipeTaskPicker(RecipeTaskPicker),
     SignatureTaskPicker(SignatureTaskPicker),
@@ -2091,6 +2096,9 @@ pub struct App {
     pub image_artifact_query: String,
     pub image_artifact_searching: bool,
     pub image_artifact_request_generation: u64,
+    pub qemu_capability: QemuCapability,
+    pub qemu_sessions: VecDeque<QemuSession>,
+    pub qemu_session_generation: u64,
     pub layer_relationships: Option<LayerRelationships>,
     pub recipe_sources: HashMap<String, Vec<PathBuf>>,
     pub recipe_metadata: HashMap<String, RecipeMetadata>,
@@ -2166,6 +2174,9 @@ impl App {
             image_artifact_query: String::new(),
             image_artifact_searching: false,
             image_artifact_request_generation: 0,
+            qemu_capability: QemuCapability::default(),
+            qemu_sessions: VecDeque::new(),
+            qemu_session_generation: 0,
             layer_relationships: None,
             recipe_sources: HashMap::new(),
             recipe_metadata: HashMap::new(),
@@ -2355,6 +2366,16 @@ impl App {
         self.filtered_image_artifacts()
             .into_iter()
             .find(|artifact| &artifact.identity == selected)
+    }
+    pub fn qemu_session(&self, id: QemuSessionId) -> Option<&QemuSession> {
+        self.qemu_sessions.iter().find(|session| session.id == id)
+    }
+    pub fn active_qemu_session(&self) -> Option<&QemuSession> {
+        self.qemu_sessions.iter().rev().find(|session| {
+            self.background_jobs
+                .get(session.background_job_id)
+                .is_some_and(|job| !job.status.is_terminal())
+        })
     }
     pub fn active_dialog(&self) -> Option<&Dialog> {
         self.dialogs.front()
@@ -2560,6 +2581,55 @@ pub enum Action {
     BeginSelectedImageArtifactBuild,
     OpenSelectedImageArtifact,
     OpenSelectedImageArtifactAssociation(ImageArtifactAssociation),
+    InspectQemuCapability,
+    QemuCapabilityLoaded(QemuCapability),
+    BeginSelectedQemuLaunch,
+    UpdateQemuLaunchDraft(QemuLaunchDraft),
+    PreviewQemuLaunch,
+    ConfirmQemuLaunch,
+    QemuSessionStarting {
+        id: QemuSessionId,
+        started_at: SystemTime,
+    },
+    QemuSessionRunning {
+        id: QemuSessionId,
+    },
+    AppendQemuSessionOutput {
+        id: QemuSessionId,
+        stream: QemuOutputStream,
+        line: String,
+        truncated: bool,
+        timestamp: SystemTime,
+    },
+    CompleteQemuSession {
+        id: QemuSessionId,
+        exit_code: i32,
+        finished_at: SystemTime,
+    },
+    FailQemuSession {
+        id: QemuSessionId,
+        message: String,
+        exit_code: Option<i32>,
+        finished_at: SystemTime,
+    },
+    LoseQemuSession {
+        id: QemuSessionId,
+        message: String,
+        finished_at: SystemTime,
+    },
+    BeginQemuSessionCancellation {
+        id: QemuSessionId,
+    },
+    ConfirmQemuSessionCancellation,
+    RejectQemuSessionCancellation {
+        id: QemuSessionId,
+        message: String,
+    },
+    CancelQemuSession {
+        id: QemuSessionId,
+        exit_code: Option<i32>,
+        finished_at: SystemTime,
+    },
     BeginBuildTargetEdit,
     BeginBuildTargetTask(Option<String>),
     AppendBuildTarget(char),
@@ -3744,6 +3814,44 @@ fn image_artifact_operation_is_loading(app: &App) -> bool {
     )
 }
 
+const MAX_QEMU_SESSIONS: usize = 32;
+const QEMU_BACKGROUND_JOB_NAMESPACE: u64 = 3 << 62;
+
+fn next_qemu_session_id(app: &mut App) -> QemuSessionId {
+    app.qemu_session_generation = app.qemu_session_generation.wrapping_add(1);
+    if app.qemu_session_generation == 0 {
+        app.qemu_session_generation = 1;
+    }
+    QemuSessionId(app.qemu_session_generation)
+}
+
+fn qemu_background_job_id(id: QemuSessionId) -> BackgroundJobId {
+    BackgroundJobId(QEMU_BACKGROUND_JOB_NAMESPACE | id.0)
+}
+
+fn qemu_job_id(app: &App, id: QemuSessionId) -> Option<BackgroundJobId> {
+    app.qemu_session(id)
+        .map(|session| session.background_job_id)
+}
+
+fn mutate_qemu_session(
+    app: &mut App,
+    id: QemuSessionId,
+    mutation: impl FnOnce(&mut QemuSession),
+) -> Option<BackgroundJobId> {
+    let session = app
+        .qemu_sessions
+        .iter_mut()
+        .find(|session| session.id == id)?;
+    let job_id = session.background_job_id;
+    mutation(session);
+    Some(job_id)
+}
+
+fn note_stale_qemu_event(app: &mut App) {
+    app.background_jobs.ignored_transitions += 1;
+}
+
 fn normalize_image_artifact_limitations(mut limitations: Vec<String>) -> Vec<String> {
     limitations = limitations
         .into_iter()
@@ -4381,6 +4489,379 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some(format!(
                 "The selected image artifact has no authoritative {label} path."
             ));
+        }
+        Action::InspectQemuCapability => {
+            app.qemu_capability = QemuCapability::NotInspected;
+            return Some(Effect::InspectQemuCapability);
+        }
+        Action::QemuCapabilityLoaded(capability) => {
+            app.qemu_capability = capability;
+        }
+        Action::BeginSelectedQemuLaunch => {
+            if app.active_qemu_session().is_some() {
+                app.notification = Some("A managed runqemu session is already active.".into());
+                return None;
+            }
+            let Some(artifact) = app.selected_image_artifact().cloned() else {
+                app.notification =
+                    Some("Select a compatible deployed image artifact first.".into());
+                return None;
+            };
+            if let Err(message) = app.qemu_capability.executable_for(&artifact.identity) {
+                app.notification = Some(message.into());
+                return None;
+            }
+            let draft = QemuLaunchDraft::for_artifact(artifact.identity, artifact.kind);
+            if let Err(message) = draft.preview(&app.qemu_capability) {
+                app.notification = Some(message.into());
+                return None;
+            }
+            open_dialog(app, Dialog::QemuLaunch(draft));
+        }
+        Action::UpdateQemuLaunchDraft(draft) => {
+            if matches!(app.active_dialog(), Some(Dialog::QemuLaunch(_))) {
+                replace_dialog(app, Dialog::QemuLaunch(draft));
+            } else {
+                app.notification = Some("No runqemu launch draft is active.".into());
+            }
+        }
+        Action::PreviewQemuLaunch => {
+            let Some(Dialog::QemuLaunch(draft)) = app.active_dialog().cloned() else {
+                app.notification = Some("No runqemu launch draft is active.".into());
+                return None;
+            };
+            match draft.preview(&app.qemu_capability) {
+                Ok(preview) => replace_dialog(app, Dialog::QemuLaunchConfirmation(preview)),
+                Err(message) => app.notification = Some(message.into()),
+            }
+        }
+        Action::ConfirmQemuLaunch => {
+            let Some(Dialog::QemuLaunchConfirmation(preview)) = app.active_dialog().cloned() else {
+                app.notification = Some("No runqemu launch is awaiting confirmation.".into());
+                return None;
+            };
+            if app.active_qemu_session().is_some() {
+                app.notification = Some("A managed runqemu session is already active.".into());
+                return None;
+            }
+            if preview.request.validate().is_err()
+                || app
+                    .qemu_capability
+                    .executable_for(&preview.request.image)
+                    .is_err()
+            {
+                app.notification =
+                    Some("The runqemu launch preview is no longer valid; review it again.".into());
+                return None;
+            }
+            while app.qemu_sessions.len() >= MAX_QEMU_SESSIONS {
+                let Some(index) = app.qemu_sessions.iter().position(|session| {
+                    app.background_jobs
+                        .get(session.background_job_id)
+                        .is_none_or(|job| job.status.is_terminal())
+                }) else {
+                    app.notification = Some("The runqemu session history is full.".into());
+                    return None;
+                };
+                app.qemu_sessions.remove(index);
+            }
+            let id = next_qemu_session_id(app);
+            let background_job_id = qemu_background_job_id(id);
+            let request = preview.request;
+            app.background_jobs.queue(BackgroundJobSpec {
+                id: background_job_id,
+                kind: BackgroundJobKind::Qemu,
+                title: format!("runqemu {}", request.image.image),
+                context: BackgroundJobContext {
+                    workspace: Some(Screen::Images),
+                    target: Some(request.image.image.clone()),
+                    image: Some(request.image.image.clone()),
+                    path: Some(request.image.path.clone()),
+                    ..BackgroundJobContext::default()
+                },
+                cancellation_supported: true,
+                queued_at: SystemTime::now(),
+            });
+            if app.background_jobs.get(background_job_id).is_none() {
+                app.notification = Some("The runqemu session could not be queued.".into());
+                return None;
+            }
+            app.qemu_sessions.push_back(QemuSession {
+                id,
+                background_job_id,
+                request: request.clone(),
+                exit_code: None,
+                error_detail: None,
+            });
+            close_dialog(app);
+            return Some(Effect::StartQemuSession { id, request });
+        }
+        Action::QemuSessionStarting { id, started_at } => {
+            let Some(job_id) = qemu_job_id(app, id) else {
+                note_stale_qemu_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Queued], |job| {
+                    job.status = BackgroundJobStatus::Starting;
+                    job.started_at = Some(started_at);
+                });
+        }
+        Action::QemuSessionRunning { id } => {
+            let Some(job_id) = qemu_job_id(app, id) else {
+                note_stale_qemu_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Starting], |job| {
+                    job.status = BackgroundJobStatus::Running;
+                });
+        }
+        Action::AppendQemuSessionOutput {
+            id,
+            stream,
+            line,
+            truncated,
+            timestamp,
+        } => {
+            let Some(job_id) = qemu_job_id(app, id) else {
+                note_stale_qemu_event(app);
+                return None;
+            };
+            app.background_jobs.append_output(
+                job_id,
+                BackgroundJobOutputEntry {
+                    severity: if stream == QemuOutputStream::Stderr {
+                        Severity::Warning
+                    } else {
+                        Severity::Info
+                    },
+                    message: line,
+                    source: match stream {
+                        QemuOutputStream::Stdout => BackgroundJobOutputSource::Stdout,
+                        QemuOutputStream::Stderr => BackgroundJobOutputSource::Stderr,
+                    },
+                    truncated,
+                    timestamp,
+                },
+            );
+        }
+        Action::CompleteQemuSession {
+            id,
+            exit_code,
+            finished_at,
+        } => {
+            if !matches!(
+                qemu_job_id(app, id).and_then(|job_id| app.background_jobs.get(job_id)),
+                Some(BackgroundJob {
+                    status: BackgroundJobStatus::Running,
+                    ..
+                })
+            ) {
+                note_stale_qemu_event(app);
+                return None;
+            }
+            let Some(job_id) =
+                mutate_qemu_session(app, id, |session| session.exit_code = Some(exit_code))
+            else {
+                note_stale_qemu_event(app);
+                return None;
+            };
+            if exit_code == 0 {
+                app.background_jobs
+                    .update_if(job_id, &[BackgroundJobStatus::Running], |job| {
+                        job.status = BackgroundJobStatus::Succeeded;
+                        job.finished_at = Some(finished_at);
+                        job.result = Some(BackgroundJobResult {
+                            summary: "runqemu exited successfully".into(),
+                            artifacts: Vec::new(),
+                        });
+                    });
+            } else {
+                let detail = format!("exit code {exit_code}");
+                let _ = mutate_qemu_session(app, id, |session| {
+                    session.error_detail = Some(detail.clone())
+                });
+                app.background_jobs
+                    .update_if(job_id, &[BackgroundJobStatus::Running], |job| {
+                        job.status = BackgroundJobStatus::Failed;
+                        job.finished_at = Some(finished_at);
+                        job.error = Some(BackgroundJobError {
+                            summary: "runqemu failed".into(),
+                            detail: Some(detail),
+                        });
+                    });
+            }
+        }
+        Action::FailQemuSession {
+            id,
+            message,
+            exit_code,
+            finished_at,
+        } => {
+            if !matches!(
+                qemu_job_id(app, id).and_then(|job_id| app.background_jobs.get(job_id)),
+                Some(BackgroundJob {
+                    status: BackgroundJobStatus::Queued
+                        | BackgroundJobStatus::Starting
+                        | BackgroundJobStatus::Running
+                        | BackgroundJobStatus::Cancelling,
+                    ..
+                })
+            ) {
+                note_stale_qemu_event(app);
+                return None;
+            }
+            let Some(job_id) = mutate_qemu_session(app, id, |session| {
+                session.exit_code = exit_code;
+                session.error_detail = Some(message.clone());
+            }) else {
+                note_stale_qemu_event(app);
+                return None;
+            };
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Queued,
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                    BackgroundJobStatus::Cancelling,
+                ],
+                |job| {
+                    job.status = BackgroundJobStatus::Failed;
+                    job.finished_at = Some(finished_at);
+                    job.error = Some(BackgroundJobError {
+                        summary: "runqemu failed".into(),
+                        detail: Some(message),
+                    });
+                },
+            );
+        }
+        Action::LoseQemuSession {
+            id,
+            message,
+            finished_at,
+        } => {
+            if !matches!(
+                qemu_job_id(app, id).and_then(|job_id| app.background_jobs.get(job_id)),
+                Some(BackgroundJob {
+                    status: BackgroundJobStatus::Starting
+                        | BackgroundJobStatus::Running
+                        | BackgroundJobStatus::Cancelling,
+                    ..
+                })
+            ) {
+                note_stale_qemu_event(app);
+                return None;
+            }
+            let Some(job_id) = mutate_qemu_session(app, id, |session| {
+                session.error_detail = Some(message.clone())
+            }) else {
+                note_stale_qemu_event(app);
+                return None;
+            };
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                    BackgroundJobStatus::Cancelling,
+                ],
+                |job| {
+                    job.status = BackgroundJobStatus::Lost;
+                    job.finished_at = Some(finished_at);
+                    job.error = Some(BackgroundJobError {
+                        summary: "runqemu process was lost".into(),
+                        detail: Some(message),
+                    });
+                },
+            );
+        }
+        Action::BeginQemuSessionCancellation { id } => {
+            let Some(session) = app.qemu_session(id) else {
+                app.notification = Some("The runqemu session no longer exists.".into());
+                return None;
+            };
+            let cancellable = app
+                .background_jobs
+                .get(session.background_job_id)
+                .is_some_and(|job| {
+                    job.cancellation_supported
+                        && matches!(
+                            job.status,
+                            BackgroundJobStatus::Queued
+                                | BackgroundJobStatus::Starting
+                                | BackgroundJobStatus::Running
+                        )
+                });
+            if cancellable {
+                open_dialog(app, Dialog::QemuCancellationConfirmation(id));
+            } else {
+                app.notification = Some("The runqemu session cannot be cancelled.".into());
+            }
+        }
+        Action::ConfirmQemuSessionCancellation => {
+            let Some(Dialog::QemuCancellationConfirmation(id)) = app.active_dialog().cloned()
+            else {
+                app.notification = Some("No runqemu cancellation is awaiting confirmation.".into());
+                return None;
+            };
+            let Some(job_id) = qemu_job_id(app, id) else {
+                note_stale_qemu_event(app);
+                return None;
+            };
+            let before = app.background_jobs.get(job_id).map(|job| job.status);
+            app.background_jobs.request_cancellation(job_id);
+            close_dialog(app);
+            if before
+                == Some(
+                    app.background_jobs
+                        .get(job_id)
+                        .map_or(BackgroundJobStatus::Lost, |job| job.status),
+                )
+            {
+                app.notification = Some("The runqemu cancellation request was rejected.".into());
+                return None;
+            }
+            return Some(Effect::CancelQemuSession(id));
+        }
+        Action::RejectQemuSessionCancellation { id, message } => {
+            let Some(job_id) = qemu_job_id(app, id) else {
+                note_stale_qemu_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Cancelling], |job| {
+                    job.status = BackgroundJobStatus::Running;
+                });
+            app.notification = Some(format!("runqemu cancellation failed: {message}"));
+        }
+        Action::CancelQemuSession {
+            id,
+            exit_code,
+            finished_at,
+        } => {
+            if !matches!(
+                qemu_job_id(app, id).and_then(|job_id| app.background_jobs.get(job_id)),
+                Some(BackgroundJob {
+                    status: BackgroundJobStatus::Cancelling,
+                    ..
+                })
+            ) {
+                note_stale_qemu_event(app);
+                return None;
+            }
+            let Some(job_id) =
+                mutate_qemu_session(app, id, |session| session.exit_code = exit_code)
+            else {
+                note_stale_qemu_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Cancelling], |job| {
+                    job.status = BackgroundJobStatus::Cancelled;
+                    job.finished_at = Some(finished_at);
+                });
         }
         Action::BeginBuildTargetEdit => {
             replace_dialog(
@@ -7377,6 +7858,12 @@ pub enum Effect {
     CancelPackageOperation,
     GetImageArtifacts(ImageArtifactRequest),
     CancelImageArtifactOperation,
+    InspectQemuCapability,
+    StartQemuSession {
+        id: QemuSessionId,
+        request: QemuLaunchRequest,
+    },
+    CancelQemuSession(QemuSessionId),
     GetRecipeMetadata(String),
     GetVariable(VariableIdentity),
     WriteConfigAssignment(ConfigEditRequest),
@@ -12285,5 +12772,215 @@ mod tests {
             Some(Dialog::RecipeTaskConfirmation(BuildRequest { targets, .. }))
                 if targets == &vec!["core-image-minimal".to_owned()]
         ));
+    }
+
+    fn qemu_model_artifact() -> ImageArtifact {
+        ImageArtifact {
+            identity: ImageArtifactIdentity {
+                machine: "qemux86-64".into(),
+                image: "core-image-minimal".into(),
+                path: "/build/tmp/deploy/images/qemux86-64/core-image-minimal.wic".into(),
+            },
+            kind: ImageArtifactKind::Wic,
+            size_bytes: ImageArtifactField::Available(42),
+            modified_unix_seconds: ImageArtifactField::Available(10),
+            checksums: ImageArtifactField::Unavailable,
+            manifests: ImageArtifactField::Unavailable,
+            licenses: ImageArtifactField::Unavailable,
+            spdx: ImageArtifactField::Unavailable,
+            wic_files: ImageArtifactField::Unavailable,
+        }
+    }
+
+    fn qemu_model_app() -> App {
+        let mut app = App::new(20, 20_000);
+        let artifact = qemu_model_artifact();
+        let request = ImageArtifactRequest {
+            generation: 1,
+            machine: artifact.identity.machine.clone(),
+        };
+        app.image_artifacts = ImageArtifactInventoryState::Available {
+            request,
+            inventory: ImageArtifactInventory {
+                machine: artifact.identity.machine.clone(),
+                deploy_directory: ImageArtifactField::Available(
+                    "/build/tmp/deploy/images/qemux86-64".into(),
+                ),
+                artifacts: vec![artifact.clone()],
+            },
+        };
+        app.image_artifact_selection = Some(artifact.identity.clone());
+        app.qemu_capability = QemuCapability::Available {
+            executable: "/opt/poky/scripts/runqemu".into(),
+            compatible_images: vec![artifact.identity],
+        };
+        app
+    }
+
+    #[test]
+    fn qemu_model_validates_exact_launch_identity_paths_and_options() {
+        let artifact = qemu_model_artifact();
+        let capability = QemuCapability::Available {
+            executable: "/opt/poky/scripts/runqemu".into(),
+            compatible_images: vec![artifact.identity.clone()],
+        };
+        let draft = QemuLaunchDraft::for_artifact(artifact.identity.clone(), artifact.kind);
+        let first = draft.preview(&capability).expect("valid preview");
+        let second = draft.preview(&capability).expect("deterministic preview");
+        assert_eq!(first, second);
+        assert_eq!(first.request.memory_mib, 1024);
+
+        let mut invalid = draft.clone();
+        invalid.machine = "other-machine".into();
+        assert_eq!(
+            invalid.preview(&capability),
+            Err("runqemu machine and image identities must match")
+        );
+        invalid = draft.clone();
+        invalid.rootfs = "relative/rootfs.ext4".into();
+        assert!(invalid.preview(&capability).is_err());
+        invalid = draft.clone();
+        invalid.memory_mib = (MAX_QEMU_MEMORY_MIB + 1).to_string();
+        assert!(invalid.preview(&capability).is_err());
+        invalid = draft.clone();
+        invalid.extra_arguments = "-- -display none".into();
+        assert!(invalid.preview(&capability).is_err());
+        invalid = draft;
+        invalid.artifact_kind = ImageArtifactKind::Manifest;
+        assert!(invalid.preview(&capability).is_err());
+    }
+
+    #[test]
+    fn qemu_model_reducer_previews_confirms_and_bounds_session_output() {
+        let mut app = qemu_model_app();
+        let _ = update(&mut app, Action::BeginSelectedQemuLaunch);
+        assert!(matches!(app.active_dialog(), Some(Dialog::QemuLaunch(_))));
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        let _ = update(&mut app, Action::PreviewQemuLaunch);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::QemuLaunchConfirmation(_))
+        ));
+        let effect = update(&mut app, Action::ConfirmQemuLaunch);
+        let Some(Effect::StartQemuSession { id, request }) = effect else {
+            panic!("expected typed runqemu start effect");
+        };
+        assert_eq!(request.image, qemu_model_artifact().identity);
+        let session = app.qemu_session(id).expect("session");
+        let job_id = session.background_job_id;
+        assert_eq!(
+            app.background_jobs.get(job_id).map(|job| job.status),
+            Some(BackgroundJobStatus::Queued)
+        );
+
+        let _ = update(&mut app, Action::BeginSelectedQemuLaunch);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("A managed runqemu session is already active.")
+        );
+        let _ = update(
+            &mut app,
+            Action::QemuSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::QemuSessionRunning { id });
+        for index in 0..600 {
+            let _ = update(
+                &mut app,
+                Action::AppendQemuSessionOutput {
+                    id,
+                    stream: if index % 2 == 0 {
+                        QemuOutputStream::Stdout
+                    } else {
+                        QemuOutputStream::Stderr
+                    },
+                    line: format!("line {index}"),
+                    truncated: false,
+                    timestamp: SystemTime::UNIX_EPOCH,
+                },
+            );
+        }
+        let job = app.background_jobs.get(job_id).expect("job");
+        assert_eq!(job.status, BackgroundJobStatus::Running);
+        assert_eq!(job.output.len(), MAX_BACKGROUND_JOB_OUTPUT_ENTRIES);
+        assert_eq!(job.dropped_output_entries, 88);
+        assert!(
+            job.output
+                .iter()
+                .any(|entry| entry.source == BackgroundJobOutputSource::Stderr)
+        );
+    }
+
+    #[test]
+    fn qemu_model_requires_cancellation_confirmation_and_rejects_stale_events() {
+        let mut app = qemu_model_app();
+        let _ = update(&mut app, Action::BeginSelectedQemuLaunch);
+        let _ = update(&mut app, Action::PreviewQemuLaunch);
+        let Some(Effect::StartQemuSession { id, .. }) = update(&mut app, Action::ConfirmQemuLaunch)
+        else {
+            panic!("expected start");
+        };
+        let _ = update(
+            &mut app,
+            Action::QemuSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::QemuSessionRunning { id });
+        let _ = update(&mut app, Action::BeginQemuSessionCancellation { id });
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::QemuCancellationConfirmation(candidate)) if *candidate == id
+        ));
+        assert_eq!(
+            update(&mut app, Action::ConfirmQemuSessionCancellation),
+            Some(Effect::CancelQemuSession(id))
+        );
+        let job_id = app.qemu_session(id).expect("session").background_job_id;
+        assert_eq!(
+            app.background_jobs.get(job_id).map(|job| job.status),
+            Some(BackgroundJobStatus::Cancelling)
+        );
+        let _ = update(
+            &mut app,
+            Action::RejectQemuSessionCancellation {
+                id,
+                message: "signal failed".into(),
+            },
+        );
+        assert_eq!(
+            app.background_jobs.get(job_id).map(|job| job.status),
+            Some(BackgroundJobStatus::Running)
+        );
+        let _ = update(&mut app, Action::BeginQemuSessionCancellation { id });
+        let _ = update(&mut app, Action::ConfirmQemuSessionCancellation);
+        let _ = update(
+            &mut app,
+            Action::CancelQemuSession {
+                id,
+                exit_code: Some(130),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert_eq!(
+            app.background_jobs.get(job_id).map(|job| job.status),
+            Some(BackgroundJobStatus::Cancelled)
+        );
+        assert_eq!(
+            app.qemu_session(id).and_then(|session| session.exit_code),
+            Some(130)
+        );
+
+        let ignored = app.background_jobs.ignored_transitions;
+        let _ = update(
+            &mut app,
+            Action::QemuSessionRunning {
+                id: QemuSessionId(99_999),
+            },
+        );
+        assert_eq!(app.background_jobs.ignored_transitions, ignored + 1);
     }
 }
