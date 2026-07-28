@@ -908,15 +908,48 @@ verify = ["cargo test -p yoctui-bitbake wic_device_write", "cargo test -p yoctui
 notes = "Canonical bounded lsblk JSON discovery validates every record, fails closed on uncertain root identity, exposes only writable removable whole devices, and reports bounded exclusions. Exact image/device identity and every safety invariant are rediscovered immediately before the shell-free wic write spawn. Fake-device/process tests cover malformed/oversized/duplicate/unsafe/stale records, exact argv, timeout, nonzero failure, cancellation, truncation, and loss without claiming live hardware safety."
 
 [[task]]
+id = "WIC-WRITE-MODEL-001"
+milestone = "M4"
+title = "Add protected Wic device dialog state"
+status = "NOT_STARTED"
+priority = 51
+required = true
+depends_on = ["WIC-WRITE-ADAPTER-001", "WIC-UI-MODEL-001"]
+verify = ["cargo test -p yoctui-model wic_device_write", "cargo test -p yoctui-app wic_device_write"]
+notes = "Add exact-image discovery routing, identity-stable device selection, focus-trapped picker/phrase/preview dialogs, stale revalidation, and stronger write-cancellation acknowledgement."
+
+[[task]]
+id = "WIC-WRITE-RENDER-001"
+milestone = "M4"
+title = "Render protected Wic device workflow"
+status = "NOT_STARTED"
+priority = 51
+required = true
+depends_on = ["WIC-WRITE-MODEL-001"]
+verify = ["cargo test -p yoctui-ui wic_device_write"]
+notes = "Render explicit inventory states, whole-device summaries, limitations, exact phrase and argv previews, write history/output, cancellation warning, shortcuts, themes, and responsive boundaries."
+
+[[task]]
+id = "WIC-WRITE-CLI-001"
+milestone = "M4"
+title = "Integrate protected Wic device execution in the CLI"
+status = "NOT_STARTED"
+priority = 51
+required = true
+depends_on = ["WIC-WRITE-RENDER-001"]
+verify = ["cargo test -p yoctui -- wic_device_write"]
+notes = "Own generation-correlated device discovery, independently rebuild and revalidate write commands, poll the shared Wic runner, route stronger cancellation, and cover fake device/process outcomes."
+
+[[task]]
 id = "WIC-WRITE-UI-CLI-001"
 milestone = "M4"
 title = "Integrate protected Wic device writing"
 status = "NOT_STARTED"
 priority = 51
 required = true
-depends_on = ["WIC-UI-CLI-001", "WIC-WRITE-ADAPTER-001"]
+depends_on = ["WIC-WRITE-MODEL-001", "WIC-WRITE-RENDER-001", "WIC-WRITE-CLI-001"]
 verify = ["cargo test -p yoctui-model wic_device_write", "cargo test -p yoctui-app wic_device_write", "cargo test -p yoctui-ui wic_device_write", "cargo test -p yoctui -- wic_device_write"]
-notes = "Add device picker/summary, exact WRITE phrase and command preview, second cancellation warning, responsive rendering, independent CLI polling, terminal history, and fake-device/process coverage."
+notes = "Parent gate for the typed device picker/phrase/preview model, responsive rendering, and independently polled adapter-revalidated CLI execution."
 
 [[task]]
 id = "SDK-001"

@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Integrate protected Wic device writing.
+Add protected Wic device dialog state.
 
 ## Current task
 
@@ -79,9 +79,9 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `WIC-WRITE-UI-CLI-001` — integrate protected device writing
-2. `WIC-001` — verify the complete Wic parent gate
-3. `SDK-001` — implement the SDK build and artifact workflow
+1. `WIC-WRITE-MODEL-001` — add protected device dialog state
+2. `WIC-WRITE-RENDER-001` — render the protected device workflow
+3. `WIC-WRITE-CLI-001` — integrate protected device execution
 
 ## Rules
 
