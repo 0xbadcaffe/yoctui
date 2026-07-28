@@ -453,6 +453,34 @@ UI render
 
 No backend callback may mutate UI structures directly.
 
+## Managed SDK boundary
+
+`yoctui-model::sdk` owns SDK kind, exact machine/distro/image/artifact
+identities, generation-correlated inventory state, selection/search, typed
+populate/test requests, publication/native-tool drafts and exact previews, and
+stable SDK operation context. It may reuse `BuildRequest` and the shared
+background-job lifecycle, but it never reads deploy directories, locates host
+tools, sources an environment script, parses process output, or launches a
+child.
+
+`yoctui-bitbake` owns canonical bounded scanning beneath the authoritative
+BitBake-reported SDK deploy root and classifies regular non-symlink installers,
+checksums, manifests, and other records. A separate SDK tool adapter resolves
+`oe-publish-sdk`, `oe-find-native-sysroot`, and `oe-run-native`, validates exact
+artifact/destination/extracted-root identities, reconstructs shell-free native
+argument vectors independently from model previews, builds a child-only
+environment from validated typed data, and emits bounded stream-tagged runner
+events. It never mutates the Yoctui process environment or invents metadata
+from display names.
+
+`yoctui-app` maps SDK keys and adapter events mechanically. `yoctui-ui` renders
+only typed SDK state. The CLI routes populate/test tasks through existing
+managed BitBake execution, owns at most one replaceable artifact scan and one
+SDK tool runner, polls both without blocking terminal input, and refreshes the
+exact correlated inventory after successful generation/publication. The
+Testing workspace may consume SDK test results later, but it does not duplicate
+SDK launch state.
+
 ## Managed runqemu model boundary
 
 `yoctui-model::qemu` owns capability states, exact artifact-bound launch
