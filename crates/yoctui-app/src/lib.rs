@@ -2,6 +2,7 @@
 use std::time::SystemTime;
 use yoctui_bitbake::{
     BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QemuRunnerEvent, QemuRunnerOutputStream,
+    WicRunnerEvent, WicRunnerOutputStream,
 };
 use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
@@ -112,6 +113,49 @@ pub fn wic_actions_for_session_event(
             finished_at: timestamp,
         }],
     }
+}
+
+pub fn wic_actions_for_runner_event(
+    id: WicSessionId,
+    event: WicRunnerEvent,
+    timestamp: SystemTime,
+) -> Vec<Action> {
+    let event = match event {
+        WicRunnerEvent::Starting => WicSessionEvent::Starting,
+        WicRunnerEvent::Started => WicSessionEvent::Started,
+        WicRunnerEvent::Output {
+            stream,
+            line,
+            truncated,
+        } => WicSessionEvent::Output {
+            stream: match stream {
+                WicRunnerOutputStream::Stdout => WicOutputStream::Stdout,
+                WicRunnerOutputStream::Stderr => WicOutputStream::Stderr,
+            },
+            line,
+            truncated,
+        },
+        WicRunnerEvent::Completed {
+            exit_code,
+            outputs,
+            limitations,
+        } => WicSessionEvent::Completed {
+            exit_code,
+            outputs,
+            limitations,
+        },
+        WicRunnerEvent::Failed { message, exit_code } => {
+            WicSessionEvent::Failed { message, exit_code }
+        }
+        WicRunnerEvent::Cancelled { forced, exit_code } => {
+            WicSessionEvent::Cancelled { forced, exit_code }
+        }
+        WicRunnerEvent::CancellationRejected { message } => {
+            WicSessionEvent::CancellationRejected { message }
+        }
+        WicRunnerEvent::Lost { message } => WicSessionEvent::Lost { message },
+    };
+    wic_actions_for_session_event(id, event, timestamp)
 }
 
 pub fn qemu_actions_for_runner_event(
@@ -3380,6 +3424,27 @@ mod tests {
         assert_eq!(
             wic_capability_action(capability.clone()),
             Action::WicCapabilityLoaded(capability)
+        );
+    }
+    #[test]
+    fn wic_adapter_runner_normalizes_typed_terminal_events() {
+        let id = WicSessionId(8);
+        let timestamp = SystemTime::UNIX_EPOCH;
+        assert_eq!(
+            wic_actions_for_runner_event(
+                id,
+                WicRunnerEvent::Failed {
+                    message: "failed".into(),
+                    exit_code: Some(9),
+                },
+                timestamp,
+            ),
+            vec![Action::FailWicSession {
+                id,
+                message: "failed".into(),
+                exit_code: Some(9),
+                finished_at: timestamp,
+            }]
         );
     }
     #[test]
