@@ -569,7 +569,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         wic_create_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::WicCreateConfirmation(preview)) = app.active_dialog() {
         wic_create_confirmation(frame, app, preview, area);
-    } else if let Some(Dialog::WicCancellationConfirmation(id)) = app.active_dialog() {
+    } else if let Some(Dialog::WicCancellationConfirmation { id, .. }) = app.active_dialog() {
         wic_cancellation_confirmation(frame, app, *id, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);
@@ -2927,7 +2927,7 @@ fn wic_inspector_text(app: &App) -> String {
     let capability = match &app.wic_capability {
         WicCapability::NotInspected => "not inspected".into(),
         WicCapability::MissingTool => "missing wic executable".into(),
-        WicCapability::MissingKickstarts => "no kickstarts available".into(),
+        WicCapability::MissingKickstarts { .. } => "no kickstarts available".into(),
         WicCapability::Failed { message } => format!("inspection failed: {message}"),
         WicCapability::Available {
             executable,
@@ -5889,8 +5889,10 @@ mod tests {
                 timestamp: SystemTime::UNIX_EPOCH,
             },
         );
-        app.dialogs
-            .push_front(Dialog::WicCancellationConfirmation(id));
+        app.dialogs.push_front(Dialog::WicCancellationConfirmation {
+            id,
+            incomplete_device_warning: false,
+        });
         assert!(rendered_text(&app, 80, 24).contains("Confirm Wic cancellation"));
         app.dialogs.clear();
         let output = yoctui_model::WicOutput {
@@ -5921,7 +5923,9 @@ mod tests {
 
         for capability in [
             WicCapability::MissingTool,
-            WicCapability::MissingKickstarts,
+            WicCapability::MissingKickstarts {
+                executable: "/usr/bin/wic".into(),
+            },
             WicCapability::Failed {
                 message: "inspection denied".into(),
             },
@@ -5938,7 +5942,12 @@ mod tests {
         for (capability, expected) in [
             (WicCapability::NotInspected, "not inspected"),
             (WicCapability::MissingTool, "missing wic executable"),
-            (WicCapability::MissingKickstarts, "no kickstarts available"),
+            (
+                WicCapability::MissingKickstarts {
+                    executable: "/usr/bin/wic".into(),
+                },
+                "no kickstarts available",
+            ),
             (
                 WicCapability::Failed {
                     message: "permission denied".into(),

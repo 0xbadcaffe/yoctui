@@ -8,6 +8,7 @@ pub const MAX_WIC_DEVICE_MOUNTS: usize = 64;
 pub const MAX_WIC_LIMITATIONS: usize = 64;
 pub const MAX_WIC_SOURCE_BYTES: usize = 64 * 1024;
 pub const MAX_WIC_OUTPUT_DIRECTORY_INPUT_BYTES: usize = 4_096;
+pub const MAX_WIC_WRITE_PHRASE_INPUT_BYTES: usize = 4_102;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WicKickstartIdentity {
@@ -88,7 +89,9 @@ pub enum WicCapability {
         image_targets: Vec<String>,
     },
     MissingTool,
-    MissingKickstarts,
+    MissingKickstarts {
+        executable: PathBuf,
+    },
     Failed {
         message: String,
     },
@@ -116,7 +119,7 @@ pub fn normalize_wic_capability(capability: WicCapability) -> WicCapability {
     kickstarts.dedup_by(|left, right| left.identity == right.identity);
     kickstarts.truncate(MAX_WIC_KICKSTARTS);
     if kickstarts.is_empty() {
-        return WicCapability::MissingKickstarts;
+        return WicCapability::MissingKickstarts { executable };
     }
     let mut image_targets: Vec<_> = image_targets
         .into_iter()
@@ -147,7 +150,7 @@ impl WicCapability {
             return Err(match self {
                 Self::NotInspected => "Wic capability has not been inspected",
                 Self::MissingTool => "wic is not available",
-                Self::MissingKickstarts => "no Wic kickstarts are available",
+                Self::MissingKickstarts { .. } => "no Wic kickstarts are available",
                 Self::Failed { .. } => "Wic capability inspection failed",
                 Self::Available { .. } => unreachable!(),
             });
@@ -598,6 +601,9 @@ impl WicWritePreview {
             WicCapability::Available { executable, .. } if absolute_normal_path(executable) => {
                 executable.clone()
             }
+            WicCapability::MissingKickstarts { executable } if absolute_normal_path(executable) => {
+                executable.clone()
+            }
             _ => return Err("Wic capability is unavailable for device writing"),
         };
         let expected = format!("WRITE {}", device.identity.path.display());
@@ -616,6 +622,36 @@ impl WicWritePreview {
             request.device.path.clone(),
         ];
         Ok(Self { request, argv })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WicDevicePickerDialog {
+    pub request: WicDeviceInventoryRequest,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WicWritePhraseDialog {
+    pub request: WicDeviceInventoryRequest,
+    pub device: WicDeviceIdentity,
+    pub input: String,
+    pub validation_error: Option<String>,
+}
+
+impl WicWritePhraseDialog {
+    pub fn append(&mut self, character: char) {
+        if !character.is_control()
+            && self.input.len().saturating_add(character.len_utf8())
+                <= MAX_WIC_WRITE_PHRASE_INPUT_BYTES
+        {
+            self.input.push(character);
+            self.validation_error = None;
+        }
+    }
+
+    pub fn backspace(&mut self) {
+        self.input.pop();
+        self.validation_error = None;
     }
 }
 
@@ -782,7 +818,7 @@ mod tests {
     }
 
     #[test]
-    fn wic_model_device_phrase_and_inventory_bounds_are_enforced() {
+    fn wic_device_write_phrase_and_inventory_bounds_are_enforced() {
         let image = WicOutputIdentity {
             path: "/build/out/image.wic".into(),
             size_bytes: 1024,
@@ -828,6 +864,23 @@ mod tests {
         let mut malformed = mounted.identity;
         malformed.major_minor = "8:".into();
         assert!(malformed.validate().is_err());
+        let mut phrase = WicWritePhraseDialog {
+            request: WicDeviceInventoryRequest {
+                generation: 1,
+                image: preview.request.image.clone(),
+            },
+            device: preview.request.device.clone(),
+            input: String::new(),
+            validation_error: Some("old".into()),
+        };
+        phrase.append('\n');
+        for _ in 0..(MAX_WIC_WRITE_PHRASE_INPUT_BYTES + 10) {
+            phrase.append('x');
+        }
+        assert_eq!(phrase.input.len(), MAX_WIC_WRITE_PHRASE_INPUT_BYTES);
+        assert!(phrase.validation_error.is_none());
+        phrase.backspace();
+        assert_eq!(phrase.input.len(), MAX_WIC_WRITE_PHRASE_INPUT_BYTES - 1);
 
         let outputs = (0..(MAX_WIC_OUTPUTS + 10))
             .map(|index| WicOutput {

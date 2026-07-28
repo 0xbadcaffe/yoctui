@@ -911,12 +911,12 @@ notes = "Canonical bounded lsblk JSON discovery validates every record, fails cl
 id = "WIC-WRITE-MODEL-001"
 milestone = "M4"
 title = "Add protected Wic device dialog state"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["WIC-WRITE-ADAPTER-001", "WIC-UI-MODEL-001"]
 verify = ["cargo test -p yoctui-model wic_device_write", "cargo test -p yoctui-app wic_device_write"]
-notes = "Add exact-image discovery routing, identity-stable device selection, focus-trapped picker/phrase/preview dialogs, stale revalidation, and stronger write-cancellation acknowledgement."
+notes = "Exact generated/deployed uncompressed image resolution now opens correlated discovery; full device identity survives rediscovery; typed picker, bounded phrase, separate exact preview, final stale-state reconstruction, and write-specific cancellation acknowledgement are covered by reducer and app-input tests. Compressed deployed Wic files are no longer classified as write-capable."
 
 [[task]]
 id = "WIC-WRITE-RENDER-001"

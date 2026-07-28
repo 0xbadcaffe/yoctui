@@ -776,7 +776,13 @@ pub enum Dialog {
     QemuCancellationConfirmation(QemuSessionId),
     WicCreate(WicCreateDialog),
     WicCreateConfirmation(WicCreatePreview),
-    WicCancellationConfirmation(WicSessionId),
+    WicDevicePicker(WicDevicePickerDialog),
+    WicWritePhrase(WicWritePhraseDialog),
+    WicWriteConfirmation(WicWritePreview),
+    WicCancellationConfirmation {
+        id: WicSessionId,
+        incomplete_device_warning: bool,
+    },
     RecipeTaskConfirmation(BuildRequest),
     RecipeTaskPicker(RecipeTaskPicker),
     SignatureTaskPicker(SignatureTaskPicker),
@@ -2109,6 +2115,7 @@ pub struct App {
     pub wic_output_selection: Option<WicOutputIdentity>,
     pub wic_output_generation: u64,
     pub wic_devices: WicDeviceInventoryState,
+    pub wic_device_selection: Option<WicDeviceIdentity>,
     pub wic_device_generation: u64,
     pub wic_sessions: VecDeque<WicSession>,
     pub wic_session_generation: u64,
@@ -2195,6 +2202,7 @@ impl App {
             wic_output_selection: None,
             wic_output_generation: 0,
             wic_devices: WicDeviceInventoryState::default(),
+            wic_device_selection: None,
             wic_device_generation: 0,
             wic_sessions: VecDeque::new(),
             wic_session_generation: 0,
@@ -2427,6 +2435,76 @@ impl App {
             .iter()
             .find(|output| &output.identity == selected)
     }
+    pub fn wic_device_rows(&self) -> &[WicDevice] {
+        match &self.wic_devices {
+            WicDeviceInventoryState::Available { devices, .. }
+            | WicDeviceInventoryState::Partial { devices, .. } => devices,
+            _ => &[],
+        }
+    }
+    pub fn selected_wic_device(&self) -> Option<&WicDevice> {
+        let selected = self.wic_device_selection.as_ref()?;
+        self.wic_device_rows()
+            .iter()
+            .find(|device| &device.identity == selected)
+    }
+    pub fn selected_wic_write_image(&self) -> Result<WicOutputIdentity, String> {
+        if self.wic_output_selection.is_some() {
+            let output = self
+                .selected_wic_output()
+                .ok_or_else(|| "The selected generated Wic output is stale.".to_owned())?;
+            if !matches!(output.kind, WicOutputKind::Wic | WicOutputKind::Direct)
+                || !is_uncompressed_wic_path(&output.identity.path)
+            {
+                return Err("Select an uncompressed generated .wic or .direct image first.".into());
+            }
+            return Ok(output.identity.clone());
+        }
+        let artifact = self
+            .selected_image_artifact()
+            .ok_or_else(|| "Select a deployed Wic or generated Wic output first.".to_owned())?;
+        if artifact.kind != ImageArtifactKind::Wic
+            || !is_uncompressed_wic_path(&artifact.identity.path)
+        {
+            return Err("Select an uncompressed deployed .wic or .direct image first.".into());
+        }
+        let size_bytes = artifact
+            .size_bytes
+            .available()
+            .copied()
+            .ok_or_else(|| "The selected Wic image size is unavailable.".to_owned())?;
+        let modified_unix_seconds = artifact
+            .modified_unix_seconds
+            .available()
+            .copied()
+            .ok_or_else(|| "The selected Wic image timestamp is unavailable.".to_owned())?;
+        Ok(WicOutputIdentity {
+            path: artifact.identity.path.clone(),
+            size_bytes,
+            modified_unix_seconds,
+        })
+    }
+    pub fn wic_device_write_unavailable_reason(&self) -> Option<String> {
+        if self.active_wic_session().is_some() {
+            return Some("A managed Wic operation is already active.".into());
+        }
+        match &self.wic_capability {
+            WicCapability::Available { executable, .. }
+            | WicCapability::MissingKickstarts { executable }
+                if executable.is_absolute() => {}
+            WicCapability::NotInspected => {
+                return Some("Wic capability has not been inspected.".into());
+            }
+            WicCapability::MissingTool => return Some("wic is not available.".into()),
+            WicCapability::Failed { message } => {
+                return Some(format!("Wic capability inspection failed: {message}"));
+            }
+            WicCapability::Available { .. } | WicCapability::MissingKickstarts { .. } => {
+                return Some("The inspected Wic executable identity is invalid.".into());
+            }
+        }
+        self.selected_wic_write_image().err()
+    }
     pub fn wic_create_unavailable_reason(&self) -> Option<String> {
         if self.active_wic_session().is_some() {
             return Some("A managed Wic operation is already active.".into());
@@ -2443,7 +2521,9 @@ impl App {
             return Some(match &self.wic_capability {
                 WicCapability::NotInspected => "Wic capability has not been inspected.".into(),
                 WicCapability::MissingTool => "wic is not available.".into(),
-                WicCapability::MissingKickstarts => "No Wic kickstarts are available.".into(),
+                WicCapability::MissingKickstarts { .. } => {
+                    "No Wic kickstarts are available.".into()
+                }
                 WicCapability::Failed { message } => {
                     format!("Wic capability inspection failed: {message}")
                 }
@@ -2803,12 +2883,19 @@ pub enum Action {
         request: WicDeviceInventoryRequest,
         message: String,
     },
-    StartConfirmedWicCreate(WicCreatePreview),
-    StartConfirmedWicDeviceWrite {
-        image: WicOutputIdentity,
-        device: WicDeviceIdentity,
-        phrase: String,
+    BeginSelectedWicDeviceWrite,
+    SelectWicDevice {
+        delta: isize,
     },
+    ConfirmWicDeviceSelection,
+    CancelWicDevicePicker,
+    AppendWicWritePhrase(char),
+    BackspaceWicWritePhrase,
+    PreviewWicDeviceWrite,
+    CancelWicWritePhrase,
+    ConfirmWicDeviceWrite,
+    CancelWicWritePreview,
+    StartConfirmedWicCreate(WicCreatePreview),
     WicSessionStarting {
         id: WicSessionId,
         started_at: SystemTime,
@@ -4113,6 +4200,12 @@ fn note_stale_wic_event(app: &mut App) {
     app.background_jobs.ignored_transitions += 1;
 }
 
+fn is_uncompressed_wic_path(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.ends_with(".wic") || name.ends_with(".direct"))
+}
+
 fn reconcile_wic_output_selection(app: &mut App) {
     let rows = app.wic_output_rows();
     let selected_is_present = app
@@ -4122,6 +4215,47 @@ fn reconcile_wic_output_selection(app: &mut App) {
     if !selected_is_present {
         app.wic_output_selection = rows.first().map(|row| row.identity.clone());
     }
+}
+
+fn reconcile_wic_device_selection(app: &mut App) {
+    let rows = app.wic_device_rows();
+    let selected_is_present = app
+        .wic_device_selection
+        .as_ref()
+        .is_some_and(|selected| rows.iter().any(|row| &row.identity == selected));
+    if !selected_is_present {
+        app.wic_device_selection = rows.first().map(|row| row.identity.clone());
+    }
+}
+
+fn current_wic_write_preview(
+    app: &App,
+    request: &WicDeviceInventoryRequest,
+    device_identity: &WicDeviceIdentity,
+    phrase: &str,
+) -> Result<WicWritePreview, String> {
+    let (active_request, devices) = match &app.wic_devices {
+        WicDeviceInventoryState::Available {
+            request, devices, ..
+        }
+        | WicDeviceInventoryState::Partial {
+            request, devices, ..
+        } => (request, devices),
+        _ => return Err("The Wic device inventory is unavailable.".into()),
+    };
+    if active_request != request {
+        return Err("The Wic device inventory request is stale.".into());
+    }
+    let current_image = app.selected_wic_write_image()?;
+    if current_image != request.image {
+        return Err("The selected Wic image identity changed.".into());
+    }
+    let device = devices
+        .iter()
+        .find(|device| &device.identity == device_identity)
+        .ok_or_else(|| "The selected Wic device identity is stale.".to_owned())?;
+    WicWritePreview::new(&app.wic_capability, request.image.clone(), device, phrase)
+        .map_err(str::to_owned)
 }
 
 fn queue_wic_session(app: &mut App, operation: WicOperation) -> Option<Effect> {
@@ -5429,11 +5563,22 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             return Some(Effect::OpenInEditor(output.identity.path.clone()));
         }
         Action::BeginActiveWicSessionCancellation => {
-            let Some(id) = app.active_wic_session().map(|session| session.id) else {
+            let Some((id, incomplete_device_warning)) = app.active_wic_session().map(|session| {
+                (
+                    session.id,
+                    matches!(session.operation, WicOperation::Write(_)),
+                )
+            }) else {
                 app.notification = Some("No managed Wic operation is active.".into());
                 return None;
             };
-            open_dialog(app, Dialog::WicCancellationConfirmation(id));
+            open_dialog(
+                app,
+                Dialog::WicCancellationConfirmation {
+                    id,
+                    incomplete_device_warning,
+                },
+            );
         }
         Action::BeginActiveImageRuntimeCancellation => {
             if app.active_wic_session().is_some() {
@@ -5444,7 +5589,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::CancelWicSessionCancellation => {
             if matches!(
                 app.active_dialog(),
-                Some(Dialog::WicCancellationConfirmation(_))
+                Some(Dialog::WicCancellationConfirmation { .. })
             ) {
                 close_dialog(app);
             }
@@ -5506,6 +5651,54 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
             app.wic_outputs = WicOutputInventoryState::Failed { request, message };
         }
+        Action::BeginSelectedWicDeviceWrite => {
+            if let Some(reason) = app.wic_device_write_unavailable_reason() {
+                app.notification = Some(reason);
+                return None;
+            }
+            let image = app
+                .selected_wic_write_image()
+                .expect("availability checked above");
+            app.wic_device_generation = app.wic_device_generation.wrapping_add(1).max(1);
+            let request = WicDeviceInventoryRequest {
+                generation: app.wic_device_generation,
+                image,
+            };
+            if let Err(message) = request.validate() {
+                app.notification = Some(format!("Wic devices are unavailable: {message}."));
+                return None;
+            }
+            let preserve_selection = matches!(
+                &app.wic_devices,
+                WicDeviceInventoryState::Loading { request: active }
+                    | WicDeviceInventoryState::Available {
+                        request: active,
+                        ..
+                    }
+                    | WicDeviceInventoryState::Partial {
+                        request: active,
+                        ..
+                    }
+                    | WicDeviceInventoryState::Failed {
+                        request: active,
+                        ..
+                    } if active.image == request.image
+            );
+            if !preserve_selection {
+                app.wic_device_selection = None;
+            }
+            app.wic_devices = WicDeviceInventoryState::Loading {
+                request: request.clone(),
+            };
+            open_dialog(
+                app,
+                Dialog::WicDevicePicker(WicDevicePickerDialog {
+                    request: request.clone(),
+                }),
+            );
+            synchronize_focus(app);
+            return Some(Effect::GetWicDevices(request));
+        }
         Action::BeginWicDeviceInventory(request) => {
             if let Err(message) = request.validate() {
                 app.notification = Some(format!("Wic devices are unavailable: {message}."));
@@ -5541,6 +5734,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     limitations,
                 }
             };
+            reconcile_wic_device_selection(app);
         }
         Action::WicDeviceInventoryFailed { request, message } => {
             if !matches!(
@@ -5552,6 +5746,132 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return None;
             }
             app.wic_devices = WicDeviceInventoryState::Failed { request, message };
+            app.wic_device_selection = None;
+        }
+        Action::SelectWicDevice { delta } => {
+            let Some(Dialog::WicDevicePicker(dialog)) = app.active_dialog() else {
+                return None;
+            };
+            let request_matches = matches!(
+                &app.wic_devices,
+                WicDeviceInventoryState::Available { request, .. }
+                    | WicDeviceInventoryState::Partial { request, .. }
+                    if request == &dialog.request
+            );
+            if !request_matches {
+                return None;
+            }
+            let rows = app.wic_device_rows();
+            if rows.is_empty() {
+                app.wic_device_selection = None;
+                return None;
+            }
+            let current = app
+                .wic_device_selection
+                .as_ref()
+                .and_then(|selected| rows.iter().position(|row| &row.identity == selected))
+                .unwrap_or(0);
+            let next = if delta.is_negative() {
+                current.saturating_sub(delta.unsigned_abs())
+            } else {
+                current.saturating_add(delta as usize).min(rows.len() - 1)
+            };
+            app.wic_device_selection = Some(rows[next].identity.clone());
+        }
+        Action::ConfirmWicDeviceSelection => {
+            let Some(Dialog::WicDevicePicker(dialog)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            let Some(device) = app.selected_wic_device() else {
+                app.notification = Some("No eligible Wic device is available to select.".into());
+                return None;
+            };
+            let request_matches = matches!(
+                &app.wic_devices,
+                WicDeviceInventoryState::Available { request, .. }
+                    | WicDeviceInventoryState::Partial { request, .. }
+                    if request == &dialog.request
+            );
+            if !request_matches {
+                app.notification = Some("The Wic device picker is stale.".into());
+                return None;
+            }
+            replace_dialog(
+                app,
+                Dialog::WicWritePhrase(WicWritePhraseDialog {
+                    request: dialog.request,
+                    device: device.identity.clone(),
+                    input: String::new(),
+                    validation_error: None,
+                }),
+            );
+        }
+        Action::CancelWicDevicePicker => {
+            if matches!(app.active_dialog(), Some(Dialog::WicDevicePicker(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::AppendWicWritePhrase(character) => {
+            if let Some(Dialog::WicWritePhrase(dialog)) = app.active_dialog_mut() {
+                dialog.append(character);
+            }
+        }
+        Action::BackspaceWicWritePhrase => {
+            if let Some(Dialog::WicWritePhrase(dialog)) = app.active_dialog_mut() {
+                dialog.backspace();
+            }
+        }
+        Action::PreviewWicDeviceWrite => {
+            let Some(Dialog::WicWritePhrase(dialog)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            match current_wic_write_preview(app, &dialog.request, &dialog.device, &dialog.input) {
+                Ok(preview) => replace_dialog(app, Dialog::WicWriteConfirmation(preview)),
+                Err(message) => {
+                    if let Some(Dialog::WicWritePhrase(active)) = app.active_dialog_mut() {
+                        active.validation_error = Some(message.clone());
+                    }
+                    app.notification = Some(message);
+                }
+            }
+        }
+        Action::CancelWicWritePhrase => {
+            if matches!(app.active_dialog(), Some(Dialog::WicWritePhrase(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::ConfirmWicDeviceWrite => {
+            let Some(Dialog::WicWriteConfirmation(preview)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            let request = WicDeviceInventoryRequest {
+                generation: match &app.wic_devices {
+                    WicDeviceInventoryState::Available { request, .. }
+                    | WicDeviceInventoryState::Partial { request, .. } => request.generation,
+                    _ => {
+                        app.notification = Some("The Wic device inventory is unavailable.".into());
+                        return None;
+                    }
+                },
+                image: preview.request.image.clone(),
+            };
+            let phrase = format!("WRITE {}", preview.request.device.path.display());
+            let current =
+                current_wic_write_preview(app, &request, &preview.request.device, &phrase);
+            if current.as_ref() != Ok(&preview) {
+                app.notification =
+                    Some("The Wic device write preview is stale or no longer valid.".into());
+                return None;
+            }
+            close_dialog(app);
+            let effect = queue_wic_session(app, WicOperation::Write(preview.request));
+            synchronize_focus(app);
+            return effect;
+        }
+        Action::CancelWicWritePreview => {
+            if matches!(app.active_dialog(), Some(Dialog::WicWriteConfirmation(_))) {
+                close_dialog(app);
+            }
         }
         Action::StartConfirmedWicCreate(preview) => {
             let Some(output_directory) = preview.request.output_directory.to_str() else {
@@ -5572,59 +5892,6 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return None;
             }
             return queue_wic_session(app, WicOperation::Create(preview.request));
-        }
-        Action::StartConfirmedWicDeviceWrite {
-            image,
-            device,
-            phrase,
-        } => {
-            let (device_request, devices) = match &app.wic_devices {
-                WicDeviceInventoryState::Available {
-                    request, devices, ..
-                }
-                | WicDeviceInventoryState::Partial {
-                    request, devices, ..
-                } => (request, devices),
-                _ => {
-                    app.notification = Some("The Wic device inventory is unavailable.".into());
-                    return None;
-                }
-            };
-            if device_request.image != image {
-                app.notification =
-                    Some("The Wic device inventory belongs to a different image.".into());
-                return None;
-            }
-            let Some(device) = devices
-                .iter()
-                .find(|candidate| candidate.identity == device)
-            else {
-                app.notification = Some("The selected Wic device identity is stale.".into());
-                return None;
-            };
-            let outputs = match &app.wic_outputs {
-                WicOutputInventoryState::Available { outputs, .. }
-                | WicOutputInventoryState::Partial { outputs, .. } => outputs,
-                _ => {
-                    app.notification = Some("The Wic output inventory is unavailable.".into());
-                    return None;
-                }
-            };
-            let Some(output) = outputs.iter().find(|output| output.identity == image) else {
-                app.notification = Some("The selected Wic image identity is stale.".into());
-                return None;
-            };
-            if !matches!(output.kind, WicOutputKind::Wic | WicOutputKind::Direct) {
-                app.notification =
-                    Some("Only uncompressed .wic or .direct outputs can be written.".into());
-                return None;
-            }
-            match WicWritePreview::new(&app.wic_capability, image, device, &phrase) {
-                Ok(preview) => {
-                    return queue_wic_session(app, WicOperation::Write(preview.request));
-                }
-                Err(message) => app.notification = Some(message.into()),
-            }
         }
         Action::WicSessionStarting { id, started_at } => {
             let Some(job_id) = wic_job_id(app, id) else {
@@ -5862,7 +6129,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
             if matches!(
                 app.active_dialog(),
-                Some(Dialog::WicCancellationConfirmation(candidate)) if *candidate == id
+                Some(Dialog::WicCancellationConfirmation { id: candidate, .. })
+                    if *candidate == id
             ) {
                 close_dialog(app);
             }
@@ -14196,6 +14464,24 @@ mod tests {
         }
     }
 
+    fn wic_model_device(path: &str, major_minor: &str) -> WicDevice {
+        WicDevice {
+            identity: WicDeviceIdentity {
+                path: path.into(),
+                major_minor: major_minor.into(),
+                size_bytes: 2048,
+                model: Some("test".into()),
+                serial: Some(format!("serial-{major_minor}")),
+                transport: Some("usb".into()),
+            },
+            removable: true,
+            writable: true,
+            read_only: false,
+            descendant_mounts: Vec::new(),
+            unavailable_reason: None,
+        }
+    }
+
     #[test]
     fn wic_model_reducer_correlates_creation_inventory_and_lifecycle() {
         let mut app = App::new(20, 20_000);
@@ -14285,7 +14571,7 @@ mod tests {
     }
 
     #[test]
-    fn wic_model_device_write_requires_exact_phrase_and_cancellation_warning() {
+    fn wic_device_write_requires_exact_phrase_and_cancellation_warning() {
         let mut app = App::new(20, 20_000);
         app.wic_capability = wic_model_capability();
         let image = WicOutputIdentity {
@@ -14303,50 +14589,95 @@ mod tests {
                 kind: WicOutputKind::Wic,
             }],
         };
-        let device = WicDevice {
-            identity: WicDeviceIdentity {
-                path: "/dev/sdz".into(),
-                major_minor: "8:240".into(),
-                size_bytes: 2048,
-                model: Some("test".into()),
-                serial: None,
-                transport: Some("usb".into()),
-            },
-            removable: true,
-            writable: true,
-            read_only: false,
-            descendant_mounts: Vec::new(),
-            unavailable_reason: None,
+        app.wic_output_selection = Some(image.clone());
+        let Some(Effect::GetWicDevices(request)) =
+            update(&mut app, Action::BeginSelectedWicDeviceWrite)
+        else {
+            panic!("Wic device discovery effect");
         };
-        app.wic_devices = WicDeviceInventoryState::Available {
-            request: WicDeviceInventoryRequest {
-                generation: 1,
-                image: image.clone(),
-            },
-            devices: vec![device.clone()],
-        };
-        assert!(
-            update(
-                &mut app,
-                Action::StartConfirmedWicDeviceWrite {
-                    image: image.clone(),
-                    device: device.identity.clone(),
-                    phrase: "WRITE /dev/sdy".into(),
-                },
-            )
-            .is_none()
-        );
-        let Some(Effect::StartWicSession { id, operation }) = update(
+        assert_eq!(request.image, image);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::WicDevicePicker(dialog)) if dialog.request == request
+        ));
+        let ignored = app.background_jobs.ignored_transitions;
+        let mut stale = request.clone();
+        stale.generation += 1;
+        let _ = update(
             &mut app,
-            Action::StartConfirmedWicDeviceWrite {
-                image,
-                device: device.identity,
-                phrase: "WRITE /dev/sdz".into(),
+            Action::WicDeviceInventoryLoaded {
+                request: stale,
+                devices: vec![wic_model_device("/dev/sdy", "8:239")],
+                limitations: Vec::new(),
             },
-        ) else {
+        );
+        assert_eq!(app.background_jobs.ignored_transitions, ignored + 1);
+        let first = wic_model_device("/dev/sdy", "8:239");
+        let selected = wic_model_device("/dev/sdz", "8:240");
+        let _ = update(
+            &mut app,
+            Action::WicDeviceInventoryLoaded {
+                request: request.clone(),
+                devices: vec![first, selected.clone()],
+                limitations: vec!["system device excluded".into()],
+            },
+        );
+        let _ = update(&mut app, Action::SelectWicDevice { delta: 1 });
+        assert_eq!(app.wic_device_selection, Some(selected.identity.clone()));
+        let _ = update(&mut app, Action::CancelWicDevicePicker);
+        let Some(Effect::GetWicDevices(refreshed_request)) =
+            update(&mut app, Action::BeginSelectedWicDeviceWrite)
+        else {
+            panic!("refreshed Wic device discovery effect");
+        };
+        assert!(refreshed_request.generation > request.generation);
+        let _ = update(
+            &mut app,
+            Action::WicDeviceInventoryLoaded {
+                request: refreshed_request,
+                devices: vec![selected.clone(), wic_model_device("/dev/sdy", "8:239")],
+                limitations: Vec::new(),
+            },
+        );
+        assert_eq!(app.wic_device_selection, Some(selected.identity.clone()));
+        let _ = update(&mut app, Action::ConfirmWicDeviceSelection);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::WicWritePhrase(dialog)) if dialog.device == selected.identity
+        ));
+        for character in "WRITE /dev/sdy".chars() {
+            let _ = update(&mut app, Action::AppendWicWritePhrase(character));
+        }
+        assert!(update(&mut app, Action::PreviewWicDeviceWrite).is_none());
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::WicWritePhrase(WicWritePhraseDialog {
+                validation_error: Some(_),
+                ..
+            }))
+        ));
+        if let Some(Dialog::WicWritePhrase(dialog)) = app.active_dialog_mut() {
+            dialog.input = "WRITE /dev/sdz".into();
+        }
+        let _ = update(&mut app, Action::PreviewWicDeviceWrite);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::WicWriteConfirmation(_))
+        ));
+        app.wic_capability = WicCapability::MissingTool;
+        assert!(update(&mut app, Action::ConfirmWicDeviceWrite).is_none());
+        assert!(app.active_wic_session().is_none());
+        app.wic_capability = WicCapability::MissingKickstarts {
+            executable: "/opt/poky/scripts/wic".into(),
+        };
+        let Some(Effect::StartWicSession { id, operation }) =
+            update(&mut app, Action::ConfirmWicDeviceWrite)
+        else {
             panic!("Wic write start effect");
         };
         assert!(matches!(operation, WicOperation::Write(_)));
+        assert!(app.active_dialog().is_none());
         let _ = update(
             &mut app,
             Action::WicSessionStarting {
@@ -14355,6 +14686,14 @@ mod tests {
             },
         );
         let _ = update(&mut app, Action::WicSessionRunning { id });
+        let _ = update(&mut app, Action::BeginActiveWicSessionCancellation);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::WicCancellationConfirmation {
+                id: candidate,
+                incomplete_device_warning: true,
+            }) if *candidate == id
+        ));
         assert!(
             update(
                 &mut app,
@@ -14400,6 +14739,86 @@ mod tests {
                 .and_then(|error| error.detail.as_deref())
                 .is_some_and(|detail| detail.contains("incomplete"))
         );
+    }
+
+    #[test]
+    fn wic_device_write_discovers_only_exact_images_and_keeps_empty_failure_typed() {
+        let mut app = qemu_model_app();
+        app.wic_capability = wic_model_capability();
+        let Some(Effect::GetWicDevices(request)) =
+            update(&mut app, Action::BeginSelectedWicDeviceWrite)
+        else {
+            panic!("deployed Wic discovery");
+        };
+        assert!(request.image.path.ends_with("core-image-minimal.wic"));
+        let _ = update(
+            &mut app,
+            Action::WicDeviceInventoryLoaded {
+                request: request.clone(),
+                devices: Vec::new(),
+                limitations: Vec::new(),
+            },
+        );
+        assert!(matches!(
+            app.wic_devices,
+            WicDeviceInventoryState::Available {
+                ref devices,
+                ..
+            } if devices.is_empty()
+        ));
+        assert!(app.wic_device_selection.is_none());
+        assert!(update(&mut app, Action::ConfirmWicDeviceSelection).is_none());
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::WicDevicePicker(_))
+        ));
+        let _ = update(&mut app, Action::CancelWicDevicePicker);
+        let Some(Effect::GetWicDevices(second_request)) =
+            update(&mut app, Action::BeginSelectedWicDeviceWrite)
+        else {
+            panic!("second discovery");
+        };
+        assert!(second_request.generation > request.generation);
+        let _ = update(
+            &mut app,
+            Action::WicDeviceInventoryFailed {
+                request: second_request.clone(),
+                message: "root identity ambiguous".into(),
+            },
+        );
+        assert!(matches!(
+            &app.wic_devices,
+            WicDeviceInventoryState::Failed { request, message }
+                if request == &second_request && message == "root identity ambiguous"
+        ));
+
+        let mut compressed = qemu_model_app();
+        compressed.wic_capability = wic_model_capability();
+        if let ImageArtifactInventoryState::Available { inventory, .. } =
+            &mut compressed.image_artifacts
+        {
+            inventory.artifacts[0].identity.path =
+                "/build/tmp/deploy/images/qemux86-64/core-image-minimal.wic.gz".into();
+            compressed.image_artifact_selection = Some(inventory.artifacts[0].identity.clone());
+        }
+        assert!(update(&mut compressed, Action::BeginSelectedWicDeviceWrite).is_none());
+
+        let mut direct = qemu_model_app();
+        direct.wic_capability = wic_model_capability();
+        if let ImageArtifactInventoryState::Available { inventory, .. } =
+            &mut direct.image_artifacts
+        {
+            inventory.artifacts[0].identity.path =
+                "/build/tmp/deploy/images/qemux86-64/core-image-minimal.direct".into();
+            direct.image_artifact_selection = Some(inventory.artifacts[0].identity.clone());
+        }
+        assert!(matches!(
+            update(&mut direct, Action::BeginSelectedWicDeviceWrite),
+            Some(Effect::GetWicDevices(WicDeviceInventoryRequest {
+                image: WicOutputIdentity { ref path, .. },
+                ..
+            })) if path.ends_with("core-image-minimal.direct")
+        ));
     }
 
     #[test]
@@ -14496,7 +14915,10 @@ mod tests {
         let _ = update(&mut app, Action::BeginActiveImageRuntimeCancellation);
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::WicCancellationConfirmation(candidate)) if *candidate == id
+            Some(Dialog::WicCancellationConfirmation {
+                id: candidate,
+                incomplete_device_warning: false,
+            }) if *candidate == id
         ));
         let _ = update(&mut app, Action::CancelWicSessionCancellation);
         assert!(app.active_dialog().is_none());

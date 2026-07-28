@@ -552,6 +552,21 @@ runner ownership only after a terminal event. Exact typed-phrase and command
 previews are model gates; the adapter's final revalidation is the authoritative
 write gate. Fake device/process coverage is not live removable-media evidence.
 
+The model resolves a write source from the exact selected generated output
+before the selected deployed artifact and accepts only typed Wic/direct records
+whose native file name is exactly uncompressed `.wic` or `.direct`. Deployed
+artifact acquisition classifies those exact suffixes as Wic and no longer
+classifies compressed `.wic.*` files as write-capable. Size and modification
+identity must be authoritatively available before discovery.
+
+A non-zero device generation and full image identity correlate each inventory.
+The model retains selection by the complete device identity, not display path,
+and owns the picker, bounded exact-phrase entry, separate command preview, and
+write-specific incomplete-device cancellation warning as typed dialog variants.
+Preview and final confirmation independently reconstruct from current
+capability, image, inventory request, and selected device state. Selection,
+phrase entry, or a stale dialog alone can never enqueue a write session.
+
 The workspace bridge includes expanded `WKS_FILE`, `WKS_FILES`,
 `WKS_SEARCH_PATH`, and `WKS_FILES_DIR` values when BitBake reports them. The CLI
 accepts only absolute configured kickstart files and absolute search roots from
