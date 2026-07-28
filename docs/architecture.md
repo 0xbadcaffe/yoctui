@@ -185,6 +185,20 @@ boundary only as typed data. The model owns search and identity-stable
 selection; it never scans the filesystem, and widgets must not classify file
 names or parse metadata.
 
+The image artifact adapter receives the exact `DEPLOY_DIR_IMAGE` value acquired
+by Tinfoil (or the environment-only diagnostic fallback) and the typed machine
+request. It requires an absolute, non-symlink directory whose canonical leaf
+matches that machine. A blocking filesystem worker performs a deterministic
+depth-one scan under entry, checksum-byte, checksum-line, and elapsed-time
+bounds while consulting a cancellation token between records. It never follows
+deploy symlinks or accepts a canonical file outside the configured directory.
+Only the adapter classifies root filesystem, kernel, bootloader, Wic,
+manifest, license, SPDX/SBOM, checksum, and other files and parses bounded
+checksum records. Malformed, oversized, nested, symlinked, missing, or
+unassociated data becomes a typed error or explicit limitation. The response
+converts directly to `BackendEvent::ImageArtifacts`; raw directory entries and
+checksum text never cross into `yoctui-app`, reducers, or widgets.
+
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore
 values, normalized varhistory operations (`op`, file, line, and detail), and

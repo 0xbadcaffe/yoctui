@@ -1,8 +1,13 @@
 //! BitBake adapters. They execute BitBake; they never evaluate metadata themselves.
+mod image;
 mod package;
 mod signature;
 
 use async_trait::async_trait;
+pub use image::{
+    ImageArtifactAdapter, ImageArtifactAdapterError, ImageArtifactCancellation,
+    ImageArtifactResponse,
+};
 pub use package::{
     PackageDataAdapter, PackageDataAdapterError, PackageDataCancellation, PackageDataCommandSpec,
     PackageDetailResponse, PackageInventoryResponse,
@@ -956,6 +961,16 @@ impl From<PackageDetailResponse> for BackendEvent {
         Self::PackageDetail {
             request: response.request,
             detail: response.detail,
+            limitations: response.limitations,
+        }
+    }
+}
+
+impl From<ImageArtifactResponse> for BackendEvent {
+    fn from(response: ImageArtifactResponse) -> Self {
+        Self::ImageArtifacts {
+            request: response.request,
+            inventory: response.inventory,
             limitations: response.limitations,
         }
     }
