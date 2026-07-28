@@ -769,7 +769,7 @@ pub enum Dialog {
         task: Option<String>,
     },
     ImagePicker(ImagePicker),
-    QemuLaunch(QemuLaunchDraft),
+    QemuLaunch(QemuLaunchDialog),
     QemuLaunchConfirmation(QemuLaunchPreview),
     QemuCancellationConfirmation(QemuSessionId),
     RecipeTaskConfirmation(BuildRequest),
@@ -2377,6 +2377,42 @@ impl App {
                 .is_some_and(|job| !job.status.is_terminal())
         })
     }
+    pub fn latest_qemu_session(&self) -> Option<&QemuSession> {
+        self.qemu_sessions.back()
+    }
+    pub fn qemu_launch_unavailable_reason(&self) -> Option<String> {
+        if self.active_qemu_session().is_some() {
+            return Some("A managed runqemu session is already active.".into());
+        }
+        let Some(artifact) = self.selected_image_artifact() else {
+            return Some("Select a deployed image artifact first.".into());
+        };
+        if !matches!(
+            artifact.kind,
+            ImageArtifactKind::RootFilesystem | ImageArtifactKind::Wic
+        ) {
+            return Some("runqemu requires a root filesystem or Wic artifact.".into());
+        }
+        match &self.qemu_capability {
+            QemuCapability::NotInspected => {
+                Some("runqemu capability has not been inspected.".into())
+            }
+            QemuCapability::MissingTool => Some("runqemu is not available.".into()),
+            QemuCapability::MissingCompatibleImage => {
+                Some("No compatible deployed runqemu image is available.".into())
+            }
+            QemuCapability::Failed { message } => {
+                Some(format!("runqemu capability inspection failed: {message}"))
+            }
+            QemuCapability::Available {
+                executable: _,
+                compatible_images,
+            } if !compatible_images.contains(&artifact.identity) => {
+                Some("The selected artifact is not in the inspected runqemu capability.".into())
+            }
+            QemuCapability::Available { .. } => None,
+        }
+    }
     pub fn active_dialog(&self) -> Option<&Dialog> {
         self.dialogs.front()
     }
@@ -2585,7 +2621,19 @@ pub enum Action {
     QemuCapabilityLoaded(QemuCapability),
     BeginSelectedQemuLaunch,
     UpdateQemuLaunchDraft(QemuLaunchDraft),
+    SelectQemuLaunchField {
+        delta: isize,
+    },
+    ActivateQemuLaunchField,
+    CycleQemuLaunchChoice {
+        backwards: bool,
+    },
+    AppendQemuLaunchField(char),
+    BackspaceQemuLaunchField,
+    FinishQemuLaunchFieldEdit,
     PreviewQemuLaunch,
+    CancelQemuLaunch,
+    CancelQemuLaunchPreview,
     ConfirmQemuLaunch,
     QemuSessionStarting {
         id: QemuSessionId,
@@ -2620,7 +2668,9 @@ pub enum Action {
     BeginQemuSessionCancellation {
         id: QemuSessionId,
     },
+    BeginActiveQemuSessionCancellation,
     ConfirmQemuSessionCancellation,
+    CancelQemuSessionCancellation,
     RejectQemuSessionCancellation {
         id: QemuSessionId,
         message: String,
@@ -4498,41 +4548,97 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.qemu_capability = capability;
         }
         Action::BeginSelectedQemuLaunch => {
-            if app.active_qemu_session().is_some() {
-                app.notification = Some("A managed runqemu session is already active.".into());
+            if let Some(reason) = app.qemu_launch_unavailable_reason() {
+                app.notification = Some(reason);
                 return None;
             }
-            let Some(artifact) = app.selected_image_artifact().cloned() else {
-                app.notification =
-                    Some("Select a compatible deployed image artifact first.".into());
-                return None;
-            };
-            if let Err(message) = app.qemu_capability.executable_for(&artifact.identity) {
-                app.notification = Some(message.into());
-                return None;
-            }
+            let artifact = app.selected_image_artifact().cloned()?;
             let draft = QemuLaunchDraft::for_artifact(artifact.identity, artifact.kind);
-            if let Err(message) = draft.preview(&app.qemu_capability) {
-                app.notification = Some(message.into());
-                return None;
-            }
-            open_dialog(app, Dialog::QemuLaunch(draft));
+            open_dialog(app, Dialog::QemuLaunch(QemuLaunchDialog::new(draft)));
         }
         Action::UpdateQemuLaunchDraft(draft) => {
-            if matches!(app.active_dialog(), Some(Dialog::QemuLaunch(_))) {
-                replace_dialog(app, Dialog::QemuLaunch(draft));
+            if let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog_mut() {
+                dialog.draft = draft;
+                dialog.validation_error = None;
             } else {
                 app.notification = Some("No runqemu launch draft is active.".into());
             }
         }
+        Action::SelectQemuLaunchField { delta } => {
+            if let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog_mut()
+                && !dialog.editing
+            {
+                dialog.selected_field = dialog.selected_field.shifted(delta);
+            }
+        }
+        Action::ActivateQemuLaunchField => {
+            if let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog_mut() {
+                if dialog.selected_field.is_read_only() {
+                    app.notification = Some("Image and machine identity are read-only.".into());
+                } else if dialog.selected_field.is_text() {
+                    dialog.editing = true;
+                    dialog.validation_error = None;
+                } else if dialog.cycle_choice(false) {
+                    dialog.validation_error = None;
+                }
+            }
+        }
+        Action::CycleQemuLaunchChoice { backwards } => {
+            if let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog_mut()
+                && !dialog.editing
+                && dialog.cycle_choice(backwards)
+            {
+                dialog.validation_error = None;
+            }
+        }
+        Action::AppendQemuLaunchField(character) => {
+            if let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog_mut()
+                && dialog.editing
+                && !character.is_control()
+                && let Some((input, maximum)) = dialog.selected_text_mut()
+                && input.len() + character.len_utf8() <= maximum
+            {
+                input.push(character);
+                dialog.validation_error = None;
+            }
+        }
+        Action::BackspaceQemuLaunchField => {
+            if let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog_mut()
+                && dialog.editing
+                && let Some((input, _)) = dialog.selected_text_mut()
+            {
+                input.pop();
+                dialog.validation_error = None;
+            }
+        }
+        Action::FinishQemuLaunchFieldEdit => {
+            if let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog_mut() {
+                dialog.editing = false;
+            }
+        }
         Action::PreviewQemuLaunch => {
-            let Some(Dialog::QemuLaunch(draft)) = app.active_dialog().cloned() else {
+            let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog().cloned() else {
                 app.notification = Some("No runqemu launch draft is active.".into());
                 return None;
             };
-            match draft.preview(&app.qemu_capability) {
+            match dialog.draft.preview(&app.qemu_capability) {
                 Ok(preview) => replace_dialog(app, Dialog::QemuLaunchConfirmation(preview)),
-                Err(message) => app.notification = Some(message.into()),
+                Err(message) => {
+                    if let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog_mut() {
+                        dialog.validation_error = Some(message.into());
+                    }
+                    app.notification = Some(message.into());
+                }
+            }
+        }
+        Action::CancelQemuLaunch => {
+            if matches!(app.active_dialog(), Some(Dialog::QemuLaunch(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::CancelQemuLaunchPreview => {
+            if matches!(app.active_dialog(), Some(Dialog::QemuLaunchConfirmation(_))) {
+                close_dialog(app);
             }
         }
         Action::ConfirmQemuLaunch => {
@@ -4800,6 +4906,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some("The runqemu session cannot be cancelled.".into());
             }
         }
+        Action::BeginActiveQemuSessionCancellation => {
+            let Some(id) = app.active_qemu_session().map(|session| session.id) else {
+                app.notification = Some("No managed runqemu session is active.".into());
+                return None;
+            };
+            let _ = update(app, Action::BeginQemuSessionCancellation { id });
+        }
         Action::ConfirmQemuSessionCancellation => {
             let Some(Dialog::QemuCancellationConfirmation(id)) = app.active_dialog().cloned()
             else {
@@ -4824,6 +4937,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return None;
             }
             return Some(Effect::CancelQemuSession(id));
+        }
+        Action::CancelQemuSessionCancellation => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::QemuCancellationConfirmation(_))
+            ) {
+                close_dialog(app);
+            }
         }
         Action::RejectQemuSessionCancellation { id, message } => {
             let Some(job_id) = qemu_job_id(app, id) else {
@@ -12982,5 +13103,135 @@ mod tests {
             },
         );
         assert_eq!(app.background_jobs.ignored_transitions, ignored + 1);
+    }
+
+    #[test]
+    fn qemu_workspace_dialog_fields_are_bounded_modal_and_validation_aware() {
+        let mut app = qemu_model_app();
+        let _ = update(&mut app, Action::BeginSelectedQemuLaunch);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::QemuLaunch(QemuLaunchDialog {
+                selected_field: QemuLaunchField::Machine,
+                editing: false,
+                ..
+            }))
+        ));
+        let _ = update(&mut app, Action::ActivateQemuLaunchField);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Image and machine identity are read-only.")
+        );
+        let _ = update(&mut app, Action::SelectQemuLaunchField { delta: 2 });
+        let _ = update(&mut app, Action::ActivateQemuLaunchField);
+        for _ in 0..(MAX_QEMU_PATH_INPUT_BYTES + 10) {
+            let _ = update(&mut app, Action::AppendQemuLaunchField('x'));
+        }
+        let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog() else {
+            panic!("launch dialog");
+        };
+        assert_eq!(dialog.draft.kernel.len(), MAX_QEMU_PATH_INPUT_BYTES);
+        assert!(dialog.editing);
+        let _ = update(&mut app, Action::FinishQemuLaunchFieldEdit);
+        let _ = update(&mut app, Action::SelectQemuLaunchField { delta: 2 });
+        let _ = update(&mut app, Action::CycleQemuLaunchChoice { backwards: false });
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::QemuLaunch(QemuLaunchDialog {
+                draft: QemuLaunchDraft {
+                    networking: QemuNetworkingMode::Tap,
+                    ..
+                },
+                ..
+            }))
+        ));
+        let _ = update(&mut app, Action::PreviewQemuLaunch);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::QemuLaunch(QemuLaunchDialog {
+                validation_error: Some(message),
+                ..
+            })) if message.contains("paths must be normalized")
+        ));
+        let _ = update(&mut app, Action::CancelQemuLaunch);
+        assert!(app.active_dialog().is_none());
+        assert_eq!(app.focus, FocusTarget::Workspace);
+    }
+
+    #[test]
+    fn qemu_workspace_availability_reasons_are_stable_and_cancellation_is_modal() {
+        let mut app = qemu_model_app();
+        let mut unsupported = qemu_model_app();
+        if let ImageArtifactInventoryState::Available { inventory, .. } =
+            &mut unsupported.image_artifacts
+        {
+            inventory.artifacts[0].kind = ImageArtifactKind::Manifest;
+        }
+        assert_eq!(
+            unsupported.qemu_launch_unavailable_reason().as_deref(),
+            Some("runqemu requires a root filesystem or Wic artifact.")
+        );
+        app.qemu_capability = QemuCapability::NotInspected;
+        assert_eq!(
+            app.qemu_launch_unavailable_reason().as_deref(),
+            Some("runqemu capability has not been inspected.")
+        );
+        app.qemu_capability = QemuCapability::MissingTool;
+        assert_eq!(
+            app.qemu_launch_unavailable_reason().as_deref(),
+            Some("runqemu is not available.")
+        );
+        app.qemu_capability = QemuCapability::MissingCompatibleImage;
+        assert_eq!(
+            app.qemu_launch_unavailable_reason().as_deref(),
+            Some("No compatible deployed runqemu image is available.")
+        );
+        app.qemu_capability = QemuCapability::Failed {
+            message: "inspection denied".into(),
+        };
+        assert_eq!(
+            app.qemu_launch_unavailable_reason().as_deref(),
+            Some("runqemu capability inspection failed: inspection denied")
+        );
+        app.qemu_capability = QemuCapability::Available {
+            executable: "/opt/poky/scripts/runqemu".into(),
+            compatible_images: Vec::new(),
+        };
+        assert_eq!(
+            app.qemu_launch_unavailable_reason().as_deref(),
+            Some("The selected artifact is not in the inspected runqemu capability.")
+        );
+        app.qemu_capability = QemuCapability::Available {
+            executable: "/opt/poky/scripts/runqemu".into(),
+            compatible_images: vec![qemu_model_artifact().identity],
+        };
+        let _ = update(&mut app, Action::BeginSelectedQemuLaunch);
+        let _ = update(&mut app, Action::PreviewQemuLaunch);
+        let Some(Effect::StartQemuSession { id, .. }) = update(&mut app, Action::ConfirmQemuLaunch)
+        else {
+            panic!("start effect");
+        };
+        let _ = update(
+            &mut app,
+            Action::QemuSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::QemuSessionRunning { id });
+        let _ = update(&mut app, Action::BeginActiveQemuSessionCancellation);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::QemuCancellationConfirmation(candidate)) if *candidate == id
+        ));
+        let _ = update(&mut app, Action::CancelQemuSessionCancellation);
+        assert!(app.active_dialog().is_none());
+        assert_eq!(
+            app.background_jobs
+                .get(app.qemu_session(id).expect("session").background_job_id)
+                .map(|job| job.status),
+            Some(BackgroundJobStatus::Running)
+        );
     }
 }
