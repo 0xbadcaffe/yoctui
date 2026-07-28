@@ -291,7 +291,7 @@ fn classify(path: &Path) -> ImageArtifactKind {
         ImageArtifactKind::LicenseManifest
     } else if name.ends_with(".manifest") {
         ImageArtifactKind::Manifest
-    } else if name.contains(".wic") {
+    } else if name.ends_with(".wic") || name.ends_with(".direct") {
         ImageArtifactKind::Wic
     } else if name.starts_with("bzimage")
         || name.starts_with("vmlinuz")
@@ -522,6 +522,22 @@ mod tests {
             generation: 1,
             machine: "qemux86-64".into(),
         }
+    }
+
+    #[test]
+    fn image_artifact_adapter_classifies_only_uncompressed_wic_images() {
+        assert_eq!(
+            classify(Path::new("/deploy/image.wic")),
+            ImageArtifactKind::Wic
+        );
+        assert_eq!(
+            classify(Path::new("/deploy/image.direct")),
+            ImageArtifactKind::Wic
+        );
+        assert_eq!(
+            classify(Path::new("/deploy/image.wic.gz")),
+            ImageArtifactKind::Other
+        );
     }
 
     #[tokio::test]

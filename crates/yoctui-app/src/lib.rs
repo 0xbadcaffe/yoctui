@@ -1204,6 +1204,7 @@ pub fn images_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('b') => Some(Action::BeginSelectedImageArtifactBuild),
         Input::Char('Q') => Some(Action::BeginSelectedQemuLaunch),
         Input::Char('W') => Some(Action::BeginSelectedWicCreate),
+        Input::Char('D') => Some(Action::BeginSelectedWicDeviceWrite),
         Input::Char('x') => Some(Action::BeginActiveImageRuntimeCancellation),
         Input::Char('[') => Some(Action::SelectWicOutput { delta: -1 }),
         Input::Char(']') => Some(Action::SelectWicOutput { delta: 1 }),
@@ -1255,11 +1256,43 @@ pub fn wic_create_confirmation_action(key: Input) -> Option<Action> {
     }
 }
 
-pub fn wic_cancellation_confirmation_action(id: WicSessionId, key: Input) -> Option<Action> {
+pub fn wic_device_picker_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectWicDevice { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectWicDevice { delta: 1 }),
+        Input::Enter => Some(Action::ConfirmWicDeviceSelection),
+        Input::Esc => Some(Action::CancelWicDevicePicker),
+        _ => None,
+    }
+}
+
+pub fn wic_write_phrase_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Char(character) => Some(Action::AppendWicWritePhrase(character)),
+        Input::Backspace => Some(Action::BackspaceWicWritePhrase),
+        Input::Enter => Some(Action::PreviewWicDeviceWrite),
+        Input::Esc => Some(Action::CancelWicWritePhrase),
+        _ => None,
+    }
+}
+
+pub fn wic_write_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmWicDeviceWrite),
+        Input::Esc => Some(Action::CancelWicWritePreview),
+        _ => None,
+    }
+}
+
+pub fn wic_cancellation_confirmation_action(
+    id: WicSessionId,
+    incomplete_device_warning: bool,
+    key: Input,
+) -> Option<Action> {
     match key {
         Input::Enter => Some(Action::ConfirmWicSessionCancellation {
             id,
-            acknowledge_incomplete_device: false,
+            acknowledge_incomplete_device: incomplete_device_warning,
         }),
         Input::Esc => Some(Action::CancelWicSessionCancellation),
         _ => None,
@@ -3418,7 +3451,7 @@ mod tests {
         );
     }
     #[test]
-    fn wic_workspace_maps_distinct_creation_modal_and_artifact_keys() {
+    fn wic_device_write_and_creation_map_distinct_modal_and_artifact_keys() {
         assert_eq!(
             images_workspace_action(false, Input::Char('W')),
             Some(Action::BeginSelectedWicCreate)
@@ -3450,10 +3483,41 @@ mod tests {
             Some(Action::ConfirmWicCreate)
         );
         assert_eq!(
-            wic_cancellation_confirmation_action(WicSessionId(3), Input::Enter),
+            wic_cancellation_confirmation_action(WicSessionId(3), false, Input::Enter),
             Some(Action::ConfirmWicSessionCancellation {
                 id: WicSessionId(3),
                 acknowledge_incomplete_device: false,
+            })
+        );
+        assert_eq!(
+            images_workspace_action(false, Input::Char('D')),
+            Some(Action::BeginSelectedWicDeviceWrite)
+        );
+        assert_eq!(
+            wic_device_picker_action(Input::Down),
+            Some(Action::SelectWicDevice { delta: 1 })
+        );
+        assert_eq!(
+            wic_device_picker_action(Input::Enter),
+            Some(Action::ConfirmWicDeviceSelection)
+        );
+        assert_eq!(
+            wic_write_phrase_action(Input::Char('W')),
+            Some(Action::AppendWicWritePhrase('W'))
+        );
+        assert_eq!(
+            wic_write_phrase_action(Input::Enter),
+            Some(Action::PreviewWicDeviceWrite)
+        );
+        assert_eq!(
+            wic_write_confirmation_action(Input::Enter),
+            Some(Action::ConfirmWicDeviceWrite)
+        );
+        assert_eq!(
+            wic_cancellation_confirmation_action(WicSessionId(4), true, Input::Enter),
+            Some(Action::ConfirmWicSessionCancellation {
+                id: WicSessionId(4),
+                acknowledge_incomplete_device: true,
             })
         );
     }
@@ -3513,7 +3577,9 @@ mod tests {
     }
     #[test]
     fn wic_adapter_capability_crosses_app_boundary_without_parsing() {
-        let capability = WicCapability::MissingKickstarts;
+        let capability = WicCapability::MissingKickstarts {
+            executable: "/usr/bin/wic".into(),
+        };
         assert_eq!(
             wic_capability_action(capability.clone()),
             Action::WicCapabilityLoaded(capability)

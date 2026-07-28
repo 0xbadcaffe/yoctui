@@ -2,58 +2,61 @@
 
 ## Active task
 
-**ID:** WIC-WRITE-MODEL-001
-**Title:** Add protected Wic device dialog state
+**ID:** WIC-WRITE-RENDER-001
+**Title:** Render protected Wic device workflow
 
 ## Objective
 
-Complete the pure reducer and app-input workflow that opens discovery from an
-exact eligible image, presents an identity-stable device picker, requires the
-exact destructive phrase, and separately previews the shell-free write request
-before a session can be queued.
+Render the completed typed device inventory, picker, phrase, exact command
+preview, write history, and stronger cancellation warning in the Images
+workspace and shared dialog layer at every supported responsive breakpoint.
 
 ## Required work
 
-1. Inspect the existing Wic output/device state, write preview helper, session
-   queue, dialog focus helpers, Images actions, and input ordering before
-   editing; reuse them rather than creating parallel lifecycle state.
-2. Add a typed selected-device identity and focus-trapping dialog variants for
-   device inventory/picker, exact phrase entry, and exact command preview.
-   Bound selection and phrase input.
-3. Add one Images action that resolves only an exact selected generated or
-   deployed uncompressed `.wic`/`.direct` identity, advances a non-zero device
-   generation, enters loading state, and emits `GetWicDevices`.
-4. Correlate loaded/partial/empty/failed results to that exact request. Keep
-   stale responses inert and preserve valid selection by full device identity.
-5. Route picker movement, selection, phrase editing, preview, cancel/back, and
-   final confirmation through pure actions. Selection alone must never emit a
-   write effect.
-6. Rebuild `WicWritePreview` from current capability, inventory image, exact
-   selected device, and exact phrase both before preview and before
-   `StartWicSession`. Reject changed output/device/capability state.
-7. Open the shared cancellation dialog for an active write with an explicit
-   incomplete-device acknowledgement state; ordinary Wic creation cancellation
-   remains a one-step confirmation.
-8. Add reducer and app-input tests for generated/deployed eligibility, compressed
-   or stale rejection, generation correlation, empty/partial/failure states,
-   selection stability, bounds, wrong phrase, modal focus/input trapping,
-   preview tampering, session queueing, and stronger cancellation.
-9. Run focused and baseline checks, then hand off to
-   `WIC-WRITE-RENDER-001`.
+1. Inspect the completed Wic write dialog/state helpers, existing Images
+   workspace/Inspector composition, Wic creation/session rendering, semantic
+   palette, popup geometry, and footer compaction before editing.
+2. Render write readiness or its exact disabled reason with the existing Wic
+   capability section. Distinguish generated/deployed selection and display the
+   exact image path and byte size used for discovery.
+3. Render the focus-trapping device picker for loading, available-empty,
+   available, partial, and failed inventory states. Each selectable row must
+   show canonical path, major/minor, capacity, model, serial, transport,
+   removable/read-only/writable flags, and mount summary without relying on
+   color alone. Show every retained limitation.
+4. Render bounded phrase entry with the exact required
+   `WRITE <canonical-device-path>` text and inline validation. Do not imply
+   that phrase entry alone starts the write.
+5. Render a separate destructive command preview with the indexed exact
+   shell-free argument vector plus complete image/device identity. `Enter` and
+   `Esc` meanings must be explicit.
+6. Extend managed Wic history/Inspector rendering for writes so exact
+   image/device identity, lifecycle, output, drop/truncation counts, telemetry,
+   success, nonzero failure, cancellation/incomplete warning, rejection, and
+   loss remain visible across navigation.
+7. Render the write-specific cancellation warning distinctly from ordinary Wic
+   creation cancellation. Keep all overlays usable at 80×24 and preserve
+   semantic themes, monochrome/no-color meaning, and long-content safety.
+8. Add `D write device` beside existing `W`, `w`, `x`, generated-output, and
+   artifact shortcuts, applying the documented compact footer behavior without
+   hiding any critical action.
+9. Add `wic_device_write` Ratatui `TestBackend` tests for every inventory/dialog
+   and terminal state, all responsive modes, themes, long identities/content,
+   exact selection styling, disabled reasons, and stronger cancellation.
+10. Run focused and baseline checks, then hand off to `WIC-WRITE-CLI-001`.
 
 ## Definition of done
 
-- Only an exact uncompressed Wic/direct image can trigger discovery.
-- Picker, phrase, preview, and write cancellation are typed modal states.
-- Selection and phrase entry cannot bypass the separate exact preview.
-- Final confirmation independently reconstructs and compares current state.
-- Reducer and app-input focused tests plus the baseline pass.
+- All typed device inventory and write lifecycle states are explicit.
+- Picker, phrase, preview, and cancellation dialogs remain usable at 80×24.
+- Exact destructive identity and command are visible before confirmation.
+- Footer and theme semantics make write availability and selection unambiguous.
+- Focused `TestBackend` and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model wic_device_write
-cargo test -p yoctui-app wic_device_write
+cargo test -p yoctui-ui wic_device_write
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

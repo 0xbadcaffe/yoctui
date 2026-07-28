@@ -35,7 +35,8 @@ use yoctui_app::{
     qemu_launch_confirmation_action, qemu_launch_dialog_action, recipe_editor_action,
     settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
     wic_actions_for_runner_event, wic_cancellation_confirmation_action,
-    wic_create_confirmation_action, wic_create_dialog_action,
+    wic_create_confirmation_action, wic_create_dialog_action, wic_device_picker_action,
+    wic_write_confirmation_action, wic_write_phrase_action,
 };
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolCommandSpec, DevtoolInspector,
@@ -2794,11 +2795,21 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     )
                     .await;
                 }
-            } else if let Some(Dialog::WicCancellationConfirmation(id)) =
-                app.active_dialog().cloned()
-            {
-                let effect = wic_cancellation_confirmation_action(id, input)
+            } else if matches!(app.active_dialog(), Some(Dialog::WicDevicePicker(_))) {
+                let _ = wic_device_picker_action(input).and_then(|action| update(&mut app, action));
+            } else if matches!(app.active_dialog(), Some(Dialog::WicWritePhrase(_))) {
+                let _ = wic_write_phrase_action(input).and_then(|action| update(&mut app, action));
+            } else if matches!(app.active_dialog(), Some(Dialog::WicWriteConfirmation(_))) {
+                let _ = wic_write_confirmation_action(input)
                     .and_then(|action| update(&mut app, action));
+            } else if let Some(Dialog::WicCancellationConfirmation {
+                id,
+                incomplete_device_warning,
+            }) = app.active_dialog().cloned()
+            {
+                let effect =
+                    wic_cancellation_confirmation_action(id, incomplete_device_warning, input)
+                        .and_then(|action| update(&mut app, action));
                 if let Some(Effect::CancelWicSession(id)) = effect {
                     begin_wic_cancellation(&mut app, &mut wic_operation, id);
                 }
@@ -5992,12 +6003,19 @@ esac"#,
             .await
             .unwrap();
             let _ = update(&mut app, Action::BeginActiveWicSessionCancellation);
-            let Some(Dialog::WicCancellationConfirmation(dialog_id)) = app.active_dialog().cloned()
+            let Some(Dialog::WicCancellationConfirmation {
+                id: dialog_id,
+                incomplete_device_warning,
+            }) = app.active_dialog().cloned()
             else {
                 panic!("Wic cancellation dialog");
             };
-            let effect = wic_cancellation_confirmation_action(dialog_id, Input::Enter)
-                .and_then(|action| update(&mut app, action));
+            let effect = wic_cancellation_confirmation_action(
+                dialog_id,
+                incomplete_device_warning,
+                Input::Enter,
+            )
+            .and_then(|action| update(&mut app, action));
             let Some(Effect::CancelWicSession(effect_id)) = effect else {
                 panic!("Wic cancellation effect");
             };
