@@ -453,6 +453,30 @@ UI render
 
 No backend callback may mutate UI structures directly.
 
+## Managed runqemu model boundary
+
+`yoctui-model::qemu` owns capability states, exact artifact-bound launch
+requests, editable drafts, deterministic argument previews, stable session
+identity, and validation. It accepts only normalized absolute executable and
+artifact paths supplied by typed capability inspection. The pure reducer never
+looks for `runqemu`, reads the filesystem, parses process output, or owns a
+terminal.
+
+A `QemuSession` associates the validated request with a disjoint
+`BackgroundJobKind::Qemu` ID. The shared background-job collection remains the
+single owner of queued, starting, running, cancelling, succeeded, failed,
+cancelled, and lost lifecycle state; timestamps; bounded stream-tagged output;
+and typed result/error details. The session retains QEMU-specific identity and
+exit information without duplicating lifecycle storage. Active-session checks
+are derived from that shared job state.
+
+`yoctui-bitbake::QemuRunnerEvent` is the typed adapter-to-application event
+boundary. `yoctui-app::qemu_actions_for_runner_event` performs only mechanical
+event normalization to QEMU reducer actions. Executable inspection, argument
+translation, child/process-group ownership, streaming, and cancellation belong
+to the QEMU adapter child task; widget rendering and input mapping belong to
+the QEMU UI child task.
+
 ## Background-job model
 
 All long-running operations use one shared job abstraction.

@@ -207,6 +207,39 @@ pub enum DevtoolRunnerEvent {
         message: String,
     },
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QemuRunnerOutputStream {
+    Stdout,
+    Stderr,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum QemuRunnerEvent {
+    Starting,
+    Started,
+    Output {
+        stream: QemuRunnerOutputStream,
+        line: String,
+        truncated: bool,
+    },
+    Completed {
+        exit_code: i32,
+    },
+    Failed {
+        message: String,
+        exit_code: Option<i32>,
+    },
+    Cancelled {
+        exit_code: Option<i32>,
+    },
+    CancellationRejected {
+        message: String,
+    },
+    Lost {
+        message: String,
+    },
+}
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum DevtoolRunnerError {
     #[error("a Devtool process or unconsumed terminal event is already active")]
