@@ -1084,15 +1084,61 @@ No silent edits.
 
 Integrate `oe-pkgdata-util`.
 
-Show:
+`Packages` is a first-class Navigator destination after `Recipes`. Activating
+it starts a correlated background inventory query when package data has not
+been loaded. The persistent shell continues drawing and accepting navigation
+while the query runs. `R` refreshes the inventory, and `c` requests
+cancellation of the active package inventory or detail query. Leaving the
+workspace does not discard a pending result; request generations prevent a
+stale result from replacing newer state.
+
+The Workspace has explicit not-loaded, loading, available-empty, available,
+partial, and failed presentations. Missing generated `tmp/pkgdata` explains
+that a target must complete `do_package`; it is not presented as an empty
+package set. Partial results render their bounded limitations. Raw
+`oe-pkgdata-util` text is never displayed or parsed by a widget.
+
+The package list shows:
 
 - package name
 - recipe
-- files
-- runtime dependencies
-- reverse dependencies
+- version
 - size
+- license
 - image membership
+
+Unavailable fields render as `unavailable`, distinct from an available empty
+value. Wide mode uses aligned package, recipe, version, size, and license
+columns. Medium mode uses a compact two-line row. Narrow mode uses one
+identity-first row and the standard Navigator / Workspace / Inspector
+switcher. All modes preserve selection by exact runtime-package identity.
+
+`Up`/`Down` or `j`/`k` select packages. `/` traps input in package search;
+typing filters package, recipe, version, license, and authoritative provider
+fields case-insensitively. `Backspace` edits and `Enter` or `Esc` leaves search
+without clearing it. `Enter` lazily requests the exact selected package
+detail.
+
+The Inspector shows the selected identity and summary plus separate Files,
+Runtime dependencies, Reverse dependencies, and Image membership sections.
+Every section distinguishes unavailable from available-empty. Detail loading,
+partial, and failed states remain visible while the inventory list stays
+usable. `D` switches the active dependency section between runtime and reverse,
+`[`/`]` selects the previous/next dependency, and `d` follows the selected
+dependency only when that exact identity exists in the current inventory.
+`u` returns through the bounded package navigation history.
+
+`o` opens the authoritative owning recipe in the Recipes workspace when its
+exact identity exists there. `e` opens the authoritative absolute provider
+path in the selected editor. Missing recipe identity, provider path, package
+detail, dependency list, or inventory identity leaves the action inert and
+shows a contextual explanation; Yoctui never fabricates a provider.
+
+The Packages footer is:
+
+```text
+↑/↓ select | Enter detail | / search | R refresh | D dep kind | [/ ] dep | d follow | u back | o recipe | e provider | c cancel
+```
 
 ### Images
 

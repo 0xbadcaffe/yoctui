@@ -917,6 +917,32 @@ pub fn signature_workspace_action(key: Input) -> Option<Action> {
         _ => None,
     }
 }
+pub fn package_workspace_action(searching: bool, key: Input) -> Option<Action> {
+    if searching {
+        return match key {
+            Input::Char(character) => Some(Action::AppendPackageQuery(character)),
+            Input::Backspace => Some(Action::BackspacePackageQuery),
+            Input::Enter | Input::Esc => Some(Action::FinishPackageSearch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectPackage { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectPackage { delta: 1 }),
+        Input::Enter => Some(Action::BeginSelectedPackageDetail),
+        Input::Char('/') => Some(Action::BeginPackageSearch),
+        Input::Char('R') => Some(Action::RefreshPackageInventory),
+        Input::Char('c') => Some(Action::CancelPackageOperation),
+        Input::Char('D') => Some(Action::TogglePackageDependencyKind),
+        Input::Char('[') => Some(Action::SelectPackageDependency { delta: -1 }),
+        Input::Char(']') => Some(Action::SelectPackageDependency { delta: 1 }),
+        Input::Char('d') => Some(Action::OpenSelectedPackageDependency),
+        Input::Char('u') => Some(Action::BackPackageNavigation),
+        Input::Char('o') => Some(Action::OpenSelectedPackageRecipe),
+        Input::Char('e') => Some(Action::OpenSelectedPackageProvider),
+        _ => None,
+    }
+}
 pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
     if searching {
         return match key {
@@ -1509,6 +1535,63 @@ mod tests {
             model_action_from_backend_event(event),
             Some(Action::PackageDetailLoaded { request, detail })
         );
+    }
+
+    #[test]
+    fn pkgdata_workspace_maps_search_navigation_refresh_and_context_actions() {
+        assert_eq!(
+            package_workspace_action(false, Input::Up),
+            Some(Action::SelectPackage { delta: -1 })
+        );
+        assert_eq!(
+            package_workspace_action(false, Input::Enter),
+            Some(Action::BeginSelectedPackageDetail)
+        );
+        assert_eq!(
+            package_workspace_action(false, Input::Char('R')),
+            Some(Action::RefreshPackageInventory)
+        );
+        assert_eq!(
+            package_workspace_action(false, Input::Char('D')),
+            Some(Action::TogglePackageDependencyKind)
+        );
+        assert_eq!(
+            package_workspace_action(false, Input::Char(']')),
+            Some(Action::SelectPackageDependency { delta: 1 })
+        );
+        assert_eq!(
+            package_workspace_action(false, Input::Char('d')),
+            Some(Action::OpenSelectedPackageDependency)
+        );
+        assert_eq!(
+            package_workspace_action(false, Input::Char('o')),
+            Some(Action::OpenSelectedPackageRecipe)
+        );
+        assert_eq!(
+            package_workspace_action(false, Input::Char('e')),
+            Some(Action::OpenSelectedPackageProvider)
+        );
+        assert_eq!(
+            package_workspace_action(false, Input::Char('c')),
+            Some(Action::CancelPackageOperation)
+        );
+        assert_eq!(
+            package_workspace_action(false, Input::Char('/')),
+            Some(Action::BeginPackageSearch)
+        );
+        assert_eq!(
+            package_workspace_action(true, Input::Char('b')),
+            Some(Action::AppendPackageQuery('b'))
+        );
+        assert_eq!(
+            package_workspace_action(true, Input::Backspace),
+            Some(Action::BackspacePackageQuery)
+        );
+        assert_eq!(
+            package_workspace_action(true, Input::Esc),
+            Some(Action::FinishPackageSearch)
+        );
+        assert_eq!(package_workspace_action(false, Input::Char('x')), None);
     }
 
     #[test]

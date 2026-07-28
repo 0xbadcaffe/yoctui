@@ -43,6 +43,7 @@ pub enum Screen {
     Signatures,
     LayerRelationships,
     Recipes,
+    Packages,
     Images,
     Layers,
     Configuration,
@@ -125,10 +126,11 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-const NAVIGATOR_SCREENS: [Screen; 12] = [
+const NAVIGATOR_SCREENS: [Screen; 13] = [
     Screen::Dashboard,
     Screen::Layers,
     Screen::Recipes,
+    Screen::Packages,
     Screen::Images,
     Screen::Tasks,
     Screen::Logs,
@@ -2079,6 +2081,9 @@ pub struct App {
     pub package_query: String,
     pub package_searching: bool,
     pub package_request_generation: u64,
+    pub package_dependency_reverse: bool,
+    pub package_dependency_selection: usize,
+    pub package_navigation: Vec<PackageIdentity>,
     pub layer_relationships: Option<LayerRelationships>,
     pub recipe_sources: HashMap<String, Vec<PathBuf>>,
     pub recipe_metadata: HashMap<String, RecipeMetadata>,
@@ -2146,6 +2151,9 @@ impl App {
             package_query: String::new(),
             package_searching: false,
             package_request_generation: 0,
+            package_dependency_reverse: false,
+            package_dependency_selection: 0,
+            package_navigation: Vec::new(),
             layer_relationships: None,
             recipe_sources: HashMap::new(),
             recipe_metadata: HashMap::new(),
@@ -2309,6 +2317,18 @@ impl App {
         self.package_selection
             .as_ref()
             .and_then(|identity| self.package_details.get(identity))
+    }
+    pub fn selected_package_dependencies(&self) -> Option<&[PackageIdentity]> {
+        let detail = self.selected_package_detail()?.detail()?;
+        if self.package_dependency_reverse {
+            detail.reverse_dependencies.available().map(Vec::as_slice)
+        } else {
+            detail.runtime_dependencies.available().map(Vec::as_slice)
+        }
+    }
+    pub fn selected_package_dependency(&self) -> Option<&PackageIdentity> {
+        self.selected_package_dependencies()?
+            .get(self.package_dependency_selection)
     }
     pub fn active_dialog(&self) -> Option<&Dialog> {
         self.dialogs.front()
@@ -2707,6 +2727,8 @@ pub enum Action {
         message: String,
     },
     BeginPackageInventory,
+    RefreshPackageInventory,
+    CancelPackageOperation,
     PackageInventoryLoaded {
         request: PackageInventoryRequest,
         packages: Vec<PackageSummary>,
@@ -2745,6 +2767,14 @@ pub enum Action {
         identity: PackageIdentity,
         reverse: bool,
     },
+    TogglePackageDependencyKind,
+    SelectPackageDependency {
+        delta: isize,
+    },
+    OpenSelectedPackageDependency,
+    BackPackageNavigation,
+    OpenSelectedPackageRecipe,
+    OpenSelectedPackageProvider,
     BeginSelectedRecipeMetadata,
     RecipeMetadataLoaded(RecipeMetadata),
     RecipeMetadataFailed {
@@ -3721,6 +3751,66 @@ fn package_detail_is_empty(detail: &PackageDetail) -> bool {
         )
 }
 
+fn begin_package_inventory(app: &mut App) -> Effect {
+    let request = PackageInventoryRequest {
+        generation: next_package_generation(app),
+    };
+    app.package_inventory = PackageInventoryState::Loading { request };
+    Effect::GetPackageInventory(request)
+}
+
+fn package_operation_is_loading(app: &App) -> bool {
+    matches!(app.package_inventory, PackageInventoryState::Loading { .. })
+        || app
+            .package_details
+            .values()
+            .any(|state| matches!(state, PackageDetailState::Loading { .. }))
+}
+
+fn begin_package_detail(app: &mut App, identity: PackageIdentity) -> Effect {
+    let request = PackageDetailRequest {
+        identity: identity.clone(),
+        generation: next_package_generation(app),
+    };
+    app.package_details.insert(
+        identity,
+        PackageDetailState::Loading {
+            request: request.clone(),
+        },
+    );
+    Effect::GetPackageDetail(request)
+}
+
+fn select_package_identity(
+    app: &mut App,
+    identity: PackageIdentity,
+    load_detail: bool,
+) -> Option<Effect> {
+    if !app
+        .package_inventory
+        .packages()
+        .is_some_and(|packages| packages.iter().any(|package| package.identity == identity))
+    {
+        app.notification =
+            Some("The dependency is not present in the current package inventory.".into());
+        return None;
+    }
+    if let Some(current) = app.package_selection.replace(identity.clone())
+        && current != identity
+    {
+        if app.package_navigation.len() == 64 {
+            app.package_navigation.remove(0);
+        }
+        app.package_navigation.push(current);
+    }
+    app.package_dependency_selection = 0;
+    if !load_detail || app.package_details.contains_key(&identity) {
+        None
+    } else {
+        Some(begin_package_detail(app, identity))
+    }
+}
+
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     if modal_focus(app).is_some()
         && matches!(
@@ -3750,6 +3840,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             {
                 app.navigator_selection = index;
             }
+            if s == Screen::Packages
+                && matches!(app.package_inventory, PackageInventoryState::NotLoaded)
+            {
+                return Some(begin_package_inventory(app));
+            }
         }
         Action::SelectNavigator { delta } => {
             app.navigator_selection = if delta.is_negative() {
@@ -3764,6 +3859,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.screen = NAVIGATOR_SCREENS[app.navigator_selection];
             app.focus = FocusTarget::Workspace;
             app.focus_return = None;
+            if app.screen == Screen::Packages
+                && matches!(app.package_inventory, PackageInventoryState::NotLoaded)
+            {
+                return Some(begin_package_inventory(app));
+            }
         }
         Action::Focus(target) => app.focus = target,
         Action::OpenCommandPalette => {
@@ -5421,11 +5521,24 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some(format!("Signature comparison failed: {message}"));
         }
         Action::BeginPackageInventory => {
-            let request = PackageInventoryRequest {
-                generation: next_package_generation(app),
-            };
-            app.package_inventory = PackageInventoryState::Loading { request };
-            return Some(Effect::GetPackageInventory(request));
+            if package_operation_is_loading(app) {
+                app.notification = Some("A package-data operation is already running.".into());
+                return None;
+            }
+            return Some(begin_package_inventory(app));
+        }
+        Action::RefreshPackageInventory => {
+            if package_operation_is_loading(app) {
+                app.notification = Some("A package-data operation is already running.".into());
+                return None;
+            }
+            return Some(begin_package_inventory(app));
+        }
+        Action::CancelPackageOperation => {
+            if package_operation_is_loading(app) {
+                return Some(Effect::CancelPackageOperation);
+            }
+            app.notification = Some("No package-data operation is running.".into());
         }
         Action::PackageInventoryLoaded { request, packages } => {
             if !matches!(
@@ -5485,6 +5598,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .min(visible.len().saturating_sub(1))
             };
             app.package_selection = Some(visible[next].clone());
+            app.package_dependency_selection = 0;
         }
         Action::BeginPackageSearch => app.package_searching = true,
         Action::AppendPackageQuery(character) => {
@@ -5506,17 +5620,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some("No current package is selected for inspection.".into());
                 return None;
             };
-            let request = PackageDetailRequest {
-                identity: identity.clone(),
-                generation: next_package_generation(app),
-            };
-            app.package_details.insert(
-                identity,
-                PackageDetailState::Loading {
-                    request: request.clone(),
-                },
-            );
-            return Some(Effect::GetPackageDetail(request));
+            if package_operation_is_loading(app) {
+                app.notification = Some("A package-data operation is already running.".into());
+                return None;
+            }
+            return Some(begin_package_detail(app, identity));
         }
         Action::PackageDetailLoaded { request, detail } => {
             if !app.package_details.get(&request.identity).is_some_and(
@@ -5552,6 +5660,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             };
             app.package_details
                 .insert(state.request().unwrap().identity.clone(), state);
+            app.package_dependency_selection = 0;
         }
         Action::PackageDetailPartial {
             request,
@@ -5585,6 +5694,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     limitations,
                 },
             );
+            app.package_dependency_selection = 0;
         }
         Action::PackageDetailFailed { request, message } => {
             if !app.package_details.get(&request.identity).is_some_and(
@@ -5624,11 +5734,88 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .packages()
                 .is_some_and(|packages| packages.iter().any(|package| package.identity == identity))
             {
-                app.package_selection = Some(identity);
+                return select_package_identity(app, identity, false);
             } else {
                 app.notification =
                     Some("The dependency is not present in the current package inventory.".into());
             }
+        }
+        Action::TogglePackageDependencyKind => {
+            app.package_dependency_reverse = !app.package_dependency_reverse;
+            app.package_dependency_selection = 0;
+        }
+        Action::SelectPackageDependency { delta } => {
+            let count = app
+                .selected_package_dependencies()
+                .map_or(0, <[PackageIdentity]>::len);
+            app.package_dependency_selection = if delta.is_negative() {
+                app.package_dependency_selection
+                    .saturating_sub(delta.unsigned_abs())
+            } else {
+                app.package_dependency_selection
+                    .saturating_add(delta as usize)
+                    .min(count.saturating_sub(1))
+            };
+        }
+        Action::OpenSelectedPackageDependency => {
+            let Some(identity) = app.selected_package_dependency().cloned() else {
+                app.notification = Some(format!(
+                    "No {} dependency is selected.",
+                    if app.package_dependency_reverse {
+                        "reverse"
+                    } else {
+                        "runtime"
+                    }
+                ));
+                return None;
+            };
+            return select_package_identity(app, identity, true);
+        }
+        Action::BackPackageNavigation => {
+            let Some(identity) = app.package_navigation.pop() else {
+                app.notification = Some("Package navigation history is empty.".into());
+                return None;
+            };
+            app.package_selection = Some(identity);
+            app.package_dependency_selection = 0;
+        }
+        Action::OpenSelectedPackageRecipe => {
+            let Some(PackageField::Available(recipe)) =
+                app.selected_package().map(|package| &package.recipe)
+            else {
+                app.notification =
+                    Some("The selected package has no authoritative recipe identity.".into());
+                return None;
+            };
+            let Some(index) = app
+                .workspace
+                .recipes
+                .iter()
+                .position(|candidate| candidate.name == *recipe)
+            else {
+                app.notification = Some(format!(
+                    "Recipe {recipe} is not present in the current workspace inventory."
+                ));
+                return None;
+            };
+            app.recipe_selection = index;
+            app.screen = Screen::Recipes;
+            app.focus = FocusTarget::Workspace;
+        }
+        Action::OpenSelectedPackageProvider => {
+            let Some(PackageField::Available(provider)) =
+                app.selected_package().map(|package| &package.provider)
+            else {
+                app.notification =
+                    Some("The selected package has no authoritative provider path.".into());
+                return None;
+            };
+            if !provider.is_absolute() {
+                app.notification =
+                    Some("The selected package provider path is not absolute.".into());
+                return None;
+            }
+            return Some(Effect::OpenInEditor(provider.clone()));
         }
         Action::BeginSelectedRecipeMetadata => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
@@ -6853,6 +7040,7 @@ pub enum Effect {
     CancelSignatureOperation,
     GetPackageInventory(PackageInventoryRequest),
     GetPackageDetail(PackageDetailRequest),
+    CancelPackageOperation,
     GetRecipeMetadata(String),
     GetVariable(VariableIdentity),
     WriteConfigAssignment(ConfigEditRequest),
@@ -11435,6 +11623,105 @@ mod tests {
                 request: failed_request,
                 message: "tool failed".into()
             })
+        );
+    }
+
+    #[test]
+    fn pkgdata_workspace_routes_navigation_refresh_detail_and_contextual_actions() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes.push(Recipe {
+            name: "busybox".into(),
+            file: Some("/layers/meta/recipes-core/busybox.bb".into()),
+            ..Recipe::default()
+        });
+        assert_eq!(
+            update(&mut app, Action::Open(Screen::Packages)),
+            Some(Effect::GetPackageInventory(PackageInventoryRequest {
+                generation: 1
+            }))
+        );
+        assert_eq!(app.screen, Screen::Packages);
+        assert_eq!(NAVIGATOR_SCREENS[app.navigator_selection], Screen::Packages);
+        assert_eq!(
+            update(&mut app, Action::CancelPackageOperation),
+            Some(Effect::CancelPackageOperation)
+        );
+        let request = PackageInventoryRequest { generation: 1 };
+        let _ = update(
+            &mut app,
+            Action::PackageInventoryLoaded {
+                request,
+                packages: vec![
+                    package_summary("busybox", "busybox"),
+                    package_summary("init", "init"),
+                    package_summary("libc6", "glibc"),
+                ],
+            },
+        );
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedPackageDetail),
+            Some(Effect::GetPackageDetail(PackageDetailRequest {
+                identity: PackageIdentity::new("busybox"),
+                generation: 2,
+            }))
+        );
+        let detail_request = PackageDetailRequest {
+            identity: PackageIdentity::new("busybox"),
+            generation: 2,
+        };
+        let _ = update(
+            &mut app,
+            Action::PackageDetailLoaded {
+                request: detail_request.clone(),
+                detail: PackageDetail {
+                    identity: detail_request.identity,
+                    files: PackageField::Available(vec!["/bin/busybox".into()]),
+                    runtime_dependencies: PackageField::Available(vec![PackageIdentity::new(
+                        "libc6",
+                    )]),
+                    reverse_dependencies: PackageField::Available(vec![PackageIdentity::new(
+                        "init",
+                    )]),
+                },
+            },
+        );
+        assert_eq!(
+            app.selected_package_dependency(),
+            Some(&PackageIdentity::new("libc6"))
+        );
+        let _ = update(&mut app, Action::TogglePackageDependencyKind);
+        assert_eq!(
+            app.selected_package_dependency(),
+            Some(&PackageIdentity::new("init"))
+        );
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedPackageDependency),
+            Some(Effect::GetPackageDetail(PackageDetailRequest {
+                identity: PackageIdentity::new("init"),
+                generation: 3,
+            }))
+        );
+        assert_eq!(app.package_selection, Some(PackageIdentity::new("init")));
+        let _ = update(&mut app, Action::BackPackageNavigation);
+        assert_eq!(app.package_selection, Some(PackageIdentity::new("busybox")));
+
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedPackageProvider),
+            Some(Effect::OpenInEditor(
+                "/layers/meta/recipes/busybox.bb".into()
+            ))
+        );
+        let _ = update(&mut app, Action::OpenSelectedPackageRecipe);
+        assert_eq!(app.screen, Screen::Recipes);
+        assert_eq!(app.recipe_selection, 0);
+
+        app.package_details.clear();
+        app.screen = Screen::Packages;
+        assert_eq!(
+            update(&mut app, Action::RefreshPackageInventory),
+            Some(Effect::GetPackageInventory(PackageInventoryRequest {
+                generation: 4
+            }))
         );
     }
 }

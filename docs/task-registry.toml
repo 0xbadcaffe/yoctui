@@ -647,12 +647,12 @@ notes = "Uppercase Z opens an authoritative focus-trapped task picker and a non-
 id = "PKG-001"
 milestone = "M3"
 title = "Package data browser"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 46
 required = true
 depends_on = ["PKG-MODEL-001", "PKG-ADAPTER-001", "PKG-UI-001"]
 verify = ["cargo test -p yoctui-app pkgdata"]
-notes = "Parent gate split into typed package state, authoritative shell-free acquisition, and responsive package workspace integration."
+notes = "Exact bounded package state, authoritative shell-free acquisition, and the responsive Packages Navigator workspace pass all child, parent, and baseline checks. Live package-data compatibility remains unclaimed because the available build has no generated pkgdata."
 
 [[task]]
 id = "PKG-MODEL-001"
@@ -680,12 +680,12 @@ notes = "Validated shell-free oe-pkgdata-util discovery and exact batched comman
 id = "PKG-UI-001"
 milestone = "M3"
 title = "Integrate the package data workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 46
 required = true
 depends_on = ["PKG-ADAPTER-001"]
 verify = ["cargo test -p yoctui-model pkgdata_workspace", "cargo test -p yoctui-app pkgdata_workspace", "cargo test -p yoctui-ui pkgdata_workspace", "cargo test -p yoctui -- pkgdata_workspace"]
-notes = "Navigator route, app-owned search/selection/refresh/dependency navigation, responsive typed detail, background execution, footer hints, and provider/recipe actions."
+notes = "Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage."
 
 [[task]]
 id = "IMAGES-001"
