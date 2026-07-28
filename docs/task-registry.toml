@@ -1032,12 +1032,12 @@ notes = "The SDK parent gate passes the complete focused matrix and baseline at 
 id = "TEST-SPEC-001"
 milestone = "M5"
 title = "Specify unified testing workflows"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 60
 required = true
 depends_on = ["JOB-002", "SDK-001"]
 verify = ["./scripts/verify-roadmap.sh"]
-notes = "Define the typed Testing workspace, tool/task boundaries, exact identities, lifecycle, result comparison, JUnit export, responsive interaction, and honest live-validation requirements before implementation."
+notes = "The authoritative contract now defines Testing navigation and responsive views; typed OE/BitBake selftest selectors; exact testimage/testsdk/testsdkext BuildRequests; configuration-gated ptest; stable background sessions; explicit structured-result states; exact regression categories; result/log opening; non-overwriting JUnit export; cancellation and failure meaning; and model/adapter/app/UI/CLI ownership. It follows current official Yocto test roles and keeps mocked evidence separate from live compatibility."
 
 [[task]]
 id = "TEST-MODEL-001"

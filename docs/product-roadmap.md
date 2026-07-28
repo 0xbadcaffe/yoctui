@@ -116,6 +116,7 @@ Capabilities:
 - testsdk
 - ptest
 - resulttool
+- typed result regression comparison and JUnit export
 - CVE analysis
 - SPDX/SBOM
 - kernel config checks

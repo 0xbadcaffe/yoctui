@@ -2,40 +2,48 @@
 
 ## Active task
 
-**ID:** TEST-SPEC-001
-**Title:** Specify unified testing workflows
+**ID:** TEST-MODEL-001
+**Title:** Model typed test discovery and execution
 
 ## Objective
 
-Define the authoritative UI behavior and architecture boundaries for one
-typed Testing workspace covering oe-selftest, bitbake-selftest, testimage,
-testsdk, testsdkext, ptest, resulttool comparison, and JUnit export.
+Add pure typed state and reducer/app routes for Testing capability, launch
+selection and previews, stable managed sessions, lifecycle, bounded output,
+cancellation, and terminal outcomes.
 
 ## Required work
 
-1. Verify the official roles and invocation boundaries of each supported
-   Yocto/BitBake testing tool.
-2. Expand `docs/ui-spec.md` with exact workspace layout, typed selectors,
-   shortcuts, dialogs, focus, responsive behavior, lifecycle, result
-   comparison, log/metadata opening, and JUnit export.
-3. Add the managed Testing boundary to `docs/architecture.md`, preserving the
-   dependency direction and existing build/job coordinators.
-4. Reconcile `docs/product-roadmap.md` only where the detailed contract
-   requires clarification.
-5. Record honest unavailable, partial, failure, cancellation, and live
-   validation meaning. Never treat arbitrary shell text as the primary UX.
+1. Add a focused `yoctui-model::testing` module for bounded family, selector,
+   capability, draft, request, exact preview, session, and stream types.
+2. Add `Testing` to the stable Navigator after `SDK` without implementing
+   result records that belong to `TEST-RESULT-MODEL-001`.
+3. Reuse exact `BuildRequest` values for testimage, testsdk, testsdkext, and
+   configured ptest; represent selftests as validated shell-free requests.
+4. Add App state, typed actions/effects, dialog/focus behavior, stale-event
+   rejection, shared background-job lifecycle, bounded output, cancellation,
+   rejection, timeout, failure, and loss.
+5. Add app input mapping for view-independent launch selection and every
+   launch/preview/cancellation dialog key without implementing widgets.
+6. Add pure unit, reducer, and app mapping tests for normal and failure paths.
 
 ## Definition of done
 
-- UI behavior is complete enough to implement without inventing interactions.
-- Component ownership and execution boundaries are explicit.
-- Every tool family, result state, comparison category, and export outcome has
-  typed meaning.
-- The registry and status documents select `TEST-MODEL-001` next.
+- Every launch family has validated typed identity and exact preview.
+- Testing navigation and session lifecycle persist independently of screen
+  selection.
+- Build tasks reuse `BuildRequest`; no shell string represents a selftest.
+- Reducer/app tests cover bounds, stale events, cancellation, and all terminal
+  outcomes.
 
 ## Verification
 
 ```bash
+cargo test -p yoctui-model test_workflow
+cargo test -p yoctui-app test_workflow
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
 ```
 

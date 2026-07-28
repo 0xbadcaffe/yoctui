@@ -481,6 +481,51 @@ exact correlated inventory after successful generation/publication. The
 Testing workspace may consume SDK test results later, but it does not duplicate
 SDK launch state.
 
+## Managed Testing boundary
+
+`yoctui-model::testing` owns test-family and selector types, exact active
+machine/distro/image/configuration identity, validated launch drafts and
+previews, stable `TestSession` context, result identities, bounded normalized
+suite/case records, selection/search, comparison categories, export requests,
+and correlated lifecycle state. It may reuse `BuildRequest` and the shared
+background-job collection, but it never discovers executables, reads result
+JSON, parses process output, walks the filesystem, launches a child, or writes
+JUnit.
+
+Image runtime, SDK, extensible SDK, and configured ptest launches are exact
+BitBake tasks owned by the existing build coordinator. The Testing model does
+not duplicate SDK launch state: an SDK task may originate from SDK or Testing,
+while exact structured results and comparisons are consumed in Testing.
+Ptest is exposed as a configured image-runtime suite only when typed
+configuration proves its prerequisites; no component guesses a target or
+silently mutates build configuration.
+
+`yoctui-bitbake` owns canonical discovery and independent revalidation of
+`oe-selftest`, `bitbake-selftest`, and `resulttool`; exact shell-free
+construction; child-only environment entries; one process-group-owned test
+runner; and bounded stream-tagged lifecycle events. Its result adapter accepts
+only canonical explicit or managed-session result roots, refuses symlinks and
+escapes, parses bounded `testresults.json` data into typed records, invokes
+supported resulttool operations with exact indexed vectors, and validates a
+non-overwriting JUnit destination immediately before spawn. Raw JSON,
+resulttool report text, unittest output, and filenames never cross into
+widgets as authority.
+
+`yoctui-app` maps Testing keys and adapter events mechanically.
+`yoctui-ui` renders only typed Testing state and emits typed actions. The CLI
+owns capability inspection, at most one selftest runner, replaceable
+generation-correlated result imports, and one comparison/export operation. It
+routes BitBake families through the existing coordinator and polls every
+Testing-owned operation without blocking terminal input. Completion, refresh,
+cancellation, timeout, nonzero failure, rejection, and worker loss are mapped
+once into reducer actions.
+
+Mocked process/filesystem coverage proves only these boundaries. Live support
+requires opt-in execution in an initialized compatible Yocto environment and
+must record the exact release, tool capabilities, selected test, result
+identity, and outcome without claiming external target or ptest coverage that
+was not exercised.
+
 ## Managed runqemu model boundary
 
 `yoctui-model::qemu` owns capability states, exact artifact-bound launch
