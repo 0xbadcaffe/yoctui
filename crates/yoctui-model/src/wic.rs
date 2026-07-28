@@ -7,6 +7,7 @@ pub const MAX_WIC_DEVICES: usize = 128;
 pub const MAX_WIC_DEVICE_MOUNTS: usize = 64;
 pub const MAX_WIC_LIMITATIONS: usize = 64;
 pub const MAX_WIC_SOURCE_BYTES: usize = 64 * 1024;
+pub const MAX_WIC_OUTPUT_DIRECTORY_INPUT_BYTES: usize = 4_096;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WicKickstartIdentity {
@@ -215,6 +216,128 @@ pub struct WicCreateDraft {
     pub output_directory: String,
     pub generate_bmap: bool,
     pub compression: WicCompression,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WicCreateField {
+    Machine,
+    Image,
+    Kickstart,
+    OutputDirectory,
+    GenerateBmap,
+    Compression,
+}
+
+impl WicCreateField {
+    const ALL: [Self; 6] = [
+        Self::Machine,
+        Self::Image,
+        Self::Kickstart,
+        Self::OutputDirectory,
+        Self::GenerateBmap,
+        Self::Compression,
+    ];
+
+    pub fn shifted(self, delta: isize) -> Self {
+        let current = Self::ALL
+            .iter()
+            .position(|value| *value == self)
+            .unwrap_or(0);
+        let next = if delta.is_negative() {
+            current.saturating_sub(delta.unsigned_abs())
+        } else {
+            current
+                .saturating_add(delta as usize)
+                .min(Self::ALL.len() - 1)
+        };
+        Self::ALL[next]
+    }
+
+    pub fn is_read_only(self) -> bool {
+        self == Self::Machine
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WicCreateDialog {
+    pub draft: WicCreateDraft,
+    pub selected_field: WicCreateField,
+    pub editing: bool,
+    pub validation_error: Option<String>,
+}
+
+impl WicCreateDialog {
+    pub fn new(draft: WicCreateDraft) -> Self {
+        Self {
+            draft,
+            selected_field: WicCreateField::Machine,
+            editing: false,
+            validation_error: None,
+        }
+    }
+
+    pub fn selected_text_mut(&mut self) -> Option<(&mut String, usize)> {
+        (self.selected_field == WicCreateField::OutputDirectory).then_some((
+            &mut self.draft.output_directory,
+            MAX_WIC_OUTPUT_DIRECTORY_INPUT_BYTES,
+        ))
+    }
+
+    pub fn cycle_choice(&mut self, capability: &WicCapability, backwards: bool) -> bool {
+        let WicCapability::Available {
+            kickstarts,
+            image_targets,
+            ..
+        } = capability
+        else {
+            return false;
+        };
+        match self.selected_field {
+            WicCreateField::Image if !image_targets.is_empty() => {
+                cycle_value(&mut self.draft.image, image_targets, backwards);
+                true
+            }
+            WicCreateField::Kickstart if !kickstarts.is_empty() => {
+                let values: Vec<_> = kickstarts
+                    .iter()
+                    .map(|kickstart| kickstart.identity.clone())
+                    .collect();
+                cycle_value(&mut self.draft.kickstart, &values, backwards);
+                true
+            }
+            WicCreateField::GenerateBmap => {
+                self.draft.generate_bmap = !self.draft.generate_bmap;
+                true
+            }
+            WicCreateField::Compression => {
+                self.draft.compression = match (self.draft.compression, backwards) {
+                    (WicCompression::None, false) => WicCompression::Gzip,
+                    (WicCompression::Gzip, false) => WicCompression::Bzip2,
+                    (WicCompression::Bzip2, false) => WicCompression::Xz,
+                    (WicCompression::Xz, false) => WicCompression::None,
+                    (WicCompression::None, true) => WicCompression::Xz,
+                    (WicCompression::Gzip, true) => WicCompression::None,
+                    (WicCompression::Bzip2, true) => WicCompression::Gzip,
+                    (WicCompression::Xz, true) => WicCompression::Bzip2,
+                };
+                true
+            }
+            _ => false,
+        }
+    }
+}
+
+fn cycle_value<T: Clone + PartialEq>(current: &mut T, values: &[T], backwards: bool) {
+    let index = values
+        .iter()
+        .position(|value| value == current)
+        .unwrap_or(0);
+    let next = if backwards {
+        index.checked_sub(1).unwrap_or(values.len() - 1)
+    } else {
+        (index + 1) % values.len()
+    };
+    *current = values[next].clone();
 }
 
 impl WicCreateDraft {

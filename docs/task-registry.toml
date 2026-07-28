@@ -867,12 +867,12 @@ notes = "One-child process-group ownership emits bounded typed streams and disti
 id = "WIC-UI-MODEL-001"
 milestone = "M4"
 title = "Add Wic workspace dialog and input state"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["WIC-ADAPTER-001"]
 verify = ["cargo test -p yoctui-model wic_workspace", "cargo test -p yoctui-app wic_workspace"]
-notes = "Add bounded creation fields, typed image/kickstart choices, preview/confirmation transitions, output selection, cancellation confirmation, disabled reasons, and modal key mapping."
+notes = "Bounded modal creation rows provide read-only machine identity, typed image/kickstart/bmap/compression choices, output editing, validation and exact preview/confirmation, stable generated-output selection/opening, active Wic-before-QEMU cancellation routing, focus restoration, disabled reasons, and distinct upper/lower-case Wic key mapping."
 
 [[task]]
 id = "WIC-UI-RENDER-001"

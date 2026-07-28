@@ -2,49 +2,49 @@
 
 ## Active task
 
-**ID:** WIC-UI-MODEL-001
-**Title:** Add Wic workspace dialog and input state
+**ID:** WIC-UI-RENDER-001
+**Title:** Render responsive Wic creation and output UI
 
 ## Objective
 
-Add pure bounded creation dialog state, typed field editing and choices,
-preview/confirmation transitions, output selection, cancellation confirmation,
-disabled reasons, and app key mapping.
+Render typed Wic capability, kickstart partitions, latest creation job,
+generated outputs, exact creation/confirmation/cancellation dialogs, and
+footer hints responsively in the Images workspace.
 
 ## Required work
 
-1. Inspect QEMU launch dialog state, Images workspace selection, focus
-   restoration, and modal input mapping before writing code.
-2. Add Wic creation draft dialog rows for read-only machine, typed image and
-   kickstart selection, output-directory editing, bmap choice, and compression
-   choice with deterministic bounded navigation.
-3. Add `W` entry from Images only when capability, active image, kickstart, and
-   no active Wic operation permit it. Preserve exact disabled reasons.
-4. Add `p` preview validation, exact preview confirmation, Esc close behavior,
-   focus trapping/restoration, and stale capability rejection.
-5. Add generated-output selection/open actions plus Wic creation cancellation
-   confirmation. Keep lower-case `w` associated-artifact opening unchanged.
-6. Map every dialog/workspace key mechanically in `yoctui-app`; dialogs must
-   consume keys before pane/global shortcuts.
-7. Add `wic_workspace` reducer/app tests for bounds, choices, validation,
-   modal focus, stale/disabled paths, output selection, cancellation, and
-   lower-/upper-case shortcut distinction.
+1. Inspect the Images Inspector, QEMU rendering, semantic theme roles, dialog
+   overlay helpers, and responsive TestBackend fixtures before editing.
+2. Render Wic capability/executable/readiness or exact disabled reason before
+   selected-artifact metadata without hiding QEMU state.
+3. Render the selected kickstart source/typed partition summary and explicit
+   dynamic/unsupported limitations without deriving new data in widgets.
+4. Render the latest Wic session request, lifecycle/timestamps, stream-tagged
+   bounded output/drop/truncation/result/error, then generated-output rows with
+   exact kind/path/size/time and visible selection.
+5. Render focus-trapped creation, exact command preview, and cancellation
+   overlays at every supported breakpoint; show read-only/editing/choice state,
+   validation, partition preview, and complete exact argv.
+6. Update the Images footer with `W create Wic`, shared `x cancel`, `[/] select
+   output`, and `O open output` while retaining QEMU and artifact hints.
+7. Add `wic_workspace` TestBackend coverage for every capability/inventory/job
+   state, all terminal outcomes, modal focus, long content, themes, 80x24,
+   medium/wide, and below-minimum terminals.
 8. Run focused and baseline checks, then mark the child done and hand off to
-   `WIC-UI-RENDER-001`.
+   `WIC-UI-CLI-001`.
 
 ## Definition of done
 
-- Dialog state is bounded, typed, modal, and capability-correlated.
-- Preview/start effects cannot be emitted from stale or invalid state.
-- Output selection and cancellation remain identity-stable.
-- App input mapping does not parse state or leak modal keys.
+- Every typed Wic state has explicit responsive rendering.
+- Dialogs trap focus and remain usable at 80x24.
+- Widgets consume typed state without parsing Wic or kickstart text.
+- Footer hints exactly match implemented shortcuts.
 - Focused and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model wic_workspace
-cargo test -p yoctui-app wic_workspace
+cargo test -p yoctui-ui wic_workspace
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

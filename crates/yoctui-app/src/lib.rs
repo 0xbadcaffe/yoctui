@@ -1195,7 +1195,11 @@ pub fn images_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('c') => Some(Action::CancelImageArtifactOperation),
         Input::Char('b') => Some(Action::BeginSelectedImageArtifactBuild),
         Input::Char('Q') => Some(Action::BeginSelectedQemuLaunch),
-        Input::Char('x') => Some(Action::BeginActiveQemuSessionCancellation),
+        Input::Char('W') => Some(Action::BeginSelectedWicCreate),
+        Input::Char('x') => Some(Action::BeginActiveImageRuntimeCancellation),
+        Input::Char('[') => Some(Action::SelectWicOutput { delta: -1 }),
+        Input::Char(']') => Some(Action::SelectWicOutput { delta: 1 }),
+        Input::Char('O') => Some(Action::OpenSelectedWicOutput),
         Input::Char('o') => Some(Action::OpenSelectedImageArtifact),
         Input::Char('m') => Some(Action::OpenSelectedImageArtifactAssociation(
             yoctui_model::ImageArtifactAssociation::Manifest,
@@ -1209,6 +1213,47 @@ pub fn images_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('w') => Some(Action::OpenSelectedImageArtifactAssociation(
             yoctui_model::ImageArtifactAssociation::Wic,
         )),
+        _ => None,
+    }
+}
+
+pub fn wic_create_dialog_action(editing: bool, key: Input) -> Option<Action> {
+    if editing {
+        return match key {
+            Input::Char(character) => Some(Action::AppendWicCreateField(character)),
+            Input::Backspace => Some(Action::BackspaceWicCreateField),
+            Input::Enter => Some(Action::FinishWicCreateFieldEdit),
+            Input::Esc => Some(Action::CancelWicCreate),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectWicCreateField { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectWicCreateField { delta: 1 }),
+        Input::Left | Input::Char('h') => Some(Action::CycleWicCreateChoice { backwards: true }),
+        Input::Right | Input::Char('l') => Some(Action::CycleWicCreateChoice { backwards: false }),
+        Input::Enter => Some(Action::ActivateWicCreateField),
+        Input::Char('p') => Some(Action::PreviewWicCreate),
+        Input::Esc => Some(Action::CancelWicCreate),
+        _ => None,
+    }
+}
+
+pub fn wic_create_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmWicCreate),
+        Input::Esc => Some(Action::CancelWicCreatePreview),
+        _ => None,
+    }
+}
+
+pub fn wic_cancellation_confirmation_action(id: WicSessionId, key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmWicSessionCancellation {
+            id,
+            acknowledge_incomplete_device: false,
+        }),
+        Input::Esc => Some(Action::CancelWicSessionCancellation),
         _ => None,
     }
 }
@@ -3313,7 +3358,7 @@ mod tests {
         );
         assert_eq!(
             images_workspace_action(false, Input::Char('x')),
-            Some(Action::BeginActiveQemuSessionCancellation)
+            Some(Action::BeginActiveImageRuntimeCancellation)
         );
         assert_eq!(
             qemu_launch_dialog_action(false, Input::Down),
@@ -3362,6 +3407,46 @@ mod tests {
         assert_eq!(
             qemu_cancellation_confirmation_action(Input::Esc),
             Some(Action::CancelQemuSessionCancellation)
+        );
+    }
+    #[test]
+    fn wic_workspace_maps_distinct_creation_modal_and_artifact_keys() {
+        assert_eq!(
+            images_workspace_action(false, Input::Char('W')),
+            Some(Action::BeginSelectedWicCreate)
+        );
+        assert_eq!(
+            images_workspace_action(false, Input::Char('w')),
+            Some(Action::OpenSelectedImageArtifactAssociation(
+                yoctui_model::ImageArtifactAssociation::Wic
+            ))
+        );
+        assert_eq!(
+            wic_create_dialog_action(false, Input::Down),
+            Some(Action::SelectWicCreateField { delta: 1 })
+        );
+        assert_eq!(
+            wic_create_dialog_action(false, Input::Left),
+            Some(Action::CycleWicCreateChoice { backwards: true })
+        );
+        assert_eq!(
+            wic_create_dialog_action(true, Input::Char('/')),
+            Some(Action::AppendWicCreateField('/'))
+        );
+        assert_eq!(
+            wic_create_dialog_action(false, Input::Char('p')),
+            Some(Action::PreviewWicCreate)
+        );
+        assert_eq!(
+            wic_create_confirmation_action(Input::Enter),
+            Some(Action::ConfirmWicCreate)
+        );
+        assert_eq!(
+            wic_cancellation_confirmation_action(WicSessionId(3), Input::Enter),
+            Some(Action::ConfirmWicSessionCancellation {
+                id: WicSessionId(3),
+                acknowledge_incomplete_device: false,
+            })
         );
     }
     #[test]
