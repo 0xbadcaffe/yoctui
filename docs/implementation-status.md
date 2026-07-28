@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Verify the complete managed QEMU parent gate.
+Add the Wic image workflow.
 
 ## Current task
 
@@ -25,7 +25,7 @@ See `docs/current-task.md`.
 | M1 BitBake cockpit | IN_PROGRESS | Typed background build execution and live BitBake 2.19.0 Tinfoil validation exist; remaining typed cockpit workflows are incomplete |
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
-| M4 Images/SDK/QEMU/Wic | IN_PROGRESS | The complete typed Images artifact workspace is done; SDK, QEMU, and Wic workflows remain |
+| M4 Images/SDK/QEMU/Wic | IN_PROGRESS | The typed Images artifact workspace and managed QEMU workflow are done; SDK and Wic workflows remain |
 | M5 Testing/QA/Security | NOT_STARTED | Coverage infrastructure exists; product workflows remain |
 | M6 Maintenance | NOT_STARTED | Partial diagnostics only |
 | M7 Hardening | IN_PROGRESS | Coverage and profiling foundations exist |
@@ -78,8 +78,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `QEMU-001` — verify the complete managed QEMU parent gate
-2. `WIC-001` — add the Wic image workflow
+1. `WIC-001` — add the Wic image workflow
 
 ## Rules
 

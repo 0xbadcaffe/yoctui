@@ -735,12 +735,12 @@ notes = "Images now combines retained recipe picker/build confirmation with corr
 id = "QEMU-001"
 milestone = "M4"
 title = "Managed runqemu workflow"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 50
 required = true
 depends_on = ["QEMU-MODEL-001", "QEMU-ADAPTER-001", "QEMU-UI-001"]
 verify = ["cargo test -p yoctui-app qemu", "cargo test -p yoctui-ui qemu"]
-notes = "Parent gate split into typed launch/session state, authoritative shell-free execution, and responsive dialog/session integration."
+notes = "The complete managed runqemu gate passes across exact artifact-bound model state, canonical capability inspection, independently revalidated shell-free arguments, bounded typed runner events, responsive dialogs/session history, and CLI-owned polling/cancellation. Fake executable coverage does not establish live runqemu compatibility."
 
 [[task]]
 id = "QEMU-MODEL-001"
