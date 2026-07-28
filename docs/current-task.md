@@ -2,55 +2,63 @@
 
 ## Active task
 
-**ID:** SDK-ARTIFACT-001
-**Title:** Discover authoritative SDK artifacts
+**ID:** SDK-TOOLS-001
+**Title:** Adapt SDK publication and native tools
 
 ## Objective
 
-Implement the bounded filesystem adapter that scans only the typed canonical
-SDK deploy root and returns exact typed SDK artifact identities, associations,
-metadata availability, and explicit limitations.
+Implement capability discovery, exact shell-free command reconstruction, and
+bounded cancellable process execution for SDK publication and native-tool
+workflows without sourcing scripts into the Yoctui process.
 
 ## Required work
 
-1. Inspect the completed SDK model identities/inventory contract and existing
-   image/Wic/package filesystem adapters before writing code.
-2. Add an SDK artifact adapter in `yoctui-bitbake` that validates the request,
-   canonicalizes the authoritative `SDK_DEPLOY` root, rejects root mismatch,
-   symlinks, escapes, non-regular files, malformed names, and over-limit input,
-   and never follows links.
-3. Classify installers, checksum files, manifests, and other SDK records in the
-   adapter only. Preserve byte size and modification time; expose machine,
-   standard/extensible kind, host tuple, target tuple, and publication state
-   only when authoritative, otherwise leave them unavailable.
-4. Associate checksum and manifest paths deterministically without parsing in
-   model, app, or widgets. Bound directories, records, path bytes,
-   associations, and limitations; report skipped validly bounded records as
-   partial rather than silently dropping them.
-5. Provide an asynchronous cancellable entry point suitable for independent
-   CLI polling. Cancellation, worker loss, missing root, permissions, empty,
-   partial, and success must remain distinct.
-6. Add focused fake-filesystem tests named `sdk_artifact` covering sorting,
-   associations, empty, partial, malformed/oversized records, symlink/root
-   escape, timeout/cancellation, unavailable metadata, and deterministic
-   bounds. Do not claim live SDK compatibility.
-7. Update `docs/architecture.md` only if the implemented boundary differs from
-   the current contract.
-8. Run focused and baseline checks, then hand off to `SDK-TOOLS-001`.
+1. Inspect the completed SDK request/preview/session model and existing
+   Devtool, QEMU, Wic, package-data, and signature process adapters before
+   writing code.
+2. Add an SDK capability inspector in `yoctui-bitbake` that discovers
+   `oe-publish-sdk`, `oe-find-native-sysroot`, and `oe-run-native` only as
+   canonical regular executable non-symlink files beneath authoritative
+   workspace roots. Preserve individual missing tools without guessing paths.
+3. Add publication command construction that independently revalidates the
+   exact selected regular installer, canonical absolute destination, tool
+   executable, and model preview identity. Never use a shell, silently
+   overwrite, or accept symlink/path escapes.
+4. Add native command construction for `oe-find-native-sysroot` and
+   `oe-run-native`. Validate the exact mode, bounded recipe/tool/argument
+   identity, canonical active-build or extracted-SDK root, and one
+   adapter-validated environment-setup file. Build a bounded child-only
+   environment; never source a script or mutate the Yoctui process
+   environment.
+5. Add a single-operation asynchronous runner that emits typed started,
+   bounded stream-tagged output, success, nonzero failure, cancellation,
+   cancellation rejection/escalation, timeout, and process-loss events.
+   Execution must use exact native argument vectors without a shell.
+6. Add focused fake-filesystem/process tests named `sdk_tool` covering partial
+   capability, unsafe/symlink/missing tools and paths, exact publication and
+   native argv, tampered previews, extracted-root/environment validation,
+   child-only environment isolation, output bounds, duplicate rejection,
+   success, nonzero failure, timeout, graceful/forced cancellation, and loss.
+   Do not claim live SDK compatibility.
+7. Update `docs/architecture.md` only if the implemented ownership boundary
+   differs from the existing Managed SDK boundary.
+8. Run focused and baseline checks, then hand off to `SDK-RENDER-001`.
 
 ## Definition of done
 
-- Only canonical regular records beneath the exact SDK deploy root cross the
-  adapter boundary.
-- Every returned identity and association validates against the model.
-- Empty, partial, failed, cancelled, and successful outcomes are explicit.
-- No widget/app code parses filenames or filesystem output.
-- Focused adapter and all baseline checks pass.
+- Capability and command construction accept only canonical adapter-validated
+  tool, artifact, destination, and workspace identities.
+- Publication and native tools execute directly with exact typed arguments and
+  a child-only environment.
+- Output and lifecycle are typed, bounded, cancellable, and independent from
+  model/UI mutation.
+- Focused fake adapters cover all terminal and validation outcomes.
+- Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake sdk_artifact
+cargo test -p yoctui-bitbake sdk_tool
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
