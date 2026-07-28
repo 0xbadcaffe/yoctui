@@ -17,14 +17,14 @@ use yoctui_model::{
     QemuCapability, QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview,
     QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor,
     RecipeIdentity, Screen, SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind,
-    SdkNativeDraft, SdkNativeMode, SdkNativePreview, SdkOperation, SdkPublishDraft,
-    SdkPublishPreview, SdkSessionId, SdkToolCapability, Severity, SignatureComparisonState,
-    SignatureDifferenceCategory, SignatureDumpState, TaskFilterField, TaskRow, TaskState, Theme,
-    VariableIdentity, WicCapability, WicCompression, WicCreateDialog, WicCreateField,
-    WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart,
-    WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
-    config_comparison, config_edit_disabled_reason, config_source_disabled_reason, format_duration,
-    selected_config_copy_value,
+    SdkNativeDialog, SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation,
+    SdkPublishDraft, SdkPublishPreview, SdkSessionId, SdkToolCapability, Severity,
+    SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, TaskFilterField,
+    TaskRow, TaskState, Theme, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
+    WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog,
+    WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog,
+    WicWritePreview, config_comparison, config_edit_disabled_reason, config_source_disabled_reason,
+    format_duration, selected_config_copy_value,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -2738,17 +2738,12 @@ fn sdk_publish_confirmation(frame: &mut Frame, app: &App, preview: &SdkPublishPr
     );
 }
 
-fn sdk_native_dialog(frame: &mut Frame, app: &App, draft: &SdkNativeDraft, area: Rect) {
-    let arguments = if draft.arguments.is_empty() {
+fn sdk_native_dialog(frame: &mut Frame, app: &App, dialog: &SdkNativeDialog, area: Rect) {
+    let draft = &dialog.draft;
+    let arguments = if dialog.arguments_input.is_empty() {
         "none".into()
     } else {
-        draft
-            .arguments
-            .iter()
-            .take(16)
-            .cloned()
-            .collect::<Vec<_>>()
-            .join(" ")
+        dialog.arguments_input.clone()
     };
     let validation = app
         .sdk_tool_capability
@@ -2769,35 +2764,64 @@ fn sdk_native_dialog(frame: &mut Frame, app: &App, draft: &SdkNativeDraft, area:
             |message| format!("Validation: {message}"),
             |()| "Validation: ready for exact preview".into(),
         );
+    let row = |field: SdkNativeField, label: &str, value: &str| {
+        let marker = if dialog.selected_field == field {
+            "▶"
+        } else {
+            " "
+        };
+        let editing = if dialog.selected_field == field && dialog.editing {
+            " [editing]"
+        } else {
+            ""
+        };
+        format!("{marker} {label}: {value}{editing}")
+    };
+    let validation = dialog
+        .validation_error
+        .as_ref()
+        .map_or(validation, |message| format!("Validation: {message}"));
     sdk_popup(
         frame,
         app,
         area,
         "SDK native tool",
         format!(
-            "Mode: {:?}\nExecutable: {}\nWorkspace: {}\nRecipe: {}\nTool: {}\nArguments: {}\n{validation}\n\nEmpty workspace uses the active build; an extracted root requires exactly one validated environment-setup-* file.\nEnter validates and opens the exact argument preview.\nEsc closes without starting.",
-            draft.mode,
+            "{}\nExecutable: {}\n{}\n{}\n{}\n{}\n{validation}\n\n↑/↓ select · Enter edit/cycle · ←/→ mode · p preview · Esc close",
+            row(SdkNativeField::Mode, "Mode", &format!("{:?}", draft.mode)),
             app.sdk_tool_capability
                 .executable_for(draft.mode)
                 .map_or_else(|_| "unavailable".into(), |path| path.display().to_string()),
-            if draft.extracted_root.is_empty() {
-                "active build"
-            } else {
-                &draft.extracted_root
-            },
-            if draft.recipe.is_empty() {
-                "unavailable"
-            } else {
-                &draft.recipe
-            },
-            if draft.mode == SdkNativeMode::FindSysroot {
-                "not applicable"
-            } else if draft.tool.is_empty() {
-                "unavailable"
-            } else {
-                &draft.tool
-            },
-            arguments,
+            row(
+                SdkNativeField::Workspace,
+                "Workspace",
+                if draft.extracted_root.is_empty() {
+                    "active build"
+                } else {
+                    &draft.extracted_root
+                },
+            ),
+            row(
+                SdkNativeField::Recipe,
+                "Recipe",
+                if draft.recipe.is_empty() {
+                    "unavailable"
+                } else {
+                    &draft.recipe
+                },
+            ),
+            row(
+                SdkNativeField::Tool,
+                "Tool",
+                if draft.mode == SdkNativeMode::FindSysroot {
+                    "not applicable"
+                } else if draft.tool.is_empty() {
+                    "unavailable"
+                } else {
+                    &draft.tool
+                },
+            ),
+            row(SdkNativeField::Arguments, "Arguments", &arguments),
         ),
         18,
     );
@@ -6771,15 +6795,22 @@ mod tests {
 
         app.dialogs.clear();
         app.focus = FocusTarget::Dialog;
-        let native_draft = SdkNativeDraft {
+        let native_draft = yoctui_model::SdkNativeDraft {
             mode: SdkNativeMode::RunNative,
             extracted_root: format!("/opt/{}", "sdk-root-".repeat(80)),
             recipe: "cmake-native".into(),
             tool: "cmake".into(),
             arguments: vec!["--version".into(), "--trace".into()],
         };
-        app.dialogs.push_front(Dialog::SdkNative(native_draft));
-        assert!(rendered_text(&app, 80, 24).contains("SDK native tool"));
+        app.dialogs
+            .push_front(Dialog::SdkNative(SdkNativeDialog::new(native_draft)));
+        let native = rendered_text(&app, 80, 24);
+        assert!(native.contains("SDK native tool"), "{native}");
+        assert!(native.contains("▶ Mode"), "{native}");
+        let _ = update(&mut app, Action::SelectSdkNativeField { delta: 2 });
+        let _ = update(&mut app, Action::ActivateSdkNativeField);
+        let editing = rendered_text(&app, 80, 24);
+        assert!(editing.contains("[editing]"), "{editing}");
 
         let preview = yoctui_model::SdkNativePreview::new(yoctui_model::SdkNativeRequest {
             executable: "/workspace/scripts/oe-run-native".into(),

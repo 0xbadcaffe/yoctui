@@ -2,40 +2,35 @@
 
 ## Active task
 
-**ID:** SDK-UI-CLI-001
-**Title:** Integrate complete SDK workspace
+**ID:** SDK-001
+**Title:** SDK build and artifact workflow
 
 ## Objective
 
-Close the cross-layer SDK workspace gate by auditing the authoritative UI
-contract against the completed model, adapters, rendering, and CLI execution,
-then implement and verify any missing end-user interaction without duplicating
-state or execution lifecycles.
+Close the SDK parent completion gate by verifying all completed SDK child
+tasks together against the authoritative product, UI, and architecture
+contracts.
 
 ## Required work
 
-1. Inspect the completed SDK child tasks and every SDK requirement in
-   `docs/ui-spec.md` before changing code.
-2. Exercise the actual model/app/UI/CLI routes for image selection, populate
-   and test previews, artifact scan/search/selection/opening, publication,
-   native-tool entry and preview, and independent cancellation.
-3. Implement only gaps found by that audit. Keep widgets typed, preserve the
-   shared dialog/focus model, and route builds through the existing BitBake
-   coordinator.
-4. Add cross-layer `sdk_workflow` tests for every corrected route, including
-   80x24 behavior, long inputs, navigation retention, terminal outcomes,
-   child-only extracted environments, and refresh correlation.
-5. Do not claim live SDK compatibility from fake filesystem/process tests.
-6. Run the complete child and baseline verification, then hand off to
-   `SDK-001`.
+1. Re-read every SDK requirement in `docs/ui-spec.md` and the completed SDK
+   child-task evidence.
+2. Run the complete SDK verification matrix and baseline checks without
+   weakening or bypassing any test.
+3. Reconcile only genuine remaining contract gaps; do not duplicate the
+   completed cross-layer implementation.
+4. Keep live-compatibility claims explicitly separate from fake
+   filesystem/process evidence.
+5. Mark the parent complete only when all child tasks and verification pass,
+   then select the next eligible highest-priority incomplete task.
 
 ## Definition of done
 
-- Every SDK shortcut and dialog specified in `docs/ui-spec.md` is reachable
-  and usable through the real CLI input router.
-- Model, app, adapters, UI, and CLI agree on exact typed identities,
-  lifecycle, refresh, cancellation, and failure meaning.
-- The combined SDK parent verification and baseline checks pass.
+- All required SDK child tasks are `DONE`.
+- The combined SDK model, app, adapter, UI, and CLI verification passes.
+- The baseline checks pass.
+- SDK status and evidence are reconciled without claiming unperformed live
+  validation.
 
 ## Verification
 

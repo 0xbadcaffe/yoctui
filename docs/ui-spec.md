@@ -1250,6 +1250,15 @@ adapter-validated environment setup identity; widgets never source scripts or
 derive environment variables. Environment changes are confined to the managed
 child process and never mutate the Yoctui process.
 
+The native-tool dialog initially selects `Mode`. `↑`/`↓` moves between Mode,
+Workspace, Recipe, Tool, and Arguments without wrapping. `Enter` on Mode, or
+`←`/`→` while Mode is selected, switches between find-sysroot and run-native.
+`Enter` on a text field begins editing and `Enter` finishes it; `Esc` closes
+the dialog even while editing. An empty Workspace means the active build.
+Arguments are bounded text whose ASCII-whitespace-delimited tokens become the
+exact shell-free argument vector. `p` validates and opens the indexed preview.
+The Tool field is explicitly not applicable in find-sysroot mode.
+
 All SDK dialogs trap focus and remain usable at 80×24. Responsive modes follow
 the shared Navigator/Workspace/Inspector rules, all lifecycle and selection
 meaning survives no-color mode, and long paths/arguments are bounded and

@@ -1010,12 +1010,12 @@ notes = "The CLI now constructs SDK adapters from canonical active workspace ide
 id = "SDK-UI-CLI-001"
 milestone = "M4"
 title = "Integrate complete SDK workspace"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 52
 required = true
 depends_on = ["SDK-MODEL-001", "SDK-ARTIFACT-001", "SDK-TOOLS-001", "SDK-RENDER-001", "SDK-CLI-001"]
 verify = ["cargo test -p yoctui-model sdk_workflow", "cargo test -p yoctui-app sdk_workflow", "cargo test -p yoctui-bitbake sdk_", "cargo test -p yoctui-ui sdk_workflow", "cargo test -p yoctui -- sdk_workflow"]
-notes = "Parent gate for exact typed SDK generation/testing, artifact discovery, publication, extracted/native tools, responsive rendering, and independently polled CLI execution."
+notes = "The cross-layer SDK workspace gate now passes: every documented shortcut reaches typed model state through the real CLI router, exact selected artifacts open through the configured editor, and the native-tool dialog provides bounded keyboard-editable mode/workspace/recipe/tool/argument fields before an indexed shell-free preview. Managed builds, correlated scans, publication/native child jobs, independent cancellation, navigation retention, refresh, terminal outcomes, long inputs, and 80x24 rendering pass focused and baseline coverage. Cancellation fixtures synchronize readiness deterministically; fake filesystems/processes do not claim live SDK compatibility."
 
 [[task]]
 id = "SDK-001"

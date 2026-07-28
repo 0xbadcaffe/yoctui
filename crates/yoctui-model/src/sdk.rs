@@ -9,6 +9,7 @@ pub const MAX_SDK_ASSOCIATIONS: usize = 256;
 pub const MAX_SDK_LIMITATIONS: usize = 64;
 pub const MAX_SDK_NATIVE_ARGUMENTS: usize = 128;
 pub const MAX_SDK_NATIVE_ARGUMENT_BYTES: usize = 4_096;
+pub const MAX_SDK_NATIVE_ARGUMENT_INPUT_BYTES: usize = 4_096;
 
 fn token_is_valid(value: &str) -> bool {
     !value.is_empty()
@@ -375,6 +376,96 @@ impl Default for SdkNativeDraft {
             tool: String::new(),
             arguments: Vec::new(),
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SdkNativeField {
+    Mode,
+    Workspace,
+    Recipe,
+    Tool,
+    Arguments,
+}
+
+impl SdkNativeField {
+    const ALL: [Self; 5] = [
+        Self::Mode,
+        Self::Workspace,
+        Self::Recipe,
+        Self::Tool,
+        Self::Arguments,
+    ];
+
+    pub fn shifted(self, delta: isize) -> Self {
+        let current = Self::ALL
+            .iter()
+            .position(|candidate| *candidate == self)
+            .unwrap_or_default();
+        let next = if delta.is_negative() {
+            current.saturating_sub(delta.unsigned_abs())
+        } else {
+            current
+                .saturating_add(delta as usize)
+                .min(Self::ALL.len() - 1)
+        };
+        Self::ALL[next]
+    }
+
+    pub fn is_text(self) -> bool {
+        !matches!(self, Self::Mode)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SdkNativeDialog {
+    pub draft: SdkNativeDraft,
+    pub selected_field: SdkNativeField,
+    pub editing: bool,
+    pub arguments_input: String,
+    pub validation_error: Option<String>,
+}
+
+impl SdkNativeDialog {
+    pub fn new(draft: SdkNativeDraft) -> Self {
+        let arguments_input = draft.arguments.join(" ");
+        Self {
+            draft,
+            selected_field: SdkNativeField::Mode,
+            editing: false,
+            arguments_input,
+            validation_error: None,
+        }
+    }
+
+    pub fn selected_text_mut(&mut self) -> Option<(&mut String, usize)> {
+        match self.selected_field {
+            SdkNativeField::Workspace => Some((&mut self.draft.extracted_root, 4_096)),
+            SdkNativeField::Recipe => Some((&mut self.draft.recipe, 256)),
+            SdkNativeField::Tool => Some((&mut self.draft.tool, 256)),
+            SdkNativeField::Arguments => Some((
+                &mut self.arguments_input,
+                MAX_SDK_NATIVE_ARGUMENT_INPUT_BYTES,
+            )),
+            SdkNativeField::Mode => None,
+        }
+    }
+
+    pub fn cycle_mode(&mut self) {
+        self.draft.mode = match self.draft.mode {
+            SdkNativeMode::FindSysroot => SdkNativeMode::RunNative,
+            SdkNativeMode::RunNative => SdkNativeMode::FindSysroot,
+        };
+        self.validation_error = None;
+    }
+
+    pub fn synchronize_arguments(&mut self) {
+        self.draft.arguments = self
+            .arguments_input
+            .split_ascii_whitespace()
+            .take(MAX_SDK_NATIVE_ARGUMENTS + 1)
+            .map(str::to_owned)
+            .collect();
     }
 }
 
