@@ -457,6 +457,9 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Images => {
             "↑/↓ select | Q QEMU | W create Wic | D write device | x cancel | [/] output | O open output | / search | R refresh | c scan | b build | i image | o artifact | m manifest | l license | s SPDX | w Wic"
         }
+        Screen::Sdk => {
+            "↑/↓ select | i image | s standard | E extensible | t testsdk | T testsdkext | R refresh | P publish | n native | o open | c cancel"
+        }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
@@ -1568,6 +1571,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
         ("Recipes", Screen::Recipes),
         ("Packages", Screen::Packages),
         ("Images", Screen::Images),
+        ("SDK", Screen::Sdk),
         ("Tasks", Screen::Tasks),
         ("Logs", Screen::Logs),
         ("Errors", Screen::Errors),
@@ -1616,6 +1620,14 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Recipes => recipes(frame, app, area),
         Screen::Packages => packages_workspace(frame, app, area),
         Screen::Images => images_workspace(frame, app, area),
+        Screen::Sdk => frame.render_widget(
+            Paragraph::new(
+                "SDK workspace model is ready. Artifact and operation rendering is pending.",
+            )
+            .block(Block::default().title("SDK").borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+            area,
+        ),
         Screen::Layers => {
             if let Some(browser) = app.layer_browser.as_ref() {
                 layer_browser(frame, app, browser, area)

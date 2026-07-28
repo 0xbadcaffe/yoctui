@@ -2,11 +2,13 @@
 mod image;
 mod package;
 mod qemu;
+mod sdk;
 mod wic;
 
 pub use image::*;
 pub use package::*;
 pub use qemu::*;
+pub use sdk::*;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
@@ -51,6 +53,7 @@ pub enum Screen {
     Recipes,
     Packages,
     Images,
+    Sdk,
     Layers,
     Configuration,
     Bbmask,
@@ -132,12 +135,13 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-const NAVIGATOR_SCREENS: [Screen; 13] = [
+const NAVIGATOR_SCREENS: [Screen; 14] = [
     Screen::Dashboard,
     Screen::Layers,
     Screen::Recipes,
     Screen::Packages,
     Screen::Images,
+    Screen::Sdk,
     Screen::Tasks,
     Screen::Logs,
     Screen::Errors,
@@ -783,6 +787,12 @@ pub enum Dialog {
         id: WicSessionId,
         incomplete_device_warning: bool,
     },
+    SdkBuildConfirmation(SdkBuildPreview),
+    SdkPublish(SdkPublishDraft),
+    SdkPublishConfirmation(SdkPublishPreview),
+    SdkNative(SdkNativeDraft),
+    SdkNativeConfirmation(SdkNativePreview),
+    SdkCancellationConfirmation(SdkSessionId),
     RecipeTaskConfirmation(BuildRequest),
     RecipeTaskPicker(RecipeTaskPicker),
     SignatureTaskPicker(SignatureTaskPicker),
@@ -2107,6 +2117,14 @@ pub struct App {
     pub image_artifact_query: String,
     pub image_artifact_searching: bool,
     pub image_artifact_request_generation: u64,
+    pub sdk_artifacts: SdkArtifactInventoryState,
+    pub sdk_artifact_selection: Option<SdkArtifactIdentity>,
+    pub sdk_artifact_query: String,
+    pub sdk_artifact_searching: bool,
+    pub sdk_artifact_generation: u64,
+    pub sdk_tool_capability: SdkToolCapability,
+    pub sdk_sessions: VecDeque<SdkSession>,
+    pub sdk_session_generation: u64,
     pub qemu_capability: QemuCapability,
     pub qemu_sessions: VecDeque<QemuSession>,
     pub qemu_session_generation: u64,
@@ -2194,6 +2212,14 @@ impl App {
             image_artifact_query: String::new(),
             image_artifact_searching: false,
             image_artifact_request_generation: 0,
+            sdk_artifacts: SdkArtifactInventoryState::NotLoaded,
+            sdk_artifact_selection: None,
+            sdk_artifact_query: String::new(),
+            sdk_artifact_searching: false,
+            sdk_artifact_generation: 0,
+            sdk_tool_capability: SdkToolCapability::NotInspected,
+            sdk_sessions: VecDeque::new(),
+            sdk_session_generation: 0,
             qemu_capability: QemuCapability::default(),
             qemu_sessions: VecDeque::new(),
             qemu_session_generation: 0,
@@ -2395,6 +2421,33 @@ impl App {
         self.filtered_image_artifacts()
             .into_iter()
             .find(|artifact| &artifact.identity == selected)
+    }
+    pub fn filtered_sdk_artifacts(&self) -> Vec<&SdkArtifact> {
+        self.sdk_artifacts
+            .artifacts()
+            .unwrap_or_default()
+            .iter()
+            .filter(|artifact| artifact.matches_query(&self.sdk_artifact_query))
+            .collect()
+    }
+    pub fn selected_sdk_artifact(&self) -> Option<&SdkArtifact> {
+        let selected = self.sdk_artifact_selection.as_ref()?;
+        self.filtered_sdk_artifacts()
+            .into_iter()
+            .find(|artifact| &artifact.identity == selected)
+    }
+    pub fn sdk_session(&self, id: SdkSessionId) -> Option<&SdkSession> {
+        self.sdk_sessions.iter().find(|session| session.id == id)
+    }
+    pub fn active_sdk_session(&self) -> Option<&SdkSession> {
+        self.sdk_sessions.iter().rev().find(|session| {
+            self.background_jobs
+                .get(session.background_job_id)
+                .is_some_and(|job| !job.status.is_terminal())
+        })
+    }
+    pub fn latest_sdk_session(&self) -> Option<&SdkSession> {
+        self.sdk_sessions.back()
     }
     pub fn qemu_session(&self, id: QemuSessionId) -> Option<&QemuSession> {
         self.qemu_sessions.iter().find(|session| session.id == id)
@@ -2776,6 +2829,84 @@ pub enum Action {
     BeginSelectedImageArtifactBuild,
     OpenSelectedImageArtifact,
     OpenSelectedImageArtifactAssociation(ImageArtifactAssociation),
+    BeginSdkBuild(SdkBuildAction),
+    ConfirmSdkBuild,
+    CancelSdkBuild,
+    BeginSdkArtifactInventory,
+    RefreshSdkArtifactInventory,
+    SdkArtifactInventoryLoaded {
+        request: SdkArtifactInventoryRequest,
+        artifacts: Vec<SdkArtifact>,
+        limitations: Vec<String>,
+    },
+    SdkArtifactInventoryFailed {
+        request: SdkArtifactInventoryRequest,
+        message: String,
+    },
+    SelectSdkArtifact {
+        delta: isize,
+    },
+    BeginSdkArtifactSearch,
+    AppendSdkArtifactQuery(char),
+    BackspaceSdkArtifactQuery,
+    FinishSdkArtifactSearch,
+    SdkToolCapabilityLoaded(SdkToolCapability),
+    BeginSelectedSdkPublish,
+    AppendSdkPublishDestination(char),
+    BackspaceSdkPublishDestination,
+    PreviewSdkPublish,
+    CancelSdkPublish,
+    CancelSdkPublishPreview,
+    ConfirmSdkPublish,
+    BeginSdkNative,
+    UpdateSdkNativeDraft(SdkNativeDraft),
+    PreviewSdkNative,
+    CancelSdkNative,
+    CancelSdkNativePreview,
+    ConfirmSdkNative,
+    SdkSessionStarting {
+        id: SdkSessionId,
+        started_at: SystemTime,
+    },
+    SdkSessionRunning {
+        id: SdkSessionId,
+    },
+    AppendSdkSessionOutput {
+        id: SdkSessionId,
+        stream: SdkOutputStream,
+        line: String,
+        truncated: bool,
+        timestamp: SystemTime,
+    },
+    CompleteSdkSession {
+        id: SdkSessionId,
+        exit_code: i32,
+        artifacts: Vec<PathBuf>,
+        finished_at: SystemTime,
+    },
+    FailSdkSession {
+        id: SdkSessionId,
+        message: String,
+        exit_code: Option<i32>,
+        finished_at: SystemTime,
+    },
+    LoseSdkSession {
+        id: SdkSessionId,
+        message: String,
+        finished_at: SystemTime,
+    },
+    BeginActiveSdkSessionCancellation,
+    ConfirmSdkSessionCancellation,
+    CancelSdkSessionCancellation,
+    RejectSdkSessionCancellation {
+        id: SdkSessionId,
+        message: String,
+    },
+    CancelSdkSession {
+        id: SdkSessionId,
+        exit_code: Option<i32>,
+        finished_at: SystemTime,
+    },
     InspectQemuCapability,
     QemuCapabilityLoaded(QemuCapability),
     BeginSelectedQemuLaunch,
@@ -4125,6 +4256,136 @@ fn image_artifact_operation_is_loading(app: &App) -> bool {
     )
 }
 
+fn begin_sdk_artifact_inventory(app: &mut App) -> Option<Effect> {
+    let Some(root) = app.workspace.variables.get("SDK_DEPLOY").map(PathBuf::from) else {
+        app.notification =
+            Some("SDK artifacts are unavailable because SDK_DEPLOY was not reported.".into());
+        return None;
+    };
+    let machine = app
+        .workspace
+        .variables
+        .get("MACHINE")
+        .cloned()
+        .unwrap_or_default();
+    app.sdk_artifact_generation = app.sdk_artifact_generation.wrapping_add(1).max(1);
+    let request = SdkArtifactInventoryRequest {
+        generation: app.sdk_artifact_generation,
+        root,
+        machine,
+    };
+    if let Err(message) = request.validate() {
+        app.notification = Some(format!("SDK artifacts are unavailable: {message}."));
+        return None;
+    }
+    app.sdk_artifacts = SdkArtifactInventoryState::Loading {
+        request: request.clone(),
+    };
+    Some(Effect::GetSdkArtifacts(request))
+}
+
+fn set_sdk_artifact_selection_to_current_or_first(
+    app: &mut App,
+    previous: Option<SdkArtifactIdentity>,
+) {
+    let visible = app
+        .filtered_sdk_artifacts()
+        .into_iter()
+        .map(|artifact| artifact.identity.clone())
+        .collect::<Vec<_>>();
+    app.sdk_artifact_selection = previous
+        .filter(|identity| visible.contains(identity))
+        .or_else(|| visible.first().cloned());
+}
+
+const MAX_SDK_SESSIONS: usize = 32;
+const SDK_BACKGROUND_JOB_NAMESPACE: u64 = 1 << 62;
+
+fn next_sdk_session_id(app: &mut App) -> SdkSessionId {
+    app.sdk_session_generation = app.sdk_session_generation.wrapping_add(1).max(1);
+    SdkSessionId(app.sdk_session_generation)
+}
+
+fn sdk_background_job_id(id: SdkSessionId) -> BackgroundJobId {
+    BackgroundJobId(SDK_BACKGROUND_JOB_NAMESPACE | id.0)
+}
+
+fn sdk_job_id(app: &App, id: SdkSessionId) -> Option<BackgroundJobId> {
+    app.sdk_session(id).map(|session| session.background_job_id)
+}
+
+fn mutate_sdk_session(
+    app: &mut App,
+    id: SdkSessionId,
+    mutation: impl FnOnce(&mut SdkSession),
+) -> Option<BackgroundJobId> {
+    let session = app
+        .sdk_sessions
+        .iter_mut()
+        .find(|session| session.id == id)?;
+    let job_id = session.background_job_id;
+    mutation(session);
+    Some(job_id)
+}
+
+fn note_stale_sdk_event(app: &mut App) {
+    app.background_jobs.ignored_transitions += 1;
+}
+
+fn queue_sdk_session(app: &mut App, operation: SdkOperation) -> Option<Effect> {
+    if app.active_sdk_session().is_some() {
+        app.notification = Some("A managed SDK tool operation is already active.".into());
+        return None;
+    }
+    while app.sdk_sessions.len() >= MAX_SDK_SESSIONS {
+        let Some(index) = app.sdk_sessions.iter().position(|session| {
+            app.background_jobs
+                .get(session.background_job_id)
+                .is_none_or(|job| job.status.is_terminal())
+        }) else {
+            app.notification = Some("The SDK operation history is full.".into());
+            return None;
+        };
+        app.sdk_sessions.remove(index);
+    }
+    let id = next_sdk_session_id(app);
+    let background_job_id = sdk_background_job_id(id);
+    let (title, path) = match &operation {
+        SdkOperation::Publish(request) => (
+            format!("Publish SDK {}", request.artifact.path.display()),
+            Some(request.artifact.path.clone()),
+        ),
+        SdkOperation::Native(request) => (
+            format!("SDK native {}", request.recipe),
+            request.extracted_root.clone(),
+        ),
+    };
+    app.background_jobs.queue(BackgroundJobSpec {
+        id: background_job_id,
+        kind: BackgroundJobKind::Sdk,
+        title,
+        context: BackgroundJobContext {
+            workspace: Some(Screen::Sdk),
+            path,
+            ..BackgroundJobContext::default()
+        },
+        cancellation_supported: true,
+        queued_at: SystemTime::now(),
+    });
+    if app.background_jobs.get(background_job_id).is_none() {
+        app.notification = Some("The SDK operation could not be queued.".into());
+        return None;
+    }
+    app.sdk_sessions.push_back(SdkSession {
+        id,
+        background_job_id,
+        operation: operation.clone(),
+        exit_code: None,
+        error_detail: None,
+    });
+    Some(Effect::StartSdkSession { id, operation })
+}
+
 const MAX_QEMU_SESSIONS: usize = 32;
 const QEMU_BACKGROUND_JOB_NAMESPACE: u64 = 3 << 62;
 
@@ -4953,6 +5214,510 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some(format!(
                 "The selected image artifact has no authoritative {label} path."
             ));
+        }
+        Action::BeginSdkBuild(action) => {
+            let Some(image) = app.build.target.clone() else {
+                app.notification = Some("Select an SDK image target with i first.".into());
+                return None;
+            };
+            let machine = app
+                .workspace
+                .variables
+                .get("MACHINE")
+                .cloned()
+                .unwrap_or_default();
+            let distro = app
+                .workspace
+                .variables
+                .get("DISTRO")
+                .cloned()
+                .unwrap_or_default();
+            match SdkBuildPreview::new(machine, distro, image, action) {
+                Ok(preview) => open_dialog(app, Dialog::SdkBuildConfirmation(preview)),
+                Err(message) => app.notification = Some(message.into()),
+            }
+        }
+        Action::ConfirmSdkBuild => {
+            let Some(Dialog::SdkBuildConfirmation(preview)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            let current = SdkBuildPreview::new(
+                app.workspace
+                    .variables
+                    .get("MACHINE")
+                    .cloned()
+                    .unwrap_or_default(),
+                app.workspace
+                    .variables
+                    .get("DISTRO")
+                    .cloned()
+                    .unwrap_or_default(),
+                app.build.target.clone().unwrap_or_default(),
+                preview.action,
+            );
+            if current.as_ref() != Ok(&preview) {
+                app.notification = Some("The SDK build preview is stale; review it again.".into());
+                return None;
+            }
+            close_dialog(app);
+            return Some(Effect::Start(preview.request));
+        }
+        Action::CancelSdkBuild => {
+            if matches!(app.active_dialog(), Some(Dialog::SdkBuildConfirmation(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::BeginSdkArtifactInventory | Action::RefreshSdkArtifactInventory => {
+            if matches!(app.sdk_artifacts, SdkArtifactInventoryState::Loading { .. }) {
+                app.notification = Some("An SDK artifact scan is already running.".into());
+                return None;
+            }
+            return begin_sdk_artifact_inventory(app);
+        }
+        Action::SdkArtifactInventoryLoaded {
+            request,
+            artifacts,
+            limitations,
+        } => {
+            if !matches!(
+                &app.sdk_artifacts,
+                SdkArtifactInventoryState::Loading { request: pending } if pending == &request
+            ) {
+                note_stale_sdk_event(app);
+                return None;
+            }
+            let previous = app.sdk_artifact_selection.take();
+            match normalize_sdk_artifacts(&request, artifacts) {
+                Ok(artifacts) => {
+                    let limitations = normalize_sdk_limitations(limitations);
+                    app.sdk_artifacts = if artifacts.is_empty() && limitations.is_empty() {
+                        SdkArtifactInventoryState::AvailableEmpty { request }
+                    } else if limitations.is_empty() {
+                        SdkArtifactInventoryState::Available { request, artifacts }
+                    } else {
+                        SdkArtifactInventoryState::Partial {
+                            request,
+                            artifacts,
+                            limitations,
+                        }
+                    };
+                    set_sdk_artifact_selection_to_current_or_first(app, previous);
+                }
+                Err(message) => {
+                    app.sdk_artifacts = SdkArtifactInventoryState::Failed {
+                        request,
+                        message: message.into(),
+                    };
+                    app.notification =
+                        Some("SDK artifact inventory failed model validation.".into());
+                }
+            }
+        }
+        Action::SdkArtifactInventoryFailed { request, message } => {
+            if !matches!(
+                &app.sdk_artifacts,
+                SdkArtifactInventoryState::Loading { request: pending } if pending == &request
+            ) {
+                note_stale_sdk_event(app);
+                return None;
+            }
+            app.sdk_artifacts = SdkArtifactInventoryState::Failed { request, message };
+            app.sdk_artifact_selection = None;
+        }
+        Action::SelectSdkArtifact { delta } => {
+            let visible = app
+                .filtered_sdk_artifacts()
+                .into_iter()
+                .map(|artifact| artifact.identity.clone())
+                .collect::<Vec<_>>();
+            if visible.is_empty() {
+                app.sdk_artifact_selection = None;
+                return None;
+            }
+            let current = app
+                .sdk_artifact_selection
+                .as_ref()
+                .and_then(|identity| visible.iter().position(|candidate| candidate == identity))
+                .unwrap_or(0);
+            let next = if delta.is_negative() {
+                current.saturating_sub(delta.unsigned_abs())
+            } else {
+                current
+                    .saturating_add(delta as usize)
+                    .min(visible.len().saturating_sub(1))
+            };
+            app.sdk_artifact_selection = Some(visible[next].clone());
+        }
+        Action::BeginSdkArtifactSearch => app.sdk_artifact_searching = true,
+        Action::AppendSdkArtifactQuery(character) => {
+            if app.sdk_artifact_searching
+                && !character.is_control()
+                && app.sdk_artifact_query.len() < 256
+            {
+                app.sdk_artifact_query.push(character);
+                set_sdk_artifact_selection_to_current_or_first(
+                    app,
+                    app.sdk_artifact_selection.clone(),
+                );
+            }
+        }
+        Action::BackspaceSdkArtifactQuery => {
+            if app.sdk_artifact_searching {
+                app.sdk_artifact_query.pop();
+                set_sdk_artifact_selection_to_current_or_first(
+                    app,
+                    app.sdk_artifact_selection.clone(),
+                );
+            }
+        }
+        Action::FinishSdkArtifactSearch => app.sdk_artifact_searching = false,
+        Action::SdkToolCapabilityLoaded(capability) => app.sdk_tool_capability = capability,
+        Action::BeginSelectedSdkPublish => {
+            let Some(artifact) = app.selected_sdk_artifact() else {
+                app.notification = Some("Select an SDK artifact to publish.".into());
+                return None;
+            };
+            if artifact.kind != SdkArtifactKind::Installer {
+                app.notification = Some("Only an SDK installer can be published.".into());
+                return None;
+            }
+            if let Err(message) = app.sdk_tool_capability.publish_executable() {
+                app.notification = Some(message.into());
+                return None;
+            }
+            open_dialog(app, Dialog::SdkPublish(SdkPublishDraft::default()));
+        }
+        Action::AppendSdkPublishDestination(character) => {
+            if let Some(Dialog::SdkPublish(draft)) = app.active_dialog_mut()
+                && !character.is_control()
+                && draft.destination.len() < 4_096
+            {
+                draft.destination.push(character);
+            }
+        }
+        Action::BackspaceSdkPublishDestination => {
+            if let Some(Dialog::SdkPublish(draft)) = app.active_dialog_mut() {
+                draft.destination.pop();
+            }
+        }
+        Action::PreviewSdkPublish => {
+            let Some(Dialog::SdkPublish(draft)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            let Some(artifact) = app.selected_sdk_artifact() else {
+                app.notification = Some("The selected SDK artifact is stale.".into());
+                return None;
+            };
+            let preview = app
+                .sdk_tool_capability
+                .publish_executable()
+                .map_err(str::to_owned)
+                .and_then(|executable| {
+                    SdkPublishPreview::new(
+                        executable,
+                        artifact.identity.clone(),
+                        PathBuf::from(draft.destination),
+                    )
+                    .map_err(str::to_owned)
+                });
+            match preview {
+                Ok(preview) => replace_dialog(app, Dialog::SdkPublishConfirmation(preview)),
+                Err(message) => app.notification = Some(message),
+            }
+        }
+        Action::CancelSdkPublish => {
+            if matches!(app.active_dialog(), Some(Dialog::SdkPublish(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::CancelSdkPublishPreview => {
+            if matches!(app.active_dialog(), Some(Dialog::SdkPublishConfirmation(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::ConfirmSdkPublish => {
+            let Some(Dialog::SdkPublishConfirmation(preview)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            let valid = app.selected_sdk_artifact().is_some_and(|artifact| {
+                artifact.kind == SdkArtifactKind::Installer
+                    && artifact.identity == preview.request.artifact
+            }) && app.sdk_tool_capability.publish_executable().as_ref()
+                == Ok(&preview.request.executable);
+            if !valid {
+                app.notification = Some("The SDK publication preview is stale.".into());
+                return None;
+            }
+            close_dialog(app);
+            return queue_sdk_session(app, SdkOperation::Publish(preview.request));
+        }
+        Action::BeginSdkNative => {
+            open_dialog(app, Dialog::SdkNative(SdkNativeDraft::default()));
+        }
+        Action::UpdateSdkNativeDraft(draft) => {
+            if matches!(app.active_dialog(), Some(Dialog::SdkNative(_))) {
+                replace_dialog(app, Dialog::SdkNative(draft));
+            }
+        }
+        Action::PreviewSdkNative => {
+            let Some(Dialog::SdkNative(draft)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            let executable = app.sdk_tool_capability.executable_for(draft.mode);
+            let request = executable.map(|executable| SdkNativeRequest {
+                executable,
+                mode: draft.mode,
+                extracted_root: (!draft.extracted_root.is_empty())
+                    .then(|| PathBuf::from(draft.extracted_root)),
+                recipe: draft.recipe,
+                tool: (draft.mode == SdkNativeMode::RunNative).then_some(draft.tool),
+                arguments: draft.arguments,
+            });
+            match request.and_then(SdkNativePreview::new) {
+                Ok(preview) => replace_dialog(app, Dialog::SdkNativeConfirmation(preview)),
+                Err(message) => app.notification = Some(message.into()),
+            }
+        }
+        Action::CancelSdkNative => {
+            if matches!(app.active_dialog(), Some(Dialog::SdkNative(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::CancelSdkNativePreview => {
+            if matches!(app.active_dialog(), Some(Dialog::SdkNativeConfirmation(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::ConfirmSdkNative => {
+            let Some(Dialog::SdkNativeConfirmation(preview)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            if SdkNativePreview::new(preview.request.clone()).as_ref() != Ok(&preview)
+                || app
+                    .sdk_tool_capability
+                    .executable_for(preview.request.mode)
+                    .as_ref()
+                    != Ok(&preview.request.executable)
+            {
+                app.notification = Some("The SDK native-tool preview is stale.".into());
+                return None;
+            }
+            close_dialog(app);
+            return queue_sdk_session(app, SdkOperation::Native(preview.request));
+        }
+        Action::SdkSessionStarting { id, started_at } => {
+            let Some(job_id) = sdk_job_id(app, id) else {
+                note_stale_sdk_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Queued], |job| {
+                    job.status = BackgroundJobStatus::Starting;
+                    job.started_at = Some(started_at);
+                });
+        }
+        Action::SdkSessionRunning { id } => {
+            let Some(job_id) = sdk_job_id(app, id) else {
+                note_stale_sdk_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Starting], |job| {
+                    job.status = BackgroundJobStatus::Running;
+                });
+        }
+        Action::AppendSdkSessionOutput {
+            id,
+            stream,
+            line,
+            truncated,
+            timestamp,
+        } => {
+            let Some(job_id) = sdk_job_id(app, id) else {
+                note_stale_sdk_event(app);
+                return None;
+            };
+            app.background_jobs.append_output(
+                job_id,
+                BackgroundJobOutputEntry {
+                    severity: if stream == SdkOutputStream::Stderr {
+                        Severity::Warning
+                    } else {
+                        Severity::Info
+                    },
+                    message: line,
+                    source: if stream == SdkOutputStream::Stderr {
+                        BackgroundJobOutputSource::Stderr
+                    } else {
+                        BackgroundJobOutputSource::Stdout
+                    },
+                    truncated,
+                    timestamp,
+                },
+            );
+        }
+        Action::CompleteSdkSession {
+            id,
+            exit_code,
+            artifacts,
+            finished_at,
+        } => {
+            let Some(job_id) =
+                mutate_sdk_session(app, id, |session| session.exit_code = Some(exit_code))
+            else {
+                note_stale_sdk_event(app);
+                return None;
+            };
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                    BackgroundJobStatus::Cancelling,
+                ],
+                |job| {
+                    job.status = BackgroundJobStatus::Succeeded;
+                    job.finished_at = Some(finished_at);
+                    job.result = Some(BackgroundJobResult {
+                        summary: "SDK operation completed".into(),
+                        artifacts,
+                    });
+                },
+            );
+        }
+        Action::FailSdkSession {
+            id,
+            message,
+            exit_code,
+            finished_at,
+        } => {
+            let Some(job_id) = mutate_sdk_session(app, id, |session| {
+                session.exit_code = exit_code;
+                session.error_detail = Some(message.clone());
+            }) else {
+                note_stale_sdk_event(app);
+                return None;
+            };
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Queued,
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                    BackgroundJobStatus::Cancelling,
+                ],
+                |job| {
+                    job.status = BackgroundJobStatus::Failed;
+                    job.finished_at = Some(finished_at);
+                    job.error = Some(BackgroundJobError {
+                        summary: "SDK operation failed".into(),
+                        detail: Some(message),
+                    });
+                },
+            );
+        }
+        Action::LoseSdkSession {
+            id,
+            message,
+            finished_at,
+        } => {
+            let Some(job_id) = mutate_sdk_session(app, id, |session| {
+                session.error_detail = Some(message.clone())
+            }) else {
+                note_stale_sdk_event(app);
+                return None;
+            };
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Queued,
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                    BackgroundJobStatus::Cancelling,
+                ],
+                |job| {
+                    job.status = BackgroundJobStatus::Lost;
+                    job.finished_at = Some(finished_at);
+                    job.error = Some(BackgroundJobError {
+                        summary: "SDK operation lost".into(),
+                        detail: Some(message),
+                    });
+                },
+            );
+        }
+        Action::BeginActiveSdkSessionCancellation => {
+            let Some(id) = app.active_sdk_session().map(|session| session.id) else {
+                app.notification = Some("No managed SDK tool operation is active.".into());
+                return None;
+            };
+            open_dialog(app, Dialog::SdkCancellationConfirmation(id));
+        }
+        Action::ConfirmSdkSessionCancellation => {
+            let Some(Dialog::SdkCancellationConfirmation(id)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            let Some(job_id) = sdk_job_id(app, id) else {
+                note_stale_sdk_event(app);
+                close_dialog(app);
+                return None;
+            };
+            let before = app.background_jobs.get(job_id).map(|job| job.status);
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Queued,
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                ],
+                |job| job.status = BackgroundJobStatus::Cancelling,
+            );
+            close_dialog(app);
+            if before != app.background_jobs.get(job_id).map(|job| job.status) {
+                return Some(Effect::CancelSdkSession(id));
+            }
+        }
+        Action::CancelSdkSessionCancellation => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::SdkCancellationConfirmation(_))
+            ) {
+                close_dialog(app);
+            }
+        }
+        Action::RejectSdkSessionCancellation { id, message } => {
+            let Some(job_id) = sdk_job_id(app, id) else {
+                note_stale_sdk_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Cancelling], |job| {
+                    job.status = BackgroundJobStatus::Running;
+                    job.error = Some(BackgroundJobError {
+                        summary: "SDK cancellation was rejected".into(),
+                        detail: Some(message.clone()),
+                    });
+                });
+            app.notification = Some(message);
+        }
+        Action::CancelSdkSession {
+            id,
+            exit_code,
+            finished_at,
+        } => {
+            let Some(job_id) = mutate_sdk_session(app, id, |session| session.exit_code = exit_code)
+            else {
+                note_stale_sdk_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Cancelling], |job| {
+                    job.status = BackgroundJobStatus::Cancelled;
+                    job.finished_at = Some(finished_at);
+                    job.result = Some(BackgroundJobResult {
+                        summary: "SDK operation cancelled".into(),
+                        artifacts: Vec::new(),
+                    });
+                });
         }
         Action::InspectQemuCapability => {
             app.qemu_capability = QemuCapability::NotInspected;
@@ -9178,6 +9943,13 @@ pub enum Effect {
     CancelPackageOperation,
     GetImageArtifacts(ImageArtifactRequest),
     CancelImageArtifactOperation,
+    GetSdkArtifacts(SdkArtifactInventoryRequest),
+    InspectSdkTools,
+    StartSdkSession {
+        id: SdkSessionId,
+        operation: SdkOperation,
+    },
+    CancelSdkSession(SdkSessionId),
     InspectQemuCapability,
     StartQemuSession {
         id: QemuSessionId,
@@ -14943,6 +15715,206 @@ mod tests {
         assert_eq!(
             update(&mut app, Action::OpenSelectedWicOutput),
             Some(Effect::OpenInEditor(output.identity.path))
+        );
+    }
+
+    fn sdk_workflow_app() -> App {
+        let mut app = App::new(20, 20_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace
+            .variables
+            .insert("DISTRO".into(), "poky".into());
+        app.workspace
+            .variables
+            .insert("SDK_DEPLOY".into(), "/build/deploy/sdk".into());
+        app.build.target = Some("core-image-minimal".into());
+        app.sdk_tool_capability = SdkToolCapability::Available {
+            publish: Some("/opt/poky/oe-publish-sdk".into()),
+            find_sysroot: Some("/opt/poky/oe-find-native-sysroot".into()),
+            run_native: Some("/opt/poky/oe-run-native".into()),
+        };
+        app
+    }
+
+    #[test]
+    fn sdk_workflow_navigates_and_previews_exact_managed_builds() {
+        let mut app = sdk_workflow_app();
+        let sdk_index = NAVIGATOR_SCREENS
+            .iter()
+            .position(|screen| *screen == Screen::Sdk)
+            .unwrap();
+        app.focus = FocusTarget::Navigator;
+        app.navigator_selection = sdk_index;
+        let _ = update(&mut app, Action::ActivateNavigator);
+        assert_eq!(app.screen, Screen::Sdk);
+        let _ = update(
+            &mut app,
+            Action::BeginSdkBuild(SdkBuildAction::Populate(SdkKind::Extensible)),
+        );
+        let Some(Dialog::SdkBuildConfirmation(preview)) = app.active_dialog() else {
+            panic!("SDK build confirmation");
+        };
+        assert_eq!(preview.machine, "qemux86-64");
+        assert_eq!(preview.distro, "poky");
+        assert_eq!(preview.request.task.as_deref(), Some("populate_sdk_ext"));
+        assert_eq!(
+            update(&mut app, Action::ConfirmSdkBuild),
+            Some(Effect::Start(BuildRequest {
+                targets: vec!["core-image-minimal".into()],
+                task: Some("populate_sdk_ext".into()),
+                force: false,
+            }))
+        );
+        assert!(app.active_dialog().is_none());
+    }
+
+    #[test]
+    fn sdk_workflow_inventory_publication_native_and_lifecycle_are_correlated() {
+        let mut app = sdk_workflow_app();
+        let Some(Effect::GetSdkArtifacts(request)) =
+            update(&mut app, Action::BeginSdkArtifactInventory)
+        else {
+            panic!("SDK inventory effect");
+        };
+        let stale = SdkArtifactInventoryRequest {
+            generation: request.generation + 1,
+            ..request.clone()
+        };
+        let ignored = app.background_jobs.ignored_transitions;
+        let _ = update(
+            &mut app,
+            Action::SdkArtifactInventoryFailed {
+                request: stale,
+                message: "stale".into(),
+            },
+        );
+        assert_eq!(app.background_jobs.ignored_transitions, ignored + 1);
+        let artifact = SdkArtifact {
+            identity: SdkArtifactIdentity {
+                path: "/build/deploy/sdk/poky.sh".into(),
+                size_bytes: 42,
+                modified_unix_seconds: 7,
+            },
+            kind: SdkArtifactKind::Installer,
+            sdk_kind: Some(SdkKind::Standard),
+            machine: Some("qemux86-64".into()),
+            host_tuple: Some("x86_64-pokysdk-linux".into()),
+            target_tuple: Some("x86_64-poky-linux".into()),
+            checksums: Vec::new(),
+            manifests: Vec::new(),
+            published: None,
+        };
+        let _ = update(
+            &mut app,
+            Action::SdkArtifactInventoryLoaded {
+                request,
+                artifacts: vec![artifact.clone()],
+                limitations: vec!["one unrelated record skipped".into()],
+            },
+        );
+        assert_eq!(app.sdk_artifact_selection, Some(artifact.identity.clone()));
+        assert!(matches!(
+            app.sdk_artifacts,
+            SdkArtifactInventoryState::Partial { .. }
+        ));
+
+        let _ = update(&mut app, Action::BeginSelectedSdkPublish);
+        if let Some(Dialog::SdkPublish(draft)) = app.active_dialog_mut() {
+            draft.destination = "/srv/sdk".into();
+        }
+        let _ = update(&mut app, Action::PreviewSdkPublish);
+        let Some(Effect::StartSdkSession { id, operation }) =
+            update(&mut app, Action::ConfirmSdkPublish)
+        else {
+            panic!("SDK publication effect");
+        };
+        assert!(matches!(
+            operation,
+            SdkOperation::Publish(SdkPublishRequest { destination, .. })
+                if destination == Path::new("/srv/sdk")
+        ));
+        let _ = update(
+            &mut app,
+            Action::SdkSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::SdkSessionRunning { id });
+        let _ = update(
+            &mut app,
+            Action::AppendSdkSessionOutput {
+                id,
+                stream: SdkOutputStream::Stderr,
+                line: "publication warning".into(),
+                truncated: true,
+                timestamp: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::CompleteSdkSession {
+                id,
+                exit_code: 0,
+                artifacts: vec!["/srv/sdk/poky.sh".into()],
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let session = app.sdk_session(id).unwrap();
+        let job = app.background_jobs.get(session.background_job_id).unwrap();
+        assert_eq!(job.status, BackgroundJobStatus::Succeeded);
+        assert!(job.output[0].truncated);
+
+        let _ = update(&mut app, Action::BeginSdkNative);
+        let _ = update(
+            &mut app,
+            Action::UpdateSdkNativeDraft(SdkNativeDraft {
+                mode: SdkNativeMode::RunNative,
+                extracted_root: "/opt/sdk".into(),
+                recipe: "cmake-native".into(),
+                tool: "cmake".into(),
+                arguments: vec!["--version".into()],
+            }),
+        );
+        let _ = update(&mut app, Action::PreviewSdkNative);
+        let Some(Effect::StartSdkSession { id: native_id, .. }) =
+            update(&mut app, Action::ConfirmSdkNative)
+        else {
+            panic!("SDK native effect");
+        };
+        let _ = update(
+            &mut app,
+            Action::SdkSessionStarting {
+                id: native_id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::SdkSessionRunning { id: native_id });
+        let _ = update(&mut app, Action::BeginActiveSdkSessionCancellation);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::SdkCancellationConfirmation(id)) if *id == native_id
+        ));
+        assert_eq!(
+            update(&mut app, Action::ConfirmSdkSessionCancellation),
+            Some(Effect::CancelSdkSession(native_id))
+        );
+        let _ = update(
+            &mut app,
+            Action::CancelSdkSession {
+                id: native_id,
+                exit_code: Some(130),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert_eq!(
+            app.background_jobs
+                .get(app.sdk_session(native_id).unwrap().background_job_id)
+                .unwrap()
+                .status,
+            BackgroundJobStatus::Cancelled
         );
     }
 }

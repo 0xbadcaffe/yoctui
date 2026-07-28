@@ -955,12 +955,12 @@ notes = "The cross-layer parent gate passes together: fail-closed adapter discov
 id = "SDK-MODEL-001"
 milestone = "M4"
 title = "Model typed SDK workspace and operations"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 52
 required = true
 depends_on = ["JOB-002"]
 verify = ["cargo test -p yoctui-model sdk_workflow", "cargo test -p yoctui-app sdk_workflow"]
-notes = "Add exact SDK identities, populate/test previews, inventory/search/selection state, publication and native-tool drafts/previews, shared-job session context, reducer actions/effects, and app input mapping."
+notes = "SDK is now a first-class typed Navigator destination. Pure state covers exact populate/test BuildRequest previews, bounded artifact identities and correlated inventory/search/selection, publication/native capability/drafts/indexed previews, shared Sdk background-job sessions, lifecycle/output/cancellation/loss, stale-event rejection, and modal app key mapping. Focused and baseline tests pass."
 
 [[task]]
 id = "SDK-ARTIFACT-001"

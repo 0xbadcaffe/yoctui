@@ -9,8 +9,8 @@ use yoctui_model::{
     BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
     LayerInspectorMode, LayerRelationship, LayerRelationships, QemuOutputStream, QemuSessionId,
-    RecipeDependencies, Screen, Severity, TaskId, TaskInfo, VariableDetail, VariableIdentity,
-    WicCapability, WicOutput, WicOutputStream, WicSessionId,
+    RecipeDependencies, Screen, SdkBuildAction, SdkKind, Severity, TaskId, TaskInfo,
+    VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream, WicSessionId,
 };
 
 pub fn wic_capability_action(capability: WicCapability) -> Action {
@@ -1222,6 +1222,89 @@ pub fn images_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('w') => Some(Action::OpenSelectedImageArtifactAssociation(
             yoctui_model::ImageArtifactAssociation::Wic,
         )),
+        _ => None,
+    }
+}
+
+pub fn sdk_workspace_action(searching: bool, key: Input) -> Option<Action> {
+    if searching {
+        return match key {
+            Input::Char(character) => Some(Action::AppendSdkArtifactQuery(character)),
+            Input::Backspace => Some(Action::BackspaceSdkArtifactQuery),
+            Input::Enter | Input::Esc => Some(Action::FinishSdkArtifactSearch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectSdkArtifact { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectSdkArtifact { delta: 1 }),
+        Input::Char('/') => Some(Action::BeginSdkArtifactSearch),
+        Input::Char('R') => Some(Action::RefreshSdkArtifactInventory),
+        Input::Char('s') => Some(Action::BeginSdkBuild(SdkBuildAction::Populate(
+            SdkKind::Standard,
+        ))),
+        Input::Char('E') => Some(Action::BeginSdkBuild(SdkBuildAction::Populate(
+            SdkKind::Extensible,
+        ))),
+        Input::Char('t') => Some(Action::BeginSdkBuild(SdkBuildAction::Test(
+            SdkKind::Standard,
+        ))),
+        Input::Char('T') => Some(Action::BeginSdkBuild(SdkBuildAction::Test(
+            SdkKind::Extensible,
+        ))),
+        Input::Char('P') => Some(Action::BeginSelectedSdkPublish),
+        Input::Char('n') => Some(Action::BeginSdkNative),
+        Input::Char('c') => Some(Action::BeginActiveSdkSessionCancellation),
+        _ => None,
+    }
+}
+
+pub fn sdk_build_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmSdkBuild),
+        Input::Esc => Some(Action::CancelSdkBuild),
+        _ => None,
+    }
+}
+
+pub fn sdk_publish_dialog_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Char(character) => Some(Action::AppendSdkPublishDestination(character)),
+        Input::Backspace => Some(Action::BackspaceSdkPublishDestination),
+        Input::Enter => Some(Action::PreviewSdkPublish),
+        Input::Esc => Some(Action::CancelSdkPublish),
+        _ => None,
+    }
+}
+
+pub fn sdk_publish_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmSdkPublish),
+        Input::Esc => Some(Action::CancelSdkPublishPreview),
+        _ => None,
+    }
+}
+
+pub fn sdk_native_dialog_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::PreviewSdkNative),
+        Input::Esc => Some(Action::CancelSdkNative),
+        _ => None,
+    }
+}
+
+pub fn sdk_native_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmSdkNative),
+        Input::Esc => Some(Action::CancelSdkNativePreview),
+        _ => None,
+    }
+}
+
+pub fn sdk_cancellation_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmSdkSessionCancellation),
+        Input::Esc => Some(Action::CancelSdkSessionCancellation),
         _ => None,
     }
 }
@@ -3674,5 +3757,58 @@ mod tests {
     fn maps_log_match_navigation_controls() {
         assert_eq!(key_action(Input::Char('n')), Some(Action::NextLogMatch));
         assert_eq!(key_action(Input::Char('N')), Some(Action::PreviousLogMatch));
+    }
+
+    #[test]
+    fn sdk_workflow_maps_workspace_and_modal_keys_without_leakage() {
+        assert_eq!(
+            sdk_workspace_action(false, Input::Char('s')),
+            Some(Action::BeginSdkBuild(SdkBuildAction::Populate(
+                SdkKind::Standard
+            )))
+        );
+        assert_eq!(
+            sdk_workspace_action(false, Input::Char('E')),
+            Some(Action::BeginSdkBuild(SdkBuildAction::Populate(
+                SdkKind::Extensible
+            )))
+        );
+        assert_eq!(
+            sdk_workspace_action(false, Input::Char('t')),
+            Some(Action::BeginSdkBuild(SdkBuildAction::Test(
+                SdkKind::Standard
+            )))
+        );
+        assert_eq!(
+            sdk_workspace_action(false, Input::Char('T')),
+            Some(Action::BeginSdkBuild(SdkBuildAction::Test(
+                SdkKind::Extensible
+            )))
+        );
+        assert_eq!(
+            sdk_workspace_action(true, Input::Char('x')),
+            Some(Action::AppendSdkArtifactQuery('x'))
+        );
+        assert_eq!(
+            sdk_build_confirmation_action(Input::Enter),
+            Some(Action::ConfirmSdkBuild)
+        );
+        assert_eq!(
+            sdk_publish_dialog_action(Input::Char('P')),
+            Some(Action::AppendSdkPublishDestination('P')),
+            "publication modal input must not leak to the SDK workspace"
+        );
+        assert_eq!(
+            sdk_publish_confirmation_action(Input::Enter),
+            Some(Action::ConfirmSdkPublish)
+        );
+        assert_eq!(
+            sdk_native_dialog_action(Input::Esc),
+            Some(Action::CancelSdkNative)
+        );
+        assert_eq!(
+            sdk_cancellation_confirmation_action(Input::Enter),
+            Some(Action::ConfirmSdkSessionCancellation)
+        );
     }
 }

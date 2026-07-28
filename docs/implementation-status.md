@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Model the typed SDK workspace and operations.
+Discover authoritative SDK artifacts.
 
 ## Current task
 
@@ -69,7 +69,7 @@ See `docs/current-task.md`.
 | QEMU adapter | DONE | Canonical executable/artifact discovery, exact preview revalidation, shell-free native arguments, bounded stream events, success/failure/loss, duplicate rejection, and graceful/forced process-group cancellation are covered by fake processes; live compatibility is not claimed |
 | QEMU dialogs/session UI | DONE | Bounded modal input, responsive capability/session rendering, and independent CLI-owned inspection/execution/polling/cancellation pass the complete cross-layer parent gate; fake runners do not establish live compatibility |
 | Wic workflow | DONE | Cooked-mode creation and protected device writing pass the cross-layer gate: discovery/startup are independently polled, exact identities are revalidated immediately before spawn, responsive modal/history/telemetry state is durable, and all terminal outcomes are covered. Fake device/process coverage does not establish live Wic or removable-media compatibility |
-| SDK workflow | NOT_STARTED | Decomposed into typed model/app, authoritative artifact scan, publication/native tool adapter, responsive rendering, CLI integration, and parent-gate tasks; existing BuildRequest/background jobs and Images artifact patterns will be reused |
+| SDK workflow | IN_PROGRESS | The typed SDK Navigator/model/app layer is complete: exact populate/test previews reuse managed BuildRequest, artifact state is correlated, publication/native previews are bounded, and SDK tool sessions reuse shared background jobs. Authoritative artifact acquisition is next |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -80,12 +80,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `SDK-MODEL-001` — model typed SDK workspace and operations
-2. `SDK-ARTIFACT-001` — discover authoritative SDK artifacts
-3. `SDK-TOOLS-001` — adapt SDK publication and native tools
-4. `SDK-RENDER-001` — render responsive SDK workspace
-5. `SDK-CLI-001` — integrate SDK execution in the CLI
-6. `SDK-UI-CLI-001` / `SDK-001` — close SDK integration gates
+1. `SDK-ARTIFACT-001` — discover authoritative SDK artifacts
+2. `SDK-TOOLS-001` — adapt SDK publication and native tools
+3. `SDK-RENDER-001` — render responsive SDK workspace
+4. `SDK-CLI-001` — integrate SDK execution in the CLI
+5. `SDK-UI-CLI-001` / `SDK-001` — close SDK integration gates
 
 ## Rules
 

@@ -1204,7 +1204,9 @@ alone.
 `SDK` is a first-class Navigator destination after `Images`. It uses the
 persistent shell and shared background-job lifecycle; leaving the workspace
 never discards an active SDK build, scan, publication, native-tool operation,
-or terminal result.
+or terminal result. Once the typed model destination is present but before an
+adapter scan has run, the Workspace explicitly reports that SDK artifact
+rendering/acquisition is pending rather than borrowing Images state.
 
 The Workspace header shows the exact active `MACHINE`, `DISTRO`, selected image
 recipe target, and authoritative SDK deploy root. `i` opens the existing
