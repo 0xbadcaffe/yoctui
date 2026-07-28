@@ -1259,8 +1259,8 @@ most 32 bounded runqemu keyword tokens: quoting, escaping, whitespace inside a
 token, leading option markers, control characters, and shell metacharacters
 are rejected.
 
-`Enter` validates the editable draft and replaces it with a deterministic
-argument preview. A second explicit confirmation starts the session. `Esc`
+`p` validates the editable draft and replaces it with a deterministic argument
+preview. `Enter` in that preview starts the session. `Esc`
 from either launch step returns without starting a process. Missing runqemu,
 missing compatible images, failed capability inspection, stale artifact
 identity, and validation failures are distinct visible states and never fall
@@ -1274,6 +1274,26 @@ and stderr, result, and error. Cancellation requires its own confirmation
 dialog. Rejected cancellation restores the running state with a visible
 reason; success, nonzero exit, cancellation, and process loss remain distinct
 terminal results.
+
+Images workspace QEMU shortcuts:
+
+- `Q`: open the launch dialog for the exact selected compatible artifact
+- `x`: request cancellation of the active managed session
+
+The launch dialog begins on the read-only Machine row. `↑`/`↓` or `k`/`j`
+moves across Machine, Image, Kernel, Root filesystem, Networking, Memory,
+Display, Serial, and Extra arguments. Machine and Image cannot enter edit mode.
+`Enter` begins editing a text row, ends the current text edit, or advances a
+typed choice. `←`/`→` or `h`/`l` cycles typed choices backward/forward. `p`
+validates and opens the exact preview. Text input is bounded to 4,096 bytes for
+each optional path, 16 bytes for memory, and the model's aggregate 32-token
+extra-argument bound. A validation failure remains visible in the draft and
+does not close it.
+
+`Esc` closes the launch draft even during text editing. In the preview,
+`Enter` confirms and `Esc` closes without launch. In cancellation confirmation,
+`Enter` confirms and `Esc` returns without changing the session. All three
+dialogs trap focus and restore the previous pane when closed.
 
 ### Wic dialog
 

@@ -1047,6 +1047,8 @@ pub fn images_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('R') => Some(Action::RefreshImageArtifactInventory),
         Input::Char('c') => Some(Action::CancelImageArtifactOperation),
         Input::Char('b') => Some(Action::BeginSelectedImageArtifactBuild),
+        Input::Char('Q') => Some(Action::BeginSelectedQemuLaunch),
+        Input::Char('x') => Some(Action::BeginActiveQemuSessionCancellation),
         Input::Char('o') => Some(Action::OpenSelectedImageArtifact),
         Input::Char('m') => Some(Action::OpenSelectedImageArtifactAssociation(
             yoctui_model::ImageArtifactAssociation::Manifest,
@@ -1063,6 +1065,45 @@ pub fn images_workspace_action(searching: bool, key: Input) -> Option<Action> {
         _ => None,
     }
 }
+
+pub fn qemu_launch_dialog_action(editing: bool, key: Input) -> Option<Action> {
+    if editing {
+        return match key {
+            Input::Char(character) => Some(Action::AppendQemuLaunchField(character)),
+            Input::Backspace => Some(Action::BackspaceQemuLaunchField),
+            Input::Enter => Some(Action::FinishQemuLaunchFieldEdit),
+            Input::Esc => Some(Action::CancelQemuLaunch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectQemuLaunchField { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectQemuLaunchField { delta: 1 }),
+        Input::Left | Input::Char('h') => Some(Action::CycleQemuLaunchChoice { backwards: true }),
+        Input::Right | Input::Char('l') => Some(Action::CycleQemuLaunchChoice { backwards: false }),
+        Input::Enter => Some(Action::ActivateQemuLaunchField),
+        Input::Char('p') => Some(Action::PreviewQemuLaunch),
+        Input::Esc => Some(Action::CancelQemuLaunch),
+        _ => None,
+    }
+}
+
+pub fn qemu_launch_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmQemuLaunch),
+        Input::Esc => Some(Action::CancelQemuLaunchPreview),
+        _ => None,
+    }
+}
+
+pub fn qemu_cancellation_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmQemuSessionCancellation),
+        Input::Esc => Some(Action::CancelQemuSessionCancellation),
+        _ => None,
+    }
+}
+
 pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
     if searching {
         return match key {
@@ -3115,6 +3156,65 @@ mod tests {
                 message: "event channel lost".into(),
                 finished_at: timestamp,
             }]
+        );
+    }
+    #[test]
+    fn qemu_workspace_maps_launch_edit_preview_and_cancellation_keys() {
+        assert_eq!(
+            images_workspace_action(false, Input::Char('Q')),
+            Some(Action::BeginSelectedQemuLaunch)
+        );
+        assert_eq!(
+            images_workspace_action(false, Input::Char('x')),
+            Some(Action::BeginActiveQemuSessionCancellation)
+        );
+        assert_eq!(
+            qemu_launch_dialog_action(false, Input::Down),
+            Some(Action::SelectQemuLaunchField { delta: 1 })
+        );
+        assert_eq!(
+            qemu_launch_dialog_action(false, Input::Left),
+            Some(Action::CycleQemuLaunchChoice { backwards: true })
+        );
+        assert_eq!(
+            qemu_launch_dialog_action(false, Input::Enter),
+            Some(Action::ActivateQemuLaunchField)
+        );
+        assert_eq!(
+            qemu_launch_dialog_action(true, Input::Char('/')),
+            Some(Action::AppendQemuLaunchField('/'))
+        );
+        assert_eq!(
+            qemu_launch_dialog_action(true, Input::Backspace),
+            Some(Action::BackspaceQemuLaunchField)
+        );
+        assert_eq!(
+            qemu_launch_dialog_action(true, Input::Enter),
+            Some(Action::FinishQemuLaunchFieldEdit)
+        );
+        assert_eq!(
+            qemu_launch_dialog_action(false, Input::Char('p')),
+            Some(Action::PreviewQemuLaunch)
+        );
+        assert_eq!(
+            qemu_launch_dialog_action(true, Input::Esc),
+            Some(Action::CancelQemuLaunch)
+        );
+        assert_eq!(
+            qemu_launch_confirmation_action(Input::Enter),
+            Some(Action::ConfirmQemuLaunch)
+        );
+        assert_eq!(
+            qemu_launch_confirmation_action(Input::Esc),
+            Some(Action::CancelQemuLaunchPreview)
+        );
+        assert_eq!(
+            qemu_cancellation_confirmation_action(Input::Enter),
+            Some(Action::ConfirmQemuSessionCancellation)
+        );
+        assert_eq!(
+            qemu_cancellation_confirmation_action(Input::Esc),
+            Some(Action::CancelQemuSessionCancellation)
         );
     }
     #[test]

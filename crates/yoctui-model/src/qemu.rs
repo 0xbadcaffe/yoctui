@@ -5,6 +5,9 @@ pub const MIN_QEMU_MEMORY_MIB: u32 = 128;
 pub const MAX_QEMU_MEMORY_MIB: u32 = 262_144;
 pub const MAX_QEMU_EXTRA_ARGUMENTS: usize = 32;
 pub const MAX_QEMU_EXTRA_ARGUMENT_BYTES: usize = 256;
+pub const MAX_QEMU_PATH_INPUT_BYTES: usize = 4_096;
+pub const MAX_QEMU_EXTRA_ARGUMENT_INPUT_BYTES: usize =
+    MAX_QEMU_EXTRA_ARGUMENTS * (MAX_QEMU_EXTRA_ARGUMENT_BYTES + 1);
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum QemuCapability {
@@ -130,6 +133,135 @@ pub struct QemuLaunchDraft {
     pub serial: QemuSerialMode,
     pub memory_mib: String,
     pub extra_arguments: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum QemuLaunchField {
+    Machine,
+    Image,
+    Kernel,
+    Rootfs,
+    Networking,
+    Memory,
+    Display,
+    Serial,
+    ExtraArguments,
+}
+
+impl QemuLaunchField {
+    const ALL: [Self; 9] = [
+        Self::Machine,
+        Self::Image,
+        Self::Kernel,
+        Self::Rootfs,
+        Self::Networking,
+        Self::Memory,
+        Self::Display,
+        Self::Serial,
+        Self::ExtraArguments,
+    ];
+
+    pub fn is_read_only(self) -> bool {
+        matches!(self, Self::Machine | Self::Image)
+    }
+
+    pub fn is_text(self) -> bool {
+        matches!(
+            self,
+            Self::Kernel | Self::Rootfs | Self::Memory | Self::ExtraArguments
+        )
+    }
+
+    pub fn shifted(self, delta: isize) -> Self {
+        let current = Self::ALL
+            .iter()
+            .position(|candidate| *candidate == self)
+            .unwrap_or_default();
+        let next = if delta.is_negative() {
+            current.saturating_sub(delta.unsigned_abs())
+        } else {
+            current
+                .saturating_add(delta as usize)
+                .min(Self::ALL.len() - 1)
+        };
+        Self::ALL[next]
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QemuLaunchDialog {
+    pub draft: QemuLaunchDraft,
+    pub selected_field: QemuLaunchField,
+    pub editing: bool,
+    pub validation_error: Option<String>,
+}
+
+impl QemuLaunchDialog {
+    pub fn new(draft: QemuLaunchDraft) -> Self {
+        Self {
+            draft,
+            selected_field: QemuLaunchField::Machine,
+            editing: false,
+            validation_error: None,
+        }
+    }
+
+    pub fn selected_text_mut(&mut self) -> Option<(&mut String, usize)> {
+        match self.selected_field {
+            QemuLaunchField::Kernel => Some((&mut self.draft.kernel, MAX_QEMU_PATH_INPUT_BYTES)),
+            QemuLaunchField::Rootfs => Some((&mut self.draft.rootfs, MAX_QEMU_PATH_INPUT_BYTES)),
+            QemuLaunchField::Memory => Some((&mut self.draft.memory_mib, 16)),
+            QemuLaunchField::ExtraArguments => Some((
+                &mut self.draft.extra_arguments,
+                MAX_QEMU_EXTRA_ARGUMENT_INPUT_BYTES,
+            )),
+            QemuLaunchField::Machine
+            | QemuLaunchField::Image
+            | QemuLaunchField::Networking
+            | QemuLaunchField::Display
+            | QemuLaunchField::Serial => None,
+        }
+    }
+
+    pub fn cycle_choice(&mut self, backwards: bool) -> bool {
+        match self.selected_field {
+            QemuLaunchField::Networking => {
+                self.draft.networking = match (self.draft.networking, backwards) {
+                    (QemuNetworkingMode::Slirp, false) => QemuNetworkingMode::Tap,
+                    (QemuNetworkingMode::Tap, false) => QemuNetworkingMode::None,
+                    (QemuNetworkingMode::None, false) => QemuNetworkingMode::Slirp,
+                    (QemuNetworkingMode::Slirp, true) => QemuNetworkingMode::None,
+                    (QemuNetworkingMode::Tap, true) => QemuNetworkingMode::Slirp,
+                    (QemuNetworkingMode::None, true) => QemuNetworkingMode::Tap,
+                };
+                true
+            }
+            QemuLaunchField::Display => {
+                self.draft.display = match self.draft.display {
+                    QemuDisplayMode::Graphical => QemuDisplayMode::Nographic,
+                    QemuDisplayMode::Nographic => QemuDisplayMode::Graphical,
+                };
+                true
+            }
+            QemuLaunchField::Serial => {
+                self.draft.serial = match (self.draft.serial, backwards) {
+                    (QemuSerialMode::Stdio, false) => QemuSerialMode::Telnet,
+                    (QemuSerialMode::Telnet, false) => QemuSerialMode::None,
+                    (QemuSerialMode::None, false) => QemuSerialMode::Stdio,
+                    (QemuSerialMode::Stdio, true) => QemuSerialMode::None,
+                    (QemuSerialMode::Telnet, true) => QemuSerialMode::Stdio,
+                    (QemuSerialMode::None, true) => QemuSerialMode::Telnet,
+                };
+                true
+            }
+            QemuLaunchField::Machine
+            | QemuLaunchField::Image
+            | QemuLaunchField::Kernel
+            | QemuLaunchField::Rootfs
+            | QemuLaunchField::Memory
+            | QemuLaunchField::ExtraArguments => false,
+        }
+    }
 }
 
 impl QemuLaunchDraft {

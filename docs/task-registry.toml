@@ -779,18 +779,18 @@ notes = "Parent gate split into dialog/input state, responsive rendering, and CL
 id = "QEMU-UI-MODEL-001"
 milestone = "M4"
 title = "Add QEMU launch dialog and workspace input state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 50
 required = true
 depends_on = ["QEMU-ADAPTER-001"]
 verify = ["cargo test -p yoctui-model qemu_workspace", "cargo test -p yoctui-app qemu_workspace"]
-notes = "Add bounded field selection/editing, stable launch disabled reasons, preview/cancel actions, and session cancellation input mapping without process or rendering work."
+notes = "Pure typed launch rows provide read-only identity, bounded text editing, typed choice cycling, inline preview validation, focus-safe close/confirmation transitions, stable capability/selection/session disabled reasons, and Images/dialog key mapping."
 
 [[task]]
 id = "QEMU-UI-RENDER-001"
 milestone = "M4"
 title = "Render responsive QEMU launch and session UI"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 50
 required = true
 depends_on = ["QEMU-UI-MODEL-001"]
