@@ -425,8 +425,9 @@ impl WicDeviceInspector {
         }
     }
 
-    #[cfg(test)]
-    fn without_device_node_validation(mut self) -> Self {
+    #[cfg(any(test, feature = "test-fixtures"))]
+    #[doc(hidden)]
+    pub fn without_device_node_validation_for_tests(mut self) -> Self {
         self.validate_device_nodes = false;
         self
     }
@@ -1865,7 +1866,7 @@ mod tests {
             directory,
             fs::canonicalize(wic).unwrap(),
             WicDeviceInspector::with_program(fs::canonicalize(&lsblk).unwrap())
-                .without_device_node_validation(),
+                .without_device_node_validation_for_tests(),
             request,
             lsblk,
         )
@@ -2211,7 +2212,7 @@ mod tests {
         );
         assert!(matches!(
             WicDeviceInspector::with_program(directory.join("missing-lsblk"))
-                .without_device_node_validation()
+                .without_device_node_validation_for_tests()
                 .discover(request.clone())
                 .await,
             Err(WicAdapterError::MissingDeviceTool(_))

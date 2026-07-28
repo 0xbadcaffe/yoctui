@@ -551,6 +551,14 @@ independently from BitBake, Devtool, QEMU, and metadata work, and releases
 runner ownership only after a terminal event. Exact typed-phrase and command
 previews are model gates; the adapter's final revalidation is the authoritative
 write gate. Fake device/process coverage is not live removable-media evidence.
+Write startup owns that final adapter revalidation in a separately polled Tokio
+task, so bounded `lsblk` inspection never blocks terminal input. The same
+operation owner transitions the validated runner into normal polling, reports a
+lost startup task distinctly, and can abort a still-pending revalidation when
+the user confirms the incomplete-device cancellation warning. Synthetic block
+nodes are enabled only by the adapter's `test-fixtures` feature for downstream
+integration tests; production construction always validates canonical writable
+block-device nodes.
 
 The model resolves a write source from the exact selected generated output
 before the selected deployed artifact and accepts only typed Wic/direct records
