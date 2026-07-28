@@ -2,52 +2,54 @@
 
 ## Active task
 
-**ID:** QEMU-001
-**Title:** Complete the managed runqemu workflow
+**ID:** QEMU-MODEL-001
+**Title:** Add typed runqemu launch and session state
 
 ## Objective
 
-Add a typed managed runqemu workflow with explicit launch configuration,
-persistent process state, console/log inspection, and safe cancellation.
+Add pure typed capability, validated launch configuration, preview,
+confirmation, persistent session lifecycle, bounded output, and cancellation
+intent for runqemu without starting processes.
 
 ## Required work
 
-1. Inspect all existing shell/process/background-job, Images, dialog, and
-   terminal-lifecycle behavior before writing code.
-2. Reconcile this broad parent into atomic child tasks if it cannot be
-   completed as one coherent verified commit.
-3. Detect runqemu capability and compatible built image artifacts using only
-   authoritative workspace/adapter state.
-4. Add typed launch configuration and preview/confirmation for machine, image,
-   networking, serial/display, memory, and extra validated options.
-5. Execute runqemu without a shell as a persistent cancellable background
-   process with bounded stdout/stderr and distinct start/failure/exit/loss
-   states.
-6. Provide console/log inspection without suspending the persistent workbench;
-   terminal ownership must remain explicit and recoverable.
-7. Require explicit confirmation for launch and cancellation; prevent
-   duplicate active sessions.
-8. Render responsive dialogs/workspace state and stable disabled explanations
-   in every theme/no-color mode.
-9. Add model, app, adapter, CLI integration, and Ratatui TestBackend tests plus
-   live smoke validation when a compatible built image is available.
-10. Update `docs/ui-spec.md`, `docs/architecture.md`, registry, and status in
-    the same coherent commits.
+1. Inspect existing background job, dialog/focus, image artifact, Devtool
+   process lifecycle, and app-event patterns before adding overlapping state.
+2. Define typed runqemu capability with available, missing-tool,
+   missing-compatible-image, and failed inspection states.
+3. Define an exact launch request containing machine, authoritative image
+   artifact/path identity, optional kernel/rootfs, networking mode, display
+   mode, serial mode, bounded memory, and validated extra argument tokens.
+4. Reject empty/control/option-injection ambiguity, relative paths, identity
+   mismatch, incompatible artifacts, unsafe memory values, and unsupported
+   combinations before preview.
+5. Add typed editable draft state, deterministic launch preview, explicit
+   confirmation, and modal-safe reducer transitions.
+6. Add a persistent session state with stable ID, request, queued/starting/
+   running/cancelling/succeeded/failed/cancelled/lost status, timestamps,
+   bounded typed stdout/stderr output, exit/error details, and cancellation
+   capability.
+7. Prevent duplicate active sessions and require confirmed cancellation intent.
+8. Add typed actions/effects plus app event normalization. Reducers must not
+   inspect executables, spawn processes, parse raw output, or own terminals.
+9. Add focused tests named `qemu_model` for validation, preview, dialog focus,
+   lifecycle transitions, output bounds, duplicates, cancellation, failures,
+   and invalid/stale events.
+10. Update `docs/architecture.md`, then mark the child done and hand off to
+    `QEMU-ADAPTER-001`.
 
 ## Definition of done
 
-- A configured runqemu session can be launched, inspected, and cancelled
-  through typed persistent state.
-- Unsupported/missing tools and images remain explicit and non-fatal.
-- Focused and baseline checks pass; live claims require live evidence.
+- Pure state fully represents capability, launch intent, confirmation, session
+  lifecycle, bounded output, and cancellation.
+- Invalid or duplicate operations are reducer-inert with explicit reasons.
+- Focused and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model qemu
-cargo test -p yoctui-app qemu
-cargo test -p yoctui-ui qemu
-cargo test -p yoctui -- qemu
+cargo test -p yoctui-model qemu_model
+cargo test -p yoctui-app qemu_model
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
