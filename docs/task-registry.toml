@@ -757,18 +757,18 @@ notes = "Typed capability and exact artifact-bound launch drafts validate paths,
 id = "QEMU-ADAPTER-001"
 milestone = "M4"
 title = "Detect and execute runqemu safely"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 50
 required = true
 depends_on = ["QEMU-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake qemu_adapter", "cargo test -p yoctui-app qemu_adapter"]
-notes = "Discover configured runqemu capability, translate validated requests to exact shell-free arguments, stream bounded output, and implement process-group cancellation with all terminal outcomes."
+notes = "Canonical explicit/PATH capability inspection correlates exact regular non-symlink deployed images. Preview revalidation produces exact shell-free native arguments; the one-child bounded runner emits typed lifecycle/stream events and supports graceful process-group cancellation with forced escalation and rejection."
 
 [[task]]
 id = "QEMU-UI-001"
 milestone = "M4"
 title = "Integrate managed QEMU dialogs and session view"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 50
 required = true
 depends_on = ["QEMU-ADAPTER-001"]
