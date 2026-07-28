@@ -845,12 +845,12 @@ notes = "Parent adapter gate split into canonical capability/kickstart/command c
 id = "WIC-ADAPTER-CAP-001"
 milestone = "M4"
 title = "Inspect Wic capability and construct creation commands"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["WIC-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake wic_adapter_capability", "cargo test -p yoctui-app wic_adapter_capability"]
-notes = "Discover canonical Wic and configured/canned kickstarts, bound partition previews and limitations, and independently construct exact shell-free cooked-mode commands."
+notes = "Canonical explicit/PATH Wic discovery executes bounded timed list-images inspection, merges configured and canned sources without following symlinks, returns bounded typed partition previews/limitations, and requires the current capability when independently revalidating every cooked-mode argument. Fake coverage passes; the active BitBake-only source has no live Wic installation."
 
 [[task]]
 id = "WIC-ADAPTER-RUNNER-001"

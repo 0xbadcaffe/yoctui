@@ -3,6 +3,7 @@ mod image;
 mod package;
 mod qemu;
 mod signature;
+mod wic;
 
 use async_trait::async_trait;
 pub use image::{
@@ -29,6 +30,7 @@ use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, Command as TokioCommand},
 };
+pub use wic::{WicAdapterError, WicCapabilityInspector, WicCreateCommandSpec};
 use yoctui_model::{
     BuildRequest, DependencyEdge, DependencyEdgeKind, DependencyGraph, DependencyNode,
     DependencyNodeId, DevtoolCapability, DevtoolGitState, DevtoolOperation, DevtoolOperationError,

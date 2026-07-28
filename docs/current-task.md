@@ -2,45 +2,48 @@
 
 ## Active task
 
-**ID:** WIC-ADAPTER-CAP-001
-**Title:** Inspect Wic capability and construct creation commands
+**ID:** WIC-ADAPTER-RUNNER-001
+**Title:** Run Wic creation and scan exact outputs
 
 ## Objective
 
-Add canonical Wic and kickstart discovery, bounded typed partition preview
-parsing, and independently revalidated shell-free cooked-mode command specs.
+Own one cancellable Wic creation process with bounded typed output and return
+only exact new generated files beneath the requested output directory.
 
 ## Required work
 
-1. Record that the active BitBake-only source has no Wic executable/canned
-   kickstarts; use fake fixtures and do not claim live compatibility.
-2. Add `yoctui-bitbake::wic` capability inspection for an explicit executable
-   or active PATH plus bounded deterministic `wic list images` parsing and
-   configured canonical `.wks`/`.wks.in` files.
-3. Read kickstart sources without following symlinks, bound bytes/lines, and
-   parse only typed `part`/`partition` fields needed by the preview. Preserve
-   unsupported/dynamic syntax as explicit limitations.
-4. Independently rebuild the exact cooked-mode native argument vector from a
-   model preview and reject path, identity, option, or argument tampering.
-5. Add fake-process/filesystem tests named `wic_adapter_capability` for missing,
-   malformed, oversized, symlink, configured, canned, partial, exact-command,
-   and tampered-preview paths.
-6. Add mechanical app normalization for typed capability results, run focused
-   and baseline checks, then mark the child done and hand off to
-   `WIC-ADAPTER-RUNNER-001`.
+1. Inspect the QEMU runner and image scanner before writing code; reuse bounded
+   line, process-group cancellation, and canonical path invariants.
+2. Snapshot the exact canonical output directory before spawn without following
+   symlinks and with deterministic entry/time bounds.
+3. Start one `WicCreateCommandSpec` in the active build directory with an
+   independent child process group, bounded stdout/stderr channel and lines,
+   duplicate rejection, and explicit starting/started events.
+4. On successful exit, rescan the same directory and return only new or changed
+   canonical regular non-symlink files with typed kind, size, and modification
+   time. Preserve empty and partial scan results honestly.
+5. Emit distinct nonzero failure, graceful/forced cancellation, cancellation
+   rejection, stream/process loss, timeout, and output-scan failure events.
+6. Add fake-process/filesystem tests named `wic_adapter_runner` for exact
+   working directory/arguments, success/empty/partial output, nonzero exit,
+   duplicate start, stream bounds, cancellation, and loss.
+7. Add mechanical app normalization, run focused and baseline checks, then mark
+   the child done and hand off to the `WIC-ADAPTER-001` parent gate.
 
 ## Definition of done
 
-- Capability and kickstart previews are canonical, bounded, and typed.
-- Creation commands are independently validated and shell-free.
+- One process is owned and polled without blocking the UI.
+- Stream and output inventories remain bounded and typed.
+- Only exact new canonical files under the requested root are returned.
+- Success, failure, cancellation, rejection, and loss remain distinct.
 - Fake coverage is not presented as live compatibility.
 - Focused and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake wic_adapter_capability
-cargo test -p yoctui-app wic_adapter_capability
+cargo test -p yoctui-bitbake wic_adapter_runner
+cargo test -p yoctui-app wic_adapter_runner
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
