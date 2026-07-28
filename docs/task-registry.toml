@@ -812,12 +812,12 @@ notes = "The CLI refreshes capability from each exact normalized image inventory
 id = "WIC-001"
 milestone = "M4"
 title = "Wic image workflow"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["WIC-UI-CLI-001", "WIC-WRITE-UI-CLI-001"]
 verify = ["cargo test -p yoctui-model wic", "cargo test -p yoctui-bitbake wic", "cargo test -p yoctui-app wic", "cargo test -p yoctui-ui wic", "cargo test -p yoctui -- wic"]
-notes = "Parent gate split into typed Wic state, safe cooked-mode creation, responsive UI/CLI integration, and independently revalidated protected removable-device writing."
+notes = "The Wic parent gate passes the complete focused matrix and baseline. Typed state, safe cooked-mode capability/creation, responsive UI/CLI execution, exact output discovery, and independently rediscovered/revalidated protected device writing agree across model, app, adapters, UI, and CLI. Readiness-synchronized fake process/device coverage does not establish live Wic compatibility or removable-media safety."
 
 [[task]]
 id = "WIC-MODEL-001"
