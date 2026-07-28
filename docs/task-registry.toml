@@ -1021,12 +1021,12 @@ notes = "The cross-layer SDK workspace gate now passes: every documented shortcu
 id = "SDK-001"
 milestone = "M4"
 title = "SDK build and artifact workflow"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 52
 required = true
 depends_on = ["SDK-UI-CLI-001"]
 verify = ["cargo test -p yoctui-model sdk_workflow", "cargo test -p yoctui-app sdk_workflow", "cargo test -p yoctui-bitbake sdk_", "cargo test -p yoctui-ui sdk_workflow", "cargo test -p yoctui -- sdk_workflow"]
-notes = "Completion gate for populate SDK/ext SDK, contextual testsdk launches, typed artifacts/publication, and extracted/native SDK workflows."
+notes = "The SDK parent gate passes the complete focused matrix and baseline at the committed cross-layer state. Populate SDK/ext SDK and contextual testsdk launches reuse the managed BitBake coordinator; correlated artifacts, configured-editor opening, shell-free publication and extracted/native execution, cancellation, refresh, responsive dialogs, and terminal outcomes agree across model, app, adapters, UI, and CLI. Fake filesystem/process evidence does not establish live SDK compatibility."
 
 [[task]]
 id = "TEST-001"
