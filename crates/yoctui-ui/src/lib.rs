@@ -11,11 +11,11 @@ use yoctui_model::{
     App, BackgroundJobKind, BuildStatus, ConfigCopyValue, DependencyEdgeKind, DependencyGraph,
     DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction, DevtoolCapability,
     DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget,
-    GitFileState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PackageDetailState,
-    PackageField, PackageIdentity, PackageInventoryState, PreviewKind, Recipe, RecipeBuildStatus,
-    RecipeEditor, RecipeIdentity, Screen, Severity, SignatureComparisonState,
-    SignatureDifferenceCategory, SignatureDumpState, TaskFilterField, TaskRow, TaskState, Theme,
-    VariableIdentity, config_comparison, config_edit_disabled_reason,
+    GitFileState, ImageArtifactField, ImageArtifactInventoryState, LayerBrowser, LayerBrowserEntry,
+    LayerInspectorMode, PackageDetailState, PackageField, PackageIdentity, PackageInventoryState,
+    PreviewKind, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity,
+    SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, TaskFilterField,
+    TaskRow, TaskState, Theme, VariableIdentity, config_comparison, config_edit_disabled_reason,
     config_source_disabled_reason, format_duration, selected_config_copy_value,
 };
 
@@ -443,7 +443,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ select | Enter detail | / search | R refresh | D dep kind | [/] dep | d follow | u back | o recipe | e provider | c cancel"
         }
         Screen::Images => {
-            "↑/↓ select | b build selected image | i image picker | Tab focus | q quit"
+            "↑/↓ select | / search | R refresh | c cancel | b build | i image picker | o artifact | m manifest | l license | s SPDX | w Wic"
         }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
@@ -1712,6 +1712,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Dependencies => dependency_inspector(app),
         Screen::Signatures => signature_detail_text(app),
         Screen::Packages => package_inspector_text(app),
+        Screen::Images => image_artifact_inspector_text(app),
         _ => format!(
             "Target: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
             app.build.target.as_deref().unwrap_or("not selected"),
@@ -2181,36 +2182,189 @@ fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
-    let images = app
+    let recipe_count = app
         .workspace
         .recipes
         .iter()
         .filter(|recipe| recipe.name.contains("image"))
+        .count();
+    let machine = app
+        .workspace
+        .variables
+        .get("MACHINE")
+        .map_or("unavailable", String::as_str);
+    let mut lines = vec![Line::from(format!(
+        "MACHINE {machine} | build target {} | {recipe_count} image recipe target(s)",
+        app.build.target.as_deref().unwrap_or("not selected")
+    ))];
+    let recipe_targets = app
+        .workspace
+        .recipes
+        .iter()
+        .filter(|recipe| recipe.name.contains("image"))
+        .take(8)
+        .map(|recipe| recipe.name.as_str())
         .collect::<Vec<_>>();
-    let text = if images.is_empty() {
-        "No image recipes were discovered in the active layers.".into()
-    } else {
-        images
-            .iter()
-            .map(|recipe| {
-                format!(
-                    "{:<36} {:<14} {}",
-                    recipe.name,
-                    recipe.version.as_deref().unwrap_or("unknown"),
-                    recipe.layer.as_deref().unwrap_or("unknown")
-                )
-            })
-            .collect::<Vec<_>>()
-            .join("\n")
+    lines.push(Line::from(format!(
+        "Recipe targets: {}",
+        if recipe_targets.is_empty() {
+            "none discovered".into()
+        } else {
+            recipe_targets.join(", ")
+        }
+    )));
+    if app.image_artifact_searching {
+        lines.push(Line::from(format!("Search: {}_", app.image_artifact_query)));
+    } else if !app.image_artifact_query.is_empty() {
+        lines.push(Line::from(format!("Search: {}", app.image_artifact_query)));
+    }
+    lines.push(Line::from(
+        "Image target                 Kind             Size       Timestamp    File",
+    ));
+    match &app.image_artifacts {
+        ImageArtifactInventoryState::NotLoaded => {
+            lines.push(Line::from("Artifacts not loaded. Press R to scan."));
+        }
+        ImageArtifactInventoryState::Loading { .. } => {
+            lines.push(Line::from("Loading deployed image artifacts…"));
+        }
+        ImageArtifactInventoryState::AvailableEmpty { .. } => {
+            lines.push(Line::from(
+                "No deployed image artifacts were found in DEPLOY_DIR_IMAGE.",
+            ));
+        }
+        ImageArtifactInventoryState::Failed { message, .. } => {
+            lines.push(Line::from(format!("Artifact scan failed: {message}")));
+        }
+        ImageArtifactInventoryState::Available { .. }
+        | ImageArtifactInventoryState::Partial { .. } => {
+            let artifacts = app.filtered_image_artifacts();
+            if artifacts.is_empty() {
+                lines.push(Line::from("No artifacts match the active search."));
+            }
+            for artifact in artifacts {
+                let selected = app.image_artifact_selection.as_ref() == Some(&artifact.identity);
+                let size = artifact
+                    .size_bytes
+                    .available()
+                    .map_or_else(|| "unavailable".into(), |size| size.to_string());
+                let timestamp = artifact
+                    .modified_unix_seconds
+                    .available()
+                    .map_or_else(|| "unavailable".into(), |value| value.to_string());
+                let file = artifact
+                    .identity
+                    .path
+                    .file_name()
+                    .map_or_else(|| "unavailable".into(), |name| name.to_string_lossy());
+                lines.push(
+                    Line::from(format!(
+                        "{:<28} {:<16} {:<10} {:<12} {}",
+                        artifact.identity.image,
+                        artifact.kind.label(),
+                        size,
+                        timestamp,
+                        file
+                    ))
+                    .style(selected_style(app, selected)),
+                );
+            }
+            if let ImageArtifactInventoryState::Partial { limitations, .. } = &app.image_artifacts {
+                lines.push(Line::from(format!(
+                    "Partial artifact inventory: {} limitation(s); inspect the selected row.",
+                    limitations.len()
+                )));
+            }
+        }
     };
     frame.render_widget(
-        Paragraph::new(format!(
-            "Image target                         Version        Layer\n{text}"
-        ))
-        .block(Block::default().title("Images").borders(Borders::ALL))
-        .wrap(Wrap { trim: false }),
+        Paragraph::new(lines)
+            .block(pane_block(
+                app,
+                "Images",
+                app.focus == FocusTarget::Workspace,
+            ))
+            .wrap(Wrap { trim: false }),
         area,
     );
+}
+
+fn image_artifact_inspector_text(app: &App) -> String {
+    let Some(artifact) = app.selected_image_artifact() else {
+        return "No deployed image artifact selected.\n\nUse i to select a buildable image recipe; press R to scan DEPLOY_DIR_IMAGE.".into();
+    };
+    let paths = |field: &ImageArtifactField<Vec<std::path::PathBuf>>| {
+        field.available().map_or_else(
+            || "unavailable".into(),
+            |paths| {
+                if paths.is_empty() {
+                    "none".into()
+                } else {
+                    paths
+                        .iter()
+                        .map(|path| path.display().to_string())
+                        .collect::<Vec<_>>()
+                        .join("\n")
+                }
+            },
+        )
+    };
+    let checksums = artifact.checksums.available().map_or_else(
+        || "unavailable".into(),
+        |checksums| {
+            if checksums.is_empty() {
+                "none".into()
+            } else {
+                checksums
+                    .iter()
+                    .map(|checksum| {
+                        format!(
+                            "{} {} ({})",
+                            checksum.algorithm,
+                            checksum.digest,
+                            checksum.source.display()
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            }
+        },
+    );
+    let deploy = app
+        .image_artifacts
+        .inventory()
+        .and_then(|inventory| inventory.deploy_directory.available())
+        .map_or_else(|| "unavailable".into(), |path| path.display().to_string());
+    let limitations = match &app.image_artifacts {
+        ImageArtifactInventoryState::Partial { limitations, .. } => limitations
+            .iter()
+            .map(|limitation| format!("! {limitation}"))
+            .collect::<Vec<_>>()
+            .join("\n"),
+        _ => "none".into(),
+    };
+    format!(
+        "Machine: {}\nImage: {}\nKind: {}\nPath: {}\nDeploy directory: {}\nSize: {}\nTimestamp: {}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}\n\nLimitations:\n{}",
+        artifact.identity.machine,
+        artifact.identity.image,
+        artifact.kind.label(),
+        artifact.identity.path.display(),
+        deploy,
+        artifact
+            .size_bytes
+            .available()
+            .map_or_else(|| "unavailable".into(), |value| format!("{value} bytes")),
+        artifact.modified_unix_seconds.available().map_or_else(
+            || "unavailable".into(),
+            |value| format!("{value}s since Unix epoch")
+        ),
+        checksums,
+        paths(&artifact.manifests),
+        paths(&artifact.licenses),
+        paths(&artifact.spdx),
+        paths(&artifact.wic_files),
+        limitations,
+    )
 }
 
 fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
@@ -4524,6 +4678,101 @@ mod tests {
             assert!(!output.contains("busybox:do_compile 0%"));
             let _ = rendered_text(&app, 80, 24);
         }
+    }
+
+    #[test]
+    fn images_workspace_renders_typed_artifacts_inspector_and_responsive_modes() {
+        let mut app = App::new(20, 20_000);
+        app.screen = Screen::Images;
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.build.target = Some("core-image-minimal".into());
+        let request = yoctui_model::ImageArtifactRequest {
+            generation: 1,
+            machine: "qemux86-64".into(),
+        };
+        let path = std::path::PathBuf::from("/deploy/qemux86-64/core-image-minimal-qemux86-64.wic");
+        let artifact = yoctui_model::ImageArtifact {
+            identity: yoctui_model::ImageArtifactIdentity {
+                machine: "qemux86-64".into(),
+                image: "core-image-minimal".into(),
+                path: path.clone(),
+            },
+            kind: yoctui_model::ImageArtifactKind::Wic,
+            size_bytes: ImageArtifactField::Available(8192),
+            modified_unix_seconds: ImageArtifactField::Available(1_700_000_000),
+            checksums: ImageArtifactField::Available(vec![yoctui_model::ImageChecksum {
+                algorithm: "sha256".into(),
+                digest: "abcdef".into(),
+                source: "/deploy/qemux86-64/image.sha256".into(),
+            }]),
+            manifests: ImageArtifactField::Available(vec![
+                "/deploy/qemux86-64/image.manifest".into(),
+            ]),
+            licenses: ImageArtifactField::Unavailable,
+            spdx: ImageArtifactField::Available(vec!["/deploy/qemux86-64/image.spdx.json".into()]),
+            wic_files: ImageArtifactField::Available(vec![path]),
+        };
+        app.image_artifact_selection = Some(artifact.identity.clone());
+        app.image_artifacts = ImageArtifactInventoryState::Partial {
+            request,
+            inventory: yoctui_model::ImageArtifactInventory {
+                machine: "qemux86-64".into(),
+                deploy_directory: ImageArtifactField::Available("/deploy/qemux86-64".into()),
+                artifacts: vec![artifact],
+            },
+            limitations: vec!["one symlink was not followed".into()],
+        };
+
+        for (width, theme, color) in [
+            (180, Theme::Dark, true),
+            (120, Theme::Light, true),
+            (80, Theme::Monochrome, false),
+        ] {
+            app.theme = theme;
+            app.color_enabled = color;
+            let output = rendered_text(&app, width, 32);
+            assert!(output.contains("core-image-minimal"), "{output}");
+            assert!(output.contains("wic"), "{output}");
+            assert!(output.contains("refresh"), "{output}");
+        }
+        let wide = rendered_text(&app, 180, 40);
+        assert!(wide.contains("Deploy directory"), "{wide}");
+        assert!(wide.contains("sha256"), "{wide}");
+        assert!(wide.contains("SPDX/SBOM"), "{wide}");
+        assert!(wide.contains("one symlink was not followed"), "{wide}");
+    }
+
+    #[test]
+    fn images_workspace_renders_loading_empty_failure_and_search_empty_states() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Images;
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        let request = yoctui_model::ImageArtifactRequest {
+            generation: 1,
+            machine: "qemux86-64".into(),
+        };
+        app.image_artifacts = ImageArtifactInventoryState::Loading {
+            request: request.clone(),
+        };
+        assert!(rendered_text(&app, 100, 25).contains("Loading deployed image artifacts"));
+        app.image_artifacts = ImageArtifactInventoryState::AvailableEmpty {
+            request: request.clone(),
+            inventory: yoctui_model::ImageArtifactInventory {
+                machine: "qemux86-64".into(),
+                deploy_directory: ImageArtifactField::Available("/deploy/qemux86-64".into()),
+                artifacts: Vec::new(),
+            },
+        };
+        assert!(rendered_text(&app, 100, 25).contains("No deployed image artifacts"));
+        app.image_artifacts = ImageArtifactInventoryState::Failed {
+            request,
+            message: "DEPLOY_DIR_IMAGE is unavailable".into(),
+        };
+        assert!(rendered_text(&app, 100, 25).contains("Artifact scan failed"));
     }
 
     #[test]

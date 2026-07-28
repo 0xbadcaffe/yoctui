@@ -963,6 +963,39 @@ pub fn package_workspace_action(searching: bool, key: Input) -> Option<Action> {
         _ => None,
     }
 }
+
+pub fn images_workspace_action(searching: bool, key: Input) -> Option<Action> {
+    if searching {
+        return match key {
+            Input::Char(character) => Some(Action::AppendImageArtifactQuery(character)),
+            Input::Backspace => Some(Action::BackspaceImageArtifactQuery),
+            Input::Enter | Input::Esc => Some(Action::FinishImageArtifactSearch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectImageArtifact { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectImageArtifact { delta: 1 }),
+        Input::Char('/') => Some(Action::BeginImageArtifactSearch),
+        Input::Char('R') => Some(Action::RefreshImageArtifactInventory),
+        Input::Char('c') => Some(Action::CancelImageArtifactOperation),
+        Input::Char('b') => Some(Action::BeginSelectedImageArtifactBuild),
+        Input::Char('o') => Some(Action::OpenSelectedImageArtifact),
+        Input::Char('m') => Some(Action::OpenSelectedImageArtifactAssociation(
+            yoctui_model::ImageArtifactAssociation::Manifest,
+        )),
+        Input::Char('l') => Some(Action::OpenSelectedImageArtifactAssociation(
+            yoctui_model::ImageArtifactAssociation::License,
+        )),
+        Input::Char('s') => Some(Action::OpenSelectedImageArtifactAssociation(
+            yoctui_model::ImageArtifactAssociation::Spdx,
+        )),
+        Input::Char('w') => Some(Action::OpenSelectedImageArtifactAssociation(
+            yoctui_model::ImageArtifactAssociation::Wic,
+        )),
+        _ => None,
+    }
+}
 pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
     if searching {
         return match key {
@@ -2873,6 +2906,47 @@ mod tests {
             Some(Action::LeaveSignatureWorkspace)
         );
         assert_eq!(signature_workspace_action(Input::Char('x')), None);
+    }
+    #[test]
+    fn images_workspace_image_action_maps_search_refresh_build_cancel_and_open_actions() {
+        assert_eq!(
+            images_workspace_action(false, Input::Up),
+            Some(Action::SelectImageArtifact { delta: -1 })
+        );
+        assert_eq!(
+            images_workspace_action(false, Input::Char('R')),
+            Some(Action::RefreshImageArtifactInventory)
+        );
+        assert_eq!(
+            images_workspace_action(false, Input::Char('b')),
+            Some(Action::BeginSelectedImageArtifactBuild)
+        );
+        assert_eq!(
+            images_workspace_action(false, Input::Char('c')),
+            Some(Action::CancelImageArtifactOperation)
+        );
+        assert_eq!(
+            images_workspace_action(false, Input::Char('o')),
+            Some(Action::OpenSelectedImageArtifact)
+        );
+        assert_eq!(
+            images_workspace_action(false, Input::Char('m')),
+            Some(Action::OpenSelectedImageArtifactAssociation(
+                yoctui_model::ImageArtifactAssociation::Manifest
+            ))
+        );
+        assert_eq!(
+            images_workspace_action(false, Input::Char('/')),
+            Some(Action::BeginImageArtifactSearch)
+        );
+        assert_eq!(
+            images_workspace_action(true, Input::Char('w')),
+            Some(Action::AppendImageArtifactQuery('w'))
+        );
+        assert_eq!(
+            images_workspace_action(true, Input::Esc),
+            Some(Action::FinishImageArtifactSearch)
+        );
     }
     #[test]
     fn maps_recipe_and_task_filter_controls() {

@@ -29,22 +29,24 @@ use yoctui_app::{
     devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
-    devtool_update_confirmation_action, errors_action, focus_action, key_action, logs_action,
-    model_action_from_backend_event, package_workspace_action, recipe_editor_action,
-    settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
+    devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
+    key_action, logs_action, model_action_from_backend_event, package_workspace_action,
+    recipe_editor_action, settings_action, signature_task_picker_action,
+    signature_workspace_action, tasks_action,
 };
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolCommandSpec, DevtoolInspector,
-    DevtoolJobRunner, DevtoolRunnerEvent, PackageDataAdapter, PackageDataCancellation,
-    ProcessBackend, SignatureAdapter, SignatureCancellation, VariableValue,
+    DevtoolJobRunner, DevtoolRunnerEvent, ImageArtifactAdapter, ImageArtifactCancellation,
+    PackageDataAdapter, PackageDataCancellation, ProcessBackend, SignatureAdapter,
+    SignatureCancellation, VariableValue,
 };
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
     DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
-    LayerBrowserEntry, LayerInspectorMode, LayerRelationship, LayerRelationships,
-    PackageDetailRequest, PackageInventoryRequest, PreviewKind, RecipeIdentity, Screen, Severity,
-    SignatureComparisonRequest, SignatureTarget, Theme, VariableDetail, VariableIdentity, update,
-    validate_config_edit_request,
+    ImageArtifactRequest, LayerBrowserEntry, LayerInspectorMode, LayerRelationship,
+    LayerRelationships, PackageDetailRequest, PackageInventoryRequest, PreviewKind, RecipeIdentity,
+    Screen, Severity, SignatureComparisonRequest, SignatureTarget, Theme, VariableDetail,
+    VariableIdentity, update, validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -1072,6 +1074,82 @@ async fn poll_package_operation(app: &mut App, operation: &mut Option<PackageBac
     }
 }
 
+struct ImageArtifactBackgroundOperation {
+    request: ImageArtifactRequest,
+    cancellation: ImageArtifactCancellation,
+    handle: tokio::task::JoinHandle<BackendEvent>,
+}
+
+fn begin_image_artifact_operation(
+    app: &mut App,
+    adapter: Option<&ImageArtifactAdapter>,
+    operation: &mut Option<ImageArtifactBackgroundOperation>,
+    effect: Effect,
+) {
+    let Effect::GetImageArtifacts(request) = effect else {
+        return;
+    };
+    if operation.is_some() {
+        app.notification = Some("An image artifact operation is already running.".into());
+        return;
+    }
+    let Some(adapter) = adapter.cloned() else {
+        let _ = update(
+            app,
+            Action::ImageArtifactInventoryFailed {
+                request,
+                message: "DEPLOY_DIR_IMAGE is unavailable from the active Yocto workspace".into(),
+            },
+        );
+        return;
+    };
+    let cancellation = ImageArtifactCancellation::default();
+    let worker_cancellation = cancellation.clone();
+    let worker_request = request.clone();
+    let handle = tokio::spawn(async move {
+        match adapter
+            .scan_with_cancellation(worker_request.clone(), worker_cancellation)
+            .await
+        {
+            Ok(response) => response.into(),
+            Err(error) => BackendEvent::ImageArtifactsFailed {
+                request: worker_request,
+                message: error.to_string(),
+            },
+        }
+    });
+    *operation = Some(ImageArtifactBackgroundOperation {
+        request,
+        cancellation,
+        handle,
+    });
+}
+
+async fn poll_image_artifact_operation(
+    app: &mut App,
+    operation: &mut Option<ImageArtifactBackgroundOperation>,
+) {
+    if !operation
+        .as_ref()
+        .is_some_and(|operation| operation.handle.is_finished())
+    {
+        return;
+    }
+    let Some(operation) = operation.take() else {
+        return;
+    };
+    let event = match operation.handle.await {
+        Ok(event) => event,
+        Err(error) => BackendEvent::ImageArtifactsFailed {
+            request: operation.request,
+            message: format!("image artifact background task was lost: {error}"),
+        },
+    };
+    if let Some(action) = model_action_from_backend_event(event) {
+        let _ = update(app, action);
+    }
+}
+
 fn editor_path_error(path: &Path) -> Option<String> {
     match path.try_exists() {
         Ok(true) => None,
@@ -1971,11 +2049,29 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     let mut signature_operation = None;
     let package_adapter = PackageDataAdapter::new(session_build_dir.clone());
     let mut package_operation = None;
+    let image_artifact_adapter = app
+        .workspace
+        .variables
+        .get("DEPLOY_DIR_IMAGE")
+        .map(PathBuf::from)
+        .map(ImageArtifactAdapter::new);
+    let mut image_artifact_operation = None;
     if app.screen == Screen::Packages
         && let Some(effect @ Effect::GetPackageInventory(_)) =
             update(&mut app, Action::BeginPackageInventory)
     {
         begin_package_operation(&mut app, &package_adapter, &mut package_operation, effect);
+    }
+    if app.screen == Screen::Images
+        && let Some(effect @ Effect::GetImageArtifacts(_)) =
+            update(&mut app, Action::BeginImageArtifactInventory)
+    {
+        begin_image_artifact_operation(
+            &mut app,
+            image_artifact_adapter.as_ref(),
+            &mut image_artifact_operation,
+            effect,
+        );
     }
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
@@ -1988,6 +2084,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         }
         poll_signature_operation(&mut app, &mut signature_operation).await;
         poll_package_operation(&mut app, &mut package_operation).await;
+        poll_image_artifact_operation(&mut app, &mut image_artifact_operation).await;
         if matches!(
             app.build.status,
             BuildStatus::LoadingWorkspace
@@ -2009,7 +2106,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 continue;
             };
             if app.command_palette_open {
-                let _ = match input {
+                let effect = match input {
                     Input::Up => update(&mut app, Action::SelectCommandPalette { delta: -1 }),
                     Input::Down => update(&mut app, Action::SelectCommandPalette { delta: 1 }),
                     Input::Enter => update(&mut app, Action::ActivateCommandPalette),
@@ -2020,6 +2117,24 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                     _ => None,
                 };
+                if let Some(effect @ Effect::GetImageArtifacts(_)) = effect {
+                    begin_image_artifact_operation(
+                        &mut app,
+                        image_artifact_adapter.as_ref(),
+                        &mut image_artifact_operation,
+                        effect,
+                    );
+                } else if let Some(
+                    effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
+                ) = effect
+                {
+                    begin_package_operation(
+                        &mut app,
+                        &package_adapter,
+                        &mut package_operation,
+                        effect,
+                    );
+                }
             } else if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
                 let editing = app.active_dialog().is_some_and(
                     |dialog| matches!(dialog, Dialog::RecipeEditor(editor) if editor.editing),
@@ -2105,6 +2220,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             &mut app,
                             &package_adapter,
                             &mut package_operation,
+                            effect,
+                        );
+                    } else if let Some(effect @ Effect::GetImageArtifacts(_)) = effect {
+                        begin_image_artifact_operation(
+                            &mut app,
+                            image_artifact_adapter.as_ref(),
+                            &mut image_artifact_operation,
                             effect,
                         );
                     }
@@ -2450,6 +2572,34 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             }
                         } else {
                             app.notification = Some("No package-data operation is running.".into());
+                        }
+                    }
+                    Some(Effect::OpenInEditor(path)) => {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                    _ => {}
+                }
+            } else if app.screen == Screen::Images
+                && images_workspace_action(app.image_artifact_searching, input).is_some()
+            {
+                let action = images_workspace_action(app.image_artifact_searching, input)
+                    .expect("Images action was checked");
+                match update(&mut app, action) {
+                    Some(effect @ Effect::GetImageArtifacts(_)) => begin_image_artifact_operation(
+                        &mut app,
+                        image_artifact_adapter.as_ref(),
+                        &mut image_artifact_operation,
+                        effect,
+                    ),
+                    Some(Effect::CancelImageArtifactOperation) => {
+                        if let Some(operation) = image_artifact_operation.as_ref() {
+                            if operation.cancellation.cancel() {
+                                app.notification =
+                                    Some("Image artifact cancellation requested.".into());
+                            }
+                        } else {
+                            app.notification =
+                                Some("No image artifact operation is running.".into());
                         }
                     }
                     Some(Effect::OpenInEditor(path)) => {
@@ -2862,6 +3012,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         }
     }
     if let Some(operation) = signature_operation.take() {
+        operation.cancellation.cancel();
+        let _ = operation.handle.await;
+    }
+    if let Some(operation) = image_artifact_operation.take() {
         operation.cancellation.cancel();
         let _ = operation.handle.await;
     }
@@ -4499,6 +4653,75 @@ esac"#,
         assert!(matches!(
             app.package_inventory,
             yoctui_model::PackageInventoryState::Failed { ref message, .. }
+                if message.contains("cancelled")
+        ));
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[tokio::test]
+    async fn images_workspace_background_operation_reports_success_failure_and_cancellation() {
+        let directory = std::env::temp_dir().join(format!(
+            "yoctui-images-workspace-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let deploy = directory.join("qemux86-64");
+        fs::create_dir_all(&deploy).unwrap();
+        fs::write(
+            deploy.join("core-image-minimal-qemux86-64.rootfs.ext4"),
+            b"image",
+        )
+        .unwrap();
+        let adapter = ImageArtifactAdapter::new(deploy);
+        let mut app = App::new(10, 1_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        let effect = update(&mut app, Action::BeginImageArtifactInventory).unwrap();
+        let mut operation = None;
+        begin_image_artifact_operation(&mut app, Some(&adapter), &mut operation, effect);
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while operation.is_some() {
+                poll_image_artifact_operation(&mut app, &mut operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(matches!(
+            app.image_artifacts,
+            yoctui_model::ImageArtifactInventoryState::Available { .. }
+        ));
+
+        let effect = update(&mut app, Action::RefreshImageArtifactInventory).unwrap();
+        begin_image_artifact_operation(&mut app, None, &mut operation, effect);
+        assert!(matches!(
+            app.image_artifacts,
+            yoctui_model::ImageArtifactInventoryState::Failed { ref message, .. }
+                if message.contains("DEPLOY_DIR_IMAGE")
+        ));
+
+        let effect = update(&mut app, Action::RefreshImageArtifactInventory).unwrap();
+        begin_image_artifact_operation(&mut app, Some(&adapter), &mut operation, effect);
+        assert!(
+            operation
+                .as_ref()
+                .is_some_and(|operation| operation.cancellation.cancel())
+        );
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while operation.is_some() {
+                poll_image_artifact_operation(&mut app, &mut operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(matches!(
+            app.image_artifacts,
+            yoctui_model::ImageArtifactInventoryState::Failed { ref message, .. }
                 if message.contains("cancelled")
         ));
         fs::remove_dir_all(directory).unwrap();

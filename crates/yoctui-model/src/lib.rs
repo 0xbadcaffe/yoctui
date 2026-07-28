@@ -2557,6 +2557,9 @@ pub enum Action {
     AppendImageArtifactQuery(char),
     BackspaceImageArtifactQuery,
     FinishImageArtifactSearch,
+    BeginSelectedImageArtifactBuild,
+    OpenSelectedImageArtifact,
+    OpenSelectedImageArtifactAssociation(ImageArtifactAssociation),
     BeginBuildTargetEdit,
     BeginBuildTargetTask(Option<String>),
     AppendBuildTarget(char),
@@ -4014,6 +4017,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             {
                 return Some(begin_package_inventory(app));
             }
+            if s == Screen::Images
+                && matches!(app.image_artifacts, ImageArtifactInventoryState::NotLoaded)
+            {
+                return begin_image_artifact_inventory(app);
+            }
         }
         Action::SelectNavigator { delta } => {
             app.navigator_selection = if delta.is_negative() {
@@ -4032,6 +4040,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 && matches!(app.package_inventory, PackageInventoryState::NotLoaded)
             {
                 return Some(begin_package_inventory(app));
+            }
+            if app.screen == Screen::Images
+                && matches!(app.image_artifacts, ImageArtifactInventoryState::NotLoaded)
+            {
+                return begin_image_artifact_inventory(app);
             }
         }
         Action::Focus(target) => app.focus = target,
@@ -4314,6 +4327,61 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::FinishImageArtifactSearch => app.image_artifact_searching = false,
+        Action::BeginSelectedImageArtifactBuild => {
+            if let Some(target) = app
+                .selected_image_artifact()
+                .map(|artifact| artifact.identity.image.clone())
+            {
+                app.build.target = Some(target.clone());
+                open_dialog(
+                    app,
+                    Dialog::RecipeTaskConfirmation(BuildRequest {
+                        targets: vec![target],
+                        task: None,
+                        force: false,
+                    }),
+                );
+            } else if let Some(target) = app.build.target.clone() {
+                open_dialog(
+                    app,
+                    Dialog::RecipeTaskConfirmation(BuildRequest {
+                        targets: vec![target],
+                        task: None,
+                        force: false,
+                    }),
+                );
+            } else {
+                app.notification = Some("Select an image first with i.".into());
+            }
+        }
+        Action::OpenSelectedImageArtifact => {
+            if let Some(path) = app
+                .selected_image_artifact()
+                .map(|artifact| artifact.identity.path.clone())
+            {
+                return Some(Effect::OpenInEditor(path));
+            }
+            app.notification = Some("No deployed image artifact is selected.".into());
+        }
+        Action::OpenSelectedImageArtifactAssociation(association) => {
+            if let Some(path) = app
+                .selected_image_artifact()
+                .and_then(|artifact| artifact.associated_paths(association))
+                .and_then(|paths| paths.first())
+                .cloned()
+            {
+                return Some(Effect::OpenInEditor(path));
+            }
+            let label = match association {
+                ImageArtifactAssociation::Manifest => "manifest",
+                ImageArtifactAssociation::License => "license",
+                ImageArtifactAssociation::Spdx => "SPDX/SBOM",
+                ImageArtifactAssociation::Wic => "Wic",
+            };
+            app.notification = Some(format!(
+                "The selected image artifact has no authoritative {label} path."
+            ));
+        }
         Action::BeginBuildTargetEdit => {
             replace_dialog(
                 app,
@@ -12150,6 +12218,72 @@ mod tests {
         assert!(matches!(
             app.image_artifacts,
             ImageArtifactInventoryState::Failed { .. }
+        ));
+    }
+
+    #[test]
+    fn images_workspace_preserves_build_and_routes_exact_typed_paths() {
+        let mut app = App::new(20, 20_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        let request = ImageArtifactRequest {
+            generation: 1,
+            machine: "qemux86-64".into(),
+        };
+        assert_eq!(
+            update(&mut app, Action::Open(Screen::Images)),
+            Some(Effect::GetImageArtifacts(request.clone()))
+        );
+        let artifact_path =
+            PathBuf::from("/build/tmp/deploy/images/qemux86-64/core-image-minimal.wic");
+        let manifest_path =
+            PathBuf::from("/build/tmp/deploy/images/qemux86-64/core-image-minimal.manifest");
+        let artifact = ImageArtifact {
+            identity: ImageArtifactIdentity {
+                machine: "qemux86-64".into(),
+                image: "core-image-minimal".into(),
+                path: artifact_path.clone(),
+            },
+            kind: ImageArtifactKind::Wic,
+            size_bytes: ImageArtifactField::Available(42),
+            modified_unix_seconds: ImageArtifactField::Available(10),
+            checksums: ImageArtifactField::Unavailable,
+            manifests: ImageArtifactField::Available(vec![manifest_path.clone()]),
+            licenses: ImageArtifactField::Unavailable,
+            spdx: ImageArtifactField::Unavailable,
+            wic_files: ImageArtifactField::Available(vec![artifact_path.clone()]),
+        };
+        let _ = update(
+            &mut app,
+            Action::ImageArtifactInventoryLoaded {
+                request,
+                inventory: ImageArtifactInventory {
+                    machine: "qemux86-64".into(),
+                    deploy_directory: ImageArtifactField::Available(
+                        "/build/tmp/deploy/images/qemux86-64".into(),
+                    ),
+                    artifacts: vec![artifact],
+                },
+            },
+        );
+        assert_eq!(
+            update(&mut app, Action::OpenSelectedImageArtifact),
+            Some(Effect::OpenInEditor(artifact_path.clone()))
+        );
+        assert_eq!(
+            update(
+                &mut app,
+                Action::OpenSelectedImageArtifactAssociation(ImageArtifactAssociation::Manifest)
+            ),
+            Some(Effect::OpenInEditor(manifest_path))
+        );
+        let _ = update(&mut app, Action::BeginSelectedImageArtifactBuild);
+        assert_eq!(app.build.target.as_deref(), Some("core-image-minimal"));
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::RecipeTaskConfirmation(BuildRequest { targets, .. }))
+                if targets == &vec!["core-image-minimal".to_owned()]
         ));
     }
 }

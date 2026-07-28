@@ -59,6 +59,14 @@ pub enum ImageArtifactKind {
     Other,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ImageArtifactAssociation {
+    Manifest,
+    License,
+    Spdx,
+    Wic,
+}
+
 impl ImageArtifactKind {
     pub fn label(self) -> &'static str {
         match self {
@@ -130,6 +138,16 @@ impl ImageArtifact {
                             .any(|path| text_matches(&path.to_string_lossy()))
                     })
                 })
+    }
+
+    pub fn associated_paths(&self, association: ImageArtifactAssociation) -> Option<&[PathBuf]> {
+        let field = match association {
+            ImageArtifactAssociation::Manifest => &self.manifests,
+            ImageArtifactAssociation::License => &self.licenses,
+            ImageArtifactAssociation::Spdx => &self.spdx,
+            ImageArtifactAssociation::Wic => &self.wic_files,
+        };
+        field.available().map(Vec::as_slice)
     }
 }
 

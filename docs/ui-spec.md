@@ -1142,17 +1142,62 @@ The Packages footer is:
 
 ### Images
 
-Show:
+Images combines buildable image recipe targets with deployed artifacts without
+presenting one as evidence for the other. The Workspace header shows the
+effective `MACHINE`, selected/current build target, artifact search query, and
+count. `i` keeps the existing image-recipe picker. Entering Images starts one
+artifact request only while state is not loaded; `R` explicitly refreshes and
+`c` requests cancellation.
 
-- image artifacts
-- file sizes
-- timestamps
-- manifests
-- licenses
-- SPDX/SBOM artifacts
-- Wic images
-- deploy directory
-- checksums
+Wide mode uses the persistent Navigator, an artifact table in Workspace, and
+the selected artifact in Inspector. Medium mode keeps the artifact table and
+uses the shared Inspector overlay. Narrow mode uses the shared visible-pane
+switcher; both list and Inspector remain reachable. The shared too-small
+message applies below the supported boundary. Selection is keyed by exact
+machine/image/path identity and survives refresh when that identity remains.
+
+The artifact table shows image target, adapter-classified kind, file name,
+size, and timestamp. It renders distinct not-loaded, loading,
+available-empty, available, partial, failed, and no-search-match states.
+Partial state keeps valid rows usable and shows the limitation count. A
+selected artifact never changes merely because an asynchronous stale result
+arrives.
+
+The Inspector shows:
+
+- exact machine and image target
+- adapter-classified artifact kind
+- absolute deployed path and authoritative deploy directory
+- byte size and modification timestamp
+- checksum algorithm, digest, and checksum source
+- manifest paths
+- license paths
+- SPDX/SBOM paths
+- Wic-related paths
+- every typed scan/model limitation
+
+Unavailable fields render `unavailable`; available empty collections render
+`none`. Widgets never classify names, parse checksum text, derive paths from
+logs, or treat a missing field as empty.
+
+`b` opens the normal build confirmation for the selected artifact's exact
+image target. When no artifact is selected it preserves the existing
+current-image behavior. `o` opens the selected artifact path. `m`, `l`, `s`,
+and `w` open the first exact typed manifest, license, SPDX/SBOM, or Wic path
+respectively. Missing selection or typed path leaves the action inert and
+shows a stable explanation. All opens use the configured editor and normal
+terminal restoration.
+
+The Images footer is:
+
+```text
+↑/↓ select | / search | R refresh | c cancel | b build | i image picker | o artifact | m manifest | l license | s SPDX | w Wic
+```
+
+Search edits only while search mode is active; Enter or Esc finishes editing.
+Dialogs trap focus. Light, dark, monochrome/no-color, and every responsive
+breakpoint preserve state meaning with labels and attributes rather than color
+alone.
 
 ### SDK
 
