@@ -2,43 +2,43 @@
 
 ## Active task
 
-**ID:** QEMU-UI-001
-**Title:** Verify the complete QEMU UI parent gate
+**ID:** QEMU-001
+**Title:** Verify the complete managed QEMU parent gate
 
 ## Objective
 
-Verify that the completed QEMU dialog state, responsive rendering, and
-CLI-owned capability/runner integration form one coherent typed workspace.
+Verify the complete managed runqemu workflow across its model, adapter, app,
+responsive UI, and CLI integration children.
 
 ## Required work
 
-1. Read the completed QEMU model, app input, UI rendering, and CLI integration
-   tests before changing any implementation.
-2. Run every focused verification command for the parent task.
-3. Confirm the launch, confirmation, cancellation, active-session, and terminal
-   outcome paths remain typed and responsive at supported terminal sizes.
-4. Confirm fake executable coverage is described honestly and no live runqemu
-   compatibility claim was introduced.
-5. Run all baseline checks.
-6. If every check passes, mark `QEMU-UI-001` done and hand off to the
-   `QEMU-001` managed-workflow parent gate. If a check fails, keep this task in
-   progress and repair only the demonstrated integration defect.
+1. Inspect the completed child task evidence and dependencies before changing
+   implementation.
+2. Run every focused verification command for `QEMU-001`.
+3. Confirm exact artifact identity and shell-free preview revalidation remain
+   enforced from capability inspection through process launch.
+4. Confirm shared job lifecycle, bounded output, navigation persistence,
+   responsive rendering, and graceful/forced cancellation agree across layers.
+5. Confirm the status and architecture documents make no live runqemu
+   compatibility claim from fake executable tests.
+6. Run all baseline checks.
+7. If every check passes, mark `QEMU-001` done and select the next eligible
+   highest-priority task. If a check fails, repair only the demonstrated
+   integration defect.
 
 ## Definition of done
 
-- All four focused model/app/UI/CLI checks pass together.
-- Modal focus, responsive rendering, and session history agree with
-  `docs/ui-spec.md`.
+- The complete parent verification passes.
+- Model, adapter, app, UI, and CLI boundaries remain typed and consistent.
+- Exact launch arguments and terminal lifecycle outcomes are covered.
 - Fake integration evidence is not presented as live compatibility.
 - Baseline checks pass without weakening tests.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model qemu_workspace
-cargo test -p yoctui-app qemu_workspace
-cargo test -p yoctui-ui qemu_workspace
-cargo test -p yoctui -- qemu_workspace
+cargo test -p yoctui-app qemu
+cargo test -p yoctui-ui qemu
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
