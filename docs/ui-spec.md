@@ -1311,16 +1311,83 @@ below-80×24 resize message remains authoritative. The Images footer includes
 
 ### Wic dialog
 
-Integrate:
+Yoctui integrates the cooked-mode `wic create` workflow and the `wic write`
+device workflow. It does not run Wic as root, guess raw-mode artifact
+directories, or turn a free-form command string into the primary interface.
+Missing tools, unavailable kickstarts, missing image artifacts, unsafe output
+directories, unsupported preview syntax, and write-permission failures remain
+distinct typed states.
 
-- `wic create`
-- kickstart selection
-- image selection
-- output directory
-- size and partition preview
-- confirmation for writing removable devices
+`W` in Images opens Wic creation for the active machine and selected image
+target. It is disabled until an exact image target, a canonical executable, and
+at least one adapter-reported canned or configured kickstart are available.
+The creation dialog contains:
 
-Direct device writes require strong confirmation and a clear device summary.
+- read-only machine identity
+- typed image-target selection
+- typed kickstart selection
+- a normalized absolute output directory
+- optional bmap generation
+- a typed compression choice: none, gzip, bzip2, or xz
+
+The initial selection prefers the active image and configured `WKS_FILE` only
+when both identities occur in the latest typed inventories. `↑`/`↓` or `k`/`j`
+moves between rows. `Enter` edits the output directory or advances a typed
+choice; `←`/`→` or `h`/`l` cycles choices. `p` opens an exact shell-free
+argument preview for cooked mode:
+
+```text
+wic create <kickstart> -e <image> -o <output-directory> [--bmap] [--compress-with <kind>]
+```
+
+The adapter resolves whether the selected kickstart is a canned name or a
+canonical regular `.wks`/`.wks.in` file; widgets never derive a path from its
+display name. The preview shows a bounded syntax-highlighted kickstart source,
+each typed `part`/`partition` row, mount point, filesystem, source plugin, and
+explicit size/alignment where present. Unknown or variable-derived values are
+shown as `dynamic` or `unavailable`; Yoctui never fabricates a total image size.
+`Enter` in the command preview starts creation and `Esc` closes either step
+without starting a process.
+
+Creation is a managed background job. Its stable request retains the exact
+machine, image, kickstart identity, output directory, options, and argument
+preview. The shared job model owns lifecycle, bounded stream-tagged output,
+cancellation, and terminal result. After success, the adapter scans only
+new regular non-symlink files canonically beneath the requested output
+directory and returns their exact path, kind, byte size, and modification time.
+Empty and partial output inventories remain honest. The Images Inspector shows
+the latest Wic request/job and generated outputs before general artifact
+metadata. `o` opens the selected generated output and `x` requests cancellation
+when a Wic creation job is active.
+
+`D` on an exact uncompressed `.wic` or `.direct` generated/deployed image opens
+the protected removable-device flow. Device discovery is typed and bounded.
+Only a whole block device reported removable, writable, large enough, and with
+no mounted descendants is selectable. The current system/root backing device,
+partitions, loop devices, device-mapper nodes, optical devices, and ambiguous
+or stale identities are never eligible.
+
+The device picker and confirmation show the exact image path and size plus the
+device canonical path, major/minor identity, capacity, model, serial when
+available, transport, removable/read-only state, and descendant mount summary.
+Selection alone cannot write. The user must enter the exact phrase
+`WRITE <canonical-device-path>` and then confirm the exact shell-free
+`wic write <image> <device>` preview. Immediately before spawn, the adapter
+rescans both identities and rechecks every safety invariant. Yoctui never
+invokes `sudo`; insufficient device permissions produce a visible disabled or
+failed state.
+
+Device writing is a separate managed background job with bounded output and
+distinct success, nonzero failure, cancellation, and process-loss results.
+Cancellation requires a second confirmation warning that the device may be
+incomplete. Every terminal result retains the exact image/device identity.
+Fake block-device/process tests do not establish live removable-media safety;
+that requires an explicit opt-in hardware smoke test.
+
+All creation, preview, device picker, typed-phrase, command-preview, and
+cancellation dialogs trap focus and render safely at 80×24. The Images footer
+places `W create Wic` and `D write device` next to the existing lower-case `w`
+shortcut, which continues to open an already-associated Wic path.
 
 ---
 

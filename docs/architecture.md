@@ -504,6 +504,33 @@ input and other coordinators remain responsive. CLI ownership is released only
 after a terminal runner event or a lost cancellation task, while completed
 session history remains in the model.
 
+## Managed Wic boundary
+
+`yoctui-model::wic` owns exact machine/image/kickstart/output/device identities,
+bounded kickstart partition summaries, deterministic creation and write
+previews, dialog drafts, generated-output inventories, and stable Wic job
+context. It reuses the shared background-job lifecycle but does not discover
+executables, parse raw command output, inspect files or block devices, or
+authorize privilege escalation.
+
+The Wic adapter owns canonical executable and kickstart discovery, bounded
+kickstart reading/parsing, independent shell-free argument construction,
+process-group execution, and canonical post-create output scanning. Creation
+initially supports Wic cooked mode only. The adapter also owns bounded block
+device discovery and immediately-before-spawn revalidation of the image,
+whole-device identity, removability, writability, capacity, mount descendants,
+and system/root-device exclusion. It executes `wic write` only when every typed
+safety invariant still agrees and never invokes `sudo`.
+
+App code maps keys and typed adapter events mechanically. Ratatui widgets render
+typed capability, partition, output, device, and job state without parsing
+kickstart text, process output, or device command output. The CLI owns at most
+one Wic process operation and one short-lived discovery operation, polls them
+independently from BitBake, Devtool, QEMU, and metadata work, and releases
+runner ownership only after a terminal event. Exact typed-phrase and command
+previews are model gates; the adapter's final revalidation is the authoritative
+write gate. Fake device/process coverage is not live removable-media evidence.
+
 ## Background-job model
 
 All long-running operations use one shared job abstraction.

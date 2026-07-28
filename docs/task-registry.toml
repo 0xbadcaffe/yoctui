@@ -812,12 +812,89 @@ notes = "The CLI refreshes capability from each exact normalized image inventory
 id = "WIC-001"
 milestone = "M4"
 title = "Wic image workflow"
+status = "IN_PROGRESS"
+priority = 51
+required = true
+depends_on = ["WIC-UI-CLI-001", "WIC-WRITE-UI-CLI-001"]
+verify = ["cargo test -p yoctui-model wic", "cargo test -p yoctui-bitbake wic", "cargo test -p yoctui-app wic", "cargo test -p yoctui-ui wic", "cargo test -p yoctui -- wic"]
+notes = "Parent gate split into typed Wic state, safe cooked-mode creation, responsive UI/CLI integration, and independently revalidated protected removable-device writing."
+
+[[task]]
+id = "WIC-MODEL-001"
+milestone = "M4"
+title = "Add typed Wic creation and device-write state"
+status = "IN_PROGRESS"
+priority = 51
+required = true
+depends_on = ["JOB-002", "IMAGES-MODEL-001"]
+verify = ["cargo test -p yoctui-model wic_model", "cargo test -p yoctui-app wic_model"]
+notes = "Add pure bounded identities, capability/inventory states, partition summaries, creation/write drafts and previews, shared-job lifecycle, stale-event correlation, and destructive confirmation gates."
+
+[[task]]
+id = "WIC-ADAPTER-001"
+milestone = "M4"
+title = "Discover kickstarts and execute Wic creation safely"
 status = "NOT_STARTED"
 priority = 51
 required = true
-depends_on = ["JOB-002", "DIALOG-001"]
-verify = ["cargo test -p yoctui-app wic"]
-notes = "Creation, kickstart preview, output inspection, protected device writing."
+depends_on = ["WIC-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake wic_adapter", "cargo test -p yoctui-app wic_adapter"]
+notes = "Discover canonical Wic/kickstart capability, parse bounded partition previews, independently construct exact cooked-mode arguments, run one cancellable process, and scan exact generated outputs."
+
+[[task]]
+id = "WIC-UI-MODEL-001"
+milestone = "M4"
+title = "Add Wic workspace dialog and input state"
+status = "NOT_STARTED"
+priority = 51
+required = true
+depends_on = ["WIC-ADAPTER-001"]
+verify = ["cargo test -p yoctui-model wic_workspace", "cargo test -p yoctui-app wic_workspace"]
+notes = "Add bounded creation fields, typed image/kickstart choices, preview/confirmation transitions, output selection, cancellation confirmation, disabled reasons, and modal key mapping."
+
+[[task]]
+id = "WIC-UI-RENDER-001"
+milestone = "M4"
+title = "Render responsive Wic creation and output UI"
+status = "NOT_STARTED"
+priority = 51
+required = true
+depends_on = ["WIC-UI-MODEL-001"]
+verify = ["cargo test -p yoctui-ui wic_workspace"]
+notes = "Render capability, partition preview, exact argument confirmation, persistent job output/results, generated outputs, footer hints, and all explicit responsive states."
+
+[[task]]
+id = "WIC-UI-CLI-001"
+milestone = "M4"
+title = "Integrate Wic creation capability and runner in the CLI"
+status = "NOT_STARTED"
+priority = 51
+required = true
+depends_on = ["WIC-UI-RENDER-001"]
+verify = ["cargo test -p yoctui -- wic_workspace"]
+notes = "Execute discovery/create/cancel effects, route modal keys first, independently poll one Wic runner, and preserve exact output/job history across navigation."
+
+[[task]]
+id = "WIC-WRITE-ADAPTER-001"
+milestone = "M4"
+title = "Discover and revalidate safe Wic write devices"
+status = "NOT_STARTED"
+priority = 51
+required = true
+depends_on = ["WIC-ADAPTER-001"]
+verify = ["cargo test -p yoctui-bitbake wic_device_write", "cargo test -p yoctui-app wic_device_write"]
+notes = "Parse bounded typed whole-device inventory, exclude unsafe/system/mounted/stale identities, independently revalidate image and device immediately before exact shell-free wic write execution, and never invoke sudo."
+
+[[task]]
+id = "WIC-WRITE-UI-CLI-001"
+milestone = "M4"
+title = "Integrate protected Wic device writing"
+status = "NOT_STARTED"
+priority = 51
+required = true
+depends_on = ["WIC-UI-CLI-001", "WIC-WRITE-ADAPTER-001"]
+verify = ["cargo test -p yoctui-model wic_device_write", "cargo test -p yoctui-app wic_device_write", "cargo test -p yoctui-ui wic_device_write", "cargo test -p yoctui -- wic_device_write"]
+notes = "Add device picker/summary, exact WRITE phrase and command preview, second cancellation warning, responsive rendering, independent CLI polling, terminal history, and fake-device/process coverage."
 
 [[task]]
 id = "SDK-001"
