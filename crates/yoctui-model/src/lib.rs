@@ -4393,6 +4393,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some("An image artifact operation is already running.".into());
                 return None;
             }
+            app.qemu_capability = QemuCapability::NotInspected;
             return begin_image_artifact_inventory(app);
         }
         Action::CancelImageArtifactOperation => {
