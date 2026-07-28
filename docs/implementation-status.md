@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Complete the package data browser.
+Complete the Images artifact workspace.
 
 ## Current task
 
@@ -24,7 +24,7 @@ See `docs/current-task.md`.
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
 | M1 BitBake cockpit | IN_PROGRESS | Typed background build execution and live BitBake 2.19.0 Tinfoil validation exist; remaining typed cockpit workflows are incomplete |
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
-| M3 Development workbench | IN_PROGRESS | Layers, Recipes, Configuration, Devtool, dependency why-built, and signature workflows are complete; package data remains |
+| M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | IN_PROGRESS | Image-recipe listing and build selection exist; artifact, SDK, QEMU, and Wic workflows remain |
 | M5 Testing/QA/Security | NOT_STARTED | Coverage infrastructure exists; product workflows remain |
 | M6 Maintenance | NOT_STARTED | Partial diagnostics only |
@@ -68,11 +68,13 @@ See `docs/current-task.md`.
 | Signature workspace | DONE | `Z` opens an authoritative focus-trapped task picker and responsive child workspace with exact record/sides, typed details/differences, provider navigation, and cancellable background execution |
 | Package data model | DONE | Exact identities, available-versus-unavailable fields, explicit bounded inventory/detail states, deterministic normalization, selection, stale correlation, search, dependency navigation, and typed event/effect mapping pass focused and baseline checks |
 | Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
-| Package data workspace | NOT_STARTED | No Navigator route, responsive workspace, input mapping, background coordination, or TestBackend coverage exists |
+| Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
 
 ## Priority queue
 
-1. `PKG-UI-001` — integrate the package data workspace
+1. `IMAGES-001` — complete the Images artifact workspace
+2. `QEMU-001` — add a managed runqemu workflow
+3. `WIC-001` — add the Wic image workflow
 
 ## Rules
 

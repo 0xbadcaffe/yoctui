@@ -30,20 +30,21 @@ use yoctui_app::{
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, key_action, logs_action,
-    model_action_from_backend_event, recipe_editor_action, settings_action,
-    signature_task_picker_action, signature_workspace_action, tasks_action,
+    model_action_from_backend_event, package_workspace_action, recipe_editor_action,
+    settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
 };
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolCommandSpec, DevtoolInspector,
-    DevtoolJobRunner, DevtoolRunnerEvent, ProcessBackend, SignatureAdapter, SignatureCancellation,
-    VariableValue,
+    DevtoolJobRunner, DevtoolRunnerEvent, PackageDataAdapter, PackageDataCancellation,
+    ProcessBackend, SignatureAdapter, SignatureCancellation, VariableValue,
 };
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
     DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
-    LayerBrowserEntry, LayerInspectorMode, LayerRelationship, LayerRelationships, PreviewKind,
-    RecipeIdentity, Screen, Severity, SignatureComparisonRequest, SignatureTarget, Theme,
-    VariableDetail, VariableIdentity, update, validate_config_edit_request,
+    LayerBrowserEntry, LayerInspectorMode, LayerRelationship, LayerRelationships,
+    PackageDetailRequest, PackageInventoryRequest, PreviewKind, RecipeIdentity, Screen, Severity,
+    SignatureComparisonRequest, SignatureTarget, Theme, VariableDetail, VariableIdentity, update,
+    validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -973,6 +974,104 @@ async fn poll_signature_operation(
     }
 }
 
+#[derive(Debug, Clone)]
+enum PackageOperationRequest {
+    Inventory(PackageInventoryRequest),
+    Detail(PackageDetailRequest),
+}
+
+struct PackageBackgroundOperation {
+    request: PackageOperationRequest,
+    cancellation: PackageDataCancellation,
+    handle: tokio::task::JoinHandle<BackendEvent>,
+}
+
+fn begin_package_operation(
+    app: &mut App,
+    adapter: &PackageDataAdapter,
+    operation: &mut Option<PackageBackgroundOperation>,
+    effect: Effect,
+) {
+    if operation.is_some() {
+        let _ = update(
+            app,
+            Action::Notify("A package-data operation is already running.".into()),
+        );
+        return;
+    }
+    let cancellation = PackageDataCancellation::default();
+    let worker_cancellation = cancellation.clone();
+    let adapter = adapter.clone();
+    let (request, handle) = match effect {
+        Effect::GetPackageInventory(request) => {
+            let worker_request = request;
+            let handle = tokio::spawn(async move {
+                match adapter
+                    .inventory_with_cancellation(worker_request, worker_cancellation)
+                    .await
+                {
+                    Ok(response) => response.into(),
+                    Err(error) => BackendEvent::PackageInventoryFailed {
+                        request: worker_request,
+                        message: error.to_string(),
+                    },
+                }
+            });
+            (PackageOperationRequest::Inventory(request), handle)
+        }
+        Effect::GetPackageDetail(request) => {
+            let worker_request = request.clone();
+            let handle = tokio::spawn(async move {
+                match adapter
+                    .detail_with_cancellation(worker_request.clone(), worker_cancellation)
+                    .await
+                {
+                    Ok(response) => response.into(),
+                    Err(error) => BackendEvent::PackageDetailFailed {
+                        request: worker_request,
+                        message: error.to_string(),
+                    },
+                }
+            });
+            (PackageOperationRequest::Detail(request), handle)
+        }
+        _ => return,
+    };
+    *operation = Some(PackageBackgroundOperation {
+        request,
+        cancellation,
+        handle,
+    });
+}
+
+async fn poll_package_operation(app: &mut App, operation: &mut Option<PackageBackgroundOperation>) {
+    if !operation
+        .as_ref()
+        .is_some_and(|operation| operation.handle.is_finished())
+    {
+        return;
+    }
+    let Some(operation) = operation.take() else {
+        return;
+    };
+    let event = match operation.handle.await {
+        Ok(event) => event,
+        Err(error) => match operation.request {
+            PackageOperationRequest::Inventory(request) => BackendEvent::PackageInventoryFailed {
+                request,
+                message: format!("package-data background task was lost: {error}"),
+            },
+            PackageOperationRequest::Detail(request) => BackendEvent::PackageDetailFailed {
+                request,
+                message: format!("package-data background task was lost: {error}"),
+            },
+        },
+    };
+    if let Some(action) = model_action_from_backend_event(event) {
+        let _ = update(app, action);
+    }
+}
+
 fn editor_path_error(path: &Path) -> Option<String> {
     match path.try_exists() {
         Ok(true) => None,
@@ -1870,6 +1969,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     let mut pending_devtool_reset = None;
     let signature_adapter = SignatureAdapter::new(session_build_dir.clone());
     let mut signature_operation = None;
+    let package_adapter = PackageDataAdapter::new(session_build_dir.clone());
+    let mut package_operation = None;
+    if app.screen == Screen::Packages
+        && let Some(effect @ Effect::GetPackageInventory(_)) =
+            update(&mut app, Action::BeginPackageInventory)
+    {
+        begin_package_operation(&mut app, &package_adapter, &mut package_operation, effect);
+    }
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
     #[cfg(unix)]
@@ -1880,6 +1987,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             break;
         }
         poll_signature_operation(&mut app, &mut signature_operation).await;
+        poll_package_operation(&mut app, &mut package_operation).await;
         if matches!(
             app.build.status,
             BuildStatus::LoadingWorkspace
@@ -1988,7 +2096,18 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 yoctui_model::FocusTarget::Navigator | yoctui_model::FocusTarget::Inspector
             ) {
                 if let Some(action) = focus_action(app.focus, input) {
-                    let _ = update(&mut app, action);
+                    let effect = update(&mut app, action);
+                    if let Some(
+                        effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
+                    ) = effect
+                    {
+                        begin_package_operation(
+                            &mut app,
+                            &package_adapter,
+                            &mut package_operation,
+                            effect,
+                        );
+                    }
                 }
             } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
                 let _ = match input {
@@ -2308,6 +2427,35 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let _ = update(&mut app, Action::ActivateNotification);
                 } else if input == Input::Esc {
                     let _ = update(&mut app, Action::DismissNotification);
+                }
+            } else if app.screen == Screen::Packages
+                && package_workspace_action(app.package_searching, input).is_some()
+            {
+                let action = package_workspace_action(app.package_searching, input)
+                    .expect("Packages action was checked");
+                match update(&mut app, action) {
+                    Some(
+                        effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
+                    ) => begin_package_operation(
+                        &mut app,
+                        &package_adapter,
+                        &mut package_operation,
+                        effect,
+                    ),
+                    Some(Effect::CancelPackageOperation) => {
+                        if let Some(operation) = package_operation.as_ref() {
+                            if operation.cancellation.cancel() {
+                                app.notification =
+                                    Some("Package-data cancellation requested.".into());
+                            }
+                        } else {
+                            app.notification = Some("No package-data operation is running.".into());
+                        }
+                    }
+                    Some(Effect::OpenInEditor(path)) => {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                    _ => {}
                 }
             } else if app.screen == Screen::Settings && settings_action(input).is_some() {
                 let action = settings_action(input).expect("settings action was checked");
@@ -4256,6 +4404,101 @@ mod tests {
         assert!(matches!(
             app.signature_dump,
             yoctui_model::SignatureDumpState::Failed { ref message, .. }
+                if message.contains("cancelled")
+        ));
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn pkgdata_workspace_background_operation_reports_inventory_detail_and_cancellation() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = std::env::temp_dir().join(format!(
+            "yoctui-pkgdata-workspace-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let build_dir = directory.join("build");
+        let pkgdata_dir = build_dir.join("tmp/pkgdata");
+        fs::create_dir_all(&pkgdata_dir).unwrap();
+        let tool = directory.join("oe-pkgdata-util");
+        let write_tool = |body: &str| {
+            fs::write(&tool, format!("#!/bin/sh\n{body}\n")).unwrap();
+            let mut permissions = fs::metadata(&tool).unwrap().permissions();
+            permissions.set_mode(0o700);
+            fs::set_permissions(&tool, permissions).unwrap();
+        };
+        write_tool(
+            r#"case "$3" in
+list-pkgs) printf 'busybox\nlibc6\n' ;;
+package-info) printf 'busybox 1.37.0-r0 busybox 1.37.0-r0 1024 "GPL-2.0-only"\nlibc6 2.40-r0 glibc 2.40-r0 4096 "GPL-2.0-or-later"\n' ;;
+list-pkg-files) printf 'busybox:\n\t/bin/busybox\n' ;;
+read-value) printf 'busybox libc6\nlibc6\n' ;;
+*) exit 9 ;;
+esac"#,
+        );
+        let adapter = PackageDataAdapter::with_paths(build_dir, tool.clone(), pkgdata_dir);
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Packages;
+        let effect = update(&mut app, Action::BeginPackageInventory).unwrap();
+        let mut operation = None;
+        begin_package_operation(&mut app, &adapter, &mut operation, effect);
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while operation.is_some() {
+                poll_package_operation(&mut app, &mut operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(matches!(
+            app.package_inventory,
+            yoctui_model::PackageInventoryState::Partial { .. }
+        ));
+        assert_eq!(
+            app.package_selection,
+            Some(yoctui_model::PackageIdentity::new("busybox"))
+        );
+
+        let effect = update(&mut app, Action::BeginSelectedPackageDetail).unwrap();
+        begin_package_operation(&mut app, &adapter, &mut operation, effect);
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while operation.is_some() {
+                poll_package_operation(&mut app, &mut operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(matches!(
+            app.selected_package_detail(),
+            Some(yoctui_model::PackageDetailState::Available { .. })
+        ));
+
+        write_tool("sleep 30");
+        let effect = update(&mut app, Action::RefreshPackageInventory).unwrap();
+        begin_package_operation(&mut app, &adapter, &mut operation, effect);
+        tokio::time::sleep(Duration::from_millis(30)).await;
+        assert!(
+            operation
+                .as_ref()
+                .is_some_and(|operation| operation.cancellation.cancel())
+        );
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while operation.is_some() {
+                poll_package_operation(&mut app, &mut operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(matches!(
+            app.package_inventory,
+            yoctui_model::PackageInventoryState::Failed { ref message, .. }
                 if message.contains("cancelled")
         ));
         fs::remove_dir_all(directory).unwrap();

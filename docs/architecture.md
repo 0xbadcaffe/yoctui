@@ -160,6 +160,16 @@ paths and image membership stay unavailable until an authoritative source
 exposes them. Only typed summaries, details, limitations, or correlated errors
 cross through `BackendEvent` and the app action mapping.
 
+The CLI owns at most one short-lived package inventory or detail Tokio task and
+its cancellation handle. It polls completion alongside terminal input,
+rendering, build events, and telemetry, then converts the terminal result into
+the same correlated `BackendEvent` used by the app boundary. Entering Packages
+starts an inventory only from not-loaded state; refresh and lazy detail effects
+use the same coordinator. Navigation never awaits `oe-pkgdata-util`, and stale
+generations remain reducer-inert. The model owns bounded package navigation
+history plus dependency-kind/identity selection; the UI renders typed state
+and emits actions without reading adapter output.
+
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore
 values, normalized varhistory operations (`op`, file, line, and detail), and

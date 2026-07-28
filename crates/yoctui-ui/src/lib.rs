@@ -11,8 +11,9 @@ use yoctui_model::{
     App, BackgroundJobKind, BuildStatus, ConfigCopyValue, DependencyEdgeKind, DependencyGraph,
     DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction, DevtoolCapability,
     DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget,
-    GitFileState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PreviewKind, Recipe,
-    RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity, SignatureComparisonState,
+    GitFileState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, PackageDetailState,
+    PackageField, PackageIdentity, PackageInventoryState, PreviewKind, Recipe, RecipeBuildStatus,
+    RecipeEditor, RecipeIdentity, Screen, Severity, SignatureComparisonState,
     SignatureDifferenceCategory, SignatureDumpState, TaskFilterField, TaskRow, TaskState, Theme,
     VariableIdentity, config_comparison, config_edit_disabled_reason,
     config_source_disabled_reason, format_duration, selected_config_copy_value,
@@ -437,6 +438,9 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::LayerRelationships => "Esc dashboard | y layers | ? help | q quit",
         Screen::Recipes => {
             "↑/↓ select | Enter inspect | z task/Z signatures | e provider | o logs | p patches | b/f tasks | V CVE | X SPDX | d modify | u update | F finish | P deploy | D reset | / search"
+        }
+        Screen::Packages => {
+            "↑/↓ select | Enter detail | / search | R refresh | D dep kind | [/] dep | d follow | u back | o recipe | e provider | c cancel"
         }
         Screen::Images => {
             "↑/↓ select | b build selected image | i image picker | Tab focus | q quit"
@@ -1520,6 +1524,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
         ("Dashboard", Screen::Dashboard),
         ("Layers", Screen::Layers),
         ("Recipes", Screen::Recipes),
+        ("Packages", Screen::Packages),
         ("Images", Screen::Images),
         ("Tasks", Screen::Tasks),
         ("Logs", Screen::Logs),
@@ -1567,6 +1572,7 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Logs => logs(frame, app, area),
         Screen::Errors => errors(frame, app, area),
         Screen::Recipes => recipes(frame, app, area),
+        Screen::Packages => packages_workspace(frame, app, area),
         Screen::Images => images_workspace(frame, app, area),
         Screen::Layers => {
             if let Some(browser) = app.layer_browser.as_ref() {
@@ -1705,6 +1711,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
         ),
         Screen::Dependencies => dependency_inspector(app),
         Screen::Signatures => signature_detail_text(app),
+        Screen::Packages => package_inspector_text(app),
         _ => format!(
             "Target: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
             app.build.target.as_deref().unwrap_or("not selected"),
@@ -3304,6 +3311,298 @@ fn recipe_inspector(app: &App, recipe: &Recipe) -> String {
         ),
         recipe_values("History", metadata.and_then(|value| value.history.as_ref())),
     )
+}
+
+fn packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let title = if app.package_searching {
+        format!("Packages | search: {}_", app.package_query)
+    } else if app.package_query.is_empty() {
+        "Packages".into()
+    } else {
+        format!("Packages | search: {}", app.package_query)
+    };
+    let block = pane_block(app, &title, app.focus == FocusTarget::Workspace);
+    match &app.package_inventory {
+        PackageInventoryState::NotLoaded => frame.render_widget(
+            Paragraph::new(
+                "Package data has not been loaded.\n\nEnter this workspace or press R to query generated pkgdata.",
+            )
+            .block(block)
+            .wrap(Wrap { trim: false }),
+            area,
+        ),
+        PackageInventoryState::Loading { .. } => frame.render_widget(
+            Paragraph::new(
+                "Loading authoritative package inventory…\n\nThe workspace remains responsive. Press c to cancel.",
+            )
+            .block(block)
+            .wrap(Wrap { trim: false }),
+            area,
+        ),
+        PackageInventoryState::AvailableEmpty { .. } => frame.render_widget(
+            Paragraph::new("No built runtime packages were reported by oe-pkgdata-util.")
+                .block(block)
+                .wrap(Wrap { trim: false }),
+            area,
+        ),
+        PackageInventoryState::Failed { message, .. } => frame.render_widget(
+            Paragraph::new(format!(
+                "Package inventory failed.\n\n{message}\n\nIf generated pkgdata is missing, build a target through do_package and press R."
+            ))
+            .block(block)
+            .wrap(Wrap { trim: false }),
+            area,
+        ),
+        PackageInventoryState::Available { .. } | PackageInventoryState::Partial { .. } => {
+            let limitations = match &app.package_inventory {
+                PackageInventoryState::Partial { limitations, .. } => limitations.as_slice(),
+                _ => &[],
+            };
+            let rows_area = if limitations.is_empty() || area.height < 10 {
+                area
+            } else {
+                Layout::vertical([Constraint::Min(4), Constraint::Length(4)]).split(area)[0]
+            };
+            let rows = app
+                .filtered_packages()
+                .into_iter()
+                .map(|package| {
+                    let selected = app.package_selection.as_ref() == Some(&package.identity);
+                    let style = if selected {
+                        palette.selected()
+                    } else {
+                        palette.base()
+                    };
+                    let name = package.identity.name.clone();
+                    let recipe = package_field_text(&package.recipe);
+                    let version = package_field_text(&package.version);
+                    let size = package
+                        .installed_size_bytes
+                        .available()
+                        .map_or_else(|| "unavailable".into(), |value| format_bytes(*value));
+                    let license = package_field_text(&package.license);
+                    Row::new(vec![name, recipe, version, size, license]).style(style)
+                })
+                .collect::<Vec<_>>();
+            let widths = if area.width >= 68 {
+                vec![
+                    Constraint::Percentage(27),
+                    Constraint::Percentage(22),
+                    Constraint::Percentage(18),
+                    Constraint::Percentage(14),
+                    Constraint::Percentage(19),
+                ]
+            } else if area.width >= 44 {
+                vec![
+                    Constraint::Percentage(42),
+                    Constraint::Percentage(33),
+                    Constraint::Percentage(25),
+                    Constraint::Length(0),
+                    Constraint::Length(0),
+                ]
+            } else {
+                vec![
+                    Constraint::Percentage(100),
+                    Constraint::Length(0),
+                    Constraint::Length(0),
+                    Constraint::Length(0),
+                    Constraint::Length(0),
+                ]
+            };
+            let header = Row::new(vec!["Package", "Recipe", "Version", "Size", "License"])
+                .style(palette.role(palette.accent, Modifier::BOLD));
+            frame.render_widget(
+                Table::new(rows, widths)
+                    .header(header)
+                    .block(block)
+                    .column_spacing(1),
+                rows_area,
+            );
+            if !limitations.is_empty() && area.height >= 10 {
+                let split =
+                    Layout::vertical([Constraint::Min(4), Constraint::Length(4)]).split(area);
+                frame.render_widget(
+                    Paragraph::new(
+                        limitations
+                            .iter()
+                            .take(2)
+                            .map(|value| format!("! {value}"))
+                            .collect::<Vec<_>>()
+                            .join("\n"),
+                    )
+                    .style(palette.role(palette.warning, Modifier::BOLD))
+                    .block(Block::default().title("Partial result").borders(Borders::ALL))
+                    .wrap(Wrap { trim: true }),
+                    split[1],
+                );
+            }
+        }
+    }
+}
+
+fn package_field_text(field: &PackageField<String>) -> String {
+    match field {
+        PackageField::Available(value) if value.is_empty() => "empty".into(),
+        PackageField::Available(value) => value.clone(),
+        PackageField::Unavailable => "unavailable".into(),
+    }
+}
+
+fn package_path_field_text(field: &PackageField<std::path::PathBuf>) -> String {
+    match field {
+        PackageField::Available(value) => value.display().to_string(),
+        PackageField::Unavailable => "unavailable".into(),
+    }
+}
+
+fn package_identity_list(
+    field: &PackageField<Vec<PackageIdentity>>,
+    selected: Option<&PackageIdentity>,
+) -> Vec<String> {
+    match field {
+        PackageField::Unavailable => vec!["  unavailable".into()],
+        PackageField::Available(values) if values.is_empty() => vec!["  empty".into()],
+        PackageField::Available(values) => values
+            .iter()
+            .map(|identity| {
+                format!(
+                    "{} {}",
+                    if selected == Some(identity) {
+                        "▶"
+                    } else {
+                        " "
+                    },
+                    identity.name
+                )
+            })
+            .collect(),
+    }
+}
+
+fn package_path_list(field: &PackageField<Vec<std::path::PathBuf>>) -> Vec<String> {
+    match field {
+        PackageField::Unavailable => vec!["  unavailable".into()],
+        PackageField::Available(values) if values.is_empty() => vec!["  empty".into()],
+        PackageField::Available(values) => values
+            .iter()
+            .take(64)
+            .map(|path| format!("  {}", path.display()))
+            .collect(),
+    }
+}
+
+fn package_membership_text(field: &PackageField<Vec<String>>) -> String {
+    match field {
+        PackageField::Unavailable => "unavailable".into(),
+        PackageField::Available(values) if values.is_empty() => "empty".into(),
+        PackageField::Available(values) => values.join(", "),
+    }
+}
+
+fn package_inspector_text(app: &App) -> String {
+    let Some(package) = app.selected_package() else {
+        return match &app.package_inventory {
+            PackageInventoryState::Loading { .. } => {
+                "Package inventory is loading.\n\nNo package is selected yet.".into()
+            }
+            PackageInventoryState::Failed { message, .. } => {
+                format!("Package inventory failed.\n\n{message}")
+            }
+            PackageInventoryState::AvailableEmpty { .. } => {
+                "The authoritative package inventory is empty.".into()
+            }
+            _ => "Select a package to inspect its typed metadata.".into(),
+        };
+    };
+    let mut lines = vec![
+        format!("Package: {}", package.identity.name),
+        format!("Recipe: {}", package_field_text(&package.recipe)),
+        format!("Provider: {}", package_path_field_text(&package.provider)),
+        format!("Version: {}", package_field_text(&package.version)),
+        format!(
+            "Installed size: {}",
+            package
+                .installed_size_bytes
+                .available()
+                .map_or_else(|| "unavailable".into(), |value| format_bytes(*value))
+        ),
+        format!("License: {}", package_field_text(&package.license)),
+        format!(
+            "Image membership: {}",
+            package_membership_text(&package.image_membership)
+        ),
+        String::new(),
+    ];
+    match app.selected_package_detail() {
+        None | Some(PackageDetailState::NotLoaded) => {
+            lines.push("Detail: not loaded (press Enter)".into());
+        }
+        Some(PackageDetailState::Loading { .. }) => {
+            lines.push("Detail: loading… (press c to cancel)".into());
+        }
+        Some(PackageDetailState::Failed { message, .. }) => {
+            lines.push(format!("Detail: failed\n{message}"));
+        }
+        Some(PackageDetailState::AvailableEmpty { .. }) => {
+            lines.push("Detail: available-empty".into());
+            lines.push("Files: empty".into());
+            lines.push("Runtime dependencies: empty".into());
+            lines.push("Reverse dependencies: empty".into());
+        }
+        Some(
+            PackageDetailState::Available { detail, .. }
+            | PackageDetailState::Partial { detail, .. },
+        ) => {
+            lines.push("Files:".into());
+            lines.extend(package_path_list(&detail.files));
+            lines.push(String::new());
+            lines.push(format!(
+                "{} runtime dependencies:",
+                if app.package_dependency_reverse {
+                    " "
+                } else {
+                    "▶"
+                }
+            ));
+            lines.extend(package_identity_list(
+                &detail.runtime_dependencies,
+                (!app.package_dependency_reverse)
+                    .then(|| app.selected_package_dependency())
+                    .flatten(),
+            ));
+            lines.push(String::new());
+            lines.push(format!(
+                "{} reverse dependencies:",
+                if app.package_dependency_reverse {
+                    "▶"
+                } else {
+                    " "
+                }
+            ));
+            lines.extend(package_identity_list(
+                &detail.reverse_dependencies,
+                app.package_dependency_reverse
+                    .then(|| app.selected_package_dependency())
+                    .flatten(),
+            ));
+            if let Some(PackageDetailState::Partial { limitations, .. }) =
+                app.selected_package_detail()
+            {
+                lines.push(String::new());
+                lines.push("Partial detail:".into());
+                lines.extend(limitations.iter().map(|value| format!("! {value}")));
+            }
+        }
+    }
+    if !app.package_navigation.is_empty() {
+        lines.push(String::new());
+        lines.push(format!(
+            "Navigation history: {} item(s); press u to return",
+            app.package_navigation.len()
+        ));
+    }
+    lines.join("\n")
 }
 
 fn recipes(frame: &mut Frame, app: &App, area: Rect) {
@@ -6449,5 +6748,92 @@ mod tests {
         let picker = rendered_text(&app, 80, 24);
         assert!(picker.contains("Inspect signatures: busybox"), "{picker}");
         assert!(picker.contains("Authoritative signature tasks"), "{picker}");
+    }
+
+    #[test]
+    fn pkgdata_workspace_renders_typed_partial_details_footer_and_responsive_modes() {
+        let request = yoctui_model::PackageInventoryRequest { generation: 1 };
+        let identity = PackageIdentity::new("busybox");
+        let package = yoctui_model::PackageSummary {
+            identity: identity.clone(),
+            recipe: PackageField::Available("busybox".into()),
+            provider: PackageField::Available("/layers/meta/recipes-core/busybox.bb".into()),
+            version: PackageField::Available("1.37.0-r0".into()),
+            installed_size_bytes: PackageField::Available(1_024),
+            license: PackageField::Available("GPL-2.0-only".into()),
+            image_membership: PackageField::Unavailable,
+        };
+        let detail_request = yoctui_model::PackageDetailRequest {
+            identity: identity.clone(),
+            generation: 2,
+        };
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Packages;
+        app.package_selection = Some(identity.clone());
+        app.package_inventory = PackageInventoryState::Partial {
+            request,
+            packages: vec![package],
+            limitations: vec!["image membership unavailable".into()],
+        };
+        app.package_details.insert(
+            identity.clone(),
+            PackageDetailState::Partial {
+                request: detail_request,
+                detail: yoctui_model::PackageDetail {
+                    identity,
+                    files: PackageField::Available(vec!["/bin/busybox".into()]),
+                    runtime_dependencies: PackageField::Available(vec![PackageIdentity::new(
+                        "libc6",
+                    )]),
+                    reverse_dependencies: PackageField::Available(Vec::new()),
+                },
+                limitations: vec!["reverse scan bounded".into()],
+            },
+        );
+
+        let wide = rendered_text(&app, 160, 34);
+        assert!(wide.contains("Packages"), "{wide}");
+        assert!(wide.contains("busybox"), "{wide}");
+        assert!(wide.contains("1.37.0-r0"), "{wide}");
+        assert!(wide.contains("GPL-2.0-only"), "{wide}");
+        assert!(wide.contains("/bin/busybox"), "{wide}");
+        assert!(wide.contains("libc6"), "{wide}");
+        assert!(wide.contains("Image membership: unavailable"), "{wide}");
+        assert!(wide.contains("image membership unavailable"), "{wide}");
+        assert!(wide.contains("Enter detail"), "{wide}");
+
+        for (width, height) in [(120, 30), (90, 28)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Packages"), "{width}: {output}");
+            assert!(output.contains("busybox"), "{width}: {output}");
+        }
+        for (theme, color) in [(Theme::Light, true), (Theme::Dark, false)] {
+            app.theme = theme;
+            app.color_enabled = color;
+            let output = rendered_text(&app, 140, 30);
+            assert!(output.contains("busybox"), "{output}");
+        }
+        assert!(rendered_text(&app, 50, 16).contains("needs at least 80x24"));
+    }
+
+    #[test]
+    fn pkgdata_workspace_renders_loading_empty_failed_and_unavailable_states() {
+        let request = yoctui_model::PackageInventoryRequest { generation: 1 };
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Packages;
+        app.package_inventory = PackageInventoryState::Loading { request };
+        assert!(rendered_text(&app, 100, 25).contains("Loading authoritative package inventory"));
+        app.package_inventory = PackageInventoryState::AvailableEmpty { request };
+        assert!(rendered_text(&app, 100, 25).contains("No built runtime packages"));
+        app.package_inventory = PackageInventoryState::Failed {
+            request,
+            message: "generated pkgdata is unavailable".into(),
+        };
+        let failed = rendered_text(&app, 100, 25);
+        assert!(
+            failed.contains("generated pkgdata is unavailable"),
+            "{failed}"
+        );
+        assert!(failed.contains("do_package"), "{failed}");
     }
 }
