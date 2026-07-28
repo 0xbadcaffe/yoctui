@@ -856,12 +856,12 @@ notes = "Canonical explicit/PATH Wic discovery executes bounded timed list-image
 id = "WIC-ADAPTER-RUNNER-001"
 milestone = "M4"
 title = "Run Wic creation and scan exact outputs"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["WIC-ADAPTER-CAP-001"]
 verify = ["cargo test -p yoctui-bitbake wic_adapter_runner", "cargo test -p yoctui-app wic_adapter_runner"]
-notes = "Own one cancellable process group with bounded typed streams and scan only new canonical regular outputs beneath the exact requested directory."
+notes = "One-child process-group ownership emits bounded typed streams and distinct lifecycle outcomes, enforces a persistent execution deadline, rejects duplicates, supports graceful/forced cancellation, and compares bounded canonical non-symlink output snapshots with nanosecond change detection. Fake runner and baseline checks pass; live compatibility is not claimed."
 
 [[task]]
 id = "WIC-UI-MODEL-001"

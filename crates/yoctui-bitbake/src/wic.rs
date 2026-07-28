@@ -1,20 +1,31 @@
 use std::{
+    collections::{BTreeMap, VecDeque},
     ffi::OsString,
     fs,
     path::{Component, Path, PathBuf},
     process::Stdio,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
+use crate::{WicRunnerEvent, WicRunnerOutputStream, output_text};
 use thiserror::Error;
-use tokio::{io::AsyncReadExt, process::Command};
+use tokio::{
+    io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, BufReader},
+    process::{Child, Command},
+};
 use yoctui_model::{
     MAX_WIC_KICKSTARTS, MAX_WIC_SOURCE_BYTES, WicCapability, WicCreatePreview, WicCreateRequest,
-    WicKickstart, WicKickstartIdentity, WicPartitionSummary, normalize_wic_capability,
+    WicKickstart, WicKickstartIdentity, WicOutput, WicOutputIdentity, WicOutputKind,
+    WicPartitionSummary, normalize_wic_capability,
 };
 
 const MAX_WIC_LIST_BYTES: u64 = 256 * 1024;
 const WIC_INSPECTION_TIMEOUT: Duration = Duration::from_secs(10);
+const MAX_WIC_LINE_BYTES: usize = 64 * 1024;
+const MAX_WIC_OUTPUT_ENTRIES: usize = 4_096;
+const WIC_EVENT_CHANNEL_CAPACITY: usize = 256;
+type WicOutputSnapshot = BTreeMap<PathBuf, (u64, u128)>;
+type WicOutputScan = (WicOutputSnapshot, Vec<String>);
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum WicAdapterError {
@@ -30,6 +41,16 @@ pub enum WicAdapterError {
     InvalidRequest(String),
     #[error("Wic preview does not match the independently validated command")]
     PreviewMismatch,
+    #[error("a Wic process or unconsumed terminal event is already active")]
+    Busy,
+    #[error("could not start Wic: {0}")]
+    Spawn(String),
+    #[error("Wic runner is not active")]
+    NotRunning,
+    #[error("Wic process control failed: {0}")]
+    ProcessControl(String),
+    #[error("Wic output scan failed: {0}")]
+    OutputScan(String),
 }
 
 #[derive(Debug, Clone)]
@@ -422,6 +443,439 @@ fn canonical_directory(path: &Path) -> Result<PathBuf, WicAdapterError> {
     Ok(canonical)
 }
 
+#[derive(Debug)]
+enum WicPipeEvent {
+    Output {
+        stream: WicRunnerOutputStream,
+        line: String,
+        truncated: bool,
+    },
+    Failed(String),
+}
+
+async fn read_wic_output<R>(
+    stream: R,
+    kind: WicRunnerOutputStream,
+    sender: tokio::sync::mpsc::Sender<WicPipeEvent>,
+) where
+    R: AsyncRead + Unpin,
+{
+    let mut reader = BufReader::new(stream);
+    let mut bytes = Vec::new();
+    let mut truncated = false;
+    loop {
+        let buffer = match reader.fill_buf().await {
+            Ok(buffer) => buffer,
+            Err(error) => {
+                let _ = sender.send(WicPipeEvent::Failed(error.to_string())).await;
+                return;
+            }
+        };
+        if buffer.is_empty() {
+            if !bytes.is_empty() || truncated {
+                let _ = sender
+                    .send(WicPipeEvent::Output {
+                        stream: kind,
+                        line: output_text(&bytes),
+                        truncated,
+                    })
+                    .await;
+            }
+            return;
+        }
+        let newline = buffer.iter().position(|byte| *byte == b'\n');
+        let take = newline.unwrap_or(buffer.len());
+        if !truncated {
+            let remaining = MAX_WIC_LINE_BYTES.saturating_sub(bytes.len());
+            bytes.extend_from_slice(&buffer[..take.min(remaining)]);
+            truncated = take > remaining;
+        }
+        reader.consume(take + usize::from(newline.is_some()));
+        if newline.is_some() {
+            if sender
+                .send(WicPipeEvent::Output {
+                    stream: kind,
+                    line: output_text(&bytes),
+                    truncated,
+                })
+                .await
+                .is_err()
+            {
+                return;
+            }
+            bytes.clear();
+            truncated = false;
+        }
+    }
+}
+
+pub struct WicJobRunner {
+    build_dir: PathBuf,
+    child: Option<Child>,
+    output: Option<tokio::sync::mpsc::Receiver<WicPipeEvent>>,
+    start_events_pending: u8,
+    terminal_pending: VecDeque<WicRunnerEvent>,
+    output_root: Option<PathBuf>,
+    before: WicOutputSnapshot,
+    cancellation_timeout: Duration,
+    execution_timeout: Duration,
+    started_at: Option<Instant>,
+    cancellation_requested: bool,
+    #[cfg(unix)]
+    process_group: Option<i32>,
+}
+
+impl WicJobRunner {
+    pub fn new(build_dir: PathBuf) -> Self {
+        Self {
+            build_dir,
+            child: None,
+            output: None,
+            start_events_pending: 0,
+            terminal_pending: VecDeque::new(),
+            output_root: None,
+            before: BTreeMap::new(),
+            cancellation_timeout: Duration::from_secs(5),
+            execution_timeout: Duration::from_secs(60 * 60),
+            started_at: None,
+            cancellation_requested: false,
+            #[cfg(unix)]
+            process_group: None,
+        }
+    }
+
+    pub fn with_cancellation_timeout(mut self, timeout: Duration) -> Self {
+        self.cancellation_timeout = timeout;
+        self
+    }
+
+    pub fn with_execution_timeout(mut self, timeout: Duration) -> Self {
+        self.execution_timeout = timeout;
+        self
+    }
+
+    pub async fn start(
+        &mut self,
+        command: WicCreateCommandSpec,
+        output_directory: PathBuf,
+    ) -> Result<(), WicAdapterError> {
+        if self.child.is_some()
+            || self.output.is_some()
+            || self.start_events_pending > 0
+            || !self.terminal_pending.is_empty()
+        {
+            return Err(WicAdapterError::Busy);
+        }
+        let output_root = canonical_directory(&output_directory)?;
+        let (before, _) = scan_outputs(&output_root)?;
+        if !self.build_dir.is_dir() {
+            return Err(WicAdapterError::Spawn(format!(
+                "build directory does not exist: {}",
+                self.build_dir.display()
+            )));
+        }
+        let mut process = Command::new(&command.executable);
+        process
+            .args(&command.arguments)
+            .current_dir(&self.build_dir)
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped());
+        #[cfg(unix)]
+        process.process_group(0);
+        let mut child = process
+            .spawn()
+            .map_err(|error| WicAdapterError::Spawn(error.to_string()))?;
+        #[cfg(unix)]
+        {
+            self.process_group = child.id().map(|id| id as i32);
+        }
+        let stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| WicAdapterError::Spawn("stdout is unavailable".into()))?;
+        let stderr = child
+            .stderr
+            .take()
+            .ok_or_else(|| WicAdapterError::Spawn("stderr is unavailable".into()))?;
+        let (sender, receiver) = tokio::sync::mpsc::channel(WIC_EVENT_CHANNEL_CAPACITY);
+        tokio::spawn(read_wic_output(
+            stdout,
+            WicRunnerOutputStream::Stdout,
+            sender.clone(),
+        ));
+        tokio::spawn(read_wic_output(
+            stderr,
+            WicRunnerOutputStream::Stderr,
+            sender.clone(),
+        ));
+        drop(sender);
+        self.child = Some(child);
+        self.output = Some(receiver);
+        self.start_events_pending = 2;
+        self.output_root = Some(output_root);
+        self.before = before;
+        self.cancellation_requested = false;
+        self.started_at = Some(Instant::now());
+        Ok(())
+    }
+
+    pub async fn next_event(&mut self) -> Result<WicRunnerEvent, WicAdapterError> {
+        if self.start_events_pending == 2 {
+            self.start_events_pending = 1;
+            return Ok(WicRunnerEvent::Starting);
+        }
+        if self.start_events_pending == 1 {
+            self.start_events_pending = 0;
+            return Ok(WicRunnerEvent::Started);
+        }
+        let remaining = self.remaining();
+        if let Some(receiver) = self.output.as_mut() {
+            match tokio::time::timeout(remaining, receiver.recv()).await {
+                Err(_) => {
+                    self.kill_and_clear().await;
+                    return Ok(WicRunnerEvent::Failed {
+                        message: "wic create timed out".into(),
+                        exit_code: None,
+                    });
+                }
+                Ok(Some(WicPipeEvent::Output {
+                    stream,
+                    line,
+                    truncated,
+                })) => {
+                    return Ok(WicRunnerEvent::Output {
+                        stream,
+                        line,
+                        truncated,
+                    });
+                }
+                Ok(Some(WicPipeEvent::Failed(message))) => {
+                    self.kill_and_clear().await;
+                    return Ok(WicRunnerEvent::Lost { message });
+                }
+                Ok(None) => {
+                    self.output = None;
+                }
+            }
+        }
+        if let Some(event) = self.terminal_pending.pop_front() {
+            return Ok(event);
+        }
+        let remaining = self.remaining();
+        let child = self.child.as_mut().ok_or(WicAdapterError::NotRunning)?;
+        let status = match tokio::time::timeout(remaining, child.wait()).await {
+            Ok(Ok(status)) => status,
+            Ok(Err(error)) => {
+                self.kill_and_clear().await;
+                return Ok(WicRunnerEvent::Lost {
+                    message: format!("Wic process wait failed: {error}"),
+                });
+            }
+            Err(_) => {
+                self.kill_and_clear().await;
+                return Ok(WicRunnerEvent::Failed {
+                    message: "wic create timed out".into(),
+                    exit_code: None,
+                });
+            }
+        };
+        self.child = None;
+        self.clear_process_state();
+        if !status.success() {
+            return Ok(WicRunnerEvent::Failed {
+                message: "wic create exited unsuccessfully".into(),
+                exit_code: status.code(),
+            });
+        }
+        let root = self
+            .output_root
+            .take()
+            .ok_or_else(|| WicAdapterError::OutputScan("output root was lost".into()))?;
+        let (after, limitations) = scan_outputs(&root)?;
+        let outputs = after
+            .into_iter()
+            .filter(|(path, identity)| self.before.get(path) != Some(identity))
+            .map(|(path, (size_bytes, modified_nanoseconds))| WicOutput {
+                kind: classify_output(&path),
+                identity: WicOutputIdentity {
+                    path,
+                    size_bytes,
+                    modified_unix_seconds: (modified_nanoseconds / 1_000_000_000) as u64,
+                },
+            })
+            .collect();
+        self.before.clear();
+        Ok(WicRunnerEvent::Completed {
+            exit_code: status.code().unwrap_or(0),
+            outputs,
+            limitations,
+        })
+    }
+
+    pub async fn cancel(&mut self) -> Result<bool, WicAdapterError> {
+        if self.cancellation_requested || self.child.is_none() {
+            self.terminal_pending
+                .push_back(WicRunnerEvent::CancellationRejected {
+                    message: "no cancellable Wic process is active".into(),
+                });
+            return Ok(false);
+        }
+        self.cancellation_requested = true;
+        let child = self.child.as_mut().expect("checked above");
+        let mut forced = false;
+        #[cfg(unix)]
+        let status = if let Some(group) = self.process_group {
+            if unsafe { libc::kill(-group, libc::SIGTERM) } != 0 {
+                child
+                    .start_kill()
+                    .map_err(|error| WicAdapterError::ProcessControl(error.to_string()))?;
+                forced = true;
+            }
+            match tokio::time::timeout(self.cancellation_timeout, child.wait()).await {
+                Ok(result) => {
+                    result.map_err(|error| WicAdapterError::ProcessControl(error.to_string()))?
+                }
+                Err(_) => {
+                    let _ = unsafe { libc::kill(-group, libc::SIGKILL) };
+                    forced = true;
+                    child
+                        .wait()
+                        .await
+                        .map_err(|error| WicAdapterError::ProcessControl(error.to_string()))?
+                }
+            }
+        } else {
+            forced = true;
+            child
+                .kill()
+                .await
+                .map_err(|error| WicAdapterError::ProcessControl(error.to_string()))?;
+            child
+                .wait()
+                .await
+                .map_err(|error| WicAdapterError::ProcessControl(error.to_string()))?
+        };
+        #[cfg(not(unix))]
+        let status = {
+            forced = true;
+            child
+                .kill()
+                .await
+                .map_err(|error| WicAdapterError::ProcessControl(error.to_string()))?;
+            child
+                .wait()
+                .await
+                .map_err(|error| WicAdapterError::ProcessControl(error.to_string()))?
+        };
+        self.child = None;
+        self.clear_process_state();
+        self.terminal_pending.push_back(WicRunnerEvent::Cancelled {
+            forced,
+            exit_code: status.code(),
+        });
+        Ok(true)
+    }
+
+    async fn kill_and_clear(&mut self) {
+        if let Some(child) = self.child.as_mut() {
+            let _ = child.kill().await;
+            let _ = child.wait().await;
+        }
+        self.child = None;
+        self.output = None;
+        self.clear_process_state();
+    }
+
+    fn clear_process_state(&mut self) {
+        self.cancellation_requested = false;
+        self.started_at = None;
+        #[cfg(unix)]
+        {
+            self.process_group = None;
+        }
+    }
+
+    fn remaining(&self) -> Duration {
+        self.started_at
+            .map(|started| self.execution_timeout.saturating_sub(started.elapsed()))
+            .unwrap_or(self.execution_timeout)
+    }
+}
+
+impl Drop for WicJobRunner {
+    fn drop(&mut self) {
+        #[cfg(unix)]
+        if let Some(group) = self.process_group {
+            let _ = unsafe { libc::kill(-group, libc::SIGKILL) };
+        }
+        if let Some(child) = self.child.as_mut() {
+            let _ = child.start_kill();
+        }
+    }
+}
+
+fn scan_outputs(root: &Path) -> Result<WicOutputScan, WicAdapterError> {
+    let root = canonical_directory(root)?;
+    let mut files = BTreeMap::new();
+    let mut limitations = Vec::new();
+    for (index, entry) in fs::read_dir(&root)
+        .map_err(|error| WicAdapterError::OutputScan(error.to_string()))?
+        .enumerate()
+    {
+        if index >= MAX_WIC_OUTPUT_ENTRIES {
+            limitations.push(format!(
+                "Wic output scan was limited to {MAX_WIC_OUTPUT_ENTRIES} entries"
+            ));
+            break;
+        }
+        let Ok(entry) = entry else {
+            limitations.push("one Wic output entry was unreadable".into());
+            continue;
+        };
+        let path = entry.path();
+        let Ok(metadata) = fs::symlink_metadata(&path) else {
+            limitations.push(format!("metadata unavailable for {}", path.display()));
+            continue;
+        };
+        if metadata.file_type().is_symlink() || !metadata.is_file() {
+            continue;
+        }
+        let Ok(canonical) = fs::canonicalize(&path) else {
+            limitations.push(format!("could not canonicalize {}", path.display()));
+            continue;
+        };
+        if canonical != path || !canonical.starts_with(&root) {
+            limitations.push(format!("unsafe Wic output ignored: {}", path.display()));
+            continue;
+        }
+        let modified = metadata
+            .modified()
+            .ok()
+            .and_then(|time| time.duration_since(std::time::UNIX_EPOCH).ok())
+            .map_or(0, |duration| duration.as_nanos());
+        files.insert(canonical, (metadata.len(), modified));
+    }
+    Ok((files, limitations))
+}
+
+fn classify_output(path: &Path) -> WicOutputKind {
+    let name = path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or_default();
+    if name.ends_with(".wic") {
+        WicOutputKind::Wic
+    } else if name.ends_with(".direct") {
+        WicOutputKind::Direct
+    } else if name.ends_with(".bmap") {
+        WicOutputKind::Bmap
+    } else if name.ends_with(".gz") || name.ends_with(".bz2") || name.ends_with(".xz") {
+        WicOutputKind::Compressed
+    } else {
+        WicOutputKind::Other
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -432,8 +886,12 @@ mod tests {
 
     fn fixture(name: &str) -> PathBuf {
         let path = std::env::temp_dir().join(format!(
-            "yoctui-wic-capability-{}-{name}-{}",
+            "yoctui-wic-capability-{}-{name}-{}-{}",
             std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos(),
             FIXTURE_ID.fetch_add(1, Ordering::Relaxed)
         ));
         fs::create_dir_all(&path).unwrap();
@@ -573,6 +1031,168 @@ mod tests {
                 .inspect(vec!["core-image-minimal".into()])
                 .await,
             WicCapability::Failed { .. }
+        ));
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    async fn runner_fixture(name: &str, body: &str) -> (PathBuf, PathBuf, WicCreateCommandSpec) {
+        let directory = fixture(name);
+        let program = directory.join("wic");
+        executable(&program, body);
+        let kickstart_path = directory.join("directdisk.wks");
+        fs::write(&kickstart_path, "part / --source=rootfs\n").unwrap();
+        let kickstart_path = fs::canonicalize(kickstart_path).unwrap();
+        let output = directory.join("output");
+        fs::create_dir(&output).unwrap();
+        let output = fs::canonicalize(output).unwrap();
+        let capability = WicCapability::Available {
+            executable: fs::canonicalize(program).unwrap(),
+            kickstarts: vec![read_kickstart(&kickstart_path, Some("directdisk".into())).unwrap()],
+            image_targets: vec!["core-image-minimal".into()],
+        };
+        let preview = WicCreateDraft {
+            machine: "qemux86-64".into(),
+            image: "core-image-minimal".into(),
+            kickstart: WicKickstartIdentity {
+                name: "directdisk".into(),
+                path: Some(kickstart_path),
+            },
+            output_directory: output.display().to_string(),
+            generate_bmap: false,
+            compression: WicCompression::None,
+        }
+        .preview(&capability)
+        .unwrap();
+        let command = WicCreateCommandSpec::from_preview(&preview, &capability).unwrap();
+        (directory, output, command)
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn wic_adapter_runner_reports_only_new_outputs_and_nonzero_failure() {
+        let (directory, output, command) = runner_fixture(
+            "runner-success",
+            "printf 'before\\n'; printf 'warning\\n' >&2; printf image > \"$6/new.wic\"; exit 0",
+        )
+        .await;
+        fs::write(output.join("existing.wic"), "old").unwrap();
+        let mut runner = WicJobRunner::new(directory.clone());
+        runner.start(command, output.clone()).await.unwrap();
+        assert_eq!(runner.next_event().await.unwrap(), WicRunnerEvent::Starting);
+        assert_eq!(runner.next_event().await.unwrap(), WicRunnerEvent::Started);
+        let terminal = tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                let event = runner.next_event().await.unwrap();
+                if matches!(event, WicRunnerEvent::Completed { .. }) {
+                    break event;
+                }
+            }
+        })
+        .await
+        .unwrap();
+        let WicRunnerEvent::Completed { outputs, .. } = terminal else {
+            unreachable!()
+        };
+        assert_eq!(outputs.len(), 1);
+        assert!(outputs[0].identity.path.ends_with("new.wic"));
+        fs::remove_dir_all(directory).unwrap();
+
+        let (directory, output, command) =
+            runner_fixture("runner-failure", "printf failed >&2; exit 9").await;
+        let mut runner = WicJobRunner::new(directory.clone());
+        runner.start(command, output).await.unwrap();
+        let _ = runner.next_event().await.unwrap();
+        let _ = runner.next_event().await.unwrap();
+        let terminal = tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                let event = runner.next_event().await.unwrap();
+                if matches!(event, WicRunnerEvent::Failed { .. }) {
+                    break event;
+                }
+            }
+        })
+        .await
+        .unwrap();
+        assert!(matches!(
+            terminal,
+            WicRunnerEvent::Failed {
+                exit_code: Some(9),
+                ..
+            }
+        ));
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn wic_adapter_runner_rejects_duplicate_and_forces_cancellation() {
+        let (directory, output, command) = runner_fixture(
+            "runner-cancel",
+            "trap '' TERM; printf 'ready\\n'; while :; do :; done",
+        )
+        .await;
+        let mut runner = WicJobRunner::new(directory.clone())
+            .with_cancellation_timeout(Duration::from_millis(50));
+        runner.start(command.clone(), output.clone()).await.unwrap();
+        assert_eq!(
+            runner.start(command, output).await.unwrap_err(),
+            WicAdapterError::Busy
+        );
+        assert!(matches!(
+            runner.next_event().await.unwrap(),
+            WicRunnerEvent::Starting
+        ));
+        assert!(matches!(
+            runner.next_event().await.unwrap(),
+            WicRunnerEvent::Started
+        ));
+        loop {
+            if matches!(
+                runner.next_event().await.unwrap(),
+                WicRunnerEvent::Output { ref line, .. } if line == "ready"
+            ) {
+                break;
+            }
+        }
+        assert!(runner.cancel().await.unwrap());
+        let cancelled = tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                let event = runner.next_event().await.unwrap();
+                if matches!(event, WicRunnerEvent::Cancelled { .. }) {
+                    break event;
+                }
+            }
+        })
+        .await
+        .unwrap();
+        assert!(matches!(
+            cancelled,
+            WicRunnerEvent::Cancelled { forced: true, .. }
+        ));
+        assert!(!runner.cancel().await.unwrap());
+        assert!(matches!(
+            runner.next_event().await.unwrap(),
+            WicRunnerEvent::CancellationRejected { .. }
+        ));
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn wic_adapter_runner_times_out_without_blocking_forever() {
+        let (directory, output, command) = runner_fixture("runner-timeout", "sleep 30").await;
+        let mut runner =
+            WicJobRunner::new(directory.clone()).with_execution_timeout(Duration::from_millis(20));
+        runner.start(command, output).await.unwrap();
+        let _ = runner.next_event().await.unwrap();
+        let _ = runner.next_event().await.unwrap();
+        assert!(matches!(
+            runner.next_event().await.unwrap(),
+            WicRunnerEvent::Failed {
+                ref message,
+                exit_code: None
+            } if message.contains("timed out")
         ));
         fs::remove_dir_all(directory).unwrap();
     }

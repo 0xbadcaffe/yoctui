@@ -30,7 +30,7 @@ use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, Command as TokioCommand},
 };
-pub use wic::{WicAdapterError, WicCapabilityInspector, WicCreateCommandSpec};
+pub use wic::{WicAdapterError, WicCapabilityInspector, WicCreateCommandSpec, WicJobRunner};
 use yoctui_model::{
     BuildRequest, DependencyEdge, DependencyEdgeKind, DependencyGraph, DependencyNode,
     DependencyNodeId, DevtoolCapability, DevtoolGitState, DevtoolOperation, DevtoolOperationError,
@@ -229,6 +229,42 @@ pub enum QemuRunnerEvent {
     },
     Completed {
         exit_code: i32,
+    },
+    Failed {
+        message: String,
+        exit_code: Option<i32>,
+    },
+    Cancelled {
+        forced: bool,
+        exit_code: Option<i32>,
+    },
+    CancellationRejected {
+        message: String,
+    },
+    Lost {
+        message: String,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WicRunnerOutputStream {
+    Stdout,
+    Stderr,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum WicRunnerEvent {
+    Starting,
+    Started,
+    Output {
+        stream: WicRunnerOutputStream,
+        line: String,
+        truncated: bool,
+    },
+    Completed {
+        exit_code: i32,
+        outputs: Vec<yoctui_model::WicOutput>,
+        limitations: Vec<String>,
     },
     Failed {
         message: String,
