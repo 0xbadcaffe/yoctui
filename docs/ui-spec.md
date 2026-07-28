@@ -1385,6 +1385,15 @@ or stale identities are never eligible.
 The device picker and confirmation show the exact image path and size plus the
 device canonical path, major/minor identity, capacity, model, serial when
 available, transport, removable/read-only state, and descendant mount summary.
+The picker title identifies it as a protected write-device selection, uses a
+visible `▶` marker in addition to semantic selection styling, and keeps partial
+discovery limitations adjacent to the retained rows. Phrase entry and final
+preview are separate overlays: the former states that typing alone cannot
+write, while the latter labels the operation destructive and presents every
+argument with its numeric index. The Images Inspector exposes write readiness,
+the correlated protected-device inventory, exact write request identity,
+host CPU/disk telemetry, retained and dropped output, truncation markers, and
+terminal outcome across navigation.
 Selection alone cannot write. The user must enter the exact phrase
 `WRITE <canonical-device-path>` and then confirm the exact shell-free
 `wic write <image> <device>` preview. Immediately before spawn, the adapter

@@ -922,12 +922,12 @@ notes = "Exact generated/deployed uncompressed image resolution now opens correl
 id = "WIC-WRITE-RENDER-001"
 milestone = "M4"
 title = "Render protected Wic device workflow"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["WIC-WRITE-MODEL-001"]
 verify = ["cargo test -p yoctui-ui wic_device_write"]
-notes = "Render explicit inventory states, whole-device summaries, limitations, exact phrase and argv previews, write history/output, cancellation warning, shortcuts, themes, and responsive boundaries."
+notes = "The Images workspace now renders correlated loading/empty/available/partial/failed device inventories, exact whole-device identity and limitations, distinct bounded phrase and indexed destructive argv previews, write readiness/history/telemetry/output, a stronger incomplete-device cancellation warning, and full/compact D footer hints. Focused TestBackend coverage passes at 80x24 and across semantic themes/no-color; no live removable-media claim is made."
 
 [[task]]
 id = "WIC-WRITE-CLI-001"

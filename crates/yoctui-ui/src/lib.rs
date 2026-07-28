@@ -18,8 +18,9 @@ use yoctui_model::{
     QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, Severity,
     SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, TaskFilterField,
     TaskRow, TaskState, Theme, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
-    WicCreateField, WicCreatePreview, WicKickstart, WicOperation, WicOutputInventoryState,
-    WicSessionId, config_comparison, config_edit_disabled_reason, config_source_disabled_reason,
+    WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog,
+    WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog,
+    WicWritePreview, config_comparison, config_edit_disabled_reason, config_source_disabled_reason,
     format_duration, selected_config_copy_value,
 };
 
@@ -454,7 +455,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
             "↑/↓ select | Enter detail | / search | R refresh | D dep kind | [/] dep | d follow | u back | o recipe | e provider | c cancel"
         }
         Screen::Images => {
-            "↑/↓ select | Q QEMU | W create Wic | x cancel | [/] output | O open output | / search | R refresh | c scan | b build | i image | o artifact | m manifest | l license | s SPDX | w Wic"
+            "↑/↓ select | Q QEMU | W create Wic | D write device | x cancel | [/] output | O open output | / search | R refresh | c scan | b build | i image | o artifact | m manifest | l license | s SPDX | w Wic"
         }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
@@ -480,7 +481,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
 
 fn responsive_footer_shortcuts(app: &App, width: u16) -> &'static str {
     if app.screen == Screen::Images && width <= 90 {
-        "↑↓ R refresh Q QEMU W create Wic x cancel [/] output O open output o artifact w Wic"
+        "↑↓ R refresh Q QEMU W create Wic D write x cancel [/] output O open output o artifact w Wic"
     } else {
         footer_shortcuts(app)
     }
@@ -569,8 +570,18 @@ pub fn render(frame: &mut Frame, app: &App) {
         wic_create_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::WicCreateConfirmation(preview)) = app.active_dialog() {
         wic_create_confirmation(frame, app, preview, area);
-    } else if let Some(Dialog::WicCancellationConfirmation { id, .. }) = app.active_dialog() {
-        wic_cancellation_confirmation(frame, app, *id, area);
+    } else if let Some(Dialog::WicDevicePicker(dialog)) = app.active_dialog() {
+        wic_device_picker(frame, app, dialog, area);
+    } else if let Some(Dialog::WicWritePhrase(dialog)) = app.active_dialog() {
+        wic_write_phrase_dialog(frame, app, dialog, area);
+    } else if let Some(Dialog::WicWriteConfirmation(preview)) = app.active_dialog() {
+        wic_write_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::WicCancellationConfirmation {
+        id,
+        incomplete_device_warning,
+    }) = app.active_dialog()
+    {
+        wic_cancellation_confirmation(frame, app, *id, *incomplete_device_warning, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);
     } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
@@ -2589,8 +2600,253 @@ fn wic_create_confirmation(frame: &mut Frame, app: &App, preview: &WicCreatePrev
     );
 }
 
-fn wic_cancellation_confirmation(frame: &mut Frame, app: &App, id: WicSessionId, area: Rect) {
-    let popup = qemu_popup_rect(area, 76, 8);
+fn wic_device_lines(app: &App, devices: &[WicDevice]) -> Vec<Line<'static>> {
+    let mut lines = Vec::new();
+    for device in devices {
+        let selected = app.wic_device_selection.as_ref() == Some(&device.identity);
+        let style = selected_style(app, selected);
+        let mounts = if device.descendant_mounts.is_empty() {
+            "none".into()
+        } else {
+            device
+                .descendant_mounts
+                .iter()
+                .map(|mount| mount.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+        };
+        lines.push(
+            Line::from(format!(
+                "{} {} | {} | {} | major:minor {}",
+                if selected { "▶" } else { " " },
+                device.identity.path.display(),
+                format_bytes(device.identity.size_bytes),
+                device.identity.size_bytes,
+                device.identity.major_minor,
+            ))
+            .style(style),
+        );
+        lines.push(
+            Line::from(format!(
+                "  model={} | serial={} | transport={} | removable={} | writable={} | read-only={} | mounts={}",
+                device.identity.model.as_deref().unwrap_or("unavailable"),
+                device.identity.serial.as_deref().unwrap_or("unavailable"),
+                device.identity.transport.as_deref().unwrap_or("unavailable"),
+                device.removable,
+                device.writable,
+                device.read_only,
+                mounts,
+            ))
+            .style(style),
+        );
+        if let Some(reason) = &device.unavailable_reason {
+            lines.push(Line::from(format!("  unavailable: {reason}")).style(style));
+        }
+    }
+    lines
+}
+
+fn wic_device_picker(frame: &mut Frame, app: &App, dialog: &WicDevicePickerDialog, area: Rect) {
+    let popup = qemu_popup_rect(area, 110, area.height.saturating_sub(2).min(30));
+    clear_popup(frame, app, popup);
+    let mut lines = vec![
+        Line::from(format!(
+            "Image: {} | {} bytes | modified {}s",
+            dialog.request.image.path.display(),
+            dialog.request.image.size_bytes,
+            dialog.request.image.modified_unix_seconds,
+        )),
+        Line::from(
+            "Only removable, writable whole devices without mounted descendants are eligible.",
+        ),
+        Line::from(""),
+    ];
+    match &app.wic_devices {
+        WicDeviceInventoryState::Loading { request } if request == &dialog.request => {
+            lines.push(Line::from("Discovering removable whole devices…"));
+        }
+        WicDeviceInventoryState::Available { request, devices } if request == &dialog.request => {
+            if devices.is_empty() {
+                lines.push(Line::from(
+                    "No eligible removable whole devices were found.",
+                ));
+            } else {
+                lines.extend(wic_device_lines(app, devices));
+            }
+            lines.push(Line::from(""));
+            lines.push(Line::from("Discovery limitations: none"));
+        }
+        WicDeviceInventoryState::Partial {
+            request,
+            devices,
+            limitations,
+        } if request == &dialog.request => {
+            if devices.is_empty() {
+                lines.push(Line::from(
+                    "No eligible removable whole devices were found.",
+                ));
+            } else {
+                lines.extend(wic_device_lines(app, devices));
+            }
+            lines.push(Line::from(""));
+            lines.push(Line::from(format!(
+                "Discovery limitations: {}",
+                limitations.join("; ")
+            )));
+        }
+        WicDeviceInventoryState::Failed { request, message } if request == &dialog.request => {
+            lines.push(Line::from(format!("Device discovery failed: {message}")));
+        }
+        _ => lines.push(Line::from(
+            "This device inventory is stale; close and start a new discovery.",
+        )),
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from(
+        "↑/↓ selects. Enter opens the required phrase dialog. Esc closes.",
+    ));
+    frame.render_widget(
+        Paragraph::new(lines)
+            .block(
+                Block::default()
+                    .title("Select protected Wic write device")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
+fn wic_write_phrase_dialog(
+    frame: &mut Frame,
+    app: &App,
+    dialog: &WicWritePhraseDialog,
+    area: Rect,
+) {
+    let popup = qemu_popup_rect(area, 100, 15);
+    clear_popup(frame, app, popup);
+    let expected = format!("WRITE {}", dialog.device.path.display());
+    let mut lines = vec![
+        Line::from(format!(
+            "Image: {} | {} bytes",
+            dialog.request.image.path.display(),
+            dialog.request.image.size_bytes,
+        )),
+        Line::from(format!(
+            "Device: {} | major:minor {} | {} bytes",
+            dialog.device.path.display(),
+            dialog.device.major_minor,
+            dialog.device.size_bytes,
+        )),
+        Line::from(format!(
+            "Model: {} | Serial: {} | Transport: {}",
+            dialog.device.model.as_deref().unwrap_or("unavailable"),
+            dialog.device.serial.as_deref().unwrap_or("unavailable"),
+            dialog.device.transport.as_deref().unwrap_or("unavailable"),
+        )),
+        Line::from(""),
+        Line::from(format!("Required phrase: {expected}")),
+        Line::from(format!("Input: {}_", dialog.input)),
+    ];
+    if let Some(error) = &dialog.validation_error {
+        let palette = ThemePalette::for_app(app);
+        lines.push(
+            Line::from(format!("Validation: {error}"))
+                .style(palette.role(palette.error, Modifier::BOLD)),
+        );
+    }
+    lines.extend([
+        Line::from(""),
+        Line::from(
+            "The phrase alone does not write. Enter opens a separate exact command preview.",
+        ),
+        Line::from("Esc closes without writing."),
+    ]);
+    frame.render_widget(
+        Paragraph::new(lines)
+            .block(
+                Block::default()
+                    .title("Confirm protected Wic device identity")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
+fn wic_write_confirmation(frame: &mut Frame, app: &App, preview: &WicWritePreview, area: Rect) {
+    let popup = qemu_popup_rect(area, 110, area.height.saturating_sub(2).min(25));
+    clear_popup(frame, app, popup);
+    let mut lines = vec![
+        Line::from("DESTRUCTIVE OPERATION: this overwrites the selected whole device."),
+        Line::from(""),
+        Line::from(format!(
+            "Image: {} | {} bytes | modified {}s",
+            preview.request.image.path.display(),
+            preview.request.image.size_bytes,
+            preview.request.image.modified_unix_seconds,
+        )),
+        Line::from(format!(
+            "Device: {} | major:minor {} | {} bytes",
+            preview.request.device.path.display(),
+            preview.request.device.major_minor,
+            preview.request.device.size_bytes,
+        )),
+        Line::from(format!(
+            "Model: {} | Serial: {} | Transport: {}",
+            preview
+                .request
+                .device
+                .model
+                .as_deref()
+                .unwrap_or("unavailable"),
+            preview
+                .request
+                .device
+                .serial
+                .as_deref()
+                .unwrap_or("unavailable"),
+            preview
+                .request
+                .device
+                .transport
+                .as_deref()
+                .unwrap_or("unavailable"),
+        )),
+        Line::from(""),
+        Line::from("Exact argument vector:"),
+    ];
+    lines.extend(
+        preview
+            .argv
+            .iter()
+            .enumerate()
+            .map(|(index, argument)| Line::from(format!("[{index}]={}", argument.display()))),
+    );
+    lines.extend([
+        Line::from(""),
+        Line::from("Enter starts WRITE DEVICE. Esc closes without writing."),
+    ]);
+    frame.render_widget(
+        Paragraph::new(lines)
+            .block(
+                Block::default()
+                    .title("Final protected Wic device-write preview")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
+fn wic_cancellation_confirmation(
+    frame: &mut Frame,
+    app: &App,
+    id: WicSessionId,
+    incomplete_device_warning: bool,
+    area: Rect,
+) {
+    let popup = qemu_popup_rect(area, 84, 10);
     clear_popup(frame, app, popup);
     let detail = app.wic_session(id).map_or_else(
         || format!("Wic operation {} is unavailable.", id.0),
@@ -2609,15 +2865,21 @@ fn wic_cancellation_confirmation(frame: &mut Frame, app: &App, id: WicSessionId,
             ),
         },
     );
+    let warning = if incomplete_device_warning {
+        "\nWARNING: stopping a device write can leave the target incomplete and unusable."
+    } else {
+        ""
+    };
+    let title = if incomplete_device_warning {
+        "Confirm Wic device-write cancellation"
+    } else {
+        "Confirm Wic cancellation"
+    };
     frame.render_widget(
         Paragraph::new(format!(
-            "{detail}\n\nEnter confirms cancellation. Esc keeps it running."
+            "{detail}{warning}\n\nEnter confirms cancellation. Esc keeps it running."
         ))
-        .block(
-            Block::default()
-                .title("Confirm Wic cancellation")
-                .borders(Borders::ALL),
-        )
+        .block(Block::default().title(title).borders(Borders::ALL))
         .wrap(Wrap { trim: false }),
         popup,
     );
@@ -2788,7 +3050,7 @@ fn image_artifact_inspector_text(app: &App) -> String {
                 _ => "none".into(),
             };
             format!(
-                "Machine: {}\nImage: {}\nKind: {}\nPath: {}\nDeploy directory: {}\nSize: {}\nTimestamp: {}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}\n\nLimitations:\n{}",
+                "Machine: {}\nImage: {}\nKind: {}\nPath: {}\nDeploy directory: {}\nSize: {}\nTimestamp: {}\nLimitations:\n{}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}",
                 artifact.identity.machine,
                 artifact.identity.image,
                 artifact.kind.label(),
@@ -2802,12 +3064,12 @@ fn image_artifact_inspector_text(app: &App) -> String {
                     || "unavailable".into(),
                     |value| format!("{value}s since Unix epoch")
                 ),
+                limitations,
                 checksums,
                 paths(&artifact.manifests),
                 paths(&artifact.licenses),
                 paths(&artifact.spdx),
                 paths(&artifact.wic_files),
-                limitations,
             )
         },
     );
@@ -2943,11 +3205,29 @@ fn wic_inspector_text(app: &App) -> String {
     let readiness = app
         .wic_create_unavailable_reason()
         .unwrap_or_else(|| "ready for selected image (W)".into());
+    let write_readiness = app.wic_device_write_unavailable_reason().map_or_else(
+        || {
+            app.selected_wic_write_image().map_or_else(
+                |message| message,
+                |image| {
+                    format!(
+                        "ready for protected write of {} ({} bytes) (D)",
+                        image.path.display(),
+                        image.size_bytes
+                    )
+                },
+            )
+        },
+        |message| format!("disabled: {message}"),
+    );
     if app.latest_wic_session().is_none()
         && matches!(app.wic_outputs, WicOutputInventoryState::NotLoaded)
+        && matches!(app.wic_devices, WicDeviceInventoryState::NotLoaded)
         && !matches!(app.wic_capability, WicCapability::Available { .. })
     {
-        return format!("Wic: {capability} | Create disabled | Outputs not loaded");
+        return format!(
+            "Wic: {capability} | Create disabled | Device write: {write_readiness} | Outputs and protected devices not loaded"
+        );
     }
     let selected_kickstart = {
         let selected_identity = match app.active_dialog() {
@@ -2985,9 +3265,16 @@ fn wic_inspector_text(app: &App) -> String {
                     request.output_directory.display()
                 ),
                 WicOperation::Write(request) => format!(
-                    "write image={} device={}",
+                    "write\nimage={} ({} bytes, modified {}s)\ndevice={} major:minor={} capacity={} bytes model={} serial={} transport={}",
                     request.image.path.display(),
-                    request.device.path.display()
+                    request.image.size_bytes,
+                    request.image.modified_unix_seconds,
+                    request.device.path.display(),
+                    request.device.major_minor,
+                    request.device.size_bytes,
+                    request.device.model.as_deref().unwrap_or("unavailable"),
+                    request.device.serial.as_deref().unwrap_or("unavailable"),
+                    request.device.transport.as_deref().unwrap_or("unavailable"),
                 ),
             };
             let output = job
@@ -3026,7 +3313,7 @@ fn wic_inspector_text(app: &App) -> String {
                 },
             );
             format!(
-                "Managed Wic operation {}\nStatus: {}\nRequest: {}\nQueued: {}\nStarted: {}\nFinished: {}\nExit: {}\nResult: {}\nError: {}\nRetained output: {} entries / {} bytes (showing latest {})\nDropped output: {} entries\nWarnings: {} | Errors: {}\nOutput:\n{}",
+                "Managed Wic operation {}\nStatus: {}\nRequest: {}\nQueued: {}\nStarted: {}\nFinished: {}\nExit: {}\nResult: {}\nError: {}\nRetained output: {} entries / {} bytes (showing latest {})\nDropped output: {} entries\nWarnings: {} | Errors: {}\nHost telemetry: CPU {} | Disk available {}\nOutput:\n{}",
                 session.id.0,
                 match job.status {
                     BackgroundJobStatus::Queued => "queued",
@@ -3057,6 +3344,12 @@ fn wic_inspector_text(app: &App) -> String {
                 job.dropped_output_entries,
                 job.warnings,
                 job.errors,
+                app.host_telemetry
+                    .cpu_utilization_percent
+                    .map_or_else(|| "unavailable".into(), |value| format!("{value}%")),
+                app.host_telemetry
+                    .disk_available_bytes
+                    .map_or_else(|| "unavailable".into(), format_bytes),
                 if output.is_empty() { "none" } else { &output },
             )
         },
@@ -3108,6 +3401,71 @@ fn wic_inspector_text(app: &App) -> String {
         WicOutputInventoryState::Partial { limitations, .. } => limitations.join("\n"),
         _ => "none".into(),
     };
+    let devices = match &app.wic_devices {
+        WicDeviceInventoryState::NotLoaded => "not loaded".into(),
+        WicDeviceInventoryState::Loading { request } => format!(
+            "loading generation {} for {}",
+            request.generation,
+            request.image.path.display()
+        ),
+        WicDeviceInventoryState::Failed { request, message } => format!(
+            "failed generation {} for {}: {message}",
+            request.generation,
+            request.image.path.display()
+        ),
+        WicDeviceInventoryState::Available { request, devices }
+        | WicDeviceInventoryState::Partial {
+            request, devices, ..
+        } => {
+            let rows = if devices.is_empty() {
+                "no eligible removable whole devices".into()
+            } else {
+                devices
+                    .iter()
+                    .map(|device| {
+                        let selected =
+                            app.wic_device_selection.as_ref() == Some(&device.identity);
+                        let mounts = if device.descendant_mounts.is_empty() {
+                            "none".into()
+                        } else {
+                            device
+                                .descendant_mounts
+                                .iter()
+                                .map(|mount| mount.display().to_string())
+                                .collect::<Vec<_>>()
+                                .join(",")
+                        };
+                        format!(
+                            "{} {} major:minor={} capacity={} bytes model={} serial={} transport={} removable={} writable={} read-only={} mounts={} unavailable={}",
+                            if selected { "▶" } else { " " },
+                            device.identity.path.display(),
+                            device.identity.major_minor,
+                            device.identity.size_bytes,
+                            device.identity.model.as_deref().unwrap_or("unavailable"),
+                            device.identity.serial.as_deref().unwrap_or("unavailable"),
+                            device.identity.transport.as_deref().unwrap_or("unavailable"),
+                            device.removable,
+                            device.writable,
+                            device.read_only,
+                            mounts,
+                            device.unavailable_reason.as_deref().unwrap_or("none"),
+                        )
+                    })
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            };
+            format!(
+                "generation {} for {}\n{}",
+                request.generation,
+                request.image.path.display(),
+                rows
+            )
+        }
+    };
+    let device_limitations = match &app.wic_devices {
+        WicDeviceInventoryState::Partial { limitations, .. } => limitations.join("\n"),
+        _ => "none".into(),
+    };
     let kickstart = selected_kickstart.map_or_else(
         || "Selected kickstart\nunavailable".into(),
         |kickstart| {
@@ -3131,7 +3489,7 @@ fn wic_inspector_text(app: &App) -> String {
         },
     );
     format!(
-        "Wic capability\n{capability}\nCreate: {readiness}\n\n{session}\n\nGenerated outputs\n{outputs}\nLimitations: {limitations}\n\n{kickstart}"
+        "Wic capability\n{capability}\nCreate: {readiness}\nDevice write: {write_readiness}\n\n{session}\n\nGenerated outputs\n{outputs}\nLimitations: {limitations}\n\nProtected device inventory\n{devices}\nLimitations: {device_limitations}\n\n{kickstart}"
     )
 }
 
@@ -6120,6 +6478,179 @@ mod tests {
     }
 
     #[test]
+    fn wic_device_write_renders_protected_dialogs_inventory_history_and_footer() {
+        let mut app = wic_workspace_app();
+        let Some(yoctui_model::Effect::GetWicDevices(request)) =
+            yoctui_model::update(&mut app, yoctui_model::Action::BeginSelectedWicDeviceWrite)
+        else {
+            panic!("expected protected device discovery");
+        };
+        let loading = rendered_text(&app, 80, 24);
+        assert!(
+            loading.contains("Select protected Wic write device"),
+            "{loading}"
+        );
+        assert!(loading.contains("Discovering removable"), "{loading}");
+
+        let mut empty = app.clone();
+        empty.wic_devices = WicDeviceInventoryState::Available {
+            request: request.clone(),
+            devices: Vec::new(),
+        };
+        let rendered = rendered_text(&empty, 100, 30);
+        assert!(
+            rendered.contains("No eligible removable whole devices"),
+            "{rendered}"
+        );
+
+        let mut failed = app.clone();
+        failed.wic_devices = WicDeviceInventoryState::Failed {
+            request: request.clone(),
+            message: "lsblk permission denied".into(),
+        };
+        let rendered = rendered_text(&failed, 100, 30);
+        assert!(
+            rendered.contains("Device discovery failed: lsblk permission denied"),
+            "{rendered}"
+        );
+
+        let device = WicDevice {
+            identity: yoctui_model::WicDeviceIdentity {
+                path: "/dev/sdz".into(),
+                major_minor: "8:240".into(),
+                size_bytes: 16_384,
+                model: Some("Protected USB".into()),
+                serial: Some("SERIAL-123".into()),
+                transport: Some("usb".into()),
+            },
+            removable: true,
+            writable: true,
+            read_only: false,
+            descendant_mounts: Vec::new(),
+            unavailable_reason: None,
+        };
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::WicDeviceInventoryLoaded {
+                request: request.clone(),
+                devices: vec![device],
+                limitations: vec!["one udev property was unavailable".into()],
+            },
+        );
+        for (theme, color_enabled) in [
+            (Theme::Dark, true),
+            (Theme::Light, true),
+            (Theme::MatrixGreen, true),
+            (Theme::HighContrast, true),
+            (Theme::Monochrome, false),
+        ] {
+            app.theme = theme;
+            app.color_enabled = color_enabled;
+            for (width, height) in [(80, 24), (110, 30), (160, 40)] {
+                let rendered = rendered_text(&app, width, height);
+                assert!(rendered.contains("/dev/sdz"), "{rendered}");
+                assert!(rendered.contains("8:240"), "{rendered}");
+                assert!(rendered.contains("Protected USB"), "{rendered}");
+                assert!(rendered.contains("SERIAL-123"), "{rendered}");
+                assert!(rendered.contains("transport=usb"), "{rendered}");
+                assert!(rendered.contains("removable=true"), "{rendered}");
+                assert!(
+                    rendered.contains("one udev property was unavailable"),
+                    "{rendered}"
+                );
+            }
+        }
+
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::ConfirmWicDeviceSelection);
+        let phrase = rendered_text(&app, 80, 24);
+        assert!(
+            phrase.contains("Required phrase: WRITE /dev/sdz"),
+            "{phrase}"
+        );
+        assert!(phrase.contains("phrase alone does not write"), "{phrase}");
+        for character in "WRONG".chars() {
+            let _ = yoctui_model::update(
+                &mut app,
+                yoctui_model::Action::AppendWicWritePhrase(character),
+            );
+        }
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::PreviewWicDeviceWrite);
+        assert!(rendered_text(&app, 100, 30).contains("Validation:"));
+        for _ in 0.."WRONG".len() {
+            let _ = yoctui_model::update(&mut app, yoctui_model::Action::BackspaceWicWritePhrase);
+        }
+        for character in "WRITE /dev/sdz".chars() {
+            let _ = yoctui_model::update(
+                &mut app,
+                yoctui_model::Action::AppendWicWritePhrase(character),
+            );
+        }
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::PreviewWicDeviceWrite);
+        for (width, height) in [(80, 24), (110, 30), (160, 40)] {
+            let preview = rendered_text(&app, width, height);
+            assert!(preview.contains("DESTRUCTIVE OPERATION"), "{preview}");
+            assert!(preview.contains("Exact argument vector"), "{preview}");
+            assert!(preview.contains("[1]=write"), "{preview}");
+            assert!(preview.contains("[2]=/deploy/qemux86-64"), "{preview}");
+            assert!(preview.contains("[3]=/dev/sdz"), "{preview}");
+        }
+
+        let Some(yoctui_model::Effect::StartWicSession { id, .. }) =
+            yoctui_model::update(&mut app, yoctui_model::Action::ConfirmWicDeviceWrite)
+        else {
+            panic!("expected managed Wic device write");
+        };
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::WicSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::WicSessionRunning { id });
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::AppendWicSessionOutput {
+                id,
+                stream: yoctui_model::WicOutputStream::Stderr,
+                line: "write progress".into(),
+                truncated: true,
+                timestamp: SystemTime::UNIX_EPOCH,
+            },
+        );
+        app.host_telemetry = yoctui_model::HostTelemetry {
+            cpu_utilization_percent: Some(42),
+            disk_available_bytes: Some(1_048_576),
+        };
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::BeginActiveWicSessionCancellation,
+        );
+        let warning = rendered_text(&app, 80, 24);
+        assert!(
+            warning.contains("Confirm Wic device-write cancellation"),
+            "{warning}"
+        );
+        assert!(warning.contains("incomplete"), "{warning}");
+        assert!(warning.contains("unusable"), "{warning}");
+        app.dialogs.clear();
+        let inspector = wic_inspector_text(&app);
+        assert!(inspector.contains("write\nimage=/deploy/qemux86-64"));
+        assert!(inspector.contains("device=/dev/sdz major:minor=8:240"));
+        assert!(inspector.contains("Host telemetry: CPU 42%"));
+        assert!(inspector.contains("write progress [truncated]"));
+        assert!(inspector.contains("Dropped output: 0 entries"));
+
+        let footer = footer_shortcuts(&app);
+        assert!(footer.contains("D write device"), "{footer}");
+        assert!(
+            responsive_footer_shortcuts(&app, 80).contains("D write"),
+            "{}",
+            responsive_footer_shortcuts(&app, 80)
+        );
+    }
+
+    #[test]
     fn wic_workspace_handles_long_source_themes_and_exact_footer_hints() {
         let mut app = wic_workspace_app();
         if let WicCapability::Available { kickstarts, .. } = &mut app.wic_capability {
@@ -6149,6 +6680,7 @@ mod tests {
         for expected in [
             "Q QEMU",
             "W create Wic",
+            "D write device",
             "x cancel",
             "[/] output",
             "O open output",
