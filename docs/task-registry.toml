@@ -933,12 +933,12 @@ notes = "The Images workspace now renders correlated loading/empty/available/par
 id = "WIC-WRITE-CLI-001"
 milestone = "M4"
 title = "Integrate protected Wic device execution in the CLI"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 51
 required = true
 depends_on = ["WIC-WRITE-RENDER-001"]
 verify = ["cargo test -p yoctui -- wic_device_write"]
-notes = "Own generation-correlated device discovery, independently rebuild and revalidate write commands, poll the shared Wic runner, route stronger cancellation, and cover fake device/process outcomes."
+notes = "The CLI now owns replaceable generation-correlated device discovery plus a nonblocking write-start task that repeats adapter-authoritative image/device validation before spawn. Modal routing, shared runner polling, telemetry, success, nonzero failure, stronger cancellation, rejection, stale identity, startup/runner loss, and fake device/process outcomes pass focused coverage; production never disables node validation and no live removable-media claim is made."
 
 [[task]]
 id = "WIC-WRITE-UI-CLI-001"

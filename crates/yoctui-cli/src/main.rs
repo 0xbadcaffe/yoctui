@@ -44,7 +44,8 @@ use yoctui_bitbake::{
     PackageDataAdapter, PackageDataCancellation, ProcessBackend, QemuAdapterError,
     QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner, QemuRunnerEvent, SignatureAdapter,
     SignatureCancellation, VariableValue, WicAdapterError, WicCapabilityInspector,
-    WicCreateCommandSpec, WicJobRunner, WicRunnerEvent,
+    WicCreateCommandSpec, WicDeviceInspector, WicDeviceInventoryResponse, WicJobRunner,
+    WicRunnerEvent,
 };
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
@@ -54,7 +55,8 @@ use yoctui_model::{
     PreviewKind, QemuCapability, QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest,
     QemuSessionId, RecipeIdentity, Screen, Severity, SignatureComparisonRequest, SignatureTarget,
     Theme, VariableDetail, VariableIdentity, WicCapability, WicCreateDraft, WicCreatePreview,
-    WicCreateRequest, WicOperation, WicSessionId, update, validate_config_edit_request,
+    WicCreateRequest, WicDeviceInventoryRequest, WicOperation, WicSessionId, update,
+    validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -1111,6 +1113,7 @@ async fn poll_qemu_job(app: &mut App, operation: &mut Option<QemuCliOperation>) 
 
 struct WicCliOperation {
     id: WicSessionId,
+    starting: Option<tokio::task::JoinHandle<(WicJobRunner, Result<(), WicAdapterError>)>>,
     runner: Option<WicJobRunner>,
     cancellation: Option<tokio::task::JoinHandle<(WicJobRunner, Result<bool, WicAdapterError>)>>,
 }
@@ -1141,6 +1144,7 @@ fn wic_preview_for_request(
 async fn begin_wic_job(
     app: &mut App,
     operation: &mut Option<WicCliOperation>,
+    device_inspector: &WicDeviceInspector,
     build_dir: &Path,
     cancellation_timeout: Duration,
     id: WicSessionId,
@@ -1158,43 +1162,40 @@ async fn begin_wic_job(
         );
         return;
     }
-    let WicOperation::Create(request) = requested_operation else {
-        let _ = update(
-            app,
-            Action::FailWicSession {
+    let mut runner =
+        WicJobRunner::new(build_dir.to_path_buf()).with_cancellation_timeout(cancellation_timeout);
+    let start = match requested_operation {
+        WicOperation::Create(request) => {
+            let output_directory = request.output_directory.clone();
+            match wic_preview_for_request(&app.wic_capability, &request)
+                .map_err(WicAdapterError::InvalidRequest)
+                .and_then(|preview| {
+                    WicCreateCommandSpec::from_preview(&preview, &app.wic_capability)
+                }) {
+                Ok(command) => runner.start(command, output_directory).await,
+                Err(error) => Err(error),
+            }
+        }
+        WicOperation::Write(request) => {
+            let inspector = device_inspector.clone();
+            let starting = tokio::spawn(async move {
+                let result = runner.start_write(&inspector, request).await;
+                (runner, result)
+            });
+            *operation = Some(WicCliOperation {
                 id,
-                message: "Wic device writing is not integrated in the CLI yet".into(),
-                exit_code: None,
-                finished_at: SystemTime::now(),
-            },
-        );
-        return;
-    };
-    let output_directory = request.output_directory.clone();
-    let start = wic_preview_for_request(&app.wic_capability, &request)
-        .map_err(WicAdapterError::InvalidRequest)
-        .and_then(|preview| WicCreateCommandSpec::from_preview(&preview, &app.wic_capability));
-    let command = match start {
-        Ok(command) => command,
-        Err(error) => {
-            let _ = update(
-                app,
-                Action::FailWicSession {
-                    id,
-                    message: error.to_string(),
-                    exit_code: None,
-                    finished_at: SystemTime::now(),
-                },
-            );
+                starting: Some(starting),
+                runner: None,
+                cancellation: None,
+            });
             return;
         }
     };
-    let mut runner =
-        WicJobRunner::new(build_dir.to_path_buf()).with_cancellation_timeout(cancellation_timeout);
-    match runner.start(command, output_directory).await {
+    match start {
         Ok(()) => {
             *operation = Some(WicCliOperation {
                 id,
+                starting: None,
                 runner: Some(runner),
                 cancellation: None,
             });
@@ -1238,6 +1239,19 @@ fn begin_wic_cancellation(
         );
         return;
     }
+    if let Some(starting) = active.starting.take() {
+        starting.abort();
+        let _ = update(
+            app,
+            Action::CancelWicSession {
+                id,
+                exit_code: None,
+                finished_at: SystemTime::now(),
+            },
+        );
+        *operation = None;
+        return;
+    }
     let Some(mut runner) = active.runner.take() else {
         let _ = update(
             app,
@@ -1258,6 +1272,46 @@ async fn poll_wic_job(app: &mut App, operation: &mut Option<WicCliOperation>) {
     let Some(active) = operation.as_mut() else {
         return;
     };
+    if active
+        .starting
+        .as_ref()
+        .is_some_and(tokio::task::JoinHandle::is_finished)
+    {
+        let handle = active.starting.take().expect("checked above");
+        match handle.await {
+            Ok((runner, Ok(()))) => active.runner = Some(runner),
+            Ok((_, Err(error))) => {
+                let id = active.id;
+                let _ = update(
+                    app,
+                    Action::FailWicSession {
+                        id,
+                        message: error.to_string(),
+                        exit_code: None,
+                        finished_at: SystemTime::now(),
+                    },
+                );
+                *operation = None;
+                return;
+            }
+            Err(error) => {
+                let id = active.id;
+                let _ = update(
+                    app,
+                    Action::LoseWicSession {
+                        id,
+                        message: format!("Wic startup task was lost: {error}"),
+                        finished_at: SystemTime::now(),
+                    },
+                );
+                *operation = None;
+                return;
+            }
+        }
+    }
+    if active.starting.is_some() {
+        return;
+    }
     if active
         .cancellation
         .as_ref()
@@ -1540,6 +1594,59 @@ struct ImageArtifactBackgroundOperation {
 struct WicCapabilityBackgroundOperation {
     image_generation: u64,
     handle: tokio::task::JoinHandle<WicCapability>,
+}
+
+struct WicDeviceBackgroundOperation {
+    request: WicDeviceInventoryRequest,
+    handle: tokio::task::JoinHandle<Result<WicDeviceInventoryResponse, WicAdapterError>>,
+}
+
+fn begin_wic_device_operation(
+    inspector: &WicDeviceInspector,
+    operation: &mut Option<WicDeviceBackgroundOperation>,
+    effect: Effect,
+) {
+    let Effect::GetWicDevices(request) = effect else {
+        return;
+    };
+    if let Some(stale) = operation.take() {
+        stale.handle.abort();
+    }
+    let worker_request = request.clone();
+    let inspector = inspector.clone();
+    let handle = tokio::spawn(async move { inspector.discover(worker_request).await });
+    *operation = Some(WicDeviceBackgroundOperation { request, handle });
+}
+
+async fn poll_wic_device_operation(
+    app: &mut App,
+    operation: &mut Option<WicDeviceBackgroundOperation>,
+) {
+    if !operation
+        .as_ref()
+        .is_some_and(|operation| operation.handle.is_finished())
+    {
+        return;
+    }
+    let Some(operation) = operation.take() else {
+        return;
+    };
+    let action = match operation.handle.await {
+        Ok(Ok(response)) => Action::WicDeviceInventoryLoaded {
+            request: response.request,
+            devices: response.devices,
+            limitations: response.limitations,
+        },
+        Ok(Err(error)) => Action::WicDeviceInventoryFailed {
+            request: operation.request,
+            message: error.to_string(),
+        },
+        Err(error) => Action::WicDeviceInventoryFailed {
+            request: operation.request,
+            message: format!("Wic device discovery task was lost: {error}"),
+        },
+    };
+    let _ = update(app, action);
 }
 
 fn configure_wic_capability_inspector(
@@ -2684,6 +2791,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     let mut qemu_operation = None;
     let wic_inspector = wic_capability_inspector(&app);
     let mut wic_capability_operation = None;
+    let wic_device_inspector = WicDeviceInspector::default();
+    let mut wic_device_operation = None;
     let mut wic_operation = None;
     if app.screen == Screen::Packages
         && let Some(effect @ Effect::GetPackageInventory(_)) =
@@ -2723,15 +2832,17 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         .await;
         poll_wic_capability_operation(&mut app, &wic_inspector, &mut wic_capability_operation)
             .await;
+        poll_wic_device_operation(&mut app, &mut wic_device_operation).await;
         poll_qemu_job(&mut app, &mut qemu_operation).await;
         poll_wic_job(&mut app, &mut wic_operation).await;
-        if matches!(
+        if (matches!(
             app.build.status,
             BuildStatus::LoadingWorkspace
                 | BuildStatus::Parsing
                 | BuildStatus::Running
                 | BuildStatus::Cancelling
-        ) && Instant::now() >= next_telemetry_sample
+        ) || wic_operation.is_some())
+            && Instant::now() >= next_telemetry_sample
         {
             let telemetry = telemetry_sampler.sample(&session_build_dir);
             let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry));
@@ -2788,6 +2899,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     begin_wic_job(
                         &mut app,
                         &mut wic_operation,
+                        &wic_device_inspector,
                         &session_build_dir,
                         cancellation_timeout,
                         id,
@@ -2800,8 +2912,20 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             } else if matches!(app.active_dialog(), Some(Dialog::WicWritePhrase(_))) {
                 let _ = wic_write_phrase_action(input).and_then(|action| update(&mut app, action));
             } else if matches!(app.active_dialog(), Some(Dialog::WicWriteConfirmation(_))) {
-                let _ = wic_write_confirmation_action(input)
+                let effect = wic_write_confirmation_action(input)
                     .and_then(|action| update(&mut app, action));
+                if let Some(Effect::StartWicSession { id, operation }) = effect {
+                    begin_wic_job(
+                        &mut app,
+                        &mut wic_operation,
+                        &wic_device_inspector,
+                        &session_build_dir,
+                        cancellation_timeout,
+                        id,
+                        operation,
+                    )
+                    .await;
+                }
             } else if let Some(Dialog::WicCancellationConfirmation {
                 id,
                 incomplete_device_warning,
@@ -3296,6 +3420,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         &mut app,
                         image_artifact_adapter.as_ref(),
                         &mut image_artifact_operation,
+                        effect,
+                    ),
+                    Some(effect @ Effect::GetWicDevices(_)) => begin_wic_device_operation(
+                        &wic_device_inspector,
+                        &mut wic_device_operation,
                         effect,
                     ),
                     Some(Effect::CancelImageArtifactOperation) => {
@@ -5865,6 +5994,410 @@ esac"#,
     }
 
     #[cfg(unix)]
+    async fn wic_device_write_start_effect(
+        app: &mut App,
+        inspector: &WicDeviceInspector,
+    ) -> (WicSessionId, WicOperation) {
+        let effect = update(app, Action::BeginSelectedWicDeviceWrite)
+            .expect("expected device discovery effect");
+        let mut discovery = None;
+        begin_wic_device_operation(inspector, &mut discovery, effect);
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while discovery.is_some() {
+                poll_wic_device_operation(app, &mut discovery).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let _ = update(
+            app,
+            wic_device_picker_action(Input::Enter).expect("device picker action"),
+        );
+        for character in "WRITE /dev/sdz".chars() {
+            let _ = update(
+                app,
+                wic_write_phrase_action(Input::Char(character)).expect("phrase action"),
+            );
+        }
+        let _ = update(
+            app,
+            wic_write_phrase_action(Input::Enter).expect("phrase preview action"),
+        );
+        let effect = update(
+            app,
+            wic_write_confirmation_action(Input::Enter).expect("write confirmation action"),
+        );
+        let Some(Effect::StartWicSession { id, operation }) = effect else {
+            panic!("expected Wic write start effect");
+        };
+        (id, operation)
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn wic_device_write_cli_discovers_routes_and_revalidates_before_spawn() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let (directory, build_dir, mut app) =
+            wic_workspace_fixture("device-write-cli", "printf 'write-started\\n'; exit 0").await;
+        let image_path = directory.join("deploy/device-image.wic");
+        fs::write(&image_path, b"image").unwrap();
+        let image_path = fs::canonicalize(image_path).unwrap();
+        let image = yoctui_model::WicOutput {
+            identity: yoctui_model::WicOutputIdentity {
+                path: image_path,
+                size_bytes: 5,
+                modified_unix_seconds: 7,
+            },
+            kind: yoctui_model::WicOutputKind::Wic,
+        };
+        app.wic_output_selection = Some(image.identity.clone());
+        app.wic_outputs = yoctui_model::WicOutputInventoryState::Available {
+            request: yoctui_model::WicOutputInventoryRequest {
+                generation: 1,
+                output_directory: directory.join("deploy"),
+            },
+            outputs: vec![image],
+        };
+
+        let lsblk = directory.join("lsblk");
+        let inventory = r#"{"blockdevices":[{"path":"/dev/sda","type":"disk","maj:min":"8:0","size":8192,"model":"root","serial":"root-serial","tran":null,"rm":false,"ro":false,"mountpoints":[],"children":[{"path":"/dev/sda1","type":"part","maj:min":"8:1","size":4096,"model":null,"serial":null,"tran":null,"rm":false,"ro":false,"mountpoints":["/"],"children":[]}]},{"path":"/dev/sdz","type":"disk","maj:min":"8:240","size":16384,"model":"Protected USB","serial":"SERIAL-123","tran":"usb","rm":true,"ro":false,"mountpoints":[],"children":[]}]}"#;
+        fs::write(&lsblk, format!("#!/bin/sh\nprintf '%s' '{}'\n", inventory)).unwrap();
+        let mut permissions = fs::metadata(&lsblk).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&lsblk, permissions).unwrap();
+        let inspector = WicDeviceInspector::with_program(fs::canonicalize(&lsblk).unwrap())
+            .without_device_node_validation_for_tests();
+
+        let Some(effect) = update(&mut app, Action::BeginSelectedWicDeviceWrite) else {
+            panic!("expected device discovery effect");
+        };
+        let Effect::GetWicDevices(request) = &effect else {
+            panic!("expected device discovery effect");
+        };
+        let request = request.clone();
+        let mut discovery = None;
+        begin_wic_device_operation(&inspector, &mut discovery, effect);
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while discovery.is_some() {
+                poll_wic_device_operation(&mut app, &mut discovery).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let yoctui_model::WicDeviceInventoryState::Partial {
+            request: discovered,
+            devices,
+            limitations,
+        } = &app.wic_devices
+        else {
+            panic!("fake discovery must retain a partial inventory");
+        };
+        assert_eq!(discovered, &request);
+        assert_eq!(devices.len(), 1);
+        assert_eq!(devices[0].identity.path, Path::new("/dev/sdz"));
+        assert!(
+            limitations
+                .iter()
+                .any(|limitation| limitation.contains("/dev/sda")
+                    && limitation.contains("root filesystem"))
+        );
+
+        let mut failed_app = app.clone();
+        let _ = update(&mut failed_app, Action::CancelWicDevicePicker);
+        let Some(failed_effect) = update(&mut failed_app, Action::BeginSelectedWicDeviceWrite)
+        else {
+            panic!("expected replacement discovery");
+        };
+        let Effect::GetWicDevices(failed_request) = &failed_effect else {
+            panic!("expected replacement discovery");
+        };
+        let failed_request = failed_request.clone();
+        let missing = WicDeviceInspector::with_program(directory.join("missing-lsblk"));
+        begin_wic_device_operation(&missing, &mut discovery, failed_effect);
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while discovery.is_some() {
+                poll_wic_device_operation(&mut failed_app, &mut discovery).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(matches!(
+            &failed_app.wic_devices,
+            yoctui_model::WicDeviceInventoryState::Failed { request, message }
+                if request == &failed_request && message.contains("unavailable")
+        ));
+
+        assert_eq!(
+            wic_device_picker_action(Input::Char('D')),
+            None,
+            "modal input must not leak to the Images workspace"
+        );
+        let picker_action = wic_device_picker_action(Input::Enter).unwrap();
+        let _ = update(&mut app, picker_action);
+        for character in "WRITE /dev/sdz".chars() {
+            let action = wic_write_phrase_action(Input::Char(character)).unwrap();
+            let _ = update(&mut app, action);
+        }
+        let preview_action = wic_write_phrase_action(Input::Enter).unwrap();
+        let _ = update(&mut app, preview_action);
+        let confirm_action = wic_write_confirmation_action(Input::Enter).unwrap();
+        let Some(Effect::StartWicSession { id, operation }) = update(&mut app, confirm_action)
+        else {
+            panic!("expected confirmed write effect");
+        };
+        assert!(matches!(&operation, WicOperation::Write(request)
+            if request.image.path == directory.join("deploy/device-image.wic")
+                && request.image.size_bytes == 5
+                && request.device.path == Path::new("/dev/sdz")));
+        let cancellation = wic_cancellation_confirmation_action(id, true, Input::Enter);
+        assert_eq!(
+            cancellation,
+            Some(Action::ConfirmWicSessionCancellation {
+                id,
+                acknowledge_incomplete_device: true,
+            })
+        );
+
+        let mut running = None;
+        begin_wic_job(
+            &mut app,
+            &mut running,
+            &inspector,
+            &build_dir,
+            Duration::from_millis(100),
+            id,
+            operation,
+        )
+        .await;
+        assert!(running.is_some());
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while running.is_some() {
+                poll_wic_job(&mut app, &mut running).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let session = app.wic_session(id).unwrap();
+        let job = app.background_jobs.get(session.background_job_id).unwrap();
+        assert!(
+            job.output
+                .iter()
+                .any(|entry| entry.message == "write-started")
+        );
+        assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Succeeded);
+        assert_eq!(session.exit_code, Some(0));
+
+        let wic = match &app.wic_capability {
+            WicCapability::Available { executable, .. } => executable.clone(),
+            capability => panic!("unexpected Wic capability: {capability:?}"),
+        };
+        fs::write(
+            &wic,
+            "#!/bin/sh\ntrap 'exit 0' TERM\nprintf 'ready\\n'\nwhile :; do sleep 1; done\n",
+        )
+        .unwrap();
+        let (cancel_id, cancel_request) = wic_device_write_start_effect(&mut app, &inspector).await;
+        let mut cancel_operation = None;
+        begin_wic_job(
+            &mut app,
+            &mut cancel_operation,
+            &inspector,
+            &build_dir,
+            Duration::from_secs(2),
+            cancel_id,
+            cancel_request,
+        )
+        .await;
+        tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                poll_wic_job(&mut app, &mut cancel_operation).await;
+                let ready = app
+                    .wic_session(cancel_id)
+                    .and_then(|session| app.background_jobs.get(session.background_job_id))
+                    .is_some_and(|job| job.output.iter().any(|entry| entry.message == "ready"));
+                if ready {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let _ = update(&mut app, Action::BeginActiveWicSessionCancellation);
+        let Some(Dialog::WicCancellationConfirmation {
+            id: dialog_id,
+            incomplete_device_warning: true,
+        }) = app.active_dialog().cloned()
+        else {
+            panic!("write cancellation must retain its incomplete-device warning");
+        };
+        let effect = wic_cancellation_confirmation_action(dialog_id, true, Input::Enter)
+            .and_then(|action| update(&mut app, action));
+        let Some(Effect::CancelWicSession(effect_id)) = effect else {
+            panic!("expected write cancellation effect");
+        };
+        begin_wic_cancellation(&mut app, &mut cancel_operation, effect_id);
+        tokio::time::timeout(Duration::from_secs(4), async {
+            while cancel_operation.is_some() {
+                poll_wic_job(&mut app, &mut cancel_operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let cancelled = app.wic_session(cancel_id).unwrap();
+        assert_eq!(
+            app.background_jobs
+                .get(cancelled.background_job_id)
+                .unwrap()
+                .status,
+            yoctui_model::BackgroundJobStatus::Cancelled
+        );
+
+        fs::write(&wic, "#!/bin/sh\nprintf 'write-error\\n' >&2\nexit 9\n").unwrap();
+        let (failed_id, failed_request) = wic_device_write_start_effect(&mut app, &inspector).await;
+        let mut failed_operation = None;
+        begin_wic_job(
+            &mut app,
+            &mut failed_operation,
+            &inspector,
+            &build_dir,
+            Duration::from_millis(100),
+            failed_id,
+            failed_request,
+        )
+        .await;
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while failed_operation.is_some() {
+                poll_wic_job(&mut app, &mut failed_operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let failed = app.wic_session(failed_id).unwrap();
+        let failed_job = app.background_jobs.get(failed.background_job_id).unwrap();
+        assert_eq!(failed_job.status, yoctui_model::BackgroundJobStatus::Failed);
+        assert_eq!(failed.exit_code, Some(9));
+        assert!(
+            failed_job
+                .output
+                .iter()
+                .any(|entry| entry.message == "write-error")
+        );
+
+        fs::write(&wic, "#!/bin/sh\nsleep 30\n").unwrap();
+        let (lost_id, lost_request) = wic_device_write_start_effect(&mut app, &inspector).await;
+        let mut lost_operation = None;
+        begin_wic_job(
+            &mut app,
+            &mut lost_operation,
+            &inspector,
+            &build_dir,
+            Duration::from_millis(100),
+            lost_id,
+            lost_request,
+        )
+        .await;
+        tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                poll_wic_job(&mut app, &mut lost_operation).await;
+                let running = app
+                    .wic_session(lost_id)
+                    .and_then(|session| app.background_jobs.get(session.background_job_id))
+                    .is_some_and(|job| job.status == yoctui_model::BackgroundJobStatus::Running);
+                if running {
+                    break;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let lost_handle = tokio::spawn(async {
+            std::future::pending::<(WicJobRunner, Result<bool, WicAdapterError>)>().await
+        });
+        lost_handle.abort();
+        lost_operation.as_mut().unwrap().cancellation = Some(lost_handle);
+        tokio::task::yield_now().await;
+        poll_wic_job(&mut app, &mut lost_operation).await;
+        let lost = app.wic_session(lost_id).unwrap();
+        assert_eq!(
+            app.background_jobs
+                .get(lost.background_job_id)
+                .unwrap()
+                .status,
+            yoctui_model::BackgroundJobStatus::Lost
+        );
+
+        let (stale_id, stale_request) = wic_device_write_start_effect(&mut app, &inspector).await;
+        let changed_inventory = inventory.replace("SERIAL-123", "SERIAL-CHANGED");
+        fs::write(
+            &lsblk,
+            format!("#!/bin/sh\nprintf '%s' '{}'\n", changed_inventory),
+        )
+        .unwrap();
+        let mut stale_operation = None;
+        begin_wic_job(
+            &mut app,
+            &mut stale_operation,
+            &inspector,
+            &build_dir,
+            Duration::from_millis(100),
+            stale_id,
+            stale_request,
+        )
+        .await;
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while stale_operation.is_some() {
+                poll_wic_job(&mut app, &mut stale_operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let stale = app.wic_session(stale_id).unwrap();
+        assert!(
+            stale
+                .error_detail
+                .as_deref()
+                .is_some_and(|message| message.contains("identity changed"))
+        );
+
+        let (reject_id, _) = wic_device_write_start_effect(&mut app, &inspector).await;
+        let _ = update(
+            &mut app,
+            Action::WicSessionStarting {
+                id: reject_id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::WicSessionRunning { id: reject_id });
+        let _ = update(&mut app, Action::BeginActiveWicSessionCancellation);
+        let effect = wic_cancellation_confirmation_action(reject_id, true, Input::Enter)
+            .and_then(|action| update(&mut app, action));
+        let Some(Effect::CancelWicSession(effect_id)) = effect else {
+            panic!("expected unowned write cancellation effect");
+        };
+        let mut unowned = None;
+        begin_wic_cancellation(&mut app, &mut unowned, effect_id);
+        let rejected = app.wic_session(reject_id).unwrap();
+        assert_eq!(
+            app.background_jobs
+                .get(rejected.background_job_id)
+                .unwrap()
+                .status,
+            yoctui_model::BackgroundJobStatus::Running
+        );
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[cfg(unix)]
     #[tokio::test]
     async fn wic_workspace_cli_discovers_runs_scans_and_persists_across_navigation() {
         let (directory, build_dir, mut app) = wic_workspace_fixture(
@@ -5889,6 +6422,7 @@ esac"#,
         begin_wic_job(
             &mut app,
             &mut operation,
+            &WicDeviceInspector::default(),
             &build_dir,
             Duration::from_millis(100),
             id,
@@ -5941,6 +6475,7 @@ esac"#,
         begin_wic_job(
             &mut failed,
             &mut failed_operation,
+            &WicDeviceInspector::default(),
             &failed_build,
             Duration::from_millis(100),
             failed_id,
@@ -5981,6 +6516,7 @@ esac"#,
             begin_wic_job(
                 &mut app,
                 &mut operation,
+                &WicDeviceInspector::default(),
                 &build_dir,
                 Duration::from_millis(50),
                 id,
@@ -6082,6 +6618,7 @@ esac"#,
         begin_wic_job(
             &mut lost,
             &mut lost_operation,
+            &WicDeviceInspector::default(),
             &lost_build,
             Duration::from_millis(100),
             lost_id,

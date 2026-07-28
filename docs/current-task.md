@@ -2,56 +2,47 @@
 
 ## Active task
 
-**ID:** WIC-WRITE-CLI-001
-**Title:** Integrate protected Wic device execution in the CLI
+**ID:** WIC-WRITE-UI-CLI-001
+**Title:** Integrate protected Wic device writing
 
 ## Objective
 
-Connect the completed protected-device model, rendering, and adapter to the
-real CLI event loop so discovery and writes run asynchronously through typed,
-generation-correlated state without blocking the terminal.
+Close the protected Wic device-writing parent gate by verifying that the
+completed adapter, model, app, responsive UI, and CLI execution paths agree on
+one typed, fail-closed workflow.
 
 ## Required work
 
-1. Inspect the existing Wic creation capability/runner integration, Images
-   dialog input routing, shared operation polling, and protected device adapter
-   APIs before editing.
-2. Execute `Effect::GetWicDevices` through the adapter without blocking the UI,
-   preserve its generation and exact image identity, and normalize success,
-   partial limitations, timeout, failure, and stale completion into typed model
-   actions.
-3. Route picker, phrase-entry, exact-preview, and stronger write-cancellation
-   inputs before global Images shortcuts so modal focus cannot leak.
-4. Execute `Effect::StartWicSession` for writes through the existing managed Wic
-   runner. Independently reconstruct and adapter-revalidate exact image/device
-   identity and argv immediately before spawn; never execute a widget-derived
-   command or shell string.
-5. Poll write output and lifecycle nonblockingly through the shared managed-job
-   path. Preserve stream tags, truncation/drop counts, host telemetry, success,
-   nonzero failure, graceful/forced cancellation, rejection, and unexpected
-   process loss across navigation.
-6. Keep creation and writing mutually exclusive while preserving both typed
-   operation histories. A write cancellation must acknowledge the
-   incomplete-device warning; ordinary creation cancellation must not inherit
-   that acknowledgement.
-7. Add focused fake-device/process CLI tests named `wic_device_write` covering
-   discovery success/partial/empty/failure, modal routing, exact revalidation,
-   success, nonzero failure, cancellation escalation, rejection, stale
-   completion, and loss. Do not claim live removable-media safety.
-8. Run focused and baseline checks, then hand off to
-   `WIC-WRITE-UI-CLI-001`.
+1. Inspect the completed Wic write child tasks and confirm their exact identity,
+   lifecycle, dialog, rendering, and CLI ownership contracts agree.
+2. Run every focused cross-layer verification command. Add only genuinely
+   missing regression coverage; do not duplicate child behavior or weaken a
+   check.
+3. Verify discovery and write execution remain shell-free, bounded,
+   generation-correlated, nonblocking, and adapter-revalidated immediately
+   before spawn.
+4. Verify responsive/no-color dialogs, write history/telemetry, modal routing,
+   stronger cancellation acknowledgement, and every terminal outcome remain
+   covered across navigation.
+5. Keep the safety claim honest: fake node/process tests prove integration, not
+   live removable-media compatibility. Do not perform a hardware write.
+6. Run all baseline checks, reconcile roadmap/status documentation, and hand
+   off to the next eligible highest-priority task.
 
 ## Definition of done
 
-- `D` drives real asynchronous adapter discovery in the CLI.
-- Confirmed previews execute only after independent adapter revalidation.
-- Every discovery and runner outcome reaches correlated typed model state.
-- Device-write cancellation retains its stronger acknowledgement semantics.
-- Focused fake integrations and all baseline checks pass.
+- All four focused Wic device-write suites pass together.
+- All baseline checks pass.
+- Adapter, model, app, UI, and CLI contracts agree without duplicate logic.
+- Documentation records the completed integration without a live-hardware
+  claim.
 
 ## Verification
 
 ```bash
+cargo test -p yoctui-model wic_device_write
+cargo test -p yoctui-app wic_device_write
+cargo test -p yoctui-ui wic_device_write
 cargo test -p yoctui -- wic_device_write
 cargo fmt --all --check
 cargo test --workspace --all-features
