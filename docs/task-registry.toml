@@ -952,15 +952,81 @@ verify = ["cargo test -p yoctui-model wic_device_write", "cargo test -p yoctui-a
 notes = "The cross-layer parent gate passes together: fail-closed adapter discovery/revalidation, exact typed model state, modal app routing, responsive TestBackend rendering, and independently polled CLI discovery/start/write/cancellation all agree. Synthetic device/process tests cover terminal outcomes but do not establish live removable-media compatibility."
 
 [[task]]
+id = "SDK-MODEL-001"
+milestone = "M4"
+title = "Model typed SDK workspace and operations"
+status = "NOT_STARTED"
+priority = 52
+required = true
+depends_on = ["JOB-002"]
+verify = ["cargo test -p yoctui-model sdk_workflow", "cargo test -p yoctui-app sdk_workflow"]
+notes = "Add exact SDK identities, populate/test previews, inventory/search/selection state, publication and native-tool drafts/previews, shared-job session context, reducer actions/effects, and app input mapping."
+
+[[task]]
+id = "SDK-ARTIFACT-001"
+milestone = "M4"
+title = "Discover authoritative SDK artifacts"
+status = "NOT_STARTED"
+priority = 52
+required = true
+depends_on = ["SDK-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake sdk_artifact"]
+notes = "Scan only the typed canonical SDK deploy root; bound records and metadata; reject symlinks/escapes; return explicit empty, partial, failure, checksum, manifest, and unavailable-field state."
+
+[[task]]
+id = "SDK-TOOLS-001"
+milestone = "M4"
+title = "Adapt SDK publication and native tools"
+status = "NOT_STARTED"
+priority = 52
+required = true
+depends_on = ["SDK-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake sdk_tool"]
+notes = "Resolve and validate oe-publish-sdk, oe-find-native-sysroot, and oe-run-native; independently reconstruct exact shell-free commands; validate extracted roots and child-only environments; stream bounded lifecycle/output/cancellation."
+
+[[task]]
+id = "SDK-RENDER-001"
+milestone = "M4"
+title = "Render responsive SDK workspace"
+status = "NOT_STARTED"
+priority = 52
+required = true
+depends_on = ["SDK-MODEL-001"]
+verify = ["cargo test -p yoctui-ui sdk_workflow"]
+notes = "Render SDK Navigator/workspace/Inspector, explicit inventories and job history, populate/test/publication/native dialogs, exact previews, footer, themes, no-color, and 80x24 boundaries."
+
+[[task]]
+id = "SDK-CLI-001"
+milestone = "M4"
+title = "Integrate SDK execution in the CLI"
+status = "NOT_STARTED"
+priority = 52
+required = true
+depends_on = ["SDK-ARTIFACT-001", "SDK-TOOLS-001", "SDK-RENDER-001"]
+verify = ["cargo test -p yoctui -- sdk_workflow"]
+notes = "Route populate/test through managed BitBake, poll correlated artifact scans and SDK tool runners independently, refresh after success, preserve history across navigation, and cover cancellation/rejection/loss."
+
+[[task]]
+id = "SDK-UI-CLI-001"
+milestone = "M4"
+title = "Integrate complete SDK workspace"
+status = "NOT_STARTED"
+priority = 52
+required = true
+depends_on = ["SDK-MODEL-001", "SDK-ARTIFACT-001", "SDK-TOOLS-001", "SDK-RENDER-001", "SDK-CLI-001"]
+verify = ["cargo test -p yoctui-model sdk_workflow", "cargo test -p yoctui-app sdk_workflow", "cargo test -p yoctui-bitbake sdk_", "cargo test -p yoctui-ui sdk_workflow", "cargo test -p yoctui -- sdk_workflow"]
+notes = "Parent gate for exact typed SDK generation/testing, artifact discovery, publication, extracted/native tools, responsive rendering, and independently polled CLI execution."
+
+[[task]]
 id = "SDK-001"
 milestone = "M4"
 title = "SDK build and artifact workflow"
 status = "NOT_STARTED"
 priority = 52
 required = true
-depends_on = ["JOB-002"]
-verify = ["cargo test -p yoctui-app sdk"]
-notes = "populate SDK/ext SDK, artifacts, publication, extracted SDK."
+depends_on = ["SDK-UI-CLI-001"]
+verify = ["cargo test -p yoctui-model sdk_workflow", "cargo test -p yoctui-app sdk_workflow", "cargo test -p yoctui-bitbake sdk_", "cargo test -p yoctui-ui sdk_workflow", "cargo test -p yoctui -- sdk_workflow"]
+notes = "Completion gate for populate SDK/ext SDK, contextual testsdk launches, typed artifacts/publication, and extracted/native SDK workflows."
 
 [[task]]
 id = "TEST-001"

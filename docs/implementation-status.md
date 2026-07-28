@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Render the protected Wic device workflow.
+Model the typed SDK workspace and operations.
 
 ## Current task
 
@@ -25,7 +25,7 @@ See `docs/current-task.md`.
 | M1 BitBake cockpit | IN_PROGRESS | Typed background build execution and live BitBake 2.19.0 Tinfoil validation exist; remaining typed cockpit workflows are incomplete |
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
-| M4 Images/SDK/QEMU/Wic | IN_PROGRESS | The typed Images artifact workspace and managed QEMU workflow are done; SDK and Wic workflows remain |
+| M4 Images/SDK/QEMU/Wic | IN_PROGRESS | Images, QEMU, Wic creation, and protected device writing are done; the SDK workspace remains |
 | M5 Testing/QA/Security | NOT_STARTED | Coverage infrastructure exists; product workflows remain |
 | M6 Maintenance | NOT_STARTED | Partial diagnostics only |
 | M7 Hardening | IN_PROGRESS | Coverage and profiling foundations exist |
@@ -69,6 +69,7 @@ See `docs/current-task.md`.
 | QEMU adapter | DONE | Canonical executable/artifact discovery, exact preview revalidation, shell-free native arguments, bounded stream events, success/failure/loss, duplicate rejection, and graceful/forced process-group cancellation are covered by fake processes; live compatibility is not claimed |
 | QEMU dialogs/session UI | DONE | Bounded modal input, responsive capability/session rendering, and independent CLI-owned inspection/execution/polling/cancellation pass the complete cross-layer parent gate; fake runners do not establish live compatibility |
 | Wic workflow | DONE | Cooked-mode creation and protected device writing pass the cross-layer gate: discovery/startup are independently polled, exact identities are revalidated immediately before spawn, responsive modal/history/telemetry state is durable, and all terminal outcomes are covered. Fake device/process coverage does not establish live Wic or removable-media compatibility |
+| SDK workflow | NOT_STARTED | Decomposed into typed model/app, authoritative artifact scan, publication/native tool adapter, responsive rendering, CLI integration, and parent-gate tasks; existing BuildRequest/background jobs and Images artifact patterns will be reused |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -79,9 +80,12 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `SDK-001` — split and implement SDK build/artifact workflow
-2. `TEST-001` — unified test execution and results
-3. `SEC-001` — CVE and SPDX workflows
+1. `SDK-MODEL-001` — model typed SDK workspace and operations
+2. `SDK-ARTIFACT-001` — discover authoritative SDK artifacts
+3. `SDK-TOOLS-001` — adapt SDK publication and native tools
+4. `SDK-RENDER-001` — render responsive SDK workspace
+5. `SDK-CLI-001` — integrate SDK execution in the CLI
+6. `SDK-UI-CLI-001` / `SDK-001` — close SDK integration gates
 
 ## Rules
 

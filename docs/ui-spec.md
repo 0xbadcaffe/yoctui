@@ -1201,15 +1201,61 @@ alone.
 
 ### SDK
 
-Integrate:
+`SDK` is a first-class Navigator destination after `Images`. It uses the
+persistent shell and shared background-job lifecycle; leaving the workspace
+never discards an active SDK build, scan, publication, native-tool operation,
+or terminal result.
 
-- `do_populate_sdk`
-- `do_populate_sdk_ext`
-- `do_testsdk`
-- `do_testsdkext`
-- `oe-publish-sdk`
-- `oe-run-native`
-- `oe-find-native-sysroot`
+The Workspace header shows the exact active `MACHINE`, `DISTRO`, selected image
+recipe target, and authoritative SDK deploy root. `i` opens the existing
+machine-aware image target picker. `s` previews a standard SDK build as the
+typed BitBake task `do_populate_sdk`; `E` previews an extensible SDK build as
+`do_populate_sdk_ext`. `t` and `T` preview `do_testsdk` and `do_testsdkext`
+respectively. Each preview names the exact image target, task, machine, and
+distro before `Enter` starts the existing managed BitBake build. `Esc` closes
+without starting. Testing launches remain visible here for SDK context, while
+the Testing workspace owns unified result comparison and export.
+
+After a successful populate task, and on explicit `R`, Yoctui scans only the
+canonical absolute SDK deploy root reported by typed BitBake configuration.
+The inventory is generation-correlated and distinguishes not loaded, loading,
+available empty, available, partial, and failed. The adapter, not widgets,
+classifies bounded regular non-symlink installers, checksum files, manifests,
+and other SDK artifacts. Rows preserve exact path identity and show SDK kind,
+host/target tuple when authoritative, byte size, modification time, and
+publication state. Missing metadata renders `unavailable`; no filename pattern
+is presented as authoritative metadata.
+
+The Inspector shows the selected exact artifact identity, related checksums and
+manifests, lifecycle/result/output for its originating SDK operation, every
+scan limitation, and any validated extracted-SDK root. `↑`/`↓` changes exact
+selection. `o` opens the selected regular artifact. `/` searches typed identity
+and metadata. `c` requests cancellation of the active SDK-owned operation.
+
+`P` opens a publication destination dialog only for a selected publishable
+installer. The next overlay shows the exact indexed, shell-free
+`oe-publish-sdk` argument vector, installer identity, and absolute destination;
+publication never begins without explicit confirmation and never guesses an
+overwrite policy. Output, nonzero failure, cancellation, and loss remain in
+SDK history.
+
+`n` opens the native-tool dialog. The user selects either the active build
+workspace or a validated extracted SDK root, enters a bounded recipe/tool
+identity and bounded native arguments, then confirms the exact indexed
+`oe-find-native-sysroot` or `oe-run-native` vector. Tools execute directly
+without a shell. Extracted roots must be canonical directories with an exact
+adapter-validated environment setup identity; widgets never source scripts or
+derive environment variables. Environment changes are confined to the managed
+child process and never mutate the Yoctui process.
+
+All SDK dialogs trap focus and remain usable at 80×24. Responsive modes follow
+the shared Navigator/Workspace/Inspector rules, all lifecycle and selection
+meaning survives no-color mode, and long paths/arguments are bounded and
+wrapped. The SDK footer is:
+
+```text
+↑/↓ select | i image | s standard | E extensible | t testsdk | T testsdkext | R refresh | P publish | n native | o open | c cancel
+```
 
 ### Testing
 
