@@ -2,48 +2,51 @@
 
 ## Active task
 
-**ID:** SEC-REPORT-ADAPTER-001
-**Title:** Acquire and parse Security reports
+**ID:** SEC-MAPPER-ADAPTER-001
+**Title:** Run exact CVE package mapping
 
 ## Objective
 
-Acquire only explicit canonical Security report paths and parse supported CVE
-and SPDX content into bounded typed records.
+Reconstruct and run only the capability-inspected `cve-check-map-pkgs`
+operation as one bounded, cancellable, shell-free Security runner.
 
 ## Required work
 
-1. Add report acquisition to the Security adapter without walking outside
-   explicit request paths.
-2. Accept canonical regular non-symlink files or bounded canonical
-   directories; reject relative paths, root, escape, stale, duplicate, and
-   unsupported entries.
-3. Bound traversed directories, entries, files, per-file/total bytes, records,
-   fields, and elapsed time; expose cancellation and worker loss distinctly.
-4. Fingerprint exact file identities before parsing and preserve them in every
-   typed record.
-5. Parse supported Yocto CVE JSON/text into typed ID, recipe/package,
-   product/version, status, severity/score/vector/link/summary, mappings,
-   metadata, and limitations.
-6. Parse supported SPDX JSON summaries and components while retaining
-   archives/unsupported schemas as exact artifacts with limitations.
-7. Preserve valid records beside malformed/oversized inputs as partial and
-   distinguish valid empty from total failure.
-8. Add fake-filesystem tests for normal, empty, mixed partial, malformed,
-   oversized, symlink, escape, timeout, cancellation, and loss paths.
+1. Add a Security package-mapping command specification and independent runner
+   to `yoctui-bitbake`.
+2. Construct the vector only from a typed operation preview and immediately
+   revalidate the exact canonical regular non-symlink executable and every
+   required canonical input identity before spawn.
+3. Use native argv with no shell, process-global environment mutation, or
+   reconstruction from display text.
+4. Bound stdout/stderr lines, retained output, arguments, execution time, and
+   cancellation escalation while preserving invalid UTF-8 lossily.
+5. Emit typed started, bounded stdout/stderr, success, nonzero failure,
+   cancellation requested/rejected/completed, timeout, and worker-loss events
+   that preserve the exact Security session ID.
+6. Reject duplicate starts, stale/tampered previews, missing or symlinked
+   inputs/tools, unsafe arguments, stream loss, and process-control failures.
+7. Add fake-process tests for exact argv, success, bounded streams, nonzero
+   exit, validation rejection, duplicate start, graceful/forced cancellation,
+   timeout, and worker loss.
+8. Update app normalization tests only where needed to prove typed events cross
+   the boundary without parsing process output.
 
 ## Definition of done
 
-- Acquisition is explicit, canonical, bounded, cancellable, and fail-closed.
-- Supported CVE and SPDX data becomes only typed model records.
-- Exact identities survive parsing and stale/unsafe paths are rejected.
-- Empty, partial, malformed, oversized, timeout, cancellation, and loss remain
-  distinct.
-- Focused report and baseline checks pass.
+- The exact inspected mapper operation is revalidated immediately before a
+  shell-free spawn.
+- Output and lifecycle events are bounded, typed, session-correlated, and
+  independent from the managed BitBake coordinator.
+- Success, nonzero, rejection, cancellation, timeout, stream/worker loss, and
+  process-control failures remain distinct.
+- Focused mapper/app and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake security_report
+cargo test -p yoctui-bitbake security_mapper
+cargo test -p yoctui-app security_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

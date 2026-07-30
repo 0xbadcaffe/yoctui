@@ -1164,12 +1164,12 @@ notes = "The fail-closed inspector accepts only explicit initialized metadata, c
 id = "SEC-REPORT-ADAPTER-001"
 milestone = "M5"
 title = "Acquire and parse Security reports"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 61
 required = true
 depends_on = ["SEC-CAP-ADAPTER-001"]
 verify = ["cargo test -p yoctui-bitbake security_report"]
-notes = "Bound explicit canonical report acquisition and parse supported CVE JSON/text and SPDX JSON into exact typed records with honest empty, partial, malformed, oversized, timeout, cancellation, and loss outcomes."
+notes = "The replaceable blocking adapter accepts only sorted unique explicit canonical regular files or bounded canonical directories, never follows symlinks or escapes a root, bounds traversal/files/bytes/records/fields/time, revalidates metadata around acquisition, and fingerprints exact bytes. Supported Yocto-shaped CVE JSON/text and SPDX JSON become typed findings/documents/components; archives and unsupported SPDX schemas remain exact partial artifacts. Empty, mixed partial, malformed, oversized, missing, symlink, escape, stale, cancellation, timeout, and worker-loss outcomes are explicit. Seven focused fake-filesystem tests plus the complete baseline pass."
 
 [[task]]
 id = "SEC-MAPPER-ADAPTER-001"
