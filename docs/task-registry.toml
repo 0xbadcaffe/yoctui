@@ -1098,12 +1098,12 @@ notes = "The complete typed Launches, Results, and Comparison views now render e
 id = "TEST-CLI-001"
 milestone = "M5"
 title = "Integrate testing execution in the CLI"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 60
 required = true
 depends_on = ["TEST-RUNNER-ADAPTER-001", "TEST-RESULT-ADAPTER-001", "TEST-RENDER-001"]
 verify = ["cargo test -p yoctui -- test_workflow"]
-notes = "Route test builds through the existing coordinator, own independent selftest/result operations, poll without blocking input, correlate refresh/import/export, and preserve navigation and terminal state."
+notes = "The CLI snapshots initialized Testing capabilities, routes image/SDK/ptest tasks through the existing managed BitBake coordinator, and independently owns one selftest runner, one replaceable bounded result import, and one resulttool comparison/export runner. Exact session/job/result identities survive capability discovery, execution, navigation, cancellation, import, comparison, JUnit destination inspection/export, refresh, and every typed terminal outcome. Focused CLI tests and the complete baseline pass; fake adapters do not establish live Yocto compatibility."
 
 [[task]]
 id = "TEST-UI-CLI-001"
