@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Model typed unified test discovery and execution.
+Model typed unified test results and comparisons.
 
 ## Current task
 
@@ -70,7 +70,7 @@ See `docs/current-task.md`.
 | QEMU dialogs/session UI | DONE | Bounded modal input, responsive capability/session rendering, and independent CLI-owned inspection/execution/polling/cancellation pass the complete cross-layer parent gate; fake runners do not establish live compatibility |
 | Wic workflow | DONE | Cooked-mode creation and protected device writing pass the cross-layer gate: discovery/startup are independently polled, exact identities are revalidated immediately before spawn, responsive modal/history/telemetry state is durable, and all terminal outcomes are covered. Fake device/process coverage does not establish live Wic or removable-media compatibility |
 | SDK workflow | DONE | The parent gate passes across typed model/app state, authoritative artifact and shell-free tool adapters, responsive rendering, and independent CLI execution. It covers scans, capability inspection, managed BitBake populate/test reuse, exact artifact opening, publication/native child execution, a bounded keyboard-editable native form, timeout/cancellation/loss, success refresh, navigation, and telemetry. Fake scans/processes do not claim live SDK compatibility |
-| Testing workflow | IN_PROGRESS | The authoritative UI and architecture contract now defines exact selftest selectors, managed BitBake test tasks, configuration-gated ptest, stable lifecycle, structured results, comparison categories, and non-overwriting JUnit export. Typed execution/result models, adapters, rendering, and CLI remain |
+| Testing workflow | IN_PROGRESS | Typed capability discovery, family selection, bounded launch forms, exact selftest and managed-BitBake previews, stable sessions, shared background lifecycle, cancellation, terminal outcomes, stale-event rejection, input mapping, and Navigator reachability are complete. Typed result records/comparisons, adapters, complete rendering, and CLI execution remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -81,7 +81,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `TEST-MODEL-001` / `TEST-RESULT-MODEL-001` — typed execution and results
+1. `TEST-RESULT-MODEL-001` — typed results and comparisons
 2. `TEST-RUNNER-ADAPTER-001` / `TEST-RESULT-ADAPTER-001` — safe tool adapters
 3. `TEST-RENDER-001` / `TEST-CLI-001` / `TEST-UI-CLI-001` / `TEST-001` — close integration gates
 

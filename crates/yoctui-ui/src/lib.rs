@@ -463,6 +463,9 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Sdk => {
             "↑/↓ select | i image | s standard | E extensible | t testsdk | T testsdkext | R refresh | P publish | n native | o open | c cancel"
         }
+        Screen::Testing => {
+            "Tab view | ↑/↓ select | Enter open | r run | i image | / search | I import | R refresh | c compare | J JUnit | o result | l log | x cancel"
+        }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
@@ -490,6 +493,8 @@ fn responsive_footer_shortcuts(app: &App, width: u16) -> &'static str {
         "↑↓ R refresh Q QEMU W create Wic D write x cancel [/] output O open output o artifact w Wic"
     } else if app.screen == Screen::Sdk && width <= 90 {
         "↑↓ i:image s/E:SDK t/T:test R:scan P:publish n:native o:open c:cancel"
+    } else if app.screen == Screen::Testing && width <= 90 {
+        "Tab:view ↑↓ Enter r:run i:image /:find I/R:results c:compare J:JUnit o/l:open x:cancel"
     } else {
         footer_shortcuts(app)
     }
@@ -1589,6 +1594,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
         ("Packages", Screen::Packages),
         ("Images", Screen::Images),
         ("SDK", Screen::Sdk),
+        ("Testing", Screen::Testing),
         ("Tasks", Screen::Tasks),
         ("Logs", Screen::Logs),
         ("Errors", Screen::Errors),
@@ -1638,6 +1644,7 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Packages => packages_workspace(frame, app, area),
         Screen::Images => images_workspace(frame, app, area),
         Screen::Sdk => sdk_workspace(frame, app, area),
+        Screen::Testing => testing_workspace(frame, app, area),
         Screen::Layers => {
             if let Some(browser) = app.layer_browser.as_ref() {
                 layer_browser(frame, app, browser, area)
@@ -1778,6 +1785,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Packages => package_inspector_text(app),
         Screen::Images => image_artifact_inspector_text(app),
         Screen::Sdk => sdk_inspector_text(app),
+        Screen::Testing => testing_inspector_text(app),
         _ => format!(
             "Target: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
             app.build.target.as_deref().unwrap_or("not selected"),
@@ -2287,6 +2295,86 @@ fn sdk_inventory_root(app: &App) -> String {
         .map(|path| path.display().to_string())
         .or_else(|| app.workspace.variables.get("SDK_DEPLOY").cloned())
         .unwrap_or_else(|| "unavailable".into())
+}
+
+fn testing_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let mut lines = vec![format!(
+        "Testing launches | MACHINE={} | DISTRO={} | image={}",
+        app.workspace
+            .variables
+            .get("MACHINE")
+            .map_or("unavailable", String::as_str),
+        app.workspace
+            .variables
+            .get("DISTRO")
+            .map_or("unavailable", String::as_str),
+        app.build.target.as_deref().unwrap_or("unavailable"),
+    )];
+    lines.push(String::new());
+    lines.extend(yoctui_model::TestFamily::ALL.iter().map(|family| {
+        format!(
+            "{} {}",
+            if *family == app.test_family_selection {
+                "▶"
+            } else {
+                " "
+            },
+            family.label()
+        )
+    }));
+    lines.push(String::new());
+    lines.push(
+        "Structured Results and Comparison views become available as their typed adapters load."
+            .into(),
+    );
+    frame.render_widget(
+        Paragraph::new(lines.join("\n"))
+            .block(pane_block(
+                app,
+                "Testing",
+                app.focus == FocusTarget::Workspace,
+            ))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn testing_inspector_text(app: &App) -> String {
+    let family = app.test_family_selection;
+    let capability = match family {
+        yoctui_model::TestFamily::OeSelftest => {
+            format!("{:?}", app.test_capability.oe_selftest)
+        }
+        yoctui_model::TestFamily::BitbakeSelftest => {
+            format!("{:?}", app.test_capability.bitbake_selftest)
+        }
+        yoctui_model::TestFamily::Ptest => format!("{:?}", app.test_capability.ptest),
+        _ => format!(
+            "managed BitBake task do_{}",
+            family.task().unwrap_or_default()
+        ),
+    };
+    let latest = app.latest_test_session().map_or_else(
+        || "No Testing session has run.".into(),
+        |session| {
+            let status = session
+                .background_job_id
+                .and_then(|id| app.background_jobs.get(id))
+                .map_or_else(
+                    || "awaiting build attachment".into(),
+                    |job| format!("{:?}", job.status),
+                );
+            format!(
+                "Latest session: {}\nStatus: {status}\nResults: {}",
+                session.id.0,
+                session.result_paths.len()
+            )
+        },
+    );
+    format!(
+        "Family: {}\nCapability: {capability}\n\n{latest}",
+        family.label()
+    )
 }
 
 fn sdk_workspace(frame: &mut Frame, app: &App, area: Rect) {
@@ -6840,6 +6928,47 @@ mod tests {
         assert!(output.contains("Enter requests cancellation"), "{output}");
     }
 
+    #[test]
+    fn test_workflow_screen_renders_identity_capability_and_selection_responsively() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Testing;
+        app.focus = FocusTarget::Workspace;
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace
+            .variables
+            .insert("DISTRO".into(), "poky".into());
+        app.build.target = Some("core-image-minimal".into());
+        app.test_capability = yoctui_model::TestCapability {
+            oe_selftest: yoctui_model::TestExecutableCapability::Available(
+                "/workspace/oe-selftest".into(),
+            ),
+            bitbake_selftest: yoctui_model::TestExecutableCapability::Missing,
+            ptest: yoctui_model::PtestCapability::Configured,
+        };
+
+        for (width, height, theme, color) in [
+            (80, 24, Theme::Monochrome, false),
+            (100, 30, Theme::Light, true),
+            (160, 40, Theme::HighContrast, true),
+        ] {
+            app.theme = theme;
+            app.color_enabled = color;
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Testing"), "{output}");
+            assert!(output.contains("qemux86-64"), "{output}");
+            assert!(output.contains("core-image-minimal"), "{output}");
+            assert!(output.contains("OE selftest"), "{output}");
+        }
+
+        app.test_family_selection = yoctui_model::TestFamily::Ptest;
+        app.focus = FocusTarget::Inspector;
+        let output = rendered_text(&app, 160, 40);
+        assert!(output.contains("Package tests"), "{output}");
+        assert!(output.contains("Configured"), "{output}");
+    }
+
     fn qemu_workspace_app() -> App {
         let mut app = App::new(20, 20_000);
         app.screen = Screen::Images;
@@ -7786,6 +7915,8 @@ mod tests {
             Screen::LayerRelationships,
             Screen::Recipes,
             Screen::Images,
+            Screen::Sdk,
+            Screen::Testing,
             Screen::Layers,
             Screen::Configuration,
             Screen::Bbmask,

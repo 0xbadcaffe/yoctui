@@ -1043,12 +1043,12 @@ notes = "The authoritative contract now defines Testing navigation and responsiv
 id = "TEST-MODEL-001"
 milestone = "M5"
 title = "Model typed test discovery and execution"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 60
 required = true
 depends_on = ["TEST-SPEC-001"]
 verify = ["cargo test -p yoctui-model test_workflow", "cargo test -p yoctui-app test_workflow"]
-notes = "Pure typed capability, catalog, launch preview, stable session, lifecycle, output, cancellation, and failure state for selftests, testimage, testsdk, testsdkext, and ptest."
+notes = "Typed capability, family catalog, bounded launch form, exact previews, stable managed sessions, background-job attachment, output, cancellation/rejection, success/failure/loss, stale-event rejection, app input mapping, Testing navigation, and responsive reachability now pass focused and baseline checks. Selftests retain validated executable/argv identity while testimage, testsdk, testsdkext, and configured ptest reuse exact BuildRequests; no live compatibility is claimed."
 
 [[task]]
 id = "TEST-RESULT-MODEL-001"
