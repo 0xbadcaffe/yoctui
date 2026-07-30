@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Close the complete cross-layer Security integration gate.
+Implement recipe, kernel, and layer QA workflows.
 
 ## Current task
 
@@ -26,7 +26,7 @@ See `docs/current-task.md`.
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
-| M5 Testing/QA/Security | IN_PROGRESS | Unified Testing is complete; Security is split into specification, model, adapter, rendering, CLI, and parent gates; QA remains |
+| M5 Testing/QA/Security | IN_PROGRESS | Unified Testing and Security are complete; QA remains |
 | M6 Maintenance | NOT_STARTED | Partial diagnostics only |
 | M7 Hardening | IN_PROGRESS | Coverage and profiling foundations exist |
 
@@ -71,7 +71,7 @@ See `docs/current-task.md`.
 | Wic workflow | DONE | Cooked-mode creation and protected device writing pass the cross-layer gate: discovery/startup are independently polled, exact identities are revalidated immediately before spawn, responsive modal/history/telemetry state is durable, and all terminal outcomes are covered. Fake device/process coverage does not establish live Wic or removable-media compatibility |
 | SDK workflow | DONE | The parent gate passes across typed model/app state, authoritative artifact and shell-free tool adapters, responsive rendering, and independent CLI execution. It covers scans, capability inspection, managed BitBake populate/test reuse, exact artifact opening, publication/native child execution, a bounded keyboard-editable native form, timeout/cancellation/loss, success refresh, navigation, and telemetry. Fake scans/processes do not claim live SDK compatibility |
 | Testing workflow | DONE | The unified parent gate passes for typed launch/result state, selftest/resulttool adapters, responsive rendering, and non-blocking CLI execution. Managed BitBake reuse, independent selftest/result operations, exact correlation, navigation, cancellation, import/comparison/JUnit export, and terminal outcomes are verified. Fake-process coverage does not establish live compatibility |
-| Security workflow | IN_PROGRESS | Specification, typed model/app state, capability/report/mapper adapters, responsive rendering, and non-blocking CLI integration are complete. Managed BitBake reuse, independent mapper/report polling, exact open revalidation, navigation, refresh, cancellation, and explicit terminal outcomes pass focused fake integration and baseline tests. The cross-layer parent gate remains; fake fixtures do not establish live compatibility |
+| Security workflow | DONE | The complete cross-layer gate passes for capability-driven CVE checks/mapping, current/legacy recipe and image SBOM workflows, bounded exact reports, responsive UI, managed BitBake reuse, independent CLI polling, exact-open revalidation, refresh, navigation, cancellation, and explicit partial/terminal states. Focused fake evidence does not establish live Yocto compatibility |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -82,7 +82,10 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `SEC-UI-CLI-001` — close the cross-layer Security gate
+1. `QA-001` — recipe, kernel, and layer QA workflows
+2. `MAINT-001` — advanced maintenance workflows
+3. `HARDEN-001` — complete test and analysis matrix
+4. `DOC-001` — complete operator and compatibility documentation
 
 ## Rules
 

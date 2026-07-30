@@ -2,44 +2,40 @@
 
 ## Active task
 
-**ID:** SEC-UI-CLI-001
-**Title:** Integrate complete Security workspace
+**ID:** QA-001
+**Title:** Recipe, kernel, and layer QA workflows
 
 ## Objective
 
-Close the cross-layer integration gate for the complete Security workspace.
+Implement the roadmap's recipe, kernel, and layer QA workflows as typed,
+verified Yoctui operations.
 
 ## Required work
 
-1. Inspect the complete Security implementation and focused tests before
-   changing behavior.
-2. Verify capability-driven current/legacy CVE and SBOM operations cross
-   model, app, adapter, renderer, and CLI boundaries with exact identities.
-3. Verify report import/refresh, CVE findings/mapping, SPDX document/component
-   drill, exact opens, managed builds, independent mapping, cancellation,
-   navigation, and terminal states across layers.
-4. Add only missing cross-layer coverage or fixes discovered by the gate.
-5. Keep live compatibility claims separate from fake process and filesystem
-   coverage.
+1. Inspect the existing QA-related behavior, authoritative UI specification,
+   architecture, and tests before changing code.
+2. Reconcile the broad roadmap item into atomic specification, model, adapter,
+   rendering, CLI, and parent-gate tasks before implementation.
+3. Cover kernel configuration, URI, patch, license, recipe QA, and
+   `yocto-check-layer` workflows without free-form command authority.
+4. Preserve exact target, task, provider, layer, report, and operation
+   identities across every boundary.
+5. Add unit, reducer, fake-process, CLI integration, and Ratatui TestBackend
+   coverage appropriate to each atomic task.
 
 ## Definition of done
 
-- Every focused Security verification command passes without weakening tests.
-- Model, app, adapter, UI, and CLI behavior agrees with the authoritative
-  specification and architecture.
-- Exact scope, operation, session, generation, finding, report, and component
-  identities remain correlated.
-- All responsive, partial, empty, and terminal states remain explicit.
-- No fake-process test is described as live Yocto compatibility.
+- QA workflows are split into coherent dependency-ordered tasks before broad
+  implementation begins.
+- Every implemented workflow uses typed previews, lifecycle state, and exact
+  identities.
+- Relevant focused and baseline checks pass without weakening tests.
+- Fake-process evidence is not described as live Yocto compatibility.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model security_workflow
-cargo test -p yoctui-app security_workflow
-cargo test -p yoctui-bitbake security
-cargo test -p yoctui-ui security_workflow
-cargo test -p yoctui -- security_workflow
+cargo test -p yoctui-app qa_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
