@@ -1128,15 +1128,81 @@ verify = ["cargo test -p yoctui-model test_workflow", "cargo test -p yoctui-app 
 notes = "The unified Testing parent gate passes after specification, typed execution/result state, selftest and managed BitBake/ptest runners, resulttool import/comparison/JUnit export, responsive rendering, and non-blocking CLI integration completed. All focused and baseline checks pass; fake-process coverage is not described as live Yocto compatibility."
 
 [[task]]
-id = "SEC-001"
+id = "SEC-SPEC-001"
 milestone = "M5"
-title = "CVE and SPDX workflows"
+title = "Specify typed CVE and SPDX workflows"
 status = "NOT_STARTED"
 priority = 61
 required = true
 depends_on = ["JOB-002"]
-verify = ["cargo test -p yoctui-app security_workflow"]
-notes = "CVE mapping/checks, reports, SBOM generation and viewing."
+verify = ["./scripts/verify-roadmap.sh"]
+notes = "Define capability-driven CVE mapping/check and SPDX/SBOM generation, exact report identity and bounded viewing, responsive navigation/dialogs, lifecycle meaning, and model/adapter/app/UI/CLI ownership without guessing paths or release-specific task names."
+
+[[task]]
+id = "SEC-MODEL-001"
+milestone = "M5"
+title = "Model typed security workflows"
+status = "NOT_STARTED"
+priority = 61
+required = true
+depends_on = ["SEC-SPEC-001"]
+verify = ["cargo test -p yoctui-model security_workflow", "cargo test -p yoctui-app security_workflow"]
+notes = "Model capability, exact recipe/image scope, CVE findings and package mappings, SPDX documents, bounded report state, selections, previews, lifecycle, cancellation, and typed effects."
+
+[[task]]
+id = "SEC-ADAPTER-001"
+milestone = "M5"
+title = "Adapt CVE and SPDX metadata and reports"
+status = "NOT_STARTED"
+priority = 61
+required = true
+depends_on = ["SEC-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake security", "cargo test -p yoctui-app security_workflow"]
+notes = "Discover authoritative tasks/tools/roots, construct exact shell-free operations, revalidate bounded report identities, parse typed CVE and SPDX content, and preserve empty, partial, malformed, timeout, cancellation, nonzero, and loss states."
+
+[[task]]
+id = "SEC-RENDER-001"
+milestone = "M5"
+title = "Render responsive Security workspace"
+status = "NOT_STARTED"
+priority = 61
+required = true
+depends_on = ["SEC-MODEL-001"]
+verify = ["cargo test -p yoctui-ui security_workflow"]
+notes = "Render capability, findings, package mappings, exact SPDX documents, metadata, limitations, lifecycle, confirmations, and responsive explicit states using typed TestBackend fixtures."
+
+[[task]]
+id = "SEC-CLI-001"
+milestone = "M5"
+title = "Integrate security execution in the CLI"
+status = "NOT_STARTED"
+priority = 61
+required = true
+depends_on = ["SEC-ADAPTER-001", "SEC-RENDER-001"]
+verify = ["cargo test -p yoctui -- security_workflow"]
+notes = "Route security builds through the managed BitBake coordinator, own replaceable bounded report acquisition, poll independently, correlate refresh/open/cancel, and preserve navigation and terminal outcomes."
+
+[[task]]
+id = "SEC-UI-CLI-001"
+milestone = "M5"
+title = "Integrate complete Security workspace"
+status = "NOT_STARTED"
+priority = 61
+required = true
+depends_on = ["SEC-MODEL-001", "SEC-ADAPTER-001", "SEC-RENDER-001", "SEC-CLI-001"]
+verify = ["cargo test -p yoctui-model security_workflow", "cargo test -p yoctui-app security_workflow", "cargo test -p yoctui-bitbake security", "cargo test -p yoctui-ui security_workflow", "cargo test -p yoctui -- security_workflow"]
+notes = "Cross-layer parent gate for capability-driven CVE mapping/checks, exact findings and reports, version-aware SPDX/SBOM generation/viewing, responsive rendering, and independently polled CLI execution."
+
+[[task]]
+id = "SEC-001"
+milestone = "M5"
+title = "CVE and SPDX workflows"
+status = "IN_PROGRESS"
+priority = 61
+required = true
+depends_on = ["SEC-UI-CLI-001"]
+verify = ["cargo test -p yoctui-model security_workflow", "cargo test -p yoctui-app security_workflow", "cargo test -p yoctui-bitbake security", "cargo test -p yoctui-ui security_workflow", "cargo test -p yoctui -- security_workflow"]
+notes = "Parent completion gate split into specification, typed security state, capability/report adapters, responsive rendering, CLI integration, and cross-layer verification."
 
 [[task]]
 id = "QA-001"

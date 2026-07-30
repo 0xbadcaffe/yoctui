@@ -2,35 +2,40 @@
 
 ## Active task
 
-**ID:** SEC-001
-**Title:** CVE and SPDX workflows
+**ID:** SEC-SPEC-001
+**Title:** Specify typed CVE and SPDX workflows
 
 ## Objective
 
-Implement typed CVE mapping/check and SPDX report generation/viewing
-workflows.
+Define authoritative, capability-driven CVE mapping/check and SPDX/SBOM
+generation and report-viewing behavior before implementation.
 
 ## Required work
 
-1. Inspect existing recipe CVE/SPDX actions and security-related model,
-   adapter, app, UI, and CLI behavior before adding code.
-2. Reconcile the requested security workflows with the authoritative UI and
-   architecture contracts.
-3. Split this parent task into atomic specification, model, adapter, renderer,
-   CLI, and integration tasks if it cannot fit one coherent commit.
-4. Implement only the selected atomic task and add the applicable tests.
+1. Specify a first-class Security Navigator destination with responsive CVE
+   and SPDX views, exact selection, search, Inspector, and footer behavior.
+2. Define authoritative capability discovery for CVE checks/package mapping
+   and release-dependent SPDX/SBOM task names without guessing support.
+3. Define exact recipe/image operation previews, confirmations, managed
+   BitBake reuse, cancellation, navigation retention, and terminal outcomes.
+4. Define bounded typed report identities, acquisition, CVE findings/package
+   mappings, SPDX documents, metadata, limitations, refresh, and editor routes.
+5. Assign pure state, process/filesystem parsing, key/effect mapping,
+   rendering, and polling to the correct architecture layers.
+6. Keep mocked evidence and live Yocto compatibility claims separate.
 
 ## Definition of done
 
-- CVE mapping/checks and SPDX report generation/viewing are typed workflows.
-- Process and metadata output is parsed outside widgets.
-- Operations remain cancellable, identity-correlated, and responsive.
-- Relevant focused and baseline verification passes.
+- `docs/ui-spec.md` completely defines Security interaction and responsive
+  behavior.
+- `docs/architecture.md` defines typed ownership and dependency boundaries.
+- The registry contains coherent dependent implementation tasks.
+- Existing recipe shortcuts are reconciled without claiming report support
+  that does not exist.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app security_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
