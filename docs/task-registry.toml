@@ -1087,12 +1087,12 @@ notes = "Independent canonical PATH discovery, bounded canonical non-symlink tes
 id = "TEST-RENDER-001"
 milestone = "M5"
 title = "Render responsive Testing workspace"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 60
 required = true
 depends_on = ["TEST-RESULT-MODEL-001"]
 verify = ["cargo test -p yoctui-ui test_workflow"]
-notes = "Render typed launch, lifecycle, result inventory, regression comparison, logs/metadata, export, unavailable states, dialogs, footer hints, and 80x24 behavior."
+notes = "The complete typed Launches, Results, and Comparison views now render exact configuration/tool/result identities, lifecycle and every terminal state, bounded suite/case drill-down, metadata, limitations, related logs, semantic outcome/regression styling, JUnit status, compact/full footers, and all seven focus-trapped launch/import/comparison/export/cancellation dialogs. TestBackend coverage passes at 80x24, medium, wide, every theme/no-color mode, and the existing too-small gate without parsing backend text."
 
 [[task]]
 id = "TEST-CLI-001"

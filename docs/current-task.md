@@ -2,46 +2,50 @@
 
 ## Active task
 
-**ID:** TEST-RENDER-001
-**Title:** Render responsive Testing workspace
+**ID:** TEST-CLI-001
+**Title:** Integrate Testing execution in the CLI
 
 ## Objective
 
-Render the complete typed Testing launch, result, comparison, and export
-workflow at every supported terminal width without parsing backend text.
+Connect the typed Testing model, adapters, and renderer to non-blocking CLI
+execution while reusing the existing managed BitBake coordinator.
 
 ## Required work
 
-1. Inspect the existing Testing renderer and reuse every already implemented
-   launch, result, dialog, focus, theme, and responsive primitive.
-2. Render Launches, Results, and Comparison views from typed model state,
-   including exact active configuration identity and capability availability.
-3. Render lifecycle/output, empty, partial, failure, cancellation, timeout,
-   loss, stale-safe selection, suite/case drill-down, metadata, limitations,
-   related logs, and regression categories without inferring authority.
-4. Render all Testing launch, cancellation, import, comparison, and JUnit
-   dialogs with trapped focus, exact previews, disabled explanations, and
-   specified footer shortcuts.
-5. Preserve semantic selection, status, severity, progress, and comparison
-   styling in every theme and in no-color mode.
-6. Add Ratatui TestBackend coverage for every state family, dialog, theme, and
-   responsive boundary, including 80x24 and too-small terminals.
+1. Inspect existing CLI operation coordinators and Testing effect routing
+   before adding state or polling.
+2. Snapshot the initialized build directory and PATH for independent
+   selftest/resulttool capability inspection without mutating process-global
+   environment.
+3. Route image runtime, SDK, extensible SDK, and configured ptest launches
+   through the existing managed BitBake build coordinator with exact session
+   correlation.
+4. Own at most one independent selftest runner and one resulttool
+   comparison/export runner; poll bounded typed events without blocking
+   terminal input or unrelated jobs.
+5. Execute explicit replaceable-generation result imports and exact
+   destination inspections, map responses mechanically, and trigger retained
+   exact-result refresh after successful Testing operations.
+6. Route cancellation only to the exact active Testing operation and preserve
+   rejection, timeout, nonzero, cancellation, loss, stale response, and
+   success-without-results outcomes distinctly.
+7. Add fake CLI integration tests covering capability discovery, managed
+   BitBake reuse, selftest/result operations, refresh/import/export,
+   navigation, duplicate rejection, and every terminal outcome.
 
 ## Definition of done
 
-- Every Testing view and dialog in `docs/ui-spec.md` renders typed state.
-- Wide, medium, narrow, 80x24, and too-small layouts are deterministic and
-  panic-free.
-- Missing tools, unavailable prerequisites, empty data, partial limitations,
-  and all terminal outcomes remain visibly distinct.
-- Widgets do not parse raw BitBake, test-runner, resulttool, or filesystem
-  text as authority.
-- Focus and footer behavior match the authoritative UI specification.
+- Every Testing effect is executed or rejected with an explicit typed action.
+- Testing-owned polling remains responsive and independent from other
+  operation families.
+- Exact request/session/result identities survive every CLI boundary.
+- Managed BitBake tests reuse the established build coordinator.
+- No fake-process test is described as live Yocto compatibility.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui test_workflow
+cargo test -p yoctui -- test_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

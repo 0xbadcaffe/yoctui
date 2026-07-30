@@ -20,11 +20,14 @@ use yoctui_model::{
     SdkNativeDialog, SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation,
     SdkPublishDraft, SdkPublishPreview, SdkSessionId, SdkToolCapability, Severity,
     SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, TaskFilterField,
-    TaskRow, TaskState, Theme, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
-    WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog,
-    WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog,
-    WicWritePreview, config_comparison, config_edit_disabled_reason, config_source_disabled_reason,
-    format_duration, selected_config_copy_value,
+    TaskRow, TaskState, TestComparisonCategory, TestComparisonState, TestExecutableCapability,
+    TestJunitExportState, TestLaunchDialog, TestLaunchField, TestLaunchPreview,
+    TestResultInventoryState, TestWorkspaceView, Theme, VariableIdentity, WicCapability,
+    WicCompression, WicCreateDialog, WicCreateField, WicCreatePreview, WicDevice,
+    WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart, WicOperation,
+    WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
+    config_comparison, config_edit_disabled_reason, config_source_disabled_reason, format_duration,
+    selected_config_copy_value,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -607,6 +610,22 @@ pub fn render(frame: &mut Frame, app: &App) {
         sdk_native_confirmation(frame, app, preview, area);
     } else if let Some(Dialog::SdkCancellationConfirmation(id)) = app.active_dialog() {
         sdk_cancellation_confirmation(frame, app, *id, area);
+    } else if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog() {
+        test_launch_dialog(frame, app, dialog, area);
+    } else if let Some(Dialog::TestLaunchConfirmation(preview)) = app.active_dialog() {
+        test_launch_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::TestCancellationConfirmation(id)) = app.active_dialog() {
+        test_cancellation_confirmation(frame, app, *id, area);
+    } else if let Some(Dialog::TestResultImport(dialog)) = app.active_dialog() {
+        test_result_import_dialog(frame, app, dialog, area);
+    } else if let Some(Dialog::TestComparison(picker)) = app.active_dialog() {
+        test_comparison_dialog(frame, app, picker, area);
+    } else if let Some(Dialog::TestComparisonConfirmation(preview)) = app.active_dialog() {
+        test_comparison_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::TestJunitExport(dialog)) = app.active_dialog() {
+        test_junit_dialog(frame, app, dialog, area);
+    } else if let Some(Dialog::TestJunitExportConfirmation(preview)) = app.active_dialog() {
+        test_junit_confirmation(frame, app, preview, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);
     } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
@@ -2298,37 +2317,44 @@ fn sdk_inventory_root(app: &App) -> String {
 }
 
 fn testing_workspace(frame: &mut Frame, app: &App, area: Rect) {
-    let mut lines = vec![format!(
-        "Testing launches | MACHINE={} | DISTRO={} | image={}",
-        app.workspace
-            .variables
-            .get("MACHINE")
-            .map_or("unavailable", String::as_str),
-        app.workspace
-            .variables
-            .get("DISTRO")
-            .map_or("unavailable", String::as_str),
-        app.build.target.as_deref().unwrap_or("unavailable"),
-    )];
-    lines.push(String::new());
-    lines.extend(yoctui_model::TestFamily::ALL.iter().map(|family| {
-        format!(
-            "{} {}",
-            if *family == app.test_family_selection {
-                "▶"
-            } else {
-                " "
-            },
-            family.label()
-        )
-    }));
-    lines.push(String::new());
-    lines.push(
-        "Structured Results and Comparison views become available as their typed adapters load."
-            .into(),
-    );
+    let palette = ThemePalette::for_app(app);
+    let active = |view| {
+        if app.test_view == view {
+            palette.focus()
+        } else {
+            Style::default()
+        }
+    };
+    let mut lines = vec![
+        Line::from(vec![
+            Span::styled(" Launches ", active(TestWorkspaceView::Launches)),
+            Span::raw(" | "),
+            Span::styled(" Results ", active(TestWorkspaceView::Results)),
+            Span::raw(" | "),
+            Span::styled(" Comparison ", active(TestWorkspaceView::Comparison)),
+        ]),
+        Line::from(format!(
+            "MACHINE={} | DISTRO={} | image={} | resulttool={}",
+            app.workspace
+                .variables
+                .get("MACHINE")
+                .map_or("unavailable", String::as_str),
+            app.workspace
+                .variables
+                .get("DISTRO")
+                .map_or("unavailable", String::as_str),
+            app.build.target.as_deref().unwrap_or("unavailable"),
+            resulttool_capability_label(&app.result_tool_capability),
+        )),
+        Line::from(""),
+    ];
+    match app.test_view {
+        TestWorkspaceView::Launches => testing_launch_lines(app, &palette, &mut lines),
+        TestWorkspaceView::Results => testing_result_lines(app, &palette, &mut lines),
+        TestWorkspaceView::Comparison => testing_comparison_lines(app, &palette, &mut lines),
+    }
     frame.render_widget(
-        Paragraph::new(lines.join("\n"))
+        Paragraph::new(lines)
             .block(pane_block(
                 app,
                 "Testing",
@@ -2340,20 +2366,368 @@ fn testing_workspace(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn testing_inspector_text(app: &App) -> String {
-    let family = app.test_family_selection;
-    let capability = match family {
-        yoctui_model::TestFamily::OeSelftest => {
-            format!("{:?}", app.test_capability.oe_selftest)
+    match app.test_view {
+        TestWorkspaceView::Launches => testing_launch_inspector(app),
+        TestWorkspaceView::Results => testing_result_inspector(app),
+        TestWorkspaceView::Comparison => testing_comparison_inspector(app),
+    }
+}
+
+fn testing_launch_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+    lines.push(Line::from(
+        "  Family                  Authority / availability",
+    ));
+    for family in yoctui_model::TestFamily::ALL {
+        let selected = family == app.test_family_selection;
+        lines.push(
+            Line::from(format!(
+                "{} {:<23} {}",
+                if selected { "▶" } else { " " },
+                family.label(),
+                test_family_capability(app, family),
+            ))
+            .style(if selected {
+                palette.selected()
+            } else {
+                Style::default()
+            }),
+        );
+    }
+    lines.push(Line::from(""));
+    match app.latest_test_session() {
+        None => lines.push(Line::from("No Testing session has run.")),
+        Some(session) => {
+            let status = session
+                .background_job_id
+                .and_then(|id| app.background_jobs.get(id))
+                .map_or_else(
+                    || {
+                        session.outcome.map_or_else(
+                            || "awaiting runner attachment".into(),
+                            |outcome| format!("{outcome:?}"),
+                        )
+                    },
+                    |job| format!("{:?}", job.status),
+                );
+            lines.push(Line::from(format!(
+                "Latest session {} | {} | {status} | exit={} | structured results={}",
+                session.id.0,
+                session.operation.family().label(),
+                session
+                    .exit_code
+                    .map_or_else(|| "—".into(), |code| code.to_string()),
+                session.result_paths.len(),
+            )));
+            if let Some(detail) = &session.error_detail {
+                lines.push(Line::styled(
+                    format!("Failure: {detail}"),
+                    testing_error_style(palette),
+                ));
+            }
         }
-        yoctui_model::TestFamily::BitbakeSelftest => {
-            format!("{:?}", app.test_capability.bitbake_selftest)
+    }
+}
+
+fn testing_result_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+    if app.test_result_searching {
+        lines.push(Line::from(format!("Search: {}_", app.test_result_query)));
+    } else if !app.test_result_query.is_empty() {
+        lines.push(Line::from(format!("Search: {}", app.test_result_query)));
+    }
+    if app.test_result_drilled {
+        let Some(record) = app.selected_test_result() else {
+            lines.push(Line::styled(
+                "Selected result is no longer available.",
+                testing_warning_style(palette),
+            ));
+            return;
+        };
+        lines.push(Line::from(format!(
+            "Result {} | fingerprint {}",
+            record.identity.path.display(),
+            record.identity.fingerprint
+        )));
+        lines.push(Line::from("  Status    Duration     Exact suite / case"));
+        for suite in &record.suites {
+            lines.push(Line::styled(
+                format!("  suite                  {}", suite.identity),
+                testing_info_style(palette),
+            ));
+            for case in &suite.cases {
+                let selected = app.test_case_selection.as_ref() == Some(&case.identity);
+                lines.push(
+                    Line::from(format!(
+                        "{} {:<9} {:<12} {}/{}",
+                        if selected { "▶" } else { " " },
+                        format!("{:?}", case.outcome).to_ascii_lowercase(),
+                        case.duration
+                            .map(format_duration)
+                            .unwrap_or_else(|| "—".into()),
+                        case.identity.suite,
+                        case.identity.case,
+                    ))
+                    .style(if selected {
+                        palette.selected()
+                    } else {
+                        test_outcome_style(palette, case.outcome)
+                    }),
+                );
+            }
         }
-        yoctui_model::TestFamily::Ptest => format!("{:?}", app.test_capability.ptest),
-        _ => format!(
-            "managed BitBake task do_{}",
-            family.task().unwrap_or_default()
-        ),
+        return;
+    }
+    lines.push(Line::from(
+        "  Family       Machine / image             P/F/S/E/U  Exact result",
+    ));
+    match &app.test_results {
+        TestResultInventoryState::NotLoaded => lines.push(Line::from(
+            "Results are not loaded. Press I to import an exact path.",
+        )),
+        TestResultInventoryState::Loading { request } => lines.push(Line::styled(
+            format!("Loading result generation {}…", request.generation),
+            testing_info_style(palette),
+        )),
+        TestResultInventoryState::AvailableEmpty { .. } => {
+            lines.push(Line::from("No structured test results were found."))
+        }
+        TestResultInventoryState::Available { .. } | TestResultInventoryState::Partial { .. } => {
+            for record in app.filtered_test_results() {
+                let selected = app.test_result_selection.as_ref() == Some(&record.identity);
+                let counts = record.counts();
+                lines.push(
+                    Line::from(format!(
+                        "{} {:<12} {:<27} {}/{}/{}/{}/{}  {}",
+                        if selected { "▶" } else { " " },
+                        record.family.map_or("unknown", |family| family.label()),
+                        format!(
+                            "{} / {}",
+                            record.machine.as_deref().unwrap_or("—"),
+                            record.image.as_deref().unwrap_or("—")
+                        ),
+                        counts.passed,
+                        counts.failed,
+                        counts.skipped,
+                        counts.errors,
+                        counts.unknown,
+                        record.identity.path.display(),
+                    ))
+                    .style(if selected {
+                        palette.selected()
+                    } else if counts.failed + counts.errors > 0 {
+                        testing_error_style(palette)
+                    } else {
+                        Style::default()
+                    }),
+                );
+            }
+            if app.filtered_test_results().is_empty() {
+                lines.push(Line::from("No results match the active search."));
+            }
+            if let TestResultInventoryState::Partial { limitations, .. } = &app.test_results {
+                lines.push(Line::styled(
+                    format!("Partial: {}", limitations.join(" | ")),
+                    testing_warning_style(palette),
+                ));
+            }
+        }
+        TestResultInventoryState::Failed { message, .. } => lines.push(Line::styled(
+            format!("Result import failed: {message}"),
+            testing_error_style(palette),
+        )),
+        TestResultInventoryState::Cancelled { .. } => lines.push(Line::styled(
+            "Result import cancelled.",
+            testing_warning_style(palette),
+        )),
+        TestResultInventoryState::TimedOut { .. } => lines.push(Line::styled(
+            "Result import timed out.",
+            testing_error_style(palette),
+        )),
+        TestResultInventoryState::Lost { message, .. } => lines.push(Line::styled(
+            format!("Result import worker lost: {message}"),
+            testing_error_style(palette),
+        )),
+    }
+}
+
+fn testing_comparison_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+    match &app.test_comparison {
+        TestComparisonState::NotSelected => lines.push(Line::from(
+            "No comparison selected. Press c to choose exact results.",
+        )),
+        TestComparisonState::Loading { request } => lines.push(Line::styled(
+            format!(
+                "Comparing {} → {}…",
+                request.baseline.path.display(),
+                request.candidate.path.display()
+            ),
+            testing_info_style(palette),
+        )),
+        TestComparisonState::Available { comparison, .. }
+        | TestComparisonState::Partial { comparison, .. } => {
+            let count = |category| {
+                comparison
+                    .transitions
+                    .iter()
+                    .filter(|transition| transition.category == category)
+                    .count()
+            };
+            lines.push(Line::from(format!(
+                "regressions={} | new failures={} | new passes={} | removed={} | other={}",
+                count(TestComparisonCategory::Regression),
+                count(TestComparisonCategory::NewFailure),
+                count(TestComparisonCategory::NewPass),
+                count(TestComparisonCategory::Removed),
+                count(TestComparisonCategory::UnchangedOther),
+            )));
+            lines.push(Line::from(format!(
+                "Baseline: {}",
+                comparison.baseline.path.display()
+            )));
+            lines.push(Line::from(format!(
+                "Candidate: {}",
+                comparison.candidate.path.display()
+            )));
+            lines.push(Line::from(
+                "  Category          Baseline → candidate  Exact case",
+            ));
+            for transition in &comparison.transitions {
+                let selected = app.test_comparison_selection.as_ref() == Some(&transition.identity);
+                lines.push(
+                    Line::from(format!(
+                        "{} {:<17} {:<9} → {:<9} {}/{}",
+                        if selected { "▶" } else { " " },
+                        comparison_category_label(transition.category),
+                        transition.baseline.map_or_else(
+                            || "absent".into(),
+                            |value| { format!("{value:?}").to_ascii_lowercase() }
+                        ),
+                        transition.candidate.map_or_else(
+                            || "absent".into(),
+                            |value| { format!("{value:?}").to_ascii_lowercase() }
+                        ),
+                        transition.identity.suite,
+                        transition.identity.case,
+                    ))
+                    .style(if selected {
+                        palette.selected()
+                    } else {
+                        comparison_category_style(palette, transition.category)
+                    }),
+                );
+            }
+            if let TestComparisonState::Partial { limitations, .. } = &app.test_comparison {
+                lines.push(Line::styled(
+                    format!("Partial: {}", limitations.join(" | ")),
+                    testing_warning_style(palette),
+                ));
+            }
+        }
+        TestComparisonState::Failed { message, .. } => lines.push(Line::styled(
+            format!("Comparison failed: {message}"),
+            testing_error_style(palette),
+        )),
+        TestComparisonState::Cancelled { .. } => lines.push(Line::styled(
+            "Comparison cancelled.",
+            testing_warning_style(palette),
+        )),
+        TestComparisonState::TimedOut { .. } => lines.push(Line::styled(
+            "Comparison timed out.",
+            testing_error_style(palette),
+        )),
+        TestComparisonState::Lost { message, .. } => lines.push(Line::styled(
+            format!("Comparison worker lost: {message}"),
+            testing_error_style(palette),
+        )),
+    }
+}
+
+fn testing_info_style(palette: &ThemePalette) -> Style {
+    palette.role(palette.info, Modifier::ITALIC)
+}
+
+fn testing_warning_style(palette: &ThemePalette) -> Style {
+    palette.role(palette.warning, Modifier::BOLD)
+}
+
+fn testing_error_style(palette: &ThemePalette) -> Style {
+    palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED)
+}
+
+fn test_outcome_style(palette: &ThemePalette, outcome: yoctui_model::TestCaseOutcome) -> Style {
+    match outcome {
+        yoctui_model::TestCaseOutcome::Passed => palette.role(palette.success, Modifier::BOLD),
+        yoctui_model::TestCaseOutcome::Skipped | yoctui_model::TestCaseOutcome::Unknown => {
+            palette.role(palette.warning, Modifier::ITALIC)
+        }
+        yoctui_model::TestCaseOutcome::Failed | yoctui_model::TestCaseOutcome::Error => {
+            testing_error_style(palette)
+        }
+    }
+}
+
+fn comparison_category_label(category: TestComparisonCategory) -> &'static str {
+    match category {
+        TestComparisonCategory::Regression => "regression",
+        TestComparisonCategory::NewFailure => "new failure",
+        TestComparisonCategory::NewPass => "new pass",
+        TestComparisonCategory::Removed => "removed",
+        TestComparisonCategory::UnchangedOther => "unchanged/other",
+    }
+}
+
+fn comparison_category_style(palette: &ThemePalette, category: TestComparisonCategory) -> Style {
+    match category {
+        TestComparisonCategory::Regression | TestComparisonCategory::NewFailure => {
+            testing_error_style(palette)
+        }
+        TestComparisonCategory::NewPass => palette.role(palette.success, Modifier::BOLD),
+        TestComparisonCategory::Removed => testing_warning_style(palette),
+        TestComparisonCategory::UnchangedOther => Style::default(),
+    }
+}
+
+fn resulttool_capability_label(capability: &yoctui_model::ResultToolCapability) -> String {
+    match capability {
+        yoctui_model::ResultToolCapability::NotInspected => "pending".into(),
+        yoctui_model::ResultToolCapability::Missing => "missing".into(),
+        yoctui_model::ResultToolCapability::Available(path) => path.display().to_string(),
+        yoctui_model::ResultToolCapability::Failed(message) => format!("failed: {message}"),
+    }
+}
+
+fn test_family_capability(app: &App, family: yoctui_model::TestFamily) -> String {
+    let executable = |capability: &TestExecutableCapability| match capability {
+        TestExecutableCapability::NotInspected => "capability pending".into(),
+        TestExecutableCapability::Missing => "executable missing".into(),
+        TestExecutableCapability::Available(path) => path.display().to_string(),
+        TestExecutableCapability::Failed(message) => format!("inspection failed: {message}"),
     };
+    match family {
+        yoctui_model::TestFamily::OeSelftest => executable(&app.test_capability.oe_selftest),
+        yoctui_model::TestFamily::BitbakeSelftest => {
+            executable(&app.test_capability.bitbake_selftest)
+        }
+        yoctui_model::TestFamily::Ptest => match &app.test_capability.ptest {
+            yoctui_model::PtestCapability::NotInspected => "prerequisites pending".into(),
+            yoctui_model::PtestCapability::Configured => {
+                "Configured do_testimage (ptest suite)".into()
+            }
+            yoctui_model::PtestCapability::Unavailable(reason) => {
+                format!("unavailable: {reason}")
+            }
+            yoctui_model::PtestCapability::Failed(message) => {
+                format!("inspection failed: {message}")
+            }
+        },
+        family => format!(
+            "managed BitBake do_{}",
+            family.task().unwrap_or("unavailable")
+        ),
+    }
+}
+
+fn testing_launch_inspector(app: &App) -> String {
+    let family = app.test_family_selection;
     let latest = app.latest_test_session().map_or_else(
         || "No Testing session has run.".into(),
         |session| {
@@ -2361,20 +2735,445 @@ fn testing_inspector_text(app: &App) -> String {
                 .background_job_id
                 .and_then(|id| app.background_jobs.get(id))
                 .map_or_else(
-                    || "awaiting build attachment".into(),
+                    || {
+                        session.outcome.map_or_else(
+                            || "awaiting runner attachment".into(),
+                            |outcome| format!("{outcome:?}"),
+                        )
+                    },
                     |job| format!("{:?}", job.status),
                 );
             format!(
-                "Latest session: {}\nStatus: {status}\nResults: {}",
+                "Latest session: {}\nStatus: {status}\nExit: {}\nStructured results: {}\n{}",
                 session.id.0,
-                session.result_paths.len()
+                session
+                    .exit_code
+                    .map_or_else(|| "unavailable".into(), |code| code.to_string()),
+                session.result_paths.len(),
+                session
+                    .error_detail
+                    .as_deref()
+                    .unwrap_or("No error detail.")
             )
         },
     );
     format!(
-        "Family: {}\nCapability: {capability}\n\n{latest}",
-        family.label()
+        "Family: {}\nAuthority: {}\nMACHINE: {}\nDISTRO: {}\nImage: {}\nTask: {}\n\n{}",
+        family.label(),
+        test_family_capability(app, family),
+        app.workspace
+            .variables
+            .get("MACHINE")
+            .map_or("unavailable", String::as_str),
+        app.workspace
+            .variables
+            .get("DISTRO")
+            .map_or("unavailable", String::as_str),
+        app.build.target.as_deref().unwrap_or("unavailable"),
+        family.task().map_or("selftest executable", |task| task),
+        latest,
     )
+}
+
+fn testing_result_inspector(app: &App) -> String {
+    let Some(record) = app.selected_test_result() else {
+        return format!(
+            "Resulttool: {}\n\nSelect an exact structured result.",
+            resulttool_capability_label(&app.result_tool_capability)
+        );
+    };
+    let counts = record.counts();
+    let metadata = record
+        .metadata
+        .iter()
+        .map(|entry| format!("{}={}", entry.key, entry.value))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let limitations = if record.limitations.is_empty() {
+        "none".into()
+    } else {
+        record.limitations.join("\n")
+    };
+    let case = app.selected_test_case().map_or_else(String::new, |case| {
+        let metadata = case
+            .metadata
+            .iter()
+            .map(|entry| format!("{}={}", entry.key, entry.value))
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!(
+            "\n\nCase: {}/{}\nStatus: {:?}\nDuration: {}\nRelated log: {}\n{}",
+            case.identity.suite,
+            case.identity.case,
+            case.outcome,
+            case.duration
+                .map(format_duration)
+                .unwrap_or_else(|| "unavailable".into()),
+            case.log_path
+                .as_deref()
+                .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+            metadata,
+        )
+    });
+    format!(
+        "Exact path:\n{}\nFingerprint: {}\nBytes: {}\nModified: {}\nFamily: {}\nMachine: {}\nImage: {}\nRevision: {}\nCounts P/F/S/E/U: {}/{}/{}/{}/{}\nDuration: {}\nOriginating session: {}\n\nMetadata:\n{}\n\nLimitations:\n{}{}",
+        record.identity.path.display(),
+        record.identity.fingerprint,
+        record.identity.byte_size,
+        timestamp_text(record.identity.modified_at),
+        record.family.map_or("unknown", |family| family.label()),
+        record.machine.as_deref().unwrap_or("unavailable"),
+        record.image.as_deref().unwrap_or("unavailable"),
+        record.revision.as_deref().unwrap_or("unavailable"),
+        counts.passed,
+        counts.failed,
+        counts.skipped,
+        counts.errors,
+        counts.unknown,
+        record
+            .duration
+            .map(format_duration)
+            .unwrap_or_else(|| "unavailable".into()),
+        record
+            .originating_session
+            .map_or_else(|| "unavailable".into(), |id| id.0.to_string()),
+        if metadata.is_empty() {
+            "unavailable"
+        } else {
+            &metadata
+        },
+        limitations,
+        case,
+    )
+}
+
+fn testing_comparison_inspector(app: &App) -> String {
+    let export = match &app.test_junit_export {
+        TestJunitExportState::NotStarted => "not started".into(),
+        TestJunitExportState::Inspecting { destination, .. } => {
+            format!("validating {}", destination.display())
+        }
+        TestJunitExportState::Ready(preview) => {
+            format!("ready: {}", preview.request.destination.display())
+        }
+        TestJunitExportState::Running(request) => {
+            format!("running: {}", request.destination.display())
+        }
+        TestJunitExportState::Succeeded(request) => {
+            format!("succeeded: {}", request.destination.display())
+        }
+        TestJunitExportState::Failed { request, message } => {
+            format!("failed {}: {message}", request.destination.display())
+        }
+        TestJunitExportState::Cancelled(request) => {
+            format!("cancelled: {}", request.destination.display())
+        }
+        TestJunitExportState::TimedOut(request) => {
+            format!("timed out: {}", request.destination.display())
+        }
+        TestJunitExportState::Lost { request, message } => {
+            format!("lost {}: {message}", request.destination.display())
+        }
+    };
+    app.selected_test_transition().map_or_else(
+        || format!("Select an exact comparison transition.\n\nJUnit export: {export}"),
+        |transition| {
+            format!(
+                "Case: {}/{}\nCategory: {}\nBaseline: {}\nCandidate: {}\nBaseline log: {}\nCandidate log: {}\n\nJUnit export: {}",
+                transition.identity.suite,
+                transition.identity.case,
+                comparison_category_label(transition.category),
+                transition
+                    .baseline
+                    .map_or_else(|| "absent".into(), |value| format!("{value:?}")),
+                transition
+                    .candidate
+                    .map_or_else(|| "absent".into(), |value| format!("{value:?}")),
+                transition.baseline_log.as_deref().map_or_else(
+                    || "unavailable".into(),
+                    |path| path.display().to_string()
+                ),
+                transition.candidate_log.as_deref().map_or_else(
+                    || "unavailable".into(),
+                    |path| path.display().to_string()
+                ),
+                export,
+            )
+        },
+    )
+}
+
+fn testing_popup(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    title: &str,
+    text: String,
+    preferred_height: u16,
+) {
+    let popup = qemu_popup_rect(area, 92, preferred_height);
+    clear_popup(frame, app, popup);
+    frame.render_widget(
+        Paragraph::new(text)
+            .block(Block::default().title(title).borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
+fn test_launch_dialog(frame: &mut Frame, app: &App, dialog: &TestLaunchDialog, area: Rect) {
+    let marker = |field| {
+        if dialog.selected_field == Some(field) {
+            "▶"
+        } else {
+            " "
+        }
+    };
+    let editing = if dialog.editing { " [editing]" } else { "" };
+    let text = format!(
+        "Family: {}\nMACHINE: {}\nDISTRO: {}\nImage: {}\n\n{} Scope: {:?}\n{} Selector: {}{}\n{} Parallelism: {}{}\n{} Verbose: {}\n{} Skip network: {}\n\n{}\n↑/↓ field | ←/→ or Enter choice | Enter edit | p preview | Esc cancel",
+        dialog.draft.family.label(),
+        dialog.draft.machine,
+        dialog.draft.distro,
+        dialog.draft.image,
+        marker(TestLaunchField::Scope),
+        dialog.draft.scope,
+        marker(TestLaunchField::Selector),
+        if dialog.draft.selector.is_empty() {
+            "(none)"
+        } else {
+            &dialog.draft.selector
+        },
+        if dialog.selected_field == Some(TestLaunchField::Selector) {
+            editing
+        } else {
+            ""
+        },
+        marker(TestLaunchField::Parallelism),
+        dialog.parallelism_input,
+        if dialog.selected_field == Some(TestLaunchField::Parallelism) {
+            editing
+        } else {
+            ""
+        },
+        marker(TestLaunchField::Verbose),
+        dialog.draft.verbose,
+        marker(TestLaunchField::SkipNetwork),
+        dialog.draft.skip_network,
+        dialog
+            .validation_error
+            .as_deref()
+            .unwrap_or("Exact typed choices only."),
+    );
+    testing_popup(frame, app, area, "Testing launch", text, 19);
+}
+
+fn test_launch_confirmation(frame: &mut Frame, app: &App, preview: &TestLaunchPreview, area: Rect) {
+    let text = match preview {
+        TestLaunchPreview::Selftest(request) => format!(
+            "Family: {}\nExact indexed shell-free argv:\n{}\nChild-only environment: {}\n\nEnter starts; Esc cancels.",
+            request.family.label(),
+            request
+                .argv()
+                .iter()
+                .enumerate()
+                .map(|(index, value)| format!("[{index}] {}", value.display()))
+                .collect::<Vec<_>>()
+                .join("\n"),
+            if request.skip_network {
+                "BB_SKIP_NETTESTS=yes"
+            } else {
+                "none"
+            },
+        ),
+        TestLaunchPreview::Build {
+            family,
+            machine,
+            distro,
+            image,
+            request,
+        } => format!(
+            "Family: {}\nMACHINE: {machine}\nDISTRO: {distro}\nImage: {image}\nExact managed BuildRequest:\ntargets={:?}\ntask={}\nforce={}\n\nEnter starts; Esc cancels.",
+            family.label(),
+            request.targets,
+            request.task.as_deref().unwrap_or("none"),
+            request.force,
+        ),
+    };
+    testing_popup(frame, app, area, "Confirm Testing launch", text, 18);
+}
+
+fn test_cancellation_confirmation(
+    frame: &mut Frame,
+    app: &App,
+    id: yoctui_model::TestSessionId,
+    area: Rect,
+) {
+    testing_popup(
+        frame,
+        app,
+        area,
+        "Confirm Testing cancellation",
+        format!(
+            "Cancel Testing session {} only?\n\nEnter requests cancellation; Esc keeps it running.",
+            id.0
+        ),
+        7,
+    );
+}
+
+fn test_result_import_dialog(
+    frame: &mut Frame,
+    app: &App,
+    dialog: &yoctui_model::TestResultImportDialog,
+    area: Rect,
+) {
+    testing_popup(
+        frame,
+        app,
+        area,
+        "Import structured test results",
+        format!(
+            "Normalized absolute testresults.json file or retained directory:\n{}_\n\n{}\nEnter imports; Esc cancels.",
+            dialog.input,
+            dialog
+                .validation_error
+                .as_deref()
+                .unwrap_or("Only the exact selected root is scanned within bounded limits."),
+        ),
+        10,
+    );
+}
+
+fn test_comparison_dialog(
+    frame: &mut Frame,
+    app: &App,
+    picker: &yoctui_model::TestComparisonPicker,
+    area: Rect,
+) {
+    let rows = app
+        .test_results
+        .records()
+        .iter()
+        .map(|record| {
+            format!(
+                "{} {} [{}]",
+                if picker.cursor.as_ref() == Some(&record.identity) {
+                    "▶"
+                } else {
+                    " "
+                },
+                record.identity.path.display(),
+                record.identity.fingerprint,
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    testing_popup(
+        frame,
+        app,
+        area,
+        "Choose exact comparison inputs",
+        format!(
+            "Active field: {:?}\nBaseline: {}\nCandidate: {}\n\n{}\n\n{}\nTab field | ↑/↓ choose | Enter set | p preview | Esc cancel",
+            picker.active_field,
+            picker.baseline.as_ref().map_or_else(
+                || "unavailable".into(),
+                |value| value.path.display().to_string()
+            ),
+            picker.candidate.as_ref().map_or_else(
+                || "unavailable".into(),
+                |value| value.path.display().to_string()
+            ),
+            rows,
+            picker
+                .validation_error
+                .as_deref()
+                .unwrap_or("Baseline and candidate must be distinct."),
+        ),
+        20,
+    );
+}
+
+fn test_comparison_confirmation(
+    frame: &mut Frame,
+    app: &App,
+    preview: &yoctui_model::TestComparisonPreview,
+    area: Rect,
+) {
+    testing_popup(
+        frame,
+        app,
+        area,
+        "Confirm result comparison",
+        format!(
+            "Baseline:\n{}\nfingerprint: {}\n\nCandidate:\n{}\nfingerprint: {}\n\nExact indexed shell-free argv:\n{}\n\nEnter compares; Esc cancels.",
+            preview.request.baseline.path.display(),
+            preview.request.baseline.fingerprint,
+            preview.request.candidate.path.display(),
+            preview.request.candidate.fingerprint,
+            preview
+                .argv
+                .iter()
+                .enumerate()
+                .map(|(index, value)| format!("[{index}] {}", value.display()))
+                .collect::<Vec<_>>()
+                .join("\n"),
+        ),
+        22,
+    );
+}
+
+fn test_junit_dialog(
+    frame: &mut Frame,
+    app: &App,
+    dialog: &yoctui_model::TestJunitExportDialog,
+    area: Rect,
+) {
+    testing_popup(
+        frame,
+        app,
+        area,
+        "JUnit export destination",
+        format!(
+            "Result:\n{}\nfingerprint: {}\n\nNew absolute .xml destination:\n{}_\n\n{}\nEnter validates; Esc cancels.",
+            dialog.result.path.display(),
+            dialog.result.fingerprint,
+            dialog.destination_input,
+            dialog.validation_error.as_deref().unwrap_or(
+                "The destination must not exist and its canonical parent must remain unchanged."
+            ),
+        ),
+        14,
+    );
+}
+
+fn test_junit_confirmation(
+    frame: &mut Frame,
+    app: &App,
+    preview: &yoctui_model::TestJunitExportPreview,
+    area: Rect,
+) {
+    testing_popup(
+        frame,
+        app,
+        area,
+        "Confirm JUnit export",
+        format!(
+            "Result:\n{}\nfingerprint: {}\nDestination:\n{}\n\nExact indexed shell-free argv:\n{}\n\nThis never overwrites. Enter exports; Esc cancels.",
+            preview.request.result.path.display(),
+            preview.request.result.fingerprint,
+            preview.request.destination.display(),
+            preview
+                .argv
+                .iter()
+                .enumerate()
+                .map(|(index, value)| format!("[{index}] {}", value.display()))
+                .collect::<Vec<_>>()
+                .join("\n"),
+        ),
+        19,
+    );
 }
 
 fn sdk_workspace(frame: &mut Frame, app: &App, area: Rect) {
@@ -6309,6 +7108,7 @@ fn help(frame: &mut Frame, area: Rect) {
 mod tests {
     use super::*;
     use ratatui::{Terminal, backend::TestBackend};
+    use std::path::PathBuf;
     use yoctui_model::{Action, BuildRequest, update};
 
     fn rendered_text(app: &App, width: u16, height: u16) -> String {
@@ -6967,6 +7767,398 @@ mod tests {
         let output = rendered_text(&app, 160, 40);
         assert!(output.contains("Package tests"), "{output}");
         assert!(output.contains("Configured"), "{output}");
+    }
+
+    fn test_workflow_result(
+        suffix: &str,
+        outcome: yoctui_model::TestCaseOutcome,
+    ) -> yoctui_model::TestResultRecord {
+        let path = PathBuf::from(format!("/results/{suffix}/testresults.json"));
+        let identity = yoctui_model::TestResultIdentity::new(
+            path,
+            128,
+            SystemTime::UNIX_EPOCH,
+            format!("{suffix}fingerprint"),
+        )
+        .unwrap();
+        let case_identity =
+            yoctui_model::TestCaseIdentity::new("runtime".into(), "Case.test_one".into()).unwrap();
+        let (case, _) = yoctui_model::TestCaseRecord::new(
+            case_identity,
+            outcome,
+            Some(std::time::Duration::from_millis(1250)),
+            vec![yoctui_model::TestMetadata::new("result".into(), suffix.into()).unwrap()],
+            Some(PathBuf::from(format!("/logs/{suffix}.log"))),
+        )
+        .unwrap();
+        let (suite, _) =
+            yoctui_model::TestSuiteRecord::new("runtime".into(), None, Vec::new(), vec![case])
+                .unwrap();
+        yoctui_model::TestResultRecord::new(
+            identity,
+            Some(yoctui_model::TestFamily::TestImage),
+            Some("qemux86-64".into()),
+            Some("core-image-minimal".into()),
+            Some("revision-1".into()),
+            Some(std::time::Duration::from_secs(2)),
+            vec![yoctui_model::TestMetadata::new("DISTRO".into(), "poky".into()).unwrap()],
+            vec![suite],
+            Some(yoctui_model::TestSessionId(3)),
+            vec!["fixture limitation".into()],
+        )
+        .0
+    }
+
+    fn test_workflow_results_app() -> (
+        App,
+        yoctui_model::TestResultRecord,
+        yoctui_model::TestResultRecord,
+    ) {
+        let baseline = test_workflow_result("baseline", yoctui_model::TestCaseOutcome::Passed);
+        let candidate = test_workflow_result("candidate", yoctui_model::TestCaseOutcome::Failed);
+        let request = yoctui_model::TestResultImportRequest::new(
+            1,
+            vec![
+                baseline.identity.path.clone(),
+                candidate.identity.path.clone(),
+            ],
+        )
+        .unwrap();
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Testing;
+        app.focus = FocusTarget::Workspace;
+        app.test_view = TestWorkspaceView::Results;
+        app.result_tool_capability =
+            yoctui_model::ResultToolCapability::Available("/workspace/resulttool".into());
+        app.test_result_selection = Some(candidate.identity.clone());
+        app.test_results = TestResultInventoryState::Partial {
+            request,
+            records: vec![baseline.clone(), candidate.clone()],
+            limitations: vec!["one malformed result was skipped".into()],
+        };
+        (app, baseline, candidate)
+    }
+
+    #[test]
+    fn test_workflow_results_render_inventory_drill_partial_and_terminal_states() {
+        let (mut app, _baseline, candidate) = test_workflow_results_app();
+        for (width, height, theme, color) in [
+            (80, 24, Theme::Monochrome, false),
+            (100, 30, Theme::Light, true),
+            (160, 40, Theme::HighContrast, true),
+        ] {
+            app.theme = theme;
+            app.color_enabled = color;
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Results"), "{output}");
+            assert!(output.contains("candidate"), "{output}");
+            assert!(output.contains("Partial"), "{output}");
+        }
+
+        app.test_result_drilled = true;
+        app.test_case_selection = Some(candidate.suites[0].cases[0].identity.clone());
+        app.focus = FocusTarget::Inspector;
+        let output = rendered_text(&app, 160, 40);
+        assert!(output.contains("Case.test_one"), "{output}");
+        assert!(output.contains("Failed"), "{output}");
+        assert!(output.contains("/logs/candidate.log"), "{output}");
+        assert!(output.contains("fixture limitation"), "{output}");
+
+        let request = app.test_results.request().unwrap().clone();
+        for (state, expected) in [
+            (
+                TestResultInventoryState::AvailableEmpty {
+                    request: request.clone(),
+                },
+                "No structured test results",
+            ),
+            (
+                TestResultInventoryState::Failed {
+                    request: request.clone(),
+                    message: "invalid JSON".into(),
+                },
+                "Result import failed",
+            ),
+            (
+                TestResultInventoryState::Cancelled {
+                    request: request.clone(),
+                },
+                "Result import cancelled",
+            ),
+            (
+                TestResultInventoryState::TimedOut {
+                    request: request.clone(),
+                },
+                "Result import timed out",
+            ),
+            (
+                TestResultInventoryState::Lost {
+                    request,
+                    message: "worker closed".into(),
+                },
+                "worker lost",
+            ),
+        ] {
+            app.test_result_drilled = false;
+            app.focus = FocusTarget::Workspace;
+            app.test_results = state;
+            let output = rendered_text(&app, 80, 24);
+            assert!(output.contains(expected), "{expected}: {output}");
+        }
+    }
+
+    #[test]
+    fn test_workflow_comparison_renders_categories_limitations_and_outcomes() {
+        let (mut app, baseline, candidate) = test_workflow_results_app();
+        let request = yoctui_model::TestComparisonRequest::new(
+            2,
+            baseline.identity.clone(),
+            candidate.identity.clone(),
+        )
+        .unwrap();
+        let comparison = yoctui_model::TestComparison::between(&baseline, &candidate).unwrap();
+        app.test_view = TestWorkspaceView::Comparison;
+        app.test_comparison_selection = Some(comparison.transitions[0].identity.clone());
+        app.test_comparison = TestComparisonState::Partial {
+            request: request.clone(),
+            comparison,
+            limitations: vec!["resulttool detail unavailable".into()],
+        };
+        for (width, height) in [(80, 24), (100, 30), (160, 40)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("regression"), "{output}");
+            assert!(output.contains("resulttool detail unavailable"), "{output}");
+        }
+        app.focus = FocusTarget::Inspector;
+        let output = rendered_text(&app, 160, 40);
+        assert!(output.contains("Baseline log"), "{output}");
+        assert!(output.contains("JUnit export"), "{output}");
+
+        for (state, expected) in [
+            (
+                TestComparisonState::Failed {
+                    request: request.clone(),
+                    message: "nonzero".into(),
+                },
+                "Comparison failed",
+            ),
+            (
+                TestComparisonState::Cancelled {
+                    request: request.clone(),
+                },
+                "Comparison cancelled",
+            ),
+            (
+                TestComparisonState::TimedOut {
+                    request: request.clone(),
+                },
+                "Comparison timed out",
+            ),
+            (
+                TestComparisonState::Lost {
+                    request,
+                    message: "worker closed".into(),
+                },
+                "worker lost",
+            ),
+        ] {
+            app.focus = FocusTarget::Workspace;
+            app.test_comparison = state;
+            let output = rendered_text(&app, 80, 24);
+            assert!(output.contains(expected), "{expected}: {output}");
+        }
+    }
+
+    #[test]
+    fn test_workflow_lifecycle_and_junit_outcomes_remain_visibly_distinct() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Testing;
+        app.focus = FocusTarget::Workspace;
+        for (index, outcome) in [
+            yoctui_model::TestSessionOutcome::Succeeded,
+            yoctui_model::TestSessionOutcome::Failed,
+            yoctui_model::TestSessionOutcome::Cancelled,
+            yoctui_model::TestSessionOutcome::TimedOut,
+            yoctui_model::TestSessionOutcome::Lost,
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            app.test_sessions.clear();
+            app.test_sessions.push_back(yoctui_model::TestSession {
+                id: yoctui_model::TestSessionId(index as u64 + 1),
+                background_job_id: None,
+                operation: yoctui_model::TestOperation::Build {
+                    family: yoctui_model::TestFamily::TestImage,
+                    request: BuildRequest {
+                        targets: vec!["core-image-minimal".into()],
+                        task: Some("testimage".into()),
+                        force: false,
+                    },
+                },
+                exit_code: (outcome == yoctui_model::TestSessionOutcome::Failed).then_some(3),
+                result_paths: if outcome == yoctui_model::TestSessionOutcome::Succeeded {
+                    vec!["/results/testresults.json".into()]
+                } else {
+                    Vec::new()
+                },
+                error_detail: (outcome != yoctui_model::TestSessionOutcome::Succeeded)
+                    .then(|| format!("{outcome:?} detail")),
+                outcome: Some(outcome),
+            });
+            let output = rendered_text(&app, 100, 30);
+            assert!(output.contains(&format!("{outcome:?}")), "{output}");
+        }
+
+        let (mut app, _baseline, candidate) = test_workflow_results_app();
+        app.test_view = TestWorkspaceView::Comparison;
+        app.focus = FocusTarget::Inspector;
+        let request = yoctui_model::TestJunitExportRequest {
+            generation: 7,
+            result: candidate.identity.clone(),
+            destination: "/exports/results.xml".into(),
+        };
+        let preview = yoctui_model::TestJunitExportPreview::new(
+            "/workspace/resulttool".into(),
+            request.clone(),
+        )
+        .unwrap();
+        let states = [
+            (
+                TestJunitExportState::Inspecting {
+                    result: candidate.identity,
+                    destination: request.destination.clone(),
+                },
+                "validating",
+            ),
+            (TestJunitExportState::Ready(preview), "ready"),
+            (TestJunitExportState::Running(request.clone()), "running"),
+            (
+                TestJunitExportState::Succeeded(request.clone()),
+                "succeeded",
+            ),
+            (
+                TestJunitExportState::Failed {
+                    request: request.clone(),
+                    message: "nonzero".into(),
+                },
+                "failed",
+            ),
+            (
+                TestJunitExportState::Cancelled(request.clone()),
+                "cancelled",
+            ),
+            (TestJunitExportState::TimedOut(request.clone()), "timed out"),
+            (
+                TestJunitExportState::Lost {
+                    request,
+                    message: "worker closed".into(),
+                },
+                "lost",
+            ),
+        ];
+        for (state, expected) in states {
+            app.test_junit_export = state;
+            let output = rendered_text(&app, 160, 40);
+            assert!(output.contains(expected), "{expected}: {output}");
+        }
+    }
+
+    #[test]
+    fn test_workflow_dialogs_render_exact_previews_at_responsive_boundaries() {
+        let (mut app, baseline, candidate) = test_workflow_results_app();
+        app.focus = FocusTarget::Dialog;
+        let draft = yoctui_model::TestLaunchDraft::new(
+            yoctui_model::TestFamily::OeSelftest,
+            "qemux86-64".into(),
+            "poky".into(),
+            "core-image-minimal".into(),
+        );
+        let launch = yoctui_model::TestLaunchDialog::new(draft);
+        app.dialogs.push_front(Dialog::TestLaunch(launch));
+        assert!(
+            rendered_text(&app, 80, 24).contains("Testing launch"),
+            "{}",
+            rendered_text(&app, 80, 24)
+        );
+
+        app.dialogs.clear();
+        let request = yoctui_model::TestSelftestRequest::new(
+            "/workspace/oe-selftest".into(),
+            yoctui_model::TestFamily::OeSelftest,
+            Some("tinfoil.Case.test_one".into()),
+            4,
+            false,
+            false,
+        )
+        .unwrap();
+        app.dialogs.push_front(Dialog::TestLaunchConfirmation(
+            yoctui_model::TestLaunchPreview::Selftest(request),
+        ));
+        let output = rendered_text(&app, 100, 30);
+        assert!(output.contains("Confirm Testing launch"), "{output}");
+        assert!(output.contains("[0] /workspace/oe-selftest"), "{output}");
+
+        app.dialogs.clear();
+        app.dialogs.push_front(Dialog::TestCancellationConfirmation(
+            yoctui_model::TestSessionId(9),
+        ));
+        assert!(rendered_text(&app, 80, 24).contains("Confirm Testing cancellation"));
+
+        app.dialogs.clear();
+        let import = yoctui_model::TestResultImportDialog {
+            input: "/results/testresults.json".into(),
+            ..Default::default()
+        };
+        app.dialogs.push_front(Dialog::TestResultImport(import));
+        assert!(rendered_text(&app, 80, 24).contains("Import structured test results"));
+
+        app.dialogs.clear();
+        let records = app.test_results.records().to_vec();
+        app.dialogs.push_front(Dialog::TestComparison(
+            yoctui_model::TestComparisonPicker::new(Some(baseline.identity.clone()), &records),
+        ));
+        assert!(rendered_text(&app, 100, 30).contains("Choose exact comparison inputs"));
+
+        app.dialogs.clear();
+        let comparison_request = yoctui_model::TestComparisonRequest::new(
+            2,
+            baseline.identity.clone(),
+            candidate.identity.clone(),
+        )
+        .unwrap();
+        app.dialogs.push_front(Dialog::TestComparisonConfirmation(
+            yoctui_model::TestComparisonPreview::new(
+                "/workspace/resulttool".into(),
+                comparison_request,
+            )
+            .unwrap(),
+        ));
+        let output = rendered_text(&app, 160, 40);
+        assert!(output.contains("Confirm result comparison"), "{output}");
+        assert!(output.contains("[1] regression-file"), "{output}");
+
+        app.dialogs.clear();
+        let mut junit = yoctui_model::TestJunitExportDialog::new(candidate.identity.clone());
+        junit.destination_input = "/exports/results.xml".into();
+        app.dialogs.push_front(Dialog::TestJunitExport(junit));
+        assert!(rendered_text(&app, 80, 24).contains("JUnit export destination"));
+
+        app.dialogs.clear();
+        let export = yoctui_model::TestJunitExportRequest {
+            generation: 3,
+            result: candidate.identity,
+            destination: "/exports/results.xml".into(),
+        };
+        app.dialogs.push_front(Dialog::TestJunitExportConfirmation(
+            yoctui_model::TestJunitExportPreview::new("/workspace/resulttool".into(), export)
+                .unwrap(),
+        ));
+        for (width, height) in [(80, 24), (100, 30), (160, 40)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Confirm JUnit export"), "{output}");
+            assert!(output.contains("never overwrites"), "{output}");
+        }
     }
 
     fn qemu_workspace_app() -> App {
