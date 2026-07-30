@@ -18,12 +18,14 @@ use yoctui_model::{
     QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor,
     RecipeIdentity, Screen, SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind,
     SdkNativeDialog, SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation,
-    SdkPublishDraft, SdkPublishPreview, SdkSessionId, SdkToolCapability, Severity,
-    SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, TaskFilterField,
-    TaskRow, TaskState, TestComparisonCategory, TestComparisonState, TestExecutableCapability,
-    TestJunitExportState, TestLaunchDialog, TestLaunchField, TestLaunchPreview,
-    TestResultInventoryState, TestWorkspaceView, Theme, VariableIdentity, WicCapability,
-    WicCompression, WicCreateDialog, WicCreateField, WicCreatePreview, WicDevice,
+    SdkPublishDraft, SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability,
+    SecurityDialog, SecurityInventoryState, SecurityOperation, SecurityOutputStream,
+    SecurityReport, SecurityScope, SecuritySessionStatus, SecurityView, Severity,
+    SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind,
+    TaskFilterField, TaskRow, TaskState, TestComparisonCategory, TestComparisonState,
+    TestExecutableCapability, TestJunitExportState, TestLaunchDialog, TestLaunchField,
+    TestLaunchPreview, TestResultInventoryState, TestWorkspaceView, Theme, VariableIdentity,
+    WicCapability, WicCompression, WicCreateDialog, WicCreateField, WicCreatePreview, WicDevice,
     WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart, WicOperation,
     WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
     config_comparison, config_edit_disabled_reason, config_source_disabled_reason, format_duration,
@@ -631,6 +633,8 @@ pub fn render(frame: &mut Frame, app: &App) {
         test_junit_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::TestJunitExportConfirmation(preview)) = app.active_dialog() {
         test_junit_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::Security(dialog)) = app.active_dialog() {
+        security_dialog(frame, app, dialog, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);
     } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
@@ -1670,18 +1674,7 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Images => images_workspace(frame, app, area),
         Screen::Sdk => sdk_workspace(frame, app, area),
         Screen::Testing => testing_workspace(frame, app, area),
-        Screen::Security => frame.render_widget(
-            Paragraph::new(
-                "Security capability and report acquisition are pending.\n\nTyped CVE and SPDX data will appear here.",
-            )
-            .block(pane_block(
-                app,
-                "Security",
-                app.focus == FocusTarget::Workspace,
-            ))
-            .wrap(Wrap { trim: false }),
-            area,
-        ),
+        Screen::Security => security_workspace(frame, app, area),
         Screen::Layers => {
             if let Some(browser) = app.layer_browser.as_ref() {
                 layer_browser(frame, app, browser, area)
@@ -1823,6 +1816,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Images => image_artifact_inspector_text(app),
         Screen::Sdk => sdk_inspector_text(app),
         Screen::Testing => testing_inspector_text(app),
+        Screen::Security => security_inspector_text(app),
         _ => format!(
             "Target: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
             app.build.target.as_deref().unwrap_or("not selected"),
@@ -2332,6 +2326,688 @@ fn sdk_inventory_root(app: &App) -> String {
         .map(|path| path.display().to_string())
         .or_else(|| app.workspace.variables.get("SDK_DEPLOY").cloned())
         .unwrap_or_else(|| "unavailable".into())
+}
+
+fn security_scope_text(scope: Option<&SecurityScope>) -> String {
+    match scope {
+        Some(SecurityScope::Recipe(identity)) => {
+            format!("recipe {} ({})", identity.name, identity.file.display())
+        }
+        Some(SecurityScope::Image {
+            target,
+            machine,
+            distro,
+        }) => format!("image {target} | MACHINE={machine} | DISTRO={distro}"),
+        None => "unavailable".into(),
+    }
+}
+
+fn security_capability_summary(capability: &SecurityCapability) -> String {
+    match capability {
+        SecurityCapability::NotInspected => {
+            "not inspected; entering Security requests inspection".into()
+        }
+        SecurityCapability::Inspecting => "inspection in progress".into(),
+        SecurityCapability::Failed(message) => format!("inspection failed: {message}"),
+        SecurityCapability::Available(capability) => format!(
+            "{} | build={} | CVE={} | recipe SBOM={} | image SBOM={} | mapper={}",
+            capability
+                .release
+                .as_deref()
+                .unwrap_or("release unavailable"),
+            capability.build_directory.display(),
+            capability.cve_task.as_deref().unwrap_or("unavailable"),
+            capability
+                .recipe_sbom_task
+                .as_deref()
+                .unwrap_or("unavailable"),
+            capability
+                .image_sbom_task
+                .as_deref()
+                .unwrap_or(if capability.image_build_emits_sbom {
+                    "ordinary image build"
+                } else {
+                    "unavailable"
+                }),
+            capability.mapper.as_ref().map_or_else(
+                || "unavailable".into(),
+                |mapper| mapper.executable.display().to_string()
+            ),
+        ),
+    }
+}
+
+fn security_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let active = |view| {
+        if app.security.view == view {
+            palette.focus()
+        } else {
+            Style::default()
+        }
+    };
+    let mut lines = vec![
+        Line::from(vec![
+            Span::styled(" CVEs ", active(SecurityView::Cves)),
+            Span::raw(" | "),
+            Span::styled(" SBOM ", active(SecurityView::Sbom)),
+        ]),
+        Line::from(format!(
+            "Scope: {}",
+            security_scope_text(app.security.scope.as_ref())
+        )),
+        Line::from(format!(
+            "Capability: {}",
+            security_capability_summary(&app.security.capability)
+        )),
+    ];
+    if app.security.searching {
+        lines.push(Line::from(format!("Search: {}_", app.security.query)));
+    } else if !app.security.query.is_empty() {
+        lines.push(Line::from(format!("Search: {}", app.security.query)));
+    }
+    lines.push(Line::from(""));
+    security_inventory_lines(app, &palette, &mut lines);
+    security_session_lines(app, &palette, &mut lines);
+    frame.render_widget(
+        Paragraph::new(lines)
+            .block(pane_block(
+                app,
+                "Security",
+                app.focus == FocusTarget::Workspace,
+            ))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn security_inventory_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+    match &app.security.inventory {
+        SecurityInventoryState::NotLoaded => lines.push(Line::from(
+            "Reports are not loaded. Press I to import or R after capability discovery.",
+        )),
+        SecurityInventoryState::Loading { request } => lines.push(Line::styled(
+            format!(
+                "Loading report generation {} from {} exact path(s)…",
+                request.generation,
+                request.paths.len()
+            ),
+            security_info_style(palette),
+        )),
+        SecurityInventoryState::AvailableEmpty { request } => lines.push(Line::from(format!(
+            "Report generation {} is available-empty: no reports or findings.",
+            request.generation
+        ))),
+        SecurityInventoryState::Available { .. } | SecurityInventoryState::Partial { .. } => {
+            match app.security.view {
+                SecurityView::Cves => security_cve_lines(app, palette, lines),
+                SecurityView::Sbom => security_sbom_lines(app, palette, lines),
+            }
+            if let SecurityInventoryState::Partial { limitations, .. } = &app.security.inventory {
+                lines.push(Line::styled(
+                    format!("Partial: {}", limitations.join(" | ")),
+                    security_warning_style(palette),
+                ));
+            }
+        }
+        SecurityInventoryState::Failed { message, .. } => lines.push(Line::styled(
+            format!("Security report acquisition failed: {message}"),
+            security_error_style(palette),
+        )),
+        SecurityInventoryState::Cancelled { .. } => lines.push(Line::styled(
+            "Security report acquisition cancelled.",
+            security_warning_style(palette),
+        )),
+        SecurityInventoryState::TimedOut { .. } => lines.push(Line::styled(
+            "Security report acquisition timed out.",
+            security_error_style(palette),
+        )),
+        SecurityInventoryState::Lost { message, .. } => lines.push(Line::styled(
+            format!("Security report worker lost: {message}"),
+            security_error_style(palette),
+        )),
+    }
+}
+
+fn security_cve_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+    lines.push(Line::from(format!(
+        "Filter: {} | {} visible finding(s)",
+        security_filter_label(app.security.cve_filter),
+        app.security.visible_findings().len()
+    )));
+    lines.push(Line::from(
+        "  CVE             Status        Recipe / package          Severity/score  Exact source",
+    ));
+    let findings = app.security.visible_findings();
+    for finding in &findings {
+        let selected = app.security.finding_selection.as_ref() == Some(&finding.identity);
+        let source = cve_source_for_finding(app, &finding.identity).map_or_else(
+            || "unavailable".into(),
+            |report| report.identity.path.display().to_string(),
+        );
+        lines.push(
+            Line::from(format!(
+                "{} {:<15} {:<13} {:<25} {:<15} {}",
+                if selected { "▶" } else { " " },
+                finding.identity.cve,
+                security_cve_status_label(finding.status),
+                format!(
+                    "{} / {}",
+                    finding.identity.recipe,
+                    finding.identity.package.as_deref().unwrap_or("—")
+                ),
+                format!(
+                    "{}/{}",
+                    finding.severity.as_deref().unwrap_or("—"),
+                    finding.score.as_deref().unwrap_or("—")
+                ),
+                source,
+            ))
+            .style(if selected {
+                palette.selected()
+            } else {
+                security_cve_status_style(palette, finding.status)
+            }),
+        );
+    }
+    if findings.is_empty() {
+        lines.push(Line::from(
+            "No findings match the active view, status filter, and search.",
+        ));
+    }
+}
+
+fn security_sbom_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+    if app.security.drilled {
+        let Some(SecurityReport::Spdx(document)) = app.security.selected_report() else {
+            lines.push(Line::styled(
+                "The selected SPDX document is no longer available.",
+                security_warning_style(palette),
+            ));
+            return;
+        };
+        lines.push(Line::from(format!(
+            "Document: {} | fingerprint {}",
+            document.identity.path.display(),
+            document.identity.fingerprint
+        )));
+        lines.push(Line::from(
+            "  Component identity        Name                    Version       Supplier / license",
+        ));
+        let components = app.security.visible_components();
+        for component in &components {
+            let selected =
+                app.security.component_selection.as_deref() == Some(component.identity.as_str());
+            lines.push(
+                Line::from(format!(
+                    "{} {:<25} {:<23} {:<13} {} / {}",
+                    if selected { "▶" } else { " " },
+                    component.identity,
+                    component.name,
+                    component.version.as_deref().unwrap_or("—"),
+                    component.supplier.as_deref().unwrap_or("—"),
+                    component.license.as_deref().unwrap_or("—"),
+                ))
+                .style(if selected {
+                    palette.selected()
+                } else {
+                    Style::default()
+                }),
+            );
+        }
+        if components.is_empty() {
+            lines.push(Line::from(
+                "No components match the active document and search.",
+            ));
+        }
+        return;
+    }
+    lines.push(Line::from(
+        "  Kind     SPDX version   Document                 Components  Exact artifact",
+    ));
+    let reports = app.security.visible_reports();
+    for report in &reports {
+        let SecurityReport::Spdx(document) = report else {
+            continue;
+        };
+        let selected = app.security.report_selection.as_ref() == Some(&document.identity);
+        lines.push(
+            Line::from(format!(
+                "{} {:<8} {:<14} {:<24} {:<11} {}",
+                if selected { "▶" } else { " " },
+                security_spdx_kind_label(document.kind),
+                document.spdx_version.as_deref().unwrap_or("unavailable"),
+                document.name.as_deref().unwrap_or("unavailable"),
+                document.components.len(),
+                document.identity.path.display(),
+            ))
+            .style(if selected {
+                palette.selected()
+            } else if document.limitations.is_empty() {
+                Style::default()
+            } else {
+                security_warning_style(palette)
+            }),
+        );
+    }
+    if reports.is_empty() {
+        lines.push(Line::from(
+            "No SPDX documents match the active view and search.",
+        ));
+    }
+}
+
+fn security_session_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+    let Some(session) = app.security.sessions.last() else {
+        return;
+    };
+    let operation = security_operation_label(&session.preview.operation);
+    lines.push(Line::from(""));
+    lines.push(Line::styled(
+        format!(
+            "Latest session {} | {operation} | {} | scope {}",
+            session.preview.id.0,
+            security_session_status_label(session.status),
+            security_scope_text(Some(&session.preview.scope))
+        ),
+        security_session_style(palette, session.status),
+    ));
+    if let Some(background_job_id) = session.background_job_id
+        && let Some(job) = app.background_jobs.get(background_job_id)
+    {
+        lines.push(Line::from(format!(
+            "Managed build {:?} | warnings={} | errors={} | output dropped={}",
+            job.status, job.warnings, job.errors, job.dropped_output_entries
+        )));
+    }
+    if let Some(message) = &session.message {
+        lines.push(Line::styled(
+            format!("Session detail: {message}"),
+            security_warning_style(palette),
+        ));
+    }
+    for output in session.output.iter().rev().take(4).rev() {
+        let stream = match output.stream {
+            SecurityOutputStream::Stdout => "stdout",
+            SecurityOutputStream::Stderr => "stderr",
+        };
+        let style = if output.stream == SecurityOutputStream::Stderr {
+            security_warning_style(palette)
+        } else {
+            Style::default()
+        };
+        lines.push(Line::styled(
+            format!(
+                "[{stream}] {}{}",
+                output.line,
+                if output.truncated { " [truncated]" } else { "" }
+            ),
+            style,
+        ));
+    }
+}
+
+fn security_inspector_text(app: &App) -> String {
+    let capability = security_capability_detail(&app.security.capability);
+    let selected = match app.security.view {
+        SecurityView::Cves => security_cve_inspector(app),
+        SecurityView::Sbom => security_sbom_inspector(app),
+    };
+    let session = app.security.sessions.last().map_or_else(
+        || "No Security operation has run.".into(),
+        |session| {
+            format!(
+                "Session {}: {} ({})\nStarted: {}\nFinished: {}\nResult paths: {}\nRetained mapper output: {}",
+                session.preview.id.0,
+                security_operation_label(&session.preview.operation),
+                security_session_status_label(session.status),
+                timestamp_text(session.started_at),
+                session
+                    .finished_at
+                    .map(timestamp_text)
+                    .unwrap_or_else(|| "not finished".into()),
+                session.result_paths.len(),
+                session.output.len(),
+            )
+        },
+    );
+    format!("{selected}\n\n{capability}\n\n{session}")
+}
+
+fn security_capability_detail(capability: &SecurityCapability) -> String {
+    match capability {
+        SecurityCapability::Available(capability) => {
+            let limitations = if capability.limitations.is_empty() {
+                "none".into()
+            } else {
+                capability.limitations.join("\n")
+            };
+            format!(
+                "Capability: available\nRelease: {}\nBuild: {}\nScope: {}\nCVE task: {}\nRecipe SBOM task: {}\nImage SBOM task: {}\nImage build emits SBOM: {}\nMapper: {}\nCVE roots: {}\nSBOM roots: {}\nLimitations:\n{}",
+                capability.release.as_deref().unwrap_or("unavailable"),
+                capability.build_directory.display(),
+                security_scope_text(Some(&capability.scope)),
+                capability.cve_task.as_deref().unwrap_or("unavailable"),
+                capability
+                    .recipe_sbom_task
+                    .as_deref()
+                    .unwrap_or("unavailable"),
+                capability
+                    .image_sbom_task
+                    .as_deref()
+                    .unwrap_or("unavailable"),
+                capability.image_build_emits_sbom,
+                capability.mapper.as_ref().map_or_else(
+                    || "unavailable".into(),
+                    |mapper| mapper.executable.display().to_string()
+                ),
+                display_security_paths(&capability.cve_roots),
+                display_security_paths(&capability.sbom_roots),
+                limitations,
+            )
+        }
+        _ => format!("Capability: {}", security_capability_summary(capability)),
+    }
+}
+
+fn security_cve_inspector(app: &App) -> String {
+    let Some((report, finding)) = selected_security_finding(app) else {
+        return "Select a typed CVE finding to inspect it.".into();
+    };
+    let mapping = display_security_metadata(&finding.mapping);
+    let metadata = display_security_metadata(&report.metadata);
+    let limitations = if report.limitations.is_empty() {
+        "none".into()
+    } else {
+        report.limitations.join("\n")
+    };
+    format!(
+        "Finding: {}\nStatus: {}\nRecipe: {}\nPackage: {}\nProduct: {}\nVersion: {}\nSeverity: {}\nScore: {}\nVector: {}\nAdvisory: {}\nSummary: {}\n\nExact report: {}\nFingerprint: {}\nBytes: {}\nModified: {}\nReport scope: {}\n\nPackage mapping:\n{}\n\nReport metadata:\n{}\n\nLimitations:\n{}",
+        finding.identity.cve,
+        security_cve_status_label(finding.status),
+        finding.identity.recipe,
+        finding.identity.package.as_deref().unwrap_or("unavailable"),
+        finding.product.as_deref().unwrap_or("unavailable"),
+        finding.version.as_deref().unwrap_or("unavailable"),
+        finding.severity.as_deref().unwrap_or("unavailable"),
+        finding.score.as_deref().unwrap_or("unavailable"),
+        finding.vector.as_deref().unwrap_or("unavailable"),
+        finding.advisory_url.as_deref().unwrap_or("unavailable"),
+        finding.summary.as_deref().unwrap_or("unavailable"),
+        report.identity.path.display(),
+        report.identity.fingerprint,
+        report.identity.byte_size,
+        timestamp_text(report.identity.modified_at),
+        security_scope_text(report.scope.as_ref()),
+        mapping,
+        metadata,
+        limitations,
+    )
+}
+
+fn security_sbom_inspector(app: &App) -> String {
+    let Some(SecurityReport::Spdx(document)) = app.security.selected_report() else {
+        return "Select an exact SPDX document or archive to inspect it.".into();
+    };
+    let creators = if document.creators.is_empty() {
+        "unavailable".into()
+    } else {
+        document.creators.join("\n")
+    };
+    let checksums = display_security_metadata(&document.checksums);
+    let limitations = if document.limitations.is_empty() {
+        "none".into()
+    } else {
+        document.limitations.join("\n")
+    };
+    let component = app
+        .security
+        .visible_components()
+        .into_iter()
+        .find(|component| {
+            app.security.component_selection.as_deref() == Some(component.identity.as_str())
+        })
+        .map_or_else(
+            || "No component selected.".into(),
+            |component| {
+                format!(
+                    "Component: {}\nName: {}\nVersion: {}\nSupplier: {}\nLicense: {}",
+                    component.identity,
+                    component.name,
+                    component.version.as_deref().unwrap_or("unavailable"),
+                    component.supplier.as_deref().unwrap_or("unavailable"),
+                    component.license.as_deref().unwrap_or("unavailable"),
+                )
+            },
+        );
+    format!(
+        "Exact artifact: {}\nFingerprint: {}\nBytes: {}\nModified: {}\nKind: {}\nScope: {}\nSPDX version: {}\nDocument: {}\nNamespace: {}\nData license: {}\nCreators:\n{}\nComponents: {}\nFiles: {}\nRelationships: {}\nChecksums:\n{}\n\n{}\n\nLimitations:\n{}",
+        document.identity.path.display(),
+        document.identity.fingerprint,
+        document.identity.byte_size,
+        timestamp_text(document.identity.modified_at),
+        security_spdx_kind_label(document.kind),
+        security_scope_text(document.scope.as_ref()),
+        document.spdx_version.as_deref().unwrap_or("unavailable"),
+        document.name.as_deref().unwrap_or("unavailable"),
+        document.namespace.as_deref().unwrap_or("unavailable"),
+        document.data_license.as_deref().unwrap_or("unavailable"),
+        creators,
+        document.components.len(),
+        document
+            .file_count
+            .map_or_else(|| "unavailable".into(), |value| value.to_string()),
+        document
+            .relationship_count
+            .map_or_else(|| "unavailable".into(), |value| value.to_string()),
+        checksums,
+        component,
+        limitations,
+    )
+}
+
+fn selected_security_finding(
+    app: &App,
+) -> Option<(&yoctui_model::CveReport, &yoctui_model::CveFinding)> {
+    let identity = app.security.finding_selection.as_ref()?;
+    app.security
+        .inventory
+        .reports()?
+        .iter()
+        .find_map(|report| match report {
+            SecurityReport::Cve(report) => report
+                .findings
+                .iter()
+                .find(|finding| &finding.identity == identity)
+                .map(|finding| (report, finding)),
+            SecurityReport::Spdx(_) => None,
+        })
+}
+
+fn cve_source_for_finding<'a>(
+    app: &'a App,
+    identity: &yoctui_model::CveFindingIdentity,
+) -> Option<&'a yoctui_model::CveReport> {
+    app.security
+        .inventory
+        .reports()?
+        .iter()
+        .find_map(|report| match report {
+            SecurityReport::Cve(report)
+                if report
+                    .findings
+                    .iter()
+                    .any(|finding| &finding.identity == identity) =>
+            {
+                Some(report)
+            }
+            _ => None,
+        })
+}
+
+fn display_security_metadata(values: &[yoctui_model::SecurityMetadata]) -> String {
+    if values.is_empty() {
+        "unavailable".into()
+    } else {
+        values
+            .iter()
+            .map(|value| format!("{}={}", value.key, value.value))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+}
+
+fn display_security_paths(paths: &[std::path::PathBuf]) -> String {
+    if paths.is_empty() {
+        "unavailable".into()
+    } else {
+        paths
+            .iter()
+            .map(|path| path.display().to_string())
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+}
+
+fn security_dialog(frame: &mut Frame, app: &App, dialog: &SecurityDialog, area: Rect) {
+    let import_field_width = usize::from(area.width.saturating_sub(6)).saturating_mul(2);
+    let (title, text, height) = match dialog {
+        SecurityDialog::Operation(preview) => {
+            let roots = display_security_paths(&preview.report_roots);
+            (
+                format!("Confirm {}", security_operation_label(&preview.operation)),
+                format!(
+                    "Session: {}\nScope: {}\n\nExact indexed shell-free operation:\n{}\n\nAuthoritative report roots:\n{}\n\nEnter starts; Esc cancels.",
+                    preview.id.0,
+                    security_scope_text(Some(&preview.scope)),
+                    preview.indexed_arguments.join("\n"),
+                    roots,
+                ),
+                18,
+            )
+        }
+        SecurityDialog::Import { input } => (
+            "Import Security reports".into(),
+            format!(
+                "Normalized absolute CVE JSON/text, SPDX JSON/archive, or bounded directory:\n{}_\n\nOnly this exact canonical non-symlink path is scanned.\nEnter imports; Esc cancels.",
+                bounded_security_field(input, import_field_width)
+            ),
+            11,
+        ),
+        SecurityDialog::Cancellation(id) => (
+            "Confirm Security cancellation".into(),
+            format!(
+                "Cancel Security session {} only?\n\nEnter requests cancellation; Esc keeps it running.",
+                id.0
+            ),
+            7,
+        ),
+    };
+    let popup = qemu_popup_rect(area, 94, height);
+    clear_popup(frame, app, popup);
+    frame.render_widget(
+        Paragraph::new(text)
+            .block(Block::default().title(title).borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
+fn bounded_security_field(value: &str, max_chars: usize) -> String {
+    let mut characters = value.chars();
+    let mut bounded = characters.by_ref().take(max_chars).collect::<String>();
+    if characters.next().is_some() {
+        bounded.push('…');
+    }
+    bounded
+}
+
+fn security_operation_label(operation: &SecurityOperation) -> &'static str {
+    match operation {
+        SecurityOperation::CveCheck(_) => "CVE check",
+        SecurityOperation::SbomBuild(_) => "SBOM generation",
+        SecurityOperation::PackageMap { .. } => "CVE package mapping",
+    }
+}
+
+fn security_filter_label(filter: yoctui_model::CveStatusFilter) -> &'static str {
+    match filter {
+        yoctui_model::CveStatusFilter::All => "all",
+        yoctui_model::CveStatusFilter::Vulnerable => "vulnerable",
+        yoctui_model::CveStatusFilter::Patched => "patched",
+        yoctui_model::CveStatusFilter::Ignored => "ignored",
+        yoctui_model::CveStatusFilter::NotAffected => "not affected",
+        yoctui_model::CveStatusFilter::Unknown => "unknown",
+    }
+}
+
+fn security_cve_status_label(status: yoctui_model::CveStatus) -> &'static str {
+    match status {
+        yoctui_model::CveStatus::Vulnerable => "vulnerable",
+        yoctui_model::CveStatus::Patched => "patched",
+        yoctui_model::CveStatus::Ignored => "ignored",
+        yoctui_model::CveStatus::NotAffected => "not affected",
+        yoctui_model::CveStatus::Unknown => "unknown",
+    }
+}
+
+fn security_spdx_kind_label(kind: SpdxArtifactKind) -> &'static str {
+    match kind {
+        SpdxArtifactKind::Json => "JSON",
+        SpdxArtifactKind::Archive => "archive",
+    }
+}
+
+fn security_session_status_label(status: SecuritySessionStatus) -> &'static str {
+    match status {
+        SecuritySessionStatus::Starting => "starting",
+        SecuritySessionStatus::Running => "running",
+        SecuritySessionStatus::Cancelling => "cancelling",
+        SecuritySessionStatus::Succeeded => "succeeded",
+        SecuritySessionStatus::Failed => "failed",
+        SecuritySessionStatus::Cancelled => "cancelled",
+        SecuritySessionStatus::TimedOut => "timed out",
+        SecuritySessionStatus::Lost => "lost",
+    }
+}
+
+fn security_info_style(palette: &ThemePalette) -> Style {
+    palette.role(palette.info, Modifier::ITALIC)
+}
+
+fn security_warning_style(palette: &ThemePalette) -> Style {
+    palette.role(palette.warning, Modifier::BOLD)
+}
+
+fn security_error_style(palette: &ThemePalette) -> Style {
+    palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED)
+}
+
+fn security_cve_status_style(palette: &ThemePalette, status: yoctui_model::CveStatus) -> Style {
+    match status {
+        yoctui_model::CveStatus::Vulnerable => security_error_style(palette),
+        yoctui_model::CveStatus::Patched | yoctui_model::CveStatus::NotAffected => {
+            palette.role(palette.success, Modifier::BOLD)
+        }
+        yoctui_model::CveStatus::Ignored | yoctui_model::CveStatus::Unknown => {
+            security_warning_style(palette)
+        }
+    }
+}
+
+fn security_session_style(palette: &ThemePalette, status: SecuritySessionStatus) -> Style {
+    match status {
+        SecuritySessionStatus::Succeeded => palette.role(palette.success, Modifier::BOLD),
+        SecuritySessionStatus::Failed | SecuritySessionStatus::Lost => {
+            security_error_style(palette)
+        }
+        SecuritySessionStatus::Cancelled | SecuritySessionStatus::TimedOut => {
+            security_warning_style(palette)
+        }
+        SecuritySessionStatus::Starting
+        | SecuritySessionStatus::Running
+        | SecuritySessionStatus::Cancelling => palette.role(palette.progress, Modifier::BOLD),
+    }
 }
 
 fn testing_workspace(frame: &mut Frame, app: &App, area: Rect) {
@@ -7141,6 +7817,381 @@ mod tests {
             .collect()
     }
 
+    fn security_report_identity(
+        path: &str,
+        fingerprint: &str,
+    ) -> yoctui_model::SecurityReportIdentity {
+        yoctui_model::SecurityReportIdentity::new(
+            PathBuf::from(path),
+            512,
+            SystemTime::UNIX_EPOCH,
+            fingerprint.into(),
+        )
+        .unwrap()
+    }
+
+    fn security_workflow_ui_app() -> App {
+        let scope = SecurityScope::Recipe(RecipeIdentity {
+            name: "busybox".into(),
+            file: "/layers/meta/recipes-core/busybox/busybox_1.36.bb".into(),
+        });
+        let cve_identity =
+            security_report_identity("/build/tmp/log/cve/busybox.cve.json", "cvefingerprint");
+        let finding_identity = yoctui_model::CveFindingIdentity::new(
+            "CVE-2026-0001".into(),
+            "busybox".into(),
+            Some("busybox".into()),
+        )
+        .unwrap();
+        let cve = yoctui_model::CveReport {
+            identity: cve_identity.clone(),
+            scope: Some(scope.clone()),
+            findings: vec![yoctui_model::CveFinding {
+                identity: finding_identity.clone(),
+                status: yoctui_model::CveStatus::Vulnerable,
+                product: Some("busybox".into()),
+                version: Some("1.36".into()),
+                severity: Some("HIGH".into()),
+                score: Some("8.1".into()),
+                vector: Some("CVSS:3.1/AV:N".into()),
+                advisory_url: Some("https://example.invalid/CVE-2026-0001".into()),
+                summary: Some("A bounded vulnerability summary".into()),
+                mapping: vec![
+                    yoctui_model::SecurityMetadata::new(
+                        "upstream-product".into(),
+                        "busybox".into(),
+                    )
+                    .unwrap(),
+                ],
+            }],
+            metadata: vec![
+                yoctui_model::SecurityMetadata::new("source".into(), "cve-check".into()).unwrap(),
+            ],
+            limitations: vec!["one unknown status was preserved".into()],
+        };
+        let spdx_identity =
+            security_report_identity("/build/tmp/deploy/spdx/image.spdx.json", "spdxfingerprint");
+        let spdx = yoctui_model::SpdxDocument {
+            identity: spdx_identity.clone(),
+            scope: Some(SecurityScope::Image {
+                target: "core-image-minimal".into(),
+                machine: "qemux86-64".into(),
+                distro: "poky".into(),
+            }),
+            kind: SpdxArtifactKind::Json,
+            spdx_version: Some("SPDX-2.3".into()),
+            name: Some("core-image-minimal".into()),
+            namespace: Some("https://example.invalid/spdx/image".into()),
+            data_license: Some("CC0-1.0".into()),
+            creators: vec!["Tool: bitbake".into()],
+            components: vec![yoctui_model::SpdxComponent {
+                identity: "SPDXRef-Package-busybox".into(),
+                name: "busybox".into(),
+                version: Some("1.36".into()),
+                supplier: Some("Organization: Yocto".into()),
+                license: Some("GPL-2.0-only".into()),
+            }],
+            file_count: Some(42),
+            relationship_count: Some(7),
+            checksums: vec![
+                yoctui_model::SecurityMetadata::new("SHA256".into(), "abcd1234".into()).unwrap(),
+            ],
+            limitations: vec!["external references unavailable".into()],
+        };
+        let request = yoctui_model::SecurityReportRequest::new(
+            1,
+            vec![cve_identity.path.clone(), spdx_identity.path.clone()],
+        )
+        .unwrap();
+        let capability = yoctui_model::SecurityCapabilitySnapshot::new(
+            Some("6.0".into()),
+            "/build".into(),
+            scope.clone(),
+            vec![scope.clone()],
+            Some("cve_check".into()),
+            Some("create_recipe_sbom".into()),
+            None,
+            false,
+            Some(yoctui_model::SecurityMapperCapability {
+                executable: "/workspace/scripts/cve-check-map-pkgs".into(),
+                arguments: vec!["/build/tmp/log/cve".into()],
+            }),
+            vec!["/build/tmp/log/cve".into()],
+            vec!["/build/tmp/deploy/spdx".into()],
+            vec!["image SBOM task unavailable for recipe scope".into()],
+        )
+        .unwrap();
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Security;
+        app.focus = FocusTarget::Workspace;
+        app.security.scope = Some(scope);
+        app.security.capability = SecurityCapability::Available(Box::new(capability));
+        app.security.inventory = SecurityInventoryState::Partial {
+            request,
+            reports: vec![SecurityReport::Cve(cve), SecurityReport::Spdx(spdx)],
+            limitations: vec!["one malformed report was skipped".into()],
+        };
+        app.security.report_selection = Some(cve_identity);
+        app.security.finding_selection = Some(finding_identity);
+        app
+    }
+
+    fn security_session(status: SecuritySessionStatus) -> yoctui_model::SecuritySession {
+        let preview = yoctui_model::SecurityOperationPreview {
+            id: yoctui_model::SecuritySessionId(9),
+            scope: SecurityScope::Image {
+                target: "core-image-minimal".into(),
+                machine: "qemux86-64".into(),
+                distro: "poky".into(),
+            },
+            operation: SecurityOperation::PackageMap {
+                executable: "/workspace/scripts/cve-check-map-pkgs".into(),
+                arguments: vec!["/build/tmp/log/cve".into()],
+            },
+            indexed_arguments: vec![
+                "0: /workspace/scripts/cve-check-map-pkgs".into(),
+                "1: /build/tmp/log/cve".into(),
+            ],
+            report_roots: vec!["/build/tmp/log/cve".into()],
+        };
+        yoctui_model::SecuritySession {
+            preview,
+            status,
+            background_job_id: None,
+            started_at: SystemTime::UNIX_EPOCH,
+            finished_at: status.is_terminal().then_some(SystemTime::UNIX_EPOCH),
+            message: matches!(
+                status,
+                SecuritySessionStatus::Failed
+                    | SecuritySessionStatus::Lost
+                    | SecuritySessionStatus::TimedOut
+            )
+            .then(|| format!("{} detail", security_session_status_label(status))),
+            result_paths: (status == SecuritySessionStatus::Succeeded)
+                .then(|| PathBuf::from("/build/tmp/log/cve/busybox.cve.json"))
+                .into_iter()
+                .collect(),
+            output: vec![
+                yoctui_model::SecurityOutputLine {
+                    stream: SecurityOutputStream::Stdout,
+                    line: "mapped busybox -> busybox".into(),
+                    truncated: false,
+                },
+                yoctui_model::SecurityOutputLine {
+                    stream: SecurityOutputStream::Stderr,
+                    line: "bounded mapper warning".into(),
+                    truncated: true,
+                },
+            ],
+        }
+    }
+
+    #[test]
+    fn security_workflow_renders_cve_identity_capability_partial_and_themes_responsively() {
+        let mut app = security_workflow_ui_app();
+        for (width, height, theme, color) in [
+            (80, 24, Theme::Monochrome, false),
+            (100, 30, Theme::Light, true),
+            (130, 30, Theme::MatrixGreen, true),
+            (160, 40, Theme::HighContrast, true),
+            (160, 40, Theme::Dark, true),
+        ] {
+            app.theme = theme;
+            app.color_enabled = color;
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Security"), "{output}");
+            assert!(output.contains("CVEs"), "{output}");
+            assert!(output.contains("CVE-2026-0001"), "{output}");
+            assert!(output.contains("vulnerable"), "{output}");
+            assert!(output.contains("one malformed report"), "{output}");
+        }
+
+        app.focus = FocusTarget::Inspector;
+        let inspector = rendered_text(&app, 160, 40);
+        assert!(inspector.contains("Exact report"), "{inspector}");
+        assert!(inspector.contains("cvefingerprint"), "{inspector}");
+        assert!(
+            inspector.contains("upstream-product=busybox"),
+            "{inspector}"
+        );
+        assert!(inspector.contains("CVSS:3.1/AV:N"), "{inspector}");
+
+        app.focus = FocusTarget::Workspace;
+        app.color_enabled = false;
+        let mut terminal = Terminal::new(TestBackend::new(160, 40)).unwrap();
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        assert!(
+            terminal.backend().buffer().content.iter().any(|cell| {
+                cell.symbol() == "▶" && cell.modifier.contains(Modifier::REVERSED)
+            }),
+            "no-color selected finding must use reverse video"
+        );
+    }
+
+    #[test]
+    fn security_workflow_renders_sbom_document_component_drill_and_limitations() {
+        let mut app = security_workflow_ui_app();
+        let spdx_identity = app
+            .security
+            .inventory
+            .reports()
+            .unwrap()
+            .iter()
+            .find_map(|report| match report {
+                SecurityReport::Spdx(document) => Some(document.identity.clone()),
+                _ => None,
+            })
+            .unwrap();
+        app.security.view = SecurityView::Sbom;
+        app.security.report_selection = Some(spdx_identity);
+        for (width, height) in [(80, 24), (100, 30), (130, 30), (160, 40)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("SBOM"), "{output}");
+            assert!(output.contains("SPDX-2.3"), "{output}");
+            assert!(output.contains("core-image-minimal"), "{output}");
+        }
+
+        app.security.drilled = true;
+        app.security.component_selection = Some("SPDXRef-Package-busybox".into());
+        let drilled = rendered_text(&app, 80, 24);
+        assert!(drilled.contains("SPDXRef-Package-busybox"), "{drilled}");
+        assert!(drilled.contains("GPL-2.0-only"), "{drilled}");
+
+        app.focus = FocusTarget::Inspector;
+        let inspector = rendered_text(&app, 160, 40);
+        assert!(inspector.contains("https://example.invalid/spdx/image"));
+        assert!(inspector.contains("SHA256=abcd1234"));
+        assert!(inspector.contains("external references unavailable"));
+        assert!(inspector.contains("Organization: Yocto"));
+    }
+
+    #[test]
+    fn security_workflow_renders_every_inventory_and_capability_state() {
+        let mut app = security_workflow_ui_app();
+        let request = app.security.inventory.request().unwrap().clone();
+        for (state, expected) in [
+            (SecurityInventoryState::NotLoaded, "Reports are not loaded"),
+            (
+                SecurityInventoryState::Loading {
+                    request: request.clone(),
+                },
+                "Loading report generation",
+            ),
+            (
+                SecurityInventoryState::AvailableEmpty {
+                    request: request.clone(),
+                },
+                "available-empty",
+            ),
+            (
+                SecurityInventoryState::Failed {
+                    request: request.clone(),
+                    message: "permission denied".into(),
+                },
+                "acquisition failed",
+            ),
+            (
+                SecurityInventoryState::Cancelled {
+                    request: request.clone(),
+                },
+                "acquisition cancelled",
+            ),
+            (
+                SecurityInventoryState::TimedOut {
+                    request: request.clone(),
+                },
+                "acquisition timed out",
+            ),
+            (
+                SecurityInventoryState::Lost {
+                    request,
+                    message: "worker channel closed".into(),
+                },
+                "worker lost",
+            ),
+        ] {
+            app.security.inventory = state;
+            let output = rendered_text(&app, 80, 24);
+            assert!(output.contains(expected), "{expected}: {output}");
+        }
+
+        app.security.inventory = SecurityInventoryState::NotLoaded;
+        for (capability, expected) in [
+            (SecurityCapability::NotInspected, "not inspected"),
+            (SecurityCapability::Inspecting, "inspection in progress"),
+            (
+                SecurityCapability::Failed("missing class".into()),
+                "inspection failed",
+            ),
+        ] {
+            app.security.capability = capability;
+            let output = rendered_text(&app, 80, 24);
+            assert!(output.contains(expected), "{expected}: {output}");
+        }
+    }
+
+    #[test]
+    fn security_workflow_renders_mapper_session_terminal_outcomes_and_bounded_output() {
+        let mut app = security_workflow_ui_app();
+        let request = app.security.inventory.request().unwrap().clone();
+        app.security.inventory = SecurityInventoryState::AvailableEmpty { request };
+        for status in [
+            SecuritySessionStatus::Starting,
+            SecuritySessionStatus::Running,
+            SecuritySessionStatus::Cancelling,
+            SecuritySessionStatus::Succeeded,
+            SecuritySessionStatus::Failed,
+            SecuritySessionStatus::Cancelled,
+            SecuritySessionStatus::TimedOut,
+            SecuritySessionStatus::Lost,
+        ] {
+            app.security.sessions = vec![security_session(status)];
+            let output = rendered_text(&app, 100, 30);
+            assert!(
+                output.contains(security_session_status_label(status)),
+                "{status:?}: {output}"
+            );
+            assert!(output.contains("mapped busybox"), "{output}");
+            assert!(output.contains("[truncated]"), "{output}");
+        }
+    }
+
+    #[test]
+    fn security_workflow_dialogs_render_exact_previews_at_all_breakpoints() {
+        let mut app = security_workflow_ui_app();
+        app.focus = FocusTarget::Dialog;
+        let session = security_session(SecuritySessionStatus::Starting);
+        app.dialogs
+            .push_front(Dialog::Security(SecurityDialog::Operation(session.preview)));
+        for (width, height) in [(80, 24), (100, 30), (130, 30), (160, 40)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Confirm CVE package mapping"), "{output}");
+            assert!(output.contains("Exact indexed shell-free"), "{output}");
+            assert!(output.contains("1: /build/tmp/log/cve"), "{output}");
+        }
+
+        app.dialogs.clear();
+        app.dialogs
+            .push_front(Dialog::Security(SecurityDialog::Import {
+                input: format!("/reports/{}", "long-path-".repeat(80)),
+            }));
+        let import = rendered_text(&app, 80, 24);
+        assert!(import.contains("Import Security reports"), "{import}");
+        assert!(import.contains("canonical non-symlink"), "{import}");
+
+        app.dialogs.clear();
+        app.dialogs
+            .push_front(Dialog::Security(SecurityDialog::Cancellation(
+                yoctui_model::SecuritySessionId(9),
+            )));
+        let cancellation = rendered_text(&app, 80, 24);
+        assert!(
+            cancellation.contains("Confirm Security cancellation"),
+            "{cancellation}"
+        );
+        assert!(cancellation.contains("session 9 only"), "{cancellation}");
+    }
+
     #[test]
     fn theme_palettes_define_distinct_semantic_roles() {
         for theme in [
@@ -9127,6 +10178,7 @@ mod tests {
             Screen::Images,
             Screen::Sdk,
             Screen::Testing,
+            Screen::Security,
             Screen::Layers,
             Screen::Configuration,
             Screen::Bbmask,

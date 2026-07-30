@@ -2,54 +2,49 @@
 
 ## Active task
 
-**ID:** SEC-RENDER-001
-**Title:** Render responsive Security workspace
+**ID:** SEC-CLI-001
+**Title:** Integrate Security execution in the CLI
 
 ## Objective
 
-Render the complete typed Security workspace and dialogs at every supported
-responsive breakpoint without parsing backend text in widgets.
+Connect the typed Security model, adapters, and renderer to non-blocking CLI
+execution while reusing the existing managed BitBake coordinator.
 
 ## Required work
 
-1. Inspect the shared shell, existing destination renderers, Security model,
-   and authoritative Security section of `docs/ui-spec.md` before editing.
-2. Add Security destination rendering for CVE and SBOM views using only typed
-   capability, inventory, finding, document/component, session, and limitation
-   state.
-3. Render explicit not-inspected/loading/unavailable, not-loaded/loading,
-   available-empty, available, partial, failed, cancelled, timed-out, and lost
-   states without showing stale rows as current.
-4. Render exact CVE status and source identity, searchable/filterable finding
-   detail, mapping metadata, advisory/provider availability, and limitations.
-5. Render exact SPDX document/archive identity, schema summary, creators,
-   checksums/counts, component drill state, unsupported/archive limitations,
-   and related-action availability.
-6. Render operation, import, and cancellation dialogs as focus-trapping,
-   indexed, exact previews with disabled reasons; no widget may infer task,
-   report, path, status, or command authority.
-7. Render bounded mapper/build session lifecycle and retained typed output,
-   plus the exact responsive Security footer and visible scope/capability
-   context.
-8. Add Ratatui `TestBackend` coverage for wide, medium, 80x24/narrow, long
-   fields, every explicit inventory/session outcome, all dialogs, every theme,
-   and no-color semantics. Narrow terminals must never panic.
-9. Update `docs/ui-spec.md` in the same commit only if an intentional behavior
-   change is required; otherwise implement its existing contract exactly.
+1. Inspect existing CLI operation coordinators and every Security effect before
+   adding state or polling.
+2. Snapshot the initialized build directory and child-only environment for
+   Security capability discovery without mutating process-global state.
+3. Route CVE checks and recipe/image SBOM generation through the existing
+   managed BitBake build coordinator with exact Security session correlation.
+4. Own at most one independent report-acquisition request and one package
+   mapper runner; poll bounded typed events without blocking terminal input or
+   unrelated jobs.
+5. Execute explicit replaceable-generation imports and exact open effects,
+   mapping all adapter responses mechanically into typed reducer actions.
+6. Refresh authoritative report roots after successful managed builds and
+   package mapping without fabricating success when reports are empty.
+7. Route cancellation only to the exact active Security operation and preserve
+   rejection, timeout, nonzero, cancellation, loss, stale response, and
+   success-without-reports outcomes distinctly.
+8. Add fake CLI integration tests covering capability discovery, managed
+   BitBake reuse, report acquisition/import/open, package mapping, refresh,
+   navigation, duplicate rejection, and every terminal outcome.
 
 ## Definition of done
 
-- The Security destination and all dialogs render only typed model state.
-- Wide, medium, narrow/80x24, themes, no-color, long data, explicit lifecycle
-  states, selections, drill state, limitations, and footer hints are covered.
-- Focus, responsive degradation, and stale/empty/failure presentation match
-  `docs/ui-spec.md` and never panic.
-- Focused UI and baseline checks pass.
+- Every Security effect is executed or rejected with an explicit typed action.
+- Security-owned polling remains responsive and independent from other
+  operation families.
+- Exact request/session/report identities survive every CLI boundary.
+- Managed BitBake Security operations reuse the established build coordinator.
+- No fake-process test is described as live Yocto compatibility.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui security_workflow
+cargo test -p yoctui -- security_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
