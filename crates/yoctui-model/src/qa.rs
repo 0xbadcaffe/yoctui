@@ -17,6 +17,8 @@ pub const MAX_QA_SESSION_OUTPUT: usize = 256;
 pub const MAX_QA_TEXT_BYTES: usize = 4_096;
 pub const MAX_QA_QUERY_BYTES: usize = 512;
 pub const MAX_QA_FINGERPRINT_BYTES: usize = 256;
+pub const MAX_QA_LAYER_ARGUMENTS: usize = 64;
+pub const MAX_QA_COMPATIBLE_SERIES: usize = 64;
 
 fn bounded_text(value: &str) -> bool {
     !value.is_empty() && value.len() <= MAX_QA_TEXT_BYTES && !value.chars().any(char::is_control)
@@ -79,6 +81,251 @@ impl QaScope {
 
     pub fn is_valid(&self) -> bool {
         Self::new(self.recipe.clone()).as_ref() == Ok(self)
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum QaView {
+    #[default]
+    RecipeKernel,
+    LayerQa,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct QaLayerIdentity {
+    pub name: String,
+    pub root: PathBuf,
+}
+
+impl QaLayerIdentity {
+    pub fn new(name: String, root: PathBuf) -> Result<Self, &'static str> {
+        if !bounded_token(&name) || !absolute_normal_path(&root) {
+            return Err("configured QA layer identity is invalid");
+        }
+        Ok(Self { name, root })
+    }
+
+    pub fn is_valid(&self) -> bool {
+        Self::new(self.name.clone(), self.root.clone()).as_ref() == Ok(self)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum QaFindingScope {
+    Recipe(QaScope),
+    Layer(QaLayerIdentity),
+}
+
+impl QaFindingScope {
+    pub fn is_valid(&self) -> bool {
+        match self {
+            Self::Recipe(scope) => scope.is_valid(),
+            Self::Layer(layer) => layer.is_valid(),
+        }
+    }
+
+    fn name(&self) -> &str {
+        match self {
+            Self::Recipe(scope) => &scope.recipe.name,
+            Self::Layer(layer) => &layer.name,
+        }
+    }
+
+    fn path(&self) -> &Path {
+        match self {
+            Self::Recipe(scope) => &scope.recipe.file,
+            Self::Layer(layer) => &layer.root,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QaExecutableIdentity {
+    pub path: PathBuf,
+    pub byte_size: u64,
+    pub modified_at: SystemTime,
+}
+
+impl QaExecutableIdentity {
+    pub fn new(
+        path: PathBuf,
+        byte_size: u64,
+        modified_at: SystemTime,
+    ) -> Result<Self, &'static str> {
+        if !absolute_normal_path(&path) || byte_size == 0 {
+            return Err("QA executable identity is invalid");
+        }
+        Ok(Self {
+            path,
+            byte_size,
+            modified_at,
+        })
+    }
+
+    pub fn is_valid(&self) -> bool {
+        Self::new(self.path.clone(), self.byte_size, self.modified_at).as_ref() == Ok(self)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum QaLayerRunCapability {
+    Available {
+        executable: QaExecutableIdentity,
+        arguments: Vec<String>,
+        report_roots: Vec<PathBuf>,
+    },
+    Disabled(String),
+}
+
+impl QaLayerRunCapability {
+    pub fn disabled_reason(&self) -> Option<&str> {
+        match self {
+            Self::Available { .. } => None,
+            Self::Disabled(reason) => Some(reason),
+        }
+    }
+
+    fn is_valid_for(&self, layer: &QaLayerIdentity) -> bool {
+        match self {
+            Self::Available {
+                executable,
+                arguments,
+                report_roots,
+            } => {
+                executable.is_valid()
+                    && !arguments.is_empty()
+                    && arguments.len() <= MAX_QA_LAYER_ARGUMENTS
+                    && arguments.iter().all(|argument| bounded_text(argument))
+                    && arguments
+                        .iter()
+                        .any(|argument| argument == &layer.root.to_string_lossy())
+                    && report_roots.iter().all(|path| absolute_normal_path(path))
+            }
+            Self::Disabled(reason) => bounded_text(reason),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QaConfiguredLayerCapability {
+    pub check: QaCheckId,
+    pub identity: QaLayerIdentity,
+    pub compatible_series: Vec<String>,
+    pub run: QaLayerRunCapability,
+    pub limitations: Vec<String>,
+}
+
+impl QaConfiguredLayerCapability {
+    pub fn new(
+        check: QaCheckId,
+        identity: QaLayerIdentity,
+        mut compatible_series: Vec<String>,
+        run: QaLayerRunCapability,
+        limitations: Vec<String>,
+    ) -> Result<Self, &'static str> {
+        if !check.is_valid()
+            || !identity.is_valid()
+            || !run.is_valid_for(&identity)
+            || compatible_series.iter().any(|value| !bounded_token(value))
+        {
+            return Err("configured layer QA capability is invalid");
+        }
+        compatible_series.sort();
+        compatible_series.dedup();
+        compatible_series.truncate(MAX_QA_COMPATIBLE_SERIES);
+        Ok(Self {
+            check,
+            identity,
+            compatible_series,
+            run,
+            limitations: normalize_limitations(limitations),
+        })
+    }
+
+    pub fn is_valid(&self) -> bool {
+        Self::new(
+            self.check.clone(),
+            self.identity.clone(),
+            self.compatible_series.clone(),
+            self.run.clone(),
+            self.limitations.clone(),
+        )
+        .as_ref()
+            == Ok(self)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QaLayerCapabilitySnapshot {
+    pub release: Option<String>,
+    pub build_directory: PathBuf,
+    pub selected_layer: QaLayerIdentity,
+    pub layers: Vec<QaConfiguredLayerCapability>,
+    pub limitations: Vec<String>,
+}
+
+impl QaLayerCapabilitySnapshot {
+    pub fn new(
+        release: Option<String>,
+        build_directory: PathBuf,
+        selected_layer: QaLayerIdentity,
+        mut layers: Vec<QaConfiguredLayerCapability>,
+        limitations: Vec<String>,
+    ) -> Result<Self, &'static str> {
+        if !absolute_normal_path(&build_directory)
+            || !selected_layer.is_valid()
+            || release.as_deref().is_some_and(|value| !bounded_text(value))
+            || layers.iter().any(|layer| !layer.is_valid())
+        {
+            return Err("layer QA capability identity is invalid");
+        }
+        layers.sort_by(|left, right| left.identity.cmp(&right.identity));
+        layers.dedup_by(|left, right| left.identity == right.identity);
+        layers.truncate(MAX_QA_SCOPES);
+        if !layers.iter().any(|layer| layer.identity == selected_layer) {
+            return Err("selected layer is not in the configured QA layer inventory");
+        }
+        Ok(Self {
+            release,
+            build_directory,
+            selected_layer,
+            layers,
+            limitations: normalize_limitations(limitations),
+        })
+    }
+
+    pub fn is_valid(&self) -> bool {
+        Self::new(
+            self.release.clone(),
+            self.build_directory.clone(),
+            self.selected_layer.clone(),
+            self.layers.clone(),
+            self.limitations.clone(),
+        )
+        .as_ref()
+            == Ok(self)
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum QaLayerCapability {
+    #[default]
+    NotInspected,
+    Inspecting,
+    Available(Box<QaLayerCapabilitySnapshot>),
+    Partial {
+        snapshot: Box<QaLayerCapabilitySnapshot>,
+        limitations: Vec<String>,
+    },
+    Failed(String),
+}
+
+impl QaLayerCapability {
+    pub fn snapshot(&self) -> Option<&QaLayerCapabilitySnapshot> {
+        match self {
+            Self::Available(snapshot) | Self::Partial { snapshot, .. } => Some(snapshot),
+            Self::NotInspected | Self::Inspecting | Self::Failed(_) => None,
+        }
     }
 }
 
@@ -353,6 +600,59 @@ pub struct QaSession {
     pub dropped_output: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct QaLayerOperationId(pub u64);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct QaLayerSessionId(pub u64);
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QaLayerOperationPreview {
+    pub id: QaLayerOperationId,
+    pub check: QaCheckId,
+    pub layer: QaLayerIdentity,
+    pub executable: QaExecutableIdentity,
+    pub arguments: Vec<String>,
+    pub indexed_arguments: Vec<String>,
+    pub report_roots: Vec<PathBuf>,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QaLayerSession {
+    pub id: QaLayerSessionId,
+    pub operation: QaLayerOperationPreview,
+    pub status: QaSessionStatus,
+    pub started_at: SystemTime,
+    pub finished_at: Option<SystemTime>,
+    pub exit_code: Option<i32>,
+    pub message: Option<String>,
+    pub result_paths: Vec<PathBuf>,
+    pub output: VecDeque<QaOutputLine>,
+    pub dropped_output: usize,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct QaFindingCounts {
+    pub passed: usize,
+    pub warnings: usize,
+    pub failed: usize,
+    pub skipped: usize,
+    pub unknown: usize,
+}
+
+impl QaFindingCounts {
+    fn add(&mut self, status: QaFindingStatus) {
+        match status {
+            QaFindingStatus::Passed => self.passed += 1,
+            QaFindingStatus::Warning => self.warnings += 1,
+            QaFindingStatus::Failed => self.failed += 1,
+            QaFindingStatus::Skipped => self.skipped += 1,
+            QaFindingStatus::Unknown => self.unknown += 1,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum QaFindingStatus {
     Passed,
@@ -414,7 +714,7 @@ pub struct QaReportIdentity {
     pub fingerprint: String,
     pub format: QaReportFormat,
     pub producer: Option<QaCheckId>,
-    pub scope: Option<QaScope>,
+    pub scope: Option<QaFindingScope>,
 }
 
 impl QaReportIdentity {
@@ -426,7 +726,7 @@ impl QaReportIdentity {
         fingerprint: String,
         format: QaReportFormat,
         producer: Option<QaCheckId>,
-        scope: Option<QaScope>,
+        scope: Option<QaFindingScope>,
     ) -> Result<Self, &'static str> {
         if !absolute_normal_path(&path)
             || byte_size == 0
@@ -526,8 +826,9 @@ pub struct QaFinding {
     pub status: QaFindingStatus,
     pub severity: Option<String>,
     pub message: String,
-    pub scope: QaScope,
+    pub scope: QaFindingScope,
     pub task: Option<String>,
+    pub test_name: Option<String>,
     pub source: Option<QaSourceLocation>,
     pub rule: Option<String>,
     pub suggestion: Option<String>,
@@ -547,6 +848,11 @@ impl QaFinding {
             .flatten()
             .all(bounded_text)
             && self.task.as_deref().is_none_or(bounded_token)
+            && self.test_name.as_deref().is_none_or(bounded_text)
+            && matches!(
+                (&self.scope, &self.task, &self.test_name),
+                (QaFindingScope::Recipe(_), _, None) | (QaFindingScope::Layer(_), None, Some(_))
+            )
             && self.source.as_ref().is_none_or(|source| {
                 QaSourceLocation::new(source.path.clone(), source.line, source.column).as_ref()
                     == Ok(source)
@@ -565,10 +871,16 @@ pub struct QaReport {
 pub fn normalize_qa_reports(
     mut reports: Vec<QaReport>,
     known_checks: &[QaCheckId],
+    known_scopes: &[QaFindingScope],
 ) -> (Vec<QaReport>, Vec<String>) {
     let mut limitations = Vec::new();
     reports.retain(|report| {
-        let valid = report.identity.is_valid();
+        let valid = report.identity.is_valid()
+            && report
+                .identity
+                .scope
+                .as_ref()
+                .is_none_or(|scope| known_scopes.contains(scope));
         if !valid {
             limitations.push("ignored a QA report with an invalid identity".into());
         }
@@ -576,7 +888,9 @@ pub fn normalize_qa_reports(
     });
     for report in &mut reports {
         report.findings.retain(|finding| {
-            let valid = finding.is_valid() && known_checks.contains(&finding.identity.check);
+            let valid = finding.is_valid()
+                && known_checks.contains(&finding.identity.check)
+                && known_scopes.contains(&finding.scope);
             if !valid {
                 limitations.push("ignored an invalid or unknown QA finding".into());
             }
@@ -721,6 +1035,7 @@ impl QaReportInventoryState {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum QaDialog {
     Operation(QaOperationPreview),
+    LayerOperation(QaLayerOperationPreview),
     Import {
         input: String,
     },
@@ -728,10 +1043,12 @@ pub enum QaDialog {
         session: QaSessionId,
         background_job: BackgroundJobId,
     },
+    LayerCancellation(QaLayerSessionId),
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct QaState {
+    pub view: QaView,
     pub scope: Option<QaScope>,
     pub capability: QaCapability,
     pub check_selection: Option<QaCheckId>,
@@ -747,6 +1064,12 @@ pub struct QaState {
     pub session_generation: u64,
     pub report_generation: u64,
     pub pending_operation: Option<QaOperationPreview>,
+    pub layer_capability: QaLayerCapability,
+    pub layer_selection: Option<QaLayerIdentity>,
+    pub layer_sessions: VecDeque<QaLayerSession>,
+    pub layer_operation_generation: u64,
+    pub layer_session_generation: u64,
+    pub pending_layer_operation: Option<QaLayerOperationPreview>,
 }
 
 impl QaState {
@@ -755,6 +1078,55 @@ impl QaState {
             .iter()
             .rev()
             .find(|session| !session.status.is_terminal())
+    }
+
+    pub fn active_layer_session(&self) -> Option<&QaLayerSession> {
+        self.layer_sessions
+            .iter()
+            .rev()
+            .find(|session| !session.status.is_terminal())
+    }
+
+    pub fn visible_layers(&self) -> Vec<&QaConfiguredLayerCapability> {
+        let query = self.query.to_ascii_lowercase();
+        self.layer_capability
+            .snapshot()
+            .map(|snapshot| {
+                snapshot
+                    .layers
+                    .iter()
+                    .filter(|layer| {
+                        matches!(self.status_filter, QaStatusFilter::All)
+                            || self
+                                .latest_status_for_layer(&layer.identity)
+                                .is_some_and(|status| self.status_filter.matches(status))
+                    })
+                    .filter(|layer| {
+                        query.is_empty()
+                            || [
+                                layer.identity.name.as_str(),
+                                layer.identity.root.to_str().unwrap_or_default(),
+                            ]
+                            .into_iter()
+                            .chain(layer.compatible_series.iter().map(String::as_str))
+                            .any(|value| value.to_ascii_lowercase().contains(&query))
+                            || self
+                                .findings_for_layer(&layer.identity)
+                                .into_iter()
+                                .any(|finding| finding_matches_query(finding, &query))
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    pub fn selected_layer(&self) -> Option<&QaConfiguredLayerCapability> {
+        let identity = self.layer_selection.as_ref()?;
+        self.layer_capability
+            .snapshot()?
+            .layers
+            .iter()
+            .find(|layer| &layer.identity == identity)
     }
 
     pub fn checks_for_scope(&self) -> Vec<&QaCheckCapability> {
@@ -820,11 +1192,20 @@ impl QaState {
     }
 
     pub fn visible_findings(&self) -> Vec<&QaFinding> {
-        let Some(check) = self.check_selection.as_ref() else {
-            return Vec::new();
-        };
         let query = self.query.to_ascii_lowercase();
-        self.findings_for_check(check)
+        let findings = match self.view {
+            QaView::RecipeKernel => self
+                .check_selection
+                .as_ref()
+                .map(|check| self.findings_for_check(check))
+                .unwrap_or_default(),
+            QaView::LayerQa => self
+                .layer_selection
+                .as_ref()
+                .map(|layer| self.findings_for_layer(layer))
+                .unwrap_or_default(),
+        };
+        findings
             .into_iter()
             .filter(|finding| self.status_filter.matches(finding.status))
             .filter(|finding| finding_matches_query(finding, &query))
@@ -875,6 +1256,56 @@ impl QaState {
                     })
             })
     }
+
+    pub fn findings_for_layer(&self, layer: &QaLayerIdentity) -> Vec<&QaFinding> {
+        self.inventory
+            .reports()
+            .unwrap_or_default()
+            .iter()
+            .flat_map(|report| report.findings.iter())
+            .filter(|finding| {
+                matches!(&finding.scope, QaFindingScope::Layer(candidate) if candidate == layer)
+            })
+            .collect()
+    }
+
+    pub fn layer_finding_counts(&self, layer: &QaLayerIdentity) -> QaFindingCounts {
+        let mut counts = QaFindingCounts::default();
+        for finding in self.findings_for_layer(layer) {
+            counts.add(finding.status);
+        }
+        counts
+    }
+
+    fn latest_status_for_layer(&self, layer: &QaLayerIdentity) -> Option<QaFindingStatus> {
+        self.findings_for_layer(layer)
+            .into_iter()
+            .map(|finding| finding.status)
+            .max_by_key(|status| match status {
+                QaFindingStatus::Failed => 5,
+                QaFindingStatus::Warning => 4,
+                QaFindingStatus::Unknown => 3,
+                QaFindingStatus::Skipped => 2,
+                QaFindingStatus::Passed => 1,
+            })
+            .or_else(|| {
+                self.layer_sessions
+                    .iter()
+                    .rev()
+                    .find(|session| &session.operation.layer == layer)
+                    .map(|session| match session.status {
+                        QaSessionStatus::Succeeded => QaFindingStatus::Passed,
+                        QaSessionStatus::Failed => QaFindingStatus::Failed,
+                        QaSessionStatus::Cancelled | QaSessionStatus::TimedOut => {
+                            QaFindingStatus::Skipped
+                        }
+                        QaSessionStatus::Starting
+                        | QaSessionStatus::Running
+                        | QaSessionStatus::Cancelling
+                        | QaSessionStatus::Lost => QaFindingStatus::Unknown,
+                    })
+            })
+    }
 }
 
 fn finding_matches_query(finding: &QaFinding, query: &str) -> bool {
@@ -882,9 +1313,10 @@ fn finding_matches_query(finding: &QaFinding, query: &str) -> bool {
         || [
             finding.identity.check.0.as_str(),
             finding.message.as_str(),
-            finding.scope.recipe.name.as_str(),
-            finding.scope.recipe.file.to_str().unwrap_or_default(),
+            finding.scope.name(),
+            finding.scope.path().to_str().unwrap_or_default(),
             finding.task.as_deref().unwrap_or_default(),
+            finding.test_name.as_deref().unwrap_or_default(),
             finding.severity.as_deref().unwrap_or_default(),
             finding.rule.as_deref().unwrap_or_default(),
             finding.suggestion.as_deref().unwrap_or_default(),
@@ -900,6 +1332,7 @@ fn finding_matches_query(finding: &QaFinding, query: &str) -> bool {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum QaAction {
+    CycleView,
     InspectCapability,
     CapabilityLoaded(QaCapabilitySnapshot),
     CapabilityPartial {
@@ -985,6 +1418,59 @@ pub enum QaAction {
     OpenSelectedReport,
     OpenProvider,
     OpenSelectedSource,
+    InspectLayerCapability,
+    LayerCapabilityLoaded(QaLayerCapabilitySnapshot),
+    LayerCapabilityPartial {
+        snapshot: QaLayerCapabilitySnapshot,
+        limitations: Vec<String>,
+    },
+    LayerCapabilityFailed(String),
+    SelectLayer(isize),
+    BeginSelectedLayerCheck,
+    ConfirmLayerOperation(QaLayerOperationPreview),
+    LayerSessionRunning(QaLayerSessionId),
+    LayerSessionOutput {
+        session: QaLayerSessionId,
+        stream: QaOutputStream,
+        line: String,
+        truncated: bool,
+    },
+    CompleteLayerSession {
+        session: QaLayerSessionId,
+        exit_code: i32,
+        result_paths: Vec<PathBuf>,
+        finished_at: SystemTime,
+    },
+    FailLayerSession {
+        session: QaLayerSessionId,
+        exit_code: Option<i32>,
+        message: String,
+        finished_at: SystemTime,
+    },
+    TimeoutLayerSession {
+        session: QaLayerSessionId,
+        forced: bool,
+        exit_code: Option<i32>,
+        finished_at: SystemTime,
+    },
+    LoseLayerSession {
+        session: QaLayerSessionId,
+        message: String,
+        finished_at: SystemTime,
+    },
+    BeginLayerCancellation,
+    ConfirmLayerCancellation(QaLayerSessionId),
+    RejectLayerCancellation {
+        session: QaLayerSessionId,
+        message: String,
+    },
+    CancelLayerSession {
+        session: QaLayerSessionId,
+        forced: bool,
+        exit_code: Option<i32>,
+        finished_at: SystemTime,
+    },
+    OpenSelectedLayerRoot,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1004,6 +1490,15 @@ pub enum QaEffect {
     OpenReport(QaReportIdentity),
     OpenProvider(RecipeIdentity),
     OpenSource(QaSourceLocation),
+    InspectLayerCapability,
+    StartLayerCheck {
+        session: QaLayerSessionId,
+        layer: QaLayerIdentity,
+        executable: QaExecutableIdentity,
+        arguments: Vec<String>,
+    },
+    CancelLayerCheck(QaLayerSessionId),
+    OpenLayerRoot(QaLayerIdentity),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1061,6 +1556,20 @@ fn indexed_build_arguments(request: &BuildRequest) -> Vec<String> {
     arguments
 }
 
+fn indexed_native_arguments(
+    executable: &QaExecutableIdentity,
+    arguments: &[String],
+) -> Vec<String> {
+    std::iter::once(format!("0: {}", executable.path.display()))
+        .chain(
+            arguments
+                .iter()
+                .enumerate()
+                .map(|(index, argument)| format!("{}: {argument}", index + 1)),
+        )
+        .collect()
+}
+
 fn clamp_selection(state: &mut QaState) {
     let checks = state
         .visible_checks()
@@ -1072,6 +1581,16 @@ fn clamp_selection(state: &mut QaState) {
         .take()
         .filter(|identity| checks.contains(identity))
         .or_else(|| checks.first().cloned());
+    let layers = state
+        .visible_layers()
+        .into_iter()
+        .map(|layer| layer.identity.clone())
+        .collect::<Vec<_>>();
+    state.layer_selection = state
+        .layer_selection
+        .take()
+        .filter(|identity| layers.contains(identity))
+        .or_else(|| layers.first().cloned());
     let findings = state
         .visible_findings()
         .into_iter()
@@ -1129,6 +1648,42 @@ fn session_mut(state: &mut QaState, id: QaSessionId) -> Option<&mut QaSession> {
     state.sessions.iter_mut().find(|session| session.id == id)
 }
 
+fn layer_session_mut(state: &mut QaState, id: QaLayerSessionId) -> Option<&mut QaLayerSession> {
+    state
+        .layer_sessions
+        .iter_mut()
+        .find(|session| session.id == id)
+}
+
+fn exact_layer_capability<'a>(
+    state: &'a QaState,
+    preview: &QaLayerOperationPreview,
+) -> Option<&'a QaConfiguredLayerCapability> {
+    state
+        .layer_capability
+        .snapshot()?
+        .layers
+        .iter()
+        .find(|capability| {
+            if capability.identity != preview.layer
+                || capability.check != preview.check
+                || capability.limitations != preview.limitations
+            {
+                return false;
+            }
+            matches!(
+                &capability.run,
+                QaLayerRunCapability::Available {
+                    executable,
+                    arguments,
+                    report_roots,
+                } if executable == &preview.executable
+                    && arguments == &preview.arguments
+                    && report_roots == &preview.report_roots
+            )
+        })
+}
+
 fn select_index<T: Clone + PartialEq>(
     items: &[T],
     selected: Option<&T>,
@@ -1149,6 +1704,21 @@ fn select_index<T: Clone + PartialEq>(
 
 pub fn update_qa(state: &mut QaState, action: QaAction) -> QaTransition {
     match action {
+        QaAction::CycleView => {
+            state.view = match state.view {
+                QaView::RecipeKernel => QaView::LayerQa,
+                QaView::LayerQa => QaView::RecipeKernel,
+            };
+            state.drilled = false;
+            clamp_selection(state);
+            if state.view == QaView::LayerQa
+                && matches!(state.layer_capability, QaLayerCapability::NotInspected)
+            {
+                state.layer_capability = QaLayerCapability::Inspecting;
+                return QaTransition::effect(QaEffect::InspectLayerCapability);
+            }
+            QaTransition::none()
+        }
         QaAction::InspectCapability => {
             state.capability = QaCapability::Inspecting;
             QaTransition::effect(QaEffect::InspectCapability {
@@ -1506,6 +2076,7 @@ pub fn update_qa(state: &mut QaState, action: QaAction) -> QaTransition {
         }
         QaAction::CancelDialog => {
             state.pending_operation = None;
+            state.pending_layer_operation = None;
             QaTransition {
                 dialog: QaDialogUpdate::Close,
                 ..QaTransition::none()
@@ -1536,7 +2107,38 @@ pub fn update_qa(state: &mut QaState, action: QaAction) -> QaTransition {
                         .collect::<Vec<_>>()
                 })
                 .unwrap_or_default();
-            let (reports, mut model_limitations) = normalize_qa_reports(reports, &known_checks);
+            let mut known_checks = known_checks;
+            let mut known_scopes = state
+                .capability
+                .snapshot()
+                .map(|snapshot| {
+                    snapshot
+                        .scopes
+                        .iter()
+                        .cloned()
+                        .map(QaFindingScope::Recipe)
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+            if let Some(snapshot) = state.layer_capability.snapshot() {
+                known_checks.extend(snapshot.layers.iter().map(|layer| layer.check.clone()));
+                known_checks.sort();
+                known_checks.dedup();
+                known_scopes.extend(
+                    snapshot
+                        .layers
+                        .iter()
+                        .map(|layer| QaFindingScope::Layer(layer.identity.clone())),
+                );
+                known_scopes.sort_by(|left, right| {
+                    left.name()
+                        .cmp(right.name())
+                        .then_with(|| left.path().cmp(right.path()))
+                });
+                known_scopes.dedup();
+            }
+            let (reports, mut model_limitations) =
+                normalize_qa_reports(reports, &known_checks, &known_scopes);
             model_limitations.extend(limitations);
             let limitations = normalize_limitations(model_limitations);
             state.inventory = if reports.is_empty() && limitations.is_empty() {
@@ -1608,7 +2210,9 @@ pub fn update_qa(state: &mut QaState, action: QaAction) -> QaTransition {
             QaTransition::none()
         }
         QaAction::Drill => {
-            if state.selected_check().is_some() {
+            if (state.view == QaView::RecipeKernel && state.selected_check().is_some())
+                || (state.view == QaView::LayerQa && state.selected_layer().is_some())
+            {
                 state.drilled = true;
                 clamp_selection(state);
             }
@@ -1661,6 +2265,296 @@ pub fn update_qa(state: &mut QaState, action: QaAction) -> QaTransition {
                 || QaTransition::notify("No exact QA finding source is available."),
                 |source| QaTransition::effect(QaEffect::OpenSource(source)),
             ),
+        QaAction::InspectLayerCapability => {
+            state.layer_capability = QaLayerCapability::Inspecting;
+            QaTransition::effect(QaEffect::InspectLayerCapability)
+        }
+        QaAction::LayerCapabilityLoaded(snapshot) => {
+            if !snapshot.is_valid() {
+                state.layer_capability =
+                    QaLayerCapability::Failed("Layer QA capability response is invalid.".into());
+                state.layer_selection = None;
+                return QaTransition::notify("Layer QA capability response is invalid.");
+            }
+            state.layer_selection = Some(snapshot.selected_layer.clone());
+            state.layer_capability = QaLayerCapability::Available(Box::new(snapshot));
+            clamp_selection(state);
+            QaTransition::none()
+        }
+        QaAction::LayerCapabilityPartial {
+            snapshot,
+            limitations,
+        } => {
+            if !snapshot.is_valid() {
+                state.layer_capability =
+                    QaLayerCapability::Failed("Layer QA capability response is invalid.".into());
+                state.layer_selection = None;
+                return QaTransition::notify("Layer QA capability response is invalid.");
+            }
+            state.layer_selection = Some(snapshot.selected_layer.clone());
+            state.layer_capability = QaLayerCapability::Partial {
+                snapshot: Box::new(snapshot),
+                limitations: normalize_limitations(limitations),
+            };
+            clamp_selection(state);
+            QaTransition::none()
+        }
+        QaAction::LayerCapabilityFailed(message) => {
+            state.layer_capability = QaLayerCapability::Failed(message);
+            state.layer_selection = None;
+            QaTransition::none()
+        }
+        QaAction::SelectLayer(delta) => {
+            let layers = state
+                .visible_layers()
+                .into_iter()
+                .map(|layer| layer.identity.clone())
+                .collect::<Vec<_>>();
+            state.layer_selection = select_index(&layers, state.layer_selection.as_ref(), delta);
+            state.drilled = false;
+            clamp_selection(state);
+            QaTransition::none()
+        }
+        QaAction::BeginSelectedLayerCheck => {
+            if state.active_layer_session().is_some() {
+                return QaTransition::notify("A layer QA operation is already active.");
+            }
+            let Some(capability) = state.selected_layer().cloned() else {
+                return QaTransition::notify("Select an exact configured layer first.");
+            };
+            let (executable, arguments, report_roots) = match capability.run {
+                QaLayerRunCapability::Available {
+                    executable,
+                    arguments,
+                    report_roots,
+                } => (executable, arguments, report_roots),
+                QaLayerRunCapability::Disabled(reason) => {
+                    return QaTransition::notify(reason);
+                }
+            };
+            let preview = QaLayerOperationPreview {
+                id: QaLayerOperationId(next_id(&mut state.layer_operation_generation)),
+                check: capability.check,
+                layer: capability.identity,
+                indexed_arguments: indexed_native_arguments(&executable, &arguments),
+                executable,
+                arguments,
+                report_roots,
+                limitations: capability.limitations,
+            };
+            state.pending_layer_operation = Some(preview.clone());
+            QaTransition {
+                dialog: QaDialogUpdate::Open(Box::new(QaDialog::LayerOperation(preview))),
+                ..QaTransition::none()
+            }
+        }
+        QaAction::ConfirmLayerOperation(preview) => {
+            if state.pending_layer_operation.as_ref() != Some(&preview)
+                || exact_layer_capability(state, &preview).is_none()
+                || state.active_layer_session().is_some()
+            {
+                return QaTransition::notify(
+                    "The layer QA confirmation is stale or no longer available.",
+                );
+            }
+            let session = QaLayerSessionId(next_id(&mut state.layer_session_generation));
+            state.layer_sessions.push_back(QaLayerSession {
+                id: session,
+                operation: preview.clone(),
+                status: QaSessionStatus::Starting,
+                started_at: SystemTime::now(),
+                finished_at: None,
+                exit_code: None,
+                message: None,
+                result_paths: Vec::new(),
+                output: VecDeque::new(),
+                dropped_output: 0,
+            });
+            while state.layer_sessions.len() > MAX_QA_SESSIONS {
+                state.layer_sessions.pop_front();
+            }
+            state.pending_layer_operation = None;
+            QaTransition {
+                effect: Some(QaEffect::StartLayerCheck {
+                    session,
+                    layer: preview.layer,
+                    executable: preview.executable,
+                    arguments: preview.arguments,
+                }),
+                dialog: QaDialogUpdate::Close,
+                notification: None,
+            }
+        }
+        QaAction::LayerSessionRunning(id) => {
+            if let Some(session) = layer_session_mut(state, id)
+                && session.status == QaSessionStatus::Starting
+            {
+                session.status = QaSessionStatus::Running;
+            }
+            QaTransition::none()
+        }
+        QaAction::LayerSessionOutput {
+            session: id,
+            stream,
+            line,
+            truncated,
+        } => {
+            if let Some(session) = layer_session_mut(state, id)
+                && !session.status.is_terminal()
+                && !line.is_empty()
+                && line.len() <= MAX_QA_TEXT_BYTES
+                && !line.contains('\0')
+            {
+                if session.output.len() == MAX_QA_SESSION_OUTPUT {
+                    session.output.pop_front();
+                    session.dropped_output = session.dropped_output.saturating_add(1);
+                }
+                session.output.push_back(QaOutputLine {
+                    stream,
+                    line,
+                    truncated,
+                });
+            }
+            QaTransition::none()
+        }
+        QaAction::CompleteLayerSession {
+            session: id,
+            exit_code,
+            result_paths,
+            finished_at,
+        } => {
+            let paths = normalize_paths(result_paths);
+            let Some(session) = layer_session_mut(state, id) else {
+                return QaTransition::none();
+            };
+            if session.status.is_terminal() {
+                return QaTransition::none();
+            }
+            session.finished_at = Some(finished_at);
+            session.exit_code = Some(exit_code);
+            session.result_paths = paths.clone();
+            if exit_code != 0 {
+                session.status = QaSessionStatus::Failed;
+                session.message = Some(format!("yocto-check-layer exited with status {exit_code}"));
+                return QaTransition::none();
+            }
+            session.status = QaSessionStatus::Succeeded;
+            if paths.is_empty() {
+                session.message = Some("no report supplied".into());
+                return QaTransition::none();
+            }
+            match begin_report_request(state, paths) {
+                Ok(effect) => QaTransition::effect(effect),
+                Err(message) => QaTransition::notify(message),
+            }
+        }
+        QaAction::FailLayerSession {
+            session: id,
+            exit_code,
+            message,
+            finished_at,
+        } => {
+            if let Some(session) = layer_session_mut(state, id)
+                && !session.status.is_terminal()
+            {
+                session.status = QaSessionStatus::Failed;
+                session.finished_at = Some(finished_at);
+                session.exit_code = exit_code;
+                session.message = Some(message);
+            }
+            QaTransition::none()
+        }
+        QaAction::TimeoutLayerSession {
+            session: id,
+            forced,
+            exit_code,
+            finished_at,
+        } => {
+            if let Some(session) = layer_session_mut(state, id)
+                && !session.status.is_terminal()
+            {
+                session.status = QaSessionStatus::TimedOut;
+                session.finished_at = Some(finished_at);
+                session.exit_code = exit_code;
+                session.message = Some(if forced {
+                    "Layer QA timed out and required forced termination".into()
+                } else {
+                    "Layer QA timed out".into()
+                });
+            }
+            QaTransition::none()
+        }
+        QaAction::LoseLayerSession {
+            session: id,
+            message,
+            finished_at,
+        } => {
+            if let Some(session) = layer_session_mut(state, id)
+                && !session.status.is_terminal()
+            {
+                session.status = QaSessionStatus::Lost;
+                session.finished_at = Some(finished_at);
+                session.message = Some(message);
+            }
+            QaTransition::none()
+        }
+        QaAction::BeginLayerCancellation => {
+            let Some(session) = state.active_layer_session() else {
+                return QaTransition::notify("No active layer QA operation can be cancelled.");
+            };
+            QaTransition {
+                dialog: QaDialogUpdate::Open(Box::new(QaDialog::LayerCancellation(session.id))),
+                ..QaTransition::none()
+            }
+        }
+        QaAction::ConfirmLayerCancellation(id) => {
+            let Some(session) = layer_session_mut(state, id) else {
+                return QaTransition::notify("The layer QA cancellation target is stale.");
+            };
+            if session.status.is_terminal() {
+                return QaTransition::notify(
+                    "The layer QA cancellation target is already complete.",
+                );
+            }
+            session.status = QaSessionStatus::Cancelling;
+            QaTransition {
+                effect: Some(QaEffect::CancelLayerCheck(id)),
+                dialog: QaDialogUpdate::Close,
+                notification: None,
+            }
+        }
+        QaAction::RejectLayerCancellation {
+            session: id,
+            message,
+        } => {
+            if let Some(session) = layer_session_mut(state, id)
+                && session.status == QaSessionStatus::Cancelling
+            {
+                session.status = QaSessionStatus::Running;
+                session.message = Some(message);
+            }
+            QaTransition::none()
+        }
+        QaAction::CancelLayerSession {
+            session: id,
+            forced,
+            exit_code,
+            finished_at,
+        } => {
+            if let Some(session) = layer_session_mut(state, id)
+                && !session.status.is_terminal()
+            {
+                session.status = QaSessionStatus::Cancelled;
+                session.finished_at = Some(finished_at);
+                session.exit_code = exit_code;
+                session.message = forced.then(|| "Layer QA required forced termination".into());
+            }
+            QaTransition::none()
+        }
+        QaAction::OpenSelectedLayerRoot => state.selected_layer().map_or_else(
+            || QaTransition::notify("No exact configured layer is selected."),
+            |layer| QaTransition::effect(QaEffect::OpenLayerRoot(layer.identity.clone())),
+        ),
     }
 }
 
@@ -1772,7 +2666,7 @@ mod tests {
             "abc123".into(),
             QaReportFormat::Json,
             Some(check),
-            Some(scope("linux-yocto")),
+            Some(QaFindingScope::Recipe(scope("linux-yocto"))),
         )
         .unwrap()
     }
@@ -1787,8 +2681,9 @@ mod tests {
             status,
             severity: Some("warning".into()),
             message: "CONFIG_DEVMEM differs from policy".into(),
-            scope: scope("linux-yocto"),
+            scope: QaFindingScope::Recipe(scope("linux-yocto")),
             task: Some("kernel_configcheck".into()),
+            test_name: None,
             source: Some(
                 QaSourceLocation::new("/layers/meta/cfg/policy.cfg".into(), Some(7), None).unwrap(),
             ),
@@ -2154,6 +3049,7 @@ mod tests {
         let (reports, limitations) = normalize_qa_reports(
             vec![report(findings)],
             &[QaCheckId::new("kernel-config".into()).unwrap()],
+            &[QaFindingScope::Recipe(scope("linux-yocto"))],
         );
         assert_eq!(reports[0].findings.len(), MAX_QA_FINDINGS);
         assert!(
@@ -2269,6 +3165,459 @@ mod tests {
             PathBuf::from("/layers/meta/recipes/busybox/busybox_1.0.bb")
         );
         assert_eq!(state.visible_checks().len(), 2);
+    }
+
+    fn layer(name: &str) -> QaLayerIdentity {
+        QaLayerIdentity::new(name.into(), format!("/layers/{name}").into()).unwrap()
+    }
+
+    fn layer_executable() -> QaExecutableIdentity {
+        QaExecutableIdentity::new(
+            "/poky/scripts/yocto-check-layer".into(),
+            1_024,
+            SystemTime::UNIX_EPOCH,
+        )
+        .unwrap()
+    }
+
+    fn layer_row(name: &str, available: bool) -> QaConfiguredLayerCapability {
+        let identity = layer(name);
+        let run = if available {
+            QaLayerRunCapability::Available {
+                executable: layer_executable(),
+                arguments: vec![
+                    "--layer".into(),
+                    identity.root.to_string_lossy().into_owned(),
+                ],
+                report_roots: vec!["/build/tmp/log/qa-layer".into()],
+            }
+        } else {
+            QaLayerRunCapability::Disabled("yocto-check-layer is unavailable".into())
+        };
+        QaConfiguredLayerCapability::new(
+            QaCheckId::new("yocto-check-layer".into()).unwrap(),
+            identity,
+            vec!["whinlatter".into()],
+            run,
+            vec![],
+        )
+        .unwrap()
+    }
+
+    fn layer_capability() -> QaLayerCapabilitySnapshot {
+        QaLayerCapabilitySnapshot::new(
+            Some("6.0".into()),
+            "/build".into(),
+            layer("meta"),
+            vec![layer_row("meta", true), layer_row("meta-custom", false)],
+            vec![],
+        )
+        .unwrap()
+    }
+
+    fn load_layer(state: &mut QaState) {
+        state.view = QaView::LayerQa;
+        let _ = update_qa(state, QaAction::LayerCapabilityLoaded(layer_capability()));
+    }
+
+    fn begin_layer(state: &mut QaState) -> QaLayerOperationPreview {
+        let transition = update_qa(state, QaAction::BeginSelectedLayerCheck);
+        let QaDialogUpdate::Open(dialog) = transition.dialog else {
+            panic!("expected layer QA preview")
+        };
+        let QaDialog::LayerOperation(preview) = *dialog else {
+            panic!("expected layer QA preview")
+        };
+        preview
+    }
+
+    fn start_layer(state: &mut QaState) -> QaLayerSessionId {
+        let preview = begin_layer(state);
+        let transition = update_qa(state, QaAction::ConfirmLayerOperation(preview));
+        let Some(QaEffect::StartLayerCheck { session, .. }) = transition.effect else {
+            panic!("expected layer QA start")
+        };
+        session
+    }
+
+    fn layer_finding(status: QaFindingStatus, fingerprint: &str) -> QaFinding {
+        QaFinding {
+            identity: QaFindingIdentity::new(
+                QaCheckId::new("yocto-check-layer".into()).unwrap(),
+                fingerprint.into(),
+            )
+            .unwrap(),
+            status,
+            severity: Some("warning".into()),
+            message: "layer compatibility declaration is incomplete".into(),
+            scope: QaFindingScope::Layer(layer("meta")),
+            task: None,
+            test_name: Some("LayerCompatibility".into()),
+            source: Some(
+                QaSourceLocation::new("/layers/meta/conf/layer.conf".into(), Some(12), None)
+                    .unwrap(),
+            ),
+            rule: Some("LAYERSERIES_COMPAT".into()),
+            suggestion: Some("declare the active release series".into()),
+            metadata: vec![],
+        }
+    }
+
+    fn layer_report(findings: Vec<QaFinding>) -> QaReport {
+        let check = QaCheckId::new("yocto-check-layer".into()).unwrap();
+        QaReport {
+            identity: QaReportIdentity::new(
+                "/build/tmp/log/qa-layer/report.json".into(),
+                512,
+                SystemTime::UNIX_EPOCH,
+                "layerreport".into(),
+                QaReportFormat::Json,
+                Some(check),
+                Some(QaFindingScope::Layer(layer("meta"))),
+            )
+            .unwrap(),
+            findings,
+            metadata: vec![],
+            limitations: vec![],
+        }
+    }
+
+    #[test]
+    fn qa_layer_workflow_keeps_configured_disabled_layers_and_rejects_invalid_identities() {
+        assert!(QaLayerIdentity::new("meta".into(), "../meta".into()).is_err());
+        let identity = layer("meta");
+        assert!(
+            QaConfiguredLayerCapability::new(
+                QaCheckId::new("yocto-check-layer".into()).unwrap(),
+                identity,
+                vec![],
+                QaLayerRunCapability::Available {
+                    executable: layer_executable(),
+                    arguments: vec!["--layer".into(), "/arbitrary/not-configured".into()],
+                    report_roots: vec![],
+                },
+                vec![],
+            )
+            .is_err()
+        );
+
+        let mut state = QaState::default();
+        assert!(matches!(
+            state.layer_capability,
+            QaLayerCapability::NotInspected
+        ));
+        assert_eq!(
+            update_qa(&mut state, QaAction::CycleView).effect,
+            Some(QaEffect::InspectLayerCapability)
+        );
+        assert_eq!(state.view, QaView::LayerQa);
+        assert!(matches!(
+            state.layer_capability,
+            QaLayerCapability::Inspecting
+        ));
+        load_layer(&mut state);
+        assert_eq!(state.visible_layers().len(), 2);
+        let _ = update_qa(&mut state, QaAction::SelectLayer(1));
+        let transition = update_qa(&mut state, QaAction::BeginSelectedLayerCheck);
+        assert_eq!(
+            transition.notification.as_deref(),
+            Some("yocto-check-layer is unavailable")
+        );
+
+        let mut partial = QaState::default();
+        let _ = update_qa(
+            &mut partial,
+            QaAction::LayerCapabilityPartial {
+                snapshot: layer_capability(),
+                limitations: vec!["one compatibility series was unavailable".into()],
+            },
+        );
+        assert!(matches!(
+            partial.layer_capability,
+            QaLayerCapability::Partial { .. }
+        ));
+        let _ = update_qa(
+            &mut partial,
+            QaAction::LayerCapabilityFailed("inspection failed".into()),
+        );
+        assert!(matches!(
+            partial.layer_capability,
+            QaLayerCapability::Failed(_)
+        ));
+    }
+
+    #[test]
+    fn qa_layer_workflow_preview_is_exact_indexed_and_stale_safe() {
+        let mut state = QaState::default();
+        load_layer(&mut state);
+        let preview = begin_layer(&mut state);
+        assert_eq!(
+            preview.indexed_arguments,
+            [
+                "0: /poky/scripts/yocto-check-layer",
+                "1: --layer",
+                "2: /layers/meta"
+            ]
+        );
+        let mut stale_layer = preview.clone();
+        stale_layer.layer = layer("meta-custom");
+        let transition = update_qa(&mut state, QaAction::ConfirmLayerOperation(stale_layer));
+        assert!(transition.effect.is_none());
+        assert!(state.layer_sessions.is_empty());
+        let mut stale_tool = preview.clone();
+        stale_tool.executable.byte_size += 1;
+        let transition = update_qa(&mut state, QaAction::ConfirmLayerOperation(stale_tool));
+        assert!(transition.effect.is_none());
+        assert!(state.layer_sessions.is_empty());
+
+        let transition = update_qa(&mut state, QaAction::ConfirmLayerOperation(preview.clone()));
+        assert!(matches!(
+            transition.effect,
+            Some(QaEffect::StartLayerCheck {
+                layer: QaLayerIdentity { ref name, .. },
+                ref executable,
+                ref arguments,
+                ..
+            }) if name == "meta"
+                && executable == &layer_executable()
+                && arguments == &["--layer", "/layers/meta"]
+        ));
+        assert!(matches!(transition.dialog, QaDialogUpdate::Close));
+        assert!(
+            update_qa(&mut state, QaAction::ConfirmLayerOperation(preview))
+                .effect
+                .is_none()
+        );
+    }
+
+    #[test]
+    fn qa_layer_workflow_lifecycle_output_cancellation_and_terminal_states_are_distinct() {
+        let mut state = QaState::default();
+        load_layer(&mut state);
+        let id = start_layer(&mut state);
+        let _ = update_qa(&mut state, QaAction::LayerSessionRunning(id));
+        for index in 0..=MAX_QA_SESSION_OUTPUT {
+            let _ = update_qa(
+                &mut state,
+                QaAction::LayerSessionOutput {
+                    session: id,
+                    stream: QaOutputStream::Stderr,
+                    line: format!("line {index}"),
+                    truncated: false,
+                },
+            );
+        }
+        assert_eq!(state.layer_sessions[0].output.len(), MAX_QA_SESSION_OUTPUT);
+        assert_eq!(state.layer_sessions[0].dropped_output, 1);
+        assert!(matches!(
+            update_qa(&mut state, QaAction::BeginLayerCancellation).dialog,
+            QaDialogUpdate::Open(dialog)
+                if matches!(*dialog, QaDialog::LayerCancellation(session) if session == id)
+        ));
+        assert_eq!(
+            update_qa(&mut state, QaAction::ConfirmLayerCancellation(id)).effect,
+            Some(QaEffect::CancelLayerCheck(id))
+        );
+        let _ = update_qa(
+            &mut state,
+            QaAction::RejectLayerCancellation {
+                session: id,
+                message: "runner busy".into(),
+            },
+        );
+        assert_eq!(state.layer_sessions[0].status, QaSessionStatus::Running);
+        let _ = update_qa(
+            &mut state,
+            QaAction::CompleteLayerSession {
+                session: id,
+                exit_code: 2,
+                result_paths: vec![],
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert_eq!(state.layer_sessions[0].status, QaSessionStatus::Failed);
+        assert_eq!(state.layer_sessions[0].exit_code, Some(2));
+
+        let mut cancelled = QaState::default();
+        load_layer(&mut cancelled);
+        let id = start_layer(&mut cancelled);
+        let _ = update_qa(
+            &mut cancelled,
+            QaAction::CancelLayerSession {
+                session: id,
+                forced: true,
+                exit_code: None,
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert_eq!(
+            cancelled.layer_sessions[0].status,
+            QaSessionStatus::Cancelled
+        );
+
+        let mut timed_out = QaState::default();
+        load_layer(&mut timed_out);
+        let id = start_layer(&mut timed_out);
+        let _ = update_qa(
+            &mut timed_out,
+            QaAction::TimeoutLayerSession {
+                session: id,
+                forced: false,
+                exit_code: None,
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert_eq!(
+            timed_out.layer_sessions[0].status,
+            QaSessionStatus::TimedOut
+        );
+
+        let mut lost = QaState::default();
+        load_layer(&mut lost);
+        let id = start_layer(&mut lost);
+        let _ = update_qa(
+            &mut lost,
+            QaAction::LoseLayerSession {
+                session: id,
+                message: "runner channel closed".into(),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert_eq!(lost.layer_sessions[0].status, QaSessionStatus::Lost);
+    }
+
+    #[test]
+    fn qa_layer_workflow_reports_counts_filters_drill_and_exact_opens() {
+        let mut state = QaState::default();
+        load_layer(&mut state);
+        let id = start_layer(&mut state);
+        let transition = update_qa(
+            &mut state,
+            QaAction::CompleteLayerSession {
+                session: id,
+                exit_code: 0,
+                result_paths: vec!["/build/tmp/log/qa-layer/report.json".into()],
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let Some(QaEffect::ImportReports(request)) = transition.effect else {
+            panic!("expected exact layer report scan")
+        };
+        let _ = update_qa(
+            &mut state,
+            QaAction::ReportsLoaded {
+                request,
+                reports: vec![layer_report(vec![
+                    layer_finding(QaFindingStatus::Failed, "layer-fail"),
+                    layer_finding(QaFindingStatus::Warning, "layer-warning"),
+                ])],
+                limitations: vec![],
+            },
+        );
+        assert_eq!(
+            state.layer_finding_counts(&layer("meta")),
+            QaFindingCounts {
+                failed: 1,
+                warnings: 1,
+                ..QaFindingCounts::default()
+            }
+        );
+        let _ = update_qa(&mut state, QaAction::CycleStatusFilter);
+        assert_eq!(state.status_filter, QaStatusFilter::Failed);
+        assert_eq!(state.visible_findings().len(), 1);
+        let _ = update_qa(&mut state, QaAction::BeginSearch);
+        for character in "compatibility".chars() {
+            let _ = update_qa(&mut state, QaAction::AppendQuery(character));
+        }
+        assert_eq!(state.visible_layers().len(), 1);
+        let _ = update_qa(&mut state, QaAction::Drill);
+        assert!(state.drilled);
+        assert!(matches!(
+            update_qa(&mut state, QaAction::OpenSelectedSource).effect,
+            Some(QaEffect::OpenSource(_))
+        ));
+        assert_eq!(
+            update_qa(&mut state, QaAction::OpenSelectedLayerRoot).effect,
+            Some(QaEffect::OpenLayerRoot(layer("meta")))
+        );
+    }
+
+    #[test]
+    fn qa_layer_workflow_native_session_is_independent_from_managed_build_session() {
+        let mut state = QaState::default();
+        load(&mut state);
+        let recipe_session = start(&mut state);
+        load_layer(&mut state);
+        let layer_session = start_layer(&mut state);
+        assert_eq!(state.active_session().unwrap().id, recipe_session);
+        assert_eq!(state.active_layer_session().unwrap().id, layer_session);
+        assert!(matches!(
+            update_qa(&mut state, QaAction::BeginLayerCancellation).dialog,
+            QaDialogUpdate::Open(dialog)
+                if matches!(*dialog, QaDialog::LayerCancellation(id) if id == layer_session)
+        ));
+        assert_eq!(
+            update_qa(
+                &mut state,
+                QaAction::AttachBackgroundJob {
+                    session: recipe_session,
+                    background_job: BackgroundJobId(77),
+                }
+            )
+            .effect,
+            None
+        );
+        assert!(matches!(
+            update_qa(&mut state, QaAction::BeginCancellation).dialog,
+            QaDialogUpdate::Open(dialog)
+                if matches!(
+                    *dialog,
+                    QaDialog::Cancellation {
+                        session,
+                        background_job
+                    } if session == recipe_session && background_job == BackgroundJobId(77)
+                )
+        ));
+    }
+
+    #[test]
+    fn qa_layer_workflow_history_is_bounded_and_dialog_focus_is_trapped() {
+        let mut state = QaState::default();
+        load_layer(&mut state);
+        for _ in 0..=MAX_QA_SESSIONS {
+            let id = start_layer(&mut state);
+            let _ = update_qa(
+                &mut state,
+                QaAction::CompleteLayerSession {
+                    session: id,
+                    exit_code: 0,
+                    result_paths: vec![],
+                    finished_at: SystemTime::UNIX_EPOCH,
+                },
+            );
+        }
+        assert_eq!(state.layer_sessions.len(), MAX_QA_SESSIONS);
+        assert_eq!(
+            state.layer_sessions.front().unwrap().id,
+            QaLayerSessionId(2)
+        );
+
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Inspector;
+        app.qa.view = QaView::LayerQa;
+        let _ = update(
+            &mut app,
+            Action::Qa(QaAction::LayerCapabilityLoaded(layer_capability())),
+        );
+        let _ = update(&mut app, Action::Qa(QaAction::BeginSelectedLayerCheck));
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::Qa(QaDialog::LayerOperation(_)))
+        ));
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        let _ = update(&mut app, Action::Qa(QaAction::CancelDialog));
+        assert!(app.active_dialog().is_none());
+        assert_eq!(app.focus, FocusTarget::Inspector);
     }
 
     #[test]

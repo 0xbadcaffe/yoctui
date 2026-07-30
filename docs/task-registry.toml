@@ -1263,12 +1263,12 @@ notes = "Pure typed QA state now validates exact recipe/provider scope and a cap
 id = "QA-LAYER-MODEL-001"
 milestone = "M5"
 title = "Model typed layer QA checks"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 62
 required = true
 depends_on = ["QA-SPEC-001"]
 verify = ["cargo test -p yoctui-model qa_layer_workflow", "cargo test -p yoctui-app qa_workflow"]
-notes = "Model exact configured-layer selection, yocto-check-layer capability, deterministic preview, stable session/output/result state, cancellation, terminal outcomes, navigation, dialogs, and typed effects."
+notes = "The QA reducer now retains every exact configured layer, including disabled rows, and models not-inspected/inspecting/available/partial/failed capability states with stable reasons. Canonical executable identities and capability-supplied native vectors drive indexed stale-safe previews, an independent bounded session/output history, exact cancellation, nonzero/success/cancel/timeout/loss outcomes, correlated layer findings/counts/reports, search/filter/drill/navigation, focus-trapped dialogs, and exact root/report/source effects. Recipe/kernel and native layer cancellation targets remain independent."
 
 [[task]]
 id = "QA-MODEL-001"

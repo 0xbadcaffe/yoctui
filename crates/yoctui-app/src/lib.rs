@@ -10,7 +10,7 @@ use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
     BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
-    LayerInspectorMode, LayerRelationship, LayerRelationships, QaAction, QaDialog,
+    LayerInspectorMode, LayerRelationship, LayerRelationships, QaAction, QaDialog, QaView,
     QemuOutputStream, QemuSessionId, RecipeDependencies, Screen, SdkBuildAction, SdkKind,
     SdkOutputStream, SdkSessionId, SecurityAction, SecurityDialog, SecurityOutputStream,
     SecurityView, Severity, TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity,
@@ -1761,7 +1761,12 @@ pub fn security_dialog_action(dialog: &SecurityDialog, key: Input) -> Option<Act
     }
 }
 
-pub fn qa_workspace_action(drilled: bool, searching: bool, key: Input) -> Option<Action> {
+pub fn qa_workspace_action(
+    view: QaView,
+    drilled: bool,
+    searching: bool,
+    key: Input,
+) -> Option<Action> {
     let qa = |action| Some(Action::Qa(action));
     if searching {
         return match key {
@@ -1772,28 +1777,49 @@ pub fn qa_workspace_action(drilled: bool, searching: bool, key: Input) -> Option
         };
     }
     match key {
+        Input::Tab => qa(QaAction::CycleView),
         Input::Up | Input::Char('k') => qa(if drilled {
             QaAction::SelectFinding(-1)
+        } else if view == QaView::LayerQa {
+            QaAction::SelectLayer(-1)
         } else {
             QaAction::SelectCheck(-1)
         }),
         Input::Down | Input::Char('j') => qa(if drilled {
             QaAction::SelectFinding(1)
+        } else if view == QaView::LayerQa {
+            QaAction::SelectLayer(1)
         } else {
             QaAction::SelectCheck(1)
         }),
         Input::Enter => qa(QaAction::Drill),
         Input::Esc if drilled => qa(QaAction::LeaveDrill),
-        Input::Char('s') => qa(QaAction::CycleScope),
+        Input::Char('s') => qa(if view == QaView::LayerQa {
+            QaAction::SelectLayer(1)
+        } else {
+            QaAction::CycleScope
+        }),
         Input::Char('/') => qa(QaAction::BeginSearch),
         Input::Char('f') => qa(QaAction::CycleStatusFilter),
-        Input::Char('r') => qa(QaAction::BeginSelectedCheck),
+        Input::Char('r') => qa(if view == QaView::LayerQa {
+            QaAction::BeginSelectedLayerCheck
+        } else {
+            QaAction::BeginSelectedCheck
+        }),
         Input::Char('I') => qa(QaAction::BeginImport),
         Input::Char('R') => qa(QaAction::RefreshReports),
         Input::Char('o') => qa(QaAction::OpenSelectedReport),
-        Input::Char('e') => qa(QaAction::OpenProvider),
+        Input::Char('e') => qa(if view == QaView::LayerQa {
+            QaAction::OpenSelectedLayerRoot
+        } else {
+            QaAction::OpenProvider
+        }),
         Input::Char('l') => qa(QaAction::OpenSelectedSource),
-        Input::Char('c') => qa(QaAction::BeginCancellation),
+        Input::Char('c') => qa(if view == QaView::LayerQa {
+            QaAction::BeginLayerCancellation
+        } else {
+            QaAction::BeginCancellation
+        }),
         _ => None,
     }
 }
@@ -1806,8 +1832,18 @@ pub fn qa_dialog_action(dialog: &QaDialog, key: Input) -> Option<Action> {
             Input::Esc => qa(QaAction::CancelDialog),
             _ => None,
         },
+        QaDialog::LayerOperation(preview) => match key {
+            Input::Enter => qa(QaAction::ConfirmLayerOperation(preview.clone())),
+            Input::Esc => qa(QaAction::CancelDialog),
+            _ => None,
+        },
         QaDialog::Cancellation { session, .. } => match key {
             Input::Enter => qa(QaAction::ConfirmCancellation(*session)),
+            Input::Esc => qa(QaAction::CancelDialog),
+            _ => None,
+        },
+        QaDialog::LayerCancellation(session) => match key {
+            Input::Enter => qa(QaAction::ConfirmLayerCancellation(*session)),
             Input::Esc => qa(QaAction::CancelDialog),
             _ => None,
         },
@@ -4961,29 +4997,49 @@ mod tests {
     #[test]
     fn qa_workflow_maps_workspace_search_and_drill_keys_without_leakage() {
         assert_eq!(
-            qa_workspace_action(false, false, Input::Char('r')),
+            qa_workspace_action(QaView::RecipeKernel, false, false, Input::Char('r')),
             Some(Action::Qa(QaAction::BeginSelectedCheck))
         );
         assert_eq!(
-            qa_workspace_action(false, false, Input::Down),
+            qa_workspace_action(QaView::RecipeKernel, false, false, Input::Down),
             Some(Action::Qa(QaAction::SelectCheck(1)))
         );
         assert_eq!(
-            qa_workspace_action(true, false, Input::Down),
+            qa_workspace_action(QaView::RecipeKernel, true, false, Input::Down),
             Some(Action::Qa(QaAction::SelectFinding(1)))
         );
         assert_eq!(
-            qa_workspace_action(false, true, Input::Char('r')),
+            qa_workspace_action(QaView::RecipeKernel, false, true, Input::Char('r')),
             Some(Action::Qa(QaAction::AppendQuery('r'))),
             "search editing consumes QA run shortcuts"
         );
         assert_eq!(
-            qa_workspace_action(true, false, Input::Esc),
+            qa_workspace_action(QaView::RecipeKernel, true, false, Input::Esc),
             Some(Action::Qa(QaAction::LeaveDrill))
         );
         assert_eq!(
-            qa_workspace_action(false, false, Input::Char('l')),
+            qa_workspace_action(QaView::RecipeKernel, false, false, Input::Char('l')),
             Some(Action::Qa(QaAction::OpenSelectedSource))
+        );
+        assert_eq!(
+            qa_workspace_action(QaView::LayerQa, false, false, Input::Tab),
+            Some(Action::Qa(QaAction::CycleView))
+        );
+        assert_eq!(
+            qa_workspace_action(QaView::LayerQa, false, false, Input::Down),
+            Some(Action::Qa(QaAction::SelectLayer(1)))
+        );
+        assert_eq!(
+            qa_workspace_action(QaView::LayerQa, false, false, Input::Char('r')),
+            Some(Action::Qa(QaAction::BeginSelectedLayerCheck))
+        );
+        assert_eq!(
+            qa_workspace_action(QaView::LayerQa, false, false, Input::Char('c')),
+            Some(Action::Qa(QaAction::BeginLayerCancellation))
+        );
+        assert_eq!(
+            qa_workspace_action(QaView::LayerQa, false, false, Input::Char('e')),
+            Some(Action::Qa(QaAction::OpenSelectedLayerRoot))
         );
     }
 
@@ -5032,6 +5088,38 @@ mod tests {
             ),
             Some(Action::Qa(QaAction::ConfirmCancellation(
                 yoctui_model::QaSessionId(3)
+            )))
+        );
+        let layer_preview = yoctui_model::QaLayerOperationPreview {
+            id: yoctui_model::QaLayerOperationId(4),
+            check: yoctui_model::QaCheckId::new("yocto-check-layer".into()).unwrap(),
+            layer: yoctui_model::QaLayerIdentity::new("meta".into(), "/layers/meta".into())
+                .unwrap(),
+            executable: yoctui_model::QaExecutableIdentity::new(
+                "/poky/scripts/yocto-check-layer".into(),
+                10,
+                SystemTime::UNIX_EPOCH,
+            )
+            .unwrap(),
+            arguments: vec!["--layer".into(), "/layers/meta".into()],
+            indexed_arguments: vec!["0: /poky/scripts/yocto-check-layer".into()],
+            report_roots: vec![],
+            limitations: vec![],
+        };
+        assert_eq!(
+            qa_dialog_action(
+                &QaDialog::LayerOperation(layer_preview.clone()),
+                Input::Enter
+            ),
+            Some(Action::Qa(QaAction::ConfirmLayerOperation(layer_preview)))
+        );
+        assert_eq!(
+            qa_dialog_action(
+                &QaDialog::LayerCancellation(yoctui_model::QaLayerSessionId(4)),
+                Input::Enter,
+            ),
+            Some(Action::Qa(QaAction::ConfirmLayerCancellation(
+                yoctui_model::QaLayerSessionId(4)
             )))
         );
         assert_eq!(
