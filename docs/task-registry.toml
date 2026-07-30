@@ -1153,12 +1153,12 @@ notes = "A first-class Security destination now owns validated exact recipe/imag
 id = "SEC-CAP-ADAPTER-001"
 milestone = "M5"
 title = "Inspect Security capabilities"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 61
 required = true
 depends_on = ["SEC-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake security_capability"]
-notes = "Construct fail-closed typed snapshots from explicit build/recipe/image metadata, canonical roots, and canonical package-mapping tool discovery while preserving exact current/legacy task names."
+notes = "The fail-closed inspector accepts only explicit initialized metadata, canonicalizes and validates the primary build/scope identity, bounds and de-duplicates optional report/PATH roots with visible limitations, discovers only a canonical regular executable cve-check-map-pkgs, and preserves exact reported current create_recipe_sbom or legacy create_spdx plus cve_check/image behavior without consulting release text or process-global environment. Current, legacy, missing, partial, symlink, invalid-scope, and excessive-input fixtures pass focused and baseline checks."
 
 [[task]]
 id = "SEC-REPORT-ADAPTER-001"

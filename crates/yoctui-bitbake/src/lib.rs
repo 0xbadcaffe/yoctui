@@ -4,6 +4,7 @@ mod package;
 mod qemu;
 mod sdk;
 mod sdk_tool;
+mod security;
 mod signature;
 mod test_results;
 mod test_runner;
@@ -27,6 +28,7 @@ pub use sdk_tool::{
     SdkToolAdapter, SdkToolAdapterError, SdkToolCapabilityInspector, SdkToolCommandSpec,
     SdkToolJobRunner, SdkToolRunnerEvent,
 };
+pub use security::{SecurityCapabilityError, SecurityCapabilityInput, SecurityCapabilityInspector};
 pub use signature::{
     SignatureAdapter, SignatureAdapterError, SignatureCancellation, SignatureCommandSpec,
     SignatureComparisonResponse, SignatureDumpResponse,
