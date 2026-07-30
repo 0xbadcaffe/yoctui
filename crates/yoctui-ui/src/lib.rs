@@ -469,6 +469,9 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Testing => {
             "Tab view | ↑/↓ select | Enter open | r run | i image | / search | I import | R refresh | c compare | J JUnit | o result | l log | x cancel"
         }
+        Screen::Security => {
+            "Tab view | ↑/↓ select | s scope | i image | / search | f status | V CVE check | M map | X SBOM | I import | R refresh | Enter details | o report | e recipe | v advisory | c cancel"
+        }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
@@ -498,6 +501,8 @@ fn responsive_footer_shortcuts(app: &App, width: u16) -> &'static str {
         "↑↓ i:image s/E:SDK t/T:test R:scan P:publish n:native o:open c:cancel"
     } else if app.screen == Screen::Testing && width <= 90 {
         "Tab:view ↑↓ Enter r:run i:image /:find I/R:results c:compare J:JUnit o/l:open x:cancel"
+    } else if app.screen == Screen::Security && width <= 90 {
+        "Tab:view ↑↓ s:scope i:image /:find f:status V:check M:map X:SBOM I/R:data Enter o/e/v:open c:cancel"
     } else {
         footer_shortcuts(app)
     }
@@ -1614,6 +1619,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
         ("Images", Screen::Images),
         ("SDK", Screen::Sdk),
         ("Testing", Screen::Testing),
+        ("Security", Screen::Security),
         ("Tasks", Screen::Tasks),
         ("Logs", Screen::Logs),
         ("Errors", Screen::Errors),
@@ -1664,6 +1670,18 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Images => images_workspace(frame, app, area),
         Screen::Sdk => sdk_workspace(frame, app, area),
         Screen::Testing => testing_workspace(frame, app, area),
+        Screen::Security => frame.render_widget(
+            Paragraph::new(
+                "Security capability and report acquisition are pending.\n\nTyped CVE and SPDX data will appear here.",
+            )
+            .block(pane_block(
+                app,
+                "Security",
+                app.focus == FocusTarget::Workspace,
+            ))
+            .wrap(Wrap { trim: false }),
+            area,
+        ),
         Screen::Layers => {
             if let Some(browser) = app.layer_browser.as_ref() {
                 layer_browser(frame, app, browser, area)

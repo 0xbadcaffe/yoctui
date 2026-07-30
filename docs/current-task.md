@@ -2,44 +2,45 @@
 
 ## Active task
 
-**ID:** SEC-MODEL-001
-**Title:** Model typed security workflows
+**ID:** SEC-ADAPTER-001
+**Title:** Adapt CVE and SPDX metadata and reports
 
 ## Objective
 
-Implement pure typed Security capability, operation, report, selection, and
-lifecycle state with reducer and app input/effect coverage.
+Implement bounded Security capability inspection, CVE/SPDX report acquisition
+and parsing, and the exact package-mapping runner.
 
 ## Required work
 
-1. Add `Screen::Security` after Testing and preserve responsive navigation.
-2. Model exact recipe/image scope and capability-supplied CVE, package-map,
-   legacy/current recipe SBOM, and image SBOM operations.
-3. Validate deterministic indexed previews without discovering tools, tasks,
-   or paths in the reducer.
-4. Model bounded canonical report identities, normalized CVE findings/package
-   mappings, SPDX document/component summaries, limitations, and explicit
-   generation-correlated inventory states.
-5. Add view, scope, search/filter/drill selection, exact open effects,
-   confirmation dialogs, managed-job association, cancellation, and every
-   terminal action.
-6. Map keys and adapter response shapes mechanically in `yoctui-app`.
-7. Add focused pure-model, reducer, failure-path, and app mapping tests.
+1. Inspect the typed Security model and existing bounded filesystem/process
+   adapters before adding a new adapter module.
+2. Build capability snapshots only from explicit build/recipe/image metadata,
+   canonical report roots, and canonical PATH tool discovery.
+3. Preserve exact authoritative task names including current
+   `create_recipe_sbom` and legacy `create_spdx` without release-name guessing.
+4. Acquire only explicit request paths, reject symlinks/escapes/stale identity,
+   and bound directories, files, bytes, records, fields, and elapsed time.
+5. Parse supported CVE JSON/text and SPDX JSON into typed records; keep
+   unknown status/schema, empty, partial, malformed, and oversized states
+   explicit.
+6. Reconstruct and revalidate the exact shell-free package-mapping operation;
+   emit bounded typed stream and terminal events with cancellation/timeout.
+7. Add fake filesystem/process tests for normal and every relevant failure
+   path. Do not claim live compatibility.
 
 ## Definition of done
 
-- Security state is fully typed, bounded, and independent of filesystem or
-  process parsing.
-- Exact request, operation, report, and generation identities reject stale
-  actions.
-- Search, filter, drill, dialogs, lifecycle, and open effects follow the UI
-  contract.
-- Focused model/app and baseline checks pass.
+- Capability data is authoritative, canonical, and fail-closed.
+- CVE/SPDX parsing returns only bounded typed records and limitations.
+- Package mapping is shell-free and immediately revalidated.
+- Empty, partial, malformed, timeout, cancellation, nonzero, rejection, and
+  loss remain distinct.
+- Focused adapter/app and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model security_workflow
+cargo test -p yoctui-bitbake security
 cargo test -p yoctui-app security_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features

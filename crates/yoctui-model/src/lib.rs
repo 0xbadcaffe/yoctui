@@ -3,6 +3,7 @@ mod image;
 mod package;
 mod qemu;
 mod sdk;
+mod security;
 mod testing;
 mod wic;
 
@@ -10,6 +11,7 @@ pub use image::*;
 pub use package::*;
 pub use qemu::*;
 pub use sdk::*;
+pub use security::*;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
@@ -57,6 +59,7 @@ pub enum Screen {
     Images,
     Sdk,
     Testing,
+    Security,
     Layers,
     Configuration,
     Bbmask,
@@ -138,7 +141,7 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-const NAVIGATOR_SCREENS: [Screen; 15] = [
+const NAVIGATOR_SCREENS: [Screen; 16] = [
     Screen::Dashboard,
     Screen::Layers,
     Screen::Recipes,
@@ -146,6 +149,7 @@ const NAVIGATOR_SCREENS: [Screen; 15] = [
     Screen::Images,
     Screen::Sdk,
     Screen::Testing,
+    Screen::Security,
     Screen::Tasks,
     Screen::Logs,
     Screen::Errors,
@@ -805,6 +809,7 @@ pub enum Dialog {
     TestComparisonConfirmation(TestComparisonPreview),
     TestJunitExport(TestJunitExportDialog),
     TestJunitExportConfirmation(TestJunitExportPreview),
+    Security(SecurityDialog),
     RecipeTaskConfirmation(BuildRequest),
     RecipeTaskPicker(RecipeTaskPicker),
     SignatureTaskPicker(SignatureTaskPicker),
@@ -2155,6 +2160,7 @@ pub struct App {
     pub test_comparison_generation: u64,
     pub test_junit_export: TestJunitExportState,
     pub test_junit_generation: u64,
+    pub security: SecurityState,
     pub qemu_capability: QemuCapability,
     pub qemu_sessions: VecDeque<QemuSession>,
     pub qemu_session_generation: u64,
@@ -2268,6 +2274,7 @@ impl App {
             test_comparison_generation: 0,
             test_junit_export: TestJunitExportState::default(),
             test_junit_generation: 0,
+            security: SecurityState::default(),
             qemu_capability: QemuCapability::default(),
             qemu_sessions: VecDeque::new(),
             qemu_session_generation: 0,
@@ -3203,6 +3210,7 @@ pub enum Action {
         request: TestJunitExportRequest,
         message: String,
     },
+    Security(SecurityAction),
     InspectQemuCapability,
     QemuCapabilityLoaded(QemuCapability),
     BeginSelectedQemuLaunch,
@@ -5409,6 +5417,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             {
                 return Some(Effect::InspectResultToolCapability);
             }
+            if s == Screen::Security
+                && matches!(app.security.capability, SecurityCapability::NotInspected)
+            {
+                return Some(Effect::Security(SecurityEffect::InspectCapability));
+            }
         }
         Action::SelectNavigator { delta } => {
             app.navigator_selection = if delta.is_negative() {
@@ -5458,6 +5471,34 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             {
                 return Some(Effect::InspectResultToolCapability);
             }
+            if app.screen == Screen::Security
+                && matches!(app.security.capability, SecurityCapability::NotInspected)
+            {
+                return Some(Effect::Security(SecurityEffect::InspectCapability));
+            }
+        }
+        Action::Security(action) => {
+            let transition = update_security(&mut app.security, action);
+            match transition.dialog {
+                SecurityDialogUpdate::None => {}
+                SecurityDialogUpdate::Open(dialog) => {
+                    if matches!(app.active_dialog(), Some(Dialog::Security(_))) {
+                        replace_dialog(app, Dialog::Security(dialog));
+                    } else {
+                        open_dialog(app, Dialog::Security(dialog));
+                    }
+                }
+                SecurityDialogUpdate::Close => {
+                    if matches!(app.active_dialog(), Some(Dialog::Security(_))) {
+                        close_dialog(app);
+                    }
+                }
+            }
+            if let Some(message) = transition.notification {
+                app.notification = Some(message);
+            }
+            synchronize_focus(app);
+            return transition.effect.map(Effect::Security);
         }
         Action::Focus(target) => app.focus = target,
         Action::OpenCommandPalette => {
@@ -11638,6 +11679,7 @@ pub enum Effect {
         destination: PathBuf,
     },
     ExportTestJunit(TestJunitExportRequest),
+    Security(SecurityEffect),
     InspectQemuCapability,
     StartQemuSession {
         id: QemuSessionId,
