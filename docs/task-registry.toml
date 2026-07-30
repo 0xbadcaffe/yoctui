@@ -1252,12 +1252,12 @@ notes = "The authoritative contracts now define a responsive QA destination with
 id = "QA-CHECK-MODEL-001"
 milestone = "M5"
 title = "Model typed recipe and kernel QA checks"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 62
 required = true
 depends_on = ["QA-SPEC-001"]
 verify = ["cargo test -p yoctui-model qa_check_workflow", "cargo test -p yoctui-app qa_workflow"]
-notes = "Model exact recipe/kernel scope, capability-supplied check catalog, previews, stable sessions, findings, result identity, search/filter selection, cancellation, terminal outcomes, dialogs, and typed effects for kernel config, URI, patch, license, and recipe checks."
+notes = "Pure typed QA state now validates exact recipe/provider scope and a capability-supplied kernel, URI, patch, license, and recipe/package catalog without task guessing. It owns indexed stale-safe managed-BitBake previews, stable bounded session/output history, background-job attachment and cancellation, every terminal outcome, generation-correlated bounded report identities/findings/imports, empty/partial/failure states, search/status selection and drill, exact opens, focus-trapped dialogs, reducer coverage, and mechanical app input mapping."
 
 [[task]]
 id = "QA-LAYER-MODEL-001"

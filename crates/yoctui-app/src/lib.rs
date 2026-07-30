@@ -10,11 +10,11 @@ use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
     BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
-    LayerInspectorMode, LayerRelationship, LayerRelationships, QemuOutputStream, QemuSessionId,
-    RecipeDependencies, Screen, SdkBuildAction, SdkKind, SdkOutputStream, SdkSessionId,
-    SecurityAction, SecurityDialog, SecurityOutputStream, SecurityView, Severity, TaskId, TaskInfo,
-    TestComparison, VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream,
-    WicSessionId,
+    LayerInspectorMode, LayerRelationship, LayerRelationships, QaAction, QaDialog,
+    QemuOutputStream, QemuSessionId, RecipeDependencies, Screen, SdkBuildAction, SdkKind,
+    SdkOutputStream, SdkSessionId, SecurityAction, SecurityDialog, SecurityOutputStream,
+    SecurityView, Severity, TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity,
+    WicCapability, WicOutput, WicOutputStream, WicSessionId,
 };
 
 pub fn security_actions_for_mapper_event(
@@ -1756,6 +1756,77 @@ pub fn security_dialog_action(dialog: &SecurityDialog, key: Input) -> Option<Act
             }
             Input::Enter => security(SecurityAction::ConfirmImport(input.clone())),
             Input::Esc => security(SecurityAction::CancelDialog),
+            _ => None,
+        },
+    }
+}
+
+pub fn qa_workspace_action(drilled: bool, searching: bool, key: Input) -> Option<Action> {
+    let qa = |action| Some(Action::Qa(action));
+    if searching {
+        return match key {
+            Input::Char(character) => qa(QaAction::AppendQuery(character)),
+            Input::Backspace => qa(QaAction::BackspaceQuery),
+            Input::Enter | Input::Esc => qa(QaAction::FinishSearch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => qa(if drilled {
+            QaAction::SelectFinding(-1)
+        } else {
+            QaAction::SelectCheck(-1)
+        }),
+        Input::Down | Input::Char('j') => qa(if drilled {
+            QaAction::SelectFinding(1)
+        } else {
+            QaAction::SelectCheck(1)
+        }),
+        Input::Enter => qa(QaAction::Drill),
+        Input::Esc if drilled => qa(QaAction::LeaveDrill),
+        Input::Char('s') => qa(QaAction::CycleScope),
+        Input::Char('/') => qa(QaAction::BeginSearch),
+        Input::Char('f') => qa(QaAction::CycleStatusFilter),
+        Input::Char('r') => qa(QaAction::BeginSelectedCheck),
+        Input::Char('I') => qa(QaAction::BeginImport),
+        Input::Char('R') => qa(QaAction::RefreshReports),
+        Input::Char('o') => qa(QaAction::OpenSelectedReport),
+        Input::Char('e') => qa(QaAction::OpenProvider),
+        Input::Char('l') => qa(QaAction::OpenSelectedSource),
+        Input::Char('c') => qa(QaAction::BeginCancellation),
+        _ => None,
+    }
+}
+
+pub fn qa_dialog_action(dialog: &QaDialog, key: Input) -> Option<Action> {
+    let qa = |action| Some(Action::Qa(action));
+    match dialog {
+        QaDialog::Operation(preview) => match key {
+            Input::Enter => qa(QaAction::ConfirmOperation(preview.clone())),
+            Input::Esc => qa(QaAction::CancelDialog),
+            _ => None,
+        },
+        QaDialog::Cancellation { session, .. } => match key {
+            Input::Enter => qa(QaAction::ConfirmCancellation(*session)),
+            Input::Esc => qa(QaAction::CancelDialog),
+            _ => None,
+        },
+        QaDialog::Import { input } => match key {
+            Input::Char(character)
+                if !character.is_control()
+                    && input.len() + character.len_utf8() <= yoctui_model::MAX_QA_TEXT_BYTES =>
+            {
+                let mut next = input.clone();
+                next.push(character);
+                qa(QaAction::UpdateImport(next))
+            }
+            Input::Backspace => {
+                let mut next = input.clone();
+                next.pop();
+                qa(QaAction::UpdateImport(next))
+            }
+            Input::Enter => qa(QaAction::ConfirmImport(input.clone())),
+            Input::Esc => qa(QaAction::CancelDialog),
             _ => None,
         },
     }
@@ -4884,6 +4955,93 @@ mod tests {
                 Input::Esc
             ),
             Some(Action::Security(SecurityAction::CancelDialog))
+        );
+    }
+
+    #[test]
+    fn qa_workflow_maps_workspace_search_and_drill_keys_without_leakage() {
+        assert_eq!(
+            qa_workspace_action(false, false, Input::Char('r')),
+            Some(Action::Qa(QaAction::BeginSelectedCheck))
+        );
+        assert_eq!(
+            qa_workspace_action(false, false, Input::Down),
+            Some(Action::Qa(QaAction::SelectCheck(1)))
+        );
+        assert_eq!(
+            qa_workspace_action(true, false, Input::Down),
+            Some(Action::Qa(QaAction::SelectFinding(1)))
+        );
+        assert_eq!(
+            qa_workspace_action(false, true, Input::Char('r')),
+            Some(Action::Qa(QaAction::AppendQuery('r'))),
+            "search editing consumes QA run shortcuts"
+        );
+        assert_eq!(
+            qa_workspace_action(true, false, Input::Esc),
+            Some(Action::Qa(QaAction::LeaveDrill))
+        );
+        assert_eq!(
+            qa_workspace_action(false, false, Input::Char('l')),
+            Some(Action::Qa(QaAction::OpenSelectedSource))
+        );
+    }
+
+    #[test]
+    fn qa_workflow_dialogs_map_only_typed_confirmation_and_edit_actions() {
+        let scope = yoctui_model::QaScope::new(yoctui_model::RecipeIdentity {
+            name: "linux-yocto".into(),
+            file: "/layers/meta/recipes-kernel/linux/linux-yocto.bb".into(),
+        })
+        .unwrap();
+        let preview = yoctui_model::QaOperationPreview {
+            id: yoctui_model::QaOperationId(7),
+            check: yoctui_model::QaCheckId::new("kernel-config".into()).unwrap(),
+            family: yoctui_model::QaCheckFamily::KernelConfiguration,
+            scope,
+            request: BuildRequest {
+                targets: vec!["linux-yocto".into()],
+                task: Some("kernel_configcheck".into()),
+                force: false,
+            },
+            indexed_arguments: vec!["0: bitbake".into()],
+            report_roots: vec!["/build/tmp/log/qa".into()],
+            limitations: vec![],
+        };
+        assert_eq!(
+            qa_dialog_action(&QaDialog::Operation(preview.clone()), Input::Enter),
+            Some(Action::Qa(QaAction::ConfirmOperation(preview)))
+        );
+        assert_eq!(
+            qa_dialog_action(
+                &QaDialog::Import {
+                    input: "/reports".into()
+                },
+                Input::Char('r')
+            ),
+            Some(Action::Qa(QaAction::UpdateImport("/reportsr".into()))),
+            "modal text editing does not leak QA run"
+        );
+        assert_eq!(
+            qa_dialog_action(
+                &QaDialog::Cancellation {
+                    session: yoctui_model::QaSessionId(3),
+                    background_job: BackgroundJobId(9),
+                },
+                Input::Enter,
+            ),
+            Some(Action::Qa(QaAction::ConfirmCancellation(
+                yoctui_model::QaSessionId(3)
+            )))
+        );
+        assert_eq!(
+            qa_dialog_action(
+                &QaDialog::Import {
+                    input: String::new()
+                },
+                Input::Char('\0')
+            ),
+            None
         );
     }
 

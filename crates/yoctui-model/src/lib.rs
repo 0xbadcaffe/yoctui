@@ -1,6 +1,7 @@
 //! Domain model and pure state transitions. BitBake remains authoritative.
 mod image;
 mod package;
+mod qa;
 mod qemu;
 mod sdk;
 mod security;
@@ -9,6 +10,7 @@ mod wic;
 
 pub use image::*;
 pub use package::*;
+pub use qa::*;
 pub use qemu::*;
 pub use sdk::*;
 pub use security::*;
@@ -810,6 +812,7 @@ pub enum Dialog {
     TestJunitExport(TestJunitExportDialog),
     TestJunitExportConfirmation(TestJunitExportPreview),
     Security(SecurityDialog),
+    Qa(QaDialog),
     RecipeTaskConfirmation(BuildRequest),
     RecipeTaskPicker(RecipeTaskPicker),
     SignatureTaskPicker(SignatureTaskPicker),
@@ -2161,6 +2164,7 @@ pub struct App {
     pub test_junit_export: TestJunitExportState,
     pub test_junit_generation: u64,
     pub security: SecurityState,
+    pub qa: QaState,
     pub qemu_capability: QemuCapability,
     pub qemu_sessions: VecDeque<QemuSession>,
     pub qemu_session_generation: u64,
@@ -2275,6 +2279,7 @@ impl App {
             test_junit_export: TestJunitExportState::default(),
             test_junit_generation: 0,
             security: SecurityState::default(),
+            qa: QaState::default(),
             qemu_capability: QemuCapability::default(),
             qemu_sessions: VecDeque::new(),
             qemu_session_generation: 0,
@@ -3211,6 +3216,7 @@ pub enum Action {
         message: String,
     },
     Security(SecurityAction),
+    Qa(QaAction),
     InspectQemuCapability,
     QemuCapabilityLoaded(QemuCapability),
     BeginSelectedQemuLaunch,
@@ -5499,6 +5505,29 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
             synchronize_focus(app);
             return transition.effect.map(Effect::Security);
+        }
+        Action::Qa(action) => {
+            let transition = update_qa(&mut app.qa, action);
+            match transition.dialog {
+                QaDialogUpdate::None => {}
+                QaDialogUpdate::Open(dialog) => {
+                    if matches!(app.active_dialog(), Some(Dialog::Qa(_))) {
+                        replace_dialog(app, Dialog::Qa(*dialog));
+                    } else {
+                        open_dialog(app, Dialog::Qa(*dialog));
+                    }
+                }
+                QaDialogUpdate::Close => {
+                    if matches!(app.active_dialog(), Some(Dialog::Qa(_))) {
+                        close_dialog(app);
+                    }
+                }
+            }
+            if let Some(message) = transition.notification {
+                app.notification = Some(message);
+            }
+            synchronize_focus(app);
+            return transition.effect.map(Effect::Qa);
         }
         Action::Focus(target) => app.focus = target,
         Action::OpenCommandPalette => {
@@ -11680,6 +11709,7 @@ pub enum Effect {
     },
     ExportTestJunit(TestJunitExportRequest),
     Security(SecurityEffect),
+    Qa(QaEffect),
     InspectQemuCapability,
     StartQemuSession {
         id: QemuSessionId,
