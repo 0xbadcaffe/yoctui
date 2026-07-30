@@ -2,8 +2,8 @@
 use std::time::SystemTime;
 use yoctui_bitbake::{
     BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QemuRunnerEvent, QemuRunnerOutputStream,
-    SdkToolRunnerEvent, TestRunnerEvent, WicDeviceInventoryResponse, WicRunnerEvent,
-    WicRunnerOutputStream,
+    SdkToolRunnerEvent, TestResultImportResponse, TestResultOperation, TestResultRunnerEvent,
+    TestRunnerEvent, WicDeviceInventoryResponse, WicRunnerEvent, WicRunnerOutputStream,
 };
 use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
@@ -11,8 +11,8 @@ use yoctui_model::{
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
     LayerInspectorMode, LayerRelationship, LayerRelationships, QemuOutputStream, QemuSessionId,
     RecipeDependencies, Screen, SdkBuildAction, SdkKind, SdkOutputStream, SdkSessionId, Severity,
-    TaskId, TaskInfo, VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream,
-    WicSessionId,
+    TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity, WicCapability, WicOutput,
+    WicOutputStream, WicSessionId,
 };
 
 pub fn sdk_actions_for_runner_event(
@@ -168,6 +168,93 @@ pub fn test_actions_for_runner_event(
             message,
             finished_at: timestamp,
         }],
+    }
+}
+
+pub fn test_results_import_action(response: TestResultImportResponse) -> Action {
+    Action::TestResultsLoaded {
+        request: response.request,
+        records: response.records,
+        limitations: response.limitations,
+    }
+}
+
+pub fn test_result_actions_for_runner_event(
+    event: TestResultRunnerEvent,
+    comparison: Option<TestComparison>,
+    limitations: Vec<String>,
+) -> Vec<Action> {
+    match event {
+        TestResultRunnerEvent::Completed { operation, .. } => match operation {
+            TestResultOperation::Comparison(request) => match comparison {
+                Some(comparison) => vec![Action::TestComparisonLoaded {
+                    request,
+                    comparison,
+                    limitations,
+                }],
+                None => vec![Action::TestComparisonFailed {
+                    request,
+                    message: "resulttool completed without a typed comparison".into(),
+                }],
+            },
+            TestResultOperation::Junit(request) => {
+                vec![Action::TestJunitExportSucceeded { request }]
+            }
+        },
+        TestResultRunnerEvent::Failed {
+            operation,
+            exit_code,
+        } => {
+            let message = exit_code.map_or_else(
+                || "resulttool exited unsuccessfully without an exit code".into(),
+                |code| format!("resulttool exited unsuccessfully with exit code {code}"),
+            );
+            test_result_failed_action(operation, message)
+        }
+        TestResultRunnerEvent::Cancelled { operation, .. } => match operation {
+            TestResultOperation::Comparison(request) => {
+                vec![Action::TestComparisonCancelled { request }]
+            }
+            TestResultOperation::Junit(request) => {
+                vec![Action::TestJunitExportCancelled { request }]
+            }
+        },
+        TestResultRunnerEvent::TimedOut { operation, .. } => match operation {
+            TestResultOperation::Comparison(request) => {
+                vec![Action::TestComparisonTimedOut { request }]
+            }
+            TestResultOperation::Junit(request) => {
+                vec![Action::TestJunitExportTimedOut { request }]
+            }
+        },
+        TestResultRunnerEvent::Lost {
+            operation: Some(operation),
+            message,
+        } => match operation {
+            TestResultOperation::Comparison(request) => {
+                vec![Action::TestComparisonLost { request, message }]
+            }
+            TestResultOperation::Junit(request) => {
+                vec![Action::TestJunitExportLost { request, message }]
+            }
+        },
+        TestResultRunnerEvent::Started { .. }
+        | TestResultRunnerEvent::Output { .. }
+        | TestResultRunnerEvent::CancellationRejected { .. }
+        | TestResultRunnerEvent::Lost {
+            operation: None, ..
+        } => Vec::new(),
+    }
+}
+
+fn test_result_failed_action(operation: TestResultOperation, message: String) -> Vec<Action> {
+    match operation {
+        TestResultOperation::Comparison(request) => {
+            vec![Action::TestComparisonFailed { request, message }]
+        }
+        TestResultOperation::Junit(request) => {
+            vec![Action::TestJunitExportFailed { request, message }]
+        }
     }
 }
 
@@ -4421,5 +4508,143 @@ mod tests {
             .as_slice(),
             [Action::LoseTestSession { message, .. }] if message == "channel closed"
         ));
+    }
+
+    #[test]
+    fn test_results_adapter_responses_map_to_identity_correlated_actions() {
+        let baseline = yoctui_model::TestResultIdentity::new(
+            "/results/baseline/testresults.json".into(),
+            10,
+            SystemTime::UNIX_EPOCH,
+            "baseline".into(),
+        )
+        .unwrap();
+        let candidate = yoctui_model::TestResultIdentity::new(
+            "/results/candidate/testresults.json".into(),
+            11,
+            SystemTime::UNIX_EPOCH,
+            "candidate".into(),
+        )
+        .unwrap();
+        let import_request =
+            yoctui_model::TestResultImportRequest::new(3, vec![baseline.path.clone()]).unwrap();
+        assert_eq!(
+            test_results_import_action(TestResultImportResponse {
+                request: import_request.clone(),
+                records: Vec::new(),
+                limitations: vec!["empty fixture".into()],
+            }),
+            Action::TestResultsLoaded {
+                request: import_request,
+                records: Vec::new(),
+                limitations: vec!["empty fixture".into()],
+            }
+        );
+
+        let request =
+            yoctui_model::TestComparisonRequest::new(4, baseline.clone(), candidate.clone())
+                .unwrap();
+        let comparison = TestComparison {
+            baseline,
+            candidate,
+            transitions: Vec::new(),
+        };
+        assert_eq!(
+            test_result_actions_for_runner_event(
+                TestResultRunnerEvent::Completed {
+                    operation: TestResultOperation::Comparison(request.clone()),
+                    exit_code: Some(0),
+                },
+                Some(comparison.clone()),
+                vec!["bounded import".into()],
+            ),
+            [Action::TestComparisonLoaded {
+                request: request.clone(),
+                comparison,
+                limitations: vec!["bounded import".into()],
+            }]
+        );
+        assert_eq!(
+            test_result_actions_for_runner_event(
+                TestResultRunnerEvent::Failed {
+                    operation: TestResultOperation::Comparison(request.clone()),
+                    exit_code: Some(6),
+                },
+                None,
+                Vec::new(),
+            ),
+            [Action::TestComparisonFailed {
+                request,
+                message: "resulttool exited unsuccessfully with exit code 6".into(),
+            }]
+        );
+    }
+
+    #[test]
+    fn test_results_junit_events_keep_terminal_outcomes_distinct() {
+        let result = yoctui_model::TestResultIdentity::new(
+            "/results/testresults.json".into(),
+            10,
+            SystemTime::UNIX_EPOCH,
+            "result".into(),
+        )
+        .unwrap();
+        let request = yoctui_model::TestJunitExportRequest {
+            generation: 8,
+            result,
+            destination: "/exports/results.xml".into(),
+        };
+        let operation = TestResultOperation::Junit(request.clone());
+        assert_eq!(
+            test_result_actions_for_runner_event(
+                TestResultRunnerEvent::Completed {
+                    operation: operation.clone(),
+                    exit_code: Some(0),
+                },
+                None,
+                Vec::new(),
+            ),
+            [Action::TestJunitExportSucceeded {
+                request: request.clone()
+            }]
+        );
+        assert_eq!(
+            test_result_actions_for_runner_event(
+                TestResultRunnerEvent::TimedOut {
+                    operation: operation.clone(),
+                    forced: true,
+                    exit_code: None,
+                },
+                None,
+                Vec::new(),
+            ),
+            [Action::TestJunitExportTimedOut {
+                request: request.clone()
+            }]
+        );
+        assert_eq!(
+            test_result_actions_for_runner_event(
+                TestResultRunnerEvent::Lost {
+                    operation: Some(operation),
+                    message: "worker channel closed".into(),
+                },
+                None,
+                Vec::new(),
+            ),
+            [Action::TestJunitExportLost {
+                request,
+                message: "worker channel closed".into(),
+            }]
+        );
+        assert!(
+            test_result_actions_for_runner_event(
+                TestResultRunnerEvent::CancellationRejected {
+                    message: "not running".into(),
+                },
+                None,
+                Vec::new(),
+            )
+            .is_empty()
+        );
     }
 }

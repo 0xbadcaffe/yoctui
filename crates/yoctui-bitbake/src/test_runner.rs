@@ -308,7 +308,7 @@ fn test_child_environment(request: &TestSelftestRequest) -> BTreeMap<OsString, O
     }
 }
 
-fn validate_path_directories(
+pub(crate) fn validate_path_directories(
     directories: &[PathBuf],
 ) -> Result<Vec<PathBuf>, TestRunnerAdapterError> {
     if directories.is_empty() || directories.len() > MAX_TEST_RUNNER_PATH_DIRECTORIES {
@@ -356,7 +356,10 @@ fn validate_directory(
     Ok(canonical)
 }
 
-fn discover_executable(directories: &[PathBuf], name: &str) -> Result<Option<PathBuf>, String> {
+pub(crate) fn discover_executable(
+    directories: &[PathBuf],
+    name: &str,
+) -> Result<Option<PathBuf>, String> {
     for directory in directories {
         let candidate = directory.join(name);
         match fs::symlink_metadata(&candidate) {

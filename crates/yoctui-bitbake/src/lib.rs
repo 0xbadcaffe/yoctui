@@ -5,6 +5,7 @@ mod qemu;
 mod sdk;
 mod sdk_tool;
 mod signature;
+mod test_results;
 mod test_runner;
 mod wic;
 
@@ -35,6 +36,11 @@ use std::{
     path::{Path, PathBuf},
     process::Stdio,
     time::{Duration, SystemTime},
+};
+pub use test_results::{
+    ResultToolCapabilityInspector, TestResultAdapter, TestResultAdapterError,
+    TestResultCommandSpec, TestResultImportResponse, TestResultJob, TestResultOperation,
+    TestResultRunnerEvent,
 };
 pub use test_runner::{
     TestCommandSpec, TestRunnerAdapter, TestRunnerAdapterError, TestRunnerCapabilityInspector,

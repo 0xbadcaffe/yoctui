@@ -1076,12 +1076,12 @@ notes = "The Testing runner now discovers canonical oe-selftest and bitbake-self
 id = "TEST-RESULT-ADAPTER-001"
 milestone = "M5"
 title = "Adapt resulttool import comparison and export"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 60
 required = true
 depends_on = ["TEST-RESULT-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake test_results", "cargo test -p yoctui-app test_results"]
-notes = "Discover resulttool and authoritative result roots, import bounded typed records, compare exact result identities, retain limitations, and write deterministic JUnit through a validated destination."
+notes = "Independent canonical PATH discovery, bounded canonical non-symlink testresults.json import, official-shaped typed parsing, SHA-256 result identities, exact shell-free regression-file/JUnit vectors, immediate executable/result/destination revalidation, non-overwriting export, bounded stream events, and identity-correlated terminal outcomes pass focused and baseline checks. Fake filesystem/process tests cover empty, partial, malformed, oversized, tampering, nonzero, cancellation, timeout, rejection, and worker loss; no live compatibility is claimed."
 
 [[task]]
 id = "TEST-RENDER-001"
