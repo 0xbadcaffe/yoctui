@@ -1219,23 +1219,23 @@ notes = "The CLI snapshots the initialized build/PATH inputs, discovers typed ca
 id = "SEC-UI-CLI-001"
 milestone = "M5"
 title = "Integrate complete Security workspace"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 61
 required = true
 depends_on = ["SEC-MODEL-001", "SEC-ADAPTER-001", "SEC-RENDER-001", "SEC-CLI-001"]
 verify = ["cargo test -p yoctui-model security_workflow", "cargo test -p yoctui-app security_workflow", "cargo test -p yoctui-bitbake security", "cargo test -p yoctui-ui security_workflow", "cargo test -p yoctui -- security_workflow"]
-notes = "Cross-layer parent gate for capability-driven CVE mapping/checks, exact findings and reports, version-aware SPDX/SBOM generation/viewing, responsive rendering, and independently polled CLI execution."
+notes = "The cross-layer gate passes with exact capability-driven current/legacy CVE and SBOM previews, normalized findings/mappings and SPDX summaries, bounded acquisition, shell-free mapping, responsive rendering, managed BitBake reuse, independent CLI polling, refresh, exact-open revalidation, cancellation, navigation, and every explicit terminal outcome. Focused evidence is 4 model, 2 app, 15 adapter, 5 UI, and 7 CLI tests plus the baseline; fixtures do not claim live compatibility."
 
 [[task]]
 id = "SEC-001"
 milestone = "M5"
 title = "CVE and SPDX workflows"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 61
 required = true
 depends_on = ["SEC-UI-CLI-001"]
 verify = ["cargo test -p yoctui-model security_workflow", "cargo test -p yoctui-app security_workflow", "cargo test -p yoctui-bitbake security", "cargo test -p yoctui-ui security_workflow", "cargo test -p yoctui -- security_workflow"]
-notes = "Parent completion gate split into specification, typed security state, capability/report adapters, responsive rendering, CLI integration, and cross-layer verification."
+notes = "The complete Security workspace passes its specification, typed state, capability/report/mapper adapter, responsive rendering, non-blocking CLI, and cross-layer gates. CVE checks, package mapping, recipe/image SBOM generation, report import/refresh, exact evidence inspection/opening, managed lifecycle, cancellation, and partial/terminal states are covered without converting fixture evidence into a live Yocto claim."
 
 [[task]]
 id = "QA-001"
