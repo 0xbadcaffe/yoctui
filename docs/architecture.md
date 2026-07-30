@@ -531,8 +531,9 @@ was not exercised.
 `yoctui-model::security` owns exact recipe/image scope, capability state,
 release-dependent task choices supplied as typed data, stable operation and
 report-generation identities, CVE findings and package mappings, SPDX
-document/component summaries, search/filter/drill selection, previews,
-background-job association, and correlated lifecycle state. It may reuse
+document/component summaries, bounded typed mapper stream retention,
+search/filter/drill selection, previews, background-job association, and
+correlated lifecycle state. It may reuse
 `BuildRequest` and the shared background-job collection, but it never inspects
 the host, guesses tasks or report roots, walks directories, parses reports or
 process output, launches a child, or opens a path/URL.
@@ -551,7 +552,11 @@ filesystem acquisition, content fingerprints, CVE/SPDX parsing, and immediate
 identity revalidation before spawn or open. It accepts only authoritative
 roots, managed-job artifact paths, or explicit imports; refuses symlinks and
 escapes; and bounds directory entries, files, bytes, records, fields, and
-parse time. Unknown CVE statuses and unsupported SPDX schemas become typed
+parse time. The package mapper runs as one shell-free native-argv child in its
+own process group, revalidates its exact executable and input identities before
+spawn, bounds both streams, and exposes correlated start, output, success,
+nonzero, cancellation, timeout, and loss events. Unknown CVE statuses and
+unsupported SPDX schemas become typed
 unknown/partial data with limitations rather than guessed meaning. Raw JSON,
 text, archives, filenames, and tool/log output never cross into widgets as
 authority.

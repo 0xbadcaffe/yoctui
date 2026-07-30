@@ -5,6 +5,7 @@ mod qemu;
 mod sdk;
 mod sdk_tool;
 mod security;
+mod security_mapper;
 mod security_report;
 mod signature;
 mod test_results;
@@ -30,6 +31,10 @@ pub use sdk_tool::{
     SdkToolJobRunner, SdkToolRunnerEvent,
 };
 pub use security::{SecurityCapabilityError, SecurityCapabilityInput, SecurityCapabilityInspector};
+pub use security_mapper::{
+    SecurityMapperAdapterError, SecurityMapperCommandSpec, SecurityMapperJobRunner,
+    SecurityMapperRunnerEvent,
+};
 pub use security_report::{
     SecurityReportAdapter, SecurityReportAdapterError, SecurityReportCancellation,
     SecurityReportResponse, SecurityReportScanOutcome,

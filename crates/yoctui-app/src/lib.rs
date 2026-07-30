@@ -2,8 +2,9 @@
 use std::time::SystemTime;
 use yoctui_bitbake::{
     BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QemuRunnerEvent, QemuRunnerOutputStream,
-    SdkToolRunnerEvent, TestResultImportResponse, TestResultOperation, TestResultRunnerEvent,
-    TestRunnerEvent, WicDeviceInventoryResponse, WicRunnerEvent, WicRunnerOutputStream,
+    SdkToolRunnerEvent, SecurityMapperRunnerEvent, TestResultImportResponse, TestResultOperation,
+    TestResultRunnerEvent, TestRunnerEvent, WicDeviceInventoryResponse, WicRunnerEvent,
+    WicRunnerOutputStream,
 };
 use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
@@ -11,9 +12,98 @@ use yoctui_model::{
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
     LayerInspectorMode, LayerRelationship, LayerRelationships, QemuOutputStream, QemuSessionId,
     RecipeDependencies, Screen, SdkBuildAction, SdkKind, SdkOutputStream, SdkSessionId,
-    SecurityAction, SecurityDialog, SecurityView, Severity, TaskId, TaskInfo, TestComparison,
-    VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream, WicSessionId,
+    SecurityAction, SecurityDialog, SecurityOutputStream, SecurityView, Severity, TaskId, TaskInfo,
+    TestComparison, VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream,
+    WicSessionId,
 };
+
+pub fn security_actions_for_mapper_event(
+    event: SecurityMapperRunnerEvent,
+    timestamp: SystemTime,
+) -> Vec<Action> {
+    let security = |action| Action::Security(action);
+    match event {
+        SecurityMapperRunnerEvent::Started { id } => {
+            vec![security(SecurityAction::SessionRunning(id))]
+        }
+        SecurityMapperRunnerEvent::Output {
+            id,
+            stream,
+            line,
+            truncated,
+        } => vec![security(SecurityAction::SessionOutput {
+            id,
+            stream,
+            line,
+            truncated,
+        })],
+        SecurityMapperRunnerEvent::Completed { id, .. } => {
+            vec![security(SecurityAction::CompleteSession {
+                id,
+                result_paths: Vec::new(),
+                finished_at: timestamp,
+            })]
+        }
+        SecurityMapperRunnerEvent::Failed { id, exit_code } => {
+            vec![security(SecurityAction::FailSession {
+                id,
+                message: exit_code.map_or_else(
+                    || "Security package mapping failed without an exit code".into(),
+                    |code| format!("Security package mapping failed with exit code {code}"),
+                ),
+                finished_at: timestamp,
+            })]
+        }
+        SecurityMapperRunnerEvent::CancellationRequested { .. } => Vec::new(),
+        SecurityMapperRunnerEvent::Cancelled {
+            id,
+            forced,
+            exit_code: _,
+        } => {
+            let mut actions = Vec::new();
+            if forced {
+                actions.push(security(SecurityAction::SessionOutput {
+                    id,
+                    stream: SecurityOutputStream::Stderr,
+                    line: "Security package mapping required forced termination".into(),
+                    truncated: false,
+                }));
+            }
+            actions.push(security(SecurityAction::CancelSession {
+                id,
+                finished_at: timestamp,
+            }));
+            actions
+        }
+        SecurityMapperRunnerEvent::CancellationRejected { id, message } => {
+            vec![security(SecurityAction::RejectCancellation { id, message })]
+        }
+        SecurityMapperRunnerEvent::TimedOut { id, forced, .. } => {
+            let mode = if forced { "forced" } else { "graceful" };
+            vec![
+                security(SecurityAction::SessionOutput {
+                    id,
+                    stream: SecurityOutputStream::Stderr,
+                    line: format!(
+                        "Security package mapping timed out; {mode} termination was used"
+                    ),
+                    truncated: false,
+                }),
+                security(SecurityAction::TimeoutSession {
+                    id,
+                    finished_at: timestamp,
+                }),
+            ]
+        }
+        SecurityMapperRunnerEvent::Lost { id, message } => {
+            vec![security(SecurityAction::LoseSession {
+                id,
+                message,
+                finished_at: timestamp,
+            })]
+        }
+    }
+}
 
 pub fn sdk_actions_for_runner_event(
     id: SdkSessionId,
@@ -4794,6 +4884,64 @@ mod tests {
                 Input::Esc
             ),
             Some(Action::Security(SecurityAction::CancelDialog))
+        );
+    }
+
+    #[test]
+    fn security_workflow_maps_typed_mapper_events_without_parsing_output() {
+        let id = yoctui_model::SecuritySessionId(7);
+        assert_eq!(
+            security_actions_for_mapper_event(
+                SecurityMapperRunnerEvent::Started { id },
+                SystemTime::UNIX_EPOCH,
+            ),
+            [Action::Security(SecurityAction::SessionRunning(id))]
+        );
+        assert_eq!(
+            security_actions_for_mapper_event(
+                SecurityMapperRunnerEvent::Output {
+                    id,
+                    stream: SecurityOutputStream::Stderr,
+                    line: "package=busybox product=busybox".into(),
+                    truncated: true,
+                },
+                SystemTime::UNIX_EPOCH,
+            ),
+            [Action::Security(SecurityAction::SessionOutput {
+                id,
+                stream: SecurityOutputStream::Stderr,
+                line: "package=busybox product=busybox".into(),
+                truncated: true,
+            })]
+        );
+        assert!(matches!(
+            security_actions_for_mapper_event(
+                SecurityMapperRunnerEvent::TimedOut {
+                    id,
+                    forced: true,
+                    exit_code: None,
+                },
+                SystemTime::UNIX_EPOCH,
+            )
+            .as_slice(),
+            [
+                Action::Security(SecurityAction::SessionOutput { id: output_id, .. }),
+                Action::Security(SecurityAction::TimeoutSession { id: timeout_id, .. }),
+            ] if *output_id == id && *timeout_id == id
+        ));
+        assert_eq!(
+            security_actions_for_mapper_event(
+                SecurityMapperRunnerEvent::Lost {
+                    id,
+                    message: "worker channel closed".into(),
+                },
+                SystemTime::UNIX_EPOCH,
+            ),
+            [Action::Security(SecurityAction::LoseSession {
+                id,
+                message: "worker channel closed".into(),
+                finished_at: SystemTime::UNIX_EPOCH,
+            })]
         );
     }
 }
