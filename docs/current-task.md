@@ -2,36 +2,35 @@
 
 ## Active task
 
-**ID:** TEST-001
-**Title:** Unified test execution and results
+**ID:** SEC-001
+**Title:** CVE and SPDX workflows
 
 ## Objective
 
-Close the unified Testing parent gate after all atomic implementation and
-cross-layer tasks have passed.
+Implement typed CVE mapping/check and SPDX report generation/viewing
+workflows.
 
 ## Required work
 
-1. Confirm every dependency of `TEST-001` is `DONE`.
-2. Re-run the unified Testing verification commands.
-3. Reconcile the machine-readable registry and human-readable status.
-4. Select the next eligible highest-priority incomplete task.
+1. Inspect existing recipe CVE/SPDX actions and security-related model,
+   adapter, app, UI, and CLI behavior before adding code.
+2. Reconcile the requested security workflows with the authoritative UI and
+   architecture contracts.
+3. Split this parent task into atomic specification, model, adapter, renderer,
+   CLI, and integration tasks if it cannot fit one coherent commit.
+4. Implement only the selected atomic task and add the applicable tests.
 
 ## Definition of done
 
-- Every Testing child task and integration gate is `DONE`.
-- Every unified Testing verification command passes without weakening tests.
-- Registry and status report the Testing parent capability consistently.
-- No fake-process test is described as live Yocto compatibility.
+- CVE mapping/checks and SPDX report generation/viewing are typed workflows.
+- Process and metadata output is parsed outside widgets.
+- Operations remain cancellable, identity-correlated, and responsive.
+- Relevant focused and baseline verification passes.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model test_workflow
-cargo test -p yoctui-app test_workflow
-cargo test -p yoctui-bitbake test_
-cargo test -p yoctui-ui test_workflow
-cargo test -p yoctui -- test_workflow
+cargo test -p yoctui-app security_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
