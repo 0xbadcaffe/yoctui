@@ -2,47 +2,49 @@
 
 ## Active task
 
-**ID:** TEST-RESULT-MODEL-001
-**Title:** Model typed test results and comparisons
+**ID:** TEST-RUNNER-ADAPTER-001
+**Title:** Adapt typed Yocto test execution
 
 ## Objective
 
-Add pure typed state and reducer/app routes for bounded exact result identities,
-correlated imports, normalized cases, comparisons, result/log opening, and
-non-overwriting JUnit export.
+Add safe adapters for selftest capability discovery, exact shell-free command
+construction, independently polled execution, bounded typed output, and
+graceful/forced cancellation.
 
 ## Required work
 
-1. Extend `yoctui-model::testing` with bounded exact result identity, suite,
-   case, outcome, metadata, log-reference, and import-state types.
-2. Normalize duplicate and oversized records deterministically while preserving
-   explicit partial limitations and unavailable fields.
-3. Model exact baseline/current selection and deterministic comparison
-   categories for regressions, new failures, fixed tests, and unchanged cases.
-4. Add correlated App state, selection, import/comparison actions and effects,
-   stale-result rejection, typed result/log opening, and explicit JUnit export
-   destination/preview/outcome state.
-5. Ensure JUnit export validation rejects existing, relative, escaping, or
-   otherwise unsafe destinations before an effect is emitted.
-6. Add pure unit, reducer, and app mapping tests for normal, empty, partial,
-   malformed, stale, bounded, and export failure paths.
+1. Add a focused `yoctui-bitbake` Testing adapter that discovers and
+   canonicalizes `oe-selftest` and `bitbake-selftest` from the initialized
+   environment without guessing paths.
+2. Revalidate executable identity at launch and construct the exact indexed
+   shell-free argv for each typed `TestSelftestRequest`.
+3. Apply `BB_SKIP_NETTESTS=yes` only to the BitBake-selftest child environment;
+   never mutate the Yoctui process environment.
+4. Reuse managed `BuildRequest` execution for testimage, testsdk, testsdkext,
+   and configured ptest rather than duplicating BitBake process ownership.
+5. Add one process-group-owned runner with bounded stdout/stderr events,
+   duplicate-start rejection, success, nonzero failure, timeout, worker loss,
+   and graceful cancellation with forced escalation.
+6. Add mechanical app event mapping and fake-filesystem/fake-process tests for
+   exact commands, tampering, bounds, cancellation, and every terminal path.
 
 ## Definition of done
 
-- Result records use stable exact identities and bounded normalized content.
-- Import and comparison states distinguish not loaded, loading, empty,
-  available, partial, and failed without fabricating results.
-- Comparison categories are deterministic and identity-correlated.
-- Result/log opening and JUnit export are typed effects; export never overwrites
-  an existing destination.
-- Reducer/app tests cover bounds, stale events, partial data, selection, and
-  export validation/outcomes.
+- Capability states distinguish available, missing, and failed discovery with
+  canonical executable identity.
+- Exact commands are reconstructable from typed requests without shell strings.
+- Runner events retain stream identity, truncation, and distinct terminal
+  meaning.
+- Cancellation owns the process group, attempts graceful termination, and
+  reports forced escalation honestly.
+- Fake-process tests cover normal, invalid, duplicate, nonzero, timeout,
+  cancellation, and lost-worker paths without claiming live compatibility.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model test_results
-cargo test -p yoctui-app test_results
+cargo test -p yoctui-bitbake test_runner
+cargo test -p yoctui-app test_runner
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

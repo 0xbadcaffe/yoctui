@@ -800,6 +800,11 @@ pub enum Dialog {
     TestLaunch(TestLaunchDialog),
     TestLaunchConfirmation(TestLaunchPreview),
     TestCancellationConfirmation(TestSessionId),
+    TestResultImport(TestResultImportDialog),
+    TestComparison(TestComparisonPicker),
+    TestComparisonConfirmation(TestComparisonPreview),
+    TestJunitExport(TestJunitExportDialog),
+    TestJunitExportConfirmation(TestJunitExportPreview),
     RecipeTaskConfirmation(BuildRequest),
     RecipeTaskPicker(RecipeTaskPicker),
     SignatureTaskPicker(SignatureTaskPicker),
@@ -2136,6 +2141,20 @@ pub struct App {
     pub test_family_selection: TestFamily,
     pub test_sessions: VecDeque<TestSession>,
     pub test_session_generation: u64,
+    pub result_tool_capability: ResultToolCapability,
+    pub test_view: TestWorkspaceView,
+    pub test_results: TestResultInventoryState,
+    pub test_result_selection: Option<TestResultIdentity>,
+    pub test_result_query: String,
+    pub test_result_searching: bool,
+    pub test_result_drilled: bool,
+    pub test_case_selection: Option<TestCaseIdentity>,
+    pub test_result_generation: u64,
+    pub test_comparison: TestComparisonState,
+    pub test_comparison_selection: Option<TestCaseIdentity>,
+    pub test_comparison_generation: u64,
+    pub test_junit_export: TestJunitExportState,
+    pub test_junit_generation: u64,
     pub qemu_capability: QemuCapability,
     pub qemu_sessions: VecDeque<QemuSession>,
     pub qemu_session_generation: u64,
@@ -2235,6 +2254,20 @@ impl App {
             test_family_selection: TestFamily::OeSelftest,
             test_sessions: VecDeque::new(),
             test_session_generation: 0,
+            result_tool_capability: ResultToolCapability::default(),
+            test_view: TestWorkspaceView::Launches,
+            test_results: TestResultInventoryState::default(),
+            test_result_selection: None,
+            test_result_query: String::new(),
+            test_result_searching: false,
+            test_result_drilled: false,
+            test_case_selection: None,
+            test_result_generation: 0,
+            test_comparison: TestComparisonState::default(),
+            test_comparison_selection: None,
+            test_comparison_generation: 0,
+            test_junit_export: TestJunitExportState::default(),
+            test_junit_generation: 0,
             qemu_capability: QemuCapability::default(),
             qemu_sessions: VecDeque::new(),
             qemu_session_generation: 0,
@@ -2479,6 +2512,55 @@ impl App {
     }
     pub fn latest_test_session(&self) -> Option<&TestSession> {
         self.test_sessions.back()
+    }
+    pub fn filtered_test_results(&self) -> Vec<&TestResultRecord> {
+        let query = self.test_result_query.to_ascii_lowercase();
+        self.test_results
+            .records()
+            .iter()
+            .filter(|record| {
+                query.is_empty()
+                    || [
+                        record.identity.path.to_str(),
+                        Some(record.identity.fingerprint.as_str()),
+                        record.machine.as_deref(),
+                        record.image.as_deref(),
+                        record.revision.as_deref(),
+                    ]
+                    .into_iter()
+                    .flatten()
+                    .chain(
+                        record
+                            .metadata
+                            .iter()
+                            .flat_map(|entry| [entry.key.as_str(), entry.value.as_str()]),
+                    )
+                    .any(|value| value.to_ascii_lowercase().contains(&query))
+            })
+            .collect()
+    }
+    pub fn selected_test_result(&self) -> Option<&TestResultRecord> {
+        let selected = self.test_result_selection.as_ref()?;
+        self.filtered_test_results()
+            .into_iter()
+            .find(|record| &record.identity == selected)
+    }
+    pub fn selected_test_case(&self) -> Option<&TestCaseRecord> {
+        let identity = self.test_case_selection.as_ref()?;
+        self.selected_test_result()?.case(identity)
+    }
+    pub fn test_comparison_transitions(&self) -> &[TestCaseTransition] {
+        match &self.test_comparison {
+            TestComparisonState::Available { comparison, .. }
+            | TestComparisonState::Partial { comparison, .. } => &comparison.transitions,
+            _ => &[],
+        }
+    }
+    pub fn selected_test_transition(&self) -> Option<&TestCaseTransition> {
+        let selected = self.test_comparison_selection.as_ref()?;
+        self.test_comparison_transitions()
+            .iter()
+            .find(|transition| &transition.identity == selected)
     }
     pub fn qemu_session(&self, id: QemuSessionId) -> Option<&QemuSession> {
         self.qemu_sessions.iter().find(|session| session.id == id)
@@ -3011,6 +3093,109 @@ pub enum Action {
         id: TestSessionId,
         exit_code: Option<i32>,
         finished_at: SystemTime,
+    },
+    InspectResultToolCapability,
+    ResultToolCapabilityLoaded(ResultToolCapability),
+    CycleTestView,
+    BeginTestResultImport,
+    AppendTestResultImport(char),
+    BackspaceTestResultImport,
+    ConfirmTestResultImport,
+    CancelTestResultImport,
+    RefreshTestResults,
+    TestResultsLoaded {
+        request: TestResultImportRequest,
+        records: Vec<TestResultRecord>,
+        limitations: Vec<String>,
+    },
+    TestResultsFailed {
+        request: TestResultImportRequest,
+        message: String,
+    },
+    TestResultsCancelled {
+        request: TestResultImportRequest,
+    },
+    TestResultsTimedOut {
+        request: TestResultImportRequest,
+    },
+    TestResultsLost {
+        request: TestResultImportRequest,
+        message: String,
+    },
+    SelectTestResult {
+        delta: isize,
+    },
+    BeginTestResultSearch,
+    AppendTestResultQuery(char),
+    BackspaceTestResultQuery,
+    FinishTestResultSearch,
+    OpenSelectedTestResult,
+    DrillIntoSelectedTestResult,
+    LeaveTestResultCases,
+    SelectTestCase {
+        delta: isize,
+    },
+    OpenSelectedTestCaseLog,
+    BeginTestComparison,
+    SelectTestComparisonChoice {
+        delta: isize,
+    },
+    CycleTestComparisonField,
+    ActivateTestComparisonChoice,
+    PreviewTestComparison,
+    CancelTestComparison,
+    CancelTestComparisonPreview,
+    ConfirmTestComparison,
+    TestComparisonLoaded {
+        request: TestComparisonRequest,
+        comparison: TestComparison,
+        limitations: Vec<String>,
+    },
+    TestComparisonFailed {
+        request: TestComparisonRequest,
+        message: String,
+    },
+    TestComparisonCancelled {
+        request: TestComparisonRequest,
+    },
+    TestComparisonTimedOut {
+        request: TestComparisonRequest,
+    },
+    TestComparisonLost {
+        request: TestComparisonRequest,
+        message: String,
+    },
+    SelectTestComparisonTransition {
+        delta: isize,
+    },
+    OpenSelectedTestTransitionLog,
+    BeginTestJunitExport,
+    AppendTestJunitDestination(char),
+    BackspaceTestJunitDestination,
+    PreviewTestJunitExport,
+    CancelTestJunitExport,
+    TestJunitDestinationInspected {
+        result: TestResultIdentity,
+        inspection: TestJunitDestinationInspection,
+    },
+    CancelTestJunitExportPreview,
+    ConfirmTestJunitExport,
+    TestJunitExportSucceeded {
+        request: TestJunitExportRequest,
+    },
+    TestJunitExportFailed {
+        request: TestJunitExportRequest,
+        message: String,
+    },
+    TestJunitExportCancelled {
+        request: TestJunitExportRequest,
+    },
+    TestJunitExportTimedOut {
+        request: TestJunitExportRequest,
+    },
+    TestJunitExportLost {
+        request: TestJunitExportRequest,
+        message: String,
     },
     InspectQemuCapability,
     QemuCapabilityLoaded(QemuCapability),
@@ -4632,6 +4817,98 @@ fn queue_test_session(app: &mut App, operation: TestOperation) -> Option<Effect>
     }
 }
 
+fn next_test_result_generation(app: &mut App) -> u64 {
+    app.test_result_generation = app.test_result_generation.wrapping_add(1).max(1);
+    app.test_result_generation
+}
+
+fn begin_test_result_import(app: &mut App, roots: Vec<PathBuf>) -> Option<Effect> {
+    let generation = next_test_result_generation(app);
+    let request = match TestResultImportRequest::new(generation, roots) {
+        Ok(request) => request,
+        Err(message) => {
+            app.notification = Some(format!("Test results are unavailable: {message}."));
+            return None;
+        }
+    };
+    app.test_results = TestResultInventoryState::Loading {
+        request: request.clone(),
+    };
+    Some(Effect::ImportTestResults(request))
+}
+
+fn test_result_request_is_current(app: &App, request: &TestResultImportRequest) -> bool {
+    matches!(
+        &app.test_results,
+        TestResultInventoryState::Loading { request: current } if current == request
+    )
+}
+
+fn set_test_result_selection_to_current_or_first(
+    app: &mut App,
+    previous: Option<TestResultIdentity>,
+) {
+    let visible = app
+        .filtered_test_results()
+        .into_iter()
+        .map(|record| record.identity.clone())
+        .collect::<Vec<_>>();
+    app.test_result_selection = previous
+        .filter(|identity| visible.contains(identity))
+        .or_else(|| visible.first().cloned());
+    if app.test_case_selection.as_ref().is_some_and(|identity| {
+        app.selected_test_result()
+            .and_then(|record| record.case(identity))
+            .is_none()
+    }) {
+        app.test_case_selection = None;
+        app.test_result_drilled = false;
+    }
+}
+
+fn test_comparison_inputs_exist(app: &App, request: &TestComparisonRequest) -> bool {
+    app.test_results
+        .records()
+        .iter()
+        .any(|record| record.identity == request.baseline)
+        && app
+            .test_results
+            .records()
+            .iter()
+            .any(|record| record.identity == request.candidate)
+}
+
+fn test_comparison_request_is_current(app: &App, request: &TestComparisonRequest) -> bool {
+    matches!(
+        &app.test_comparison,
+        TestComparisonState::Loading { request: current } if current == request
+    ) && test_comparison_inputs_exist(app, request)
+}
+
+fn set_test_comparison_selection(app: &mut App) {
+    let identities = app
+        .test_comparison_transitions()
+        .iter()
+        .map(|transition| transition.identity.clone())
+        .collect::<Vec<_>>();
+    app.test_comparison_selection = app
+        .test_comparison_selection
+        .take()
+        .filter(|identity| identities.contains(identity))
+        .or_else(|| identities.first().cloned());
+}
+
+fn test_junit_request_is_current(app: &App, request: &TestJunitExportRequest) -> bool {
+    app.test_results
+        .records()
+        .iter()
+        .any(|record| record.identity == request.result)
+        && match &app.test_junit_export {
+            TestJunitExportState::Running(current) => current == request,
+            _ => false,
+        }
+}
+
 const MAX_QEMU_SESSIONS: usize = 32;
 const QEMU_BACKGROUND_JOB_NAMESPACE: u64 = 3 << 62;
 
@@ -5117,6 +5394,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             {
                 return Some(Effect::InspectTestCapability);
             }
+            if s == Screen::Testing
+                && matches!(
+                    app.result_tool_capability,
+                    ResultToolCapability::NotInspected
+                )
+            {
+                return Some(Effect::InspectResultToolCapability);
+            }
         }
         Action::SelectNavigator { delta } => {
             app.navigator_selection = if delta.is_negative() {
@@ -5157,6 +5442,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 )
             {
                 return Some(Effect::InspectTestCapability);
+            }
+            if app.screen == Screen::Testing
+                && matches!(
+                    app.result_tool_capability,
+                    ResultToolCapability::NotInspected
+                )
+            {
+                return Some(Effect::InspectResultToolCapability);
             }
         }
         Action::Focus(target) => app.focus = target,
@@ -6086,7 +6379,17 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.test_capability = TestCapability::default();
             return Some(Effect::InspectTestCapability);
         }
-        Action::TestCapabilityLoaded(capability) => app.test_capability = capability,
+        Action::TestCapabilityLoaded(capability) => {
+            app.test_capability = capability;
+            if app.screen == Screen::Testing
+                && matches!(
+                    app.result_tool_capability,
+                    ResultToolCapability::NotInspected
+                )
+            {
+                return Some(Effect::InspectResultToolCapability);
+            }
+        }
         Action::SelectTestFamily { delta } => {
             app.test_family_selection = app.test_family_selection.shifted(delta);
         }
@@ -6250,6 +6553,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 note_stale_test_event(app);
                 return None;
             };
+            let import_roots = result_paths.clone();
             app.background_jobs.update_if(
                 job_id,
                 &[
@@ -6266,6 +6570,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     });
                 },
             );
+            if !import_roots.is_empty()
+                && app
+                    .background_jobs
+                    .get(job_id)
+                    .is_some_and(|job| job.status == BackgroundJobStatus::Succeeded)
+            {
+                return begin_test_result_import(app, import_roots);
+            }
         }
         Action::FailTestSession {
             id,
@@ -6402,6 +6714,631 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                         artifacts: Vec::new(),
                     });
                 });
+        }
+        Action::InspectResultToolCapability => {
+            app.result_tool_capability = ResultToolCapability::NotInspected;
+            return Some(Effect::InspectResultToolCapability);
+        }
+        Action::ResultToolCapabilityLoaded(capability) => {
+            app.result_tool_capability = capability;
+        }
+        Action::CycleTestView => {
+            app.test_view = app.test_view.next();
+        }
+        Action::BeginTestResultImport => {
+            open_dialog(
+                app,
+                Dialog::TestResultImport(TestResultImportDialog::default()),
+            );
+        }
+        Action::AppendTestResultImport(character) => {
+            if let Some(Dialog::TestResultImport(dialog)) = app.active_dialog_mut() {
+                dialog.append(character);
+            }
+        }
+        Action::BackspaceTestResultImport => {
+            if let Some(Dialog::TestResultImport(dialog)) = app.active_dialog_mut() {
+                dialog.backspace();
+            }
+        }
+        Action::ConfirmTestResultImport => {
+            let Some(Dialog::TestResultImport(dialog)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            match dialog.root() {
+                Ok(root) => {
+                    close_dialog(app);
+                    return begin_test_result_import(app, vec![root]);
+                }
+                Err(message) => {
+                    if let Some(Dialog::TestResultImport(dialog)) = app.active_dialog_mut() {
+                        dialog.validation_error = Some(message.into());
+                    }
+                }
+            }
+        }
+        Action::CancelTestResultImport => {
+            if matches!(app.active_dialog(), Some(Dialog::TestResultImport(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::RefreshTestResults => {
+            let Some(roots) = app
+                .test_results
+                .request()
+                .map(|request| request.roots.clone())
+            else {
+                app.notification = Some("No validated test-result roots are retained.".into());
+                return None;
+            };
+            return begin_test_result_import(app, roots);
+        }
+        Action::TestResultsLoaded {
+            request,
+            records,
+            limitations,
+        } => {
+            if !test_result_request_is_current(app, &request)
+                || records.iter().any(|record| !record.is_valid())
+            {
+                note_stale_test_event(app);
+                return None;
+            }
+            let previous = app.test_result_selection.clone();
+            let (records, limitations) = normalize_test_results(records, limitations);
+            app.test_results = if records.is_empty() && limitations.is_empty() {
+                TestResultInventoryState::AvailableEmpty { request }
+            } else if limitations.is_empty() {
+                TestResultInventoryState::Available { request, records }
+            } else {
+                TestResultInventoryState::Partial {
+                    request,
+                    records,
+                    limitations,
+                }
+            };
+            set_test_result_selection_to_current_or_first(app, previous);
+            if app
+                .test_comparison
+                .request()
+                .is_some_and(|request| !test_comparison_inputs_exist(app, request))
+            {
+                app.test_comparison = TestComparisonState::NotSelected;
+                app.test_comparison_selection = None;
+            }
+        }
+        Action::TestResultsFailed { request, message } => {
+            if !test_result_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_results = TestResultInventoryState::Failed {
+                request,
+                message: message.clone(),
+            };
+            app.notification = Some(format!("Test result import failed: {message}"));
+        }
+        Action::TestResultsCancelled { request } => {
+            if !test_result_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_results = TestResultInventoryState::Cancelled { request };
+        }
+        Action::TestResultsTimedOut { request } => {
+            if !test_result_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_results = TestResultInventoryState::TimedOut { request };
+        }
+        Action::TestResultsLost { request, message } => {
+            if !test_result_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_results = TestResultInventoryState::Lost {
+                request,
+                message: message.clone(),
+            };
+            app.notification = Some(format!("Test result worker was lost: {message}"));
+        }
+        Action::SelectTestResult { delta } => {
+            let visible = app
+                .filtered_test_results()
+                .into_iter()
+                .map(|record| record.identity.clone())
+                .collect::<Vec<_>>();
+            if visible.is_empty() {
+                app.test_result_selection = None;
+                return None;
+            }
+            let current = app
+                .test_result_selection
+                .as_ref()
+                .and_then(|identity| visible.iter().position(|candidate| candidate == identity))
+                .unwrap_or_default();
+            let next = if delta.is_negative() {
+                current.saturating_sub(delta.unsigned_abs())
+            } else {
+                current
+                    .saturating_add(delta as usize)
+                    .min(visible.len() - 1)
+            };
+            app.test_result_selection = visible.get(next).cloned();
+            app.test_result_drilled = false;
+            app.test_case_selection = None;
+        }
+        Action::BeginTestResultSearch => app.test_result_searching = true,
+        Action::AppendTestResultQuery(character) => {
+            if app.test_result_searching
+                && !character.is_control()
+                && app.test_result_query.len() + character.len_utf8() <= MAX_TEST_TEXT_BYTES
+            {
+                app.test_result_query.push(character);
+                let previous = app.test_result_selection.clone();
+                set_test_result_selection_to_current_or_first(app, previous);
+            }
+        }
+        Action::BackspaceTestResultQuery => {
+            if app.test_result_searching {
+                app.test_result_query.pop();
+                let previous = app.test_result_selection.clone();
+                set_test_result_selection_to_current_or_first(app, previous);
+            }
+        }
+        Action::FinishTestResultSearch => app.test_result_searching = false,
+        Action::OpenSelectedTestResult => {
+            let Some(record) = app.selected_test_result() else {
+                app.notification = Some("No exact test result is selected.".into());
+                return None;
+            };
+            return Some(Effect::OpenInEditor(record.identity.path.clone()));
+        }
+        Action::DrillIntoSelectedTestResult => {
+            let first = app.selected_test_result().and_then(|record| {
+                record
+                    .suites
+                    .iter()
+                    .flat_map(|suite| &suite.cases)
+                    .next()
+                    .map(|case| case.identity.clone())
+            });
+            if first.is_some() {
+                app.test_result_drilled = true;
+                app.test_case_selection = first;
+            } else {
+                app.notification = Some("The selected test result contains no cases.".into());
+            }
+        }
+        Action::LeaveTestResultCases => {
+            app.test_result_drilled = false;
+            app.test_case_selection = None;
+        }
+        Action::SelectTestCase { delta } => {
+            let identities = app.selected_test_result().map_or_else(Vec::new, |record| {
+                record
+                    .suites
+                    .iter()
+                    .flat_map(|suite| &suite.cases)
+                    .map(|case| case.identity.clone())
+                    .collect::<Vec<_>>()
+            });
+            if identities.is_empty() {
+                app.test_case_selection = None;
+                return None;
+            }
+            let current = app
+                .test_case_selection
+                .as_ref()
+                .and_then(|identity| {
+                    identities
+                        .iter()
+                        .position(|candidate| candidate == identity)
+                })
+                .unwrap_or_default();
+            let next = if delta.is_negative() {
+                current.saturating_sub(delta.unsigned_abs())
+            } else {
+                current
+                    .saturating_add(delta as usize)
+                    .min(identities.len() - 1)
+            };
+            app.test_case_selection = identities.get(next).cloned();
+        }
+        Action::OpenSelectedTestCaseLog => {
+            let Some(path) = app
+                .selected_test_case()
+                .and_then(|case| case.log_path.clone())
+            else {
+                app.notification = Some("The selected test case has no exact log path.".into());
+                return None;
+            };
+            return Some(Effect::OpenInEditor(path));
+        }
+        Action::BeginTestComparison => {
+            let records = app.test_results.records();
+            if records.len() < 2 {
+                app.notification =
+                    Some("At least two exact test results are required for comparison.".into());
+                return None;
+            }
+            open_dialog(
+                app,
+                Dialog::TestComparison(TestComparisonPicker::new(
+                    app.test_result_selection.clone(),
+                    records,
+                )),
+            );
+        }
+        Action::SelectTestComparisonChoice { delta } => {
+            let records = app.test_results.records().to_vec();
+            if let Some(Dialog::TestComparison(dialog)) = app.active_dialog_mut() {
+                dialog.select(&records, delta);
+            }
+        }
+        Action::CycleTestComparisonField => {
+            if let Some(Dialog::TestComparison(dialog)) = app.active_dialog_mut() {
+                dialog.cycle_field();
+            }
+        }
+        Action::ActivateTestComparisonChoice => {
+            if let Some(Dialog::TestComparison(dialog)) = app.active_dialog_mut() {
+                dialog.activate();
+            }
+        }
+        Action::PreviewTestComparison => {
+            let Some(Dialog::TestComparison(dialog)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            app.test_comparison_generation = app.test_comparison_generation.wrapping_add(1).max(1);
+            let preview = dialog
+                .preview(app.test_comparison_generation)
+                .and_then(|request| {
+                    app.result_tool_capability
+                        .executable()
+                        .and_then(|executable| TestComparisonPreview::new(executable, request))
+                });
+            match preview {
+                Ok(preview) => {
+                    replace_dialog(app, Dialog::TestComparisonConfirmation(preview));
+                }
+                Err(message) => {
+                    if let Some(Dialog::TestComparison(dialog)) = app.active_dialog_mut() {
+                        dialog.validation_error = Some(message.into());
+                    }
+                }
+            }
+        }
+        Action::CancelTestComparison => {
+            if matches!(app.active_dialog(), Some(Dialog::TestComparison(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::CancelTestComparisonPreview => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::TestComparisonConfirmation(_))
+            ) {
+                close_dialog(app);
+            }
+        }
+        Action::ConfirmTestComparison => {
+            let Some(Dialog::TestComparisonConfirmation(preview)) = app.active_dialog().cloned()
+            else {
+                return None;
+            };
+            let request = preview.request;
+            let valid = app
+                .test_results
+                .records()
+                .iter()
+                .any(|record| record.identity == request.baseline)
+                && app
+                    .test_results
+                    .records()
+                    .iter()
+                    .any(|record| record.identity == request.candidate)
+                && app
+                    .result_tool_capability
+                    .executable()
+                    .is_ok_and(|executable| preview.argv.first() == Some(&executable));
+            if !valid {
+                app.notification = Some("The test comparison preview is stale.".into());
+                return None;
+            }
+            close_dialog(app);
+            app.test_comparison = TestComparisonState::Loading {
+                request: request.clone(),
+            };
+            return Some(Effect::CompareTestResults(request));
+        }
+        Action::TestComparisonLoaded {
+            request,
+            comparison,
+            limitations,
+        } => {
+            if !test_comparison_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            let baseline = app
+                .test_results
+                .records()
+                .iter()
+                .find(|record| record.identity == request.baseline);
+            let candidate = app
+                .test_results
+                .records()
+                .iter()
+                .find(|record| record.identity == request.candidate);
+            let Some(expected) = baseline.zip(candidate).and_then(|(baseline, candidate)| {
+                TestComparison::between(baseline, candidate).ok()
+            }) else {
+                note_stale_test_event(app);
+                return None;
+            };
+            if comparison != expected {
+                note_stale_test_event(app);
+                app.notification =
+                    Some("Testing rejected an inconsistent comparison result.".into());
+                return None;
+            }
+            let limitations = normalize_limitations(limitations);
+            app.test_comparison = if limitations.is_empty() {
+                TestComparisonState::Available {
+                    request,
+                    comparison,
+                }
+            } else {
+                TestComparisonState::Partial {
+                    request,
+                    comparison,
+                    limitations,
+                }
+            };
+            set_test_comparison_selection(app);
+        }
+        Action::TestComparisonFailed { request, message } => {
+            if !test_comparison_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_comparison = TestComparisonState::Failed {
+                request,
+                message: message.clone(),
+            };
+            app.notification = Some(format!("Test comparison failed: {message}"));
+        }
+        Action::TestComparisonCancelled { request } => {
+            if !test_comparison_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_comparison = TestComparisonState::Cancelled { request };
+        }
+        Action::TestComparisonTimedOut { request } => {
+            if !test_comparison_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_comparison = TestComparisonState::TimedOut { request };
+        }
+        Action::TestComparisonLost { request, message } => {
+            if !test_comparison_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_comparison = TestComparisonState::Lost { request, message };
+        }
+        Action::SelectTestComparisonTransition { delta } => {
+            let identities = app
+                .test_comparison_transitions()
+                .iter()
+                .map(|transition| transition.identity.clone())
+                .collect::<Vec<_>>();
+            if identities.is_empty() {
+                app.test_comparison_selection = None;
+                return None;
+            }
+            let current = app
+                .test_comparison_selection
+                .as_ref()
+                .and_then(|identity| {
+                    identities
+                        .iter()
+                        .position(|candidate| candidate == identity)
+                })
+                .unwrap_or_default();
+            let next = if delta.is_negative() {
+                current.saturating_sub(delta.unsigned_abs())
+            } else {
+                current
+                    .saturating_add(delta as usize)
+                    .min(identities.len() - 1)
+            };
+            app.test_comparison_selection = identities.get(next).cloned();
+        }
+        Action::OpenSelectedTestTransitionLog => {
+            let Some(path) = app.selected_test_transition().and_then(|transition| {
+                transition
+                    .candidate_log
+                    .clone()
+                    .or_else(|| transition.baseline_log.clone())
+            }) else {
+                app.notification =
+                    Some("The selected comparison transition has no exact log path.".into());
+                return None;
+            };
+            return Some(Effect::OpenInEditor(path));
+        }
+        Action::BeginTestJunitExport => {
+            let Some(identity) = app
+                .selected_test_result()
+                .map(|record| record.identity.clone())
+            else {
+                app.notification = Some("No exact test result is selected for export.".into());
+                return None;
+            };
+            if app.result_tool_capability.executable().is_err() {
+                app.notification = Some("resulttool is unavailable for JUnit export.".into());
+                return None;
+            }
+            open_dialog(
+                app,
+                Dialog::TestJunitExport(TestJunitExportDialog::new(identity)),
+            );
+        }
+        Action::AppendTestJunitDestination(character) => {
+            if let Some(Dialog::TestJunitExport(dialog)) = app.active_dialog_mut() {
+                dialog.append(character);
+            }
+        }
+        Action::BackspaceTestJunitDestination => {
+            if let Some(Dialog::TestJunitExport(dialog)) = app.active_dialog_mut() {
+                dialog.backspace();
+            }
+        }
+        Action::PreviewTestJunitExport => {
+            let Some(Dialog::TestJunitExport(dialog)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            match dialog.lexical_destination() {
+                Ok(destination) => {
+                    app.test_junit_export = TestJunitExportState::Inspecting {
+                        result: dialog.result.clone(),
+                        destination: destination.clone(),
+                    };
+                    return Some(Effect::InspectTestJunitDestination {
+                        result: dialog.result,
+                        destination,
+                    });
+                }
+                Err(message) => {
+                    if let Some(Dialog::TestJunitExport(dialog)) = app.active_dialog_mut() {
+                        dialog.validation_error = Some(message.into());
+                    }
+                }
+            }
+        }
+        Action::CancelTestJunitExport => {
+            if matches!(app.active_dialog(), Some(Dialog::TestJunitExport(_))) {
+                close_dialog(app);
+                app.test_junit_export = TestJunitExportState::NotStarted;
+            }
+        }
+        Action::TestJunitDestinationInspected { result, inspection } => {
+            let current = matches!(
+                &app.test_junit_export,
+                TestJunitExportState::Inspecting {
+                    result: current_result,
+                    destination,
+                } if current_result == &result && destination == &inspection.requested
+            ) && app
+                .selected_test_result()
+                .is_some_and(|record| record.identity == result)
+                && matches!(
+                    app.active_dialog(),
+                    Some(Dialog::TestJunitExport(dialog)) if dialog.result == result
+                );
+            if !current {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_junit_generation = app.test_junit_generation.wrapping_add(1).max(1);
+            let preview =
+                TestJunitExportRequest::new(app.test_junit_generation, result, &inspection)
+                    .and_then(|request| {
+                        app.result_tool_capability
+                            .executable()
+                            .and_then(|executable| TestJunitExportPreview::new(executable, request))
+                    });
+            match preview {
+                Ok(preview) => {
+                    app.test_junit_export = TestJunitExportState::Ready(preview.clone());
+                    replace_dialog(app, Dialog::TestJunitExportConfirmation(preview));
+                }
+                Err(message) => {
+                    app.test_junit_export = TestJunitExportState::NotStarted;
+                    if let Some(Dialog::TestJunitExport(dialog)) = app.active_dialog_mut() {
+                        dialog.validation_error = Some(message.into());
+                    }
+                }
+            }
+        }
+        Action::CancelTestJunitExportPreview => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::TestJunitExportConfirmation(_))
+            ) {
+                close_dialog(app);
+                app.test_junit_export = TestJunitExportState::NotStarted;
+            }
+        }
+        Action::ConfirmTestJunitExport => {
+            let Some(Dialog::TestJunitExportConfirmation(preview)) = app.active_dialog().cloned()
+            else {
+                return None;
+            };
+            let valid = matches!(
+                &app.test_junit_export,
+                TestJunitExportState::Ready(current) if current == &preview
+            ) && app
+                .test_results
+                .records()
+                .iter()
+                .any(|record| record.identity == preview.request.result)
+                && app
+                    .result_tool_capability
+                    .executable()
+                    .is_ok_and(|executable| preview.argv.first() == Some(&executable));
+            if !valid {
+                app.notification = Some("The JUnit export preview is stale.".into());
+                return None;
+            }
+            close_dialog(app);
+            let request = preview.request;
+            app.test_junit_export = TestJunitExportState::Running(request.clone());
+            return Some(Effect::ExportTestJunit(request));
+        }
+        Action::TestJunitExportSucceeded { request } => {
+            if !test_junit_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_junit_export = TestJunitExportState::Succeeded(request);
+        }
+        Action::TestJunitExportFailed { request, message } => {
+            if !test_junit_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_junit_export = TestJunitExportState::Failed {
+                request,
+                message: message.clone(),
+            };
+            app.notification = Some(format!("JUnit export failed: {message}"));
+        }
+        Action::TestJunitExportCancelled { request } => {
+            if !test_junit_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_junit_export = TestJunitExportState::Cancelled(request);
+        }
+        Action::TestJunitExportTimedOut { request } => {
+            if !test_junit_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_junit_export = TestJunitExportState::TimedOut(request);
+        }
+        Action::TestJunitExportLost { request, message } => {
+            if !test_junit_request_is_current(app, &request) {
+                note_stale_test_event(app);
+                return None;
+            }
+            app.test_junit_export = TestJunitExportState::Lost { request, message };
         }
         Action::InspectQemuCapability => {
             app.qemu_capability = QemuCapability::NotInspected;
@@ -10645,6 +11582,14 @@ pub enum Effect {
         request: BuildRequest,
     },
     CancelTestSession(TestSessionId),
+    InspectResultToolCapability,
+    ImportTestResults(TestResultImportRequest),
+    CompareTestResults(TestComparisonRequest),
+    InspectTestJunitDestination {
+        result: TestResultIdentity,
+        destination: PathBuf,
+    },
+    ExportTestJunit(TestJunitExportRequest),
     InspectQemuCapability,
     StartQemuSession {
         id: QemuSessionId,
@@ -16929,5 +17874,352 @@ mod tests {
             },
         );
         assert_eq!(lost.background_jobs.ignored_transitions, ignored + 1);
+    }
+
+    fn test_results_record(
+        name: &str,
+        fingerprint: &str,
+        outcomes: &[(&str, TestCaseOutcome)],
+    ) -> TestResultRecord {
+        let cases = outcomes
+            .iter()
+            .map(|(case_name, outcome)| {
+                TestCaseRecord::new(
+                    TestCaseIdentity::new("suite".into(), (*case_name).into()).unwrap(),
+                    *outcome,
+                    Some(Duration::from_millis(10)),
+                    Vec::new(),
+                    Some(format!("/build/logs/{name}-{case_name}.log").into()),
+                )
+                .unwrap()
+                .0
+            })
+            .collect();
+        let suite = TestSuiteRecord::new("suite".into(), None, Vec::new(), cases)
+            .unwrap()
+            .0;
+        TestResultRecord::new(
+            TestResultIdentity::new(
+                format!("/build/results/{name}/testresults.json").into(),
+                2_048,
+                SystemTime::UNIX_EPOCH,
+                fingerprint.into(),
+            )
+            .unwrap(),
+            Some(TestFamily::TestImage),
+            Some("qemux86-64".into()),
+            Some("core-image-minimal".into()),
+            Some("rev-1".into()),
+            Some(Duration::from_secs(1)),
+            Vec::new(),
+            vec![suite],
+            Some(TestSessionId(1)),
+            Vec::new(),
+        )
+        .0
+    }
+
+    fn load_test_results(
+        app: &mut App,
+        records: Vec<TestResultRecord>,
+        limitations: Vec<String>,
+    ) -> TestResultImportRequest {
+        let Some(Effect::ImportTestResults(request)) =
+            begin_test_result_import(app, vec!["/build/results".into()])
+        else {
+            panic!("import effect");
+        };
+        let _ = update(
+            app,
+            Action::TestResultsLoaded {
+                request: request.clone(),
+                records,
+                limitations,
+            },
+        );
+        request
+    }
+
+    #[test]
+    fn test_results_reducer_correlates_empty_partial_search_drill_and_stale_data() {
+        let mut empty = test_workflow_app();
+        let request = load_test_results(&mut empty, Vec::new(), Vec::new());
+        assert!(matches!(
+            empty.test_results,
+            TestResultInventoryState::AvailableEmpty { .. }
+        ));
+        let ignored = empty.background_jobs.ignored_transitions;
+        let _ = update(
+            &mut empty,
+            Action::TestResultsLost {
+                request,
+                message: "late worker loss".into(),
+            },
+        );
+        assert_eq!(empty.background_jobs.ignored_transitions, ignored + 1);
+
+        let baseline =
+            test_results_record("baseline", "base", &[("case", TestCaseOutcome::Passed)]);
+        let candidate = test_results_record(
+            "candidate",
+            "candidate",
+            &[("case", TestCaseOutcome::Failed)],
+        );
+        let mut app = test_workflow_app();
+        let old_request = load_test_results(
+            &mut app,
+            vec![candidate.clone(), baseline.clone(), candidate],
+            vec!["one malformed adapter record was skipped".into()],
+        );
+        let TestResultInventoryState::Partial {
+            records,
+            limitations,
+            ..
+        } = &app.test_results
+        else {
+            panic!("partial inventory");
+        };
+        assert_eq!(records.len(), 2);
+        assert!(limitations.iter().any(|value| value.contains("duplicate")));
+        assert_eq!(app.test_result_selection.as_ref(), Some(&baseline.identity));
+        let _ = update(&mut app, Action::BeginTestResultSearch);
+        for character in "candidate".chars() {
+            let _ = update(&mut app, Action::AppendTestResultQuery(character));
+        }
+        assert_eq!(
+            app.test_result_selection.as_ref(),
+            Some(
+                &test_results_record(
+                    "candidate",
+                    "candidate",
+                    &[("case", TestCaseOutcome::Failed)]
+                )
+                .identity
+            ),
+            "search falls back to the first visible exact result"
+        );
+        assert_eq!(app.filtered_test_results().len(), 1);
+        let _ = update(&mut app, Action::SelectTestResult { delta: 1 });
+        assert_eq!(
+            app.test_result_selection.as_ref(),
+            Some(
+                &test_results_record(
+                    "candidate",
+                    "candidate",
+                    &[("case", TestCaseOutcome::Failed)]
+                )
+                .identity
+            )
+        );
+        let _ = update(&mut app, Action::DrillIntoSelectedTestResult);
+        assert!(app.test_result_drilled);
+        assert!(matches!(
+            update(&mut app, Action::OpenSelectedTestCaseLog),
+            Some(Effect::OpenInEditor(path))
+                if path == Path::new("/build/logs/candidate-case.log")
+        ));
+        assert!(matches!(
+            update(&mut app, Action::OpenSelectedTestResult),
+            Some(Effect::OpenInEditor(path))
+                if path == Path::new("/build/results/candidate/testresults.json")
+        ));
+
+        let Some(Effect::ImportTestResults(new_request)) =
+            update(&mut app, Action::RefreshTestResults)
+        else {
+            panic!("refresh effect");
+        };
+        assert_ne!(old_request, new_request);
+        let mut malformed = baseline;
+        malformed.identity.path = "relative.json".into();
+        let ignored = app.background_jobs.ignored_transitions;
+        let _ = update(
+            &mut app,
+            Action::TestResultsLoaded {
+                request: new_request,
+                records: vec![malformed],
+                limitations: Vec::new(),
+            },
+        );
+        assert_eq!(app.background_jobs.ignored_transitions, ignored + 1);
+        assert!(matches!(
+            app.test_results,
+            TestResultInventoryState::Loading { .. }
+        ));
+    }
+
+    #[test]
+    fn test_results_reducer_previews_exact_comparison_and_rejects_inconsistent_results() {
+        let baseline =
+            test_results_record("baseline", "base", &[("case", TestCaseOutcome::Passed)]);
+        let candidate = test_results_record(
+            "candidate",
+            "candidate",
+            &[("case", TestCaseOutcome::Failed)],
+        );
+        let mut app = test_workflow_app();
+        app.result_tool_capability =
+            ResultToolCapability::Available("/workspace/resulttool".into());
+        load_test_results(
+            &mut app,
+            vec![baseline.clone(), candidate.clone()],
+            Vec::new(),
+        );
+        let _ = update(&mut app, Action::BeginTestComparison);
+        let _ = update(&mut app, Action::PreviewTestComparison);
+        let Some(Dialog::TestComparisonConfirmation(preview)) = app.active_dialog().cloned() else {
+            panic!("comparison preview");
+        };
+        assert_eq!(
+            preview.argv,
+            [
+                PathBuf::from("/workspace/resulttool"),
+                "regression-file".into(),
+                baseline.identity.path.clone(),
+                candidate.identity.path.clone(),
+            ]
+        );
+        let Some(Effect::CompareTestResults(request)) =
+            update(&mut app, Action::ConfirmTestComparison)
+        else {
+            panic!("comparison effect");
+        };
+        let comparison = TestComparison::between(&baseline, &candidate).unwrap();
+        let _ = update(
+            &mut app,
+            Action::TestComparisonLoaded {
+                request: request.clone(),
+                comparison,
+                limitations: vec!["resulttool omitted optional metadata".into()],
+            },
+        );
+        assert!(matches!(
+            app.test_comparison,
+            TestComparisonState::Partial { .. }
+        ));
+        assert_eq!(
+            app.selected_test_transition().unwrap().category,
+            TestComparisonCategory::Regression
+        );
+        assert!(matches!(
+            update(&mut app, Action::OpenSelectedTestTransitionLog),
+            Some(Effect::OpenInEditor(path))
+                if path == Path::new("/build/logs/candidate-case.log")
+        ));
+
+        let ignored = app.background_jobs.ignored_transitions;
+        let _ = update(
+            &mut app,
+            Action::TestComparisonFailed {
+                request,
+                message: "late failure".into(),
+            },
+        );
+        assert_eq!(app.background_jobs.ignored_transitions, ignored + 1);
+    }
+
+    #[test]
+    fn test_results_reducer_validates_junit_destination_and_correlates_failure() {
+        let result = test_results_record(
+            "candidate",
+            "candidate",
+            &[("case", TestCaseOutcome::Failed)],
+        );
+        let mut app = test_workflow_app();
+        app.result_tool_capability =
+            ResultToolCapability::Available("/workspace/resulttool".into());
+        load_test_results(&mut app, vec![result.clone()], Vec::new());
+        let _ = update(&mut app, Action::BeginTestJunitExport);
+        for character in "/exports/candidate.xml".chars() {
+            let _ = update(&mut app, Action::AppendTestJunitDestination(character));
+        }
+        let Some(Effect::InspectTestJunitDestination {
+            result: inspected_result,
+            destination,
+        }) = update(&mut app, Action::PreviewTestJunitExport)
+        else {
+            panic!("destination inspection effect");
+        };
+        assert_eq!(inspected_result, result.identity);
+        assert_eq!(destination, PathBuf::from("/exports/candidate.xml"));
+        let _ = update(
+            &mut app,
+            Action::TestJunitDestinationInspected {
+                result: result.identity.clone(),
+                inspection: TestJunitDestinationInspection {
+                    requested: destination.clone(),
+                    canonical_parent: Some("/exports".into()),
+                    parent_exists: true,
+                    parent_is_directory: true,
+                    destination_exists: true,
+                    destination_is_symlink: false,
+                },
+            },
+        );
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TestJunitExport(dialog)) if dialog.validation_error.is_some()
+        ));
+        assert!(
+            update(&mut app, Action::PreviewTestJunitExport).is_some(),
+            "the corrected retry requests fresh filesystem validation"
+        );
+        let _ = update(
+            &mut app,
+            Action::TestJunitDestinationInspected {
+                result: result.identity.clone(),
+                inspection: TestJunitDestinationInspection {
+                    requested: destination,
+                    canonical_parent: Some("/exports".into()),
+                    parent_exists: true,
+                    parent_is_directory: true,
+                    destination_exists: false,
+                    destination_is_symlink: false,
+                },
+            },
+        );
+        let Some(Dialog::TestJunitExportConfirmation(preview)) = app.active_dialog().cloned()
+        else {
+            panic!("JUnit confirmation");
+        };
+        assert_eq!(
+            preview.argv,
+            [
+                PathBuf::from("/workspace/resulttool"),
+                "junit".into(),
+                result.identity.path,
+                "-j".into(),
+                "/exports/candidate.xml".into(),
+            ]
+        );
+        let Some(Effect::ExportTestJunit(request)) =
+            update(&mut app, Action::ConfirmTestJunitExport)
+        else {
+            panic!("JUnit export effect");
+        };
+        let stale = TestJunitExportRequest {
+            generation: request.generation + 1,
+            ..request.clone()
+        };
+        let ignored = app.background_jobs.ignored_transitions;
+        let _ = update(
+            &mut app,
+            Action::TestJunitExportSucceeded { request: stale },
+        );
+        assert_eq!(app.background_jobs.ignored_transitions, ignored + 1);
+        let _ = update(
+            &mut app,
+            Action::TestJunitExportFailed {
+                request: request.clone(),
+                message: "resulttool exited 1".into(),
+            },
+        );
+        assert!(matches!(
+            app.test_junit_export,
+            TestJunitExportState::Failed { .. }
+        ));
+        let ignored = app.background_jobs.ignored_transitions;
+        let _ = update(&mut app, Action::TestJunitExportSucceeded { request });
+        assert_eq!(app.background_jobs.ignored_transitions, ignored + 1);
     }
 }

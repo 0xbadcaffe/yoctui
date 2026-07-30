@@ -1457,6 +1457,98 @@ pub fn test_cancellation_confirmation_action(key: Input) -> Option<Action> {
     }
 }
 
+pub fn test_results_workspace_action(searching: bool, drilled: bool, key: Input) -> Option<Action> {
+    if searching {
+        return match key {
+            Input::Char(character) => Some(Action::AppendTestResultQuery(character)),
+            Input::Backspace => Some(Action::BackspaceTestResultQuery),
+            Input::Enter | Input::Esc => Some(Action::FinishTestResultSearch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Tab => Some(Action::CycleTestView),
+        Input::Up | Input::Char('k') if drilled => Some(Action::SelectTestCase { delta: -1 }),
+        Input::Down | Input::Char('j') if drilled => Some(Action::SelectTestCase { delta: 1 }),
+        Input::Up | Input::Char('k') => Some(Action::SelectTestResult { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectTestResult { delta: 1 }),
+        Input::Enter if drilled => None,
+        Input::Enter => Some(Action::DrillIntoSelectedTestResult),
+        Input::Esc if drilled => Some(Action::LeaveTestResultCases),
+        Input::Char('/') => Some(Action::BeginTestResultSearch),
+        Input::Char('I') => Some(Action::BeginTestResultImport),
+        Input::Char('R') => Some(Action::RefreshTestResults),
+        Input::Char('c') => Some(Action::BeginTestComparison),
+        Input::Char('J') => Some(Action::BeginTestJunitExport),
+        Input::Char('o') => Some(Action::OpenSelectedTestResult),
+        Input::Char('l') => Some(Action::OpenSelectedTestCaseLog),
+        Input::Char('x') => Some(Action::BeginActiveTestSessionCancellation),
+        _ => None,
+    }
+}
+
+pub fn test_comparison_workspace_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Tab => Some(Action::CycleTestView),
+        Input::Up | Input::Char('k') => Some(Action::SelectTestComparisonTransition { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectTestComparisonTransition { delta: 1 }),
+        Input::Char('c') => Some(Action::BeginTestComparison),
+        Input::Char('l') => Some(Action::OpenSelectedTestTransitionLog),
+        Input::Char('x') => Some(Action::BeginActiveTestSessionCancellation),
+        _ => None,
+    }
+}
+
+pub fn test_result_import_dialog_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Char(character) => Some(Action::AppendTestResultImport(character)),
+        Input::Backspace => Some(Action::BackspaceTestResultImport),
+        Input::Enter => Some(Action::ConfirmTestResultImport),
+        Input::Esc => Some(Action::CancelTestResultImport),
+        _ => None,
+    }
+}
+
+pub fn test_comparison_dialog_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectTestComparisonChoice { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectTestComparisonChoice { delta: 1 }),
+        Input::Left | Input::Right | Input::Char('h') | Input::Char('l') => {
+            Some(Action::CycleTestComparisonField)
+        }
+        Input::Enter => Some(Action::ActivateTestComparisonChoice),
+        Input::Char('p') => Some(Action::PreviewTestComparison),
+        Input::Esc => Some(Action::CancelTestComparison),
+        _ => None,
+    }
+}
+
+pub fn test_comparison_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmTestComparison),
+        Input::Esc => Some(Action::CancelTestComparisonPreview),
+        _ => None,
+    }
+}
+
+pub fn test_junit_dialog_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Char(character) => Some(Action::AppendTestJunitDestination(character)),
+        Input::Backspace => Some(Action::BackspaceTestJunitDestination),
+        Input::Enter => Some(Action::PreviewTestJunitExport),
+        Input::Esc => Some(Action::CancelTestJunitExport),
+        _ => None,
+    }
+}
+
+pub fn test_junit_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmTestJunitExport),
+        Input::Esc => Some(Action::CancelTestJunitExportPreview),
+        _ => None,
+    }
+}
+
 pub fn wic_create_dialog_action(editing: bool, key: Input) -> Option<Action> {
     if editing {
         return match key {
@@ -4085,5 +4177,78 @@ mod tests {
                 ..
             })) if task == "testimage"
         ));
+    }
+
+    #[test]
+    fn test_results_map_workspace_search_and_modal_keys_without_leakage() {
+        assert_eq!(
+            test_results_workspace_action(false, false, Input::Tab),
+            Some(Action::CycleTestView)
+        );
+        assert_eq!(
+            test_results_workspace_action(false, false, Input::Enter),
+            Some(Action::DrillIntoSelectedTestResult)
+        );
+        assert_eq!(
+            test_results_workspace_action(false, true, Input::Down),
+            Some(Action::SelectTestCase { delta: 1 })
+        );
+        assert_eq!(
+            test_results_workspace_action(false, true, Input::Esc),
+            Some(Action::LeaveTestResultCases)
+        );
+        assert_eq!(
+            test_results_workspace_action(false, false, Input::Char('I')),
+            Some(Action::BeginTestResultImport)
+        );
+        assert_eq!(
+            test_results_workspace_action(false, false, Input::Char('c')),
+            Some(Action::BeginTestComparison)
+        );
+        assert_eq!(
+            test_results_workspace_action(false, false, Input::Char('J')),
+            Some(Action::BeginTestJunitExport)
+        );
+        assert_eq!(
+            test_results_workspace_action(true, false, Input::Char('x')),
+            Some(Action::AppendTestResultQuery('x')),
+            "search input must not leak to the Testing workspace"
+        );
+        assert_eq!(
+            test_result_import_dialog_action(Input::Char('/')),
+            Some(Action::AppendTestResultImport('/'))
+        );
+        assert_eq!(
+            test_result_import_dialog_action(Input::Enter),
+            Some(Action::ConfirmTestResultImport)
+        );
+        assert_eq!(
+            test_comparison_dialog_action(Input::Right),
+            Some(Action::CycleTestComparisonField)
+        );
+        assert_eq!(
+            test_comparison_dialog_action(Input::Char('p')),
+            Some(Action::PreviewTestComparison)
+        );
+        assert_eq!(
+            test_comparison_confirmation_action(Input::Enter),
+            Some(Action::ConfirmTestComparison)
+        );
+        assert_eq!(
+            test_junit_dialog_action(Input::Char('x')),
+            Some(Action::AppendTestJunitDestination('x'))
+        );
+        assert_eq!(
+            test_junit_dialog_action(Input::Enter),
+            Some(Action::PreviewTestJunitExport)
+        );
+        assert_eq!(
+            test_junit_confirmation_action(Input::Esc),
+            Some(Action::CancelTestJunitExportPreview)
+        );
+        assert_eq!(
+            test_comparison_workspace_action(Input::Char('l')),
+            Some(Action::OpenSelectedTestTransitionLog)
+        );
     }
 }

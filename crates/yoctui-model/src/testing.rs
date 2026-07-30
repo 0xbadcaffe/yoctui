@@ -1,12 +1,20 @@
 use crate::{BackgroundJobId, BuildRequest};
 use std::{
+    collections::{BTreeMap, BTreeSet},
     path::{Component, Path, PathBuf},
-    time::SystemTime,
+    time::{Duration, SystemTime},
 };
 
 pub const MAX_TEST_SELECTOR_BYTES: usize = 256;
 pub const MAX_TEST_PARALLELISM_INPUT_BYTES: usize = 3;
 pub const MAX_TEST_RESULT_PATHS: usize = 256;
+pub const MAX_TEST_RESULTS: usize = 256;
+pub const MAX_TEST_SUITES: usize = 512;
+pub const MAX_TEST_CASES_PER_SUITE: usize = 4_096;
+pub const MAX_TEST_METADATA: usize = 128;
+pub const MAX_TEST_LIMITATIONS: usize = 128;
+pub const MAX_TEST_TEXT_BYTES: usize = 4_096;
+pub const MAX_TEST_FINGERPRINT_BYTES: usize = 256;
 
 fn bounded_token(value: &str) -> bool {
     !value.is_empty()
@@ -26,8 +34,950 @@ fn absolute_normal_path(path: &Path) -> bool {
             .all(|component| !matches!(component, Component::ParentDir | Component::CurDir))
 }
 
+fn bounded_text(value: &str) -> bool {
+    !value.is_empty() && value.len() <= MAX_TEST_TEXT_BYTES && !value.chars().any(char::is_control)
+}
+
+fn bounded_fingerprint(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= MAX_TEST_FINGERPRINT_BYTES
+        && value
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || matches!(character, '-' | '_'))
+}
+
 pub fn test_result_paths_are_valid(paths: &[PathBuf]) -> bool {
     paths.len() <= MAX_TEST_RESULT_PATHS && paths.iter().all(|path| absolute_normal_path(path))
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TestResultIdentity {
+    pub path: PathBuf,
+    pub byte_size: u64,
+    pub modified_at: SystemTime,
+    pub fingerprint: String,
+}
+
+impl TestResultIdentity {
+    pub fn new(
+        path: PathBuf,
+        byte_size: u64,
+        modified_at: SystemTime,
+        fingerprint: String,
+    ) -> Result<Self, &'static str> {
+        if !absolute_normal_path(&path) || byte_size == 0 || !bounded_fingerprint(&fingerprint) {
+            return Err("test result identity is invalid");
+        }
+        Ok(Self {
+            path,
+            byte_size,
+            modified_at,
+            fingerprint,
+        })
+    }
+
+    pub fn is_valid(&self) -> bool {
+        Self::new(
+            self.path.clone(),
+            self.byte_size,
+            self.modified_at,
+            self.fingerprint.clone(),
+        )
+        .as_ref()
+            == Ok(self)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TestCaseIdentity {
+    pub suite: String,
+    pub case: String,
+}
+
+impl TestCaseIdentity {
+    pub fn new(suite: String, case: String) -> Result<Self, &'static str> {
+        if !bounded_text(&suite) || !bounded_text(&case) {
+            return Err("test case identity is invalid");
+        }
+        Ok(Self { suite, case })
+    }
+
+    pub fn is_valid(&self) -> bool {
+        Self::new(self.suite.clone(), self.case.clone()).as_ref() == Ok(self)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TestCaseOutcome {
+    Passed,
+    Failed,
+    Skipped,
+    Error,
+    Unknown,
+}
+
+impl TestCaseOutcome {
+    fn is_failure(self) -> bool {
+        matches!(self, Self::Failed | Self::Error)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct TestMetadata {
+    pub key: String,
+    pub value: String,
+}
+
+impl TestMetadata {
+    pub fn new(key: String, value: String) -> Result<Self, &'static str> {
+        if !bounded_text(&key) || !bounded_text(&value) {
+            return Err("test metadata is invalid");
+        }
+        Ok(Self { key, value })
+    }
+
+    fn is_valid(&self) -> bool {
+        Self::new(self.key.clone(), self.value.clone()).as_ref() == Ok(self)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestCaseRecord {
+    pub identity: TestCaseIdentity,
+    pub outcome: TestCaseOutcome,
+    pub duration: Option<Duration>,
+    pub metadata: Vec<TestMetadata>,
+    pub log_path: Option<PathBuf>,
+}
+
+impl TestCaseRecord {
+    pub fn new(
+        identity: TestCaseIdentity,
+        outcome: TestCaseOutcome,
+        duration: Option<Duration>,
+        metadata: Vec<TestMetadata>,
+        log_path: Option<PathBuf>,
+    ) -> Result<(Self, Vec<String>), &'static str> {
+        if log_path
+            .as_deref()
+            .is_some_and(|path| !absolute_normal_path(path))
+        {
+            return Err("test case log identity is invalid");
+        }
+        let (metadata, limitations) = normalize_test_metadata(metadata);
+        Ok((
+            Self {
+                identity,
+                outcome,
+                duration,
+                metadata,
+                log_path,
+            },
+            limitations,
+        ))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestSuiteRecord {
+    pub identity: String,
+    pub duration: Option<Duration>,
+    pub metadata: Vec<TestMetadata>,
+    pub cases: Vec<TestCaseRecord>,
+}
+
+impl TestSuiteRecord {
+    pub fn new(
+        identity: String,
+        duration: Option<Duration>,
+        metadata: Vec<TestMetadata>,
+        mut cases: Vec<TestCaseRecord>,
+    ) -> Result<(Self, Vec<String>), &'static str> {
+        if !bounded_text(&identity) || cases.iter().any(|case| case.identity.suite != identity) {
+            return Err("test suite identity is invalid or mismatched");
+        }
+        let (metadata, mut limitations) = normalize_test_metadata(metadata);
+        cases.sort_by(|left, right| left.identity.cmp(&right.identity));
+        let before = cases.len();
+        cases.dedup_by(|left, right| left.identity == right.identity);
+        if cases.len() != before {
+            limitations.push(format!(
+                "ignored {} duplicate test cases in suite {identity}",
+                before - cases.len()
+            ));
+        }
+        if cases.len() > MAX_TEST_CASES_PER_SUITE {
+            let dropped = cases.len() - MAX_TEST_CASES_PER_SUITE;
+            cases.truncate(MAX_TEST_CASES_PER_SUITE);
+            limitations.push(format!(
+                "ignored {dropped} test cases beyond the per-suite bound"
+            ));
+        }
+        Ok((
+            Self {
+                identity,
+                duration,
+                metadata,
+                cases,
+            },
+            limitations,
+        ))
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct TestOutcomeCounts {
+    pub passed: usize,
+    pub failed: usize,
+    pub skipped: usize,
+    pub errors: usize,
+    pub unknown: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestResultRecord {
+    pub identity: TestResultIdentity,
+    pub family: Option<TestFamily>,
+    pub machine: Option<String>,
+    pub image: Option<String>,
+    pub revision: Option<String>,
+    pub duration: Option<Duration>,
+    pub metadata: Vec<TestMetadata>,
+    pub suites: Vec<TestSuiteRecord>,
+    pub originating_session: Option<TestSessionId>,
+    pub limitations: Vec<String>,
+}
+
+impl TestResultRecord {
+    #[allow(clippy::too_many_arguments)]
+    pub fn new(
+        identity: TestResultIdentity,
+        family: Option<TestFamily>,
+        machine: Option<String>,
+        image: Option<String>,
+        revision: Option<String>,
+        duration: Option<Duration>,
+        metadata: Vec<TestMetadata>,
+        mut suites: Vec<TestSuiteRecord>,
+        originating_session: Option<TestSessionId>,
+        limitations: Vec<String>,
+    ) -> (Self, Vec<String>) {
+        let (metadata, mut normalization) = normalize_test_metadata(metadata);
+        let mut normalize_optional = |label: &str, value: Option<String>| {
+            value.and_then(|value| {
+                if bounded_text(&value) {
+                    Some(value)
+                } else {
+                    normalization.push(format!("ignored invalid {label} metadata"));
+                    None
+                }
+            })
+        };
+        let machine = normalize_optional("machine", machine);
+        let image = normalize_optional("image", image);
+        let revision = normalize_optional("revision", revision);
+        suites.sort_by(|left, right| left.identity.cmp(&right.identity));
+        let before = suites.len();
+        suites.dedup_by(|left, right| left.identity == right.identity);
+        if suites.len() != before {
+            normalization.push(format!(
+                "ignored {} duplicate test suites",
+                before - suites.len()
+            ));
+        }
+        if suites.len() > MAX_TEST_SUITES {
+            let dropped = suites.len() - MAX_TEST_SUITES;
+            suites.truncate(MAX_TEST_SUITES);
+            normalization.push(format!("ignored {dropped} suites beyond the result bound"));
+        }
+        let mut limitations = normalize_limitations(limitations);
+        limitations.extend(normalization.iter().cloned());
+        limitations = normalize_limitations(limitations);
+        (
+            Self {
+                identity,
+                family,
+                machine,
+                image,
+                revision,
+                duration,
+                metadata,
+                suites,
+                originating_session,
+                limitations,
+            },
+            normalization,
+        )
+    }
+
+    pub fn counts(&self) -> TestOutcomeCounts {
+        let mut counts = TestOutcomeCounts::default();
+        for case in self.suites.iter().flat_map(|suite| &suite.cases) {
+            match case.outcome {
+                TestCaseOutcome::Passed => counts.passed += 1,
+                TestCaseOutcome::Failed => counts.failed += 1,
+                TestCaseOutcome::Skipped => counts.skipped += 1,
+                TestCaseOutcome::Error => counts.errors += 1,
+                TestCaseOutcome::Unknown => counts.unknown += 1,
+            }
+        }
+        counts
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.identity.is_valid()
+            && self
+                .machine
+                .iter()
+                .chain(self.image.iter())
+                .chain(self.revision.iter())
+                .all(|value| bounded_text(value))
+            && self.metadata.iter().all(TestMetadata::is_valid)
+            && self.suites.len() <= MAX_TEST_SUITES
+            && self.suites.iter().all(|suite| {
+                bounded_text(&suite.identity)
+                    && suite.metadata.iter().all(TestMetadata::is_valid)
+                    && suite.cases.len() <= MAX_TEST_CASES_PER_SUITE
+                    && suite.cases.iter().all(|case| {
+                        case.identity.is_valid()
+                            && case.identity.suite == suite.identity
+                            && case.metadata.iter().all(TestMetadata::is_valid)
+                            && case.log_path.as_deref().is_none_or(absolute_normal_path)
+                    })
+            })
+            && self.limitations.len() <= MAX_TEST_LIMITATIONS
+            && self.limitations.iter().all(|value| bounded_text(value))
+    }
+
+    pub fn case(&self, identity: &TestCaseIdentity) -> Option<&TestCaseRecord> {
+        self.suites
+            .iter()
+            .find(|suite| suite.identity == identity.suite)
+            .and_then(|suite| suite.cases.iter().find(|case| &case.identity == identity))
+    }
+}
+
+fn normalize_test_metadata(metadata: Vec<TestMetadata>) -> (Vec<TestMetadata>, Vec<String>) {
+    let before = metadata.len();
+    let mut exact = BTreeMap::new();
+    for entry in metadata {
+        exact.entry(entry.key).or_insert(entry.value);
+    }
+    let duplicate_count = before.saturating_sub(exact.len());
+    let dropped = exact.len().saturating_sub(MAX_TEST_METADATA);
+    let normalized = exact
+        .into_iter()
+        .take(MAX_TEST_METADATA)
+        .map(|(key, value)| TestMetadata { key, value })
+        .collect();
+    let mut limitations = Vec::new();
+    if duplicate_count > 0 {
+        limitations.push(format!(
+            "ignored {duplicate_count} duplicate metadata entries"
+        ));
+    }
+    if dropped > 0 {
+        limitations.push(format!(
+            "ignored {dropped} metadata entries beyond the bound"
+        ));
+    }
+    (normalized, limitations)
+}
+
+pub fn normalize_limitations(limitations: Vec<String>) -> Vec<String> {
+    let mut exact = limitations
+        .into_iter()
+        .filter(|value| bounded_text(value))
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    exact.truncate(MAX_TEST_LIMITATIONS);
+    exact
+}
+
+pub fn normalize_test_results(
+    mut records: Vec<TestResultRecord>,
+    limitations: Vec<String>,
+) -> (Vec<TestResultRecord>, Vec<String>) {
+    records.sort_by(|left, right| left.identity.cmp(&right.identity));
+    let before = records.len();
+    records.dedup_by(|left, right| left.identity == right.identity);
+    let duplicate_count = before - records.len();
+    let dropped = records.len().saturating_sub(MAX_TEST_RESULTS);
+    records.truncate(MAX_TEST_RESULTS);
+    let mut limitations = normalize_limitations(limitations);
+    if duplicate_count > 0 {
+        limitations.push(format!(
+            "ignored {duplicate_count} duplicate exact test results"
+        ));
+    }
+    if dropped > 0 {
+        limitations.push(format!("ignored {dropped} test results beyond the bound"));
+    }
+    (records, normalize_limitations(limitations))
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestResultImportRequest {
+    pub generation: u64,
+    pub roots: Vec<PathBuf>,
+}
+
+impl TestResultImportRequest {
+    pub fn new(generation: u64, mut roots: Vec<PathBuf>) -> Result<Self, &'static str> {
+        roots.sort();
+        roots.dedup();
+        if generation == 0
+            || roots.is_empty()
+            || roots.len() > MAX_TEST_RESULT_PATHS
+            || roots.iter().any(|path| !absolute_normal_path(path))
+        {
+            return Err("test result import request is invalid");
+        }
+        Ok(Self { generation, roots })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum TestResultInventoryState {
+    #[default]
+    NotLoaded,
+    Loading {
+        request: TestResultImportRequest,
+    },
+    AvailableEmpty {
+        request: TestResultImportRequest,
+    },
+    Available {
+        request: TestResultImportRequest,
+        records: Vec<TestResultRecord>,
+    },
+    Partial {
+        request: TestResultImportRequest,
+        records: Vec<TestResultRecord>,
+        limitations: Vec<String>,
+    },
+    Failed {
+        request: TestResultImportRequest,
+        message: String,
+    },
+    Cancelled {
+        request: TestResultImportRequest,
+    },
+    TimedOut {
+        request: TestResultImportRequest,
+    },
+    Lost {
+        request: TestResultImportRequest,
+        message: String,
+    },
+}
+
+impl TestResultInventoryState {
+    pub fn request(&self) -> Option<&TestResultImportRequest> {
+        match self {
+            Self::NotLoaded => None,
+            Self::Loading { request }
+            | Self::AvailableEmpty { request }
+            | Self::Available { request, .. }
+            | Self::Partial { request, .. }
+            | Self::Failed { request, .. }
+            | Self::Cancelled { request }
+            | Self::TimedOut { request }
+            | Self::Lost { request, .. } => Some(request),
+        }
+    }
+
+    pub fn records(&self) -> &[TestResultRecord] {
+        match self {
+            Self::Available { records, .. } | Self::Partial { records, .. } => records,
+            _ => &[],
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum ResultToolCapability {
+    #[default]
+    NotInspected,
+    Missing,
+    Available(PathBuf),
+    Failed(String),
+}
+
+impl ResultToolCapability {
+    pub fn executable(&self) -> Result<PathBuf, &'static str> {
+        match self {
+            Self::Available(path) if absolute_normal_path(path) => Ok(path.clone()),
+            Self::Available(_) => Err("resulttool executable identity is invalid"),
+            Self::NotInspected => Err("resulttool has not been inspected"),
+            Self::Missing => Err("resulttool is missing"),
+            Self::Failed(_) => Err("resulttool inspection failed"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TestWorkspaceView {
+    Launches,
+    Results,
+    Comparison,
+}
+
+impl TestWorkspaceView {
+    pub fn next(self) -> Self {
+        match self {
+            Self::Launches => Self::Results,
+            Self::Results => Self::Comparison,
+            Self::Comparison => Self::Launches,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct TestResultImportDialog {
+    pub input: String,
+    pub validation_error: Option<String>,
+}
+
+impl TestResultImportDialog {
+    pub fn append(&mut self, character: char) {
+        if !character.is_control() && self.input.len() + character.len_utf8() <= MAX_TEST_TEXT_BYTES
+        {
+            self.input.push(character);
+            self.validation_error = None;
+        }
+    }
+
+    pub fn backspace(&mut self) {
+        self.input.pop();
+        self.validation_error = None;
+    }
+
+    pub fn root(&self) -> Result<PathBuf, &'static str> {
+        let path = PathBuf::from(&self.input);
+        absolute_normal_path(&path)
+            .then_some(path)
+            .ok_or("result import path must be normalized and absolute")
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TestComparisonCategory {
+    Regression,
+    NewFailure,
+    NewPass,
+    Removed,
+    UnchangedOther,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestCaseTransition {
+    pub identity: TestCaseIdentity,
+    pub baseline: Option<TestCaseOutcome>,
+    pub candidate: Option<TestCaseOutcome>,
+    pub category: TestComparisonCategory,
+    pub baseline_log: Option<PathBuf>,
+    pub candidate_log: Option<PathBuf>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestComparison {
+    pub baseline: TestResultIdentity,
+    pub candidate: TestResultIdentity,
+    pub transitions: Vec<TestCaseTransition>,
+}
+
+impl TestComparison {
+    pub fn between(
+        baseline: &TestResultRecord,
+        candidate: &TestResultRecord,
+    ) -> Result<Self, &'static str> {
+        if baseline.identity == candidate.identity {
+            return Err("test comparison requires distinct exact results");
+        }
+        let baseline_cases = baseline
+            .suites
+            .iter()
+            .flat_map(|suite| &suite.cases)
+            .map(|case| (case.identity.clone(), case))
+            .collect::<BTreeMap<_, _>>();
+        let candidate_cases = candidate
+            .suites
+            .iter()
+            .flat_map(|suite| &suite.cases)
+            .map(|case| (case.identity.clone(), case))
+            .collect::<BTreeMap<_, _>>();
+        let identities = baseline_cases
+            .keys()
+            .chain(candidate_cases.keys())
+            .cloned()
+            .collect::<BTreeSet<_>>();
+        let transitions = identities
+            .into_iter()
+            .map(|identity| {
+                let baseline = baseline_cases.get(&identity).copied();
+                let candidate = candidate_cases.get(&identity).copied();
+                let category = classify_test_transition(
+                    baseline.map(|case| case.outcome),
+                    candidate.map(|case| case.outcome),
+                );
+                TestCaseTransition {
+                    identity,
+                    baseline: baseline.map(|case| case.outcome),
+                    candidate: candidate.map(|case| case.outcome),
+                    category,
+                    baseline_log: baseline.and_then(|case| case.log_path.clone()),
+                    candidate_log: candidate.and_then(|case| case.log_path.clone()),
+                }
+            })
+            .collect();
+        Ok(Self {
+            baseline: baseline.identity.clone(),
+            candidate: candidate.identity.clone(),
+            transitions,
+        })
+    }
+}
+
+fn classify_test_transition(
+    baseline: Option<TestCaseOutcome>,
+    candidate: Option<TestCaseOutcome>,
+) -> TestComparisonCategory {
+    match (baseline, candidate) {
+        (Some(TestCaseOutcome::Passed | TestCaseOutcome::Skipped), Some(candidate))
+            if candidate.is_failure() =>
+        {
+            TestComparisonCategory::Regression
+        }
+        (None, Some(candidate)) if candidate.is_failure() => TestComparisonCategory::NewFailure,
+        (Some(baseline), Some(TestCaseOutcome::Passed)) if baseline.is_failure() => {
+            TestComparisonCategory::NewPass
+        }
+        (Some(_), None) => TestComparisonCategory::Removed,
+        _ => TestComparisonCategory::UnchangedOther,
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestComparisonRequest {
+    pub generation: u64,
+    pub baseline: TestResultIdentity,
+    pub candidate: TestResultIdentity,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TestComparisonField {
+    Baseline,
+    Candidate,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestComparisonPicker {
+    pub baseline: Option<TestResultIdentity>,
+    pub candidate: Option<TestResultIdentity>,
+    pub active_field: TestComparisonField,
+    pub cursor: Option<TestResultIdentity>,
+    pub validation_error: Option<String>,
+}
+
+impl TestComparisonPicker {
+    pub fn new(selected: Option<TestResultIdentity>, records: &[TestResultRecord]) -> Self {
+        let baseline = selected.or_else(|| records.first().map(|record| record.identity.clone()));
+        let candidate = records
+            .iter()
+            .find(|record| Some(&record.identity) != baseline.as_ref())
+            .map(|record| record.identity.clone());
+        Self {
+            cursor: baseline.clone(),
+            baseline,
+            candidate,
+            active_field: TestComparisonField::Baseline,
+            validation_error: None,
+        }
+    }
+
+    pub fn select(&mut self, records: &[TestResultRecord], delta: isize) {
+        if records.is_empty() {
+            self.cursor = None;
+            return;
+        }
+        let current = self
+            .cursor
+            .as_ref()
+            .and_then(|identity| {
+                records
+                    .iter()
+                    .position(|record| &record.identity == identity)
+            })
+            .unwrap_or_default();
+        let next = if delta.is_negative() {
+            current.saturating_sub(delta.unsigned_abs())
+        } else {
+            current
+                .saturating_add(delta as usize)
+                .min(records.len() - 1)
+        };
+        self.cursor = records.get(next).map(|record| record.identity.clone());
+        self.validation_error = None;
+    }
+
+    pub fn cycle_field(&mut self) {
+        self.active_field = match self.active_field {
+            TestComparisonField::Baseline => TestComparisonField::Candidate,
+            TestComparisonField::Candidate => TestComparisonField::Baseline,
+        };
+        self.validation_error = None;
+    }
+
+    pub fn activate(&mut self) {
+        match self.active_field {
+            TestComparisonField::Baseline => self.baseline.clone_from(&self.cursor),
+            TestComparisonField::Candidate => self.candidate.clone_from(&self.cursor),
+        }
+        self.validation_error = None;
+    }
+
+    pub fn preview(&self, generation: u64) -> Result<TestComparisonRequest, &'static str> {
+        TestComparisonRequest::new(
+            generation,
+            self.baseline
+                .clone()
+                .ok_or("comparison baseline is unavailable")?,
+            self.candidate
+                .clone()
+                .ok_or("comparison candidate is unavailable")?,
+        )
+    }
+}
+
+impl TestComparisonRequest {
+    pub fn new(
+        generation: u64,
+        baseline: TestResultIdentity,
+        candidate: TestResultIdentity,
+    ) -> Result<Self, &'static str> {
+        if generation == 0 || baseline == candidate {
+            return Err("test comparison request is invalid");
+        }
+        Ok(Self {
+            generation,
+            baseline,
+            candidate,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestComparisonPreview {
+    pub request: TestComparisonRequest,
+    pub argv: Vec<PathBuf>,
+}
+
+impl TestComparisonPreview {
+    pub fn new(executable: PathBuf, request: TestComparisonRequest) -> Result<Self, &'static str> {
+        if !absolute_normal_path(&executable) {
+            return Err("resulttool executable identity is invalid");
+        }
+        let argv = vec![
+            executable,
+            "regression-file".into(),
+            request.baseline.path.clone(),
+            request.candidate.path.clone(),
+        ];
+        Ok(Self { request, argv })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum TestComparisonState {
+    #[default]
+    NotSelected,
+    Loading {
+        request: TestComparisonRequest,
+    },
+    Available {
+        request: TestComparisonRequest,
+        comparison: TestComparison,
+    },
+    Partial {
+        request: TestComparisonRequest,
+        comparison: TestComparison,
+        limitations: Vec<String>,
+    },
+    Failed {
+        request: TestComparisonRequest,
+        message: String,
+    },
+    Cancelled {
+        request: TestComparisonRequest,
+    },
+    TimedOut {
+        request: TestComparisonRequest,
+    },
+    Lost {
+        request: TestComparisonRequest,
+        message: String,
+    },
+}
+
+impl TestComparisonState {
+    pub fn request(&self) -> Option<&TestComparisonRequest> {
+        match self {
+            Self::NotSelected => None,
+            Self::Loading { request }
+            | Self::Available { request, .. }
+            | Self::Partial { request, .. }
+            | Self::Failed { request, .. }
+            | Self::Cancelled { request }
+            | Self::TimedOut { request }
+            | Self::Lost { request, .. } => Some(request),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestJunitDestinationInspection {
+    pub requested: PathBuf,
+    pub canonical_parent: Option<PathBuf>,
+    pub parent_exists: bool,
+    pub parent_is_directory: bool,
+    pub destination_exists: bool,
+    pub destination_is_symlink: bool,
+}
+
+impl TestJunitDestinationInspection {
+    pub fn validated_destination(&self) -> Result<PathBuf, &'static str> {
+        let parent = self
+            .canonical_parent
+            .as_deref()
+            .ok_or("JUnit destination parent is not canonical")?;
+        let requested_parent = self
+            .requested
+            .parent()
+            .ok_or("JUnit destination has no parent")?;
+        if !absolute_normal_path(&self.requested)
+            || self.requested.extension().and_then(|value| value.to_str()) != Some("xml")
+            || !self.parent_exists
+            || !self.parent_is_directory
+            || self.destination_exists
+            || self.destination_is_symlink
+            || requested_parent != parent
+        {
+            return Err("JUnit destination is unsafe or would overwrite an existing path");
+        }
+        Ok(self.requested.clone())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestJunitExportRequest {
+    pub generation: u64,
+    pub result: TestResultIdentity,
+    pub destination: PathBuf,
+}
+
+impl TestJunitExportRequest {
+    pub fn new(
+        generation: u64,
+        result: TestResultIdentity,
+        inspection: &TestJunitDestinationInspection,
+    ) -> Result<Self, &'static str> {
+        if generation == 0 {
+            return Err("JUnit export generation is invalid");
+        }
+        Ok(Self {
+            generation,
+            result,
+            destination: inspection.validated_destination()?,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestJunitExportPreview {
+    pub request: TestJunitExportRequest,
+    pub argv: Vec<PathBuf>,
+}
+
+impl TestJunitExportPreview {
+    pub fn new(executable: PathBuf, request: TestJunitExportRequest) -> Result<Self, &'static str> {
+        if !absolute_normal_path(&executable) {
+            return Err("resulttool executable identity is invalid");
+        }
+        let argv = vec![
+            executable,
+            "junit".into(),
+            request.result.path.clone(),
+            "-j".into(),
+            request.destination.clone(),
+        ];
+        Ok(Self { request, argv })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum TestJunitExportState {
+    #[default]
+    NotStarted,
+    Inspecting {
+        result: TestResultIdentity,
+        destination: PathBuf,
+    },
+    Ready(TestJunitExportPreview),
+    Running(TestJunitExportRequest),
+    Succeeded(TestJunitExportRequest),
+    Failed {
+        request: TestJunitExportRequest,
+        message: String,
+    },
+    Cancelled(TestJunitExportRequest),
+    TimedOut(TestJunitExportRequest),
+    Lost {
+        request: TestJunitExportRequest,
+        message: String,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TestJunitExportDialog {
+    pub result: TestResultIdentity,
+    pub destination_input: String,
+    pub validation_error: Option<String>,
+}
+
+impl TestJunitExportDialog {
+    pub fn new(result: TestResultIdentity) -> Self {
+        Self {
+            result,
+            destination_input: String::new(),
+            validation_error: None,
+        }
+    }
+
+    pub fn append(&mut self, character: char) {
+        if !character.is_control()
+            && self.destination_input.len() + character.len_utf8() <= MAX_TEST_TEXT_BYTES
+        {
+            self.destination_input.push(character);
+            self.validation_error = None;
+        }
+    }
+
+    pub fn backspace(&mut self) {
+        self.destination_input.pop();
+        self.validation_error = None;
+    }
+
+    pub fn lexical_destination(&self) -> Result<PathBuf, &'static str> {
+        let path = PathBuf::from(&self.destination_input);
+        if !absolute_normal_path(&path)
+            || path.extension().and_then(|value| value.to_str()) != Some("xml")
+        {
+            return Err("JUnit destination must be a normalized absolute .xml path");
+        }
+        Ok(path)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -635,5 +1585,195 @@ mod tests {
             "image".into(),
         );
         assert!(ptest.preview(&missing).is_err());
+    }
+
+    fn result_identity(name: &str, fingerprint: &str) -> TestResultIdentity {
+        TestResultIdentity::new(
+            format!("/build/testresults/{name}/testresults.json").into(),
+            1_024,
+            SystemTime::UNIX_EPOCH,
+            fingerprint.into(),
+        )
+        .unwrap()
+    }
+
+    fn case(suite: &str, name: &str, outcome: TestCaseOutcome) -> TestCaseRecord {
+        TestCaseRecord::new(
+            TestCaseIdentity::new(suite.into(), name.into()).unwrap(),
+            outcome,
+            Some(Duration::from_millis(10)),
+            Vec::new(),
+            Some(format!("/build/logs/{suite}-{name}.log").into()),
+        )
+        .unwrap()
+        .0
+    }
+
+    fn result(name: &str, fingerprint: &str, cases: Vec<TestCaseRecord>) -> TestResultRecord {
+        let (suite, _) = TestSuiteRecord::new("suite".into(), None, Vec::new(), cases).unwrap();
+        TestResultRecord::new(
+            result_identity(name, fingerprint),
+            Some(TestFamily::TestImage),
+            Some("qemux86-64".into()),
+            Some("core-image-minimal".into()),
+            Some("rev-1".into()),
+            None,
+            Vec::new(),
+            vec![suite],
+            Some(TestSessionId(1)),
+            Vec::new(),
+        )
+        .0
+    }
+
+    #[test]
+    fn test_results_normalize_exact_records_metadata_duplicates_and_bounds() {
+        let duplicate = case("suite", "same", TestCaseOutcome::Passed);
+        let (suite, suite_limitations) = TestSuiteRecord::new(
+            "suite".into(),
+            None,
+            vec![
+                TestMetadata::new("z".into(), "last".into()).unwrap(),
+                TestMetadata::new("z".into(), "ignored".into()).unwrap(),
+                TestMetadata::new("a".into(), "first".into()).unwrap(),
+            ],
+            vec![duplicate.clone(), duplicate],
+        )
+        .unwrap();
+        assert_eq!(suite.metadata[0].key, "a");
+        assert_eq!(suite.cases.len(), 1);
+        assert!(
+            suite_limitations
+                .iter()
+                .any(|value| value.contains("duplicate"))
+        );
+
+        let record = TestResultRecord::new(
+            result_identity("one", "abc123"),
+            None,
+            Some("\n".into()),
+            None,
+            None,
+            None,
+            Vec::new(),
+            vec![suite],
+            None,
+            vec!["adapter skipped malformed record".into()],
+        )
+        .0;
+        assert_eq!(record.machine, None);
+        assert_eq!(record.counts().passed, 1);
+        assert!(
+            record
+                .limitations
+                .iter()
+                .any(|value| value.contains("invalid machine"))
+        );
+
+        let (records, limitations) = normalize_test_results(
+            vec![record.clone(), record],
+            vec!["adapter skipped malformed record".into()],
+        );
+        assert_eq!(records.len(), 1);
+        assert!(
+            limitations
+                .iter()
+                .any(|value| value.contains("duplicate exact test results"))
+        );
+        assert!(
+            TestResultIdentity::new(
+                "relative.json".into(),
+                1,
+                SystemTime::UNIX_EPOCH,
+                "abc".into()
+            )
+            .is_err()
+        );
+    }
+
+    #[test]
+    fn test_results_comparison_uses_exact_suite_case_status_transitions() {
+        let baseline = result(
+            "baseline",
+            "base",
+            vec![
+                case("suite", "regression", TestCaseOutcome::Passed),
+                case("suite", "fixed", TestCaseOutcome::Failed),
+                case("suite", "removed", TestCaseOutcome::Skipped),
+                case("suite", "same", TestCaseOutcome::Passed),
+            ],
+        );
+        let candidate = result(
+            "candidate",
+            "candidate",
+            vec![
+                case("suite", "regression", TestCaseOutcome::Error),
+                case("suite", "fixed", TestCaseOutcome::Passed),
+                case("suite", "new-failure", TestCaseOutcome::Failed),
+                case("suite", "same", TestCaseOutcome::Passed),
+            ],
+        );
+        let comparison = TestComparison::between(&baseline, &candidate).unwrap();
+        let categories = comparison
+            .transitions
+            .iter()
+            .map(|transition| (transition.identity.case.as_str(), transition.category))
+            .collect::<BTreeMap<_, _>>();
+        assert_eq!(categories["regression"], TestComparisonCategory::Regression);
+        assert_eq!(categories["fixed"], TestComparisonCategory::NewPass);
+        assert_eq!(
+            categories["new-failure"],
+            TestComparisonCategory::NewFailure
+        );
+        assert_eq!(categories["removed"], TestComparisonCategory::Removed);
+        assert_eq!(categories["same"], TestComparisonCategory::UnchangedOther);
+        assert!(TestComparison::between(&baseline, &baseline).is_err());
+    }
+
+    #[test]
+    fn test_results_import_and_junit_require_exact_non_overwriting_paths() {
+        assert!(TestResultImportRequest::new(1, vec!["relative".into()]).is_err());
+        let request = TestResultImportRequest::new(2, vec!["/build/results".into()]).unwrap();
+        assert_eq!(request.roots, [PathBuf::from("/build/results")]);
+
+        let result = result_identity("candidate", "candidate");
+        let valid = TestJunitDestinationInspection {
+            requested: "/exports/candidate.xml".into(),
+            canonical_parent: Some("/exports".into()),
+            parent_exists: true,
+            parent_is_directory: true,
+            destination_exists: false,
+            destination_is_symlink: false,
+        };
+        let export = TestJunitExportRequest::new(1, result.clone(), &valid).unwrap();
+        let preview = TestJunitExportPreview::new("/workspace/resulttool".into(), export).unwrap();
+        assert_eq!(
+            preview.argv,
+            [
+                PathBuf::from("/workspace/resulttool"),
+                "junit".into(),
+                result.path,
+                "-j".into(),
+                "/exports/candidate.xml".into(),
+            ]
+        );
+
+        for invalid in [
+            TestJunitDestinationInspection {
+                requested: "relative.xml".into(),
+                canonical_parent: Some("/exports".into()),
+                ..valid.clone()
+            },
+            TestJunitDestinationInspection {
+                destination_exists: true,
+                ..valid.clone()
+            },
+            TestJunitDestinationInspection {
+                canonical_parent: Some("/other".into()),
+                ..valid.clone()
+            },
+        ] {
+            assert!(invalid.validated_destination().is_err());
+        }
     }
 }
