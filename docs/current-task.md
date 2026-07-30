@@ -2,49 +2,50 @@
 
 ## Active task
 
-**ID:** TEST-RUNNER-ADAPTER-001
-**Title:** Adapt typed Yocto test execution
+**ID:** TEST-RESULT-ADAPTER-001
+**Title:** Adapt resulttool import comparison and export
 
 ## Objective
 
-Add safe adapters for selftest capability discovery, exact shell-free command
-construction, independently polled execution, bounded typed output, and
-graceful/forced cancellation.
+Add safe resulttool capability discovery, explicit bounded test-result import,
+exact comparison, and non-overwriting JUnit export adapters.
 
 ## Required work
 
-1. Add a focused `yoctui-bitbake` Testing adapter that discovers and
-   canonicalizes `oe-selftest` and `bitbake-selftest` from the initialized
-   environment without guessing paths.
-2. Revalidate executable identity at launch and construct the exact indexed
-   shell-free argv for each typed `TestSelftestRequest`.
-3. Apply `BB_SKIP_NETTESTS=yes` only to the BitBake-selftest child environment;
-   never mutate the Yoctui process environment.
-4. Reuse managed `BuildRequest` execution for testimage, testsdk, testsdkext,
-   and configured ptest rather than duplicating BitBake process ownership.
-5. Add one process-group-owned runner with bounded stdout/stderr events,
-   duplicate-start rejection, success, nonzero failure, timeout, worker loss,
-   and graceful cancellation with forced escalation.
-6. Add mechanical app event mapping and fake-filesystem/fake-process tests for
-   exact commands, tampering, bounds, cancellation, and every terminal path.
+1. Discover and canonicalize `resulttool` from the initialized PATH snapshot
+   independently of selftest capability.
+2. Accept only explicit canonical regular non-symlink `testresults.json` files
+   or validated retained directories; bound traversal, files, bytes, parsed
+   runs, suites, cases, metadata, logs, and limitations.
+3. Parse supported result JSON into typed model records while keeping malformed,
+   duplicate, oversized, missing, empty, partial, timeout, cancellation, and
+   worker-loss outcomes distinct.
+4. Revalidate exact result path, size, timestamp, and fingerprint for
+   `regression-file`; construct its indexed shell-free vector and return
+   identity-correlated typed comparisons.
+5. Revalidate result identity and destination parent immediately before JUnit
+   spawn; construct `resulttool junit <json> -j <destination>` and fail closed
+   if the destination exists, is a symlink, escapes, or its parent changed.
+6. Add mechanical app response mapping and fake filesystem/process tests for
+   import bounds, malformed data, exact vectors, tampering, non-overwrite,
+   cancellation, timeout, nonzero, and loss.
 
 ## Definition of done
 
-- Capability states distinguish available, missing, and failed discovery with
-  canonical executable identity.
-- Exact commands are reconstructable from typed requests without shell strings.
-- Runner events retain stream identity, truncation, and distinct terminal
-  meaning.
-- Cancellation owns the process group, attempts graceful termination, and
-  reports forced escalation honestly.
-- Fake-process tests cover normal, invalid, duplicate, nonzero, timeout,
-  cancellation, and lost-worker paths without claiming live compatibility.
+- Resulttool capability is independent, canonical, and revalidated.
+- Import emits only bounded typed records from explicit validated roots.
+- Comparison and export commands are exact, shell-free, identity-correlated,
+  and stale-safe.
+- JUnit export cannot overwrite an existing or changed destination.
+- Fake tests cover normal, empty, partial, malformed, bounded, stale,
+  cancellation, timeout, nonzero, and worker-loss paths without claiming live
+  compatibility.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake test_runner
-cargo test -p yoctui-app test_runner
+cargo test -p yoctui-bitbake test_results
+cargo test -p yoctui-app test_results
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

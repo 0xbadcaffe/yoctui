@@ -2,7 +2,8 @@
 use std::time::SystemTime;
 use yoctui_bitbake::{
     BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QemuRunnerEvent, QemuRunnerOutputStream,
-    SdkToolRunnerEvent, WicDeviceInventoryResponse, WicRunnerEvent, WicRunnerOutputStream,
+    SdkToolRunnerEvent, TestRunnerEvent, WicDeviceInventoryResponse, WicRunnerEvent,
+    WicRunnerOutputStream,
 };
 use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
@@ -84,6 +85,85 @@ pub fn sdk_actions_for_runner_event(
             }]
         }
         SdkToolRunnerEvent::Lost { message } => vec![Action::LoseSdkSession {
+            id,
+            message,
+            finished_at: timestamp,
+        }],
+    }
+}
+
+pub fn test_actions_for_runner_event(
+    id: yoctui_model::TestSessionId,
+    event: TestRunnerEvent,
+    timestamp: SystemTime,
+) -> Vec<Action> {
+    match event {
+        TestRunnerEvent::Started => vec![
+            Action::TestSessionStarting {
+                id,
+                started_at: timestamp,
+            },
+            Action::TestSessionRunning { id },
+        ],
+        TestRunnerEvent::Output {
+            stream,
+            line,
+            truncated,
+        } => vec![Action::AppendTestSessionOutput {
+            id,
+            stream,
+            line,
+            truncated,
+            timestamp,
+        }],
+        TestRunnerEvent::Completed {
+            exit_code,
+            result_paths,
+        } => vec![Action::CompleteTestSession {
+            id,
+            exit_code: exit_code.unwrap_or(0),
+            result_paths,
+            finished_at: timestamp,
+        }],
+        TestRunnerEvent::Failed { exit_code } => vec![Action::FailTestSession {
+            id,
+            message: exit_code.map_or_else(
+                || "Testing process exited unsuccessfully without an exit code".into(),
+                |code| format!("Testing process exited unsuccessfully with exit code {code}"),
+            ),
+            exit_code,
+            finished_at: timestamp,
+        }],
+        TestRunnerEvent::Cancelled { forced, exit_code } => {
+            let mut actions = Vec::new();
+            if forced {
+                actions.push(Action::AppendTestSessionOutput {
+                    id,
+                    stream: yoctui_model::TestOutputStream::Stderr,
+                    line: "Testing cancellation required forced termination".into(),
+                    truncated: false,
+                    timestamp,
+                });
+            }
+            actions.push(Action::CancelTestSession {
+                id,
+                exit_code,
+                finished_at: timestamp,
+            });
+            actions
+        }
+        TestRunnerEvent::CancellationRejected { message } => {
+            vec![Action::RejectTestSessionCancellation { id, message }]
+        }
+        TestRunnerEvent::TimedOut { forced, exit_code } => {
+            vec![Action::TimeoutTestSession {
+                id,
+                forced,
+                exit_code,
+                finished_at: timestamp,
+            }]
+        }
+        TestRunnerEvent::Lost { message } => vec![Action::LoseTestSession {
             id,
             message,
             finished_at: timestamp,
@@ -1866,7 +1946,7 @@ pub fn config_edit_confirmation_action(key: Input) -> Option<Action> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::Duration;
+    use std::{path::PathBuf, time::Duration};
     use yoctui_model::{
         App, BackgroundJobStatus, BuildStatus, DependencyEdge, DependencyEdgeKind, DependencyGraph,
         DependencyGraphState, DependencyNodeId, ImageArtifact, ImageArtifactField,
@@ -4110,7 +4190,7 @@ mod tests {
     }
 
     #[test]
-    fn test_workflow_maps_keys_and_classifies_managed_bitbake_tests() {
+    fn test_workflow_test_runner_maps_keys_and_classifies_managed_bitbake_tests() {
         assert_eq!(
             testing_workspace_action(Input::Down),
             Some(Action::SelectTestFamily { delta: 1 })
@@ -4250,5 +4330,96 @@ mod tests {
             test_comparison_workspace_action(Input::Char('l')),
             Some(Action::OpenSelectedTestTransitionLog)
         );
+    }
+
+    #[test]
+    fn test_runner_events_map_once_with_stream_and_terminal_meaning() {
+        let id = yoctui_model::TestSessionId(9);
+        assert_eq!(
+            test_actions_for_runner_event(id, TestRunnerEvent::Started, SystemTime::UNIX_EPOCH),
+            [
+                Action::TestSessionStarting {
+                    id,
+                    started_at: SystemTime::UNIX_EPOCH,
+                },
+                Action::TestSessionRunning { id },
+            ]
+        );
+        assert_eq!(
+            test_actions_for_runner_event(
+                id,
+                TestRunnerEvent::Output {
+                    stream: yoctui_model::TestOutputStream::Stderr,
+                    line: "warning".into(),
+                    truncated: true,
+                },
+                SystemTime::UNIX_EPOCH,
+            ),
+            [Action::AppendTestSessionOutput {
+                id,
+                stream: yoctui_model::TestOutputStream::Stderr,
+                line: "warning".into(),
+                truncated: true,
+                timestamp: SystemTime::UNIX_EPOCH,
+            }]
+        );
+        assert!(matches!(
+            test_actions_for_runner_event(
+                id,
+                TestRunnerEvent::Completed {
+                    exit_code: Some(0),
+                    result_paths: vec!["/build/testresults.json".into()],
+                },
+                SystemTime::UNIX_EPOCH,
+            )
+            .as_slice(),
+            [Action::CompleteTestSession {
+                id: yoctui_model::TestSessionId(9),
+                exit_code: 0,
+                result_paths,
+                ..
+            }] if result_paths == &[PathBuf::from("/build/testresults.json")]
+        ));
+        assert!(matches!(
+            test_actions_for_runner_event(
+                id,
+                TestRunnerEvent::TimedOut {
+                    forced: true,
+                    exit_code: None,
+                },
+                SystemTime::UNIX_EPOCH,
+            )
+            .as_slice(),
+            [Action::TimeoutTestSession {
+                id: yoctui_model::TestSessionId(9),
+                forced: true,
+                exit_code: None,
+                ..
+            }]
+        ));
+        assert_eq!(
+            test_actions_for_runner_event(
+                id,
+                TestRunnerEvent::Cancelled {
+                    forced: true,
+                    exit_code: Some(137),
+                },
+                SystemTime::UNIX_EPOCH,
+            )
+            .len(),
+            2,
+            "forced cancellation retains both its warning and terminal action"
+        );
+        assert!(matches!(
+            test_actions_for_runner_event(
+                id,
+                TestRunnerEvent::Lost {
+                    message: "channel closed".into(),
+                },
+                SystemTime::UNIX_EPOCH,
+            )
+            .as_slice(),
+            [Action::LoseTestSession { message, .. }] if message == "channel closed"
+        ));
     }
 }
