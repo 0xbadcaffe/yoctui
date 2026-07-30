@@ -1109,12 +1109,12 @@ notes = "The CLI snapshots initialized Testing capabilities, routes image/SDK/pt
 id = "TEST-UI-CLI-001"
 milestone = "M5"
 title = "Integrate complete Testing workspace"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 60
 required = true
 depends_on = ["TEST-MODEL-001", "TEST-RESULT-MODEL-001", "TEST-RUNNER-ADAPTER-001", "TEST-RESULT-ADAPTER-001", "TEST-RENDER-001", "TEST-CLI-001"]
 verify = ["cargo test -p yoctui-model test_workflow", "cargo test -p yoctui-app test_workflow", "cargo test -p yoctui-bitbake test_", "cargo test -p yoctui-ui test_workflow", "cargo test -p yoctui -- test_workflow"]
-notes = "Cross-layer parent gate for every specified launch family, exact results, comparisons, export, responsive rendering, and independently polled CLI execution."
+notes = "The cross-layer gate passes for every specified launch family, exact result import and suite/case drill-down, typed comparison, non-overwriting JUnit export, cancellation and every terminal state, responsive rendering, navigation retention, managed BitBake reuse, and independently polled CLI execution. All focused layer checks and the complete baseline pass; live Yocto test compatibility remains unclaimed."
 
 [[task]]
 id = "TEST-001"
