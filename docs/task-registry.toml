@@ -1150,15 +1150,48 @@ verify = ["cargo test -p yoctui-model security_workflow", "cargo test -p yoctui-
 notes = "A first-class Security destination now owns validated exact recipe/image scope, capability-supplied current/legacy task choices, deterministic CVE/SBOM/package-map previews, stable sessions and managed-job identity, cancellation and terminal outcomes, canonical report identities, bounded normalized CVE findings/mappings and SPDX summaries, explicit correlated inventory states, search/filter/drill selection, exact open effects, focus-trapped typed dialogs, and mechanical app key mapping. Focused and baseline checks pass without filesystem or process parsing in the reducer."
 
 [[task]]
+id = "SEC-CAP-ADAPTER-001"
+milestone = "M5"
+title = "Inspect Security capabilities"
+status = "NOT_STARTED"
+priority = 61
+required = true
+depends_on = ["SEC-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake security_capability"]
+notes = "Construct fail-closed typed snapshots from explicit build/recipe/image metadata, canonical roots, and canonical package-mapping tool discovery while preserving exact current/legacy task names."
+
+[[task]]
+id = "SEC-REPORT-ADAPTER-001"
+milestone = "M5"
+title = "Acquire and parse Security reports"
+status = "NOT_STARTED"
+priority = 61
+required = true
+depends_on = ["SEC-CAP-ADAPTER-001"]
+verify = ["cargo test -p yoctui-bitbake security_report"]
+notes = "Bound explicit canonical report acquisition and parse supported CVE JSON/text and SPDX JSON into exact typed records with honest empty, partial, malformed, oversized, timeout, cancellation, and loss outcomes."
+
+[[task]]
+id = "SEC-MAPPER-ADAPTER-001"
+milestone = "M5"
+title = "Run exact CVE package mapping"
+status = "NOT_STARTED"
+priority = 61
+required = true
+depends_on = ["SEC-CAP-ADAPTER-001"]
+verify = ["cargo test -p yoctui-bitbake security_mapper", "cargo test -p yoctui-app security_workflow"]
+notes = "Reconstruct and immediately revalidate the exact shell-free cve-check-map-pkgs operation and emit bounded typed stream, success, nonzero, rejection, cancellation, timeout, and worker-loss events."
+
+[[task]]
 id = "SEC-ADAPTER-001"
 milestone = "M5"
 title = "Adapt CVE and SPDX metadata and reports"
 status = "NOT_STARTED"
 priority = 61
 required = true
-depends_on = ["SEC-MODEL-001"]
+depends_on = ["SEC-REPORT-ADAPTER-001", "SEC-MAPPER-ADAPTER-001"]
 verify = ["cargo test -p yoctui-bitbake security", "cargo test -p yoctui-app security_workflow"]
-notes = "Discover authoritative tasks/tools/roots, construct exact shell-free operations, revalidate bounded report identities, parse typed CVE and SPDX content, and preserve empty, partial, malformed, timeout, cancellation, nonzero, and loss states."
+notes = "Parent adapter gate split into canonical capability discovery, bounded CVE/SPDX report acquisition/parsing, and an exact cancellable package-mapping runner."
 
 [[task]]
 id = "SEC-RENDER-001"

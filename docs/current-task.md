@@ -2,46 +2,44 @@
 
 ## Active task
 
-**ID:** SEC-ADAPTER-001
-**Title:** Adapt CVE and SPDX metadata and reports
+**ID:** SEC-CAP-ADAPTER-001
+**Title:** Inspect Security capabilities
 
 ## Objective
 
-Implement bounded Security capability inspection, CVE/SPDX report acquisition
-and parsing, and the exact package-mapping runner.
+Construct fail-closed typed Security capability snapshots from explicit
+initialized-workspace metadata and canonical host identities.
 
 ## Required work
 
-1. Inspect the typed Security model and existing bounded filesystem/process
-   adapters before adding a new adapter module.
-2. Build capability snapshots only from explicit build/recipe/image metadata,
-   canonical report roots, and canonical PATH tool discovery.
-3. Preserve exact authoritative task names including current
-   `create_recipe_sbom` and legacy `create_spdx` without release-name guessing.
-4. Acquire only explicit request paths, reject symlinks/escapes/stale identity,
-   and bound directories, files, bytes, records, fields, and elapsed time.
-5. Parse supported CVE JSON/text and SPDX JSON into typed records; keep
-   unknown status/schema, empty, partial, malformed, and oversized states
-   explicit.
-6. Reconstruct and revalidate the exact shell-free package-mapping operation;
-   emit bounded typed stream and terminal events with cancellation/timeout.
-7. Add fake filesystem/process tests for normal and every relevant failure
-   path. Do not claim live compatibility.
+1. Add a Security adapter module following existing explicit-snapshot
+   capability inspectors.
+2. Accept initialized build directory, release, exact available scopes,
+   authoritative recipe tasks, image-SBOM configuration, report-root values,
+   and PATH directories as typed input.
+3. Preserve the exact reported `cve_check`, `create_recipe_sbom`,
+   `create_spdx`, or image task rather than selecting from release text.
+4. Canonicalize the build directory and report roots, refuse symlinks,
+   non-directories, escapes, duplicates, relative paths, and excessive input.
+5. Discover `cve-check-map-pkgs` only as a canonical regular executable in
+   the supplied PATH snapshot and construct its exact bounded input arguments.
+6. Return partial limitations for invalid optional roots/tools while failing
+   closed for the primary build/scope identity.
+7. Add fake-filesystem tests for current, legacy, missing, partial, unsafe,
+   duplicate, and bounded capability input.
 
 ## Definition of done
 
-- Capability data is authoritative, canonical, and fail-closed.
-- CVE/SPDX parsing returns only bounded typed records and limitations.
-- Package mapping is shell-free and immediately revalidated.
-- Empty, partial, malformed, timeout, cancellation, nonzero, rejection, and
-  loss remain distinct.
-- Focused adapter/app and baseline checks pass.
+- Capability identity is canonical and fail-closed.
+- Current and legacy task names remain exact typed input.
+- Optional roots and mapping support are explicit and bounded.
+- No process-global environment is read or mutated.
+- Focused capability and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake security
-cargo test -p yoctui-app security_workflow
+cargo test -p yoctui-bitbake security_capability
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Adapt CVE and SPDX capabilities and reports.
+Inspect authoritative Security capabilities.
 
 ## Current task
 
@@ -82,9 +82,9 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `SEC-ADAPTER-001` — adapt typed security capabilities and reports
-2. `SEC-RENDER-001` — render the responsive Security workspace
-3. `SEC-CLI-001` — integrate non-blocking security execution
+1. `SEC-CAP-ADAPTER-001` — inspect authoritative Security capabilities
+2. `SEC-REPORT-ADAPTER-001` / `SEC-MAPPER-ADAPTER-001` — parse reports and run mapping
+3. `SEC-ADAPTER-001` / `SEC-RENDER-001` — close adapter and rendering gates
 
 ## Rules
 
