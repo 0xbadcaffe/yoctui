@@ -1131,12 +1131,12 @@ notes = "The unified Testing parent gate passes after specification, typed execu
 id = "SEC-SPEC-001"
 milestone = "M5"
 title = "Specify typed CVE and SPDX workflows"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 61
 required = true
 depends_on = ["JOB-002"]
 verify = ["./scripts/verify-roadmap.sh"]
-notes = "Define capability-driven CVE mapping/check and SPDX/SBOM generation, exact report identity and bounded viewing, responsive navigation/dialogs, lifecycle meaning, and model/adapter/app/UI/CLI ownership without guessing paths or release-specific task names."
+notes = "The authoritative contracts now define a first-class responsive Security workspace; CVE findings, filters, exact advisory/report/provider routes, checks and package mapping; legacy/current recipe and image SBOM capability; bounded exact SPDX summaries; imports and authoritative scans; managed lifecycle/cancellation; every explicit partial/terminal state; and model/adapter/app/UI/CLI ownership. Task and path support is capability-driven, and mocked evidence remains separate from live compatibility."
 
 [[task]]
 id = "SEC-MODEL-001"
