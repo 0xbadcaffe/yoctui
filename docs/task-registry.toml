@@ -1054,12 +1054,12 @@ notes = "Typed capability, family catalog, bounded launch form, exact previews, 
 id = "TEST-RESULT-MODEL-001"
 milestone = "M5"
 title = "Model typed test results and comparisons"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 60
 required = true
 depends_on = ["TEST-MODEL-001"]
 verify = ["cargo test -p yoctui-model test_results", "cargo test -p yoctui-app test_results"]
-notes = "Bounded exact result identities, correlated import states, normalized cases, regressions/new failures/new passes, metadata/log references, selection, and explicit JUnit export state."
+notes = "Bounded canonical identity snapshots, deterministic suite/case/metadata normalization, explicit import states, identity-stable search/drill selections, exact result/log effects, regression/new-failure/new-pass/removed comparison, correlated terminal responses, and two-stage non-overwriting JUnit destination validation pass focused and baseline checks. Exact regression-file and JUnit vectors follow the supported resulttool interface; adapters must still revalidate filesystem identity immediately before spawn."
 
 [[task]]
 id = "TEST-RUNNER-ADAPTER-001"
