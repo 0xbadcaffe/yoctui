@@ -2,43 +2,54 @@
 
 ## Active task
 
-**ID:** SEC-ADAPTER-001
-**Title:** Adapt CVE and SPDX metadata and reports
+**ID:** SEC-RENDER-001
+**Title:** Render responsive Security workspace
 
 ## Objective
 
-Close the Security adapter parent gate across capability inspection, bounded
-report acquisition/parsing, and exact package mapping.
+Render the complete typed Security workspace and dialogs at every supported
+responsive breakpoint without parsing backend text in widgets.
 
 ## Required work
 
-1. Inspect the capability, report, and mapper adapter implementations together
-   for contract gaps, duplicate behavior, or inconsistent public exports.
-2. Verify all adapter inputs derive only from typed authoritative scope,
-   canonical paths, exact artifact identities, or explicit imports.
-3. Verify every filesystem/process boundary is bounded, fail-closed,
-   cancellable where applicable, and emits only typed data/events.
-4. Verify current and legacy task selection remains capability-supplied and no
-   release-name, filename, raw log, or display-text inference was introduced.
-5. Run the complete focused Security adapter and app gates plus the baseline.
-6. Fix any discovered cross-child inconsistency without broadening this parent
-   task into rendering or CLI integration.
-7. Record that fake process/filesystem coverage does not establish live Yocto
-   Security compatibility.
+1. Inspect the shared shell, existing destination renderers, Security model,
+   and authoritative Security section of `docs/ui-spec.md` before editing.
+2. Add Security destination rendering for CVE and SBOM views using only typed
+   capability, inventory, finding, document/component, session, and limitation
+   state.
+3. Render explicit not-inspected/loading/unavailable, not-loaded/loading,
+   available-empty, available, partial, failed, cancelled, timed-out, and lost
+   states without showing stale rows as current.
+4. Render exact CVE status and source identity, searchable/filterable finding
+   detail, mapping metadata, advisory/provider availability, and limitations.
+5. Render exact SPDX document/archive identity, schema summary, creators,
+   checksums/counts, component drill state, unsupported/archive limitations,
+   and related-action availability.
+6. Render operation, import, and cancellation dialogs as focus-trapping,
+   indexed, exact previews with disabled reasons; no widget may infer task,
+   report, path, status, or command authority.
+7. Render bounded mapper/build session lifecycle and retained typed output,
+   plus the exact responsive Security footer and visible scope/capability
+   context.
+8. Add Ratatui `TestBackend` coverage for wide, medium, 80x24/narrow, long
+   fields, every explicit inventory/session outcome, all dialogs, every theme,
+   and no-color semantics. Narrow terminals must never panic.
+9. Update `docs/ui-spec.md` in the same commit only if an intentional behavior
+   change is required; otherwise implement its existing contract exactly.
 
 ## Definition of done
 
-- Capability, report, and mapper children form one consistent typed adapter
-  boundary.
-- Focused `security` and app gates pass without weakening tests.
-- No mocked fixture is presented as live BitBake/Yocto support.
-- Registry/status/current-task governance advances to the next eligible task.
+- The Security destination and all dialogs render only typed model state.
+- Wide, medium, narrow/80x24, themes, no-color, long data, explicit lifecycle
+  states, selections, drill state, limitations, and footer hints are covered.
+- Focus, responsive degradation, and stale/empty/failure presentation match
+  `docs/ui-spec.md` and never panic.
+- Focused UI and baseline checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake security
-cargo test -p yoctui-app security_workflow
+cargo test -p yoctui-ui security_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

@@ -1186,12 +1186,12 @@ notes = "A session-correlated independent runner reconstructs only the exact typ
 id = "SEC-ADAPTER-001"
 milestone = "M5"
 title = "Adapt CVE and SPDX metadata and reports"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 61
 required = true
 depends_on = ["SEC-REPORT-ADAPTER-001", "SEC-MAPPER-ADAPTER-001"]
 verify = ["cargo test -p yoctui-bitbake security", "cargo test -p yoctui-app security_workflow"]
-notes = "Parent adapter gate split into canonical capability discovery, bounded CVE/SPDX report acquisition/parsing, and an exact cancellable package-mapping runner."
+notes = "The parent gate now passes across canonical capability discovery, exact current/legacy task preservation, bounded fingerprinted CVE/SPDX acquisition/parsing, archive/unsupported-schema retention, and the shell-free identity-revalidated package-mapping runner. All boundaries expose typed empty/partial/failure/cancellation/timeout/loss meaning, and the app maps mapper events mechanically. Fifteen focused adapter tests, focused app tests, and the baseline pass. Coverage is fake process/filesystem evidence only and does not claim live Yocto Security compatibility."
 
 [[task]]
 id = "SEC-RENDER-001"
