@@ -2,55 +2,44 @@
 
 ## Active task
 
-**ID:** QA-RENDER-001
-**Title:** Render responsive QA workspace
+**ID:** QA-CLI-001
+**Title:** Integrate non-blocking QA execution
 
 ## Objective
 
-Render the complete typed Recipe & Kernel and Layer QA workspace, findings,
-sessions, limitations, and modal lifecycle at every supported responsive
-breakpoint and theme without parsing backend text.
+Wire the complete typed QA model, adapters, managed BitBake coordinator,
+report worker, native layer runner, exact opens, and terminal input into the
+CLI without blocking navigation or unrelated operations.
 
 ## Required work
 
-1. Inspect the typed QA state/selectors, shared responsive shell, neighboring
-   Testing/Security renderers, dialog helpers, semantic theme roles, and the
-   authoritative QA UI specification before writing code.
-2. Add QA as a first-class Navigator workspace after Security and render the
-   `Recipe & Kernel` and `Layer QA` views selected by typed state.
-3. Render capability loading/available/partial/failed states, exact scope,
-   catalog or configured-layer rows, typed status/counts, report availability,
-   search/filter state, selection, and explicit empty states.
-4. Render the Inspector with exact capability, provider/layer, session/output,
-   report/fingerprint, finding/source/rule/suggestion/metadata, and limitation
-   details; missing fields must say `unavailable`.
-5. Render operation, layer-operation, import, and cancellation dialogs as
-   focus-trapping responsive overlays with exact indexed previews and stable
-   disabled reasons.
-6. Render every success, failure, nonzero, cancelled, timed-out, lost, partial,
-   malformed, missing, permission, and stale state distinctly using semantic
-   text plus color/attributes.
-7. Render the specified full and compact QA footer shortcuts and ensure long
-   paths, vectors, findings, metadata, output, and limitations wrap/bound
-   safely at every responsive breakpoint, including 80×24, all themes, and
-   no-color mode.
-8. Add Ratatui `TestBackend` coverage for both views, every capability/report/
-   session/dialog family, responsive boundaries, selection/drill, themes, and
-   no-color behavior. Do not implement adapter or CLI polling logic here.
+1. Inspect existing Testing/Security CLI coordinators and QA effects before
+   changing code.
+2. Inspect recipe/kernel and layer capabilities on demand from authoritative
+   workspace metadata and child-only executable search state.
+3. Reuse the managed BitBake coordinator for recipe/kernel operations and
+   correlate completion/cancellation to the exact QA session.
+4. Own one replaceable generation-correlated report worker and one independent
+   layer-QA runner; poll both without blocking terminal input or navigation.
+5. Route imports, refreshes, exact report/provider/source/layer opens through
+   immediate adapter revalidation.
+6. Preserve duplicate, rejection, nonzero, empty, partial, failure,
+   cancellation, timeout, stale, and loss outcomes as typed actions.
+7. Map every specified QA key and modal key without leaking dialog input.
+8. Add CLI integration tests for discovery, managed/native execution,
+   reports, cancellation, exact opens, terminal outcomes, and navigation.
 
 ## Definition of done
 
-- Widgets consume only typed QA model state and emit no parsed authority.
-- Both QA views, Inspector, dialogs, explicit states, and footer match
-  `docs/ui-spec.md`.
-- All supported terminal sizes and themes render without panic or semantic
-  loss.
-- Focused UI and baseline verification pass.
+- Both QA workflows execute and poll without blocking the TUI.
+- Managed and native cancellation targets remain independent.
+- Exact identities are revalidated before spawn/open.
+- Focused CLI and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui qa_workflow
+cargo test -p yoctui -- qa_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

@@ -1329,12 +1329,12 @@ notes = "The combined adapter/app parent gate passes 17 BitBake adapter tests an
 id = "QA-RENDER-001"
 milestone = "M5"
 title = "Render responsive QA workspace"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 62
 required = true
 depends_on = ["QA-MODEL-001"]
 verify = ["cargo test -p yoctui-ui qa_workflow"]
-notes = "Render the complete typed QA capability, check, finding, result, session, limitation, confirmation, and cancellation states at every responsive breakpoint, theme, and no-color mode."
+notes = "QA is now a first-class Navigator destination after Security. Typed Recipe & Kernel and Layer QA views render capability, catalog/layer rows, status counts, reports, findings, sessions/output, exact Inspector identities, limitations, every report terminal state, all confirmation/import/cancellation dialogs, full/compact footers, themes, no-color, and responsive 80x24 behavior. Three focused TestBackend tests and the full UI suite pass."
 
 [[task]]
 id = "QA-CLI-001"
