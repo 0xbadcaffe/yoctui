@@ -1,6 +1,7 @@
 //! BitBake adapters. They execute BitBake; they never evaluate metadata themselves.
 mod image;
 mod package;
+mod qa_layer;
 mod qa_report;
 mod qa_task;
 mod qemu;
@@ -22,6 +23,11 @@ pub use image::{
 pub use package::{
     PackageDataAdapter, PackageDataAdapterError, PackageDataCancellation, PackageDataCommandSpec,
     PackageDetailResponse, PackageInventoryResponse,
+};
+pub use qa_layer::{
+    QaConfiguredLayerInput, QaLayerAdapterError, QaLayerCapabilityInput,
+    QaLayerCapabilityInspector, QaLayerCapabilityResponse, QaLayerCommandSpec, QaLayerJobRunner,
+    QaLayerRunnerEvent,
 };
 pub use qa_report::{
     QaReportAdapter, QaReportAdapterError, QaReportCancellation, QaReportCandidate, QaReportOrigin,
