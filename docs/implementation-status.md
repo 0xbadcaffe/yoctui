@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Adapt authoritative recipe and kernel QA capabilities.
+Acquire bounded QA findings and reports.
 
 ## Current task
 
@@ -72,7 +72,7 @@ See `docs/current-task.md`.
 | SDK workflow | DONE | The parent gate passes across typed model/app state, authoritative artifact and shell-free tool adapters, responsive rendering, and independent CLI execution. It covers scans, capability inspection, managed BitBake populate/test reuse, exact artifact opening, publication/native child execution, a bounded keyboard-editable native form, timeout/cancellation/loss, success refresh, navigation, and telemetry. Fake scans/processes do not claim live SDK compatibility |
 | Testing workflow | DONE | The unified parent gate passes for typed launch/result state, selftest/resulttool adapters, responsive rendering, and non-blocking CLI execution. Managed BitBake reuse, independent selftest/result operations, exact correlation, navigation, cancellation, import/comparison/JUnit export, and terminal outcomes are verified. Fake-process coverage does not establish live compatibility |
 | Security workflow | DONE | The complete cross-layer gate passes for capability-driven CVE checks/mapping, current/legacy recipe and image SBOM workflows, bounded exact reports, responsive UI, managed BitBake reuse, independent CLI polling, exact-open revalidation, refresh, navigation, cancellation, and explicit partial/terminal states. Focused fake evidence does not establish live Yocto compatibility |
-| QA workflow | IN_PROGRESS | The authoritative contracts and complete typed QA model/app parent gate are done. Recipe/provider and configured-layer inventories, capability-supplied checks/vectors, indexed stale-safe managed/native operations, independent cancellation targets, bounded sessions/reports/findings, typed counts, exact opens, filters, drill, modal focus, and every terminal state are covered. Adapters, UI, and CLI integration remain |
+| QA workflow | IN_PROGRESS | The authoritative contracts, complete typed QA model/app parent gate, and fail-closed recipe/kernel capability adapter are done. Canonical recipe/provider/report-root identities and explicit task inventories drive the required check families without task or kernel guessing. Bounded report acquisition, layer execution, UI, and CLI integration remain; fixture evidence does not establish live compatibility |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -83,8 +83,8 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `QA-TASK-ADAPTER-001` — adapt authoritative recipe and kernel QA capabilities
-2. `QA-REPORT-ADAPTER-001` / `QA-LAYER-ADAPTER-001` — acquire QA evidence and execute layer QA
+1. `QA-REPORT-ADAPTER-001` — acquire bounded QA evidence
+2. `QA-LAYER-ADAPTER-001` — execute exact layer QA
 3. `QA-ADAPTER-001` — close the QA adapter gate
 4. `QA-RENDER-001` / `QA-CLI-001` — render and integrate the complete QA workspace
 

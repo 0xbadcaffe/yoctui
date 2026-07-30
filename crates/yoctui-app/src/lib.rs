@@ -1,10 +1,10 @@
 //! Application-owned input mapping, keeping terminal concerns outside the reducer.
 use std::time::SystemTime;
 use yoctui_bitbake::{
-    BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QemuRunnerEvent, QemuRunnerOutputStream,
-    SdkToolRunnerEvent, SecurityMapperRunnerEvent, TestResultImportResponse, TestResultOperation,
-    TestResultRunnerEvent, TestRunnerEvent, WicDeviceInventoryResponse, WicRunnerEvent,
-    WicRunnerOutputStream,
+    BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QaTaskCapabilityResponse,
+    QemuRunnerEvent, QemuRunnerOutputStream, SdkToolRunnerEvent, SecurityMapperRunnerEvent,
+    TestResultImportResponse, TestResultOperation, TestResultRunnerEvent, TestRunnerEvent,
+    WicDeviceInventoryResponse, WicRunnerEvent, WicRunnerOutputStream,
 };
 use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
@@ -16,6 +16,21 @@ use yoctui_model::{
     SecurityView, Severity, TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity,
     WicCapability, WicOutput, WicOutputStream, WicSessionId,
 };
+
+pub fn qa_task_capability_action(response: QaTaskCapabilityResponse) -> Action {
+    match response {
+        QaTaskCapabilityResponse::Available(snapshot) => {
+            Action::Qa(QaAction::CapabilityLoaded(snapshot))
+        }
+        QaTaskCapabilityResponse::Partial(snapshot) => {
+            let limitations = snapshot.limitations.clone();
+            Action::Qa(QaAction::CapabilityPartial {
+                snapshot,
+                limitations,
+            })
+        }
+    }
+}
 
 pub fn security_actions_for_mapper_event(
     event: SecurityMapperRunnerEvent,
@@ -5040,6 +5055,35 @@ mod tests {
         assert_eq!(
             qa_workspace_action(QaView::LayerQa, false, false, Input::Char('e')),
             Some(Action::Qa(QaAction::OpenSelectedLayerRoot))
+        );
+    }
+
+    #[test]
+    fn qa_workflow_maps_task_capability_response_without_reinterpreting_it() {
+        let scope = yoctui_model::QaScope::new(yoctui_model::RecipeIdentity {
+            name: "busybox".into(),
+            file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+        })
+        .unwrap();
+        let snapshot = yoctui_model::QaCapabilitySnapshot::new(
+            Some("6.0".into()),
+            "/build".into(),
+            scope.clone(),
+            vec![scope],
+            vec![],
+            vec!["one optional report root was unsafe".into()],
+        )
+        .unwrap();
+        assert_eq!(
+            qa_task_capability_action(QaTaskCapabilityResponse::Available(snapshot.clone())),
+            Action::Qa(QaAction::CapabilityLoaded(snapshot.clone()))
+        );
+        assert_eq!(
+            qa_task_capability_action(QaTaskCapabilityResponse::Partial(snapshot.clone())),
+            Action::Qa(QaAction::CapabilityPartial {
+                snapshot,
+                limitations: vec!["one optional report root was unsafe".into()],
+            })
         );
     }
 

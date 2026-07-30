@@ -1285,12 +1285,12 @@ notes = "The combined model/app parent gate passes 18 QA-focused model tests and
 id = "QA-TASK-ADAPTER-001"
 milestone = "M5"
 title = "Adapt recipe and kernel QA capabilities"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 62
 required = true
 depends_on = ["QA-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake qa_task"]
-notes = "Build fail-closed typed capability snapshots from authoritative recipe tasks/configuration, construct exact managed BitBake requests, and normalize only typed QA evidence without guessing task names or parsing widgets."
+notes = "A fail-closed adapter now validates canonical build/provider/report-root identities and bounded authoritative scope/task inventories, exposes every required family, enables only exact explicitly reported task bindings, preserves optional unsafe inputs as typed partial limitations, and mechanically maps responses across the app boundary. Alternate tasks are accepted only as explicit data, kernel capability requires explicit classification, and fixture coverage makes no live Yocto claim."
 
 [[task]]
 id = "QA-REPORT-ADAPTER-001"
