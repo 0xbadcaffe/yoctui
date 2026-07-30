@@ -1296,12 +1296,12 @@ notes = "A fail-closed adapter now validates canonical build/provider/report-roo
 id = "QA-REPORT-ADAPTER-001"
 milestone = "M5"
 title = "Acquire bounded QA findings and reports"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 62
 required = true
 depends_on = ["QA-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake qa_report"]
-notes = "Acquire exact report/log identities supplied by managed jobs or imports, bound filesystem/content parsing, normalize typed kernel/URI/patch/license/recipe findings, and preserve empty, partial, malformed, timeout, cancellation, and loss states."
+notes = "The QA report adapter now accepts exact managed or import candidates with producer/scope authority, confines managed roots, bounds traversal/files/bytes/records/fields/time, parses documented JSON/JSONL/XML/tab-text/BitBake QA records, fingerprints and revalidates identities, normalizes typed findings, and preserves empty, partial, malformed, missing, permission, stale, cancellation, timeout, and loss outcomes. Mechanical app mapping is covered; fake filesystem evidence makes no live Yocto claim."
 
 [[task]]
 id = "QA-LAYER-ADAPTER-001"

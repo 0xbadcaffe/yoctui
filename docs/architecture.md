@@ -610,6 +610,15 @@ fields/time, and preserve partial valid data with limitations. Unknown formats
 or records remain unknown/partial instead of being inferred from filenames,
 colors, or unstructured output.
 
+The documented QA report formats are a JSON `findings` envelope, a JSON array
+or JSON-lines stream of finding objects; a `qa-report` XML envelope containing
+self-closing `finding` records; tab-separated text whose first fields are
+status and message followed by bounded `key=value` fields; and exact BitBake
+log records beginning `ERROR: QA Issue:` or `WARNING: QA Issue:`. Candidate
+files carry an explicit matching format, while bounded directory imports use
+only the allowlisted `.json`, `.jsonl`, `.xml`, `.qa`, `.txt`, and `.log`
+suffixes. Unsupported records stay limitations and never become findings.
+
 Normalized findings carry stable check and finding identity, exact scope,
 typed status/severity, bounded message, optional authoritative source path and
 line, rule/code, suggestion, and report identity. Raw BitBake logs, native

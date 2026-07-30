@@ -1,21 +1,72 @@
 //! Application-owned input mapping, keeping terminal concerns outside the reducer.
 use std::time::SystemTime;
 use yoctui_bitbake::{
-    BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QaTaskCapabilityResponse,
-    QemuRunnerEvent, QemuRunnerOutputStream, SdkToolRunnerEvent, SecurityMapperRunnerEvent,
-    TestResultImportResponse, TestResultOperation, TestResultRunnerEvent, TestRunnerEvent,
-    WicDeviceInventoryResponse, WicRunnerEvent, WicRunnerOutputStream,
+    BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QaReportAdapterError, QaReportResponse,
+    QaReportScanOutcome, QaTaskCapabilityResponse, QemuRunnerEvent, QemuRunnerOutputStream,
+    SdkToolRunnerEvent, SecurityMapperRunnerEvent, TestResultImportResponse, TestResultOperation,
+    TestResultRunnerEvent, TestRunnerEvent, WicDeviceInventoryResponse, WicRunnerEvent,
+    WicRunnerOutputStream,
 };
 use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
     BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
-    LayerInspectorMode, LayerRelationship, LayerRelationships, QaAction, QaDialog, QaView,
-    QemuOutputStream, QemuSessionId, RecipeDependencies, Screen, SdkBuildAction, SdkKind,
-    SdkOutputStream, SdkSessionId, SecurityAction, SecurityDialog, SecurityOutputStream,
-    SecurityView, Severity, TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity,
-    WicCapability, WicOutput, WicOutputStream, WicSessionId,
+    LayerInspectorMode, LayerRelationship, LayerRelationships, QaAction, QaDialog,
+    QaReportFailureKind, QaReportRequest, QaView, QemuOutputStream, QemuSessionId,
+    RecipeDependencies, Screen, SdkBuildAction, SdkKind, SdkOutputStream, SdkSessionId,
+    SecurityAction, SecurityDialog, SecurityOutputStream, SecurityView, Severity, TaskId, TaskInfo,
+    TestComparison, VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream,
+    WicSessionId,
 };
+
+pub fn qa_report_response_action(response: QaReportResponse) -> Action {
+    let (reports, limitations) = match response.outcome {
+        QaReportScanOutcome::Empty => (Vec::new(), Vec::new()),
+        QaReportScanOutcome::Complete(reports) => (reports, Vec::new()),
+        QaReportScanOutcome::Partial {
+            reports,
+            limitations,
+        } => (reports, limitations),
+    };
+    Action::Qa(QaAction::ReportsLoaded {
+        request: response.request,
+        reports,
+        limitations,
+    })
+}
+
+pub fn qa_report_error_action(request: QaReportRequest, error: QaReportAdapterError) -> Action {
+    let qa = |action| Action::Qa(action);
+    match error {
+        QaReportAdapterError::Cancelled => qa(QaAction::ReportsCancelled(request)),
+        QaReportAdapterError::Timeout(_) => qa(QaAction::ReportsTimedOut(request)),
+        QaReportAdapterError::WorkerLost(message) => qa(QaAction::ReportsLost { request, message }),
+        error => {
+            let kind = match &error {
+                QaReportAdapterError::MissingPath(_) => QaReportFailureKind::Missing,
+                QaReportAdapterError::PermissionDenied(_) => QaReportFailureKind::PermissionDenied,
+                QaReportAdapterError::StaleReport(_) => QaReportFailureKind::Stale,
+                QaReportAdapterError::MalformedReport(_)
+                | QaReportAdapterError::UnsupportedPath(_)
+                | QaReportAdapterError::OversizedReport(_) => QaReportFailureKind::Malformed,
+                QaReportAdapterError::InvalidRequest(_)
+                | QaReportAdapterError::UnsafePath(_)
+                | QaReportAdapterError::SymlinkPath(_)
+                | QaReportAdapterError::EscapePath(_)
+                | QaReportAdapterError::Io(_)
+                | QaReportAdapterError::NoUsableReports(_) => QaReportFailureKind::Failed,
+                QaReportAdapterError::Timeout(_)
+                | QaReportAdapterError::Cancelled
+                | QaReportAdapterError::WorkerLost(_) => unreachable!(),
+            };
+            qa(QaAction::ReportsFailed {
+                request,
+                kind,
+                message: error.to_string(),
+            })
+        }
+    }
+}
 
 pub fn qa_task_capability_action(response: QaTaskCapabilityResponse) -> Action {
     match response {
@@ -5085,6 +5136,64 @@ mod tests {
                 limitations: vec!["one optional report root was unsafe".into()],
             })
         );
+    }
+
+    #[test]
+    fn qa_workflow_maps_report_adapter_outcomes_without_parsing_them() {
+        let request = yoctui_model::QaReportRequest::new(9, vec!["/build/reports".into()]).unwrap();
+        assert_eq!(
+            qa_report_response_action(QaReportResponse {
+                request: request.clone(),
+                outcome: QaReportScanOutcome::Empty,
+            }),
+            Action::Qa(QaAction::ReportsLoaded {
+                request: request.clone(),
+                reports: Vec::new(),
+                limitations: Vec::new(),
+            })
+        );
+        assert_eq!(
+            qa_report_response_action(QaReportResponse {
+                request: request.clone(),
+                outcome: QaReportScanOutcome::Partial {
+                    reports: Vec::new(),
+                    limitations: vec!["one exact report was malformed".into()],
+                },
+            }),
+            Action::Qa(QaAction::ReportsLoaded {
+                request: request.clone(),
+                reports: Vec::new(),
+                limitations: vec!["one exact report was malformed".into()],
+            })
+        );
+        assert_eq!(
+            qa_report_error_action(request.clone(), QaReportAdapterError::Cancelled),
+            Action::Qa(QaAction::ReportsCancelled(request.clone()))
+        );
+        assert_eq!(
+            qa_report_error_action(request.clone(), QaReportAdapterError::Timeout(30)),
+            Action::Qa(QaAction::ReportsTimedOut(request.clone()))
+        );
+        assert_eq!(
+            qa_report_error_action(
+                request.clone(),
+                QaReportAdapterError::WorkerLost("channel closed".into())
+            ),
+            Action::Qa(QaAction::ReportsLost {
+                request: request.clone(),
+                message: "channel closed".into(),
+            })
+        );
+        assert!(matches!(
+            qa_report_error_action(
+                request,
+                QaReportAdapterError::PermissionDenied("/build/reports".into())
+            ),
+            Action::Qa(QaAction::ReportsFailed {
+                kind: QaReportFailureKind::PermissionDenied,
+                ..
+            })
+        ));
     }
 
     #[test]

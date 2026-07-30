@@ -2,54 +2,56 @@
 
 ## Active task
 
-**ID:** QA-REPORT-ADAPTER-001
-**Title:** Acquire bounded QA findings and reports
+**ID:** QA-LAYER-ADAPTER-001
+**Title:** Run exact layer QA checks
 
 ## Objective
 
-Acquire exact QA report and log identities supplied by managed jobs or explicit
-imports, and normalize bounded typed kernel, URI, patch, license, and
-recipe/package findings without inferring evidence from arbitrary filesystem
-contents.
+Discover and revalidate canonical `yocto-check-layer` capability for exact
+configured layers, then execute only capability-supplied shell-free vectors
+with bounded typed lifecycle events.
 
 ## Required work
 
-1. Inspect the typed QA report/finding model, existing security and test-result
-   report adapters, filesystem safety helpers, fake-filesystem patterns, and
-   the authoritative QA architecture before writing code.
-2. Add a focused BitBake report adapter that accepts an exact build identity,
-   report generation, scope/check identity, and explicit report candidates
-   supplied by a completed managed job or import.
-3. Canonicalize and confine every root and report identity, reject symlinks,
-   escapes, stale replacements, unsupported file kinds, and duplicate inputs,
-   and revalidate identities immediately before reading or opening.
-4. Bound candidate count, traversal, file size, total bytes, parsed records,
-   fields, and retained text; recognize only documented report formats and
-   never scan unrelated build output heuristically.
-5. Normalize exact typed finding status, severity, message, task/test/source,
-   rule, suggestion, metadata, and report identity while preserving absent
-   fields honestly.
-6. Preserve valid empty, partial, malformed, missing, permission, timeout,
-   cancellation, and worker-loss outcomes distinctly; one bad optional report
-   must not discard usable evidence from other exact candidates.
-7. Add fake-filesystem and cancellation tests for every normal and relevant
-   failure path plus mechanical app response mapping if a new adapter response
-   type is required. Do not implement layer execution, CLI polling, or final
-   rendering in this task.
+1. Inspect the typed layer-QA model, configured-layer metadata, hardened native
+   runner adapters, process-group cancellation patterns, and the authoritative
+   QA architecture before writing code.
+2. Add a focused BitBake layer-QA adapter that accepts an initialized build
+   identity, a child-only executable search path, and exact configured-layer
+   identities; do not reconstruct layer roots from names or scan arbitrary
+   directories.
+3. Discover a canonical regular executable without following symlinks and
+   construct an exact capability vector for each configured layer. Preserve
+   missing/unsafe tools and invalid optional layers as typed disabled or
+   partial capability with stable reasons.
+4. Capture executable size/modification identity and canonical layer roots,
+   reconstruct only the confirmed indexed vector, and revalidate both
+   immediately before spawn.
+5. Launch one native-argv child in its own process group, use no shell or
+   free-form arguments, bound and tag both output streams, reject duplicate
+   sessions, and emit exact started/output/completed/nonzero events.
+6. Implement correlated graceful cancellation with forced escalation and
+   distinct rejection, timeout, stale identity, and unexpected worker/channel
+   loss outcomes.
+7. Add fake-process and fake-filesystem tests for discovery, exact vectors,
+   symlink/escape/tampering, bounded output, duplicate start, success,
+   nonzero, graceful/forced cancellation, timeout, and loss. Add only
+   mechanical app event mapping; do not implement CLI polling or rendering.
 
 ## Definition of done
 
-- Only exact supplied and revalidated report identities are read.
-- Typed findings retain exact generation, scope, check, report, and source
-  correlation within documented hard bounds.
-- Empty, partial, malformed, timeout, cancellation, and loss states remain
-  distinguishable.
+- Capability contains only canonical configured-layer and executable
+  identities with complete indexed native vectors.
+- Spawn reconstructs the confirmed vector exactly after immediate identity
+  revalidation and never invokes a shell.
+- Every lifecycle, cancellation, timeout, duplicate, stale, and loss outcome
+  remains typed and distinct.
 - Focused adapter/app and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake qa_report
+cargo test -p yoctui-bitbake qa_layer
 cargo test -p yoctui-app qa_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
