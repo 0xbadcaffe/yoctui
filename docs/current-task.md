@@ -2,40 +2,45 @@
 
 ## Active task
 
-**ID:** SEC-SPEC-001
-**Title:** Specify typed CVE and SPDX workflows
+**ID:** SEC-MODEL-001
+**Title:** Model typed security workflows
 
 ## Objective
 
-Define authoritative, capability-driven CVE mapping/check and SPDX/SBOM
-generation and report-viewing behavior before implementation.
+Implement pure typed Security capability, operation, report, selection, and
+lifecycle state with reducer and app input/effect coverage.
 
 ## Required work
 
-1. Specify a first-class Security Navigator destination with responsive CVE
-   and SPDX views, exact selection, search, Inspector, and footer behavior.
-2. Define authoritative capability discovery for CVE checks/package mapping
-   and release-dependent SPDX/SBOM task names without guessing support.
-3. Define exact recipe/image operation previews, confirmations, managed
-   BitBake reuse, cancellation, navigation retention, and terminal outcomes.
-4. Define bounded typed report identities, acquisition, CVE findings/package
-   mappings, SPDX documents, metadata, limitations, refresh, and editor routes.
-5. Assign pure state, process/filesystem parsing, key/effect mapping,
-   rendering, and polling to the correct architecture layers.
-6. Keep mocked evidence and live Yocto compatibility claims separate.
+1. Add `Screen::Security` after Testing and preserve responsive navigation.
+2. Model exact recipe/image scope and capability-supplied CVE, package-map,
+   legacy/current recipe SBOM, and image SBOM operations.
+3. Validate deterministic indexed previews without discovering tools, tasks,
+   or paths in the reducer.
+4. Model bounded canonical report identities, normalized CVE findings/package
+   mappings, SPDX document/component summaries, limitations, and explicit
+   generation-correlated inventory states.
+5. Add view, scope, search/filter/drill selection, exact open effects,
+   confirmation dialogs, managed-job association, cancellation, and every
+   terminal action.
+6. Map keys and adapter response shapes mechanically in `yoctui-app`.
+7. Add focused pure-model, reducer, failure-path, and app mapping tests.
 
 ## Definition of done
 
-- `docs/ui-spec.md` completely defines Security interaction and responsive
-  behavior.
-- `docs/architecture.md` defines typed ownership and dependency boundaries.
-- The registry contains coherent dependent implementation tasks.
-- Existing recipe shortcuts are reconciled without claiming report support
-  that does not exist.
+- Security state is fully typed, bounded, and independent of filesystem or
+  process parsing.
+- Exact request, operation, report, and generation identities reject stale
+  actions.
+- Search, filter, drill, dialogs, lifecycle, and open effects follow the UI
+  contract.
+- Focused model/app and baseline checks pass.
 
 ## Verification
 
 ```bash
+cargo test -p yoctui-model security_workflow
+cargo test -p yoctui-app security_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

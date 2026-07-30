@@ -526,6 +526,51 @@ must record the exact release, tool capabilities, selected test, result
 identity, and outcome without claiming external target or ptest coverage that
 was not exercised.
 
+## Managed Security boundary
+
+`yoctui-model::security` owns exact recipe/image scope, capability state,
+release-dependent task choices supplied as typed data, stable operation and
+report-generation identities, CVE findings and package mappings, SPDX
+document/component summaries, search/filter/drill selection, previews,
+background-job association, and correlated lifecycle state. It may reuse
+`BuildRequest` and the shared background-job collection, but it never inspects
+the host, guesses tasks or report roots, walks directories, parses reports or
+process output, launches a child, or opens a path/URL.
+
+Security BitBake requests use the existing managed build coordinator.
+Capability input comes from authoritative recipe tasks and typed BitBake
+configuration: the model never assumes that `cve_check`, legacy
+`create_spdx`, current `create_recipe_sbom`, image SBOM generation, or package
+mapping is available based on a release name. Successful operations cause an
+exact generation-correlated report refresh; success without a typed artifact
+or newly observed report remains explicit.
+
+`yoctui-bitbake` owns canonical capability discovery, report-root and
+executable validation, exact shell-free package-mapping vectors, bounded
+filesystem acquisition, content fingerprints, CVE/SPDX parsing, and immediate
+identity revalidation before spawn or open. It accepts only authoritative
+roots, managed-job artifact paths, or explicit imports; refuses symlinks and
+escapes; and bounds directory entries, files, bytes, records, fields, and
+parse time. Unknown CVE statuses and unsupported SPDX schemas become typed
+unknown/partial data with limitations rather than guessed meaning. Raw JSON,
+text, archives, filenames, and tool/log output never cross into widgets as
+authority.
+
+`yoctui-app` maps Security keys, adapter responses, and runner events
+mechanically. `yoctui-ui` renders only typed capability, findings, document
+summaries, lifecycle, and dialog state and emits typed actions. The CLI routes
+CVE/SBOM builds through the managed BitBake coordinator, owns at most one
+independent package-mapping runner and one replaceable generation-correlated
+report worker, polls them without blocking terminal input, and routes opens
+only after adapter revalidation. Cancellation is correlated to the exact
+Security operation and cannot target unrelated work.
+
+Fake process/filesystem coverage proves boundary behavior only. Live Security
+support requires opt-in execution against an initialized compatible Yocto
+environment and must record the exact release, capability/task names, scope,
+report identities, and outcome. A mocked legacy/current task matrix or parsed
+fixture alone is not a live compatibility claim.
+
 ## Managed runqemu model boundary
 
 `yoctui-model::qemu` owns capability states, exact artifact-bound launch
