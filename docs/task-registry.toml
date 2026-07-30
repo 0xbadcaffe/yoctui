@@ -1274,12 +1274,12 @@ notes = "The QA reducer now retains every exact configured layer, including disa
 id = "QA-MODEL-001"
 milestone = "M5"
 title = "Close typed QA model gate"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 62
 required = true
 depends_on = ["QA-CHECK-MODEL-001", "QA-LAYER-MODEL-001"]
 verify = ["cargo test -p yoctui-model qa_", "cargo test -p yoctui-app qa_workflow"]
-notes = "Parent model/app gate for the shared QA destination, capability state, exact scopes, check catalog, findings/results, sessions, focus-trapped dialogs, and mechanical key/effect mapping."
+notes = "The combined model/app parent gate passes 18 QA-focused model tests and the complete app mapping gate. Recipe/provider and configured-layer capability state, catalog/vector identities, deterministic previews, independent managed/native sessions and cancellation, bounded output/history/reports/findings, exact configured scope validation, filters/drill/navigation, focus-trapped dialogs, exact opens, and every terminal outcome agree with the UI and architecture contracts without host, report, process, or widget parsing."
 
 [[task]]
 id = "QA-TASK-ADAPTER-001"
