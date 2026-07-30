@@ -37,6 +37,12 @@ use yoctui_app::{
     sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
     sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
     settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
+    test_actions_for_runner_event, test_cancellation_confirmation_action,
+    test_comparison_confirmation_action, test_comparison_dialog_action,
+    test_comparison_workspace_action, test_junit_confirmation_action, test_junit_dialog_action,
+    test_launch_confirmation_action, test_launch_dialog_action,
+    test_result_actions_for_runner_event, test_result_import_dialog_action,
+    test_results_import_action, test_results_workspace_action, testing_workspace_action,
     wic_actions_for_runner_event, wic_cancellation_confirmation_action,
     wic_create_confirmation_action, wic_create_dialog_action, wic_device_picker_action,
     wic_write_confirmation_action, wic_write_phrase_action,
@@ -48,9 +54,10 @@ use yoctui_bitbake::{
     QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner, QemuRunnerEvent, SdkArtifactAdapter,
     SdkArtifactCancellation, SdkArtifactScanOutcome, SdkToolAdapter, SdkToolAdapterError,
     SdkToolCommandSpec, SdkToolJobRunner, SdkToolRunnerEvent, SignatureAdapter,
-    SignatureCancellation, VariableValue, WicAdapterError, WicCapabilityInspector,
-    WicCreateCommandSpec, WicDeviceInspector, WicDeviceInventoryResponse, WicJobRunner,
-    WicRunnerEvent,
+    SignatureCancellation, TestResultAdapter, TestResultJob, TestResultOperation,
+    TestResultRunnerEvent, TestRunnerAdapter, TestRunnerEvent, TestRunnerJob, VariableValue,
+    WicAdapterError, WicCapabilityInspector, WicCreateCommandSpec, WicDeviceInspector,
+    WicDeviceInventoryResponse, WicJobRunner, WicRunnerEvent,
 };
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
@@ -60,9 +67,10 @@ use yoctui_model::{
     PreviewKind, QemuCapability, QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest,
     QemuSessionId, RecipeIdentity, Screen, SdkArtifactInventoryRequest, SdkNativePreview,
     SdkOperation, SdkPublishPreview, SdkSessionId, SdkToolCapability, Severity,
-    SignatureComparisonRequest, SignatureTarget, Theme, VariableDetail, VariableIdentity,
-    WicCapability, WicCreateDraft, WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest,
-    WicOperation, WicSessionId, update, validate_config_edit_request,
+    SignatureComparisonRequest, SignatureTarget, TestComparison, TestOperation, TestSessionId,
+    TestWorkspaceView, Theme, VariableDetail, VariableIdentity, WicCapability, WicCreateDraft,
+    WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest, WicOperation, WicSessionId,
+    update, validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -805,6 +813,123 @@ async fn begin_build(
     }
 }
 
+async fn begin_test_build(
+    backend: &mut Box<dyn BitBakeBackend>,
+    app: &mut App,
+    build_jobs: &mut BuildJobCoordinator,
+    id: TestSessionId,
+    request: BuildRequest,
+) -> bool {
+    let Some(actions) = build_jobs.queue_build(&request, SystemTime::now()) else {
+        let _ = update(
+            app,
+            Action::FailTestSession {
+                id,
+                message: "another managed BitBake build is already active".into(),
+                exit_code: None,
+                finished_at: SystemTime::now(),
+            },
+        );
+        return false;
+    };
+    for action in actions {
+        let _ = update(app, action);
+    }
+    let Some(background_job_id) = build_jobs.active_job_id() else {
+        let _ = update(
+            app,
+            Action::FailTestSession {
+                id,
+                message: "Testing build coordinator did not retain its job identity".into(),
+                exit_code: None,
+                finished_at: SystemTime::now(),
+            },
+        );
+        return false;
+    };
+    let _ = update(
+        app,
+        Action::AttachTestBuildSession {
+            id,
+            background_job_id,
+        },
+    );
+    match backend.start_build(request).await {
+        Ok(()) => true,
+        Err(error) => {
+            let _ = update(
+                app,
+                Action::FailTestSession {
+                    id,
+                    message: error.to_string(),
+                    exit_code: None,
+                    finished_at: SystemTime::now(),
+                },
+            );
+            for action in build_jobs.start_failed(error.to_string(), SystemTime::now()) {
+                let _ = update(app, action);
+            }
+            false
+        }
+    }
+}
+
+fn test_build_action_for_event(
+    app: &App,
+    id: TestSessionId,
+    event: &BackendEvent,
+) -> Option<Action> {
+    let cancelling = app
+        .test_session(id)
+        .and_then(|session| session.background_job_id)
+        .and_then(|job_id| app.background_jobs.get(job_id))
+        .is_some_and(|job| job.status == yoctui_model::BackgroundJobStatus::Cancelling);
+    match event {
+        BackendEvent::BuildStarted => Some(Action::TestSessionRunning { id }),
+        BackendEvent::BuildCompleted {
+            success: true,
+            exit_code,
+        } => Some(Action::CompleteTestSession {
+            id,
+            exit_code: exit_code.unwrap_or(0),
+            result_paths: Vec::new(),
+            finished_at: SystemTime::now(),
+        }),
+        BackendEvent::BuildCompleted {
+            success: false,
+            exit_code,
+        } if cancelling => Some(Action::CancelTestSession {
+            id,
+            exit_code: *exit_code,
+            finished_at: SystemTime::now(),
+        }),
+        BackendEvent::BuildCompleted {
+            success: false,
+            exit_code,
+        } => Some(Action::FailTestSession {
+            id,
+            message: exit_code.map_or_else(
+                || "Testing BitBake task failed without an exit code".into(),
+                |code| format!("Testing BitBake task failed with exit code {code}"),
+            ),
+            exit_code: *exit_code,
+            finished_at: SystemTime::now(),
+        }),
+        BackendEvent::CommandFailed { code, message } => Some(Action::FailTestSession {
+            id,
+            message: format!("{code}: {message}"),
+            exit_code: None,
+            finished_at: SystemTime::now(),
+        }),
+        BackendEvent::Disconnected => Some(Action::LoseTestSession {
+            id,
+            message: "BitBake backend disconnected during Testing".into(),
+            finished_at: SystemTime::now(),
+        }),
+        _ => None,
+    }
+}
+
 async fn begin_devtool_job(
     app: &mut App,
     coordinator: &mut DevtoolJobCoordinator,
@@ -1373,6 +1498,491 @@ async fn poll_sdk_job(
             None
         }
         Err(_) => None,
+    }
+}
+
+struct TestSessionCliOperation {
+    id: TestSessionId,
+    runner: TestRunnerJob,
+}
+
+struct TestResultImportCliOperation {
+    request: yoctui_model::TestResultImportRequest,
+    deadline: tokio::time::Instant,
+    handle: tokio::task::JoinHandle<
+        std::result::Result<yoctui_bitbake::TestResultImportResponse, String>,
+    >,
+}
+
+struct TestResultCliOperation {
+    runner: TestResultJob,
+    operation: TestResultOperation,
+    comparison: Option<TestComparison>,
+}
+
+struct TestCliCoordinator {
+    runner_adapter: TestRunnerAdapter,
+    result_adapter: TestResultAdapter,
+    session: Option<TestSessionCliOperation>,
+    import: Option<TestResultImportCliOperation>,
+    result: Option<TestResultCliOperation>,
+}
+
+impl TestCliCoordinator {
+    fn new(
+        build_directory: PathBuf,
+        path_directories: Vec<PathBuf>,
+        ptest: yoctui_model::PtestCapability,
+    ) -> Self {
+        Self {
+            runner_adapter: TestRunnerAdapter::new(
+                build_directory,
+                path_directories.clone(),
+                ptest,
+            ),
+            result_adapter: TestResultAdapter::new(path_directories),
+            session: None,
+            import: None,
+            result: None,
+        }
+    }
+
+    async fn handle_effect(&mut self, app: &mut App, effect: Effect) -> bool {
+        match effect {
+            Effect::InspectTestCapability => {
+                let next = update(
+                    app,
+                    Action::TestCapabilityLoaded(self.runner_adapter.capability()),
+                );
+                if matches!(next, Some(Effect::InspectResultToolCapability)) {
+                    let _ = update(
+                        app,
+                        Action::ResultToolCapabilityLoaded(self.result_adapter.capability()),
+                    );
+                }
+                true
+            }
+            Effect::InspectResultToolCapability => {
+                let _ = update(
+                    app,
+                    Action::ResultToolCapabilityLoaded(self.result_adapter.capability()),
+                );
+                true
+            }
+            Effect::StartTestSession { id, operation } => {
+                self.begin_session(app, id, operation).await;
+                true
+            }
+            Effect::CancelTestSession(id)
+                if self.session.as_ref().is_some_and(|active| active.id == id) =>
+            {
+                let result = self
+                    .session
+                    .as_mut()
+                    .expect("exact active Testing session was checked")
+                    .runner
+                    .cancel()
+                    .await;
+                if let Err(error) = result {
+                    let _ = update(
+                        app,
+                        Action::RejectTestSessionCancellation {
+                            id,
+                            message: error.to_string(),
+                        },
+                    );
+                }
+                true
+            }
+            Effect::ImportTestResults(request) => {
+                if let Some(previous) = self.import.take() {
+                    previous.handle.abort();
+                }
+                let adapter = self.result_adapter.clone();
+                let owned_request = request.clone();
+                self.import = Some(TestResultImportCliOperation {
+                    request,
+                    deadline: tokio::time::Instant::now() + Duration::from_secs(30),
+                    handle: tokio::task::spawn_blocking(move || {
+                        adapter
+                            .import(&owned_request)
+                            .map_err(|error| error.to_string())
+                    }),
+                });
+                true
+            }
+            Effect::CompareTestResults(request) => {
+                self.begin_comparison(app, request).await;
+                true
+            }
+            Effect::InspectTestJunitDestination {
+                result,
+                destination,
+            } => {
+                let inspection = self.result_adapter.inspect_junit_destination(destination);
+                let _ = update(
+                    app,
+                    Action::TestJunitDestinationInspected { result, inspection },
+                );
+                true
+            }
+            Effect::ExportTestJunit(request) => {
+                self.begin_junit(app, request).await;
+                true
+            }
+            _ => false,
+        }
+    }
+
+    async fn begin_session(&mut self, app: &mut App, id: TestSessionId, operation: TestOperation) {
+        if self.session.is_some() {
+            let _ = update(
+                app,
+                Action::FailTestSession {
+                    id,
+                    message: "another selftest runner is already active".into(),
+                    exit_code: None,
+                    finished_at: SystemTime::now(),
+                },
+            );
+            return;
+        }
+        let TestOperation::Selftest(request) = operation else {
+            let _ = update(
+                app,
+                Action::FailTestSession {
+                    id,
+                    message: "managed BitBake Testing reached the selftest runner".into(),
+                    exit_code: None,
+                    finished_at: SystemTime::now(),
+                },
+            );
+            return;
+        };
+        let command = match self.runner_adapter.command(&request) {
+            Ok(command) => command,
+            Err(error) => {
+                let _ = update(
+                    app,
+                    Action::FailTestSession {
+                        id,
+                        message: error.to_string(),
+                        exit_code: None,
+                        finished_at: SystemTime::now(),
+                    },
+                );
+                return;
+            }
+        };
+        let mut runner = TestRunnerJob::new();
+        if let Err(error) = runner.start(command).await {
+            let _ = update(
+                app,
+                Action::FailTestSession {
+                    id,
+                    message: error.to_string(),
+                    exit_code: None,
+                    finished_at: SystemTime::now(),
+                },
+            );
+            return;
+        }
+        self.session = Some(TestSessionCliOperation { id, runner });
+    }
+
+    async fn begin_comparison(
+        &mut self,
+        app: &mut App,
+        request: yoctui_model::TestComparisonRequest,
+    ) {
+        if self.result.is_some() {
+            let _ = update(
+                app,
+                Action::TestComparisonFailed {
+                    request,
+                    message: "another resulttool operation is already active".into(),
+                },
+            );
+            return;
+        }
+        let baseline = app
+            .test_results
+            .records()
+            .iter()
+            .find(|record| record.identity == request.baseline)
+            .cloned();
+        let candidate = app
+            .test_results
+            .records()
+            .iter()
+            .find(|record| record.identity == request.candidate)
+            .cloned();
+        let Some((baseline, candidate)) = baseline.zip(candidate) else {
+            let _ = update(
+                app,
+                Action::TestComparisonFailed {
+                    request,
+                    message: "an exact comparison input is unavailable".into(),
+                },
+            );
+            return;
+        };
+        let preview = self
+            .result_adapter
+            .capability()
+            .executable()
+            .and_then(|executable| {
+                yoctui_model::TestComparisonPreview::new(executable, request.clone())
+            });
+        let command = preview.map_err(str::to_owned).and_then(|preview| {
+            self.result_adapter
+                .comparison_command(&preview, &baseline, &candidate)
+                .map_err(|error| error.to_string())
+        });
+        let comparison = TestComparison::between(&baseline, &candidate);
+        let (command, comparison) = match (command, comparison.map_err(str::to_owned)) {
+            (Ok(command), Ok(comparison)) => (command, comparison),
+            (Err(message), _) | (_, Err(message)) => {
+                let _ = update(app, Action::TestComparisonFailed { request, message });
+                return;
+            }
+        };
+        let mut runner = TestResultJob::new();
+        if let Err(error) = runner.start(command).await {
+            let _ = update(
+                app,
+                Action::TestComparisonFailed {
+                    request,
+                    message: error.to_string(),
+                },
+            );
+            return;
+        }
+        self.result = Some(TestResultCliOperation {
+            runner,
+            operation: TestResultOperation::Comparison(request),
+            comparison: Some(comparison),
+        });
+    }
+
+    async fn begin_junit(&mut self, app: &mut App, request: yoctui_model::TestJunitExportRequest) {
+        if self.result.is_some() {
+            let _ = update(
+                app,
+                Action::TestJunitExportFailed {
+                    request,
+                    message: "another resulttool operation is already active".into(),
+                },
+            );
+            return;
+        }
+        let record = app
+            .test_results
+            .records()
+            .iter()
+            .find(|record| record.identity == request.result)
+            .cloned();
+        let Some(record) = record else {
+            let _ = update(
+                app,
+                Action::TestJunitExportFailed {
+                    request,
+                    message: "the exact JUnit source result is unavailable".into(),
+                },
+            );
+            return;
+        };
+        let preview = self
+            .result_adapter
+            .capability()
+            .executable()
+            .and_then(|executable| {
+                yoctui_model::TestJunitExportPreview::new(executable, request.clone())
+            });
+        let command = preview.map_err(str::to_owned).and_then(|preview| {
+            self.result_adapter
+                .junit_command(&preview, &record)
+                .map_err(|error| error.to_string())
+        });
+        let command = match command {
+            Ok(command) => command,
+            Err(message) => {
+                let _ = update(app, Action::TestJunitExportFailed { request, message });
+                return;
+            }
+        };
+        let mut runner = TestResultJob::new();
+        if let Err(error) = runner.start(command).await {
+            let _ = update(
+                app,
+                Action::TestJunitExportFailed {
+                    request,
+                    message: error.to_string(),
+                },
+            );
+            return;
+        }
+        self.result = Some(TestResultCliOperation {
+            runner,
+            operation: TestResultOperation::Junit(request),
+            comparison: None,
+        });
+    }
+
+    async fn poll(&mut self, app: &mut App) {
+        let mut followups = Vec::new();
+        if let Some(operation) = self.session.as_mut()
+            && let Ok(event) =
+                tokio::time::timeout(Duration::from_millis(1), operation.runner.next_event()).await
+        {
+            let terminal = event.is_err()
+                || matches!(
+                    event,
+                    Ok(TestRunnerEvent::Completed { .. }
+                        | TestRunnerEvent::Failed { .. }
+                        | TestRunnerEvent::Cancelled { .. }
+                        | TestRunnerEvent::TimedOut { .. }
+                        | TestRunnerEvent::Lost { .. })
+                );
+            match event {
+                Ok(event) => {
+                    for action in
+                        test_actions_for_runner_event(operation.id, event, SystemTime::now())
+                    {
+                        if let Some(effect) = update(app, action) {
+                            followups.push(effect);
+                        }
+                    }
+                }
+                Err(error) => {
+                    let _ = update(
+                        app,
+                        Action::LoseTestSession {
+                            id: operation.id,
+                            message: error.to_string(),
+                            finished_at: SystemTime::now(),
+                        },
+                    );
+                }
+            }
+            if terminal {
+                self.session = None;
+            }
+        }
+        if self
+            .import
+            .as_ref()
+            .is_some_and(|operation| tokio::time::Instant::now() >= operation.deadline)
+        {
+            let operation = self.import.take().expect("expired import was checked");
+            operation.handle.abort();
+            let _ = update(
+                app,
+                Action::TestResultsTimedOut {
+                    request: operation.request,
+                },
+            );
+        } else if self
+            .import
+            .as_ref()
+            .is_some_and(|operation| operation.handle.is_finished())
+        {
+            let operation = self.import.take().expect("finished import was checked");
+            let action = match operation.handle.await {
+                Ok(Ok(response)) => test_results_import_action(response),
+                Ok(Err(message)) => Action::TestResultsFailed {
+                    request: operation.request,
+                    message,
+                },
+                Err(error) if error.is_cancelled() => Action::TestResultsCancelled {
+                    request: operation.request,
+                },
+                Err(error) => Action::TestResultsLost {
+                    request: operation.request,
+                    message: error.to_string(),
+                },
+            };
+            if let Some(effect) = update(app, action) {
+                followups.push(effect);
+            }
+        }
+        if let Some(operation) = self.result.as_mut()
+            && let Ok(event) =
+                tokio::time::timeout(Duration::from_millis(1), operation.runner.next_event()).await
+        {
+            let terminal = event.is_err()
+                || matches!(
+                    event,
+                    Ok(TestResultRunnerEvent::Completed { .. }
+                        | TestResultRunnerEvent::Failed { .. }
+                        | TestResultRunnerEvent::Cancelled { .. }
+                        | TestResultRunnerEvent::TimedOut { .. }
+                        | TestResultRunnerEvent::Lost { .. })
+                );
+            let event = match event {
+                Ok(event) => event,
+                Err(error) => TestResultRunnerEvent::Lost {
+                    operation: Some(operation.operation.clone()),
+                    message: error.to_string(),
+                },
+            };
+            for action in test_result_actions_for_runner_event(
+                event,
+                operation.comparison.clone(),
+                Vec::new(),
+            ) {
+                if let Some(effect) = update(app, action) {
+                    followups.push(effect);
+                }
+            }
+            if terminal {
+                self.result = None;
+            }
+        }
+        for effect in followups {
+            let _ = self.handle_effect(app, effect).await;
+        }
+    }
+}
+
+fn initialized_path_directories() -> Vec<PathBuf> {
+    env::var_os("PATH")
+        .map(|path| env::split_paths(&path).collect())
+        .unwrap_or_default()
+}
+
+fn ptest_capability(app: &App) -> yoctui_model::PtestCapability {
+    let suites = app.workspace.variables.get("TEST_SUITES");
+    let features = app
+        .workspace
+        .variables
+        .get("EXTRA_IMAGE_FEATURES")
+        .or_else(|| app.workspace.variables.get("IMAGE_FEATURES"));
+    match (suites, features) {
+        (Some(suites), Some(features))
+            if suites.split_whitespace().any(|value| value == "ptest")
+                && features
+                    .split_whitespace()
+                    .any(|value| value == "ptest-pkgs") =>
+        {
+            yoctui_model::PtestCapability::Configured
+        }
+        (Some(_), Some(_)) => yoctui_model::PtestCapability::Unavailable(
+            "active TEST_SUITES/IMAGE_FEATURES do not confirm ptest".into(),
+        ),
+        _ => yoctui_model::PtestCapability::Unavailable(
+            "active TEST_SUITES and image features are unavailable".into(),
+        ),
+    }
+}
+
+fn testing_screen_action(app: &App, input: Input) -> Option<Action> {
+    match app.test_view {
+        TestWorkspaceView::Launches => testing_workspace_action(input),
+        TestWorkspaceView::Results => {
+            test_results_workspace_action(app.test_result_searching, app.test_result_drilled, input)
+        }
+        TestWorkspaceView::Comparison => test_comparison_workspace_action(input),
     }
 }
 
@@ -3336,6 +3946,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     let wic_device_inspector = WicDeviceInspector::default();
     let mut wic_device_operation = None;
     let mut wic_operation = None;
+    let mut test_coordinator = TestCliCoordinator::new(
+        session_build_dir.clone(),
+        initialized_path_directories(),
+        ptest_capability(&app),
+    );
+    let mut pending_test_build = None;
     if app.screen == Screen::Packages
         && let Some(effect @ Effect::GetPackageInventory(_)) =
             update(&mut app, Action::BeginPackageInventory)
@@ -3360,6 +3976,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             &mut sdk_capability_operation,
             Effect::InspectSdkTools,
         );
+    }
+    if app.screen == Screen::Testing
+        && let Some(effect) = update(&mut app, Action::InspectTestCapability)
+    {
+        let _ = test_coordinator.handle_effect(&mut app, effect).await;
     }
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
@@ -3398,6 +4019,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         poll_wic_device_operation(&mut app, &mut wic_device_operation).await;
         poll_qemu_job(&mut app, &mut qemu_operation).await;
         poll_wic_job(&mut app, &mut wic_operation).await;
+        test_coordinator.poll(&mut app).await;
         if (matches!(
             app.build.status,
             BuildStatus::LoadingWorkspace
@@ -3405,7 +4027,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 | BuildStatus::Running
                 | BuildStatus::Cancelling
         ) || wic_operation.is_some()
-            || sdk_operation.is_some())
+            || sdk_operation.is_some()
+            || test_coordinator.session.is_some()
+            || test_coordinator.result.is_some())
             && Instant::now() >= next_telemetry_sample
         {
             let telemetry = telemetry_sampler.sample(&session_build_dir);
@@ -3456,6 +4080,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         &mut sdk_capability_operation,
                         effect,
                     );
+                } else if let Some(
+                    effect @ (Effect::InspectTestCapability | Effect::InspectResultToolCapability),
+                ) = effect
+                {
+                    let _ = test_coordinator.handle_effect(&mut app, effect).await;
                 }
             } else if matches!(app.active_dialog(), Some(Dialog::SdkBuildConfirmation(_))) {
                 let effect = sdk_build_confirmation_action(input)
@@ -3511,6 +4140,87 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     .and_then(|action| update(&mut app, action));
                 if let Some(Effect::CancelSdkSession(id)) = effect {
                     begin_sdk_cancellation(&mut app, &mut sdk_operation, id);
+                }
+            } else if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog() {
+                let editing = dialog.editing;
+                let _ = test_launch_dialog_action(editing, input)
+                    .and_then(|action| update(&mut app, action));
+            } else if matches!(app.active_dialog(), Some(Dialog::TestLaunchConfirmation(_))) {
+                let effect = test_launch_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                match effect {
+                    Some(effect @ Effect::StartTestSession { .. }) => {
+                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                    }
+                    Some(Effect::StartTestBuildSession { id, request }) => {
+                        if begin_test_build(&mut backend, &mut app, &mut build_jobs, id, request)
+                            .await
+                        {
+                            pending_test_build = Some(id);
+                        }
+                    }
+                    _ => {}
+                }
+            } else if matches!(
+                app.active_dialog(),
+                Some(Dialog::TestCancellationConfirmation(_))
+            ) {
+                let effect = test_cancellation_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(effect @ Effect::CancelTestSession(id)) = effect
+                    && !test_coordinator.handle_effect(&mut app, effect).await
+                    && pending_test_build == Some(id)
+                {
+                    if let Some(action) = build_jobs.request_cancellation() {
+                        let _ = update(&mut app, action);
+                    }
+                    if let Err(error) = backend.cancel_build().await {
+                        let _ = update(
+                            &mut app,
+                            Action::RejectTestSessionCancellation {
+                                id,
+                                message: error.to_string(),
+                            },
+                        );
+                        for action in
+                            build_jobs.cancellation_failed(error.to_string(), SystemTime::now())
+                        {
+                            let _ = update(&mut app, action);
+                        }
+                    }
+                }
+            } else if matches!(app.active_dialog(), Some(Dialog::TestResultImport(_))) {
+                let effect = test_result_import_dialog_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(effect) = effect {
+                    let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                }
+            } else if matches!(app.active_dialog(), Some(Dialog::TestComparison(_))) {
+                let _ = test_comparison_dialog_action(input)
+                    .and_then(|action| update(&mut app, action));
+            } else if matches!(
+                app.active_dialog(),
+                Some(Dialog::TestComparisonConfirmation(_))
+            ) {
+                let effect = test_comparison_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(effect) = effect {
+                    let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                }
+            } else if matches!(app.active_dialog(), Some(Dialog::TestJunitExport(_))) {
+                let effect =
+                    test_junit_dialog_action(input).and_then(|action| update(&mut app, action));
+                if let Some(effect) = effect {
+                    let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                }
+            } else if matches!(
+                app.active_dialog(),
+                Some(Dialog::TestJunitExportConfirmation(_))
+            ) {
+                let effect = test_junit_confirmation_action(input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(effect) = effect {
+                    let _ = test_coordinator.handle_effect(&mut app, effect).await;
                 }
             } else if matches!(app.active_dialog(), Some(Dialog::WicCreate(_))) {
                 let editing = app.active_dialog().is_some_and(
@@ -4109,6 +4819,24 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                     _ => {}
                 }
+            } else if app.screen == Screen::Testing && testing_screen_action(&app, input).is_some()
+            {
+                let action =
+                    testing_screen_action(&app, input).expect("Testing action was checked");
+                match update(&mut app, action) {
+                    Some(effect @ Effect::ImportTestResults(_))
+                    | Some(effect @ Effect::CompareTestResults(_))
+                    | Some(effect @ Effect::InspectTestJunitDestination { .. })
+                    | Some(effect @ Effect::ExportTestJunit(_))
+                    | Some(effect @ Effect::InspectTestCapability)
+                    | Some(effect @ Effect::InspectResultToolCapability) => {
+                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                    }
+                    Some(Effect::OpenInEditor(path)) => {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                    _ => {}
+                }
             } else if app.screen == Screen::Settings && settings_action(input).is_some() {
                 let action = settings_action(input).expect("settings action was checked");
                 if matches!(update(&mut app, action), Some(Effect::PersistSettings)) {
@@ -4435,7 +5163,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         }
                     }
                 } else {
-                    let _ = update(&mut app, action);
+                    if let Some(effect) = update(&mut app, action) {
+                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                    }
                 }
             }
         }
@@ -4498,10 +5228,24 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         }
         match tokio::time::timeout(Duration::from_millis(1), backend.next_event()).await {
             Ok(Ok(event)) => {
+                let test_terminal = matches!(
+                    event,
+                    BackendEvent::BuildCompleted { .. }
+                        | BackendEvent::CommandFailed { .. }
+                        | BackendEvent::Disconnected
+                );
+                if let Some(id) = pending_test_build
+                    && let Some(action) = test_build_action_for_event(&app, id, &event)
+                {
+                    let _ = update(&mut app, action);
+                }
                 let sdk_refresh =
                     sdk_refresh_after_build_event(&mut app, &mut pending_sdk_build, &event);
                 for action in build_jobs.actions_for_backend_event(event, SystemTime::now()) {
                     let _ = update(&mut app, action);
+                }
+                if test_terminal {
+                    pending_test_build = None;
                 }
                 if let Some(effect) = sdk_refresh {
                     begin_sdk_artifact_operation(
@@ -4513,6 +5257,16 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
             }
             Ok(Err(error)) => {
+                if let Some(id) = pending_test_build.take() {
+                    let _ = update(
+                        &mut app,
+                        Action::LoseTestSession {
+                            id,
+                            message: error.to_string(),
+                            finished_at: SystemTime::now(),
+                        },
+                    );
+                }
                 pending_sdk_build = None;
                 for action in build_jobs.backend_lost(error.to_string(), SystemTime::now()) {
                     let _ = update(&mut app, action);
@@ -4573,6 +5327,16 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         } else if let Some(mut runner) = operation.runner.take() {
             let _ = runner.cancel().await;
         }
+    }
+    if let Some(mut operation) = test_coordinator.session.take() {
+        let _ = operation.runner.cancel().await;
+    }
+    if let Some(mut operation) = test_coordinator.result.take() {
+        let _ = operation.runner.cancel().await;
+    }
+    if let Some(operation) = test_coordinator.import.take() {
+        operation.handle.abort();
+        let _ = operation.handle.await;
     }
     backend.shutdown().await?;
     session.last_target = app.build.target;
@@ -7940,6 +8704,304 @@ esac"#,
             .get(app.sdk_session(rejected_id).unwrap().background_job_id)
             .unwrap();
         assert_eq!(lost.status, yoctui_model::BackgroundJobStatus::Lost);
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[cfg(unix)]
+    fn test_workflow_cli_executable(path: &Path, body: &str) {
+        use std::os::unix::fs::PermissionsExt;
+        fs::write(path, body).unwrap();
+        let mut permissions = fs::metadata(path).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(path, permissions).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn test_workflow_cli_discovers_and_runs_selftest_across_navigation() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-testing-cli-runner-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+        let bin = directory.join("bin");
+        let build = directory.join("build");
+        fs::create_dir_all(&bin).unwrap();
+        fs::create_dir_all(&build).unwrap();
+        test_workflow_cli_executable(
+            &bin.join("oe-selftest"),
+            "#!/bin/sh\nprintf 'selftest output\\n'\nexit 0\n",
+        );
+        test_workflow_cli_executable(&bin.join("bitbake-selftest"), "#!/bin/sh\nexit 0\n");
+        test_workflow_cli_executable(&bin.join("resulttool"), "#!/bin/sh\nexit 0\n");
+
+        let mut app = App::new(100, 100_000);
+        app.screen = Screen::Testing;
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace
+            .variables
+            .insert("DISTRO".into(), "poky".into());
+        app.build.target = Some("core-image-minimal".into());
+        let mut coordinator =
+            TestCliCoordinator::new(build, vec![bin], yoctui_model::PtestCapability::Configured);
+        assert!(
+            coordinator
+                .handle_effect(&mut app, Effect::InspectTestCapability)
+                .await
+        );
+        assert!(matches!(
+            app.test_capability.oe_selftest,
+            yoctui_model::TestExecutableCapability::Available(_)
+        ));
+        assert!(matches!(
+            app.result_tool_capability,
+            yoctui_model::ResultToolCapability::Available(_)
+        ));
+
+        let _ = update(&mut app, Action::BeginSelectedTestLaunch);
+        let _ = update(&mut app, Action::PreviewTestLaunch);
+        let effect = update(&mut app, Action::ConfirmTestLaunch).unwrap();
+        let Effect::StartTestSession { id, .. } = effect.clone() else {
+            panic!("expected exact selftest effect");
+        };
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        let _ = update(&mut app, Action::Open(Screen::Dashboard));
+        for _ in 0..100 {
+            coordinator.poll(&mut app).await;
+            if app
+                .test_session(id)
+                .is_some_and(|session| session.outcome.is_some())
+            {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        let session = app.test_session(id).unwrap();
+        assert_eq!(
+            session.outcome,
+            Some(yoctui_model::TestSessionOutcome::Succeeded)
+        );
+        let job = app
+            .background_jobs
+            .get(session.background_job_id.unwrap())
+            .unwrap();
+        assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Succeeded);
+        assert!(
+            job.output
+                .iter()
+                .any(|entry| entry.message == "selftest output")
+        );
+        fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[test]
+    fn test_workflow_cli_correlates_managed_bitbake_success_and_cancellation() {
+        fn queued_test_build() -> (App, BuildJobCoordinator, TestSessionId, BuildRequest) {
+            let mut app = App::new(100, 100_000);
+            app.screen = Screen::Testing;
+            app.test_family_selection = yoctui_model::TestFamily::TestImage;
+            app.workspace
+                .variables
+                .insert("MACHINE".into(), "qemux86-64".into());
+            app.workspace
+                .variables
+                .insert("DISTRO".into(), "poky".into());
+            app.build.target = Some("core-image-minimal".into());
+            let _ = update(&mut app, Action::BeginSelectedTestLaunch);
+            let _ = update(&mut app, Action::PreviewTestLaunch);
+            let Some(Effect::StartTestBuildSession { id, request }) =
+                update(&mut app, Action::ConfirmTestLaunch)
+            else {
+                panic!("expected managed Testing build");
+            };
+            let mut coordinator = BuildJobCoordinator::default();
+            for action in coordinator
+                .queue_build(&request, SystemTime::UNIX_EPOCH)
+                .unwrap()
+            {
+                let _ = update(&mut app, action);
+            }
+            let background_job_id = coordinator.active_job_id().unwrap();
+            let _ = update(
+                &mut app,
+                Action::AttachTestBuildSession {
+                    id,
+                    background_job_id,
+                },
+            );
+            (app, coordinator, id, request)
+        }
+
+        let (mut succeeded, mut success_jobs, success_id, request) = queued_test_build();
+        assert_eq!(request.task.as_deref(), Some("testimage"));
+        for event in [
+            BackendEvent::BuildStarted,
+            BackendEvent::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        ] {
+            if let Some(action) = test_build_action_for_event(&succeeded, success_id, &event) {
+                let _ = update(&mut succeeded, action);
+            }
+            for action in success_jobs.job_actions_for_event(&event, SystemTime::UNIX_EPOCH) {
+                let _ = update(&mut succeeded, action);
+            }
+        }
+        assert_eq!(
+            succeeded.test_session(success_id).unwrap().outcome,
+            Some(yoctui_model::TestSessionOutcome::Succeeded)
+        );
+
+        let (mut cancelled, mut cancel_jobs, cancel_id, _) = queued_test_build();
+        if let Some(action) =
+            test_build_action_for_event(&cancelled, cancel_id, &BackendEvent::BuildStarted)
+        {
+            let _ = update(&mut cancelled, action);
+        }
+        for action in
+            cancel_jobs.job_actions_for_event(&BackendEvent::BuildStarted, SystemTime::UNIX_EPOCH)
+        {
+            let _ = update(&mut cancelled, action);
+        }
+        let _ = update(&mut cancelled, Action::BeginActiveTestSessionCancellation);
+        assert!(matches!(
+            update(&mut cancelled, Action::ConfirmTestSessionCancellation),
+            Some(Effect::CancelTestSession(id)) if id == cancel_id
+        ));
+        let event = BackendEvent::BuildCompleted {
+            success: false,
+            exit_code: Some(130),
+        };
+        let action = test_build_action_for_event(&cancelled, cancel_id, &event).unwrap();
+        let _ = update(&mut cancelled, action);
+        for action in cancel_jobs.job_actions_for_event(&event, SystemTime::UNIX_EPOCH) {
+            let _ = update(&mut cancelled, action);
+        }
+        assert_eq!(
+            cancelled.test_session(cancel_id).unwrap().outcome,
+            Some(yoctui_model::TestSessionOutcome::Cancelled)
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn test_workflow_cli_imports_compares_and_exports_exact_results() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-testing-cli-results-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+        let bin = directory.join("bin");
+        let build = directory.join("build");
+        let results = directory.join("results");
+        let export = directory.join("export");
+        fs::create_dir_all(&bin).unwrap();
+        fs::create_dir_all(&build).unwrap();
+        fs::create_dir_all(&results).unwrap();
+        fs::create_dir_all(&export).unwrap();
+        test_workflow_cli_executable(
+            &bin.join("resulttool"),
+            "#!/bin/sh\nif [ \"$1\" = junit ]; then : > \"$4\"; fi\nexit 0\n",
+        );
+        for tool in ["oe-selftest", "bitbake-selftest"] {
+            test_workflow_cli_executable(&bin.join(tool), "#!/bin/sh\nexit 0\n");
+        }
+        let result_json = |status: &str| {
+            format!(
+                r#"{{"runtime":{{"configuration":{{"TEST_TYPE":"runtime","MACHINE":"qemux86-64","IMAGE_BASENAME":"core-image-minimal"}},"result":{{"runtime.Case.test_one":{{"status":"{status}"}}}}}}}}"#
+            )
+        };
+        let baseline_path = results.join("baseline").join("testresults.json");
+        let candidate_path = results.join("candidate").join("testresults.json");
+        fs::create_dir_all(baseline_path.parent().unwrap()).unwrap();
+        fs::create_dir_all(candidate_path.parent().unwrap()).unwrap();
+        fs::write(&baseline_path, result_json("PASSED")).unwrap();
+        fs::write(&candidate_path, result_json("FAILED")).unwrap();
+
+        let mut app = App::new(100, 100_000);
+        app.screen = Screen::Testing;
+        let mut coordinator =
+            TestCliCoordinator::new(build, vec![bin], yoctui_model::PtestCapability::Configured);
+        let _ = coordinator
+            .handle_effect(&mut app, Effect::InspectResultToolCapability)
+            .await;
+        let request =
+            yoctui_model::TestResultImportRequest::new(1, vec![baseline_path, candidate_path])
+                .unwrap();
+        app.test_results = yoctui_model::TestResultInventoryState::Loading {
+            request: request.clone(),
+        };
+        assert!(
+            coordinator
+                .handle_effect(&mut app, Effect::ImportTestResults(request))
+                .await
+        );
+        for _ in 0..100 {
+            coordinator.poll(&mut app).await;
+            if app.test_results.records().len() == 2 {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+        assert_eq!(app.test_results.records().len(), 2);
+        let baseline = app.test_results.records()[0].clone();
+        let candidate = app.test_results.records()[1].clone();
+        let request = yoctui_model::TestComparisonRequest::new(
+            1,
+            baseline.identity.clone(),
+            candidate.identity.clone(),
+        )
+        .unwrap();
+        app.test_comparison = yoctui_model::TestComparisonState::Loading {
+            request: request.clone(),
+        };
+        assert!(
+            coordinator
+                .handle_effect(&mut app, Effect::CompareTestResults(request))
+                .await
+        );
+        for _ in 0..100 {
+            coordinator.poll(&mut app).await;
+            if matches!(
+                app.test_comparison,
+                yoctui_model::TestComparisonState::Available { .. }
+                    | yoctui_model::TestComparisonState::Partial { .. }
+            ) {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+        assert!(matches!(
+            app.test_comparison,
+            yoctui_model::TestComparisonState::Available { .. }
+        ));
+
+        let destination = export.join("results.xml");
+        let inspection = coordinator
+            .result_adapter
+            .inspect_junit_destination(destination);
+        let request =
+            yoctui_model::TestJunitExportRequest::new(1, candidate.identity, &inspection).unwrap();
+        app.test_junit_export = yoctui_model::TestJunitExportState::Running(request.clone());
+        assert!(
+            coordinator
+                .handle_effect(&mut app, Effect::ExportTestJunit(request))
+                .await
+        );
+        for _ in 0..100 {
+            coordinator.poll(&mut app).await;
+            if matches!(
+                app.test_junit_export,
+                yoctui_model::TestJunitExportState::Succeeded(_)
+            ) {
+                break;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+        assert!(matches!(
+            app.test_junit_export,
+            yoctui_model::TestJunitExportState::Succeeded(_)
+        ));
+        assert!(export.join("results.xml").is_file());
         fs::remove_dir_all(directory).unwrap();
     }
 }

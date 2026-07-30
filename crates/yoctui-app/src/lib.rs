@@ -1578,6 +1578,7 @@ pub fn sdk_cancellation_confirmation_action(key: Input) -> Option<Action> {
 
 pub fn testing_workspace_action(key: Input) -> Option<Action> {
     match key {
+        Input::Tab => Some(Action::CycleTestView),
         Input::Up | Input::Char('k') => Some(Action::SelectTestFamily { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectTestFamily { delta: 1 }),
         Input::Enter | Input::Char('r') => Some(Action::BeginSelectedTestLaunch),

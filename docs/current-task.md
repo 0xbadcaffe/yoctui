@@ -2,49 +2,41 @@
 
 ## Active task
 
-**ID:** TEST-CLI-001
-**Title:** Integrate Testing execution in the CLI
+**ID:** TEST-UI-CLI-001
+**Title:** Integrate complete Testing workspace
 
 ## Objective
 
-Connect the typed Testing model, adapters, and renderer to non-blocking CLI
-execution while reusing the existing managed BitBake coordinator.
+Close the cross-layer integration gate for the complete Testing workspace.
 
 ## Required work
 
-1. Inspect existing CLI operation coordinators and Testing effect routing
-   before adding state or polling.
-2. Snapshot the initialized build directory and PATH for independent
-   selftest/resulttool capability inspection without mutating process-global
-   environment.
-3. Route image runtime, SDK, extensible SDK, and configured ptest launches
-   through the existing managed BitBake build coordinator with exact session
-   correlation.
-4. Own at most one independent selftest runner and one resulttool
-   comparison/export runner; poll bounded typed events without blocking
-   terminal input or unrelated jobs.
-5. Execute explicit replaceable-generation result imports and exact
-   destination inspections, map responses mechanically, and trigger retained
-   exact-result refresh after successful Testing operations.
-6. Route cancellation only to the exact active Testing operation and preserve
-   rejection, timeout, nonzero, cancellation, loss, stale response, and
-   success-without-results outcomes distinctly.
-7. Add fake CLI integration tests covering capability discovery, managed
-   BitBake reuse, selftest/result operations, refresh/import/export,
-   navigation, duplicate rejection, and every terminal outcome.
+1. Inspect the complete Testing implementation and focused tests before
+   changing behavior.
+2. Verify every specified launch family crosses model, app, adapter, renderer,
+   and CLI boundaries with exact identities.
+3. Verify structured result import, suite/case drill-down, comparison, JUnit
+   export, cancellation, navigation, and terminal states across layers.
+4. Add only missing cross-layer coverage or fixes discovered by the gate.
+5. Keep live compatibility claims separate from fake process and filesystem
+   coverage.
 
 ## Definition of done
 
-- Every Testing effect is executed or rejected with an explicit typed action.
-- Testing-owned polling remains responsive and independent from other
-  operation families.
-- Exact request/session/result identities survive every CLI boundary.
-- Managed BitBake tests reuse the established build coordinator.
+- Every focused Testing verification command passes without weakening tests.
+- Model, app, adapter, UI, and CLI behavior agrees with the authoritative
+  specification and architecture.
+- Exact launch, result, comparison, and export identities remain correlated.
+- All responsive and terminal states remain explicit.
 - No fake-process test is described as live Yocto compatibility.
 
 ## Verification
 
 ```bash
+cargo test -p yoctui-model test_workflow
+cargo test -p yoctui-app test_workflow
+cargo test -p yoctui-bitbake test_
+cargo test -p yoctui-ui test_workflow
 cargo test -p yoctui -- test_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features

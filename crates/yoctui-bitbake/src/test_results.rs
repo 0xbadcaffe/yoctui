@@ -17,9 +17,9 @@ use tokio::{
 };
 use yoctui_model::{
     ResultToolCapability, TestCaseIdentity, TestCaseOutcome, TestCaseRecord, TestComparisonPreview,
-    TestComparisonRequest, TestFamily, TestJunitExportPreview, TestJunitExportRequest,
-    TestMetadata, TestOutputStream, TestResultIdentity, TestResultImportRequest, TestResultRecord,
-    TestSuiteRecord, normalize_test_results,
+    TestComparisonRequest, TestFamily, TestJunitDestinationInspection, TestJunitExportPreview,
+    TestJunitExportRequest, TestMetadata, TestOutputStream, TestResultIdentity,
+    TestResultImportRequest, TestResultRecord, TestSuiteRecord, normalize_test_results,
 };
 
 use crate::{
@@ -113,6 +113,31 @@ impl TestResultAdapter {
 
     pub fn capability(&self) -> ResultToolCapability {
         ResultToolCapabilityInspector::new(self.path_directories.clone()).inspect()
+    }
+
+    pub fn inspect_junit_destination(
+        &self,
+        destination: PathBuf,
+    ) -> TestJunitDestinationInspection {
+        let destination_metadata = fs::symlink_metadata(&destination).ok();
+        let parent = destination.parent().map(Path::to_path_buf);
+        let parent_metadata = parent
+            .as_deref()
+            .and_then(|path| fs::symlink_metadata(path).ok());
+        TestJunitDestinationInspection {
+            requested: destination,
+            canonical_parent: parent
+                .as_deref()
+                .and_then(|path| fs::canonicalize(path).ok()),
+            parent_exists: parent_metadata.is_some(),
+            parent_is_directory: parent_metadata
+                .as_ref()
+                .is_some_and(|metadata| metadata.is_dir() && !metadata.file_type().is_symlink()),
+            destination_exists: destination_metadata.is_some(),
+            destination_is_symlink: destination_metadata
+                .as_ref()
+                .is_some_and(|metadata| metadata.file_type().is_symlink()),
+        }
     }
 
     pub fn import(
