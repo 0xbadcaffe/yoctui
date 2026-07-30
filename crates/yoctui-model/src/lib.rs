@@ -3,6 +3,7 @@ mod image;
 mod package;
 mod qemu;
 mod sdk;
+mod testing;
 mod wic;
 
 pub use image::*;
@@ -16,6 +17,7 @@ use std::{
     path::{Component, Path, PathBuf},
     time::{Duration, SystemTime},
 };
+pub use testing::*;
 use thiserror::Error;
 pub use wic::*;
 
@@ -54,6 +56,7 @@ pub enum Screen {
     Packages,
     Images,
     Sdk,
+    Testing,
     Layers,
     Configuration,
     Bbmask,
@@ -135,13 +138,14 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-const NAVIGATOR_SCREENS: [Screen; 14] = [
+const NAVIGATOR_SCREENS: [Screen; 15] = [
     Screen::Dashboard,
     Screen::Layers,
     Screen::Recipes,
     Screen::Packages,
     Screen::Images,
     Screen::Sdk,
+    Screen::Testing,
     Screen::Tasks,
     Screen::Logs,
     Screen::Errors,
@@ -793,6 +797,9 @@ pub enum Dialog {
     SdkNative(SdkNativeDialog),
     SdkNativeConfirmation(SdkNativePreview),
     SdkCancellationConfirmation(SdkSessionId),
+    TestLaunch(TestLaunchDialog),
+    TestLaunchConfirmation(TestLaunchPreview),
+    TestCancellationConfirmation(TestSessionId),
     RecipeTaskConfirmation(BuildRequest),
     RecipeTaskPicker(RecipeTaskPicker),
     SignatureTaskPicker(SignatureTaskPicker),
@@ -2125,6 +2132,10 @@ pub struct App {
     pub sdk_tool_capability: SdkToolCapability,
     pub sdk_sessions: VecDeque<SdkSession>,
     pub sdk_session_generation: u64,
+    pub test_capability: TestCapability,
+    pub test_family_selection: TestFamily,
+    pub test_sessions: VecDeque<TestSession>,
+    pub test_session_generation: u64,
     pub qemu_capability: QemuCapability,
     pub qemu_sessions: VecDeque<QemuSession>,
     pub qemu_session_generation: u64,
@@ -2220,6 +2231,10 @@ impl App {
             sdk_tool_capability: SdkToolCapability::NotInspected,
             sdk_sessions: VecDeque::new(),
             sdk_session_generation: 0,
+            test_capability: TestCapability::default(),
+            test_family_selection: TestFamily::OeSelftest,
+            test_sessions: VecDeque::new(),
+            test_session_generation: 0,
             qemu_capability: QemuCapability::default(),
             qemu_sessions: VecDeque::new(),
             qemu_session_generation: 0,
@@ -2448,6 +2463,22 @@ impl App {
     }
     pub fn latest_sdk_session(&self) -> Option<&SdkSession> {
         self.sdk_sessions.back()
+    }
+    pub fn test_session(&self, id: TestSessionId) -> Option<&TestSession> {
+        self.test_sessions.iter().find(|session| session.id == id)
+    }
+    pub fn active_test_session(&self) -> Option<&TestSession> {
+        self.test_sessions.iter().rev().find(|session| {
+            session.background_job_id.is_none()
+                || session.background_job_id.is_some_and(|job_id| {
+                    self.background_jobs
+                        .get(job_id)
+                        .is_some_and(|job| !job.status.is_terminal())
+                })
+        })
+    }
+    pub fn latest_test_session(&self) -> Option<&TestSession> {
+        self.test_sessions.back()
     }
     pub fn qemu_session(&self, id: QemuSessionId) -> Option<&QemuSession> {
         self.qemu_sessions.iter().find(|session| session.id == id)
@@ -2913,6 +2944,71 @@ pub enum Action {
     },
     CancelSdkSession {
         id: SdkSessionId,
+        exit_code: Option<i32>,
+        finished_at: SystemTime,
+    },
+    InspectTestCapability,
+    TestCapabilityLoaded(TestCapability),
+    SelectTestFamily {
+        delta: isize,
+    },
+    BeginSelectedTestLaunch,
+    UpdateTestLaunchDraft(TestLaunchDraft),
+    SelectTestLaunchField {
+        delta: isize,
+    },
+    ActivateTestLaunchField,
+    AppendTestLaunchField(char),
+    BackspaceTestLaunchField,
+    FinishTestLaunchFieldEdit,
+    PreviewTestLaunch,
+    CancelTestLaunch,
+    CancelTestLaunchPreview,
+    ConfirmTestLaunch,
+    AttachTestBuildSession {
+        id: TestSessionId,
+        background_job_id: BackgroundJobId,
+    },
+    TestSessionStarting {
+        id: TestSessionId,
+        started_at: SystemTime,
+    },
+    TestSessionRunning {
+        id: TestSessionId,
+    },
+    AppendTestSessionOutput {
+        id: TestSessionId,
+        stream: TestOutputStream,
+        line: String,
+        truncated: bool,
+        timestamp: SystemTime,
+    },
+    CompleteTestSession {
+        id: TestSessionId,
+        exit_code: i32,
+        result_paths: Vec<PathBuf>,
+        finished_at: SystemTime,
+    },
+    FailTestSession {
+        id: TestSessionId,
+        message: String,
+        exit_code: Option<i32>,
+        finished_at: SystemTime,
+    },
+    LoseTestSession {
+        id: TestSessionId,
+        message: String,
+        finished_at: SystemTime,
+    },
+    BeginActiveTestSessionCancellation,
+    ConfirmTestSessionCancellation,
+    CancelTestSessionCancellation,
+    RejectTestSessionCancellation {
+        id: TestSessionId,
+        message: String,
+    },
+    CancelTestSession {
+        id: TestSessionId,
         exit_code: Option<i32>,
         finished_at: SystemTime,
     },
@@ -4395,6 +4491,147 @@ fn queue_sdk_session(app: &mut App, operation: SdkOperation) -> Option<Effect> {
     Some(Effect::StartSdkSession { id, operation })
 }
 
+const MAX_TEST_SESSIONS: usize = 32;
+const TEST_BACKGROUND_JOB_NAMESPACE: u64 = 3 << 60;
+
+fn next_test_session_id(app: &mut App) -> TestSessionId {
+    app.test_session_generation = app.test_session_generation.wrapping_add(1).max(1);
+    TestSessionId(app.test_session_generation)
+}
+
+fn test_background_job_id(id: TestSessionId) -> BackgroundJobId {
+    BackgroundJobId(TEST_BACKGROUND_JOB_NAMESPACE | id.0)
+}
+
+fn test_job_id(app: &App, id: TestSessionId) -> Option<BackgroundJobId> {
+    app.test_session(id)
+        .and_then(|session| session.background_job_id)
+}
+
+fn mutate_test_session(
+    app: &mut App,
+    id: TestSessionId,
+    mutation: impl FnOnce(&mut TestSession),
+) -> Option<Option<BackgroundJobId>> {
+    let session = app
+        .test_sessions
+        .iter_mut()
+        .find(|session| session.id == id)?;
+    mutation(session);
+    Some(session.background_job_id)
+}
+
+fn note_stale_test_event(app: &mut App) {
+    app.background_jobs.ignored_transitions += 1;
+}
+
+fn test_launch_draft(app: &App, family: TestFamily) -> TestLaunchDraft {
+    TestLaunchDraft::new(
+        family,
+        app.workspace
+            .variables
+            .get("MACHINE")
+            .cloned()
+            .unwrap_or_default(),
+        app.workspace
+            .variables
+            .get("DISTRO")
+            .cloned()
+            .unwrap_or_default(),
+        app.build.target.clone().unwrap_or_default(),
+    )
+}
+
+fn test_preview_is_current(app: &App, preview: &TestLaunchPreview) -> bool {
+    match preview {
+        TestLaunchPreview::Selftest(request) => {
+            TestSelftestRequest::new(
+                request.executable.clone(),
+                request.family,
+                request.selector.clone(),
+                request.parallelism,
+                request.verbose,
+                request.skip_network,
+            )
+            .as_ref()
+                == Ok(request)
+                && app.test_capability.executable_for(request.family).as_ref()
+                    == Ok(&request.executable)
+        }
+        TestLaunchPreview::Build {
+            family, request, ..
+        } => {
+            test_launch_draft(app, *family)
+                .preview(&app.test_capability)
+                .as_ref()
+                .is_ok_and(|current| current == preview)
+                && request.validate().is_ok()
+        }
+    }
+}
+
+fn queue_test_session(app: &mut App, operation: TestOperation) -> Option<Effect> {
+    if app.active_test_session().is_some() {
+        app.notification = Some("A managed Testing operation is already active.".into());
+        return None;
+    }
+    while app.test_sessions.len() >= MAX_TEST_SESSIONS {
+        let Some(index) = app.test_sessions.iter().position(|session| {
+            session.background_job_id.is_some_and(|job_id| {
+                app.background_jobs
+                    .get(job_id)
+                    .is_none_or(|job| job.status.is_terminal())
+            })
+        }) else {
+            app.notification = Some("The Testing session history is full.".into());
+            return None;
+        };
+        app.test_sessions.remove(index);
+    }
+    let id = next_test_session_id(app);
+    let background_job_id =
+        matches!(&operation, TestOperation::Selftest(_)).then(|| test_background_job_id(id));
+    if let Some(job_id) = background_job_id {
+        let family = operation.family();
+        app.background_jobs.queue(BackgroundJobSpec {
+            id: job_id,
+            kind: BackgroundJobKind::Test,
+            title: family.label().into(),
+            context: BackgroundJobContext {
+                workspace: Some(Screen::Testing),
+                target: match &operation {
+                    TestOperation::Selftest(request) => request.selector.clone(),
+                    TestOperation::Build { request, .. } => request.targets.first().cloned(),
+                },
+                task: family.task().map(str::to_owned),
+                image: match &operation {
+                    TestOperation::Build { request, .. } => request.targets.first().cloned(),
+                    TestOperation::Selftest(_) => None,
+                },
+                ..BackgroundJobContext::default()
+            },
+            cancellation_supported: true,
+            queued_at: SystemTime::now(),
+        });
+        if app.background_jobs.get(job_id).is_none() {
+            app.notification = Some("The Testing operation could not be queued.".into());
+            return None;
+        }
+    }
+    app.test_sessions.push_back(TestSession {
+        id,
+        background_job_id,
+        operation: operation.clone(),
+        exit_code: None,
+        result_paths: Vec::new(),
+        error_detail: None,
+    });
+    match operation {
+        TestOperation::Selftest(_) => Some(Effect::StartTestSession { id, operation }),
+        TestOperation::Build { request, .. } => Some(Effect::StartTestBuildSession { id, request }),
+    }
+}
+
 const MAX_QEMU_SESSIONS: usize = 32;
 const QEMU_BACKGROUND_JOB_NAMESPACE: u64 = 3 << 62;
 
@@ -4868,6 +5105,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             {
                 return Some(Effect::InspectSdkTools);
             }
+            if s == Screen::Testing
+                && matches!(
+                    app.test_capability.oe_selftest,
+                    TestExecutableCapability::NotInspected
+                )
+                && matches!(
+                    app.test_capability.bitbake_selftest,
+                    TestExecutableCapability::NotInspected
+                )
+            {
+                return Some(Effect::InspectTestCapability);
+            }
         }
         Action::SelectNavigator { delta } => {
             app.navigator_selection = if delta.is_negative() {
@@ -4896,6 +5145,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 && matches!(app.sdk_tool_capability, SdkToolCapability::NotInspected)
             {
                 return Some(Effect::InspectSdkTools);
+            }
+            if app.screen == Screen::Testing
+                && matches!(
+                    app.test_capability.oe_selftest,
+                    TestExecutableCapability::NotInspected
+                )
+                && matches!(
+                    app.test_capability.bitbake_selftest,
+                    TestExecutableCapability::NotInspected
+                )
+            {
+                return Some(Effect::InspectTestCapability);
             }
         }
         Action::Focus(target) => app.focus = target,
@@ -5817,6 +6078,327 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     job.finished_at = Some(finished_at);
                     job.result = Some(BackgroundJobResult {
                         summary: "SDK operation cancelled".into(),
+                        artifacts: Vec::new(),
+                    });
+                });
+        }
+        Action::InspectTestCapability => {
+            app.test_capability = TestCapability::default();
+            return Some(Effect::InspectTestCapability);
+        }
+        Action::TestCapabilityLoaded(capability) => app.test_capability = capability,
+        Action::SelectTestFamily { delta } => {
+            app.test_family_selection = app.test_family_selection.shifted(delta);
+        }
+        Action::BeginSelectedTestLaunch => {
+            let draft = test_launch_draft(app, app.test_family_selection);
+            open_dialog(app, Dialog::TestLaunch(TestLaunchDialog::new(draft)));
+        }
+        Action::UpdateTestLaunchDraft(draft) => {
+            if matches!(app.active_dialog(), Some(Dialog::TestLaunch(_))) {
+                replace_dialog(app, Dialog::TestLaunch(TestLaunchDialog::new(draft)));
+            }
+        }
+        Action::SelectTestLaunchField { delta } => {
+            if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog_mut()
+                && !dialog.editing
+            {
+                dialog.select(delta);
+            }
+        }
+        Action::ActivateTestLaunchField => {
+            if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog_mut() {
+                dialog.activate();
+            }
+        }
+        Action::AppendTestLaunchField(character) => {
+            if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog_mut() {
+                dialog.append(character);
+            }
+        }
+        Action::BackspaceTestLaunchField => {
+            if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog_mut() {
+                dialog.backspace();
+            }
+        }
+        Action::FinishTestLaunchFieldEdit => {
+            if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog_mut() {
+                dialog.finish_edit();
+            }
+        }
+        Action::PreviewTestLaunch => {
+            let Some(Dialog::TestLaunch(dialog)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            match dialog.draft.preview(&app.test_capability) {
+                Ok(preview) => {
+                    replace_dialog(app, Dialog::TestLaunchConfirmation(preview));
+                }
+                Err(message) => {
+                    if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog_mut() {
+                        dialog.validation_error = Some(message.into());
+                    }
+                }
+            }
+        }
+        Action::CancelTestLaunch => {
+            if matches!(app.active_dialog(), Some(Dialog::TestLaunch(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::CancelTestLaunchPreview => {
+            if matches!(app.active_dialog(), Some(Dialog::TestLaunchConfirmation(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::ConfirmTestLaunch => {
+            let Some(Dialog::TestLaunchConfirmation(preview)) = app.active_dialog().cloned() else {
+                return None;
+            };
+            if !test_preview_is_current(app, &preview) {
+                app.notification = Some("The Testing launch preview is stale.".into());
+                return None;
+            }
+            close_dialog(app);
+            return queue_test_session(app, preview.operation());
+        }
+        Action::AttachTestBuildSession {
+            id,
+            background_job_id,
+        } => {
+            let valid = app.test_session(id).is_some_and(|session| {
+                session.background_job_id.is_none()
+                    && matches!(session.operation, TestOperation::Build { .. })
+            }) && app
+                .background_jobs
+                .get(background_job_id)
+                .is_some_and(|job| job.kind == BackgroundJobKind::Test);
+            if !valid {
+                note_stale_test_event(app);
+                return None;
+            }
+            let _ = mutate_test_session(app, id, |session| {
+                session.background_job_id = Some(background_job_id)
+            });
+        }
+        Action::TestSessionStarting { id, started_at } => {
+            let Some(job_id) = test_job_id(app, id) else {
+                note_stale_test_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Queued], |job| {
+                    job.status = BackgroundJobStatus::Starting;
+                    job.started_at = Some(started_at);
+                });
+        }
+        Action::TestSessionRunning { id } => {
+            let Some(job_id) = test_job_id(app, id) else {
+                note_stale_test_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Starting], |job| {
+                    job.status = BackgroundJobStatus::Running;
+                });
+        }
+        Action::AppendTestSessionOutput {
+            id,
+            stream,
+            line,
+            truncated,
+            timestamp,
+        } => {
+            let Some(job_id) = test_job_id(app, id) else {
+                note_stale_test_event(app);
+                return None;
+            };
+            app.background_jobs.append_output(
+                job_id,
+                BackgroundJobOutputEntry {
+                    severity: if stream == TestOutputStream::Stderr {
+                        Severity::Warning
+                    } else {
+                        Severity::Info
+                    },
+                    message: line,
+                    source: if stream == TestOutputStream::Stderr {
+                        BackgroundJobOutputSource::Stderr
+                    } else {
+                        BackgroundJobOutputSource::Stdout
+                    },
+                    truncated,
+                    timestamp,
+                },
+            );
+        }
+        Action::CompleteTestSession {
+            id,
+            exit_code,
+            result_paths,
+            finished_at,
+        } => {
+            if !test_result_paths_are_valid(&result_paths) {
+                note_stale_test_event(app);
+                app.notification = Some("Testing returned invalid structured result paths.".into());
+                return None;
+            }
+            let Some(Some(job_id)) = mutate_test_session(app, id, |session| {
+                session.exit_code = Some(exit_code);
+                session.result_paths.clone_from(&result_paths);
+            }) else {
+                note_stale_test_event(app);
+                return None;
+            };
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                    BackgroundJobStatus::Cancelling,
+                ],
+                |job| {
+                    job.status = BackgroundJobStatus::Succeeded;
+                    job.finished_at = Some(finished_at);
+                    job.result = Some(BackgroundJobResult {
+                        summary: "Testing operation completed".into(),
+                        artifacts: result_paths,
+                    });
+                },
+            );
+        }
+        Action::FailTestSession {
+            id,
+            message,
+            exit_code,
+            finished_at,
+        } => {
+            let Some(Some(job_id)) = mutate_test_session(app, id, |session| {
+                session.exit_code = exit_code;
+                session.error_detail = Some(message.clone());
+            }) else {
+                note_stale_test_event(app);
+                return None;
+            };
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Queued,
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                    BackgroundJobStatus::Cancelling,
+                ],
+                |job| {
+                    job.status = BackgroundJobStatus::Failed;
+                    job.finished_at = Some(finished_at);
+                    job.error = Some(BackgroundJobError {
+                        summary: "Testing operation failed".into(),
+                        detail: Some(message),
+                    });
+                },
+            );
+        }
+        Action::LoseTestSession {
+            id,
+            message,
+            finished_at,
+        } => {
+            let Some(Some(job_id)) = mutate_test_session(app, id, |session| {
+                session.error_detail = Some(message.clone());
+            }) else {
+                note_stale_test_event(app);
+                return None;
+            };
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Queued,
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                    BackgroundJobStatus::Cancelling,
+                ],
+                |job| {
+                    job.status = BackgroundJobStatus::Lost;
+                    job.finished_at = Some(finished_at);
+                    job.error = Some(BackgroundJobError {
+                        summary: "Testing operation lost".into(),
+                        detail: Some(message),
+                    });
+                },
+            );
+        }
+        Action::BeginActiveTestSessionCancellation => {
+            if let Some(id) = app.active_test_session().map(|session| session.id) {
+                open_dialog(app, Dialog::TestCancellationConfirmation(id));
+            } else {
+                app.notification = Some("No managed Testing operation is active.".into());
+            }
+        }
+        Action::ConfirmTestSessionCancellation => {
+            let Some(Dialog::TestCancellationConfirmation(id)) = app.active_dialog().cloned()
+            else {
+                return None;
+            };
+            let Some(job_id) = test_job_id(app, id) else {
+                note_stale_test_event(app);
+                close_dialog(app);
+                return None;
+            };
+            let before = app.background_jobs.get(job_id).map(|job| job.status);
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Queued,
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                ],
+                |job| job.status = BackgroundJobStatus::Cancelling,
+            );
+            close_dialog(app);
+            if before != app.background_jobs.get(job_id).map(|job| job.status) {
+                return Some(Effect::CancelTestSession(id));
+            }
+        }
+        Action::CancelTestSessionCancellation => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::TestCancellationConfirmation(_))
+            ) {
+                close_dialog(app);
+            }
+        }
+        Action::RejectTestSessionCancellation { id, message } => {
+            let Some(job_id) = test_job_id(app, id) else {
+                note_stale_test_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Cancelling], |job| {
+                    job.status = BackgroundJobStatus::Running;
+                    job.error = Some(BackgroundJobError {
+                        summary: "Testing cancellation was rejected".into(),
+                        detail: Some(message.clone()),
+                    });
+                });
+            app.notification = Some(message);
+        }
+        Action::CancelTestSession {
+            id,
+            exit_code,
+            finished_at,
+        } => {
+            let Some(Some(job_id)) =
+                mutate_test_session(app, id, |session| session.exit_code = exit_code)
+            else {
+                note_stale_test_event(app);
+                return None;
+            };
+            app.background_jobs
+                .update_if(job_id, &[BackgroundJobStatus::Cancelling], |job| {
+                    job.status = BackgroundJobStatus::Cancelled;
+                    job.finished_at = Some(finished_at);
+                    job.result = Some(BackgroundJobResult {
+                        summary: "Testing operation cancelled".into(),
                         artifacts: Vec::new(),
                     });
                 });
@@ -10053,6 +10635,16 @@ pub enum Effect {
         operation: SdkOperation,
     },
     CancelSdkSession(SdkSessionId),
+    InspectTestCapability,
+    StartTestSession {
+        id: TestSessionId,
+        operation: TestOperation,
+    },
+    StartTestBuildSession {
+        id: TestSessionId,
+        request: BuildRequest,
+    },
+    CancelTestSession(TestSessionId),
     InspectQemuCapability,
     StartQemuSession {
         id: QemuSessionId,
@@ -16055,5 +16647,287 @@ mod tests {
                 .status,
             BackgroundJobStatus::Cancelled
         );
+    }
+
+    fn test_workflow_app() -> App {
+        let mut app = App::new(20, 20_000);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace
+            .variables
+            .insert("DISTRO".into(), "poky".into());
+        app.build.target = Some("core-image-minimal".into());
+        app.test_capability = TestCapability {
+            oe_selftest: TestExecutableCapability::Available("/workspace/oe-selftest".into()),
+            bitbake_selftest: TestExecutableCapability::Available(
+                "/workspace/bitbake-selftest".into(),
+            ),
+            ptest: PtestCapability::Configured,
+        };
+        app
+    }
+
+    #[test]
+    fn test_workflow_model_navigates_previews_and_runs_bounded_selftests() {
+        let mut app = test_workflow_app();
+        let testing_index = NAVIGATOR_SCREENS
+            .iter()
+            .position(|screen| *screen == Screen::Testing)
+            .unwrap();
+        app.focus = FocusTarget::Navigator;
+        app.navigator_selection = testing_index;
+        app.test_capability = TestCapability::default();
+        assert_eq!(
+            update(&mut app, Action::ActivateNavigator),
+            Some(Effect::InspectTestCapability)
+        );
+        assert_eq!(app.screen, Screen::Testing);
+        let capability = test_workflow_app().test_capability;
+        let _ = update(&mut app, Action::TestCapabilityLoaded(capability));
+        let _ = update(&mut app, Action::BeginSelectedTestLaunch);
+        let _ = update(&mut app, Action::ActivateTestLaunchField);
+        let _ = update(&mut app, Action::SelectTestLaunchField { delta: 1 });
+        let _ = update(&mut app, Action::ActivateTestLaunchField);
+        for character in "tinfoil.TinfoilTests.test_getvar".chars() {
+            let _ = update(&mut app, Action::AppendTestLaunchField(character));
+        }
+        let _ = update(&mut app, Action::FinishTestLaunchFieldEdit);
+        let _ = update(&mut app, Action::SelectTestLaunchField { delta: 1 });
+        let _ = update(&mut app, Action::ActivateTestLaunchField);
+        let _ = update(&mut app, Action::BackspaceTestLaunchField);
+        let _ = update(&mut app, Action::AppendTestLaunchField('8'));
+        let _ = update(&mut app, Action::FinishTestLaunchFieldEdit);
+        let _ = update(&mut app, Action::PreviewTestLaunch);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TestLaunchConfirmation(
+                TestLaunchPreview::Selftest(request)
+            )) if request.parallelism == 8
+                && request.selector.as_deref() == Some("tinfoil.TinfoilTests.test_getvar")
+        ));
+        let Some(Effect::StartTestSession { id, operation }) =
+            update(&mut app, Action::ConfirmTestLaunch)
+        else {
+            panic!("selftest effect");
+        };
+        assert!(matches!(
+            operation,
+            TestOperation::Selftest(TestSelftestRequest {
+                family: TestFamily::OeSelftest,
+                ..
+            })
+        ));
+        let job_id = app.test_session(id).unwrap().background_job_id.unwrap();
+        assert_eq!(
+            app.background_jobs.get(job_id).unwrap().kind,
+            BackgroundJobKind::Test
+        );
+        let _ = update(
+            &mut app,
+            Action::TestSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::TestSessionRunning { id });
+        let _ = update(
+            &mut app,
+            Action::AppendTestSessionOutput {
+                id,
+                stream: TestOutputStream::Stderr,
+                line: "one warning".into(),
+                truncated: true,
+                timestamp: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::BeginActiveTestSessionCancellation);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TestCancellationConfirmation(candidate)) if *candidate == id
+        ));
+        assert_eq!(
+            update(&mut app, Action::ConfirmTestSessionCancellation),
+            Some(Effect::CancelTestSession(id))
+        );
+        let _ = update(
+            &mut app,
+            Action::RejectTestSessionCancellation {
+                id,
+                message: "still stopping".into(),
+            },
+        );
+        assert_eq!(
+            app.background_jobs.get(job_id).unwrap().status,
+            BackgroundJobStatus::Running
+        );
+        let _ = update(&mut app, Action::BeginActiveTestSessionCancellation);
+        let _ = update(&mut app, Action::ConfirmTestSessionCancellation);
+        let _ = update(
+            &mut app,
+            Action::CancelTestSession {
+                id,
+                exit_code: Some(130),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let job = app.background_jobs.get(job_id).unwrap();
+        assert_eq!(job.status, BackgroundJobStatus::Cancelled);
+        assert!(job.output[0].truncated);
+    }
+
+    #[test]
+    fn test_workflow_model_attaches_managed_builds_and_rejects_stale_results() {
+        let mut app = test_workflow_app();
+        let _ = update(&mut app, Action::SelectTestFamily { delta: 2 });
+        let _ = update(&mut app, Action::BeginSelectedTestLaunch);
+        let _ = update(&mut app, Action::PreviewTestLaunch);
+        let Some(Effect::StartTestBuildSession { id, request }) =
+            update(&mut app, Action::ConfirmTestLaunch)
+        else {
+            panic!("test build effect");
+        };
+        assert_eq!(request.task.as_deref(), Some("testimage"));
+        assert!(app.test_session(id).unwrap().background_job_id.is_none());
+        let job_id = BackgroundJobId(44);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(BackgroundJobSpec {
+                id: job_id,
+                kind: BackgroundJobKind::Test,
+                title: "Image runtime test".into(),
+                context: BackgroundJobContext {
+                    workspace: Some(Screen::Testing),
+                    image: Some("core-image-minimal".into()),
+                    task: Some("testimage".into()),
+                    ..BackgroundJobContext::default()
+                },
+                cancellation_supported: true,
+                queued_at: SystemTime::UNIX_EPOCH,
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::AttachTestBuildSession {
+                id,
+                background_job_id: job_id,
+            },
+        );
+        assert_eq!(
+            app.test_session(id).unwrap().background_job_id,
+            Some(job_id)
+        );
+        let ignored = app.background_jobs.ignored_transitions;
+        let _ = update(
+            &mut app,
+            Action::CompleteTestSession {
+                id,
+                exit_code: 0,
+                result_paths: vec!["relative/testresults.json".into()],
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert_eq!(app.background_jobs.ignored_transitions, ignored + 1);
+        let _ = update(
+            &mut app,
+            Action::TestSessionStarting {
+                id,
+                started_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let _ = update(&mut app, Action::TestSessionRunning { id });
+        let _ = update(
+            &mut app,
+            Action::CompleteTestSession {
+                id,
+                exit_code: 0,
+                result_paths: vec!["/build/testresults.json".into()],
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert_eq!(
+            app.background_jobs.get(job_id).unwrap().status,
+            BackgroundJobStatus::Succeeded
+        );
+        assert_eq!(
+            app.test_session(id).unwrap().result_paths,
+            [PathBuf::from("/build/testresults.json")]
+        );
+    }
+
+    #[test]
+    fn test_workflow_model_records_failure_loss_and_stale_terminal_events() {
+        fn queue_selftest(app: &mut App) -> TestSessionId {
+            let request = TestSelftestRequest::new(
+                "/workspace/oe-selftest".into(),
+                TestFamily::OeSelftest,
+                None,
+                1,
+                false,
+                false,
+            )
+            .unwrap();
+            let Some(Effect::StartTestSession { id, .. }) =
+                queue_test_session(app, TestOperation::Selftest(request))
+            else {
+                panic!("selftest session");
+            };
+            id
+        }
+
+        let mut failed = test_workflow_app();
+        let failed_id = queue_selftest(&mut failed);
+        let failed_job = failed
+            .test_session(failed_id)
+            .unwrap()
+            .background_job_id
+            .unwrap();
+        let _ = update(
+            &mut failed,
+            Action::FailTestSession {
+                id: failed_id,
+                message: "runner timed out after forced termination".into(),
+                exit_code: None,
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        let job = failed.background_jobs.get(failed_job).unwrap();
+        assert_eq!(job.status, BackgroundJobStatus::Failed);
+        assert_eq!(
+            job.error.as_ref().and_then(|error| error.detail.as_deref()),
+            Some("runner timed out after forced termination")
+        );
+
+        let mut lost = test_workflow_app();
+        let lost_id = queue_selftest(&mut lost);
+        let lost_job = lost
+            .test_session(lost_id)
+            .unwrap()
+            .background_job_id
+            .unwrap();
+        let _ = update(
+            &mut lost,
+            Action::LoseTestSession {
+                id: lost_id,
+                message: "runner event channel closed".into(),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert_eq!(
+            lost.background_jobs.get(lost_job).unwrap().status,
+            BackgroundJobStatus::Lost
+        );
+
+        let ignored = lost.background_jobs.ignored_transitions;
+        let _ = update(
+            &mut lost,
+            Action::FailTestSession {
+                id: TestSessionId(u64::MAX),
+                message: "stale".into(),
+                exit_code: Some(1),
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert_eq!(lost.background_jobs.ignored_transitions, ignored + 1);
     }
 }

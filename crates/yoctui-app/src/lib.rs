@@ -357,6 +357,12 @@ impl BuildJobCoordinator {
                 Screen::Recipes,
                 target.clone(),
             ),
+            Some(task @ ("testimage" | "testsdk" | "testsdkext")) => (
+                BackgroundJobKind::Test,
+                format!("Test {}:{task}", request.targets.join(" ")),
+                Screen::Testing,
+                None,
+            ),
             Some(task) => (
                 BackgroundJobKind::Build,
                 format!("Build {}:{task}", request.targets.join(" ")),
@@ -1399,6 +1405,54 @@ pub fn sdk_cancellation_confirmation_action(key: Input) -> Option<Action> {
     match key {
         Input::Enter => Some(Action::ConfirmSdkSessionCancellation),
         Input::Esc => Some(Action::CancelSdkSessionCancellation),
+        _ => None,
+    }
+}
+
+pub fn testing_workspace_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectTestFamily { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectTestFamily { delta: 1 }),
+        Input::Enter | Input::Char('r') => Some(Action::BeginSelectedTestLaunch),
+        Input::Char('x') => Some(Action::BeginActiveTestSessionCancellation),
+        _ => None,
+    }
+}
+
+pub fn test_launch_dialog_action(editing: bool, key: Input) -> Option<Action> {
+    if editing {
+        return match key {
+            Input::Char(character) => Some(Action::AppendTestLaunchField(character)),
+            Input::Backspace => Some(Action::BackspaceTestLaunchField),
+            Input::Enter => Some(Action::FinishTestLaunchFieldEdit),
+            Input::Esc => Some(Action::CancelTestLaunch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectTestLaunchField { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectTestLaunchField { delta: 1 }),
+        Input::Left | Input::Right | Input::Char('h') | Input::Char('l') | Input::Enter => {
+            Some(Action::ActivateTestLaunchField)
+        }
+        Input::Char('p') => Some(Action::PreviewTestLaunch),
+        Input::Esc => Some(Action::CancelTestLaunch),
+        _ => None,
+    }
+}
+
+pub fn test_launch_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmTestLaunch),
+        Input::Esc => Some(Action::CancelTestLaunchPreview),
+        _ => None,
+    }
+}
+
+pub fn test_cancellation_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmTestSessionCancellation),
+        Input::Esc => Some(Action::CancelTestSessionCancellation),
         _ => None,
     }
 }
@@ -3960,6 +4014,76 @@ mod tests {
                 exit_code: None,
                 ..
             }] if message.contains("timed out") && message.contains("forced")
+        ));
+    }
+
+    #[test]
+    fn test_workflow_maps_keys_and_classifies_managed_bitbake_tests() {
+        assert_eq!(
+            testing_workspace_action(Input::Down),
+            Some(Action::SelectTestFamily { delta: 1 })
+        );
+        assert_eq!(
+            testing_workspace_action(Input::Char('r')),
+            Some(Action::BeginSelectedTestLaunch)
+        );
+        assert_eq!(
+            testing_workspace_action(Input::Char('x')),
+            Some(Action::BeginActiveTestSessionCancellation)
+        );
+        assert_eq!(
+            test_launch_dialog_action(false, Input::Down),
+            Some(Action::SelectTestLaunchField { delta: 1 })
+        );
+        assert_eq!(
+            test_launch_dialog_action(false, Input::Char('p')),
+            Some(Action::PreviewTestLaunch)
+        );
+        assert_eq!(
+            test_launch_dialog_action(true, Input::Char('x')),
+            Some(Action::AppendTestLaunchField('x')),
+            "editable launch fields must trap printable input"
+        );
+        assert_eq!(
+            test_launch_dialog_action(true, Input::Enter),
+            Some(Action::FinishTestLaunchFieldEdit)
+        );
+        assert_eq!(
+            test_launch_dialog_action(true, Input::Esc),
+            Some(Action::CancelTestLaunch),
+            "Esc closes the launch dialog while a field is edited"
+        );
+        assert_eq!(
+            test_launch_confirmation_action(Input::Enter),
+            Some(Action::ConfirmTestLaunch)
+        );
+        assert_eq!(
+            test_cancellation_confirmation_action(Input::Enter),
+            Some(Action::ConfirmTestSessionCancellation)
+        );
+
+        let mut coordinator = BuildJobCoordinator::default();
+        let actions = coordinator
+            .queue_build(
+                &BuildRequest {
+                    targets: vec!["core-image-minimal".into()],
+                    task: Some("testimage".into()),
+                    force: false,
+                },
+                SystemTime::UNIX_EPOCH,
+            )
+            .expect("valid testimage request");
+        assert!(matches!(
+            actions.first(),
+            Some(Action::QueueBackgroundJob(BackgroundJobSpec {
+                kind: BackgroundJobKind::Test,
+                context: BackgroundJobContext {
+                    workspace: Some(Screen::Testing),
+                    task: Some(task),
+                    ..
+                },
+                ..
+            })) if task == "testimage"
         ));
     }
 }
