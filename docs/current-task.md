@@ -2,48 +2,43 @@
 
 ## Active task
 
-**ID:** SEC-CLI-001
-**Title:** Integrate Security execution in the CLI
+**ID:** SEC-UI-CLI-001
+**Title:** Integrate complete Security workspace
 
 ## Objective
 
-Connect the typed Security model, adapters, and renderer to non-blocking CLI
-execution while reusing the existing managed BitBake coordinator.
+Close the cross-layer integration gate for the complete Security workspace.
 
 ## Required work
 
-1. Inspect existing CLI operation coordinators and every Security effect before
-   adding state or polling.
-2. Snapshot the initialized build directory and child-only environment for
-   Security capability discovery without mutating process-global state.
-3. Route CVE checks and recipe/image SBOM generation through the existing
-   managed BitBake build coordinator with exact Security session correlation.
-4. Own at most one independent report-acquisition request and one package
-   mapper runner; poll bounded typed events without blocking terminal input or
-   unrelated jobs.
-5. Execute explicit replaceable-generation imports and exact open effects,
-   mapping all adapter responses mechanically into typed reducer actions.
-6. Refresh authoritative report roots after successful managed builds and
-   package mapping without fabricating success when reports are empty.
-7. Route cancellation only to the exact active Security operation and preserve
-   rejection, timeout, nonzero, cancellation, loss, stale response, and
-   success-without-reports outcomes distinctly.
-8. Add fake CLI integration tests covering capability discovery, managed
-   BitBake reuse, report acquisition/import/open, package mapping, refresh,
-   navigation, duplicate rejection, and every terminal outcome.
+1. Inspect the complete Security implementation and focused tests before
+   changing behavior.
+2. Verify capability-driven current/legacy CVE and SBOM operations cross
+   model, app, adapter, renderer, and CLI boundaries with exact identities.
+3. Verify report import/refresh, CVE findings/mapping, SPDX document/component
+   drill, exact opens, managed builds, independent mapping, cancellation,
+   navigation, and terminal states across layers.
+4. Add only missing cross-layer coverage or fixes discovered by the gate.
+5. Keep live compatibility claims separate from fake process and filesystem
+   coverage.
 
 ## Definition of done
 
-- Every Security effect is executed or rejected with an explicit typed action.
-- Security-owned polling remains responsive and independent from other
-  operation families.
-- Exact request/session/report identities survive every CLI boundary.
-- Managed BitBake Security operations reuse the established build coordinator.
+- Every focused Security verification command passes without weakening tests.
+- Model, app, adapter, UI, and CLI behavior agrees with the authoritative
+  specification and architecture.
+- Exact scope, operation, session, generation, finding, report, and component
+  identities remain correlated.
+- All responsive, partial, empty, and terminal states remain explicit.
 - No fake-process test is described as live Yocto compatibility.
 
 ## Verification
 
 ```bash
+cargo test -p yoctui-model security_workflow
+cargo test -p yoctui-app security_workflow
+cargo test -p yoctui-bitbake security
+cargo test -p yoctui-ui security_workflow
 cargo test -p yoctui -- security_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
