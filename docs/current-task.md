@@ -2,42 +2,55 @@
 
 ## Active task
 
-**ID:** QA-ADAPTER-001
-**Title:** Close QA adapter gate
+**ID:** QA-RENDER-001
+**Title:** Render responsive QA workspace
 
 ## Objective
 
-Verify the recipe/kernel capability, bounded report, configured-layer runner,
-and mechanical app mappings together as one authoritative QA adapter boundary.
+Render the complete typed Recipe & Kernel and Layer QA workspace, findings,
+sessions, limitations, and modal lifecycle at every supported responsive
+breakpoint and theme without parsing backend text.
 
 ## Required work
 
-1. Inspect all three completed QA adapter modules and their app mappings for
-   boundary disagreements, duplicated parsing, guessed identities, or missing
-   terminal outcomes before changing code.
-2. Confirm recipe/kernel tasks remain exact capability values, reports retain
-   generation/check/scope/fingerprint identity, and layer execution
-   reconstructs only the confirmed canonical native vector.
-3. Confirm report and layer workers independently preserve empty, partial,
-   malformed, missing, permission, stale, nonzero, cancellation, timeout,
-   duplicate, rejection, and loss outcomes where applicable.
-4. Add only missing cross-adapter or mechanical app coverage required to close
-   the parent gate. Do not implement widgets or CLI polling in this task.
-5. Run the focused parent checks and every baseline verification command.
+1. Inspect the typed QA state/selectors, shared responsive shell, neighboring
+   Testing/Security renderers, dialog helpers, semantic theme roles, and the
+   authoritative QA UI specification before writing code.
+2. Add QA as a first-class Navigator workspace after Security and render the
+   `Recipe & Kernel` and `Layer QA` views selected by typed state.
+3. Render capability loading/available/partial/failed states, exact scope,
+   catalog or configured-layer rows, typed status/counts, report availability,
+   search/filter state, selection, and explicit empty states.
+4. Render the Inspector with exact capability, provider/layer, session/output,
+   report/fingerprint, finding/source/rule/suggestion/metadata, and limitation
+   details; missing fields must say `unavailable`.
+5. Render operation, layer-operation, import, and cancellation dialogs as
+   focus-trapping responsive overlays with exact indexed previews and stable
+   disabled reasons.
+6. Render every success, failure, nonzero, cancelled, timed-out, lost, partial,
+   malformed, missing, permission, and stale state distinctly using semantic
+   text plus color/attributes.
+7. Render the specified full and compact QA footer shortcuts and ensure long
+   paths, vectors, findings, metadata, output, and limitations wrap/bound
+   safely at every responsive breakpoint, including 80×24, all themes, and
+   no-color mode.
+8. Add Ratatui `TestBackend` coverage for both views, every capability/report/
+   session/dialog family, responsive boundaries, selection/drill, themes, and
+   no-color behavior. Do not implement adapter or CLI polling logic here.
 
 ## Definition of done
 
-- All QA adapter and app focused tests pass together.
-- No adapter guesses tasks, paths, checks, scopes, formats, status, or native
-  arguments outside the documented contracts.
-- Raw process/report text cannot cross the app boundary as authority.
-- Baseline verification passes.
+- Widgets consume only typed QA model state and emit no parsed authority.
+- Both QA views, Inspector, dialogs, explicit states, and footer match
+  `docs/ui-spec.md`.
+- All supported terminal sizes and themes render without panic or semantic
+  loss.
+- Focused UI and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake qa_
-cargo test -p yoctui-app qa_workflow
+cargo test -p yoctui-ui qa_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
