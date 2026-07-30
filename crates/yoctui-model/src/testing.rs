@@ -1455,6 +1455,16 @@ pub struct TestSession {
     pub exit_code: Option<i32>,
     pub result_paths: Vec<PathBuf>,
     pub error_detail: Option<String>,
+    pub outcome: Option<TestSessionOutcome>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TestSessionOutcome {
+    Succeeded,
+    Failed,
+    Cancelled,
+    TimedOut,
+    Lost,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

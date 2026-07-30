@@ -1065,12 +1065,12 @@ notes = "Bounded canonical identity snapshots, deterministic suite/case/metadata
 id = "TEST-RUNNER-ADAPTER-001"
 milestone = "M5"
 title = "Adapt typed Yocto test execution"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 60
 required = true
 depends_on = ["TEST-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake test_runner", "cargo test -p yoctui-app test_runner"]
-notes = "Discover and revalidate supported selftest/ptest tools, construct exact shell-free commands, reuse managed BitBake tasks where authoritative, and emit bounded typed runner events with cancellation and terminal outcomes."
+notes = "The Testing runner now discovers canonical oe-selftest and bitbake-selftest identities from an explicit initialized PATH snapshot, preserves typed ptest configuration, reconstructs exact shell-free argv, revalidates executable/build identities at spawn, confines BB_SKIP_NETTESTS=yes to BitBake-selftest children, and emits bounded stream-tagged lifecycle events. Fake-process tests cover tampering, duplicates, success, nonzero, loss, cancellation rejection, graceful/forced cancellation, and timeout; managed BitBake families remain on the existing coordinator and no live compatibility is claimed."
 
 [[task]]
 id = "TEST-RESULT-ADAPTER-001"

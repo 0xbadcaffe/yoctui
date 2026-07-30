@@ -3077,6 +3077,12 @@ pub enum Action {
         exit_code: Option<i32>,
         finished_at: SystemTime,
     },
+    TimeoutTestSession {
+        id: TestSessionId,
+        forced: bool,
+        exit_code: Option<i32>,
+        finished_at: SystemTime,
+    },
     LoseTestSession {
         id: TestSessionId,
         message: String,
@@ -4810,6 +4816,7 @@ fn queue_test_session(app: &mut App, operation: TestOperation) -> Option<Effect>
         exit_code: None,
         result_paths: Vec::new(),
         error_detail: None,
+        outcome: None,
     });
     match operation {
         TestOperation::Selftest(_) => Some(Effect::StartTestSession { id, operation }),
@@ -6549,6 +6556,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             let Some(Some(job_id)) = mutate_test_session(app, id, |session| {
                 session.exit_code = Some(exit_code);
                 session.result_paths.clone_from(&result_paths);
+                session.outcome = Some(TestSessionOutcome::Succeeded);
             }) else {
                 note_stale_test_event(app);
                 return None;
@@ -6588,6 +6596,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             let Some(Some(job_id)) = mutate_test_session(app, id, |session| {
                 session.exit_code = exit_code;
                 session.error_detail = Some(message.clone());
+                session.outcome = Some(TestSessionOutcome::Failed);
             }) else {
                 note_stale_test_event(app);
                 return None;
@@ -6610,6 +6619,43 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 },
             );
         }
+        Action::TimeoutTestSession {
+            id,
+            forced,
+            exit_code,
+            finished_at,
+        } => {
+            let detail = if forced {
+                "Testing operation timed out and required forced termination"
+            } else {
+                "Testing operation timed out after graceful termination"
+            };
+            let Some(Some(job_id)) = mutate_test_session(app, id, |session| {
+                session.exit_code = exit_code;
+                session.error_detail = Some(detail.into());
+                session.outcome = Some(TestSessionOutcome::TimedOut);
+            }) else {
+                note_stale_test_event(app);
+                return None;
+            };
+            app.background_jobs.update_if(
+                job_id,
+                &[
+                    BackgroundJobStatus::Queued,
+                    BackgroundJobStatus::Starting,
+                    BackgroundJobStatus::Running,
+                    BackgroundJobStatus::Cancelling,
+                ],
+                |job| {
+                    job.status = BackgroundJobStatus::Failed;
+                    job.finished_at = Some(finished_at);
+                    job.error = Some(BackgroundJobError {
+                        summary: "Testing operation timed out".into(),
+                        detail: Some(detail.into()),
+                    });
+                },
+            );
+        }
         Action::LoseTestSession {
             id,
             message,
@@ -6617,6 +6663,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         } => {
             let Some(Some(job_id)) = mutate_test_session(app, id, |session| {
                 session.error_detail = Some(message.clone());
+                session.outcome = Some(TestSessionOutcome::Lost);
             }) else {
                 note_stale_test_event(app);
                 return None;
@@ -6699,9 +6746,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             exit_code,
             finished_at,
         } => {
-            let Some(Some(job_id)) =
-                mutate_test_session(app, id, |session| session.exit_code = exit_code)
-            else {
+            let Some(Some(job_id)) = mutate_test_session(app, id, |session| {
+                session.exit_code = exit_code;
+                session.outcome = Some(TestSessionOutcome::Cancelled);
+            }) else {
                 note_stale_test_event(app);
                 return None;
             };
@@ -17861,6 +17909,22 @@ mod tests {
         assert_eq!(
             lost.background_jobs.get(lost_job).unwrap().status,
             BackgroundJobStatus::Lost
+        );
+
+        let mut timed_out = test_workflow_app();
+        let timed_out_id = queue_selftest(&mut timed_out);
+        let _ = update(
+            &mut timed_out,
+            Action::TimeoutTestSession {
+                id: timed_out_id,
+                forced: true,
+                exit_code: None,
+                finished_at: SystemTime::UNIX_EPOCH,
+            },
+        );
+        assert_eq!(
+            timed_out.test_session(timed_out_id).unwrap().outcome,
+            Some(TestSessionOutcome::TimedOut)
         );
 
         let ignored = lost.background_jobs.ignored_transitions;
