@@ -2,32 +2,26 @@
 
 ## Active task
 
-**ID:** TEST-UI-CLI-001
-**Title:** Integrate complete Testing workspace
+**ID:** TEST-001
+**Title:** Unified test execution and results
 
 ## Objective
 
-Close the cross-layer integration gate for the complete Testing workspace.
+Close the unified Testing parent gate after all atomic implementation and
+cross-layer tasks have passed.
 
 ## Required work
 
-1. Inspect the complete Testing implementation and focused tests before
-   changing behavior.
-2. Verify every specified launch family crosses model, app, adapter, renderer,
-   and CLI boundaries with exact identities.
-3. Verify structured result import, suite/case drill-down, comparison, JUnit
-   export, cancellation, navigation, and terminal states across layers.
-4. Add only missing cross-layer coverage or fixes discovered by the gate.
-5. Keep live compatibility claims separate from fake process and filesystem
-   coverage.
+1. Confirm every dependency of `TEST-001` is `DONE`.
+2. Re-run the unified Testing verification commands.
+3. Reconcile the machine-readable registry and human-readable status.
+4. Select the next eligible highest-priority incomplete task.
 
 ## Definition of done
 
-- Every focused Testing verification command passes without weakening tests.
-- Model, app, adapter, UI, and CLI behavior agrees with the authoritative
-  specification and architecture.
-- Exact launch, result, comparison, and export identities remain correlated.
-- All responsive and terminal states remain explicit.
+- Every Testing child task and integration gate is `DONE`.
+- Every unified Testing verification command passes without weakening tests.
+- Registry and status report the Testing parent capability consistently.
 - No fake-process test is described as live Yocto compatibility.
 
 ## Verification
