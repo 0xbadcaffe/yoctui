@@ -5,6 +5,7 @@ mod qemu;
 mod sdk;
 mod sdk_tool;
 mod security;
+mod security_report;
 mod signature;
 mod test_results;
 mod test_runner;
@@ -29,6 +30,10 @@ pub use sdk_tool::{
     SdkToolJobRunner, SdkToolRunnerEvent,
 };
 pub use security::{SecurityCapabilityError, SecurityCapabilityInput, SecurityCapabilityInspector};
+pub use security_report::{
+    SecurityReportAdapter, SecurityReportAdapterError, SecurityReportCancellation,
+    SecurityReportResponse, SecurityReportScanOutcome,
+};
 pub use signature::{
     SignatureAdapter, SignatureAdapterError, SignatureCancellation, SignatureCommandSpec,
     SignatureComparisonResponse, SignatureDumpResponse,
