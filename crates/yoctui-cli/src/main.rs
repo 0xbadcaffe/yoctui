@@ -36,6 +36,7 @@ use yoctui_app::{
     sdk_actions_for_runner_event, sdk_build_confirmation_action,
     sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
     sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
+    security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
     settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
     test_actions_for_runner_event, test_cancellation_confirmation_action,
     test_comparison_confirmation_action, test_comparison_dialog_action,
@@ -53,11 +54,14 @@ use yoctui_bitbake::{
     PackageDataAdapter, PackageDataCancellation, ProcessBackend, QemuAdapterError,
     QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner, QemuRunnerEvent, SdkArtifactAdapter,
     SdkArtifactCancellation, SdkArtifactScanOutcome, SdkToolAdapter, SdkToolAdapterError,
-    SdkToolCommandSpec, SdkToolJobRunner, SdkToolRunnerEvent, SignatureAdapter,
-    SignatureCancellation, TestResultAdapter, TestResultJob, TestResultOperation,
-    TestResultRunnerEvent, TestRunnerAdapter, TestRunnerEvent, TestRunnerJob, VariableValue,
-    WicAdapterError, WicCapabilityInspector, WicCreateCommandSpec, WicDeviceInspector,
-    WicDeviceInventoryResponse, WicJobRunner, WicRunnerEvent,
+    SdkToolCommandSpec, SdkToolJobRunner, SdkToolRunnerEvent, SecurityCapabilityInput,
+    SecurityCapabilityInspector, SecurityMapperCommandSpec, SecurityMapperJobRunner,
+    SecurityMapperRunnerEvent, SecurityReportAdapter, SecurityReportAdapterError,
+    SecurityReportCancellation, SecurityReportScanOutcome, SignatureAdapter, SignatureCancellation,
+    TestResultAdapter, TestResultJob, TestResultOperation, TestResultRunnerEvent,
+    TestRunnerAdapter, TestRunnerEvent, TestRunnerJob, VariableValue, WicAdapterError,
+    WicCapabilityInspector, WicCreateCommandSpec, WicDeviceInspector, WicDeviceInventoryResponse,
+    WicJobRunner, WicRunnerEvent,
 };
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
@@ -66,11 +70,12 @@ use yoctui_model::{
     LayerRelationship, LayerRelationships, PackageDetailRequest, PackageInventoryRequest,
     PreviewKind, QemuCapability, QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest,
     QemuSessionId, RecipeIdentity, Screen, SdkArtifactInventoryRequest, SdkNativePreview,
-    SdkOperation, SdkPublishPreview, SdkSessionId, SdkToolCapability, Severity,
-    SignatureComparisonRequest, SignatureTarget, TestComparison, TestOperation, TestSessionId,
-    TestWorkspaceView, Theme, VariableDetail, VariableIdentity, WicCapability, WicCreateDraft,
-    WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest, WicOperation, WicSessionId,
-    update, validate_config_edit_request,
+    SdkOperation, SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityAction,
+    SecurityEffect, SecurityOperation, SecurityReportRequest, SecurityScope, SecuritySessionId,
+    SecuritySessionStatus, Severity, SignatureComparisonRequest, SignatureTarget, TestComparison,
+    TestOperation, TestSessionId, TestWorkspaceView, Theme, VariableDetail, VariableIdentity,
+    WicCapability, WicCreateDraft, WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest,
+    WicOperation, WicSessionId, update, validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -926,6 +931,117 @@ fn test_build_action_for_event(
             message: "BitBake backend disconnected during Testing".into(),
             finished_at: SystemTime::now(),
         }),
+        _ => None,
+    }
+}
+
+async fn begin_security_build(
+    backend: &mut Box<dyn BitBakeBackend>,
+    app: &mut App,
+    build_jobs: &mut BuildJobCoordinator,
+    id: SecuritySessionId,
+    request: BuildRequest,
+) -> bool {
+    let Some(actions) = build_jobs.queue_build(&request, SystemTime::now()) else {
+        let _ = update(
+            app,
+            Action::Security(SecurityAction::FailSession {
+                id,
+                message: "another managed BitBake build is already active".into(),
+                finished_at: SystemTime::now(),
+            }),
+        );
+        return false;
+    };
+    for action in actions {
+        let _ = update(app, action);
+    }
+    let Some(background_job_id) = build_jobs.active_job_id() else {
+        let _ = update(
+            app,
+            Action::Security(SecurityAction::LoseSession {
+                id,
+                message: "Security build coordinator did not retain its job identity".into(),
+                finished_at: SystemTime::now(),
+            }),
+        );
+        return false;
+    };
+    let _ = update(
+        app,
+        Action::Security(SecurityAction::AttachBackgroundJob {
+            id,
+            background_job_id,
+        }),
+    );
+    match backend.start_build(request).await {
+        Ok(()) => true,
+        Err(error) => {
+            let _ = update(
+                app,
+                Action::Security(SecurityAction::FailSession {
+                    id,
+                    message: error.to_string(),
+                    finished_at: SystemTime::now(),
+                }),
+            );
+            for action in build_jobs.start_failed(error.to_string(), SystemTime::now()) {
+                let _ = update(app, action);
+            }
+            false
+        }
+    }
+}
+
+fn security_build_action_for_event(
+    app: &App,
+    id: SecuritySessionId,
+    event: &BackendEvent,
+) -> Option<Action> {
+    let cancelling = app
+        .security
+        .sessions
+        .iter()
+        .find(|session| session.preview.id == id)
+        .is_some_and(|session| session.status == SecuritySessionStatus::Cancelling);
+    match event {
+        BackendEvent::BuildStarted => Some(Action::Security(SecurityAction::SessionRunning(id))),
+        BackendEvent::BuildCompleted { success: true, .. } => {
+            Some(Action::Security(SecurityAction::CompleteSession {
+                id,
+                result_paths: Vec::new(),
+                finished_at: SystemTime::now(),
+            }))
+        }
+        BackendEvent::BuildCompleted { success: false, .. } if cancelling => {
+            Some(Action::Security(SecurityAction::CancelSession {
+                id,
+                finished_at: SystemTime::now(),
+            }))
+        }
+        BackendEvent::BuildCompleted {
+            success: false,
+            exit_code,
+        } => Some(Action::Security(SecurityAction::FailSession {
+            id,
+            message: exit_code.map_or_else(
+                || "Security BitBake task failed without an exit code".into(),
+                |code| format!("Security BitBake task failed with exit code {code}"),
+            ),
+            finished_at: SystemTime::now(),
+        })),
+        BackendEvent::CommandFailed { code, message } => {
+            Some(Action::Security(SecurityAction::FailSession {
+                id,
+                message: format!("{code}: {message}"),
+                finished_at: SystemTime::now(),
+            }))
+        }
+        BackendEvent::Disconnected => Some(Action::Security(SecurityAction::LoseSession {
+            id,
+            message: "BitBake backend disconnected during Security operation".into(),
+            finished_at: SystemTime::now(),
+        })),
         _ => None,
     }
 }
@@ -1942,6 +2058,552 @@ impl TestCliCoordinator {
         for effect in followups {
             let _ = self.handle_effect(app, effect).await;
         }
+    }
+}
+
+struct SecurityCapabilityCliOperation {
+    handle: tokio::task::JoinHandle<
+        std::result::Result<yoctui_model::SecurityCapabilitySnapshot, String>,
+    >,
+}
+
+struct SecurityReportCliOperation {
+    request: SecurityReportRequest,
+    cancellation: SecurityReportCancellation,
+    handle: tokio::task::JoinHandle<
+        std::result::Result<yoctui_bitbake::SecurityReportResponse, SecurityReportAdapterError>,
+    >,
+}
+
+struct SecurityMapperCliOperation {
+    id: SecuritySessionId,
+    runner: SecurityMapperJobRunner,
+}
+
+struct SecurityCliCoordinator {
+    build_directory: PathBuf,
+    path_directories: Vec<PathBuf>,
+    report_adapter: SecurityReportAdapter,
+    capability: Option<SecurityCapabilityCliOperation>,
+    report: Option<SecurityReportCliOperation>,
+    mapper: Option<SecurityMapperCliOperation>,
+}
+
+impl SecurityCliCoordinator {
+    fn new(build_directory: PathBuf, path_directories: Vec<PathBuf>) -> Self {
+        Self {
+            build_directory,
+            path_directories,
+            report_adapter: SecurityReportAdapter::new(),
+            capability: None,
+            report: None,
+            mapper: None,
+        }
+    }
+
+    fn owns_mapper(&self, id: SecuritySessionId) -> bool {
+        self.mapper.as_ref().is_some_and(|active| active.id == id)
+    }
+
+    async fn handle_effect(&mut self, app: &mut App, effect: Effect) -> bool {
+        let Effect::Security(effect) = effect else {
+            return false;
+        };
+        match effect {
+            SecurityEffect::InspectCapability => self.begin_capability_inspection(app),
+            SecurityEffect::StartPackageMap {
+                id,
+                executable,
+                arguments,
+            } => {
+                self.begin_mapper(app, id, executable, arguments).await;
+            }
+            SecurityEffect::CancelSession(id) => self.cancel_mapper(app, id).await,
+            SecurityEffect::ImportReports(request) => self.begin_report_scan(request),
+            SecurityEffect::OpenPath(_) | SecurityEffect::OpenUrl(_) => return false,
+            SecurityEffect::StartBuild { .. } => return false,
+        }
+        true
+    }
+
+    fn begin_capability_inspection(&mut self, app: &mut App) {
+        if let Some(stale) = self.capability.take() {
+            stale.handle.abort();
+        }
+        let input = security_capability_input(
+            app,
+            self.build_directory.clone(),
+            self.path_directories.clone(),
+        );
+        let handle = tokio::task::spawn_blocking(move || {
+            let input = input?;
+            SecurityCapabilityInspector::new(input)
+                .inspect()
+                .map_err(|error| error.to_string())
+        });
+        self.capability = Some(SecurityCapabilityCliOperation { handle });
+    }
+
+    fn begin_report_scan(&mut self, request: SecurityReportRequest) {
+        if let Some(stale) = self.report.take() {
+            stale.cancellation.cancel();
+            stale.handle.abort();
+        }
+        let cancellation = SecurityReportCancellation::default();
+        let worker_cancellation = cancellation.clone();
+        let worker_request = request.clone();
+        let adapter = self.report_adapter.clone();
+        let handle = tokio::spawn(async move {
+            adapter
+                .scan_with_cancellation(worker_request, worker_cancellation)
+                .await
+        });
+        self.report = Some(SecurityReportCliOperation {
+            request,
+            cancellation,
+            handle,
+        });
+    }
+
+    async fn begin_mapper(
+        &mut self,
+        app: &mut App,
+        id: SecuritySessionId,
+        executable: PathBuf,
+        arguments: Vec<String>,
+    ) {
+        if self.owns_mapper(id) {
+            let _ = update(
+                app,
+                Action::Notify(
+                    "The exact Security package-mapping process is already owned by the CLI."
+                        .into(),
+                ),
+            );
+            return;
+        }
+        if self.mapper.is_some() {
+            let _ = update(
+                app,
+                Action::Security(SecurityAction::FailSession {
+                    id,
+                    message: "another Security package-mapping process is already active".into(),
+                    finished_at: SystemTime::now(),
+                }),
+            );
+            return;
+        }
+        let preview = app
+            .security
+            .sessions
+            .iter()
+            .find(|session| session.preview.id == id)
+            .map(|session| session.preview.clone());
+        let Some(preview) = preview else {
+            let _ = update(
+                app,
+                Action::Security(SecurityAction::LoseSession {
+                    id,
+                    message: "the exact Security package-mapping session is unavailable".into(),
+                    finished_at: SystemTime::now(),
+                }),
+            );
+            return;
+        };
+        if !matches!(
+            &preview.operation,
+            SecurityOperation::PackageMap {
+                executable: expected_executable,
+                arguments: expected_arguments,
+            } if expected_executable == &executable && expected_arguments == &arguments
+        ) {
+            let _ = update(
+                app,
+                Action::Security(SecurityAction::FailSession {
+                    id,
+                    message: "Security package-mapping effect does not match its preview".into(),
+                    finished_at: SystemTime::now(),
+                }),
+            );
+            return;
+        }
+        let command = match SecurityMapperCommandSpec::from_preview(&preview) {
+            Ok(command) => command,
+            Err(error) => {
+                let _ = update(
+                    app,
+                    Action::Security(SecurityAction::FailSession {
+                        id,
+                        message: error.to_string(),
+                        finished_at: SystemTime::now(),
+                    }),
+                );
+                return;
+            }
+        };
+        let mut runner = SecurityMapperJobRunner::new();
+        if let Err(error) = runner.start(command).await {
+            let _ = update(
+                app,
+                Action::Security(SecurityAction::FailSession {
+                    id,
+                    message: error.to_string(),
+                    finished_at: SystemTime::now(),
+                }),
+            );
+            return;
+        }
+        self.mapper = Some(SecurityMapperCliOperation { id, runner });
+    }
+
+    async fn cancel_mapper(&mut self, app: &mut App, id: SecuritySessionId) {
+        let Some(active) = self.mapper.as_mut().filter(|active| active.id == id) else {
+            let _ = update(
+                app,
+                Action::Security(SecurityAction::RejectCancellation {
+                    id,
+                    message: "the CLI does not own this Security package-mapping process".into(),
+                }),
+            );
+            return;
+        };
+        if let Err(error) = active.runner.cancel(id).await {
+            let _ = update(
+                app,
+                Action::Security(SecurityAction::RejectCancellation {
+                    id,
+                    message: error.to_string(),
+                }),
+            );
+        }
+    }
+
+    async fn poll(&mut self, app: &mut App) {
+        self.poll_capability(app).await;
+        self.poll_report(app).await;
+        self.poll_mapper(app).await;
+    }
+
+    async fn poll_capability(&mut self, app: &mut App) {
+        if !self
+            .capability
+            .as_ref()
+            .is_some_and(|operation| operation.handle.is_finished())
+        {
+            return;
+        }
+        let operation = self.capability.take().expect("finished capability checked");
+        let action = match operation.handle.await {
+            Ok(Ok(capability)) => SecurityAction::CapabilityLoaded(capability),
+            Ok(Err(message)) => SecurityAction::CapabilityFailed(message),
+            Err(error) => SecurityAction::CapabilityFailed(format!(
+                "Security capability task was lost: {error}"
+            )),
+        };
+        let _ = update(app, Action::Security(action));
+    }
+
+    async fn poll_report(&mut self, app: &mut App) {
+        if !self
+            .report
+            .as_ref()
+            .is_some_and(|operation| operation.handle.is_finished())
+        {
+            return;
+        }
+        let operation = self.report.take().expect("finished report scan checked");
+        let action = match operation.handle.await {
+            Ok(Ok(response)) => match response.outcome {
+                SecurityReportScanOutcome::Empty => SecurityAction::ReportsLoaded {
+                    request: response.request,
+                    reports: Vec::new(),
+                    limitations: Vec::new(),
+                },
+                SecurityReportScanOutcome::Complete(reports) => SecurityAction::ReportsLoaded {
+                    request: response.request,
+                    reports,
+                    limitations: Vec::new(),
+                },
+                SecurityReportScanOutcome::Partial {
+                    reports,
+                    limitations,
+                } => SecurityAction::ReportsLoaded {
+                    request: response.request,
+                    reports,
+                    limitations,
+                },
+            },
+            Ok(Err(SecurityReportAdapterError::Cancelled)) => {
+                SecurityAction::ReportsCancelled(operation.request)
+            }
+            Ok(Err(SecurityReportAdapterError::Timeout(_))) => {
+                SecurityAction::ReportsTimedOut(operation.request)
+            }
+            Ok(Err(SecurityReportAdapterError::WorkerLost(message))) => {
+                SecurityAction::ReportsLost {
+                    request: operation.request,
+                    message,
+                }
+            }
+            Ok(Err(error)) => SecurityAction::ReportsFailed {
+                request: operation.request,
+                message: error.to_string(),
+            },
+            Err(error) if error.is_cancelled() => {
+                SecurityAction::ReportsCancelled(operation.request)
+            }
+            Err(error) => SecurityAction::ReportsLost {
+                request: operation.request,
+                message: error.to_string(),
+            },
+        };
+        let _ = update(app, Action::Security(action));
+    }
+
+    async fn poll_mapper(&mut self, app: &mut App) {
+        let mut followups = Vec::new();
+        let Some(operation) = self.mapper.as_mut() else {
+            return;
+        };
+        let result =
+            tokio::time::timeout(Duration::from_millis(1), operation.runner.next_event()).await;
+        let event = match result {
+            Ok(Ok(event)) => Some(event),
+            Ok(Err(error)) => Some(SecurityMapperRunnerEvent::Lost {
+                id: operation.id,
+                message: error.to_string(),
+            }),
+            Err(_) => None,
+        };
+        let Some(event) = event else {
+            return;
+        };
+        let terminal = matches!(
+            event,
+            SecurityMapperRunnerEvent::Completed { .. }
+                | SecurityMapperRunnerEvent::Failed { .. }
+                | SecurityMapperRunnerEvent::Cancelled { .. }
+                | SecurityMapperRunnerEvent::TimedOut { .. }
+                | SecurityMapperRunnerEvent::Lost { .. }
+        );
+        for action in security_actions_for_mapper_event(event, SystemTime::now()) {
+            if let Some(effect) = update(app, action) {
+                followups.push(effect);
+            }
+        }
+        if terminal {
+            self.mapper = None;
+        }
+        for effect in followups {
+            let _ = self.handle_effect(app, effect).await;
+        }
+    }
+
+    async fn revalidate_open_path(&self, app: &App, path: &Path) -> Result<(), String> {
+        let selected_identity = app
+            .security
+            .selected_report()
+            .map(|report| report.identity().clone())
+            .filter(|identity| identity.path == path);
+        if let Some(identity) = selected_identity {
+            let request =
+                SecurityReportRequest::new(1, vec![path.to_path_buf()]).map_err(str::to_owned)?;
+            let response = self
+                .report_adapter
+                .scan(request)
+                .await
+                .map_err(|error| error.to_string())?;
+            if response
+                .outcome
+                .reports()
+                .iter()
+                .any(|report| report.identity() == &identity)
+            {
+                return Ok(());
+            }
+            return Err("the selected Security report changed before it could be opened".into());
+        }
+        let provider = app.security.scope.as_ref().and_then(|scope| match scope {
+            SecurityScope::Recipe(identity) => Some(identity.file.as_path()),
+            SecurityScope::Image { .. } => None,
+        });
+        if provider != Some(path) {
+            return Err(
+                "the requested path is not the selected Security report or provider".into(),
+            );
+        }
+        let metadata = fs::symlink_metadata(path)
+            .map_err(|error| format!("could not inspect the Security provider: {error}"))?;
+        if metadata.file_type().is_symlink()
+            || !metadata.is_file()
+            || fs::canonicalize(path).ok().as_deref() != Some(path)
+        {
+            return Err(
+                "the selected Security provider is no longer a canonical regular file".into(),
+            );
+        }
+        Ok(())
+    }
+
+    fn url_opener(&self) -> Option<PathBuf> {
+        self.path_directories.iter().find_map(|directory| {
+            let candidate = directory.join("xdg-open");
+            let metadata = fs::symlink_metadata(&candidate).ok()?;
+            if metadata.file_type().is_symlink()
+                || !metadata.is_file()
+                || fs::canonicalize(&candidate).ok().as_ref() != Some(&candidate)
+            {
+                return None;
+            }
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                if metadata.permissions().mode() & 0o111 == 0 {
+                    return None;
+                }
+            }
+            Some(candidate)
+        })
+    }
+}
+
+fn security_capability_input(
+    app: &App,
+    build_directory: PathBuf,
+    path_directories: Vec<PathBuf>,
+) -> std::result::Result<SecurityCapabilityInput, String> {
+    let selected_recipe = app
+        .workspace
+        .recipes
+        .get(app.recipe_selection)
+        .and_then(|recipe| {
+            recipe.file.clone().map(|file| {
+                SecurityScope::Recipe(RecipeIdentity {
+                    name: recipe.name.clone(),
+                    file,
+                })
+            })
+        });
+    let selected_image = app.build.target.clone().and_then(|target| {
+        let machine = app.workspace.variables.get("MACHINE")?.clone();
+        let distro = app.workspace.variables.get("DISTRO")?.clone();
+        Some(SecurityScope::Image {
+            target,
+            machine,
+            distro,
+        })
+    });
+    let mut available_scopes = [selected_recipe, selected_image]
+        .into_iter()
+        .flatten()
+        .filter(SecurityScope::is_valid)
+        .collect::<Vec<_>>();
+    available_scopes.dedup();
+    let scope = app
+        .security
+        .scope
+        .clone()
+        .filter(|scope| available_scopes.contains(scope))
+        .or_else(|| available_scopes.first().cloned())
+        .ok_or_else(|| {
+            "Security needs an exact selected recipe provider or image target with MACHINE and DISTRO"
+                .to_owned()
+        })?;
+    let reported_tasks = app
+        .recipe_metadata
+        .get(scope.target())
+        .and_then(|metadata| metadata.tasks.clone())
+        .unwrap_or_default();
+    let explicit_paths = |names: &[&str]| {
+        names
+            .iter()
+            .filter_map(|name| app.workspace.variables.get(*name))
+            .map(PathBuf::from)
+            .collect::<Vec<_>>()
+    };
+    let cve_roots = explicit_paths(&["CVE_CHECK_REPORT_ROOT", "CVE_CHECK_DIR", "DEPLOY_DIR_IMAGE"]);
+    let sbom_roots = explicit_paths(&["DEPLOY_DIR_SPDX", "DEPLOY_DIR_SBOM", "DEPLOY_DIR_IMAGE"]);
+    let image_build_emits_sbom = ["INHERIT", "IMAGE_CLASSES"]
+        .iter()
+        .filter_map(|name| app.workspace.variables.get(*name))
+        .flat_map(|value| value.split_whitespace())
+        .any(|value| {
+            matches!(
+                value,
+                "create-spdx" | "create-spdx-2.0" | "create_sbom" | "create-sbom"
+            )
+        });
+    Ok(SecurityCapabilityInput {
+        release: app.workspace.release.clone(),
+        build_directory,
+        scope,
+        available_scopes,
+        reported_tasks,
+        image_build_emits_sbom,
+        cve_roots,
+        sbom_roots,
+        path_directories,
+    })
+}
+
+async fn open_security_url(app: &mut App, opener: Option<PathBuf>, url: String) {
+    if !url.starts_with("https://") || url.chars().any(char::is_control) {
+        app.notification = Some("The selected Security advisory URL is invalid.".into());
+        return;
+    }
+    let Some(opener) = opener else {
+        app.notification =
+            Some("Cannot open the Security advisory because xdg-open is unavailable.".into());
+        return;
+    };
+    let result = tokio::task::spawn_blocking(move || {
+        ProcessCommand::new(opener)
+            .arg(&url)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+    })
+    .await;
+    match result {
+        Ok(Ok(status)) if status.success() => {}
+        Ok(Ok(status)) => {
+            app.notification = Some(format!("xdg-open exited with {status}."));
+        }
+        Ok(Err(error)) => {
+            app.notification = Some(format!("Could not start xdg-open: {error}"));
+        }
+        Err(error) => {
+            app.notification = Some(format!("Security URL opener task was lost: {error}"));
+        }
+    }
+}
+
+async fn route_independent_security_effect(
+    guard: &TerminalGuard,
+    app: &mut App,
+    coordinator: &mut SecurityCliCoordinator,
+    effect: Effect,
+    editor: Option<&str>,
+) -> bool {
+    match &effect {
+        Effect::Security(SecurityEffect::StartBuild { .. }) => false,
+        Effect::Security(SecurityEffect::CancelSession(id)) if !coordinator.owns_mapper(*id) => {
+            false
+        }
+        Effect::Security(SecurityEffect::OpenPath(path)) => {
+            match coordinator.revalidate_open_path(app, path).await {
+                Ok(()) => open_in_editor(guard, app, path.clone(), editor).await,
+                Err(message) => app.notification = Some(message),
+            }
+            true
+        }
+        Effect::Security(SecurityEffect::OpenUrl(url)) => {
+            open_security_url(app, coordinator.url_opener(), url.clone()).await;
+            true
+        }
+        Effect::Security(_) => coordinator.handle_effect(app, effect).await,
+        _ => false,
     }
 }
 
@@ -3946,12 +4608,16 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     let wic_device_inspector = WicDeviceInspector::default();
     let mut wic_device_operation = None;
     let mut wic_operation = None;
+    let initialized_paths = initialized_path_directories();
     let mut test_coordinator = TestCliCoordinator::new(
         session_build_dir.clone(),
-        initialized_path_directories(),
+        initialized_paths.clone(),
         ptest_capability(&app),
     );
     let mut pending_test_build = None;
+    let mut security_coordinator =
+        SecurityCliCoordinator::new(session_build_dir.clone(), initialized_paths);
+    let mut pending_security_build = None;
     if app.screen == Screen::Packages
         && let Some(effect @ Effect::GetPackageInventory(_)) =
             update(&mut app, Action::BeginPackageInventory)
@@ -3981,6 +4647,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         && let Some(effect) = update(&mut app, Action::InspectTestCapability)
     {
         let _ = test_coordinator.handle_effect(&mut app, effect).await;
+    }
+    if app.screen == Screen::Security
+        && let Some(effect) = update(
+            &mut app,
+            Action::Security(SecurityAction::InspectCapability),
+        )
+    {
+        let _ = security_coordinator.handle_effect(&mut app, effect).await;
     }
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
@@ -4020,6 +4694,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         poll_qemu_job(&mut app, &mut qemu_operation).await;
         poll_wic_job(&mut app, &mut wic_operation).await;
         test_coordinator.poll(&mut app).await;
+        security_coordinator.poll(&mut app).await;
         if (matches!(
             app.build.status,
             BuildStatus::LoadingWorkspace
@@ -4029,7 +4704,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         ) || wic_operation.is_some()
             || sdk_operation.is_some()
             || test_coordinator.session.is_some()
-            || test_coordinator.result.is_some())
+            || test_coordinator.result.is_some()
+            || security_coordinator.mapper.is_some())
             && Instant::now() >= next_telemetry_sample
         {
             let telemetry = telemetry_sampler.sample(&session_build_dir);
@@ -4085,6 +4761,77 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 ) = effect
                 {
                     let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                } else if let Some(effect @ Effect::Security(_)) = effect {
+                    let _ = route_independent_security_effect(
+                        &guard,
+                        &mut app,
+                        &mut security_coordinator,
+                        effect,
+                        editor.as_deref(),
+                    )
+                    .await;
+                }
+            } else if let Some(Dialog::Security(dialog)) = app.active_dialog().cloned() {
+                let effect = security_dialog_action(&dialog, input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(effect) = effect {
+                    let routed = route_independent_security_effect(
+                        &guard,
+                        &mut app,
+                        &mut security_coordinator,
+                        effect.clone(),
+                        editor.as_deref(),
+                    )
+                    .await;
+                    if !routed {
+                        match effect {
+                            Effect::Security(SecurityEffect::StartBuild { id, request }) => {
+                                if begin_security_build(
+                                    &mut backend,
+                                    &mut app,
+                                    &mut build_jobs,
+                                    id,
+                                    request,
+                                )
+                                .await
+                                {
+                                    pending_security_build = Some(id);
+                                }
+                            }
+                            Effect::Security(SecurityEffect::CancelSession(id))
+                                if pending_security_build == Some(id) =>
+                            {
+                                if let Some(action) = build_jobs.request_cancellation() {
+                                    let _ = update(&mut app, action);
+                                }
+                                if let Err(error) = backend.cancel_build().await {
+                                    let _ = update(
+                                        &mut app,
+                                        Action::Security(SecurityAction::RejectCancellation {
+                                            id,
+                                            message: error.to_string(),
+                                        }),
+                                    );
+                                    for action in build_jobs
+                                        .cancellation_failed(error.to_string(), SystemTime::now())
+                                    {
+                                        let _ = update(&mut app, action);
+                                    }
+                                }
+                            }
+                            Effect::Security(SecurityEffect::CancelSession(id)) => {
+                                let _ = update(
+                                    &mut app,
+                                    Action::Security(SecurityAction::RejectCancellation {
+                                        id,
+                                        message: "the CLI does not own this Security operation"
+                                            .into(),
+                                    }),
+                                );
+                            }
+                            _ => {}
+                        }
+                    }
                 }
             } else if matches!(app.active_dialog(), Some(Dialog::SdkBuildConfirmation(_))) {
                 let effect = sdk_build_confirmation_action(input)
@@ -4403,6 +5150,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             &mut sdk_capability_operation,
                             effect,
                         );
+                    } else if let Some(effect @ Effect::Security(_)) = effect {
+                        let _ = route_independent_security_effect(
+                            &guard,
+                            &mut app,
+                            &mut security_coordinator,
+                            effect,
+                            editor.as_deref(),
+                        )
+                        .await;
                     }
                 }
             } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
@@ -4837,6 +5593,32 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                     _ => {}
                 }
+            } else if app.screen == Screen::Security
+                && security_workspace_action(
+                    app.security.view,
+                    app.security.drilled,
+                    app.security.searching,
+                    input,
+                )
+                .is_some()
+            {
+                let action = security_workspace_action(
+                    app.security.view,
+                    app.security.drilled,
+                    app.security.searching,
+                    input,
+                )
+                .expect("Security action was checked");
+                if let Some(effect) = update(&mut app, action) {
+                    let _ = route_independent_security_effect(
+                        &guard,
+                        &mut app,
+                        &mut security_coordinator,
+                        effect,
+                        editor.as_deref(),
+                    )
+                    .await;
+                }
             } else if app.screen == Screen::Settings && settings_action(input).is_some() {
                 let action = settings_action(input).expect("settings action was checked");
                 if matches!(update(&mut app, action), Some(Effect::PersistSettings)) {
@@ -5163,7 +5945,16 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         }
                     }
                 } else {
-                    if let Some(effect) = update(&mut app, action) {
+                    if let Some(effect) = update(&mut app, action)
+                        && !route_independent_security_effect(
+                            &guard,
+                            &mut app,
+                            &mut security_coordinator,
+                            effect.clone(),
+                            editor.as_deref(),
+                        )
+                        .await
+                    {
                         let _ = test_coordinator.handle_effect(&mut app, effect).await;
                     }
                 }
@@ -5234,11 +6025,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         | BackendEvent::CommandFailed { .. }
                         | BackendEvent::Disconnected
                 );
+                let security_terminal = test_terminal;
                 if let Some(id) = pending_test_build
                     && let Some(action) = test_build_action_for_event(&app, id, &event)
                 {
                     let _ = update(&mut app, action);
                 }
+                let security_followup = pending_security_build
+                    .and_then(|id| security_build_action_for_event(&app, id, &event))
+                    .and_then(|action| update(&mut app, action));
                 let sdk_refresh =
                     sdk_refresh_after_build_event(&mut app, &mut pending_sdk_build, &event);
                 for action in build_jobs.actions_for_backend_event(event, SystemTime::now()) {
@@ -5246,6 +6041,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
                 if test_terminal {
                     pending_test_build = None;
+                }
+                if security_terminal {
+                    pending_security_build = None;
+                }
+                if let Some(effect) = security_followup {
+                    let _ = security_coordinator.handle_effect(&mut app, effect).await;
                 }
                 if let Some(effect) = sdk_refresh {
                     begin_sdk_artifact_operation(
@@ -5265,6 +6066,16 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             message: error.to_string(),
                             finished_at: SystemTime::now(),
                         },
+                    );
+                }
+                if let Some(id) = pending_security_build.take() {
+                    let _ = update(
+                        &mut app,
+                        Action::Security(SecurityAction::LoseSession {
+                            id,
+                            message: error.to_string(),
+                            finished_at: SystemTime::now(),
+                        }),
                     );
                 }
                 pending_sdk_build = None;
@@ -5337,6 +6148,18 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     if let Some(operation) = test_coordinator.import.take() {
         operation.handle.abort();
         let _ = operation.handle.await;
+    }
+    if let Some(operation) = security_coordinator.capability.take() {
+        operation.handle.abort();
+        let _ = operation.handle.await;
+    }
+    if let Some(operation) = security_coordinator.report.take() {
+        operation.cancellation.cancel();
+        operation.handle.abort();
+        let _ = operation.handle.await;
+    }
+    if let Some(mut operation) = security_coordinator.mapper.take() {
+        let _ = operation.runner.cancel(operation.id).await;
     }
     backend.shutdown().await?;
     session.last_target = app.build.target;
@@ -9003,5 +9826,744 @@ esac"#,
         ));
         assert!(export.join("results.xml").is_file());
         fs::remove_dir_all(directory).unwrap();
+    }
+
+    struct SecurityCliFixture {
+        root: PathBuf,
+        build: PathBuf,
+        reports: PathBuf,
+        bin: PathBuf,
+        provider: PathBuf,
+    }
+
+    impl SecurityCliFixture {
+        fn new(mapper_body: &str) -> Self {
+            use std::sync::atomic::{AtomicU64, Ordering};
+            static NEXT_SECURITY_FIXTURE: AtomicU64 = AtomicU64::new(1);
+            let root = std::env::temp_dir().join(format!(
+                "yoctui-security-cli-{}-{}",
+                std::process::id(),
+                NEXT_SECURITY_FIXTURE.fetch_add(1, Ordering::Relaxed)
+            ));
+            let build = root.join("build");
+            let reports = root.join("reports");
+            let bin = root.join("bin");
+            let layer = root.join("layer");
+            for directory in [&build, &reports, &bin, &layer] {
+                fs::create_dir_all(directory).unwrap();
+            }
+            let provider = layer.join("busybox.bb");
+            fs::write(&provider, "SUMMARY = \"busybox\"\n").unwrap();
+            let mapper = bin.join("cve-check-map-pkgs");
+            fs::write(&mapper, mapper_body).unwrap();
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let mut permissions = fs::metadata(&mapper).unwrap().permissions();
+                permissions.set_mode(0o755);
+                fs::set_permissions(&mapper, permissions).unwrap();
+            }
+            Self {
+                root,
+                build,
+                reports,
+                bin,
+                provider,
+            }
+        }
+
+        fn app(&self) -> App {
+            let mut app = App::new(20, 8_000);
+            app.screen = Screen::Security;
+            app.build.target = Some("core-image-minimal".into());
+            app.workspace.build_dir = Some(self.build.clone());
+            app.workspace.release = Some("6.0".into());
+            app.workspace
+                .variables
+                .insert("MACHINE".into(), "qemux86-64".into());
+            app.workspace
+                .variables
+                .insert("DISTRO".into(), "poky".into());
+            app.workspace.variables.insert(
+                "DEPLOY_DIR_IMAGE".into(),
+                self.reports.display().to_string(),
+            );
+            app.workspace.recipes.push(yoctui_model::Recipe {
+                name: "busybox".into(),
+                file: Some(self.provider.clone()),
+                ..yoctui_model::Recipe::default()
+            });
+            app.recipe_metadata.insert(
+                "busybox".into(),
+                yoctui_model::RecipeMetadata {
+                    recipe: "busybox".into(),
+                    tasks: Some(vec!["do_cve_check".into(), "do_create_recipe_sbom".into()]),
+                    ..yoctui_model::RecipeMetadata::default()
+                },
+            );
+            app
+        }
+
+        fn write_cve(&self) -> PathBuf {
+            let path = self.reports.join("busybox.cve.json");
+            fs::write(
+                &path,
+                br#"{
+                  "version": "1",
+                  "packages": [{
+                    "name": "busybox",
+                    "version": "1.36",
+                    "products": [{
+                      "product": "busybox",
+                      "cves": [{
+                        "id": "CVE-2026-0001",
+                        "status": "Unpatched",
+                        "severity": "HIGH",
+                        "mapping": {"source": "cve-check"}
+                      }]
+                    }]
+                  }]
+                }"#,
+            )
+            .unwrap();
+            path
+        }
+    }
+
+    impl Drop for SecurityCliFixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    struct SecurityBuildBackend {
+        started: std::sync::Arc<std::sync::Mutex<Vec<BuildRequest>>>,
+        fail_start: bool,
+    }
+
+    #[async_trait::async_trait]
+    impl BitBakeBackend for SecurityBuildBackend {
+        async fn inspect_workspace(
+            &mut self,
+        ) -> std::result::Result<yoctui_model::Workspace, yoctui_bitbake::BackendError> {
+            Ok(yoctui_model::Workspace::default())
+        }
+
+        async fn list_recipes(
+            &mut self,
+            _filter: Option<String>,
+        ) -> std::result::Result<Vec<yoctui_model::Recipe>, yoctui_bitbake::BackendError> {
+            Ok(Vec::new())
+        }
+
+        async fn list_layers(
+            &mut self,
+        ) -> std::result::Result<Vec<yoctui_model::Layer>, yoctui_bitbake::BackendError> {
+            Ok(Vec::new())
+        }
+
+        async fn get_variable(
+            &mut self,
+            _name: String,
+            _recipe: Option<String>,
+        ) -> std::result::Result<VariableValue, yoctui_bitbake::BackendError> {
+            Err(yoctui_bitbake::BackendError::NotRunning)
+        }
+
+        async fn get_dependencies(
+            &mut self,
+            _recipe: String,
+        ) -> std::result::Result<yoctui_bitbake::RecipeDependencies, yoctui_bitbake::BackendError>
+        {
+            Err(yoctui_bitbake::BackendError::NotRunning)
+        }
+
+        async fn get_dependency_graph(
+            &mut self,
+            _recipe: String,
+        ) -> std::result::Result<
+            yoctui_bitbake::DependencyGraphResponse,
+            yoctui_bitbake::BackendError,
+        > {
+            Err(yoctui_bitbake::BackendError::NotRunning)
+        }
+
+        async fn get_signature_dump(
+            &mut self,
+            _target: SignatureTarget,
+        ) -> std::result::Result<yoctui_bitbake::SignatureDumpResponse, yoctui_bitbake::BackendError>
+        {
+            Err(yoctui_bitbake::BackendError::NotRunning)
+        }
+
+        async fn compare_signatures(
+            &mut self,
+            _request: SignatureComparisonRequest,
+        ) -> std::result::Result<
+            yoctui_bitbake::SignatureComparisonResponse,
+            yoctui_bitbake::BackendError,
+        > {
+            Err(yoctui_bitbake::BackendError::NotRunning)
+        }
+
+        async fn get_recipe_sources(
+            &mut self,
+            _recipe: String,
+        ) -> std::result::Result<Vec<PathBuf>, yoctui_bitbake::BackendError> {
+            Err(yoctui_bitbake::BackendError::NotRunning)
+        }
+
+        async fn get_recipe_metadata(
+            &mut self,
+            _recipe: String,
+        ) -> std::result::Result<yoctui_model::RecipeMetadata, yoctui_bitbake::BackendError>
+        {
+            Err(yoctui_bitbake::BackendError::NotRunning)
+        }
+
+        async fn get_layer_relationships(
+            &mut self,
+        ) -> std::result::Result<Vec<yoctui_bitbake::LayerRelationship>, yoctui_bitbake::BackendError>
+        {
+            Err(yoctui_bitbake::BackendError::NotRunning)
+        }
+
+        async fn start_build(
+            &mut self,
+            request: BuildRequest,
+        ) -> std::result::Result<(), yoctui_bitbake::BackendError> {
+            if self.fail_start {
+                Err(yoctui_bitbake::BackendError::Bridge(
+                    "synthetic Security start failure".into(),
+                ))
+            } else {
+                self.started.lock().unwrap().push(request);
+                Ok(())
+            }
+        }
+
+        async fn cancel_build(&mut self) -> std::result::Result<(), yoctui_bitbake::BackendError> {
+            Ok(())
+        }
+
+        async fn next_event(
+            &mut self,
+        ) -> std::result::Result<BackendEvent, yoctui_bitbake::BackendError> {
+            Err(yoctui_bitbake::BackendError::NotRunning)
+        }
+
+        async fn shutdown(&mut self) -> std::result::Result<(), yoctui_bitbake::BackendError> {
+            Ok(())
+        }
+    }
+
+    async fn poll_security_until(
+        coordinator: &mut SecurityCliCoordinator,
+        app: &mut App,
+        complete: impl Fn(&App, &SecurityCliCoordinator) -> bool,
+    ) {
+        for _ in 0..200 {
+            coordinator.poll(app).await;
+            if complete(app, coordinator) {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+        panic!("Security CLI operation did not finish");
+    }
+
+    #[tokio::test]
+    async fn security_workflow_cli_discovers_capability_imports_and_preserves_navigation() {
+        let fixture = SecurityCliFixture::new("#!/bin/sh\nexit 0\n");
+        let report = fixture.write_cve();
+        let mut app = fixture.app();
+        let mut coordinator =
+            SecurityCliCoordinator::new(fixture.build.clone(), vec![fixture.bin.clone()]);
+
+        let effect = update(
+            &mut app,
+            Action::Security(SecurityAction::InspectCapability),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        app.screen = Screen::Dashboard;
+        poll_security_until(&mut coordinator, &mut app, |app, _| {
+            matches!(
+                app.security.capability,
+                yoctui_model::SecurityCapability::Available(_)
+            )
+        })
+        .await;
+        let yoctui_model::SecurityCapability::Available(capability) = &app.security.capability
+        else {
+            unreachable!()
+        };
+        assert_eq!(capability.release.as_deref(), Some("6.0"));
+        assert_eq!(capability.cve_task.as_deref(), Some("cve_check"));
+        assert_eq!(
+            capability.recipe_sbom_task.as_deref(),
+            Some("create_recipe_sbom")
+        );
+        assert_eq!(
+            capability.mapper.as_ref().unwrap().executable,
+            fixture.bin.join("cve-check-map-pkgs")
+        );
+
+        let _ = update(&mut app, Action::Security(SecurityAction::BeginImport));
+        let effect = update(
+            &mut app,
+            Action::Security(SecurityAction::ConfirmImport(report.display().to_string())),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        poll_security_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.report.is_none()
+                && app
+                    .security
+                    .inventory
+                    .reports()
+                    .is_some_and(|reports| !reports.is_empty())
+        })
+        .await;
+        assert_eq!(app.screen, Screen::Dashboard);
+        assert_eq!(
+            app.security.visible_findings()[0].identity.cve,
+            "CVE-2026-0001"
+        );
+    }
+
+    #[tokio::test]
+    async fn security_workflow_cli_runs_exact_mapper_refreshes_and_rejects_duplicate_start() {
+        let fixture =
+            SecurityCliFixture::new("#!/bin/sh\nprintf 'mapped busybox -> busybox\\n'\nexit 0\n");
+        fixture.write_cve();
+        let mut app = fixture.app();
+        let mut coordinator =
+            SecurityCliCoordinator::new(fixture.build.clone(), vec![fixture.bin.clone()]);
+        let effect = update(
+            &mut app,
+            Action::Security(SecurityAction::InspectCapability),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        poll_security_until(&mut coordinator, &mut app, |app, _| {
+            matches!(
+                app.security.capability,
+                yoctui_model::SecurityCapability::Available(_)
+            )
+        })
+        .await;
+
+        let _ = update(&mut app, Action::Security(SecurityAction::BeginPackageMap));
+        let preview = match app.active_dialog().cloned() {
+            Some(Dialog::Security(yoctui_model::SecurityDialog::Operation(preview))) => preview,
+            other => panic!("unexpected mapper dialog: {other:?}"),
+        };
+        let effect = update(
+            &mut app,
+            Action::Security(SecurityAction::ConfirmOperation(preview)),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect.clone()).await);
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("already owned"))
+        );
+        app.screen = Screen::Layers;
+        poll_security_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.mapper.is_none()
+                && coordinator.report.is_none()
+                && app
+                    .security
+                    .sessions
+                    .last()
+                    .is_some_and(|session| session.status.is_terminal())
+        })
+        .await;
+        let session = app.security.sessions.last().unwrap();
+        assert_eq!(session.status, SecuritySessionStatus::Succeeded);
+        assert!(
+            session
+                .output
+                .iter()
+                .any(|line| line.line.contains("mapped busybox"))
+        );
+        assert!(app.security.inventory.reports().is_some());
+        assert_eq!(app.screen, Screen::Layers);
+    }
+
+    #[tokio::test]
+    async fn security_workflow_cli_cancels_only_the_exact_mapper_session() {
+        let fixture =
+            SecurityCliFixture::new("#!/bin/sh\ntrap 'exit 0' TERM\nwhile :; do :; done\n");
+        fixture.write_cve();
+        let mut app = fixture.app();
+        let mut coordinator =
+            SecurityCliCoordinator::new(fixture.build.clone(), vec![fixture.bin.clone()]);
+        let effect = update(
+            &mut app,
+            Action::Security(SecurityAction::InspectCapability),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        poll_security_until(&mut coordinator, &mut app, |app, _| {
+            matches!(
+                app.security.capability,
+                yoctui_model::SecurityCapability::Available(_)
+            )
+        })
+        .await;
+        let _ = update(&mut app, Action::Security(SecurityAction::BeginPackageMap));
+        let preview = match app.active_dialog().cloned() {
+            Some(Dialog::Security(yoctui_model::SecurityDialog::Operation(preview))) => preview,
+            other => panic!("unexpected mapper dialog: {other:?}"),
+        };
+        let id = preview.id;
+        let effect = update(
+            &mut app,
+            Action::Security(SecurityAction::ConfirmOperation(preview)),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        let _ = update(
+            &mut app,
+            Action::Security(SecurityAction::BeginCancellation),
+        );
+        let effect = update(
+            &mut app,
+            Action::Security(SecurityAction::ConfirmCancellation(id)),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        app.screen = Screen::Configuration;
+        poll_security_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.mapper.is_none()
+                && app
+                    .security
+                    .sessions
+                    .last()
+                    .is_some_and(|session| session.status.is_terminal())
+        })
+        .await;
+        assert_eq!(
+            app.security.sessions.last().unwrap().status,
+            SecuritySessionStatus::Cancelled
+        );
+        assert_eq!(app.screen, Screen::Configuration);
+    }
+
+    #[tokio::test]
+    async fn security_workflow_cli_maps_report_failures_and_replaceable_generations() {
+        let fixture = SecurityCliFixture::new("#!/bin/sh\nexit 0\n");
+        let empty = fixture.root.join("empty");
+        fs::create_dir(&empty).unwrap();
+        let mut app = fixture.app();
+        let mut coordinator =
+            SecurityCliCoordinator::new(fixture.build.clone(), vec![fixture.bin.clone()]);
+
+        let request = SecurityReportRequest::new(1, vec![empty.clone()]).unwrap();
+        app.security.inventory = yoctui_model::SecurityInventoryState::Loading {
+            request: request.clone(),
+        };
+        coordinator.begin_report_scan(request);
+        poll_security_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.report.is_none()
+                && matches!(
+                    app.security.inventory,
+                    yoctui_model::SecurityInventoryState::AvailableEmpty { .. }
+                )
+        })
+        .await;
+
+        for (generation, error) in [
+            (2, SecurityReportAdapterError::Cancelled),
+            (3, SecurityReportAdapterError::Timeout(30)),
+            (
+                4,
+                SecurityReportAdapterError::WorkerLost("worker channel closed".into()),
+            ),
+            (
+                5,
+                SecurityReportAdapterError::PermissionDenied(empty.clone()),
+            ),
+        ] {
+            let request = SecurityReportRequest::new(generation, vec![empty.clone()]).unwrap();
+            app.security.inventory = yoctui_model::SecurityInventoryState::Loading {
+                request: request.clone(),
+            };
+            let cancellation = SecurityReportCancellation::default();
+            coordinator.report = Some(SecurityReportCliOperation {
+                request,
+                cancellation,
+                handle: tokio::spawn(async move { Err(error) }),
+            });
+            tokio::task::yield_now().await;
+            coordinator.poll(&mut app).await;
+            assert!(
+                matches!(
+                    (&app.security.inventory, generation),
+                    (yoctui_model::SecurityInventoryState::Cancelled { .. }, 2)
+                        | (yoctui_model::SecurityInventoryState::TimedOut { .. }, 3)
+                        | (yoctui_model::SecurityInventoryState::Lost { .. }, 4)
+                        | (yoctui_model::SecurityInventoryState::Failed { .. }, 5)
+                ),
+                "generation {generation}: {:?}",
+                app.security.inventory
+            );
+        }
+
+        let first = SecurityReportRequest::new(6, vec![empty.clone()]).unwrap();
+        app.security.inventory = yoctui_model::SecurityInventoryState::Loading {
+            request: first.clone(),
+        };
+        coordinator.begin_report_scan(first);
+        let replacement = SecurityReportRequest::new(7, vec![empty]).unwrap();
+        app.security.inventory = yoctui_model::SecurityInventoryState::Loading {
+            request: replacement.clone(),
+        };
+        coordinator.begin_report_scan(replacement);
+        poll_security_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.report.is_none()
+                && app
+                    .security
+                    .inventory
+                    .request()
+                    .is_some_and(|request| request.generation == 7)
+        })
+        .await;
+        assert_eq!(app.security.inventory.request().unwrap().generation, 7);
+    }
+
+    #[tokio::test]
+    async fn security_workflow_cli_revalidates_exact_report_provider_and_advisory_opens() {
+        let fixture = SecurityCliFixture::new("#!/bin/sh\nexit 0\n");
+        let report = fixture.write_cve();
+        let marker = fixture.root.join("opened-url");
+        let opener = fixture.bin.join("xdg-open");
+        fs::write(
+            &opener,
+            format!("#!/bin/sh\nprintf opened > '{}'\n", marker.display()),
+        )
+        .unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut permissions = fs::metadata(&opener).unwrap().permissions();
+            permissions.set_mode(0o755);
+            fs::set_permissions(&opener, permissions).unwrap();
+        }
+        let mut app = fixture.app();
+        let mut coordinator =
+            SecurityCliCoordinator::new(fixture.build.clone(), vec![fixture.bin.clone()]);
+        let request = SecurityReportRequest::new(1, vec![report.clone()]).unwrap();
+        app.security.inventory = yoctui_model::SecurityInventoryState::Loading {
+            request: request.clone(),
+        };
+        coordinator.begin_report_scan(request);
+        poll_security_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.report.is_none()
+                && app
+                    .security
+                    .inventory
+                    .reports()
+                    .is_some_and(|reports| !reports.is_empty())
+        })
+        .await;
+        assert!(
+            coordinator
+                .revalidate_open_path(&app, &report)
+                .await
+                .is_ok()
+        );
+        assert!(
+            coordinator
+                .revalidate_open_path(&app, &fixture.provider)
+                .await
+                .is_err(),
+            "a provider is authorized only by the selected exact Security scope"
+        );
+
+        let input =
+            security_capability_input(&app, fixture.build.clone(), vec![fixture.bin.clone()])
+                .unwrap();
+        let capability = SecurityCapabilityInspector::new(input).inspect().unwrap();
+        let _ = update(
+            &mut app,
+            Action::Security(SecurityAction::CapabilityLoaded(capability)),
+        );
+        assert!(
+            coordinator
+                .revalidate_open_path(&app, &fixture.provider)
+                .await
+                .is_ok()
+        );
+        fs::write(&report, "{}").unwrap();
+        assert!(
+            coordinator
+                .revalidate_open_path(&app, &report)
+                .await
+                .is_err(),
+            "changed report identity must fail closed"
+        );
+
+        open_security_url(
+            &mut app,
+            coordinator.url_opener(),
+            "https://example.invalid/CVE-2026-0001".into(),
+        )
+        .await;
+        assert_eq!(fs::read_to_string(marker).unwrap(), "opened");
+        open_security_url(
+            &mut app,
+            coordinator.url_opener(),
+            "http://example.invalid/not-allowed".into(),
+        )
+        .await;
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("invalid"))
+        );
+    }
+
+    #[tokio::test]
+    async fn security_workflow_cli_reuses_managed_build_coordinator_and_attaches_job() {
+        let fixture = SecurityCliFixture::new("#!/bin/sh\nexit 0\n");
+        let mut app = fixture.app();
+        let input =
+            security_capability_input(&app, fixture.build.clone(), vec![fixture.bin.clone()])
+                .unwrap();
+        let capability = SecurityCapabilityInspector::new(input).inspect().unwrap();
+        let _ = update(
+            &mut app,
+            Action::Security(SecurityAction::CapabilityLoaded(capability)),
+        );
+        let _ = update(&mut app, Action::Security(SecurityAction::BeginCveCheck));
+        let preview = match app.active_dialog().cloned() {
+            Some(Dialog::Security(yoctui_model::SecurityDialog::Operation(preview))) => preview,
+            other => panic!("unexpected build dialog: {other:?}"),
+        };
+        let effect = update(
+            &mut app,
+            Action::Security(SecurityAction::ConfirmOperation(preview)),
+        )
+        .unwrap();
+        let Effect::Security(SecurityEffect::StartBuild { id, request }) = effect else {
+            panic!("Security build did not produce its typed effect");
+        };
+        let started = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let mut backend: Box<dyn BitBakeBackend> = Box::new(SecurityBuildBackend {
+            started: started.clone(),
+            fail_start: false,
+        });
+        let mut jobs = BuildJobCoordinator::default();
+        assert!(begin_security_build(&mut backend, &mut app, &mut jobs, id, request.clone()).await);
+        assert_eq!(*started.lock().unwrap(), [request]);
+        let background_job_id = jobs.active_job_id().unwrap();
+        assert_eq!(
+            app.security.sessions.last().unwrap().background_job_id,
+            Some(background_job_id)
+        );
+        assert_eq!(
+            app.background_jobs.get(background_job_id).unwrap().kind,
+            yoctui_model::BackgroundJobKind::CveCheck
+        );
+    }
+
+    #[test]
+    fn security_workflow_cli_correlates_managed_build_terminal_outcomes() {
+        let fixture = SecurityCliFixture::new("#!/bin/sh\nexit 0\n");
+        let mut app = fixture.app();
+        let input =
+            security_capability_input(&app, fixture.build.clone(), vec![fixture.bin.clone()])
+                .unwrap();
+        let capability = SecurityCapabilityInspector::new(input).inspect().unwrap();
+        let _ = update(
+            &mut app,
+            Action::Security(SecurityAction::CapabilityLoaded(capability)),
+        );
+        let _ = update(&mut app, Action::Security(SecurityAction::BeginCveCheck));
+        let preview = match app.active_dialog().cloned() {
+            Some(Dialog::Security(yoctui_model::SecurityDialog::Operation(preview))) => preview,
+            other => panic!("unexpected build dialog: {other:?}"),
+        };
+        let _ = update(
+            &mut app,
+            Action::Security(SecurityAction::ConfirmOperation(preview)),
+        );
+        let id = app.security.sessions.last().unwrap().preview.id;
+
+        let started =
+            security_build_action_for_event(&app, id, &BackendEvent::BuildStarted).unwrap();
+        let _ = update(&mut app, started);
+        assert_eq!(
+            app.security.sessions.last().unwrap().status,
+            SecuritySessionStatus::Running
+        );
+
+        let mut succeeded = app.clone();
+        succeeded.screen = Screen::Logs;
+        let action = security_build_action_for_event(
+            &succeeded,
+            id,
+            &BackendEvent::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        )
+        .unwrap();
+        assert!(matches!(
+            update(&mut succeeded, action),
+            Some(Effect::Security(SecurityEffect::ImportReports(_)))
+        ));
+        assert_eq!(
+            succeeded.security.sessions.last().unwrap().status,
+            SecuritySessionStatus::Succeeded
+        );
+        assert_eq!(succeeded.screen, Screen::Logs);
+
+        let mut failed = app.clone();
+        let action = security_build_action_for_event(
+            &failed,
+            id,
+            &BackendEvent::BuildCompleted {
+                success: false,
+                exit_code: Some(1),
+            },
+        )
+        .unwrap();
+        let _ = update(&mut failed, action);
+        assert_eq!(
+            failed.security.sessions.last().unwrap().status,
+            SecuritySessionStatus::Failed
+        );
+
+        let mut cancelled = app.clone();
+        cancelled.security.sessions.last_mut().unwrap().status = SecuritySessionStatus::Cancelling;
+        let action = security_build_action_for_event(
+            &cancelled,
+            id,
+            &BackendEvent::BuildCompleted {
+                success: false,
+                exit_code: Some(130),
+            },
+        )
+        .unwrap();
+        let _ = update(&mut cancelled, action);
+        assert_eq!(
+            cancelled.security.sessions.last().unwrap().status,
+            SecuritySessionStatus::Cancelled
+        );
+
+        let mut lost = app;
+        let action =
+            security_build_action_for_event(&lost, id, &BackendEvent::Disconnected).unwrap();
+        let _ = update(&mut lost, action);
+        assert_eq!(
+            lost.security.sessions.last().unwrap().status,
+            SecuritySessionStatus::Lost
+        );
     }
 }

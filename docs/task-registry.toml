@@ -1208,12 +1208,12 @@ notes = "The Security destination now renders typed CVE and SBOM views, exact fi
 id = "SEC-CLI-001"
 milestone = "M5"
 title = "Integrate security execution in the CLI"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 61
 required = true
 depends_on = ["SEC-ADAPTER-001", "SEC-RENDER-001"]
 verify = ["cargo test -p yoctui -- security_workflow"]
-notes = "Route security builds through the managed BitBake coordinator, own replaceable bounded report acquisition, poll independently, correlate refresh/open/cancel, and preserve navigation and terminal outcomes."
+notes = "The CLI snapshots the initialized build/PATH inputs, discovers typed capability without process-global mutation, routes CVE/SBOM requests through the shared managed build coordinator, and independently owns one mapper plus one replaceable report scan. Exact report/provider/advisory opens revalidate before shell-free launch; generation/session correlation, refresh, navigation, duplicate rejection, cancellation, empty/partial/failure/timeout/loss, build outcomes, and bounded output pass seven focused fake integration tests and the baseline. No live compatibility is claimed."
 
 [[task]]
 id = "SEC-UI-CLI-001"
