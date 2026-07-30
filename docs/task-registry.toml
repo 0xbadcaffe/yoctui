@@ -1197,12 +1197,12 @@ notes = "The parent gate now passes across canonical capability discovery, exact
 id = "SEC-RENDER-001"
 milestone = "M5"
 title = "Render responsive Security workspace"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 61
 required = true
 depends_on = ["SEC-MODEL-001"]
 verify = ["cargo test -p yoctui-ui security_workflow"]
-notes = "Render capability, findings, package mappings, exact SPDX documents, metadata, limitations, lifecycle, confirmations, and responsive explicit states using typed TestBackend fixtures."
+notes = "The Security destination now renders typed CVE and SBOM views, exact finding/report/component identity and metadata, capability and inventory states, partial limitations, bounded mapper lifecycle/output, and focus-trapped operation/import/cancellation dialogs. Wide, medium, 80x24, long-field, theme, no-color, drill, and every explicit terminal-state TestBackend fixtures pass together with the full baseline."
 
 [[task]]
 id = "SEC-CLI-001"

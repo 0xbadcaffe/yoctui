@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Render the responsive typed Security workspace.
+Integrate non-blocking Security execution in the CLI.
 
 ## Current task
 
@@ -71,7 +71,7 @@ See `docs/current-task.md`.
 | Wic workflow | DONE | Cooked-mode creation and protected device writing pass the cross-layer gate: discovery/startup are independently polled, exact identities are revalidated immediately before spawn, responsive modal/history/telemetry state is durable, and all terminal outcomes are covered. Fake device/process coverage does not establish live Wic or removable-media compatibility |
 | SDK workflow | DONE | The parent gate passes across typed model/app state, authoritative artifact and shell-free tool adapters, responsive rendering, and independent CLI execution. It covers scans, capability inspection, managed BitBake populate/test reuse, exact artifact opening, publication/native child execution, a bounded keyboard-editable native form, timeout/cancellation/loss, success refresh, navigation, and telemetry. Fake scans/processes do not claim live SDK compatibility |
 | Testing workflow | DONE | The unified parent gate passes for typed launch/result state, selftest/resulttool adapters, responsive rendering, and non-blocking CLI execution. Managed BitBake reuse, independent selftest/result operations, exact correlation, navigation, cancellation, import/comparison/JUnit export, and terminal outcomes are verified. Fake-process coverage does not establish live compatibility |
-| Security workflow | IN_PROGRESS | The specification, model/app state, and complete adapter parent gate are done. Canonical capability discovery, bounded fingerprinted CVE/SPDX parsing, exact archive retention, and shell-free session-correlated package mapping pass focused and baseline tests. Responsive rendering and non-blocking CLI integration remain; fake fixtures do not establish live compatibility |
+| Security workflow | IN_PROGRESS | The specification, model/app state, complete adapter parent gate, and responsive renderer are done. Typed capability/inventory/session states, exact CVE/SPDX evidence, package mapping, dialogs, responsive breakpoints, themes, and no-color semantics pass focused and baseline tests. Non-blocking CLI integration remains; fake fixtures do not establish live compatibility |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -82,9 +82,8 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `SEC-RENDER-001` — render the responsive Security workspace
-2. `SEC-CLI-001` — integrate non-blocking Security execution
-3. `SEC-UI-CLI-001` — close the cross-layer Security gate
+1. `SEC-CLI-001` — integrate non-blocking Security execution
+2. `SEC-UI-CLI-001` — close the cross-layer Security gate
 
 ## Rules
 
