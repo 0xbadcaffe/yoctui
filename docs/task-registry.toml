@@ -1238,15 +1238,136 @@ verify = ["cargo test -p yoctui-model security_workflow", "cargo test -p yoctui-
 notes = "The complete Security workspace passes its specification, typed state, capability/report/mapper adapter, responsive rendering, non-blocking CLI, and cross-layer gates. CVE checks, package mapping, recipe/image SBOM generation, report import/refresh, exact evidence inspection/opening, managed lifecycle, cancellation, and partial/terminal states are covered without converting fixture evidence into a live Yocto claim."
 
 [[task]]
-id = "QA-001"
+id = "QA-SPEC-001"
 milestone = "M5"
-title = "Recipe, kernel, and layer QA workflows"
+title = "Specify unified QA workflows"
 status = "NOT_STARTED"
 priority = 62
 required = true
 depends_on = ["JOB-002"]
-verify = ["cargo test -p yoctui-app qa_workflow"]
-notes = "kernel config, URI, patch, license, yocto-check-layer."
+verify = ["./scripts/verify-roadmap.sh"]
+notes = "Define a responsive capability-driven QA destination for kernel configuration, URI, patch, license, recipe checks, and yocto-check-layer; exact scopes/previews/results; managed lifecycle; and model/adapter/app/UI/CLI ownership."
+
+[[task]]
+id = "QA-CHECK-MODEL-001"
+milestone = "M5"
+title = "Model typed recipe and kernel QA checks"
+status = "NOT_STARTED"
+priority = 62
+required = true
+depends_on = ["QA-SPEC-001"]
+verify = ["cargo test -p yoctui-model qa_check_workflow", "cargo test -p yoctui-app qa_workflow"]
+notes = "Model exact recipe/kernel scope, capability-supplied check catalog, previews, stable sessions, findings, result identity, search/filter selection, cancellation, terminal outcomes, dialogs, and typed effects for kernel config, URI, patch, license, and recipe checks."
+
+[[task]]
+id = "QA-LAYER-MODEL-001"
+milestone = "M5"
+title = "Model typed layer QA checks"
+status = "NOT_STARTED"
+priority = 62
+required = true
+depends_on = ["QA-SPEC-001"]
+verify = ["cargo test -p yoctui-model qa_layer_workflow", "cargo test -p yoctui-app qa_workflow"]
+notes = "Model exact configured-layer selection, yocto-check-layer capability, deterministic preview, stable session/output/result state, cancellation, terminal outcomes, navigation, dialogs, and typed effects."
+
+[[task]]
+id = "QA-MODEL-001"
+milestone = "M5"
+title = "Close typed QA model gate"
+status = "NOT_STARTED"
+priority = 62
+required = true
+depends_on = ["QA-CHECK-MODEL-001", "QA-LAYER-MODEL-001"]
+verify = ["cargo test -p yoctui-model qa_", "cargo test -p yoctui-app qa_workflow"]
+notes = "Parent model/app gate for the shared QA destination, capability state, exact scopes, check catalog, findings/results, sessions, focus-trapped dialogs, and mechanical key/effect mapping."
+
+[[task]]
+id = "QA-TASK-ADAPTER-001"
+milestone = "M5"
+title = "Adapt recipe and kernel QA capabilities"
+status = "NOT_STARTED"
+priority = 62
+required = true
+depends_on = ["QA-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake qa_task"]
+notes = "Build fail-closed typed capability snapshots from authoritative recipe tasks/configuration, construct exact managed BitBake requests, and normalize only typed QA evidence without guessing task names or parsing widgets."
+
+[[task]]
+id = "QA-REPORT-ADAPTER-001"
+milestone = "M5"
+title = "Acquire bounded QA findings and reports"
+status = "NOT_STARTED"
+priority = 62
+required = true
+depends_on = ["QA-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake qa_report"]
+notes = "Acquire exact report/log identities supplied by managed jobs or imports, bound filesystem/content parsing, normalize typed kernel/URI/patch/license/recipe findings, and preserve empty, partial, malformed, timeout, cancellation, and loss states."
+
+[[task]]
+id = "QA-LAYER-ADAPTER-001"
+milestone = "M5"
+title = "Run exact layer QA checks"
+status = "NOT_STARTED"
+priority = 62
+required = true
+depends_on = ["QA-LAYER-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake qa_layer", "cargo test -p yoctui-app qa_workflow"]
+notes = "Discover and revalidate canonical yocto-check-layer capability, construct exact shell-free configured-layer argv, stream bounded typed output, and preserve duplicate, nonzero, cancellation, timeout, and worker-loss outcomes."
+
+[[task]]
+id = "QA-ADAPTER-001"
+milestone = "M5"
+title = "Close QA adapter gate"
+status = "NOT_STARTED"
+priority = 62
+required = true
+depends_on = ["QA-TASK-ADAPTER-001", "QA-REPORT-ADAPTER-001", "QA-LAYER-ADAPTER-001"]
+verify = ["cargo test -p yoctui-bitbake qa_", "cargo test -p yoctui-app qa_workflow"]
+notes = "Parent adapter/app gate for authoritative task/capability discovery, bounded typed findings, exact shell-free layer QA, and every explicit lifecycle outcome."
+
+[[task]]
+id = "QA-RENDER-001"
+milestone = "M5"
+title = "Render responsive QA workspace"
+status = "NOT_STARTED"
+priority = 62
+required = true
+depends_on = ["QA-MODEL-001"]
+verify = ["cargo test -p yoctui-ui qa_workflow"]
+notes = "Render the complete typed QA capability, check, finding, result, session, limitation, confirmation, and cancellation states at every responsive breakpoint, theme, and no-color mode."
+
+[[task]]
+id = "QA-CLI-001"
+milestone = "M5"
+title = "Integrate non-blocking QA execution"
+status = "NOT_STARTED"
+priority = 62
+required = true
+depends_on = ["QA-ADAPTER-001", "QA-RENDER-001"]
+verify = ["cargo test -p yoctui -- qa_workflow"]
+notes = "Reuse the managed BitBake coordinator for recipe/kernel QA, own independent replaceable report acquisition and one exact layer-QA runner, poll without blocking, revalidate opens, correlate refresh/cancellation, and preserve navigation/outcomes."
+
+[[task]]
+id = "QA-UI-CLI-001"
+milestone = "M5"
+title = "Integrate complete QA workspace"
+status = "NOT_STARTED"
+priority = 62
+required = true
+depends_on = ["QA-MODEL-001", "QA-ADAPTER-001", "QA-RENDER-001", "QA-CLI-001"]
+verify = ["cargo test -p yoctui-model qa_", "cargo test -p yoctui-app qa_workflow", "cargo test -p yoctui-bitbake qa_", "cargo test -p yoctui-ui qa_workflow", "cargo test -p yoctui -- qa_workflow"]
+notes = "Cross-layer parent gate for capability-driven kernel configuration, URI, patch, license, recipe, and configured-layer QA workflows with exact identities, responsive rendering, and independently polled CLI execution."
+
+[[task]]
+id = "QA-001"
+milestone = "M5"
+title = "Recipe, kernel, and layer QA workflows"
+status = "IN_PROGRESS"
+priority = 62
+required = true
+depends_on = ["QA-UI-CLI-001"]
+verify = ["cargo test -p yoctui-model qa_", "cargo test -p yoctui-app qa_workflow", "cargo test -p yoctui-bitbake qa_", "cargo test -p yoctui-ui qa_workflow", "cargo test -p yoctui -- qa_workflow"]
+notes = "Parent completion gate split into specification, typed recipe/kernel and layer state, task/report/layer adapters, responsive rendering, non-blocking CLI integration, and cross-layer verification."
 
 [[task]]
 id = "MAINT-001"

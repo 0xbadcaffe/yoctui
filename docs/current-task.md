@@ -2,40 +2,45 @@
 
 ## Active task
 
-**ID:** QA-001
-**Title:** Recipe, kernel, and layer QA workflows
+**ID:** QA-SPEC-001
+**Title:** Specify unified QA workflows
 
 ## Objective
 
-Implement the roadmap's recipe, kernel, and layer QA workflows as typed,
-verified Yoctui operations.
+Define authoritative, capability-driven recipe, kernel, and configured-layer
+QA behavior before implementation.
 
 ## Required work
 
-1. Inspect the existing QA-related behavior, authoritative UI specification,
-   architecture, and tests before changing code.
-2. Reconcile the broad roadmap item into atomic specification, model, adapter,
-   rendering, CLI, and parent-gate tasks before implementation.
-3. Cover kernel configuration, URI, patch, license, recipe QA, and
-   `yocto-check-layer` workflows without free-form command authority.
-4. Preserve exact target, task, provider, layer, report, and operation
-   identities across every boundary.
-5. Add unit, reducer, fake-process, CLI integration, and Ratatui TestBackend
-   coverage appropriate to each atomic task.
+1. Specify a first-class QA Navigator destination with responsive Recipe &
+   Kernel and Layer QA views, exact selection, search, Inspector, and footer
+   behavior.
+2. Define authoritative capability discovery and check catalogs for kernel
+   configuration, URI, patch, license, general recipe QA, and
+   `yocto-check-layer` without guessing task or tool support.
+3. Define exact recipe/kernel/layer scopes, deterministic indexed previews,
+   managed BitBake reuse, independent layer execution, cancellation,
+   navigation retention, and terminal outcomes.
+4. Define bounded typed finding/report identities, acquisition, imports,
+   filters, limitations, refresh, and exact editor/provider/report routes.
+5. Assign pure state, process/filesystem parsing, key/effect mapping,
+   rendering, and polling to the correct architecture layers.
+6. Reconcile existing recipe task and patch-review routes without duplicating
+   or weakening them.
+7. Keep mocked evidence and live Yocto compatibility claims separate.
 
 ## Definition of done
 
-- QA workflows are split into coherent dependency-ordered tasks before broad
-  implementation begins.
-- Every implemented workflow uses typed previews, lifecycle state, and exact
-  identities.
-- Relevant focused and baseline checks pass without weakening tests.
-- Fake-process evidence is not described as live Yocto compatibility.
+- `docs/ui-spec.md` completely defines QA interaction and responsive behavior.
+- `docs/architecture.md` defines typed ownership and dependency boundaries.
+- Existing recipe QA and patch-review routes are reconciled with the new
+  destination.
+- The registry's dependent implementation tasks remain coherent.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app qa_workflow
+./scripts/verify-roadmap.sh
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
