@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Begin typed CVE and SPDX security workflows.
+Specify typed CVE and SPDX security workflows.
 
 ## Current task
 
@@ -26,7 +26,7 @@ See `docs/current-task.md`.
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
-| M5 Testing/QA/Security | IN_PROGRESS | Unified Testing is complete across model, adapters, rendering, CLI, and parent gates; security and QA remain |
+| M5 Testing/QA/Security | IN_PROGRESS | Unified Testing is complete; Security is split into specification, model, adapter, rendering, CLI, and parent gates; QA remains |
 | M6 Maintenance | NOT_STARTED | Partial diagnostics only |
 | M7 Hardening | IN_PROGRESS | Coverage and profiling foundations exist |
 
@@ -71,6 +71,7 @@ See `docs/current-task.md`.
 | Wic workflow | DONE | Cooked-mode creation and protected device writing pass the cross-layer gate: discovery/startup are independently polled, exact identities are revalidated immediately before spawn, responsive modal/history/telemetry state is durable, and all terminal outcomes are covered. Fake device/process coverage does not establish live Wic or removable-media compatibility |
 | SDK workflow | DONE | The parent gate passes across typed model/app state, authoritative artifact and shell-free tool adapters, responsive rendering, and independent CLI execution. It covers scans, capability inspection, managed BitBake populate/test reuse, exact artifact opening, publication/native child execution, a bounded keyboard-editable native form, timeout/cancellation/loss, success refresh, navigation, and telemetry. Fake scans/processes do not claim live SDK compatibility |
 | Testing workflow | DONE | The unified parent gate passes for typed launch/result state, selftest/resulttool adapters, responsive rendering, and non-blocking CLI execution. Managed BitBake reuse, independent selftest/result operations, exact correlation, navigation, cancellation, import/comparison/JUnit export, and terminal outcomes are verified. Fake-process coverage does not establish live compatibility |
+| Security workflow | IN_PROGRESS | Existing recipe shortcuts launch only authoritatively reported legacy CVE/SPDX tasks through managed BitBake and retain honest no-path outcomes. Typed CVE findings/package mappings, capability-driven legacy/current SBOM tasks, bounded report acquisition/viewing, a responsive Security workspace, and complete CLI integration remain |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -81,8 +82,9 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `SEC-001` — implement CVE and SPDX workflows
-2. `QA-001` — implement recipe, kernel, and layer QA workflows
+1. `SEC-SPEC-001` — specify capability-driven CVE and SPDX workflows
+2. `SEC-MODEL-001` — model typed security workflows
+3. `SEC-ADAPTER-001` / `SEC-RENDER-001` — adapt and render security data
 
 ## Rules
 
