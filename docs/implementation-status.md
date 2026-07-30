@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Render the complete responsive QA workspace.
+Integrate non-blocking QA execution.
 
 ## Current task
 
@@ -72,7 +72,7 @@ See `docs/current-task.md`.
 | SDK workflow | DONE | The parent gate passes across typed model/app state, authoritative artifact and shell-free tool adapters, responsive rendering, and independent CLI execution. It covers scans, capability inspection, managed BitBake populate/test reuse, exact artifact opening, publication/native child execution, a bounded keyboard-editable native form, timeout/cancellation/loss, success refresh, navigation, and telemetry. Fake scans/processes do not claim live SDK compatibility |
 | Testing workflow | DONE | The unified parent gate passes for typed launch/result state, selftest/resulttool adapters, responsive rendering, and non-blocking CLI execution. Managed BitBake reuse, independent selftest/result operations, exact correlation, navigation, cancellation, import/comparison/JUnit export, and terminal outcomes are verified. Fake-process coverage does not establish live compatibility |
 | Security workflow | DONE | The complete cross-layer gate passes for capability-driven CVE checks/mapping, current/legacy recipe and image SBOM workflows, bounded exact reports, responsive UI, managed BitBake reuse, independent CLI polling, exact-open revalidation, refresh, navigation, cancellation, and explicit partial/terminal states. Focused fake evidence does not establish live Yocto compatibility |
-| QA workflow | IN_PROGRESS | The authoritative contracts, typed model/app gate, and complete adapter/app parent gate are done. Capability-driven recipe/kernel checks, bounded fingerprinted reports, and canonical shell-free layer execution preserve every applicable lifecycle outcome. Responsive UI and CLI integration remain; fixture evidence does not establish live compatibility |
+| QA workflow | IN_PROGRESS | Contracts, model/app, adapters, and responsive rendering are complete. QA is a first-class workspace with typed Recipe & Kernel and Layer QA views, exact Inspector evidence, lifecycle/report states, modal previews, compact footers, themes, no-color, and 80×24 coverage. Non-blocking CLI integration and parent gates remain; fixture evidence does not establish live compatibility |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -83,9 +83,8 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `QA-RENDER-001` — render the complete QA workspace
-2. `QA-CLI-001` — integrate non-blocking QA execution
-3. `QA-UI-CLI-001` / `QA-001` — close cross-layer and parent gates
+1. `QA-CLI-001` — integrate non-blocking QA execution
+2. `QA-UI-CLI-001` / `QA-001` — close cross-layer and parent gates
 
 ## Rules
 

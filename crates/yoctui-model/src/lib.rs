@@ -62,6 +62,7 @@ pub enum Screen {
     Sdk,
     Testing,
     Security,
+    Qa,
     Layers,
     Configuration,
     Bbmask,
@@ -143,7 +144,7 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-const NAVIGATOR_SCREENS: [Screen; 16] = [
+const NAVIGATOR_SCREENS: [Screen; 17] = [
     Screen::Dashboard,
     Screen::Layers,
     Screen::Recipes,
@@ -152,6 +153,7 @@ const NAVIGATOR_SCREENS: [Screen; 16] = [
     Screen::Sdk,
     Screen::Testing,
     Screen::Security,
+    Screen::Qa,
     Screen::Tasks,
     Screen::Logs,
     Screen::Errors,
@@ -5428,6 +5430,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             {
                 return Some(Effect::Security(SecurityEffect::InspectCapability));
             }
+            if s == Screen::Qa && matches!(app.qa.capability, QaCapability::NotInspected) {
+                return Some(Effect::Qa(QaEffect::InspectCapability {
+                    scope: app.qa.scope.clone(),
+                }));
+            }
         }
         Action::SelectNavigator { delta } => {
             app.navigator_selection = if delta.is_negative() {
@@ -5481,6 +5488,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 && matches!(app.security.capability, SecurityCapability::NotInspected)
             {
                 return Some(Effect::Security(SecurityEffect::InspectCapability));
+            }
+            if app.screen == Screen::Qa && matches!(app.qa.capability, QaCapability::NotInspected) {
+                return Some(Effect::Qa(QaEffect::InspectCapability {
+                    scope: app.qa.scope.clone(),
+                }));
             }
         }
         Action::Security(action) => {

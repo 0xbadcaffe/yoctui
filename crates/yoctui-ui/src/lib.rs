@@ -14,22 +14,24 @@ use yoctui_model::{
     DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget, GitFileState, ImageArtifactField,
     ImageArtifactInventoryState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode,
     PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PreviewKind,
-    QemuCapability, QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview,
-    QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor,
-    RecipeIdentity, Screen, SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind,
-    SdkNativeDialog, SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation,
-    SdkPublishDraft, SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability,
-    SecurityDialog, SecurityInventoryState, SecurityOperation, SecurityOutputStream,
-    SecurityReport, SecurityScope, SecuritySessionStatus, SecurityView, Severity,
-    SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind,
-    TaskFilterField, TaskRow, TaskState, TestComparisonCategory, TestComparisonState,
-    TestExecutableCapability, TestJunitExportState, TestLaunchDialog, TestLaunchField,
-    TestLaunchPreview, TestResultInventoryState, TestWorkspaceView, Theme, VariableIdentity,
-    WicCapability, WicCompression, WicCreateDialog, WicCreateField, WicCreatePreview, WicDevice,
-    WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart, WicOperation,
-    WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
-    config_comparison, config_edit_disabled_reason, config_source_disabled_reason, format_duration,
-    selected_config_copy_value,
+    QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus, QaLayerCapability,
+    QaLayerRunCapability, QaOutputStream, QaReportFailureKind, QaReportInventoryState,
+    QaSessionStatus, QaStatusFilter, QaView, QemuCapability, QemuDisplayMode, QemuLaunchDialog,
+    QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe,
+    RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, SdkArtifactInventoryState,
+    SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog, SdkNativeField, SdkNativeMode,
+    SdkNativePreview, SdkOperation, SdkPublishDraft, SdkPublishPreview, SdkSessionId,
+    SdkToolCapability, SecurityCapability, SecurityDialog, SecurityInventoryState,
+    SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope, SecuritySessionStatus,
+    SecurityView, Severity, SignatureComparisonState, SignatureDifferenceCategory,
+    SignatureDumpState, SpdxArtifactKind, TaskFilterField, TaskRow, TaskState,
+    TestComparisonCategory, TestComparisonState, TestExecutableCapability, TestJunitExportState,
+    TestLaunchDialog, TestLaunchField, TestLaunchPreview, TestResultInventoryState,
+    TestWorkspaceView, Theme, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
+    WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog,
+    WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog,
+    WicWritePreview, config_comparison, config_edit_disabled_reason, config_source_disabled_reason,
+    format_duration, selected_config_copy_value,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -474,6 +476,9 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Security => {
             "Tab view | ↑/↓ select | s scope | i image | / search | f status | V CVE check | M map | X SBOM | I import | R refresh | Enter details | o report | e recipe | v advisory | c cancel"
         }
+        Screen::Qa => {
+            "Tab view | ↑/↓ select | s scope | / search | f status | r run | I import | R refresh | Enter details | o report | e provider | l source | c cancel"
+        }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
@@ -505,6 +510,8 @@ fn responsive_footer_shortcuts(app: &App, width: u16) -> &'static str {
         "Tab:view ↑↓ Enter r:run i:image /:find I/R:results c:compare J:JUnit o/l:open x:cancel"
     } else if app.screen == Screen::Security && width <= 90 {
         "Tab:view ↑↓ s:scope i:image /:find f:status V:check M:map X:SBOM I/R:data Enter o/e/v:open c:cancel"
+    } else if app.screen == Screen::Qa && width <= 90 {
+        "Tab:view ↑↓ s:scope /:find f:status r:run I/R:data Enter o/e/l:open c:cancel"
     } else {
         footer_shortcuts(app)
     }
@@ -635,6 +642,8 @@ pub fn render(frame: &mut Frame, app: &App) {
         test_junit_confirmation(frame, app, preview, area);
     } else if let Some(Dialog::Security(dialog)) = app.active_dialog() {
         security_dialog(frame, app, dialog, area);
+    } else if let Some(Dialog::Qa(dialog)) = app.active_dialog() {
+        qa_dialog(frame, app, dialog, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);
     } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
@@ -1624,6 +1633,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
         ("SDK", Screen::Sdk),
         ("Testing", Screen::Testing),
         ("Security", Screen::Security),
+        ("QA", Screen::Qa),
         ("Tasks", Screen::Tasks),
         ("Logs", Screen::Logs),
         ("Errors", Screen::Errors),
@@ -1675,6 +1685,7 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Sdk => sdk_workspace(frame, app, area),
         Screen::Testing => testing_workspace(frame, app, area),
         Screen::Security => security_workspace(frame, app, area),
+        Screen::Qa => qa_workspace(frame, app, area),
         Screen::Layers => {
             if let Some(browser) = app.layer_browser.as_ref() {
                 layer_browser(frame, app, browser, area)
@@ -1817,6 +1828,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Sdk => sdk_inspector_text(app),
         Screen::Testing => testing_inspector_text(app),
         Screen::Security => security_inspector_text(app),
+        Screen::Qa => qa_inspector_text(app),
         _ => format!(
             "Target: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
             app.build.target.as_deref().unwrap_or("not selected"),
@@ -2326,6 +2338,589 @@ fn sdk_inventory_root(app: &App) -> String {
         .map(|path| path.display().to_string())
         .or_else(|| app.workspace.variables.get("SDK_DEPLOY").cloned())
         .unwrap_or_else(|| "unavailable".into())
+}
+
+fn qa_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let active = |view| {
+        if app.qa.view == view {
+            palette.focus()
+        } else {
+            Style::default()
+        }
+    };
+    let mut lines = vec![
+        Line::from(vec![
+            Span::styled(" Recipe & Kernel ", active(QaView::RecipeKernel)),
+            Span::raw(" | "),
+            Span::styled(" Layer QA ", active(QaView::LayerQa)),
+        ]),
+        Line::from(format!(
+            "Scope: {} | Filter: {}{}",
+            qa_scope_label(app),
+            qa_filter_label(app.qa.status_filter),
+            if app.qa.searching {
+                format!(" | Search: {}_", app.qa.query)
+            } else if app.qa.query.is_empty() {
+                String::new()
+            } else {
+                format!(" | Search: {}", app.qa.query)
+            }
+        )),
+        Line::from(""),
+    ];
+    if app.qa.drilled {
+        qa_finding_lines(app, &palette, &mut lines);
+    } else {
+        match app.qa.view {
+            QaView::RecipeKernel => qa_check_lines(app, &palette, &mut lines),
+            QaView::LayerQa => qa_layer_lines(app, &palette, &mut lines),
+        }
+    }
+    qa_inventory_lines(app, &palette, &mut lines);
+    qa_session_lines(app, &palette, &mut lines);
+    frame.render_widget(
+        Paragraph::new(lines)
+            .block(pane_block(app, "QA", app.focus == FocusTarget::Workspace))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn qa_scope_label(app: &App) -> String {
+    match app.qa.view {
+        QaView::RecipeKernel => app.qa.scope.as_ref().map_or_else(
+            || "unavailable".into(),
+            |scope| format!("{} ({})", scope.recipe.name, scope.recipe.file.display()),
+        ),
+        QaView::LayerQa => app.qa.layer_selection.as_ref().map_or_else(
+            || "unavailable".into(),
+            |layer| format!("{} ({})", layer.name, layer.root.display()),
+        ),
+    }
+}
+
+fn qa_check_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+    match &app.qa.capability {
+        QaCapability::NotInspected => {
+            lines.push(Line::from("QA capability is not inspected."));
+            return;
+        }
+        QaCapability::Inspecting => {
+            lines.push(Line::styled(
+                "Inspecting recipe and kernel QA capability…",
+                palette.info,
+            ));
+            return;
+        }
+        QaCapability::Failed(message) => {
+            lines.push(Line::styled(
+                format!("QA capability failed: {message}"),
+                palette.error,
+            ));
+            return;
+        }
+        QaCapability::Partial { limitations, .. } => lines.push(Line::styled(
+            format!("Partial capability: {}", limitations.join(" | ")),
+            palette.warning,
+        )),
+        QaCapability::Available(_) => {}
+    }
+    lines.push(Line::from(
+        "  Family                Exact task             Availability       Findings  Label",
+    ));
+    let checks = app.qa.visible_checks();
+    for check in &checks {
+        let selected = app.qa.check_selection.as_ref() == Some(&check.id);
+        let findings = app.qa.findings_for_check(&check.id);
+        let status = qa_worst_status(findings.iter().map(|finding| finding.status));
+        let availability = match &check.availability {
+            QaCheckAvailability::Available => "available",
+            QaCheckAvailability::Disabled(_) => "disabled",
+        };
+        lines.push(
+            Line::from(format!(
+                "{} {:<21} {:<22} {:<18} {:<9} {}",
+                if selected { "▶" } else { " " },
+                qa_family_label(check.family),
+                check.task.as_deref().unwrap_or("unavailable"),
+                availability,
+                qa_status_label(status),
+                check.label,
+            ))
+            .style(if selected {
+                palette.selected()
+            } else {
+                qa_status_style(palette, status)
+            }),
+        );
+    }
+    if checks.is_empty() {
+        lines.push(Line::from(
+            "No checks match the exact scope, status filter, and search.",
+        ));
+    }
+}
+
+fn qa_layer_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+    match &app.qa.layer_capability {
+        QaLayerCapability::NotInspected => {
+            lines.push(Line::from("Layer-QA capability is not inspected."));
+            return;
+        }
+        QaLayerCapability::Inspecting => {
+            lines.push(Line::styled(
+                "Inspecting configured layer-QA capability…",
+                palette.info,
+            ));
+            return;
+        }
+        QaLayerCapability::Failed(message) => {
+            lines.push(Line::styled(
+                format!("Layer-QA capability failed: {message}"),
+                palette.error,
+            ));
+            return;
+        }
+        QaLayerCapability::Partial { limitations, .. } => lines.push(Line::styled(
+            format!("Partial capability: {}", limitations.join(" | ")),
+            palette.warning,
+        )),
+        QaLayerCapability::Available(_) => {}
+    }
+    lines.push(Line::from(
+        "  Layer                 Capability       Pass Warn Fail Skip Unknown  Exact root",
+    ));
+    let layers = app.qa.visible_layers();
+    for layer in &layers {
+        let selected = app.qa.layer_selection.as_ref() == Some(&layer.identity);
+        let counts = app.qa.layer_finding_counts(&layer.identity);
+        let capability = match layer.run {
+            QaLayerRunCapability::Available { .. } => "available",
+            QaLayerRunCapability::Disabled(_) => "disabled",
+        };
+        let status = qa_worst_status(
+            app.qa
+                .findings_for_layer(&layer.identity)
+                .iter()
+                .map(|finding| finding.status),
+        );
+        lines.push(
+            Line::from(format!(
+                "{} {:<21} {:<16} {:>4} {:>4} {:>4} {:>4} {:>7}  {}",
+                if selected { "▶" } else { " " },
+                layer.identity.name,
+                capability,
+                counts.passed,
+                counts.warnings,
+                counts.failed,
+                counts.skipped,
+                counts.unknown,
+                layer.identity.root.display(),
+            ))
+            .style(if selected {
+                palette.selected()
+            } else {
+                qa_status_style(palette, status)
+            }),
+        );
+    }
+    if layers.is_empty() {
+        lines.push(Line::from(
+            "No configured layers match the status filter and search.",
+        ));
+    }
+}
+
+fn qa_finding_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+    lines.push(Line::from(
+        "Findings (Esc returns) — Status     Severity      Rule / test                 Message",
+    ));
+    let findings = app.qa.visible_findings();
+    for finding in &findings {
+        let selected = app.qa.finding_selection.as_ref() == Some(&finding.identity);
+        lines.push(
+            Line::from(format!(
+                "{} {:<10} {:<13} {:<27} {}",
+                if selected { "▶" } else { " " },
+                qa_status_label(Some(finding.status)),
+                finding.severity.as_deref().unwrap_or("unavailable"),
+                finding
+                    .rule
+                    .as_deref()
+                    .or(finding.test_name.as_deref())
+                    .unwrap_or("unavailable"),
+                finding.message,
+            ))
+            .style(if selected {
+                palette.selected()
+            } else {
+                qa_status_style(palette, Some(finding.status))
+            }),
+        );
+    }
+    if findings.is_empty() {
+        lines.push(Line::from(
+            "No findings match the active filter and search.",
+        ));
+    }
+}
+
+fn qa_inventory_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+    match &app.qa.inventory {
+        QaReportInventoryState::NotLoaded => lines.push(Line::from(
+            "Reports not loaded. I imports; R refreshes exact paths.",
+        )),
+        QaReportInventoryState::Loading { request } => lines.push(Line::styled(
+            format!(
+                "Loading report generation {} from {} exact path(s)…",
+                request.generation,
+                request.paths.len()
+            ),
+            palette.info,
+        )),
+        QaReportInventoryState::AvailableEmpty { request } => lines.push(Line::from(format!(
+            "Report generation {} available-empty: no reports or findings.",
+            request.generation
+        ))),
+        QaReportInventoryState::Available { reports, .. } => lines.push(Line::from(format!(
+            "{} exact report(s) available.",
+            reports.len()
+        ))),
+        QaReportInventoryState::Partial {
+            reports,
+            limitations,
+            ..
+        } => lines.push(Line::styled(
+            format!(
+                "Partial: {} report(s) | {}",
+                reports.len(),
+                limitations.join(" | ")
+            ),
+            palette.warning,
+        )),
+        QaReportInventoryState::Failed { kind, message, .. } => lines.push(Line::styled(
+            format!("Report acquisition {}: {message}", qa_failure_label(*kind)),
+            palette.error,
+        )),
+        QaReportInventoryState::Cancelled { .. } => lines.push(Line::styled(
+            "Report acquisition cancelled.",
+            palette.warning,
+        )),
+        QaReportInventoryState::TimedOut { .. } => {
+            lines.push(Line::styled("Report acquisition timed out.", palette.error))
+        }
+        QaReportInventoryState::Lost { message, .. } => lines.push(Line::styled(
+            format!("Report worker lost: {message}"),
+            palette.error,
+        )),
+    }
+}
+
+fn qa_session_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+    let session = match app.qa.view {
+        QaView::RecipeKernel => app.qa.sessions.back().map(|session| {
+            (
+                session.id.0,
+                session.status,
+                session.message.as_deref(),
+                session
+                    .output
+                    .iter()
+                    .map(|line| (line.stream, line.line.as_str(), line.truncated))
+                    .collect::<Vec<_>>(),
+            )
+        }),
+        QaView::LayerQa => app.qa.layer_sessions.back().map(|session| {
+            (
+                session.id.0,
+                session.status,
+                session.message.as_deref(),
+                session
+                    .output
+                    .iter()
+                    .map(|line| (line.stream, line.line.as_str(), line.truncated))
+                    .collect::<Vec<_>>(),
+            )
+        }),
+    };
+    let Some((id, status, message, output)) = session else {
+        return;
+    };
+    lines.push(Line::from(""));
+    lines.push(Line::styled(
+        format!("Latest session {id}: {}", qa_session_status_label(status)),
+        qa_session_style(palette, status),
+    ));
+    if let Some(message) = message {
+        lines.push(Line::styled(
+            format!("Session detail: {message}"),
+            palette.warning,
+        ));
+    }
+    for (stream, line, truncated) in output.iter().rev().take(4).rev() {
+        lines.push(Line::styled(
+            format!(
+                "[{}] {}{}",
+                match stream {
+                    QaOutputStream::Stdout => "stdout",
+                    QaOutputStream::Stderr => "stderr",
+                },
+                line,
+                if *truncated { " [truncated]" } else { "" }
+            ),
+            if *stream == QaOutputStream::Stderr {
+                security_warning_style(palette)
+            } else {
+                Style::default()
+            },
+        ));
+    }
+}
+
+fn qa_inspector_text(app: &App) -> String {
+    let mut lines = vec![format!(
+        "View: {}\nExact scope: {}",
+        match app.qa.view {
+            QaView::RecipeKernel => "Recipe & Kernel",
+            QaView::LayerQa => "Layer QA",
+        },
+        qa_scope_label(app)
+    )];
+    if let Some(finding) = app.qa.selected_finding() {
+        lines.push(format!(
+            "\nFinding {}\nStatus: {}\nSeverity: {}\nMessage: {}\nTask: {}\nTest: {}\nRule: {}\nSuggestion: {}\nSource: {}\nMetadata: {}",
+            finding.identity.fingerprint,
+            qa_status_label(Some(finding.status)),
+            finding.severity.as_deref().unwrap_or("unavailable"),
+            finding.message,
+            finding.task.as_deref().unwrap_or("unavailable"),
+            finding.test_name.as_deref().unwrap_or("unavailable"),
+            finding.rule.as_deref().unwrap_or("unavailable"),
+            finding.suggestion.as_deref().unwrap_or("unavailable"),
+            finding.source.as_ref().map_or_else(
+                || "unavailable".into(),
+                |source| format!(
+                    "{}:{}:{}",
+                    source.path.display(),
+                    source.line.map_or_else(|| "unavailable".into(), |line| line.to_string()),
+                    source.column.map_or_else(|| "unavailable".into(), |column| column.to_string())
+                )
+            ),
+            if finding.metadata.is_empty() {
+                "unavailable".into()
+            } else {
+                finding.metadata.iter().map(|item| format!("{}={}", item.key, item.value)).collect::<Vec<_>>().join(", ")
+            }
+        ));
+    } else if let Some(report) = app.qa.selected_report() {
+        lines.push(format!(
+            "\nReport\nPath: {}\nFormat: {:?}\nBytes: {}\nFingerprint: {}\nModified: {}\nFindings: {}\nLimitations: {}",
+            report.identity.path.display(),
+            report.identity.format,
+            report.identity.byte_size,
+            report.identity.fingerprint,
+            timestamp_text(report.identity.modified_at),
+            report.findings.len(),
+            if report.limitations.is_empty() { "none".into() } else { report.limitations.join(" | ") },
+        ));
+    } else {
+        match app.qa.view {
+            QaView::RecipeKernel => {
+                if let Some(check) = app.qa.selected_check() {
+                    lines.push(format!(
+                        "\nCheck {}\nFamily: {}\nTask: {}\nAvailability: {}\nProvider: {}\nReport roots: {}\nLimitations: {}",
+                        check.id.0,
+                        qa_family_label(check.family),
+                        check.task.as_deref().unwrap_or("unavailable"),
+                        match &check.availability {
+                            QaCheckAvailability::Available => "available",
+                            QaCheckAvailability::Disabled(reason) => reason,
+                        },
+                        check.scope.recipe.file.display(),
+                        if check.report_roots.is_empty() { "unavailable".into() } else { check.report_roots.iter().map(|path| path.display().to_string()).collect::<Vec<_>>().join(", ") },
+                        if check.limitations.is_empty() { "none".into() } else { check.limitations.join(" | ") },
+                    ));
+                } else {
+                    lines.push("\nNo QA check selected.".into());
+                }
+            }
+            QaView::LayerQa => {
+                if let Some(layer) = app.qa.selected_layer() {
+                    lines.push(format!(
+                        "\nLayer {}\nRoot: {}\nCompatible series: {}\nCapability: {}\nLimitations: {}",
+                        layer.identity.name,
+                        layer.identity.root.display(),
+                        if layer.compatible_series.is_empty() { "unavailable".into() } else { layer.compatible_series.join(", ") },
+                        match &layer.run {
+                            QaLayerRunCapability::Available { executable, arguments, report_roots } => format!("{} | argv [{}] | reports {}", executable.path.display(), arguments.join(", "), report_roots.len()),
+                            QaLayerRunCapability::Disabled(reason) => format!("disabled: {reason}"),
+                        },
+                        if layer.limitations.is_empty() { "none".into() } else { layer.limitations.join(" | ") },
+                    ));
+                } else {
+                    lines.push("\nNo configured layer selected.".into());
+                }
+            }
+        }
+    }
+    lines.join("\n")
+}
+
+fn qa_dialog(frame: &mut Frame, app: &App, dialog: &QaDialog, area: Rect) {
+    let (title, body) = match dialog {
+        QaDialog::Operation(preview) => (
+            "Confirm recipe/kernel QA",
+            format!(
+                "Operation {}\nCheck: {}\nRecipe: {}\nProvider: {}\n\nIndexed BitBake request:\n{}\n\nReport roots:\n{}\n\nEnter runs | Esc cancels",
+                preview.id.0,
+                preview.check.0,
+                preview.scope.recipe.name,
+                preview.scope.recipe.file.display(),
+                preview.indexed_arguments.join("\n"),
+                preview
+                    .report_roots
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            ),
+        ),
+        QaDialog::LayerOperation(preview) => (
+            "Confirm layer QA",
+            format!(
+                "Operation {}\nLayer: {} ({})\nExecutable: {}\n\nIndexed native vector:\n{}\n\nEnter runs | Esc cancels",
+                preview.id.0,
+                preview.layer.name,
+                preview.layer.root.display(),
+                preview.executable.path.display(),
+                preview.indexed_arguments.join("\n")
+            ),
+        ),
+        QaDialog::Import { input } => (
+            "Import QA reports",
+            format!("Exact absolute report or directory:\n{input}_\n\nEnter imports | Esc cancels"),
+        ),
+        QaDialog::Cancellation {
+            session,
+            background_job,
+        } => (
+            "Cancel managed QA",
+            format!(
+                "Cancel QA session {} attached to build job {}?\n\nEnter confirms | Esc keeps running",
+                session.0, background_job.0
+            ),
+        ),
+        QaDialog::LayerCancellation(session) => (
+            "Cancel layer QA",
+            format!(
+                "Cancel exact layer-QA session {}?\n\nEnter confirms | Esc keeps running",
+                session.0
+            ),
+        ),
+    };
+    let width = 78.min(area.width.saturating_sub(2));
+    let height = 18.min(area.height.saturating_sub(2));
+    let popup = Rect::new(
+        area.x + area.width.saturating_sub(width) / 2,
+        area.y + area.height.saturating_sub(height) / 2,
+        width,
+        height,
+    );
+    clear_popup(frame, app, popup);
+    frame.render_widget(
+        Paragraph::new(body)
+            .block(Block::default().title(title).borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
+fn qa_family_label(family: QaCheckFamily) -> &'static str {
+    match family {
+        QaCheckFamily::KernelConfiguration => "kernel configuration",
+        QaCheckFamily::UriFetch => "URI / fetch",
+        QaCheckFamily::Patch => "patch",
+        QaCheckFamily::License => "license",
+        QaCheckFamily::RecipePackage => "recipe / package",
+    }
+}
+
+fn qa_filter_label(filter: QaStatusFilter) -> &'static str {
+    match filter {
+        QaStatusFilter::All => "all",
+        QaStatusFilter::Failed => "failed",
+        QaStatusFilter::Warning => "warning",
+        QaStatusFilter::Passed => "passed",
+        QaStatusFilter::Skipped => "skipped",
+        QaStatusFilter::Unknown => "unknown",
+    }
+}
+
+fn qa_status_label(status: Option<QaFindingStatus>) -> &'static str {
+    match status {
+        Some(QaFindingStatus::Passed) => "passed",
+        Some(QaFindingStatus::Warning) => "warning",
+        Some(QaFindingStatus::Failed) => "failed",
+        Some(QaFindingStatus::Skipped) => "skipped",
+        Some(QaFindingStatus::Unknown) => "unknown",
+        None => "unavailable",
+    }
+}
+
+fn qa_worst_status(values: impl Iterator<Item = QaFindingStatus>) -> Option<QaFindingStatus> {
+    values.max_by_key(|status| match status {
+        QaFindingStatus::Failed => 5,
+        QaFindingStatus::Warning => 4,
+        QaFindingStatus::Unknown => 3,
+        QaFindingStatus::Skipped => 2,
+        QaFindingStatus::Passed => 1,
+    })
+}
+
+fn qa_failure_label(kind: QaReportFailureKind) -> &'static str {
+    match kind {
+        QaReportFailureKind::Missing => "missing",
+        QaReportFailureKind::PermissionDenied => "permission denied",
+        QaReportFailureKind::Stale => "stale",
+        QaReportFailureKind::Malformed => "malformed",
+        QaReportFailureKind::Failed => "failed",
+    }
+}
+
+fn qa_session_status_label(status: QaSessionStatus) -> &'static str {
+    match status {
+        QaSessionStatus::Starting => "starting",
+        QaSessionStatus::Running => "running",
+        QaSessionStatus::Cancelling => "cancelling",
+        QaSessionStatus::Succeeded => "succeeded",
+        QaSessionStatus::Failed => "failed",
+        QaSessionStatus::Cancelled => "cancelled",
+        QaSessionStatus::TimedOut => "timed out",
+        QaSessionStatus::Lost => "lost",
+    }
+}
+
+fn qa_status_style(palette: &ThemePalette, status: Option<QaFindingStatus>) -> Style {
+    match status {
+        Some(QaFindingStatus::Passed) => palette.role(palette.success, Modifier::BOLD),
+        Some(QaFindingStatus::Warning | QaFindingStatus::Skipped) => {
+            security_warning_style(palette)
+        }
+        Some(QaFindingStatus::Failed) => security_error_style(palette),
+        Some(QaFindingStatus::Unknown) | None => Style::default(),
+    }
+}
+
+fn qa_session_style(palette: &ThemePalette, status: QaSessionStatus) -> Style {
+    match status {
+        QaSessionStatus::Succeeded => palette.role(palette.success, Modifier::BOLD),
+        QaSessionStatus::Failed | QaSessionStatus::TimedOut | QaSessionStatus::Lost => {
+            security_error_style(palette)
+        }
+        QaSessionStatus::Cancelled | QaSessionStatus::Cancelling => security_warning_style(palette),
+        QaSessionStatus::Starting | QaSessionStatus::Running => security_info_style(palette),
+    }
 }
 
 fn security_scope_text(scope: Option<&SecurityScope>) -> String {
@@ -12338,5 +12933,318 @@ mod tests {
             "{failed}"
         );
         assert!(failed.contains("do_package"), "{failed}");
+    }
+
+    fn qa_workflow_ui_app() -> App {
+        let scope = yoctui_model::QaScope::new(RecipeIdentity {
+            name: "busybox".into(),
+            file: "/layers/meta/recipes-core/busybox/busybox_1.36.bb".into(),
+        })
+        .unwrap();
+        let check = yoctui_model::QaCheckId::new("recipe-package-busybox".into()).unwrap();
+        let report_identity = yoctui_model::QaReportIdentity::new(
+            "/build/tmp/log/qa/busybox.json".into(),
+            512,
+            SystemTime::UNIX_EPOCH,
+            "reportfingerprint".into(),
+            yoctui_model::QaReportFormat::Json,
+            Some(check.clone()),
+            Some(yoctui_model::QaFindingScope::Recipe(scope.clone())),
+        )
+        .unwrap();
+        let finding_identity =
+            yoctui_model::QaFindingIdentity::new(check.clone(), "findingfingerprint".into())
+                .unwrap();
+        let finding = yoctui_model::QaFinding {
+            identity: finding_identity.clone(),
+            status: yoctui_model::QaFindingStatus::Failed,
+            severity: Some("error".into()),
+            message: "installed-vs-shipped mismatch".into(),
+            scope: yoctui_model::QaFindingScope::Recipe(scope.clone()),
+            task: Some("do_package_qa".into()),
+            test_name: None,
+            source: Some(
+                yoctui_model::QaSourceLocation::new(
+                    "/layers/meta/classes-global/insane.bbclass".into(),
+                    Some(42),
+                    None,
+                )
+                .unwrap(),
+            ),
+            rule: Some("installed-vs-shipped".into()),
+            suggestion: Some("add the installed file to FILES".into()),
+            metadata: vec![
+                yoctui_model::QaMetadata::new("package".into(), "busybox".into()).unwrap(),
+            ],
+        };
+        let report = yoctui_model::QaReport {
+            identity: report_identity.clone(),
+            findings: vec![finding],
+            metadata: Vec::new(),
+            limitations: vec!["one unsupported record was retained".into()],
+        };
+        let request =
+            yoctui_model::QaReportRequest::new(3, vec![report_identity.path.clone()]).unwrap();
+        let available = yoctui_model::QaCheckCapability::new(
+            check.clone(),
+            yoctui_model::QaCheckFamily::RecipePackage,
+            "Recipe and package QA".into(),
+            scope.clone(),
+            Some("do_package_qa".into()),
+            vec!["/build/tmp/log/qa".into()],
+            yoctui_model::QaCheckAvailability::Available,
+            Vec::new(),
+        )
+        .unwrap();
+        let disabled = yoctui_model::QaCheckCapability::new(
+            yoctui_model::QaCheckId::new("kernel-configuration-busybox".into()).unwrap(),
+            yoctui_model::QaCheckFamily::KernelConfiguration,
+            "Kernel configuration".into(),
+            scope.clone(),
+            None,
+            Vec::new(),
+            yoctui_model::QaCheckAvailability::Disabled(
+                "selected recipe is not a kernel provider".into(),
+            ),
+            Vec::new(),
+        )
+        .unwrap();
+        let capability = yoctui_model::QaCapabilitySnapshot::new(
+            Some("6.0".into()),
+            "/build".into(),
+            scope.clone(),
+            vec![scope.clone()],
+            vec![available, disabled],
+            vec!["one optional report root was unavailable".into()],
+        )
+        .unwrap();
+        let layer_identity =
+            yoctui_model::QaLayerIdentity::new("meta-demo".into(), "/layers/meta-demo".into())
+                .unwrap();
+        let executable = yoctui_model::QaExecutableIdentity::new(
+            "/workspace/scripts/yocto-check-layer".into(),
+            128,
+            SystemTime::UNIX_EPOCH,
+        )
+        .unwrap();
+        let arguments = vec![layer_identity.root.display().to_string()];
+        let layer = yoctui_model::QaConfiguredLayerCapability::new(
+            yoctui_model::QaCheckId::new("layer-meta-demo".into()).unwrap(),
+            layer_identity.clone(),
+            vec!["walnascar".into()],
+            yoctui_model::QaLayerRunCapability::Available {
+                executable,
+                arguments,
+                report_roots: vec!["/build/tmp/log/qa-layer".into()],
+            },
+            vec!["live compatibility not validated".into()],
+        )
+        .unwrap();
+        let layer_capability = yoctui_model::QaLayerCapabilitySnapshot::new(
+            Some("6.0".into()),
+            "/build".into(),
+            layer_identity.clone(),
+            vec![layer],
+            Vec::new(),
+        )
+        .unwrap();
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Qa;
+        app.focus = FocusTarget::Workspace;
+        app.qa.scope = Some(scope);
+        app.qa.check_selection = Some(check);
+        app.qa.capability = yoctui_model::QaCapability::Partial {
+            snapshot: Box::new(capability),
+            limitations: vec!["one optional report root was unavailable".into()],
+        };
+        app.qa.inventory = yoctui_model::QaReportInventoryState::Partial {
+            request,
+            reports: vec![report],
+            limitations: vec!["one exact record was malformed".into()],
+        };
+        app.qa.report_selection = Some(report_identity);
+        app.qa.finding_selection = Some(finding_identity);
+        app.qa.layer_capability =
+            yoctui_model::QaLayerCapability::Available(Box::new(layer_capability));
+        app.qa.layer_selection = Some(layer_identity);
+        app
+    }
+
+    #[test]
+    fn qa_workflow_renders_both_views_findings_inspector_themes_and_breakpoints() {
+        let mut app = qa_workflow_ui_app();
+        for (width, height) in [(160, 40), (120, 30), (90, 24), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Recipe & Kernel"), "{width}: {output}");
+            assert!(output.contains("do_package_qa"), "{width}: {output}");
+            assert!(output.contains("Partial"), "{width}: {output}");
+        }
+        app.qa.drilled = true;
+        app.focus = FocusTarget::Inspector;
+        let inspector = rendered_text(&app, 120, 30);
+        assert!(
+            inspector.contains("installed-vs-shipped mismatch"),
+            "{inspector}"
+        );
+        assert!(inspector.contains("add the installed file"), "{inspector}");
+        assert!(inspector.contains("insane.bbclass"), "{inspector}");
+
+        app.focus = FocusTarget::Workspace;
+        app.qa.view = QaView::LayerQa;
+        let layer = rendered_text(&app, 160, 40);
+        assert!(layer.contains("meta-demo"), "{layer}");
+        assert!(layer.contains("/layers/meta-demo"), "{layer}");
+        for (theme, color) in [
+            (Theme::Dark, true),
+            (Theme::Light, true),
+            (Theme::HighContrast, true),
+            (Theme::Monochrome, false),
+        ] {
+            app.theme = theme;
+            app.color_enabled = color;
+            assert!(rendered_text(&app, 100, 24).contains("Layer QA"));
+        }
+    }
+
+    #[test]
+    fn qa_workflow_renders_every_report_and_capability_state_distinctly() {
+        let mut app = qa_workflow_ui_app();
+        let request = yoctui_model::QaReportRequest::new(8, vec!["/build/reports".into()]).unwrap();
+        for (inventory, expected) in [
+            (
+                yoctui_model::QaReportInventoryState::NotLoaded,
+                "Reports not loaded",
+            ),
+            (
+                yoctui_model::QaReportInventoryState::Loading {
+                    request: request.clone(),
+                },
+                "Loading report generation 8",
+            ),
+            (
+                yoctui_model::QaReportInventoryState::AvailableEmpty {
+                    request: request.clone(),
+                },
+                "available-empty",
+            ),
+            (
+                yoctui_model::QaReportInventoryState::Failed {
+                    request: request.clone(),
+                    kind: yoctui_model::QaReportFailureKind::PermissionDenied,
+                    message: "access denied".into(),
+                },
+                "permission denied",
+            ),
+            (
+                yoctui_model::QaReportInventoryState::Cancelled {
+                    request: request.clone(),
+                },
+                "acquisition cancelled",
+            ),
+            (
+                yoctui_model::QaReportInventoryState::TimedOut {
+                    request: request.clone(),
+                },
+                "acquisition timed out",
+            ),
+            (
+                yoctui_model::QaReportInventoryState::Lost {
+                    request,
+                    message: "worker channel closed".into(),
+                },
+                "worker lost",
+            ),
+        ] {
+            app.qa.inventory = inventory;
+            let output = rendered_text(&app, 120, 28);
+            assert!(output.contains(expected), "{expected}: {output}");
+        }
+        app.qa.capability = QaCapability::Inspecting;
+        assert!(rendered_text(&app, 120, 28).contains("Inspecting recipe"));
+        app.qa.capability = QaCapability::Failed("metadata denied".into());
+        assert!(rendered_text(&app, 120, 28).contains("metadata denied"));
+        app.qa.view = QaView::LayerQa;
+        app.qa.layer_capability = QaLayerCapability::Failed("tool unsafe".into());
+        assert!(rendered_text(&app, 120, 28).contains("tool unsafe"));
+    }
+
+    #[test]
+    fn qa_workflow_dialogs_render_exact_previews_at_responsive_boundaries() {
+        let mut app = qa_workflow_ui_app();
+        let scope = app.qa.scope.clone().unwrap();
+        let check = app.qa.check_selection.clone().unwrap();
+        let operation = yoctui_model::QaOperationPreview {
+            id: yoctui_model::QaOperationId(11),
+            check,
+            family: yoctui_model::QaCheckFamily::RecipePackage,
+            scope,
+            request: BuildRequest {
+                targets: vec!["busybox".into()],
+                task: Some("do_package_qa".into()),
+                force: false,
+            },
+            indexed_arguments: vec![
+                "0: bitbake".into(),
+                "1: busybox".into(),
+                "2: -c".into(),
+                "3: package_qa".into(),
+            ],
+            report_roots: vec!["/build/tmp/log/qa".into()],
+            limitations: Vec::new(),
+        };
+        let layer = app.qa.selected_layer().unwrap();
+        let QaLayerRunCapability::Available {
+            executable,
+            arguments,
+            report_roots,
+        } = &layer.run
+        else {
+            panic!("expected layer capability")
+        };
+        let layer_operation = yoctui_model::QaLayerOperationPreview {
+            id: yoctui_model::QaLayerOperationId(12),
+            check: layer.check.clone(),
+            layer: layer.identity.clone(),
+            executable: executable.clone(),
+            arguments: arguments.clone(),
+            indexed_arguments: vec![
+                format!("0: {}", executable.path.display()),
+                format!("1: {}", layer.identity.root.display()),
+            ],
+            report_roots: report_roots.clone(),
+            limitations: Vec::new(),
+        };
+        for (dialog, expected) in [
+            (QaDialog::Operation(operation), "Indexed BitBake request"),
+            (
+                QaDialog::LayerOperation(layer_operation),
+                "Indexed native vector",
+            ),
+            (
+                QaDialog::Import {
+                    input: "/build/reports".into(),
+                },
+                "Exact absolute report",
+            ),
+            (
+                QaDialog::Cancellation {
+                    session: yoctui_model::QaSessionId(13),
+                    background_job: yoctui_model::BackgroundJobId(4),
+                },
+                "attached to build job 4",
+            ),
+            (
+                QaDialog::LayerCancellation(yoctui_model::QaLayerSessionId(14)),
+                "exact layer-QA session 14",
+            ),
+        ] {
+            app.dialogs.clear();
+            app.dialogs.push_front(Dialog::Qa(dialog));
+            app.focus = FocusTarget::Dialog;
+            for (width, height) in [(160, 40), (100, 26), (80, 24)] {
+                let output = rendered_text(&app, width, height);
+                assert!(output.contains(expected), "{width}: {output}");
+            }
+        }
     }
 }
