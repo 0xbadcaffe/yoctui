@@ -14,6 +14,7 @@ pub const MAX_SECURITY_QUERY_BYTES: usize = 512;
 pub const MAX_SECURITY_FINGERPRINT_BYTES: usize = 256;
 pub const MAX_SECURITY_PATHS: usize = 256;
 pub const MAX_SECURITY_SESSIONS: usize = 64;
+pub const MAX_SECURITY_SESSION_OUTPUT: usize = 256;
 
 fn bounded_text(value: &str) -> bool {
     !value.is_empty()
@@ -608,6 +609,19 @@ impl SecuritySessionStatus {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SecurityOutputStream {
+    Stdout,
+    Stderr,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SecurityOutputLine {
+    pub stream: SecurityOutputStream,
+    pub line: String,
+    pub truncated: bool,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SecuritySession {
     pub preview: SecurityOperationPreview,
@@ -617,6 +631,7 @@ pub struct SecuritySession {
     pub finished_at: Option<SystemTime>,
     pub message: Option<String>,
     pub result_paths: Vec<PathBuf>,
+    pub output: Vec<SecurityOutputLine>,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -784,6 +799,12 @@ pub enum SecurityAction {
         background_job_id: BackgroundJobId,
     },
     SessionRunning(SecuritySessionId),
+    SessionOutput {
+        id: SecuritySessionId,
+        stream: SecurityOutputStream,
+        line: String,
+        truncated: bool,
+    },
     CompleteSession {
         id: SecuritySessionId,
         result_paths: Vec<PathBuf>,
@@ -1173,6 +1194,7 @@ pub fn update_security(state: &mut SecurityState, action: SecurityAction) -> Sec
                 finished_at: None,
                 message: None,
                 result_paths: Vec::new(),
+                output: Vec::new(),
             });
             if state.sessions.len() > MAX_SECURITY_SESSIONS {
                 state.sessions.remove(0);
@@ -1207,6 +1229,31 @@ pub fn update_security(state: &mut SecurityState, action: SecurityAction) -> Sec
                 && session.status == SecuritySessionStatus::Starting
             {
                 session.status = SecuritySessionStatus::Running;
+            }
+            SecurityTransition::none()
+        }
+        SecurityAction::SessionOutput {
+            id,
+            stream,
+            line,
+            truncated,
+        } => {
+            if line.len() <= MAX_SECURITY_TEXT_BYTES
+                && !line.chars().any(char::is_control)
+                && let Some(session) = state
+                    .sessions
+                    .iter_mut()
+                    .find(|session| session.preview.id == id)
+                && !session.status.is_terminal()
+            {
+                session.output.push(SecurityOutputLine {
+                    stream,
+                    line,
+                    truncated,
+                });
+                if session.output.len() > MAX_SECURITY_SESSION_OUTPUT {
+                    session.output.remove(0);
+                }
             }
             SecurityTransition::none()
         }
@@ -1740,6 +1787,25 @@ mod tests {
             Some(SecurityEffect::StartBuild { id: started, .. }) if started == id
         ));
         let _ = update_security(&mut state, SecurityAction::SessionRunning(id));
+        for index in 0..=MAX_SECURITY_SESSION_OUTPUT {
+            let _ = update_security(
+                &mut state,
+                SecurityAction::SessionOutput {
+                    id,
+                    stream: SecurityOutputStream::Stdout,
+                    line: format!("mapped package {index}"),
+                    truncated: index == MAX_SECURITY_SESSION_OUTPUT,
+                },
+            );
+        }
+        assert_eq!(
+            state.active_session().unwrap().output.len(),
+            MAX_SECURITY_SESSION_OUTPUT
+        );
+        assert_eq!(
+            state.active_session().unwrap().output[0].line,
+            "mapped package 1"
+        );
         let _ = update_security(&mut state, SecurityAction::BeginCancellation);
         let transition = update_security(&mut state, SecurityAction::ConfirmCancellation(id));
         assert_eq!(transition.effect, Some(SecurityEffect::CancelSession(id)));

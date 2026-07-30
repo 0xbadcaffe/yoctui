@@ -1175,12 +1175,12 @@ notes = "The replaceable blocking adapter accepts only sorted unique explicit ca
 id = "SEC-MAPPER-ADAPTER-001"
 milestone = "M5"
 title = "Run exact CVE package mapping"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 61
 required = true
 depends_on = ["SEC-CAP-ADAPTER-001"]
 verify = ["cargo test -p yoctui-bitbake security_mapper", "cargo test -p yoctui-app security_workflow"]
-notes = "Reconstruct and immediately revalidate the exact shell-free cve-check-map-pkgs operation and emit bounded typed stream, success, nonzero, rejection, cancellation, timeout, and worker-loss events."
+notes = "A session-correlated independent runner reconstructs only the exact typed cve-check-map-pkgs preview, captures and immediately revalidates canonical regular non-symlink executable/input identities, spawns native argv in a child process group, bounds lossy stdout/stderr and retained model output, and preserves started, output, success, nonzero, cancellation requested/rejected/graceful/forced, timeout, and worker-loss events. Tampering, duplicate starts, stale tools, symlinked tools/inputs, invalid arguments, and wrong-session cancellation fail closed. Focused fake-process and baseline checks pass; live compatibility is not claimed."
 
 [[task]]
 id = "SEC-ADAPTER-001"
