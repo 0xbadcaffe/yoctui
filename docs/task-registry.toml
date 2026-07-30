@@ -1318,12 +1318,12 @@ notes = "The layer-QA adapter discovers only a canonical executable from the chi
 id = "QA-ADAPTER-001"
 milestone = "M5"
 title = "Close QA adapter gate"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 62
 required = true
 depends_on = ["QA-TASK-ADAPTER-001", "QA-REPORT-ADAPTER-001", "QA-LAYER-ADAPTER-001"]
 verify = ["cargo test -p yoctui-bitbake qa_", "cargo test -p yoctui-app qa_workflow"]
-notes = "Parent adapter/app gate for authoritative task/capability discovery, bounded typed findings, exact shell-free layer QA, and every explicit lifecycle outcome."
+notes = "The combined adapter/app parent gate passes 17 BitBake adapter tests and five mechanical app tests. Authoritative task capability, bounded fingerprinted findings, exact shell-free layer execution, independent cancellation targets, and every applicable empty/partial/failure/nonzero/cancel/timeout/loss outcome agree without widget parsing or mocked live claims."
 
 [[task]]
 id = "QA-RENDER-001"
