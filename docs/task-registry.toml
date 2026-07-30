@@ -1307,12 +1307,12 @@ notes = "The QA report adapter now accepts exact managed or import candidates wi
 id = "QA-LAYER-ADAPTER-001"
 milestone = "M5"
 title = "Run exact layer QA checks"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 62
 required = true
 depends_on = ["QA-LAYER-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake qa_layer", "cargo test -p yoctui-app qa_workflow"]
-notes = "Discover and revalidate canonical yocto-check-layer capability, construct exact shell-free configured-layer argv, stream bounded typed output, and preserve duplicate, nonzero, cancellation, timeout, and worker-loss outcomes."
+notes = "The layer-QA adapter discovers only a canonical executable from the child search path, retains every exact configured layer with disabled reasons, constructs one exact layer-root argv, validates report roots, captures and revalidates executable/layer identities before shell-free spawn, and streams bounded typed output. Fake-process coverage preserves success, nonzero, duplicate, graceful/forced cancellation, rejection, timeout, stale identity, and channel-loss outcomes without claiming live compatibility."
 
 [[task]]
 id = "QA-ADAPTER-001"

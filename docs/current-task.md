@@ -2,56 +2,41 @@
 
 ## Active task
 
-**ID:** QA-LAYER-ADAPTER-001
-**Title:** Run exact layer QA checks
+**ID:** QA-ADAPTER-001
+**Title:** Close QA adapter gate
 
 ## Objective
 
-Discover and revalidate canonical `yocto-check-layer` capability for exact
-configured layers, then execute only capability-supplied shell-free vectors
-with bounded typed lifecycle events.
+Verify the recipe/kernel capability, bounded report, configured-layer runner,
+and mechanical app mappings together as one authoritative QA adapter boundary.
 
 ## Required work
 
-1. Inspect the typed layer-QA model, configured-layer metadata, hardened native
-   runner adapters, process-group cancellation patterns, and the authoritative
-   QA architecture before writing code.
-2. Add a focused BitBake layer-QA adapter that accepts an initialized build
-   identity, a child-only executable search path, and exact configured-layer
-   identities; do not reconstruct layer roots from names or scan arbitrary
-   directories.
-3. Discover a canonical regular executable without following symlinks and
-   construct an exact capability vector for each configured layer. Preserve
-   missing/unsafe tools and invalid optional layers as typed disabled or
-   partial capability with stable reasons.
-4. Capture executable size/modification identity and canonical layer roots,
-   reconstruct only the confirmed indexed vector, and revalidate both
-   immediately before spawn.
-5. Launch one native-argv child in its own process group, use no shell or
-   free-form arguments, bound and tag both output streams, reject duplicate
-   sessions, and emit exact started/output/completed/nonzero events.
-6. Implement correlated graceful cancellation with forced escalation and
-   distinct rejection, timeout, stale identity, and unexpected worker/channel
-   loss outcomes.
-7. Add fake-process and fake-filesystem tests for discovery, exact vectors,
-   symlink/escape/tampering, bounded output, duplicate start, success,
-   nonzero, graceful/forced cancellation, timeout, and loss. Add only
-   mechanical app event mapping; do not implement CLI polling or rendering.
+1. Inspect all three completed QA adapter modules and their app mappings for
+   boundary disagreements, duplicated parsing, guessed identities, or missing
+   terminal outcomes before changing code.
+2. Confirm recipe/kernel tasks remain exact capability values, reports retain
+   generation/check/scope/fingerprint identity, and layer execution
+   reconstructs only the confirmed canonical native vector.
+3. Confirm report and layer workers independently preserve empty, partial,
+   malformed, missing, permission, stale, nonzero, cancellation, timeout,
+   duplicate, rejection, and loss outcomes where applicable.
+4. Add only missing cross-adapter or mechanical app coverage required to close
+   the parent gate. Do not implement widgets or CLI polling in this task.
+5. Run the focused parent checks and every baseline verification command.
 
 ## Definition of done
 
-- Capability contains only canonical configured-layer and executable
-  identities with complete indexed native vectors.
-- Spawn reconstructs the confirmed vector exactly after immediate identity
-  revalidation and never invokes a shell.
-- Every lifecycle, cancellation, timeout, duplicate, stale, and loss outcome
-  remains typed and distinct.
-- Focused adapter/app and baseline verification pass.
+- All QA adapter and app focused tests pass together.
+- No adapter guesses tasks, paths, checks, scopes, formats, status, or native
+  arguments outside the documented contracts.
+- Raw process/report text cannot cross the app boundary as authority.
+- Baseline verification passes.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake qa_layer
+cargo test -p yoctui-bitbake qa_
 cargo test -p yoctui-app qa_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features

@@ -1,9 +1,10 @@
 //! Application-owned input mapping, keeping terminal concerns outside the reducer.
 use std::time::SystemTime;
 use yoctui_bitbake::{
-    BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QaReportAdapterError, QaReportResponse,
-    QaReportScanOutcome, QaTaskCapabilityResponse, QemuRunnerEvent, QemuRunnerOutputStream,
-    SdkToolRunnerEvent, SecurityMapperRunnerEvent, TestResultImportResponse, TestResultOperation,
+    BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QaLayerCapabilityResponse,
+    QaLayerRunnerEvent, QaReportAdapterError, QaReportResponse, QaReportScanOutcome,
+    QaTaskCapabilityResponse, QemuRunnerEvent, QemuRunnerOutputStream, SdkToolRunnerEvent,
+    SecurityMapperRunnerEvent, TestResultImportResponse, TestResultOperation,
     TestResultRunnerEvent, TestRunnerEvent, WicDeviceInventoryResponse, WicRunnerEvent,
     WicRunnerOutputStream,
 };
@@ -18,6 +19,98 @@ use yoctui_model::{
     TestComparison, VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream,
     WicSessionId,
 };
+
+pub fn qa_layer_capability_action(response: QaLayerCapabilityResponse) -> Action {
+    match response {
+        QaLayerCapabilityResponse::Available(snapshot) => {
+            Action::Qa(QaAction::LayerCapabilityLoaded(snapshot))
+        }
+        QaLayerCapabilityResponse::Partial(snapshot) => {
+            let limitations = snapshot.limitations.clone();
+            Action::Qa(QaAction::LayerCapabilityPartial {
+                snapshot,
+                limitations,
+            })
+        }
+    }
+}
+
+pub fn qa_layer_runner_action(event: QaLayerRunnerEvent, timestamp: SystemTime) -> Option<Action> {
+    let qa = |action| Some(Action::Qa(action));
+    match event {
+        QaLayerRunnerEvent::Started { id } => qa(QaAction::LayerSessionRunning(id)),
+        QaLayerRunnerEvent::Output {
+            id,
+            stream,
+            line,
+            truncated,
+        } => qa(QaAction::LayerSessionOutput {
+            session: id,
+            stream,
+            line,
+            truncated,
+        }),
+        QaLayerRunnerEvent::Completed {
+            id,
+            exit_code: Some(exit_code),
+        } => qa(QaAction::CompleteLayerSession {
+            session: id,
+            exit_code,
+            result_paths: Vec::new(),
+            finished_at: timestamp,
+        }),
+        QaLayerRunnerEvent::Completed {
+            id,
+            exit_code: None,
+        } => qa(QaAction::FailLayerSession {
+            session: id,
+            exit_code: None,
+            message: "layer QA completed without an exit code".into(),
+            finished_at: timestamp,
+        }),
+        QaLayerRunnerEvent::Failed { id, exit_code } => qa(QaAction::FailLayerSession {
+            session: id,
+            exit_code,
+            message: exit_code.map_or_else(
+                || "layer QA failed without an exit code".into(),
+                |code| format!("layer QA failed with exit code {code}"),
+            ),
+            finished_at: timestamp,
+        }),
+        QaLayerRunnerEvent::CancellationRequested { .. } => None,
+        QaLayerRunnerEvent::Cancelled {
+            id,
+            forced,
+            exit_code,
+        } => qa(QaAction::CancelLayerSession {
+            session: id,
+            forced,
+            exit_code,
+            finished_at: timestamp,
+        }),
+        QaLayerRunnerEvent::CancellationRejected { id, message } => {
+            qa(QaAction::RejectLayerCancellation {
+                session: id,
+                message,
+            })
+        }
+        QaLayerRunnerEvent::TimedOut {
+            id,
+            forced,
+            exit_code,
+        } => qa(QaAction::TimeoutLayerSession {
+            session: id,
+            forced,
+            exit_code,
+            finished_at: timestamp,
+        }),
+        QaLayerRunnerEvent::Lost { id, message } => qa(QaAction::LoseLayerSession {
+            session: id,
+            message,
+            finished_at: timestamp,
+        }),
+    }
+}
 
 pub fn qa_report_response_action(response: QaReportResponse) -> Action {
     let (reports, limitations) = match response.outcome {
@@ -5194,6 +5287,90 @@ mod tests {
                 ..
             })
         ));
+    }
+
+    #[test]
+    fn qa_workflow_maps_layer_capability_and_runner_events_mechanically() {
+        let layer =
+            yoctui_model::QaLayerIdentity::new("meta-demo".into(), "/layers/meta-demo".into())
+                .unwrap();
+        let configured = yoctui_model::QaConfiguredLayerCapability::new(
+            yoctui_model::QaCheckId::new("layer-meta-demo".into()).unwrap(),
+            layer.clone(),
+            vec!["walnascar".into()],
+            yoctui_model::QaLayerRunCapability::Disabled("tool unavailable".into()),
+            vec!["tool unavailable".into()],
+        )
+        .unwrap();
+        let snapshot = yoctui_model::QaLayerCapabilitySnapshot::new(
+            Some("6.0".into()),
+            "/build".into(),
+            layer,
+            vec![configured],
+            vec!["tool unavailable".into()],
+        )
+        .unwrap();
+        assert_eq!(
+            qa_layer_capability_action(QaLayerCapabilityResponse::Partial(snapshot.clone())),
+            Action::Qa(QaAction::LayerCapabilityPartial {
+                snapshot,
+                limitations: vec!["tool unavailable".into()],
+            })
+        );
+
+        let timestamp = SystemTime::UNIX_EPOCH;
+        let session = yoctui_model::QaLayerSessionId(7);
+        assert_eq!(
+            qa_layer_runner_action(QaLayerRunnerEvent::Started { id: session }, timestamp),
+            Some(Action::Qa(QaAction::LayerSessionRunning(session)))
+        );
+        assert_eq!(
+            qa_layer_runner_action(
+                QaLayerRunnerEvent::Output {
+                    id: session,
+                    stream: yoctui_model::QaOutputStream::Stderr,
+                    line: "warning".into(),
+                    truncated: false,
+                },
+                timestamp,
+            ),
+            Some(Action::Qa(QaAction::LayerSessionOutput {
+                session,
+                stream: yoctui_model::QaOutputStream::Stderr,
+                line: "warning".into(),
+                truncated: false,
+            }))
+        );
+        assert_eq!(
+            qa_layer_runner_action(
+                QaLayerRunnerEvent::TimedOut {
+                    id: session,
+                    forced: true,
+                    exit_code: None,
+                },
+                timestamp,
+            ),
+            Some(Action::Qa(QaAction::TimeoutLayerSession {
+                session,
+                forced: true,
+                exit_code: None,
+                finished_at: timestamp,
+            }))
+        );
+        assert_eq!(
+            qa_layer_runner_action(
+                QaLayerRunnerEvent::Lost {
+                    id: session,
+                    message: "channel lost".into(),
+                },
+                timestamp,
+            ),
+            Some(Action::Qa(QaAction::LoseLayerSession {
+                session,
+                message: "channel lost".into(),
+                finished_at: timestamp,
+            }))
+        );
     }
 
     #[test]
