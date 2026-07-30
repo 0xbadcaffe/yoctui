@@ -576,6 +576,71 @@ environment and must record the exact release, capability/task names, scope,
 report identities, and outcome. A mocked legacy/current task matrix or parsed
 fixture alone is not a live compatibility claim.
 
+## Managed QA boundary
+
+`yoctui-model::qa` owns the typed Recipe & Kernel and Layer QA views, exact
+recipe/provider and configured-layer scopes, capability-supplied check
+catalog, stable operation/session/report/finding identities, deterministic
+previews, search/filter/drill selection, bounded retained session output,
+managed-job association, dialog state, cancellation, and correlated lifecycle
+outcomes. It may reuse `BuildRequest`, `RecipeIdentity`, `Layer`, and the shared
+background-job collection, but it never inspects the host, guesses a task or
+tool, walks report directories, parses logs/reports/process text, launches a
+child, or opens a path.
+
+Each catalog entry is typed as kernel configuration, URI, patch, license,
+general recipe/package, or configured-layer QA and carries an execution kind
+plus an exact availability reason. Recipe/kernel operations use only tasks
+reported for the exact provider and reuse the existing managed BitBake
+coordinator. Task strings such as `kernel_configcheck`, `checkuri`, or
+`package_qa` are capability values, not release-derived defaults. The model
+cannot enable inherited classes or translate an unavailable check into an
+arbitrary shell command.
+
+`yoctui-bitbake` owns fail-closed capability construction from explicit
+initialized metadata, canonical report/tool/layer validation, bounded report
+acquisition and content fingerprints, normalized QA finding parsing, and the
+exact `yocto-check-layer` adapter. The layer runner captures and immediately
+revalidates the canonical executable and configured-layer identities,
+reconstructs only the confirmed indexed vector, uses native argv in its own
+process group, and emits typed bounded start/output/completion/nonzero/
+cancellation/timeout/loss events. Report adapters accept only exact roots or
+imports, refuse symlinks and escapes, bound traversal/files/bytes/records/
+fields/time, and preserve partial valid data with limitations. Unknown formats
+or records remain unknown/partial instead of being inferred from filenames,
+colors, or unstructured output.
+
+Normalized findings carry stable check and finding identity, exact scope,
+typed status/severity, bounded message, optional authoritative source path and
+line, rule/code, suggestion, and report identity. Raw BitBake logs, native
+stdout/stderr, report JSON/XML/text, and filenames never cross into widgets as
+authority. Successful managed operations without an exact report remain
+successful with no report and do not fabricate findings.
+
+`yoctui-app` maps QA keys, adapter responses, and layer-runner events
+mechanically. `yoctui-ui` renders only typed QA capability, catalog, report,
+finding, session, limitation, and dialog state and emits typed actions. The
+CLI snapshots the initialized build directory and child-only executable
+search path, routes recipe/kernel builds through the managed BitBake
+coordinator, owns at most one independent layer-QA runner and one replaceable
+generation-correlated report worker, and polls them without blocking terminal
+input or unrelated operations. It revalidates exact reports/providers/finding
+sources before editor launch and correlates cancellation to the exact QA
+session only.
+
+Existing Recipes task execution and local patch review remain contextual
+routes over the same authoritative recipe identity; the QA destination does
+not fork their editor or build lifecycle. UI behavior changes are specified in
+`docs/ui-spec.md`, while the backend remains the authority for task, provider,
+layer, and report identity.
+
+Fake process/filesystem coverage proves only these boundaries. Live QA support
+requires opt-in execution in an initialized compatible Yocto environment and
+must record the exact release, capability/task/tool names, recipe or layer
+scope, report identities, and outcome. Fixture output from
+`yocto-check-layer` or a mocked task catalog is not live compatibility
+evidence.
+
 ## Managed runqemu model boundary
 
 `yoctui-model::qemu` owns capability states, exact artifact-bound launch

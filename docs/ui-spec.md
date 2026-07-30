@@ -23,7 +23,7 @@ It must combine:
 - dependency exploration
 - Devtool workflows
 - configuration and provenance inspection
-- package, image, SDK, testing, QEMU, Wic, sstate, CVE, SPDX, and maintenance workflows
+- package, image, SDK, testing, QA, QEMU, Wic, sstate, CVE, SPDX, and maintenance workflows
 
 Yoctui is not a collection of unrelated screens. It is a persistent workbench with a consistent navigation, focus, dialog, and shortcut model.
 
@@ -54,6 +54,7 @@ The normal application layout is:
 │ SDK              │                                     │                                  │
 │ Testing          │                                     │                                  │
 │ Security         │                                     │                                  │
+│ QA               │                                     │                                  │
 │ Devtool          │                                     │                                  │
 │ QEMU / Wic       │                                     │                                  │
 │ Maintenance      │                                     │                                  │
@@ -132,6 +133,7 @@ Required entries:
 - SDK
 - Testing
 - Security
+- QA
 - Devtool
 - Dependencies
 - QEMU / Wic
@@ -1592,6 +1594,158 @@ At 90 columns and below it compacts to:
 
 ```text
 Tab:view ↑↓ s:scope i:image /:find f:status V:check M:map X:SBOM I/R:data Enter o/e/v:open c:cancel
+```
+
+### QA
+
+`QA` is a first-class Navigator destination after `Security`. It owns
+capability-driven recipe, kernel, and configured-layer validation without
+replacing the exact task, patch-review, or provider routes already available
+in Recipes. The persistent Header shows the active Yocto release, build
+directory, `MACHINE`, `DISTRO`, exact QA scope, active managed job, CPU
+utilization, and build-filesystem space.
+
+The QA Workspace has `Recipe & Kernel` and `Layer QA` views selected by
+`Tab`. View, exact selection, search/filter state, session history, and
+findings survive navigation and resize. Entering QA requests one correlated
+capability inspection and scans only already-authoritative report roots; it
+does not launch checks automatically.
+
+#### Capability, catalog, and scope
+
+The capability result contains the exact release/build identity, selected
+recipe and provider, all eligible configured layers, canonical executable
+identity when layer QA is available, and a typed check catalog. Every catalog
+entry has a stable identity, family, label, exact scope, execution kind,
+reported BitBake task or native vector, expected report roots, availability,
+and disabled reason.
+
+The required check families are:
+
+- kernel configuration;
+- URI and fetch metadata;
+- patch application and patch metadata/status;
+- license metadata and checksum;
+- general recipe/package QA;
+- configured-layer compatibility through `yocto-check-layer`.
+
+Support is derived only from typed BitBake metadata, configuration, configured
+layer identity, and canonical tool discovery. For example, kernel
+configuration may use a reported `do_kernel_configcheck`, URI validation may
+use a reported `do_checkuri`, and recipe/package or license validation may use
+other exact reported tasks. These names are examples, not defaults: an entry
+is runnable only when the capability supplies its exact task. Yoctui never
+selects a task from the release string, treats a similarly named task as
+equivalent, edits inherited classes to enable a check, or uses a free-form
+command field.
+
+In `Recipe & Kernel`, `s` cycles only exact recipe scopes supplied by the
+capability. The selected recipe name and absolute provider path form one
+identity; a stale provider invalidates the preview. Kernel-only entries show a
+stable disabled reason for non-kernel scopes. In `Layer QA`, configured layer
+name plus canonical root path form the identity. Only layers in the active
+typed layer inventory are selectable; Yoctui never scans arbitrary
+directories or reconstructs a layer path from its name.
+
+#### Recipe and kernel checks
+
+The Workspace shows one row per catalog entry with family, exact task,
+availability, latest status, warning/error counts, and report availability.
+`Up`/`Down` selects a check. `/` searches typed label, family, task, recipe,
+provider, result, and finding fields. `f` cycles `all`, `failed`, `warning`,
+`passed`, `skipped`, and `unknown`.
+
+`r` opens a two-step confirmation for the selected available check. The
+preview shows stable operation ID, exact recipe/provider scope, complete
+indexed shell-free BitBake request, expected report roots, and any known
+limitations. `Enter` starts it through the existing single managed BitBake
+coordinator; `Esc` closes without execution. Duplicate builds remain rejected
+by that coordinator. Successful completion triggers an exact
+generation-correlated report scan. Success with no authoritative report is a
+successful session with `no report supplied`; widgets never derive findings
+or paths from console text.
+
+The Inspector shows the selected check's capability source, exact scope and
+task, current/previous sessions, bounded output summary, exact report
+identities, and every limitation. It also shows normalized findings with
+stable check/finding identity, typed status (`passed`, `warning`, `failed`,
+`skipped`, or `unknown`), severity when reported, bounded message, recipe,
+task, source path/line when authoritative, rule/code, and suggestion when
+reported. Missing fields render `unavailable`; an available empty report says
+`no findings`.
+
+`Enter` drills from a check into its bounded findings and `Esc` returns one
+level. `o` opens the selected exact report, `e` opens the exact provider, and
+`l` opens an exact finding source only when the adapter supplied a canonical
+path. Existing Recipes patch review remains the contextual way to browse all
+resolved local patches; QA source opening targets only the selected normalized
+finding.
+
+#### Layer QA
+
+The Layer QA Workspace lists every configured layer even when
+`yocto-check-layer` is missing. Rows show exact layer name/root, compatibility
+metadata when available, capability state, latest session status, pass/warn/
+fail/skip counts, and report availability. Search and status filters operate
+only on typed rows/findings.
+
+`r` opens a deterministic confirmation only when the capability contains a
+canonical regular executable and exact vector for the selected configured
+layer. The preview shows stable session identity and the complete indexed
+native argument vector; there is no extra-arguments textbox. Confirmation
+immediately revalidates the executable and layer root, then starts one
+shell-free child in its own process group. At most one layer-QA runner is
+active. Both output streams are bounded and tagged, while widgets consume
+only typed runner events and normalized findings.
+
+Layer findings use the same typed status and source fields as recipe/kernel
+findings plus exact layer identity and test name. Unsupported output remains
+bounded session output with a visible parsing limitation; it is never silently
+promoted to a pass or failure. Nonzero exit, cancellation, timeout, duplicate
+start, stale tool/layer identity, and worker loss are separate outcomes.
+
+#### Reports, imports, lifecycle, and dialogs
+
+`I` opens a focus-trapping import dialog for one normalized absolute canonical
+regular QA report or a bounded canonical directory. Only documented adapter
+formats are parsed. Imports and successful operations replace the current
+report generation; `R` rescans the same exact paths. Scans are bounded by
+directory/file count, total bytes, record count, field length, and time, refuse
+symlinks and escapes, and preserve valid findings beside malformed data as
+`partial`.
+
+Exact report identity contains canonical path, byte size, modification time,
+content fingerprint, format, and optional producer/check scope. Available
+empty, partial, missing, permission-denied, stale, malformed, cancelled,
+timed-out, and worker-loss states remain distinct. Exact identity is
+revalidated before every open. Raw log/report text, JSON, XML, and native
+process output never cross into widgets as authority.
+
+`c` opens cancellation confirmation for the exact active QA session. Managed
+BitBake cancellation targets only the attached background job; layer-QA
+cancellation targets only its matching native runner. Rejection restores the
+running state with its reason. Cancellation never targets Testing, Security,
+SDK, QEMU, Wic, Devtool, or unrelated metadata/report work.
+
+Operation, import, and cancellation dialogs trap focus, show exact indexed
+previews or normalized paths, and keep unavailable actions disabled with a
+stable reason. All QA views and dialogs remain usable at 80×24. Wide mode uses
+the persistent Navigator/Workspace/Inspector shell; medium and narrow modes
+use the shared Inspector overlay and visible-pane switcher. Long paths,
+findings, vectors, metadata, and limitations are bounded and wrapped. Every
+theme and no-color mode preserves status meaning through text and terminal
+attributes.
+
+The full QA footer is:
+
+```text
+Tab view | ↑/↓ select | s scope | / search | f status | r run | I import | R refresh | Enter details | o report | e provider | l source | c cancel
+```
+
+At 90 columns and below it compacts to:
+
+```text
+Tab:view ↑↓ s:scope /:find f:status r:run I/R:data Enter o/e/l:open c:cancel
 ```
 
 ---

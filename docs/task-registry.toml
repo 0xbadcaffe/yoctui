@@ -1241,12 +1241,12 @@ notes = "The complete Security workspace passes its specification, typed state, 
 id = "QA-SPEC-001"
 milestone = "M5"
 title = "Specify unified QA workflows"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 62
 required = true
 depends_on = ["JOB-002"]
 verify = ["./scripts/verify-roadmap.sh"]
-notes = "Define a responsive capability-driven QA destination for kernel configuration, URI, patch, license, recipe checks, and yocto-check-layer; exact scopes/previews/results; managed lifecycle; and model/adapter/app/UI/CLI ownership."
+notes = "The authoritative contracts now define a responsive QA destination with typed Recipe & Kernel and Layer QA views; exact recipe/provider/configured-layer scope; capability-supplied kernel, URI, patch, license, recipe/package, and yocto-check-layer catalog entries; indexed confirmations; managed BitBake reuse; one exact native layer runner; bounded findings/reports/imports; exact opens; cancellation; explicit partial/terminal states; responsive footer/dialog behavior; and model/adapter/app/UI/CLI ownership. Existing Recipes task and patch-review routes remain contextual, and fixture evidence remains separate from live compatibility."
 
 [[task]]
 id = "QA-CHECK-MODEL-001"
