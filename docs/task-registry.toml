@@ -1142,12 +1142,12 @@ notes = "The authoritative contracts now define a first-class responsive Securit
 id = "SEC-MODEL-001"
 milestone = "M5"
 title = "Model typed security workflows"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 61
 required = true
 depends_on = ["SEC-SPEC-001"]
 verify = ["cargo test -p yoctui-model security_workflow", "cargo test -p yoctui-app security_workflow"]
-notes = "Model capability, exact recipe/image scope, CVE findings and package mappings, SPDX documents, bounded report state, selections, previews, lifecycle, cancellation, and typed effects."
+notes = "A first-class Security destination now owns validated exact recipe/image scope, capability-supplied current/legacy task choices, deterministic CVE/SBOM/package-map previews, stable sessions and managed-job identity, cancellation and terminal outcomes, canonical report identities, bounded normalized CVE findings/mappings and SPDX summaries, explicit correlated inventory states, search/filter/drill selection, exact open effects, focus-trapped typed dialogs, and mechanical app key mapping. Focused and baseline checks pass without filesystem or process parsing in the reducer."
 
 [[task]]
 id = "SEC-ADAPTER-001"

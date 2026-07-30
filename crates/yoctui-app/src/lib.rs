@@ -10,9 +10,9 @@ use yoctui_model::{
     BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
     LayerInspectorMode, LayerRelationship, LayerRelationships, QemuOutputStream, QemuSessionId,
-    RecipeDependencies, Screen, SdkBuildAction, SdkKind, SdkOutputStream, SdkSessionId, Severity,
-    TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity, WicCapability, WicOutput,
-    WicOutputStream, WicSessionId,
+    RecipeDependencies, Screen, SdkBuildAction, SdkKind, SdkOutputStream, SdkSessionId,
+    SecurityAction, SecurityDialog, SecurityView, Severity, TaskId, TaskInfo, TestComparison,
+    VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream, WicSessionId,
 };
 
 pub fn sdk_actions_for_runner_event(
@@ -1584,6 +1584,90 @@ pub fn testing_workspace_action(key: Input) -> Option<Action> {
         Input::Enter | Input::Char('r') => Some(Action::BeginSelectedTestLaunch),
         Input::Char('x') => Some(Action::BeginActiveTestSessionCancellation),
         _ => None,
+    }
+}
+
+pub fn security_workspace_action(
+    view: SecurityView,
+    drilled: bool,
+    searching: bool,
+    key: Input,
+) -> Option<Action> {
+    let security = |action| Some(Action::Security(action));
+    if searching {
+        return match key {
+            Input::Char(character) => security(SecurityAction::AppendQuery(character)),
+            Input::Backspace => security(SecurityAction::BackspaceQuery),
+            Input::Enter | Input::Esc => security(SecurityAction::FinishSearch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Tab => security(SecurityAction::CycleView),
+        Input::Up | Input::Char('k') => security(if view == SecurityView::Cves {
+            SecurityAction::SelectFinding(-1)
+        } else if drilled {
+            SecurityAction::SelectComponent(-1)
+        } else {
+            SecurityAction::SelectReport(-1)
+        }),
+        Input::Down | Input::Char('j') => security(if view == SecurityView::Cves {
+            SecurityAction::SelectFinding(1)
+        } else if drilled {
+            SecurityAction::SelectComponent(1)
+        } else {
+            SecurityAction::SelectReport(1)
+        }),
+        Input::Enter => security(SecurityAction::Drill),
+        Input::Esc if drilled => security(SecurityAction::LeaveDrill),
+        Input::Char('s') => security(SecurityAction::CycleScope),
+        Input::Char('/') => security(SecurityAction::BeginSearch),
+        Input::Char('f') => security(SecurityAction::CycleCveFilter),
+        Input::Char('V') => security(SecurityAction::BeginCveCheck),
+        Input::Char('M') => security(SecurityAction::BeginPackageMap),
+        Input::Char('X') => security(SecurityAction::BeginSbomGeneration),
+        Input::Char('I') => security(SecurityAction::BeginImport),
+        Input::Char('R') => security(SecurityAction::RefreshReports),
+        Input::Char('o') => security(SecurityAction::OpenSelectedReport),
+        Input::Char('e') => security(SecurityAction::OpenSelectedRecipe),
+        Input::Char('v') => security(SecurityAction::OpenSelectedAdvisory),
+        Input::Char('c') => security(SecurityAction::BeginCancellation),
+        _ => None,
+    }
+}
+
+pub fn security_dialog_action(dialog: &SecurityDialog, key: Input) -> Option<Action> {
+    let security = |action| Some(Action::Security(action));
+    match dialog {
+        SecurityDialog::Operation(preview) => match key {
+            Input::Enter => security(SecurityAction::ConfirmOperation(preview.clone())),
+            Input::Esc => security(SecurityAction::CancelDialog),
+            _ => None,
+        },
+        SecurityDialog::Cancellation(id) => match key {
+            Input::Enter => security(SecurityAction::ConfirmCancellation(*id)),
+            Input::Esc => security(SecurityAction::CancelDialog),
+            _ => None,
+        },
+        SecurityDialog::Import { input } => match key {
+            Input::Char(character)
+                if !character.is_control()
+                    && input.len() + character.len_utf8()
+                        <= yoctui_model::MAX_SECURITY_TEXT_BYTES =>
+            {
+                let mut next = input.clone();
+                next.push(character);
+                security(SecurityAction::UpdateImport(next))
+            }
+            Input::Backspace => {
+                let mut next = input.clone();
+                next.pop();
+                security(SecurityAction::UpdateImport(next))
+            }
+            Input::Enter => security(SecurityAction::ConfirmImport(input.clone())),
+            Input::Esc => security(SecurityAction::CancelDialog),
+            _ => None,
+        },
     }
 }
 
@@ -4646,6 +4730,70 @@ mod tests {
                 Vec::new(),
             )
             .is_empty()
+        );
+    }
+
+    #[test]
+    fn security_workflow_maps_workspace_search_and_modal_keys_without_leakage() {
+        assert_eq!(
+            security_workspace_action(SecurityView::Cves, false, false, Input::Char('V')),
+            Some(Action::Security(SecurityAction::BeginCveCheck))
+        );
+        assert_eq!(
+            security_workspace_action(SecurityView::Sbom, false, false, Input::Down),
+            Some(Action::Security(SecurityAction::SelectReport(1)))
+        );
+        assert_eq!(
+            security_workspace_action(SecurityView::Sbom, true, false, Input::Down),
+            Some(Action::Security(SecurityAction::SelectComponent(1)))
+        );
+        assert_eq!(
+            security_workspace_action(SecurityView::Cves, false, true, Input::Char('x')),
+            Some(Action::Security(SecurityAction::AppendQuery('x')))
+        );
+        assert_eq!(
+            security_workspace_action(SecurityView::Cves, false, true, Input::Char('V')),
+            Some(Action::Security(SecurityAction::AppendQuery('V'))),
+            "search editing consumes workflow shortcuts"
+        );
+
+        let preview = yoctui_model::SecurityOperationPreview {
+            id: yoctui_model::SecuritySessionId(7),
+            scope: yoctui_model::SecurityScope::Image {
+                target: "core-image-minimal".into(),
+                machine: "qemux86-64".into(),
+                distro: "poky".into(),
+            },
+            operation: yoctui_model::SecurityOperation::SbomBuild(BuildRequest {
+                targets: vec!["core-image-minimal".into()],
+                task: Some("create_recipe_sbom".into()),
+                force: false,
+            }),
+            indexed_arguments: vec!["0: bitbake".into()],
+            report_roots: vec!["/build/tmp/deploy/spdx".into()],
+        };
+        assert_eq!(
+            security_dialog_action(&SecurityDialog::Operation(preview.clone()), Input::Enter),
+            Some(Action::Security(SecurityAction::ConfirmOperation(preview)))
+        );
+        assert_eq!(
+            security_dialog_action(
+                &SecurityDialog::Import {
+                    input: "/reports".into()
+                },
+                Input::Char('V')
+            ),
+            Some(Action::Security(SecurityAction::UpdateImport(
+                "/reportsV".into()
+            ))),
+            "modal text editing does not leak CVE launch"
+        );
+        assert_eq!(
+            security_dialog_action(
+                &SecurityDialog::Cancellation(yoctui_model::SecuritySessionId(7)),
+                Input::Esc
+            ),
+            Some(Action::Security(SecurityAction::CancelDialog))
         );
     }
 }
