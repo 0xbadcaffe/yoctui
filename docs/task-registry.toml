@@ -1373,18 +1373,18 @@ notes = "The QA parent gate passes from the committed cross-layer state: capabil
 id = "MAINT-SPEC-001"
 milestone = "M6"
 title = "Specify typed Maintenance workflows"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["JOB-002", "DIALOG-001"]
 verify = ["./scripts/verify-roadmap.sh"]
-notes = "Define one responsive Maintenance destination, exact capability and safety rules, typed sstate/service/release workflows, lifecycle, cancellation, evidence, and fake-versus-live validation boundaries without duplicating completed Signatures, Security, QA, or recipe patch-review work."
+notes = "The authoritative UI and architecture contracts now define one responsive four-view Maintenance destination, current-versus-legacy tool capability, exact identities, typed readiness/cleanup/service/release/integration workflows, separate destructive/network confirmations, lifecycle, evidence, and fake-versus-live boundaries without duplicating Signatures, Security, QA, or recipe patch review."
 
 [[task]]
 id = "MAINT-MODEL-001"
 milestone = "M6"
 title = "Model typed Maintenance state and operations"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-SPEC-001"]

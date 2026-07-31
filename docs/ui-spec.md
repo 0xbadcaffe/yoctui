@@ -1945,27 +1945,164 @@ visible on one line.
 
 ## 20. Maintenance workspace
 
-Advanced and potentially destructive operations live here.
+Maintenance is a first-class Navigator destination. It must never reuse the
+BBMASK screen or silently fall back to an unrelated workspace. It provides four
+typed views in this fixed order:
 
-Integrations include:
+1. `Sstate`
+2. `Services`
+3. `Release`
+4. `Integrations`
 
-- `oe-check-sstate`
-- `sstate-cache-management.sh`
-- `buildhistory-diff`
-- `build-compare`
-- `bitbake-diffsigs`
-- `bitbake-dumpsig`
-- `gen-lockedsig-cache`
-- `bitbake-prserv-tool`
-- `cve-check-map-pkgs`
-- `yocto-check-layer`
-- `patchreview`
-- `send-error-report`
-- `create-pull-request`
-- `send-pull-request`
-- `oe-git-archive`
+`[` and `]` change view and preserve the selected row in every view. The wide
+layout uses a capability/operation list in Workspace and exact configuration,
+preview, result, and evidence in Inspector. Medium layout uses the standard
+Inspector overlay. Narrow layout uses the standard pane switcher. Too-small
+terminals render the standard safe message; every dialog below must render and
+trap focus at 80×24.
 
-Internal services such as `bitbake-worker`, `bitbake-prserv`, and `bitbake-hashserv` are observed and diagnosed, not normally launched directly.
+The shared footer is
+`[ ] view  r refresh  Enter inspect  x cancel  o open evidence  S signatures`.
+View-specific enabled actions follow it: Sstate adds `c check` and `d cleanup`;
+Services adds `e PR export` and `m PR import`; Release adds
+`l locked cache`, `h compare`, and `a archive`; Integrations has detection and
+inspection only. Disabled actions remain visible with a typed reason in
+Inspector. `S` routes to the existing Signatures workspace. Security mapping,
+recipe/kernel/layer QA, and recipe patch review remain owned by Security, QA,
+and Recipes respectively; Maintenance links to those destinations instead of
+duplicating their state or execution.
+
+### 20.1 Capability and identity
+
+Capability inspection records the canonical executable, detected interface,
+supported operation family, exact configured roots, and an explicit
+available/unavailable reason. The current initialized metadata is authoritative
+for `SSTATE_DIR`, `TMPDIR`, `STAMPS_DIR`, `BUILDHISTORY_DIR`, `PRSERV_HOST`,
+`BB_HASHSERVE`, `BB_HASHSERVE_UPSTREAM`, signature configuration, machine, and
+distro. A missing metadata value or optional executable is unavailable, never
+an empty successful capability.
+
+All filesystem inputs are canonical absolute identities. Regular-file,
+directory, symlink, containment, and read/write requirements are typed per
+operation. Selection and preview retain the same exact identities. Immediately
+before execution, the CLI re-inspects capability and revalidates every input;
+changed identities reject the request visibly.
+
+### 20.2 Sstate readiness and protected cleanup
+
+Readiness uses the installed `oe-check-sstate` interface with one or more exact
+target names. The default request runs its isolated-TMPDIR behavior and sets
+`BB_SETSCENE_ENFORCE=1`; a separate explicit `same TMPDIR` choice is labelled
+as dependent on prior build state. Its confirmation shows the shell-free
+indexed argument vector, target list, selected mode, output/log paths, and
+timeout. The result contains exact restored task names, totals, bounded output,
+limitations, and terminal outcome. Readiness does not mutate the shared cache.
+
+Cleanup supports only an interface reported by capability inspection. Current
+`sstate-cache-management.py` operations are typed as `duplicates`, `orphans`,
+or `unreferenced by stamps`; legacy `.sh` support is a distinct detected
+interface. The form shows canonical `SSTATE_DIR`, every canonical stamps
+directory, worker count, and selected modes. Yoctui first performs a preview
+without automatic confirmation and captures the exact candidate paths and
+count. Execution requires the phrase
+`DELETE <candidate-count> FROM <canonical-sstate-dir>` and then a separate
+destructive confirmation showing the exact cache root, stamps roots, candidate
+count, and indexed native vector. The final request uses the installed tool's
+noninteractive confirmation flag only after Yoctui confirmation. It may delete
+only the exact previewed regular files beneath the same cache root; a changed
+candidate set, symlink, escape, identity, or capability rejects execution.
+Arbitrary age-based deletion and free-form cleanup arguments are outside this
+workflow.
+
+Readiness and cleanup are independent cancellable background operations.
+Cancellation of cleanup requires an additional warning that a partially
+cleaned cache may remain.
+
+### 20.3 PR and hash service diagnostics
+
+Services renders typed configured, disabled, local, remote, reachable,
+unreachable, partial, and unavailable states for the PR and hash services. It
+shows exact configured endpoints and bounded observational process evidence
+for `bitbake-prserv` and `bitbake-hashserv`. `bitbake-worker` is observational
+build context only. Yoctui does not start, restart, stop, or reconfigure any of
+these internal services and never treats process-name matching alone as proof
+that a configured endpoint is healthy.
+
+When the installed `bitbake-prserv-tool` supports it, PR export accepts one
+canonical writable `.conf` or `.inc` destination and PR import accepts one
+canonical readable regular `.conf` or `.inc` source. Both require a typed
+preview and explicit confirmation because the native helper can stop a
+memory-resident server and invalidate BitBake cache records; import is labelled
+as changing PR data and receives destructive styling. The destination/source,
+operation, configured endpoint, build identity, indexed native vector, and
+known helper side effects are all visible. Undocumented helper commands are
+not inferred or exposed.
+
+### 20.4 Release evidence
+
+Locked-cache generation uses `gen-lockedsig-cache` with the exact ordered
+inputs: locked-signature include file, input cache directory, output cache
+directory, native LSB string, and optional filter file. Because matching
+destination files may be replaced, the exact canonical output root and
+replacement warning receive destructive styling and a separate explicit
+confirmation. Completion returns a bounded inventory of created/replaced
+evidence.
+
+Build-history comparison uses `buildhistory-diff` with one exact canonical Git
+repository and zero, one, or two validated revisions, plus typed report-version,
+report-all, signature, signature-diff, exclude-path, and no-colour choices.
+Its report is replaceable, bounded, and retains both resolved revisions.
+`build-compare` is a separate optional capability and is disabled when absent;
+it is never emulated by relabelling `buildhistory-diff`.
+
+Git archival uses `oe-git-archive` with exact data and repository directories,
+typed create/bare/tag choices, branch/tag/message templates, exclusions, and
+notes. Push is never implicit. Local archive creation has an exact preview;
+repository creation, tag replacement risk, or overwriting tracked output is
+called out in confirmation. A requested remote push is a second network side
+effect requiring a separate explicit confirmation after the local result.
+
+### 20.5 Optional integrations
+
+Integrations detects and reports, without launching:
+
+- `create-pull-request` and `send-pull-request`, including canonical helper and
+  Git-worktree identity
+- `send-error-report`, including the helper and candidate report identity
+- a canonical repo manifest or an explicit unavailable reason
+- Toaster executable/configuration and observational running state
+
+This milestone is detection-only for pull-request email, error-report upload,
+repo-manifest mutation, and Toaster lifecycle. No key in this view sends mail,
+uploads data, changes a manifest, or starts/stops Toaster. Future execution
+must add a typed review of recipients/server/payload or manifest changes and a
+separate network-side-effect confirmation.
+
+### 20.6 Execution, evidence, and validation
+
+Capability and service inspection use replaceable correlated workers.
+Maintenance owns at most one foreground operation runner; managed BitBake
+operations continue to use the shared build coordinator. Every session has a
+stable operation ID, exact context, queued/running/cancelling/terminal state,
+bounded stdout/stderr with dropped-byte counters, optional typed progress,
+start/end time, timeout, exit status, evidence identities, and explicit
+success, failure, cancelled, timed-out, or runner-lost outcome. Navigation does
+not discard sessions. Stale events cannot replace current capability, preview,
+or evidence.
+
+`x` opens a confirmation only for the exact cancellable active operation.
+Evidence opening requires a canonical regular file from the current successful
+operation and repeats containment/identity validation immediately before the
+editor or viewer transition. Reports are replaced atomically only after
+successful completion; failures retain prior valid evidence and the failed
+attempt's bounded output.
+
+Fake process/filesystem tests prove typed vectors, validation, lifecycle, and
+rendering only. They do not establish live cache safety, service health, PR
+database compatibility, signature-cache compatibility, archive correctness, or
+network interoperability. Those claims require explicit opt-in validation in
+an initialized Yocto environment, and destructive/network validation requires
+dedicated disposable resources.
 
 ---
 

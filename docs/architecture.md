@@ -650,6 +650,60 @@ scope, report identities, and outcome. Fixture output from
 `yocto-check-layer` or a mocked task catalog is not live compatibility
 evidence.
 
+## Managed Maintenance boundary
+
+`yoctui-model::maintenance` owns the fixed Sstate, Services, Release, and
+Integrations views; capability and metadata snapshots; canonical input and
+evidence identities; typed operation drafts and confirmations; stable
+operation sessions; bounded output; service diagnostics; and all selection,
+focus, and terminal outcome state. It contains no host inspection, filesystem
+access, raw process parsing, or command construction. Existing Signatures,
+Security, QA, and recipe patch-review state remains authoritative and is
+reached through typed navigation actions.
+
+`yoctui-bitbake` owns four adapter families. The sstate adapter detects the
+installed readiness and cleanup interface, constructs validated native vectors,
+previews exact cleanup candidates, revalidates the candidate set and canonical
+cache/stamps identities, and executes only a confirmed typed request. The
+service adapter acquires configured PR/hash variables, performs bounded
+observational endpoint/process diagnostics, and exposes only documented
+installed PR-tool operations; it never owns service lifecycle. The release
+adapter validates locked-signature inputs, build-history revisions, archive
+roots, and evidence, then runs shell-free commands with bounded output. The
+optional adapter reports pull-request, error-report, repo-manifest, and Toaster
+capability without network or lifecycle side effects.
+
+All Maintenance adapters return typed capability, preview, diagnostic,
+progress, result, and error values. Raw output parsing and filesystem/process
+classification stop at this boundary. A missing executable, metadata field, or
+unsupported tool generation is an explicit unavailable capability. In
+particular, legacy `sstate-cache-management.sh` and current
+`sstate-cache-management.py` are different interfaces, and `build-compare`
+does not alias `buildhistory-diff`.
+
+`yoctui-app` maps Maintenance keys and adapter events mechanically.
+`yoctui-ui` renders only typed state and emits typed actions. The CLI owns
+replaceable capability/service workers and at most one independent Maintenance
+operation runner, polls all of them without blocking terminal/backend input,
+and revalidates exact capability, destructive candidate, and evidence identity
+immediately before side effects. Managed BitBake work continues to use the
+shared build coordinator.
+
+Cleanup, PR import/export, locked-cache output replacement, repository
+creation/tagging, and optional remote push are separate typed side-effect
+classes. A cleanup request requires both its exact candidate preview and phrase
+confirmation; a remote push can occur only after a separately confirmed local
+archive result. Cancellation, timeout, nonzero exit, process loss, stale
+correlation, and output truncation remain distinct reducer outcomes. Successful
+replaceable evidence is installed atomically; a failed attempt does not erase
+prior evidence.
+
+Fake adapters establish boundary behavior only. Live cache safety, service
+health, PR data compatibility, locked-cache correctness, build comparison,
+archive correctness, and network interoperability require explicit initialized
+Yocto validation. Destructive and network validation must use disposable,
+opt-in resources and cannot be inferred from unit fixtures.
+
 ## Managed runqemu model boundary
 
 `yoctui-model::qemu` owns capability states, exact artifact-bound launch
