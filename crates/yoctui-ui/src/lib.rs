@@ -13,6 +13,7 @@ use yoctui_model::{
     DependencyPathResult, DevtoolAction, DevtoolCapability, DevtoolGitState, DevtoolStatus,
     DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget, GitFileState, ImageArtifactField,
     ImageArtifactInventoryState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode,
+    MaintenanceCapability, MaintenanceDialog, MaintenanceOperation, MaintenanceToolCapability,
     PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PreviewKind,
     QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus, QaLayerCapability,
     QaLayerRunCapability, QaOutputStream, QaReportFailureKind, QaReportInventoryState,
@@ -488,6 +489,9 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Bbmask => {
             "e edit BBMASK | Enter preview/confirm | Esc cancel/dashboard | v configuration | ? help | q quit"
         }
+        Screen::Maintenance => {
+            "[/] view | r refresh | ↑/↓ select | x cancel | o evidence | S signatures"
+        }
         Screen::Logs => {
             "↑/↓ select | ←/→ horizontal | f follow | w wrap | s severity | R/T/B filters | / search | n/N match | o source | C copy"
         }
@@ -644,6 +648,8 @@ pub fn render(frame: &mut Frame, app: &App) {
         security_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::Qa(dialog)) = app.active_dialog() {
         qa_dialog(frame, app, dialog, area);
+    } else if let Some(Dialog::Maintenance(dialog)) = app.active_dialog() {
+        maintenance_dialog(frame, app, dialog, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);
     } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
@@ -1640,7 +1646,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
         ("Configuration", Screen::Configuration),
         ("Dependencies", Screen::Dependencies),
         ("Devtool", Screen::Recipes),
-        ("Maintenance", Screen::Bbmask),
+        ("Maintenance", Screen::Maintenance),
         ("Settings", Screen::Settings),
     ];
     let text = entries
@@ -1695,6 +1701,7 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         }
         Screen::Configuration => config(frame, app, area),
         Screen::Bbmask => bbmask(frame, app, area),
+        Screen::Maintenance => maintenance_workspace(frame, app, area),
         Screen::Help => help(frame, area),
         Screen::Settings => settings_workspace(frame, app, area),
     }
@@ -1829,6 +1836,10 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Testing => testing_inspector_text(app),
         Screen::Security => security_inspector_text(app),
         Screen::Qa => qa_inspector_text(app),
+        Screen::Maintenance => format!(
+            "View: {:?}\nCapability: {:?}\nServices: {:?}\n\nTyped Maintenance details will appear here.",
+            app.maintenance.view, app.maintenance.capability, app.maintenance.services
+        ),
         _ => format!(
             "Target: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
             app.build.target.as_deref().unwrap_or("not selected"),
@@ -8384,6 +8395,143 @@ fn bbmask(frame: &mut Frame, app: &App, area: Rect) {
         area,
     );
 }
+
+fn maintenance_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let mut lines = vec![
+        format!(
+            "[{}]  [{}]  [{}]  [{}]",
+            if app.maintenance.view == yoctui_model::MaintenanceView::Sstate {
+                "Sstate"
+            } else {
+                "sstate"
+            },
+            if app.maintenance.view == yoctui_model::MaintenanceView::Services {
+                "Services"
+            } else {
+                "services"
+            },
+            if app.maintenance.view == yoctui_model::MaintenanceView::Release {
+                "Release"
+            } else {
+                "release"
+            },
+            if app.maintenance.view == yoctui_model::MaintenanceView::Integrations {
+                "Integrations"
+            } else {
+                "integrations"
+            },
+        ),
+        String::new(),
+    ];
+    match &app.maintenance.capability {
+        MaintenanceCapability::NotInspected => lines.push("Capability not inspected.".into()),
+        MaintenanceCapability::Loading(request) => {
+            lines.push(format!("Inspecting capability (request {request})…"))
+        }
+        MaintenanceCapability::Available { snapshot, .. }
+        | MaintenanceCapability::Partial { snapshot, .. } => {
+            for (index, capability) in snapshot.tools.iter().enumerate() {
+                let text = match capability {
+                    MaintenanceToolCapability::Available {
+                        tool, executable, ..
+                    } => format!("{tool:?}  {}", executable.path.display()),
+                    MaintenanceToolCapability::Unavailable { tool, reason } => {
+                        format!("{tool:?}  unavailable: {reason}")
+                    }
+                };
+                lines.push(format!(
+                    "{} {text}",
+                    if index == app.maintenance.selection() {
+                        "▶"
+                    } else {
+                        " "
+                    }
+                ));
+            }
+        }
+        MaintenanceCapability::Failed { message, .. } => {
+            lines.push(format!("Capability inspection failed: {message}"))
+        }
+    }
+    if let Some(session) = app.maintenance.sessions.back() {
+        lines.push(String::new());
+        lines.push(format!("Session {}: {:?}", session.id.0, session.status));
+    }
+    frame.render_widget(
+        Paragraph::new(lines.join("\n"))
+            .block(Block::default().title("Maintenance").borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, area: Rect) {
+    let (title, body) = match dialog {
+        MaintenanceDialog::Confirm(preview) => (
+            "Confirm Maintenance operation",
+            format!(
+                "Operation {}\nKind: {}\nDestructive: {}\n\nIndexed native vector:\n{}\n\nEnter confirms | Esc cancels",
+                preview.id,
+                maintenance_operation_label(&preview.operation),
+                if preview.operation.destructive() {
+                    "yes"
+                } else {
+                    "no"
+                },
+                preview.arguments.join("\n")
+            ),
+        ),
+        MaintenanceDialog::CleanupPhrase { preview, input } => (
+            "Confirm protected sstate cleanup",
+            format!(
+                "Type exactly:\n{}\n\n{input}_\n\nTyping alone cannot delete files.\nEnter continues | Esc cancels",
+                preview.operation.cleanup_phrase().unwrap_or_default()
+            ),
+        ),
+        MaintenanceDialog::ConfirmNetworkPush(preview) => (
+            "Confirm network push",
+            format!(
+                "Operation {} requests a separately confirmed remote push.\n\n{}\n\nEnter confirms | Esc cancels",
+                preview.id,
+                preview.arguments.join("\n")
+            ),
+        ),
+        MaintenanceDialog::ConfirmCancellation(id) => (
+            "Cancel Maintenance operation",
+            format!(
+                "Cancel exact session {}?\nA cleanup may leave a partially cleaned cache.\n\nEnter confirms | Esc keeps running",
+                id.0
+            ),
+        ),
+    };
+    let width = 78.min(area.width.saturating_sub(2));
+    let height = 18.min(area.height.saturating_sub(2));
+    let popup = Rect::new(
+        area.x + area.width.saturating_sub(width) / 2,
+        area.y + area.height.saturating_sub(height) / 2,
+        width,
+        height,
+    );
+    clear_popup(frame, app, popup);
+    frame.render_widget(
+        Paragraph::new(body)
+            .block(Block::default().title(title).borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
+fn maintenance_operation_label(operation: &MaintenanceOperation) -> &'static str {
+    match operation {
+        MaintenanceOperation::SstateReadiness(_) => "sstate readiness",
+        MaintenanceOperation::SstateCleanup(_) => "sstate cleanup",
+        MaintenanceOperation::PrService(_) => "PR service",
+        MaintenanceOperation::LockedSignatureCache(_) => "locked signature cache",
+        MaintenanceOperation::BuildHistoryComparison(_) => "build-history comparison",
+        MaintenanceOperation::BuildCompare(_) => "build compare",
+        MaintenanceOperation::GitArchive(_) => "Git archive",
+    }
+}
 fn bbmask_assignment(value: &str) -> String {
     format!(
         "BBMASK = \"{}\"",
@@ -10777,6 +10925,7 @@ mod tests {
             Screen::Layers,
             Screen::Configuration,
             Screen::Bbmask,
+            Screen::Maintenance,
             Screen::Logs,
             Screen::Errors,
             Screen::Help,

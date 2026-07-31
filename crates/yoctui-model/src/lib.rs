@@ -1,5 +1,6 @@
 //! Domain model and pure state transitions. BitBake remains authoritative.
 mod image;
+mod maintenance;
 mod package;
 mod qa;
 mod qemu;
@@ -9,6 +10,7 @@ mod testing;
 mod wic;
 
 pub use image::*;
+pub use maintenance::*;
 pub use package::*;
 pub use qa::*;
 pub use qemu::*;
@@ -66,6 +68,7 @@ pub enum Screen {
     Layers,
     Configuration,
     Bbmask,
+    Maintenance,
     Logs,
     Errors,
     Help,
@@ -160,7 +163,7 @@ const NAVIGATOR_SCREENS: [Screen; 17] = [
     Screen::Configuration,
     Screen::Dependencies,
     Screen::Recipes,
-    Screen::Bbmask,
+    Screen::Maintenance,
     Screen::Settings,
 ];
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -815,6 +818,7 @@ pub enum Dialog {
     TestJunitExportConfirmation(TestJunitExportPreview),
     Security(SecurityDialog),
     Qa(QaDialog),
+    Maintenance(Box<MaintenanceDialog>),
     RecipeTaskConfirmation(BuildRequest),
     RecipeTaskPicker(RecipeTaskPicker),
     SignatureTaskPicker(SignatureTaskPicker),
@@ -2167,6 +2171,7 @@ pub struct App {
     pub test_junit_generation: u64,
     pub security: SecurityState,
     pub qa: QaState,
+    pub maintenance: MaintenanceState,
     pub qemu_capability: QemuCapability,
     pub qemu_sessions: VecDeque<QemuSession>,
     pub qemu_session_generation: u64,
@@ -2282,6 +2287,7 @@ impl App {
             test_junit_generation: 0,
             security: SecurityState::default(),
             qa: QaState::default(),
+            maintenance: MaintenanceState::default(),
             qemu_capability: QemuCapability::default(),
             qemu_sessions: VecDeque::new(),
             qemu_session_generation: 0,
@@ -3219,6 +3225,7 @@ pub enum Action {
     },
     Security(SecurityAction),
     Qa(QaAction),
+    Maintenance(MaintenanceAction),
     InspectQemuCapability,
     QemuCapabilityLoaded(QemuCapability),
     BeginSelectedQemuLaunch,
@@ -5435,6 +5442,17 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     scope: app.qa.scope.clone(),
                 }));
             }
+            if s == Screen::Maintenance
+                && matches!(
+                    app.maintenance.capability,
+                    MaintenanceCapability::NotInspected
+                )
+            {
+                return update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::InspectCapability),
+                );
+            }
         }
         Action::SelectNavigator { delta } => {
             app.navigator_selection = if delta.is_negative() {
@@ -5494,6 +5512,17 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     scope: app.qa.scope.clone(),
                 }));
             }
+            if app.screen == Screen::Maintenance
+                && matches!(
+                    app.maintenance.capability,
+                    MaintenanceCapability::NotInspected
+                )
+            {
+                return update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::InspectCapability),
+                );
+            }
         }
         Action::Security(action) => {
             let transition = update_security(&mut app.security, action);
@@ -5540,6 +5569,29 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
             synchronize_focus(app);
             return transition.effect.map(Effect::Qa);
+        }
+        Action::Maintenance(action) => {
+            let transition = update_maintenance(&mut app.maintenance, action);
+            match transition.dialog {
+                MaintenanceDialogUpdate::None => {}
+                MaintenanceDialogUpdate::Open(dialog) => {
+                    if matches!(app.active_dialog(), Some(Dialog::Maintenance(_))) {
+                        replace_dialog(app, Dialog::Maintenance(dialog));
+                    } else {
+                        open_dialog(app, Dialog::Maintenance(dialog));
+                    }
+                }
+                MaintenanceDialogUpdate::Close => {
+                    if matches!(app.active_dialog(), Some(Dialog::Maintenance(_))) {
+                        close_dialog(app);
+                    }
+                }
+            }
+            if let Some(message) = transition.notification {
+                app.notification = Some(message);
+            }
+            synchronize_focus(app);
+            return transition.effect.map(Effect::Maintenance);
         }
         Action::Focus(target) => app.focus = target,
         Action::OpenCommandPalette => {
@@ -11722,6 +11774,7 @@ pub enum Effect {
     ExportTestJunit(TestJunitExportRequest),
     Security(SecurityEffect),
     Qa(QaEffect),
+    Maintenance(MaintenanceEffect),
     InspectQemuCapability,
     StartQemuSession {
         id: QemuSessionId,

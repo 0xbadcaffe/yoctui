@@ -1384,18 +1384,18 @@ notes = "The authoritative UI and architecture contracts now define one responsi
 id = "MAINT-MODEL-001"
 milestone = "M6"
 title = "Model typed Maintenance state and operations"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-SPEC-001"]
 verify = ["cargo test -p yoctui-model maintenance_workflow", "cargo test -p yoctui-app maintenance_workflow"]
-notes = "Add exact capability, sstate readiness/cleanup, service diagnostics, locked-signature, comparison, archive, optional integration, preview, session, evidence, cancellation, and terminal state without host or process access."
+notes = "First-class Maintenance model state now owns four fixed views, per-view selection, bounded exact capability/metadata/service state, every typed operation request and preview, protected cleanup phrase, separate network confirmation, one correlated session lifecycle, replaceable evidence, cancellation, all terminal outcomes, and routes to existing owned workspaces. Six reducer and two app tests pass with the full baseline."
 
 [[task]]
 id = "MAINT-SSTATE-ADAPTER-001"
 milestone = "M6"
 title = "Adapt sstate readiness and protected cleanup"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001"]

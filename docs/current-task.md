@@ -2,51 +2,54 @@
 
 ## Task
 
-**ID:** MAINT-MODEL-001
-**Title:** Model typed Maintenance state and operations
+**ID:** MAINT-SSTATE-ADAPTER-001
+**Title:** Adapt sstate readiness and protected cleanup
 
 ## Objective
 
-Add pure, bounded, exact-identity model state and reducer behavior for the
-four-view Maintenance workspace without host, filesystem, process, or raw-text
-access.
+Discover, preview, and run the exact installed `oe-check-sstate` and
+`sstate-cache-management.py` or legacy `.sh` interfaces with canonical
+identities, bounded output, protected cleanup confirmation inputs, timeout,
+cancellation, and runner loss.
 
 ## Required work
 
-1. Add a `maintenance` model module owning:
-   - fixed Sstate, Services, Release, and Integrations views
-   - capability and configured-metadata snapshots
-   - canonical typed input/evidence identities
-   - sstate readiness and cleanup drafts/previews
-   - PR/hash diagnostics and PR import/export requests
-   - locked-cache, build-comparison, and Git-archive requests
-   - optional integration detection
-   - one stable bounded operation session and exact terminal outcomes
-2. Add deterministic validation for required fields, cleanup phrase and exact
-   candidate identity, destructive/network confirmation, stale correlations,
-   cancellation, timeout, failure, loss, and replaceable evidence.
-3. Integrate first-class `Screen::Maintenance`, state ownership, navigation,
-   actions, effects, and backend normalization in `yoctui-model` and
-   `yoctui-app`; remove the Maintenance Navigator alias to BBMASK.
-4. Preserve existing Signatures, Security, QA, and recipe patch-review
-   ownership and expose only typed navigation actions to them.
-5. Add focused unit and reducer tests for normal and relevant failure paths.
-6. Keep all collections and output bounded and deterministic.
+1. Inspect the initialized build environment and child-only executable search
+   path for canonical regular non-symlink readiness and cleanup tools.
+2. Distinguish current Python and legacy shell cleanup interfaces; never alias
+   or guess missing commands.
+3. Construct shell-free exact readiness vectors for:
+   - one or more validated targets
+   - isolated or explicitly selected same-TMPDIR behavior
+   - optional exact output/log paths
+   - child-only `BB_SETSCENE_ENFORCE=1`
+4. Construct exact cleanup preview and execution vectors for duplicates,
+   orphans, and unreferenced-by-stamps modes supported by the installed
+   interface.
+5. Canonicalize cache/stamps identities, reject symlinks/escapes/root paths,
+   bound traversal/candidates, and revalidate executable, inputs, and the exact
+   previewed candidate set before execution.
+6. Implement one cancellable kill-on-drop process-group runner with bounded
+   stdout/stderr, nonzero failure, timeout, graceful/forced cancellation,
+   duplicate rejection, and channel/child loss.
+7. Add fake-filesystem/fake-process tests for exact vectors, both interfaces,
+   missing/unsafe capability, normal/empty/oversized previews, tampering,
+   success, nonzero, timeout, cancellation, and loss.
+8. Do not claim live sstate safety from fixture tests.
 
 ## Definition of done
 
-- Maintenance is first-class typed state with no host/process access.
-- Every specified operation can be represented without free-form shell text.
-- Validation and reducer tests cover exact identities, previews, confirmations,
-  lifecycle, stale results, cancellation, every terminal outcome, evidence
-  replacement, selection, and cross-workspace routes.
-- Existing workspace behavior and baseline verification remain green.
+- Capability distinguishes exact available, partial, unsupported, and missing
+  readiness/cleanup inputs.
+- No shell or unstructured argument string is used.
+- Cleanup execution cannot exceed the exact confirmed canonical candidate set.
+- Runner outcomes and output remain bounded and typed.
+- Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model maintenance_workflow
-cargo test -p yoctui-app maintenance_workflow
+cargo test -p yoctui-bitbake maintenance_sstate
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -56,12 +59,11 @@ python3 -m pytest bridge/tests
 
 ## Documentation updates
 
-- Update `docs/ui-spec.md` with any intentional behavior change.
-- Update `docs/architecture.md` with any changed component boundary.
-- Mark `MAINT-MODEL-001` `DONE` only after verification passes.
+- Update `docs/architecture.md` only if the adapter boundary changes.
+- Mark `MAINT-SSTATE-ADAPTER-001` `DONE` only after verification passes.
 - Update `docs/implementation-status.md`.
-- Replace this file with `MAINT-SSTATE-ADAPTER-001`.
+- Replace this file with the next eligible highest-priority Maintenance task.
 
 ## Next task
 
-`MAINT-SSTATE-ADAPTER-001`
+`MAINT-SERVICE-ADAPTER-001`
