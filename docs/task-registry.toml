@@ -1362,18 +1362,18 @@ notes = "The complete cross-layer QA matrix passes together: 18 model, five app,
 id = "QA-001"
 milestone = "M5"
 title = "Recipe, kernel, and layer QA workflows"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 62
 required = true
 depends_on = ["QA-UI-CLI-001"]
 verify = ["cargo test -p yoctui-model qa_", "cargo test -p yoctui-app qa_workflow", "cargo test -p yoctui-bitbake qa_", "cargo test -p yoctui-ui qa_workflow", "cargo test -p yoctui -- qa_workflow"]
-notes = "Parent completion gate split into specification, typed recipe/kernel and layer state, task/report/layer adapters, responsive rendering, non-blocking CLI integration, and cross-layer verification."
+notes = "The QA parent gate passes from the committed cross-layer state: capability-driven recipe/kernel and configured-layer checks, exact identities, bounded reports, responsive rendering, managed BitBake reuse, independent native execution/cancellation, revalidated evidence opens, navigation, and every terminal outcome agree across all crates. The full baseline passes; fake fixtures do not establish live Yocto compatibility."
 
 [[task]]
 id = "MAINT-001"
 milestone = "M6"
 title = "Advanced maintenance workflows"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["JOB-002", "DIALOG-001"]

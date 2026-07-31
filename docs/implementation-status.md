@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Close the QA parent completion gate.
+Decompose the advanced Maintenance parent into atomic workflows.
 
 ## Current task
 
@@ -26,8 +26,8 @@ See `docs/current-task.md`.
 | M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
-| M5 Testing/QA/Security | IN_PROGRESS | Unified Testing and Security are complete; QA remains |
-| M6 Maintenance | NOT_STARTED | Partial diagnostics only |
+| M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
+| M6 Maintenance | IN_PROGRESS | The broad Maintenance parent must be split into specified typed workflows before implementation |
 | M7 Hardening | IN_PROGRESS | Coverage and profiling foundations exist |
 
 ## Reconciliation evidence
@@ -72,7 +72,7 @@ See `docs/current-task.md`.
 | SDK workflow | DONE | The parent gate passes across typed model/app state, authoritative artifact and shell-free tool adapters, responsive rendering, and independent CLI execution. It covers scans, capability inspection, managed BitBake populate/test reuse, exact artifact opening, publication/native child execution, a bounded keyboard-editable native form, timeout/cancellation/loss, success refresh, navigation, and telemetry. Fake scans/processes do not claim live SDK compatibility |
 | Testing workflow | DONE | The unified parent gate passes for typed launch/result state, selftest/resulttool adapters, responsive rendering, and non-blocking CLI execution. Managed BitBake reuse, independent selftest/result operations, exact correlation, navigation, cancellation, import/comparison/JUnit export, and terminal outcomes are verified. Fake-process coverage does not establish live compatibility |
 | Security workflow | DONE | The complete cross-layer gate passes for capability-driven CVE checks/mapping, current/legacy recipe and image SBOM workflows, bounded exact reports, responsive UI, managed BitBake reuse, independent CLI polling, exact-open revalidation, refresh, navigation, cancellation, and explicit partial/terminal states. Focused fake evidence does not establish live Yocto compatibility |
-| QA workflow | IN_PROGRESS | Contracts, model/app, adapters, responsive rendering, non-blocking CLI integration, and the complete cross-layer gate pass. QA is a first-class workspace with typed Recipe & Kernel and Layer QA views, managed BitBake reuse, an independent native runner, replaceable exact reports, revalidated opens, modal previews, compact footers, themes, no-color, and 80×24 coverage. The parent gate remains; fixture evidence does not establish live compatibility |
+| QA workflow | DONE | The complete parent gate passes across typed Recipe & Kernel and Layer QA state, exact capability/report/native adapters, responsive rendering, managed BitBake reuse, independent CLI polling/cancellation, replaceable reports, revalidated evidence opens, navigation, and every terminal outcome. Fixture evidence does not establish live compatibility |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -83,7 +83,9 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `QA-001` — close the QA parent gate
+1. `MAINT-001` — decompose and implement advanced Maintenance workflows
+2. `HARDEN-001` — complete the test and analysis matrix
+3. `DOC-001` — complete operator and compatibility documentation
 
 ## Rules
 
