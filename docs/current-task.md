@@ -2,45 +2,41 @@
 
 ## Active task
 
-**ID:** QA-001
-**Title:** Recipe, kernel, and layer QA workflows
+**ID:** MAINT-001
+**Title:** Advanced maintenance workflows
 
 ## Objective
 
-Close the QA parent completion gate after all specification, model, adapter,
-rendering, and CLI child tasks have passed.
+Turn the broad Maintenance milestone into safe, typed, independently
+verifiable workflows for sstate, PR/hash services, locked signatures, build
+comparison, archives, and release engineering.
 
 ## Required work
 
-1. Verify every QA child task is `DONE` and its dependency is satisfied.
-2. Run the complete QA parent matrix from the committed cross-layer state.
-3. Run the full baseline without weakening checks or treating fixtures as
-   live Yocto compatibility evidence.
-4. Reconcile the registry and human-readable status only when every command
-   passes.
+1. Inspect the existing Maintenance model, UI, CLI routes, specifications, and
+   tests before changing code.
+2. Reconcile the current implementation with the Maintenance requirements in
+   the UI and architecture contracts.
+3. Because this parent is too large for one coherent commit, split it into
+   atomic specification, model, adapter, rendering, CLI, and parent-gate tasks
+   before implementation.
+4. Set the highest-priority eligible child as current and continue
+   immediately.
 
 ## Definition of done
 
-- Every QA parent verification command passes.
-- `QA-001` and the M5 QA workflow are marked `DONE`.
-- The next eligible highest-priority incomplete task becomes current.
+- The Maintenance parent has explicit atomic children and dependency order.
+- Each child has a concrete outcome and verification command.
+- Specifications and human-readable status agree with the registry.
+- The first eligible child becomes current.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model qa_
-cargo test -p yoctui-app qa_workflow
-cargo test -p yoctui-bitbake qa_
-cargo test -p yoctui-ui qa_workflow
-cargo test -p yoctui -- qa_workflow
-cargo fmt --all --check
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
 ```
 
 ## Next task
 
-Select the next eligible highest-priority incomplete task from
+Select the highest-priority eligible Maintenance child from
 `docs/task-registry.toml`.
