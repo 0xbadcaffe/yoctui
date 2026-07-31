@@ -1351,12 +1351,12 @@ notes = "The CLI now inspects exact recipe/provider/task and configured-layer/to
 id = "QA-UI-CLI-001"
 milestone = "M5"
 title = "Integrate complete QA workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 62
 required = true
 depends_on = ["QA-MODEL-001", "QA-ADAPTER-001", "QA-RENDER-001", "QA-CLI-001"]
 verify = ["cargo test -p yoctui-model qa_", "cargo test -p yoctui-app qa_workflow", "cargo test -p yoctui-bitbake qa_", "cargo test -p yoctui-ui qa_workflow", "cargo test -p yoctui -- qa_workflow"]
-notes = "Cross-layer parent gate for capability-driven kernel configuration, URI, patch, license, recipe, and configured-layer QA workflows with exact identities, responsive rendering, and independently polled CLI execution."
+notes = "The complete cross-layer QA matrix passes together: 18 model, five app, 17 adapter, three responsive TestBackend, and seven CLI tests verify capability-driven recipe/kernel and configured-layer checks, exact identities, managed/native execution, independent cancellation, bounded reports, revalidated opens, navigation, dialogs, responsive rendering, and every terminal state. The full baseline passes; fixture evidence does not claim live compatibility."
 
 [[task]]
 id = "QA-001"
