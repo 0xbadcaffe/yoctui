@@ -2,34 +2,28 @@
 
 ## Active task
 
-**ID:** QA-UI-CLI-001
-**Title:** Integrate complete QA workspace
+**ID:** QA-001
+**Title:** Recipe, kernel, and layer QA workflows
 
 ## Objective
 
-Close the cross-layer QA gate by proving that the typed model, capability and
-report adapters, native layer runner, application mappings, responsive
-renderer, and non-blocking CLI coordinator agree on every required workflow
-and terminal outcome.
+Close the QA parent completion gate after all specification, model, adapter,
+rendering, and CLI child tasks have passed.
 
 ## Required work
 
-1. Inspect the completed QA model, adapters, application mappings, renderer,
-   and CLI integration before changing code.
-2. Run the complete focused QA matrix across every crate.
-3. Fix only cross-layer inconsistencies exposed by that matrix without
-   weakening existing tests or inventing new UI behavior.
-4. Verify recipe/kernel and configured-layer capability, managed/native
-   execution, independent cancellation, bounded reports, exact opens,
-   navigation, responsive rendering, and terminal outcomes together.
-5. Keep fake process/filesystem evidence explicitly separate from live Yocto
-   compatibility claims.
+1. Verify every QA child task is `DONE` and its dependency is satisfied.
+2. Run the complete QA parent matrix from the committed cross-layer state.
+3. Run the full baseline without weakening checks or treating fixtures as
+   live Yocto compatibility evidence.
+4. Reconcile the registry and human-readable status only when every command
+   passes.
 
 ## Definition of done
 
-- Every QA child gate passes together from the committed workspace.
-- Model, adapter, app, UI, and CLI identities and lifecycle states agree.
-- Baseline verification passes.
+- Every QA parent verification command passes.
+- `QA-001` and the M5 QA workflow are marked `DONE`.
+- The next eligible highest-priority incomplete task becomes current.
 
 ## Verification
 
