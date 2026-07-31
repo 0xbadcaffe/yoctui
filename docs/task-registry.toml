@@ -1370,15 +1370,125 @@ verify = ["cargo test -p yoctui-model qa_", "cargo test -p yoctui-app qa_workflo
 notes = "The QA parent gate passes from the committed cross-layer state: capability-driven recipe/kernel and configured-layer checks, exact identities, bounded reports, responsive rendering, managed BitBake reuse, independent native execution/cancellation, revalidated evidence opens, navigation, and every terminal outcome agree across all crates. The full baseline passes; fake fixtures do not establish live Yocto compatibility."
 
 [[task]]
+id = "MAINT-SPEC-001"
+milestone = "M6"
+title = "Specify typed Maintenance workflows"
+status = "IN_PROGRESS"
+priority = 70
+required = true
+depends_on = ["JOB-002", "DIALOG-001"]
+verify = ["./scripts/verify-roadmap.sh"]
+notes = "Define one responsive Maintenance destination, exact capability and safety rules, typed sstate/service/release workflows, lifecycle, cancellation, evidence, and fake-versus-live validation boundaries without duplicating completed Signatures, Security, QA, or recipe patch-review work."
+
+[[task]]
+id = "MAINT-MODEL-001"
+milestone = "M6"
+title = "Model typed Maintenance state and operations"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-SPEC-001"]
+verify = ["cargo test -p yoctui-model maintenance_workflow", "cargo test -p yoctui-app maintenance_workflow"]
+notes = "Add exact capability, sstate readiness/cleanup, service diagnostics, locked-signature, comparison, archive, optional integration, preview, session, evidence, cancellation, and terminal state without host or process access."
+
+[[task]]
+id = "MAINT-SSTATE-ADAPTER-001"
+milestone = "M6"
+title = "Adapt sstate readiness and protected cleanup"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake maintenance_sstate"]
+notes = "Discover, preview, and run exact oe-check-sstate and sstate-cache-management.sh operations with canonical paths, bounded output, protected cleanup confirmation, timeout, cancellation, and loss."
+
+[[task]]
+id = "MAINT-SERVICE-ADAPTER-001"
+milestone = "M6"
+title = "Adapt PR and hash service diagnostics"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake maintenance_service"]
+notes = "Inspect typed PRSERV/HASHSERV configuration and process diagnostics, and expose only exact supported bitbake-prserv-tool operations; internal services are observed rather than launched."
+
+[[task]]
+id = "MAINT-RELEASE-ADAPTER-001"
+milestone = "M6"
+title = "Adapt locked signatures comparisons and archives"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake maintenance_release"]
+notes = "Discover and run exact gen-lockedsig-cache, buildhistory-diff/build-compare, and oe-git-archive operations with canonical identities, bounded evidence, shell-free vectors, cancellation, timeout, and loss."
+
+[[task]]
+id = "MAINT-OPTIONAL-ADAPTER-001"
+milestone = "M6"
+title = "Detect optional release integrations"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake maintenance_optional"]
+notes = "Detect optional pull-request helpers, repo manifests, and Toaster without silently launching services or turning absent tools into empty success."
+
+[[task]]
+id = "MAINT-ADAPTER-001"
+milestone = "M6"
+title = "Close Maintenance adapter gate"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-SSTATE-ADAPTER-001", "MAINT-SERVICE-ADAPTER-001", "MAINT-RELEASE-ADAPTER-001", "MAINT-OPTIONAL-ADAPTER-001"]
+verify = ["cargo test -p yoctui-bitbake maintenance_", "cargo test -p yoctui-app maintenance_workflow"]
+notes = "Combined capability and execution boundary for every specified Maintenance family."
+
+[[task]]
+id = "MAINT-RENDER-001"
+milestone = "M6"
+title = "Render responsive Maintenance workspace"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-MODEL-001"]
+verify = ["cargo test -p yoctui-ui maintenance_workflow"]
+notes = "Render typed capability, readiness, diagnostics, sessions, evidence, previews, destructive confirmations, terminal outcomes, responsive breakpoints, themes, and no-color meaning."
+
+[[task]]
+id = "MAINT-CLI-001"
+milestone = "M6"
+title = "Integrate non-blocking Maintenance execution"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-ADAPTER-001", "MAINT-RENDER-001"]
+verify = ["cargo test -p yoctui -- maintenance_workflow"]
+notes = "Own replaceable capability/diagnostic workers and one exact managed Maintenance runner, poll without blocking, revalidate destructive and evidence identities, and preserve navigation/cancellation/outcomes."
+
+[[task]]
+id = "MAINT-UI-CLI-001"
+milestone = "M6"
+title = "Integrate complete Maintenance workspace"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-MODEL-001", "MAINT-ADAPTER-001", "MAINT-RENDER-001", "MAINT-CLI-001"]
+verify = ["cargo test -p yoctui-model maintenance_workflow", "cargo test -p yoctui-app maintenance_workflow", "cargo test -p yoctui-bitbake maintenance_", "cargo test -p yoctui-ui maintenance_workflow", "cargo test -p yoctui -- maintenance_workflow"]
+notes = "Cross-layer parent gate for safe typed sstate, service-diagnostic, locked-signature, comparison, archive, and optional Maintenance workflows."
+
+[[task]]
 id = "MAINT-001"
 milestone = "M6"
 title = "Advanced maintenance workflows"
 status = "IN_PROGRESS"
 priority = 70
 required = true
-depends_on = ["JOB-002", "DIALOG-001"]
-verify = ["cargo test -p yoctui-app maintenance"]
-notes = "sstate, PR service, hash server, locked sigs, archive, build comparison."
+depends_on = ["MAINT-UI-CLI-001"]
+verify = ["cargo test -p yoctui-model maintenance_workflow", "cargo test -p yoctui-app maintenance_workflow", "cargo test -p yoctui-bitbake maintenance_", "cargo test -p yoctui-ui maintenance_workflow", "cargo test -p yoctui -- maintenance_workflow"]
+notes = "Parent completion gate split into specification, typed state, sstate/service/release/optional adapters, responsive rendering, non-blocking CLI integration, and cross-layer verification."
 
 [[task]]
 id = "HARDEN-001"
