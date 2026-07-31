@@ -12,12 +12,12 @@ use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
     BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
-    LayerInspectorMode, LayerRelationship, LayerRelationships, QaAction, QaDialog,
-    QaReportFailureKind, QaReportRequest, QaView, QemuOutputStream, QemuSessionId,
-    RecipeDependencies, Screen, SdkBuildAction, SdkKind, SdkOutputStream, SdkSessionId,
-    SecurityAction, SecurityDialog, SecurityOutputStream, SecurityView, Severity, TaskId, TaskInfo,
-    TestComparison, VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream,
-    WicSessionId,
+    LayerInspectorMode, LayerRelationship, LayerRelationships, MaintenanceAction,
+    MaintenanceDialog, QaAction, QaDialog, QaReportFailureKind, QaReportRequest, QaView,
+    QemuOutputStream, QemuSessionId, RecipeDependencies, Screen, SdkBuildAction, SdkKind,
+    SdkOutputStream, SdkSessionId, SecurityAction, SecurityDialog, SecurityOutputStream,
+    SecurityView, Severity, TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity,
+    WicCapability, WicOutput, WicOutputStream, WicSessionId,
 };
 
 pub fn qa_layer_capability_action(response: QaLayerCapabilityResponse) -> Action {
@@ -2027,6 +2027,78 @@ pub fn qa_dialog_action(dialog: &QaDialog, key: Input) -> Option<Action> {
     }
 }
 
+pub fn maintenance_workspace_action(row_count: usize, key: Input) -> Option<Action> {
+    let maintenance = |action| Some(Action::Maintenance(action));
+    match key {
+        Input::Char('[') => maintenance(MaintenanceAction::CycleView { backwards: true }),
+        Input::Char(']') | Input::Tab => {
+            maintenance(MaintenanceAction::CycleView { backwards: false })
+        }
+        Input::Up | Input::Char('k') => maintenance(MaintenanceAction::Select {
+            delta: -1,
+            row_count,
+        }),
+        Input::Down | Input::Char('j') => maintenance(MaintenanceAction::Select {
+            delta: 1,
+            row_count,
+        }),
+        Input::Char('r') => maintenance(MaintenanceAction::InspectCapability),
+        Input::Char('x') => maintenance(MaintenanceAction::BeginCancellation),
+        Input::Char('o') => maintenance(MaintenanceAction::OpenSelectedEvidence),
+        Input::Char('S') => maintenance(MaintenanceAction::OpenSignatures),
+        _ => None,
+    }
+}
+
+pub fn maintenance_dialog_action(dialog: &MaintenanceDialog, key: Input) -> Option<Action> {
+    let maintenance = |action| Some(Action::Maintenance(action));
+    match dialog {
+        MaintenanceDialog::Confirm(preview) => match key {
+            Input::Enter => maintenance(MaintenanceAction::ConfirmOperation(preview.clone())),
+            Input::Esc => maintenance(MaintenanceAction::CancelDialog),
+            _ => None,
+        },
+        MaintenanceDialog::CleanupPhrase { preview, input } => match key {
+            Input::Char(character)
+                if !character.is_control()
+                    && input.len() + character.len_utf8()
+                        <= yoctui_model::MAX_MAINTENANCE_TEXT_BYTES =>
+            {
+                let mut next = input.clone();
+                next.push(character);
+                maintenance(MaintenanceAction::UpdateCleanupPhrase {
+                    preview: preview.clone(),
+                    input: next,
+                })
+            }
+            Input::Backspace => {
+                let mut next = input.clone();
+                next.pop();
+                maintenance(MaintenanceAction::UpdateCleanupPhrase {
+                    preview: preview.clone(),
+                    input: next,
+                })
+            }
+            Input::Enter => maintenance(MaintenanceAction::ConfirmCleanupPhrase {
+                preview: preview.clone(),
+                input: input.clone(),
+            }),
+            Input::Esc => maintenance(MaintenanceAction::CancelDialog),
+            _ => None,
+        },
+        MaintenanceDialog::ConfirmNetworkPush(preview) => match key {
+            Input::Enter => maintenance(MaintenanceAction::ConfirmNetworkPush(preview.clone())),
+            Input::Esc => maintenance(MaintenanceAction::CancelDialog),
+            _ => None,
+        },
+        MaintenanceDialog::ConfirmCancellation(id) => match key {
+            Input::Enter => maintenance(MaintenanceAction::ConfirmCancellation(*id)),
+            Input::Esc => maintenance(MaintenanceAction::CancelDialog),
+            _ => None,
+        },
+    }
+}
+
 pub fn test_launch_dialog_action(editing: bool, key: Input) -> Option<Action> {
     if editing {
         return match key {
@@ -2496,6 +2568,88 @@ mod tests {
             task: None,
             force: false,
         }
+    }
+
+    fn maintenance_preview() -> yoctui_model::MaintenanceOperationPreview {
+        yoctui_model::MaintenanceOperationPreview::new(
+            7,
+            1,
+            yoctui_model::MaintenanceOperation::SstateReadiness(
+                yoctui_model::SstateReadinessRequest::new(
+                    vec!["core-image-minimal".into()],
+                    yoctui_model::SstateReadinessMode::IsolatedTmpdir,
+                    None,
+                    None,
+                    60,
+                )
+                .unwrap(),
+            ),
+            vec![
+                "0: /tools/oe-check-sstate".into(),
+                "1: core-image-minimal".into(),
+            ],
+            vec![],
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn maintenance_workflow_maps_first_class_screen_and_typed_keys() {
+        let mut app = App::new(10, 1_000);
+        assert_eq!(
+            update(&mut app, Action::Open(Screen::Maintenance)),
+            Some(yoctui_model::Effect::Maintenance(
+                yoctui_model::MaintenanceEffect::InspectCapability { request: 1 }
+            ))
+        );
+        assert_eq!(app.screen, Screen::Maintenance);
+        assert_eq!(
+            maintenance_workspace_action(4, Input::Char(']')),
+            Some(Action::Maintenance(MaintenanceAction::CycleView {
+                backwards: false
+            }))
+        );
+        assert_eq!(
+            maintenance_workspace_action(4, Input::Down),
+            Some(Action::Maintenance(MaintenanceAction::Select {
+                delta: 1,
+                row_count: 4
+            }))
+        );
+        assert_eq!(
+            maintenance_workspace_action(4, Input::Char('S')),
+            Some(Action::Maintenance(MaintenanceAction::OpenSignatures))
+        );
+    }
+
+    #[test]
+    fn maintenance_workflow_dialog_mapping_traps_typed_input() {
+        let preview = maintenance_preview();
+        assert_eq!(
+            maintenance_dialog_action(&MaintenanceDialog::Confirm(preview.clone()), Input::Enter),
+            Some(Action::Maintenance(MaintenanceAction::ConfirmOperation(
+                preview.clone()
+            )))
+        );
+        assert_eq!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::CleanupPhrase {
+                    preview: preview.clone(),
+                    input: "DELETE".into()
+                },
+                Input::Char(' ')
+            ),
+            Some(Action::Maintenance(
+                MaintenanceAction::UpdateCleanupPhrase {
+                    preview: preview.clone(),
+                    input: "DELETE ".into()
+                }
+            ))
+        );
+        assert_eq!(
+            maintenance_dialog_action(&MaintenanceDialog::ConfirmNetworkPush(preview), Input::Esc),
+            Some(Action::Maintenance(MaintenanceAction::CancelDialog))
+        );
     }
 
     #[test]
