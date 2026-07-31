@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Decompose the advanced Maintenance parent into atomic workflows.
+Specify safe typed Maintenance workflows.
 
 ## Current task
 
@@ -27,7 +27,7 @@ See `docs/current-task.md`.
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
-| M6 Maintenance | IN_PROGRESS | The broad Maintenance parent must be split into specified typed workflows before implementation |
+| M6 Maintenance | IN_PROGRESS | The parent is split into specification, model, sstate/service/release/optional adapters, rendering, CLI, cross-layer, and parent gates; specification is active |
 | M7 Hardening | IN_PROGRESS | Coverage and profiling foundations exist |
 
 ## Reconciliation evidence
@@ -83,9 +83,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `MAINT-001` — decompose and implement advanced Maintenance workflows
-2. `HARDEN-001` — complete the test and analysis matrix
-3. `DOC-001` — complete operator and compatibility documentation
+1. `MAINT-SPEC-001` — specify typed Maintenance workflows
+2. `MAINT-MODEL-001` — model typed state and operations
+3. `MAINT-SSTATE-ADAPTER-001` / `MAINT-SERVICE-ADAPTER-001` / `MAINT-RELEASE-ADAPTER-001` / `MAINT-OPTIONAL-ADAPTER-001` — adapt exact tools and diagnostics
+4. `MAINT-RENDER-001` / `MAINT-CLI-001` / `MAINT-UI-CLI-001` / `MAINT-001` — render, execute, and close gates
+5. `HARDEN-001` / `DOC-001` — hardening and operator documentation
 
 ## Rules
 
