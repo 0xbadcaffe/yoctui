@@ -31,6 +31,8 @@ use yoctui_app::{
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
     key_action, logs_action, model_action_from_backend_event, package_workspace_action,
+    qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action, qa_report_error_action,
+    qa_report_response_action, qa_task_capability_action, qa_workspace_action,
     qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
     qemu_launch_confirmation_action, qemu_launch_dialog_action, recipe_editor_action,
     sdk_actions_for_runner_event, sdk_build_confirmation_action,
@@ -51,7 +53,11 @@ use yoctui_app::{
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, DevtoolCommandSpec, DevtoolInspector,
     DevtoolJobRunner, DevtoolRunnerEvent, ImageArtifactAdapter, ImageArtifactCancellation,
-    PackageDataAdapter, PackageDataCancellation, ProcessBackend, QemuAdapterError,
+    PackageDataAdapter, PackageDataCancellation, ProcessBackend, QaConfiguredLayerInput,
+    QaFamilyTaskBinding, QaLayerCapabilityInput, QaLayerCapabilityInspector, QaLayerCommandSpec,
+    QaLayerJobRunner, QaLayerRunnerEvent, QaReportAdapter, QaReportAdapterError,
+    QaReportCancellation, QaReportCandidate, QaReportOrigin, QaReportRootInput, QaReportScanInput,
+    QaTaskCapabilityInput, QaTaskCapabilityInspector, QaTaskScopeInput, QemuAdapterError,
     QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner, QemuRunnerEvent, SdkArtifactAdapter,
     SdkArtifactCancellation, SdkArtifactScanOutcome, SdkToolAdapter, SdkToolAdapterError,
     SdkToolCommandSpec, SdkToolJobRunner, SdkToolRunnerEvent, SecurityCapabilityInput,
@@ -68,14 +74,17 @@ use yoctui_model::{
     DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
     ImageArtifactInventoryState, ImageArtifactRequest, LayerBrowserEntry, LayerInspectorMode,
     LayerRelationship, LayerRelationships, PackageDetailRequest, PackageInventoryRequest,
-    PreviewKind, QemuCapability, QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest,
-    QemuSessionId, RecipeIdentity, Screen, SdkArtifactInventoryRequest, SdkNativePreview,
-    SdkOperation, SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityAction,
-    SecurityEffect, SecurityOperation, SecurityReportRequest, SecurityScope, SecuritySessionId,
-    SecuritySessionStatus, Severity, SignatureComparisonRequest, SignatureTarget, TestComparison,
-    TestOperation, TestSessionId, TestWorkspaceView, Theme, VariableDetail, VariableIdentity,
-    WicCapability, WicCreateDraft, WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest,
-    WicOperation, WicSessionId, update, validate_config_edit_request,
+    PreviewKind, QaAction, QaCheckFamily, QaCheckId, QaEffect, QaFindingScope, QaLayerIdentity,
+    QaLayerSessionId, QaReportFormat, QaReportIdentity, QaReportRequest, QaScope, QaSessionId,
+    QaSessionStatus, QaSourceLocation, QemuCapability, QemuLaunchDraft, QemuLaunchPreview,
+    QemuLaunchRequest, QemuSessionId, RecipeIdentity, Screen, SdkArtifactInventoryRequest,
+    SdkNativePreview, SdkOperation, SdkPublishPreview, SdkSessionId, SdkToolCapability,
+    SecurityAction, SecurityEffect, SecurityOperation, SecurityReportRequest, SecurityScope,
+    SecuritySessionId, SecuritySessionStatus, Severity, SignatureComparisonRequest,
+    SignatureTarget, TestComparison, TestOperation, TestSessionId, TestWorkspaceView, Theme,
+    VariableDetail, VariableIdentity, WicCapability, WicCreateDraft, WicCreatePreview,
+    WicCreateRequest, WicDeviceInventoryRequest, WicOperation, WicSessionId, update,
+    validate_config_edit_request,
 };
 use yoctui_ui::render;
 #[derive(Parser, Debug)]
@@ -1040,6 +1049,116 @@ fn security_build_action_for_event(
         BackendEvent::Disconnected => Some(Action::Security(SecurityAction::LoseSession {
             id,
             message: "BitBake backend disconnected during Security operation".into(),
+            finished_at: SystemTime::now(),
+        })),
+        _ => None,
+    }
+}
+
+async fn begin_qa_build(
+    backend: &mut Box<dyn BitBakeBackend>,
+    app: &mut App,
+    build_jobs: &mut BuildJobCoordinator,
+    session: QaSessionId,
+    request: BuildRequest,
+) -> bool {
+    let Some(actions) = build_jobs.queue_build(&request, SystemTime::now()) else {
+        let _ = update(
+            app,
+            Action::Qa(QaAction::FailSession {
+                session,
+                message: "another managed BitBake build is already active".into(),
+                finished_at: SystemTime::now(),
+            }),
+        );
+        return false;
+    };
+    for action in actions {
+        let _ = update(app, action);
+    }
+    let Some(background_job) = build_jobs.active_job_id() else {
+        let _ = update(
+            app,
+            Action::Qa(QaAction::LoseSession {
+                session,
+                message: "QA build coordinator did not retain its job identity".into(),
+                finished_at: SystemTime::now(),
+            }),
+        );
+        return false;
+    };
+    let _ = update(
+        app,
+        Action::Qa(QaAction::AttachBackgroundJob {
+            session,
+            background_job,
+        }),
+    );
+    match backend.start_build(request).await {
+        Ok(()) => true,
+        Err(error) => {
+            let _ = update(
+                app,
+                Action::Qa(QaAction::FailSession {
+                    session,
+                    message: error.to_string(),
+                    finished_at: SystemTime::now(),
+                }),
+            );
+            for action in build_jobs.start_failed(error.to_string(), SystemTime::now()) {
+                let _ = update(app, action);
+            }
+            false
+        }
+    }
+}
+
+fn qa_build_action_for_event(
+    app: &App,
+    session: QaSessionId,
+    event: &BackendEvent,
+) -> Option<Action> {
+    let qa_session = app
+        .qa
+        .sessions
+        .iter()
+        .find(|candidate| candidate.id == session)?;
+    match event {
+        BackendEvent::BuildStarted => Some(Action::Qa(QaAction::SessionRunning(session))),
+        BackendEvent::BuildCompleted { success: true, .. } => {
+            Some(Action::Qa(QaAction::CompleteSession {
+                session,
+                result_paths: qa_session.operation.report_roots.clone(),
+                finished_at: SystemTime::now(),
+            }))
+        }
+        BackendEvent::BuildCompleted { success: false, .. }
+            if qa_session.status == QaSessionStatus::Cancelling =>
+        {
+            Some(Action::Qa(QaAction::CancelSession {
+                session,
+                finished_at: SystemTime::now(),
+            }))
+        }
+        BackendEvent::BuildCompleted {
+            success: false,
+            exit_code,
+        } => Some(Action::Qa(QaAction::FailSession {
+            session,
+            message: exit_code.map_or_else(
+                || "QA BitBake task failed without an exit code".into(),
+                |code| format!("QA BitBake task failed with exit code {code}"),
+            ),
+            finished_at: SystemTime::now(),
+        })),
+        BackendEvent::CommandFailed { code, message } => Some(Action::Qa(QaAction::FailSession {
+            session,
+            message: format!("{code}: {message}"),
+            finished_at: SystemTime::now(),
+        })),
+        BackendEvent::Disconnected => Some(Action::Qa(QaAction::LoseSession {
+            session,
+            message: "BitBake backend disconnected during QA".into(),
             finished_at: SystemTime::now(),
         })),
         _ => None,
@@ -2603,6 +2722,856 @@ async fn route_independent_security_effect(
             true
         }
         Effect::Security(_) => coordinator.handle_effect(app, effect).await,
+        _ => false,
+    }
+}
+
+struct QaCapabilityCliOperation {
+    handle: tokio::task::JoinHandle<
+        std::result::Result<yoctui_bitbake::QaTaskCapabilityResponse, String>,
+    >,
+}
+
+struct QaLayerCapabilityCliOperation {
+    handle: tokio::task::JoinHandle<
+        std::result::Result<yoctui_bitbake::QaLayerCapabilityResponse, String>,
+    >,
+}
+
+struct QaReportCliOperation {
+    request: QaReportRequest,
+    cancellation: QaReportCancellation,
+    handle: tokio::task::JoinHandle<
+        std::result::Result<yoctui_bitbake::QaReportResponse, QaReportAdapterError>,
+    >,
+}
+
+struct QaLayerCliOperation {
+    id: QaLayerSessionId,
+    runner: QaLayerJobRunner,
+}
+
+struct QaCliCoordinator {
+    build_directory: PathBuf,
+    path_directories: Vec<PathBuf>,
+    report_adapter: QaReportAdapter,
+    capability: Option<QaCapabilityCliOperation>,
+    layer_capability: Option<QaLayerCapabilityCliOperation>,
+    report: Option<QaReportCliOperation>,
+    layer: Option<QaLayerCliOperation>,
+}
+
+impl QaCliCoordinator {
+    fn new(build_directory: PathBuf, path_directories: Vec<PathBuf>) -> Self {
+        Self {
+            build_directory,
+            path_directories,
+            report_adapter: QaReportAdapter::new(),
+            capability: None,
+            layer_capability: None,
+            report: None,
+            layer: None,
+        }
+    }
+
+    fn owns_layer(&self, id: QaLayerSessionId) -> bool {
+        self.layer.as_ref().is_some_and(|active| active.id == id)
+    }
+
+    async fn handle_effect(&mut self, app: &mut App, effect: Effect) -> bool {
+        let Effect::Qa(effect) = effect else {
+            return false;
+        };
+        match effect {
+            QaEffect::InspectCapability { scope } => {
+                self.begin_capability_inspection(app, scope);
+            }
+            QaEffect::InspectLayerCapability => self.begin_layer_capability_inspection(app),
+            QaEffect::ImportReports(request) => self.begin_report_scan(app, request),
+            QaEffect::StartLayerCheck {
+                session,
+                layer,
+                executable,
+                arguments,
+            } => {
+                self.begin_layer_check(app, session, layer, executable, arguments)
+                    .await;
+            }
+            QaEffect::CancelLayerCheck(id) => self.cancel_layer_check(app, id).await,
+            QaEffect::StartBuild { .. }
+            | QaEffect::CancelBuild { .. }
+            | QaEffect::OpenReport(_)
+            | QaEffect::OpenProvider(_)
+            | QaEffect::OpenSource(_)
+            | QaEffect::OpenLayerRoot(_) => return false,
+        }
+        true
+    }
+
+    fn begin_capability_inspection(&mut self, app: &App, scope: Option<QaScope>) {
+        if let Some(stale) = self.capability.take() {
+            stale.handle.abort();
+        }
+        let input = qa_task_capability_input(app, self.build_directory.clone(), scope);
+        let handle = tokio::task::spawn_blocking(move || {
+            let input = input?;
+            QaTaskCapabilityInspector::new(input)
+                .inspect()
+                .map_err(|error| error.to_string())
+        });
+        self.capability = Some(QaCapabilityCliOperation { handle });
+    }
+
+    fn begin_layer_capability_inspection(&mut self, app: &App) {
+        if let Some(stale) = self.layer_capability.take() {
+            stale.handle.abort();
+        }
+        let input = qa_layer_capability_input(
+            app,
+            self.build_directory.clone(),
+            self.path_directories.clone(),
+        );
+        let handle = tokio::task::spawn_blocking(move || {
+            let input = input?;
+            QaLayerCapabilityInspector::inspect(input).map_err(|error| error.to_string())
+        });
+        self.layer_capability = Some(QaLayerCapabilityCliOperation { handle });
+    }
+
+    fn begin_report_scan(&mut self, app: &App, request: QaReportRequest) {
+        if let Some(stale) = self.report.take() {
+            stale.cancellation.cancel();
+            stale.handle.abort();
+        }
+        let input = qa_report_scan_input(app, self.build_directory.clone(), request.clone());
+        let cancellation = QaReportCancellation::default();
+        let worker_cancellation = cancellation.clone();
+        let adapter = self.report_adapter.clone();
+        let handle = tokio::spawn(async move {
+            match input {
+                Ok(input) => {
+                    adapter
+                        .scan_with_cancellation(input, worker_cancellation)
+                        .await
+                }
+                Err(message) => Err(QaReportAdapterError::InvalidRequest(message)),
+            }
+        });
+        self.report = Some(QaReportCliOperation {
+            request,
+            cancellation,
+            handle,
+        });
+    }
+
+    async fn begin_layer_check(
+        &mut self,
+        app: &mut App,
+        id: QaLayerSessionId,
+        layer: QaLayerIdentity,
+        executable: yoctui_model::QaExecutableIdentity,
+        arguments: Vec<String>,
+    ) {
+        if self.owns_layer(id) {
+            let _ = update(
+                app,
+                Action::Notify("The exact layer-QA process is already owned by the CLI.".into()),
+            );
+            return;
+        }
+        if self.layer.is_some() {
+            let _ = update(
+                app,
+                Action::Qa(QaAction::FailLayerSession {
+                    session: id,
+                    exit_code: None,
+                    message: "another layer-QA process is already active".into(),
+                    finished_at: SystemTime::now(),
+                }),
+            );
+            return;
+        }
+        let preview = app
+            .qa
+            .layer_sessions
+            .iter()
+            .find(|session| session.id == id)
+            .map(|session| session.operation.clone());
+        let Some(preview) = preview else {
+            let _ = update(
+                app,
+                Action::Qa(QaAction::LoseLayerSession {
+                    session: id,
+                    message: "the exact layer-QA session is unavailable".into(),
+                    finished_at: SystemTime::now(),
+                }),
+            );
+            return;
+        };
+        if preview.layer != layer
+            || preview.executable != executable
+            || preview.arguments != arguments
+        {
+            let _ = update(
+                app,
+                Action::Qa(QaAction::FailLayerSession {
+                    session: id,
+                    exit_code: None,
+                    message: "layer-QA effect does not match its confirmed preview".into(),
+                    finished_at: SystemTime::now(),
+                }),
+            );
+            return;
+        }
+        let command = match QaLayerCommandSpec::from_preview(id, &preview) {
+            Ok(command) => command,
+            Err(error) => {
+                let _ = update(
+                    app,
+                    Action::Qa(QaAction::FailLayerSession {
+                        session: id,
+                        exit_code: None,
+                        message: error.to_string(),
+                        finished_at: SystemTime::now(),
+                    }),
+                );
+                return;
+            }
+        };
+        let mut runner = QaLayerJobRunner::new();
+        if let Err(error) = runner.start(command).await {
+            let _ = update(
+                app,
+                Action::Qa(QaAction::FailLayerSession {
+                    session: id,
+                    exit_code: None,
+                    message: error.to_string(),
+                    finished_at: SystemTime::now(),
+                }),
+            );
+            return;
+        }
+        self.layer = Some(QaLayerCliOperation { id, runner });
+    }
+
+    async fn cancel_layer_check(&mut self, app: &mut App, id: QaLayerSessionId) {
+        let Some(active) = self.layer.as_mut().filter(|active| active.id == id) else {
+            let _ = update(
+                app,
+                Action::Qa(QaAction::RejectLayerCancellation {
+                    session: id,
+                    message: "the CLI does not own this layer-QA process".into(),
+                }),
+            );
+            return;
+        };
+        if let Err(error) = active.runner.cancel(id).await {
+            let _ = update(
+                app,
+                Action::Qa(QaAction::RejectLayerCancellation {
+                    session: id,
+                    message: error.to_string(),
+                }),
+            );
+        }
+    }
+
+    async fn poll(&mut self, app: &mut App) {
+        self.poll_capability(app).await;
+        self.poll_layer_capability(app).await;
+        self.poll_report(app).await;
+        self.poll_layer(app).await;
+    }
+
+    async fn poll_capability(&mut self, app: &mut App) {
+        if !self
+            .capability
+            .as_ref()
+            .is_some_and(|operation| operation.handle.is_finished())
+        {
+            return;
+        }
+        let operation = self
+            .capability
+            .take()
+            .expect("finished QA capability checked");
+        let action = match operation.handle.await {
+            Ok(Ok(response)) => qa_task_capability_action(response),
+            Ok(Err(message)) => Action::Qa(QaAction::CapabilityFailed(message)),
+            Err(error) => Action::Qa(QaAction::CapabilityFailed(format!(
+                "QA capability task was lost: {error}"
+            ))),
+        };
+        let _ = update(app, action);
+    }
+
+    async fn poll_layer_capability(&mut self, app: &mut App) {
+        if !self
+            .layer_capability
+            .as_ref()
+            .is_some_and(|operation| operation.handle.is_finished())
+        {
+            return;
+        }
+        let operation = self
+            .layer_capability
+            .take()
+            .expect("finished layer-QA capability checked");
+        let action = match operation.handle.await {
+            Ok(Ok(response)) => qa_layer_capability_action(response),
+            Ok(Err(message)) => Action::Qa(QaAction::LayerCapabilityFailed(message)),
+            Err(error) => Action::Qa(QaAction::LayerCapabilityFailed(format!(
+                "layer-QA capability task was lost: {error}"
+            ))),
+        };
+        let _ = update(app, action);
+    }
+
+    async fn poll_report(&mut self, app: &mut App) {
+        if !self
+            .report
+            .as_ref()
+            .is_some_and(|operation| operation.handle.is_finished())
+        {
+            return;
+        }
+        let operation = self.report.take().expect("finished QA report scan checked");
+        let action = match operation.handle.await {
+            Ok(Ok(response)) => qa_report_response_action(response),
+            Ok(Err(error)) => qa_report_error_action(operation.request, error),
+            Err(error) if error.is_cancelled() => {
+                qa_report_error_action(operation.request, QaReportAdapterError::Cancelled)
+            }
+            Err(error) => qa_report_error_action(
+                operation.request,
+                QaReportAdapterError::WorkerLost(error.to_string()),
+            ),
+        };
+        let _ = update(app, action);
+    }
+
+    async fn poll_layer(&mut self, app: &mut App) {
+        let Some(operation) = self.layer.as_mut() else {
+            return;
+        };
+        let result =
+            tokio::time::timeout(Duration::from_millis(1), operation.runner.next_event()).await;
+        let event = match result {
+            Ok(Ok(event)) => Some(event),
+            Ok(Err(error)) => Some(QaLayerRunnerEvent::Lost {
+                id: operation.id,
+                message: error.to_string(),
+            }),
+            Err(_) => None,
+        };
+        let Some(event) = event else {
+            return;
+        };
+        let terminal = matches!(
+            event,
+            QaLayerRunnerEvent::Completed { .. }
+                | QaLayerRunnerEvent::Failed { .. }
+                | QaLayerRunnerEvent::Cancelled { .. }
+                | QaLayerRunnerEvent::TimedOut { .. }
+                | QaLayerRunnerEvent::Lost { .. }
+        );
+        let action = match event {
+            QaLayerRunnerEvent::Completed {
+                id,
+                exit_code: Some(exit_code),
+            } => {
+                let result_paths = app
+                    .qa
+                    .layer_sessions
+                    .iter()
+                    .find(|session| session.id == id)
+                    .map(|session| session.operation.report_roots.clone())
+                    .unwrap_or_default();
+                Some(Action::Qa(QaAction::CompleteLayerSession {
+                    session: id,
+                    exit_code,
+                    result_paths,
+                    finished_at: SystemTime::now(),
+                }))
+            }
+            event => qa_layer_runner_action(event, SystemTime::now()),
+        };
+        let followup = action.and_then(|action| update(app, action));
+        if terminal {
+            self.layer = None;
+        }
+        if let Some(effect) = followup {
+            let _ = self.handle_effect(app, effect).await;
+        }
+    }
+
+    fn revalidate_report(&self, app: &App, identity: &QaReportIdentity) -> Result<(), String> {
+        let retained = app
+            .qa
+            .inventory
+            .reports()
+            .unwrap_or_default()
+            .iter()
+            .any(|report| &report.identity == identity);
+        if !retained {
+            return Err("the exact QA report is no longer retained".into());
+        }
+        self.report_adapter
+            .revalidate(identity)
+            .map_err(|error| error.to_string())
+    }
+
+    fn revalidate_provider(&self, app: &App, identity: &RecipeIdentity) -> Result<(), String> {
+        let retained = app.qa.capability.snapshot().is_some_and(|snapshot| {
+            snapshot
+                .scopes
+                .iter()
+                .any(|scope| &scope.recipe == identity)
+        });
+        if !retained {
+            return Err("the exact QA provider scope is no longer retained".into());
+        }
+        revalidate_canonical_regular_file(&identity.file, "QA provider")
+    }
+
+    fn revalidate_source(&self, app: &App, source: &QaSourceLocation) -> Result<(), String> {
+        let retained = app
+            .qa
+            .inventory
+            .reports()
+            .unwrap_or_default()
+            .iter()
+            .flat_map(|report| report.findings.iter())
+            .any(|finding| finding.source.as_ref() == Some(source));
+        if !retained {
+            return Err("the exact QA finding source is no longer retained".into());
+        }
+        revalidate_canonical_regular_file(&source.path, "QA finding source")
+    }
+
+    fn revalidate_layer(&self, app: &App, layer: &QaLayerIdentity) -> Result<(), String> {
+        let retained = app.qa.layer_capability.snapshot().is_some_and(|snapshot| {
+            snapshot
+                .layers
+                .iter()
+                .any(|candidate| &candidate.identity == layer)
+        });
+        if !retained {
+            return Err("the exact configured layer is no longer retained".into());
+        }
+        revalidate_canonical_directory(&layer.root, "configured QA layer")
+    }
+}
+
+fn qa_task_capability_input(
+    app: &App,
+    build_directory: PathBuf,
+    requested_scope: Option<QaScope>,
+) -> std::result::Result<QaTaskCapabilityInput, String> {
+    let mut scopes = app
+        .workspace
+        .recipes
+        .iter()
+        .filter_map(|recipe| {
+            let file = recipe.file.clone()?;
+            let identity = RecipeIdentity {
+                name: recipe.name.clone(),
+                file,
+            };
+            let reported_tasks = app
+                .recipe_metadata
+                .get(&recipe.name)
+                .and_then(|metadata| metadata.tasks.clone())
+                .unwrap_or_default();
+            let family_tasks = qa_family_task_bindings(&reported_tasks);
+            let is_kernel = family_tasks
+                .iter()
+                .any(|binding| binding.family == QaCheckFamily::KernelConfiguration);
+            Some(QaTaskScopeInput {
+                identity,
+                reported_tasks,
+                family_tasks,
+                is_kernel,
+                report_roots: qa_task_report_roots(app),
+            })
+        })
+        .collect::<Vec<_>>();
+    scopes.sort_by(|left, right| {
+        left.identity
+            .name
+            .cmp(&right.identity.name)
+            .then_with(|| left.identity.file.cmp(&right.identity.file))
+    });
+    scopes.dedup_by(|left, right| left.identity == right.identity);
+    let selected = requested_scope
+        .map(|scope| scope.recipe)
+        .filter(|identity| scopes.iter().any(|scope| scope.identity == *identity))
+        .or_else(|| {
+            app.qa
+                .scope
+                .as_ref()
+                .map(|scope| scope.recipe.clone())
+                .filter(|identity| scopes.iter().any(|scope| scope.identity == *identity))
+        })
+        .or_else(|| {
+            app.workspace
+                .recipes
+                .get(app.recipe_selection)
+                .and_then(|recipe| {
+                    recipe.file.clone().map(|file| RecipeIdentity {
+                        name: recipe.name.clone(),
+                        file,
+                    })
+                })
+                .filter(|identity| scopes.iter().any(|scope| scope.identity == *identity))
+        })
+        .or_else(|| scopes.first().map(|scope| scope.identity.clone()))
+        .ok_or_else(|| "QA needs at least one exact recipe/provider identity".to_owned())?;
+    Ok(QaTaskCapabilityInput {
+        release: app.workspace.release.clone(),
+        build_directory,
+        selected,
+        scopes,
+    })
+}
+
+fn qa_family_task_bindings(reported_tasks: &[String]) -> Vec<QaFamilyTaskBinding> {
+    [
+        (
+            QaCheckFamily::KernelConfiguration,
+            ["do_kernel_configcheck"].as_slice(),
+        ),
+        (QaCheckFamily::UriFetch, ["do_checkuri"].as_slice()),
+        (QaCheckFamily::Patch, ["do_patch_qa"].as_slice()),
+        (QaCheckFamily::License, ["do_populate_lic"].as_slice()),
+        (QaCheckFamily::RecipePackage, ["do_package_qa"].as_slice()),
+    ]
+    .into_iter()
+    .flat_map(|(family, candidates)| {
+        candidates
+            .iter()
+            .filter(|candidate| reported_tasks.iter().any(|task| task == **candidate))
+            .map(move |task| QaFamilyTaskBinding {
+                family,
+                task: (*task).into(),
+            })
+    })
+    .collect()
+}
+
+fn qa_task_report_roots(app: &App) -> Vec<QaReportRootInput> {
+    [
+        (
+            QaCheckFamily::KernelConfiguration,
+            "KERNEL_CONFIGCHECK_REPORT_ROOT",
+        ),
+        (QaCheckFamily::UriFetch, "URI_QA_REPORT_ROOT"),
+        (QaCheckFamily::Patch, "PATCH_QA_REPORT_ROOT"),
+        (QaCheckFamily::License, "LICENSE_QA_REPORT_ROOT"),
+        (QaCheckFamily::RecipePackage, "PACKAGE_QA_REPORT_ROOT"),
+    ]
+    .into_iter()
+    .filter_map(|(family, name)| {
+        app.workspace
+            .variables
+            .get(name)
+            .map(|value| QaReportRootInput {
+                family,
+                path: PathBuf::from(value),
+            })
+    })
+    .collect()
+}
+
+fn qa_layer_capability_input(
+    app: &App,
+    build_directory: PathBuf,
+    path_directories: Vec<PathBuf>,
+) -> std::result::Result<QaLayerCapabilityInput, String> {
+    let report_roots = ["YOCTO_CHECK_LAYER_REPORT_ROOT", "LAYER_QA_REPORT_ROOT"]
+        .into_iter()
+        .filter_map(|name| app.workspace.variables.get(name).map(PathBuf::from))
+        .collect::<Vec<_>>();
+    let layers = app
+        .workspace
+        .layers
+        .iter()
+        .map(|layer| {
+            let identity = QaLayerIdentity::new(layer.name.clone(), layer.path.clone())
+                .map_err(str::to_owned)?;
+            let compatible_series = app
+                .workspace
+                .variables
+                .get(&format!(
+                    "LAYERSERIES_COMPAT_{}",
+                    layer.name.replace('-', "_")
+                ))
+                .map(|value| value.split_whitespace().map(str::to_owned).collect())
+                .unwrap_or_default();
+            Ok(QaConfiguredLayerInput {
+                check: QaCheckId::new("layer-qa".into()).expect("static QA check ID is valid"),
+                identity,
+                compatible_series,
+                report_roots: report_roots.clone(),
+            })
+        })
+        .collect::<std::result::Result<Vec<_>, String>>()?;
+    let selected_layer = app
+        .qa
+        .layer_selection
+        .clone()
+        .filter(|identity| layers.iter().any(|layer| layer.identity == *identity))
+        .or_else(|| layers.first().map(|layer| layer.identity.clone()))
+        .ok_or_else(|| "layer QA needs at least one exact configured layer".to_owned())?;
+    Ok(QaLayerCapabilityInput {
+        release: app.workspace.release.clone(),
+        build_directory,
+        selected_layer,
+        layers,
+        executable_search_path: path_directories,
+    })
+}
+
+fn qa_report_scan_input(
+    app: &App,
+    build_directory: PathBuf,
+    request: QaReportRequest,
+) -> std::result::Result<QaReportScanInput, String> {
+    let known_checks = app
+        .qa
+        .capability
+        .snapshot()
+        .into_iter()
+        .flat_map(|snapshot| snapshot.checks.iter().map(|check| check.id.clone()))
+        .chain(
+            app.qa
+                .layer_capability
+                .snapshot()
+                .into_iter()
+                .flat_map(|snapshot| snapshot.layers.iter().map(|layer| layer.check.clone())),
+        )
+        .collect::<Vec<_>>();
+    let known_scopes = app
+        .qa
+        .capability
+        .snapshot()
+        .into_iter()
+        .flat_map(|snapshot| snapshot.scopes.iter().cloned().map(QaFindingScope::Recipe))
+        .chain(
+            app.qa
+                .layer_capability
+                .snapshot()
+                .into_iter()
+                .flat_map(|snapshot| {
+                    snapshot
+                        .layers
+                        .iter()
+                        .map(|layer| QaFindingScope::Layer(layer.identity.clone()))
+                }),
+        )
+        .collect::<Vec<_>>();
+    let candidates = request
+        .paths
+        .iter()
+        .map(|path| qa_report_candidate(app, path))
+        .collect::<std::result::Result<Vec<_>, String>>()?;
+    Ok(QaReportScanInput {
+        build_directory,
+        request,
+        candidates,
+        known_checks,
+        known_scopes,
+    })
+}
+
+fn qa_report_candidate(app: &App, path: &Path) -> std::result::Result<QaReportCandidate, String> {
+    let recipe_session = app
+        .qa
+        .sessions
+        .iter()
+        .rev()
+        .find(|session| {
+            session
+                .result_paths
+                .iter()
+                .any(|candidate| candidate == path)
+        })
+        .map(|session| {
+            (
+                QaReportOrigin::Managed,
+                session.operation.check.clone(),
+                QaFindingScope::Recipe(session.operation.scope.clone()),
+                session.operation.request.task.clone(),
+                None,
+            )
+        });
+    let layer_session = app
+        .qa
+        .layer_sessions
+        .iter()
+        .rev()
+        .find(|session| {
+            session
+                .result_paths
+                .iter()
+                .any(|candidate| candidate == path)
+        })
+        .map(|session| {
+            (
+                QaReportOrigin::Managed,
+                session.operation.check.clone(),
+                QaFindingScope::Layer(session.operation.layer.clone()),
+                None,
+                Some("yocto-check-layer".into()),
+            )
+        });
+    let retained_report = app
+        .qa
+        .inventory
+        .reports()
+        .unwrap_or_default()
+        .iter()
+        .find(|report| report.identity.path == path)
+        .and_then(|report| {
+            let producer = report.identity.producer.clone()?;
+            let scope = report.identity.scope.clone()?;
+            let (task, test_name) = match &scope {
+                QaFindingScope::Recipe(recipe_scope) => {
+                    let task = app.qa.capability.snapshot().and_then(|snapshot| {
+                        snapshot
+                            .checks
+                            .iter()
+                            .find(|check| check.id == producer && check.scope == *recipe_scope)
+                            .and_then(|check| check.task.clone())
+                    });
+                    (task, None)
+                }
+                QaFindingScope::Layer(_) => (None, Some("yocto-check-layer".into())),
+            };
+            Some((QaReportOrigin::Import, producer, scope, task, test_name))
+        });
+    let selected_recipe = app.qa.selected_check().map(|check| {
+        (
+            QaReportOrigin::Import,
+            check.id.clone(),
+            QaFindingScope::Recipe(check.scope.clone()),
+            check.task.clone(),
+            None,
+        )
+    });
+    let selected_layer = app.qa.selected_layer().map(|layer| {
+        (
+            QaReportOrigin::Import,
+            layer.check.clone(),
+            QaFindingScope::Layer(layer.identity.clone()),
+            None,
+            Some("yocto-check-layer".into()),
+        )
+    });
+    let (origin, producer, scope, task, test_name) = recipe_session
+        .or(layer_session)
+        .or(retained_report)
+        .or_else(|| match app.qa.view {
+            yoctui_model::QaView::RecipeKernel => selected_recipe.or(selected_layer),
+            yoctui_model::QaView::LayerQa => selected_layer.or(selected_recipe),
+        })
+        .ok_or_else(|| {
+            "QA report import needs an exact check or configured-layer scope".to_owned()
+        })?;
+    let format = match fs::symlink_metadata(path) {
+        Ok(metadata) if metadata.is_dir() => None,
+        _ => qa_report_format(path),
+    };
+    Ok(QaReportCandidate {
+        path: path.to_path_buf(),
+        origin,
+        format,
+        producer,
+        scope,
+        task,
+        test_name,
+    })
+}
+
+fn qa_report_format(path: &Path) -> Option<QaReportFormat> {
+    match path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .map(str::to_ascii_lowercase)
+        .as_deref()
+    {
+        Some("json" | "jsonl") => Some(QaReportFormat::Json),
+        Some("xml") => Some(QaReportFormat::Xml),
+        Some("qa" | "txt") => Some(QaReportFormat::Text),
+        Some("log") => Some(QaReportFormat::BitBakeLog),
+        _ => None,
+    }
+}
+
+fn revalidate_canonical_regular_file(path: &Path, label: &str) -> Result<(), String> {
+    let metadata = fs::symlink_metadata(path)
+        .map_err(|error| format!("could not inspect {label}: {error}"))?;
+    if metadata.file_type().is_symlink()
+        || !metadata.is_file()
+        || fs::canonicalize(path).ok().as_deref() != Some(path)
+    {
+        return Err(format!("{label} is no longer a canonical regular file"));
+    }
+    Ok(())
+}
+
+fn revalidate_canonical_directory(path: &Path, label: &str) -> Result<(), String> {
+    let metadata = fs::symlink_metadata(path)
+        .map_err(|error| format!("could not inspect {label}: {error}"))?;
+    if metadata.file_type().is_symlink()
+        || !metadata.is_dir()
+        || fs::canonicalize(path).ok().as_deref() != Some(path)
+    {
+        return Err(format!("{label} is no longer a canonical directory"));
+    }
+    Ok(())
+}
+
+async fn route_independent_qa_effect(
+    guard: &TerminalGuard,
+    app: &mut App,
+    coordinator: &mut QaCliCoordinator,
+    effect: Effect,
+    editor: Option<&str>,
+) -> bool {
+    match &effect {
+        Effect::Qa(QaEffect::StartBuild { .. } | QaEffect::CancelBuild { .. }) => false,
+        Effect::Qa(QaEffect::OpenReport(identity)) => {
+            match coordinator.revalidate_report(app, identity) {
+                Ok(()) => {
+                    open_in_editor(guard, app, identity.path.clone(), editor).await;
+                }
+                Err(message) => app.notification = Some(message),
+            }
+            true
+        }
+        Effect::Qa(QaEffect::OpenProvider(identity)) => {
+            match coordinator.revalidate_provider(app, identity) {
+                Ok(()) => open_in_editor(guard, app, identity.file.clone(), editor).await,
+                Err(message) => app.notification = Some(message),
+            }
+            true
+        }
+        Effect::Qa(QaEffect::OpenSource(source)) => {
+            match coordinator.revalidate_source(app, source) {
+                Ok(()) => open_in_editor(guard, app, source.path.clone(), editor).await,
+                Err(message) => app.notification = Some(message),
+            }
+            true
+        }
+        Effect::Qa(QaEffect::OpenLayerRoot(layer)) => {
+            match coordinator.revalidate_layer(app, layer) {
+                Ok(()) => open_in_editor(guard, app, layer.root.clone(), editor).await,
+                Err(message) => app.notification = Some(message),
+            }
+            true
+        }
+        Effect::Qa(_) => coordinator.handle_effect(app, effect).await,
         _ => false,
     }
 }
@@ -4616,8 +5585,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     );
     let mut pending_test_build = None;
     let mut security_coordinator =
-        SecurityCliCoordinator::new(session_build_dir.clone(), initialized_paths);
+        SecurityCliCoordinator::new(session_build_dir.clone(), initialized_paths.clone());
     let mut pending_security_build = None;
+    let mut qa_coordinator = QaCliCoordinator::new(session_build_dir.clone(), initialized_paths);
+    let mut pending_qa_build = None;
     if app.screen == Screen::Packages
         && let Some(effect @ Effect::GetPackageInventory(_)) =
             update(&mut app, Action::BeginPackageInventory)
@@ -4655,6 +5626,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         )
     {
         let _ = security_coordinator.handle_effect(&mut app, effect).await;
+    }
+    if app.screen == Screen::Qa
+        && let Some(effect) = update(&mut app, Action::Qa(QaAction::InspectCapability))
+    {
+        let _ = qa_coordinator.handle_effect(&mut app, effect).await;
     }
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
@@ -4695,6 +5671,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         poll_wic_job(&mut app, &mut wic_operation).await;
         test_coordinator.poll(&mut app).await;
         security_coordinator.poll(&mut app).await;
+        qa_coordinator.poll(&mut app).await;
         if (matches!(
             app.build.status,
             BuildStatus::LoadingWorkspace
@@ -4705,7 +5682,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             || sdk_operation.is_some()
             || test_coordinator.session.is_some()
             || test_coordinator.result.is_some()
-            || security_coordinator.mapper.is_some())
+            || security_coordinator.mapper.is_some()
+            || qa_coordinator.layer.is_some())
             && Instant::now() >= next_telemetry_sample
         {
             let telemetry = telemetry_sampler.sample(&session_build_dir);
@@ -4770,6 +5748,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         editor.as_deref(),
                     )
                     .await;
+                } else if let Some(effect @ Effect::Qa(_)) = effect {
+                    let _ = route_independent_qa_effect(
+                        &guard,
+                        &mut app,
+                        &mut qa_coordinator,
+                        effect,
+                        editor.as_deref(),
+                    )
+                    .await;
                 }
             } else if let Some(Dialog::Security(dialog)) = app.active_dialog().cloned() {
                 let effect = security_dialog_action(&dialog, input)
@@ -4825,6 +5812,68 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                     Action::Security(SecurityAction::RejectCancellation {
                                         id,
                                         message: "the CLI does not own this Security operation"
+                                            .into(),
+                                    }),
+                                );
+                            }
+                            _ => {}
+                        }
+                    }
+                }
+            } else if let Some(Dialog::Qa(dialog)) = app.active_dialog().cloned() {
+                let effect =
+                    qa_dialog_action(&dialog, input).and_then(|action| update(&mut app, action));
+                if let Some(effect) = effect {
+                    let routed = route_independent_qa_effect(
+                        &guard,
+                        &mut app,
+                        &mut qa_coordinator,
+                        effect.clone(),
+                        editor.as_deref(),
+                    )
+                    .await;
+                    if !routed {
+                        match effect {
+                            Effect::Qa(QaEffect::StartBuild { session, request }) => {
+                                if begin_qa_build(
+                                    &mut backend,
+                                    &mut app,
+                                    &mut build_jobs,
+                                    session,
+                                    request,
+                                )
+                                .await
+                                {
+                                    pending_qa_build = Some(session);
+                                }
+                            }
+                            Effect::Qa(QaEffect::CancelBuild { session, .. })
+                                if pending_qa_build == Some(session) =>
+                            {
+                                if let Some(action) = build_jobs.request_cancellation() {
+                                    let _ = update(&mut app, action);
+                                }
+                                if let Err(error) = backend.cancel_build().await {
+                                    let _ = update(
+                                        &mut app,
+                                        Action::Qa(QaAction::RejectCancellation {
+                                            session,
+                                            message: error.to_string(),
+                                        }),
+                                    );
+                                    for action in build_jobs
+                                        .cancellation_failed(error.to_string(), SystemTime::now())
+                                    {
+                                        let _ = update(&mut app, action);
+                                    }
+                                }
+                            }
+                            Effect::Qa(QaEffect::CancelBuild { session, .. }) => {
+                                let _ = update(
+                                    &mut app,
+                                    Action::Qa(QaAction::RejectCancellation {
+                                        session,
+                                        message: "the CLI does not own this QA managed build"
                                             .into(),
                                     }),
                                 );
@@ -5619,6 +6668,23 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     )
                     .await;
                 }
+            } else if app.screen == Screen::Qa
+                && qa_workspace_action(app.qa.view, app.qa.drilled, app.qa.searching, input)
+                    .is_some()
+            {
+                let action =
+                    qa_workspace_action(app.qa.view, app.qa.drilled, app.qa.searching, input)
+                        .expect("QA action was checked");
+                if let Some(effect) = update(&mut app, action) {
+                    let _ = route_independent_qa_effect(
+                        &guard,
+                        &mut app,
+                        &mut qa_coordinator,
+                        effect,
+                        editor.as_deref(),
+                    )
+                    .await;
+                }
             } else if app.screen == Screen::Settings && settings_action(input).is_some() {
                 let action = settings_action(input).expect("settings action was checked");
                 if matches!(update(&mut app, action), Some(Effect::PersistSettings)) {
@@ -5954,6 +7020,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             editor.as_deref(),
                         )
                         .await
+                        && !route_independent_qa_effect(
+                            &guard,
+                            &mut app,
+                            &mut qa_coordinator,
+                            effect.clone(),
+                            editor.as_deref(),
+                        )
+                        .await
                     {
                         let _ = test_coordinator.handle_effect(&mut app, effect).await;
                     }
@@ -6026,6 +7100,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         | BackendEvent::Disconnected
                 );
                 let security_terminal = test_terminal;
+                let qa_terminal = test_terminal;
                 if let Some(id) = pending_test_build
                     && let Some(action) = test_build_action_for_event(&app, id, &event)
                 {
@@ -6033,6 +7108,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
                 let security_followup = pending_security_build
                     .and_then(|id| security_build_action_for_event(&app, id, &event))
+                    .and_then(|action| update(&mut app, action));
+                let qa_followup = pending_qa_build
+                    .and_then(|id| qa_build_action_for_event(&app, id, &event))
                     .and_then(|action| update(&mut app, action));
                 let sdk_refresh =
                     sdk_refresh_after_build_event(&mut app, &mut pending_sdk_build, &event);
@@ -6045,8 +7123,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 if security_terminal {
                     pending_security_build = None;
                 }
+                if qa_terminal {
+                    pending_qa_build = None;
+                }
                 if let Some(effect) = security_followup {
                     let _ = security_coordinator.handle_effect(&mut app, effect).await;
+                }
+                if let Some(effect) = qa_followup {
+                    let _ = qa_coordinator.handle_effect(&mut app, effect).await;
                 }
                 if let Some(effect) = sdk_refresh {
                     begin_sdk_artifact_operation(
@@ -6073,6 +7157,16 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         &mut app,
                         Action::Security(SecurityAction::LoseSession {
                             id,
+                            message: error.to_string(),
+                            finished_at: SystemTime::now(),
+                        }),
+                    );
+                }
+                if let Some(id) = pending_qa_build.take() {
+                    let _ = update(
+                        &mut app,
+                        Action::Qa(QaAction::LoseSession {
+                            session: id,
                             message: error.to_string(),
                             finished_at: SystemTime::now(),
                         }),
@@ -10565,5 +11659,540 @@ esac"#,
             lost.security.sessions.last().unwrap().status,
             SecuritySessionStatus::Lost
         );
+    }
+
+    struct QaCliFixture {
+        root: PathBuf,
+        build: PathBuf,
+        reports: PathBuf,
+        bin: PathBuf,
+        provider: PathBuf,
+        layer: PathBuf,
+        source: PathBuf,
+    }
+
+    impl QaCliFixture {
+        fn new(layer_runner_body: &str) -> Self {
+            use std::sync::atomic::{AtomicU64, Ordering};
+            static NEXT_QA_FIXTURE: AtomicU64 = AtomicU64::new(1);
+            let root = std::env::temp_dir().join(format!(
+                "yoctui-qa-cli-{}-{}",
+                std::process::id(),
+                NEXT_QA_FIXTURE.fetch_add(1, Ordering::Relaxed)
+            ));
+            let build = root.join("build");
+            let reports = build.join("qa-reports");
+            let bin = root.join("bin");
+            let layer = root.join("meta-demo");
+            let recipes = layer.join("recipes-core/busybox");
+            for directory in [&build, &reports, &bin, &layer, &recipes] {
+                fs::create_dir_all(directory).unwrap();
+            }
+            let provider = recipes.join("busybox_1.0.bb");
+            fs::write(&provider, "SUMMARY = \"BusyBox\"\n").unwrap();
+            let source = layer.join("conf/layer.conf");
+            fs::create_dir_all(source.parent().unwrap()).unwrap();
+            fs::write(&source, "LAYERSERIES_COMPAT_meta-demo = \"scarthgap\"\n").unwrap();
+            let runner = bin.join("yocto-check-layer");
+            fs::write(&runner, layer_runner_body).unwrap();
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                let mut permissions = fs::metadata(&runner).unwrap().permissions();
+                permissions.set_mode(0o755);
+                fs::set_permissions(&runner, permissions).unwrap();
+            }
+            Self {
+                root: fs::canonicalize(root).unwrap(),
+                build: fs::canonicalize(build).unwrap(),
+                reports: fs::canonicalize(reports).unwrap(),
+                bin: fs::canonicalize(bin).unwrap(),
+                provider: fs::canonicalize(provider).unwrap(),
+                layer: fs::canonicalize(layer).unwrap(),
+                source: fs::canonicalize(source).unwrap(),
+            }
+        }
+
+        fn app(&self) -> App {
+            let mut app = App::new(20, 8_000);
+            app.screen = Screen::Qa;
+            app.workspace.build_dir = Some(self.build.clone());
+            app.workspace.release = Some("6.0".into());
+            app.workspace.variables.insert(
+                "PACKAGE_QA_REPORT_ROOT".into(),
+                self.reports.display().to_string(),
+            );
+            app.workspace.variables.insert(
+                "YOCTO_CHECK_LAYER_REPORT_ROOT".into(),
+                self.reports.display().to_string(),
+            );
+            app.workspace.recipes.push(yoctui_model::Recipe {
+                name: "busybox".into(),
+                file: Some(self.provider.clone()),
+                ..yoctui_model::Recipe::default()
+            });
+            app.workspace.layers.push(yoctui_model::Layer {
+                name: "meta-demo".into(),
+                path: self.layer.clone(),
+                priority: Some(6),
+            });
+            app.recipe_metadata.insert(
+                "busybox".into(),
+                yoctui_model::RecipeMetadata {
+                    recipe: "busybox".into(),
+                    tasks: Some(vec![
+                        "do_checkuri".into(),
+                        "do_patch_qa".into(),
+                        "do_populate_lic".into(),
+                        "do_package_qa".into(),
+                    ]),
+                    ..yoctui_model::RecipeMetadata::default()
+                },
+            );
+            app
+        }
+
+        fn write_report(&self) -> PathBuf {
+            let report = self.reports.join("recipe-qa.json");
+            fs::write(
+                &report,
+                format!(
+                    r#"{{"findings":[{{"status":"warning","severity":"warning","message":"license checksum needs review","rule":"license-checksum","source":{{"path":"{}","line":1}}}}]}}"#,
+                    self.source.display()
+                ),
+            )
+            .unwrap();
+            fs::canonicalize(report).unwrap()
+        }
+    }
+
+    impl Drop for QaCliFixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    async fn poll_qa_until(
+        coordinator: &mut QaCliCoordinator,
+        app: &mut App,
+        complete: impl Fn(&App, &QaCliCoordinator) -> bool,
+    ) {
+        for _ in 0..300 {
+            coordinator.poll(app).await;
+            if complete(app, coordinator) {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(1)).await;
+        }
+        panic!("QA CLI operation did not finish");
+    }
+
+    async fn inspect_qa_capability(
+        fixture: &QaCliFixture,
+        app: &mut App,
+        coordinator: &mut QaCliCoordinator,
+    ) {
+        let effect = update(app, Action::Qa(QaAction::InspectCapability)).unwrap();
+        assert!(coordinator.handle_effect(app, effect).await);
+        poll_qa_until(coordinator, app, |app, _| {
+            app.qa.capability.snapshot().is_some()
+        })
+        .await;
+        assert_eq!(
+            app.qa
+                .selected_check()
+                .and_then(|check| check.task.as_deref()),
+            None,
+            "the first kernel-only check stays disabled for a non-kernel recipe"
+        );
+        assert_eq!(app.qa.scope.as_ref().unwrap().recipe.file, fixture.provider);
+    }
+
+    #[tokio::test]
+    async fn qa_workflow_cli_discovers_capability_imports_reports_and_preserves_navigation() {
+        let fixture = QaCliFixture::new("#!/bin/sh\nexit 0\n");
+        let report = fixture.write_report();
+        let mut app = fixture.app();
+        let mut coordinator =
+            QaCliCoordinator::new(fixture.build.clone(), vec![fixture.bin.clone()]);
+        inspect_qa_capability(&fixture, &mut app, &mut coordinator).await;
+        app.qa.check_selection = Some(QaCheckId::new("recipe-package".into()).unwrap());
+
+        let _ = update(&mut app, Action::Qa(QaAction::BeginImport));
+        let effect = update(
+            &mut app,
+            Action::Qa(QaAction::ConfirmImport(report.display().to_string())),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        app.screen = Screen::Layers;
+        poll_qa_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.report.is_none()
+                && app
+                    .qa
+                    .inventory
+                    .reports()
+                    .is_some_and(|reports| !reports.is_empty())
+        })
+        .await;
+        assert_eq!(app.screen, Screen::Layers);
+        assert_eq!(app.qa.visible_findings().len(), 1);
+        assert_eq!(
+            app.qa.visible_findings()[0].message,
+            "license checksum needs review"
+        );
+    }
+
+    #[tokio::test]
+    async fn qa_workflow_cli_runs_exact_layer_check_refreshes_and_rejects_duplicate() {
+        let fixture =
+            QaCliFixture::new("#!/bin/sh\nprintf 'checking configured layer\\n'\nexit 0\n");
+        fixture.write_report();
+        let mut app = fixture.app();
+        let mut coordinator =
+            QaCliCoordinator::new(fixture.build.clone(), vec![fixture.bin.clone()]);
+        inspect_qa_capability(&fixture, &mut app, &mut coordinator).await;
+        let effect = update(&mut app, Action::Qa(QaAction::CycleView)).unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        poll_qa_until(&mut coordinator, &mut app, |app, _| {
+            app.qa.layer_capability.snapshot().is_some()
+        })
+        .await;
+        let selected = app.qa.selected_layer().unwrap();
+        assert_eq!(selected.identity.root, fixture.layer);
+        assert!(matches!(
+            selected.run,
+            yoctui_model::QaLayerRunCapability::Available { .. }
+        ));
+
+        let _ = update(&mut app, Action::Qa(QaAction::BeginSelectedLayerCheck));
+        let preview = match app.active_dialog().cloned() {
+            Some(Dialog::Qa(yoctui_model::QaDialog::LayerOperation(preview))) => preview,
+            other => panic!("unexpected layer-QA dialog: {other:?}"),
+        };
+        let effect = update(
+            &mut app,
+            Action::Qa(QaAction::ConfirmLayerOperation(preview)),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect.clone()).await);
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("already owned"))
+        );
+        app.screen = Screen::Dashboard;
+        poll_qa_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.layer.is_none()
+                && coordinator.report.is_none()
+                && app
+                    .qa
+                    .layer_sessions
+                    .back()
+                    .is_some_and(|session| session.status.is_terminal())
+        })
+        .await;
+        let session = app.qa.layer_sessions.back().unwrap();
+        assert_eq!(session.status, QaSessionStatus::Succeeded);
+        assert!(
+            session
+                .output
+                .iter()
+                .any(|line| line.line.contains("checking configured layer"))
+        );
+        assert!(app.qa.inventory.reports().is_some());
+        assert_eq!(app.screen, Screen::Dashboard);
+    }
+
+    #[tokio::test]
+    async fn qa_workflow_cli_cancels_only_exact_native_layer_session() {
+        let fixture =
+            QaCliFixture::new("#!/bin/sh\ntrap 'exit 0' TERM\nwhile :; do sleep 1; done\n");
+        let mut app = fixture.app();
+        let mut coordinator =
+            QaCliCoordinator::new(fixture.build.clone(), vec![fixture.bin.clone()]);
+        inspect_qa_capability(&fixture, &mut app, &mut coordinator).await;
+        let effect = update(&mut app, Action::Qa(QaAction::CycleView)).unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        poll_qa_until(&mut coordinator, &mut app, |app, _| {
+            app.qa.layer_capability.snapshot().is_some()
+        })
+        .await;
+        let _ = update(&mut app, Action::Qa(QaAction::BeginSelectedLayerCheck));
+        let preview = match app.active_dialog().cloned() {
+            Some(Dialog::Qa(yoctui_model::QaDialog::LayerOperation(preview))) => preview,
+            other => panic!("unexpected layer-QA dialog: {other:?}"),
+        };
+        let effect = update(
+            &mut app,
+            Action::Qa(QaAction::ConfirmLayerOperation(preview)),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        let actual_id = app.qa.layer_sessions.back().unwrap().id;
+        let _ = update(&mut app, Action::Qa(QaAction::BeginLayerCancellation));
+        let effect = update(
+            &mut app,
+            Action::Qa(QaAction::ConfirmLayerCancellation(actual_id)),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        assert!(!coordinator.owns_layer(QaLayerSessionId(actual_id.0 + 1)));
+        poll_qa_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.layer.is_none()
+                && app
+                    .qa
+                    .layer_sessions
+                    .back()
+                    .is_some_and(|session| session.status.is_terminal())
+        })
+        .await;
+        assert_eq!(
+            app.qa.layer_sessions.back().unwrap().status,
+            QaSessionStatus::Cancelled
+        );
+    }
+
+    #[tokio::test]
+    async fn qa_workflow_cli_revalidates_exact_report_provider_source_and_layer_opens() {
+        let fixture = QaCliFixture::new("#!/bin/sh\nexit 0\n");
+        let report = fixture.write_report();
+        let mut app = fixture.app();
+        let mut coordinator =
+            QaCliCoordinator::new(fixture.build.clone(), vec![fixture.bin.clone()]);
+        inspect_qa_capability(&fixture, &mut app, &mut coordinator).await;
+        app.qa.check_selection = Some(QaCheckId::new("recipe-package".into()).unwrap());
+        let request = QaReportRequest::new(1, vec![report.clone()]).unwrap();
+        app.qa.inventory = yoctui_model::QaReportInventoryState::Loading {
+            request: request.clone(),
+        };
+        coordinator.begin_report_scan(&app, request);
+        poll_qa_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.report.is_none()
+                && app
+                    .qa
+                    .inventory
+                    .reports()
+                    .is_some_and(|reports| !reports.is_empty())
+        })
+        .await;
+        let identity = app.qa.inventory.reports().unwrap()[0].identity.clone();
+        let source = app.qa.inventory.reports().unwrap()[0].findings[0]
+            .source
+            .clone()
+            .unwrap();
+        assert!(coordinator.revalidate_report(&app, &identity).is_ok());
+        assert!(
+            coordinator
+                .revalidate_provider(
+                    &app,
+                    &RecipeIdentity {
+                        name: "busybox".into(),
+                        file: fixture.provider.clone(),
+                    }
+                )
+                .is_ok()
+        );
+        assert!(coordinator.revalidate_source(&app, &source).is_ok());
+
+        let effect = update(&mut app, Action::Qa(QaAction::CycleView)).unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        poll_qa_until(&mut coordinator, &mut app, |app, _| {
+            app.qa.layer_capability.snapshot().is_some()
+        })
+        .await;
+        let layer = app.qa.selected_layer().unwrap().identity.clone();
+        assert!(coordinator.revalidate_layer(&app, &layer).is_ok());
+        fs::write(&report, "{}").unwrap();
+        assert!(coordinator.revalidate_report(&app, &identity).is_err());
+        fs::remove_file(&fixture.source).unwrap();
+        assert!(coordinator.revalidate_source(&app, &source).is_err());
+    }
+
+    #[tokio::test]
+    async fn qa_workflow_cli_reuses_managed_build_and_correlates_terminal_outcomes() {
+        let fixture = QaCliFixture::new("#!/bin/sh\nexit 0\n");
+        fixture.write_report();
+        let mut app = fixture.app();
+        let mut coordinator =
+            QaCliCoordinator::new(fixture.build.clone(), vec![fixture.bin.clone()]);
+        inspect_qa_capability(&fixture, &mut app, &mut coordinator).await;
+        app.qa.check_selection = Some(QaCheckId::new("recipe-package".into()).unwrap());
+        let _ = update(&mut app, Action::Qa(QaAction::BeginSelectedCheck));
+        let preview = match app.active_dialog().cloned() {
+            Some(Dialog::Qa(yoctui_model::QaDialog::Operation(preview))) => preview,
+            other => panic!("unexpected QA build dialog: {other:?}"),
+        };
+        let effect = update(&mut app, Action::Qa(QaAction::ConfirmOperation(preview))).unwrap();
+        let Effect::Qa(QaEffect::StartBuild { session, request }) = effect else {
+            panic!("QA build did not produce its typed effect");
+        };
+        let started = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let mut backend: Box<dyn BitBakeBackend> = Box::new(SecurityBuildBackend {
+            started: started.clone(),
+            fail_start: false,
+        });
+        let mut jobs = BuildJobCoordinator::default();
+        assert!(begin_qa_build(&mut backend, &mut app, &mut jobs, session, request.clone()).await);
+        assert_eq!(*started.lock().unwrap(), [request]);
+        assert_eq!(
+            app.qa.sessions.back().unwrap().background_job_id,
+            jobs.active_job_id()
+        );
+        let started_action =
+            qa_build_action_for_event(&app, session, &BackendEvent::BuildStarted).unwrap();
+        let _ = update(&mut app, started_action);
+        assert_eq!(
+            app.qa.sessions.back().unwrap().status,
+            QaSessionStatus::Running
+        );
+        app.screen = Screen::Logs;
+        let completed_action = qa_build_action_for_event(
+            &app,
+            session,
+            &BackendEvent::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        )
+        .unwrap();
+        let followup = update(&mut app, completed_action);
+        assert!(matches!(
+            followup,
+            Some(Effect::Qa(QaEffect::ImportReports(_)))
+        ));
+        assert_eq!(app.screen, Screen::Logs);
+
+        let mut failed = fixture.app();
+        inspect_qa_capability(&fixture, &mut failed, &mut coordinator).await;
+        failed.qa.check_selection = Some(QaCheckId::new("recipe-package".into()).unwrap());
+        let _ = update(&mut failed, Action::Qa(QaAction::BeginSelectedCheck));
+        let preview = match failed.active_dialog().cloned() {
+            Some(Dialog::Qa(yoctui_model::QaDialog::Operation(preview))) => preview,
+            other => panic!("unexpected QA build dialog: {other:?}"),
+        };
+        let _ = update(&mut failed, Action::Qa(QaAction::ConfirmOperation(preview)));
+        let failed_id = failed.qa.sessions.back().unwrap().id;
+        let action = qa_build_action_for_event(
+            &failed,
+            failed_id,
+            &BackendEvent::BuildCompleted {
+                success: false,
+                exit_code: Some(1),
+            },
+        )
+        .unwrap();
+        let _ = update(&mut failed, action);
+        assert_eq!(
+            failed.qa.sessions.back().unwrap().status,
+            QaSessionStatus::Failed
+        );
+    }
+
+    #[tokio::test]
+    async fn qa_workflow_cli_preserves_report_terminal_states_and_replaceable_generations() {
+        let fixture = QaCliFixture::new("#!/bin/sh\nexit 0\n");
+        let empty = fixture.build.join("empty-qa");
+        fs::create_dir(&empty).unwrap();
+        let empty = fs::canonicalize(empty).unwrap();
+        let mut app = fixture.app();
+        let mut coordinator =
+            QaCliCoordinator::new(fixture.build.clone(), vec![fixture.bin.clone()]);
+        inspect_qa_capability(&fixture, &mut app, &mut coordinator).await;
+        app.qa.check_selection = Some(QaCheckId::new("recipe-package".into()).unwrap());
+
+        for (generation, error) in [
+            (1, QaReportAdapterError::Cancelled),
+            (2, QaReportAdapterError::Timeout(30)),
+            (
+                3,
+                QaReportAdapterError::WorkerLost("worker channel closed".into()),
+            ),
+            (4, QaReportAdapterError::PermissionDenied(empty.clone())),
+        ] {
+            let request = QaReportRequest::new(generation, vec![empty.clone()]).unwrap();
+            app.qa.inventory = yoctui_model::QaReportInventoryState::Loading {
+                request: request.clone(),
+            };
+            coordinator.report = Some(QaReportCliOperation {
+                request,
+                cancellation: QaReportCancellation::default(),
+                handle: tokio::spawn(async move { Err(error) }),
+            });
+            tokio::task::yield_now().await;
+            coordinator.poll(&mut app).await;
+            assert!(
+                matches!(
+                    (&app.qa.inventory, generation),
+                    (yoctui_model::QaReportInventoryState::Cancelled { .. }, 1)
+                        | (yoctui_model::QaReportInventoryState::TimedOut { .. }, 2)
+                        | (yoctui_model::QaReportInventoryState::Lost { .. }, 3)
+                        | (yoctui_model::QaReportInventoryState::Failed { .. }, 4)
+                ),
+                "generation {generation}: {:?}",
+                app.qa.inventory
+            );
+        }
+
+        let first = QaReportRequest::new(5, vec![empty.clone()]).unwrap();
+        app.qa.inventory = yoctui_model::QaReportInventoryState::Loading {
+            request: first.clone(),
+        };
+        coordinator.begin_report_scan(&app, first);
+        let replacement = QaReportRequest::new(6, vec![empty]).unwrap();
+        app.qa.inventory = yoctui_model::QaReportInventoryState::Loading {
+            request: replacement.clone(),
+        };
+        coordinator.begin_report_scan(&app, replacement);
+        poll_qa_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.report.is_none()
+                && app
+                    .qa
+                    .inventory
+                    .request()
+                    .is_some_and(|request| request.generation == 6)
+        })
+        .await;
+        assert!(matches!(
+            app.qa.inventory,
+            yoctui_model::QaReportInventoryState::AvailableEmpty { .. }
+        ));
+    }
+
+    #[test]
+    fn qa_workflow_cli_routes_every_workspace_and_modal_key_without_leakage() {
+        use yoctui_app::Input;
+        let keys = [
+            Input::Tab,
+            Input::Up,
+            Input::Down,
+            Input::Char('s'),
+            Input::Char('/'),
+            Input::Char('f'),
+            Input::Char('r'),
+            Input::Char('I'),
+            Input::Char('R'),
+            Input::Enter,
+            Input::Char('o'),
+            Input::Char('e'),
+            Input::Char('l'),
+            Input::Char('c'),
+        ];
+        for key in keys {
+            assert!(
+                qa_workspace_action(yoctui_model::QaView::RecipeKernel, false, false, key)
+                    .is_some(),
+                "unrouted QA workspace key: {key:?}"
+            );
+        }
+        let dialog = yoctui_model::QaDialog::Import {
+            input: String::new(),
+        };
+        assert!(qa_dialog_action(&dialog, Input::Char('x')).is_some());
+        assert!(qa_dialog_action(&dialog, Input::Backspace).is_some());
+        assert!(qa_dialog_action(&dialog, Input::Enter).is_some());
+        assert!(qa_dialog_action(&dialog, Input::Esc).is_some());
+        assert!(qa_dialog_action(&dialog, Input::Tab).is_none());
     }
 }
