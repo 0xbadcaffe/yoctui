@@ -1340,18 +1340,18 @@ notes = "QA is now a first-class Navigator destination after Security. Typed Rec
 id = "QA-CLI-001"
 milestone = "M5"
 title = "Integrate non-blocking QA execution"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 62
 required = true
 depends_on = ["QA-ADAPTER-001", "QA-RENDER-001"]
 verify = ["cargo test -p yoctui -- qa_workflow"]
-notes = "Reuse the managed BitBake coordinator for recipe/kernel QA, own independent replaceable report acquisition and one exact layer-QA runner, poll without blocking, revalidate opens, correlate refresh/cancellation, and preserve navigation/outcomes."
+notes = "The CLI now inspects exact recipe/provider/task and configured-layer/tool capability, reuses the managed BitBake coordinator, independently owns one native layer runner and one replaceable report worker, and revalidates every exact open. Seven focused integration tests cover managed/native execution, independent cancellation, report generations and terminal states, navigation, key/modal routing, and stale report/provider/source/layer rejection. Full baseline verification passes; fake fixtures do not claim live compatibility."
 
 [[task]]
 id = "QA-UI-CLI-001"
 milestone = "M5"
 title = "Integrate complete QA workspace"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 62
 required = true
 depends_on = ["QA-MODEL-001", "QA-ADAPTER-001", "QA-RENDER-001", "QA-CLI-001"]
