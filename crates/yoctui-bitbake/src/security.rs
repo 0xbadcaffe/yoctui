@@ -8,6 +8,9 @@ use yoctui_model::{
     MAX_SECURITY_PATHS, SecurityCapabilitySnapshot, SecurityMapperCapability, SecurityScope,
 };
 
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+
 const MAX_SECURITY_PATH_DIRECTORIES: usize = 256;
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
@@ -212,7 +215,6 @@ fn discover_executable(
 
 #[cfg(unix)]
 fn is_executable(metadata: &fs::Metadata) -> bool {
-    use std::os::unix::fs::PermissionsExt;
     metadata.permissions().mode() & 0o111 != 0
 }
 
@@ -224,10 +226,7 @@ fn is_executable(_metadata: &fs::Metadata) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{
-        io::Write,
-        sync::atomic::{AtomicU64, Ordering},
-    };
+    use std::sync::atomic::{AtomicU64, Ordering};
     use yoctui_model::RecipeIdentity;
 
     static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
@@ -264,15 +263,7 @@ mod tests {
     }
 
     fn executable(path: &Path) {
-        let mut file = fs::File::create(path).unwrap();
-        writeln!(file, "#!/bin/sh").unwrap();
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let mut permissions = fs::metadata(path).unwrap().permissions();
-            permissions.set_mode(0o755);
-            fs::set_permissions(path, permissions).unwrap();
-        }
+        crate::test_support::write_executable(path, "#!/bin/sh\n");
     }
 
     fn fixture(tasks: &[&str]) -> (TestDirectory, SecurityCapabilityInput) {

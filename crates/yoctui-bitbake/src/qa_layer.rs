@@ -845,7 +845,7 @@ mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
 
     #[cfg(unix)]
-    use std::os::unix::fs::{PermissionsExt, symlink};
+    use std::os::unix::fs::symlink;
 
     static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
 
@@ -871,10 +871,7 @@ mod tests {
 
     #[cfg(unix)]
     fn write_executable(path: &Path, body: &str) {
-        fs::write(path, body).unwrap();
-        let mut permissions = fs::metadata(path).unwrap().permissions();
-        permissions.set_mode(0o755);
-        fs::set_permissions(path, permissions).unwrap();
+        crate::test_support::write_executable(path, body);
     }
 
     #[cfg(unix)]
