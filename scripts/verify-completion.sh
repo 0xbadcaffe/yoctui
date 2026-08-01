@@ -26,6 +26,7 @@ require cargo flamegraph --version
 
 ./scripts/check-checkout.sh
 ./scripts/verify-ui-spec.sh
+./scripts/check-docs.sh
 
 cargo fmt --all --check
 cargo test --workspace --all-features
