@@ -21,6 +21,21 @@ and immediately cancels `core-image-minimal`. Override these with
 
 `scripts/test-terminal.sh` starts Yoctui in a Linux pseudo-terminal, sends a quit key, and asserts that alternate-screen and cursor hide/show sequences are both emitted.
 
+## Documentation validation
+
+`./scripts/check-docs.sh` validates every tracked repository Markdown link and
+used fragment locally without network access. It also requires the installation,
+operator, compatibility, testing, profiling, architecture, protocol, and UI
+documents and their critical workflow/troubleshooting sections. The gate checks
+current CLI help, runs the no-Yocto headless workload and doctor with isolated
+configuration, and runs `bash -n` over a sorted list of every tracked shell
+script. A developer session can therefore neither inject a remembered build
+target nor turn documentation validation into a BitBake build.
+
+```bash
+./scripts/check-docs.sh
+```
+
 ## Fuzzing
 
 `fuzz/` contains cargo-fuzz targets for arbitrary protocol frames and bounded

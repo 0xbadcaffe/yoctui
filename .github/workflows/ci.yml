@@ -17,6 +17,7 @@ jobs:
       - run: ./scripts/test-terminal.sh
       - run: ./scripts/test-stress.sh
       - run: ./scripts/test-cli.sh
+      - run: ./scripts/check-docs.sh
       - run: python3 -m unittest discover bridge/tests
       - run: ruff check bridge
       - run: ruff format --check bridge

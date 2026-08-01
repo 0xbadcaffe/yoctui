@@ -1681,12 +1681,12 @@ notes = "Compatibility now defines evidence levels and matrices protocol/backend
 id = "DOC-VERIFY-001"
 milestone = "M7"
 title = "Validate documentation links and commands"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 81
 required = true
 depends_on = ["DOC-COMPAT-001"]
 verify = ["./scripts/check-docs.sh"]
-notes = "Add deterministic local checks for repository Markdown links, required operator sections, CLI help, safe headless and doctor commands, and shell syntax of every checked-in script."
+notes = "scripts/check-docs.sh now validates all tracked Markdown local links and used fragments without network access, required installation/operator/compatibility/testing/profiling/architecture/protocol/UI documents and critical headings, current CLI help, isolated headless and doctor behavior, and the sorted tracked shell-script syntax set. CI and verify-completion invoke the same gate, and testing.md documents its isolation guarantees. All focused and baseline verification passes."
 
 [[task]]
 id = "DOC-001"
