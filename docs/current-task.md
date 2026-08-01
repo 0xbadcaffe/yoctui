@@ -2,59 +2,43 @@
 
 ## Task
 
-**ID:** MAINT-CLI-001
-**Title:** Integrate non-blocking Maintenance execution
+**ID:** MAINT-UI-CLI-001
+**Title:** Integrate complete Maintenance workspace
 
 ## Objective
 
-Connect model-owned Maintenance effects to replaceable capability, service,
-and optional-integration workers plus one exact managed operation runner while
-preserving terminal responsiveness, correlation, identity revalidation,
-navigation, cancellation, and honest failure state.
+Close the cross-layer Maintenance gate by verifying that the committed model,
+adapter, app, responsive renderer, and non-blocking CLI implementation agree on
+typed behavior and safety boundaries without claiming live compatibility from
+fixtures.
 
 ## Required work
 
-1. Inspect existing CLI worker/runner patterns, startup metadata, input routing,
-   app effect mapping, and all four Maintenance adapters before changing code.
-2. Route capability refresh through replaceable correlated workers that acquire
-   authoritative initialized-build metadata and bounded child-only tool search
-   paths, then merge typed sstate, service, release, and optional capability
-   results without turning missing or partial data into empty success.
-3. Route service and optional-integration diagnostics into their model-owned
-   correlated states. Keep endpoint/process observations typed and detection
-   only; never start or stop a service or perform optional network actions.
-4. Own at most one independent Maintenance operation runner. Construct commands
-   only through the adapter selected by the exact typed preview, re-inspect
-   capability and revalidate executable/input/candidate/evidence identities
-   immediately before spawn, and reject stale or mismatched requests visibly.
-5. Poll every worker and the runner without blocking terminal or BitBake input.
-   Map bounded stdout/stderr, success, nonzero exit, timeout, graceful/forced
-   cancellation, duplicate rejection, start failure, and runner loss exactly
-   once to typed actions while navigation continues.
-6. Keep managed BitBake work on the shared build coordinator. Maintenance
-   cancellation targets only the exact Maintenance session and never cancels a
-   build, Devtool, QA, Security, Testing, SDK, Wic, or QEMU job.
-7. Install successful replaceable evidence only after exact post-run validation;
-   failure retains prior valid evidence. Keep local Git archive creation and
-   optional remote push as separately confirmed operations.
-8. Add CLI integration tests with fake filesystem/process adapters for refresh,
-   correlation, navigation, success, nonzero, timeout, cancellation, rejection,
-   loss, stale identities, and evidence replacement. Do not claim live support
-   from these tests.
+1. Audit every Maintenance effect, action, dialog, view, adapter result, runner
+   event, and CLI route across all crates; do not duplicate existing behavior.
+2. Verify correlated capability, service, and optional-integration state plus
+   exact operation reconstruction, cleanup rediscovery, evidence replacement,
+   archive/push separation, navigation, and isolated cancellation.
+3. Verify all responsive layouts, themes, no-color meaning, disabled/failure
+   states, dialogs, session output, and terminal outcomes remain model-driven.
+4. Add only missing focused regression coverage discovered by the audit.
+5. Run the complete focused matrix and baseline. Do not make a live support
+   claim unless the opt-in real-Yocto validation is actually executed.
 
 ## Definition of done
 
-- Maintenance inspection and execution remain non-blocking and exactly
-  correlated across navigation and cancellation.
-- Typed adapter results cross the CLI/app boundary without UI parsing.
-- Focused and baseline verification pass.
+- The complete cross-layer Maintenance matrix passes.
+- Documentation and registry state match the verified implementation.
+- Fixture evidence is explicitly separated from live compatibility.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui -- maintenance_workflow
+cargo test -p yoctui-model maintenance_workflow
 cargo test -p yoctui-app maintenance_workflow
 cargo test -p yoctui-bitbake maintenance_
+cargo test -p yoctui-ui maintenance_workflow
+cargo test -p yoctui -- maintenance_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -64,12 +48,11 @@ python3 -m pytest bridge/tests
 
 ## Documentation updates
 
-- Update `docs/architecture.md` in this commit for any CLI ownership change.
-- Update `docs/ui-spec.md` only for intentional UI behavior changes.
-- Mark `MAINT-CLI-001` `DONE` only after verification passes.
+- Update authoritative documents only if the audit reveals a disagreement.
+- Mark `MAINT-UI-CLI-001` `DONE` only after every command passes.
 - Update `docs/implementation-status.md`.
-- Replace this file with the next eligible highest-priority Maintenance task.
+- Replace this file with `MAINT-001`.
 
 ## Next task
 
-`MAINT-UI-CLI-001`
+`MAINT-001`

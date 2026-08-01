@@ -1,0 +1,1269 @@
+use std::{
+    collections::BTreeMap,
+    fs,
+    path::{Path, PathBuf},
+    time::{Duration, SystemTime},
+};
+
+use tokio::task::JoinHandle;
+use yoctui_bitbake::{
+    GitArchiveLocalResult, MaintenanceOptionalCapabilityInput,
+    MaintenanceOptionalCapabilityInspector, MaintenanceReleaseCapabilityInput,
+    MaintenanceReleaseCapabilityInspector, MaintenanceReleaseEvidenceSnapshot,
+    MaintenanceServiceCapabilityInput, MaintenanceServiceCapabilityInspector,
+    MaintenanceSstateCapabilityInput, MaintenanceSstateCapabilityInspector,
+    MaintenanceSstateCommandSpec, MaintenanceSstateJobRunner, MaintenanceSstateRunnerEvent,
+    build_compare_command, buildhistory_command, git_archive_local_command,
+    git_archive_push_command, locked_signature_command, parse_cleanup_preview, pr_service_command,
+};
+use yoctui_model::{
+    Action, App, Effect, MaintenanceAction, MaintenanceCapabilitySnapshot, MaintenanceEffect,
+    MaintenanceEvidence, MaintenanceFileIdentity, MaintenanceIntegrationsSnapshot,
+    MaintenanceMetadata, MaintenanceOperation, MaintenanceOperationPreview, MaintenanceSessionId,
+    MaintenanceTool, MaintenanceToolCapability, PrServiceOperation, ServiceDiagnostic, update,
+};
+
+const INSPECTION_TIMEOUT: Duration = Duration::from_secs(10);
+
+#[derive(Clone)]
+struct MaintenanceCliContext {
+    metadata: MaintenanceMetadata,
+    search_path: Vec<PathBuf>,
+    git_candidates: Vec<PathBuf>,
+    repo_candidates: Vec<PathBuf>,
+    toaster_candidates: Vec<PathBuf>,
+}
+
+impl MaintenanceCliContext {
+    fn from_app(app: &App, build_dir: &Path, search_path: Vec<PathBuf>) -> Result<Self, String> {
+        let build_dir = canonical_directory(build_dir)?;
+        let variable_path = |name: &str| {
+            app.workspace
+                .variables
+                .get(name)
+                .and_then(|value| canonical_directory(Path::new(value)).ok())
+        };
+        let stamps_dirs = app
+            .workspace
+            .variables
+            .get("STAMPS_DIR")
+            .or_else(|| app.workspace.variables.get("STAMP"))
+            .and_then(|value| canonical_directory(Path::new(value)).ok())
+            .into_iter()
+            .collect();
+        let text = |name: &str| {
+            app.workspace
+                .variables
+                .get(name)
+                .filter(|value| !value.is_empty())
+                .cloned()
+        };
+        let metadata = MaintenanceMetadata::new(MaintenanceMetadata {
+            build_dir: Some(build_dir.clone()),
+            sstate_dir: variable_path("SSTATE_DIR"),
+            tmp_dir: variable_path("TMPDIR"),
+            stamps_dirs,
+            buildhistory_dir: variable_path("BUILDHISTORY_DIR"),
+            prserv_host: text("PRSERV_HOST"),
+            hashserve: text("BB_HASHSERVE"),
+            hashserve_upstream: text("BB_HASHSERVE_UPSTREAM"),
+            signature_handler: text("BB_SIGNATURE_HANDLER"),
+            native_lsb: text("NATIVELSBSTRING"),
+            machine: text("MACHINE"),
+            distro: text("DISTRO"),
+        })
+        .map_err(str::to_owned)?;
+
+        let mut roots = app
+            .workspace
+            .layers
+            .iter()
+            .filter_map(|layer| canonical_directory(&layer.path).ok())
+            .collect::<Vec<_>>();
+        if let Some(parent) = build_dir
+            .parent()
+            .and_then(|path| canonical_directory(path).ok())
+        {
+            roots.push(parent);
+        }
+        roots.sort();
+        roots.dedup();
+        let toaster_candidates = [build_dir.join("conf/toaster.conf")]
+            .into_iter()
+            .filter_map(|path| canonical_file(&path).ok())
+            .collect();
+        Ok(Self {
+            metadata,
+            search_path,
+            git_candidates: roots.clone(),
+            repo_candidates: roots,
+            toaster_candidates,
+        })
+    }
+
+    fn build_dir(&self) -> PathBuf {
+        self.metadata
+            .build_dir
+            .clone()
+            .expect("validated Maintenance context owns BUILDDIR")
+    }
+}
+
+struct MaintenanceInspection {
+    capability: Result<MaintenanceCapabilitySnapshot, String>,
+    services: Result<(Vec<ServiceDiagnostic>, Vec<String>), String>,
+    integrations: Result<MaintenanceIntegrationsSnapshot, String>,
+}
+
+#[derive(Clone)]
+enum InspectionPurpose {
+    Refresh(u64),
+    Services(u64),
+    Start {
+        id: MaintenanceSessionId,
+        preview: Box<MaintenanceOperationPreview>,
+    },
+}
+
+struct InspectionWorker {
+    purpose: InspectionPurpose,
+    deadline: tokio::time::Instant,
+    handle: JoinHandle<MaintenanceInspection>,
+}
+
+enum EvidencePlan {
+    None,
+    Release(MaintenanceReleaseEvidenceSnapshot),
+    GitArchive(yoctui_model::GitArchiveRequest),
+    PrExport(PathBuf),
+}
+
+struct CleanupPreviewStage {
+    capability_request: u64,
+    operation_id: u64,
+    snapshot: MaintenanceCapabilitySnapshot,
+    confirmed: yoctui_model::SstateCleanupPreview,
+    stdout: Vec<String>,
+}
+
+enum OperationStage {
+    Execute(Box<EvidencePlan>),
+    CleanupPreview(Box<CleanupPreviewStage>),
+}
+
+struct MaintenanceCliOperation {
+    id: MaintenanceSessionId,
+    runner: Option<MaintenanceSstateJobRunner>,
+    cancellation: Option<JoinHandle<(MaintenanceSstateJobRunner, Result<bool, String>)>>,
+    stage: OperationStage,
+}
+
+pub(crate) struct MaintenanceCliCoordinator {
+    context: MaintenanceCliContext,
+    inspection: Option<InspectionWorker>,
+    operation: Option<MaintenanceCliOperation>,
+    snapshot: Option<MaintenanceCapabilitySnapshot>,
+    local_archive: Option<GitArchiveLocalResult>,
+}
+
+impl MaintenanceCliCoordinator {
+    pub(crate) fn new(
+        app: &App,
+        build_dir: &Path,
+        search_path: Vec<PathBuf>,
+    ) -> Result<Self, String> {
+        Ok(Self {
+            context: MaintenanceCliContext::from_app(app, build_dir, search_path)?,
+            inspection: None,
+            operation: None,
+            snapshot: None,
+            local_archive: None,
+        })
+    }
+
+    pub(crate) fn operation_active(&self) -> bool {
+        self.operation.is_some()
+    }
+
+    pub(crate) async fn shutdown(&mut self) {
+        if let Some(worker) = self.inspection.take() {
+            worker.handle.abort();
+            let _ = worker.handle.await;
+        }
+        if let Some(mut active) = self.operation.take() {
+            if let Some(wait) = active.cancellation.take() {
+                wait.abort();
+                let _ = wait.await;
+            } else if let Some(mut runner) = active.runner.take() {
+                let _ = runner.cancel(active.id).await;
+            }
+        }
+    }
+
+    pub(crate) async fn handle_effect(&mut self, app: &mut App, effect: Effect) -> bool {
+        let Effect::Maintenance(effect) = effect else {
+            return false;
+        };
+        match effect {
+            MaintenanceEffect::InspectCapability { request } => {
+                self.start_inspection(InspectionPurpose::Refresh(request));
+            }
+            MaintenanceEffect::InspectServices { request } => {
+                self.start_inspection(InspectionPurpose::Services(request));
+            }
+            MaintenanceEffect::StartOperation { id, preview } => {
+                if self.operation.is_some() {
+                    fail(app, id, "another Maintenance operation is already active");
+                } else {
+                    self.start_inspection(InspectionPurpose::Start { id, preview });
+                }
+            }
+            MaintenanceEffect::CancelOperation(id) => self.cancel(app, id),
+            MaintenanceEffect::OpenEvidence(_) | MaintenanceEffect::Navigate(_) => return false,
+        }
+        true
+    }
+
+    fn start_inspection(&mut self, purpose: InspectionPurpose) {
+        if let Some(worker) = self.inspection.take() {
+            worker.handle.abort();
+        }
+        let context = self.context.clone();
+        self.inspection = Some(InspectionWorker {
+            purpose,
+            deadline: tokio::time::Instant::now() + INSPECTION_TIMEOUT,
+            handle: tokio::task::spawn_blocking(move || inspect(context)),
+        });
+    }
+
+    fn cancel(&mut self, app: &mut App, id: MaintenanceSessionId) {
+        let Some(active) = self.operation.as_mut() else {
+            reject_cancellation(app, id, "no Maintenance operation is active");
+            return;
+        };
+        if active.id != id || active.cancellation.is_some() {
+            reject_cancellation(app, id, "the exact Maintenance session is not cancellable");
+            return;
+        }
+        let Some(mut runner) = active.runner.take() else {
+            reject_cancellation(app, id, "Maintenance cancellation is already in progress");
+            return;
+        };
+        active.cancellation = Some(tokio::spawn(async move {
+            let result = runner.cancel(id).await.map_err(|error| error.to_string());
+            (runner, result)
+        }));
+    }
+
+    pub(crate) async fn poll(&mut self, app: &mut App) {
+        self.poll_inspection(app).await;
+        self.poll_operation(app).await;
+    }
+
+    async fn poll_inspection(&mut self, app: &mut App) {
+        let Some(worker) = self.inspection.as_ref() else {
+            return;
+        };
+        if !worker.handle.is_finished() && tokio::time::Instant::now() < worker.deadline {
+            return;
+        }
+        let worker = self
+            .inspection
+            .take()
+            .expect("inspection worker was checked");
+        if !worker.handle.is_finished() {
+            worker.handle.abort();
+            self.inspection_failed(
+                app,
+                worker.purpose,
+                "Maintenance inspection timed out".into(),
+            );
+            return;
+        }
+        match worker.handle.await {
+            Ok(result) => self.finish_inspection(app, worker.purpose, result).await,
+            Err(error) => self.inspection_failed(
+                app,
+                worker.purpose,
+                format!("Maintenance inspection worker was lost: {error}"),
+            ),
+        }
+    }
+
+    fn inspection_failed(&mut self, app: &mut App, purpose: InspectionPurpose, message: String) {
+        match purpose {
+            InspectionPurpose::Refresh(request) => {
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::CapabilityFailed {
+                        request,
+                        message: message.clone(),
+                    }),
+                );
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::ServicesFailed {
+                        request,
+                        message: message.clone(),
+                    }),
+                );
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::IntegrationsFailed { request, message }),
+                );
+            }
+            InspectionPurpose::Services(request) => {
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::ServicesFailed { request, message }),
+                );
+            }
+            InspectionPurpose::Start { id, .. } => fail(app, id, &message),
+        }
+    }
+
+    async fn finish_inspection(
+        &mut self,
+        app: &mut App,
+        purpose: InspectionPurpose,
+        result: MaintenanceInspection,
+    ) {
+        match purpose {
+            InspectionPurpose::Refresh(request) => {
+                match result.capability {
+                    Ok(snapshot) => {
+                        let partial = !snapshot.limitations.is_empty()
+                            || snapshot.tools.iter().any(|tool| {
+                                matches!(tool, MaintenanceToolCapability::Unavailable { .. })
+                            });
+                        self.snapshot = Some(snapshot.clone());
+                        let _ = update(
+                            app,
+                            Action::Maintenance(MaintenanceAction::CapabilityLoaded {
+                                request,
+                                snapshot,
+                                partial,
+                            }),
+                        );
+                    }
+                    Err(message) => {
+                        let _ = update(
+                            app,
+                            Action::Maintenance(MaintenanceAction::CapabilityFailed {
+                                request,
+                                message,
+                            }),
+                        );
+                    }
+                }
+                apply_services(app, request, result.services);
+                apply_integrations(app, request, result.integrations);
+            }
+            InspectionPurpose::Services(request) => apply_services(app, request, result.services),
+            InspectionPurpose::Start { id, preview } => match result.capability {
+                Ok(snapshot) => self.begin_operation(app, id, *preview, snapshot).await,
+                Err(message) => fail(app, id, &message),
+            },
+        }
+    }
+
+    async fn begin_operation(
+        &mut self,
+        app: &mut App,
+        id: MaintenanceSessionId,
+        confirmed: MaintenanceOperationPreview,
+        snapshot: MaintenanceCapabilitySnapshot,
+    ) {
+        if confirmed.capability_request == 0
+            || self
+                .snapshot
+                .as_ref()
+                .is_none_or(|cached| cached != &snapshot)
+        {
+            fail(
+                app,
+                id,
+                "Maintenance capability changed; refresh and confirm again",
+            );
+            return;
+        }
+        let operation = confirmed.operation.clone();
+        let built = match operation {
+            MaintenanceOperation::SstateReadiness(request) => {
+                MaintenanceSstateCommandSpec::readiness(
+                    id,
+                    confirmed.capability_request,
+                    &snapshot,
+                    confirmed.id,
+                    request,
+                )
+                .map(|(preview, command)| {
+                    (
+                        preview,
+                        command,
+                        OperationStage::Execute(Box::new(EvidencePlan::None)),
+                    )
+                })
+                .map_err(|error| error.to_string())
+            }
+            MaintenanceOperation::SstateCleanup(preview) => {
+                MaintenanceSstateCommandSpec::cleanup_preview(
+                    id,
+                    &snapshot,
+                    preview.request.clone(),
+                )
+                .map(|command| {
+                    (
+                        confirmed.clone(),
+                        command,
+                        OperationStage::CleanupPreview(Box::new(CleanupPreviewStage {
+                            capability_request: confirmed.capability_request,
+                            operation_id: confirmed.id,
+                            snapshot,
+                            confirmed: preview,
+                            stdout: Vec::new(),
+                        })),
+                    )
+                })
+                .map_err(|error| error.to_string())
+            }
+            MaintenanceOperation::PrService(request) => {
+                let evidence = match request.operation {
+                    PrServiceOperation::Export => EvidencePlan::PrExport(request.file.clone()),
+                    PrServiceOperation::Import => EvidencePlan::None,
+                };
+                pr_service_command(
+                    id,
+                    confirmed.capability_request,
+                    &snapshot,
+                    confirmed.id,
+                    request,
+                )
+                .map(|(preview, command)| {
+                    (
+                        preview,
+                        command,
+                        OperationStage::Execute(Box::new(evidence)),
+                    )
+                })
+                .map_err(|error| error.to_string())
+            }
+            MaintenanceOperation::LockedSignatureCache(request) => locked_signature_command(
+                id,
+                confirmed.capability_request,
+                &snapshot,
+                confirmed.id,
+                request,
+            )
+            .map(|(preview, command, before)| {
+                (
+                    preview,
+                    command,
+                    OperationStage::Execute(Box::new(EvidencePlan::Release(before))),
+                )
+            })
+            .map_err(|error| error.to_string()),
+            MaintenanceOperation::BuildHistoryComparison(request) => buildhistory_command(
+                id,
+                confirmed.capability_request,
+                &snapshot,
+                confirmed.id,
+                request,
+            )
+            .map(|(preview, command)| {
+                (
+                    preview,
+                    command,
+                    OperationStage::Execute(Box::new(EvidencePlan::None)),
+                )
+            })
+            .map_err(|error| error.to_string()),
+            MaintenanceOperation::BuildCompare(request) => {
+                build_compare_command(id, &snapshot, request)
+                    .map(|command| {
+                        (
+                            confirmed.clone(),
+                            command,
+                            OperationStage::Execute(Box::new(EvidencePlan::None)),
+                        )
+                    })
+                    .map_err(|error| error.to_string())
+            }
+            MaintenanceOperation::GitArchive(request) if request.push_remote.is_some() => self
+                .local_archive
+                .as_ref()
+                .ok_or_else(|| {
+                    "local Git archive evidence is unavailable; run local archive first".to_owned()
+                })
+                .and_then(|local| {
+                    git_archive_push_command(
+                        id,
+                        confirmed.capability_request,
+                        &snapshot,
+                        confirmed.id,
+                        request,
+                        local,
+                    )
+                    .map(|(preview, command)| {
+                        (
+                            preview,
+                            command,
+                            OperationStage::Execute(Box::new(EvidencePlan::None)),
+                        )
+                    })
+                    .map_err(|error| error.to_string())
+                }),
+            MaintenanceOperation::GitArchive(request) => git_archive_local_command(
+                id,
+                confirmed.capability_request,
+                &snapshot,
+                confirmed.id,
+                &request,
+            )
+            .map(|(preview, command)| {
+                (
+                    preview,
+                    command,
+                    OperationStage::Execute(Box::new(EvidencePlan::GitArchive(request))),
+                )
+            })
+            .map_err(|error| error.to_string()),
+        };
+        let (fresh_preview, command, stage) = match built {
+            Ok(value) => value,
+            Err(message) => {
+                fail(app, id, &message);
+                return;
+            }
+        };
+        if fresh_preview != confirmed {
+            fail(
+                app,
+                id,
+                "Maintenance preview changed; inspect and confirm the exact operation again",
+            );
+            return;
+        }
+        let mut runner = MaintenanceSstateJobRunner::new();
+        if let Err(error) = runner.start(command).await {
+            fail(app, id, &error.to_string());
+            return;
+        }
+        self.operation = Some(MaintenanceCliOperation {
+            id,
+            runner: Some(runner),
+            cancellation: None,
+            stage,
+        });
+    }
+
+    async fn poll_operation(&mut self, app: &mut App) {
+        let Some(active) = self.operation.as_mut() else {
+            return;
+        };
+        if active
+            .cancellation
+            .as_ref()
+            .is_some_and(JoinHandle::is_finished)
+        {
+            let wait = active
+                .cancellation
+                .take()
+                .expect("cancellation was checked");
+            match wait.await {
+                Ok((runner, Ok(_))) => active.runner = Some(runner),
+                Ok((runner, Err(message))) => {
+                    active.runner = Some(runner);
+                    reject_cancellation(app, active.id, &message);
+                }
+                Err(error) => {
+                    let id = active.id;
+                    lose(
+                        app,
+                        id,
+                        &format!("Maintenance cancellation worker was lost: {error}"),
+                    );
+                    self.operation = None;
+                    return;
+                }
+            }
+        }
+        let Some(runner) = active.runner.as_mut() else {
+            return;
+        };
+        let event = match tokio::time::timeout(Duration::from_millis(1), runner.next_event()).await
+        {
+            Ok(Ok(event)) => event,
+            Ok(Err(error)) => {
+                let id = active.id;
+                lose(app, id, &error.to_string());
+                self.operation = None;
+                return;
+            }
+            Err(_) => return,
+        };
+        self.apply_runner_event(app, event).await;
+    }
+
+    async fn apply_runner_event(&mut self, app: &mut App, event: MaintenanceSstateRunnerEvent) {
+        let Some(active) = self.operation.as_mut() else {
+            return;
+        };
+        match event {
+            MaintenanceSstateRunnerEvent::Started { id } => {
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::SessionRunning {
+                        id,
+                        started_at: SystemTime::now(),
+                    }),
+                );
+            }
+            MaintenanceSstateRunnerEvent::Output {
+                id,
+                stream,
+                line,
+                truncated,
+            } => {
+                if let OperationStage::CleanupPreview(stage) = &mut active.stage
+                    && stream == yoctui_model::MaintenanceOutputStream::Stdout
+                {
+                    stage.stdout.push(line.clone());
+                }
+                let text = if truncated {
+                    format!("{line} [truncated]")
+                } else {
+                    line
+                };
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::SessionOutput { id, stream, text }),
+                );
+            }
+            MaintenanceSstateRunnerEvent::Completed { id, exit_code } => {
+                if matches!(active.stage, OperationStage::CleanupPreview(_)) {
+                    self.advance_cleanup(app).await;
+                } else {
+                    let evidence = match self.capture_evidence() {
+                        Ok(evidence) => evidence,
+                        Err(message) => {
+                            fail(
+                                app,
+                                id,
+                                &format!("Maintenance evidence validation failed: {message}"),
+                            );
+                            self.operation = None;
+                            return;
+                        }
+                    };
+                    let _ = update(
+                        app,
+                        Action::Maintenance(MaintenanceAction::CompleteSession {
+                            id,
+                            exit_code: exit_code.unwrap_or(0),
+                            evidence,
+                            finished_at: SystemTime::now(),
+                        }),
+                    );
+                    self.operation = None;
+                }
+            }
+            MaintenanceSstateRunnerEvent::Failed { id, exit_code } => {
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::FailSession {
+                        id,
+                        message: "Maintenance command exited unsuccessfully".into(),
+                        exit_code,
+                        finished_at: SystemTime::now(),
+                    }),
+                );
+                self.operation = None;
+            }
+            MaintenanceSstateRunnerEvent::CancellationRequested { .. } => {}
+            MaintenanceSstateRunnerEvent::Cancelled { id, .. } => {
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::CancelSession {
+                        id,
+                        finished_at: SystemTime::now(),
+                    }),
+                );
+                self.operation = None;
+            }
+            MaintenanceSstateRunnerEvent::CancellationRejected { id, message } => {
+                reject_cancellation(app, id, &message);
+            }
+            MaintenanceSstateRunnerEvent::TimedOut { id, .. } => {
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::TimeoutSession {
+                        id,
+                        finished_at: SystemTime::now(),
+                    }),
+                );
+                self.operation = None;
+            }
+            MaintenanceSstateRunnerEvent::Lost { id, message } => {
+                lose(app, id, &message);
+                self.operation = None;
+            }
+        }
+    }
+
+    async fn advance_cleanup(&mut self, app: &mut App) {
+        let active = self
+            .operation
+            .as_mut()
+            .expect("cleanup operation is active");
+        let OperationStage::CleanupPreview(stage) = &active.stage else {
+            return;
+        };
+        let result = parse_cleanup_preview(stage.confirmed.request.clone(), &stage.stdout)
+            .and_then(|fresh| {
+                MaintenanceSstateCommandSpec::cleanup_execution(
+                    active.id,
+                    stage.capability_request,
+                    &stage.snapshot,
+                    stage.operation_id,
+                    &stage.confirmed,
+                    &fresh,
+                )
+            });
+        let (_, command) = match result {
+            Ok(value) => value,
+            Err(error) => {
+                fail(app, active.id, &error.to_string());
+                self.operation = None;
+                return;
+            }
+        };
+        let runner = active.runner.as_mut().expect("cleanup runner is owned");
+        if let Err(error) = runner.start(command).await {
+            fail(app, active.id, &error.to_string());
+            self.operation = None;
+            return;
+        }
+        active.stage = OperationStage::Execute(Box::new(EvidencePlan::None));
+    }
+
+    fn capture_evidence(&mut self) -> Result<Vec<MaintenanceEvidence>, String> {
+        let active = self
+            .operation
+            .as_ref()
+            .expect("completed operation is active");
+        let OperationStage::Execute(plan) = &active.stage else {
+            return Ok(Vec::new());
+        };
+        match plan.as_ref() {
+            EvidencePlan::None => Ok(Vec::new()),
+            EvidencePlan::Release(before) => {
+                before.changed_evidence().map_err(|error| error.to_string())
+            }
+            EvidencePlan::GitArchive(request) => {
+                let result =
+                    GitArchiveLocalResult::capture(request).map_err(|error| error.to_string())?;
+                let evidence =
+                    MaintenanceEvidence::new(result.head.clone(), "Git archive HEAD".into())
+                        .map_err(str::to_owned)?;
+                self.local_archive = Some(result);
+                Ok(vec![evidence])
+            }
+            EvidencePlan::PrExport(path) => Ok(vec![file_evidence(path, "PR service export")?]),
+        }
+    }
+
+    pub(crate) fn revalidate_evidence(
+        &self,
+        identity: &MaintenanceFileIdentity,
+    ) -> Result<PathBuf, String> {
+        let current = file_identity(&identity.path)?;
+        if &current != identity {
+            return Err(format!(
+                "Maintenance evidence changed: {}",
+                identity.path.display()
+            ));
+        }
+        Ok(current.path)
+    }
+}
+
+fn inspect(context: MaintenanceCliContext) -> MaintenanceInspection {
+    let build_dir = context.build_dir();
+    let sstate = MaintenanceSstateCapabilityInspector::inspect(MaintenanceSstateCapabilityInput {
+        build_dir: build_dir.clone(),
+        sstate_dir: context.metadata.sstate_dir.clone(),
+        tmp_dir: context.metadata.tmp_dir.clone(),
+        stamps_dirs: context.metadata.stamps_dirs.clone(),
+        executable_search_path: context.search_path.clone(),
+    });
+    let service =
+        MaintenanceServiceCapabilityInspector::inspect(MaintenanceServiceCapabilityInput {
+            build_dir: build_dir.clone(),
+            prserv_host: context.metadata.prserv_host.clone(),
+            hashserve: context.metadata.hashserve.clone(),
+            hashserve_upstream: context.metadata.hashserve_upstream.clone(),
+            signature_handler: context.metadata.signature_handler.clone(),
+            executable_search_path: context.search_path.clone(),
+            process_root: PathBuf::from("/proc"),
+            endpoint_probe_timeout: Duration::from_millis(100),
+            endpoint_observations: Vec::new(),
+        });
+    let release =
+        MaintenanceReleaseCapabilityInspector::inspect(MaintenanceReleaseCapabilityInput {
+            build_dir: build_dir.clone(),
+            buildhistory_dir: context.metadata.buildhistory_dir.clone(),
+            native_lsb: context.metadata.native_lsb.clone(),
+            executable_search_path: context.search_path.clone(),
+        });
+    let optional =
+        MaintenanceOptionalCapabilityInspector::inspect(MaintenanceOptionalCapabilityInput {
+            build_dir,
+            executable_search_path: context.search_path,
+            git_worktree_candidates: context.git_candidates,
+            error_report_candidates: Vec::new(),
+            repo_workspace_candidates: context.repo_candidates,
+            toaster_configuration_candidates: context.toaster_candidates,
+            process_root: PathBuf::from("/proc"),
+        });
+
+    let services = service
+        .as_ref()
+        .map(|inspection| (inspection.services.clone(), inspection.limitations.clone()))
+        .map_err(ToString::to_string);
+    let integrations = optional
+        .as_ref()
+        .map_err(ToString::to_string)
+        .and_then(|inspection| {
+            inspection
+                .integrations_snapshot()
+                .map_err(|error| error.to_string())
+        });
+    let capability = merge_capabilities(
+        context.metadata,
+        [
+            sstate.map_err(|error| error.to_string()),
+            service
+                .map(|inspection| inspection.capability)
+                .map_err(|error| error.to_string()),
+            release.map_err(|error| error.to_string()),
+            optional
+                .map(|inspection| inspection.capability)
+                .map_err(|error| error.to_string()),
+        ],
+    );
+    MaintenanceInspection {
+        capability,
+        services,
+        integrations,
+    }
+}
+
+fn merge_capabilities(
+    metadata: MaintenanceMetadata,
+    groups: impl IntoIterator<Item = Result<MaintenanceCapabilitySnapshot, String>>,
+) -> Result<MaintenanceCapabilitySnapshot, String> {
+    let mut tools = BTreeMap::new();
+    let mut limitations = Vec::new();
+    for group in groups {
+        match group {
+            Ok(snapshot) => {
+                for capability in snapshot.tools {
+                    tools.insert(capability.tool(), capability);
+                }
+                limitations.extend(snapshot.limitations);
+            }
+            Err(message) => limitations.push(message),
+        }
+    }
+    for tool in [
+        MaintenanceTool::OeCheckSstate,
+        MaintenanceTool::SstateCacheManagement,
+        MaintenanceTool::PrServiceTool,
+        MaintenanceTool::LockedSignatureCache,
+        MaintenanceTool::BuildHistoryDiff,
+        MaintenanceTool::BuildCompare,
+        MaintenanceTool::GitArchive,
+        MaintenanceTool::CreatePullRequest,
+        MaintenanceTool::SendPullRequest,
+        MaintenanceTool::SendErrorReport,
+        MaintenanceTool::Toaster,
+    ] {
+        tools
+            .entry(tool)
+            .or_insert_with(|| MaintenanceToolCapability::Unavailable {
+                tool,
+                reason: "capability adapter did not return authoritative evidence".into(),
+            });
+    }
+    MaintenanceCapabilitySnapshot::new(metadata, tools.into_values().collect(), limitations)
+        .map_err(str::to_owned)
+}
+
+fn apply_services(
+    app: &mut App,
+    request: u64,
+    result: Result<(Vec<ServiceDiagnostic>, Vec<String>), String>,
+) {
+    let action = match result {
+        Ok((services, limitations)) => MaintenanceAction::ServicesLoaded {
+            request,
+            services,
+            limitations,
+        },
+        Err(message) => MaintenanceAction::ServicesFailed { request, message },
+    };
+    let _ = update(app, Action::Maintenance(action));
+}
+
+fn apply_integrations(
+    app: &mut App,
+    request: u64,
+    result: Result<MaintenanceIntegrationsSnapshot, String>,
+) {
+    let action = match result {
+        Ok(snapshot) => MaintenanceAction::IntegrationsLoaded {
+            request,
+            partial: !snapshot.limitations.is_empty(),
+            snapshot: Box::new(snapshot),
+        },
+        Err(message) => MaintenanceAction::IntegrationsFailed { request, message },
+    };
+    let _ = update(app, Action::Maintenance(action));
+}
+
+fn fail(app: &mut App, id: MaintenanceSessionId, message: &str) {
+    let _ = update(
+        app,
+        Action::Maintenance(MaintenanceAction::FailSession {
+            id,
+            message: message.into(),
+            exit_code: None,
+            finished_at: SystemTime::now(),
+        }),
+    );
+}
+
+fn lose(app: &mut App, id: MaintenanceSessionId, message: &str) {
+    let _ = update(
+        app,
+        Action::Maintenance(MaintenanceAction::LoseSession {
+            id,
+            message: message.into(),
+            finished_at: SystemTime::now(),
+        }),
+    );
+}
+
+fn reject_cancellation(app: &mut App, id: MaintenanceSessionId, message: &str) {
+    let _ = update(
+        app,
+        Action::Maintenance(MaintenanceAction::RejectCancellation {
+            id,
+            message: message.into(),
+        }),
+    );
+}
+
+fn canonical_directory(path: &Path) -> Result<PathBuf, String> {
+    let canonical = fs::canonicalize(path).map_err(|error| error.to_string())?;
+    if canonical == Path::new("/") || !canonical.is_dir() {
+        return Err(format!("unsafe Maintenance directory: {}", path.display()));
+    }
+    Ok(canonical)
+}
+
+fn canonical_file(path: &Path) -> Result<PathBuf, String> {
+    let canonical = fs::canonicalize(path).map_err(|error| error.to_string())?;
+    if !canonical.is_file() {
+        return Err(format!("unsafe Maintenance file: {}", path.display()));
+    }
+    Ok(canonical)
+}
+
+fn file_identity(path: &Path) -> Result<MaintenanceFileIdentity, String> {
+    let path = canonical_file(path)?;
+    let metadata = fs::metadata(&path).map_err(|error| error.to_string())?;
+    MaintenanceFileIdentity::new(
+        path,
+        metadata.len(),
+        metadata.modified().map_err(|error| error.to_string())?,
+    )
+    .map_err(str::to_owned)
+}
+
+fn file_evidence(path: &Path, label: &str) -> Result<MaintenanceEvidence, String> {
+    MaintenanceEvidence::new(file_identity(path)?, label.into()).map_err(str::to_owned)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    use yoctui_model::{
+        MaintenanceCapability, MaintenanceSessionStatus, SstateReadinessMode,
+        SstateReadinessRequest,
+    };
+
+    static NEXT_ROOT: AtomicU64 = AtomicU64::new(1);
+
+    struct Fixture {
+        root: PathBuf,
+        build: PathBuf,
+        bin: PathBuf,
+    }
+
+    impl Fixture {
+        fn new(script: &str) -> Self {
+            let root = std::env::temp_dir().join(format!(
+                "yoctui-maintenance-workflow-{}-{}",
+                std::process::id(),
+                NEXT_ROOT.fetch_add(1, Ordering::Relaxed)
+            ));
+            let build = root.join("build");
+            let bin = root.join("bin");
+            fs::create_dir_all(&build).unwrap();
+            fs::create_dir_all(&bin).unwrap();
+            let executable = bin.join("oe-check-sstate");
+            fs::write(&executable, script).unwrap();
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                fs::set_permissions(&executable, fs::Permissions::from_mode(0o755)).unwrap();
+            }
+            Self { root, build, bin }
+        }
+    }
+
+    impl Drop for Fixture {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.root);
+        }
+    }
+
+    async fn poll_until(
+        coordinator: &mut MaintenanceCliCoordinator,
+        app: &mut App,
+        complete: impl Fn(&App, &MaintenanceCliCoordinator) -> bool,
+    ) {
+        for _ in 0..400 {
+            coordinator.poll(app).await;
+            if complete(app, coordinator) {
+                return;
+            }
+            tokio::time::sleep(Duration::from_millis(5)).await;
+        }
+        panic!("Maintenance CLI workflow did not complete");
+    }
+
+    async fn refreshed_coordinator(fixture: &Fixture) -> (App, MaintenanceCliCoordinator, u64) {
+        let mut app = App::new(100, 64 * 1024);
+        app.workspace.build_dir = Some(fixture.build.clone());
+        let mut coordinator =
+            MaintenanceCliCoordinator::new(&app, &fixture.build, vec![fixture.bin.clone()])
+                .unwrap();
+        let effect = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::InspectCapability),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            matches!(
+                app.maintenance.capability,
+                MaintenanceCapability::Available { .. } | MaintenanceCapability::Partial { .. }
+            )
+        })
+        .await;
+        let request = app.maintenance.capability.request().unwrap();
+        (app, coordinator, request)
+    }
+
+    async fn begin_readiness(
+        app: &mut App,
+        coordinator: &mut MaintenanceCliCoordinator,
+        request: u64,
+        id: MaintenanceSessionId,
+        timeout_seconds: u64,
+    ) {
+        let snapshot = app.maintenance.capability.snapshot().unwrap().clone();
+        let readiness = SstateReadinessRequest::new(
+            vec!["core-image-minimal".into()],
+            SstateReadinessMode::IsolatedTmpdir,
+            None,
+            None,
+            timeout_seconds,
+        )
+        .unwrap();
+        let (preview, _) =
+            MaintenanceSstateCommandSpec::readiness(id, request, &snapshot, id.0, readiness)
+                .unwrap();
+        let _ = update(
+            app,
+            Action::Maintenance(MaintenanceAction::BeginOperation(preview.clone())),
+        );
+        let effect = update(
+            app,
+            Action::Maintenance(MaintenanceAction::ConfirmOperation(preview)),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(app, effect).await);
+    }
+
+    #[tokio::test]
+    async fn maintenance_workflow_refresh_is_correlated_and_preserves_unavailable_tools() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let (app, mut coordinator, request) = refreshed_coordinator(&fixture).await;
+        let snapshot = app.maintenance.capability.snapshot().unwrap();
+        assert_eq!(request, 1);
+        assert!(snapshot.supports(MaintenanceTool::OeCheckSstate));
+        assert!(matches!(
+            snapshot.capability(MaintenanceTool::BuildCompare),
+            Some(MaintenanceToolCapability::Unavailable { .. })
+        ));
+        assert_eq!(app.maintenance.services.request(), Some(request));
+        assert_eq!(app.maintenance.integrations.request(), Some(request));
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_workflow_runner_maps_success_and_bounded_output() {
+        let fixture = Fixture::new("#!/bin/sh\nprintf 'cache ready\\n'\nexit 0\n");
+        let (mut app, mut coordinator, request) = refreshed_coordinator(&fixture).await;
+        let snapshot = app.maintenance.capability.snapshot().unwrap().clone();
+        let id = MaintenanceSessionId(91);
+        let readiness = SstateReadinessRequest::new(
+            vec!["core-image-minimal".into()],
+            SstateReadinessMode::IsolatedTmpdir,
+            None,
+            None,
+            30,
+        )
+        .unwrap();
+        let (preview, _) =
+            MaintenanceSstateCommandSpec::readiness(id, request, &snapshot, id.0, readiness)
+                .unwrap();
+        let _ = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::BeginOperation(preview.clone())),
+        );
+        let effect = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::ConfirmOperation(preview)),
+        )
+        .unwrap();
+        assert!(coordinator.handle_effect(&mut app, effect).await);
+        poll_until(&mut coordinator, &mut app, |app, coordinator| {
+            !coordinator.operation_active()
+                && app
+                    .maintenance
+                    .sessions
+                    .back()
+                    .is_some_and(|session| session.status.is_terminal())
+        })
+        .await;
+        let session = app.maintenance.sessions.back().unwrap();
+        assert_eq!(session.status, MaintenanceSessionStatus::Succeeded);
+        assert!(session.output.iter().any(|line| line.text == "cache ready"));
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_workflow_rejects_cancellation_for_an_unowned_session() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let (mut app, mut coordinator, _) = refreshed_coordinator(&fixture).await;
+        let handled = coordinator
+            .handle_effect(
+                &mut app,
+                Effect::Maintenance(MaintenanceEffect::CancelOperation(MaintenanceSessionId(7))),
+            )
+            .await;
+        assert!(handled);
+        assert!(!coordinator.operation_active());
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_workflow_runner_maps_nonzero_and_timeout_distinctly() {
+        for (script, id, timeout, expected) in [
+            (
+                "#!/bin/sh\nexit 7\n",
+                MaintenanceSessionId(92),
+                30,
+                MaintenanceSessionStatus::Failed,
+            ),
+            (
+                "#!/bin/sh\nsleep 5\n",
+                MaintenanceSessionId(93),
+                1,
+                MaintenanceSessionStatus::TimedOut,
+            ),
+        ] {
+            let fixture = Fixture::new(script);
+            let (mut app, mut coordinator, request) = refreshed_coordinator(&fixture).await;
+            begin_readiness(&mut app, &mut coordinator, request, id, timeout).await;
+            poll_until(&mut coordinator, &mut app, |app, coordinator| {
+                !coordinator.operation_active()
+                    && app
+                        .maintenance
+                        .sessions
+                        .back()
+                        .is_some_and(|session| session.status.is_terminal())
+            })
+            .await;
+            assert_eq!(app.maintenance.sessions.back().unwrap().status, expected);
+            coordinator.shutdown().await;
+        }
+    }
+
+    #[tokio::test]
+    async fn maintenance_workflow_cancels_only_the_exact_active_session() {
+        let fixture = Fixture::new("#!/bin/sh\ntrap 'exit 0' TERM\nwhile :; do sleep 1; done\n");
+        let (mut app, mut coordinator, request) = refreshed_coordinator(&fixture).await;
+        let id = MaintenanceSessionId(94);
+        begin_readiness(&mut app, &mut coordinator, request, id, 30).await;
+        poll_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.operation_active()
+                && app
+                    .maintenance
+                    .sessions
+                    .back()
+                    .is_some_and(|session| session.status == MaintenanceSessionStatus::Running)
+        })
+        .await;
+
+        coordinator
+            .handle_effect(
+                &mut app,
+                Effect::Maintenance(MaintenanceEffect::CancelOperation(MaintenanceSessionId(
+                    999,
+                ))),
+            )
+            .await;
+        assert!(coordinator.operation_active());
+        let _ = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::BeginCancellation),
+        );
+        let effect = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::ConfirmCancellation(id)),
+        )
+        .unwrap();
+        coordinator.handle_effect(&mut app, effect).await;
+        poll_until(&mut coordinator, &mut app, |app, coordinator| {
+            !coordinator.operation_active()
+                && app
+                    .maintenance
+                    .sessions
+                    .back()
+                    .is_some_and(|session| session.status.is_terminal())
+        })
+        .await;
+        assert_eq!(
+            app.maintenance.sessions.back().unwrap().status,
+            MaintenanceSessionStatus::Cancelled
+        );
+        coordinator.shutdown().await;
+    }
+}
