@@ -82,11 +82,13 @@ See `docs/current-task.md`.
 | Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
 | Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
 | Hardening matrix | BLOCKED | All integrated gates except Flamegraph pass. The matching `perf` and cargo-flamegraph tools are installed, but host `kernel.perf_event_paranoid=4` denies even a userspace dummy event; grant CAP_PERFMON or temporarily set the sysctl to 0, then run `./scripts/flamegraph.sh` and verify its nonempty SVG |
+| Operator documentation | IN_PROGRESS | Existing README quickstarts and live compatibility evidence are useful but incomplete; installation, daily workflows/troubleshooting, compatibility structure, and deterministic documentation validation are split into atomic tasks |
 
 ## Priority queue
 
-1. `DOC-001` — complete operator and compatibility documentation
-2. `HARDEN-ANALYSIS-001` / `HARDEN-001` — rerun Flamegraph and close hardening after host perf permission changes
+1. `DOC-INSTALL-001` — document installation and Yocto quickstart
+2. `DOC-OPERATOR-001` / `DOC-COMPAT-001` / `DOC-VERIFY-001` / `DOC-001` — close documentation gates
+3. `HARDEN-ANALYSIS-001` / `HARDEN-001` — rerun Flamegraph and close hardening after host perf permission changes
 
 ## Rules
 

@@ -1645,12 +1645,56 @@ verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --a
 notes = "Parent gate split after audit into reproducible fuzz, deterministic stress/process-tree, sanitizer, and final analysis-integration tasks. Existing property, pseudo-terminal, process-group, Valgrind, profiling, and Flamegraph foundations remain in scope for the final audit."
 
 [[task]]
+id = "DOC-INSTALL-001"
+milestone = "M7"
+title = "Document installation and Yocto quickstart"
+status = "IN_PROGRESS"
+priority = 81
+required = true
+depends_on = ["BB-001"]
+verify = ["test -s README.md", "cargo run -q -p yoctui -- --help", "./scripts/test-cli.sh"]
+notes = "Reconcile fresh-checkout host prerequisites, Rust build/install, current bitbake-setup and existing Poky environment paths, copyable launch commands, backend selection, and first TUI build without running BitBake from the setup shell."
+
+[[task]]
+id = "DOC-OPERATOR-001"
+milestone = "M7"
+title = "Document daily operator workflows and troubleshooting"
+status = "NOT_STARTED"
+priority = 81
+required = true
+depends_on = ["DOC-INSTALL-001"]
+verify = ["test -s docs/operator-guide.md"]
+notes = "Add one linked operator guide covering persistent navigation, builds/tasks/logs/errors/images, layer/recipe/config editing, Devtool, dependencies/signatures/package data, SDK/QEMU/Wic, Testing/Security/QA/Maintenance, shell/editor transitions, settings, evidence, cancellation, and actionable troubleshooting."
+
+[[task]]
+id = "DOC-COMPAT-001"
+milestone = "M7"
+title = "Complete evidence-backed compatibility matrix"
+status = "NOT_STARTED"
+priority = 81
+required = true
+depends_on = ["DOC-OPERATOR-001"]
+verify = ["test -s docs/compatibility.md", "python3 scripts/live_bitbake_smoke.py --help"]
+notes = "Structure protocol, host, backend, Yocto/BitBake snapshot, fake-versus-live capability, optional-tool, and known-limitation evidence without generalizing from mocked tests."
+
+[[task]]
+id = "DOC-VERIFY-001"
+milestone = "M7"
+title = "Validate documentation links and commands"
+status = "NOT_STARTED"
+priority = 81
+required = true
+depends_on = ["DOC-COMPAT-001"]
+verify = ["./scripts/check-docs.sh"]
+notes = "Add deterministic local checks for repository Markdown links, required operator sections, CLI help, safe headless and doctor commands, and shell syntax of every checked-in script."
+
+[[task]]
 id = "DOC-001"
 milestone = "M7"
 title = "Complete operator and compatibility documentation"
 status = "IN_PROGRESS"
 priority = 81
 required = true
-depends_on = ["BB-001"]
-verify = ["test -s docs/compatibility.md", "test -s README.md"]
-notes = "Fresh-checkout, live matrix, workflows, troubleshooting."
+depends_on = ["BB-001", "DOC-INSTALL-001", "DOC-OPERATOR-001", "DOC-COMPAT-001", "DOC-VERIFY-001"]
+verify = ["test -s docs/compatibility.md", "test -s docs/operator-guide.md", "test -s README.md", "./scripts/check-docs.sh"]
+notes = "Parent gate split after audit into installation/quickstart, daily operator/troubleshooting, compatibility evidence, and deterministic documentation-validation tasks."
