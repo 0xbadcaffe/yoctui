@@ -1401,6 +1401,161 @@ impl MaintenanceBuildHistoryDraft {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum MaintenanceGitArchiveField {
+    #[default]
+    DataDir,
+    GitDir,
+    Create,
+    Bare,
+    CreateTag,
+    BranchName,
+    TagName,
+    CommitSubject,
+    CommitBody,
+    TagSubject,
+    TagBody,
+    Exclusions,
+    Notes,
+    PushRemote,
+}
+
+impl MaintenanceGitArchiveField {
+    pub fn cycle(self, backwards: bool) -> Self {
+        const FIELDS: [MaintenanceGitArchiveField; 14] = [
+            MaintenanceGitArchiveField::DataDir,
+            MaintenanceGitArchiveField::GitDir,
+            MaintenanceGitArchiveField::Create,
+            MaintenanceGitArchiveField::Bare,
+            MaintenanceGitArchiveField::CreateTag,
+            MaintenanceGitArchiveField::BranchName,
+            MaintenanceGitArchiveField::TagName,
+            MaintenanceGitArchiveField::CommitSubject,
+            MaintenanceGitArchiveField::CommitBody,
+            MaintenanceGitArchiveField::TagSubject,
+            MaintenanceGitArchiveField::TagBody,
+            MaintenanceGitArchiveField::Exclusions,
+            MaintenanceGitArchiveField::Notes,
+            MaintenanceGitArchiveField::PushRemote,
+        ];
+        let index = FIELDS
+            .iter()
+            .position(|field| *field == self)
+            .expect("Git archive field belongs to its fixed field order");
+        FIELDS[if backwards {
+            index.checked_sub(1).unwrap_or(FIELDS.len() - 1)
+        } else {
+            (index + 1) % FIELDS.len()
+        }]
+    }
+
+    pub fn is_toggle(self) -> bool {
+        matches!(self, Self::Create | Self::Bare | Self::CreateTag)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MaintenanceGitArchiveDraft {
+    pub field: MaintenanceGitArchiveField,
+    pub data_dir: String,
+    pub git_dir: String,
+    pub create: bool,
+    pub bare: bool,
+    pub create_tag: bool,
+    pub branch_name: String,
+    pub tag_name: String,
+    pub commit_subject: String,
+    pub commit_body: String,
+    pub tag_subject: String,
+    pub tag_body: String,
+    pub exclusions: String,
+    pub notes: String,
+    pub push_remote: String,
+    pub validation: Option<String>,
+}
+
+impl Default for MaintenanceGitArchiveDraft {
+    fn default() -> Self {
+        Self {
+            field: MaintenanceGitArchiveField::DataDir,
+            data_dir: String::new(),
+            git_dir: String::new(),
+            create: true,
+            bare: false,
+            create_tag: true,
+            branch_name: "release/{machine}".into(),
+            tag_name: "release/{tag_number}".into(),
+            commit_subject: "Release {commit}".into(),
+            commit_body: String::new(),
+            tag_subject: "Release tag {tag_number}".into(),
+            tag_body: String::new(),
+            exclusions: String::new(),
+            notes: String::new(),
+            push_remote: String::new(),
+            validation: None,
+        }
+    }
+}
+
+impl MaintenanceGitArchiveDraft {
+    pub fn request(&self) -> Result<GitArchiveRequest, &'static str> {
+        let comma_list = |value: &str| {
+            value
+                .split(',')
+                .map(str::trim)
+                .filter(|entry| !entry.is_empty())
+                .map(str::to_owned)
+                .collect::<Vec<_>>()
+        };
+        let notes = comma_list(&self.notes)
+            .into_iter()
+            .map(|entry| {
+                let (reference, path) = entry
+                    .split_once('=')
+                    .ok_or("notes must use reference=/absolute/file entries")?;
+                if reference.is_empty() || path.is_empty() {
+                    return Err("notes must use reference=/absolute/file entries");
+                }
+                Ok((reference.to_owned(), PathBuf::from(path)))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        GitArchiveRequest::new(GitArchiveRequest {
+            data_dir: PathBuf::from(&self.data_dir),
+            git_dir: PathBuf::from(&self.git_dir),
+            create: self.create,
+            bare: self.bare,
+            create_tag: self.create_tag,
+            branch_name: self.branch_name.clone(),
+            tag_name: (!self.tag_name.is_empty()).then(|| self.tag_name.clone()),
+            commit_subject: self.commit_subject.clone(),
+            commit_body: self.commit_body.clone(),
+            tag_subject: self.tag_subject.clone(),
+            tag_body: self.tag_body.clone(),
+            exclusions: comma_list(&self.exclusions),
+            notes,
+            push_remote: (!self.push_remote.is_empty()).then(|| self.push_remote.clone()),
+        })
+    }
+
+    pub fn is_bounded(&self) -> bool {
+        [
+            &self.data_dir,
+            &self.git_dir,
+            &self.branch_name,
+            &self.tag_name,
+            &self.commit_subject,
+            &self.commit_body,
+            &self.tag_subject,
+            &self.tag_body,
+            &self.exclusions,
+            &self.notes,
+            &self.push_remote,
+        ]
+        .into_iter()
+        .all(|value| value.len() <= MAX_MAINTENANCE_TEXT_BYTES && !value.contains('\n'))
+    }
+}
+
 impl MaintenanceCleanupDraft {
     pub fn from_metadata(metadata: &MaintenanceMetadata) -> Result<Self, &'static str> {
         let cache_dir = metadata
@@ -1522,6 +1677,7 @@ pub enum MaintenanceDialog {
     PrServiceForm(Box<MaintenancePrServiceDraft>),
     LockedCacheForm(Box<MaintenanceLockedCacheDraft>),
     BuildHistoryForm(Box<MaintenanceBuildHistoryDraft>),
+    GitArchiveForm(Box<MaintenanceGitArchiveDraft>),
     Confirm(MaintenanceOperationPreview),
     CleanupPhrase {
         preview: MaintenanceOperationPreview,
@@ -1634,6 +1790,9 @@ pub enum MaintenanceAction {
     OpenBuildHistoryForm,
     UpdateBuildHistoryForm(Box<MaintenanceBuildHistoryDraft>),
     ConfirmBuildHistoryForm(Box<MaintenanceBuildHistoryDraft>),
+    OpenGitArchiveForm,
+    UpdateGitArchiveForm(Box<MaintenanceGitArchiveDraft>),
+    ConfirmGitArchiveForm(Box<MaintenanceGitArchiveDraft>),
     BeginOperation(MaintenanceOperationPreview),
     UpdateCleanupPhrase {
         preview: MaintenanceOperationPreview,
@@ -1721,6 +1880,10 @@ pub enum MaintenanceEffect {
     PreviewBuildHistoryComparison {
         capability_request: u64,
         request: BuildComparisonRequest,
+    },
+    PreviewGitArchive {
+        capability_request: u64,
+        request: GitArchiveRequest,
     },
     StartOperation {
         id: MaintenanceSessionId,
@@ -2173,6 +2336,54 @@ pub fn update_maintenance(
                     return MaintenanceTransition {
                         dialog: MaintenanceDialogUpdate::Open(Box::new(
                             MaintenanceDialog::BuildHistoryForm(draft),
+                        )),
+                        ..MaintenanceTransition::none()
+                    };
+                }
+            }
+        }
+        MaintenanceAction::OpenGitArchiveForm
+            if state.view == MaintenanceView::Release
+                && state
+                    .capability
+                    .snapshot()
+                    .is_some_and(|snapshot| snapshot.supports(MaintenanceTool::GitArchive)) =>
+        {
+            return MaintenanceTransition {
+                dialog: MaintenanceDialogUpdate::Open(Box::new(MaintenanceDialog::GitArchiveForm(
+                    Box::default(),
+                ))),
+                ..MaintenanceTransition::none()
+            };
+        }
+        MaintenanceAction::UpdateGitArchiveForm(draft) if draft.is_bounded() => {
+            return MaintenanceTransition {
+                dialog: MaintenanceDialogUpdate::Open(Box::new(MaintenanceDialog::GitArchiveForm(
+                    draft,
+                ))),
+                ..MaintenanceTransition::none()
+            };
+        }
+        MaintenanceAction::ConfirmGitArchiveForm(mut draft) if draft.is_bounded() => {
+            match draft.request() {
+                Ok(request) => {
+                    let Some(capability_request) = state.capability.request() else {
+                        return MaintenanceTransition::none();
+                    };
+                    return MaintenanceTransition {
+                        effect: Some(MaintenanceEffect::PreviewGitArchive {
+                            capability_request,
+                            request,
+                        }),
+                        dialog: MaintenanceDialogUpdate::Close,
+                        notification: None,
+                    };
+                }
+                Err(message) => {
+                    draft.validation = Some(message.into());
+                    return MaintenanceTransition {
+                        dialog: MaintenanceDialogUpdate::Open(Box::new(
+                            MaintenanceDialog::GitArchiveForm(draft),
                         )),
                         ..MaintenanceTransition::none()
                     };
@@ -3277,6 +3488,83 @@ mod tests {
             update_maintenance(
                 &mut state,
                 MaintenanceAction::UpdateBuildHistoryForm(Box::new(draft)),
+            ),
+            MaintenanceTransition::none()
+        );
+    }
+
+    #[test]
+    fn maintenance_release_archive_workspace_preserves_local_and_push_intent() {
+        for remote in [None, Some("origin")] {
+            let mut state = ready_state();
+            state.view = MaintenanceView::Release;
+            let transition = update_maintenance(&mut state, MaintenanceAction::OpenGitArchiveForm);
+            let MaintenanceDialogUpdate::Open(dialog) = transition.dialog else {
+                panic!("Git archive form did not open");
+            };
+            let MaintenanceDialog::GitArchiveForm(mut draft) = *dialog else {
+                panic!("wrong Git archive dialog");
+            };
+            assert!(draft.create && draft.create_tag && !draft.bare);
+            assert_eq!(
+                draft.field.cycle(true),
+                MaintenanceGitArchiveField::PushRemote
+            );
+            draft.data_dir = "/release/data".into();
+            draft.git_dir = "/release/archive.git".into();
+            draft.exclusions = "tmp/*,downloads/*,tmp/*".into();
+            draft.notes = "release=/release/note.txt".into();
+            draft.push_remote = remote.unwrap_or_default().into();
+            let valid =
+                update_maintenance(&mut state, MaintenanceAction::ConfirmGitArchiveForm(draft));
+            assert!(matches!(
+                valid.effect,
+                Some(MaintenanceEffect::PreviewGitArchive {
+                    capability_request: 1,
+                    request: GitArchiveRequest {
+                        exclusions,
+                        notes,
+                        push_remote,
+                        ..
+                    },
+                }) if exclusions == vec!["downloads/*", "tmp/*"]
+                    && notes == vec![("release".into(), PathBuf::from("/release/note.txt"))]
+                    && push_remote.as_deref() == remote
+            ));
+            assert_eq!(valid.dialog, MaintenanceDialogUpdate::Close);
+        }
+    }
+
+    #[test]
+    fn maintenance_release_archive_workspace_rejects_invalid_notes_context_and_bounds() {
+        let mut state = MaintenanceState {
+            view: MaintenanceView::Release,
+            ..MaintenanceState::default()
+        };
+        assert_eq!(
+            update_maintenance(&mut state, MaintenanceAction::OpenGitArchiveForm),
+            MaintenanceTransition::none()
+        );
+        let mut draft = MaintenanceGitArchiveDraft {
+            data_dir: "/release/data".into(),
+            git_dir: "/release/archive.git".into(),
+            notes: "missing-equals".into(),
+            ..MaintenanceGitArchiveDraft::default()
+        };
+        let invalid = update_maintenance(
+            &mut state,
+            MaintenanceAction::ConfirmGitArchiveForm(Box::new(draft.clone())),
+        );
+        assert!(matches!(
+            invalid.dialog,
+            MaintenanceDialogUpdate::Open(dialog)
+                if matches!(*dialog, MaintenanceDialog::GitArchiveForm(ref draft) if draft.validation.as_deref().is_some_and(|message| message.contains("reference=")))
+        ));
+        draft.notes = "x".repeat(MAX_MAINTENANCE_TEXT_BYTES + 1);
+        assert_eq!(
+            update_maintenance(
+                &mut state,
+                MaintenanceAction::UpdateGitArchiveForm(Box::new(draft)),
             ),
             MaintenanceTransition::none()
         );

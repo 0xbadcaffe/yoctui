@@ -1538,22 +1538,22 @@ notes = "Release h now opens only from exact buildhistory-diff capability plus a
 id = "MAINT-RELEASE-ARCHIVE-UI-001"
 milestone = "M6"
 title = "Add typed Git archive form"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-RELEASE-HISTORY-UI-001"]
 verify = ["cargo test -p yoctui-model maintenance_release_archive_workspace", "cargo test -p yoctui-app maintenance_release_archive_workspace", "cargo test -p yoctui-ui maintenance_release_archive_workspace"]
-notes = "Add the a route and bounded model-owned oe-git-archive form with every typed local option, notes/exclusions, explicit optional push intent, app input mapping, and responsive local-versus-network meaning."
+notes = "Release a now opens a bounded model-owned 14-field oe-git-archive form only with exact capability. It supplies documented defaults, typed create/bare/tag choices, normalized exclusions, validated reference=/absolute/file notes, and optional push intent. Reducer submission emits one typed preview without execution; app input is trapped; a 22-row responsive modal keeps every field, validation, overwrite risk, local-first behavior, and second network confirmation visible at 80x24. Two reducer tests, one app test, one TestBackend test, and the full baseline pass."
 
 [[task]]
 id = "MAINT-RELEASE-UI-001"
 milestone = "M6"
 title = "Close typed Maintenance release form gate"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-RELEASE-LOCKED-UI-001", "MAINT-RELEASE-HISTORY-UI-001", "MAINT-RELEASE-ARCHIVE-UI-001"]
-verify = ["cargo test -p yoctui-model maintenance_release_workspace", "cargo test -p yoctui-app maintenance_release_workspace", "cargo test -p yoctui-ui maintenance_release_workspace"]
+verify = ["cargo test -p yoctui-model maintenance_release_", "cargo test -p yoctui-app maintenance_release_", "cargo test -p yoctui-ui maintenance_release_"]
 notes = "Cross-form gate for the atomic locked-cache, build-history, and archive entry tasks found by the audit. Re-run their combined model/app/TestBackend matrix and reconcile the exact UI contract before routing execution."
 
 [[task]]
