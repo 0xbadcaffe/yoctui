@@ -2,44 +2,45 @@
 
 ## Task
 
-**ID:** MAINT-SSTATE-UI-001
-**Title:** Add typed sstate readiness and cleanup forms
+**ID:** MAINT-SSTATE-CLI-001
+**Title:** Route sstate readiness and cleanup forms
 
 ## Objective
 
-Implement the missing model-owned, focus-trapped `c` readiness and `d`
-protected-cleanup entry workflows specified for the Maintenance Sstate view,
-without executing a process in this task.
+Connect the typed Sstate forms to exact adapter previews while keeping candidate
+discovery non-blocking and preserving the existing phrase, destructive
+confirmation, fresh rediscovery, runner, and cancellation boundaries.
 
 ## Required work
 
-1. Inspect existing Maintenance requests, previews, generic confirmations,
-   renderer, and input helpers; reuse them rather than duplicating execution.
-2. Add bounded typed readiness draft state for targets, mode, output/log paths,
-   and timeout, initialized only from authoritative capability metadata.
-3. Add bounded typed cleanup draft state for cache root, stamps roots, modes,
-   and worker count. Candidate discovery remains a typed effect for the CLI task;
-   do not fabricate candidates in the model or UI.
-4. Map `c` and `d` only in the Sstate view. Dialog input must trap focus,
-   validate visibly, and close without side effects on `Esc`.
-5. Render every field, validation/disabled reason, and footer shortcut safely at
-   wide, medium, narrow, too-small, theme, and no-color boundaries.
-6. Add reducer, app mapping, and Ratatui TestBackend tests for normal, invalid,
-   unavailable, and cancellation paths.
+1. Inspect the new preview effects and existing adapter/coordinator paths before
+   changing code; do not duplicate command construction.
+2. Revalidate the exact correlated capability before accepting either request.
+3. Reconstruct readiness through `MaintenanceSstateCommandSpec::readiness` and
+   dispatch the adapter-produced preview into the existing confirmation flow.
+4. Run cleanup preview discovery through the exact adapter command in an
+   independent non-blocking stage, retain bounded stdout/stderr, parse only the
+   adapter result, and dispatch the exact candidate preview into the existing
+   phrase flow. Preview discovery must never delete files.
+5. Preserve navigation, replacement, timeout, nonzero, cancellation, loss,
+   output bounds, and stale-correlation behavior. Execution must still rerun
+   discovery and compare the candidate set immediately before deletion.
+6. Add fake filesystem/process CLI tests for readiness preview, cleanup
+   candidates, empty candidates, nonzero, timeout/loss, stale capability, and
+   confirmation routing. Do not claim live cache safety.
 
 ## Definition of done
 
-- The specified readiness and cleanup forms are reachable and model-owned.
-- Confirming a valid form emits only a typed preview-acquisition effect.
-- No command runs and no cleanup candidate is inferred in this task.
+- `c` reaches an exact normal confirmation through the adapter.
+- `d` reaches the exact phrase dialog only after successful typed discovery.
+- Discovery failures are visible and cannot create a destructive preview.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model maintenance_sstate_workspace
-cargo test -p yoctui-app maintenance_sstate_workspace
-cargo test -p yoctui-ui maintenance_sstate_workspace
+cargo test -p yoctui -- maintenance_sstate_workspace
+cargo test -p yoctui-bitbake maintenance_sstate
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -49,12 +50,11 @@ python3 -m pytest bridge/tests
 
 ## Documentation updates
 
-- Update `docs/ui-spec.md` only if intentional behavior differs from the current
-  authoritative Sstate contract.
-- Mark `MAINT-SSTATE-UI-001` `DONE` only after every command passes.
+- Update `docs/architecture.md` only if coordinator ownership changes.
+- Mark `MAINT-SSTATE-CLI-001` `DONE` only after every command passes.
 - Update `docs/implementation-status.md`.
-- Replace this file with `MAINT-SSTATE-CLI-001`.
+- Replace this file with `MAINT-SERVICE-UI-001`.
 
 ## Next task
 
-`MAINT-SSTATE-CLI-001`
+`MAINT-SERVICE-UI-001`

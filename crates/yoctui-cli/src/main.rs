@@ -6773,10 +6773,19 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     .await;
                 }
             } else if app.screen == Screen::Maintenance
-                && maintenance_workspace_action(maintenance_row_count(&app), input).is_some()
+                && maintenance_workspace_action(
+                    app.maintenance.view,
+                    maintenance_row_count(&app),
+                    input,
+                )
+                .is_some()
             {
-                let action = maintenance_workspace_action(maintenance_row_count(&app), input)
-                    .expect("Maintenance action was checked");
+                let action = maintenance_workspace_action(
+                    app.maintenance.view,
+                    maintenance_row_count(&app),
+                    input,
+                )
+                .expect("Maintenance action was checked");
                 if let Some(effect) = update(&mut app, action) {
                     let _ = route_independent_maintenance_effect(
                         &guard,

@@ -1472,18 +1472,18 @@ notes = "A dedicated CLI coordinator now owns replaceable correlated capability/
 id = "MAINT-SSTATE-UI-001"
 milestone = "M6"
 title = "Add typed sstate readiness and cleanup forms"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001", "MAINT-RENDER-001"]
 verify = ["cargo test -p yoctui-model maintenance_sstate_workspace", "cargo test -p yoctui-app maintenance_sstate_workspace", "cargo test -p yoctui-ui maintenance_sstate_workspace"]
-notes = "Cross-layer audit found that the specified c/d shortcuts and readiness/cleanup forms are absent; existing renderer tests construct confirmed previews directly. Add model-owned bounded drafts, focus-trapped dialogs, validation, and responsive rendering without executing commands."
+notes = "The Sstate view now maps c/d into model-owned readiness and protected-cleanup forms. Bounded typed drafts validate targets, mode, optional output/log paths, timeout, authoritative cache/stamps roots, cleanup modes, and jobs; valid confirmation emits preview-acquisition effects only. Focus-trapped responsive dialogs expose every field, validation, read-only identity, and safety boundary across themes and 80x24. Two reducer, one app, and one TestBackend test plus the complete baseline pass."
 
 [[task]]
 id = "MAINT-SSTATE-CLI-001"
 milestone = "M6"
 title = "Route sstate readiness and cleanup forms"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-SSTATE-UI-001", "MAINT-CLI-001"]

@@ -211,6 +211,8 @@ impl MaintenanceCliCoordinator {
             MaintenanceEffect::InspectServices { request } => {
                 self.start_inspection(InspectionPurpose::Services(request));
             }
+            MaintenanceEffect::PreviewReadiness { .. }
+            | MaintenanceEffect::PreviewCleanup { .. } => return false,
             MaintenanceEffect::StartOperation { id, preview } => {
                 if self.operation.is_some() {
                     fail(app, id, "another Maintenance operation is already active");

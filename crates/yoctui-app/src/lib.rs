@@ -13,11 +13,12 @@ use yoctui_model::{
     BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
     LayerInspectorMode, LayerRelationship, LayerRelationships, MaintenanceAction,
-    MaintenanceDialog, QaAction, QaDialog, QaReportFailureKind, QaReportRequest, QaView,
-    QemuOutputStream, QemuSessionId, RecipeDependencies, Screen, SdkBuildAction, SdkKind,
-    SdkOutputStream, SdkSessionId, SecurityAction, SecurityDialog, SecurityOutputStream,
-    SecurityView, Severity, TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity,
-    WicCapability, WicOutput, WicOutputStream, WicSessionId,
+    MaintenanceCleanupField, MaintenanceDialog, MaintenanceReadinessField, MaintenanceView,
+    QaAction, QaDialog, QaReportFailureKind, QaReportRequest, QaView, QemuOutputStream,
+    QemuSessionId, RecipeDependencies, Screen, SdkBuildAction, SdkKind, SdkOutputStream,
+    SdkSessionId, SecurityAction, SecurityDialog, SecurityOutputStream, SecurityView, Severity,
+    TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity, WicCapability, WicOutput,
+    WicOutputStream, WicSessionId,
 };
 
 pub fn qa_layer_capability_action(response: QaLayerCapabilityResponse) -> Action {
@@ -2027,7 +2028,11 @@ pub fn qa_dialog_action(dialog: &QaDialog, key: Input) -> Option<Action> {
     }
 }
 
-pub fn maintenance_workspace_action(row_count: usize, key: Input) -> Option<Action> {
+pub fn maintenance_workspace_action(
+    view: MaintenanceView,
+    row_count: usize,
+    key: Input,
+) -> Option<Action> {
     let maintenance = |action| Some(Action::Maintenance(action));
     match key {
         Input::Char('[') => maintenance(MaintenanceAction::CycleView { backwards: true }),
@@ -2046,6 +2051,12 @@ pub fn maintenance_workspace_action(row_count: usize, key: Input) -> Option<Acti
         Input::Char('x') => maintenance(MaintenanceAction::BeginCancellation),
         Input::Char('o') => maintenance(MaintenanceAction::OpenSelectedEvidence),
         Input::Char('S') => maintenance(MaintenanceAction::OpenSignatures),
+        Input::Char('c') if view == MaintenanceView::Sstate => {
+            maintenance(MaintenanceAction::OpenReadinessForm)
+        }
+        Input::Char('d') if view == MaintenanceView::Sstate => {
+            maintenance(MaintenanceAction::OpenCleanupForm)
+        }
         _ => None,
     }
 }
@@ -2053,6 +2064,95 @@ pub fn maintenance_workspace_action(row_count: usize, key: Input) -> Option<Acti
 pub fn maintenance_dialog_action(dialog: &MaintenanceDialog, key: Input) -> Option<Action> {
     let maintenance = |action| Some(Action::Maintenance(action));
     match dialog {
+        MaintenanceDialog::ReadinessForm(draft) => {
+            let mut next = (**draft).clone();
+            next.validation = None;
+            match key {
+                Input::Tab => next.field = next.field.cycle(false),
+                Input::BackTab => next.field = next.field.cycle(true),
+                Input::Left | Input::Right | Input::Char(' ')
+                    if next.field == MaintenanceReadinessField::Mode =>
+                {
+                    next.mode = match next.mode {
+                        yoctui_model::SstateReadinessMode::IsolatedTmpdir => {
+                            yoctui_model::SstateReadinessMode::SameTmpdir
+                        }
+                        yoctui_model::SstateReadinessMode::SameTmpdir => {
+                            yoctui_model::SstateReadinessMode::IsolatedTmpdir
+                        }
+                    };
+                }
+                Input::Char(character) if !character.is_control() => {
+                    let value = match next.field {
+                        MaintenanceReadinessField::Targets => &mut next.targets,
+                        MaintenanceReadinessField::Output => &mut next.output,
+                        MaintenanceReadinessField::Log => &mut next.log,
+                        MaintenanceReadinessField::Timeout if character.is_ascii_digit() => {
+                            &mut next.timeout
+                        }
+                        _ => return None,
+                    };
+                    if value.len() + character.len_utf8()
+                        <= yoctui_model::MAX_MAINTENANCE_TEXT_BYTES
+                    {
+                        value.push(character);
+                    }
+                }
+                Input::Backspace => match next.field {
+                    MaintenanceReadinessField::Targets => {
+                        next.targets.pop();
+                    }
+                    MaintenanceReadinessField::Output => {
+                        next.output.pop();
+                    }
+                    MaintenanceReadinessField::Log => {
+                        next.log.pop();
+                    }
+                    MaintenanceReadinessField::Timeout => {
+                        next.timeout.pop();
+                    }
+                    MaintenanceReadinessField::Mode => return None,
+                },
+                Input::Enter => {
+                    return maintenance(MaintenanceAction::ConfirmReadinessForm(Box::new(next)));
+                }
+                Input::Esc => return maintenance(MaintenanceAction::CancelDialog),
+                _ => return None,
+            }
+            maintenance(MaintenanceAction::UpdateReadinessForm(Box::new(next)))
+        }
+        MaintenanceDialog::CleanupForm(draft) => {
+            let mut next = (**draft).clone();
+            next.validation = None;
+            match key {
+                Input::Tab => next.field = next.field.cycle(false),
+                Input::BackTab => next.field = next.field.cycle(true),
+                Input::Char(' ') | Input::Left | Input::Right => match next.field {
+                    MaintenanceCleanupField::Duplicates => next.duplicates = !next.duplicates,
+                    MaintenanceCleanupField::Orphans => next.orphans = !next.orphans,
+                    MaintenanceCleanupField::UnreferencedByStamps => {
+                        next.unreferenced_by_stamps = !next.unreferenced_by_stamps;
+                    }
+                    MaintenanceCleanupField::Jobs => return None,
+                },
+                Input::Char(character)
+                    if next.field == MaintenanceCleanupField::Jobs
+                        && character.is_ascii_digit()
+                        && next.jobs.len() < 5 =>
+                {
+                    next.jobs.push(character);
+                }
+                Input::Backspace if next.field == MaintenanceCleanupField::Jobs => {
+                    next.jobs.pop();
+                }
+                Input::Enter => {
+                    return maintenance(MaintenanceAction::ConfirmCleanupForm(Box::new(next)));
+                }
+                Input::Esc => return maintenance(MaintenanceAction::CancelDialog),
+                _ => return None,
+            }
+            maintenance(MaintenanceAction::UpdateCleanupForm(Box::new(next)))
+        }
         MaintenanceDialog::Confirm(preview) => match key {
             Input::Enter => maintenance(MaintenanceAction::ConfirmOperation(preview.clone())),
             Input::Esc => maintenance(MaintenanceAction::CancelDialog),
@@ -2604,20 +2704,20 @@ mod tests {
         );
         assert_eq!(app.screen, Screen::Maintenance);
         assert_eq!(
-            maintenance_workspace_action(4, Input::Char(']')),
+            maintenance_workspace_action(MaintenanceView::Sstate, 4, Input::Char(']')),
             Some(Action::Maintenance(MaintenanceAction::CycleView {
                 backwards: false
             }))
         );
         assert_eq!(
-            maintenance_workspace_action(4, Input::Down),
+            maintenance_workspace_action(MaintenanceView::Sstate, 4, Input::Down),
             Some(Action::Maintenance(MaintenanceAction::Select {
                 delta: 1,
                 row_count: 4
             }))
         );
         assert_eq!(
-            maintenance_workspace_action(4, Input::Char('S')),
+            maintenance_workspace_action(MaintenanceView::Sstate, 4, Input::Char('S')),
             Some(Action::Maintenance(MaintenanceAction::OpenSignatures))
         );
     }
@@ -2648,6 +2748,64 @@ mod tests {
         );
         assert_eq!(
             maintenance_dialog_action(&MaintenanceDialog::ConfirmNetworkPush(preview), Input::Esc),
+            Some(Action::Maintenance(MaintenanceAction::CancelDialog))
+        );
+    }
+
+    #[test]
+    fn maintenance_sstate_workspace_maps_only_typed_form_input() {
+        assert_eq!(
+            maintenance_workspace_action(MaintenanceView::Sstate, 2, Input::Char('c')),
+            Some(Action::Maintenance(MaintenanceAction::OpenReadinessForm))
+        );
+        assert_eq!(
+            maintenance_workspace_action(MaintenanceView::Sstate, 2, Input::Char('d')),
+            Some(Action::Maintenance(MaintenanceAction::OpenCleanupForm))
+        );
+        assert_eq!(
+            maintenance_workspace_action(MaintenanceView::Release, 4, Input::Char('c')),
+            None
+        );
+
+        let readiness = yoctui_model::MaintenanceReadinessDraft::default();
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::ReadinessForm(Box::new(readiness.clone())),
+                Input::Char('c'),
+            ),
+            Some(Action::Maintenance(MaintenanceAction::UpdateReadinessForm(draft)))
+                if draft.targets == "c"
+        ));
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::ReadinessForm(Box::new(readiness)),
+                Input::Enter,
+            ),
+            Some(Action::Maintenance(
+                MaintenanceAction::ConfirmReadinessForm(_)
+            ))
+        ));
+
+        let metadata = yoctui_model::MaintenanceMetadata::new(yoctui_model::MaintenanceMetadata {
+            sstate_dir: Some("/cache".into()),
+            stamps_dirs: vec!["/build/tmp/stamps".into()],
+            ..yoctui_model::MaintenanceMetadata::default()
+        })
+        .unwrap();
+        let cleanup = yoctui_model::MaintenanceCleanupDraft::from_metadata(&metadata).unwrap();
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::CleanupForm(Box::new(cleanup)),
+                Input::Char(' '),
+            ),
+            Some(Action::Maintenance(MaintenanceAction::UpdateCleanupForm(draft)))
+                if !draft.duplicates
+        ));
+        assert_eq!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::ReadinessForm(Box::default()),
+                Input::Esc,
+            ),
             Some(Action::Maintenance(MaintenanceAction::CancelDialog))
         );
     }
