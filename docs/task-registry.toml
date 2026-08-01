@@ -1590,15 +1590,59 @@ verify = ["cargo test -p yoctui-model maintenance_workflow", "cargo test -p yoct
 notes = "All required atomic Maintenance tasks are DONE. The independent parent gate passes 7 model, 2 app, 27 adapter, 4 responsive TestBackend, and 5 CLI tests together with the full formatting, workspace test, clippy, bridge, and roadmap baseline. M6 is complete without inferring live Yocto compatibility from fixture coverage."
 
 [[task]]
+id = "HARDEN-FUZZ-001"
+milestone = "M7"
+title = "Add reproducible fuzz harnesses"
+status = "IN_PROGRESS"
+priority = 80
+required = true
+depends_on = ["GOV-001"]
+verify = ["./scripts/test-fuzz.sh"]
+notes = "Add bounded cargo-fuzz targets for untrusted protocol framing and reducer-owned retained state, with checked-in seeds and a reproducible finite smoke command."
+
+[[task]]
+id = "HARDEN-STRESS-001"
+milestone = "M7"
+title = "Add deterministic stress and process-tree tests"
+status = "NOT_STARTED"
+priority = 80
+required = true
+depends_on = ["HARDEN-FUZZ-001"]
+verify = ["./scripts/test-stress.sh"]
+notes = "Exercise high-volume bounded reducer/protocol behavior and verify that cancellation terminates a real child process tree without leaking descendants."
+
+[[task]]
+id = "HARDEN-SANITIZER-001"
+milestone = "M7"
+title = "Add sanitizer verification"
+status = "NOT_STARTED"
+priority = 80
+required = true
+depends_on = ["HARDEN-STRESS-001"]
+verify = ["./scripts/test-sanitizers.sh"]
+notes = "Run deterministic native workloads under supported Rust AddressSanitizer and LeakSanitizer instrumentation, with explicit platform and toolchain prerequisites."
+
+[[task]]
+id = "HARDEN-ANALYSIS-001"
+milestone = "M7"
+title = "Integrate hardening analysis gates"
+status = "NOT_STARTED"
+priority = 80
+required = true
+depends_on = ["HARDEN-SANITIZER-001"]
+verify = ["./scripts/test-terminal.sh", "./scripts/valgrind.sh", "./scripts/profile-workload.sh", "./scripts/flamegraph.sh"]
+notes = "Audit and integrate the existing terminal, memory, deterministic profiling, Flamegraph, property, and process-runner gates into one documented completion path without weakening missing-tool failures."
+
+[[task]]
 id = "HARDEN-001"
 milestone = "M7"
 title = "Complete test and analysis matrix"
 status = "IN_PROGRESS"
 priority = 80
 required = true
-depends_on = ["GOV-001"]
+depends_on = ["GOV-001", "HARDEN-FUZZ-001", "HARDEN-STRESS-001", "HARDEN-SANITIZER-001", "HARDEN-ANALYSIS-001"]
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings"]
-notes = "Property, fuzz, stress, terminal, sanitizer, Valgrind, profiling, flamegraph."
+notes = "Parent gate split after audit into reproducible fuzz, deterministic stress/process-tree, sanitizer, and final analysis-integration tasks. Existing property, pseudo-terminal, process-group, Valgrind, profiling, and Flamegraph foundations remain in scope for the final audit."
 
 [[task]]
 id = "DOC-001"
