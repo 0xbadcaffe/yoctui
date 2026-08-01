@@ -1571,12 +1571,12 @@ notes = "All three typed release forms now receive fresh correlated capability i
 id = "MAINT-UI-CLI-001"
 milestone = "M6"
 title = "Integrate complete Maintenance workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001", "MAINT-ADAPTER-001", "MAINT-RENDER-001", "MAINT-CLI-001", "MAINT-SSTATE-CLI-001", "MAINT-SERVICE-CLI-001", "MAINT-RELEASE-CLI-001"]
 verify = ["cargo test -p yoctui-model maintenance_workflow", "cargo test -p yoctui-app maintenance_workflow", "cargo test -p yoctui-bitbake maintenance_", "cargo test -p yoctui-ui maintenance_workflow", "cargo test -p yoctui -- maintenance_workflow"]
-notes = "Cross-layer audit found that rendering and execution existed but specified operation-entry forms and routes did not. This gate now depends on the atomic sstate, service, and release UI/CLI tasks before re-running the complete matrix."
+notes = "The post-dependency audit confirms the committed Sstate, Services, Release, and optional-integration paths match the UI and architecture contracts without duplicated execution ownership. The combined gate passes 7 model, 2 app, 27 adapter, 4 responsive TestBackend, and 5 CLI tests, with atomic form and route suites retained in its verified dependency chain. Fixture evidence does not establish live Yocto compatibility."
 
 [[task]]
 id = "MAINT-001"
