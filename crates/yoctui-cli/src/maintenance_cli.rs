@@ -17,10 +17,11 @@ use yoctui_bitbake::{
     git_archive_push_command, locked_signature_command, parse_cleanup_preview, pr_service_command,
 };
 use yoctui_model::{
-    Action, App, Effect, MaintenanceAction, MaintenanceCapabilitySnapshot, MaintenanceEffect,
-    MaintenanceEvidence, MaintenanceFileIdentity, MaintenanceIntegrationsSnapshot,
-    MaintenanceMetadata, MaintenanceOperation, MaintenanceOperationPreview, MaintenanceSessionId,
-    MaintenanceTool, MaintenanceToolCapability, PrServiceOperation, ServiceDiagnostic, update,
+    Action, App, Effect, MAX_MAINTENANCE_PATHS, MaintenanceAction, MaintenanceCapabilitySnapshot,
+    MaintenanceEffect, MaintenanceEvidence, MaintenanceFileIdentity,
+    MaintenanceIntegrationsSnapshot, MaintenanceMetadata, MaintenanceOperation,
+    MaintenanceOperationPreview, MaintenanceSessionId, MaintenanceTool, MaintenanceToolCapability,
+    PrServiceOperation, ServiceDiagnostic, SstateCleanupRequest, SstateReadinessRequest, update,
 };
 
 const INSPECTION_TIMEOUT: Duration = Duration::from_secs(10);
@@ -123,6 +124,14 @@ enum InspectionPurpose {
         id: MaintenanceSessionId,
         preview: Box<MaintenanceOperationPreview>,
     },
+    PreviewReadiness {
+        capability_request: u64,
+        request: Box<SstateReadinessRequest>,
+    },
+    PreviewCleanup {
+        capability_request: u64,
+        request: Box<SstateCleanupRequest>,
+    },
 }
 
 struct InspectionWorker {
@@ -158,12 +167,24 @@ struct MaintenanceCliOperation {
     stage: OperationStage,
 }
 
+struct MaintenanceCleanupPreviewOperation {
+    id: MaintenanceSessionId,
+    capability_request: u64,
+    snapshot: MaintenanceCapabilitySnapshot,
+    request: SstateCleanupRequest,
+    runner: MaintenanceSstateJobRunner,
+    stdout: Vec<String>,
+    last_stderr: Option<String>,
+}
+
 pub(crate) struct MaintenanceCliCoordinator {
     context: MaintenanceCliContext,
     inspection: Option<InspectionWorker>,
+    cleanup_preview: Option<MaintenanceCleanupPreviewOperation>,
     operation: Option<MaintenanceCliOperation>,
     snapshot: Option<MaintenanceCapabilitySnapshot>,
     local_archive: Option<GitArchiveLocalResult>,
+    next_preview_id: u64,
 }
 
 impl MaintenanceCliCoordinator {
@@ -175,14 +196,16 @@ impl MaintenanceCliCoordinator {
         Ok(Self {
             context: MaintenanceCliContext::from_app(app, build_dir, search_path)?,
             inspection: None,
+            cleanup_preview: None,
             operation: None,
             snapshot: None,
             local_archive: None,
+            next_preview_id: 1,
         })
     }
 
     pub(crate) fn operation_active(&self) -> bool {
-        self.operation.is_some()
+        self.cleanup_preview.is_some() || self.operation.is_some()
     }
 
     pub(crate) async fn shutdown(&mut self) {
@@ -198,6 +221,9 @@ impl MaintenanceCliCoordinator {
                 let _ = runner.cancel(active.id).await;
             }
         }
+        if let Some(mut preview) = self.cleanup_preview.take() {
+            let _ = preview.runner.cancel(preview.id).await;
+        }
     }
 
     pub(crate) async fn handle_effect(&mut self, app: &mut App, effect: Effect) -> bool {
@@ -211,8 +237,27 @@ impl MaintenanceCliCoordinator {
             MaintenanceEffect::InspectServices { request } => {
                 self.start_inspection(InspectionPurpose::Services(request));
             }
-            MaintenanceEffect::PreviewReadiness { .. }
-            | MaintenanceEffect::PreviewCleanup { .. } => return false,
+            MaintenanceEffect::PreviewReadiness {
+                capability_request,
+                request,
+            } => self.start_inspection(InspectionPurpose::PreviewReadiness {
+                capability_request,
+                request: Box::new(request),
+            }),
+            MaintenanceEffect::PreviewCleanup {
+                capability_request,
+                request,
+            } => {
+                if self.cleanup_preview.is_some() || self.operation.is_some() {
+                    app.notification =
+                        Some("another Maintenance operation is already active".into());
+                } else {
+                    self.start_inspection(InspectionPurpose::PreviewCleanup {
+                        capability_request,
+                        request: Box::new(request),
+                    });
+                }
+            }
             MaintenanceEffect::StartOperation { id, preview } => {
                 if self.operation.is_some() {
                     fail(app, id, "another Maintenance operation is already active");
@@ -259,6 +304,7 @@ impl MaintenanceCliCoordinator {
 
     pub(crate) async fn poll(&mut self, app: &mut App) {
         self.poll_inspection(app).await;
+        self.poll_cleanup_preview(app).await;
         self.poll_operation(app).await;
     }
 
@@ -321,6 +367,10 @@ impl MaintenanceCliCoordinator {
                 );
             }
             InspectionPurpose::Start { id, .. } => fail(app, id, &message),
+            InspectionPurpose::PreviewReadiness { .. }
+            | InspectionPurpose::PreviewCleanup { .. } => {
+                app.notification = Some(message);
+            }
         }
     }
 
@@ -366,6 +416,199 @@ impl MaintenanceCliCoordinator {
                 Ok(snapshot) => self.begin_operation(app, id, *preview, snapshot).await,
                 Err(message) => fail(app, id, &message),
             },
+            InspectionPurpose::PreviewReadiness {
+                capability_request,
+                request,
+            } => match result.capability {
+                Ok(snapshot) => self.preview_readiness(app, capability_request, *request, snapshot),
+                Err(message) => app.notification = Some(message),
+            },
+            InspectionPurpose::PreviewCleanup {
+                capability_request,
+                request,
+            } => match result.capability {
+                Ok(snapshot) => {
+                    self.begin_cleanup_preview(app, capability_request, *request, snapshot)
+                        .await;
+                }
+                Err(message) => app.notification = Some(message),
+            },
+        }
+    }
+
+    fn next_id(&mut self) -> MaintenanceSessionId {
+        let id = MaintenanceSessionId(self.next_preview_id);
+        self.next_preview_id = self.next_preview_id.wrapping_add(1).max(1);
+        id
+    }
+
+    fn exact_snapshot(
+        &self,
+        app: &App,
+        capability_request: u64,
+        fresh: &MaintenanceCapabilitySnapshot,
+    ) -> bool {
+        app.maintenance.capability.request() == Some(capability_request)
+            && self.snapshot.as_ref() == Some(fresh)
+    }
+
+    fn preview_readiness(
+        &mut self,
+        app: &mut App,
+        capability_request: u64,
+        request: SstateReadinessRequest,
+        snapshot: MaintenanceCapabilitySnapshot,
+    ) {
+        if !self.exact_snapshot(app, capability_request, &snapshot) {
+            app.notification = Some(
+                "Maintenance capability changed; refresh and reopen the readiness form".into(),
+            );
+            return;
+        }
+        let id = self.next_id();
+        match MaintenanceSstateCommandSpec::readiness(
+            id,
+            capability_request,
+            &snapshot,
+            id.0,
+            request,
+        ) {
+            Ok((preview, _)) => {
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::BeginOperation(preview)),
+                );
+            }
+            Err(error) => app.notification = Some(error.to_string()),
+        }
+    }
+
+    async fn begin_cleanup_preview(
+        &mut self,
+        app: &mut App,
+        capability_request: u64,
+        request: SstateCleanupRequest,
+        snapshot: MaintenanceCapabilitySnapshot,
+    ) {
+        if !self.exact_snapshot(app, capability_request, &snapshot) {
+            app.notification =
+                Some("Maintenance capability changed; refresh and reopen the cleanup form".into());
+            return;
+        }
+        let id = self.next_id();
+        let command =
+            match MaintenanceSstateCommandSpec::cleanup_preview(id, &snapshot, request.clone()) {
+                Ok(command) => command,
+                Err(error) => {
+                    app.notification = Some(error.to_string());
+                    return;
+                }
+            };
+        let mut runner = MaintenanceSstateJobRunner::new();
+        if let Err(error) = runner.start(command).await {
+            app.notification = Some(error.to_string());
+            return;
+        }
+        self.cleanup_preview = Some(MaintenanceCleanupPreviewOperation {
+            id,
+            capability_request,
+            snapshot,
+            request,
+            runner,
+            stdout: Vec::new(),
+            last_stderr: None,
+        });
+    }
+
+    async fn poll_cleanup_preview(&mut self, app: &mut App) {
+        let Some(active) = self.cleanup_preview.as_mut() else {
+            return;
+        };
+        let event = match tokio::time::timeout(Duration::from_millis(1), active.runner.next_event())
+            .await
+        {
+            Ok(Ok(event)) => event,
+            Ok(Err(error)) => {
+                app.notification = Some(format!("sstate cleanup preview was lost: {error}"));
+                self.cleanup_preview = None;
+                return;
+            }
+            Err(_) => return,
+        };
+        match event {
+            MaintenanceSstateRunnerEvent::Started { .. }
+            | MaintenanceSstateRunnerEvent::CancellationRequested { .. } => {}
+            MaintenanceSstateRunnerEvent::Output {
+                stream,
+                line,
+                truncated,
+                ..
+            } => match stream {
+                yoctui_model::MaintenanceOutputStream::Stdout
+                    if !truncated && active.stdout.len() <= MAX_MAINTENANCE_PATHS =>
+                {
+                    active.stdout.push(line);
+                }
+                yoctui_model::MaintenanceOutputStream::Stderr => {
+                    active.last_stderr = Some(line);
+                }
+                _ => {}
+            },
+            MaintenanceSstateRunnerEvent::Completed { .. } => {
+                let active = self.cleanup_preview.take().expect("preview was checked");
+                if !self.exact_snapshot(app, active.capability_request, &active.snapshot) {
+                    app.notification = Some(
+                        "Maintenance capability changed during cleanup discovery; reopen the form"
+                            .into(),
+                    );
+                    return;
+                }
+                let preview =
+                    parse_cleanup_preview(active.request, &active.stdout).and_then(|fresh| {
+                        MaintenanceSstateCommandSpec::cleanup_execution(
+                            active.id,
+                            active.capability_request,
+                            &active.snapshot,
+                            active.id.0,
+                            &fresh,
+                            &fresh,
+                        )
+                        .map(|(preview, _)| preview)
+                    });
+                match preview {
+                    Ok(preview) => {
+                        app.notification = None;
+                        let _ = update(
+                            app,
+                            Action::Maintenance(MaintenanceAction::BeginOperation(preview)),
+                        );
+                    }
+                    Err(error) => app.notification = Some(error.to_string()),
+                }
+            }
+            MaintenanceSstateRunnerEvent::Failed { exit_code, .. } => {
+                let stderr = active
+                    .last_stderr
+                    .clone()
+                    .unwrap_or_else(|| "no stderr".into());
+                app.notification = Some(format!(
+                    "sstate cleanup preview failed with status {exit_code:?}: {stderr}"
+                ));
+                self.cleanup_preview = None;
+            }
+            MaintenanceSstateRunnerEvent::Cancelled { .. } => {
+                app.notification = Some("sstate cleanup preview cancelled".into());
+                self.cleanup_preview = None;
+            }
+            MaintenanceSstateRunnerEvent::CancellationRejected { message, .. }
+            | MaintenanceSstateRunnerEvent::Lost { message, .. } => {
+                app.notification = Some(message);
+                self.cleanup_preview = None;
+            }
+            MaintenanceSstateRunnerEvent::TimedOut { .. } => {
+                app.notification = Some("sstate cleanup preview timed out".into());
+                self.cleanup_preview = None;
+            }
         }
     }
 
@@ -1035,6 +1278,17 @@ mod tests {
             }
             Self { root, build, bin }
         }
+
+        fn install(&self, name: &str, script: &str) -> PathBuf {
+            let executable = self.bin.join(name);
+            fs::write(&executable, script).unwrap();
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                fs::set_permissions(&executable, fs::Permissions::from_mode(0o755)).unwrap();
+            }
+            executable
+        }
     }
 
     impl Drop for Fixture {
@@ -1079,6 +1333,42 @@ mod tests {
         .await;
         let request = app.maintenance.capability.request().unwrap();
         (app, coordinator, request)
+    }
+
+    async fn refreshed_cleanup_coordinator(
+        fixture: &Fixture,
+        script: &str,
+    ) -> (App, MaintenanceCliCoordinator, u64, PathBuf, PathBuf) {
+        fixture.install("sstate-cache-management.py", script);
+        let cache = fixture.root.join("sstate-cache");
+        let stamps = fixture.root.join("stamps");
+        fs::create_dir_all(&cache).unwrap();
+        fs::create_dir_all(&stamps).unwrap();
+        let mut app = App::new(100, 64 * 1024);
+        app.workspace
+            .variables
+            .insert("SSTATE_DIR".into(), cache.display().to_string());
+        app.workspace
+            .variables
+            .insert("STAMPS_DIR".into(), stamps.display().to_string());
+        let mut coordinator =
+            MaintenanceCliCoordinator::new(&app, &fixture.build, vec![fixture.bin.clone()])
+                .unwrap();
+        let effect = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::InspectCapability),
+        )
+        .unwrap();
+        coordinator.handle_effect(&mut app, effect).await;
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            app.maintenance
+                .capability
+                .snapshot()
+                .is_some_and(|snapshot| snapshot.supports(MaintenanceTool::SstateCacheManagement))
+        })
+        .await;
+        let request = app.maintenance.capability.request().unwrap();
+        (app, coordinator, request, cache, stamps)
     }
 
     async fn begin_readiness(
@@ -1266,6 +1556,142 @@ mod tests {
             app.maintenance.sessions.back().unwrap().status,
             MaintenanceSessionStatus::Cancelled
         );
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_sstate_workspace_builds_exact_readiness_confirmation() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let (mut app, mut coordinator, capability_request) = refreshed_coordinator(&fixture).await;
+        let request = SstateReadinessRequest::new(
+            vec!["core-image-minimal".into()],
+            SstateReadinessMode::SameTmpdir,
+            Some(fixture.build.join("readiness.txt")),
+            None,
+            30,
+        )
+        .unwrap();
+        assert!(
+            coordinator
+                .handle_effect(
+                    &mut app,
+                    Effect::Maintenance(MaintenanceEffect::PreviewReadiness {
+                        capability_request,
+                        request,
+                    }),
+                )
+                .await
+        );
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            matches!(
+                app.active_dialog(),
+                Some(yoctui_model::Dialog::Maintenance(dialog))
+                    if matches!(dialog.as_ref(), yoctui_model::MaintenanceDialog::Confirm(_))
+            )
+        })
+        .await;
+        let Some(yoctui_model::Dialog::Maintenance(dialog)) = app.active_dialog() else {
+            panic!("readiness confirmation is absent");
+        };
+        let yoctui_model::MaintenanceDialog::Confirm(preview) = dialog.as_ref() else {
+            panic!("wrong readiness confirmation");
+        };
+        assert!(
+            preview
+                .arguments
+                .iter()
+                .any(|argument| argument.ends_with(": --same-tmpdir"))
+        );
+        assert!(
+            preview
+                .arguments
+                .iter()
+                .any(|argument| argument.ends_with(": core-image-minimal"))
+        );
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_sstate_workspace_discovers_exact_cleanup_candidates_before_phrase() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let candidate = fixture.root.join("sstate-cache/candidate.tgz");
+        let script = format!("#!/bin/sh\nprintf '%s\\n' '{}'\n", candidate.display());
+        let (mut app, mut coordinator, capability_request, cache, stamps) =
+            refreshed_cleanup_coordinator(&fixture, &script).await;
+        fs::write(&candidate, b"candidate").unwrap();
+        let request = SstateCleanupRequest::new(
+            cache.clone(),
+            vec![stamps],
+            vec![yoctui_model::SstateCleanupMode::Duplicates],
+            1,
+        )
+        .unwrap();
+        coordinator
+            .handle_effect(
+                &mut app,
+                Effect::Maintenance(MaintenanceEffect::PreviewCleanup {
+                    capability_request,
+                    request,
+                }),
+            )
+            .await;
+        poll_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.cleanup_preview.is_none()
+                && matches!(
+                    app.active_dialog(),
+                    Some(yoctui_model::Dialog::Maintenance(dialog))
+                        if matches!(dialog.as_ref(), yoctui_model::MaintenanceDialog::CleanupPhrase { .. })
+                )
+        })
+        .await;
+        let Some(yoctui_model::Dialog::Maintenance(dialog)) = app.active_dialog() else {
+            panic!("cleanup phrase dialog is absent");
+        };
+        let yoctui_model::MaintenanceDialog::CleanupPhrase { preview, .. } = dialog.as_ref() else {
+            panic!("wrong cleanup dialog");
+        };
+        let MaintenanceOperation::SstateCleanup(preview) = &preview.operation else {
+            panic!("wrong cleanup operation");
+        };
+        assert_eq!(preview.candidates.len(), 1);
+        assert_eq!(preview.candidates[0].path, candidate);
+        assert_eq!(
+            preview.required_phrase(),
+            format!("DELETE 1 FROM {}", cache.display())
+        );
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_sstate_workspace_preview_failure_never_opens_destructive_dialog() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let (mut app, mut coordinator, capability_request, cache, _) =
+            refreshed_cleanup_coordinator(&fixture, "#!/bin/sh\necho denied >&2\nexit 9\n").await;
+        let request = SstateCleanupRequest::new(
+            cache,
+            Vec::new(),
+            vec![yoctui_model::SstateCleanupMode::Duplicates],
+            1,
+        )
+        .unwrap();
+        coordinator
+            .handle_effect(
+                &mut app,
+                Effect::Maintenance(MaintenanceEffect::PreviewCleanup {
+                    capability_request,
+                    request,
+                }),
+            )
+            .await;
+        poll_until(&mut coordinator, &mut app, |app, coordinator| {
+            coordinator.cleanup_preview.is_none()
+                && app
+                    .notification
+                    .as_deref()
+                    .is_some_and(|message| message.contains("status Some(9)"))
+        })
+        .await;
+        assert!(app.active_dialog().is_none());
         coordinator.shutdown().await;
     }
 }

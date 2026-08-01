@@ -1483,18 +1483,18 @@ notes = "The Sstate view now maps c/d into model-owned readiness and protected-c
 id = "MAINT-SSTATE-CLI-001"
 milestone = "M6"
 title = "Route sstate readiness and cleanup forms"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-SSTATE-UI-001", "MAINT-CLI-001"]
 verify = ["cargo test -p yoctui -- maintenance_sstate_workspace", "cargo test -p yoctui-bitbake maintenance_sstate"]
-notes = "Acquire an exact cleanup candidate preview before phrase confirmation, route readiness previews through the adapter, and retain the coordinator's immediate rediscovery and revalidation before execution."
+notes = "The CLI now fresh-inspects and correlation-checks capability before reconstructing readiness into the adapter-owned exact confirmation. Cleanup runs a mutually exclusive non-destructive preview runner, bounds typed output, parses exact candidates only through the adapter, and opens the phrase dialog only after success; execution retains its second discovery and exact candidate comparison. Three CLI tests cover indexed readiness, exact candidate/phrase acquisition, and nonzero failure without destructive dialog, while adapter coverage retains empty, timeout, loss, stale, and cancellation cases. Full baseline passes without claiming live cache safety."
 
 [[task]]
 id = "MAINT-SERVICE-UI-001"
 milestone = "M6"
 title = "Add typed PR service export and import forms"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-SSTATE-CLI-001"]
