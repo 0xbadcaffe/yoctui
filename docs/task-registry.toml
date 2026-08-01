@@ -1469,15 +1469,81 @@ verify = ["cargo test -p yoctui -- maintenance_workflow"]
 notes = "A dedicated CLI coordinator now owns replaceable correlated capability/service/optional-integration inspection and one independent shell-free Maintenance runner. It reconstructs every command from a fresh capability snapshot, reruns cleanup preview discovery, revalidates exact evidence, separates local Git archive state from optional push, polls without blocking terminal or BitBake input, and isolates exact cancellation. Five CLI workflow tests cover correlated partial discovery, unavailable tools, success/output, nonzero, timeout, exact cancellation, and unowned rejection; the 27 adapter tests retain forced cancellation/loss/stale identity coverage. The complete baseline passes without claiming live Maintenance compatibility."
 
 [[task]]
-id = "MAINT-UI-CLI-001"
+id = "MAINT-SSTATE-UI-001"
 milestone = "M6"
-title = "Integrate complete Maintenance workspace"
+title = "Add typed sstate readiness and cleanup forms"
 status = "IN_PROGRESS"
 priority = 70
 required = true
-depends_on = ["MAINT-MODEL-001", "MAINT-ADAPTER-001", "MAINT-RENDER-001", "MAINT-CLI-001"]
+depends_on = ["MAINT-MODEL-001", "MAINT-RENDER-001"]
+verify = ["cargo test -p yoctui-model maintenance_sstate_workspace", "cargo test -p yoctui-app maintenance_sstate_workspace", "cargo test -p yoctui-ui maintenance_sstate_workspace"]
+notes = "Cross-layer audit found that the specified c/d shortcuts and readiness/cleanup forms are absent; existing renderer tests construct confirmed previews directly. Add model-owned bounded drafts, focus-trapped dialogs, validation, and responsive rendering without executing commands."
+
+[[task]]
+id = "MAINT-SSTATE-CLI-001"
+milestone = "M6"
+title = "Route sstate readiness and cleanup forms"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-SSTATE-UI-001", "MAINT-CLI-001"]
+verify = ["cargo test -p yoctui -- maintenance_sstate_workspace", "cargo test -p yoctui-bitbake maintenance_sstate"]
+notes = "Acquire an exact cleanup candidate preview before phrase confirmation, route readiness previews through the adapter, and retain the coordinator's immediate rediscovery and revalidation before execution."
+
+[[task]]
+id = "MAINT-SERVICE-UI-001"
+milestone = "M6"
+title = "Add typed PR service export and import forms"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-SSTATE-CLI-001"]
+verify = ["cargo test -p yoctui-model maintenance_service_workspace", "cargo test -p yoctui-app maintenance_service_workspace", "cargo test -p yoctui-ui maintenance_service_workspace"]
+notes = "Cross-layer audit found that the specified e/m shortcuts and canonical PR export/import forms are absent. Add exact endpoint/build/file context, validation, side-effect disclosure, and modal rendering."
+
+[[task]]
+id = "MAINT-SERVICE-CLI-001"
+milestone = "M6"
+title = "Route PR service export and import forms"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-SERVICE-UI-001", "MAINT-CLI-001"]
+verify = ["cargo test -p yoctui -- maintenance_service_workspace", "cargo test -p yoctui-bitbake maintenance_service"]
+notes = "Construct exact PR helper previews from confirmed typed forms, preserve separate export/import evidence behavior, and route them through the independent Maintenance runner."
+
+[[task]]
+id = "MAINT-RELEASE-UI-001"
+milestone = "M6"
+title = "Add typed Maintenance release forms"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-SERVICE-CLI-001"]
+verify = ["cargo test -p yoctui-model maintenance_release_workspace", "cargo test -p yoctui-app maintenance_release_workspace", "cargo test -p yoctui-ui maintenance_release_workspace"]
+notes = "Cross-layer audit found that the specified l/h/a shortcuts and locked-cache, build-history, and archive forms are absent. Add bounded typed drafts, exact validation, local-versus-network intent, and responsive dialogs."
+
+[[task]]
+id = "MAINT-RELEASE-CLI-001"
+milestone = "M6"
+title = "Route Maintenance release forms"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-RELEASE-UI-001", "MAINT-CLI-001"]
+verify = ["cargo test -p yoctui -- maintenance_release_workspace", "cargo test -p yoctui-bitbake maintenance_release"]
+notes = "Construct exact locked-cache, build-history, local archive, and separately confirmed push previews from typed forms and route them through the revalidating coordinator."
+
+[[task]]
+id = "MAINT-UI-CLI-001"
+milestone = "M6"
+title = "Integrate complete Maintenance workspace"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-MODEL-001", "MAINT-ADAPTER-001", "MAINT-RENDER-001", "MAINT-CLI-001", "MAINT-SSTATE-CLI-001", "MAINT-SERVICE-CLI-001", "MAINT-RELEASE-CLI-001"]
 verify = ["cargo test -p yoctui-model maintenance_workflow", "cargo test -p yoctui-app maintenance_workflow", "cargo test -p yoctui-bitbake maintenance_", "cargo test -p yoctui-ui maintenance_workflow", "cargo test -p yoctui -- maintenance_workflow"]
-notes = "Cross-layer parent gate for safe typed sstate, service-diagnostic, locked-signature, comparison, archive, and optional Maintenance workflows."
+notes = "Cross-layer audit found that rendering and execution existed but specified operation-entry forms and routes did not. This gate now depends on the atomic sstate, service, and release UI/CLI tasks before re-running the complete matrix."
 
 [[task]]
 id = "MAINT-001"
