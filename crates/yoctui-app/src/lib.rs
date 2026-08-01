@@ -13,12 +13,12 @@ use yoctui_model::{
     BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
     LayerInspectorMode, LayerRelationship, LayerRelationships, MaintenanceAction,
-    MaintenanceCleanupField, MaintenanceDialog, MaintenanceReadinessField, MaintenanceView,
-    QaAction, QaDialog, QaReportFailureKind, QaReportRequest, QaView, QemuOutputStream,
-    QemuSessionId, RecipeDependencies, Screen, SdkBuildAction, SdkKind, SdkOutputStream,
-    SdkSessionId, SecurityAction, SecurityDialog, SecurityOutputStream, SecurityView, Severity,
-    TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity, WicCapability, WicOutput,
-    WicOutputStream, WicSessionId,
+    MaintenanceCleanupField, MaintenanceDialog, MaintenanceLockedCacheField,
+    MaintenanceReadinessField, MaintenanceView, QaAction, QaDialog, QaReportFailureKind,
+    QaReportRequest, QaView, QemuOutputStream, QemuSessionId, RecipeDependencies, Screen,
+    SdkBuildAction, SdkKind, SdkOutputStream, SdkSessionId, SecurityAction, SecurityDialog,
+    SecurityOutputStream, SecurityView, Severity, TaskId, TaskInfo, TestComparison, VariableDetail,
+    VariableIdentity, WicCapability, WicOutput, WicOutputStream, WicSessionId,
 };
 
 pub fn qa_layer_capability_action(response: QaLayerCapabilityResponse) -> Action {
@@ -2063,6 +2063,9 @@ pub fn maintenance_workspace_action(
         Input::Char('m') if view == MaintenanceView::Services => maintenance(
             MaintenanceAction::OpenPrServiceForm(yoctui_model::PrServiceOperation::Import),
         ),
+        Input::Char('l') if view == MaintenanceView::Release => {
+            maintenance(MaintenanceAction::OpenLockedCacheForm)
+        }
         _ => None,
     }
 }
@@ -2180,6 +2183,51 @@ pub fn maintenance_dialog_action(dialog: &MaintenanceDialog, key: Input) -> Opti
                 _ => return None,
             }
             maintenance(MaintenanceAction::UpdatePrServiceForm(Box::new(next)))
+        }
+        MaintenanceDialog::LockedCacheForm(draft) => {
+            let mut next = (**draft).clone();
+            next.validation = None;
+            match key {
+                Input::Tab => next.field = next.field.cycle(false),
+                Input::BackTab => next.field = next.field.cycle(true),
+                Input::Char(character) if !character.is_control() => {
+                    let value = match next.field {
+                        MaintenanceLockedCacheField::LockedSignatures => {
+                            &mut next.locked_signatures
+                        }
+                        MaintenanceLockedCacheField::InputCache => &mut next.input_cache,
+                        MaintenanceLockedCacheField::OutputCache => &mut next.output_cache,
+                        MaintenanceLockedCacheField::Filter => &mut next.filter,
+                    };
+                    if value.len() + character.len_utf8()
+                        <= yoctui_model::MAX_MAINTENANCE_TEXT_BYTES
+                    {
+                        value.push(character);
+                    }
+                }
+                Input::Backspace => {
+                    match next.field {
+                        MaintenanceLockedCacheField::LockedSignatures => {
+                            next.locked_signatures.pop();
+                        }
+                        MaintenanceLockedCacheField::InputCache => {
+                            next.input_cache.pop();
+                        }
+                        MaintenanceLockedCacheField::OutputCache => {
+                            next.output_cache.pop();
+                        }
+                        MaintenanceLockedCacheField::Filter => {
+                            next.filter.pop();
+                        }
+                    };
+                }
+                Input::Enter => {
+                    return maintenance(MaintenanceAction::ConfirmLockedCacheForm(Box::new(next)));
+                }
+                Input::Esc => return maintenance(MaintenanceAction::CancelDialog),
+                _ => return None,
+            }
+            maintenance(MaintenanceAction::UpdateLockedCacheForm(Box::new(next)))
         }
         MaintenanceDialog::Confirm(preview) => match key {
             Input::Enter => maintenance(MaintenanceAction::ConfirmOperation(preview.clone())),
@@ -2884,6 +2932,55 @@ mod tests {
                 MaintenanceAction::ConfirmPrServiceForm(_)
             ))
         ));
+    }
+
+    #[test]
+    fn maintenance_release_locked_workspace_maps_only_typed_form_input() {
+        assert_eq!(
+            maintenance_workspace_action(MaintenanceView::Release, 3, Input::Char('l')),
+            Some(Action::Maintenance(MaintenanceAction::OpenLockedCacheForm))
+        );
+        assert_eq!(
+            maintenance_workspace_action(MaintenanceView::Services, 3, Input::Char('l')),
+            None
+        );
+        let metadata = yoctui_model::MaintenanceMetadata {
+            native_lsb: Some("ubuntu".into()),
+            ..yoctui_model::MaintenanceMetadata::default()
+        };
+        let draft = yoctui_model::MaintenanceLockedCacheDraft::from_metadata(&metadata).unwrap();
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::LockedCacheForm(Box::new(draft.clone())),
+                Input::Char('/'),
+            ),
+            Some(Action::Maintenance(MaintenanceAction::UpdateLockedCacheForm(next)))
+                if next.locked_signatures == "/"
+        ));
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::LockedCacheForm(Box::new(draft.clone())),
+                Input::Tab,
+            ),
+            Some(Action::Maintenance(MaintenanceAction::UpdateLockedCacheForm(next)))
+                if next.field == MaintenanceLockedCacheField::InputCache
+        ));
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::LockedCacheForm(Box::new(draft.clone())),
+                Input::Enter,
+            ),
+            Some(Action::Maintenance(
+                MaintenanceAction::ConfirmLockedCacheForm(_)
+            ))
+        ));
+        assert_eq!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::LockedCacheForm(Box::new(draft)),
+                Input::Esc,
+            ),
+            Some(Action::Maintenance(MaintenanceAction::CancelDialog))
+        );
     }
 
     #[test]

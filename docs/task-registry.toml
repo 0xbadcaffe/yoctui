@@ -1516,18 +1516,18 @@ notes = "PR export/import form effects now trigger fresh correlated capability i
 id = "MAINT-RELEASE-LOCKED-UI-001"
 milestone = "M6"
 title = "Add typed locked-signature cache form"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-SERVICE-CLI-001"]
 verify = ["cargo test -p yoctui-model maintenance_release_locked_workspace", "cargo test -p yoctui-app maintenance_release_locked_workspace", "cargo test -p yoctui-ui maintenance_release_locked_workspace"]
-notes = "Add the l route, bounded model-owned locked-signature form, authoritative native-LSB context, exact request validation, replacement warning, app input mapping, and responsive rendering without execution."
+notes = "Release l now opens a bounded model-owned four-path form only with exact generator capability and authoritative native-LSB context. Reducer validation emits one typed preview effect without execution; app input is focus-trapped; responsive rendering exposes selected fields, inline validation, read-only identity, and destructive replacement meaning. Two reducer tests, one app test, one TestBackend test, and the complete baseline pass."
 
 [[task]]
 id = "MAINT-RELEASE-HISTORY-UI-001"
 milestone = "M6"
 title = "Add typed build-history comparison form"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-RELEASE-LOCKED-UI-001"]
