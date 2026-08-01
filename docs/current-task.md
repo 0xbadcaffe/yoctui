@@ -2,72 +2,80 @@
 
 ## Task
 
-**ID:** DOC-001
-**Title:** Complete operator and compatibility documentation
+**ID:** HARDEN-ANALYSIS-001
+**Title:** Integrate hardening analysis gates
+**Status:** BLOCKED
 
 ## Objective
 
-Close the documentation parent gate only after every atomic documentation task
-and the combined installation, operator, compatibility, and deterministic
-validation surface pass together.
+Complete the deterministic Flamegraph evidence and close the final hardening
+analysis task without skipping a required tool or weakening the completion
+gate.
 
-## Required work
+## Completed evidence
 
-1. Verify `DOC-INSTALL-001`, `DOC-OPERATOR-001`, `DOC-COMPAT-001`, and
-   `DOC-VERIFY-001` are `DONE` and their committed files are present.
-2. Run the parent verification exactly; fix any disagreement rather than
-   weakening the checker or duplicating guidance.
-3. Run the baseline before closing this parent. After it is closed, run the
-   repository completion gate and preserve any external hardening or
-   live-validation blocker exactly as reported.
-4. Mark `DOC-001` `DONE`, update the implementation status, and select the next
-   eligible task. Do not claim overall completion while a required blocked task
-   remains.
+- Linux pseudo-terminal restoration passes.
+- Property and repeated process-tree stress passes.
+- ASan and LSan pass their isolated workloads.
+- Valgrind reports no definite, indirect, or possible lost bytes; the two
+  Tokio signal descriptors are explicitly recognized.
+- Deterministic release profiling produces a nonempty summary.
+- `cargo-flamegraph 0.6.13` and matching `perf 7.0.12` are installed.
 
-## Definition of done
+## External blocker
 
-- Every documentation child task is `DONE` with passing evidence.
-- README, operator guide, compatibility matrix, and local documentation gate
-  pass together.
-- Documentation status is closed without changing live-support claims.
-- Baseline verification passes and the strict completion result is recorded
-  honestly.
+The host currently reports:
+
+```sh
+cat /proc/sys/kernel/perf_event_paranoid
+# 4
+```
+
+It denies even the userspace dummy probe:
+
+```sh
+perf record --no-buildid-mmap -e dummy:u -o /tmp/yoctui-perf.data -- true
+```
+
+`./scripts/flamegraph.sh` therefore exits 2 with `perf sampling is
+unavailable`. Repository code cannot grant host perf capability.
+
+## Required external action
+
+Under the local host security policy, grant `CAP_PERFMON` to the matching perf
+binary or temporarily lower the sysctl, for example:
+
+```sh
+sudo sysctl -w kernel.perf_event_paranoid=0
+```
+
+Then continue immediately with the verification below.
 
 ## Verification
 
 ```bash
-test -s docs/compatibility.md
-test -s docs/operator-guide.md
-test -s README.md
-./scripts/check-docs.sh
+./scripts/test-terminal.sh
+./scripts/valgrind.sh
+./scripts/profile-workload.sh
+./scripts/flamegraph.sh
+test -s artifacts/flamegraph/yoctui.svg
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
-```
-
-## Post-task completion audit
-
-After the documentation task is committed, run:
-
-```bash
 ./scripts/verify-completion.sh
 ```
 
-This audit determines overall repository completion. An unrelated required
-task or external host blocker does not retroactively invalidate documentation
-that passed its registry verification, but it must remain explicit and prevents
-the repository from being declared complete.
+## Definition of done
 
-## Documentation updates
-
-- Mark `DOC-001` `DONE` only after its own verification passes.
-- Update `docs/implementation-status.md` and the milestone summary.
-- Replace this file with the next eligible task or the exact remaining blocked
-  gate reproduction.
+- The Flamegraph command succeeds with a nonempty deterministic SVG.
+- `HARDEN-ANALYSIS-001` and then `HARDEN-001` are marked `DONE` only after
+  every required command passes.
+- The strict completion gate passes without skipped tooling or live-support
+  overclaims.
 
 ## Next task
 
-`HARDEN-ANALYSIS-001` after its host perf permission is available; otherwise
-record that it remains the external completion blocker.
+No other eligible required task remains. Resume this task after the host perf
+permission changes.
