@@ -2,53 +2,53 @@
 
 ## Task
 
-**ID:** MAINT-001
-**Title:** Advanced maintenance workflows
+**ID:** HARDEN-001
+**Title:** Complete test and analysis matrix
 
 ## Objective
 
-Close the Maintenance milestone parent gate by verifying that every required
-atomic Maintenance task is complete and that the final cross-layer workflow
-matrix and repository baseline remain green together.
+Close the required hardening milestone with verified property, fuzz, stress,
+terminal, sanitizer, Valgrind, profiling, and flamegraph coverage appropriate
+to the repository.
 
 ## Required work
 
-1. Audit all dependencies of `MAINT-001` in `docs/task-registry.toml`; no parent
-   capability may be inferred from a partial child task.
-2. Run the final model, app, adapter, Ratatui TestBackend, and CLI Maintenance
-   matrix without weakening filters or tests.
-3. Run the repository baseline and preserve the documented distinction between
-   fixture verification and live Yocto compatibility.
-4. Reconcile any failure in the smallest owning task before closing the parent.
+1. Inspect the existing hardening implementation, tests, scripts, CI, and
+   documentation before adding anything.
+2. Reconcile the task against `docs/product-roadmap.md`, `docs/ui-spec.md`, and
+   `docs/architecture.md` and identify the exact remaining gaps.
+3. Because this parent outcome spans unrelated verification techniques, split
+   each missing gap into one concrete atomic child task with explicit files,
+   dependencies, definition of done, and verification commands before
+   implementation.
+4. Execute every child in dependency order, retaining platform/tool
+   limitations explicitly rather than weakening verification.
+5. Run the complete workspace test and clippy gate after all children pass.
 
 ## Definition of done
 
-- Every required Maintenance child task is `DONE` with passing verification.
-- The complete Maintenance cross-layer matrix passes.
-- The repository baseline passes.
-- `MAINT-001` and the M6 Maintenance status are marked `DONE`.
+- Every required hardening technique has verified implementation or an exact
+  documented external blocker with a follow-up validation command.
+- All atomic hardening child tasks are `DONE` or correctly `BLOCKED`.
+- Workspace tests and warning-free clippy pass.
+- `HARDEN-001` is marked `DONE` only when its required completion gate passes.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model maintenance_workflow
-cargo test -p yoctui-app maintenance_workflow
-cargo test -p yoctui-bitbake maintenance_
-cargo test -p yoctui-ui maintenance_workflow
-cargo test -p yoctui -- maintenance_workflow
-cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
+cargo fmt --all --check
 python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
 ```
 
 ## Documentation updates
 
-- Mark `MAINT-001` `DONE` only after every command passes.
-- Mark M6 Maintenance `DONE` in `docs/implementation-status.md`.
-- Replace this file with the next eligible highest-priority task.
+- Split missing independent outcomes in `docs/task-registry.toml` before code.
+- Keep `docs/implementation-status.md` synchronized with each child.
+- Replace this file with the next eligible atomic child after the split.
 
 ## Next task
 
-`HARDEN-001`
+To be selected by the hardening gap audit.
