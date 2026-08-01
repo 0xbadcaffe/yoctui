@@ -45,6 +45,24 @@ cargo +nightly fuzz run retained_logs -- -max_total_time=3600 -max_len=4096
 Crashes are written below `artifacts/fuzz/` by the smoke script. A finite fuzz
 run verifies the harness and its observed inputs; it is not an exhaustive
 safety or compatibility claim.
+
+## Stress and process trees
+
+The deterministic stress gate drives 20,000 model log events through bounded
+retention, frames and decodes 10,000 ordered protocol messages across
+irregular chunks, and cancels a real Unix child process group containing a
+TERM-resistant descendant. It checks retained counts/bytes/loss counters and
+message order directly, then requires the exact descendant PID to disappear
+within a bounded cancellation deadline.
+
+```bash
+./scripts/test-stress.sh
+YOCTUI_STRESS_ITERATIONS=10 ./scripts/test-stress.sh
+```
+
+The default is three repetitions; values from 1 through 20 are accepted. The
+process-tree case runs only on Unix, matching the runner's process-group
+implementation.
 # Completion gate
 
 `./scripts/verify-completion.sh` is intentionally strict. It verifies the clean checkout, coverage thresholds, security checks, Python static checks, deterministic profiling workloads, and Flamegraph output. It exits with status 2 and names the missing prerequisite if a required completion tool has not been installed.
