@@ -1439,18 +1439,18 @@ notes = "A detection-only adapter now reports complete, partial, and unavailable
 id = "MAINT-ADAPTER-001"
 milestone = "M6"
 title = "Close Maintenance adapter gate"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-SSTATE-ADAPTER-001", "MAINT-SERVICE-ADAPTER-001", "MAINT-RELEASE-ADAPTER-001", "MAINT-OPTIONAL-ADAPTER-001"]
 verify = ["cargo test -p yoctui-bitbake maintenance_", "cargo test -p yoctui-app maintenance_workflow"]
-notes = "Combined capability and execution boundary for every specified Maintenance family."
+notes = "The combined audit found no missing or duplicated adapter boundary requiring code changes. All 27 sstate, service, release, and optional adapter tests pass together with both app Maintenance workflow tests and the complete baseline. Canonical/revalidated identities, typed bounded evidence, shared runner outcomes, separate destructive/network operations, and detection-only optional integrations agree with the architecture; fixture coverage makes no live compatibility claim."
 
 [[task]]
 id = "MAINT-RENDER-001"
 milestone = "M6"
 title = "Render responsive Maintenance workspace"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001"]

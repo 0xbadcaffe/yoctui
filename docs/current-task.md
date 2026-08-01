@@ -2,49 +2,53 @@
 
 ## Task
 
-**ID:** MAINT-ADAPTER-001
-**Title:** Close Maintenance adapter gate
+**ID:** MAINT-RENDER-001
+**Title:** Render responsive Maintenance workspace
 
 ## Objective
 
-Verify the combined capability, identity, command, evidence, and lifecycle
-boundary across every specified Maintenance adapter family without expanding
-fixture results into unsupported live-compatibility claims.
+Render the authoritative typed Maintenance state as a first-class responsive
+workspace with four fixed views, exact capability and identity details,
+operation/session evidence, safe dialogs, themes, and narrow-terminal behavior.
 
 ## Required work
 
-1. Inspect the sstate, service, release, and optional adapter implementations
-   and their focused tests for duplicated or missing specified behavior.
-2. Verify each family returns typed bounded capability, diagnostic, preview,
-   evidence, or error values and keeps raw filesystem/process classification
-   inside `yoctui-bitbake`.
-3. Verify every executable and filesystem identity is canonical and revalidated
-   at the relevant execution or evidence boundary; unsafe, changed, missing,
-   and unsupported inputs remain explicit.
-4. Verify exact shell-free commands reuse the shared Maintenance runner with
-   bounded streams and distinct success, nonzero, timeout, cancellation,
-   rejection, and runner-loss outcomes.
-5. Verify destructive and network effects remain separately represented:
-   cleanup candidates, PR data, locked-cache replacement, archive creation,
-   and archive push must not collapse into one implicit operation.
-6. Verify optional integrations remain detection-only and do not construct or
-   run mail, upload, manifest mutation, network, or service-lifecycle actions.
-7. Add only missing aggregate regression coverage found by this audit; do not
-   duplicate already adequate focused tests or weaken any gate.
-8. Do not claim live compatibility from fixture tests.
+1. Inspect the existing shell, responsive helpers, Maintenance model, dialog
+   queue, theme roles, and TestBackend patterns before adding renderer code.
+2. Render `Sstate`, `Services`, `Release`, and `Integrations` in fixed order,
+   preserving each view's typed selection and clearly distinguishing available,
+   partial, disabled, loading, failed, and unavailable state.
+3. In wide mode render the capability/operation list plus exact Inspector
+   details; use the standard Inspector overlay in medium mode and standard pane
+   switcher in narrow mode. Too-small terminals must use the standard safe
+   message and never panic.
+4. Render canonical metadata, tool/interface identity, service endpoint and
+   process observations, exact indexed preview arguments and limitations,
+   retained bounded output, lifecycle/terminal outcomes, and evidence identity.
+   Widgets must not parse raw process or BitBake text.
+5. Render the exact shared and view-specific footer shortcuts from section 20
+   of `docs/ui-spec.md`; disabled actions stay visible with typed reasons.
+6. Render Maintenance confirmations through the existing modal queue, trapping
+   focus at 80x24. Distinguish ordinary, cleanup-phrase, destructive,
+   network-push, cancellation, and terminal outcome meaning without inventing
+   new keys or bypassing typed dialog state.
+7. Add Ratatui TestBackend coverage for every view and major lifecycle state,
+   selection/Inspector detail, modal focus, all responsive boundaries, every
+   theme, and no-color semantic distinctions.
+8. Update `docs/ui-spec.md` in this commit only if implementation reveals an
+   intentional UI behavior change; do not silently diverge from it.
 
 ## Definition of done
 
-- All four adapter families pass their focused checks together with the model
-  workflow checks.
-- No architecture or specification boundary is contradicted.
-- The complete baseline passes.
+- Maintenance renders only typed model state at all supported breakpoints.
+- Every required view, state, footer, dialog, theme, and no-color distinction
+  has focused TestBackend coverage.
+- Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake maintenance_
-cargo test -p yoctui-app maintenance_workflow
+cargo test -p yoctui-ui maintenance_workflow
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -54,11 +58,12 @@ python3 -m pytest bridge/tests
 
 ## Documentation updates
 
-- Reconcile `docs/architecture.md` only if the audit changes a boundary.
-- Mark `MAINT-ADAPTER-001` `DONE` only after verification passes.
+- Update `docs/ui-spec.md` in this commit for any intentional UI behavior change.
+- Update `docs/architecture.md` only if the rendering boundary changes.
+- Mark `MAINT-RENDER-001` `DONE` only after verification passes.
 - Update `docs/implementation-status.md`.
 - Replace this file with the next eligible highest-priority Maintenance task.
 
 ## Next task
 
-`MAINT-RENDER-001`
+`MAINT-CLI-001`
