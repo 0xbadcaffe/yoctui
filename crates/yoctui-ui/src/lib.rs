@@ -13,7 +13,10 @@ use yoctui_model::{
     DependencyPathResult, DevtoolAction, DevtoolCapability, DevtoolGitState, DevtoolStatus,
     DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget, GitFileState, ImageArtifactField,
     ImageArtifactInventoryState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode,
-    MaintenanceCapability, MaintenanceDialog, MaintenanceOperation, MaintenanceToolCapability,
+    MaintenanceCapability, MaintenanceCapabilitySnapshot, MaintenanceDialog,
+    MaintenanceIntegrationDiagnostics, MaintenanceIntegrationsSnapshot, MaintenanceOperation,
+    MaintenanceOperationPreview, MaintenanceServiceDiagnostics, MaintenanceSessionStatus,
+    MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView,
     PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PreviewKind,
     QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus, QaLayerCapability,
     QaLayerRunCapability, QaOutputStream, QaReportFailureKind, QaReportInventoryState,
@@ -489,9 +492,20 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Bbmask => {
             "e edit BBMASK | Enter preview/confirm | Esc cancel/dashboard | v configuration | ? help | q quit"
         }
-        Screen::Maintenance => {
-            "[/] view | r refresh | ↑/↓ select | x cancel | o evidence | S signatures"
-        }
+        Screen::Maintenance => match app.maintenance.view {
+            MaintenanceView::Sstate => {
+                "[ ] view | r refresh | Enter inspect | x cancel | o open evidence | S signatures | c check | d cleanup"
+            }
+            MaintenanceView::Services => {
+                "[ ] view | r refresh | Enter inspect | x cancel | o open evidence | S signatures | e PR export | m PR import"
+            }
+            MaintenanceView::Release => {
+                "[ ] view | r refresh | Enter inspect | x cancel | o open evidence | S signatures | l locked cache | h compare | a archive"
+            }
+            MaintenanceView::Integrations => {
+                "[ ] view | r refresh | Enter inspect | x cancel | o open evidence | S signatures | detection/inspection only"
+            }
+        },
         Screen::Logs => {
             "↑/↓ select | ←/→ horizontal | f follow | w wrap | s severity | R/T/B filters | / search | n/N match | o source | C copy"
         }
@@ -1836,10 +1850,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Testing => testing_inspector_text(app),
         Screen::Security => security_inspector_text(app),
         Screen::Qa => qa_inspector_text(app),
-        Screen::Maintenance => format!(
-            "View: {:?}\nCapability: {:?}\nServices: {:?}\n\nTyped Maintenance details will appear here.",
-            app.maintenance.view, app.maintenance.capability, app.maintenance.services
-        ),
+        Screen::Maintenance => maintenance_inspector_text(app),
         _ => format!(
             "Target: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
             app.build.target.as_deref().unwrap_or("not selected"),
@@ -8397,89 +8408,682 @@ fn bbmask(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn maintenance_workspace(frame: &mut Frame, app: &App, area: Rect) {
-    let mut lines = vec![
-        format!(
-            "[{}]  [{}]  [{}]  [{}]",
-            if app.maintenance.view == yoctui_model::MaintenanceView::Sstate {
-                "Sstate"
+    let palette = ThemePalette::for_app(app);
+    let mut lines = vec![Line::from(
+        [
+            MaintenanceView::Sstate,
+            MaintenanceView::Services,
+            MaintenanceView::Release,
+            MaintenanceView::Integrations,
+        ]
+        .into_iter()
+        .flat_map(|view| {
+            let style = if app.maintenance.view == view {
+                palette.role(palette.accent, Modifier::BOLD | Modifier::UNDERLINED)
             } else {
-                "sstate"
-            },
-            if app.maintenance.view == yoctui_model::MaintenanceView::Services {
-                "Services"
-            } else {
-                "services"
-            },
-            if app.maintenance.view == yoctui_model::MaintenanceView::Release {
-                "Release"
-            } else {
-                "release"
-            },
-            if app.maintenance.view == yoctui_model::MaintenanceView::Integrations {
-                "Integrations"
-            } else {
-                "integrations"
-            },
-        ),
-        String::new(),
-    ];
+                palette.role(palette.disabled, Modifier::DIM)
+            };
+            [
+                Span::styled(format!(" {} ", maintenance_view_label(view)), style),
+                Span::raw(" "),
+            ]
+        })
+        .collect::<Vec<_>>(),
+    )];
+    lines.push(Line::from(""));
     match &app.maintenance.capability {
-        MaintenanceCapability::NotInspected => lines.push("Capability not inspected.".into()),
-        MaintenanceCapability::Loading(request) => {
-            lines.push(format!("Inspecting capability (request {request})…"))
+        MaintenanceCapability::NotInspected => lines.push(Line::styled(
+            "Capability not inspected; press r to inspect.",
+            palette.role(palette.disabled, Modifier::DIM),
+        )),
+        MaintenanceCapability::Loading(request) => lines.push(Line::styled(
+            format!("Inspecting capability (request {request})…"),
+            palette.role(palette.info, Modifier::BOLD),
+        )),
+        MaintenanceCapability::Available { snapshot, .. } => {
+            maintenance_capability_lines(app, snapshot, &mut lines, palette)
         }
-        MaintenanceCapability::Available { snapshot, .. }
-        | MaintenanceCapability::Partial { snapshot, .. } => {
-            for (index, capability) in snapshot.tools.iter().enumerate() {
-                let text = match capability {
-                    MaintenanceToolCapability::Available {
-                        tool, executable, ..
-                    } => format!("{tool:?}  {}", executable.path.display()),
-                    MaintenanceToolCapability::Unavailable { tool, reason } => {
-                        format!("{tool:?}  unavailable: {reason}")
-                    }
-                };
-                lines.push(format!(
-                    "{} {text}",
-                    if index == app.maintenance.selection() {
-                        "▶"
-                    } else {
-                        " "
-                    }
-                ));
+        MaintenanceCapability::Partial {
+            snapshot,
+            limitations,
+            ..
+        } => {
+            lines.push(Line::styled(
+                format!("Partial capability: {} limitation(s)", limitations.len()),
+                palette.role(palette.warning, Modifier::BOLD),
+            ));
+            maintenance_capability_lines(app, snapshot, &mut lines, palette);
+        }
+        MaintenanceCapability::Failed { message, .. } => lines.push(Line::styled(
+            format!("Capability inspection failed: {message}"),
+            palette.role(palette.error, Modifier::BOLD),
+        )),
+    }
+    if app.maintenance.view == MaintenanceView::Services {
+        lines.push(Line::from(""));
+        lines.push(Line::styled("Service diagnostics", palette.focus()));
+        match &app.maintenance.services {
+            MaintenanceServiceDiagnostics::NotInspected => lines.push(Line::raw("not inspected")),
+            MaintenanceServiceDiagnostics::Loading(request) => {
+                lines.push(Line::raw(format!("loading request {request}")))
             }
+            MaintenanceServiceDiagnostics::Available { services, .. }
+            | MaintenanceServiceDiagnostics::Partial { services, .. } => {
+                for service in services {
+                    lines.push(Line::styled(
+                        format!(
+                            "  {:?}: {:?} ({} endpoint(s), {} process(es))",
+                            service.kind,
+                            service.state,
+                            service.endpoints.len(),
+                            service.process_evidence.len()
+                        ),
+                        service_state_style(app, service.state),
+                    ));
+                }
+            }
+            MaintenanceServiceDiagnostics::Failed { message, .. } => lines.push(Line::styled(
+                format!("failed: {message}"),
+                palette.role(palette.error, Modifier::BOLD),
+            )),
         }
-        MaintenanceCapability::Failed { message, .. } => {
-            lines.push(format!("Capability inspection failed: {message}"))
+    }
+    if app.maintenance.view == MaintenanceView::Integrations {
+        lines.push(Line::from(""));
+        lines.push(Line::styled("Integration readiness", palette.focus()));
+        match &app.maintenance.integrations {
+            MaintenanceIntegrationDiagnostics::NotInspected => {
+                lines.push(Line::raw("not inspected"))
+            }
+            MaintenanceIntegrationDiagnostics::Loading(request) => {
+                lines.push(Line::raw(format!("loading request {request}")))
+            }
+            MaintenanceIntegrationDiagnostics::Available { snapshot, .. }
+            | MaintenanceIntegrationDiagnostics::Partial { snapshot, .. } => {
+                for (label, state) in maintenance_integration_rows(snapshot) {
+                    lines.push(Line::styled(
+                        format!("  {label}: {state:?}"),
+                        optional_state_style(app, state),
+                    ));
+                }
+            }
+            MaintenanceIntegrationDiagnostics::Failed { message, .. } => lines.push(Line::styled(
+                format!("failed: {message}"),
+                palette.role(palette.error, Modifier::BOLD),
+            )),
         }
     }
     if let Some(session) = app.maintenance.sessions.back() {
-        lines.push(String::new());
-        lines.push(format!("Session {}: {:?}", session.id.0, session.status));
+        lines.push(Line::from(""));
+        lines.push(Line::styled(
+            format!(
+                "Session {}: {:?}  exit {}  dropped {}",
+                session.id.0,
+                session.status,
+                session
+                    .exit_code
+                    .map_or_else(|| "--".into(), |value| value.to_string()),
+                session.dropped_lines,
+            ),
+            maintenance_session_style(app, session.status),
+        ));
+        for output in session.output.iter().rev().take(3).rev() {
+            lines.push(Line::raw(format!("  {:?}: {}", output.stream, output.text)));
+        }
     }
     frame.render_widget(
-        Paragraph::new(lines.join("\n"))
-            .block(Block::default().title("Maintenance").borders(Borders::ALL))
+        Paragraph::new(Text::from(lines))
+            .block(pane_block(
+                app,
+                &format!(
+                    "Maintenance · {}",
+                    maintenance_view_label(app.maintenance.view)
+                ),
+                app.focus == FocusTarget::Workspace,
+            ))
             .wrap(Wrap { trim: false }),
         area,
     );
 }
 
-fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, area: Rect) {
-    let (title, body) = match dialog {
-        MaintenanceDialog::Confirm(preview) => (
-            "Confirm Maintenance operation",
+fn maintenance_capability_lines(
+    app: &App,
+    snapshot: &MaintenanceCapabilitySnapshot,
+    lines: &mut Vec<Line<'static>>,
+    palette: ThemePalette,
+) {
+    for (index, tool) in maintenance_tools_for_view(app.maintenance.view)
+        .iter()
+        .enumerate()
+    {
+        let (text, style) = match snapshot.capability(*tool) {
+            Some(MaintenanceToolCapability::Available {
+                executable,
+                interface,
+                ..
+            }) => (
+                format!(
+                    "{}  available ({})  {}",
+                    maintenance_tool_label(*tool),
+                    maintenance_interface_label(*interface),
+                    executable.path.display()
+                ),
+                palette.role(palette.success, Modifier::BOLD),
+            ),
+            Some(MaintenanceToolCapability::Unavailable { reason, .. }) => (
+                format!("{}  unavailable: {reason}", maintenance_tool_label(*tool)),
+                palette.role(palette.disabled, Modifier::DIM),
+            ),
+            None => (
+                format!(
+                    "{}  unavailable: capability not reported",
+                    maintenance_tool_label(*tool)
+                ),
+                palette.role(palette.disabled, Modifier::DIM),
+            ),
+        };
+        let selected = index == app.maintenance.selection();
+        lines.push(Line::styled(
+            format!("{} {text}", if selected { "▶" } else { " " }),
+            if selected {
+                selected_style(app, true)
+            } else {
+                style
+            },
+        ));
+    }
+}
+
+fn maintenance_inspector_text(app: &App) -> String {
+    let mut sections = vec![format!(
+        "View: {}",
+        maintenance_view_label(app.maintenance.view)
+    )];
+    match &app.maintenance.capability {
+        MaintenanceCapability::NotInspected => sections.push("Capability: not inspected".into()),
+        MaintenanceCapability::Loading(request) => {
+            sections.push(format!("Capability: loading request {request}"));
+        }
+        MaintenanceCapability::Failed { request, message } => {
+            sections.push(format!("Capability request {request} failed: {message}"));
+        }
+        MaintenanceCapability::Available { request, snapshot }
+        | MaintenanceCapability::Partial {
+            request, snapshot, ..
+        } => {
+            sections.push(format!("Capability request: {request}"));
+            sections.push(maintenance_metadata_text(snapshot));
+            if let Some(tool) =
+                maintenance_tools_for_view(app.maintenance.view).get(app.maintenance.selection())
+            {
+                sections.push(maintenance_tool_detail(snapshot, *tool));
+            }
+            if !snapshot.limitations.is_empty() {
+                sections.push(format!(
+                    "Capability limitations:\n- {}",
+                    snapshot.limitations.join("\n- ")
+                ));
+            }
+        }
+    }
+    if app.maintenance.view == MaintenanceView::Services {
+        sections.push(maintenance_services_text(&app.maintenance.services));
+    }
+    if app.maintenance.view == MaintenanceView::Integrations {
+        sections.push(maintenance_integrations_text(&app.maintenance.integrations));
+    }
+    if let Some(preview) = app.maintenance.pending.as_ref() {
+        sections.push(maintenance_preview_text(preview));
+    }
+    if let Some(session) = app.maintenance.sessions.back() {
+        let output = session
+            .output
+            .iter()
+            .map(|line| format!("{:?}: {}", line.stream, line.text))
+            .collect::<Vec<_>>()
+            .join("\n");
+        sections.push(format!(
+            "Latest session {}\nOperation: {}\nStatus: {:?}\nStarted: {}\nFinished: {}\nExit: {}\nDropped lines: {}\nMessage: {}\nOutput:\n{}",
+            session.id.0,
+            maintenance_operation_label(&session.preview.operation),
+            session.status,
+            session
+                .started_at
+                .map(timestamp_text)
+                .unwrap_or_else(|| "not started".into()),
+            session
+                .finished_at
+                .map(timestamp_text)
+                .unwrap_or_else(|| "not finished".into()),
+            session
+                .exit_code
+                .map_or_else(|| "unavailable".into(), |value| value.to_string()),
+            session.dropped_lines,
+            session.message.as_deref().unwrap_or("none"),
+            if output.is_empty() { "none" } else { &output },
+        ));
+    }
+    if let Some(evidence) = app.maintenance.selected_evidence() {
+        sections.push(format!(
+            "Selected evidence\nLabel: {}\nPath: {}\nBytes: {}\nModified: {}",
+            evidence.label,
+            evidence.identity.path.display(),
+            evidence.identity.byte_size,
+            timestamp_text(evidence.identity.modified_at),
+        ));
+    } else {
+        sections.push("Evidence: none".into());
+    }
+    sections.join("\n\n")
+}
+
+fn maintenance_metadata_text(snapshot: &MaintenanceCapabilitySnapshot) -> String {
+    let metadata = &snapshot.metadata;
+    let path = |value: Option<&std::path::PathBuf>| {
+        value.map_or_else(|| "unavailable".into(), |path| path.display().to_string())
+    };
+    let stamps = if metadata.stamps_dirs.is_empty() {
+        "unavailable".into()
+    } else {
+        metadata
+            .stamps_dirs
+            .iter()
+            .map(|value| value.display().to_string())
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    format!(
+        "Metadata\nBuild: {}\nSstate: {}\nTmp: {}\nStamps: {}\nBuild history: {}\nPR service: {}\nHash service: {}\nHash upstream: {}\nSignature handler: {}\nNative LSB: {}\nMachine: {}\nDistro: {}",
+        path(metadata.build_dir.as_ref()),
+        path(metadata.sstate_dir.as_ref()),
+        path(metadata.tmp_dir.as_ref()),
+        stamps,
+        path(metadata.buildhistory_dir.as_ref()),
+        metadata.prserv_host.as_deref().unwrap_or("unavailable"),
+        metadata.hashserve.as_deref().unwrap_or("unavailable"),
+        metadata
+            .hashserve_upstream
+            .as_deref()
+            .unwrap_or("unavailable"),
+        metadata
+            .signature_handler
+            .as_deref()
+            .unwrap_or("unavailable"),
+        metadata.native_lsb.as_deref().unwrap_or("unavailable"),
+        metadata.machine.as_deref().unwrap_or("unavailable"),
+        metadata.distro.as_deref().unwrap_or("unavailable"),
+    )
+}
+
+fn maintenance_tool_detail(
+    snapshot: &MaintenanceCapabilitySnapshot,
+    tool: MaintenanceTool,
+) -> String {
+    match snapshot.capability(tool) {
+        Some(MaintenanceToolCapability::Available {
+            executable,
+            interface,
+            ..
+        }) => format!(
+            "Selected capability\nTool: {}\nState: available\nInterface: {}\nExecutable: {}\nBytes: {}\nModified: {}",
+            maintenance_tool_label(tool),
+            maintenance_interface_label(*interface),
+            executable.path.display(),
+            executable.byte_size,
+            timestamp_text(executable.modified_at),
+        ),
+        Some(MaintenanceToolCapability::Unavailable { reason, .. }) => format!(
+            "Selected capability\nTool: {}\nState: unavailable\nReason: {reason}",
+            maintenance_tool_label(tool)
+        ),
+        None => format!(
+            "Selected capability\nTool: {}\nState: unavailable\nReason: capability not reported",
+            maintenance_tool_label(tool)
+        ),
+    }
+}
+
+fn maintenance_services_text(state: &MaintenanceServiceDiagnostics) -> String {
+    match state {
+        MaintenanceServiceDiagnostics::NotInspected => "Service diagnostics: not inspected".into(),
+        MaintenanceServiceDiagnostics::Loading(request) => {
+            format!("Service diagnostics: loading request {request}")
+        }
+        MaintenanceServiceDiagnostics::Failed { request, message } => {
+            format!("Service diagnostics request {request} failed: {message}")
+        }
+        MaintenanceServiceDiagnostics::Available { request, services } => {
+            maintenance_service_records(*request, services, &[])
+        }
+        MaintenanceServiceDiagnostics::Partial {
+            request,
+            services,
+            limitations,
+        } => maintenance_service_records(*request, services, limitations),
+    }
+}
+
+fn maintenance_service_records(
+    request: u64,
+    services: &[yoctui_model::ServiceDiagnostic],
+    limitations: &[String],
+) -> String {
+    let details = services
+        .iter()
+        .map(|service| {
+            let endpoints = service
+                .endpoints
+                .iter()
+                .map(|endpoint| {
+                    format!(
+                        "  {:?} {} [{:?}, {:?}]{}",
+                        endpoint.role,
+                        endpoint.value,
+                        endpoint.location,
+                        endpoint.reachability,
+                        endpoint
+                            .limitation
+                            .as_deref()
+                            .map_or_else(String::new, |value| format!(" — {value}")),
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            let processes = service
+                .process_evidence
+                .iter()
+                .map(|process| {
+                    format!(
+                        "  PID {} {} (observational)",
+                        process.pid, process.executable
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
             format!(
-                "Operation {}\nKind: {}\nDestructive: {}\n\nIndexed native vector:\n{}\n\nEnter confirms | Esc cancels",
+                "{:?}: {:?}\nEndpoints:\n{}\nProcesses:\n{}\nLimitations:\n- {}",
+                service.kind,
+                service.state,
+                if endpoints.is_empty() {
+                    "  none"
+                } else {
+                    &endpoints
+                },
+                if processes.is_empty() {
+                    "  none"
+                } else {
+                    &processes
+                },
+                if service.limitations.is_empty() {
+                    "none".into()
+                } else {
+                    service.limitations.join("\n- ")
+                }
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n");
+    format!(
+        "Service diagnostics request {request}\n{details}\nInspection limitations:\n- {}",
+        if limitations.is_empty() {
+            "none".into()
+        } else {
+            limitations.join("\n- ")
+        }
+    )
+}
+
+fn maintenance_integrations_text(state: &MaintenanceIntegrationDiagnostics) -> String {
+    match state {
+        MaintenanceIntegrationDiagnostics::NotInspected => {
+            "Integration details: not inspected".into()
+        }
+        MaintenanceIntegrationDiagnostics::Loading(request) => {
+            format!("Integration details: loading request {request}")
+        }
+        MaintenanceIntegrationDiagnostics::Failed { request, message } => {
+            format!("Integration request {request} failed: {message}")
+        }
+        MaintenanceIntegrationDiagnostics::Available { request, snapshot }
+        | MaintenanceIntegrationDiagnostics::Partial {
+            request, snapshot, ..
+        } => {
+            let limitations = snapshot
+                .limitations
+                .iter()
+                .chain(snapshot.pull_request.limitations.iter())
+                .chain(snapshot.error_report.limitations.iter())
+                .chain(snapshot.repo_manifest.limitations.iter())
+                .chain(snapshot.toaster.limitations.iter())
+                .cloned()
+                .collect::<Vec<_>>();
+            format!(
+                "Integration request {request}\nPull request: {:?}\n  create: {}\n  send: {}\n  worktree: {}\n  HEAD: {}\nError report: {:?}\n  helper: {}\n  candidate: {}\nRepo manifest: {:?}\n  repo: {}\n  workspace: {}\n  manifest: {}\nToaster: {:?}\n  executable: {}\n  configurations: {}\n  observed processes: {}\n  process evidence is observational only",
+                snapshot.pull_request.state,
+                optional_file_path(snapshot.pull_request.create_helper.as_ref()),
+                optional_file_path(snapshot.pull_request.send_helper.as_ref()),
+                snapshot.pull_request.worktree.as_ref().map_or_else(
+                    || "unavailable".into(),
+                    |value| value.root.path.display().to_string()
+                ),
+                snapshot.pull_request.worktree.as_ref().map_or_else(
+                    || "unavailable".into(),
+                    |value| value.head.path.display().to_string()
+                ),
+                snapshot.error_report.state,
+                optional_file_path(snapshot.error_report.helper.as_ref()),
+                optional_file_path(snapshot.error_report.candidate_report.as_ref()),
+                snapshot.repo_manifest.state,
+                optional_file_path(snapshot.repo_manifest.repo_executable.as_ref()),
+                snapshot.repo_manifest.workspace.as_ref().map_or_else(
+                    || "unavailable".into(),
+                    |value| value.path.display().to_string()
+                ),
+                optional_file_path(snapshot.repo_manifest.manifest.as_ref()),
+                snapshot.toaster.state,
+                optional_file_path(snapshot.toaster.executable.as_ref()),
+                if snapshot.toaster.configurations.is_empty() {
+                    "none".into()
+                } else {
+                    snapshot
+                        .toaster
+                        .configurations
+                        .iter()
+                        .map(|value| value.path.display().to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                },
+                if snapshot.toaster.observed_processes.is_empty() {
+                    "none".into()
+                } else {
+                    snapshot
+                        .toaster
+                        .observed_processes
+                        .iter()
+                        .map(|value| format!("{}:{}", value.pid, value.executable))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                },
+            ) + &format!(
+                "\nLimitations:\n- {}",
+                if limitations.is_empty() {
+                    "none".into()
+                } else {
+                    limitations.join("\n- ")
+                }
+            )
+        }
+    }
+}
+
+fn optional_file_path(identity: Option<&yoctui_model::MaintenanceFileIdentity>) -> String {
+    identity.map_or_else(
+        || "unavailable".into(),
+        |value| value.path.display().to_string(),
+    )
+}
+
+fn maintenance_preview_text(preview: &MaintenanceOperationPreview) -> String {
+    format!(
+        "Pending preview {}\nOperation: {}\nDestructive: {}\nNetwork: {}\nIndexed native vector:\n{}\nLimitations:\n- {}",
+        preview.id,
+        maintenance_operation_label(&preview.operation),
+        preview.operation.destructive(),
+        preview.operation.network_side_effect(),
+        indexed_arguments(&preview.arguments),
+        if preview.limitations.is_empty() {
+            "none".into()
+        } else {
+            preview.limitations.join("\n- ")
+        },
+    )
+}
+
+fn maintenance_tools_for_view(view: MaintenanceView) -> &'static [MaintenanceTool] {
+    match view {
+        MaintenanceView::Sstate => &[
+            MaintenanceTool::OeCheckSstate,
+            MaintenanceTool::SstateCacheManagement,
+        ],
+        MaintenanceView::Services => &[MaintenanceTool::PrServiceTool],
+        MaintenanceView::Release => &[
+            MaintenanceTool::LockedSignatureCache,
+            MaintenanceTool::BuildHistoryDiff,
+            MaintenanceTool::BuildCompare,
+            MaintenanceTool::GitArchive,
+        ],
+        MaintenanceView::Integrations => &[
+            MaintenanceTool::CreatePullRequest,
+            MaintenanceTool::SendPullRequest,
+            MaintenanceTool::SendErrorReport,
+            MaintenanceTool::Toaster,
+        ],
+    }
+}
+
+fn maintenance_view_label(view: MaintenanceView) -> &'static str {
+    match view {
+        MaintenanceView::Sstate => "Sstate",
+        MaintenanceView::Services => "Services",
+        MaintenanceView::Release => "Release",
+        MaintenanceView::Integrations => "Integrations",
+    }
+}
+
+fn maintenance_tool_label(tool: MaintenanceTool) -> &'static str {
+    match tool {
+        MaintenanceTool::OeCheckSstate => "oe-check-sstate",
+        MaintenanceTool::SstateCacheManagement => "sstate cache management",
+        MaintenanceTool::PrServiceTool => "bitbake-prserv-tool",
+        MaintenanceTool::LockedSignatureCache => "gen-lockedsig-cache",
+        MaintenanceTool::BuildHistoryDiff => "buildhistory-diff",
+        MaintenanceTool::BuildCompare => "build-compare",
+        MaintenanceTool::GitArchive => "oe-git-archive",
+        MaintenanceTool::CreatePullRequest => "create-pull-request",
+        MaintenanceTool::SendPullRequest => "send-pull-request",
+        MaintenanceTool::SendErrorReport => "send-error-report",
+        MaintenanceTool::Toaster => "Toaster",
+    }
+}
+
+fn maintenance_interface_label(interface: MaintenanceToolInterface) -> &'static str {
+    match interface {
+        MaintenanceToolInterface::Native => "native",
+        MaintenanceToolInterface::SstatePython => "current Python",
+        MaintenanceToolInterface::SstateLegacyShell => "legacy shell",
+        MaintenanceToolInterface::DetectionOnly => "detection only",
+    }
+}
+
+fn maintenance_integration_rows(
+    snapshot: &MaintenanceIntegrationsSnapshot,
+) -> [(&'static str, yoctui_model::OptionalIntegrationState); 4] {
+    [
+        ("Pull request", snapshot.pull_request.state),
+        ("Error report", snapshot.error_report.state),
+        ("Repo manifest", snapshot.repo_manifest.state),
+        ("Toaster", snapshot.toaster.state),
+    ]
+}
+
+fn service_state_style(app: &App, state: yoctui_model::ServiceState) -> Style {
+    let palette = ThemePalette::for_app(app);
+    match state {
+        yoctui_model::ServiceState::Reachable => palette.role(palette.success, Modifier::BOLD),
+        yoctui_model::ServiceState::Unreachable => palette.role(palette.error, Modifier::BOLD),
+        yoctui_model::ServiceState::Partial => palette.role(palette.warning, Modifier::BOLD),
+        yoctui_model::ServiceState::Configured => palette.role(palette.info, Modifier::BOLD),
+        yoctui_model::ServiceState::Disabled | yoctui_model::ServiceState::Unavailable => {
+            palette.role(palette.disabled, Modifier::DIM)
+        }
+    }
+}
+
+fn optional_state_style(app: &App, state: yoctui_model::OptionalIntegrationState) -> Style {
+    let palette = ThemePalette::for_app(app);
+    match state {
+        yoctui_model::OptionalIntegrationState::Available => {
+            palette.role(palette.success, Modifier::BOLD)
+        }
+        yoctui_model::OptionalIntegrationState::Partial => {
+            palette.role(palette.warning, Modifier::BOLD)
+        }
+        yoctui_model::OptionalIntegrationState::Unavailable => {
+            palette.role(palette.disabled, Modifier::DIM)
+        }
+    }
+}
+
+fn maintenance_session_style(app: &App, status: MaintenanceSessionStatus) -> Style {
+    let palette = ThemePalette::for_app(app);
+    match status {
+        MaintenanceSessionStatus::Succeeded => palette.role(palette.success, Modifier::BOLD),
+        MaintenanceSessionStatus::Failed
+        | MaintenanceSessionStatus::TimedOut
+        | MaintenanceSessionStatus::Lost => palette.role(palette.error, Modifier::BOLD),
+        MaintenanceSessionStatus::Cancelled => palette.role(palette.warning, Modifier::BOLD),
+        MaintenanceSessionStatus::Queued
+        | MaintenanceSessionStatus::Running
+        | MaintenanceSessionStatus::Cancelling => palette.role(palette.info, Modifier::BOLD),
+    }
+}
+
+fn indexed_arguments(arguments: &[String]) -> String {
+    arguments
+        .iter()
+        .enumerate()
+        .map(|(index, argument)| format!("[{index}] {argument}"))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let (title, body, style) = match dialog {
+        MaintenanceDialog::Confirm(preview) => (
+            if preview.operation.destructive() {
+                "Confirm destructive Maintenance operation"
+            } else {
+                "Confirm Maintenance operation"
+            },
+            format!(
+                "Operation {}\nKind: {}\nDestructive: {}\nNetwork: {}\n\nIndexed native vector:\n{}\n\nLimitations:\n- {}\n\nEnter confirms | Esc cancels",
                 preview.id,
                 maintenance_operation_label(&preview.operation),
-                if preview.operation.destructive() {
-                    "yes"
+                preview.operation.destructive(),
+                preview.operation.network_side_effect(),
+                indexed_arguments(&preview.arguments),
+                if preview.limitations.is_empty() {
+                    "none".into()
                 } else {
-                    "no"
+                    preview.limitations.join("\n- ")
                 },
-                preview.arguments.join("\n")
             ),
+            if preview.operation.destructive() {
+                palette.role(palette.warning, Modifier::BOLD)
+            } else {
+                palette.role(palette.info, Modifier::BOLD)
+            },
         ),
         MaintenanceDialog::CleanupPhrase { preview, input } => (
             "Confirm protected sstate cleanup",
@@ -8487,14 +9091,16 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
                 "Type exactly:\n{}\n\n{input}_\n\nTyping alone cannot delete files.\nEnter continues | Esc cancels",
                 preview.operation.cleanup_phrase().unwrap_or_default()
             ),
+            palette.role(palette.error, Modifier::BOLD),
         ),
         MaintenanceDialog::ConfirmNetworkPush(preview) => (
             "Confirm network push",
             format!(
                 "Operation {} requests a separately confirmed remote push.\n\n{}\n\nEnter confirms | Esc cancels",
                 preview.id,
-                preview.arguments.join("\n")
+                indexed_arguments(&preview.arguments)
             ),
+            palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED),
         ),
         MaintenanceDialog::ConfirmCancellation(id) => (
             "Cancel Maintenance operation",
@@ -8502,6 +9108,7 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
                 "Cancel exact session {}?\nA cleanup may leave a partially cleaned cache.\n\nEnter confirms | Esc keeps running",
                 id.0
             ),
+            palette.role(palette.warning, Modifier::BOLD),
         ),
     };
     let width = 78.min(area.width.saturating_sub(2));
@@ -8515,7 +9122,12 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
     clear_popup(frame, app, popup);
     frame.render_widget(
         Paragraph::new(body)
-            .block(Block::default().title(title).borders(Borders::ALL))
+            .block(
+                Block::default()
+                    .title(title)
+                    .borders(Borders::ALL)
+                    .border_style(style),
+            )
             .wrap(Wrap { trim: false }),
         popup,
     );
@@ -13394,6 +14006,451 @@ mod tests {
                 let output = rendered_text(&app, width, height);
                 assert!(output.contains(expected), "{width}: {output}");
             }
+        }
+    }
+
+    fn maintenance_identity(path: &str) -> yoctui_model::MaintenanceFileIdentity {
+        yoctui_model::MaintenanceFileIdentity::new(path.into(), 42, UNIX_EPOCH).unwrap()
+    }
+
+    fn maintenance_preview(id: u64) -> yoctui_model::MaintenanceOperationPreview {
+        yoctui_model::MaintenanceOperationPreview::new(
+            id,
+            7,
+            yoctui_model::MaintenanceOperation::SstateReadiness(
+                yoctui_model::SstateReadinessRequest::new(
+                    vec!["core-image-minimal".into()],
+                    yoctui_model::SstateReadinessMode::IsolatedTmpdir,
+                    Some("/build/sstate-report.txt".into()),
+                    None,
+                    60,
+                )
+                .unwrap(),
+            ),
+            vec![
+                "/tools/oe-check-sstate".into(),
+                "--output".into(),
+                "/build/sstate-report.txt".into(),
+                "core-image-minimal".into(),
+            ],
+            vec!["fixture evidence is not live compatibility".into()],
+        )
+        .unwrap()
+    }
+
+    fn maintenance_workflow_ui_app() -> App {
+        let mut app = App::new(100, 10_000);
+        app.screen = Screen::Maintenance;
+        app.focus = FocusTarget::Workspace;
+        let available = |tool, path| MaintenanceToolCapability::Available {
+            tool,
+            executable: maintenance_identity(path),
+            interface: if matches!(
+                tool,
+                MaintenanceTool::CreatePullRequest
+                    | MaintenanceTool::SendPullRequest
+                    | MaintenanceTool::SendErrorReport
+                    | MaintenanceTool::Toaster
+            ) {
+                MaintenanceToolInterface::DetectionOnly
+            } else {
+                MaintenanceToolInterface::Native
+            },
+        };
+        let snapshot = yoctui_model::MaintenanceCapabilitySnapshot::new(
+            yoctui_model::MaintenanceMetadata::new(yoctui_model::MaintenanceMetadata {
+                build_dir: Some("/build".into()),
+                sstate_dir: Some("/cache/sstate".into()),
+                tmp_dir: Some("/build/tmp".into()),
+                stamps_dirs: vec!["/build/tmp/stamps".into()],
+                buildhistory_dir: Some("/build/buildhistory".into()),
+                prserv_host: Some("localhost:8585".into()),
+                hashserve: Some("auto".into()),
+                hashserve_upstream: None,
+                signature_handler: Some("OEEquivHash".into()),
+                native_lsb: Some("ubuntu-24.04".into()),
+                machine: Some("qemux86-64".into()),
+                distro: Some("poky".into()),
+            })
+            .unwrap(),
+            vec![
+                available(MaintenanceTool::OeCheckSstate, "/tools/oe-check-sstate"),
+                available(
+                    MaintenanceTool::SstateCacheManagement,
+                    "/tools/sstate-cache-management.py",
+                ),
+                available(MaintenanceTool::PrServiceTool, "/tools/bitbake-prserv-tool"),
+                available(
+                    MaintenanceTool::LockedSignatureCache,
+                    "/tools/gen-lockedsig-cache",
+                ),
+                available(
+                    MaintenanceTool::BuildHistoryDiff,
+                    "/tools/buildhistory-diff",
+                ),
+                MaintenanceToolCapability::Unavailable {
+                    tool: MaintenanceTool::BuildCompare,
+                    reason: "distinct optional interface is unsupported".into(),
+                },
+                available(MaintenanceTool::GitArchive, "/tools/oe-git-archive"),
+                available(
+                    MaintenanceTool::CreatePullRequest,
+                    "/tools/create-pull-request",
+                ),
+                available(MaintenanceTool::SendPullRequest, "/tools/send-pull-request"),
+                available(MaintenanceTool::SendErrorReport, "/tools/send-error-report"),
+                available(MaintenanceTool::Toaster, "/tools/toaster"),
+            ],
+            vec!["bounded fixture snapshot".into()],
+        )
+        .unwrap();
+        app.maintenance.capability = MaintenanceCapability::Partial {
+            request: 7,
+            limitations: snapshot.limitations.clone(),
+            snapshot,
+        };
+
+        let endpoint = yoctui_model::ServiceEndpointDiagnostic::new(
+            yoctui_model::ServiceEndpointRole::Primary,
+            "localhost:8585".into(),
+            yoctui_model::ServiceLocation::Local,
+            yoctui_model::ServiceReachability::Reachable,
+            None,
+        )
+        .unwrap();
+        let service = yoctui_model::ServiceDiagnostic::new(
+            yoctui_model::ServiceKind::Pr,
+            yoctui_model::ServiceState::Reachable,
+            vec![endpoint],
+            vec![yoctui_model::ServiceProcessEvidence::new(42, "bitbake-prserv".into()).unwrap()],
+            vec!["process evidence is observational".into()],
+        )
+        .unwrap();
+        app.maintenance.services = MaintenanceServiceDiagnostics::Partial {
+            request: 8,
+            services: vec![service],
+            limitations: vec!["remote endpoint was not probed".into()],
+        };
+
+        let directory = |path: &str| {
+            yoctui_model::MaintenanceDirectoryIdentity::new(path.into(), UNIX_EPOCH).unwrap()
+        };
+        let integrations = yoctui_model::MaintenanceIntegrationsSnapshot::new(
+            yoctui_model::MaintenanceIntegrationsSnapshot {
+                pull_request: yoctui_model::OptionalPullRequestIntegration {
+                    state: yoctui_model::OptionalIntegrationState::Available,
+                    create_helper: Some(maintenance_identity("/tools/create-pull-request")),
+                    send_helper: Some(maintenance_identity("/tools/send-pull-request")),
+                    worktree: Some(yoctui_model::MaintenanceGitWorktreeIdentity {
+                        root: directory("/sources/poky"),
+                        head: maintenance_identity("/sources/poky/.git/HEAD"),
+                    }),
+                    limitations: Vec::new(),
+                },
+                error_report: yoctui_model::OptionalErrorReportIntegration {
+                    state: yoctui_model::OptionalIntegrationState::Partial,
+                    helper: Some(maintenance_identity("/tools/send-error-report")),
+                    candidate_report: None,
+                    limitations: vec!["candidate report unavailable".into()],
+                },
+                repo_manifest: yoctui_model::OptionalRepoManifestIntegration {
+                    state: yoctui_model::OptionalIntegrationState::Available,
+                    repo_executable: Some(maintenance_identity("/tools/repo")),
+                    workspace: Some(directory("/workspace")),
+                    manifest: Some(maintenance_identity(
+                        "/workspace/.repo/manifests/default.xml",
+                    )),
+                    limitations: Vec::new(),
+                },
+                toaster: yoctui_model::OptionalToasterIntegration {
+                    state: yoctui_model::OptionalIntegrationState::Available,
+                    executable: Some(maintenance_identity("/tools/toaster")),
+                    configurations: vec![maintenance_identity("/config/toaster.conf")],
+                    observed_processes: vec![
+                        yoctui_model::ServiceProcessEvidence::new(84, "toaster".into()).unwrap(),
+                    ],
+                    limitations: vec!["observational only".into()],
+                },
+                limitations: vec!["detection only".into()],
+            },
+        )
+        .unwrap();
+        app.maintenance.integrations = MaintenanceIntegrationDiagnostics::Partial {
+            request: 9,
+            limitations: integrations.limitations.clone(),
+            snapshot: integrations,
+        };
+        app.maintenance.pending = Some(maintenance_preview(10));
+        app.maintenance
+            .sessions
+            .push_back(yoctui_model::MaintenanceSession {
+                id: yoctui_model::MaintenanceSessionId(11),
+                preview: maintenance_preview(11),
+                status: MaintenanceSessionStatus::Succeeded,
+                started_at: Some(UNIX_EPOCH),
+                finished_at: Some(UNIX_EPOCH),
+                output: std::collections::VecDeque::from([
+                    yoctui_model::MaintenanceOutputLine {
+                        stream: yoctui_model::MaintenanceOutputStream::Stdout,
+                        text: "created report".into(),
+                    },
+                    yoctui_model::MaintenanceOutputLine {
+                        stream: yoctui_model::MaintenanceOutputStream::Stderr,
+                        text: "bounded warning".into(),
+                    },
+                ]),
+                dropped_lines: 3,
+                exit_code: Some(0),
+                message: None,
+            });
+        app.maintenance.evidence = vec![
+            yoctui_model::MaintenanceEvidence::new(
+                maintenance_identity("/build/sstate-report.txt"),
+                "sstate report".into(),
+            )
+            .unwrap(),
+        ];
+        app
+    }
+
+    #[test]
+    fn maintenance_workflow_renders_every_view_and_exact_typed_inspector() {
+        let mut app = maintenance_workflow_ui_app();
+        for (view, expected, action) in [
+            (MaintenanceView::Sstate, "oe-check-sstate", "c check"),
+            (
+                MaintenanceView::Services,
+                "bitbake-prserv-tool",
+                "e PR export",
+            ),
+            (
+                MaintenanceView::Release,
+                "gen-lockedsig-cache",
+                "l locked cache",
+            ),
+            (
+                MaintenanceView::Integrations,
+                "create-pull-request",
+                "detection/inspection only",
+            ),
+        ] {
+            app.maintenance.view = view;
+            let output = rendered_text(&app, 180, 70);
+            assert!(output.contains(expected), "{view:?}: {output}");
+            assert!(output.contains(action), "{view:?}: {output}");
+            assert!(output.contains("Partial capability"), "{output}");
+        }
+
+        app.focus = FocusTarget::Inspector;
+        app.maintenance.view = MaintenanceView::Services;
+        let services = rendered_text(&app, 180, 120);
+        assert!(services.contains("localhost:8585"), "{services}");
+        assert!(services.contains("PID 42 bitbake-prserv"), "{services}");
+        assert!(services.contains("observational"), "{services}");
+        assert!(services.contains("Indexed native vector"), "{services}");
+        assert!(services.contains("Selected evidence"), "{services}");
+
+        app.maintenance.view = MaintenanceView::Integrations;
+        let integrations = rendered_text(&app, 180, 120);
+        for expected in [
+            "/sources/poky/.git/HEAD",
+            "/workspace/.repo/manifests/default.xml",
+            "/config/toaster.conf",
+            "process evidence is observational only",
+        ] {
+            assert!(integrations.contains(expected), "{integrations}");
+        }
+    }
+
+    #[test]
+    fn maintenance_workflow_renders_terminal_states_responsively_in_every_theme() {
+        let mut app = maintenance_workflow_ui_app();
+        for status in [
+            MaintenanceSessionStatus::Queued,
+            MaintenanceSessionStatus::Running,
+            MaintenanceSessionStatus::Cancelling,
+            MaintenanceSessionStatus::Succeeded,
+            MaintenanceSessionStatus::Failed,
+            MaintenanceSessionStatus::Cancelled,
+            MaintenanceSessionStatus::TimedOut,
+            MaintenanceSessionStatus::Lost,
+        ] {
+            app.maintenance.sessions.back_mut().unwrap().status = status;
+            let output = rendered_text(&app, 160, 40);
+            assert!(output.contains(&format!("{status:?}")), "{output}");
+        }
+        for (width, expected) in [
+            (130, "Inspector"),
+            (100, "Maintenance"),
+            (99, "Panes:"),
+            (80, "Maintenance"),
+        ] {
+            let output = rendered_text(&app, width, 24);
+            assert!(output.contains(expected), "{width}: {output}");
+        }
+        assert!(rendered_text(&app, 79, 24).contains("needs at least 80x24"));
+
+        for theme in [
+            Theme::Dark,
+            Theme::Light,
+            Theme::MatrixGreen,
+            Theme::HighContrast,
+            Theme::Monochrome,
+        ] {
+            app.theme = theme;
+            assert!(rendered_text(&app, 130, 30).contains("Maintenance"));
+        }
+        app.color_enabled = false;
+        let mut terminal = Terminal::new(TestBackend::new(130, 30)).unwrap();
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        assert!(
+            terminal.backend().buffer().content.iter().any(|cell| {
+                cell.symbol() == "▶" && cell.modifier.contains(Modifier::REVERSED)
+            })
+        );
+    }
+
+    #[test]
+    fn maintenance_workflow_renders_loading_failed_disabled_and_unavailable_states() {
+        let mut app = maintenance_workflow_ui_app();
+        app.maintenance.view = MaintenanceView::Services;
+        app.maintenance.capability = MaintenanceCapability::Loading(41);
+        app.maintenance.services = MaintenanceServiceDiagnostics::Loading(42);
+        let loading = rendered_text(&app, 160, 40);
+        assert!(
+            loading.contains("Inspecting capability (request 41)"),
+            "{loading}"
+        );
+        assert!(loading.contains("loading request 42"), "{loading}");
+
+        app.maintenance.capability = MaintenanceCapability::Failed {
+            request: 43,
+            message: "metadata unavailable".into(),
+        };
+        app.maintenance.services = MaintenanceServiceDiagnostics::Failed {
+            request: 44,
+            message: "process inspection unavailable".into(),
+        };
+        let failed = rendered_text(&app, 160, 40);
+        assert!(failed.contains("metadata unavailable"), "{failed}");
+        assert!(
+            failed.contains("process inspection unavailable"),
+            "{failed}"
+        );
+
+        let disabled = yoctui_model::ServiceDiagnostic::new(
+            yoctui_model::ServiceKind::Hash,
+            yoctui_model::ServiceState::Disabled,
+            Vec::new(),
+            Vec::new(),
+            vec!["not configured".into()],
+        )
+        .unwrap();
+        app.maintenance.services = MaintenanceServiceDiagnostics::Available {
+            request: 45,
+            services: vec![disabled],
+        };
+        let disabled = rendered_text(&app, 160, 40);
+        assert!(disabled.contains("Hash: Disabled"), "{disabled}");
+
+        app.maintenance.view = MaintenanceView::Integrations;
+        app.maintenance.integrations = MaintenanceIntegrationDiagnostics::Loading(46);
+        assert!(rendered_text(&app, 160, 40).contains("loading request 46"));
+        app.maintenance.integrations = MaintenanceIntegrationDiagnostics::Failed {
+            request: 47,
+            message: "optional tools unavailable".into(),
+        };
+        assert!(rendered_text(&app, 160, 40).contains("optional tools unavailable"));
+    }
+
+    #[test]
+    fn maintenance_workflow_dialogs_render_exact_safety_meaning_at_80x24() {
+        let mut app = maintenance_workflow_ui_app();
+        let ordinary = maintenance_preview(21);
+        let cleanup_request = yoctui_model::SstateCleanupRequest::new(
+            "/cache/sstate".into(),
+            Vec::new(),
+            vec![yoctui_model::SstateCleanupMode::Duplicates],
+            1,
+        )
+        .unwrap();
+        let cleanup = yoctui_model::MaintenanceOperationPreview::new(
+            22,
+            7,
+            yoctui_model::MaintenanceOperation::SstateCleanup(
+                yoctui_model::SstateCleanupPreview::new(
+                    cleanup_request,
+                    vec![maintenance_identity("/cache/sstate/a.tgz")],
+                )
+                .unwrap(),
+            ),
+            vec![
+                "/tools/sstate-cache-management.py".into(),
+                "--remove-duplicated".into(),
+            ],
+            vec!["files may be removed".into()],
+        )
+        .unwrap();
+        let archive = yoctui_model::GitArchiveRequest::new(yoctui_model::GitArchiveRequest {
+            data_dir: "/data".into(),
+            git_dir: "/archive/release.git".into(),
+            create: false,
+            bare: false,
+            create_tag: false,
+            branch_name: "main".into(),
+            tag_name: None,
+            commit_subject: "archive".into(),
+            commit_body: String::new(),
+            tag_subject: "tag".into(),
+            tag_body: String::new(),
+            exclusions: Vec::new(),
+            notes: Vec::new(),
+            push_remote: Some("origin".into()),
+        })
+        .unwrap();
+        let network = yoctui_model::MaintenanceOperationPreview::new(
+            23,
+            7,
+            yoctui_model::MaintenanceOperation::GitArchive(archive),
+            vec![
+                "/tools/oe-git-archive".into(),
+                "--push".into(),
+                "origin".into(),
+            ],
+            Vec::new(),
+        )
+        .unwrap();
+        for (dialog, expected) in [
+            (
+                MaintenanceDialog::Confirm(ordinary),
+                "[0] /tools/oe-check-sstate",
+            ),
+            (
+                MaintenanceDialog::Confirm(cleanup.clone()),
+                "Confirm destructive Maintenance operation",
+            ),
+            (
+                MaintenanceDialog::CleanupPhrase {
+                    preview: cleanup,
+                    input: "DELETE".into(),
+                },
+                "Typing alone cannot delete files",
+            ),
+            (
+                MaintenanceDialog::ConfirmNetworkPush(network),
+                "separately confirmed remote push",
+            ),
+            (
+                MaintenanceDialog::ConfirmCancellation(yoctui_model::MaintenanceSessionId(11)),
+                "partially cleaned cache",
+            ),
+        ] {
+            app.dialogs.clear();
+            app.dialogs
+                .push_front(Dialog::Maintenance(Box::new(dialog)));
+            app.focus = FocusTarget::Dialog;
+            let output = rendered_text(&app, 80, 24);
+            assert!(output.contains(expected), "{output}");
         }
     }
 }

@@ -1450,18 +1450,18 @@ notes = "The combined audit found no missing or duplicated adapter boundary requ
 id = "MAINT-RENDER-001"
 milestone = "M6"
 title = "Render responsive Maintenance workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001"]
 verify = ["cargo test -p yoctui-ui maintenance_workflow"]
-notes = "Render typed capability, readiness, diagnostics, sessions, evidence, previews, destructive confirmations, terminal outcomes, responsive breakpoints, themes, and no-color meaning."
+notes = "Maintenance now renders all four fixed views from model-owned typed capability, service, optional-integration, preview, session, output, and evidence state. Wide, medium-overlay, narrow pane-switcher, too-small, all-theme, and no-color behavior is covered; exact metadata/identities, indexed vectors, limitations, disabled states, lifecycle outcomes, and ordinary/destructive/cleanup/network/cancellation dialogs render safely at 80x24. Optional adapter identities normalize into the model snapshot rather than crossing directly into widgets. Four TestBackend tests, one model test, seven adapter regressions, and the complete baseline pass."
 
 [[task]]
 id = "MAINT-CLI-001"
 milestone = "M6"
 title = "Integrate non-blocking Maintenance execution"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-ADAPTER-001", "MAINT-RENDER-001"]

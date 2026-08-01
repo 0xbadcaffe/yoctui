@@ -2,15 +2,19 @@ use std::{
     fs,
     io::Read,
     path::{Path, PathBuf},
-    time::SystemTime,
 };
 
 use thiserror::Error;
 use yoctui_model::{
     MAX_MAINTENANCE_LIMITATIONS, MAX_MAINTENANCE_OUTPUT, MAX_MAINTENANCE_PATHS,
     MAX_MAINTENANCE_TEXT_BYTES, MaintenanceCapabilitySnapshot, MaintenanceFileIdentity,
-    MaintenanceMetadata, MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface,
-    ServiceProcessEvidence,
+    MaintenanceIntegrationsSnapshot, MaintenanceMetadata, MaintenanceTool,
+    MaintenanceToolCapability, MaintenanceToolInterface, ServiceProcessEvidence,
+};
+pub use yoctui_model::{
+    MaintenanceDirectoryIdentity, MaintenanceGitWorktreeIdentity, OptionalErrorReportIntegration,
+    OptionalIntegrationState, OptionalPullRequestIntegration, OptionalRepoManifestIntegration,
+    OptionalToasterIntegration,
 };
 
 const MAX_PROCESS_ENTRIES: usize = 4_096;
@@ -39,60 +43,6 @@ pub struct MaintenanceOptionalCapabilityInput {
     pub process_root: PathBuf,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum OptionalIntegrationState {
-    Available,
-    Partial,
-    Unavailable,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MaintenanceDirectoryIdentity {
-    pub path: PathBuf,
-    pub modified_at: SystemTime,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MaintenanceGitWorktreeIdentity {
-    pub root: MaintenanceDirectoryIdentity,
-    pub head: MaintenanceFileIdentity,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct OptionalPullRequestIntegration {
-    pub state: OptionalIntegrationState,
-    pub create_helper: Option<MaintenanceFileIdentity>,
-    pub send_helper: Option<MaintenanceFileIdentity>,
-    pub worktree: Option<MaintenanceGitWorktreeIdentity>,
-    pub limitations: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct OptionalErrorReportIntegration {
-    pub state: OptionalIntegrationState,
-    pub helper: Option<MaintenanceFileIdentity>,
-    pub candidate_report: Option<MaintenanceFileIdentity>,
-    pub limitations: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct OptionalRepoManifestIntegration {
-    pub state: OptionalIntegrationState,
-    pub repo_executable: Option<MaintenanceFileIdentity>,
-    pub workspace: Option<MaintenanceDirectoryIdentity>,
-    pub manifest: Option<MaintenanceFileIdentity>,
-    pub limitations: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct OptionalToasterIntegration {
-    pub state: OptionalIntegrationState,
-    pub executable: Option<MaintenanceFileIdentity>,
-    pub configurations: Vec<MaintenanceFileIdentity>,
-    pub observed_processes: Vec<ServiceProcessEvidence>,
-    pub limitations: Vec<String>,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MaintenanceOptionalInspection {
     pub build: MaintenanceDirectoryIdentity,
@@ -105,6 +55,19 @@ pub struct MaintenanceOptionalInspection {
 }
 
 impl MaintenanceOptionalInspection {
+    pub fn integrations_snapshot(
+        &self,
+    ) -> Result<MaintenanceIntegrationsSnapshot, MaintenanceOptionalAdapterError> {
+        MaintenanceIntegrationsSnapshot::new(MaintenanceIntegrationsSnapshot {
+            pull_request: self.pull_request.clone(),
+            error_report: self.error_report.clone(),
+            repo_manifest: self.repo_manifest.clone(),
+            toaster: self.toaster.clone(),
+            limitations: self.limitations.clone(),
+        })
+        .map_err(|message| MaintenanceOptionalAdapterError::InvalidInput(message.into()))
+    }
+
     pub fn revalidate(&self) -> Result<(), MaintenanceOptionalAdapterError> {
         revalidate_directory(&self.build)?;
         for capability in &self.capability.tools {
@@ -310,6 +273,7 @@ impl MaintenanceOptionalCapabilityInspector {
             toaster,
             limitations,
         };
+        let _ = inspection.integrations_snapshot()?;
         inspection.revalidate()?;
         Ok(inspection)
     }
