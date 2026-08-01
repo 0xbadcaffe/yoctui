@@ -9060,6 +9060,50 @@ fn indexed_arguments(arguments: &[String]) -> String {
 fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, area: Rect) {
     let palette = ThemePalette::for_app(app);
     let (title, body, style) = match dialog {
+        MaintenanceDialog::ReadinessForm(draft) => (
+            "Sstate readiness check",
+            format!(
+                "{} Targets: {}\n{} Mode: {:?}\n{} Output: {}\n{} Log: {}\n{} Timeout seconds: {}\n\n{}\n\nTab/Shift+Tab field | Space/←/→ mode | Enter preview | Esc cancel",
+                if draft.field == yoctui_model::MaintenanceReadinessField::Targets { ">" } else { " " },
+                if draft.targets.is_empty() { "<required>" } else { &draft.targets },
+                if draft.field == yoctui_model::MaintenanceReadinessField::Mode { ">" } else { " " },
+                draft.mode,
+                if draft.field == yoctui_model::MaintenanceReadinessField::Output { ">" } else { " " },
+                if draft.output.is_empty() { "<none>" } else { &draft.output },
+                if draft.field == yoctui_model::MaintenanceReadinessField::Log { ">" } else { " " },
+                if draft.log.is_empty() { "<none>" } else { &draft.log },
+                if draft.field == yoctui_model::MaintenanceReadinessField::Timeout { ">" } else { " " },
+                if draft.timeout.is_empty() { "<required>" } else { &draft.timeout },
+                draft.validation.as_deref().unwrap_or("No command runs until the exact adapter preview is confirmed."),
+            ),
+            if draft.validation.is_some() {
+                palette.role(palette.error, Modifier::BOLD)
+            } else {
+                palette.role(palette.info, Modifier::BOLD)
+            },
+        ),
+        MaintenanceDialog::CleanupForm(draft) => (
+            "Protected sstate cleanup preview",
+            format!(
+                "Cache: {}\nStamps:\n- {}\n\n{} [{}] duplicates\n{} [{}] orphans\n{} [{}] unreferenced by stamps\n{} Jobs: {}\n\n{}\n\nTab/Shift+Tab field | Space toggle | Enter discover candidates | Esc cancel",
+                draft.cache_dir.display(),
+                if draft.stamps_dirs.is_empty() { "none".into() } else { draft.stamps_dirs.iter().take(3).map(|path| path.display().to_string()).collect::<Vec<_>>().join("\n- ") },
+                if draft.field == yoctui_model::MaintenanceCleanupField::Duplicates { ">" } else { " " },
+                if draft.duplicates { "x" } else { " " },
+                if draft.field == yoctui_model::MaintenanceCleanupField::Orphans { ">" } else { " " },
+                if draft.orphans { "x" } else { " " },
+                if draft.field == yoctui_model::MaintenanceCleanupField::UnreferencedByStamps { ">" } else { " " },
+                if draft.unreferenced_by_stamps { "x" } else { " " },
+                if draft.field == yoctui_model::MaintenanceCleanupField::Jobs { ">" } else { " " },
+                if draft.jobs.is_empty() { "<required>" } else { &draft.jobs },
+                draft.validation.as_deref().unwrap_or("Candidate discovery is read-only. Deletion still requires the exact phrase and a second confirmation."),
+            ),
+            if draft.validation.is_some() {
+                palette.role(palette.error, Modifier::BOLD)
+            } else {
+                palette.role(palette.warning, Modifier::BOLD)
+            },
+        ),
         MaintenanceDialog::Confirm(preview) => (
             if preview.operation.destructive() {
                 "Confirm destructive Maintenance operation"
@@ -14451,6 +14495,57 @@ mod tests {
             app.focus = FocusTarget::Dialog;
             let output = rendered_text(&app, 80, 24);
             assert!(output.contains(expected), "{output}");
+        }
+    }
+
+    #[test]
+    fn maintenance_sstate_workspace_renders_forms_validation_and_responsive_fields() {
+        let mut app = maintenance_workflow_ui_app();
+        let readiness = yoctui_model::MaintenanceReadinessDraft {
+            targets: "core-image-minimal busybox".into(),
+            output: "/build/sstate.txt".into(),
+            validation: Some("timeout must be a positive integer".into()),
+            ..yoctui_model::MaintenanceReadinessDraft::default()
+        };
+        app.dialogs.push_front(Dialog::Maintenance(Box::new(
+            MaintenanceDialog::ReadinessForm(Box::new(readiness)),
+        )));
+        app.focus = FocusTarget::Dialog;
+        for (width, height) in [(160, 40), (100, 26), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(
+                output.contains("Sstate readiness check"),
+                "{width}: {output}"
+            );
+            assert!(
+                output.contains("core-image-minimal busybox"),
+                "{width}: {output}"
+            );
+            assert!(
+                output.contains("timeout must be a positive"),
+                "{width}: {output}"
+            );
+        }
+
+        let metadata = yoctui_model::MaintenanceMetadata::new(yoctui_model::MaintenanceMetadata {
+            sstate_dir: Some("/cache/sstate".into()),
+            stamps_dirs: vec!["/build/tmp/stamps".into()],
+            ..yoctui_model::MaintenanceMetadata::default()
+        })
+        .unwrap();
+        let mut cleanup = yoctui_model::MaintenanceCleanupDraft::from_metadata(&metadata).unwrap();
+        cleanup.orphans = true;
+        app.dialogs.clear();
+        app.dialogs.push_front(Dialog::Maintenance(Box::new(
+            MaintenanceDialog::CleanupForm(Box::new(cleanup)),
+        )));
+        for theme in [Theme::Dark, Theme::Light, Theme::Monochrome] {
+            app.theme = theme;
+            let output = rendered_text(&app, 80, 24);
+            assert!(output.contains("Protected sstate cleanup"), "{output}");
+            assert!(output.contains("/cache/sstate"), "{output}");
+            assert!(output.contains("[x] orphans"), "{output}");
+            assert!(output.contains("discover candidates"), "{output}");
         }
     }
 }

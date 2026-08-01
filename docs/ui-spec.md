@@ -1998,6 +1998,15 @@ indexed argument vector, target list, selected mode, output/log paths, and
 timeout. The result contains exact restored task names, totals, bounded output,
 limitations, and terminal outcome. Readiness does not mutate the shared cache.
 
+`c` opens the readiness form only when the exact readiness capability is
+available. Targets begin empty and are entered as whitespace- or comma-separated
+tokens; mode begins as `isolated TMPDIR`, output and log paths begin absent, and
+timeout begins at 3600 seconds. `Tab`/`Shift+Tab` moves through Targets, Mode,
+Output, Log, and Timeout. `Space` or `Left`/`Right` changes only Mode; normal
+text edits the selected text field. `Enter` validates and requests an adapter
+preview without running a command, while `Esc` closes without side effects.
+Validation remains visible in the focus-trapped form.
+
 Cleanup supports only an interface reported by capability inspection. Current
 `sstate-cache-management.py` operations are typed as `duplicates`, `orphans`,
 or `unreferenced by stamps`; legacy `.sh` support is a distinct detected
@@ -2013,6 +2022,15 @@ only the exact previewed regular files beneath the same cache root; a changed
 candidate set, symlink, escape, identity, or capability rejects execution.
 Arbitrary age-based deletion and free-form cleanup arguments are outside this
 workflow.
+
+`d` opens the cleanup form only when the exact cleanup capability and canonical
+`SSTATE_DIR` are available. Cache and stamps roots are read-only; duplicates is
+selected initially, orphans and unreferenced-by-stamps begin clear, and jobs
+begins at one. `Tab`/`Shift+Tab` moves through the three modes and Jobs,
+`Space` or `Left`/`Right` toggles a selected mode, and digits edit Jobs.
+`Enter` validates and requests read-only candidate discovery; it cannot open
+the deletion phrase or destructive confirmation until the adapter returns an
+exact typed candidate preview. `Esc` closes without discovery or deletion.
 
 Readiness and cleanup are independent cancellable background operations.
 Cancellation of cleanup requires an additional warning that a partially

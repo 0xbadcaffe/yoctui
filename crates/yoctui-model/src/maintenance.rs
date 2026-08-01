@@ -1061,6 +1061,174 @@ pub struct MaintenanceOutputLine {
     pub text: String,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum MaintenanceReadinessField {
+    #[default]
+    Targets,
+    Mode,
+    Output,
+    Log,
+    Timeout,
+}
+
+impl MaintenanceReadinessField {
+    pub fn cycle(self, backwards: bool) -> Self {
+        match (self, backwards) {
+            (Self::Targets, false) | (Self::Output, true) => Self::Mode,
+            (Self::Mode, false) | (Self::Log, true) => Self::Output,
+            (Self::Output, false) | (Self::Timeout, true) => Self::Log,
+            (Self::Log, false) | (Self::Targets, true) => Self::Timeout,
+            (Self::Timeout, false) | (Self::Mode, true) => Self::Targets,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MaintenanceReadinessDraft {
+    pub field: MaintenanceReadinessField,
+    pub targets: String,
+    pub mode: SstateReadinessMode,
+    pub output: String,
+    pub log: String,
+    pub timeout: String,
+    pub validation: Option<String>,
+}
+
+impl Default for MaintenanceReadinessDraft {
+    fn default() -> Self {
+        Self {
+            field: MaintenanceReadinessField::Targets,
+            targets: String::new(),
+            mode: SstateReadinessMode::IsolatedTmpdir,
+            output: String::new(),
+            log: String::new(),
+            timeout: "3600".into(),
+            validation: None,
+        }
+    }
+}
+
+impl MaintenanceReadinessDraft {
+    pub fn request(&self) -> Result<SstateReadinessRequest, &'static str> {
+        let targets = self
+            .targets
+            .split(|character: char| character.is_whitespace() || character == ',')
+            .filter(|target| !target.is_empty())
+            .map(str::to_owned)
+            .collect();
+        let optional_path = |value: &str| {
+            if value.is_empty() {
+                Ok(None)
+            } else {
+                let path = PathBuf::from(value);
+                absolute_normal_path(&path)
+                    .then_some(Some(path))
+                    .ok_or("output and log paths must be absolute normalized paths")
+            }
+        };
+        let timeout_seconds = self
+            .timeout
+            .parse::<u64>()
+            .map_err(|_| "timeout must be a positive integer")?;
+        SstateReadinessRequest::new(
+            targets,
+            self.mode,
+            optional_path(&self.output)?,
+            optional_path(&self.log)?,
+            timeout_seconds,
+        )
+    }
+
+    pub fn is_bounded(&self) -> bool {
+        [&self.targets, &self.output, &self.log, &self.timeout]
+            .into_iter()
+            .all(|value| value.len() <= MAX_MAINTENANCE_TEXT_BYTES && !value.contains('\n'))
+    }
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum MaintenanceCleanupField {
+    #[default]
+    Duplicates,
+    Orphans,
+    UnreferencedByStamps,
+    Jobs,
+}
+
+impl MaintenanceCleanupField {
+    pub fn cycle(self, backwards: bool) -> Self {
+        match (self, backwards) {
+            (Self::Duplicates, false) | (Self::UnreferencedByStamps, true) => Self::Orphans,
+            (Self::Orphans, false) | (Self::Jobs, true) => Self::UnreferencedByStamps,
+            (Self::UnreferencedByStamps, false) | (Self::Duplicates, true) => Self::Jobs,
+            (Self::Jobs, false) | (Self::Orphans, true) => Self::Duplicates,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MaintenanceCleanupDraft {
+    pub field: MaintenanceCleanupField,
+    pub cache_dir: PathBuf,
+    pub stamps_dirs: Vec<PathBuf>,
+    pub duplicates: bool,
+    pub orphans: bool,
+    pub unreferenced_by_stamps: bool,
+    pub jobs: String,
+    pub validation: Option<String>,
+}
+
+impl MaintenanceCleanupDraft {
+    pub fn from_metadata(metadata: &MaintenanceMetadata) -> Result<Self, &'static str> {
+        let cache_dir = metadata
+            .sstate_dir
+            .clone()
+            .ok_or("SSTATE_DIR is unavailable")?;
+        Ok(Self {
+            field: MaintenanceCleanupField::Duplicates,
+            cache_dir,
+            stamps_dirs: metadata.stamps_dirs.clone(),
+            duplicates: true,
+            orphans: false,
+            unreferenced_by_stamps: false,
+            jobs: "1".into(),
+            validation: None,
+        })
+    }
+
+    pub fn request(&self) -> Result<SstateCleanupRequest, &'static str> {
+        let modes = [
+            (self.duplicates, SstateCleanupMode::Duplicates),
+            (self.orphans, SstateCleanupMode::Orphans),
+            (
+                self.unreferenced_by_stamps,
+                SstateCleanupMode::UnreferencedByStamps,
+            ),
+        ]
+        .into_iter()
+        .filter_map(|(selected, mode)| selected.then_some(mode))
+        .collect();
+        let jobs = self
+            .jobs
+            .parse::<u16>()
+            .map_err(|_| "jobs must be a positive integer")?;
+        SstateCleanupRequest::new(
+            self.cache_dir.clone(),
+            self.stamps_dirs.clone(),
+            modes,
+            jobs,
+        )
+    }
+
+    pub fn is_bounded(&self) -> bool {
+        self.jobs.len() <= 5
+            && self
+                .jobs
+                .chars()
+                .all(|character| character.is_ascii_digit())
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MaintenanceSessionStatus {
     Queued,
@@ -1126,6 +1294,8 @@ impl MaintenanceSession {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MaintenanceDialog {
+    ReadinessForm(Box<MaintenanceReadinessDraft>),
+    CleanupForm(Box<MaintenanceCleanupDraft>),
     Confirm(MaintenanceOperationPreview),
     CleanupPhrase {
         preview: MaintenanceOperationPreview,
@@ -1223,6 +1393,12 @@ pub enum MaintenanceAction {
         request: u64,
         message: String,
     },
+    OpenReadinessForm,
+    UpdateReadinessForm(Box<MaintenanceReadinessDraft>),
+    ConfirmReadinessForm(Box<MaintenanceReadinessDraft>),
+    OpenCleanupForm,
+    UpdateCleanupForm(Box<MaintenanceCleanupDraft>),
+    ConfirmCleanupForm(Box<MaintenanceCleanupDraft>),
     BeginOperation(MaintenanceOperationPreview),
     UpdateCleanupPhrase {
         preview: MaintenanceOperationPreview,
@@ -1290,6 +1466,14 @@ pub enum MaintenanceEffect {
     },
     InspectServices {
         request: u64,
+    },
+    PreviewReadiness {
+        capability_request: u64,
+        request: SstateReadinessRequest,
+    },
+    PreviewCleanup {
+        capability_request: u64,
+        request: SstateCleanupRequest,
     },
     StartOperation {
         id: MaintenanceSessionId,
@@ -1491,6 +1675,105 @@ pub fn update_maintenance(
             if state.services.request() == Some(request) && bounded_text(&message) =>
         {
             state.services = MaintenanceServiceDiagnostics::Failed { request, message };
+        }
+        MaintenanceAction::OpenReadinessForm
+            if state.view == MaintenanceView::Sstate
+                && state
+                    .capability
+                    .snapshot()
+                    .is_some_and(|snapshot| snapshot.supports(MaintenanceTool::OeCheckSstate)) =>
+        {
+            return MaintenanceTransition {
+                dialog: MaintenanceDialogUpdate::Open(Box::new(MaintenanceDialog::ReadinessForm(
+                    Box::default(),
+                ))),
+                ..MaintenanceTransition::none()
+            };
+        }
+        MaintenanceAction::UpdateReadinessForm(draft) if draft.is_bounded() => {
+            return MaintenanceTransition {
+                dialog: MaintenanceDialogUpdate::Open(Box::new(MaintenanceDialog::ReadinessForm(
+                    draft,
+                ))),
+                ..MaintenanceTransition::none()
+            };
+        }
+        MaintenanceAction::ConfirmReadinessForm(mut draft) if draft.is_bounded() => {
+            match draft.request() {
+                Ok(request) => {
+                    let Some(capability_request) = state.capability.request() else {
+                        return MaintenanceTransition::none();
+                    };
+                    return MaintenanceTransition {
+                        effect: Some(MaintenanceEffect::PreviewReadiness {
+                            capability_request,
+                            request,
+                        }),
+                        dialog: MaintenanceDialogUpdate::Close,
+                        notification: None,
+                    };
+                }
+                Err(message) => {
+                    draft.validation = Some(message.into());
+                    return MaintenanceTransition {
+                        dialog: MaintenanceDialogUpdate::Open(Box::new(
+                            MaintenanceDialog::ReadinessForm(draft),
+                        )),
+                        ..MaintenanceTransition::none()
+                    };
+                }
+            }
+        }
+        MaintenanceAction::OpenCleanupForm
+            if state.view == MaintenanceView::Sstate
+                && state.capability.snapshot().is_some_and(|snapshot| {
+                    snapshot.supports(MaintenanceTool::SstateCacheManagement)
+                }) =>
+        {
+            if let Some(snapshot) = state.capability.snapshot()
+                && let Ok(draft) = MaintenanceCleanupDraft::from_metadata(&snapshot.metadata)
+            {
+                return MaintenanceTransition {
+                    dialog: MaintenanceDialogUpdate::Open(Box::new(
+                        MaintenanceDialog::CleanupForm(Box::new(draft)),
+                    )),
+                    ..MaintenanceTransition::none()
+                };
+            }
+        }
+        MaintenanceAction::UpdateCleanupForm(draft) if draft.is_bounded() => {
+            return MaintenanceTransition {
+                dialog: MaintenanceDialogUpdate::Open(Box::new(MaintenanceDialog::CleanupForm(
+                    draft,
+                ))),
+                ..MaintenanceTransition::none()
+            };
+        }
+        MaintenanceAction::ConfirmCleanupForm(mut draft) if draft.is_bounded() => {
+            match draft.request() {
+                Ok(request) => {
+                    let Some(capability_request) = state.capability.request() else {
+                        return MaintenanceTransition::none();
+                    };
+                    return MaintenanceTransition {
+                        effect: Some(MaintenanceEffect::PreviewCleanup {
+                            capability_request,
+                            request,
+                        }),
+                        dialog: MaintenanceDialogUpdate::Close,
+                        notification: None,
+                    };
+                }
+                Err(message) => {
+                    draft.validation = Some(message.into());
+                    return MaintenanceTransition {
+                        dialog: MaintenanceDialogUpdate::Open(Box::new(
+                            MaintenanceDialog::CleanupForm(draft),
+                        )),
+                        ..MaintenanceTransition::none()
+                    };
+                }
+            }
         }
         MaintenanceAction::BeginOperation(preview)
             if state.active_session().is_none()
@@ -2301,5 +2584,83 @@ mod tests {
             state.integrations,
             MaintenanceIntegrationDiagnostics::Partial { request: 2, .. }
         ));
+    }
+
+    #[test]
+    fn maintenance_sstate_workspace_forms_validate_and_emit_typed_preview_requests() {
+        let mut state = ready_state();
+        let transition = update_maintenance(&mut state, MaintenanceAction::OpenReadinessForm);
+        let MaintenanceDialogUpdate::Open(dialog) = transition.dialog else {
+            panic!("readiness form did not open");
+        };
+        let MaintenanceDialog::ReadinessForm(mut draft) = *dialog else {
+            panic!("wrong readiness dialog");
+        };
+        let invalid = update_maintenance(
+            &mut state,
+            MaintenanceAction::ConfirmReadinessForm(draft.clone()),
+        );
+        assert!(matches!(
+            invalid.dialog,
+            MaintenanceDialogUpdate::Open(dialog)
+                if matches!(*dialog, MaintenanceDialog::ReadinessForm(ref draft) if draft.validation.is_some())
+        ));
+        draft.targets = "core-image-minimal busybox".into();
+        draft.timeout = "45".into();
+        let valid = update_maintenance(&mut state, MaintenanceAction::ConfirmReadinessForm(draft));
+        assert!(matches!(
+            valid.effect,
+            Some(MaintenanceEffect::PreviewReadiness {
+                capability_request: 1,
+                request: SstateReadinessRequest {
+                    timeout_seconds: 45,
+                    ..
+                },
+            })
+        ));
+        assert_eq!(valid.dialog, MaintenanceDialogUpdate::Close);
+
+        let cleanup = update_maintenance(&mut state, MaintenanceAction::OpenCleanupForm);
+        let MaintenanceDialogUpdate::Open(dialog) = cleanup.dialog else {
+            panic!("cleanup form did not open");
+        };
+        let MaintenanceDialog::CleanupForm(mut draft) = *dialog else {
+            panic!("wrong cleanup dialog");
+        };
+        assert_eq!(draft.cache_dir, Path::new("/cache"));
+        assert_eq!(draft.stamps_dirs, vec![PathBuf::from("/build/tmp/stamps")]);
+        draft.duplicates = false;
+        let invalid = update_maintenance(
+            &mut state,
+            MaintenanceAction::ConfirmCleanupForm(draft.clone()),
+        );
+        assert!(matches!(
+            invalid.dialog,
+            MaintenanceDialogUpdate::Open(dialog)
+                if matches!(*dialog, MaintenanceDialog::CleanupForm(ref draft) if draft.validation.is_some())
+        ));
+        draft.orphans = true;
+        draft.jobs = "3".into();
+        let valid = update_maintenance(&mut state, MaintenanceAction::ConfirmCleanupForm(draft));
+        assert!(matches!(
+            valid.effect,
+            Some(MaintenanceEffect::PreviewCleanup {
+                capability_request: 1,
+                request: SstateCleanupRequest { jobs: 3, .. },
+            })
+        ));
+    }
+
+    #[test]
+    fn maintenance_sstate_workspace_forms_stay_inert_without_exact_capability() {
+        let mut state = MaintenanceState::default();
+        assert_eq!(
+            update_maintenance(&mut state, MaintenanceAction::OpenReadinessForm),
+            MaintenanceTransition::none()
+        );
+        assert_eq!(
+            update_maintenance(&mut state, MaintenanceAction::OpenCleanupForm),
+            MaintenanceTransition::none()
+        );
     }
 }
