@@ -1513,15 +1513,48 @@ verify = ["cargo test -p yoctui -- maintenance_service_workspace", "cargo test -
 notes = "PR export/import form effects now trigger fresh correlated capability inspection, rebuild only adapter-owned shell-free previews, and enter the generic confirmation/runner path without pre-confirmation spawn. Export evidence is installed only after successful exact-file validation; import remains evidence-free and destructively styled. Four fake CLI tests cover distinct vectors, successful export evidence, nonzero output/failure, stale capability, and invalid input. The focused adapter matrix and full baseline pass; fake fixtures do not establish live PR database compatibility."
 
 [[task]]
-id = "MAINT-RELEASE-UI-001"
+id = "MAINT-RELEASE-LOCKED-UI-001"
 milestone = "M6"
-title = "Add typed Maintenance release forms"
+title = "Add typed locked-signature cache form"
 status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-SERVICE-CLI-001"]
+verify = ["cargo test -p yoctui-model maintenance_release_locked_workspace", "cargo test -p yoctui-app maintenance_release_locked_workspace", "cargo test -p yoctui-ui maintenance_release_locked_workspace"]
+notes = "Add the l route, bounded model-owned locked-signature form, authoritative native-LSB context, exact request validation, replacement warning, app input mapping, and responsive rendering without execution."
+
+[[task]]
+id = "MAINT-RELEASE-HISTORY-UI-001"
+milestone = "M6"
+title = "Add typed build-history comparison form"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-RELEASE-LOCKED-UI-001"]
+verify = ["cargo test -p yoctui-model maintenance_release_history_workspace", "cargo test -p yoctui-app maintenance_release_history_workspace", "cargo test -p yoctui-ui maintenance_release_history_workspace"]
+notes = "Add the h route and bounded model-owned buildhistory-diff form with canonical repository context, optional revisions, exact typed choices, app input mapping, and responsive rendering without emulating build-compare."
+
+[[task]]
+id = "MAINT-RELEASE-ARCHIVE-UI-001"
+milestone = "M6"
+title = "Add typed Git archive form"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-RELEASE-HISTORY-UI-001"]
+verify = ["cargo test -p yoctui-model maintenance_release_archive_workspace", "cargo test -p yoctui-app maintenance_release_archive_workspace", "cargo test -p yoctui-ui maintenance_release_archive_workspace"]
+notes = "Add the a route and bounded model-owned oe-git-archive form with every typed local option, notes/exclusions, explicit optional push intent, app input mapping, and responsive local-versus-network meaning."
+
+[[task]]
+id = "MAINT-RELEASE-UI-001"
+milestone = "M6"
+title = "Close typed Maintenance release form gate"
+status = "NOT_STARTED"
+priority = 70
+required = true
+depends_on = ["MAINT-RELEASE-LOCKED-UI-001", "MAINT-RELEASE-HISTORY-UI-001", "MAINT-RELEASE-ARCHIVE-UI-001"]
 verify = ["cargo test -p yoctui-model maintenance_release_workspace", "cargo test -p yoctui-app maintenance_release_workspace", "cargo test -p yoctui-ui maintenance_release_workspace"]
-notes = "Cross-layer audit found that the specified l/h/a shortcuts and locked-cache, build-history, and archive forms are absent. Add bounded typed drafts, exact validation, local-versus-network intent, and responsive dialogs."
+notes = "Cross-form gate for the atomic locked-cache, build-history, and archive entry tasks found by the audit. Re-run their combined model/app/TestBackend matrix and reconcile the exact UI contract before routing execution."
 
 [[task]]
 id = "MAINT-RELEASE-CLI-001"

@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Add typed locked-cache, build-history, and Git-archive release forms.
+Add the typed locked-signature cache release form.
 
 ## Current task
 
@@ -84,9 +84,11 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `MAINT-RELEASE-UI-001` / `MAINT-RELEASE-CLI-001` — add and route release forms
-2. `MAINT-UI-CLI-001` / `MAINT-001` — close the cross-layer and milestone gates
-3. `HARDEN-001` / `DOC-001` — hardening and operator documentation
+1. `MAINT-RELEASE-LOCKED-UI-001` — add locked-signature cache entry
+2. `MAINT-RELEASE-HISTORY-UI-001` / `MAINT-RELEASE-ARCHIVE-UI-001` — add remaining release forms
+3. `MAINT-RELEASE-UI-001` / `MAINT-RELEASE-CLI-001` — close and route release forms
+4. `MAINT-UI-CLI-001` / `MAINT-001` — close the cross-layer and milestone gates
+5. `HARDEN-001` / `DOC-001` — hardening and operator documentation
 
 ## Rules
 
