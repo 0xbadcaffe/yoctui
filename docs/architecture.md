@@ -703,6 +703,20 @@ retains the remote as an explicit network side effect. Data, repository, note,
 tool, and local-result identities are guarded independently; fake repositories
 and helpers establish vector and lifecycle behavior only.
 
+The optional-integration adapter is deliberately inspection-only. It resolves
+the four named helpers through bounded child search paths and records exact
+regular non-symlink executable identities. Pull-request readiness additionally
+requires a canonical Git worktree and HEAD identity; error-report readiness
+retains one explicit canonical report candidate. Repo-manifest readiness keeps
+the `repo` executable, workspace directory, and manifest target as separate
+identities and accepts a manifest link only when its canonical regular target
+remains beneath that workspace's `.repo` directory. Toaster readiness retains
+canonical configuration files plus bounded process-name evidence. An observed
+`toaster` or `toaster-eventreplay` process is diagnostic only and cannot turn a
+missing executable/configuration into an available capability. The adapter
+constructs no command and performs no mail, upload, manifest mutation, network,
+or service-lifecycle action.
+
 All Maintenance adapters return typed capability, preview, diagnostic,
 progress, result, and error values. Raw output parsing and filesystem/process
 classification stop at this boundary. A missing executable, metadata field, or
