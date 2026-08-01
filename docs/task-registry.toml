@@ -1494,18 +1494,18 @@ notes = "The CLI now fresh-inspects and correlation-checks capability before rec
 id = "MAINT-SERVICE-UI-001"
 milestone = "M6"
 title = "Add typed PR service export and import forms"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-SSTATE-CLI-001"]
 verify = ["cargo test -p yoctui-model maintenance_service_workspace", "cargo test -p yoctui-app maintenance_service_workspace", "cargo test -p yoctui-ui maintenance_service_workspace"]
-notes = "Cross-layer audit found that the specified e/m shortcuts and canonical PR export/import forms are absent. Add exact endpoint/build/file context, validation, side-effect disclosure, and modal rendering."
+notes = "Services now maps e/m to distinct model-owned PR export/import forms. The helper operation is fixed by the shortcut, authoritative build directory and configured endpoint are read-only, and one bounded canonical .conf/.inc path is validated before a typed preview effect. Responsive focus-trapped rendering exposes server-stop/cache-invalidation side effects plus import mutation or export replacement meaning. Two reducer, one app, and one TestBackend test plus the full baseline pass."
 
 [[task]]
 id = "MAINT-SERVICE-CLI-001"
 milestone = "M6"
 title = "Route PR service export and import forms"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-SERVICE-UI-001", "MAINT-CLI-001"]

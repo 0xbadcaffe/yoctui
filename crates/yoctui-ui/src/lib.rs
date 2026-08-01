@@ -9104,6 +9104,32 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
                 palette.role(palette.warning, Modifier::BOLD)
             },
         ),
+        MaintenanceDialog::PrServiceForm(draft) => (
+            match draft.operation {
+                yoctui_model::PrServiceOperation::Export => "PR service export",
+                yoctui_model::PrServiceOperation::Import => "PR service import",
+            },
+            format!(
+                "Operation: {:?}\nFile: {}\nBuild directory: {}\nConfigured endpoint: {}\n\nThe native helper may stop a memory-resident BitBake server and invalidate BitBake cache records.{}\n\n{}\n\nType canonical .conf/.inc path | Enter preview | Esc cancel",
+                draft.operation,
+                if draft.file.is_empty() { "<required>" } else { &draft.file },
+                draft.build_dir.display(),
+                draft.endpoint,
+                if draft.operation == yoctui_model::PrServiceOperation::Import {
+                    "\nImport changes PR service data."
+                } else {
+                    "\nExport may replace the exact destination."
+                },
+                draft.validation.as_deref().unwrap_or("No helper runs until the exact adapter preview is confirmed."),
+            ),
+            if draft.validation.is_some() {
+                palette.role(palette.error, Modifier::BOLD)
+            } else if draft.operation == yoctui_model::PrServiceOperation::Import {
+                palette.role(palette.warning, Modifier::BOLD)
+            } else {
+                palette.role(palette.info, Modifier::BOLD)
+            },
+        ),
         MaintenanceDialog::Confirm(preview) => (
             if preview.operation.destructive() {
                 "Confirm destructive Maintenance operation"
@@ -14546,6 +14572,46 @@ mod tests {
             assert!(output.contains("/cache/sstate"), "{output}");
             assert!(output.contains("[x] orphans"), "{output}");
             assert!(output.contains("discover candidates"), "{output}");
+        }
+    }
+
+    #[test]
+    fn maintenance_service_workspace_renders_exact_context_and_side_effects() {
+        let mut app = maintenance_workflow_ui_app();
+        let metadata = app
+            .maintenance
+            .capability
+            .snapshot()
+            .unwrap()
+            .metadata
+            .clone();
+        for operation in [
+            yoctui_model::PrServiceOperation::Export,
+            yoctui_model::PrServiceOperation::Import,
+        ] {
+            let mut draft =
+                yoctui_model::MaintenancePrServiceDraft::from_metadata(&metadata, operation)
+                    .unwrap();
+            draft.file = "/build/pr-data.inc".into();
+            if operation == yoctui_model::PrServiceOperation::Export {
+                draft.validation = Some("destination parent is unavailable".into());
+            }
+            app.dialogs.clear();
+            app.dialogs.push_front(Dialog::Maintenance(Box::new(
+                MaintenanceDialog::PrServiceForm(Box::new(draft)),
+            )));
+            app.focus = FocusTarget::Dialog;
+            for (width, height) in [(160, 40), (100, 26), (80, 24)] {
+                let output = rendered_text(&app, width, height);
+                assert!(output.contains("/build/pr-data.inc"), "{width}: {output}");
+                assert!(output.contains("localhost:8585"), "{width}: {output}");
+                assert!(output.contains("memory-resident"), "{width}: {output}");
+                if operation == yoctui_model::PrServiceOperation::Import {
+                    assert!(output.contains("changes PR service data"), "{output}");
+                } else {
+                    assert!(output.contains("destination parent"), "{output}");
+                }
+            }
         }
     }
 }

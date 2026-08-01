@@ -2057,6 +2057,12 @@ pub fn maintenance_workspace_action(
         Input::Char('d') if view == MaintenanceView::Sstate => {
             maintenance(MaintenanceAction::OpenCleanupForm)
         }
+        Input::Char('e') if view == MaintenanceView::Services => maintenance(
+            MaintenanceAction::OpenPrServiceForm(yoctui_model::PrServiceOperation::Export),
+        ),
+        Input::Char('m') if view == MaintenanceView::Services => maintenance(
+            MaintenanceAction::OpenPrServiceForm(yoctui_model::PrServiceOperation::Import),
+        ),
         _ => None,
     }
 }
@@ -2152,6 +2158,28 @@ pub fn maintenance_dialog_action(dialog: &MaintenanceDialog, key: Input) -> Opti
                 _ => return None,
             }
             maintenance(MaintenanceAction::UpdateCleanupForm(Box::new(next)))
+        }
+        MaintenanceDialog::PrServiceForm(draft) => {
+            let mut next = (**draft).clone();
+            next.validation = None;
+            match key {
+                Input::Char(character) if !character.is_control() => {
+                    if next.file.len() + character.len_utf8()
+                        <= yoctui_model::MAX_MAINTENANCE_TEXT_BYTES
+                    {
+                        next.file.push(character);
+                    }
+                }
+                Input::Backspace => {
+                    next.file.pop();
+                }
+                Input::Enter => {
+                    return maintenance(MaintenanceAction::ConfirmPrServiceForm(Box::new(next)));
+                }
+                Input::Esc => return maintenance(MaintenanceAction::CancelDialog),
+                _ => return None,
+            }
+            maintenance(MaintenanceAction::UpdatePrServiceForm(Box::new(next)))
         }
         MaintenanceDialog::Confirm(preview) => match key {
             Input::Enter => maintenance(MaintenanceAction::ConfirmOperation(preview.clone())),
@@ -2808,6 +2836,54 @@ mod tests {
             ),
             Some(Action::Maintenance(MaintenanceAction::CancelDialog))
         );
+    }
+
+    #[test]
+    fn maintenance_service_workspace_maps_distinct_export_and_import_forms() {
+        assert_eq!(
+            maintenance_workspace_action(MaintenanceView::Services, 1, Input::Char('e')),
+            Some(Action::Maintenance(MaintenanceAction::OpenPrServiceForm(
+                yoctui_model::PrServiceOperation::Export,
+            )))
+        );
+        assert_eq!(
+            maintenance_workspace_action(MaintenanceView::Services, 1, Input::Char('m')),
+            Some(Action::Maintenance(MaintenanceAction::OpenPrServiceForm(
+                yoctui_model::PrServiceOperation::Import,
+            )))
+        );
+        assert_eq!(
+            maintenance_workspace_action(MaintenanceView::Sstate, 2, Input::Char('e')),
+            None
+        );
+        let metadata = yoctui_model::MaintenanceMetadata::new(yoctui_model::MaintenanceMetadata {
+            build_dir: Some("/build".into()),
+            prserv_host: Some("localhost:8585".into()),
+            ..yoctui_model::MaintenanceMetadata::default()
+        })
+        .unwrap();
+        let draft = yoctui_model::MaintenancePrServiceDraft::from_metadata(
+            &metadata,
+            yoctui_model::PrServiceOperation::Import,
+        )
+        .unwrap();
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::PrServiceForm(Box::new(draft.clone())),
+                Input::Char('/'),
+            ),
+            Some(Action::Maintenance(MaintenanceAction::UpdatePrServiceForm(next)))
+                if next.file == "/"
+        ));
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::PrServiceForm(Box::new(draft)),
+                Input::Enter,
+            ),
+            Some(Action::Maintenance(
+                MaintenanceAction::ConfirmPrServiceForm(_)
+            ))
+        ));
     }
 
     #[test]
