@@ -2,53 +2,59 @@
 
 ## Task
 
-**ID:** MAINT-RENDER-001
-**Title:** Render responsive Maintenance workspace
+**ID:** MAINT-CLI-001
+**Title:** Integrate non-blocking Maintenance execution
 
 ## Objective
 
-Render the authoritative typed Maintenance state as a first-class responsive
-workspace with four fixed views, exact capability and identity details,
-operation/session evidence, safe dialogs, themes, and narrow-terminal behavior.
+Connect model-owned Maintenance effects to replaceable capability, service,
+and optional-integration workers plus one exact managed operation runner while
+preserving terminal responsiveness, correlation, identity revalidation,
+navigation, cancellation, and honest failure state.
 
 ## Required work
 
-1. Inspect the existing shell, responsive helpers, Maintenance model, dialog
-   queue, theme roles, and TestBackend patterns before adding renderer code.
-2. Render `Sstate`, `Services`, `Release`, and `Integrations` in fixed order,
-   preserving each view's typed selection and clearly distinguishing available,
-   partial, disabled, loading, failed, and unavailable state.
-3. In wide mode render the capability/operation list plus exact Inspector
-   details; use the standard Inspector overlay in medium mode and standard pane
-   switcher in narrow mode. Too-small terminals must use the standard safe
-   message and never panic.
-4. Render canonical metadata, tool/interface identity, service endpoint and
-   process observations, exact indexed preview arguments and limitations,
-   retained bounded output, lifecycle/terminal outcomes, and evidence identity.
-   Widgets must not parse raw process or BitBake text.
-5. Render the exact shared and view-specific footer shortcuts from section 20
-   of `docs/ui-spec.md`; disabled actions stay visible with typed reasons.
-6. Render Maintenance confirmations through the existing modal queue, trapping
-   focus at 80x24. Distinguish ordinary, cleanup-phrase, destructive,
-   network-push, cancellation, and terminal outcome meaning without inventing
-   new keys or bypassing typed dialog state.
-7. Add Ratatui TestBackend coverage for every view and major lifecycle state,
-   selection/Inspector detail, modal focus, all responsive boundaries, every
-   theme, and no-color semantic distinctions.
-8. Update `docs/ui-spec.md` in this commit only if implementation reveals an
-   intentional UI behavior change; do not silently diverge from it.
+1. Inspect existing CLI worker/runner patterns, startup metadata, input routing,
+   app effect mapping, and all four Maintenance adapters before changing code.
+2. Route capability refresh through replaceable correlated workers that acquire
+   authoritative initialized-build metadata and bounded child-only tool search
+   paths, then merge typed sstate, service, release, and optional capability
+   results without turning missing or partial data into empty success.
+3. Route service and optional-integration diagnostics into their model-owned
+   correlated states. Keep endpoint/process observations typed and detection
+   only; never start or stop a service or perform optional network actions.
+4. Own at most one independent Maintenance operation runner. Construct commands
+   only through the adapter selected by the exact typed preview, re-inspect
+   capability and revalidate executable/input/candidate/evidence identities
+   immediately before spawn, and reject stale or mismatched requests visibly.
+5. Poll every worker and the runner without blocking terminal or BitBake input.
+   Map bounded stdout/stderr, success, nonzero exit, timeout, graceful/forced
+   cancellation, duplicate rejection, start failure, and runner loss exactly
+   once to typed actions while navigation continues.
+6. Keep managed BitBake work on the shared build coordinator. Maintenance
+   cancellation targets only the exact Maintenance session and never cancels a
+   build, Devtool, QA, Security, Testing, SDK, Wic, or QEMU job.
+7. Install successful replaceable evidence only after exact post-run validation;
+   failure retains prior valid evidence. Keep local Git archive creation and
+   optional remote push as separately confirmed operations.
+8. Add CLI integration tests with fake filesystem/process adapters for refresh,
+   correlation, navigation, success, nonzero, timeout, cancellation, rejection,
+   loss, stale identities, and evidence replacement. Do not claim live support
+   from these tests.
 
 ## Definition of done
 
-- Maintenance renders only typed model state at all supported breakpoints.
-- Every required view, state, footer, dialog, theme, and no-color distinction
-  has focused TestBackend coverage.
+- Maintenance inspection and execution remain non-blocking and exactly
+  correlated across navigation and cancellation.
+- Typed adapter results cross the CLI/app boundary without UI parsing.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui maintenance_workflow
+cargo test -p yoctui -- maintenance_workflow
+cargo test -p yoctui-app maintenance_workflow
+cargo test -p yoctui-bitbake maintenance_
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -58,12 +64,12 @@ python3 -m pytest bridge/tests
 
 ## Documentation updates
 
-- Update `docs/ui-spec.md` in this commit for any intentional UI behavior change.
-- Update `docs/architecture.md` only if the rendering boundary changes.
-- Mark `MAINT-RENDER-001` `DONE` only after verification passes.
+- Update `docs/architecture.md` in this commit for any CLI ownership change.
+- Update `docs/ui-spec.md` only for intentional UI behavior changes.
+- Mark `MAINT-CLI-001` `DONE` only after verification passes.
 - Update `docs/implementation-status.md`.
 - Replace this file with the next eligible highest-priority Maintenance task.
 
 ## Next task
 
-`MAINT-CLI-001`
+`MAINT-UI-CLI-001`

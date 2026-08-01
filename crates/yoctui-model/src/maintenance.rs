@@ -471,6 +471,200 @@ impl MaintenanceServiceDiagnostics {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MaintenanceDirectoryIdentity {
+    pub path: PathBuf,
+    pub modified_at: SystemTime,
+}
+
+impl MaintenanceDirectoryIdentity {
+    pub fn new(path: PathBuf, modified_at: SystemTime) -> Result<Self, &'static str> {
+        if !absolute_normal_path(&path) {
+            return Err(
+                "Maintenance directory identity must be a canonical absolute non-root path",
+            );
+        }
+        Ok(Self { path, modified_at })
+    }
+
+    pub fn is_valid(&self) -> bool {
+        Self::new(self.path.clone(), self.modified_at).as_ref() == Ok(self)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OptionalIntegrationState {
+    Available,
+    Partial,
+    Unavailable,
+}
+
+fn optional_state(parts: &[bool]) -> OptionalIntegrationState {
+    if parts.iter().all(|present| *present) {
+        OptionalIntegrationState::Available
+    } else if parts.iter().any(|present| *present) {
+        OptionalIntegrationState::Partial
+    } else {
+        OptionalIntegrationState::Unavailable
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MaintenanceGitWorktreeIdentity {
+    pub root: MaintenanceDirectoryIdentity,
+    pub head: MaintenanceFileIdentity,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OptionalPullRequestIntegration {
+    pub state: OptionalIntegrationState,
+    pub create_helper: Option<MaintenanceFileIdentity>,
+    pub send_helper: Option<MaintenanceFileIdentity>,
+    pub worktree: Option<MaintenanceGitWorktreeIdentity>,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OptionalErrorReportIntegration {
+    pub state: OptionalIntegrationState,
+    pub helper: Option<MaintenanceFileIdentity>,
+    pub candidate_report: Option<MaintenanceFileIdentity>,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OptionalRepoManifestIntegration {
+    pub state: OptionalIntegrationState,
+    pub repo_executable: Option<MaintenanceFileIdentity>,
+    pub workspace: Option<MaintenanceDirectoryIdentity>,
+    pub manifest: Option<MaintenanceFileIdentity>,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OptionalToasterIntegration {
+    pub state: OptionalIntegrationState,
+    pub executable: Option<MaintenanceFileIdentity>,
+    pub configurations: Vec<MaintenanceFileIdentity>,
+    pub observed_processes: Vec<ServiceProcessEvidence>,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MaintenanceIntegrationsSnapshot {
+    pub pull_request: OptionalPullRequestIntegration,
+    pub error_report: OptionalErrorReportIntegration,
+    pub repo_manifest: OptionalRepoManifestIntegration,
+    pub toaster: OptionalToasterIntegration,
+    pub limitations: Vec<String>,
+}
+
+impl MaintenanceIntegrationsSnapshot {
+    pub fn new(mut value: Self) -> Result<Self, &'static str> {
+        let file_valid = |identity: &Option<MaintenanceFileIdentity>| {
+            identity
+                .as_ref()
+                .is_none_or(MaintenanceFileIdentity::is_valid)
+        };
+        if !file_valid(&value.pull_request.create_helper)
+            || !file_valid(&value.pull_request.send_helper)
+            || value
+                .pull_request
+                .worktree
+                .as_ref()
+                .is_some_and(|worktree| !worktree.root.is_valid() || !worktree.head.is_valid())
+            || value.pull_request.state
+                != optional_state(&[
+                    value.pull_request.create_helper.is_some(),
+                    value.pull_request.send_helper.is_some(),
+                    value.pull_request.worktree.is_some(),
+                ])
+            || !file_valid(&value.error_report.helper)
+            || !file_valid(&value.error_report.candidate_report)
+            || value.error_report.state
+                != optional_state(&[
+                    value.error_report.helper.is_some(),
+                    value.error_report.candidate_report.is_some(),
+                ])
+            || !file_valid(&value.repo_manifest.repo_executable)
+            || value
+                .repo_manifest
+                .workspace
+                .as_ref()
+                .is_some_and(|identity| !identity.is_valid())
+            || !file_valid(&value.repo_manifest.manifest)
+            || value.repo_manifest.state
+                != optional_state(&[
+                    value.repo_manifest.repo_executable.is_some(),
+                    value.repo_manifest.workspace.is_some(),
+                    value.repo_manifest.manifest.is_some(),
+                ])
+            || !file_valid(&value.toaster.executable)
+            || value
+                .toaster
+                .configurations
+                .iter()
+                .any(|identity| !identity.is_valid())
+            || value.toaster.observed_processes.iter().any(|process| {
+                ServiceProcessEvidence::new(process.pid, process.executable.clone()).as_ref()
+                    != Ok(process)
+            })
+            || value.toaster.state
+                != optional_state(&[
+                    value.toaster.executable.is_some(),
+                    !value.toaster.configurations.is_empty(),
+                ])
+        {
+            return Err("Maintenance integration snapshot is invalid");
+        }
+        value
+            .toaster
+            .configurations
+            .sort_by(|left, right| left.path.cmp(&right.path));
+        value
+            .toaster
+            .configurations
+            .dedup_by(|left, right| left.path == right.path);
+        value.toaster.configurations.truncate(MAX_MAINTENANCE_PATHS);
+        value.toaster.observed_processes.sort();
+        value.toaster.observed_processes.dedup();
+        value
+            .toaster
+            .observed_processes
+            .truncate(MAX_MAINTENANCE_OUTPUT);
+        value.pull_request.limitations =
+            normalize_text(value.pull_request.limitations, MAX_MAINTENANCE_LIMITATIONS);
+        value.error_report.limitations =
+            normalize_text(value.error_report.limitations, MAX_MAINTENANCE_LIMITATIONS);
+        value.repo_manifest.limitations =
+            normalize_text(value.repo_manifest.limitations, MAX_MAINTENANCE_LIMITATIONS);
+        value.toaster.limitations =
+            normalize_text(value.toaster.limitations, MAX_MAINTENANCE_LIMITATIONS);
+        value.limitations = normalize_text(value.limitations, MAX_MAINTENANCE_LIMITATIONS);
+        Ok(value)
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum MaintenanceIntegrationDiagnostics {
+    #[default]
+    NotInspected,
+    Loading(u64),
+    Available {
+        request: u64,
+        snapshot: MaintenanceIntegrationsSnapshot,
+    },
+    Partial {
+        request: u64,
+        snapshot: MaintenanceIntegrationsSnapshot,
+        limitations: Vec<String>,
+    },
+    Failed {
+        request: u64,
+        message: String,
+    },
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SstateReadinessMode {
     IsolatedTmpdir,
@@ -935,6 +1129,7 @@ pub struct MaintenanceState {
     pub selections: [usize; 4],
     pub capability: MaintenanceCapability,
     pub services: MaintenanceServiceDiagnostics,
+    pub integrations: MaintenanceIntegrationDiagnostics,
     pub pending: Option<MaintenanceOperationPreview>,
     pub sessions: VecDeque<MaintenanceSession>,
     pub evidence: Vec<MaintenanceEvidence>,
@@ -950,6 +1145,7 @@ impl Default for MaintenanceState {
             selections: [0; 4],
             capability: MaintenanceCapability::NotInspected,
             services: MaintenanceServiceDiagnostics::NotInspected,
+            integrations: MaintenanceIntegrationDiagnostics::NotInspected,
             pending: None,
             sessions: VecDeque::new(),
             evidence: Vec::new(),
@@ -1936,5 +2132,54 @@ mod tests {
         let mut local = archive;
         local.push_remote = None;
         assert!(!MaintenanceOperation::GitArchive(local).network_side_effect());
+    }
+
+    #[test]
+    fn maintenance_integration_snapshot_validates_state_and_bounds_typed_evidence() {
+        let file = |path: &str| MaintenanceFileIdentity::new(path.into(), 1, UNIX_EPOCH).unwrap();
+        let directory =
+            |path: &str| MaintenanceDirectoryIdentity::new(path.into(), UNIX_EPOCH).unwrap();
+        let mut snapshot = MaintenanceIntegrationsSnapshot {
+            pull_request: OptionalPullRequestIntegration {
+                state: OptionalIntegrationState::Available,
+                create_helper: Some(file("/tools/create-pull-request")),
+                send_helper: Some(file("/tools/send-pull-request")),
+                worktree: Some(MaintenanceGitWorktreeIdentity {
+                    root: directory("/sources/poky"),
+                    head: file("/sources/poky/.git/HEAD"),
+                }),
+                limitations: Vec::new(),
+            },
+            error_report: OptionalErrorReportIntegration {
+                state: OptionalIntegrationState::Partial,
+                helper: Some(file("/tools/send-error-report")),
+                candidate_report: None,
+                limitations: vec!["report unavailable".into()],
+            },
+            repo_manifest: OptionalRepoManifestIntegration {
+                state: OptionalIntegrationState::Unavailable,
+                repo_executable: None,
+                workspace: None,
+                manifest: None,
+                limitations: vec!["repo unavailable".into()],
+            },
+            toaster: OptionalToasterIntegration {
+                state: OptionalIntegrationState::Available,
+                executable: Some(file("/tools/toaster")),
+                configurations: vec![file("/config/toaster.conf"), file("/config/toaster.conf")],
+                observed_processes: vec![
+                    ServiceProcessEvidence::new(42, "toaster".into()).unwrap(),
+                    ServiceProcessEvidence::new(42, "toaster".into()).unwrap(),
+                ],
+                limitations: vec!["observational only".into()],
+            },
+            limitations: Vec::new(),
+        };
+        let normalized = MaintenanceIntegrationsSnapshot::new(snapshot.clone()).unwrap();
+        assert_eq!(normalized.toaster.configurations.len(), 1);
+        assert_eq!(normalized.toaster.observed_processes.len(), 1);
+
+        snapshot.pull_request.state = OptionalIntegrationState::Partial;
+        assert!(MaintenanceIntegrationsSnapshot::new(snapshot).is_err());
     }
 }

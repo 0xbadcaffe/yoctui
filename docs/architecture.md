@@ -653,7 +653,7 @@ evidence.
 ## Managed Maintenance boundary
 
 `yoctui-model::maintenance` owns the fixed Sstate, Services, Release, and
-Integrations views; capability and metadata snapshots; canonical input and
+Integrations views; capability, metadata, and optional-integration snapshots; canonical input and
 evidence identities; typed operation drafts and confirmations; stable
 operation sessions; bounded output; service diagnostics; and all selection,
 focus, and terminal outcome state. It contains no host inspection, filesystem
@@ -703,7 +703,9 @@ retains the remote as an explicit network side effect. Data, repository, note,
 tool, and local-result identities are guarded independently; fake repositories
 and helpers establish vector and lifecycle behavior only.
 
-The optional-integration adapter is deliberately inspection-only. It resolves
+The optional-integration adapter is deliberately inspection-only. Its typed
+result is normalized into the model-owned integration snapshot before UI
+rendering. It resolves
 the four named helpers through bounded child search paths and records exact
 regular non-symlink executable identities. Pull-request readiness additionally
 requires a canonical Git worktree and HEAD identity; error-report readiness
