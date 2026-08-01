@@ -1520,8 +1520,12 @@ mod tests {
     impl Fixture {
         fn new(script: &str) -> Self {
             let root = std::env::temp_dir().join(format!(
-                "yoctui-maintenance-workflow-{}-{}",
+                "yoctui-maintenance-workflow-{}-{}-{}",
                 std::process::id(),
+                SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap()
+                    .as_nanos(),
                 NEXT_ROOT.fetch_add(1, Ordering::Relaxed)
             ));
             let build = root.join("build");
@@ -1529,23 +1533,30 @@ mod tests {
             fs::create_dir_all(&build).unwrap();
             fs::create_dir_all(&bin).unwrap();
             let executable = bin.join("oe-check-sstate");
-            fs::write(&executable, script).unwrap();
+            Self::publish_executable(&executable, script);
+            Self { root, build, bin }
+        }
+
+        fn publish_executable(executable: &Path, script: &str) {
             #[cfg(unix)]
             {
                 use std::os::unix::fs::PermissionsExt;
-                fs::set_permissions(&executable, fs::Permissions::from_mode(0o755)).unwrap();
+
+                let temporary = executable.with_extension(format!(
+                    "fixture-write-{}",
+                    NEXT_ROOT.fetch_add(1, Ordering::Relaxed)
+                ));
+                fs::write(&temporary, script).unwrap();
+                fs::set_permissions(&temporary, fs::Permissions::from_mode(0o755)).unwrap();
+                fs::rename(temporary, executable).unwrap();
             }
-            Self { root, build, bin }
+            #[cfg(not(unix))]
+            fs::write(executable, script).unwrap();
         }
 
         fn install(&self, name: &str, script: &str) -> PathBuf {
             let executable = self.bin.join(name);
-            fs::write(&executable, script).unwrap();
-            #[cfg(unix)]
-            {
-                use std::os::unix::fs::PermissionsExt;
-                fs::set_permissions(&executable, fs::Permissions::from_mode(0o755)).unwrap();
-            }
+            Self::publish_executable(&executable, script);
             executable
         }
     }
