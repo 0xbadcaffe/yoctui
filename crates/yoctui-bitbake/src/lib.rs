@@ -1,5 +1,6 @@
 //! BitBake adapters. They execute BitBake; they never evaluate metadata themselves.
 mod image;
+mod maintenance_release;
 mod maintenance_service;
 mod maintenance_sstate;
 mod package;
@@ -21,6 +22,12 @@ use async_trait::async_trait;
 pub use image::{
     ImageArtifactAdapter, ImageArtifactAdapterError, ImageArtifactCancellation,
     ImageArtifactResponse,
+};
+pub use maintenance_release::{
+    GitArchiveLocalResult, MaintenanceReleaseAdapterError, MaintenanceReleaseCapabilityInput,
+    MaintenanceReleaseCapabilityInspector, MaintenanceReleaseEvidenceSnapshot,
+    build_compare_command, buildhistory_command, git_archive_local_command,
+    git_archive_push_command, locked_signature_command,
 };
 pub use maintenance_service::{
     MaintenanceEndpointObservation, MaintenanceServiceAdapterError,

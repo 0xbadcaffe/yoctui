@@ -1417,18 +1417,18 @@ notes = "Typed primary/upstream endpoint roles retain local/remote and reachable
 id = "MAINT-RELEASE-ADAPTER-001"
 milestone = "M6"
 title = "Adapt locked signatures comparisons and archives"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake maintenance_release"]
-notes = "Discover and run exact gen-lockedsig-cache, buildhistory-diff/build-compare, and oe-git-archive operations with canonical identities, bounded evidence, shell-free vectors, cancellation, timeout, and loss."
+notes = "Canonical non-symlink discovery and exact shell-free vectors now cover gen-lockedsig-cache, buildhistory-diff, and oe-git-archive with immediate executable/input/output/Git identity revalidation, bounded replaceable evidence, and the shared timeout/cancellation/loss-aware runner. Archive creation and remote push are separate operations linked by a revalidated local-result identity. A discovered build-compare remains explicitly unavailable because its obsolete distinct interface is not safely interchangeable with buildhistory-diff. Seven adapter tests, one model test, and the complete baseline pass; fixture evidence does not claim live tool or network compatibility."
 
 [[task]]
 id = "MAINT-OPTIONAL-ADAPTER-001"
 milestone = "M6"
 title = "Detect optional release integrations"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001"]
