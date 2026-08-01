@@ -256,7 +256,8 @@ Required behavior:
 - search filters layers, paths, and filenames
 - selected files preview in the inspector
 - selected directories show metadata and relationships
-- open directory or file in configured external editor/file manager
+- open the selected layer in the in-TUI two-pane tree/editor
+- open the selected layer root in the configured external editor/file manager
 - refresh selected subtree
 - detect modified, untracked, and generated files where Git information is available
 
@@ -272,18 +273,26 @@ ignored/generated, and `-` when Git is unavailable. Hidden entries are loaded
 but omitted until `.` toggles them on, so toggling does not cause a recursive
 scan or lose path identity.
 
-Keyboard:
+From the configured-layer inventory:
+
+- `Enter`: open the selected layer's lazy metadata browser
+- `e`: open the selected layer in the large in-TUI two-pane editor
+- `o`: open the selected layer root in the configured external editor
+- `R`: inspect authoritative layer relationships
+
+Inside the layer browser/editor:
 
 - `Right` / `l`: expand
 - `Left` / `h`: collapse or move to parent
-- `Enter`: open file or toggle directory
-- `e`: open in editor
+- `Enter`: edit a file or toggle a directory
+- `e`: edit the selected file
 - `r`: refresh
 - `.`: toggle hidden files
 - `/`: search
 - `g`: Git details
 - `m`: metadata view
 - `d`: dependencies view
+- `Esc`: return to the configured-layer inventory
 
 The tree must not eagerly scan the entire Yocto source tree.
 
@@ -335,9 +344,16 @@ previews. Invalid UTF-8 or NUL-containing files are treated as binary and show
 metadata only. Preview responses carry their source path, so a late response
 cannot replace the newly selected file's Inspector.
 
-The first version does not implement a full embedded code editor.
+Layer and Devtool source workflows use a large two-pane in-TUI editor: the
+left pane retains the bounded lazy tree and the right pane shows the selected
+syntax-aware preview or editable file. `Ctrl+S` saves an edited file and
+`Esc` returns to the prior workspace. Ordinary Inspector previews remain
+read-only.
 
-Pressing `e` launches `$EDITOR` or the configured editor. After it exits, Yoctui refreshes the file, Git status, and affected metadata.
+Where a workspace exposes its external-open action (`o` in Layers), Yoctui
+suspends the terminal and launches `$EDITOR` or the configured editor. After
+the editor exits, Yoctui restores the terminal and refreshes the affected
+file, Git state, and metadata.
 
 ---
 
