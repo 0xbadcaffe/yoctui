@@ -17,7 +17,8 @@ validation surface pass together.
    `DOC-VERIFY-001` are `DONE` and their committed files are present.
 2. Run the parent verification exactly; fix any disagreement rather than
    weakening the checker or duplicating guidance.
-3. Run the baseline and completion gate, preserving any external hardening or
+3. Run the baseline before closing this parent. After it is closed, run the
+   repository completion gate and preserve any external hardening or
    live-validation blocker exactly as reported.
 4. Mark `DOC-001` `DONE`, update the implementation status, and select the next
    eligible task. Do not claim overall completion while a required blocked task
@@ -44,8 +45,20 @@ cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
+```
+
+## Post-task completion audit
+
+After the documentation task is committed, run:
+
+```bash
 ./scripts/verify-completion.sh
 ```
+
+This audit determines overall repository completion. An unrelated required
+task or external host blocker does not retroactively invalidate documentation
+that passed its registry verification, but it must remain explicit and prevents
+the repository from being declared complete.
 
 ## Documentation updates
 
