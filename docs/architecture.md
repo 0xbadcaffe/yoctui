@@ -735,6 +735,20 @@ and revalidates exact capability, destructive candidate, and evidence identity
 immediately before side effects. Managed BitBake work continues to use the
 shared build coordinator.
 
+The CLI coordinator builds one immutable inspection context from canonical
+initialized-workspace metadata and bounded child-only executable paths. A
+replacement blocking worker inspects all four adapter families and returns
+separately correlated capability, service, and optional-integration results;
+adapter failure remains an explicit unavailable capability or failed typed
+diagnostic. Confirmed operations trigger a fresh inspection before command
+reconstruction. The coordinator rejects any preview or capability change,
+runs cleanup discovery before reconstructing its destructive command, and
+retains local Git archive evidence separately from a later push request. One
+runner task owns output, deadlines, and the process group; cancellation moves
+that exact runner into an asynchronous wait so terminal and BitBake input stay
+responsive. Successful post-run evidence validation replaces model evidence,
+while validation or command failure preserves the previous evidence set.
+
 Cleanup, PR import/export, locked-cache output replacement, repository
 creation/tagging, and optional remote push are separate typed side-effect
 classes. A cleanup request requires both its exact candidate preview and phrase

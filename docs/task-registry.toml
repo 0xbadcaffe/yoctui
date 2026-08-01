@@ -1461,18 +1461,18 @@ notes = "Maintenance now renders all four fixed views from model-owned typed cap
 id = "MAINT-CLI-001"
 milestone = "M6"
 title = "Integrate non-blocking Maintenance execution"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-ADAPTER-001", "MAINT-RENDER-001"]
 verify = ["cargo test -p yoctui -- maintenance_workflow"]
-notes = "Own replaceable capability/diagnostic workers and one exact managed Maintenance runner, poll without blocking, revalidate destructive and evidence identities, and preserve navigation/cancellation/outcomes."
+notes = "A dedicated CLI coordinator now owns replaceable correlated capability/service/optional-integration inspection and one independent shell-free Maintenance runner. It reconstructs every command from a fresh capability snapshot, reruns cleanup preview discovery, revalidates exact evidence, separates local Git archive state from optional push, polls without blocking terminal or BitBake input, and isolates exact cancellation. Five CLI workflow tests cover correlated partial discovery, unavailable tools, success/output, nonzero, timeout, exact cancellation, and unowned rejection; the 27 adapter tests retain forced cancellation/loss/stale identity coverage. The complete baseline passes without claiming live Maintenance compatibility."
 
 [[task]]
 id = "MAINT-UI-CLI-001"
 milestone = "M6"
 title = "Integrate complete Maintenance workspace"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001", "MAINT-ADAPTER-001", "MAINT-RENDER-001", "MAINT-CLI-001"]

@@ -30,8 +30,9 @@ use yoctui_app::{
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
-    key_action, logs_action, model_action_from_backend_event, package_workspace_action,
-    qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action, qa_report_error_action,
+    key_action, logs_action, maintenance_dialog_action, maintenance_workspace_action,
+    model_action_from_backend_event, package_workspace_action, qa_dialog_action,
+    qa_layer_capability_action, qa_layer_runner_action, qa_report_error_action,
     qa_report_response_action, qa_task_capability_action, qa_workspace_action,
     qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
     qemu_launch_confirmation_action, qemu_launch_dialog_action, recipe_editor_action,
@@ -87,6 +88,10 @@ use yoctui_model::{
     validate_config_edit_request,
 };
 use yoctui_ui::render;
+
+mod maintenance_cli;
+
+use maintenance_cli::MaintenanceCliCoordinator;
 #[derive(Parser, Debug)]
 #[command(about = "A Ratatui frontend and control client for BitBake")]
 struct Cli {
@@ -3582,6 +3587,41 @@ fn initialized_path_directories() -> Vec<PathBuf> {
         .unwrap_or_default()
 }
 
+async fn route_independent_maintenance_effect(
+    guard: &TerminalGuard,
+    app: &mut App,
+    coordinator: &mut MaintenanceCliCoordinator,
+    effect: Effect,
+    editor: Option<&str>,
+) -> bool {
+    match effect {
+        Effect::Maintenance(yoctui_model::MaintenanceEffect::OpenEvidence(identity)) => {
+            match coordinator.revalidate_evidence(&identity) {
+                Ok(path) => open_in_editor(guard, app, path, editor).await,
+                Err(message) => app.notification = Some(message),
+            }
+            true
+        }
+        Effect::Maintenance(yoctui_model::MaintenanceEffect::Navigate(screen)) => {
+            if let Some(next) = update(app, Action::Open(screen)) {
+                let _ = coordinator.handle_effect(app, next).await;
+            }
+            true
+        }
+        Effect::Maintenance(_) => coordinator.handle_effect(app, effect).await,
+        _ => false,
+    }
+}
+
+fn maintenance_row_count(app: &App) -> usize {
+    match app.maintenance.view {
+        yoctui_model::MaintenanceView::Sstate => 2,
+        yoctui_model::MaintenanceView::Services => 1,
+        yoctui_model::MaintenanceView::Release => 4,
+        yoctui_model::MaintenanceView::Integrations => 4,
+    }
+}
+
 fn ptest_capability(app: &App) -> yoctui_model::PtestCapability {
     let suites = app.workspace.variables.get("TEST_SUITES");
     let features = app
@@ -5587,8 +5627,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     let mut security_coordinator =
         SecurityCliCoordinator::new(session_build_dir.clone(), initialized_paths.clone());
     let mut pending_security_build = None;
-    let mut qa_coordinator = QaCliCoordinator::new(session_build_dir.clone(), initialized_paths);
+    let mut qa_coordinator =
+        QaCliCoordinator::new(session_build_dir.clone(), initialized_paths.clone());
     let mut pending_qa_build = None;
+    let mut maintenance_coordinator =
+        MaintenanceCliCoordinator::new(&app, &session_build_dir, initialized_paths)
+            .map_err(anyhow::Error::msg)?;
     if app.screen == Screen::Packages
         && let Some(effect @ Effect::GetPackageInventory(_)) =
             update(&mut app, Action::BeginPackageInventory)
@@ -5632,6 +5676,16 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     {
         let _ = qa_coordinator.handle_effect(&mut app, effect).await;
     }
+    if app.screen == Screen::Maintenance
+        && let Some(effect) = update(
+            &mut app,
+            Action::Maintenance(yoctui_model::MaintenanceAction::InspectCapability),
+        )
+    {
+        let _ = maintenance_coordinator
+            .handle_effect(&mut app, effect)
+            .await;
+    }
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
     #[cfg(unix)]
@@ -5672,6 +5726,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         test_coordinator.poll(&mut app).await;
         security_coordinator.poll(&mut app).await;
         qa_coordinator.poll(&mut app).await;
+        maintenance_coordinator.poll(&mut app).await;
         if (matches!(
             app.build.status,
             BuildStatus::LoadingWorkspace
@@ -5683,7 +5738,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             || test_coordinator.session.is_some()
             || test_coordinator.result.is_some()
             || security_coordinator.mapper.is_some()
-            || qa_coordinator.layer.is_some())
+            || qa_coordinator.layer.is_some()
+            || maintenance_coordinator.operation_active())
             && Instant::now() >= next_telemetry_sample
         {
             let telemetry = telemetry_sampler.sample(&session_build_dir);
@@ -5753,6 +5809,28 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         &guard,
                         &mut app,
                         &mut qa_coordinator,
+                        effect,
+                        editor.as_deref(),
+                    )
+                    .await;
+                } else if let Some(effect @ Effect::Maintenance(_)) = effect {
+                    let _ = route_independent_maintenance_effect(
+                        &guard,
+                        &mut app,
+                        &mut maintenance_coordinator,
+                        effect,
+                        editor.as_deref(),
+                    )
+                    .await;
+                }
+            } else if let Some(Dialog::Maintenance(dialog)) = app.active_dialog().cloned() {
+                let effect = maintenance_dialog_action(&dialog, input)
+                    .and_then(|action| update(&mut app, action));
+                if let Some(effect) = effect {
+                    let _ = route_independent_maintenance_effect(
+                        &guard,
+                        &mut app,
+                        &mut maintenance_coordinator,
                         effect,
                         editor.as_deref(),
                     )
@@ -6204,6 +6282,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             &guard,
                             &mut app,
                             &mut security_coordinator,
+                            effect,
+                            editor.as_deref(),
+                        )
+                        .await;
+                    } else if let Some(effect @ Effect::Maintenance(_)) = effect {
+                        let _ = route_independent_maintenance_effect(
+                            &guard,
+                            &mut app,
+                            &mut maintenance_coordinator,
                             effect,
                             editor.as_deref(),
                         )
@@ -6685,6 +6772,21 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     )
                     .await;
                 }
+            } else if app.screen == Screen::Maintenance
+                && maintenance_workspace_action(maintenance_row_count(&app), input).is_some()
+            {
+                let action = maintenance_workspace_action(maintenance_row_count(&app), input)
+                    .expect("Maintenance action was checked");
+                if let Some(effect) = update(&mut app, action) {
+                    let _ = route_independent_maintenance_effect(
+                        &guard,
+                        &mut app,
+                        &mut maintenance_coordinator,
+                        effect,
+                        editor.as_deref(),
+                    )
+                    .await;
+                }
             } else if app.screen == Screen::Settings && settings_action(input).is_some() {
                 let action = settings_action(input).expect("settings action was checked");
                 if matches!(update(&mut app, action), Some(Effect::PersistSettings)) {
@@ -7028,6 +7130,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             editor.as_deref(),
                         )
                         .await
+                        && !route_independent_maintenance_effect(
+                            &guard,
+                            &mut app,
+                            &mut maintenance_coordinator,
+                            effect.clone(),
+                            editor.as_deref(),
+                        )
+                        .await
                     {
                         let _ = test_coordinator.handle_effect(&mut app, effect).await;
                     }
@@ -7255,6 +7365,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     if let Some(mut operation) = security_coordinator.mapper.take() {
         let _ = operation.runner.cancel(operation.id).await;
     }
+    maintenance_coordinator.shutdown().await;
     backend.shutdown().await?;
     session.last_target = app.build.target;
     session.last_screen = Some(app.screen);

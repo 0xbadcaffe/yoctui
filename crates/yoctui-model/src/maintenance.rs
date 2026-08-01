@@ -460,7 +460,7 @@ pub enum MaintenanceServiceDiagnostics {
 }
 
 impl MaintenanceServiceDiagnostics {
-    fn request(&self) -> Option<u64> {
+    pub fn request(&self) -> Option<u64> {
         match self {
             Self::Loading(request)
             | Self::Available { request, .. }
@@ -663,6 +663,18 @@ pub enum MaintenanceIntegrationDiagnostics {
         request: u64,
         message: String,
     },
+}
+
+impl MaintenanceIntegrationDiagnostics {
+    pub fn request(&self) -> Option<u64> {
+        match self {
+            Self::Loading(request)
+            | Self::Available { request, .. }
+            | Self::Partial { request, .. }
+            | Self::Failed { request, .. } => Some(*request),
+            Self::NotInspected => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1192,6 +1204,15 @@ pub enum MaintenanceAction {
         request: u64,
         message: String,
     },
+    IntegrationsLoaded {
+        request: u64,
+        snapshot: Box<MaintenanceIntegrationsSnapshot>,
+        partial: bool,
+    },
+    IntegrationsFailed {
+        request: u64,
+        message: String,
+    },
     InspectServices,
     ServicesLoaded {
         request: u64,
@@ -1399,6 +1420,8 @@ pub fn update_maintenance(
         MaintenanceAction::InspectCapability => {
             let request = next_id(&mut state.capability_generation);
             state.capability = MaintenanceCapability::Loading(request);
+            state.services = MaintenanceServiceDiagnostics::Loading(request);
+            state.integrations = MaintenanceIntegrationDiagnostics::Loading(request);
             return MaintenanceTransition::effect(MaintenanceEffect::InspectCapability { request });
         }
         MaintenanceAction::CapabilityLoaded {
@@ -1420,6 +1443,27 @@ pub fn update_maintenance(
             if state.capability.request() == Some(request) && bounded_text(&message) =>
         {
             state.capability = MaintenanceCapability::Failed { request, message };
+        }
+        MaintenanceAction::IntegrationsLoaded {
+            request,
+            snapshot,
+            partial,
+        } if state.integrations.request() == Some(request) => {
+            let snapshot = *snapshot;
+            state.integrations = if partial {
+                MaintenanceIntegrationDiagnostics::Partial {
+                    request,
+                    limitations: snapshot.limitations.clone(),
+                    snapshot,
+                }
+            } else {
+                MaintenanceIntegrationDiagnostics::Available { request, snapshot }
+            };
+        }
+        MaintenanceAction::IntegrationsFailed { request, message }
+            if state.integrations.request() == Some(request) && bounded_text(&message) =>
+        {
+            state.integrations = MaintenanceIntegrationDiagnostics::Failed { request, message };
         }
         MaintenanceAction::InspectServices => {
             let request = next_id(&mut state.service_generation);
@@ -2181,5 +2225,81 @@ mod tests {
 
         snapshot.pull_request.state = OptionalIntegrationState::Partial;
         assert!(MaintenanceIntegrationsSnapshot::new(snapshot).is_err());
+    }
+
+    #[test]
+    fn maintenance_workflow_correlates_replaceable_integration_diagnostics() {
+        let mut state = MaintenanceState::default();
+        update_maintenance(&mut state, MaintenanceAction::InspectCapability);
+        update_maintenance(&mut state, MaintenanceAction::InspectCapability);
+        let unavailable = MaintenanceIntegrationsSnapshot::new(MaintenanceIntegrationsSnapshot {
+            pull_request: OptionalPullRequestIntegration {
+                state: OptionalIntegrationState::Unavailable,
+                create_helper: None,
+                send_helper: None,
+                worktree: None,
+                limitations: vec!["pull-request integration unavailable".into()],
+            },
+            error_report: OptionalErrorReportIntegration {
+                state: OptionalIntegrationState::Unavailable,
+                helper: None,
+                candidate_report: None,
+                limitations: Vec::new(),
+            },
+            repo_manifest: OptionalRepoManifestIntegration {
+                state: OptionalIntegrationState::Unavailable,
+                repo_executable: None,
+                workspace: None,
+                manifest: None,
+                limitations: Vec::new(),
+            },
+            toaster: OptionalToasterIntegration {
+                state: OptionalIntegrationState::Unavailable,
+                executable: None,
+                configurations: Vec::new(),
+                observed_processes: Vec::new(),
+                limitations: Vec::new(),
+            },
+            limitations: vec!["optional integrations are partial".into()],
+        })
+        .unwrap();
+
+        update_maintenance(
+            &mut state,
+            MaintenanceAction::IntegrationsLoaded {
+                request: 1,
+                snapshot: Box::new(unavailable.clone()),
+                partial: true,
+            },
+        );
+        assert_eq!(
+            state.integrations,
+            MaintenanceIntegrationDiagnostics::Loading(2)
+        );
+
+        update_maintenance(
+            &mut state,
+            MaintenanceAction::IntegrationsLoaded {
+                request: 2,
+                snapshot: Box::new(unavailable.clone()),
+                partial: true,
+            },
+        );
+        assert!(matches!(
+            state.integrations,
+            MaintenanceIntegrationDiagnostics::Partial { request: 2, .. }
+        ));
+
+        update_maintenance(
+            &mut state,
+            MaintenanceAction::IntegrationsFailed {
+                request: 1,
+                message: "stale failure".into(),
+            },
+        );
+        assert!(matches!(
+            state.integrations,
+            MaintenanceIntegrationDiagnostics::Partial { request: 2, .. }
+        ));
     }
 }
