@@ -14,12 +14,12 @@ use yoctui_model::{
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
     LayerInspectorMode, LayerRelationship, LayerRelationships, MaintenanceAction,
     MaintenanceBuildHistoryField, MaintenanceCleanupField, MaintenanceDialog,
-    MaintenanceLockedCacheField, MaintenanceReadinessField, MaintenanceView, QaAction, QaDialog,
-    QaReportFailureKind, QaReportRequest, QaView, QemuOutputStream, QemuSessionId,
-    RecipeDependencies, Screen, SdkBuildAction, SdkKind, SdkOutputStream, SdkSessionId,
-    SecurityAction, SecurityDialog, SecurityOutputStream, SecurityView, Severity, TaskId, TaskInfo,
-    TestComparison, VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream,
-    WicSessionId,
+    MaintenanceGitArchiveField, MaintenanceLockedCacheField, MaintenanceReadinessField,
+    MaintenanceView, QaAction, QaDialog, QaReportFailureKind, QaReportRequest, QaView,
+    QemuOutputStream, QemuSessionId, RecipeDependencies, Screen, SdkBuildAction, SdkKind,
+    SdkOutputStream, SdkSessionId, SecurityAction, SecurityDialog, SecurityOutputStream,
+    SecurityView, Severity, TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity,
+    WicCapability, WicOutput, WicOutputStream, WicSessionId,
 };
 
 pub fn qa_layer_capability_action(response: QaLayerCapabilityResponse) -> Action {
@@ -2070,6 +2070,9 @@ pub fn maintenance_workspace_action(
         Input::Char('h') if view == MaintenanceView::Release => {
             maintenance(MaintenanceAction::OpenBuildHistoryForm)
         }
+        Input::Char('a') if view == MaintenanceView::Release => {
+            maintenance(MaintenanceAction::OpenGitArchiveForm)
+        }
         _ => None,
     }
 }
@@ -2293,6 +2296,68 @@ pub fn maintenance_dialog_action(dialog: &MaintenanceDialog, key: Input) -> Opti
                 _ => return None,
             }
             maintenance(MaintenanceAction::UpdateBuildHistoryForm(Box::new(next)))
+        }
+        MaintenanceDialog::GitArchiveForm(draft) => {
+            let mut next = (**draft).clone();
+            next.validation = None;
+            match key {
+                Input::Tab => next.field = next.field.cycle(false),
+                Input::BackTab => next.field = next.field.cycle(true),
+                Input::Char(' ') | Input::Left | Input::Right if next.field.is_toggle() => {
+                    match next.field {
+                        MaintenanceGitArchiveField::Create => next.create = !next.create,
+                        MaintenanceGitArchiveField::Bare => next.bare = !next.bare,
+                        MaintenanceGitArchiveField::CreateTag => {
+                            next.create_tag = !next.create_tag;
+                        }
+                        _ => return None,
+                    }
+                }
+                Input::Char(character) if !character.is_control() => {
+                    let value = match next.field {
+                        MaintenanceGitArchiveField::DataDir => &mut next.data_dir,
+                        MaintenanceGitArchiveField::GitDir => &mut next.git_dir,
+                        MaintenanceGitArchiveField::BranchName => &mut next.branch_name,
+                        MaintenanceGitArchiveField::TagName => &mut next.tag_name,
+                        MaintenanceGitArchiveField::CommitSubject => &mut next.commit_subject,
+                        MaintenanceGitArchiveField::CommitBody => &mut next.commit_body,
+                        MaintenanceGitArchiveField::TagSubject => &mut next.tag_subject,
+                        MaintenanceGitArchiveField::TagBody => &mut next.tag_body,
+                        MaintenanceGitArchiveField::Exclusions => &mut next.exclusions,
+                        MaintenanceGitArchiveField::Notes => &mut next.notes,
+                        MaintenanceGitArchiveField::PushRemote => &mut next.push_remote,
+                        _ => return None,
+                    };
+                    if value.len() + character.len_utf8()
+                        <= yoctui_model::MAX_MAINTENANCE_TEXT_BYTES
+                    {
+                        value.push(character);
+                    }
+                }
+                Input::Backspace => {
+                    let value = match next.field {
+                        MaintenanceGitArchiveField::DataDir => &mut next.data_dir,
+                        MaintenanceGitArchiveField::GitDir => &mut next.git_dir,
+                        MaintenanceGitArchiveField::BranchName => &mut next.branch_name,
+                        MaintenanceGitArchiveField::TagName => &mut next.tag_name,
+                        MaintenanceGitArchiveField::CommitSubject => &mut next.commit_subject,
+                        MaintenanceGitArchiveField::CommitBody => &mut next.commit_body,
+                        MaintenanceGitArchiveField::TagSubject => &mut next.tag_subject,
+                        MaintenanceGitArchiveField::TagBody => &mut next.tag_body,
+                        MaintenanceGitArchiveField::Exclusions => &mut next.exclusions,
+                        MaintenanceGitArchiveField::Notes => &mut next.notes,
+                        MaintenanceGitArchiveField::PushRemote => &mut next.push_remote,
+                        _ => return None,
+                    };
+                    value.pop();
+                }
+                Input::Enter => {
+                    return maintenance(MaintenanceAction::ConfirmGitArchiveForm(Box::new(next)));
+                }
+                Input::Esc => return maintenance(MaintenanceAction::CancelDialog),
+                _ => return None,
+            }
+            maintenance(MaintenanceAction::UpdateGitArchiveForm(Box::new(next)))
         }
         MaintenanceDialog::Confirm(preview) => match key {
             Input::Enter => maintenance(MaintenanceAction::ConfirmOperation(preview.clone())),
@@ -3093,6 +3158,61 @@ mod tests {
         assert_eq!(
             maintenance_dialog_action(
                 &MaintenanceDialog::BuildHistoryForm(Box::new(draft)),
+                Input::Esc,
+            ),
+            Some(Action::Maintenance(MaintenanceAction::CancelDialog))
+        );
+    }
+
+    #[test]
+    fn maintenance_release_archive_workspace_maps_text_toggles_and_cancel() {
+        assert_eq!(
+            maintenance_workspace_action(MaintenanceView::Release, 3, Input::Char('a')),
+            Some(Action::Maintenance(MaintenanceAction::OpenGitArchiveForm))
+        );
+        assert_eq!(
+            maintenance_workspace_action(MaintenanceView::Services, 3, Input::Char('a')),
+            None
+        );
+        let draft = yoctui_model::MaintenanceGitArchiveDraft::default();
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::GitArchiveForm(Box::new(draft.clone())),
+                Input::Char('/'),
+            ),
+            Some(Action::Maintenance(MaintenanceAction::UpdateGitArchiveForm(next)))
+                if next.data_dir == "/"
+        ));
+        let mut toggle = draft.clone();
+        toggle.field = MaintenanceGitArchiveField::Bare;
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::GitArchiveForm(Box::new(toggle)),
+                Input::Right,
+            ),
+            Some(Action::Maintenance(MaintenanceAction::UpdateGitArchiveForm(next)))
+                if next.bare
+        ));
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::GitArchiveForm(Box::new(draft.clone())),
+                Input::BackTab,
+            ),
+            Some(Action::Maintenance(MaintenanceAction::UpdateGitArchiveForm(next)))
+                if next.field == MaintenanceGitArchiveField::PushRemote
+        ));
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::GitArchiveForm(Box::new(draft.clone())),
+                Input::Enter,
+            ),
+            Some(Action::Maintenance(
+                MaintenanceAction::ConfirmGitArchiveForm(_)
+            ))
+        ));
+        assert_eq!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::GitArchiveForm(Box::new(draft)),
                 Input::Esc,
             ),
             Some(Action::Maintenance(MaintenanceAction::CancelDialog))

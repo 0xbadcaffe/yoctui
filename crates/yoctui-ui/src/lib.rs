@@ -9186,6 +9186,51 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
                 Modifier::BOLD,
             ),
         ),
+        MaintenanceDialog::GitArchiveForm(draft) => (
+            "Git release archive",
+            format!(
+                "{} Data directory: {}\n{} Git directory: {}\n{} [{}] create  {} [{}] bare  {} [{}] create tag\n{} Branch: {}\n{} Tag: {}\n{} Commit subject: {}\n{} Commit body: {}\n{} Tag subject: {}\n{} Tag body: {}\n{} Exclusions: {}\n{} Notes: {}\n{} Push remote: {}\n\nLocal archive creation runs first. A configured push is deferred and requires a second network confirmation after local success. Repository creation, tag replacement, and tracked-output overwrite risks remain visible in the adapter preview.\n\n{}\n\nTab/Shift+Tab field | Space/←/→ toggle | Enter preview | Esc cancel",
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::DataDir { ">" } else { " " },
+                if draft.data_dir.is_empty() { "<required>" } else { &draft.data_dir },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::GitDir { ">" } else { " " },
+                if draft.git_dir.is_empty() { "<required>" } else { &draft.git_dir },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::Create { ">" } else { " " },
+                if draft.create { "x" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::Bare { ">" } else { " " },
+                if draft.bare { "x" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::CreateTag { ">" } else { " " },
+                if draft.create_tag { "x" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::BranchName { ">" } else { " " },
+                draft.branch_name,
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::TagName { ">" } else { " " },
+                if draft.tag_name.is_empty() { "<none>" } else { &draft.tag_name },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::CommitSubject { ">" } else { " " },
+                draft.commit_subject,
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::CommitBody { ">" } else { " " },
+                if draft.commit_body.is_empty() { "<none>" } else { &draft.commit_body },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::TagSubject { ">" } else { " " },
+                draft.tag_subject,
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::TagBody { ">" } else { " " },
+                if draft.tag_body.is_empty() { "<none>" } else { &draft.tag_body },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::Exclusions { ">" } else { " " },
+                if draft.exclusions.is_empty() { "<none>" } else { &draft.exclusions },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::Notes { ">" } else { " " },
+                if draft.notes.is_empty() { "<none>" } else { &draft.notes },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::PushRemote { ">" } else { " " },
+                if draft.push_remote.is_empty() { "<local only>" } else { &draft.push_remote },
+                draft.validation.as_deref().unwrap_or("No archive or network operation runs until the exact preview is confirmed."),
+            ),
+            palette.role(
+                if draft.validation.is_some() {
+                    palette.error
+                } else if !draft.push_remote.is_empty() {
+                    palette.warning
+                } else {
+                    palette.info
+                },
+                Modifier::BOLD,
+            ),
+        ),
         MaintenanceDialog::Confirm(preview) => (
             if preview.operation.destructive() {
                 "Confirm destructive Maintenance operation"
@@ -9238,7 +9283,12 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
         ),
     };
     let width = 78.min(area.width.saturating_sub(2));
-    let height = 18.min(area.height.saturating_sub(2));
+    let preferred_height = if matches!(dialog, MaintenanceDialog::GitArchiveForm(_)) {
+        22
+    } else {
+        18
+    };
+    let height = preferred_height.min(area.height.saturating_sub(2));
     let popup = Rect::new(
         area.x + area.width.saturating_sub(width) / 2,
         area.y + area.height.saturating_sub(height) / 2,
@@ -14737,6 +14787,38 @@ mod tests {
             assert!(output.contains("[x] no colour"), "{width}: {output}");
             assert!(
                 output.contains("repository identity changed"),
+                "{width}: {output}"
+            );
+        }
+    }
+
+    #[test]
+    fn maintenance_release_archive_workspace_renders_local_and_network_intent_responsively() {
+        let mut app = maintenance_workflow_ui_app();
+        let mut draft = yoctui_model::MaintenanceGitArchiveDraft {
+            data_dir: "/release/data".into(),
+            git_dir: "/release/archive.git".into(),
+            bare: true,
+            exclusions: "tmp/*,downloads/*".into(),
+            notes: "release=/release/note.txt".into(),
+            push_remote: "origin".into(),
+            validation: Some("note identity changed".into()),
+            ..yoctui_model::MaintenanceGitArchiveDraft::default()
+        };
+        draft.field = yoctui_model::MaintenanceGitArchiveField::PushRemote;
+        app.dialogs.push_front(Dialog::Maintenance(Box::new(
+            MaintenanceDialog::GitArchiveForm(Box::new(draft)),
+        )));
+        app.focus = FocusTarget::Dialog;
+        for (width, height) in [(160, 40), (100, 26), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Git release archive"), "{width}: {output}");
+            assert!(output.contains("/release/archive.git"), "{width}: {output}");
+            assert!(output.contains("[x] bare"), "{width}: {output}");
+            assert!(output.contains("origin"), "{width}: {output}");
+            assert!(output.contains("second network"), "{width}: {output}");
+            assert!(
+                output.contains("note identity changed"),
                 "{width}: {output}"
             );
         }
