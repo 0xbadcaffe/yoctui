@@ -749,6 +749,14 @@ that exact runner into an asynchronous wait so terminal and BitBake input stay
 responsive. Successful post-run evidence validation replaces model evidence,
 while validation or command failure preserves the previous evidence set.
 
+Sstate form effects enter the coordinator before confirmation. Readiness
+reconstructs and exposes the adapter-owned exact vector without spawning it.
+Cleanup uses a separate non-destructive preview runner whose bounded stdout is
+parsed only by the sstate adapter; only a successfully parsed exact candidate
+set enters the phrase dialog. The preview runner and destructive operation
+runner are mutually exclusive, and execution rediscovers and compares the
+candidate set again immediately before deletion.
+
 Cleanup, PR import/export, locked-cache output replacement, repository
 creation/tagging, and optional remote push are separate typed side-effect
 classes. A cleanup request requires both its exact candidate preview and phrase
