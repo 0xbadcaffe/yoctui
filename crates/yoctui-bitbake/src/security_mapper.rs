@@ -778,10 +778,15 @@ mod tests {
 
     #[cfg(unix)]
     fn write_executable(path: &Path, body: &str) {
-        fs::write(path, body).unwrap();
-        let mut permissions = fs::metadata(path).unwrap().permissions();
+        let temporary = path.with_extension(format!(
+            "fixture-write-{}",
+            NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::write(&temporary, body).unwrap();
+        let mut permissions = fs::metadata(&temporary).unwrap().permissions();
         permissions.set_mode(0o755);
-        fs::set_permissions(path, permissions).unwrap();
+        fs::set_permissions(&temporary, permissions).unwrap();
+        fs::rename(temporary, path).unwrap();
     }
 
     fn preview(directory: &TestDirectory) -> SecurityOperationPreview {
