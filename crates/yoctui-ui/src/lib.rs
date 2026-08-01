@@ -9154,6 +9154,38 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
                 Modifier::BOLD,
             ),
         ),
+        MaintenanceDialog::BuildHistoryForm(draft) => (
+            "Build-history comparison",
+            format!(
+                "Repository (read-only): {}\n{} From revision: {}\n{} To revision: {}\n{} [{}] report version\n{} [{}] report all\n{} [{}] signatures\n{} [{}] signature diff\n{} Exclude paths: {}\n{} [{}] no colour\n\nComparison uses buildhistory-diff only; build-compare is a separate unsupported capability. Output is bounded session evidence.\n\n{}\n\nTab/Shift+Tab field | Space/←/→ toggle | Enter preview | Esc cancel",
+                draft.repository.display(),
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::FromRevision { ">" } else { " " },
+                if draft.from_revision.is_empty() { "<none>" } else { &draft.from_revision },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::ToRevision { ">" } else { " " },
+                if draft.to_revision.is_empty() { "<none>" } else { &draft.to_revision },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::ReportVersion { ">" } else { " " },
+                if draft.report_version { "x" } else { " " },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::ReportAll { ">" } else { " " },
+                if draft.report_all { "x" } else { " " },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::Signatures { ">" } else { " " },
+                if draft.signatures { "x" } else { " " },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::SignatureDiff { ">" } else { " " },
+                if draft.signature_diff { "x" } else { " " },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::ExcludePaths { ">" } else { " " },
+                if draft.exclude_paths.is_empty() { "<none>" } else { &draft.exclude_paths },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::NoColour { ">" } else { " " },
+                if draft.no_colour { "x" } else { " " },
+                draft.validation.as_deref().unwrap_or("No comparison runs until the exact adapter preview is confirmed."),
+            ),
+            palette.role(
+                if draft.validation.is_some() {
+                    palette.error
+                } else {
+                    palette.info
+                },
+                Modifier::BOLD,
+            ),
+        ),
         MaintenanceDialog::Confirm(preview) => (
             if preview.operation.destructive() {
                 "Confirm destructive Maintenance operation"
@@ -14668,6 +14700,43 @@ mod tests {
             assert!(output.contains("may be replaced"), "{width}: {output}");
             assert!(
                 output.contains("input and output cache must differ"),
+                "{width}: {output}"
+            );
+        }
+    }
+
+    #[test]
+    fn maintenance_release_history_workspace_renders_exact_choices_responsively() {
+        let mut app = maintenance_workflow_ui_app();
+        let metadata = yoctui_model::MaintenanceMetadata {
+            buildhistory_dir: Some("/build/buildhistory".into()),
+            ..yoctui_model::MaintenanceMetadata::default()
+        };
+        let mut draft =
+            yoctui_model::MaintenanceBuildHistoryDraft::from_metadata(&metadata).unwrap();
+        draft.from_revision = "HEAD~2".into();
+        draft.to_revision = "HEAD".into();
+        draft.signatures = true;
+        draft.signature_diff = true;
+        draft.exclude_paths = "images/*,packages/*".into();
+        draft.no_colour = true;
+        draft.validation = Some("repository identity changed".into());
+        app.dialogs.push_front(Dialog::Maintenance(Box::new(
+            MaintenanceDialog::BuildHistoryForm(Box::new(draft)),
+        )));
+        app.focus = FocusTarget::Dialog;
+        for (width, height) in [(160, 40), (100, 26), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(
+                output.contains("Build-history comparison"),
+                "{width}: {output}"
+            );
+            assert!(output.contains("/build/buildhistory"), "{width}: {output}");
+            assert!(output.contains("HEAD~2"), "{width}: {output}");
+            assert!(output.contains("[x] signature diff"), "{width}: {output}");
+            assert!(output.contains("[x] no colour"), "{width}: {output}");
+            assert!(
+                output.contains("repository identity changed"),
                 "{width}: {output}"
             );
         }

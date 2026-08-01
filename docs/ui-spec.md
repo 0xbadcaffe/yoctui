@@ -2093,6 +2093,18 @@ Its report is replaceable, bounded, and retains both resolved revisions.
 `build-compare` is a separate optional capability and is disabled when absent;
 it is never emulated by relabelling `buildhistory-diff`.
 
+`h` opens the build-history comparison form only when the exact
+`buildhistory-diff` capability and authoritative canonical `BUILDHISTORY_DIR`
+repository are available. Repository is read-only. From revision, to revision,
+and comma-separated exclude paths begin empty; report-version, report-all,
+signatures, signature-diff, and no-colour begin clear. `Tab`/`Shift+Tab`
+traverses those fields in that order, with exclude paths between signature-diff
+and no-colour. Normal typing and `Backspace` edit only text fields, while
+`Space` or `Left`/`Right` toggles only the selected choice. `Enter` validates
+and requests an exact adapter preview without running a comparison; `Esc`
+closes without side effects. The form labels bounded session output and states
+that `build-compare` is a separate unsupported interface.
+
 Git archival uses `oe-git-archive` with exact data and repository directories,
 typed create/bare/tag choices, branch/tag/message templates, exclusions, and
 notes. Push is never implicit. Local archive creation has an exact preview;
