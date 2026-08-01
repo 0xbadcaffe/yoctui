@@ -2,66 +2,59 @@
 
 ## Task
 
-**ID:** HARDEN-ANALYSIS-001
-**Title:** Integrate hardening analysis gates
+**ID:** DOC-001
+**Title:** Complete operator and compatibility documentation
 
 ## Objective
 
-Audit and integrate every existing and newly added hardening technique into a
-single strict, documented completion path with reproducible artifacts and
-actionable prerequisite failures.
+Close the M7 documentation gate with accurate fresh-checkout installation,
+daily operator workflows, troubleshooting, and evidence-backed compatibility
+claims for the implemented Yoctui product.
 
 ## Required work
 
-1. Execute and audit the existing pseudo-terminal, Valgrind, deterministic
-   profile, and Flamegraph scripts. Fix correctness or determinism defects;
-   never weaken a finding or missing-tool failure.
-2. Confirm the model and protocol property tests run in the ordinary workspace
-   suite and the real process-tree test runs in the stress gate.
-3. Add fuzz, stress/process-tree, sanitizer, and pseudo-terminal gates to
-   `scripts/verify-completion.sh` in a clear order before memory/profile output.
-4. Add the deterministic stress gate to CI. Keep nightly/tool-heavy fuzz,
-   sanitizer, Valgrind, and Flamegraph work in the strict completion gate with
-   documented local prerequisites.
-5. Verify Valgrind summaries reject definite/indirect leaks and unexpected
-   file descriptors, profiling writes a nonempty timing artifact, and
-   Flamegraph writes a nonempty SVG.
-6. Update testing/profiling documentation and record exact tool/platform
-   limitations without claiming live BitBake coverage.
+1. Audit `README.md`, `docs/compatibility.md`, `docs/testing.md`, and all linked
+   operator documents against the current CLI, UI specification, architecture,
+   and verified live/fake boundaries.
+2. Identify missing fresh-checkout, dependency installation, initialized Yocto
+   environment, launch, workspace, build, editor, Devtool, maintenance,
+   hardening, troubleshooting, and artifact instructions.
+3. Because these are independent documentation outcomes, split genuine gaps
+   into atomic child tasks with explicit verification before editing.
+4. Keep commands directly copyable and distinguish Poky setup from standalone
+   BitBake setup. Never claim a release or live workflow from fixture evidence.
+5. Validate every internal link and shell snippet that can run without an
+   external Yocto checkout.
 
 ## Definition of done
 
-- Terminal, Valgrind, profile, and Flamegraph scripts pass and produce their
-  expected evidence.
-- The strict completion script invokes every hardening technique.
-- CI runs the portable deterministic stress gate.
-- Focused and baseline verification pass.
+- Fresh-checkout installation and launch instructions are complete and
+  reproducible.
+- Daily workflows and troubleshooting cover all implemented destinations and
+  safety boundaries.
+- The compatibility matrix contains only evidence-backed claims and explicit
+  limitations.
+- All documentation verification and repository baseline checks pass.
 
 ## Verification
 
 ```bash
-./scripts/test-terminal.sh
-./scripts/valgrind.sh
-./scripts/profile-workload.sh
-./scripts/flamegraph.sh
-test -s artifacts/valgrind/report.xml
-test -s artifacts/valgrind/summary.txt
-test -s artifacts/profile/summary.txt
-test -s artifacts/flamegraph/yoctui.svg
+test -s docs/compatibility.md
+test -s README.md
+./scripts/verify-roadmap.sh
+./scripts/check-checkout.sh
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 python3 -m pytest bridge/tests
-./scripts/verify-roadmap.sh
 ```
 
 ## Documentation updates
 
-- Update `docs/testing.md` and `docs/profiling.md` for the integrated gate.
-- Mark `HARDEN-ANALYSIS-001` `DONE` only after every command passes.
-- Update `docs/implementation-status.md`.
-- Replace this file with `HARDEN-001`.
+- Split missing independent outcomes in `docs/task-registry.toml` before edits.
+- Update `docs/implementation-status.md` with verified documentation evidence.
+- Replace this file with the first atomic documentation child.
 
 ## Next task
 
-`HARDEN-001`
+To be selected by the documentation gap audit.
