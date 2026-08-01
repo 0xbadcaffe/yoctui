@@ -1178,6 +1178,49 @@ pub struct MaintenanceCleanupDraft {
     pub validation: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MaintenancePrServiceDraft {
+    pub operation: PrServiceOperation,
+    pub file: String,
+    pub build_dir: PathBuf,
+    pub endpoint: String,
+    pub validation: Option<String>,
+}
+
+impl MaintenancePrServiceDraft {
+    pub fn from_metadata(
+        metadata: &MaintenanceMetadata,
+        operation: PrServiceOperation,
+    ) -> Result<Self, &'static str> {
+        Ok(Self {
+            operation,
+            file: String::new(),
+            build_dir: metadata
+                .build_dir
+                .clone()
+                .ok_or("BUILDDIR is unavailable")?,
+            endpoint: metadata
+                .prserv_host
+                .clone()
+                .ok_or("PRSERV_HOST is unavailable")?,
+            validation: None,
+        })
+    }
+
+    pub fn request(&self) -> Result<PrServiceRequest, &'static str> {
+        PrServiceRequest::new(
+            self.operation,
+            PathBuf::from(&self.file),
+            self.build_dir.clone(),
+            self.endpoint.clone(),
+        )
+    }
+
+    pub fn is_bounded(&self) -> bool {
+        self.file.len() <= MAX_MAINTENANCE_TEXT_BYTES && !self.file.contains('\n')
+    }
+}
+
 impl MaintenanceCleanupDraft {
     pub fn from_metadata(metadata: &MaintenanceMetadata) -> Result<Self, &'static str> {
         let cache_dir = metadata
@@ -1296,6 +1339,7 @@ impl MaintenanceSession {
 pub enum MaintenanceDialog {
     ReadinessForm(Box<MaintenanceReadinessDraft>),
     CleanupForm(Box<MaintenanceCleanupDraft>),
+    PrServiceForm(Box<MaintenancePrServiceDraft>),
     Confirm(MaintenanceOperationPreview),
     CleanupPhrase {
         preview: MaintenanceOperationPreview,
@@ -1399,6 +1443,9 @@ pub enum MaintenanceAction {
     OpenCleanupForm,
     UpdateCleanupForm(Box<MaintenanceCleanupDraft>),
     ConfirmCleanupForm(Box<MaintenanceCleanupDraft>),
+    OpenPrServiceForm(PrServiceOperation),
+    UpdatePrServiceForm(Box<MaintenancePrServiceDraft>),
+    ConfirmPrServiceForm(Box<MaintenancePrServiceDraft>),
     BeginOperation(MaintenanceOperationPreview),
     UpdateCleanupPhrase {
         preview: MaintenanceOperationPreview,
@@ -1474,6 +1521,10 @@ pub enum MaintenanceEffect {
     PreviewCleanup {
         capability_request: u64,
         request: SstateCleanupRequest,
+    },
+    PreviewPrService {
+        capability_request: u64,
+        request: PrServiceRequest,
     },
     StartOperation {
         id: MaintenanceSessionId,
@@ -1775,6 +1826,59 @@ pub fn update_maintenance(
                 }
             }
         }
+        MaintenanceAction::OpenPrServiceForm(operation)
+            if state.view == MaintenanceView::Services
+                && state
+                    .capability
+                    .snapshot()
+                    .is_some_and(|snapshot| snapshot.supports(MaintenanceTool::PrServiceTool)) =>
+        {
+            if let Some(snapshot) = state.capability.snapshot()
+                && let Ok(draft) =
+                    MaintenancePrServiceDraft::from_metadata(&snapshot.metadata, operation)
+            {
+                return MaintenanceTransition {
+                    dialog: MaintenanceDialogUpdate::Open(Box::new(
+                        MaintenanceDialog::PrServiceForm(Box::new(draft)),
+                    )),
+                    ..MaintenanceTransition::none()
+                };
+            }
+        }
+        MaintenanceAction::UpdatePrServiceForm(draft) if draft.is_bounded() => {
+            return MaintenanceTransition {
+                dialog: MaintenanceDialogUpdate::Open(Box::new(MaintenanceDialog::PrServiceForm(
+                    draft,
+                ))),
+                ..MaintenanceTransition::none()
+            };
+        }
+        MaintenanceAction::ConfirmPrServiceForm(mut draft) if draft.is_bounded() => {
+            match draft.request() {
+                Ok(request) => {
+                    let Some(capability_request) = state.capability.request() else {
+                        return MaintenanceTransition::none();
+                    };
+                    return MaintenanceTransition {
+                        effect: Some(MaintenanceEffect::PreviewPrService {
+                            capability_request,
+                            request,
+                        }),
+                        dialog: MaintenanceDialogUpdate::Close,
+                        notification: None,
+                    };
+                }
+                Err(message) => {
+                    draft.validation = Some(message.into());
+                    return MaintenanceTransition {
+                        dialog: MaintenanceDialogUpdate::Open(Box::new(
+                            MaintenanceDialog::PrServiceForm(draft),
+                        )),
+                        ..MaintenanceTransition::none()
+                    };
+                }
+            }
+        }
         MaintenanceAction::BeginOperation(preview)
             if state.active_session().is_none()
                 && !state
@@ -2036,6 +2140,7 @@ mod tests {
                 stamps_dirs: vec!["/build/tmp/stamps".into()],
                 native_lsb: Some("ubuntu".into()),
                 machine: Some("qemux86-64".into()),
+                prserv_host: Some("localhost:8585".into()),
                 ..MaintenanceMetadata::default()
             })
             .unwrap(),
@@ -2660,6 +2765,63 @@ mod tests {
         );
         assert_eq!(
             update_maintenance(&mut state, MaintenanceAction::OpenCleanupForm),
+            MaintenanceTransition::none()
+        );
+    }
+
+    #[test]
+    fn maintenance_service_workspace_forms_keep_operation_and_context_typed() {
+        for operation in [PrServiceOperation::Export, PrServiceOperation::Import] {
+            let mut state = ready_state();
+            state.view = MaintenanceView::Services;
+            let transition =
+                update_maintenance(&mut state, MaintenanceAction::OpenPrServiceForm(operation));
+            let MaintenanceDialogUpdate::Open(dialog) = transition.dialog else {
+                panic!("PR service form did not open");
+            };
+            let MaintenanceDialog::PrServiceForm(mut draft) = *dialog else {
+                panic!("wrong PR service dialog");
+            };
+            assert_eq!(draft.operation, operation);
+            assert_eq!(draft.build_dir, Path::new("/build"));
+            assert_eq!(draft.endpoint, "localhost:8585");
+            draft.file = "/evidence/pr.txt".into();
+            let invalid = update_maintenance(
+                &mut state,
+                MaintenanceAction::ConfirmPrServiceForm(draft.clone()),
+            );
+            assert!(matches!(
+                invalid.dialog,
+                MaintenanceDialogUpdate::Open(dialog)
+                    if matches!(*dialog, MaintenanceDialog::PrServiceForm(ref draft) if draft.validation.is_some())
+            ));
+            draft.file = match operation {
+                PrServiceOperation::Export => "/evidence/pr.conf".into(),
+                PrServiceOperation::Import => "/evidence/pr.inc".into(),
+            };
+            let valid =
+                update_maintenance(&mut state, MaintenanceAction::ConfirmPrServiceForm(draft));
+            assert!(matches!(
+                valid.effect,
+                Some(MaintenanceEffect::PreviewPrService {
+                    capability_request: 1,
+                    request: PrServiceRequest { operation: actual, .. },
+                }) if actual == operation
+            ));
+        }
+    }
+
+    #[test]
+    fn maintenance_service_workspace_form_is_inert_without_capability_or_context() {
+        let mut state = MaintenanceState {
+            view: MaintenanceView::Services,
+            ..MaintenanceState::default()
+        };
+        assert_eq!(
+            update_maintenance(
+                &mut state,
+                MaintenanceAction::OpenPrServiceForm(PrServiceOperation::Export),
+            ),
             MaintenanceTransition::none()
         );
     }

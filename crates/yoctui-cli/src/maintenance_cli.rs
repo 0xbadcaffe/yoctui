@@ -258,6 +258,7 @@ impl MaintenanceCliCoordinator {
                     });
                 }
             }
+            MaintenanceEffect::PreviewPrService { .. } => return false,
             MaintenanceEffect::StartOperation { id, preview } => {
                 if self.operation.is_some() {
                     fail(app, id, "another Maintenance operation is already active");
