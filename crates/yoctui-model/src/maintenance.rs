@@ -1290,6 +1290,117 @@ impl MaintenanceLockedCacheDraft {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum MaintenanceBuildHistoryField {
+    #[default]
+    FromRevision,
+    ToRevision,
+    ReportVersion,
+    ReportAll,
+    Signatures,
+    SignatureDiff,
+    ExcludePaths,
+    NoColour,
+}
+
+impl MaintenanceBuildHistoryField {
+    pub fn cycle(self, backwards: bool) -> Self {
+        const FIELDS: [MaintenanceBuildHistoryField; 8] = [
+            MaintenanceBuildHistoryField::FromRevision,
+            MaintenanceBuildHistoryField::ToRevision,
+            MaintenanceBuildHistoryField::ReportVersion,
+            MaintenanceBuildHistoryField::ReportAll,
+            MaintenanceBuildHistoryField::Signatures,
+            MaintenanceBuildHistoryField::SignatureDiff,
+            MaintenanceBuildHistoryField::ExcludePaths,
+            MaintenanceBuildHistoryField::NoColour,
+        ];
+        let index = FIELDS
+            .iter()
+            .position(|field| *field == self)
+            .expect("build-history field belongs to its fixed field order");
+        FIELDS[if backwards {
+            index.checked_sub(1).unwrap_or(FIELDS.len() - 1)
+        } else {
+            (index + 1) % FIELDS.len()
+        }]
+    }
+
+    pub fn is_toggle(self) -> bool {
+        matches!(
+            self,
+            Self::ReportVersion
+                | Self::ReportAll
+                | Self::Signatures
+                | Self::SignatureDiff
+                | Self::NoColour
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MaintenanceBuildHistoryDraft {
+    pub field: MaintenanceBuildHistoryField,
+    pub repository: PathBuf,
+    pub from_revision: String,
+    pub to_revision: String,
+    pub report_version: bool,
+    pub report_all: bool,
+    pub signatures: bool,
+    pub signature_diff: bool,
+    pub exclude_paths: String,
+    pub no_colour: bool,
+    pub validation: Option<String>,
+}
+
+impl MaintenanceBuildHistoryDraft {
+    pub fn from_metadata(metadata: &MaintenanceMetadata) -> Result<Self, &'static str> {
+        Ok(Self {
+            field: MaintenanceBuildHistoryField::FromRevision,
+            repository: metadata
+                .buildhistory_dir
+                .clone()
+                .ok_or("BUILDHISTORY_DIR is unavailable")?,
+            from_revision: String::new(),
+            to_revision: String::new(),
+            report_version: false,
+            report_all: false,
+            signatures: false,
+            signature_diff: false,
+            exclude_paths: String::new(),
+            no_colour: false,
+            validation: None,
+        })
+    }
+
+    pub fn request(&self) -> Result<BuildComparisonRequest, &'static str> {
+        let optional = |value: &str| (!value.is_empty()).then(|| value.to_owned());
+        BuildComparisonRequest::new(BuildComparisonRequest {
+            repository: self.repository.clone(),
+            from_revision: optional(&self.from_revision),
+            to_revision: optional(&self.to_revision),
+            report_version: self.report_version,
+            report_all: self.report_all,
+            signatures: self.signatures,
+            signature_diff: self.signature_diff,
+            exclude_paths: self
+                .exclude_paths
+                .split(',')
+                .map(str::trim)
+                .filter(|path| !path.is_empty())
+                .map(str::to_owned)
+                .collect(),
+            no_colour: self.no_colour,
+        })
+    }
+
+    pub fn is_bounded(&self) -> bool {
+        [&self.from_revision, &self.to_revision, &self.exclude_paths]
+            .into_iter()
+            .all(|value| value.len() <= MAX_MAINTENANCE_TEXT_BYTES && !value.contains('\n'))
+    }
+}
+
 impl MaintenanceCleanupDraft {
     pub fn from_metadata(metadata: &MaintenanceMetadata) -> Result<Self, &'static str> {
         let cache_dir = metadata
@@ -1410,6 +1521,7 @@ pub enum MaintenanceDialog {
     CleanupForm(Box<MaintenanceCleanupDraft>),
     PrServiceForm(Box<MaintenancePrServiceDraft>),
     LockedCacheForm(Box<MaintenanceLockedCacheDraft>),
+    BuildHistoryForm(Box<MaintenanceBuildHistoryDraft>),
     Confirm(MaintenanceOperationPreview),
     CleanupPhrase {
         preview: MaintenanceOperationPreview,
@@ -1519,6 +1631,9 @@ pub enum MaintenanceAction {
     OpenLockedCacheForm,
     UpdateLockedCacheForm(Box<MaintenanceLockedCacheDraft>),
     ConfirmLockedCacheForm(Box<MaintenanceLockedCacheDraft>),
+    OpenBuildHistoryForm,
+    UpdateBuildHistoryForm(Box<MaintenanceBuildHistoryDraft>),
+    ConfirmBuildHistoryForm(Box<MaintenanceBuildHistoryDraft>),
     BeginOperation(MaintenanceOperationPreview),
     UpdateCleanupPhrase {
         preview: MaintenanceOperationPreview,
@@ -1602,6 +1717,10 @@ pub enum MaintenanceEffect {
     PreviewLockedSignatureCache {
         capability_request: u64,
         request: LockedSignatureCacheRequest,
+    },
+    PreviewBuildHistoryComparison {
+        capability_request: u64,
+        request: BuildComparisonRequest,
     },
     StartOperation {
         id: MaintenanceSessionId,
@@ -2008,6 +2127,58 @@ pub fn update_maintenance(
                 }
             }
         }
+        MaintenanceAction::OpenBuildHistoryForm
+            if state.view == MaintenanceView::Release
+                && state.capability.snapshot().is_some_and(|snapshot| {
+                    snapshot.supports(MaintenanceTool::BuildHistoryDiff)
+                        && snapshot.metadata.buildhistory_dir.is_some()
+                }) =>
+        {
+            if let Some(snapshot) = state.capability.snapshot()
+                && let Ok(draft) = MaintenanceBuildHistoryDraft::from_metadata(&snapshot.metadata)
+            {
+                return MaintenanceTransition {
+                    dialog: MaintenanceDialogUpdate::Open(Box::new(
+                        MaintenanceDialog::BuildHistoryForm(Box::new(draft)),
+                    )),
+                    ..MaintenanceTransition::none()
+                };
+            }
+        }
+        MaintenanceAction::UpdateBuildHistoryForm(draft) if draft.is_bounded() => {
+            return MaintenanceTransition {
+                dialog: MaintenanceDialogUpdate::Open(Box::new(
+                    MaintenanceDialog::BuildHistoryForm(draft),
+                )),
+                ..MaintenanceTransition::none()
+            };
+        }
+        MaintenanceAction::ConfirmBuildHistoryForm(mut draft) if draft.is_bounded() => {
+            match draft.request() {
+                Ok(request) => {
+                    let Some(capability_request) = state.capability.request() else {
+                        return MaintenanceTransition::none();
+                    };
+                    return MaintenanceTransition {
+                        effect: Some(MaintenanceEffect::PreviewBuildHistoryComparison {
+                            capability_request,
+                            request,
+                        }),
+                        dialog: MaintenanceDialogUpdate::Close,
+                        notification: None,
+                    };
+                }
+                Err(message) => {
+                    draft.validation = Some(message.into());
+                    return MaintenanceTransition {
+                        dialog: MaintenanceDialogUpdate::Open(Box::new(
+                            MaintenanceDialog::BuildHistoryForm(draft),
+                        )),
+                        ..MaintenanceTransition::none()
+                    };
+                }
+            }
+        }
         MaintenanceAction::BeginOperation(preview)
             if state.active_session().is_none()
                 && !state
@@ -2267,6 +2438,7 @@ mod tests {
                 build_dir: Some("/build".into()),
                 sstate_dir: Some("/cache".into()),
                 stamps_dirs: vec!["/build/tmp/stamps".into()],
+                buildhistory_dir: Some("/build/buildhistory".into()),
                 native_lsb: Some("ubuntu".into()),
                 machine: Some("qemux86-64".into()),
                 prserv_host: Some("localhost:8585".into()),
@@ -3023,6 +3195,88 @@ mod tests {
             update_maintenance(
                 &mut state,
                 MaintenanceAction::UpdateLockedCacheForm(Box::new(draft)),
+            ),
+            MaintenanceTransition::none()
+        );
+    }
+
+    #[test]
+    fn maintenance_release_history_workspace_emits_exact_buildhistory_request() {
+        let mut state = ready_state();
+        state.view = MaintenanceView::Release;
+        let transition = update_maintenance(&mut state, MaintenanceAction::OpenBuildHistoryForm);
+        let MaintenanceDialogUpdate::Open(dialog) = transition.dialog else {
+            panic!("build-history form did not open");
+        };
+        let MaintenanceDialog::BuildHistoryForm(mut draft) = *dialog else {
+            panic!("wrong build-history dialog");
+        };
+        assert_eq!(draft.repository, Path::new("/build/buildhistory"));
+        assert_eq!(
+            draft.field.cycle(true),
+            MaintenanceBuildHistoryField::NoColour
+        );
+        draft.from_revision = "HEAD~2".into();
+        draft.to_revision = "HEAD".into();
+        draft.report_version = true;
+        draft.signatures = true;
+        draft.signature_diff = true;
+        draft.exclude_paths = "images/*, packages/*, images/*".into();
+        draft.no_colour = true;
+        let valid = update_maintenance(
+            &mut state,
+            MaintenanceAction::ConfirmBuildHistoryForm(draft),
+        );
+        assert!(matches!(
+            valid.effect,
+            Some(MaintenanceEffect::PreviewBuildHistoryComparison {
+                capability_request: 1,
+                request: BuildComparisonRequest {
+                    from_revision: Some(from),
+                    to_revision: Some(to),
+                    signatures: true,
+                    signature_diff: true,
+                    no_colour: true,
+                    exclude_paths,
+                    ..
+                },
+            }) if from == "HEAD~2"
+                && to == "HEAD"
+                && exclude_paths == vec!["images/*", "packages/*"]
+        ));
+        assert_eq!(valid.dialog, MaintenanceDialogUpdate::Close);
+    }
+
+    #[test]
+    fn maintenance_release_history_workspace_rejects_invalid_or_unavailable_context() {
+        let mut state = MaintenanceState {
+            view: MaintenanceView::Release,
+            ..MaintenanceState::default()
+        };
+        assert_eq!(
+            update_maintenance(&mut state, MaintenanceAction::OpenBuildHistoryForm),
+            MaintenanceTransition::none()
+        );
+
+        let mut draft = MaintenanceBuildHistoryDraft::from_metadata(&MaintenanceMetadata {
+            buildhistory_dir: Some(PathBuf::from("relative/buildhistory")),
+            ..MaintenanceMetadata::default()
+        })
+        .unwrap();
+        let invalid = update_maintenance(
+            &mut state,
+            MaintenanceAction::ConfirmBuildHistoryForm(Box::new(draft.clone())),
+        );
+        assert!(matches!(
+            invalid.dialog,
+            MaintenanceDialogUpdate::Open(dialog)
+                if matches!(*dialog, MaintenanceDialog::BuildHistoryForm(ref draft) if draft.validation.is_some())
+        ));
+        draft.exclude_paths = "x".repeat(MAX_MAINTENANCE_TEXT_BYTES + 1);
+        assert_eq!(
+            update_maintenance(
+                &mut state,
+                MaintenanceAction::UpdateBuildHistoryForm(Box::new(draft)),
             ),
             MaintenanceTransition::none()
         );

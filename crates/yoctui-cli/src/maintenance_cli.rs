@@ -278,6 +278,7 @@ impl MaintenanceCliCoordinator {
             }
             MaintenanceEffect::CancelOperation(id) => self.cancel(app, id),
             MaintenanceEffect::PreviewLockedSignatureCache { .. }
+            | MaintenanceEffect::PreviewBuildHistoryComparison { .. }
             | MaintenanceEffect::OpenEvidence(_)
             | MaintenanceEffect::Navigate(_) => return false,
         }

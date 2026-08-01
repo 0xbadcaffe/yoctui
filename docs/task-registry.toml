@@ -1527,18 +1527,18 @@ notes = "Release l now opens a bounded model-owned four-path form only with exac
 id = "MAINT-RELEASE-HISTORY-UI-001"
 milestone = "M6"
 title = "Add typed build-history comparison form"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-RELEASE-LOCKED-UI-001"]
 verify = ["cargo test -p yoctui-model maintenance_release_history_workspace", "cargo test -p yoctui-app maintenance_release_history_workspace", "cargo test -p yoctui-ui maintenance_release_history_workspace"]
-notes = "Add the h route and bounded model-owned buildhistory-diff form with canonical repository context, optional revisions, exact typed choices, app input mapping, and responsive rendering without emulating build-compare."
+notes = "Release h now opens only from exact buildhistory-diff capability plus authoritative BUILDHISTORY_DIR. The model-owned form preserves the repository read-only, validates optional revisions and normalized exclusions, exposes every typed report/signature/no-colour choice, and emits one preview effect without execution. App input is focus-trapped and responsive rendering explicitly distinguishes unsupported build-compare. Two reducer tests, one app test, one TestBackend test, and the complete baseline pass."
 
 [[task]]
 id = "MAINT-RELEASE-ARCHIVE-UI-001"
 milestone = "M6"
 title = "Add typed Git archive form"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-RELEASE-HISTORY-UI-001"]
