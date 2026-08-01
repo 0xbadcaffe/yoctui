@@ -2,53 +2,56 @@
 
 ## Task
 
-**ID:** MAINT-SERVICE-ADAPTER-001
-**Title:** Adapt PR and hash service diagnostics
+**ID:** MAINT-RELEASE-ADAPTER-001
+**Title:** Adapt locked signatures, comparisons, and archives
 
 ## Objective
 
-Inspect authoritative PR service and hash server configuration plus bounded
-observational process evidence, and expose only the installed documented
-`bitbake-prserv-tool` export/import operations. Yoctui must never launch,
-restart, stop, or reconfigure internal BitBake services.
+Discover, preview, and execute the exact installed locked-signature cache,
+build-history comparison, optional build-compare, and Git archive interfaces
+with canonical identities, bounded evidence, cancellation, timeout, and
+runner-loss handling.
 
 ## Required work
 
-1. Accept an explicit initialized metadata snapshot containing `PRSERV_HOST`,
-   `BB_HASHSERVE`, `BB_HASHSERVE_UPSTREAM`, signature configuration, build
-   identity, and a child-only executable search path.
-2. Normalize configured, disabled, local, remote, reachable, unreachable,
-   partial, and unavailable PR/hash states without treating process-name
-   matching as proof of endpoint health.
-3. Acquire bounded observational evidence for `bitbake-prserv`,
-   `bitbake-hashserv`, and `bitbake-worker`; never own their lifecycle.
-4. Discover only a canonical regular non-symlink `bitbake-prserv-tool` and
-   expose only documented export and import operations.
-5. Construct exact shell-free vectors for canonical writable `.conf`/`.inc`
-   export destinations and canonical readable regular `.conf`/`.inc` import
-   sources. Revalidate executable and file identities immediately before
-   execution.
-6. Preserve the helper's known memory-server and BitBake-cache side effects in
-   typed previews; do not infer or expose undocumented commands.
-7. Reuse one Maintenance process runner where practical, with fake-process
-   tests for exact diagnostics and vectors, missing/unsafe/tampered inputs,
-   success, nonzero failure, timeout, graceful/forced cancellation, rejection,
-   and runner loss.
-8. Do not claim live PR/hash service health or PR database compatibility from
-   fixture tests.
+1. Inspect an explicit initialized build snapshot and child-only search path
+   for canonical regular non-symlink `gen-lockedsig-cache`,
+   `buildhistory-diff`, optional `build-compare`, and `oe-git-archive` tools.
+   Missing tools and distinct interfaces remain explicit.
+2. Construct the exact ordered `gen-lockedsig-cache` vector from a canonical
+   readable locked-signature include, canonical input/output cache roots,
+   native LSB string, and optional canonical readable filter. Preview output
+   replacement risk and revalidate every identity before execution.
+3. Validate one canonical build-history Git repository plus zero, one, or two
+   revisions. Construct only documented `buildhistory-diff` flags for report
+   version/all, signatures, signature differences, exclusions, and no-colour.
+4. Keep optional `build-compare` capability and vectors distinct from
+   `buildhistory-diff`; never emulate one by relabelling the other.
+5. Construct exact `oe-git-archive` vectors from canonical data/repository
+   roots and typed create/bare/tag/branch/message/exclusion/note choices.
+   Retain local archive creation separately from an optional remote push.
+6. Revalidate executable, Git revision, input, output, and evidence identities
+   immediately before execution or installation. Successful replaceable
+   evidence is installed atomically; failures retain prior valid evidence.
+7. Reuse the shared Maintenance process-group runner with bounded streams and
+   fake filesystem/process tests for exact vectors, missing/unsafe/tampered
+   inputs, success, nonzero failure, timeout, graceful/forced cancellation,
+   rejection, and runner loss.
+8. Do not claim live signature-cache, comparison, archive, or network
+   compatibility from fixture tests.
 
 ## Definition of done
 
-- Service configuration, endpoint observations, and process evidence remain
-  typed, bounded, and explicit about limitations.
-- Process evidence is observational only and cannot mutate service lifecycle.
-- Only exact documented PR export/import vectors can execute.
+- Every supported release operation is capability-driven, shell-free, and
+  exact; missing optional tools remain unavailable.
+- Replacement/destructive and network side effects are explicit in previews.
+- All inputs and resulting evidence are bounded and revalidated.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake maintenance_service
+cargo test -p yoctui-bitbake maintenance_release
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -59,10 +62,10 @@ python3 -m pytest bridge/tests
 ## Documentation updates
 
 - Update `docs/architecture.md` only if the adapter boundary changes.
-- Mark `MAINT-SERVICE-ADAPTER-001` `DONE` only after verification passes.
+- Mark `MAINT-RELEASE-ADAPTER-001` `DONE` only after verification passes.
 - Update `docs/implementation-status.md`.
 - Replace this file with the next eligible highest-priority Maintenance task.
 
 ## Next task
 
-`MAINT-RELEASE-ADAPTER-001`
+`MAINT-OPTIONAL-ADAPTER-001`

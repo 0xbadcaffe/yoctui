@@ -300,7 +300,7 @@ impl MaintenanceCapability {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ServiceKind {
     Pr,
     Hash,
@@ -317,12 +317,81 @@ pub enum ServiceState {
     Unavailable,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ServiceLocation {
+    Local,
+    Remote,
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ServiceEndpointRole {
+    Primary,
+    Upstream,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum ServiceReachability {
+    NotProbed,
+    Reachable,
+    Unreachable,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ServiceEndpointDiagnostic {
+    pub role: ServiceEndpointRole,
+    pub value: String,
+    pub location: ServiceLocation,
+    pub reachability: ServiceReachability,
+    pub limitation: Option<String>,
+}
+
+impl ServiceEndpointDiagnostic {
+    pub fn new(
+        role: ServiceEndpointRole,
+        value: String,
+        location: ServiceLocation,
+        reachability: ServiceReachability,
+        limitation: Option<String>,
+    ) -> Result<Self, &'static str> {
+        if !bounded_text(&value)
+            || limitation
+                .as_deref()
+                .is_some_and(|message| !bounded_text(message))
+        {
+            return Err("Maintenance service endpoint diagnostic is invalid");
+        }
+        Ok(Self {
+            role,
+            value,
+            location,
+            reachability,
+            limitation,
+        })
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ServiceProcessEvidence {
+    pub pid: u32,
+    pub executable: String,
+}
+
+impl ServiceProcessEvidence {
+    pub fn new(pid: u32, executable: String) -> Result<Self, &'static str> {
+        if pid == 0 || !bounded_token(&executable) {
+            return Err("Maintenance service process evidence is invalid");
+        }
+        Ok(Self { pid, executable })
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ServiceDiagnostic {
     pub kind: ServiceKind,
     pub state: ServiceState,
-    pub endpoint: Option<String>,
-    pub process_evidence: Vec<String>,
+    pub endpoints: Vec<ServiceEndpointDiagnostic>,
+    pub process_evidence: Vec<ServiceProcessEvidence>,
     pub limitations: Vec<String>,
 }
 
@@ -330,21 +399,41 @@ impl ServiceDiagnostic {
     pub fn new(
         kind: ServiceKind,
         state: ServiceState,
-        endpoint: Option<String>,
-        process_evidence: Vec<String>,
+        mut endpoints: Vec<ServiceEndpointDiagnostic>,
+        mut process_evidence: Vec<ServiceProcessEvidence>,
         limitations: Vec<String>,
     ) -> Result<Self, &'static str> {
-        if endpoint
-            .as_deref()
-            .is_some_and(|value| !bounded_text(value))
-        {
-            return Err("Maintenance service endpoint is invalid");
+        if endpoints.iter().any(|endpoint| {
+            ServiceEndpointDiagnostic::new(
+                endpoint.role,
+                endpoint.value.clone(),
+                endpoint.location,
+                endpoint.reachability,
+                endpoint.limitation.clone(),
+            )
+            .as_ref()
+                != Ok(endpoint)
+        }) || process_evidence.iter().any(|process| {
+            ServiceProcessEvidence::new(process.pid, process.executable.clone()).as_ref()
+                != Ok(process)
+        }) {
+            return Err("Maintenance service diagnostic is invalid");
         }
+        endpoints.sort_by(|left, right| {
+            left.role
+                .cmp(&right.role)
+                .then(left.value.cmp(&right.value))
+        });
+        endpoints.dedup_by(|left, right| left.role == right.role && left.value == right.value);
+        endpoints.truncate(MAX_MAINTENANCE_PATHS);
+        process_evidence.sort();
+        process_evidence.dedup();
+        process_evidence.truncate(MAX_MAINTENANCE_OUTPUT);
         Ok(Self {
             kind,
             state,
-            endpoint,
-            process_evidence: normalize_text(process_evidence, MAX_MAINTENANCE_OUTPUT),
+            endpoints,
+            process_evidence,
             limitations: normalize_text(limitations, MAX_MAINTENANCE_LIMITATIONS),
         })
     }
@@ -517,15 +606,31 @@ pub enum PrServiceOperation {
 pub struct PrServiceRequest {
     pub operation: PrServiceOperation,
     pub file: PathBuf,
+    pub build_dir: PathBuf,
+    pub endpoint: String,
 }
 
 impl PrServiceRequest {
-    pub fn new(operation: PrServiceOperation, file: PathBuf) -> Result<Self, &'static str> {
+    pub fn new(
+        operation: PrServiceOperation,
+        file: PathBuf,
+        build_dir: PathBuf,
+        endpoint: String,
+    ) -> Result<Self, &'static str> {
         let extension = file.extension().and_then(|value| value.to_str());
-        if !absolute_normal_path(&file) || !matches!(extension, Some("conf" | "inc")) {
+        if !absolute_normal_path(&file)
+            || !matches!(extension, Some("conf" | "inc"))
+            || !absolute_normal_path(&build_dir)
+            || !bounded_text(&endpoint)
+        {
             return Err("PR service file must be an absolute .conf or .inc path");
         }
-        Ok(Self { operation, file })
+        Ok(Self {
+            operation,
+            file,
+            build_dir,
+            endpoint,
+        })
     }
 }
 
@@ -1743,5 +1848,48 @@ mod tests {
                 Some(MaintenanceEffect::Navigate(screen))
             );
         }
+    }
+
+    #[test]
+    fn maintenance_service_model_retains_typed_endpoint_process_and_pr_context() {
+        let endpoint = ServiceEndpointDiagnostic::new(
+            ServiceEndpointRole::Primary,
+            "localhost:8585".into(),
+            ServiceLocation::Local,
+            ServiceReachability::Reachable,
+            None,
+        )
+        .unwrap();
+        let process = ServiceProcessEvidence::new(42, "bitbake-prserv".into()).unwrap();
+        let diagnostic = ServiceDiagnostic::new(
+            ServiceKind::Pr,
+            ServiceState::Reachable,
+            vec![endpoint.clone(), endpoint],
+            vec![process.clone(), process],
+            vec!["observational only".into(), "observational only".into()],
+        )
+        .unwrap();
+        assert_eq!(diagnostic.endpoints.len(), 1);
+        assert_eq!(diagnostic.process_evidence.len(), 1);
+        assert_eq!(diagnostic.limitations, vec!["observational only"]);
+
+        let request = PrServiceRequest::new(
+            PrServiceOperation::Import,
+            "/evidence/pr.inc".into(),
+            "/build".into(),
+            "localhost:8585".into(),
+        )
+        .unwrap();
+        assert_eq!(request.build_dir, Path::new("/build"));
+        assert_eq!(request.endpoint, "localhost:8585");
+        assert!(
+            PrServiceRequest::new(
+                PrServiceOperation::Export,
+                "/evidence/pr.txt".into(),
+                "/build".into(),
+                "localhost:8585".into(),
+            )
+            .is_err()
+        );
     }
 }

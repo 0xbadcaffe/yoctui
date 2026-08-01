@@ -1406,18 +1406,18 @@ notes = "The adapter distinguishes current Python and legacy shell cleanup inter
 id = "MAINT-SERVICE-ADAPTER-001"
 milestone = "M6"
 title = "Adapt PR and hash service diagnostics"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake maintenance_service"]
-notes = "Inspect typed PRSERV/HASHSERV configuration and process diagnostics, and expose only exact supported bitbake-prserv-tool operations; internal services are observed rather than launched."
+notes = "Typed primary/upstream endpoint roles retain local/remote and reachable/unreachable/configured/disabled/partial/unavailable meaning, while bounded PID/executable evidence for bitbake-prserv, bitbake-hashserv, and bitbake-worker remains observational only. The canonical bitbake-prserv-tool exposes only exact export/import vectors with build/endpoint context, native side-effect warnings, source/destination and executable revalidation, and the shared bounded process-group runner. Six adapter tests plus model and complete baseline checks pass; fixtures do not claim live service health or PR database compatibility."
 
 [[task]]
 id = "MAINT-RELEASE-ADAPTER-001"
 milestone = "M6"
 title = "Adapt locked signatures comparisons and archives"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001"]

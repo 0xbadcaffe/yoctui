@@ -18,8 +18,8 @@ use yoctui_model::{
     MaintenanceCapabilitySnapshot, MaintenanceFileIdentity, MaintenanceMetadata,
     MaintenanceOperation, MaintenanceOperationPreview, MaintenanceOutputStream,
     MaintenanceSessionId, MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface,
-    SstateCleanupMode, SstateCleanupPreview, SstateCleanupRequest, SstateReadinessMode,
-    SstateReadinessRequest,
+    PrServiceOperation, PrServiceRequest, SstateCleanupMode, SstateCleanupPreview,
+    SstateCleanupRequest, SstateReadinessMode, SstateReadinessRequest,
 };
 
 const SSTATE_EVENT_CHANNEL_CAPACITY: usize = 64;
@@ -407,6 +407,108 @@ fn cleanup_arguments(request: &SstateCleanupRequest, preview: bool, execute: boo
     arguments
 }
 
+fn pr_service_arguments(request: &PrServiceRequest) -> Vec<String> {
+    vec![
+        match request.operation {
+            PrServiceOperation::Export => "export",
+            PrServiceOperation::Import => "import",
+        }
+        .into(),
+        request.file.display().to_string(),
+    ]
+}
+
+fn filesystem_identity(
+    path: &Path,
+    directory: bool,
+) -> Result<FilesystemIdentity, MaintenanceSstateAdapterError> {
+    let metadata = safe_metadata(path, directory)
+        .map_err(|_| MaintenanceSstateAdapterError::UnsafePath(path.into()))?;
+    if metadata.is_dir() != directory {
+        return Err(MaintenanceSstateAdapterError::UnsafePath(path.into()));
+    }
+    let canonical = fs::canonicalize(path)
+        .map_err(|_| MaintenanceSstateAdapterError::UnsafePath(path.into()))?;
+    if canonical != path {
+        return Err(MaintenanceSstateAdapterError::UnsafePath(path.into()));
+    }
+    Ok(FilesystemIdentity {
+        path: canonical,
+        byte_size: metadata.len(),
+        modified_at: metadata
+            .modified()
+            .map_err(|_| MaintenanceSstateAdapterError::UnsafePath(path.into()))?,
+        directory,
+    })
+}
+
+fn require_writable(
+    path: &Path,
+    metadata: &fs::Metadata,
+) -> Result<(), MaintenanceSstateAdapterError> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        if metadata.permissions().mode() & 0o222 == 0 {
+            return Err(MaintenanceSstateAdapterError::UnsafePath(path.into()));
+        }
+    }
+    #[cfg(not(unix))]
+    if metadata.permissions().readonly() {
+        return Err(MaintenanceSstateAdapterError::UnsafePath(path.into()));
+    }
+    Ok(())
+}
+
+fn inspect_pr_service_file(
+    request: &PrServiceRequest,
+) -> Result<PrServiceFileGuard, MaintenanceSstateAdapterError> {
+    match request.operation {
+        PrServiceOperation::Export => {
+            let parent = request
+                .file
+                .parent()
+                .ok_or_else(|| MaintenanceSstateAdapterError::UnsafePath(request.file.clone()))?;
+            let parent_identity = filesystem_identity(parent, true)?;
+            let parent_metadata = fs::metadata(parent)
+                .map_err(|_| MaintenanceSstateAdapterError::UnsafePath(parent.into()))?;
+            require_writable(parent, &parent_metadata)?;
+            let existing = if request.file.exists() {
+                let identity = filesystem_identity(&request.file, false)?;
+                let metadata = fs::metadata(&request.file)
+                    .map_err(|_| MaintenanceSstateAdapterError::UnsafePath(request.file.clone()))?;
+                require_writable(&request.file, &metadata)?;
+                Some(identity)
+            } else {
+                None
+            };
+            Ok(PrServiceFileGuard::Export {
+                parent: parent_identity,
+                existing,
+            })
+        }
+        PrServiceOperation::Import => {
+            let identity = filesystem_identity(&request.file, false)?;
+            fs::File::open(&request.file)
+                .map_err(|_| MaintenanceSstateAdapterError::UnsafePath(request.file.clone()))?;
+            Ok(PrServiceFileGuard::Import(identity))
+        }
+    }
+}
+
+fn revalidate_pr_service_file(
+    request: &PrServiceRequest,
+    expected: &PrServiceFileGuard,
+) -> Result<(), MaintenanceSstateAdapterError> {
+    let current = inspect_pr_service_file(request)?;
+    if &current != expected {
+        return Err(MaintenanceSstateAdapterError::StaleIdentity(
+            request.file.clone(),
+        ));
+    }
+    Ok(())
+}
+
 fn indexed_arguments(executable: &Path, arguments: &[String]) -> Vec<String> {
     std::iter::once(format!("0: {}", executable.display()))
         .chain(
@@ -423,6 +525,25 @@ pub enum MaintenanceSstateCommandKind {
     Readiness,
     CleanupPreview,
     CleanupExecute,
+    PrServiceExport,
+    PrServiceImport,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct FilesystemIdentity {
+    path: PathBuf,
+    byte_size: u64,
+    modified_at: std::time::SystemTime,
+    directory: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum PrServiceFileGuard {
+    Export {
+        parent: FilesystemIdentity,
+        existing: Option<FilesystemIdentity>,
+    },
+    Import(FilesystemIdentity),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -439,6 +560,7 @@ pub struct MaintenanceSstateCommandSpec {
     preview: Option<MaintenanceOperationPreview>,
     cleanup_request: Option<SstateCleanupRequest>,
     cleanup_candidates: Vec<MaintenanceFileIdentity>,
+    pr_service_guard: Option<PrServiceFileGuard>,
 }
 
 impl MaintenanceSstateCommandSpec {
@@ -504,6 +626,7 @@ impl MaintenanceSstateCommandSpec {
                 preview: Some(preview),
                 cleanup_request: None,
                 cleanup_candidates: Vec::new(),
+                pr_service_guard: None,
             },
         ))
     }
@@ -546,6 +669,7 @@ impl MaintenanceSstateCommandSpec {
             preview: None,
             cleanup_request: Some(request),
             cleanup_candidates: Vec::new(),
+            pr_service_guard: None,
         })
     }
 
@@ -594,6 +718,79 @@ impl MaintenanceSstateCommandSpec {
                 preview: Some(preview),
                 cleanup_request: Some(confirmed.request.clone()),
                 cleanup_candidates: confirmed.candidates.clone(),
+                pr_service_guard: None,
+            },
+        ))
+    }
+
+    pub fn pr_service(
+        session: MaintenanceSessionId,
+        capability_request: u64,
+        snapshot: &MaintenanceCapabilitySnapshot,
+        operation_id: u64,
+        request: PrServiceRequest,
+    ) -> Result<(MaintenanceOperationPreview, Self), MaintenanceSstateAdapterError> {
+        let (executable, interface) = available_tool(snapshot, MaintenanceTool::PrServiceTool)?;
+        if interface != MaintenanceToolInterface::Native {
+            return Err(MaintenanceSstateAdapterError::Unavailable(
+                "unsupported bitbake-prserv-tool interface".into(),
+            ));
+        }
+        revalidate_executable(executable, "bitbake-prserv-tool")?;
+        let build_dir = snapshot
+            .metadata
+            .build_dir
+            .as_deref()
+            .ok_or_else(|| {
+                MaintenanceSstateAdapterError::Unavailable("BUILDDIR is unavailable".into())
+            })
+            .and_then(canonical_directory)?;
+        if request.build_dir != build_dir
+            || snapshot.metadata.prserv_host.as_ref() != Some(&request.endpoint)
+        {
+            return Err(MaintenanceSstateAdapterError::PreviewMismatch);
+        }
+        let guard = inspect_pr_service_file(&request)?;
+        let arguments = pr_service_arguments(&request);
+        let indexed = indexed_arguments(&executable.path, &arguments);
+        let mut limitations = vec![
+            format!("build directory: {}", build_dir.display()),
+            format!("configured PR endpoint: {}", request.endpoint),
+            "the native helper stops any active memory-resident BitBake server".into(),
+            "the native helper invalidates BitBake cache records before parsing".into(),
+        ];
+        match request.operation {
+            PrServiceOperation::Export => limitations
+                .push("export may replace the exact selected .conf or .inc destination".into()),
+            PrServiceOperation::Import => limitations.push("import changes PR service data".into()),
+        }
+        let preview = MaintenanceOperationPreview::new(
+            operation_id,
+            capability_request,
+            MaintenanceOperation::PrService(request.clone()),
+            indexed,
+            limitations,
+        )
+        .map_err(|message| MaintenanceSstateAdapterError::InvalidInput(message.into()))?;
+        Ok((
+            preview.clone(),
+            Self {
+                id: session,
+                kind: match request.operation {
+                    PrServiceOperation::Export => MaintenanceSstateCommandKind::PrServiceExport,
+                    PrServiceOperation::Import => MaintenanceSstateCommandKind::PrServiceImport,
+                },
+                executable_identity: executable.clone(),
+                interface,
+                arguments: arguments.iter().map(OsString::from).collect(),
+                environment: BTreeMap::new(),
+                current_directory: build_dir,
+                timeout: SSTATE_OPERATION_TIMEOUT,
+                stdin_payload: None,
+                preview: Some(preview),
+                cleanup_request: None,
+                cleanup_candidates: Vec::new(),
+                pr_service_guard: Some(guard),
             },
         ))
     }
@@ -623,12 +820,18 @@ impl MaintenanceSstateCommandSpec {
     }
 
     fn revalidate(&self) -> Result<(), MaintenanceSstateAdapterError> {
-        let name =
-            expected_name(self.interface, &self.executable_identity.path).ok_or_else(|| {
-                MaintenanceSstateAdapterError::UnsafeExecutable(
-                    self.executable_identity.path.clone(),
-                )
-            })?;
+        let name = if matches!(
+            self.kind,
+            MaintenanceSstateCommandKind::PrServiceExport
+                | MaintenanceSstateCommandKind::PrServiceImport
+        ) {
+            Some("bitbake-prserv-tool")
+        } else {
+            expected_name(self.interface, &self.executable_identity.path)
+        }
+        .ok_or_else(|| {
+            MaintenanceSstateAdapterError::UnsafeExecutable(self.executable_identity.path.clone())
+        })?;
         revalidate_executable(&self.executable_identity, name)?;
         canonical_directory(&self.current_directory)?;
         if self.timeout.is_zero() {
@@ -696,6 +899,24 @@ impl MaintenanceSstateCommandSpec {
                     {
                         return Err(MaintenanceSstateAdapterError::PreviewMismatch);
                     }
+                }
+                MaintenanceOperation::PrService(request) => {
+                    let expected_kind = match request.operation {
+                        PrServiceOperation::Export => MaintenanceSstateCommandKind::PrServiceExport,
+                        PrServiceOperation::Import => MaintenanceSstateCommandKind::PrServiceImport,
+                    };
+                    if self.kind != expected_kind
+                        || arguments != pr_service_arguments(request)
+                        || request.build_dir != self.current_directory
+                        || self.stdin_payload.is_some()
+                    {
+                        return Err(MaintenanceSstateAdapterError::PreviewMismatch);
+                    }
+                    let guard = self
+                        .pr_service_guard
+                        .as_ref()
+                        .ok_or(MaintenanceSstateAdapterError::PreviewMismatch)?;
+                    revalidate_pr_service_file(request, guard)?;
                 }
                 _ => return Err(MaintenanceSstateAdapterError::PreviewMismatch),
             }
@@ -1244,7 +1465,7 @@ impl MaintenanceSstateJobRunner {
     }
 
     #[cfg(test)]
-    fn lose_output_channel(&mut self) {
+    pub(crate) fn lose_output_channel(&mut self) {
         self.output = None;
     }
 }

@@ -673,6 +673,19 @@ roots, and evidence, then runs shell-free commands with bounded output. The
 optional adapter reports pull-request, error-report, repo-manifest, and Toaster
 capability without network or lifecycle side effects.
 
+Service diagnostics cross the boundary as typed endpoint-role, local/remote,
+reachability, PID, and executable-name records rather than raw process or
+socket text. The adapter bounds an explicit process-root scan and records
+`bitbake-prserv`, `bitbake-hashserv`, and `bitbake-worker` names only as
+observational evidence. Numeric, localhost, and UNIX endpoints may receive a
+bounded connection probe; named remote endpoints remain configured with an
+explicit unprobed limitation rather than invoking unbounded name resolution.
+Typed endpoint observations allow deterministic worker and fixture input but
+cannot turn process-name evidence into service health. PR export/import retains
+the exact build directory and configured endpoint, revalidates the canonical
+helper plus source/destination identities, and reuses the same Maintenance
+process-group runner as sstate operations.
+
 All Maintenance adapters return typed capability, preview, diagnostic,
 progress, result, and error values. Raw output parsing and filesystem/process
 classification stop at this boundary. A missing executable, metadata field, or
