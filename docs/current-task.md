@@ -2,53 +2,55 @@
 
 ## Task
 
-**ID:** HARDEN-001
-**Title:** Complete test and analysis matrix
+**ID:** HARDEN-FUZZ-001
+**Title:** Add reproducible fuzz harnesses
 
 ## Objective
 
-Close the required hardening milestone with verified property, fuzz, stress,
-terminal, sanitizer, Valgrind, profiling, and flamegraph coverage appropriate
-to the repository.
+Add bounded, reproducible cargo-fuzz coverage for the two principal untrusted
+pure-data boundaries: protocol framing and reducer-owned retained state.
 
 ## Required work
 
-1. Inspect the existing hardening implementation, tests, scripts, CI, and
-   documentation before adding anything.
-2. Reconcile the task against `docs/product-roadmap.md`, `docs/ui-spec.md`, and
-   `docs/architecture.md` and identify the exact remaining gaps.
-3. Because this parent outcome spans unrelated verification techniques, split
-   each missing gap into one concrete atomic child task with explicit files,
-   dependencies, definition of done, and verification commands before
-   implementation.
-4. Execute every child in dependency order, retaining platform/tool
-   limitations explicitly rather than weakening verification.
-5. Run the complete workspace test and clippy gate after all children pass.
+1. Inspect and reuse the existing protocol decode and model retention APIs;
+   do not copy their implementations into fuzz targets.
+2. Add a cargo-fuzz package excluded from the normal workspace and one target
+   each for arbitrary protocol frames and arbitrary retained-state operations.
+3. Keep target input and in-memory work bounded so finite smoke runs are
+   deterministic and suitable for CI/manual verification.
+4. Add minimal checked-in corpus seeds covering valid, malformed, oversized,
+   unknown-version, and retention-pressure inputs.
+5. Add `scripts/test-fuzz.sh` with explicit nightly/cargo-fuzz prerequisite
+   errors and finite smoke runs for every target.
+6. Document the exact fuzz commands, artifact location, and the fact that a
+   finite smoke run is not an exhaustive safety claim.
 
 ## Definition of done
 
-- Every required hardening technique has verified implementation or an exact
-  documented external blocker with a follow-up validation command.
-- All atomic hardening child tasks are `DONE` or correctly `BLOCKED`.
-- Workspace tests and warning-free clippy pass.
-- `HARDEN-001` is marked `DONE` only when its required completion gate passes.
+- Both fuzz targets compile and complete their finite smoke budgets without a
+  crash.
+- Corpus seeds are bounded and checked in.
+- Missing prerequisites fail with actionable exit status 2.
+- Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
+./scripts/test-fuzz.sh
+cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo fmt --all --check
 python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
 ```
 
 ## Documentation updates
 
-- Split missing independent outcomes in `docs/task-registry.toml` before code.
-- Keep `docs/implementation-status.md` synchronized with each child.
-- Replace this file with the next eligible atomic child after the split.
+- Document fuzzing in `docs/testing.md`.
+- Mark `HARDEN-FUZZ-001` `DONE` only after every command passes.
+- Update `docs/implementation-status.md`.
+- Replace this file with `HARDEN-STRESS-001`.
 
 ## Next task
 
-To be selected by the hardening gap audit.
+`HARDEN-STRESS-001`
