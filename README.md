@@ -2,6 +2,10 @@
 
 Yoctui is a Rust/Ratatui control frontend for Yocto/BitBake. BitBake remains the metadata and build authority; Yoctui observes it and requests operations.
 
+Start with the installation and environment quickstarts below, then use the
+[Operator Guide](docs/operator-guide.md) for daily builds, metadata editing,
+Devtool, artifacts, testing, maintenance, and troubleshooting.
+
 ## Prerequisites and installation
 
 Yoctui's production path targets a UTF-8 Linux terminal. Building Yoctui requires Git, Python 3, and a current stable Rust toolchain with Cargo. A real image build also needs the host packages required by the selected Yocto release; follow that release's Yocto Project Quick Build documentation rather than treating Yoctui's Rust prerequisites as a complete Yocto host setup.

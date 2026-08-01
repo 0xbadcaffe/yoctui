@@ -1659,18 +1659,18 @@ notes = "README now separates current bitbake-setup from complete Poky release l
 id = "DOC-OPERATOR-001"
 milestone = "M7"
 title = "Document daily operator workflows and troubleshooting"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 81
 required = true
 depends_on = ["DOC-INSTALL-001"]
 verify = ["test -s docs/operator-guide.md"]
-notes = "Add one linked operator guide covering persistent navigation, builds/tasks/logs/errors/images, layer/recipe/config editing, Devtool, dependencies/signatures/package data, SDK/QEMU/Wic, Testing/Security/QA/Maintenance, shell/editor transitions, settings, evidence, cancellation, and actionable troubleshooting."
+notes = "The linked operator guide now covers safe startup, persistent/responsive navigation, image and recipe build loops, Tasks/Logs/Errors, layer/recipe/config editing, Devtool, dependencies/signatures/package data, Images/SDK/QEMU/Wic, Testing/Security/QA/Maintenance, background cancellation and outcomes, shell/editor transitions, settings/session precedence, authority and fixture boundaries, and actionable environment/tool/job/terminal diagnostics. The Security mapper fixture now publishes rewritten executables atomically so the baseline is not vulnerable to ETXTBSY. All task and baseline verification passes."
 
 [[task]]
 id = "DOC-COMPAT-001"
 milestone = "M7"
 title = "Complete evidence-backed compatibility matrix"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 81
 required = true
 depends_on = ["DOC-OPERATOR-001"]
