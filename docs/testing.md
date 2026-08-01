@@ -20,6 +20,31 @@ and immediately cancels `core-image-minimal`. Override these with
 `YOCTUI_OE_INIT_BUILD_ENV` to the checkout's `oe-init-build-env`.
 
 `scripts/test-terminal.sh` starts Yoctui in a Linux pseudo-terminal, sends a quit key, and asserts that alternate-screen and cursor hide/show sequences are both emitted.
+
+## Fuzzing
+
+`fuzz/` contains cargo-fuzz targets for arbitrary protocol frames and bounded
+log-retention operations. The checked-in corpus covers valid and malformed
+JSON, an unsupported protocol version, an oversized frame, empty messages, and
+retention pressure. Run the reproducible smoke budget with:
+
+```bash
+rustup toolchain install nightly
+cargo install cargo-fuzz
+./scripts/test-fuzz.sh
+```
+
+For a longer investigation, run either target directly and choose an explicit
+time budget:
+
+```bash
+cargo +nightly fuzz run protocol_frames -- -max_total_time=3600 -max_len=4096
+cargo +nightly fuzz run retained_logs -- -max_total_time=3600 -max_len=4096
+```
+
+Crashes are written below `artifacts/fuzz/` by the smoke script. A finite fuzz
+run verifies the harness and its observed inputs; it is not an exhaustive
+safety or compatibility claim.
 # Completion gate
 
 `./scripts/verify-completion.sh` is intentionally strict. It verifies the clean checkout, coverage thresholds, security checks, Python static checks, deterministic profiling workloads, and Flamegraph output. It exits with status 2 and names the missing prerequisite if a required completion tool has not been installed.
