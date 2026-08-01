@@ -59,7 +59,7 @@ The normal application layout is:
 │ QEMU / Wic       │                                     │                                  │
 │ Maintenance      │                                     │                                  │
 ├──────────────────┴─────────────────────────────────────┴──────────────────────────────────┤
-│ F1 Help  F5 Build  / Search  Tab Focus  Ctrl+P Commands  E Errors  L Logs  Q Quit        │
+│ ? Help  F5 Build  / Search  Tab Focus  Ctrl+P Commands  e Errors  l Logs  q Quit         │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -398,7 +398,9 @@ Running actions:
 
 ## 10. Build dialog
 
-`F5` or `b` opens a build dialog.
+`F5` or `B` opens the image build-options dialog. A lower-case `b` remains a
+contextual selected-target action, including the selected-recipe build in
+Recipes.
 
 Example:
 
@@ -2300,19 +2302,19 @@ It shows context-sensitive shortcuts, not a fixed oversized list.
 Global example:
 
 ```text
-F1 Help  F5 Build  Ctrl+P Commands  / Search  Tab Focus  E Errors  L Logs  Q Quit
+? Help  F5 Build  Ctrl+P Commands  / Search  Tab Focus  e Errors  l Logs  q Quit
 ```
 
 Layers example:
 
 ```text
-Enter Open  ← Collapse  → Expand  E Editor  M Metadata  D Dependencies  / Search
+Enter Open/Toggle  ← Collapse  → Expand  e Editor  m Metadata  d Dependencies  / Search
 ```
 
 Tasks example:
 
 ```text
-Enter Inspect  F Follow  A Active  R Recipe Filter  C Cancel  E Errors  L Logs
+↑/↓ Select  f State  F Field  / Edit Filter  d Duration  c Cancel  Tab Focus
 ```
 
 Dialog example:
