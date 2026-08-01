@@ -2,46 +2,47 @@
 
 ## Task
 
-**ID:** DOC-COMPAT-001
-**Title:** Complete evidence-backed compatibility matrix
+**ID:** DOC-VERIFY-001
+**Title:** Validate documentation links and commands
 
 ## Objective
 
-Turn the compatibility notes into a structured, auditable matrix that states
-exactly what was observed live, what is covered only by fixtures, and which
-host or optional-tool prerequisites remain unvalidated or blocked.
+Add a deterministic local documentation gate that catches broken repository
+links, missing operator coverage, stale CLI examples, unsafe smoke behavior,
+and invalid checked-in shell scripts without requiring network or live Yocto.
 
 ## Required work
 
-1. Inspect the live BitBake smoke harness, recorded evidence, bridge adapter
-   selection, CLI backend behavior, hardening gates, and current compatibility
-   document before editing it.
-2. Structure `docs/compatibility.md` by protocol version, host/runtime,
-   backend, observed Yocto/BitBake snapshot, capability family, validation
-   level, date, and exact evidence command.
-3. Keep live, fixture/fake-process, static/test-only, unavailable, and blocked
-   evidence visibly distinct. Never generalize one snapshot to all BitBake 2.x
-   or claim live support from mocked modules.
-4. Record optional tool and host constraints for package data, SDK/QEMU/Wic,
-   Testing/Security/QA/Maintenance, terminal and hardening analysis, including
-   the current Flamegraph permission blocker.
-5. Add a reproducible procedure for adding a supported live combination and
-   link installation, operator, testing, and profiling guidance.
+1. Inspect existing verification scripts and every repository Markdown link
+   pattern before implementing; reuse existing safe CLI/headless helpers.
+2. Add `scripts/check-docs.sh` with deterministic local checks for relative
+   Markdown file links and anchors used by repository documentation. Reject
+   missing files, directories used as documents, and invalid fragments without
+   accessing the network.
+3. Require the installation, operator, compatibility, testing, profiling,
+   architecture, protocol, and UI documents plus the operator guide's required
+   daily workflow and troubleshooting sections.
+4. Verify current CLI help, the isolated no-Yocto headless workload, and doctor
+   behavior without reading a developer session or starting BitBake.
+5. Run `bash -n` over every checked-in `.sh` file using a deterministic sorted
+   list, with actionable file-specific failures.
+6. Integrate the documentation gate into CI and the completion gate without
+   weakening any existing check. Document it in the testing guide.
 
 ## Definition of done
 
-- The matrix identifies the exact observed live combination and capability
-  evidence without broad compatibility claims.
-- Fixture-only and optional-tool coverage cannot be mistaken for live support.
-- Known limitations and blocked evidence include actionable reproduction and
-  follow-up commands.
-- Task and baseline verification pass.
+- Broken local Markdown links/fragments and required-section omissions fail
+  with actionable output.
+- CLI/help/headless/doctor checks are isolated and cannot start a remembered
+  build.
+- Every checked-in shell script receives syntax validation.
+- CI and completion invoke the same gate.
+- Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-test -s docs/compatibility.md
-python3 scripts/live_bitbake_smoke.py --help
+./scripts/check-docs.sh
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -51,11 +52,12 @@ python3 -m pytest bridge/tests
 
 ## Documentation updates
 
-- Update `docs/compatibility.md` only.
-- Mark `DOC-COMPAT-001` `DONE` only after every command passes.
+- Add `scripts/check-docs.sh` and update `docs/testing.md`.
+- Update `.github/workflows/ci.yml` and `scripts/verify-completion.sh`.
+- Mark `DOC-VERIFY-001` `DONE` only after every command passes.
 - Update `docs/implementation-status.md`.
-- Replace this file with `DOC-VERIFY-001`.
+- Replace this file with `DOC-001`.
 
 ## Next task
 
-`DOC-VERIFY-001`
+`DOC-001`

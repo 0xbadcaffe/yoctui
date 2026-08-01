@@ -1670,18 +1670,18 @@ notes = "The linked operator guide now covers safe startup, persistent/responsiv
 id = "DOC-COMPAT-001"
 milestone = "M7"
 title = "Complete evidence-backed compatibility matrix"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 81
 required = true
 depends_on = ["DOC-OPERATOR-001"]
 verify = ["test -s docs/compatibility.md", "python3 scripts/live_bitbake_smoke.py --help"]
-notes = "Structure protocol, host, backend, Yocto/BitBake snapshot, fake-versus-live capability, optional-tool, and known-limitation evidence without generalizing from mocked tests."
+notes = "Compatibility now defines evidence levels and matrices protocol/backends, the exact BitBake 2.19.0/Poky 6.0.99 qemux86-64 live snapshot, per-workflow live versus fixture status, CI/development hosts, terminal/fuzz/Valgrind evidence, and the perf_event_paranoid Flamegraph blocker. It includes exact core/config/signature/pkgdata reproduction commands and a bounded procedure for adding live combinations without major-version generalization. The test-runner fixture now atomically publishes rewritten executables to prevent ETXTBSY across repeated sandbox runs. All task and baseline verification passes."
 
 [[task]]
 id = "DOC-VERIFY-001"
 milestone = "M7"
 title = "Validate documentation links and commands"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 81
 required = true
 depends_on = ["DOC-COMPAT-001"]
