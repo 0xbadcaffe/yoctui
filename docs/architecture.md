@@ -686,6 +686,23 @@ the exact build directory and configured endpoint, revalidates the canonical
 helper plus source/destination identities, and reuses the same Maintenance
 process-group runner as sstate operations.
 
+Release commands use the same runner through a guarded external-command
+specification. `gen-lockedsig-cache` retains its ordered positional interface
+and an exact pre-operation output inventory, so only created or identity-changed
+regular evidence is installed after success. `buildhistory-diff` retains its
+documented repository, reporting, signature, exclusion, colour, and revision
+arguments; the repository and HEAD identity are revalidated before spawn. A
+detected optional `build-compare` remains unavailable until its distinct native
+interface is explicitly supported and is never translated into a
+`buildhistory-diff` request.
+
+`oe-git-archive` local creation is constructed without `--push`, even when the
+typed user request includes a remote. A push vector can be constructed only
+from a separately captured and revalidated local repository/HEAD result, and it
+retains the remote as an explicit network side effect. Data, repository, note,
+tool, and local-result identities are guarded independently; fake repositories
+and helpers establish vector and lifecycle behavior only.
+
 All Maintenance adapters return typed capability, preview, diagnostic,
 progress, result, and error values. Raw output parsing and filesystem/process
 classification stop at this boundary. A missing executable, metadata field, or

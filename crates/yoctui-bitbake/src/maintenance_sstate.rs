@@ -442,6 +442,58 @@ fn filesystem_identity(
     })
 }
 
+pub(crate) fn guard_regular_file(
+    path: &Path,
+) -> Result<MaintenanceFilesystemGuard, MaintenanceSstateAdapterError> {
+    Ok(MaintenanceFilesystemGuard::Existing(filesystem_identity(
+        path, false,
+    )?))
+}
+
+pub(crate) fn guard_directory(
+    path: &Path,
+) -> Result<MaintenanceFilesystemGuard, MaintenanceSstateAdapterError> {
+    Ok(MaintenanceFilesystemGuard::Existing(filesystem_identity(
+        path, true,
+    )?))
+}
+
+pub(crate) fn guard_directory_or_absent(
+    path: &Path,
+) -> Result<MaintenanceFilesystemGuard, MaintenanceSstateAdapterError> {
+    if path.exists() {
+        return guard_directory(path);
+    }
+    let parent = path
+        .parent()
+        .ok_or_else(|| MaintenanceSstateAdapterError::UnsafePath(path.into()))?;
+    Ok(MaintenanceFilesystemGuard::Absent {
+        path: path.into(),
+        parent: filesystem_identity(parent, true)?,
+    })
+}
+
+fn revalidate_filesystem_guard(
+    guard: &MaintenanceFilesystemGuard,
+) -> Result<(), MaintenanceSstateAdapterError> {
+    match guard {
+        MaintenanceFilesystemGuard::Existing(expected) => {
+            let current = filesystem_identity(&expected.path, expected.directory)?;
+            if &current != expected {
+                return Err(MaintenanceSstateAdapterError::StaleIdentity(
+                    expected.path.clone(),
+                ));
+            }
+        }
+        MaintenanceFilesystemGuard::Absent { path, parent } => {
+            if path.exists() || filesystem_identity(&parent.path, true)? != *parent {
+                return Err(MaintenanceSstateAdapterError::StaleIdentity(path.clone()));
+            }
+        }
+    }
+    Ok(())
+}
+
 fn require_writable(
     path: &Path,
     metadata: &fs::Metadata,
@@ -527,14 +579,40 @@ pub enum MaintenanceSstateCommandKind {
     CleanupExecute,
     PrServiceExport,
     PrServiceImport,
+    LockedSignatureCache,
+    BuildHistoryComparison,
+    BuildCompare,
+    GitArchiveLocal,
+    GitArchivePush,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-struct FilesystemIdentity {
+pub(crate) struct FilesystemIdentity {
     path: PathBuf,
     byte_size: u64,
     modified_at: std::time::SystemTime,
     directory: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) enum MaintenanceFilesystemGuard {
+    Existing(FilesystemIdentity),
+    Absent {
+        path: PathBuf,
+        parent: FilesystemIdentity,
+    },
+}
+
+pub(crate) struct MaintenanceExternalCommand {
+    pub session: MaintenanceSessionId,
+    pub kind: MaintenanceSstateCommandKind,
+    pub executable_identity: MaintenanceFileIdentity,
+    pub expected_executable_name: String,
+    pub arguments: Vec<OsString>,
+    pub current_directory: PathBuf,
+    pub timeout: Duration,
+    pub preview: MaintenanceOperationPreview,
+    pub guards: Vec<MaintenanceFilesystemGuard>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -551,6 +629,7 @@ pub struct MaintenanceSstateCommandSpec {
     id: MaintenanceSessionId,
     kind: MaintenanceSstateCommandKind,
     executable_identity: MaintenanceFileIdentity,
+    expected_executable_name: String,
     interface: MaintenanceToolInterface,
     arguments: Vec<OsString>,
     environment: BTreeMap<OsString, OsString>,
@@ -561,6 +640,7 @@ pub struct MaintenanceSstateCommandSpec {
     cleanup_request: Option<SstateCleanupRequest>,
     cleanup_candidates: Vec<MaintenanceFileIdentity>,
     pr_service_guard: Option<PrServiceFileGuard>,
+    external_guards: Vec<MaintenanceFilesystemGuard>,
 }
 
 impl MaintenanceSstateCommandSpec {
@@ -617,6 +697,7 @@ impl MaintenanceSstateCommandSpec {
                 id: session,
                 kind: MaintenanceSstateCommandKind::Readiness,
                 executable_identity: executable.clone(),
+                expected_executable_name: "oe-check-sstate".into(),
                 interface,
                 arguments: arguments.iter().map(OsString::from).collect(),
                 environment,
@@ -627,6 +708,7 @@ impl MaintenanceSstateCommandSpec {
                 cleanup_request: None,
                 cleanup_candidates: Vec::new(),
                 pr_service_guard: None,
+                external_guards: Vec::new(),
             },
         ))
     }
@@ -658,6 +740,7 @@ impl MaintenanceSstateCommandSpec {
             id: session,
             kind: MaintenanceSstateCommandKind::CleanupPreview,
             executable_identity: executable.clone(),
+            expected_executable_name: name.into(),
             interface,
             arguments: arguments.iter().map(OsString::from).collect(),
             environment: BTreeMap::new(),
@@ -670,6 +753,7 @@ impl MaintenanceSstateCommandSpec {
             cleanup_request: Some(request),
             cleanup_candidates: Vec::new(),
             pr_service_guard: None,
+            external_guards: Vec::new(),
         })
     }
 
@@ -709,6 +793,7 @@ impl MaintenanceSstateCommandSpec {
                 id: session,
                 kind: MaintenanceSstateCommandKind::CleanupExecute,
                 executable_identity: preview_command.executable_identity,
+                expected_executable_name: preview_command.expected_executable_name,
                 interface: preview_command.interface,
                 arguments: arguments.iter().map(OsString::from).collect(),
                 environment: BTreeMap::new(),
@@ -719,6 +804,7 @@ impl MaintenanceSstateCommandSpec {
                 cleanup_request: Some(confirmed.request.clone()),
                 cleanup_candidates: confirmed.candidates.clone(),
                 pr_service_guard: None,
+                external_guards: Vec::new(),
             },
         ))
     }
@@ -781,6 +867,7 @@ impl MaintenanceSstateCommandSpec {
                     PrServiceOperation::Import => MaintenanceSstateCommandKind::PrServiceImport,
                 },
                 executable_identity: executable.clone(),
+                expected_executable_name: "bitbake-prserv-tool".into(),
                 interface,
                 arguments: arguments.iter().map(OsString::from).collect(),
                 environment: BTreeMap::new(),
@@ -791,8 +878,45 @@ impl MaintenanceSstateCommandSpec {
                 cleanup_request: None,
                 cleanup_candidates: Vec::new(),
                 pr_service_guard: Some(guard),
+                external_guards: Vec::new(),
             },
         ))
+    }
+
+    pub(crate) fn external(
+        command: MaintenanceExternalCommand,
+    ) -> Result<Self, MaintenanceSstateAdapterError> {
+        if !matches!(
+            command.kind,
+            MaintenanceSstateCommandKind::LockedSignatureCache
+                | MaintenanceSstateCommandKind::BuildHistoryComparison
+                | MaintenanceSstateCommandKind::BuildCompare
+                | MaintenanceSstateCommandKind::GitArchiveLocal
+                | MaintenanceSstateCommandKind::GitArchivePush
+        ) || command.expected_executable_name.is_empty()
+            || command.timeout.is_zero()
+        {
+            return Err(MaintenanceSstateAdapterError::InvalidInput(
+                "external Maintenance command is invalid".into(),
+            ));
+        }
+        Ok(Self {
+            id: command.session,
+            kind: command.kind,
+            executable_identity: command.executable_identity,
+            expected_executable_name: command.expected_executable_name,
+            interface: MaintenanceToolInterface::Native,
+            arguments: command.arguments,
+            environment: BTreeMap::new(),
+            current_directory: command.current_directory,
+            timeout: command.timeout,
+            stdin_payload: None,
+            preview: Some(command.preview),
+            cleanup_request: None,
+            cleanup_candidates: Vec::new(),
+            pr_service_guard: None,
+            external_guards: command.guards,
+        })
     }
 
     pub fn id(&self) -> MaintenanceSessionId {
@@ -820,19 +944,7 @@ impl MaintenanceSstateCommandSpec {
     }
 
     fn revalidate(&self) -> Result<(), MaintenanceSstateAdapterError> {
-        let name = if matches!(
-            self.kind,
-            MaintenanceSstateCommandKind::PrServiceExport
-                | MaintenanceSstateCommandKind::PrServiceImport
-        ) {
-            Some("bitbake-prserv-tool")
-        } else {
-            expected_name(self.interface, &self.executable_identity.path)
-        }
-        .ok_or_else(|| {
-            MaintenanceSstateAdapterError::UnsafeExecutable(self.executable_identity.path.clone())
-        })?;
-        revalidate_executable(&self.executable_identity, name)?;
+        revalidate_executable(&self.executable_identity, &self.expected_executable_name)?;
         canonical_directory(&self.current_directory)?;
         if self.timeout.is_zero() {
             return Err(MaintenanceSstateAdapterError::InvalidInput(
@@ -866,6 +978,9 @@ impl MaintenanceSstateCommandSpec {
                     ));
                 }
             }
+        }
+        for guard in &self.external_guards {
+            revalidate_filesystem_guard(guard)?;
         }
         if let Some(preview) = &self.preview {
             let arguments = self
@@ -917,6 +1032,22 @@ impl MaintenanceSstateCommandSpec {
                         .as_ref()
                         .ok_or(MaintenanceSstateAdapterError::PreviewMismatch)?;
                     revalidate_pr_service_file(request, guard)?;
+                }
+                MaintenanceOperation::LockedSignatureCache(_)
+                    if self.kind == MaintenanceSstateCommandKind::LockedSignatureCache => {}
+                MaintenanceOperation::BuildHistoryComparison(_)
+                    if self.kind == MaintenanceSstateCommandKind::BuildHistoryComparison => {}
+                MaintenanceOperation::BuildCompare(_)
+                    if self.kind == MaintenanceSstateCommandKind::BuildCompare => {}
+                MaintenanceOperation::GitArchive(request) => {
+                    let expected_kind = if request.push_remote.is_some() {
+                        MaintenanceSstateCommandKind::GitArchivePush
+                    } else {
+                        MaintenanceSstateCommandKind::GitArchiveLocal
+                    };
+                    if self.kind != expected_kind {
+                        return Err(MaintenanceSstateAdapterError::PreviewMismatch);
+                    }
                 }
                 _ => return Err(MaintenanceSstateAdapterError::PreviewMismatch),
             }

@@ -2,56 +2,52 @@
 
 ## Task
 
-**ID:** MAINT-RELEASE-ADAPTER-001
-**Title:** Adapt locked signatures, comparisons, and archives
+**ID:** MAINT-OPTIONAL-ADAPTER-001
+**Title:** Detect optional release integrations
 
 ## Objective
 
-Discover, preview, and execute the exact installed locked-signature cache,
-build-history comparison, optional build-compare, and Git archive interfaces
-with canonical identities, bounded evidence, cancellation, timeout, and
-runner-loss handling.
+Represent optional pull-request, error-report, repo-manifest, and Toaster
+integrations from canonical bounded observations without sending mail,
+uploading reports, mutating manifests, or launching services.
 
 ## Required work
 
-1. Inspect an explicit initialized build snapshot and child-only search path
-   for canonical regular non-symlink `gen-lockedsig-cache`,
-   `buildhistory-diff`, optional `build-compare`, and `oe-git-archive` tools.
-   Missing tools and distinct interfaces remain explicit.
-2. Construct the exact ordered `gen-lockedsig-cache` vector from a canonical
-   readable locked-signature include, canonical input/output cache roots,
-   native LSB string, and optional canonical readable filter. Preview output
-   replacement risk and revalidate every identity before execution.
-3. Validate one canonical build-history Git repository plus zero, one, or two
-   revisions. Construct only documented `buildhistory-diff` flags for report
-   version/all, signatures, signature differences, exclusions, and no-colour.
-4. Keep optional `build-compare` capability and vectors distinct from
-   `buildhistory-diff`; never emulate one by relabelling the other.
-5. Construct exact `oe-git-archive` vectors from canonical data/repository
-   roots and typed create/bare/tag/branch/message/exclusion/note choices.
-   Retain local archive creation separately from an optional remote push.
-6. Revalidate executable, Git revision, input, output, and evidence identities
-   immediately before execution or installation. Successful replaceable
-   evidence is installed atomically; failures retain prior valid evidence.
-7. Reuse the shared Maintenance process-group runner with bounded streams and
-   fake filesystem/process tests for exact vectors, missing/unsafe/tampered
-   inputs, success, nonzero failure, timeout, graceful/forced cancellation,
-   rejection, and runner loss.
-8. Do not claim live signature-cache, comparison, archive, or network
-   compatibility from fixture tests.
+1. Inspect an explicit initialized build snapshot and child-only search paths
+   for canonical regular non-symlink `create-pull-request`,
+   `send-pull-request`, `send-error-report`, repo, and Toaster interfaces.
+   Preserve missing, partial, unsafe, and unsupported states explicitly.
+2. Associate pull-request helpers with one canonical Git worktree and retain
+   helper identity separately from repository identity. Do not construct or
+   execute mail-sending operations in this detection task.
+3. Associate error-report helpers with canonical configured candidates and
+   expose only bounded readiness evidence. Do not upload reports or infer
+   credentials from helper presence.
+4. Detect a canonical repo manifest only when an installed supported interface
+   and exact workspace identity are available; otherwise expose an explicit
+   unavailable reason. Never create, replace, or mutate a manifest.
+5. Detect Toaster executable/configuration capability and bounded observed
+   process evidence without starting, stopping, or otherwise managing a
+   service. Process observations are diagnostic, not proof of health.
+6. Bound search paths, records, strings, and filesystem traversal. Revalidate
+   canonical file and directory identities before returning exact evidence.
+7. Add fixture tests for complete, missing, partial, unsafe/symlinked,
+   tampered, and bounded inputs. Keep every network, mail, upload, manifest,
+   and service-lifecycle side effect absent.
+8. Do not claim live optional-integration compatibility from fixture tests.
 
 ## Definition of done
 
-- Every supported release operation is capability-driven, shell-free, and
-  exact; missing optional tools remain unavailable.
-- Replacement/destructive and network side effects are explicit in previews.
-- All inputs and resulting evidence are bounded and revalidated.
+- Optional integration capabilities are typed, canonical, bounded, and honest
+  about partial or unavailable states.
+- Detection has no mail, network, manifest-mutation, or service-lifecycle side
+  effects.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake maintenance_release
+cargo test -p yoctui-bitbake maintenance_optional
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -62,10 +58,10 @@ python3 -m pytest bridge/tests
 ## Documentation updates
 
 - Update `docs/architecture.md` only if the adapter boundary changes.
-- Mark `MAINT-RELEASE-ADAPTER-001` `DONE` only after verification passes.
+- Mark `MAINT-OPTIONAL-ADAPTER-001` `DONE` only after verification passes.
 - Update `docs/implementation-status.md`.
 - Replace this file with the next eligible highest-priority Maintenance task.
 
 ## Next task
 
-`MAINT-OPTIONAL-ADAPTER-001`
+`MAINT-ADAPTER-001`
