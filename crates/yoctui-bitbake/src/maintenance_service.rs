@@ -696,7 +696,7 @@ mod tests {
     use std::sync::atomic::{AtomicU64, Ordering};
 
     #[cfg(unix)]
-    use std::os::unix::fs::{PermissionsExt, symlink};
+    use std::os::unix::fs::symlink;
 
     static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
 
@@ -725,9 +725,7 @@ mod tests {
     }
 
     fn executable(path: &Path, body: &str) {
-        fs::write(path, body).unwrap();
-        #[cfg(unix)]
-        fs::set_permissions(path, fs::Permissions::from_mode(0o755)).unwrap();
+        crate::test_support::write_executable(path, body);
     }
 
     fn process(process_root: &Path, pid: u32, name: &str) {

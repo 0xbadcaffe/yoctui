@@ -748,7 +748,7 @@ mod tests {
     use yoctui_model::SecurityScope;
 
     #[cfg(unix)]
-    use std::os::unix::fs::{PermissionsExt, symlink};
+    use std::os::unix::fs::symlink;
 
     static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
 
@@ -778,15 +778,7 @@ mod tests {
 
     #[cfg(unix)]
     fn write_executable(path: &Path, body: &str) {
-        let temporary = path.with_extension(format!(
-            "fixture-write-{}",
-            NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed)
-        ));
-        fs::write(&temporary, body).unwrap();
-        let mut permissions = fs::metadata(&temporary).unwrap().permissions();
-        permissions.set_mode(0o755);
-        fs::set_permissions(&temporary, permissions).unwrap();
-        fs::rename(temporary, path).unwrap();
+        crate::test_support::write_executable(path, body);
     }
 
     fn preview(directory: &TestDirectory) -> SecurityOperationPreview {

@@ -936,8 +936,6 @@ mod tests {
     };
 
     #[cfg(unix)]
-    use std::os::unix::fs::PermissionsExt;
-
     struct TestDirectory(PathBuf);
 
     impl TestDirectory {
@@ -990,13 +988,7 @@ mod tests {
     }
 
     fn write_executable(path: &Path, body: &str) {
-        fs::write(path, body).unwrap();
-        #[cfg(unix)]
-        {
-            let mut permissions = fs::metadata(path).unwrap().permissions();
-            permissions.set_mode(0o755);
-            fs::set_permissions(path, permissions).unwrap();
-        }
+        crate::test_support::write_executable(path, body);
     }
 
     fn signature_path(root: &Path, hash: &str) -> PathBuf {

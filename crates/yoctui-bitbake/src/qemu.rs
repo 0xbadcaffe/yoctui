@@ -624,11 +624,7 @@ mod tests {
 
     #[cfg(unix)]
     fn executable(path: &Path, body: &str) {
-        use std::os::unix::fs::PermissionsExt;
-        fs::write(path, format!("#!/bin/sh\n{body}\n")).unwrap();
-        let mut permissions = fs::metadata(path).unwrap().permissions();
-        permissions.set_mode(0o755);
-        fs::set_permissions(path, permissions).unwrap();
+        crate::test_support::write_executable(path, &format!("#!/bin/sh\n{body}\n"));
     }
 
     fn artifact(path: PathBuf, kind: ImageArtifactKind) -> ImageArtifact {
