@@ -2,54 +2,112 @@
 
 Yoctui is a Rust/Ratatui control frontend for Yocto/BitBake. BitBake remains the metadata and build authority; Yoctui observes it and requests operations.
 
-## Quickstart: current Yocto development setup and Yoctui
+## Prerequisites and installation
 
-Poky's `master` checkout is now intentionally a README-only migration notice. For current Yocto development, use BitBake's supported `bitbake-setup` workflow: it checks out BitBake, OpenEmbedded-Core, and meta-yocto separately. This example creates a `qemux86-64` setup and opens Yoctui; start the image build from the TUI.
+Yoctui's production path targets a UTF-8 Linux terminal. Building Yoctui requires Git, Python 3, and a current stable Rust toolchain with Cargo. A real image build also needs the host packages required by the selected Yocto release; follow that release's Yocto Project Quick Build documentation rather than treating Yoctui's Rust prerequisites as a complete Yocto host setup.
+
+Check the tools, clone Yoctui, and build both debug and release binaries:
+
+```sh
+export YOCTUI_DIR="$HOME/projects/yoctui"
+
+command -v git
+command -v python3
+command -v rustc
+command -v cargo
+rustc --version
+
+git clone https://github.com/0xbadcaffe/yoctui.git "$YOCTUI_DIR"
+cd "$YOCTUI_DIR"
+cargo build --locked -p yoctui
+cargo build --locked --release -p yoctui
+```
+
+If `rustc` or `cargo` is missing, install stable Rust with the official rustup installer, restart the shell or source its printed environment file, and rerun the checks above. The binaries are `target/debug/yoctui` and `target/release/yoctui`. To install the release binary in Cargo's executable directory as `yoctui`:
+
+```sh
+cd "$YOCTUI_DIR"
+cargo install --locked --path crates/yoctui-cli
+command -v yoctui
+yoctui --help
+```
+
+## Quickstart: current Yocto development setup
+
+A checkout of Poky's `master` migration repository may contain only `README`; it does not provide `oe-init-build-env`. For current Yocto development, use BitBake's `bitbake-setup` workflow, which creates a setup from separate BitBake, OpenEmbedded-Core, and metadata repositories. This copyable block creates a `qemux86-64` setup and launches Yoctui without requesting a build:
 
 ```sh
 export YOCTUI_DIR="$HOME/projects/yoctui"
 export BITBAKE_DIR="$HOME/src/bitbake"
+export YOCTUI_SETUP="yoctui-qemux86-64"
 
-git clone https://git.openembedded.org/bitbake "$BITBAKE_DIR"
+test -d "$YOCTUI_DIR/.git" || git clone https://github.com/0xbadcaffe/yoctui.git "$YOCTUI_DIR"
+test -d "$BITBAKE_DIR/.git" || git clone https://git.openembedded.org/bitbake "$BITBAKE_DIR"
+test -x "$BITBAKE_DIR/bin/bitbake-setup" || {
+    echo "missing $BITBAKE_DIR/bin/bitbake-setup" >&2
+    exit 1
+}
+
 cd "$BITBAKE_DIR"
-./bin/bitbake-setup init --setup-dir-name yoctui-qemux86-64
+./bin/bitbake-setup init --setup-dir-name "$YOCTUI_SETUP"
 
 # In the interactive prompts choose the current poky-master template,
 # the poky distro, and the qemux86-64 machine.
-source "$BITBAKE_DIR/bitbake-builds/yoctui-qemux86-64/build/init-build-env"
+export YOCTUI_INIT="$BITBAKE_DIR/bitbake-builds/$YOCTUI_SETUP/build/init-build-env"
+test -f "$YOCTUI_INIT" || {
+    echo "missing $YOCTUI_INIT; review the bitbake-setup result" >&2
+    exit 1
+}
+source "$YOCTUI_INIT"
+test -n "${BUILDDIR:-}" || {
+    echo "init-build-env did not export BUILDDIR" >&2
+    exit 1
+}
 
 cd "$YOCTUI_DIR"
-cargo build -p yoctui
-cargo run -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
+cargo run --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
 ```
 
-Inside Yoctui, press `B` for image build options, then `e` and enter `core-image-minimal`; press Enter to start the build. Alternatively, press `b` and enter any BitBake target directly. Build progress, package progress, CPU utilization, disk free space, and logs remain visible in Yoctui throughout the build.
+Inside Yoctui, press `B` for image build options, press `e`, enter `core-image-minimal`, then choose the build action and explicitly confirm it. Do not run `bitbake core-image-minimal` during setup: the first image build begins from this TUI confirmation. Build progress, package progress, CPU utilization, disk free space, and logs remain visible throughout the build.
 
-To use an existing Yocto build instead of creating a new setup, source that build directory's `init-build-env` (or its existing environment setup script) and launch Yoctui with its exported `BUILDDIR`. For example, the setup above can be reopened without rebuilding from the shell:
+Reopen the setup later with the same guards and no positional target:
 
 ```sh
-source "$BITBAKE_DIR/bitbake-builds/yoctui-qemux86-64/build/init-build-env"
+export YOCTUI_DIR="$HOME/projects/yoctui"
+export YOCTUI_INIT="$HOME/src/bitbake/bitbake-builds/yoctui-qemux86-64/build/init-build-env"
+test -f "$YOCTUI_INIT" || { echo "missing $YOCTUI_INIT" >&2; exit 1; }
+source "$YOCTUI_INIT"
+test -n "${BUILDDIR:-}" || { echo "BUILDDIR is not set" >&2; exit 1; }
 cd "$YOCTUI_DIR"
-cargo run -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
+cargo run --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
 ```
 
-Yoctui does not start a build merely because it opens an existing build directory; choose the image from its build controls when you are ready. Press `!` to open an inherited Yocto shell for optional commands such as `bitbake-layers show-layers`; type `exit` to return to Yoctui.
+Yoctui never starts a build merely because the workspace opens. Press `!` to open an inherited Yocto shell for optional commands such as `bitbake-layers show-layers`; type `exit` to return.
 
-## Prerequisites
+## Quickstart: existing Poky checkout
 
-- Stable Rust with Cargo.
-- Python 3 for the bundled bridge.
-- A separate Poky/Yocto checkout when using a real BitBake workspace. `oe-init-build-env` is **not** part of this repository.
+Use this path only when `YOCTO_DIR` is a complete Poky release checkout that contains `oe-init-build-env`. Select the stable branch appropriate for the product before running this block; do not substitute the README-only Poky `master` migration repository.
 
-  Set `YOCTO_DIR` to the directory that contains `oe-init-build-env`, then initialize its build environment:
+```sh
+export YOCTUI_DIR="$HOME/projects/yoctui"
+export YOCTO_DIR="$HOME/src/poky"
+export YOCTUI_BUILD_DIR="build-yoctui"
 
-  ```sh
-  export YOCTO_DIR="$HOME/src/poky"
-  test -f "$YOCTO_DIR/oe-init-build-env"
-  source "$YOCTO_DIR/oe-init-build-env" build
-  ```
+test -f "$YOCTO_DIR/oe-init-build-env" || {
+    echo "missing $YOCTO_DIR/oe-init-build-env; use a complete Poky release or bitbake-setup" >&2
+    exit 1
+}
+source "$YOCTO_DIR/oe-init-build-env" "$YOCTUI_BUILD_DIR"
+test -n "${BUILDDIR:-}" || {
+    echo "oe-init-build-env did not export BUILDDIR" >&2
+    exit 1
+}
 
-The bridge backend is the default. The process backend invokes the `bitbake` executable as a compatible fallback.
+cd "$YOCTUI_DIR"
+cargo run --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
+```
+
+Select and confirm `core-image-minimal` from `B` inside Yoctui exactly as in the current-development quickstart.
 
 ## Build
 
@@ -69,31 +127,35 @@ The binaries are written to `target/debug/yoctui` and `target/release/yoctui` re
 
 ## Run
 
-### Quick start without a Yocto checkout
+### Smoke checks without a Yocto checkout
 
 This verifies the bundled bridge and terminal application from the Yoctui repository itself. It does not start a BitBake build:
 
 ```sh
 cd ~/projects/yoctui
-cargo build -p yoctui
-cargo run -p yoctui -- --headless --backend bridge --build-dir "$PWD"
+cargo build --locked -p yoctui
+./scripts/headless-workload.sh target/debug/yoctui bridge
+cargo run --locked -p yoctui -- doctor
 ```
+
+The workload script gives the smoke run a temporary `XDG_CONFIG_HOME`, so a saved session cannot inject a remembered build directory or target. CI and other automation should use the same isolation pattern rather than reading a developer's configuration.
 
 ### Interactive UI with Yocto
 
-Start from an initialized build directory. The following commands are intended to be copied as one block after choosing the correct `YOCTO_DIR`:
+Start from an initialized build directory. The following commands are intended to be copied as one block after choosing the correct complete Poky release checkout:
 
 ```sh
 export YOCTO_DIR="$HOME/src/poky"
+test -f "$YOCTO_DIR/oe-init-build-env" || { echo "missing $YOCTO_DIR/oe-init-build-env" >&2; exit 1; }
 source "$YOCTO_DIR/oe-init-build-env" build
 cd ~/projects/yoctui
-cargo run -p yoctui -- --build-dir "$BUILDDIR" core-image-minimal
+cargo run --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
 ```
 
 If the build directory is already initialized in the current shell, start the UI directly:
 
 ```sh
-cargo run -p yoctui -- --build-dir "$BUILDDIR" core-image-minimal
+cargo run --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
 ```
 
 ### Interactive cockpit shortcuts
@@ -120,9 +182,11 @@ Select a backend explicitly when needed:
 # Versioned Python bridge (default)
 cargo run -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
 
-# Direct bitbake process fallback
-cargo run -p yoctui -- --backend process --build-dir "$BUILDDIR" core-image-minimal
+# Direct bitbake process fallback; builds still require explicit TUI confirmation
+cargo run -p yoctui -- --backend process --build-dir "$BUILDDIR"
 ```
+
+The bridge backend is the default and provides versioned workspace inspection and typed live events when the active BitBake adapter supports them. The process backend directly invokes the inherited `bitbake` executable as a compatibility fallback and can expose fewer capabilities. Neither backend makes a mocked or environment-only bridge into live BitBake support; see the observed combinations in [Compatibility](docs/compatibility.md).
 
 ### Edit a recipe with Devtool
 
@@ -145,7 +209,7 @@ cargo run -p yoctui -- doctor
 
 Use `cargo run -p yoctui -- --help` for the complete CLI reference.
 
-The bridge protocol is NDJSON on standard I/O. The included bridge safely negotiates and inspects environment-derived workspace data without parsing configuration as authority; server operations require a compatible live BitBake adapter. See `docs/` for architecture, testing, profiling, protocol, and compatibility details.
+The bridge protocol is NDJSON on standard I/O. The included bridge safely negotiates and inspects environment-derived workspace data without parsing configuration as authority; server operations require a compatible live BitBake adapter. See the complete [UI behavior reference](docs/ui-spec.md), [architecture](docs/architecture.md), [protocol](docs/protocol.md), [testing](docs/testing.md), [profiling](docs/profiling.md), and [compatibility evidence](docs/compatibility.md).
 
 In the Recipes screen, press `g` to inspect the selected recipe's build and runtime dependencies. Use Up/Down and Enter to open a dependency recipe that is present in the workspace. This view is intentionally available only when the active BitBake server supports the bridge's `get_dependencies` capability; Yoctui does not infer dependencies itself.
 
@@ -162,7 +226,7 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/check-checkout.sh
 ```
 
-The strict final gate is `./scripts/verify-completion.sh`; it names any missing optional security, coverage, or profiling tool instead of reporting a false success. See `docs/testing.md` and `docs/profiling.md` for details.
+The strict final gate is `./scripts/verify-completion.sh`; it names any missing optional security, coverage, or profiling tool instead of reporting a false success. See [Testing](docs/testing.md) and [Profiling](docs/profiling.md) for details.
 
 ## Current limitations
 

@@ -1648,18 +1648,18 @@ notes = "Parent gate split after audit into reproducible fuzz, deterministic str
 id = "DOC-INSTALL-001"
 milestone = "M7"
 title = "Document installation and Yocto quickstart"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 81
 required = true
 depends_on = ["BB-001"]
 verify = ["test -s README.md", "cargo run -q -p yoctui -- --help", "./scripts/test-cli.sh"]
-notes = "Reconcile fresh-checkout host prerequisites, Rust build/install, current bitbake-setup and existing Poky environment paths, copyable launch commands, backend selection, and first TUI build without running BitBake from the setup shell."
+notes = "README now separates current bitbake-setup from complete Poky release layouts; guards every environment script and BUILDDIR; documents Linux/Rust/Python/Git prerequisites, locked build/install and binary paths, backend semantics, isolated smoke/doctor checks, and an explicit first TUI core-image-minimal confirmation without a positional target. CLI smoke state is isolated from user sessions, and the baseline process-tree test waits for valid published PID contents rather than racing file creation. All task and baseline verification passes."
 
 [[task]]
 id = "DOC-OPERATOR-001"
 milestone = "M7"
 title = "Document daily operator workflows and troubleshooting"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 81
 required = true
 depends_on = ["DOC-INSTALL-001"]
