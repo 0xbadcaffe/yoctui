@@ -1395,18 +1395,18 @@ notes = "First-class Maintenance model state now owns four fixed views, per-view
 id = "MAINT-SSTATE-ADAPTER-001"
 milestone = "M6"
 title = "Adapt sstate readiness and protected cleanup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake maintenance_sstate"]
-notes = "Discover, preview, and run exact oe-check-sstate and sstate-cache-management.sh operations with canonical paths, bounded output, protected cleanup confirmation, timeout, cancellation, and loss."
+notes = "The adapter distinguishes current Python and legacy shell cleanup interfaces, constructs exact readiness and cleanup vectors, bounds exact preview candidates, revalidates every identity before execution, and covers success, nonzero failure, timeout, graceful/forced cancellation, rejection, and runner loss. Seven focused adapter tests and the complete baseline pass; fixture evidence does not claim live sstate safety."
 
 [[task]]
 id = "MAINT-SERVICE-ADAPTER-001"
 milestone = "M6"
 title = "Adapt PR and hash service diagnostics"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001"]
