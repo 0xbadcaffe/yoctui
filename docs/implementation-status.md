@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Adapt sstate readiness and protected cleanup.
+Adapt PR and hash service diagnostics.
 
 ## Current task
 
@@ -27,7 +27,7 @@ See `docs/current-task.md`.
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
-| M6 Maintenance | IN_PROGRESS | The responsive contract and typed model are complete; exact sstate readiness and protected cleanup adapters are active |
+| M6 Maintenance | IN_PROGRESS | The contract, model, and sstate adapter are complete; exact PR and hash service diagnostics are active |
 | M7 Hardening | IN_PROGRESS | Coverage and profiling foundations exist |
 
 ## Reconciliation evidence
@@ -73,7 +73,7 @@ See `docs/current-task.md`.
 | Testing workflow | DONE | The unified parent gate passes for typed launch/result state, selftest/resulttool adapters, responsive rendering, and non-blocking CLI execution. Managed BitBake reuse, independent selftest/result operations, exact correlation, navigation, cancellation, import/comparison/JUnit export, and terminal outcomes are verified. Fake-process coverage does not establish live compatibility |
 | Security workflow | DONE | The complete cross-layer gate passes for capability-driven CVE checks/mapping, current/legacy recipe and image SBOM workflows, bounded exact reports, responsive UI, managed BitBake reuse, independent CLI polling, exact-open revalidation, refresh, navigation, cancellation, and explicit partial/terminal states. Focused fake evidence does not establish live Yocto compatibility |
 | QA workflow | DONE | The complete parent gate passes across typed Recipe & Kernel and Layer QA state, exact capability/report/native adapters, responsive rendering, managed BitBake reuse, independent CLI polling/cancellation, replaceable reports, revalidated evidence opens, navigation, and every terminal outcome. Fixture evidence does not establish live compatibility |
-| Maintenance workflow | IN_PROGRESS | The authoritative contract and first-class model now cover four views, exact bounded capability/metadata/operation identities, protected cleanup phrase, separate network confirmation, one correlated session lifecycle, replaceable evidence, cancellation, terminal outcomes, and routes to existing owned workspaces; sstate adapter implementation is active |
+| Maintenance workflow | IN_PROGRESS | The contract, first-class model, and sstate adapter are complete. Python/legacy cleanup discovery, exact readiness/cleanup vectors, bounded preview candidates, identity revalidation, and every runner outcome pass focused and baseline checks; service diagnostics are active |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -84,8 +84,8 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `MAINT-SSTATE-ADAPTER-001` — adapt sstate readiness and protected cleanup
-2. `MAINT-SERVICE-ADAPTER-001` / `MAINT-RELEASE-ADAPTER-001` / `MAINT-OPTIONAL-ADAPTER-001` — adapt remaining exact tools and diagnostics
+1. `MAINT-SERVICE-ADAPTER-001` — adapt exact PR and hash service diagnostics
+2. `MAINT-RELEASE-ADAPTER-001` / `MAINT-OPTIONAL-ADAPTER-001` — adapt remaining exact tools and diagnostics
 3. `MAINT-RENDER-001` / `MAINT-CLI-001` / `MAINT-UI-CLI-001` / `MAINT-001` — render, execute, and close gates
 4. `HARDEN-001` / `DOC-001` — hardening and operator documentation
 

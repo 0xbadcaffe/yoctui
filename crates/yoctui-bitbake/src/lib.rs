@@ -1,5 +1,6 @@
 //! BitBake adapters. They execute BitBake; they never evaluate metadata themselves.
 mod image;
+mod maintenance_sstate;
 mod package;
 mod qa_layer;
 mod qa_report;
@@ -19,6 +20,12 @@ use async_trait::async_trait;
 pub use image::{
     ImageArtifactAdapter, ImageArtifactAdapterError, ImageArtifactCancellation,
     ImageArtifactResponse,
+};
+pub use maintenance_sstate::{
+    MaintenanceSstateAdapterError, MaintenanceSstateCapabilityInput,
+    MaintenanceSstateCapabilityInspector, MaintenanceSstateCommandKind,
+    MaintenanceSstateCommandSpec, MaintenanceSstateJobRunner, MaintenanceSstateRunnerEvent,
+    parse_cleanup_preview,
 };
 pub use package::{
     PackageDataAdapter, PackageDataAdapterError, PackageDataCancellation, PackageDataCommandSpec,
