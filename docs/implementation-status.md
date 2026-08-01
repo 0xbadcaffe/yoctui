@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-Close the combined typed Maintenance release-form gate.
+Route locked-cache, build-history, local archive, and deferred push execution.
 
 ## Current task
 
@@ -84,10 +84,9 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `MAINT-RELEASE-UI-001` — close the combined release-form gate
-2. `MAINT-RELEASE-CLI-001` — route exact release previews and execution
-3. `MAINT-UI-CLI-001` / `MAINT-001` — close the cross-layer and milestone gates
-4. `HARDEN-001` / `DOC-001` — hardening and operator documentation
+1. `MAINT-RELEASE-CLI-001` — route exact release previews and execution
+2. `MAINT-UI-CLI-001` / `MAINT-001` — close the cross-layer and milestone gates
+3. `HARDEN-001` / `DOC-001` — hardening and operator documentation
 
 ## Rules
 

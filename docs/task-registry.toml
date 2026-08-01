@@ -1549,18 +1549,18 @@ notes = "Release a now opens a bounded model-owned 14-field oe-git-archive form 
 id = "MAINT-RELEASE-UI-001"
 milestone = "M6"
 title = "Close typed Maintenance release form gate"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-RELEASE-LOCKED-UI-001", "MAINT-RELEASE-HISTORY-UI-001", "MAINT-RELEASE-ARCHIVE-UI-001"]
 verify = ["cargo test -p yoctui-model maintenance_release_", "cargo test -p yoctui-app maintenance_release_", "cargo test -p yoctui-ui maintenance_release_"]
-notes = "Cross-form gate for the atomic locked-cache, build-history, and archive entry tasks found by the audit. Re-run their combined model/app/TestBackend matrix and reconcile the exact UI contract before routing execution."
+notes = "The cross-form audit found the three committed entry paths aligned with the exact UI contract and adapter-owned request types. Combined filters run 7 model, 3 app, and 3 TestBackend tests: l/h/a remain Release-scoped, capability/context-gated, bounded, focus-trapped, responsive at 80x24, and side-effect free before typed preview effects. The full baseline passes without claiming live release-tool compatibility."
 
 [[task]]
 id = "MAINT-RELEASE-CLI-001"
 milestone = "M6"
 title = "Route Maintenance release forms"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-RELEASE-UI-001", "MAINT-CLI-001"]
