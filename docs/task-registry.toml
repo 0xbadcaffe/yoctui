@@ -1582,12 +1582,12 @@ notes = "The post-dependency audit confirms the committed Sstate, Services, Rele
 id = "MAINT-001"
 milestone = "M6"
 title = "Advanced maintenance workflows"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-UI-CLI-001"]
 verify = ["cargo test -p yoctui-model maintenance_workflow", "cargo test -p yoctui-app maintenance_workflow", "cargo test -p yoctui-bitbake maintenance_", "cargo test -p yoctui-ui maintenance_workflow", "cargo test -p yoctui -- maintenance_workflow"]
-notes = "Parent completion gate split into specification, typed state, sstate/service/release/optional adapters, responsive rendering, non-blocking CLI integration, and cross-layer verification."
+notes = "All required atomic Maintenance tasks are DONE. The independent parent gate passes 7 model, 2 app, 27 adapter, 4 responsive TestBackend, and 5 CLI tests together with the full formatting, workspace test, clippy, bridge, and roadmap baseline. M6 is complete without inferring live Yocto compatibility from fixture coverage."
 
 [[task]]
 id = "HARDEN-001"
