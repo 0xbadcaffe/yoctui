@@ -31,6 +31,11 @@ cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 
+./scripts/test-terminal.sh
+./scripts/test-fuzz.sh
+./scripts/test-stress.sh
+./scripts/test-sanitizers.sh
+
 cargo llvm-cov -p yoctui-model --all-features --fail-under-lines 80
 cargo llvm-cov -p yoctui-protocol --all-features --fail-under-lines 80
 
