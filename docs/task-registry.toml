@@ -1593,18 +1593,18 @@ notes = "All required atomic Maintenance tasks are DONE. The independent parent 
 id = "HARDEN-FUZZ-001"
 milestone = "M7"
 title = "Add reproducible fuzz harnesses"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 80
 required = true
 depends_on = ["GOV-001"]
 verify = ["./scripts/test-fuzz.sh"]
-notes = "Add bounded cargo-fuzz targets for untrusted protocol framing and reducer-owned retained state, with checked-in seeds and a reproducible finite smoke command."
+notes = "A workspace-excluded cargo-fuzz package now drives the public protocol decoder/framer and model log-retention APIs with bounded inputs. Six checked-in seeds cover valid, malformed, unsupported-version, synthetic oversized, empty, and retention-pressure cases; the smoke script uses temporary corpus copies, actionable prerequisite failures, finite budgets, and ASan with leak detection delegated to the dedicated sanitizer task. Both targets and the full baseline pass; finite fuzzing is not an exhaustive safety claim."
 
 [[task]]
 id = "HARDEN-STRESS-001"
 milestone = "M7"
 title = "Add deterministic stress and process-tree tests"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 80
 required = true
 depends_on = ["HARDEN-FUZZ-001"]

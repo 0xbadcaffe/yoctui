@@ -28,7 +28,7 @@ See `docs/current-task.md`.
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
 | M6 Maintenance | DONE | Typed Sstate, Services, Release, and optional integrations pass their atomic, cross-layer, and milestone parent gates |
-| M7 Hardening | IN_PROGRESS | Property, terminal, process-group, Valgrind, profiling, and Flamegraph foundations exist; fuzz, stress/process-tree, sanitizer, and final integration gates remain |
+| M7 Hardening | IN_PROGRESS | Reproducible protocol/retention fuzzing joins existing property, terminal, process-group, Valgrind, profiling, and Flamegraph foundations; stress/process-tree, sanitizer, and final integration gates remain |
 
 ## Reconciliation evidence
 
@@ -81,12 +81,12 @@ See `docs/current-task.md`.
 | Package data model | DONE | Exact identities, available-versus-unavailable fields, explicit bounded inventory/detail states, deterministic normalization, selection, stale correlation, search, dependency navigation, and typed event/effect mapping pass focused and baseline checks |
 | Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
 | Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
-| Hardening matrix | IN_PROGRESS | The gap audit retained existing property, terminal, process-group, Valgrind, deterministic profiling, and Flamegraph coverage and split the missing fuzz, stress/process-tree, sanitizer, and final analysis gates into atomic tasks |
+| Hardening matrix | IN_PROGRESS | Bounded cargo-fuzz targets and deterministic checked-in seeds now cover protocol frames and retained logs with passing finite ASan-backed smoke runs. Stress/process-tree, dedicated sanitizer, and final analysis integration remain |
 
 ## Priority queue
 
-1. `HARDEN-FUZZ-001` — add reproducible fuzz harnesses
-2. `HARDEN-STRESS-001` / `HARDEN-SANITIZER-001` / `HARDEN-ANALYSIS-001` / `HARDEN-001` — close the hardening gates
+1. `HARDEN-STRESS-001` — add deterministic stress and process-tree tests
+2. `HARDEN-SANITIZER-001` / `HARDEN-ANALYSIS-001` / `HARDEN-001` — close the remaining hardening gates
 3. `DOC-001` — complete operator and compatibility documentation
 
 ## Rules

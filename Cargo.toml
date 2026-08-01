@@ -3,6 +3,7 @@ members = [
   "crates/yoctui-model", "crates/yoctui-protocol", "crates/yoctui-app",
   "crates/yoctui-bitbake", "crates/yoctui-ui", "crates/yoctui-cli"
 ]
+exclude = ["fuzz"]
 resolver = "2"
 
 [workspace.package]

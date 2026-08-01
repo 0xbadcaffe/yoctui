@@ -1,0 +1,27 @@
+[package]
+name = "yoctui-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+yoctui-model = { path = "../crates/yoctui-model" }
+yoctui-protocol = { path = "../crates/yoctui-protocol" }
+
+[[bin]]
+name = "protocol_frames"
+path = "fuzz_targets/protocol_frames.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "retained_logs"
+path = "fuzz_targets/retained_logs.rs"
+test = false
+doc = false
+bench = false

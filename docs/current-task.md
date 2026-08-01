@@ -2,41 +2,43 @@
 
 ## Task
 
-**ID:** HARDEN-FUZZ-001
-**Title:** Add reproducible fuzz harnesses
+**ID:** HARDEN-STRESS-001
+**Title:** Add deterministic stress and process-tree tests
 
 ## Objective
 
-Add bounded, reproducible cargo-fuzz coverage for the two principal untrusted
-pure-data boundaries: protocol framing and reducer-owned retained state.
+Add repeatable high-volume tests for bounded pure state and protocol framing,
+plus a real Unix process-tree cancellation test that proves child descendants
+do not survive a runner cancellation.
 
 ## Required work
 
-1. Inspect and reuse the existing protocol decode and model retention APIs;
-   do not copy their implementations into fuzz targets.
-2. Add a cargo-fuzz package excluded from the normal workspace and one target
-   each for arbitrary protocol frames and arbitrary retained-state operations.
-3. Keep target input and in-memory work bounded so finite smoke runs are
-   deterministic and suitable for CI/manual verification.
-4. Add minimal checked-in corpus seeds covering valid, malformed, oversized,
-   unknown-version, and retention-pressure inputs.
-5. Add `scripts/test-fuzz.sh` with explicit nightly/cargo-fuzz prerequisite
-   errors and finite smoke runs for every target.
-6. Document the exact fuzz commands, artifact location, and the fact that a
-   finite smoke run is not an exhaustive safety claim.
+1. Add a deterministic model stress test that drives substantially more log
+   events than retention limits and checks count, bytes, loss counters,
+   selection, and invariant preservation.
+2. Add a deterministic protocol stress test that frames and decodes a large
+   ordered stream across irregular chunk boundaries without losing or
+   reordering messages.
+3. Add a Unix fake-process test using an existing process-group runner. Spawn a
+   child that owns a descendant, cancel the exact session, and prove both the
+   parent and descendant exit within a bounded deadline.
+4. Add `scripts/test-stress.sh` with a validated bounded repetition count and
+   focused commands for all three tests.
+5. Document scope, reproducible commands, and platform limitations. Do not use
+   unbounded loops or timing-only success criteria.
 
 ## Definition of done
 
-- Both fuzz targets compile and complete their finite smoke budgets without a
-  crash.
-- Corpus seeds are bounded and checked in.
-- Missing prerequisites fail with actionable exit status 2.
+- Model and protocol high-volume invariants pass deterministically.
+- The Unix process-tree test observes and then proves termination of the exact
+  descendant after cancellation.
+- The bounded repeated stress script passes.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-./scripts/test-fuzz.sh
+./scripts/test-stress.sh
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -46,11 +48,11 @@ python3 -m pytest bridge/tests
 
 ## Documentation updates
 
-- Document fuzzing in `docs/testing.md`.
-- Mark `HARDEN-FUZZ-001` `DONE` only after every command passes.
+- Document stress and process-tree coverage in `docs/testing.md`.
+- Mark `HARDEN-STRESS-001` `DONE` only after every command passes.
 - Update `docs/implementation-status.md`.
-- Replace this file with `HARDEN-STRESS-001`.
+- Replace this file with `HARDEN-SANITIZER-001`.
 
 ## Next task
 
-`HARDEN-STRESS-001`
+`HARDEN-SANITIZER-001`
