@@ -2,43 +2,41 @@
 
 ## Task
 
-**ID:** HARDEN-STRESS-001
-**Title:** Add deterministic stress and process-tree tests
+**ID:** HARDEN-SANITIZER-001
+**Title:** Add sanitizer verification
 
 ## Objective
 
-Add repeatable high-volume tests for bounded pure state and protocol framing,
-plus a real Unix process-tree cancellation test that proves child descendants
-do not survive a runner cancellation.
+Add a reproducible Linux x86_64 nightly sanitizer gate that runs deterministic
+native Yoctui workloads under AddressSanitizer and LeakSanitizer.
 
 ## Required work
 
-1. Add a deterministic model stress test that drives substantially more log
-   events than retention limits and checks count, bytes, loss counters,
-   selection, and invariant preservation.
-2. Add a deterministic protocol stress test that frames and decodes a large
-   ordered stream across irregular chunk boundaries without losing or
-   reordering messages.
-3. Add a Unix fake-process test using an existing process-group runner. Spawn a
-   child that owns a descendant, cancel the exact session, and prove both the
-   parent and descendant exit within a bounded deadline.
-4. Add `scripts/test-stress.sh` with a validated bounded repetition count and
-   focused commands for all three tests.
-5. Document scope, reproducible commands, and platform limitations. Do not use
-   unbounded loops or timing-only success criteria.
+1. Add `scripts/test-sanitizers.sh` with explicit Linux x86_64, nightly, and
+   nightly `rust-src` prerequisite checks that fail with actionable exit status
+   2.
+2. Build the standard library and selected workspace crates with sanitizer
+   instrumentation in isolated target directories; do not contaminate normal
+   build artifacts.
+3. Run the deterministic model and protocol stress targets under
+   AddressSanitizer and LeakSanitizer.
+4. Run a production CLI headless bridge workload under AddressSanitizer so the
+   executable boundary, protocol framing, bridge lifecycle, and shutdown are
+   exercised together.
+5. Treat every sanitizer finding as a failure. Document unsupported platforms,
+   runtime constraints, and exact reproduction commands.
 
 ## Definition of done
 
-- Model and protocol high-volume invariants pass deterministically.
-- The Unix process-tree test observes and then proves termination of the exact
-  descendant after cancellation.
-- The bounded repeated stress script passes.
+- AddressSanitizer passes the selected stress tests and headless CLI workload.
+- LeakSanitizer passes the selected deterministic stress tests.
+- Missing prerequisites and unsupported hosts fail explicitly.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-./scripts/test-stress.sh
+./scripts/test-sanitizers.sh
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -48,11 +46,11 @@ python3 -m pytest bridge/tests
 
 ## Documentation updates
 
-- Document stress and process-tree coverage in `docs/testing.md`.
-- Mark `HARDEN-STRESS-001` `DONE` only after every command passes.
+- Document sanitizer scope and prerequisites in `docs/testing.md`.
+- Mark `HARDEN-SANITIZER-001` `DONE` only after every command passes.
 - Update `docs/implementation-status.md`.
-- Replace this file with `HARDEN-SANITIZER-001`.
+- Replace this file with `HARDEN-ANALYSIS-001`.
 
 ## Next task
 
-`HARDEN-SANITIZER-001`
+`HARDEN-ANALYSIS-001`

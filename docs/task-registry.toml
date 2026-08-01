@@ -1604,18 +1604,18 @@ notes = "A workspace-excluded cargo-fuzz package now drives the public protocol 
 id = "HARDEN-STRESS-001"
 milestone = "M7"
 title = "Add deterministic stress and process-tree tests"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 80
 required = true
 depends_on = ["HARDEN-FUZZ-001"]
 verify = ["./scripts/test-stress.sh"]
-notes = "Exercise high-volume bounded reducer/protocol behavior and verify that cancellation terminates a real child process tree without leaking descendants."
+notes = "Deterministic tests now drive 20,000 reducer log events through bounded retention, frame/decode 10,000 ordered protocol messages across irregular chunks, and cancel a real TERM-resistant descendant through the existing Maintenance process-group runner. The script validates a 1-20 repetition count and all three tests pass three consecutive default iterations plus the full baseline. The descendant assertion is Unix-only and verifies exact PID disappearance, not timing alone."
 
 [[task]]
 id = "HARDEN-SANITIZER-001"
 milestone = "M7"
 title = "Add sanitizer verification"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 80
 required = true
 depends_on = ["HARDEN-STRESS-001"]
