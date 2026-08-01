@@ -132,6 +132,10 @@ enum InspectionPurpose {
         capability_request: u64,
         request: Box<SstateCleanupRequest>,
     },
+    PreviewPrService {
+        capability_request: u64,
+        request: Box<yoctui_model::PrServiceRequest>,
+    },
 }
 
 struct InspectionWorker {
@@ -258,7 +262,13 @@ impl MaintenanceCliCoordinator {
                     });
                 }
             }
-            MaintenanceEffect::PreviewPrService { .. } => return false,
+            MaintenanceEffect::PreviewPrService {
+                capability_request,
+                request,
+            } => self.start_inspection(InspectionPurpose::PreviewPrService {
+                capability_request,
+                request: Box::new(request),
+            }),
             MaintenanceEffect::StartOperation { id, preview } => {
                 if self.operation.is_some() {
                     fail(app, id, "another Maintenance operation is already active");
@@ -369,7 +379,8 @@ impl MaintenanceCliCoordinator {
             }
             InspectionPurpose::Start { id, .. } => fail(app, id, &message),
             InspectionPurpose::PreviewReadiness { .. }
-            | InspectionPurpose::PreviewCleanup { .. } => {
+            | InspectionPurpose::PreviewCleanup { .. }
+            | InspectionPurpose::PreviewPrService { .. } => {
                 app.notification = Some(message);
             }
         }
@@ -434,6 +445,15 @@ impl MaintenanceCliCoordinator {
                 }
                 Err(message) => app.notification = Some(message),
             },
+            InspectionPurpose::PreviewPrService {
+                capability_request,
+                request,
+            } => match result.capability {
+                Ok(snapshot) => {
+                    self.preview_pr_service(app, capability_request, *request, snapshot)
+                }
+                Err(message) => app.notification = Some(message),
+            },
         }
     }
 
@@ -474,6 +494,31 @@ impl MaintenanceCliCoordinator {
             id.0,
             request,
         ) {
+            Ok((preview, _)) => {
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::BeginOperation(preview)),
+                );
+            }
+            Err(error) => app.notification = Some(error.to_string()),
+        }
+    }
+
+    fn preview_pr_service(
+        &mut self,
+        app: &mut App,
+        capability_request: u64,
+        request: yoctui_model::PrServiceRequest,
+        snapshot: MaintenanceCapabilitySnapshot,
+    ) {
+        if !self.exact_snapshot(app, capability_request, &snapshot) {
+            app.notification = Some(
+                "Maintenance capability changed; refresh and reopen the PR service form".into(),
+            );
+            return;
+        }
+        let id = self.next_id();
+        match pr_service_command(id, capability_request, &snapshot, id.0, request) {
             Ok((preview, _)) => {
                 let _ = update(
                     app,
@@ -1303,7 +1348,7 @@ mod tests {
         app: &mut App,
         complete: impl Fn(&App, &MaintenanceCliCoordinator) -> bool,
     ) {
-        for _ in 0..400 {
+        for _ in 0..2_400 {
             coordinator.poll(app).await;
             if complete(app, coordinator) {
                 return;
@@ -1370,6 +1415,35 @@ mod tests {
         .await;
         let request = app.maintenance.capability.request().unwrap();
         (app, coordinator, request, cache, stamps)
+    }
+
+    async fn refreshed_service_coordinator(
+        fixture: &Fixture,
+        script: &str,
+    ) -> (App, MaintenanceCliCoordinator, u64) {
+        fixture.install("bitbake-prserv-tool", script);
+        let mut app = App::new(100, 64 * 1024);
+        app.workspace
+            .variables
+            .insert("PRSERV_HOST".into(), "localhost:8585".into());
+        let mut coordinator =
+            MaintenanceCliCoordinator::new(&app, &fixture.build, vec![fixture.bin.clone()])
+                .unwrap();
+        let effect = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::InspectCapability),
+        )
+        .unwrap();
+        coordinator.handle_effect(&mut app, effect).await;
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            app.maintenance
+                .capability
+                .snapshot()
+                .is_some_and(|snapshot| snapshot.supports(MaintenanceTool::PrServiceTool))
+        })
+        .await;
+        let request = app.maintenance.capability.request().unwrap();
+        (app, coordinator, request)
     }
 
     async fn begin_readiness(
@@ -1693,6 +1767,236 @@ mod tests {
         })
         .await;
         assert!(app.active_dialog().is_none());
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_service_workspace_builds_distinct_exact_previews() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let (mut app, mut coordinator, capability_request) =
+            refreshed_service_coordinator(&fixture, "#!/bin/sh\nexit 0\n").await;
+        for operation in [PrServiceOperation::Export, PrServiceOperation::Import] {
+            app.dialogs.clear();
+            let file = fixture.build.join(match operation {
+                PrServiceOperation::Export => "export.conf",
+                PrServiceOperation::Import => "import.inc",
+            });
+            if operation == PrServiceOperation::Import {
+                fs::write(&file, b"PRSERV_DUMP = \"1\"\n").unwrap();
+            }
+            let request = yoctui_model::PrServiceRequest::new(
+                operation,
+                file.clone(),
+                fixture.build.clone(),
+                "localhost:8585".into(),
+            )
+            .unwrap();
+            coordinator
+                .handle_effect(
+                    &mut app,
+                    Effect::Maintenance(MaintenanceEffect::PreviewPrService {
+                        capability_request,
+                        request,
+                    }),
+                )
+                .await;
+            poll_until(&mut coordinator, &mut app, |app, _| {
+                matches!(
+                    app.active_dialog(),
+                    Some(yoctui_model::Dialog::Maintenance(dialog))
+                        if matches!(dialog.as_ref(), yoctui_model::MaintenanceDialog::Confirm(_))
+                )
+            })
+            .await;
+            let Some(yoctui_model::Dialog::Maintenance(dialog)) = app.active_dialog() else {
+                panic!("PR preview is absent");
+            };
+            let yoctui_model::MaintenanceDialog::Confirm(preview) = dialog.as_ref() else {
+                panic!("wrong PR preview dialog");
+            };
+            let expected = match operation {
+                PrServiceOperation::Export => "export",
+                PrServiceOperation::Import => "import",
+            };
+            assert!(
+                preview
+                    .arguments
+                    .iter()
+                    .any(|argument| argument.ends_with(&format!(": {expected}")))
+            );
+            assert!(
+                preview
+                    .arguments
+                    .iter()
+                    .any(|argument| argument.ends_with(&format!(": {}", file.display())))
+            );
+        }
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_service_workspace_success_installs_exact_export_evidence() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let script = "#!/bin/sh\nprintf 'PRSERV_DUMP = \\\"1\\\"\\n' > \"$2\"\n";
+        let (mut app, mut coordinator, capability_request) =
+            refreshed_service_coordinator(&fixture, script).await;
+        let destination = fixture.build.join("export.inc");
+        let request = yoctui_model::PrServiceRequest::new(
+            PrServiceOperation::Export,
+            destination.clone(),
+            fixture.build.clone(),
+            "localhost:8585".into(),
+        )
+        .unwrap();
+        coordinator
+            .handle_effect(
+                &mut app,
+                Effect::Maintenance(MaintenanceEffect::PreviewPrService {
+                    capability_request,
+                    request,
+                }),
+            )
+            .await;
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            app.active_dialog().is_some()
+        })
+        .await;
+        let Some(yoctui_model::Dialog::Maintenance(dialog)) = app.active_dialog().cloned() else {
+            panic!("PR confirmation is absent");
+        };
+        let yoctui_model::MaintenanceDialog::Confirm(preview) = dialog.as_ref() else {
+            panic!("wrong PR confirmation");
+        };
+        let effect = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::ConfirmOperation(preview.clone())),
+        )
+        .unwrap();
+        coordinator.handle_effect(&mut app, effect).await;
+        poll_until(&mut coordinator, &mut app, |app, coordinator| {
+            !coordinator.operation_active()
+                && app
+                    .maintenance
+                    .sessions
+                    .back()
+                    .is_some_and(|session| session.status.is_terminal())
+        })
+        .await;
+        assert_eq!(
+            app.maintenance.sessions.back().unwrap().status,
+            MaintenanceSessionStatus::Succeeded
+        );
+        assert_eq!(app.maintenance.evidence.len(), 1);
+        assert_eq!(app.maintenance.evidence[0].identity.path, destination);
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_service_workspace_rejects_stale_and_invalid_previews() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let (mut app, mut coordinator, capability_request) =
+            refreshed_service_coordinator(&fixture, "#!/bin/sh\nexit 0\n").await;
+        let valid = yoctui_model::PrServiceRequest::new(
+            PrServiceOperation::Export,
+            fixture.build.join("export.conf"),
+            fixture.build.clone(),
+            "localhost:8585".into(),
+        )
+        .unwrap();
+        coordinator
+            .handle_effect(
+                &mut app,
+                Effect::Maintenance(MaintenanceEffect::PreviewPrService {
+                    capability_request: capability_request + 1,
+                    request: valid,
+                }),
+            )
+            .await;
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("capability changed"))
+        })
+        .await;
+        assert!(app.active_dialog().is_none());
+
+        app.notification = None;
+        let invalid = yoctui_model::PrServiceRequest {
+            operation: PrServiceOperation::Export,
+            file: PathBuf::from("relative.conf"),
+            build_dir: fixture.build.clone(),
+            endpoint: "localhost:8585".into(),
+        };
+        coordinator
+            .handle_effect(
+                &mut app,
+                Effect::Maintenance(MaintenanceEffect::PreviewPrService {
+                    capability_request,
+                    request: invalid,
+                }),
+            )
+            .await;
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("absolute") || message.contains("unsafe"))
+        })
+        .await;
+        assert!(app.active_dialog().is_none());
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_service_workspace_reports_nonzero_without_export_evidence() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let (mut app, mut coordinator, capability_request) =
+            refreshed_service_coordinator(&fixture, "#!/bin/sh\necho denied >&2\nexit 7\n").await;
+        let destination = fixture.build.join("failed-export.conf");
+        let request = yoctui_model::PrServiceRequest::new(
+            PrServiceOperation::Export,
+            destination,
+            fixture.build.clone(),
+            "localhost:8585".into(),
+        )
+        .unwrap();
+        coordinator
+            .handle_effect(
+                &mut app,
+                Effect::Maintenance(MaintenanceEffect::PreviewPrService {
+                    capability_request,
+                    request,
+                }),
+            )
+            .await;
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            app.active_dialog().is_some()
+        })
+        .await;
+        let Some(yoctui_model::Dialog::Maintenance(dialog)) = app.active_dialog().cloned() else {
+            panic!("PR confirmation is absent");
+        };
+        let yoctui_model::MaintenanceDialog::Confirm(preview) = dialog.as_ref() else {
+            panic!("wrong PR confirmation");
+        };
+        let effect = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::ConfirmOperation(preview.clone())),
+        )
+        .unwrap();
+        coordinator.handle_effect(&mut app, effect).await;
+        poll_until(&mut coordinator, &mut app, |app, coordinator| {
+            !coordinator.operation_active()
+                && app
+                    .maintenance
+                    .sessions
+                    .back()
+                    .is_some_and(|session| session.status.is_terminal())
+        })
+        .await;
+        let session = app.maintenance.sessions.back().unwrap();
+        assert_eq!(session.status, MaintenanceSessionStatus::Failed);
+        assert!(session.output.iter().any(|line| line.text == "denied"));
+        assert!(app.maintenance.evidence.is_empty());
         coordinator.shutdown().await;
     }
 }

@@ -1505,18 +1505,18 @@ notes = "Services now maps e/m to distinct model-owned PR export/import forms. T
 id = "MAINT-SERVICE-CLI-001"
 milestone = "M6"
 title = "Route PR service export and import forms"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-SERVICE-UI-001", "MAINT-CLI-001"]
 verify = ["cargo test -p yoctui -- maintenance_service_workspace", "cargo test -p yoctui-bitbake maintenance_service"]
-notes = "Construct exact PR helper previews from confirmed typed forms, preserve separate export/import evidence behavior, and route them through the independent Maintenance runner."
+notes = "PR export/import form effects now trigger fresh correlated capability inspection, rebuild only adapter-owned shell-free previews, and enter the generic confirmation/runner path without pre-confirmation spawn. Export evidence is installed only after successful exact-file validation; import remains evidence-free and destructively styled. Four fake CLI tests cover distinct vectors, successful export evidence, nonzero output/failure, stale capability, and invalid input. The focused adapter matrix and full baseline pass; fake fixtures do not establish live PR database compatibility."
 
 [[task]]
 id = "MAINT-RELEASE-UI-001"
 milestone = "M6"
 title = "Add typed Maintenance release forms"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-SERVICE-CLI-001"]

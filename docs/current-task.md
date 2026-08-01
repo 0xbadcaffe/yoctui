@@ -2,41 +2,49 @@
 
 ## Task
 
-**ID:** MAINT-SERVICE-CLI-001
-**Title:** Route PR service export and import forms
+**ID:** MAINT-RELEASE-UI-001
+**Title:** Add typed Maintenance release forms
 
 ## Objective
 
-Connect typed PR export/import forms to exact adapter previews and the existing
-fresh-inspecting independent Maintenance runner.
+Expose model-owned, focus-trapped entry forms for locked-signature cache
+generation, build-history comparison, and local Git archival without duplicating
+adapter validation or starting a process.
 
 ## Required work
 
-1. Route `PreviewPrService` through a fresh correlated capability inspection.
-2. Reconstruct only the exact typed export/import request with
-   `pr_service_command`; reject changed helper, build, endpoint, file, or
-   capability identity visibly.
-3. Dispatch the adapter preview into the existing generic confirmation flow;
-   do not spawn before confirmation.
-4. Preserve import destructive styling, export destination replacement
-   warning, exact indexed vector, output, evidence, navigation, cancellation,
-   and every terminal outcome through the existing runner.
-5. Add fake filesystem/process CLI tests for export and import previews,
-   successful export evidence, nonzero failure, stale identity, and input
-   rejection. Do not claim live PR database compatibility.
+1. Map Release shortcuts `l`, `h`, and `a` only when their exact capability and
+   required metadata are available; disabled routes remain inert with a visible
+   typed reason.
+2. Add bounded typed drafts and reducer actions for every field required by
+   `LockedSignatureCacheRequest`, `BuildComparisonRequest`, and
+   `GitArchiveRequest`. Keep authoritative metadata read-only and distinguish
+   optional values from empty required values.
+3. Validate drafts into exact typed requests and emit preview effects only on
+   `Enter`; `Esc` closes without effects, dialogs trap focus, and ordinary pane
+   shortcuts cannot leak through.
+4. Define the exact field order, toggle controls, destructive/replacement
+   meaning, and local-versus-network archive intent in `docs/ui-spec.md`, then
+   render all three forms safely at 80x24 and responsive boundaries.
+5. Add reducer, app-input, and Ratatui `TestBackend` tests for normal entry,
+   invalid input, disabled capability, focus traversal/toggles, cancellation,
+   bounded text, and narrow rendering. Do not claim live release-tool
+   compatibility.
 
 ## Definition of done
 
-- Both forms reach exact adapter-owned confirmations and confirmed execution.
-- Export installs exact validated evidence only after success.
-- Failure cannot erase prior evidence or mutate UI-owned state directly.
+- Release `l/h/a` opens only the specified typed form with authoritative
+  context and visible side-effect meaning.
+- Valid submission emits one exact typed preview effect and never spawns.
+- Invalid or unavailable submissions remain visible and side-effect free.
 - Focused and baseline verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui -- maintenance_service_workspace
-cargo test -p yoctui-bitbake maintenance_service
+cargo test -p yoctui-model maintenance_release_workspace
+cargo test -p yoctui-app maintenance_release_workspace
+cargo test -p yoctui-ui maintenance_release_workspace
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
@@ -46,11 +54,12 @@ python3 -m pytest bridge/tests
 
 ## Documentation updates
 
-- Update `docs/architecture.md` only if coordinator ownership changes.
-- Mark `MAINT-SERVICE-CLI-001` `DONE` only after every command passes.
+- Update `docs/ui-spec.md` in the implementation commit with exact controls.
+- Update `docs/architecture.md` only if component ownership changes.
+- Mark `MAINT-RELEASE-UI-001` `DONE` only after every command passes.
 - Update `docs/implementation-status.md`.
-- Replace this file with `MAINT-RELEASE-UI-001`.
+- Replace this file with `MAINT-RELEASE-CLI-001`.
 
 ## Next task
 
-`MAINT-RELEASE-UI-001`
+`MAINT-RELEASE-CLI-001`
