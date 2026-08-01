@@ -17,11 +17,12 @@ use yoctui_bitbake::{
     git_archive_push_command, locked_signature_command, parse_cleanup_preview, pr_service_command,
 };
 use yoctui_model::{
-    Action, App, Effect, MAX_MAINTENANCE_PATHS, MaintenanceAction, MaintenanceCapabilitySnapshot,
-    MaintenanceEffect, MaintenanceEvidence, MaintenanceFileIdentity,
-    MaintenanceIntegrationsSnapshot, MaintenanceMetadata, MaintenanceOperation,
-    MaintenanceOperationPreview, MaintenanceSessionId, MaintenanceTool, MaintenanceToolCapability,
-    PrServiceOperation, ServiceDiagnostic, SstateCleanupRequest, SstateReadinessRequest, update,
+    Action, App, BuildComparisonRequest, Effect, GitArchiveRequest, LockedSignatureCacheRequest,
+    MAX_MAINTENANCE_PATHS, MaintenanceAction, MaintenanceCapabilitySnapshot, MaintenanceEffect,
+    MaintenanceEvidence, MaintenanceFileIdentity, MaintenanceIntegrationsSnapshot,
+    MaintenanceMetadata, MaintenanceOperation, MaintenanceOperationPreview, MaintenanceSessionId,
+    MaintenanceTool, MaintenanceToolCapability, PrServiceOperation, ServiceDiagnostic,
+    SstateCleanupRequest, SstateReadinessRequest, update,
 };
 
 const INSPECTION_TIMEOUT: Duration = Duration::from_secs(10);
@@ -136,6 +137,22 @@ enum InspectionPurpose {
         capability_request: u64,
         request: Box<yoctui_model::PrServiceRequest>,
     },
+    PreviewLockedSignatureCache {
+        capability_request: u64,
+        request: Box<LockedSignatureCacheRequest>,
+    },
+    PreviewBuildHistoryComparison {
+        capability_request: u64,
+        request: Box<BuildComparisonRequest>,
+    },
+    PreviewGitArchive {
+        capability_request: u64,
+        request: Box<GitArchiveRequest>,
+    },
+    PreviewGitArchivePush {
+        capability_request: u64,
+        request: Box<GitArchiveRequest>,
+    },
 }
 
 struct InspectionWorker {
@@ -144,6 +161,7 @@ struct InspectionWorker {
     handle: JoinHandle<MaintenanceInspection>,
 }
 
+#[derive(Clone)]
 enum EvidencePlan {
     None,
     Release(MaintenanceReleaseEvidenceSnapshot),
@@ -188,6 +206,8 @@ pub(crate) struct MaintenanceCliCoordinator {
     operation: Option<MaintenanceCliOperation>,
     snapshot: Option<MaintenanceCapabilitySnapshot>,
     local_archive: Option<GitArchiveLocalResult>,
+    archive_intent: Option<(u64, GitArchiveRequest)>,
+    deferred_archive_push: Option<GitArchiveRequest>,
     next_preview_id: u64,
 }
 
@@ -204,6 +224,8 @@ impl MaintenanceCliCoordinator {
             operation: None,
             snapshot: None,
             local_archive: None,
+            archive_intent: None,
+            deferred_archive_push: None,
             next_preview_id: 1,
         })
     }
@@ -277,11 +299,28 @@ impl MaintenanceCliCoordinator {
                 }
             }
             MaintenanceEffect::CancelOperation(id) => self.cancel(app, id),
-            MaintenanceEffect::PreviewLockedSignatureCache { .. }
-            | MaintenanceEffect::PreviewBuildHistoryComparison { .. }
-            | MaintenanceEffect::PreviewGitArchive { .. }
-            | MaintenanceEffect::OpenEvidence(_)
-            | MaintenanceEffect::Navigate(_) => return false,
+            MaintenanceEffect::PreviewLockedSignatureCache {
+                capability_request,
+                request,
+            } => self.start_inspection(InspectionPurpose::PreviewLockedSignatureCache {
+                capability_request,
+                request: Box::new(request),
+            }),
+            MaintenanceEffect::PreviewBuildHistoryComparison {
+                capability_request,
+                request,
+            } => self.start_inspection(InspectionPurpose::PreviewBuildHistoryComparison {
+                capability_request,
+                request: Box::new(request),
+            }),
+            MaintenanceEffect::PreviewGitArchive {
+                capability_request,
+                request,
+            } => self.start_inspection(InspectionPurpose::PreviewGitArchive {
+                capability_request,
+                request: Box::new(request),
+            }),
+            MaintenanceEffect::OpenEvidence(_) | MaintenanceEffect::Navigate(_) => return false,
         }
         true
     }
@@ -384,7 +423,11 @@ impl MaintenanceCliCoordinator {
             InspectionPurpose::Start { id, .. } => fail(app, id, &message),
             InspectionPurpose::PreviewReadiness { .. }
             | InspectionPurpose::PreviewCleanup { .. }
-            | InspectionPurpose::PreviewPrService { .. } => {
+            | InspectionPurpose::PreviewPrService { .. }
+            | InspectionPurpose::PreviewLockedSignatureCache { .. }
+            | InspectionPurpose::PreviewBuildHistoryComparison { .. }
+            | InspectionPurpose::PreviewGitArchive { .. }
+            | InspectionPurpose::PreviewGitArchivePush { .. } => {
                 app.notification = Some(message);
             }
         }
@@ -458,6 +501,42 @@ impl MaintenanceCliCoordinator {
                 }
                 Err(message) => app.notification = Some(message),
             },
+            InspectionPurpose::PreviewLockedSignatureCache {
+                capability_request,
+                request,
+            } => match result.capability {
+                Ok(snapshot) => {
+                    self.preview_locked_signature_cache(app, capability_request, *request, snapshot)
+                }
+                Err(message) => app.notification = Some(message),
+            },
+            InspectionPurpose::PreviewBuildHistoryComparison {
+                capability_request,
+                request,
+            } => match result.capability {
+                Ok(snapshot) => {
+                    self.preview_buildhistory(app, capability_request, *request, snapshot)
+                }
+                Err(message) => app.notification = Some(message),
+            },
+            InspectionPurpose::PreviewGitArchive {
+                capability_request,
+                request,
+            } => match result.capability {
+                Ok(snapshot) => {
+                    self.preview_git_archive(app, capability_request, *request, snapshot)
+                }
+                Err(message) => app.notification = Some(message),
+            },
+            InspectionPurpose::PreviewGitArchivePush {
+                capability_request,
+                request,
+            } => match result.capability {
+                Ok(snapshot) => {
+                    self.preview_git_archive_push(app, capability_request, *request, snapshot)
+                }
+                Err(message) => app.notification = Some(message),
+            },
         }
     }
 
@@ -523,6 +602,110 @@ impl MaintenanceCliCoordinator {
         }
         let id = self.next_id();
         match pr_service_command(id, capability_request, &snapshot, id.0, request) {
+            Ok((preview, _)) => {
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::BeginOperation(preview)),
+                );
+            }
+            Err(error) => app.notification = Some(error.to_string()),
+        }
+    }
+
+    fn preview_locked_signature_cache(
+        &mut self,
+        app: &mut App,
+        capability_request: u64,
+        request: LockedSignatureCacheRequest,
+        snapshot: MaintenanceCapabilitySnapshot,
+    ) {
+        if !self.exact_snapshot(app, capability_request, &snapshot) {
+            app.notification = Some(
+                "Maintenance capability changed; refresh and reopen the locked-cache form".into(),
+            );
+            return;
+        }
+        let id = self.next_id();
+        match locked_signature_command(id, capability_request, &snapshot, id.0, request) {
+            Ok((preview, _, _)) => {
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::BeginOperation(preview)),
+                );
+            }
+            Err(error) => app.notification = Some(error.to_string()),
+        }
+    }
+
+    fn preview_buildhistory(
+        &mut self,
+        app: &mut App,
+        capability_request: u64,
+        request: BuildComparisonRequest,
+        snapshot: MaintenanceCapabilitySnapshot,
+    ) {
+        if !self.exact_snapshot(app, capability_request, &snapshot) {
+            app.notification = Some(
+                "Maintenance capability changed; refresh and reopen the build-history form".into(),
+            );
+            return;
+        }
+        let id = self.next_id();
+        match buildhistory_command(id, capability_request, &snapshot, id.0, request) {
+            Ok((preview, _)) => {
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::BeginOperation(preview)),
+                );
+            }
+            Err(error) => app.notification = Some(error.to_string()),
+        }
+    }
+
+    fn preview_git_archive(
+        &mut self,
+        app: &mut App,
+        capability_request: u64,
+        request: GitArchiveRequest,
+        snapshot: MaintenanceCapabilitySnapshot,
+    ) {
+        if !self.exact_snapshot(app, capability_request, &snapshot) {
+            app.notification =
+                Some("Maintenance capability changed; refresh and reopen the archive form".into());
+            return;
+        }
+        let id = self.next_id();
+        match git_archive_local_command(id, capability_request, &snapshot, id.0, &request) {
+            Ok((preview, _)) => {
+                self.archive_intent = Some((preview.id, request));
+                let _ = update(
+                    app,
+                    Action::Maintenance(MaintenanceAction::BeginOperation(preview)),
+                );
+            }
+            Err(error) => app.notification = Some(error.to_string()),
+        }
+    }
+
+    fn preview_git_archive_push(
+        &mut self,
+        app: &mut App,
+        capability_request: u64,
+        request: GitArchiveRequest,
+        snapshot: MaintenanceCapabilitySnapshot,
+    ) {
+        if !self.exact_snapshot(app, capability_request, &snapshot) {
+            app.notification = Some(
+                "Maintenance capability changed; refresh before confirming archive push".into(),
+            );
+            return;
+        }
+        let Some(local) = self.local_archive.clone() else {
+            app.notification = Some("local Git archive evidence is unavailable".into());
+            return;
+        };
+        let id = self.next_id();
+        match git_archive_push_command(id, capability_request, &snapshot, id.0, request, &local) {
             Ok((preview, _)) => {
                 let _ = update(
                     app,
@@ -808,21 +991,35 @@ impl MaintenanceCliCoordinator {
                     })
                     .map_err(|error| error.to_string())
                 }),
-            MaintenanceOperation::GitArchive(request) => git_archive_local_command(
-                id,
-                confirmed.capability_request,
-                &snapshot,
-                confirmed.id,
-                &request,
-            )
-            .map(|(preview, command)| {
-                (
-                    preview,
-                    command,
-                    OperationStage::Execute(Box::new(EvidencePlan::GitArchive(request))),
+            MaintenanceOperation::GitArchive(request) => {
+                let evidence_request = self
+                    .archive_intent
+                    .take()
+                    .filter(|(preview_id, original)| {
+                        let mut local = original.clone();
+                        local.push_remote = None;
+                        *preview_id == confirmed.id && local == request
+                    })
+                    .map(|(_, original)| original)
+                    .unwrap_or_else(|| request.clone());
+                git_archive_local_command(
+                    id,
+                    confirmed.capability_request,
+                    &snapshot,
+                    confirmed.id,
+                    &evidence_request,
                 )
-            })
-            .map_err(|error| error.to_string()),
+                .map(|(preview, command)| {
+                    (
+                        preview,
+                        command,
+                        OperationStage::Execute(Box::new(EvidencePlan::GitArchive(
+                            evidence_request,
+                        ))),
+                    )
+                })
+                .map_err(|error| error.to_string())
+            }
         };
         let (fresh_preview, command, stage) = match built {
             Ok(value) => value,
@@ -961,6 +1158,14 @@ impl MaintenanceCliCoordinator {
                         }),
                     );
                     self.operation = None;
+                    if let Some(request) = self.deferred_archive_push.take()
+                        && let Some(capability_request) = app.maintenance.capability.request()
+                    {
+                        self.start_inspection(InspectionPurpose::PreviewGitArchivePush {
+                            capability_request,
+                            request: Box::new(request),
+                        });
+                    }
                 }
             }
             MaintenanceSstateRunnerEvent::Failed { id, exit_code } => {
@@ -1050,21 +1255,25 @@ impl MaintenanceCliCoordinator {
         let OperationStage::Execute(plan) = &active.stage else {
             return Ok(Vec::new());
         };
-        match plan.as_ref() {
+        let plan = plan.as_ref().clone();
+        match plan {
             EvidencePlan::None => Ok(Vec::new()),
             EvidencePlan::Release(before) => {
                 before.changed_evidence().map_err(|error| error.to_string())
             }
             EvidencePlan::GitArchive(request) => {
                 let result =
-                    GitArchiveLocalResult::capture(request).map_err(|error| error.to_string())?;
+                    GitArchiveLocalResult::capture(&request).map_err(|error| error.to_string())?;
                 let evidence =
                     MaintenanceEvidence::new(result.head.clone(), "Git archive HEAD".into())
                         .map_err(str::to_owned)?;
                 self.local_archive = Some(result);
+                if request.push_remote.is_some() {
+                    self.deferred_archive_push = Some(request);
+                }
                 Ok(vec![evidence])
             }
-            EvidencePlan::PrExport(path) => Ok(vec![file_evidence(path, "PR service export")?]),
+            EvidencePlan::PrExport(path) => Ok(vec![file_evidence(&path, "PR service export")?]),
         }
     }
 
@@ -1296,8 +1505,8 @@ mod tests {
     use super::*;
     use std::sync::atomic::{AtomicU64, Ordering};
     use yoctui_model::{
-        MaintenanceCapability, MaintenanceSessionStatus, SstateReadinessMode,
-        SstateReadinessRequest,
+        MAX_MAINTENANCE_OUTPUT, MaintenanceCapability, MaintenanceSessionStatus,
+        SstateReadinessMode, SstateReadinessRequest,
     };
 
     static NEXT_ROOT: AtomicU64 = AtomicU64::new(1);
@@ -1448,6 +1657,53 @@ mod tests {
         .await;
         let request = app.maintenance.capability.request().unwrap();
         (app, coordinator, request)
+    }
+
+    async fn refreshed_release_coordinator(
+        fixture: &Fixture,
+        locked_script: &str,
+        buildhistory_script: &str,
+        archive_script: &str,
+    ) -> (App, MaintenanceCliCoordinator, u64, PathBuf) {
+        fixture.install("gen-lockedsig-cache", locked_script);
+        fixture.install("buildhistory-diff", buildhistory_script);
+        fixture.install("oe-git-archive", archive_script);
+        let history = fixture.root.join("buildhistory");
+        fs::create_dir_all(history.join(".git")).unwrap();
+        fs::write(history.join(".git/HEAD"), b"ref: refs/heads/main\n").unwrap();
+        let mut app = App::new(100, 64 * 1024);
+        app.workspace
+            .variables
+            .insert("NATIVELSBSTRING".into(), "ubuntu".into());
+        app.workspace
+            .variables
+            .insert("BUILDHISTORY_DIR".into(), history.display().to_string());
+        let mut coordinator =
+            MaintenanceCliCoordinator::new(&app, &fixture.build, vec![fixture.bin.clone()])
+                .unwrap();
+        let effect = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::InspectCapability),
+        )
+        .unwrap();
+        coordinator.handle_effect(&mut app, effect).await;
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            app.maintenance
+                .capability
+                .snapshot()
+                .is_some_and(|snapshot| {
+                    [
+                        MaintenanceTool::LockedSignatureCache,
+                        MaintenanceTool::BuildHistoryDiff,
+                        MaintenanceTool::GitArchive,
+                    ]
+                    .into_iter()
+                    .all(|tool| snapshot.supports(tool))
+                })
+        })
+        .await;
+        let request = app.maintenance.capability.request().unwrap();
+        (app, coordinator, request, history)
     }
 
     async fn begin_readiness(
@@ -2001,6 +2257,435 @@ mod tests {
         assert_eq!(session.status, MaintenanceSessionStatus::Failed);
         assert!(session.output.iter().any(|line| line.text == "denied"));
         assert!(app.maintenance.evidence.is_empty());
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_release_workspace_builds_exact_previews_for_every_form() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let (mut app, mut coordinator, capability_request, history) =
+            refreshed_release_coordinator(
+                &fixture,
+                "#!/bin/sh\nexit 0\n",
+                "#!/bin/sh\nprintf 'comparison\\n'\n",
+                "#!/bin/sh\nexit 0\n",
+            )
+            .await;
+
+        let locked = fixture.root.join("locked.inc");
+        let input = fixture.root.join("input-cache");
+        let output = fixture.root.join("output-cache");
+        fs::write(&locked, b"SIGGEN_LOCKEDSIGS = \"\"\n").unwrap();
+        fs::create_dir_all(&input).unwrap();
+        fs::create_dir_all(&output).unwrap();
+        let requests = [
+            Effect::Maintenance(MaintenanceEffect::PreviewLockedSignatureCache {
+                capability_request,
+                request: LockedSignatureCacheRequest::new(
+                    locked,
+                    input,
+                    output,
+                    "ubuntu".into(),
+                    None,
+                )
+                .unwrap(),
+            }),
+            Effect::Maintenance(MaintenanceEffect::PreviewBuildHistoryComparison {
+                capability_request,
+                request: BuildComparisonRequest::new(BuildComparisonRequest {
+                    repository: history,
+                    from_revision: Some("HEAD^".into()),
+                    to_revision: Some("HEAD".into()),
+                    report_version: true,
+                    report_all: false,
+                    signatures: true,
+                    signature_diff: false,
+                    exclude_paths: vec!["images/*".into()],
+                    no_colour: true,
+                })
+                .unwrap(),
+            }),
+            Effect::Maintenance(MaintenanceEffect::PreviewGitArchive {
+                capability_request,
+                request: GitArchiveRequest::new(GitArchiveRequest {
+                    data_dir: fixture.root.clone(),
+                    git_dir: fixture.root.join("release.git"),
+                    create: true,
+                    bare: false,
+                    create_tag: false,
+                    branch_name: "release".into(),
+                    tag_name: None,
+                    commit_subject: "Release".into(),
+                    commit_body: String::new(),
+                    tag_subject: "Tag".into(),
+                    tag_body: String::new(),
+                    exclusions: Vec::new(),
+                    notes: Vec::new(),
+                    push_remote: None,
+                })
+                .unwrap(),
+            }),
+        ];
+        let expected = [
+            MaintenanceTool::LockedSignatureCache,
+            MaintenanceTool::BuildHistoryDiff,
+            MaintenanceTool::GitArchive,
+        ];
+        for (index, (effect, tool)) in requests.into_iter().zip(expected).enumerate() {
+            app.dialogs.clear();
+            coordinator.handle_effect(&mut app, effect).await;
+            poll_until(&mut coordinator, &mut app, |app, _| {
+                matches!(
+                    app.active_dialog(),
+                    Some(yoctui_model::Dialog::Maintenance(dialog))
+                        if matches!(dialog.as_ref(), yoctui_model::MaintenanceDialog::Confirm(_))
+                )
+            })
+            .await;
+            let Some(yoctui_model::Dialog::Maintenance(dialog)) = app.active_dialog() else {
+                panic!("release confirmation is absent");
+            };
+            let yoctui_model::MaintenanceDialog::Confirm(preview) = dialog.as_ref() else {
+                panic!("wrong release confirmation");
+            };
+            assert_eq!(preview.operation.tool(), tool);
+            assert!(!preview.arguments.is_empty());
+            if index == 2 {
+                assert!(!preview.operation.network_side_effect());
+            }
+        }
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_release_workspace_defers_push_until_local_head_success() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let script = "#!/bin/sh\nmkdir -p \"$2\"\nprintf 'ref: refs/heads/main\\n' > \"$2/HEAD\"\n";
+        let (mut app, mut coordinator, capability_request, _) = refreshed_release_coordinator(
+            &fixture,
+            "#!/bin/sh\nexit 0\n",
+            "#!/bin/sh\nprintf 'comparison\\n'\n",
+            script,
+        )
+        .await;
+        let request = GitArchiveRequest::new(GitArchiveRequest {
+            data_dir: fixture.root.clone(),
+            git_dir: fixture.root.join("push-release.git"),
+            create: true,
+            bare: true,
+            create_tag: false,
+            branch_name: "release".into(),
+            tag_name: None,
+            commit_subject: "Release".into(),
+            commit_body: String::new(),
+            tag_subject: "Tag".into(),
+            tag_body: String::new(),
+            exclusions: Vec::new(),
+            notes: Vec::new(),
+            push_remote: Some("origin".into()),
+        })
+        .unwrap();
+        coordinator
+            .handle_effect(
+                &mut app,
+                Effect::Maintenance(MaintenanceEffect::PreviewGitArchive {
+                    capability_request,
+                    request,
+                }),
+            )
+            .await;
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            app.active_dialog().is_some()
+        })
+        .await;
+        let Some(yoctui_model::Dialog::Maintenance(dialog)) = app.active_dialog().cloned() else {
+            panic!("local archive confirmation is absent");
+        };
+        let yoctui_model::MaintenanceDialog::Confirm(local) = dialog.as_ref() else {
+            panic!("wrong local archive confirmation");
+        };
+        assert!(!local.operation.network_side_effect());
+        let effect = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::ConfirmOperation(local.clone())),
+        )
+        .unwrap();
+        coordinator.handle_effect(&mut app, effect).await;
+        poll_until(&mut coordinator, &mut app, |app, coordinator| {
+            !coordinator.operation_active()
+                && matches!(
+                    app.active_dialog(),
+                    Some(yoctui_model::Dialog::Maintenance(dialog))
+                        if matches!(dialog.as_ref(), yoctui_model::MaintenanceDialog::Confirm(preview) if preview.operation.network_side_effect())
+                )
+        })
+        .await;
+        assert!(
+            app.maintenance
+                .evidence
+                .iter()
+                .any(|evidence| evidence.label == "Git archive HEAD")
+        );
+
+        let Some(yoctui_model::Dialog::Maintenance(dialog)) = app.active_dialog().cloned() else {
+            panic!("push confirmation is absent");
+        };
+        let yoctui_model::MaintenanceDialog::Confirm(push) = dialog.as_ref() else {
+            panic!("wrong push confirmation");
+        };
+        let _ = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::ConfirmOperation(push.clone())),
+        );
+        assert!(matches!(
+            app.active_dialog(),
+            Some(yoctui_model::Dialog::Maintenance(dialog))
+                if matches!(dialog.as_ref(), yoctui_model::MaintenanceDialog::ConfirmNetworkPush(_))
+        ));
+        fs::write(
+            fixture.root.join("push-release.git/HEAD"),
+            b"changed local head\n",
+        )
+        .unwrap();
+        let effect = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::ConfirmNetworkPush(push.clone())),
+        )
+        .unwrap();
+        coordinator.handle_effect(&mut app, effect).await;
+        poll_until(&mut coordinator, &mut app, |app, coordinator| {
+            !coordinator.operation_active()
+                && app.maintenance.sessions.len() == 2
+                && app
+                    .maintenance
+                    .sessions
+                    .back()
+                    .is_some_and(|session| session.status.is_terminal())
+        })
+        .await;
+        let push_session = app.maintenance.sessions.back().unwrap();
+        assert_eq!(push_session.status, MaintenanceSessionStatus::Failed);
+        assert!(
+            push_session
+                .message
+                .as_deref()
+                .is_some_and(|message| message.contains("changed"))
+        );
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_release_workspace_installs_changed_locked_cache_evidence() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let locked_script = "#!/bin/sh\nmkdir -p \"$3/aa\"\nprintf 'sig\\n' > \"$3/aa/new.siginfo\"\nprintf 'locked cache ready\\n'\n";
+        let (mut app, mut coordinator, capability_request, _) = refreshed_release_coordinator(
+            &fixture,
+            locked_script,
+            "#!/bin/sh\nexit 0\n",
+            "#!/bin/sh\nexit 0\n",
+        )
+        .await;
+        let locked = fixture.root.join("locked.inc");
+        let input = fixture.root.join("input-cache");
+        let output = fixture.root.join("output-cache");
+        fs::write(&locked, b"SIGGEN_LOCKEDSIGS = \"\"\n").unwrap();
+        fs::create_dir_all(&input).unwrap();
+        fs::create_dir_all(&output).unwrap();
+        coordinator
+            .handle_effect(
+                &mut app,
+                Effect::Maintenance(MaintenanceEffect::PreviewLockedSignatureCache {
+                    capability_request,
+                    request: LockedSignatureCacheRequest::new(
+                        locked,
+                        input,
+                        output.clone(),
+                        "ubuntu".into(),
+                        None,
+                    )
+                    .unwrap(),
+                }),
+            )
+            .await;
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            app.active_dialog().is_some()
+        })
+        .await;
+        let Some(yoctui_model::Dialog::Maintenance(dialog)) = app.active_dialog().cloned() else {
+            panic!("locked-cache confirmation is absent");
+        };
+        let yoctui_model::MaintenanceDialog::Confirm(preview) = dialog.as_ref() else {
+            panic!("wrong locked-cache confirmation");
+        };
+        let effect = update(
+            &mut app,
+            Action::Maintenance(MaintenanceAction::ConfirmOperation(preview.clone())),
+        )
+        .unwrap();
+        coordinator.handle_effect(&mut app, effect).await;
+        poll_until(&mut coordinator, &mut app, |app, coordinator| {
+            !coordinator.operation_active()
+                && app
+                    .maintenance
+                    .sessions
+                    .back()
+                    .is_some_and(|session| session.status.is_terminal())
+        })
+        .await;
+        let session = app.maintenance.sessions.back().unwrap();
+        assert_eq!(session.status, MaintenanceSessionStatus::Succeeded);
+        assert!(
+            session
+                .output
+                .iter()
+                .any(|line| line.text == "locked cache ready")
+        );
+        assert!(app.maintenance.evidence.iter().any(|evidence| {
+            evidence.identity.path == output.join("aa/new.siginfo")
+                && evidence.label == "created locked-signature cache evidence"
+        }));
+        coordinator.shutdown().await;
+    }
+
+    #[tokio::test]
+    async fn maintenance_release_workspace_bounds_comparison_output_and_reports_nonzero() {
+        for (script, expected, expected_dropped) in [
+            (
+                "#!/bin/sh\ni=0\nwhile [ \"$i\" -lt 520 ]; do printf 'comparison-%s\\n' \"$i\"; i=$((i + 1)); done\n",
+                MaintenanceSessionStatus::Succeeded,
+                8,
+            ),
+            (
+                "#!/bin/sh\nprintf 'comparison denied\\n' >&2\nexit 7\n",
+                MaintenanceSessionStatus::Failed,
+                0,
+            ),
+        ] {
+            let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+            let (mut app, mut coordinator, capability_request, history) =
+                refreshed_release_coordinator(
+                    &fixture,
+                    "#!/bin/sh\nexit 0\n",
+                    script,
+                    "#!/bin/sh\nexit 0\n",
+                )
+                .await;
+            let request = BuildComparisonRequest::new(BuildComparisonRequest {
+                repository: history,
+                from_revision: Some("HEAD^".into()),
+                to_revision: Some("HEAD".into()),
+                report_version: false,
+                report_all: false,
+                signatures: false,
+                signature_diff: false,
+                exclude_paths: Vec::new(),
+                no_colour: true,
+            })
+            .unwrap();
+            coordinator
+                .handle_effect(
+                    &mut app,
+                    Effect::Maintenance(MaintenanceEffect::PreviewBuildHistoryComparison {
+                        capability_request,
+                        request,
+                    }),
+                )
+                .await;
+            poll_until(&mut coordinator, &mut app, |app, _| {
+                app.active_dialog().is_some()
+            })
+            .await;
+            let Some(yoctui_model::Dialog::Maintenance(dialog)) = app.active_dialog().cloned()
+            else {
+                panic!("comparison confirmation is absent");
+            };
+            let yoctui_model::MaintenanceDialog::Confirm(preview) = dialog.as_ref() else {
+                panic!("wrong comparison confirmation");
+            };
+            let effect = update(
+                &mut app,
+                Action::Maintenance(MaintenanceAction::ConfirmOperation(preview.clone())),
+            )
+            .unwrap();
+            coordinator.handle_effect(&mut app, effect).await;
+            poll_until(&mut coordinator, &mut app, |app, coordinator| {
+                !coordinator.operation_active()
+                    && app
+                        .maintenance
+                        .sessions
+                        .back()
+                        .is_some_and(|session| session.status.is_terminal())
+            })
+            .await;
+            let session = app.maintenance.sessions.back().unwrap();
+            assert_eq!(session.status, expected);
+            assert_eq!(session.dropped_lines, expected_dropped);
+            assert!(session.output.len() <= MAX_MAINTENANCE_OUTPUT);
+            assert!(app.maintenance.evidence.is_empty());
+            coordinator.shutdown().await;
+        }
+    }
+
+    #[tokio::test]
+    async fn maintenance_release_workspace_rejects_stale_and_invalid_requests() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let (mut app, mut coordinator, capability_request, _) = refreshed_release_coordinator(
+            &fixture,
+            "#!/bin/sh\nexit 0\n",
+            "#!/bin/sh\nexit 0\n",
+            "#!/bin/sh\nexit 0\n",
+        )
+        .await;
+        let locked = fixture.root.join("locked.inc");
+        let input = fixture.root.join("input-cache");
+        let output = fixture.root.join("output-cache");
+        fs::write(&locked, b"SIGGEN_LOCKEDSIGS = \"\"\n").unwrap();
+        fs::create_dir_all(&input).unwrap();
+        fs::create_dir_all(&output).unwrap();
+        let valid =
+            LockedSignatureCacheRequest::new(locked, input, output, "ubuntu".into(), None).unwrap();
+        coordinator
+            .handle_effect(
+                &mut app,
+                Effect::Maintenance(MaintenanceEffect::PreviewLockedSignatureCache {
+                    capability_request: capability_request + 1,
+                    request: valid,
+                }),
+            )
+            .await;
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("capability changed"))
+        })
+        .await;
+        assert!(app.active_dialog().is_none());
+
+        app.notification = None;
+        coordinator
+            .handle_effect(
+                &mut app,
+                Effect::Maintenance(MaintenanceEffect::PreviewLockedSignatureCache {
+                    capability_request,
+                    request: LockedSignatureCacheRequest {
+                        locked_signatures: PathBuf::from("relative.inc"),
+                        input_cache: fixture.root.clone(),
+                        output_cache: fixture.build.clone(),
+                        native_lsb: "ubuntu".into(),
+                        filter: None,
+                    },
+                }),
+            )
+            .await;
+        poll_until(&mut coordinator, &mut app, |app, _| {
+            app.notification.as_deref().is_some_and(|message| {
+                message.contains("invalid")
+                    || message.contains("absolute")
+                    || message.contains("unsafe")
+            })
+        })
+        .await;
+        assert!(app.active_dialog().is_none());
         coordinator.shutdown().await;
     }
 }

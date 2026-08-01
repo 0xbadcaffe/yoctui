@@ -27,7 +27,7 @@ See `docs/current-task.md`.
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
-| M6 Maintenance | IN_PROGRESS | The contract, base model, adapters, responsive summary renderer, and non-blocking CLI runner are complete; the cross-layer audit found missing operation-entry forms and routes |
+| M6 Maintenance | IN_PROGRESS | Typed Sstate, Services, and Release entry forms and exact non-blocking CLI routes are complete; the full cross-layer parent gate remains |
 | M7 Hardening | IN_PROGRESS | Coverage and profiling foundations exist |
 
 ## Reconciliation evidence
@@ -73,7 +73,7 @@ See `docs/current-task.md`.
 | Testing workflow | DONE | The unified parent gate passes for typed launch/result state, selftest/resulttool adapters, responsive rendering, and non-blocking CLI execution. Managed BitBake reuse, independent selftest/result operations, exact correlation, navigation, cancellation, import/comparison/JUnit export, and terminal outcomes are verified. Fake-process coverage does not establish live compatibility |
 | Security workflow | DONE | The complete cross-layer gate passes for capability-driven CVE checks/mapping, current/legacy recipe and image SBOM workflows, bounded exact reports, responsive UI, managed BitBake reuse, independent CLI polling, exact-open revalidation, refresh, navigation, cancellation, and explicit partial/terminal states. Focused fake evidence does not establish live Yocto compatibility |
 | QA workflow | DONE | The complete parent gate passes across typed Recipe & Kernel and Layer QA state, exact capability/report/native adapters, responsive rendering, managed BitBake reuse, independent CLI polling/cancellation, replaceable reports, revalidated evidence opens, navigation, and every terminal outcome. Fixture evidence does not establish live compatibility |
-| Maintenance workflow | IN_PROGRESS | Sstate `c/d` and Services `e/m` run through exact preview/execution. Release `l/h/a` now provide model-owned validated locked-cache, buildhistory-diff, and local-first Git archive forms with exact context, choices, warnings, and optional deferred push intent; release execution routing remains. No live cache, PR-service, or release-tool compatibility is claimed |
+| Maintenance workflow | IN_PROGRESS | Sstate `c/d`, Services `e/m`, and Release `l/h/a` run through fresh capability inspection, exact adapter-owned preview, generic confirmation, and the shared independent runner. Release execution preserves changed locked-cache evidence, bounded comparison output, local archive HEAD evidence, and a separately confirmed optional push with HEAD revalidation. The cross-layer parent gate remains; no live cache, PR-service, release-tool, or network compatibility is claimed |
 | Settings workspace | DONE | Six typed visual/log rows apply immediately, persist atomically without rewriting config.toml, preserve precedence, and retain retryable dirty state on failure |
 | Signature model | DONE | Exact recipe/task/hash/path identities, explicit bounded dump/comparison states, deterministic typed differences, identity-stable selection, stale-result correlation, reducer effects, and typed backend-event mapping are verified |
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
@@ -84,9 +84,8 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-1. `MAINT-RELEASE-CLI-001` — route exact release previews and execution
-2. `MAINT-UI-CLI-001` / `MAINT-001` — close the cross-layer and milestone gates
-3. `HARDEN-001` / `DOC-001` — hardening and operator documentation
+1. `MAINT-UI-CLI-001` / `MAINT-001` — close the cross-layer and milestone gates
+2. `HARDEN-001` / `DOC-001` — hardening and operator documentation
 
 ## Rules
 
