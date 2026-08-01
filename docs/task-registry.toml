@@ -1428,18 +1428,18 @@ notes = "Canonical non-symlink discovery and exact shell-free vectors now cover 
 id = "MAINT-OPTIONAL-ADAPTER-001"
 milestone = "M6"
 title = "Detect optional release integrations"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake maintenance_optional"]
-notes = "Detect optional pull-request helpers, repo manifests, and Toaster without silently launching services or turning absent tools into empty success."
+notes = "A detection-only adapter now reports complete, partial, and unavailable pull-request, error-report, repo-manifest, and Toaster integrations. It retains canonical build/helper/Git HEAD/report/repo workspace/manifest/configuration identities, bounds all candidates and process evidence, revalidates stale evidence, rejects unsafe helper links and escaped manifests, and labels Toaster process names as observational only. It constructs no command and performs no mail, upload, network, manifest mutation, or service lifecycle action. Seven focused tests and the complete baseline pass; fixtures do not claim live integration compatibility."
 
 [[task]]
 id = "MAINT-ADAPTER-001"
 milestone = "M6"
 title = "Close Maintenance adapter gate"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-SSTATE-ADAPTER-001", "MAINT-SERVICE-ADAPTER-001", "MAINT-RELEASE-ADAPTER-001", "MAINT-OPTIONAL-ADAPTER-001"]
