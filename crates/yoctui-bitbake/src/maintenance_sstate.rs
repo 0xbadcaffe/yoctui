@@ -2151,17 +2151,17 @@ mod tests {
             MaintenanceSstateRunnerEvent::Started { .. }
         ));
 
+        let mut descendant = None;
         for _ in 0..200 {
-            if descendant_file.is_file() {
+            descendant = fs::read_to_string(&descendant_file)
+                .ok()
+                .and_then(|contents| contents.trim().parse::<i32>().ok());
+            if descendant.is_some() {
                 break;
             }
             tokio::time::sleep(Duration::from_millis(5)).await;
         }
-        let descendant = fs::read_to_string(&descendant_file)
-            .unwrap()
-            .trim()
-            .parse::<i32>()
-            .unwrap();
+        let descendant = descendant.expect("fixture did not publish a descendant PID");
         // SAFETY: signal zero only probes the exact child PID written by the fixture.
         assert_eq!(unsafe { libc::kill(descendant, 0) }, 0);
 
