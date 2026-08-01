@@ -1560,18 +1560,18 @@ notes = "The cross-form audit found the three committed entry paths aligned with
 id = "MAINT-RELEASE-CLI-001"
 milestone = "M6"
 title = "Route Maintenance release forms"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 70
 required = true
 depends_on = ["MAINT-RELEASE-UI-001", "MAINT-CLI-001"]
 verify = ["cargo test -p yoctui -- maintenance_release_workspace", "cargo test -p yoctui-bitbake maintenance_release"]
-notes = "Construct exact locked-cache, build-history, local archive, and separately confirmed push previews from typed forms and route them through the revalidating coordinator."
+notes = "All three typed release forms now receive fresh correlated capability inspection and exact adapter-owned previews before the shared non-blocking runner can spawn. Fake CLI coverage verifies changed locked-cache evidence, bounded comparison output, nonzero failure, stale and unsafe input rejection, local-only archive creation, deferred separately confirmed network push, and changed local HEAD rejection. Adapter and baseline gates pass without claiming live release-tool or network compatibility."
 
 [[task]]
 id = "MAINT-UI-CLI-001"
 milestone = "M6"
 title = "Integrate complete Maintenance workspace"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 70
 required = true
 depends_on = ["MAINT-MODEL-001", "MAINT-ADAPTER-001", "MAINT-RENDER-001", "MAINT-CLI-001", "MAINT-SSTATE-CLI-001", "MAINT-SERVICE-CLI-001", "MAINT-RELEASE-CLI-001"]
