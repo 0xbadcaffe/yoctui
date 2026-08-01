@@ -9130,6 +9130,30 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
                 palette.role(palette.info, Modifier::BOLD)
             },
         ),
+        MaintenanceDialog::LockedCacheForm(draft) => (
+            "Locked-signature cache",
+            format!(
+                "{} Locked signatures: {}\n{} Input cache: {}\n{} Output cache: {}\n  Native LSB (read-only): {}\n{} Filter: {}\n\nMatching files beneath the exact output cache may be replaced. The adapter preview and a separate destructive confirmation are still required.\n\n{}\n\nTab/Shift+Tab field | Type/Backspace edit | Enter preview | Esc cancel",
+                if draft.field == yoctui_model::MaintenanceLockedCacheField::LockedSignatures { ">" } else { " " },
+                if draft.locked_signatures.is_empty() { "<required>" } else { &draft.locked_signatures },
+                if draft.field == yoctui_model::MaintenanceLockedCacheField::InputCache { ">" } else { " " },
+                if draft.input_cache.is_empty() { "<required>" } else { &draft.input_cache },
+                if draft.field == yoctui_model::MaintenanceLockedCacheField::OutputCache { ">" } else { " " },
+                if draft.output_cache.is_empty() { "<required>" } else { &draft.output_cache },
+                draft.native_lsb,
+                if draft.field == yoctui_model::MaintenanceLockedCacheField::Filter { ">" } else { " " },
+                if draft.filter.is_empty() { "<none>" } else { &draft.filter },
+                draft.validation.as_deref().unwrap_or("No generator runs until the exact adapter preview is confirmed."),
+            ),
+            palette.role(
+                if draft.validation.is_some() {
+                    palette.error
+                } else {
+                    palette.warning
+                },
+                Modifier::BOLD,
+            ),
+        ),
         MaintenanceDialog::Confirm(preview) => (
             if preview.operation.destructive() {
                 "Confirm destructive Maintenance operation"
@@ -14612,6 +14636,40 @@ mod tests {
                     assert!(output.contains("destination parent"), "{output}");
                 }
             }
+        }
+    }
+
+    #[test]
+    fn maintenance_release_locked_workspace_renders_context_warning_and_validation_responsively() {
+        let mut app = maintenance_workflow_ui_app();
+        let metadata = yoctui_model::MaintenanceMetadata {
+            native_lsb: Some("ubuntu-24.04".into()),
+            ..yoctui_model::MaintenanceMetadata::default()
+        };
+        let mut draft =
+            yoctui_model::MaintenanceLockedCacheDraft::from_metadata(&metadata).unwrap();
+        draft.locked_signatures = "/build/conf/locked-sigs.inc".into();
+        draft.input_cache = "/cache/input".into();
+        draft.output_cache = "/cache/release".into();
+        draft.filter = "/build/conf/filter.inc".into();
+        draft.validation = Some("input and output cache must differ".into());
+        app.dialogs.push_front(Dialog::Maintenance(Box::new(
+            MaintenanceDialog::LockedCacheForm(Box::new(draft)),
+        )));
+        app.focus = FocusTarget::Dialog;
+        for (width, height) in [(160, 40), (100, 26), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(
+                output.contains("Locked-signature cache"),
+                "{width}: {output}"
+            );
+            assert!(output.contains("/cache/release"), "{width}: {output}");
+            assert!(output.contains("ubuntu-24.04"), "{width}: {output}");
+            assert!(output.contains("may be replaced"), "{width}: {output}");
+            assert!(
+                output.contains("input and output cache must differ"),
+                "{width}: {output}"
+            );
         }
     }
 }

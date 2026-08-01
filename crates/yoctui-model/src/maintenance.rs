@@ -1221,6 +1221,75 @@ impl MaintenancePrServiceDraft {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum MaintenanceLockedCacheField {
+    #[default]
+    LockedSignatures,
+    InputCache,
+    OutputCache,
+    Filter,
+}
+
+impl MaintenanceLockedCacheField {
+    pub fn cycle(self, backwards: bool) -> Self {
+        match (self, backwards) {
+            (Self::LockedSignatures, false) | (Self::OutputCache, true) => Self::InputCache,
+            (Self::InputCache, false) | (Self::Filter, true) => Self::OutputCache,
+            (Self::OutputCache, false) | (Self::LockedSignatures, true) => Self::Filter,
+            (Self::Filter, false) | (Self::InputCache, true) => Self::LockedSignatures,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MaintenanceLockedCacheDraft {
+    pub field: MaintenanceLockedCacheField,
+    pub locked_signatures: String,
+    pub input_cache: String,
+    pub output_cache: String,
+    pub native_lsb: String,
+    pub filter: String,
+    pub validation: Option<String>,
+}
+
+impl MaintenanceLockedCacheDraft {
+    pub fn from_metadata(metadata: &MaintenanceMetadata) -> Result<Self, &'static str> {
+        Ok(Self {
+            field: MaintenanceLockedCacheField::LockedSignatures,
+            locked_signatures: String::new(),
+            input_cache: String::new(),
+            output_cache: String::new(),
+            native_lsb: metadata
+                .native_lsb
+                .clone()
+                .ok_or("NATIVELSBSTRING is unavailable")?,
+            filter: String::new(),
+            validation: None,
+        })
+    }
+
+    pub fn request(&self) -> Result<LockedSignatureCacheRequest, &'static str> {
+        LockedSignatureCacheRequest::new(
+            PathBuf::from(&self.locked_signatures),
+            PathBuf::from(&self.input_cache),
+            PathBuf::from(&self.output_cache),
+            self.native_lsb.clone(),
+            (!self.filter.is_empty()).then(|| PathBuf::from(&self.filter)),
+        )
+    }
+
+    pub fn is_bounded(&self) -> bool {
+        [
+            &self.locked_signatures,
+            &self.input_cache,
+            &self.output_cache,
+            &self.filter,
+        ]
+        .into_iter()
+        .all(|value| value.len() <= MAX_MAINTENANCE_TEXT_BYTES && !value.contains('\n'))
+    }
+}
+
 impl MaintenanceCleanupDraft {
     pub fn from_metadata(metadata: &MaintenanceMetadata) -> Result<Self, &'static str> {
         let cache_dir = metadata
@@ -1340,6 +1409,7 @@ pub enum MaintenanceDialog {
     ReadinessForm(Box<MaintenanceReadinessDraft>),
     CleanupForm(Box<MaintenanceCleanupDraft>),
     PrServiceForm(Box<MaintenancePrServiceDraft>),
+    LockedCacheForm(Box<MaintenanceLockedCacheDraft>),
     Confirm(MaintenanceOperationPreview),
     CleanupPhrase {
         preview: MaintenanceOperationPreview,
@@ -1446,6 +1516,9 @@ pub enum MaintenanceAction {
     OpenPrServiceForm(PrServiceOperation),
     UpdatePrServiceForm(Box<MaintenancePrServiceDraft>),
     ConfirmPrServiceForm(Box<MaintenancePrServiceDraft>),
+    OpenLockedCacheForm,
+    UpdateLockedCacheForm(Box<MaintenanceLockedCacheDraft>),
+    ConfirmLockedCacheForm(Box<MaintenanceLockedCacheDraft>),
     BeginOperation(MaintenanceOperationPreview),
     UpdateCleanupPhrase {
         preview: MaintenanceOperationPreview,
@@ -1525,6 +1598,10 @@ pub enum MaintenanceEffect {
     PreviewPrService {
         capability_request: u64,
         request: PrServiceRequest,
+    },
+    PreviewLockedSignatureCache {
+        capability_request: u64,
+        request: LockedSignatureCacheRequest,
     },
     StartOperation {
         id: MaintenanceSessionId,
@@ -1873,6 +1950,58 @@ pub fn update_maintenance(
                     return MaintenanceTransition {
                         dialog: MaintenanceDialogUpdate::Open(Box::new(
                             MaintenanceDialog::PrServiceForm(draft),
+                        )),
+                        ..MaintenanceTransition::none()
+                    };
+                }
+            }
+        }
+        MaintenanceAction::OpenLockedCacheForm
+            if state.view == MaintenanceView::Release
+                && state.capability.snapshot().is_some_and(|snapshot| {
+                    snapshot.supports(MaintenanceTool::LockedSignatureCache)
+                        && snapshot.metadata.native_lsb.is_some()
+                }) =>
+        {
+            if let Some(snapshot) = state.capability.snapshot()
+                && let Ok(draft) = MaintenanceLockedCacheDraft::from_metadata(&snapshot.metadata)
+            {
+                return MaintenanceTransition {
+                    dialog: MaintenanceDialogUpdate::Open(Box::new(
+                        MaintenanceDialog::LockedCacheForm(Box::new(draft)),
+                    )),
+                    ..MaintenanceTransition::none()
+                };
+            }
+        }
+        MaintenanceAction::UpdateLockedCacheForm(draft) if draft.is_bounded() => {
+            return MaintenanceTransition {
+                dialog: MaintenanceDialogUpdate::Open(Box::new(
+                    MaintenanceDialog::LockedCacheForm(draft),
+                )),
+                ..MaintenanceTransition::none()
+            };
+        }
+        MaintenanceAction::ConfirmLockedCacheForm(mut draft) if draft.is_bounded() => {
+            match draft.request() {
+                Ok(request) => {
+                    let Some(capability_request) = state.capability.request() else {
+                        return MaintenanceTransition::none();
+                    };
+                    return MaintenanceTransition {
+                        effect: Some(MaintenanceEffect::PreviewLockedSignatureCache {
+                            capability_request,
+                            request,
+                        }),
+                        dialog: MaintenanceDialogUpdate::Close,
+                        notification: None,
+                    };
+                }
+                Err(message) => {
+                    draft.validation = Some(message.into());
+                    return MaintenanceTransition {
+                        dialog: MaintenanceDialogUpdate::Open(Box::new(
+                            MaintenanceDialog::LockedCacheForm(draft),
                         )),
                         ..MaintenanceTransition::none()
                     };
@@ -2821,6 +2950,79 @@ mod tests {
             update_maintenance(
                 &mut state,
                 MaintenanceAction::OpenPrServiceForm(PrServiceOperation::Export),
+            ),
+            MaintenanceTransition::none()
+        );
+    }
+
+    #[test]
+    fn maintenance_release_locked_workspace_validates_and_emits_exact_request() {
+        let mut state = ready_state();
+        state.view = MaintenanceView::Release;
+        let transition = update_maintenance(&mut state, MaintenanceAction::OpenLockedCacheForm);
+        let MaintenanceDialogUpdate::Open(dialog) = transition.dialog else {
+            panic!("locked-cache form did not open");
+        };
+        let MaintenanceDialog::LockedCacheForm(mut draft) = *dialog else {
+            panic!("wrong locked-cache dialog");
+        };
+        assert_eq!(draft.native_lsb, "ubuntu");
+        assert_eq!(
+            draft.field.cycle(false),
+            MaintenanceLockedCacheField::InputCache
+        );
+        let invalid = update_maintenance(
+            &mut state,
+            MaintenanceAction::ConfirmLockedCacheForm(draft.clone()),
+        );
+        assert!(matches!(
+            invalid.dialog,
+            MaintenanceDialogUpdate::Open(dialog)
+                if matches!(*dialog, MaintenanceDialog::LockedCacheForm(ref draft) if draft.validation.is_some())
+        ));
+
+        draft.locked_signatures = "/build/conf/locked-sigs.inc".into();
+        draft.input_cache = "/cache/input".into();
+        draft.output_cache = "/cache/release".into();
+        draft.filter = "/build/conf/locked-filter.inc".into();
+        let valid =
+            update_maintenance(&mut state, MaintenanceAction::ConfirmLockedCacheForm(draft));
+        assert!(matches!(
+            valid.effect,
+            Some(MaintenanceEffect::PreviewLockedSignatureCache {
+                capability_request: 1,
+                request: LockedSignatureCacheRequest {
+                    native_lsb,
+                    filter: Some(filter),
+                    ..
+                },
+            }) if native_lsb == "ubuntu" && filter == Path::new("/build/conf/locked-filter.inc")
+        ));
+        assert_eq!(valid.dialog, MaintenanceDialogUpdate::Close);
+    }
+
+    #[test]
+    fn maintenance_release_locked_workspace_is_inert_without_exact_context_and_bounds_input() {
+        let mut state = MaintenanceState {
+            view: MaintenanceView::Release,
+            ..MaintenanceState::default()
+        };
+        assert_eq!(
+            update_maintenance(&mut state, MaintenanceAction::OpenLockedCacheForm),
+            MaintenanceTransition::none()
+        );
+
+        let mut draft = MaintenanceLockedCacheDraft::from_metadata(&MaintenanceMetadata {
+            native_lsb: Some("ubuntu".into()),
+            ..MaintenanceMetadata::default()
+        })
+        .unwrap();
+        draft.locked_signatures = "x".repeat(MAX_MAINTENANCE_TEXT_BYTES + 1);
+        assert!(!draft.is_bounded());
+        assert_eq!(
+            update_maintenance(
+                &mut state,
+                MaintenanceAction::UpdateLockedCacheForm(Box::new(draft)),
             ),
             MaintenanceTransition::none()
         );

@@ -2076,6 +2076,16 @@ replacement warning receive destructive styling and a separate explicit
 confirmation. Completion returns a bounded inventory of created/replaced
 evidence.
 
+`l` opens the locked-cache form only when the exact generator capability and
+authoritative native-LSB metadata are available. Locked-signature include,
+input cache, output cache, and optional filter begin empty; native LSB is
+read-only. `Tab`/`Shift+Tab` traverses those four editable paths in that order.
+Normal typing and `Backspace` edit only the selected path. `Enter` validates
+canonical absolute inputs and requests an adapter preview without running the
+generator; `Esc` closes without side effects. The form always states that
+matching files beneath the exact output cache may be replaced and that a
+separate destructive confirmation remains required.
+
 Build-history comparison uses `buildhistory-diff` with one exact canonical Git
 repository and zero, one, or two validated revisions, plus typed report-version,
 report-all, signature, signature-diff, exclude-path, and no-colour choices.
