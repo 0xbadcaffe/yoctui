@@ -1615,18 +1615,18 @@ notes = "Deterministic tests now drive 20,000 reducer log events through bounded
 id = "HARDEN-SANITIZER-001"
 milestone = "M7"
 title = "Add sanitizer verification"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 80
 required = true
 depends_on = ["HARDEN-STRESS-001"]
 verify = ["./scripts/test-sanitizers.sh"]
-notes = "Run deterministic native workloads under supported Rust AddressSanitizer and LeakSanitizer instrumentation, with explicit platform and toolchain prerequisites."
+notes = "A Linux x86_64 gate now checks nightly and rust-src prerequisites, rebuilds std and selected crates in isolated targets, runs both deterministic stress suites under AddressSanitizer and LeakSanitizer, and runs the production process-backend headless executable under ASan. All sanitizer runs and the full baseline pass. Headless workloads now isolate config/session state so remembered targets cannot turn profiling into an accidental build; bridge remains the profiling default."
 
 [[task]]
 id = "HARDEN-ANALYSIS-001"
 milestone = "M7"
 title = "Integrate hardening analysis gates"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 80
 required = true
 depends_on = ["HARDEN-SANITIZER-001"]

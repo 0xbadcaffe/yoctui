@@ -63,6 +63,26 @@ YOCTUI_STRESS_ITERATIONS=10 ./scripts/test-stress.sh
 The default is three repetitions; values from 1 through 20 are accepted. The
 process-tree case runs only on Unix, matching the runner's process-group
 implementation.
+
+## Sanitizers
+
+The sanitizer gate currently supports Linux x86_64 and requires nightly Rust
+plus its `rust-src` component. It rebuilds the standard library and selected
+workspace crates in isolated `target/sanitizers/` directories, runs the model
+and protocol stress cases under AddressSanitizer and LeakSanitizer, then runs
+the production headless bridge lifecycle under AddressSanitizer.
+
+```bash
+rustup toolchain install nightly
+rustup component add rust-src --toolchain nightly
+./scripts/test-sanitizers.sh
+```
+
+AddressSanitizer leak detection is disabled because leak checking is performed
+separately by LeakSanitizer. The headless workload uses the native process
+backend to cover CLI startup, backend selection, workspace inspection, and
+shutdown; protocol framing is covered by the separately instrumented stress
+test. Any sanitizer diagnostic or nonzero workload exit fails the gate.
 # Completion gate
 
 `./scripts/verify-completion.sh` is intentionally strict. It verifies the clean checkout, coverage thresholds, security checks, Python static checks, deterministic profiling workloads, and Flamegraph output. It exits with status 2 and names the missing prerequisite if a required completion tool has not been installed.
