@@ -205,6 +205,16 @@ print(
 )
 PY
 
+for media in \
+  docs/media/yoctui-demo.gif \
+  artifacts/flamegraph/yoctui.svg
+do
+  if [[ ! -s "$media" ]]; then
+    printf 'documentation check: visual artifact is missing or empty: %s\n' "$media" >&2
+    exit 1
+  fi
+done
+
 cli_help="$(cargo run -q -p yoctui -- --help)"
 for expected in \
   'A Ratatui frontend and control client for BitBake' \
