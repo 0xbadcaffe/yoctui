@@ -7442,6 +7442,27 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
 mod tests {
     use super::*;
 
+    #[cfg(unix)]
+    fn write_test_executable(path: &Path, body: &str) {
+        use std::{
+            os::unix::fs::PermissionsExt,
+            sync::atomic::{AtomicU64, Ordering},
+        };
+
+        static NEXT_EXECUTABLE: AtomicU64 = AtomicU64::new(1);
+
+        let temporary = path.with_extension(format!(
+            "yoctui-fixture-write-{}-{}",
+            std::process::id(),
+            NEXT_EXECUTABLE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::write(&temporary, body).unwrap();
+        let mut permissions = fs::metadata(&temporary).unwrap().permissions();
+        permissions.set_mode(0o700);
+        fs::set_permissions(&temporary, permissions).unwrap();
+        fs::rename(temporary, path).unwrap();
+    }
+
     #[test]
     fn parses_retention_and_backend_settings() {
         let config: FileConfig = toml::from_str(
@@ -9392,8 +9413,6 @@ esac"#,
 
     #[cfg(unix)]
     async fn wic_workspace_fixture(name: &str, create_body: &str) -> (PathBuf, PathBuf, App) {
-        use std::os::unix::fs::PermissionsExt;
-
         let directory = std::env::temp_dir().join(format!(
             "yoctui-wic-workspace-{}-{name}-{}",
             std::process::id(),
@@ -9407,14 +9426,10 @@ esac"#,
         fs::create_dir_all(&build_dir).unwrap();
         fs::create_dir_all(&deploy).unwrap();
         let executable = directory.join("wic");
-        fs::write(
+        write_test_executable(
             &executable,
-            format!("#!/bin/sh\nif [ \"$1\" = \"list\" ]; then exit 0; fi\n{create_body}\n"),
-        )
-        .unwrap();
-        let mut permissions = fs::metadata(&executable).unwrap().permissions();
-        permissions.set_mode(0o700);
-        fs::set_permissions(&executable, permissions).unwrap();
+            &format!("#!/bin/sh\nif [ \"$1\" = \"list\" ]; then exit 0; fi\n{create_body}\n"),
+        );
         let kickstart = directory.join("directdisk.wks");
         fs::write(
             &kickstart,
@@ -9537,8 +9552,6 @@ esac"#,
     #[cfg(unix)]
     #[tokio::test]
     async fn wic_device_write_cli_discovers_routes_and_revalidates_before_spawn() {
-        use std::os::unix::fs::PermissionsExt;
-
         let (directory, build_dir, mut app) =
             wic_workspace_fixture("device-write-cli", "printf 'write-started\\n'; exit 0").await;
         let image_path = directory.join("deploy/device-image.wic");
@@ -9563,10 +9576,7 @@ esac"#,
 
         let lsblk = directory.join("lsblk");
         let inventory = r#"{"blockdevices":[{"path":"/dev/sda","type":"disk","maj:min":"8:0","size":8192,"model":"root","serial":"root-serial","tran":null,"rm":false,"ro":false,"mountpoints":[],"children":[{"path":"/dev/sda1","type":"part","maj:min":"8:1","size":4096,"model":null,"serial":null,"tran":null,"rm":false,"ro":false,"mountpoints":["/"],"children":[]}]},{"path":"/dev/sdz","type":"disk","maj:min":"8:240","size":16384,"model":"Protected USB","serial":"SERIAL-123","tran":"usb","rm":true,"ro":false,"mountpoints":[],"children":[]}]}"#;
-        fs::write(&lsblk, format!("#!/bin/sh\nprintf '%s' '{}'\n", inventory)).unwrap();
-        let mut permissions = fs::metadata(&lsblk).unwrap().permissions();
-        permissions.set_mode(0o700);
-        fs::set_permissions(&lsblk, permissions).unwrap();
+        write_test_executable(&lsblk, &format!("#!/bin/sh\nprintf '%s' '{}'\n", inventory));
         let inspector = WicDeviceInspector::with_program(fs::canonicalize(&lsblk).unwrap())
             .without_device_node_validation_for_tests();
 
@@ -9696,11 +9706,10 @@ esac"#,
             WicCapability::Available { executable, .. } => executable.clone(),
             capability => panic!("unexpected Wic capability: {capability:?}"),
         };
-        fs::write(
+        write_test_executable(
             &wic,
             "#!/bin/sh\ntrap 'exit 0' TERM\nprintf 'ready\\n'\nwhile :; do sleep 1; done\n",
-        )
-        .unwrap();
+        );
         let (cancel_id, cancel_request) = wic_device_write_start_effect(&mut app, &inspector).await;
         let mut cancel_operation = None;
         begin_wic_job(
@@ -9759,7 +9768,7 @@ esac"#,
             yoctui_model::BackgroundJobStatus::Cancelled
         );
 
-        fs::write(&wic, "#!/bin/sh\nprintf 'write-error\\n' >&2\nexit 9\n").unwrap();
+        write_test_executable(&wic, "#!/bin/sh\nprintf 'write-error\\n' >&2\nexit 9\n");
         let (failed_id, failed_request) = wic_device_write_start_effect(&mut app, &inspector).await;
         let mut failed_operation = None;
         begin_wic_job(
@@ -9791,7 +9800,7 @@ esac"#,
                 .any(|entry| entry.message == "write-error")
         );
 
-        fs::write(&wic, "#!/bin/sh\nsleep 30\n").unwrap();
+        write_test_executable(&wic, "#!/bin/sh\nsleep 30\n");
         let (lost_id, lost_request) = wic_device_write_start_effect(&mut app, &inspector).await;
         let mut lost_operation = None;
         begin_wic_job(
@@ -9837,11 +9846,10 @@ esac"#,
 
         let (stale_id, stale_request) = wic_device_write_start_effect(&mut app, &inspector).await;
         let changed_inventory = inventory.replace("SERIAL-123", "SERIAL-CHANGED");
-        fs::write(
+        write_test_executable(
             &lsblk,
-            format!("#!/bin/sh\nprintf '%s' '{}'\n", changed_inventory),
-        )
-        .unwrap();
+            &format!("#!/bin/sh\nprintf '%s' '{}'\n", changed_inventory),
+        );
         let mut stale_operation = None;
         begin_wic_job(
             &mut app,
