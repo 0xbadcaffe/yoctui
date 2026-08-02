@@ -304,9 +304,7 @@ class Tinfoil:
         self.assertEqual(message["provenance"], "/build/conf/local.conf:12")
         self.assertEqual(len(message["operations"]), 2)
         self.assertEqual(message["operations"][1]["operation"], "append[qemux86-64]")
-        self.assertEqual(
-            message["active_overrides"], ["x86-64", "qemux86-64", "poky"]
-        )
+        self.assertEqual(message["active_overrides"], ["x86-64", "qemux86-64", "poky"])
 
     def test_config_metadata_rejects_malformed_server_operations(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

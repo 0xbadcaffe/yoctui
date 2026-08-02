@@ -336,7 +336,9 @@ class TinfoilConnection:
 
     def get_dependency_graph(self, recipe):
         if self.active:
-            raise RuntimeError("dependency graphs are unavailable during an active build")
+            raise RuntimeError(
+                "dependency graphs are unavailable during an active build"
+            )
         self._ensure_recipes()
         event_mask = [
             "bb.event.DepTreeGenerated",
@@ -371,7 +373,9 @@ class TinfoilConnection:
                             "BitBake completed dependency generation without a graph"
                         )
                     return dependency_graph_from_deptree(recipe, graph_data)
-            raise RuntimeError("BitBake dependency generation timed out after 120 seconds")
+            raise RuntimeError(
+                "BitBake dependency generation timed out after 120 seconds"
+            )
         finally:
             self.tinfoil.set_event_mask(self.EVENT_MASK)
 
@@ -619,9 +623,11 @@ class BitBakeAdapter:
             operations = response.get("operations", [])
             active_overrides = response.get("active_overrides", [])
             scope = response.get("recipe", recipe)
-            if (value is None or isinstance(value, str)) and (
-                provenance is None or isinstance(provenance, str)
-            ) and (unexpanded_value is None or isinstance(unexpanded_value, str)):
+            if (
+                (value is None or isinstance(value, str))
+                and (provenance is None or isinstance(provenance, str))
+                and (unexpanded_value is None or isinstance(unexpanded_value, str))
+            ):
                 if scope is not None and not isinstance(scope, str):
                     raise ServerUnavailable(
                         f"BitBake server returned an invalid variable scope for {name}"
@@ -644,8 +650,7 @@ class BitBakeAdapter:
                         )
                     )
                     and (
-                        item.get("value") is None
-                        or isinstance(item.get("value"), str)
+                        item.get("value") is None or isinstance(item.get("value"), str)
                     )
                     for item in operations
                 ):
@@ -1149,7 +1154,9 @@ def typed_recipe_metadata(response):
         "failed",
         "cancelled",
     ):
-        raise ServerUnavailable("BitBake server returned an invalid recipe build status")
+        raise ServerUnavailable(
+            "BitBake server returned an invalid recipe build status"
+        )
     return {
         "recipe": response["recipe"],
         "workspace_status": response.get("workspace_status"),
@@ -1196,7 +1203,9 @@ def typed_dependencies(response):
 
 def dependency_node_id(value):
     if not isinstance(value, dict):
-        raise ServerUnavailable("BitBake server returned a malformed dependency identity")
+        raise ServerUnavailable(
+            "BitBake server returned a malformed dependency identity"
+        )
     recipe = value.get("recipe")
     task = value.get("task")
     if (
@@ -1214,7 +1223,9 @@ def dependency_node_id(value):
             )
         )
     ):
-        raise ServerUnavailable("BitBake server returned a malformed dependency identity")
+        raise ServerUnavailable(
+            "BitBake server returned a malformed dependency identity"
+        )
     result = {"recipe": recipe}
     if task is not None:
         result["task"] = task
@@ -1249,13 +1260,17 @@ def typed_dependency_graph(response, requested_recipe):
             isinstance(value, str) and len(value) <= 512 for value in limitations
         )
     ):
-        raise ServerUnavailable("BitBake server returned malformed dependency graph data")
+        raise ServerUnavailable(
+            "BitBake server returned malformed dependency graph data"
+        )
 
     normalized_nodes = {}
     dropped_paths = 0
     for raw_node in raw_nodes:
         if not isinstance(raw_node, dict):
-            raise ServerUnavailable("BitBake server returned a malformed dependency node")
+            raise ServerUnavailable(
+                "BitBake server returned a malformed dependency node"
+            )
         identity = dependency_node_id(raw_node.get("id"))
         provider = raw_node.get("provider")
         log = raw_node.get("log")
@@ -1282,12 +1297,16 @@ def typed_dependency_graph(response, requested_recipe):
     edge_values = set()
     for raw_edge in raw_edges:
         if not isinstance(raw_edge, dict):
-            raise ServerUnavailable("BitBake server returned a malformed dependency edge")
+            raise ServerUnavailable(
+                "BitBake server returned a malformed dependency edge"
+            )
         source = dependency_node_id(raw_edge.get("from"))
         destination = dependency_node_id(raw_edge.get("to"))
         kind = raw_edge.get("kind")
         if kind not in ("build", "runtime", "task"):
-            raise ServerUnavailable("BitBake server returned an unknown dependency edge kind")
+            raise ServerUnavailable(
+                "BitBake server returned an unknown dependency edge kind"
+            )
         source_key = (source["recipe"], source.get("task"))
         destination_key = (destination["recipe"], destination.get("task"))
         if source_key == destination_key:
@@ -1305,9 +1324,7 @@ def typed_dependency_graph(response, requested_recipe):
     ]
     dropped_nodes = max(0, len(sorted_nodes) - MAX_DEPENDENCY_NODES)
     sorted_nodes = sorted_nodes[:MAX_DEPENDENCY_NODES]
-    retained = {
-        (node["id"]["recipe"], node["id"].get("task")) for node in sorted_nodes
-    }
+    retained = {(node["id"]["recipe"], node["id"].get("task")) for node in sorted_nodes}
     if (requested_recipe, None) not in retained:
         sorted_nodes[-1] = {"id": root}
         sorted_nodes.sort(
@@ -1409,8 +1426,12 @@ def dependency_graph_from_deptree(recipe, response):
         ("runtime", runtime_dependencies),
     ):
         for source, destinations in dependencies.items():
-            if not isinstance(source, str) or not isinstance(destinations, (list, tuple)):
-                raise ServerUnavailable("BitBake returned malformed recipe dependency edges")
+            if not isinstance(source, str) or not isinstance(
+                destinations, (list, tuple)
+            ):
+                raise ServerUnavailable(
+                    "BitBake returned malformed recipe dependency edges"
+                )
             for destination in destinations:
                 if not isinstance(destination, str):
                     raise ServerUnavailable(
@@ -1674,9 +1695,7 @@ def handle(command, correlation_id, adapter):
                         correlation_id,
                     )
                     return True
-                native_events = adapter.start_build(
-                    targets, command.get("task"), force
-                )
+                native_events = adapter.start_build(targets, command.get("task"), force)
             except ServerUnavailable as exc:
                 error("bitbake_server_unavailable", str(exc), correlation_id)
             else:
