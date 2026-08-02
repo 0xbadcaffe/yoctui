@@ -31,8 +31,33 @@ const MAX_WIC_DEVICE_JSON_BYTES: u64 = 1024 * 1024;
 const MAX_WIC_DEVICE_RECORDS: usize = 512;
 const MAX_WIC_DEVICE_PATH_BYTES: usize = 4_096;
 const WIC_DEVICE_INSPECTION_TIMEOUT: Duration = Duration::from_secs(10);
+const WIC_SPAWN_ATTEMPTS: usize = 4;
+const WIC_SPAWN_RETRY_DELAY: Duration = Duration::from_millis(5);
 type WicOutputSnapshot = BTreeMap<PathBuf, (u64, u128)>;
 type WicOutputScan = (WicOutputSnapshot, Vec<String>);
+
+#[cfg(unix)]
+fn is_transient_spawn_error(error: &std::io::Error) -> bool {
+    error.raw_os_error() == Some(libc::ETXTBSY)
+}
+
+#[cfg(not(unix))]
+fn is_transient_spawn_error(_error: &std::io::Error) -> bool {
+    false
+}
+
+async fn spawn_async_command(command: &mut Command) -> std::io::Result<Child> {
+    for attempt in 1..=WIC_SPAWN_ATTEMPTS {
+        match command.spawn() {
+            Ok(child) => return Ok(child),
+            Err(error) if attempt < WIC_SPAWN_ATTEMPTS && is_transient_spawn_error(&error) => {
+                tokio::time::sleep(WIC_SPAWN_RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    unreachable!("the bounded Wic spawn loop always returns")
+}
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum WicAdapterError {
@@ -171,8 +196,8 @@ async fn list_canned(executable: &Path) -> Result<Vec<String>, WicAdapterError> 
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
-    let mut child = command
-        .spawn()
+    let mut child = spawn_async_command(&mut command)
+        .await
         .map_err(|error| WicAdapterError::Capability(error.to_string()))?;
     let stdout = child.stdout.take().ok_or_else(|| {
         WicAdapterError::Capability("wic list images stdout is unavailable".into())
@@ -556,8 +581,8 @@ async fn run_lsblk(executable: &Path, timeout: Duration) -> Result<Vec<u8>, WicA
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .kill_on_drop(true);
-    let mut child = command
-        .spawn()
+    let mut child = spawn_async_command(&mut command)
+        .await
         .map_err(|error| WicAdapterError::DeviceDiscovery(error.to_string()))?;
     let stdout = child
         .stdout
@@ -1484,6 +1509,37 @@ mod tests {
     #[cfg(unix)]
     fn executable(path: &Path, body: &str) {
         crate::test_support::write_executable(path, &format!("#!/bin/sh\n{body}\n"));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn wic_async_spawn_retries_only_transient_text_file_busy() {
+        let directory = fixture("spawn-retry");
+        let program = directory.join("wic");
+        executable(&program, "exit 0");
+        let writer = fs::OpenOptions::new().write(true).open(&program).unwrap();
+        let release = tokio::spawn(async move {
+            tokio::time::sleep(WIC_SPAWN_RETRY_DELAY + WIC_SPAWN_RETRY_DELAY).await;
+            drop(writer);
+        });
+        let mut command = Command::new(&program);
+        let mut child = spawn_async_command(&mut command).await.unwrap();
+        assert!(child.wait().await.unwrap().success());
+        release.await.unwrap();
+
+        let writer = fs::OpenOptions::new().write(true).open(&program).unwrap();
+        let mut command = Command::new(&program);
+        let error = match spawn_async_command(&mut command).await {
+            Ok(_) => panic!("write-held executable unexpectedly spawned"),
+            Err(error) => error,
+        };
+        assert!(is_transient_spawn_error(&error));
+        drop(writer);
+
+        assert!(!is_transient_spawn_error(
+            &std::io::Error::from_raw_os_error(libc::EACCES)
+        ));
+        fs::remove_dir_all(directory).unwrap();
     }
 
     #[cfg(unix)]
