@@ -11,7 +11,8 @@ Status values:
 
 ## Current phase
 
-Complete the production-hardening and operator-documentation gates.
+Product implementation is complete; all required roadmap and completion gates
+pass.
 
 ## Current task
 
@@ -22,13 +23,13 @@ See `docs/current-task.md`.
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
-| M1 BitBake cockpit | IN_PROGRESS | Typed background build execution and live BitBake 2.19.0 Tinfoil validation exist; remaining typed cockpit workflows are incomplete |
-| M2 Persistent workbench | IN_PROGRESS | Persistent shell, responsive modes, focus, dialogs, palette, preferences, live Tasks, and background build jobs are complete; Logs, Errors, and Images remain partial |
+| M1 BitBake cockpit | DONE | Typed workspace discovery, builds, cancellation, events, history, telemetry, terminal restoration, and live BitBake 2.19.0 Tinfoil validation pass |
+| M2 Persistent workbench | DONE | Persistent shell, responsive modes, focus, dialogs, palette, preferences, notifications, background jobs, and all specified workspaces pass their parent gates |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
 | M6 Maintenance | DONE | Typed Sstate, Services, Release, and optional integrations pass their atomic, cross-layer, and milestone parent gates |
-| M7 Hardening | IN_PROGRESS | Fuzz, stress/process-tree, ASan/LSan, property, terminal, Valgrind, profile, CI, and completion integration pass; Flamegraph sampling is blocked by host `perf_event_paranoid=4` |
+| M7 Hardening | DONE | Fuzz, stress/process-tree, ASan/LSan, property, terminal, Valgrind, deterministic profile, real perf-backed Flamegraph, CI, documentation, and completion integration pass |
 
 ## Reconciliation evidence
 
@@ -81,12 +82,12 @@ See `docs/current-task.md`.
 | Package data model | DONE | Exact identities, available-versus-unavailable fields, explicit bounded inventory/detail states, deterministic normalization, selection, stale correlation, search, dependency navigation, and typed event/effect mapping pass focused and baseline checks |
 | Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
 | Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
-| Hardening matrix | BLOCKED | All integrated gates except Flamegraph pass. The matching `perf` and cargo-flamegraph tools are installed, but host `kernel.perf_event_paranoid=4` denies even a userspace dummy event; grant CAP_PERFMON or temporarily set the sysctl to 0, then run `./scripts/flamegraph.sh` and verify its nonempty SVG |
+| Hardening matrix | DONE | Every integrated gate passes. With explicitly authorized temporary host sampling permission, matching perf 7.0.12 and cargo-flamegraph 0.6.13 captured the real deterministic headless workload into a nonempty 34 KiB SVG; kernel-symbol restrictions remain an honest host limitation |
 | Operator documentation | DONE | Guarded installation and Yocto quickstarts, the complete daily operator/troubleshooting guide, structured live-versus-fixture compatibility evidence, deterministic local documentation validation, CI/completion integration, and the parent gate pass |
 
 ## Priority queue
 
-1. `HARDEN-ANALYSIS-001` / `HARDEN-001` — rerun Flamegraph and close hardening after host perf permission changes
+No incomplete registry task remains.
 
 ## Rules
 

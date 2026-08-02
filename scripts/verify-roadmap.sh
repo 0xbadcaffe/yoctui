@@ -82,8 +82,16 @@ if not match:
 current_id = match.group(1)
 if current_id not in by_id:
     raise SystemExit(f"current task {current_id} is not in task registry")
-if by_id[current_id]["status"] not in {"NOT_STARTED", "IN_PROGRESS", "BLOCKED"}:
-    raise SystemExit(f"current task {current_id} is already DONE")
+
+incomplete = [task["id"] for task in tasks if task["status"] != "DONE"]
+if by_id[current_id]["status"] == "DONE":
+    if incomplete:
+        raise SystemExit(
+            f"current task {current_id} is DONE while incomplete tasks remain: "
+            + ", ".join(incomplete)
+        )
+    print(f"roadmap valid: {len(tasks)} tasks; roadmap complete at {current_id}")
+    raise SystemExit(0)
 
 print(f"roadmap valid: {len(tasks)} tasks; current task {current_id}")
 PY

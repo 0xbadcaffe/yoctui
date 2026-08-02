@@ -1626,23 +1626,23 @@ notes = "A Linux x86_64 gate now checks nightly and rust-src prerequisites, rebu
 id = "HARDEN-ANALYSIS-001"
 milestone = "M7"
 title = "Integrate hardening analysis gates"
-status = "BLOCKED"
+status = "DONE"
 priority = 80
 required = true
 depends_on = ["HARDEN-SANITIZER-001"]
 verify = ["./scripts/test-terminal.sh", "./scripts/valgrind.sh", "./scripts/profile-workload.sh", "./scripts/flamegraph.sh"]
-notes = "BLOCKED only on host perf permission. Terminal restoration, property, process-tree stress, Valgrind (0 definite/indirect/possible bytes lost; two allowlisted Tokio signal descriptors), deterministic release profile, CI stress wiring, and strict completion integration pass with the full baseline. cargo-flamegraph 0.6.13 and matching perf 7.0.12 are installed, but `kernel.perf_event_paranoid=4`; `./scripts/flamegraph.sh` exits 2 with `perf sampling is unavailable`. Reproduce with `perf record --no-buildid-mmap -e dummy:u -o /tmp/yoctui-perf.data -- true`. Follow up under local security policy with CAP_PERFMON or `sudo sysctl -w kernel.perf_event_paranoid=0`, then run `./scripts/flamegraph.sh` and `test -s artifacts/flamegraph/yoctui.svg`."
+notes = "Terminal restoration, property, process-tree stress, Valgrind (0 definite/indirect/possible bytes lost; two allowlisted Tokio signal descriptors), deterministic release profiling, CI stress wiring, and strict completion integration pass. With explicitly authorized temporary `kernel.perf_event_paranoid=0`, cargo-flamegraph 0.6.13 and matching perf 7.0.12 captured the real headless workload and produced a nonempty 34 KiB SVG. The full task baseline passes; kernel-symbol restrictions were reported without invalidating userspace samples."
 
 [[task]]
 id = "HARDEN-001"
 milestone = "M7"
 title = "Complete test and analysis matrix"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 80
 required = true
 depends_on = ["GOV-001", "HARDEN-FUZZ-001", "HARDEN-STRESS-001", "HARDEN-SANITIZER-001", "HARDEN-ANALYSIS-001"]
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings"]
-notes = "Parent gate split after audit into reproducible fuzz, deterministic stress/process-tree, sanitizer, and final analysis-integration tasks. Existing property, pseudo-terminal, process-group, Valgrind, profiling, and Flamegraph foundations remain in scope for the final audit."
+notes = "The complete parent matrix passes reproducible fuzzing, deterministic stress/process-tree checks, ASan/LSan, property and pseudo-terminal restoration tests, process-group cancellation, Valgrind, deterministic profiling, a real perf-backed Flamegraph, the full workspace suite, and warning-free clippy. The strict clean-checkout completion gate is the final verification of this terminal roadmap state."
 
 [[task]]
 id = "DOC-INSTALL-001"
