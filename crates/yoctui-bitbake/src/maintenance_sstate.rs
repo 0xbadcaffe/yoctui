@@ -26,6 +26,8 @@ use yoctui_model::{
 const SSTATE_EVENT_CHANNEL_CAPACITY: usize = 64;
 const SSTATE_OPERATION_TIMEOUT: Duration = Duration::from_secs(60 * 60);
 const MAX_PREVIEW_OUTPUT_BYTES: usize = 8 * 1024 * 1024;
+const SPAWN_ATTEMPTS: usize = 4;
+const SPAWN_RETRY_DELAY: Duration = Duration::from_millis(5);
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum MaintenanceSstateAdapterError {
@@ -1252,6 +1254,29 @@ where
     }
 }
 
+#[cfg(unix)]
+fn is_transient_spawn_error(error: &std::io::Error) -> bool {
+    error.raw_os_error() == Some(libc::ETXTBSY)
+}
+
+#[cfg(not(unix))]
+fn is_transient_spawn_error(_error: &std::io::Error) -> bool {
+    false
+}
+
+async fn spawn_process(process: &mut Command) -> std::io::Result<Child> {
+    for attempt in 1..=SPAWN_ATTEMPTS {
+        match process.spawn() {
+            Ok(child) => return Ok(child),
+            Err(error) if attempt < SPAWN_ATTEMPTS && is_transient_spawn_error(&error) => {
+                tokio::time::sleep(SPAWN_RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    unreachable!("the bounded spawn loop always returns")
+}
+
 pub struct MaintenanceSstateJobRunner {
     id: Option<MaintenanceSessionId>,
     child: Option<Child>,
@@ -1335,8 +1360,8 @@ impl MaintenanceSstateJobRunner {
         }
         #[cfg(unix)]
         process.process_group(0);
-        let mut child = process
-            .spawn()
+        let mut child = spawn_process(&mut process)
+            .await
             .map_err(|error| MaintenanceSstateAdapterError::Spawn(error.to_string()))?;
         #[cfg(unix)]
         {
@@ -2011,6 +2036,42 @@ mod tests {
         drop(child_stdin);
 
         write_process_stdin(&mut stdin, b"n\n").await.unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn maintenance_sstate_spawn_retries_only_transient_text_file_busy() {
+        let root = TestDirectory::new("spawn-retry");
+        let executable = root.0.join("runner");
+        write_executable(&executable, "#!/bin/sh\nexit 0\n");
+        let writer = fs::OpenOptions::new()
+            .write(true)
+            .open(&executable)
+            .unwrap();
+        let release = tokio::spawn(async move {
+            tokio::time::sleep(SPAWN_RETRY_DELAY + SPAWN_RETRY_DELAY).await;
+            drop(writer);
+        });
+        let mut process = Command::new(&executable);
+        let mut child = spawn_process(&mut process).await.unwrap();
+        assert!(child.wait().await.unwrap().success());
+        release.await.unwrap();
+
+        let writer = fs::OpenOptions::new()
+            .write(true)
+            .open(&executable)
+            .unwrap();
+        let mut process = Command::new(&executable);
+        let error = match spawn_process(&mut process).await {
+            Ok(_) => panic!("write-held executable unexpectedly spawned"),
+            Err(error) => error,
+        };
+        assert!(is_transient_spawn_error(&error));
+        drop(writer);
+
+        assert!(!is_transient_spawn_error(
+            &std::io::Error::from_raw_os_error(libc::EACCES)
+        ));
     }
 
     #[cfg(unix)]
