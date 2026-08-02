@@ -21,7 +21,9 @@ Do not begin implementation until the active task and its verification commands 
 - `docs/ui-spec.md` is authoritative for UI behavior.
 - `docs/architecture.md` is authoritative for component boundaries.
 - `docs/task-registry.toml` is authoritative for task state and dependencies.
-- `docs/current-task.md` contains exactly one active task.
+- `docs/current-task.md` contains exactly one active task while work remains;
+  after every registry task is `DONE`, it records the final completed task as
+  the terminal handoff.
 - `docs/implementation-status.md` is the human-readable progress report.
 - BitBake and Yocto metadata remain authoritative for build state.
 
@@ -45,6 +47,10 @@ while ./scripts/verify-completion.sh != PASS
     continue immediately
 end
 ```
+
+When no incomplete task remains, replace `docs/current-task.md` with the final
+completed task. `scripts/verify-roadmap.sh` accepts that terminal state only
+when every registry task is `DONE`.
 
 After every successful commit:
 
