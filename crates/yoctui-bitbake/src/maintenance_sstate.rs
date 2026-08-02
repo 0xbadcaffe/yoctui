@@ -2,6 +2,7 @@ use std::{
     collections::{BTreeMap, VecDeque},
     ffi::{OsStr, OsString},
     fs,
+    io::ErrorKind,
     path::{Path, PathBuf},
     process::Stdio,
     time::Duration,
@@ -9,7 +10,7 @@ use std::{
 
 use thiserror::Error;
 use tokio::{
-    io::{AsyncBufReadExt, AsyncRead, AsyncWriteExt, BufReader},
+    io::{AsyncBufReadExt, AsyncRead, AsyncWrite, AsyncWriteExt, BufReader},
     process::{Child, Command},
     time::Instant,
 };
@@ -1241,6 +1242,16 @@ fn output_text(bytes: &[u8]) -> String {
         .to_string()
 }
 
+async fn write_process_stdin<W>(stdin: &mut W, payload: &[u8]) -> std::io::Result<()>
+where
+    W: AsyncWrite + Unpin,
+{
+    match stdin.write_all(payload).await {
+        Err(error) if error.kind() == ErrorKind::BrokenPipe => Ok(()),
+        result => result,
+    }
+}
+
 pub struct MaintenanceSstateJobRunner {
     id: Option<MaintenanceSessionId>,
     child: Option<Child>,
@@ -1339,7 +1350,7 @@ impl MaintenanceSstateJobRunner {
                     "cleanup preview stdin is unavailable".into(),
                 ));
             };
-            if let Err(error) = stdin.write_all(&payload).await {
+            if let Err(error) = write_process_stdin(&mut stdin, &payload).await {
                 let _ = child.kill().await;
                 let _ = child.wait().await;
                 self.clear_process_state();
@@ -1992,6 +2003,49 @@ mod tests {
             MaintenanceSstateJobRunner::new().start(command).await,
             Err(MaintenanceSstateAdapterError::StaleIdentity(_))
         ));
+    }
+
+    #[tokio::test]
+    async fn maintenance_sstate_closed_stdin_does_not_mask_child_outcome() {
+        let (mut stdin, child_stdin) = tokio::io::duplex(1);
+        drop(child_stdin);
+
+        write_process_stdin(&mut stdin, b"n\n").await.unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn maintenance_sstate_fast_cleanup_failure_retains_status_and_stderr() {
+        let (root, snapshot) = fixture(
+            "fast-preview-failure",
+            "sstate-cache-management.py",
+            "#!/bin/sh\nexec 0<&-\nprintf 'denied\\n' >&2\nexit 9\n",
+        );
+        let command = MaintenanceSstateCommandSpec::cleanup_preview(
+            MaintenanceSessionId(42),
+            &snapshot,
+            cleanup_request(&root),
+        )
+        .unwrap();
+        let mut runner = MaintenanceSstateJobRunner::new();
+        runner.start(command).await.unwrap();
+
+        let mut stderr = None;
+        loop {
+            match runner.next_event().await.unwrap() {
+                MaintenanceSstateRunnerEvent::Started { .. } => {}
+                MaintenanceSstateRunnerEvent::Output {
+                    stream: MaintenanceOutputStream::Stderr,
+                    line,
+                    ..
+                } => stderr = Some(line),
+                MaintenanceSstateRunnerEvent::Failed {
+                    exit_code: Some(9), ..
+                } => break,
+                event => panic!("unexpected event {event:?}"),
+            }
+        }
+        assert_eq!(stderr.as_deref(), Some("denied"));
     }
 
     #[cfg(unix)]
