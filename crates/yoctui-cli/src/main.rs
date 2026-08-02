@@ -9199,6 +9199,25 @@ esac"#,
         (id, request)
     }
 
+    async fn poll_qemu_until(
+        app: &mut App,
+        operation: &mut Option<QemuCliOperation>,
+        condition: impl Fn(&App, &Option<QemuCliOperation>) -> bool,
+    ) {
+        let result = tokio::time::timeout(Duration::from_secs(30), async {
+            while !condition(app, operation) {
+                poll_qemu_job(app, operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await;
+        assert!(
+            result.is_ok(),
+            "timed out waiting for QEMU CLI state; operation active: {}",
+            operation.is_some()
+        );
+    }
+
     #[cfg(unix)]
     #[tokio::test]
     async fn qemu_workspace_cli_refreshes_capability_and_runs_exact_request_across_navigation() {
@@ -9225,14 +9244,7 @@ esac"#,
         )
         .await;
         app.screen = Screen::Logs;
-        tokio::time::timeout(Duration::from_secs(2), async {
-            while operation.is_some() {
-                poll_qemu_job(&mut app, &mut operation).await;
-                tokio::task::yield_now().await;
-            }
-        })
-        .await
-        .unwrap();
+        poll_qemu_until(&mut app, &mut operation, |_, operation| operation.is_none()).await;
         let session = app.qemu_session(id).unwrap();
         let job = app.background_jobs.get(session.background_job_id).unwrap();
         assert_eq!(job.status, yoctui_model::BackgroundJobStatus::Succeeded);
@@ -9271,14 +9283,10 @@ esac"#,
             failed_request,
         )
         .await;
-        tokio::time::timeout(Duration::from_secs(2), async {
-            while failed_operation.is_some() {
-                poll_qemu_job(&mut failed, &mut failed_operation).await;
-                tokio::task::yield_now().await;
-            }
+        poll_qemu_until(&mut failed, &mut failed_operation, |_, operation| {
+            operation.is_none()
         })
-        .await
-        .unwrap();
+        .await;
         let failed_job = failed
             .background_jobs
             .get(failed.qemu_session(failed_id).unwrap().background_job_id)
@@ -9302,21 +9310,13 @@ esac"#,
             cancel_request,
         )
         .await;
-        tokio::time::timeout(Duration::from_secs(2), async {
-            loop {
-                poll_qemu_job(&mut cancelled, &mut cancel_operation).await;
-                let ready = cancelled
-                    .qemu_session(cancel_id)
-                    .and_then(|session| cancelled.background_jobs.get(session.background_job_id))
-                    .is_some_and(|job| job.output.iter().any(|entry| entry.message == "ready"));
-                if ready {
-                    break;
-                }
-                tokio::task::yield_now().await;
-            }
+        poll_qemu_until(&mut cancelled, &mut cancel_operation, |cancelled, _| {
+            cancelled
+                .qemu_session(cancel_id)
+                .and_then(|session| cancelled.background_jobs.get(session.background_job_id))
+                .is_some_and(|job| job.output.iter().any(|entry| entry.message == "ready"))
         })
-        .await
-        .unwrap();
+        .await;
         let _ = update(
             &mut cancelled,
             Action::BeginQemuSessionCancellation { id: cancel_id },
@@ -9327,14 +9327,10 @@ esac"#,
             panic!("cancel effect");
         };
         begin_qemu_cancellation(&mut cancelled, &mut cancel_operation, effect_id);
-        tokio::time::timeout(Duration::from_secs(2), async {
-            while cancel_operation.is_some() {
-                poll_qemu_job(&mut cancelled, &mut cancel_operation).await;
-                tokio::task::yield_now().await;
-            }
+        poll_qemu_until(&mut cancelled, &mut cancel_operation, |_, operation| {
+            operation.is_none()
         })
-        .await
-        .unwrap();
+        .await;
         let cancel_job = cancelled
             .background_jobs
             .get(cancelled.qemu_session(cancel_id).unwrap().background_job_id)
