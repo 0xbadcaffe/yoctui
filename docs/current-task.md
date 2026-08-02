@@ -2,43 +2,43 @@
 
 ## Task
 
-**ID:** HARDEN-001
-**Title:** Complete test and analysis matrix
-**Status:** DONE
+**ID:** DOC-README-001
+**Title:** Refresh README with visual project overview
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Record the terminal roadmap state after every required implementation,
-documentation, compatibility, and production-hardening task has passed its
-verification.
+Make the repository landing page concise, visual, and immediately useful
+without weakening its guarded Yocto setup instructions or evidence labels.
 
-## Completed evidence
+## Scope
 
-- All 154 registry tasks are `DONE`.
-- Reproducible fuzz, deterministic stress/process-tree, ASan/LSan, property,
-  terminal restoration, and process-group tests pass.
-- Valgrind reports no definite, indirect, or possible lost bytes; the two
-  Tokio signal descriptors remain explicitly recognized.
-- Deterministic release profiling succeeds.
-- With explicitly authorized temporary host sampling permission, matching
-  perf 7.0.12 and cargo-flamegraph 0.6.13 generated a nonempty 34 KiB SVG from
-  the real headless workload.
-- Formatting, workspace tests, clippy, bridge tests, documentation, roadmap,
-  compatibility, and strict clean-checkout completion checks pass.
+- Replace the long, repetitive README flow with a compact project overview.
+- Keep one copyable guarded installation and Yocto launch path.
+- Embed `docs/media/yoctui-demo.gif`, captured from the real binary with
+  clearly labelled deterministic fixture metadata.
+- Embed/link the real perf-backed `artifacts/flamegraph/yoctui.svg`.
+- Preserve links to detailed operator, compatibility, testing, profiling, UI,
+  and architecture documentation.
 
 ## Verification
 
 ```bash
-./scripts/verify-completion.sh
+test -s README.md
+test -s docs/media/yoctui-demo.gif
+test -s artifacts/flamegraph/yoctui.svg
+./scripts/check-docs.sh
+./scripts/verify-roadmap.sh
 ```
 
 ## Definition of done
 
-- Every registry task is `DONE`.
-- `./scripts/verify-completion.sh` passes from a clean checkout.
-- No skipped tool or mocked-only live compatibility claim is used as
-  completion evidence.
+- The README is materially shorter and has no duplicated run instructions.
+- Its quickstart commands are directly copyable and retain failure guards.
+- The GIF renders the actual Yoctui binary and is labelled as fixture-backed.
+- The Flamegraph is visible and described as real perf evidence.
+- Documentation and roadmap verification pass.
 
 ## Next task
 
-None. The roadmap is complete.
+Return to the terminal completed state after this task passes.

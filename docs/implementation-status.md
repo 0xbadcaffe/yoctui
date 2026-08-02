@@ -11,8 +11,8 @@ Status values:
 
 ## Current phase
 
-Product implementation is complete; all required roadmap and completion gates
-pass.
+Product implementation remains complete. A focused README presentation refresh
+is in progress to add verified visual artifacts and simplify onboarding.
 
 ## Current task
 
@@ -83,11 +83,11 @@ See `docs/current-task.md`.
 | Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
 | Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
 | Hardening matrix | DONE | Every integrated gate passes. With explicitly authorized temporary host sampling permission, matching perf 7.0.12 and cargo-flamegraph 0.6.13 captured the real deterministic headless workload into a nonempty 34 KiB SVG; kernel-symbol restrictions remain an honest host limitation |
-| Operator documentation | DONE | Guarded installation and Yocto quickstarts, the complete daily operator/troubleshooting guide, structured live-versus-fixture compatibility evidence, deterministic local documentation validation, CI/completion integration, and the parent gate pass |
+| Operator documentation | IN_PROGRESS | Existing guarded installation, operator, compatibility, and validation documentation passes; DOC-README-001 is simplifying the repository landing page and adding labelled demo/performance media |
 
 ## Priority queue
 
-No incomplete registry task remains.
+1. `DOC-README-001` — simplify the README and embed labelled UI/performance media.
 
 ## Rules
 
