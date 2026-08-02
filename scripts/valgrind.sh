@@ -12,8 +12,13 @@ valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-fds=yes
 python3 - <<'PY' | tee artifacts/valgrind/summary.txt
 import sys
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
-root = ET.parse("artifacts/valgrind/report.xml").getroot()
+# Valgrind 3.25 can emit the literal diagnostic token `<unknown>` inside a
+# `<what>` element without XML escaping it. Normalize only that known token;
+# malformed or truncated reports still fail `ET.fromstring`.
+report = Path("artifacts/valgrind/report.xml").read_text(encoding="utf-8")
+root = ET.fromstring(report.replace("<unknown>", "&lt;unknown&gt;"))
 leaks = root.find("leak_summary")
 values = {
     name: int(leaks.findtext(f"{name}/bytes", "0").replace(",", ""))
