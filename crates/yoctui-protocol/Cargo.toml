@@ -10,4 +10,4 @@ thiserror.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
-yoctui-model = { path = "../yoctui-model" }
+yoctui-model = { version = "0.1.0", path = "../yoctui-model" }

@@ -8,10 +8,10 @@ anyhow.workspace = true
 clap.workspace = true
 crossterm.workspace = true
 ratatui.workspace = true
-yoctui-app = { path = "../yoctui-app" }
-yoctui-bitbake = { path = "../yoctui-bitbake" }
-yoctui-model = { path = "../yoctui-model" }
-yoctui-ui = { path = "../yoctui-ui" }
+yoctui-app = { version = "0.1.0", path = "../yoctui-app" }
+yoctui-bitbake = { version = "0.1.0", path = "../yoctui-bitbake" }
+yoctui-model = { version = "0.1.0", path = "../yoctui-model" }
+yoctui-ui = { version = "0.1.0", path = "../yoctui-ui" }
 serde.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
@@ -21,4 +21,4 @@ tracing-subscriber.workspace = true
 libc.workspace = true
 [dev-dependencies]
 async-trait.workspace = true
-yoctui-bitbake = { path = "../yoctui-bitbake", features = ["test-fixtures"] }
+yoctui-bitbake = { version = "0.1.0", path = "../yoctui-bitbake", features = ["test-fixtures"] }
