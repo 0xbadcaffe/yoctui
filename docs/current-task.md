@@ -4,22 +4,24 @@
 
 **ID:** DOC-README-001
 **Title:** Refresh README with visual project overview
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
 Make the repository landing page concise, visual, and immediately useful
 without weakening its guarded Yocto setup instructions or evidence labels.
 
-## Scope
+## Completed evidence
 
-- Replace the long, repetitive README flow with a compact project overview.
-- Keep one copyable guarded installation and Yocto launch path.
-- Embed `docs/media/yoctui-demo.gif`, captured from the real binary with
-  clearly labelled deterministic fixture metadata.
-- Embed/link the real perf-backed `artifacts/flamegraph/yoctui.svg`.
-- Preserve links to detailed operator, compatibility, testing, profiling, UI,
-  and architecture documentation.
+- README shrank from 1,811 to 675 words while retaining guarded installation
+  and current-development/existing-Poky launch paths.
+- `docs/media/yoctui-demo.gif` is a 952x484 capture of the real binary cycling
+  through Dashboard, layer-scoped recipes, Recipes, and Help with explicit
+  deterministic-fixture labelling.
+- The perf-backed `artifacts/flamegraph/yoctui.svg` is embedded and linked.
+- `scripts/check-docs.sh` requires both visual artifacts to remain nonempty.
+- Detailed operator, compatibility, testing, profiling, UI, architecture, and
+  implementation-evidence links remain available.
 
 ## Verification
 
@@ -41,4 +43,4 @@ test -s artifacts/flamegraph/yoctui.svg
 
 ## Next task
 
-Return to the terminal completed state after this task passes.
+None. All 155 registry tasks are complete.

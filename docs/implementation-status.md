@@ -11,8 +11,8 @@ Status values:
 
 ## Current phase
 
-Product implementation remains complete. A focused README presentation refresh
-is in progress to add verified visual artifacts and simplify onboarding.
+Product implementation and documentation are complete; all required roadmap
+and completion gates pass.
 
 ## Current task
 
@@ -83,11 +83,11 @@ See `docs/current-task.md`.
 | Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
 | Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
 | Hardening matrix | DONE | Every integrated gate passes. With explicitly authorized temporary host sampling permission, matching perf 7.0.12 and cargo-flamegraph 0.6.13 captured the real deterministic headless workload into a nonempty 34 KiB SVG; kernel-symbol restrictions remain an honest host limitation |
-| Operator documentation | IN_PROGRESS | Existing guarded installation, operator, compatibility, and validation documentation passes; DOC-README-001 is simplifying the repository landing page and adding labelled demo/performance media |
+| Operator documentation | DONE | The concise landing page retains guarded setup paths and embeds a real-binary, fixture-labelled UI demo plus the real perf-backed Flamegraph; the complete operator/troubleshooting and compatibility evidence remain linked and visual artifacts are validated |
 
 ## Priority queue
 
-1. `DOC-README-001` — simplify the README and embed labelled UI/performance media.
+No incomplete registry task remains.
 
 ## Rules
 
