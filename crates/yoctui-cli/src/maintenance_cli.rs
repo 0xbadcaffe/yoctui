@@ -1572,14 +1572,25 @@ mod tests {
         app: &mut App,
         complete: impl Fn(&App, &MaintenanceCliCoordinator) -> bool,
     ) {
-        for _ in 0..2_400 {
-            coordinator.poll(app).await;
-            if complete(app, coordinator) {
-                return;
+        let result = tokio::time::timeout(Duration::from_secs(30), async {
+            loop {
+                coordinator.poll(app).await;
+                if complete(app, coordinator) {
+                    return;
+                }
+                tokio::time::sleep(Duration::from_millis(5)).await;
             }
-            tokio::time::sleep(Duration::from_millis(5)).await;
+        })
+        .await;
+        if result.is_err() {
+            panic!(
+                "Maintenance CLI workflow did not complete: notification={:?}, inspection_active={}, cleanup_preview_active={}, operation_active={}",
+                app.notification,
+                coordinator.inspection.is_some(),
+                coordinator.cleanup_preview.is_some(),
+                coordinator.operation.is_some()
+            );
         }
-        panic!("Maintenance CLI workflow did not complete");
     }
 
     async fn refreshed_coordinator(fixture: &Fixture) -> (App, MaintenanceCliCoordinator, u64) {
