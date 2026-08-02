@@ -439,6 +439,68 @@ server = Server()
         )
         self.assertIn("Legacy server", message["data"]["limitations"][0])
 
+    def test_tinfoil_dependency_tree_events_become_a_typed_graph(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            package = Path(directory, "bb")
+            package.mkdir()
+            Path(package, "__init__.py").write_text(
+                '__version__ = "2.19.0"\n', encoding="utf-8"
+            )
+            Path(package, "tinfoil.py").write_text(
+                """class Data:
+ def getVar(self, name): return "build" if name == "BB_DEFAULT_TASK" else None
+class DepTreeGenerated:
+ def __init__(self):
+  self._depgraph = {
+   "pn": {
+    "image": {"filename": "/layers/meta/recipes-core/images/image.bb"},
+    "busybox": {"filename": "/layers/meta/recipes-core/busybox/busybox.bb"},
+   },
+   "depends": {"image": ["virtual/busybox"]},
+   "rdepends-pn": {"image": ["busybox"]},
+   "tdepends": {"image.do_build": ["busybox.do_package"]},
+   "providermap": {"virtual/busybox": ["busybox"]},
+  }
+class CommandCompleted: pass
+class Tinfoil:
+ def __init__(self, **kwargs):
+  self.config_data = Data()
+  self.events = []
+ def prepare(self, **kwargs): pass
+ def parse_recipes(self): pass
+ def set_event_mask(self, event_mask): self.event_mask = event_mask
+ def run_command(self, command, targets, task, **kwargs):
+  assert command == "generateDepTreeEvent"
+  assert targets == ["image"]
+  assert task == "build"
+  self.events = [DepTreeGenerated(), CommandCompleted()]
+ def wait_event(self, timeout):
+  return self.events.pop(0) if self.events else None
+ def shutdown(self): pass
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"get_dependency_graph","recipe":"image"}}',
+                environment={"PYTHONPATH": directory},
+            )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "dependency_graph")
+        self.assertEqual(message["data"]["root"], {"recipe": "image"})
+        self.assertEqual(
+            [edge["kind"] for edge in message["data"]["edges"]],
+            ["build", "runtime", "task"],
+        )
+        self.assertEqual(
+            next(
+                node["provider"]
+                for node in message["data"]["nodes"]
+                if node["id"] == {"recipe": "busybox"}
+            ),
+            "/layers/meta/recipes-core/busybox/busybox.bb",
+        )
+
     def test_dependencies_without_a_server_capability_are_not_guessed(self) -> None:
         result = run_bridge(
             b'{"protocol_version":1,"sequence":1,"message":{"type":"get_dependencies","recipe":"busybox"}}'
