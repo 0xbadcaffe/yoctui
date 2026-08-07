@@ -2,28 +2,26 @@
 
 ## Task
 
-**ID:** SHELL-UI-001
-**Title:** Render and operate the embedded shell workspace
+**ID:** SHELL-INTEGRATION-001
+**Title:** Integrate shell sessions with Yocto context and utilities
 **Status:** NOT_STARTED
 
 ## Objective
 
-Add a Shell workspace with full-screen focus, visible session/cwd/status,
-scrollback, copy/search, multiline-paste confirmation, resize, bounded
-sessions, and clear escape/close/restart shortcuts.
+Open shells at build/source/layer/recipe/SDK locations and preserve initialized
+Yocto variables without silently re-sourcing a running shell.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui embedded_shell
-cargo test -p yoctui-app embedded_shell_input
+cargo test -p yoctui -- embedded_shell_integration
 ```
 
 ## Definition of done
 
-- Shell rendering and input ownership are visible and responsive across the
-  supported terminal breakpoints.
+- Shell sessions retain exact Yocto context and expose stale-environment state
+  with controlled refresh/restart.
 
 ## Next task
 
-After completion, select `SHELL-INTEGRATION-001`.
+After completion, select `SHELL-TEST-001`.
