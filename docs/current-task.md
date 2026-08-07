@@ -2,27 +2,27 @@
 
 ## Task
 
-**ID:** UTIL-LAYERS-001
-**Title:** Cover common bitbake-layers operations
+**ID:** UTIL-PKGDATA-001
+**Title:** Cover common oe-pkgdata-util package workflows
 **Status:** NOT_STARTED
 
 ## Objective
 
-Add typed show, overlay, append, dependency, flatten, create, add, remove,
-save-build-conf, and layerindex workflows with mutation previews and refresh.
+Add typed package lookup/list/detail/dependency workflows linked to Packages,
+Recipes, Images, files, and dependency navigation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui -- utility_bitbake_layers
-./scripts/test-utility-fixtures.sh bitbake-layers
+cargo test -p yoctui -- utility_pkgdata
+./scripts/test-utility-fixtures.sh oe-pkgdata-util
 ```
 
 ## Definition of done
 
-- bitbake-layers operations use typed forms, bounded destinations, and
-  confirmation for mutations.
+- oe-pkgdata-util operations preserve unavailable state when pkgdata is absent
+  and expose bounded typed package results.
 
 ## Next task
 
-After completion, select `UTIL-PKGDATA-001`.
+After completion, select `UTIL-CORE-001`.

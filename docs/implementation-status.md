@@ -16,7 +16,8 @@ harness, keyboard matrix, focus/workspace flow, and semantic snapshots are
 complete. Fresh-Poky validation is blocked by unavailable network DNS; the
 utility catalog, shared safe runner, and contextual typed utility menus are
 complete; Devtool utility coverage is complete and the active task begins
-Recipetool workflows are complete; the active task covers bitbake-layers.
+Recipetool and bitbake-layers workflows are complete; the active task covers
+oe-pkgdata-util.
 
 ## Current task
 
@@ -92,7 +93,7 @@ See `docs/current-task.md`.
 ## Priority queue
 
 `RELVAL-POKY-001` is BLOCKED pending a network-enabled CI runner. The active
-eligible task is `UTIL-LAYERS-001`.
+eligible task is `UTIL-PKGDATA-001`.
 
 ## Rules
 
