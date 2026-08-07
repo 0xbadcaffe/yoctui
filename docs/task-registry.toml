@@ -1986,12 +1986,12 @@ notes = "Added typed ShellSession lifecycle/cwd/environment identity, foreground
 id = "SHELL-PTY-001"
 milestone = "M9"
 title = "Add a native PTY shell backend"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 111
 required = true
 depends_on = ["SHELL-MODEL-001"]
 verify = ["cargo test -p yoctui-shell pty_backend", "./scripts/test-embedded-shell.sh --backend"]
-notes = "Spawn the user's configured shell through a real PTY with validated cwd and inherited initialized Yocto environment, process-group/session ownership, nonblocking reads/writes, resize propagation, bounded buffering, graceful HUP/TERM/KILL shutdown, child-tree cleanup, exit status, and no shell interpolation by Yoctui. Isolate the backend in a dedicated crate/module and never run it on the UI thread."
+notes = "Added dedicated yoctui-shell PTY backend using openpty, validated cwd, inherited environment, resize propagation, and child lifecycle ownership; focused pty_backend and embedded-shell backend verification pass."
 
 [[task]]
 id = "SHELL-TERM-001"

@@ -2205,6 +2205,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "yoctui-shell"
+version = "0.1.0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "yoctui-ui"
 version = "0.1.0"
 dependencies = [

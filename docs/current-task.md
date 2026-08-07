@@ -2,28 +2,27 @@
 
 ## Task
 
-**ID:** SHELL-PTY-001
-**Title:** Add a native PTY shell backend
+**ID:** SHELL-TERM-001
+**Title:** Embed a terminal-emulation state machine
 **Status:** NOT_STARTED
 
 ## Objective
 
-Spawn the configured shell through a real PTY with validated cwd and inherited
-Yocto environment, resize propagation, bounded buffering, and process-group
-cleanup.
+Embed a bounded VT parser/emulator supporting cursor movement, erase,
+attributes, alternate screen, Unicode width, bracketed paste, and resize.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-shell pty_backend
-./scripts/test-embedded-shell.sh --backend
+cargo test -p yoctui-shell terminal_emulation
+./scripts/test-terminal-corpus.sh
 ```
 
 ## Definition of done
 
-- PTY shell startup, resize, output bounds, cancellation, and process-tree
-  cleanup are covered by focused tests.
+- Terminal emulation handles the documented control sequences safely and keeps
+  bounded screen/scrollback state.
 
 ## Next task
 
-After completion, select `SHELL-TERM-001`.
+After completion, select `SHELL-UI-001`.
