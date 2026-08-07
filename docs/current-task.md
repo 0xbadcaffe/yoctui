@@ -2,30 +2,32 @@
 
 ## Task
 
-**ID:** RELVAL-CI-002
-**Title:** Validate GitHub Actions workflow syntax
+**ID:** RELVAL-HARDEN-001
+**Title:** Make Security mapper launches resilient to transient ETXTBSY
 **Status:** DONE
 
 ## Objective
 
-Final completed task: GitHub Actions workflow syntax validation; release-quality
-validation, utility workbench, and embedded native shell requirements are complete.
+Final completed task: eliminate the transient `Text file busy` process-launch
+failure while preserving bounded retries and Security mapper semantics.
 
 ## Verification
 
 ```bash
-ruby -e 'require "yaml"; YAML.load_file(".github/workflows/ci.yml")'
-git diff --check
+cargo test -p yoctui-bitbake security_mapper
+./scripts/verify-completion.sh
 ```
 
 ## Definition of done
 
-- The workflow parses as valid YAML and the diff is whitespace-clean.
+- Security mapper retries only transient `ETXTBSY` errors with a bounded delay.
+- The full completion gate passes.
 
 ## Next task
 
 ## Terminal handoff
 
-All registry tasks are complete. The aggregate completion gate is blocked on
-the host's disabled Linux perf sampling (`perf_event_paranoid=4`); all checks
-before the perf-backed flamegraph pass.
+## Terminal handoff
+
+All registry tasks are complete; run the aggregate completion gate from this
+committed checkout.

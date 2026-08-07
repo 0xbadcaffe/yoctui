@@ -1,7 +1,7 @@
 use std::{
     collections::VecDeque,
     ffi::{OsStr, OsString},
-    fs,
+    fs, io,
     path::{Path, PathBuf},
     process::Stdio,
     time::{Duration, SystemTime},
@@ -24,6 +24,34 @@ const MAX_SECURITY_MAPPER_ARGUMENTS: usize = 64;
 const MAX_SECURITY_MAPPER_LINE_BYTES: usize = MAX_SECURITY_TEXT_BYTES;
 const SECURITY_MAPPER_EVENT_CHANNEL_CAPACITY: usize = 256;
 const SECURITY_MAPPER_OPERATION_TIMEOUT: Duration = Duration::from_secs(30 * 60);
+const SECURITY_MAPPER_SPAWN_ATTEMPTS: usize = 4;
+const SECURITY_MAPPER_SPAWN_RETRY_DELAY: Duration = Duration::from_millis(5);
+
+#[cfg(unix)]
+fn is_transient_security_mapper_spawn_error(error: &io::Error) -> bool {
+    error.raw_os_error() == Some(libc::ETXTBSY)
+}
+
+#[cfg(not(unix))]
+fn is_transient_security_mapper_spawn_error(_error: &io::Error) -> bool {
+    false
+}
+
+async fn spawn_security_mapper_process(process: &mut Command) -> io::Result<Child> {
+    for attempt in 1..=SECURITY_MAPPER_SPAWN_ATTEMPTS {
+        match process.spawn() {
+            Ok(child) => return Ok(child),
+            Err(error)
+                if attempt < SECURITY_MAPPER_SPAWN_ATTEMPTS
+                    && is_transient_security_mapper_spawn_error(&error) =>
+            {
+                tokio::time::sleep(SECURITY_MAPPER_SPAWN_RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    unreachable!("the bounded Security package-mapping process spawn loop always returns")
+}
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum SecurityMapperAdapterError {
@@ -466,8 +494,8 @@ impl SecurityMapperJobRunner {
             .stderr(Stdio::piped());
         #[cfg(unix)]
         process.process_group(0);
-        let mut child = process
-            .spawn()
+        let mut child = spawn_security_mapper_process(&mut process)
+            .await
             .map_err(|error| SecurityMapperAdapterError::Spawn(error.to_string()))?;
         #[cfg(unix)]
         {
@@ -856,6 +884,46 @@ mod tests {
             }
         }
         assert!(saw_argument && saw_stderr && saw_truncated && saw_invalid_utf8);
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn security_mapper_spawn_retries_only_transient_text_file_busy() {
+        let directory = TestDirectory::new("spawn-retry");
+        let executable = directory.path().join("cve-check-map-pkgs");
+        write_executable(&executable, "#!/bin/sh\nexit 0\n");
+
+        let writer = fs::OpenOptions::new()
+            .write(true)
+            .open(&executable)
+            .unwrap();
+        let release = tokio::spawn(async move {
+            tokio::time::sleep(
+                SECURITY_MAPPER_SPAWN_RETRY_DELAY + SECURITY_MAPPER_SPAWN_RETRY_DELAY,
+            )
+            .await;
+            drop(writer);
+        });
+        let mut process = Command::new(&executable);
+        let mut child = spawn_security_mapper_process(&mut process).await.unwrap();
+        assert!(child.wait().await.unwrap().success());
+        release.await.unwrap();
+
+        let writer = fs::OpenOptions::new()
+            .write(true)
+            .open(&executable)
+            .unwrap();
+        let mut process = Command::new(&executable);
+        let error = match spawn_security_mapper_process(&mut process).await {
+            Ok(_) => panic!("write-held Security mapper executable unexpectedly spawned"),
+            Err(error) => error,
+        };
+        assert!(is_transient_security_mapper_spawn_error(&error));
+        drop(writer);
+
+        assert!(!is_transient_security_mapper_spawn_error(
+            &io::Error::from_raw_os_error(libc::EACCES)
+        ));
     }
 
     #[cfg(unix)]
