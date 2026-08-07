@@ -2,27 +2,27 @@
 
 ## Task
 
-**ID:** UTIL-DEVTOOL-001
-**Title:** Cover common Devtool recipe workflows
+**ID:** UTIL-RECIPETOOL-001
+**Title:** Add common Recipetool recipe workflows
 **Status:** NOT_STARTED
 
 ## Objective
 
-Ensure typed UI coverage for common Devtool recipe/workspace workflows with
-exact previews, eligibility reasons, and version-aware expert argv fallback.
+Add typed create, appendfile, newappend, setvar, and source-analysis forms with
+layer-aware paths, previews, protection, refresh, and expert argv fallback.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui -- utility_devtool
-./scripts/test-utility-fixtures.sh devtool
+cargo test -p yoctui -- utility_recipetool
+./scripts/test-utility-fixtures.sh recipetool
 ```
 
 ## Definition of done
 
-- Devtool common operations use typed forms with capability-aware disabled
-  reasons and safe expert argv fallback.
+- Recipetool common operations use typed forms with protected destinations and
+  safe expert argv fallback.
 
 ## Next task
 
-After completion, select `UTIL-RECIPETOOL-001`.
+After completion, select `UTIL-LAYERS-001`.
