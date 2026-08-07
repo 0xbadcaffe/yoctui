@@ -1,0 +1,9 @@
+[package]
+name = "yoctui-shell"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+libc.workspace = true
+

@@ -2,7 +2,7 @@
 members = [
   "crates/yoctui-model", "crates/yoctui-protocol", "crates/yoctui-app",
   "crates/yoctui-bitbake", "crates/yoctui-ui", "crates/yoctui-cli"
-  , "crates/yoctui-e2e"
+  , "crates/yoctui-e2e", "crates/yoctui-shell"
 ]
 exclude = ["fuzz"]
 resolver = "2"
