@@ -2,28 +2,27 @@
 
 ## Task
 
-**ID:** SHELL-TEST-001
-**Title:** Add PTY end-to-end tests for the embedded shell
+**ID:** SHELL-DOC-001
+**Title:** Document embedded shell behavior and safety
 **Status:** NOT_STARTED
 
 ## Objective
 
-Drive a real shell through the outer Yoctui PTY and nested child PTY, verifying
-interactive input, resize, Unicode, scrollback, escape, cleanup, and terminal
-restoration.
+Document input ownership, escape chord, supported terminal behavior,
+environment/cwd choices, session limits, paste/OSC policy, child cleanup, and
+troubleshooting.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-e2e embedded_shell
-./scripts/test-embedded-shell.sh
+test -s docs/embedded-shell.md
+./scripts/check-docs.sh
 ```
 
 ## Definition of done
 
-- Outer and nested PTY evidence covers shell lifecycle, focus restoration,
-  cleanup, and terminal restoration.
+- Embedded shell behavior and safety policy match the shipped model/backend.
 
 ## Next task
 
-After completion, select `SHELL-DOC-001`.
+After completion, select `SHELL-001`.

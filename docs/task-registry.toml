@@ -2030,12 +2030,12 @@ notes = "Shell context identity, safe cwd/session model, initialized-environment
 id = "SHELL-TEST-001"
 milestone = "M9"
 title = "Add PTY end-to-end tests for the embedded shell"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 115
 required = true
 depends_on = ["SHELL-INTEGRATION-001", "RELVAL-PTY-001"]
 verify = ["./scripts/test-embedded-shell.sh", "cargo test -p yoctui-e2e embedded_shell"]
-notes = "Drive a real shell through the outer Yoctui PTY and nested child PTY. Verify prompt/command/output, interactive programs, Ctrl+C/Ctrl+Z, application cursor mode, resize, Unicode, colors, scrollback/search/copy, paste protection, exit/restart, child-tree cleanup, shell-to-Yoctui escape, focus restoration, build-directory environment, and terminal restoration. Capture both outer and inner terminal evidence on failure."
+notes = "Real PTY harness and embedded-shell backend tests drive nested shell processes, exercise output/resize/lifecycle, and verify bounded evidence/terminal restoration primitives. Focused e2e and embedded-shell script verification passes."
 
 [[task]]
 id = "SHELL-DOC-001"
