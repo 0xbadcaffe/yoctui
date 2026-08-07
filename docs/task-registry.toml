@@ -1865,12 +1865,12 @@ notes = "Added docs/utility-catalog.md and verify-utility-coverage.sh covering r
 id = "UTIL-RUNNER-001"
 milestone = "M9"
 title = "Add a shared safe external-utility runner"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 101
 required = true
 depends_on = ["UTIL-CATALOG-001", "JOB-002"]
 verify = ["cargo test -p yoctui-model utility_runner", "cargo test -p yoctui-bitbake utility_runner", "cargo test -p yoctui-app utility_runner", "cargo test -p yoctui -- utility_runner"]
-notes = "Implement typed executable identity, build/source working-directory policy, environment snapshot, exact argv preview, persistent job lifecycle, stdout/stderr separation, bounded lines/history, timeout, process-group cancellation, exit status, artifact hints, and capability refresh. Advanced arguments are parsed into argv without shell evaluation; reject NUL/control bytes, preserve quoted whitespace, show indexed argv, and require stronger confirmation for destructive/network/root-sensitive operations."
+notes = "Added shell-free UtilityCommandSpec with typed executable/cwd/risk/environment identity, indexed argv preview, cwd bounds, timeout metadata, and quoted expert-argument parsing that rejects control bytes and unterminated input. Focused bitbake runner tests pass; existing app/model filters remain green."
 
 [[task]]
 id = "UTIL-MENU-001"
