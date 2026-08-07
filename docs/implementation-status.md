@@ -24,8 +24,9 @@ complete; utility documentation, the shell session model, native PTY backend,
 terminal emulation, shell workspace UI, and Yocto-context integration are
 complete; embedded shell PTY end-to-end coverage is complete and the active
 task documents shell behavior and safety is complete; the active task runs the
-utility parent coverage gate is complete; the active task runs the embedded
-shell parent gate.
+utility and embedded-shell parent gates are complete. Fresh-Poky validation
+remains BLOCKED by unavailable network DNS; no eligible dependent release task
+can proceed until a network-enabled runner supplies live evidence.
 
 ## Current task
 
@@ -101,7 +102,7 @@ See `docs/current-task.md`.
 ## Priority queue
 
 `RELVAL-POKY-001` is BLOCKED pending a network-enabled CI runner. The active
-eligible task is `SHELL-001`.
+active blocked task is `RELVAL-POKY-001`.
 
 ## Rules
 

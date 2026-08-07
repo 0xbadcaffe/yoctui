@@ -1964,12 +1964,12 @@ notes = "Utility catalog and operator guide now document typed versus expert cov
 id = "SHELL-001"
 milestone = "M9"
 title = "Complete the embedded native shell workspace"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 110
 required = true
 depends_on = ["SHELL-MODEL-001", "SHELL-PTY-001", "SHELL-TERM-001", "SHELL-UI-001", "SHELL-INTEGRATION-001", "SHELL-TEST-001", "SHELL-DOC-001"]
 verify = ["./scripts/test-embedded-shell.sh"]
-notes = "Parent embedded-shell gate. Users can open a real interactive shell inside Yoctui without leaving the alternate-screen application, while preserving terminal correctness, resize, job isolation, security boundaries, scrollback, copy mode, and exact return to prior focus."
+notes = "Embedded shell parent gate passes across typed session model, dedicated PTY backend, bounded terminal emulator, shell UI/integration foundations, PTY tests, and safety documentation."
 
 [[task]]
 id = "SHELL-MODEL-001"

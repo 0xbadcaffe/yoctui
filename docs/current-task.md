@@ -2,26 +2,26 @@
 
 ## Task
 
-**ID:** SHELL-001
-**Title:** Complete the embedded native shell workspace
+**ID:** RELVAL-POKY-001
+**Title:** Validate Yoctui against a freshly cloned Poky release
+**Status:** BLOCKED
 **Status:** NOT_STARTED
 
 ## Objective
 
-Run the embedded-shell parent gate across session model, PTY backend, terminal
-emulation, UI foundation, integration, PTY tests, and documentation.
+Run the fresh-Poky release workflow in a network-enabled environment. This is
+blocked locally because DNS cannot resolve github.com.
 
 ## Verification
 
 ```bash
-./scripts/test-embedded-shell.sh
+./scripts/test-fresh-poky.sh
 ```
 
 ## Definition of done
 
-- Embedded shell sessions remain inside Yoctui with PTY lifecycle, bounded
-  terminal state, safety policy, and restoration evidence.
+- Exact Poky/BitBake/host/artifact evidence is required before unblocking.
 
 ## Next task
 
-After completion, select `RELVAL-001`.
+After completion, select `RELVAL-README-001`.
