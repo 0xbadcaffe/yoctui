@@ -1942,12 +1942,12 @@ notes = "Core BitBake, getvar/signature, native-sysroot, kas, buildhistory, and 
 id = "UTIL-ADVANCED-001"
 milestone = "M9"
 title = "Integrate advanced QA, maintenance, and release utilities"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 108
 required = true
 depends_on = ["UTIL-MENU-001", "MAINT-001", "QA-001", "SEC-001", "TEST-001"]
 verify = ["cargo test -p yoctui -- utility_advanced", "./scripts/test-utility-fixtures.sh advanced"]
-notes = "Expose capability-aware menus for resulttool, oe-selftest, bitbake-selftest, yocto-check-layer, patchreview, CVE mapping/check helpers, SPDX tasks, sstate/cache tools, cleanup-workdir, wipe-sysroot, gen-lockedsig-cache, build-compare, oe-git-archive, create/send-pull-request, PR service tools, and hash service diagnostics. Internal workers/servers such as bitbake-worker, bitbake-prserv, and bitbake-hashserv must be diagnostic/managed-service entries, not unrestricted one-key launches."
+notes = "Advanced QA, maintenance, release, CVE/SPDX, cache, archive, pull-request, and managed-service entries are represented in the capability catalog with explicit safety classifications; fixture verification passes."
 
 [[task]]
 id = "UTIL-DOC-001"
