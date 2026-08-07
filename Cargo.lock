@@ -2178,6 +2178,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "yoctui-e2e"
+version = "0.1.0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "yoctui-model"
 version = "0.1.0"
 dependencies = [

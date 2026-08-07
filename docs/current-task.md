@@ -2,29 +2,27 @@
 
 ## Task
 
-**ID:** RELVAL-PTY-001
-**Title:** Add a real PTY-driven TUI test harness
+**ID:** RELVAL-KEYMAP-001
+**Title:** Verify every documented keyboard shortcut
 **Status:** NOT_STARTED
 
 ## Objective
 
-Launch the release binary in a real pseudo-terminal, feed keys and resize
-events, parse ANSI/VT state into deterministic cells, and retain failure
-evidence as required by `docs/ui-acceptance-tests.md`.
+Generate and drive the documented keyboard matrix through the real PTY,
+checking valid transitions and inert behavior in invalid contexts.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-e2e pty_harness
-./scripts/test-tui-pty.sh
+cargo test -p yoctui-e2e keyboard_matrix
+./scripts/test-tui-keymap.sh
 ```
 
 ## Definition of done
 
-- The release binary is driven through a real PTY with semantic screen queries,
-  resize handling, timeout enforcement, terminal restoration, and bounded
-  failure artifacts.
+- Every documented shortcut has an executable path and context-invalid keys
+  remain inert with visible disabled explanations.
 
 ## Next task
 
-After completion, select `RELVAL-KEYMAP-001`.
+After completion, select `RELVAL-FLOW-001`.

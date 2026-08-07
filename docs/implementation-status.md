@@ -11,9 +11,9 @@ Status values:
 
 ## Current phase
 
-Release-quality validation is underway. The acceptance contract is complete;
-the active task is the real PTY harness that subsequent keyboard, flow,
-visual, Poky, compatibility, performance, and CI tasks will consume.
+Release-quality validation is underway. The acceptance contract and real PTY
+harness are complete; the active task verifies every documented keyboard
+shortcut before navigation and visual regression coverage.
 
 ## Current task
 
@@ -88,7 +88,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-`RELVAL-PTY-001` is active and depends on completed `RELVAL-SPEC-001`.
+`RELVAL-KEYMAP-001` is active and depends on completed `RELVAL-PTY-001`.
 
 ## Rules
 

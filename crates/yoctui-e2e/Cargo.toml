@@ -1,0 +1,9 @@
+[package]
+name = "yoctui-e2e"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+libc.workspace = true
+
