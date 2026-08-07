@@ -1909,12 +1909,12 @@ notes = "Recipetool typed workflow entry and shell-free expert fallback are cata
 id = "UTIL-LAYERS-001"
 milestone = "M9"
 title = "Cover common bitbake-layers operations"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 105
 required = true
 depends_on = ["UTIL-MENU-001", "LAYERS-001"]
 verify = ["cargo test -p yoctui -- utility_bitbake_layers", "./scripts/test-utility-fixtures.sh bitbake-layers"]
-notes = "Add typed show-layers, show-overlayed, show-appends, show-recipes, show-cross-depends, flatten, create-layer, add-layer, remove-layer, save-build-conf, and layerindex-fetch workflows when available. Make read-only queries directly inspectable; require preview/confirmation and post-operation refresh for mutations; bound flatten destinations and prevent source-tree overwrite."
+notes = "bitbake-layers read-only and mutation workflows are represented in the typed utility catalog with bounded flatten destinations, preview/confirmation, and refresh policy; fixture verification passes."
 
 [[task]]
 id = "UTIL-PKGDATA-001"
