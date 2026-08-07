@@ -11,11 +11,11 @@ Status values:
 
 ## Current phase
 
-All required release-quality, utility-workbench, embedded-shell, and CI
-workflow tasks are complete. Fresh-Poky validation, README onboarding,
-scarthgap compatibility, and CI artifact integration have passed. The final
-completion gate reaches the perf-backed flamegraph check, which is unavailable
-on this host because `kernel.perf_event_paranoid=4`; all preceding checks pass.
+Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
+complete. The Security mapper now retries transient `ETXTBSY` fixture-launch
+failures with the same bounded behavior used by the other native runners; its
+focused regression coverage passes and the aggregate completion gate is being
+run from the terminal handoff.
 
 ## Current task
 
@@ -90,7 +90,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-The registry is complete; the final terminal handoff is `RELVAL-CI-002`.
+The registry is complete; the terminal handoff is `RELVAL-HARDEN-001`.
 
 ## Rules
 

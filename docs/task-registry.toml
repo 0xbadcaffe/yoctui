@@ -2058,3 +2058,14 @@ required = true
 depends_on = ["RELVAL-CI-001"]
 verify = ["ruby -e 'require \"yaml\"; YAML.load_file(\".github/workflows/ci.yml\")'", "git diff --check"]
 notes = "Fixed the concurrency expression mapping so the workflow parses as valid YAML while preserving cancellation and artifact collection."
+
+[[task]]
+id = "RELVAL-HARDEN-001"
+milestone = "M7"
+title = "Make Security mapper launches resilient to transient ETXTBSY"
+status = "DONE"
+priority = 118
+required = true
+depends_on = ["RELVAL-CI-002"]
+verify = ["cargo test -p yoctui-bitbake security_mapper", "./scripts/verify-completion.sh"]
+notes = "Completion validation exposed a transient Text file busy failure while launching a just-written Security mapper fixture. The runner now uses the established bounded ETXTBSY retry behavior, with focused regression coverage; the final aggregate gate is run from the terminal handoff."
