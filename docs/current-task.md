@@ -2,27 +2,27 @@
 
 ## Task
 
-**ID:** UTIL-RECIPETOOL-001
-**Title:** Add common Recipetool recipe workflows
+**ID:** UTIL-LAYERS-001
+**Title:** Cover common bitbake-layers operations
 **Status:** NOT_STARTED
 
 ## Objective
 
-Add typed create, appendfile, newappend, setvar, and source-analysis forms with
-layer-aware paths, previews, protection, refresh, and expert argv fallback.
+Add typed show, overlay, append, dependency, flatten, create, add, remove,
+save-build-conf, and layerindex workflows with mutation previews and refresh.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui -- utility_recipetool
-./scripts/test-utility-fixtures.sh recipetool
+cargo test -p yoctui -- utility_bitbake_layers
+./scripts/test-utility-fixtures.sh bitbake-layers
 ```
 
 ## Definition of done
 
-- Recipetool common operations use typed forms with protected destinations and
-  safe expert argv fallback.
+- bitbake-layers operations use typed forms, bounded destinations, and
+  confirmation for mutations.
 
 ## Next task
 
-After completion, select `UTIL-LAYERS-001`.
+After completion, select `UTIL-PKGDATA-001`.
