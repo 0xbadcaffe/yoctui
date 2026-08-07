@@ -1953,12 +1953,12 @@ notes = "Advanced QA, maintenance, release, CVE/SPDX, cache, archive, pull-reque
 id = "UTIL-DOC-001"
 milestone = "M9"
 title = "Document utility coverage, safety, and extension points"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 109
 required = true
 depends_on = ["UTIL-DEVTOOL-001", "UTIL-RECIPETOOL-001", "UTIL-LAYERS-001", "UTIL-PKGDATA-001", "UTIL-CORE-001", "UTIL-ADVANCED-001"]
 verify = ["test -s docs/utility-catalog.md", "test -s docs/operator-guide.md", "./scripts/check-docs.sh", "./scripts/verify-utility-coverage.sh"]
-notes = "Document every utility's typed coverage, expert-mode availability, supported versions, required environment, mutation/network/root risk, output/artifact handling, and intentional exclusions. Add a contributor contract for new adapters and require catalog-to-code coverage checks."
+notes = "Utility catalog and operator guide now document typed versus expert coverage, version/environment/risk policy, bounded output, exclusions, and contributor extension requirements; check-docs and catalog coverage pass."
 
 [[task]]
 id = "SHELL-001"

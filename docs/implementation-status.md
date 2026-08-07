@@ -20,7 +20,8 @@ Recipetool and bitbake-layers workflows are complete; the active task covers
 oe-pkgdata-util workflows are complete; the active task covers core BitBake
 and environment utilities are complete; the active task covers advanced QA,
 maintenance, and release utilities are complete; the active task documents
-utility coverage and extension policy.
+utility coverage and extension policy are complete; the active task begins the
+embedded shell session model.
 
 ## Current task
 
@@ -96,7 +97,7 @@ See `docs/current-task.md`.
 ## Priority queue
 
 `RELVAL-POKY-001` is BLOCKED pending a network-enabled CI runner. The active
-eligible task is `UTIL-DOC-001`.
+eligible task is `SHELL-MODEL-001`.
 
 ## Rules
 
