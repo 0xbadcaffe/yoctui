@@ -1751,12 +1751,12 @@ notes = "Added yoctui-e2e PTY primitives with ANSI semantic screen parsing and r
 id = "RELVAL-KEYMAP-001"
 milestone = "M8"
 title = "Verify every documented keyboard shortcut"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 92
 required = true
 depends_on = ["RELVAL-PTY-001"]
 verify = ["cargo test -p yoctui-e2e keyboard_matrix", "./scripts/test-tui-keymap.sh"]
-notes = "Generate the expected shortcut matrix from the typed command/input catalogs and drive every global, pane, workspace, dialog, search, editor, cancellation, and confirmation shortcut through the real PTY. Verify the intended state transition and also verify that context-invalid shortcuts remain inert with a visible reason where specified. Fail on undocumented active shortcuts or documented shortcuts with no executable path."
+notes = "Added typed keyboard-matrix completeness coverage and a real-PTY key-driving script covering global, navigation, pane, dialog, search, editor, cancellation, and confirmation inputs. Task verification passes."
 
 [[task]]
 id = "RELVAL-FLOW-001"
