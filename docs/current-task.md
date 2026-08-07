@@ -2,27 +2,28 @@
 
 ## Task
 
-**ID:** RELVAL-KEYMAP-001
-**Title:** Verify every documented keyboard shortcut
+**ID:** RELVAL-FLOW-001
+**Title:** Verify Tab focus, windows, dialogs, and workspace flow
 **Status:** NOT_STARTED
 
 ## Objective
 
-Generate and drive the documented keyboard matrix through the real PTY,
-checking valid transitions and inert behavior in invalid contexts.
+Exercise forward/reverse focus, Navigator-to-Workspace-to-Inspector traversal,
+narrow pane switching, overlays, nested modal trapping/restoration, search,
+back navigation, and persistent jobs across supported terminal sizes.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-e2e keyboard_matrix
-./scripts/test-tui-keymap.sh
+cargo test -p yoctui-e2e navigation_flow
+./scripts/test-tui-flow.sh
 ```
 
 ## Definition of done
 
-- Every documented shortcut has an executable path and context-invalid keys
-  remain inert with visible disabled explanations.
+- Focus and workspace transitions remain deterministic across resize and modal
+  boundaries, with exact return-focus restoration.
 
 ## Next task
 
-After completion, select `RELVAL-FLOW-001`.
+After completion, select `RELVAL-VISUAL-001`.

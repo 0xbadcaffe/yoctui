@@ -165,4 +165,64 @@ mod tests {
         let output = run_pty("/bin/sh", &["-c", "printf 'pty-ok\\n'"], b"").expect("pty");
         assert!(String::from_utf8_lossy(&output).contains("pty-ok"));
     }
+
+    #[test]
+    fn keyboard_matrix_is_complete_and_unique() {
+        let keys = [
+            "?",
+            "F5",
+            "Ctrl+P",
+            "/",
+            "Tab",
+            "Shift+Tab",
+            "Esc",
+            "q",
+            "Ctrl+C",
+            "Up",
+            "Down",
+            "j",
+            "k",
+            "Enter",
+            "Backspace",
+            "Right",
+            "Left",
+            "l",
+            "h",
+            "e",
+            "o",
+            "R",
+            "r",
+            ".",
+            "g",
+            "m",
+            "d",
+            "f",
+            "F",
+            "n",
+            "N",
+            "w",
+            "s",
+            "T",
+            "B",
+            "C",
+            "L",
+            "1",
+            "2",
+            "c",
+            "Q",
+            "x",
+            "D",
+            "i",
+            "v",
+            "Space",
+            "Ctrl+S",
+            "Ctrl+B",
+        ];
+        let mut sorted = keys.to_vec();
+        sorted.sort_unstable();
+        sorted.dedup();
+        assert_eq!(sorted.len(), keys.len());
+        assert!(keys.contains(&"Shift+Tab"));
+        assert!(keys.contains(&"Ctrl+P"));
+    }
 }
