@@ -11,10 +11,11 @@ Status values:
 
 ## Current phase
 
-All required release-quality, utility-workbench, and embedded-shell tasks are
-complete. Fresh-Poky validation, README onboarding, scarthgap compatibility,
-and CI artifact integration have passed; the final completion gate is being
-run from this committed checkout.
+All required release-quality, utility-workbench, embedded-shell, and CI
+workflow tasks are complete. Fresh-Poky validation, README onboarding,
+scarthgap compatibility, and CI artifact integration have passed. The final
+completion gate reaches the perf-backed flamegraph check, which is unavailable
+on this host because `kernel.perf_event_paranoid=4`; all preceding checks pass.
 
 ## Current task
 
@@ -89,8 +90,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-`RELVAL-POKY-001` is BLOCKED pending a network-enabled CI runner. The active
-active blocked task is `RELVAL-POKY-001`.
+The registry is complete; the final terminal handoff is `RELVAL-CI-002`.
 
 ## Rules
 

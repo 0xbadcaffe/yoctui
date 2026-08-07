@@ -2047,3 +2047,14 @@ required = true
 depends_on = ["SHELL-TEST-001"]
 verify = ["test -s docs/embedded-shell.md", "./scripts/check-docs.sh"]
 notes = "Added docs/embedded-shell.md documenting input ownership, Ctrl+] escape, PTY/terminal behavior, cwd/environment, session limits, paste/OSC policy, child cleanup, troubleshooting, and typed-versus-expert command boundaries; check-docs passes."
+
+[[task]]
+id = "RELVAL-CI-002"
+milestone = "M7"
+title = "Validate GitHub Actions workflow syntax"
+status = "DONE"
+priority = 117
+required = true
+depends_on = ["RELVAL-CI-001"]
+verify = ["ruby -e 'require \"yaml\"; YAML.load_file(\".github/workflows/ci.yml\")'", "git diff --check"]
+notes = "Fixed the concurrency expression mapping so the workflow parses as valid YAML while preserving cancellation and artifact collection."
