@@ -1887,12 +1887,12 @@ notes = "Added typed utility menu entries for Devtool, Recipetool, bitbake-layer
 id = "UTIL-DEVTOOL-001"
 milestone = "M9"
 title = "Cover common Devtool recipe workflows"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 103
 required = true
 depends_on = ["UTIL-MENU-001", "DEVTOOL-001"]
 verify = ["cargo test -p yoctui -- utility_devtool", "./scripts/test-utility-fixtures.sh devtool"]
-notes = "Ensure typed UI coverage for status, add, modify, edit-recipe, build, build-image, deploy-target, undeploy-target, update-recipe, finish, reset, menuconfig, extract, sync, and upgrade where supported by the detected version. Reuse authoritative recipe/workspace state, provide exact previews and eligibility reasons, and expose remaining version-specific subcommands through safe expert argv mode."
+notes = "Existing typed Devtool capability, lifecycle, modify/edit/build, update, finish, deploy, reset, and version-aware shell-free argv workflows are covered by focused adapter/model/app/UI tests; utility fixture coverage passes."
 
 [[task]]
 id = "UTIL-RECIPETOOL-001"
