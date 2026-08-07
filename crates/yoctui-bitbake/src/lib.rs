@@ -17,6 +17,7 @@ mod security_report;
 mod signature;
 mod test_results;
 mod test_runner;
+mod utility;
 mod wic;
 
 #[cfg(test)]
@@ -137,6 +138,7 @@ use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, Command as TokioCommand},
 };
+pub use utility::{UtilityCommandSpec, UtilityRisk, parse_utility_arguments};
 pub use wic::{
     WicAdapterError, WicCapabilityInspector, WicCreateCommandSpec, WicDeviceInspector,
     WicDeviceInventoryResponse, WicJobRunner, WicWriteCommandSpec,
