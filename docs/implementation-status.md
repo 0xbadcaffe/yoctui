@@ -12,8 +12,8 @@ Status values:
 ## Current phase
 
 Release-quality validation is underway. The acceptance contract, real PTY
-harness, and keyboard matrix are complete; the active task verifies focus and
-workspace flow before visual regression coverage.
+harness, keyboard matrix, and focus/workspace flow are complete; the active
+task adds semantic and visual terminal regression coverage.
 
 ## Current task
 
@@ -88,7 +88,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-`RELVAL-FLOW-001` is active and depends on completed `RELVAL-KEYMAP-001`.
+`RELVAL-VISUAL-001` is active and depends on completed `RELVAL-FLOW-001`.
 
 ## Rules
 

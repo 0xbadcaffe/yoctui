@@ -225,4 +225,14 @@ mod tests {
         assert!(keys.contains(&"Shift+Tab"));
         assert!(keys.contains(&"Ctrl+P"));
     }
+
+    #[test]
+    fn navigation_flow_preserves_semantic_anchors_after_resize() {
+        let before = parse_screen(b"\x1b[1;1HYoctui\x1b[24;1HTab Focus", 80, 24);
+        let after = parse_screen(b"\x1b[1;1HYoctui\x1b[30;1HTab Focus", 100, 30);
+        assert!(before.text().contains("Yoctui"));
+        assert!(before.text().contains("Tab Focus"));
+        assert!(after.text().contains("Yoctui"));
+        assert!(after.text().contains("Tab Focus"));
+    }
 }

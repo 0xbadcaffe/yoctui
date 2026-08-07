@@ -2,28 +2,27 @@
 
 ## Task
 
-**ID:** RELVAL-FLOW-001
-**Title:** Verify Tab focus, windows, dialogs, and workspace flow
+**ID:** RELVAL-VISUAL-001
+**Title:** Add semantic and visual terminal regression tests
 **Status:** NOT_STARTED
 
 ## Objective
 
-Exercise forward/reverse focus, Navigator-to-Workspace-to-Inspector traversal,
-narrow pane switching, overlays, nested modal trapping/restoration, search,
-back navigation, and persistent jobs across supported terminal sizes.
+Capture normalized terminal-cell snapshots for workspaces, dialogs, lifecycle
+states, themes, no-color, reduced motion, Unicode/path content, and supported
+terminal breakpoints.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-e2e navigation_flow
-./scripts/test-tui-flow.sh
+./scripts/test-tui-snapshots.sh
 ```
 
 ## Definition of done
 
-- Focus and workspace transitions remain deterministic across resize and modal
-  boundaries, with exact return-focus restoration.
+- Semantic and visual snapshots are deterministic, bounded, and retain failure
+  diffs and rendered artifacts.
 
 ## Next task
 
-After completion, select `RELVAL-VISUAL-001`.
+After completion, select `RELVAL-POKY-001`.

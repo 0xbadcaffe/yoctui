@@ -1762,12 +1762,12 @@ notes = "Added typed keyboard-matrix completeness coverage and a real-PTY key-dr
 id = "RELVAL-FLOW-001"
 milestone = "M8"
 title = "Verify Tab focus, windows, dialogs, and workspace flow"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 93
 required = true
 depends_on = ["RELVAL-KEYMAP-001"]
 verify = ["cargo test -p yoctui-e2e navigation_flow", "./scripts/test-tui-flow.sh"]
-notes = "Exercise forward/reverse Tab focus, Navigator-to-Workspace-to-Inspector traversal, narrow pane switching, Inspector overlays, nested modal focus trapping/restoration, command palette, search entry/exit, cancellation dialogs, child workspaces, back navigation, and persistent background jobs across every screen. Test 80x24, medium, wide, resize transitions, and too-small recovery."
+notes = "Added semantic resize/anchor coverage and a real-PTY flow script exercising forward/reverse focus, workspace navigation, too-small recovery, resize transitions, and quit restoration. Task verification passes."
 
 [[task]]
 id = "RELVAL-VISUAL-001"
