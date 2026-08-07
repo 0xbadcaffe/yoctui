@@ -22,7 +22,8 @@ and environment utilities are complete; the active task covers advanced QA,
 maintenance, and release utilities are complete; utility documentation is
 complete; utility documentation, the shell session model, native PTY backend,
 terminal emulation, shell workspace UI, and Yocto-context integration are
-complete; the active task adds embedded shell PTY end-to-end coverage.
+complete; embedded shell PTY end-to-end coverage is complete and the active
+task documents shell behavior and safety.
 
 ## Current task
 
@@ -98,7 +99,7 @@ See `docs/current-task.md`.
 ## Priority queue
 
 `RELVAL-POKY-001` is BLOCKED pending a network-enabled CI runner. The active
-eligible task is `SHELL-TEST-001`.
+eligible task is `SHELL-DOC-001`.
 
 ## Rules
 
