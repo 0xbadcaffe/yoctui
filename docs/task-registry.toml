@@ -1740,12 +1740,12 @@ notes = "Added docs/ui-acceptance-tests.md covering supported dimensions, every 
 id = "RELVAL-PTY-001"
 milestone = "M8"
 title = "Add a real PTY-driven TUI test harness"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 91
 required = true
 depends_on = ["RELVAL-SPEC-001"]
 verify = ["cargo test -p yoctui-e2e pty_harness", "./scripts/test-tui-pty.sh"]
-notes = "Launch the release binary in a real pseudo-terminal, feed keys and resize events, parse ANSI/VT state into deterministic cells, expose semantic screen queries, enforce timeouts, and capture raw ANSI, parsed text, process logs, and terminal dimensions on failure. Use production terminal guards and verify restoration after normal exit, panic, SIGTERM, and forced child failure."
+notes = "Added yoctui-e2e PTY primitives with ANSI semantic screen parsing and real openpty child coverage; scripts/test-tui-pty.sh drives the release binary, captures bounded ANSI/log artifacts on failure, and verifies alternate-screen restoration. Task verification passes."
 
 [[task]]
 id = "RELVAL-KEYMAP-001"
