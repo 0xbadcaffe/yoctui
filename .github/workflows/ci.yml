@@ -23,3 +23,30 @@ jobs:
       - run: ruff format --check bridge
       - run: mypy bridge
       - run: pytest bridge/tests --cov=bridge --cov-report=term-missing --cov-fail-under=75
+  release-quality:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build release binary
+        run: cargo build --locked -p yoctui
+      - name: Run PTY/keymap/flow/snapshot/performance gates
+        run: |
+          ./scripts/test-tui-pty.sh
+          ./scripts/test-tui-keymap.sh
+          ./scripts/test-tui-flow.sh
+          ./scripts/test-tui-snapshots.sh
+          ./scripts/test-tui-performance.sh
+      - name: Run utility and embedded-shell gates
+        run: |
+          ./scripts/verify-utility-coverage.sh
+          ./scripts/test-embedded-shell.sh
+      - name: Upload release-quality evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yoctui-release-quality-${{ github.sha }}
+          path: artifacts/release-quality/
+          if-no-files-found: ignore
