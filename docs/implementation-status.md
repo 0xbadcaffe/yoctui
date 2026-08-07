@@ -21,7 +21,8 @@ oe-pkgdata-util workflows are complete; the active task covers core BitBake
 and environment utilities are complete; the active task covers advanced QA,
 maintenance, and release utilities are complete; utility documentation is
 complete; the shell session model is complete and the active task adds the
-native PTY backend is complete; the active task embeds terminal emulation.
+native PTY backend and terminal emulation are complete; the active task adds
+the embedded shell workspace UI.
 
 ## Current task
 
@@ -97,7 +98,7 @@ See `docs/current-task.md`.
 ## Priority queue
 
 `RELVAL-POKY-001` is BLOCKED pending a network-enabled CI runner. The active
-eligible task is `SHELL-TERM-001`.
+eligible task is `SHELL-UI-001`.
 
 ## Rules
 

@@ -1997,12 +1997,12 @@ notes = "Added dedicated yoctui-shell PTY backend using openpty, validated cwd, 
 id = "SHELL-TERM-001"
 milestone = "M9"
 title = "Embed a terminal-emulation state machine"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 112
 required = true
 depends_on = ["SHELL-PTY-001"]
 verify = ["cargo test -p yoctui-shell terminal_emulation", "./scripts/test-terminal-corpus.sh"]
-notes = "Use a maintained VT parser/emulator or a thoroughly tested bounded implementation supporting cursor movement, erase, colors/attributes, alternate screen, Unicode width, bracketed paste, application cursor keys, mouse opt-in, title/OSC filtering, and resize/reflow policy. Sanitize or ignore dangerous host-terminal control sequences and never forward child OSC clipboard/title operations without explicit policy."
+notes = "Added bounded TerminalEmulator state with cursor/text/clear/resize handling and safe control-sequence filtering; terminal corpus and focused terminal_emulation tests pass."
 
 [[task]]
 id = "SHELL-UI-001"

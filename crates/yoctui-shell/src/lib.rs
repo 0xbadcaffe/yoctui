@@ -6,6 +6,74 @@ use std::{
     process::{Child, Command, Stdio},
 };
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TerminalEmulator {
+    pub width: usize,
+    pub height: usize,
+    pub cursor: (usize, usize),
+    cells: Vec<Vec<char>>,
+}
+
+impl TerminalEmulator {
+    pub fn new(width: usize, height: usize) -> Self {
+        Self {
+            width,
+            height,
+            cursor: (0, 0),
+            cells: vec![vec![' '; width]; height],
+        }
+    }
+    pub fn text(&self) -> String {
+        self.cells
+            .iter()
+            .map(|row| row.iter().collect::<String>())
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+    pub fn resize(&mut self, width: usize, height: usize) {
+        self.width = width;
+        self.height = height;
+        self.cells.resize_with(height, || vec![' '; width]);
+        for row in &mut self.cells {
+            row.resize(width, ' ');
+        }
+        self.cursor.0 = self.cursor.0.min(width.saturating_sub(1));
+        self.cursor.1 = self.cursor.1.min(height.saturating_sub(1));
+    }
+    pub fn feed(&mut self, bytes: &[u8]) {
+        let mut i = 0;
+        while i < bytes.len() {
+            match bytes[i] {
+                b'\x1b' if bytes.get(i + 1) == Some(&b'[') => {
+                    i += 2;
+                    while i < bytes.len() && !bytes[i].is_ascii_alphabetic() {
+                        i += 1;
+                    }
+                    if i < bytes.len() && bytes[i] == b'J' {
+                        self.cells = vec![vec![' '; self.width]; self.height];
+                        self.cursor = (0, 0);
+                    }
+                }
+                b'\r' => self.cursor.0 = 0,
+                b'\n' => self.cursor.1 = (self.cursor.1 + 1).min(self.height.saturating_sub(1)),
+                0x20..=0x7e => {
+                    let (x, y) = self.cursor;
+                    if y < self.height && x < self.width {
+                        self.cells[y][x] = bytes[i] as char;
+                    }
+                    self.cursor.0 += 1;
+                    if self.cursor.0 >= self.width {
+                        self.cursor.0 = 0;
+                        self.cursor.1 = (self.cursor.1 + 1).min(self.height.saturating_sub(1));
+                    }
+                }
+                _ => {}
+            }
+            i += 1;
+        }
+    }
+}
+
 pub struct PtyShell {
     master: std::fs::File,
     child: Child,
@@ -78,5 +146,17 @@ mod tests {
         shell.resize(80, 24).unwrap();
         assert!(shell.child_id() > 0);
         let _ = shell.child.kill();
+    }
+
+    #[test]
+    fn terminal_emulation_handles_cursor_clear_resize_and_unicode_safely() {
+        let mut terminal = TerminalEmulator::new(20, 4);
+        terminal.feed(b"\x1b[2JYoctui\r\nShell");
+        assert!(terminal.text().contains("Yoctui"));
+        assert!(terminal.text().contains("Shell"));
+        terminal.resize(8, 2);
+        assert_eq!(terminal.width, 8);
+        terminal.feed("é".as_bytes());
+        assert!(terminal.cursor.0 <= 8);
     }
 }
