@@ -2,27 +2,29 @@
 
 ## Task
 
-**ID:** UTIL-CATALOG-001
-**Title:** Define a versioned Yocto utility capability catalog
+**ID:** UTIL-RUNNER-001
+**Title:** Add a shared safe external-utility runner
 **Status:** NOT_STARTED
 
 ## Objective
 
-Inventory supported Yocto utilities and classify typed workflows, expert
-launchers, informational/internal entries, and intentional exclusions.
+Implement typed executable identity, exact argv previews, environment/cwd
+policy, bounded output, timeout, cancellation, and persistent job history.
 
 ## Verification
 
 ```bash
-test -s docs/utility-catalog.md
-cargo test -p yoctui-model utility_catalog
-./scripts/verify-utility-coverage.sh --catalog-only
+cargo test -p yoctui-model utility_runner
+cargo test -p yoctui-bitbake utility_runner
+cargo test -p yoctui-app utility_runner
+cargo test -p yoctui -- utility_runner
 ```
 
 ## Definition of done
 
-- The catalog is versioned, non-empty, and coverage verification passes.
+- Common and expert utility execution is shell-free, bounded, cancellable, and
+  represented by typed jobs with exact previews.
 
 ## Next task
 
-After completion, select `UTIL-RUNNER-001`.
+After completion, select `UTIL-MENU-001`.
