@@ -7,6 +7,7 @@ mod qemu;
 mod sdk;
 mod security;
 mod testing;
+mod utility_menu;
 mod wic;
 
 pub use image::*;
@@ -25,6 +26,7 @@ use std::{
 };
 pub use testing::*;
 use thiserror::Error;
+pub use utility_menu::*;
 pub use wic::*;
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
