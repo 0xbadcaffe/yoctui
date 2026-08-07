@@ -2,27 +2,27 @@
 
 ## Task
 
-**ID:** UTIL-PKGDATA-001
-**Title:** Cover common oe-pkgdata-util package workflows
+**ID:** UTIL-CORE-001
+**Title:** Integrate common BitBake and environment utilities
 **Status:** NOT_STARTED
 
 ## Objective
 
-Add typed package lookup/list/detail/dependency workflows linked to Packages,
-Recipes, Images, files, and dependency navigation.
+Provide typed or contextual workflows for core BitBake/environment utilities,
+with setup capabilities distinct from arbitrary child jobs.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui -- utility_pkgdata
-./scripts/test-utility-fixtures.sh oe-pkgdata-util
+cargo test -p yoctui -- utility_core
+./scripts/test-utility-fixtures.sh core
 ```
 
 ## Definition of done
 
-- oe-pkgdata-util operations preserve unavailable state when pkgdata is absent
-  and expose bounded typed package results.
+- Core utility workflows remain typed or capability-aware and setup commands
+  are never exposed as arbitrary jobs.
 
 ## Next task
 
-After completion, select `UTIL-CORE-001`.
+After completion, select `UTIL-ADVANCED-001`.
