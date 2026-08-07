@@ -1975,12 +1975,12 @@ notes = "Parent embedded-shell gate. Users can open a real interactive shell ins
 id = "SHELL-MODEL-001"
 milestone = "M9"
 title = "Model embedded shell sessions and input ownership"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 110
 required = true
 depends_on = ["UTIL-RUNNER-001"]
 verify = ["cargo test -p yoctui-model embedded_shell", "cargo test -p yoctui-app embedded_shell"]
-notes = "Define stable shell session IDs, lifecycle, build/source/current working directory, environment identity, foreground/copy/search modes, bounded scrollback metadata, exit status, unread activity, restart/close confirmation, and exclusive input ownership. Reserve an explicit escape chord that always returns input to Yoctui and cannot be swallowed by the child shell."
+notes = "Added typed ShellSession lifecycle/cwd/environment identity, foreground/copy/search ownership, bounded 4,000-line scrollback, exit/unread state, and the unswallowable Ctrl+] emergency escape chord with focused model coverage."
 
 [[task]]
 id = "SHELL-PTY-001"

@@ -2,27 +2,28 @@
 
 ## Task
 
-**ID:** SHELL-MODEL-001
-**Title:** Model embedded shell sessions and input ownership
+**ID:** SHELL-PTY-001
+**Title:** Add a native PTY shell backend
 **Status:** NOT_STARTED
 
 ## Objective
 
-Define stable shell session IDs, lifecycle, cwd/environment identity,
-foreground/copy/search modes, bounded scrollback, exit status, and exclusive
-input ownership with an emergency escape chord.
+Spawn the configured shell through a real PTY with validated cwd and inherited
+Yocto environment, resize propagation, bounded buffering, and process-group
+cleanup.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model embedded_shell
-cargo test -p yoctui-app embedded_shell
+cargo test -p yoctui-shell pty_backend
+./scripts/test-embedded-shell.sh --backend
 ```
 
 ## Definition of done
 
-- Shell session state transitions and input ownership are typed and tested.
+- PTY shell startup, resize, output bounds, cancellation, and process-tree
+  cleanup are covered by focused tests.
 
 ## Next task
 
-After completion, select `SHELL-PTY-001`.
+After completion, select `SHELL-TERM-001`.
