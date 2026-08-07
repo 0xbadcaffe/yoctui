@@ -1931,12 +1931,12 @@ notes = "Existing typed Package Data model/adapter/workspace covers lookup, list
 id = "UTIL-CORE-001"
 milestone = "M9"
 title = "Integrate common BitBake and environment utilities"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 107
 required = true
 depends_on = ["UTIL-MENU-001"]
 verify = ["cargo test -p yoctui -- utility_core", "./scripts/test-utility-fixtures.sh core"]
-notes = "Provide typed or contextual workflows for bitbake targets/tasks/force/env/graph, bitbake-getvar, dumpsig/diffsigs, whatchanged, oe-find-native-sysroot, oe-run-native, kas checkout/build/shell/lock where installed, and buildhistory-diff. Treat oe-init-build-env, oe-setup-builddir, and oe-buildenv-internal as environment/setup capabilities rather than arbitrary child jobs; show their resolved state and exact remediation."
+notes = "Core BitBake, getvar/signature, native-sysroot, kas, buildhistory, and setup/environment capabilities are catalogued with typed/contextual versus expert/internal safety policy; fixture verification passes."
 
 [[task]]
 id = "UTIL-ADVANCED-001"
