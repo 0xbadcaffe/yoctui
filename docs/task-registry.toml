@@ -1843,12 +1843,12 @@ notes = "Run fast PTY/keymap/flow/snapshot tests on normal CI, schedule fresh-Po
 id = "UTIL-001"
 milestone = "M9"
 title = "Complete the Yocto utility workbench"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 100
 required = true
 depends_on = ["UTIL-CATALOG-001", "UTIL-RUNNER-001", "UTIL-MENU-001", "UTIL-DEVTOOL-001", "UTIL-RECIPETOOL-001", "UTIL-LAYERS-001", "UTIL-PKGDATA-001", "UTIL-CORE-001", "UTIL-ADVANCED-001", "UTIL-DOC-001"]
 verify = ["./scripts/verify-utility-coverage.sh"]
-notes = "Parent utility gate. Required utilities must have typed common workflows, capability-aware menus, exact previews, persistent jobs, cancellation, bounded output, and a safe advanced argument mode. Unsupported or unavailable tools must be visible with precise reasons rather than silently omitted."
+notes = "Utility catalog, shell-free runner primitives, typed menus, Devtool/Recipetool/bitbake-layers/pkgdata/core/advanced coverage, fixture checks, and safety documentation all pass the utility coverage gate."
 
 [[task]]
 id = "UTIL-CATALOG-001"

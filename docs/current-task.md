@@ -2,26 +2,26 @@
 
 ## Task
 
-**ID:** UTIL-001
-**Title:** Complete the Yocto utility workbench
+**ID:** SHELL-001
+**Title:** Complete the embedded native shell workspace
 **Status:** NOT_STARTED
 
 ## Objective
 
-Run the utility coverage gate across the catalog, runner, menus, common
-families, advanced families, and documentation.
+Run the embedded-shell parent gate across session model, PTY backend, terminal
+emulation, UI foundation, integration, PTY tests, and documentation.
 
 ## Verification
 
 ```bash
-./scripts/verify-utility-coverage.sh
+./scripts/test-embedded-shell.sh
 ```
 
 ## Definition of done
 
-- Every required utility has typed/common or safe expert coverage and catalog
-  documentation.
+- Embedded shell sessions remain inside Yoctui with PTY lifecycle, bounded
+  terminal state, safety policy, and restoration evidence.
 
 ## Next task
 
-After completion, select `SHELL-001`.
+After completion, select `RELVAL-001`.
