@@ -1854,12 +1854,12 @@ notes = "Parent utility gate. Required utilities must have typed common workflow
 id = "UTIL-CATALOG-001"
 milestone = "M9"
 title = "Define a versioned Yocto utility capability catalog"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 100
 required = true
 depends_on = ["RELVAL-SPEC-001"]
 verify = ["test -s docs/utility-catalog.md", "cargo test -p yoctui-model utility_catalog", "./scripts/verify-utility-coverage.sh --catalog-only"]
-notes = "Inventory every supported utility and task, including oe-init-build-env, bitbake, devtool, recipetool, bitbake-layers, runqemu, wic, kas, oe-pkgdata-util, bitbake-getvar, bitbake-diffsigs, bitbake-dumpsig, oe-find-native-sysroot, sstate-cache-management.sh, buildhistory-diff, yocto-check-layer, yocto-layer, yocto-bsp, yocto-kernel, pybootchartgui, toaster, CVE/SPDX helpers, selftests, resulttool, archive/pull-request helpers, cleanup tools, locked signatures, whatchanged, PR/hash services, and setup/internal commands. Classify each as typed workflow, expert launcher, informational/internal, or intentionally excluded with rationale."
+notes = "Added docs/utility-catalog.md and verify-utility-coverage.sh covering required setup, BitBake, Devtool, Recipetool, layer, package-data, image, QA, security, maintenance, release, service, and intentionally excluded internal utilities with typed/expert/safety classifications. Catalog verification passes."
 
 [[task]]
 id = "UTIL-RUNNER-001"
