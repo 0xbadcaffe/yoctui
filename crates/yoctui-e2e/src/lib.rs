@@ -235,4 +235,11 @@ mod tests {
         assert!(after.text().contains("Yoctui"));
         assert!(after.text().contains("Tab Focus"));
     }
+
+    #[test]
+    fn visual_snapshot_normalization_discards_terminal_control_noise() {
+        let screen = parse_screen(b"\x1b[?1049h\x1b[2J\x1b[1;1HYoctui\x1b[0m", 20, 4);
+        assert_eq!(screen.text().lines().next(), Some("Yoctui              "));
+        assert!(!screen.text().contains('\x1b'));
+    }
 }
