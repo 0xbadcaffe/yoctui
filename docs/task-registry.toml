@@ -1709,3 +1709,341 @@ required = true
 depends_on = ["DOC-001", "HARDEN-001"]
 verify = ["test -s README.md", "test -s docs/media/yoctui-demo.gif", "test -s artifacts/flamegraph/yoctui.svg", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "README is 63% shorter by word count and now leads with a concise product overview, one nonduplicated install flow, two guarded Yocto launch paths, essential controls, and deep-document links. It embeds a 952x484 GIF captured from the real binary with explicit deterministic-fixture labelling and the real perf-backed Flamegraph SVG; check-docs requires both nonempty artifacts. All task verification passes in this commit."
+
+# -----------------------------------------------------------------------------
+# M8 — Release-quality validation
+# -----------------------------------------------------------------------------
+
+[[task]]
+id = "RELVAL-001"
+milestone = "M8"
+title = "Complete release-quality validation"
+status = "IN_PROGRESS"
+priority = 90
+required = true
+depends_on = ["RELVAL-SPEC-001", "RELVAL-PTY-001", "RELVAL-KEYMAP-001", "RELVAL-FLOW-001", "RELVAL-VISUAL-001", "RELVAL-POKY-001", "RELVAL-README-001", "RELVAL-COMPAT-001", "RELVAL-PERF-001", "RELVAL-CI-001"]
+verify = ["./scripts/verify-release-quality.sh"]
+notes = "Parent release gate. It remains IN_PROGRESS until PTY interaction, keyboard coverage, screen flow, visual regression, fresh Poky onboarding, README execution, compatibility, performance, and CI artifacts pass together."
+
+[[task]]
+id = "RELVAL-SPEC-001"
+milestone = "M8"
+title = "Specify the release-quality UI acceptance contract"
+status = "DONE"
+priority = 90
+required = true
+depends_on = ["DOC-README-001"]
+verify = ["test -s docs/ui-acceptance-tests.md", "./scripts/verify-roadmap.sh"]
+notes = "Added docs/ui-acceptance-tests.md covering supported dimensions, every Navigator destination, modal/focus rules, typed keyboard matrix, failure artifacts, live-versus-fixture labels, Poky policy, and artifact retention; roadmap verification passes."
+
+[[task]]
+id = "RELVAL-PTY-001"
+milestone = "M8"
+title = "Add a real PTY-driven TUI test harness"
+status = "NOT_STARTED"
+priority = 91
+required = true
+depends_on = ["RELVAL-SPEC-001"]
+verify = ["cargo test -p yoctui-e2e pty_harness", "./scripts/test-tui-pty.sh"]
+notes = "Launch the release binary in a real pseudo-terminal, feed keys and resize events, parse ANSI/VT state into deterministic cells, expose semantic screen queries, enforce timeouts, and capture raw ANSI, parsed text, process logs, and terminal dimensions on failure. Use production terminal guards and verify restoration after normal exit, panic, SIGTERM, and forced child failure."
+
+[[task]]
+id = "RELVAL-KEYMAP-001"
+milestone = "M8"
+title = "Verify every documented keyboard shortcut"
+status = "NOT_STARTED"
+priority = 92
+required = true
+depends_on = ["RELVAL-PTY-001"]
+verify = ["cargo test -p yoctui-e2e keyboard_matrix", "./scripts/test-tui-keymap.sh"]
+notes = "Generate the expected shortcut matrix from the typed command/input catalogs and drive every global, pane, workspace, dialog, search, editor, cancellation, and confirmation shortcut through the real PTY. Verify the intended state transition and also verify that context-invalid shortcuts remain inert with a visible reason where specified. Fail on undocumented active shortcuts or documented shortcuts with no executable path."
+
+[[task]]
+id = "RELVAL-FLOW-001"
+milestone = "M8"
+title = "Verify Tab focus, windows, dialogs, and workspace flow"
+status = "NOT_STARTED"
+priority = 93
+required = true
+depends_on = ["RELVAL-KEYMAP-001"]
+verify = ["cargo test -p yoctui-e2e navigation_flow", "./scripts/test-tui-flow.sh"]
+notes = "Exercise forward/reverse Tab focus, Navigator-to-Workspace-to-Inspector traversal, narrow pane switching, Inspector overlays, nested modal focus trapping/restoration, command palette, search entry/exit, cancellation dialogs, child workspaces, back navigation, and persistent background jobs across every screen. Test 80x24, medium, wide, resize transitions, and too-small recovery."
+
+[[task]]
+id = "RELVAL-VISUAL-001"
+milestone = "M8"
+title = "Add semantic and visual terminal regression tests"
+status = "NOT_STARTED"
+priority = 94
+required = true
+depends_on = ["RELVAL-FLOW-001"]
+verify = ["./scripts/test-tui-snapshots.sh"]
+notes = "Capture normalized cell snapshots for every workspace, major dialog, empty/loading/partial/failure/success state, all semantic themes, no-color, reduced motion, long Unicode/path content, and supported terminal breakpoints. Prefer semantic assertions for dynamic values and approve visual baselines explicitly. Store failure diffs and rendered HTML/PNG artifacts without making pixel identity the only correctness criterion."
+
+[[task]]
+id = "RELVAL-POKY-001"
+milestone = "M8"
+title = "Validate Yoctui against a freshly cloned Poky release"
+status = "NOT_STARTED"
+priority = 95
+required = true
+depends_on = ["RELVAL-PTY-001"]
+verify = ["./scripts/test-fresh-poky.sh"]
+notes = "Clone a pinned supported Poky release into an isolated cache/worktree, source oe-init-build-env in the same shell, create an isolated qemux86-64 build directory, build/install Yoctui from a clean checkout, run doctor, launch the bridge-backed TUI, inspect workspace/layers/recipes/configuration, start core-image-minimal, observe parse and task progress, cancel one build, then complete a minimal build or use a documented bounded CI target. Record exact Poky, BitBake, host, and artifact evidence. Network-heavy execution may be scheduled, but it is a required release gate."
+
+[[task]]
+id = "RELVAL-README-001"
+milestone = "M8"
+title = "Execute README onboarding verbatim and repair drift"
+status = "NOT_STARTED"
+priority = 96
+required = true
+depends_on = ["RELVAL-POKY-001"]
+verify = ["./scripts/test-readme-quickstart.sh", "./scripts/check-docs.sh"]
+notes = "Extract the fenced installation and Poky quickstart commands from README, execute them in a clean isolated environment without hidden setup, and classify failures as code, documentation, environment, or upstream. Fix README and code in the same task when they disagree. Verify bridge-path discovery, same-shell environment requirements, build-directory creation, doctor output, TUI launch, and core-image-minimal workflow."
+
+[[task]]
+id = "RELVAL-COMPAT-001"
+milestone = "M8"
+title = "Run the supported Poky and host compatibility matrix"
+status = "NOT_STARTED"
+priority = 97
+required = true
+depends_on = ["RELVAL-POKY-001", "RELVAL-README-001"]
+verify = ["./scripts/test-compatibility-matrix.sh", "test -s docs/compatibility.md"]
+notes = "Run bounded live smoke coverage on each release explicitly claimed as supported and on documented host/container images. At minimum verify doctor, bridge handshake, workspace/layer/recipe/config queries, build start/events/cancellation/shutdown, and selected utility detection. Update docs/compatibility.md from generated evidence; never generalize beyond tested versions."
+
+[[task]]
+id = "RELVAL-PERF-001"
+milestone = "M8"
+title = "Validate startup, rendering, and large-workspace performance"
+status = "NOT_STARTED"
+priority = 98
+required = true
+depends_on = ["RELVAL-PTY-001"]
+verify = ["./scripts/test-tui-performance.sh"]
+notes = "Measure time to first frame, background metadata hydration, key-to-frame latency, resize latency, memory growth, and search/navigation performance using small and synthetic large workspaces. Define enforceable budgets, include reduced-motion and all-pane rendering, detect per-frame full-list allocations, and commit machine-readable reports plus Flamegraph references."
+
+[[task]]
+id = "RELVAL-CI-001"
+milestone = "M8"
+title = "Integrate release-quality UI validation into CI"
+status = "NOT_STARTED"
+priority = 99
+required = true
+depends_on = ["RELVAL-VISUAL-001", "RELVAL-COMPAT-001", "RELVAL-PERF-001"]
+verify = ["./scripts/verify-release-quality.sh", "./scripts/verify-completion.sh"]
+notes = "Run fast PTY/keymap/flow/snapshot tests on normal CI, schedule fresh-Poky and compatibility jobs with caches and concurrency limits, publish ANSI/screenshots/logs/reports on failure, and require the complete release-quality gate before a release tag. Keep live-network evidence distinct from deterministic fixture tests."
+
+# -----------------------------------------------------------------------------
+# M9 — Utility workbench and embedded native shell
+# -----------------------------------------------------------------------------
+
+[[task]]
+id = "UTIL-001"
+milestone = "M9"
+title = "Complete the Yocto utility workbench"
+status = "NOT_STARTED"
+priority = 100
+required = true
+depends_on = ["UTIL-CATALOG-001", "UTIL-RUNNER-001", "UTIL-MENU-001", "UTIL-DEVTOOL-001", "UTIL-RECIPETOOL-001", "UTIL-LAYERS-001", "UTIL-PKGDATA-001", "UTIL-CORE-001", "UTIL-ADVANCED-001", "UTIL-DOC-001"]
+verify = ["./scripts/verify-utility-coverage.sh"]
+notes = "Parent utility gate. Required utilities must have typed common workflows, capability-aware menus, exact previews, persistent jobs, cancellation, bounded output, and a safe advanced argument mode. Unsupported or unavailable tools must be visible with precise reasons rather than silently omitted."
+
+[[task]]
+id = "UTIL-CATALOG-001"
+milestone = "M9"
+title = "Define a versioned Yocto utility capability catalog"
+status = "NOT_STARTED"
+priority = 100
+required = true
+depends_on = ["RELVAL-SPEC-001"]
+verify = ["test -s docs/utility-catalog.md", "cargo test -p yoctui-model utility_catalog", "./scripts/verify-utility-coverage.sh --catalog-only"]
+notes = "Inventory every supported utility and task, including oe-init-build-env, bitbake, devtool, recipetool, bitbake-layers, runqemu, wic, kas, oe-pkgdata-util, bitbake-getvar, bitbake-diffsigs, bitbake-dumpsig, oe-find-native-sysroot, sstate-cache-management.sh, buildhistory-diff, yocto-check-layer, yocto-layer, yocto-bsp, yocto-kernel, pybootchartgui, toaster, CVE/SPDX helpers, selftests, resulttool, archive/pull-request helpers, cleanup tools, locked signatures, whatchanged, PR/hash services, and setup/internal commands. Classify each as typed workflow, expert launcher, informational/internal, or intentionally excluded with rationale."
+
+[[task]]
+id = "UTIL-RUNNER-001"
+milestone = "M9"
+title = "Add a shared safe external-utility runner"
+status = "NOT_STARTED"
+priority = 101
+required = true
+depends_on = ["UTIL-CATALOG-001", "JOB-002"]
+verify = ["cargo test -p yoctui-model utility_runner", "cargo test -p yoctui-bitbake utility_runner", "cargo test -p yoctui-app utility_runner", "cargo test -p yoctui -- utility_runner"]
+notes = "Implement typed executable identity, build/source working-directory policy, environment snapshot, exact argv preview, persistent job lifecycle, stdout/stderr separation, bounded lines/history, timeout, process-group cancellation, exit status, artifact hints, and capability refresh. Advanced arguments are parsed into argv without shell evaluation; reject NUL/control bytes, preserve quoted whitespace, show indexed argv, and require stronger confirmation for destructive/network/root-sensitive operations."
+
+[[task]]
+id = "UTIL-MENU-001"
+milestone = "M9"
+title = "Add contextual utility menus and expert argument forms"
+status = "NOT_STARTED"
+priority = 102
+required = true
+depends_on = ["UTIL-RUNNER-001"]
+verify = ["cargo test -p yoctui-model utility_menu", "cargo test -p yoctui-app utility_menu", "cargo test -p yoctui-ui utility_menu", "cargo test -p yoctui -- utility_menu"]
+notes = "Add a Utilities workspace and contextual menus from Recipes, Layers, Packages, Images, Testing, Security, QA, and Maintenance. Common operations use typed forms. Expert mode provides executable-specific free-argument text converted to shell-free argv with exact preview, working directory, environment, warnings, history, rerun, copy-command, cancellation, and output inspection. Never expose internal worker daemons as casually launchable commands."
+
+[[task]]
+id = "UTIL-DEVTOOL-001"
+milestone = "M9"
+title = "Cover common Devtool recipe workflows"
+status = "NOT_STARTED"
+priority = 103
+required = true
+depends_on = ["UTIL-MENU-001", "DEVTOOL-001"]
+verify = ["cargo test -p yoctui -- utility_devtool", "./scripts/test-utility-fixtures.sh devtool"]
+notes = "Ensure typed UI coverage for status, add, modify, edit-recipe, build, build-image, deploy-target, undeploy-target, update-recipe, finish, reset, menuconfig, extract, sync, and upgrade where supported by the detected version. Reuse authoritative recipe/workspace state, provide exact previews and eligibility reasons, and expose remaining version-specific subcommands through safe expert argv mode."
+
+[[task]]
+id = "UTIL-RECIPETOOL-001"
+milestone = "M9"
+title = "Add common Recipetool recipe workflows"
+status = "NOT_STARTED"
+priority = 104
+required = true
+depends_on = ["UTIL-MENU-001"]
+verify = ["cargo test -p yoctui -- utility_recipetool", "./scripts/test-utility-fixtures.sh recipetool"]
+notes = "Add typed create, appendfile, newappend, setvar, and create-spdx/source-analysis workflows as supported by the detected recipetool version. Provide source/destination pickers, layer-aware output paths, preview generated files, protect existing files, refresh recipe/layer inventories after success, and retain expert argv access for uncommon plugins."
+
+[[task]]
+id = "UTIL-LAYERS-001"
+milestone = "M9"
+title = "Cover common bitbake-layers operations"
+status = "NOT_STARTED"
+priority = 105
+required = true
+depends_on = ["UTIL-MENU-001", "LAYERS-001"]
+verify = ["cargo test -p yoctui -- utility_bitbake_layers", "./scripts/test-utility-fixtures.sh bitbake-layers"]
+notes = "Add typed show-layers, show-overlayed, show-appends, show-recipes, show-cross-depends, flatten, create-layer, add-layer, remove-layer, save-build-conf, and layerindex-fetch workflows when available. Make read-only queries directly inspectable; require preview/confirmation and post-operation refresh for mutations; bound flatten destinations and prevent source-tree overwrite."
+
+[[task]]
+id = "UTIL-PKGDATA-001"
+milestone = "M9"
+title = "Cover common oe-pkgdata-util package workflows"
+status = "NOT_STARTED"
+priority = 106
+required = true
+depends_on = ["UTIL-MENU-001", "PKG-001"]
+verify = ["cargo test -p yoctui -- utility_pkgdata", "./scripts/test-utility-fixtures.sh oe-pkgdata-util"]
+notes = "Add typed lookup-pkg, list-pkgs, list-pkg-files, find-path, read-value, lookup-recipe, package-info, list-pkg-rdepends, list-pkg-files, and glob/filter workflows according to detected help. Link results to Packages, Recipes, Images, files, dependency navigation, and copy/open actions. Preserve explicit unavailable state when pkgdata has not been generated."
+
+[[task]]
+id = "UTIL-CORE-001"
+milestone = "M9"
+title = "Integrate common BitBake and environment utilities"
+status = "NOT_STARTED"
+priority = 107
+required = true
+depends_on = ["UTIL-MENU-001"]
+verify = ["cargo test -p yoctui -- utility_core", "./scripts/test-utility-fixtures.sh core"]
+notes = "Provide typed or contextual workflows for bitbake targets/tasks/force/env/graph, bitbake-getvar, dumpsig/diffsigs, whatchanged, oe-find-native-sysroot, oe-run-native, kas checkout/build/shell/lock where installed, and buildhistory-diff. Treat oe-init-build-env, oe-setup-builddir, and oe-buildenv-internal as environment/setup capabilities rather than arbitrary child jobs; show their resolved state and exact remediation."
+
+[[task]]
+id = "UTIL-ADVANCED-001"
+milestone = "M9"
+title = "Integrate advanced QA, maintenance, and release utilities"
+status = "NOT_STARTED"
+priority = 108
+required = true
+depends_on = ["UTIL-MENU-001", "MAINT-001", "QA-001", "SEC-001", "TEST-001"]
+verify = ["cargo test -p yoctui -- utility_advanced", "./scripts/test-utility-fixtures.sh advanced"]
+notes = "Expose capability-aware menus for resulttool, oe-selftest, bitbake-selftest, yocto-check-layer, patchreview, CVE mapping/check helpers, SPDX tasks, sstate/cache tools, cleanup-workdir, wipe-sysroot, gen-lockedsig-cache, build-compare, oe-git-archive, create/send-pull-request, PR service tools, and hash service diagnostics. Internal workers/servers such as bitbake-worker, bitbake-prserv, and bitbake-hashserv must be diagnostic/managed-service entries, not unrestricted one-key launches."
+
+[[task]]
+id = "UTIL-DOC-001"
+milestone = "M9"
+title = "Document utility coverage, safety, and extension points"
+status = "NOT_STARTED"
+priority = 109
+required = true
+depends_on = ["UTIL-DEVTOOL-001", "UTIL-RECIPETOOL-001", "UTIL-LAYERS-001", "UTIL-PKGDATA-001", "UTIL-CORE-001", "UTIL-ADVANCED-001"]
+verify = ["test -s docs/utility-catalog.md", "test -s docs/operator-guide.md", "./scripts/check-docs.sh", "./scripts/verify-utility-coverage.sh"]
+notes = "Document every utility's typed coverage, expert-mode availability, supported versions, required environment, mutation/network/root risk, output/artifact handling, and intentional exclusions. Add a contributor contract for new adapters and require catalog-to-code coverage checks."
+
+[[task]]
+id = "SHELL-001"
+milestone = "M9"
+title = "Complete the embedded native shell workspace"
+status = "NOT_STARTED"
+priority = 110
+required = true
+depends_on = ["SHELL-MODEL-001", "SHELL-PTY-001", "SHELL-TERM-001", "SHELL-UI-001", "SHELL-INTEGRATION-001", "SHELL-TEST-001", "SHELL-DOC-001"]
+verify = ["./scripts/test-embedded-shell.sh"]
+notes = "Parent embedded-shell gate. Users can open a real interactive shell inside Yoctui without leaving the alternate-screen application, while preserving terminal correctness, resize, job isolation, security boundaries, scrollback, copy mode, and exact return to prior focus."
+
+[[task]]
+id = "SHELL-MODEL-001"
+milestone = "M9"
+title = "Model embedded shell sessions and input ownership"
+status = "NOT_STARTED"
+priority = 110
+required = true
+depends_on = ["UTIL-RUNNER-001"]
+verify = ["cargo test -p yoctui-model embedded_shell", "cargo test -p yoctui-app embedded_shell"]
+notes = "Define stable shell session IDs, lifecycle, build/source/current working directory, environment identity, foreground/copy/search modes, bounded scrollback metadata, exit status, unread activity, restart/close confirmation, and exclusive input ownership. Reserve an explicit escape chord that always returns input to Yoctui and cannot be swallowed by the child shell."
+
+[[task]]
+id = "SHELL-PTY-001"
+milestone = "M9"
+title = "Add a native PTY shell backend"
+status = "NOT_STARTED"
+priority = 111
+required = true
+depends_on = ["SHELL-MODEL-001"]
+verify = ["cargo test -p yoctui-shell pty_backend", "./scripts/test-embedded-shell.sh --backend"]
+notes = "Spawn the user's configured shell through a real PTY with validated cwd and inherited initialized Yocto environment, process-group/session ownership, nonblocking reads/writes, resize propagation, bounded buffering, graceful HUP/TERM/KILL shutdown, child-tree cleanup, exit status, and no shell interpolation by Yoctui. Isolate the backend in a dedicated crate/module and never run it on the UI thread."
+
+[[task]]
+id = "SHELL-TERM-001"
+milestone = "M9"
+title = "Embed a terminal-emulation state machine"
+status = "NOT_STARTED"
+priority = 112
+required = true
+depends_on = ["SHELL-PTY-001"]
+verify = ["cargo test -p yoctui-shell terminal_emulation", "./scripts/test-terminal-corpus.sh"]
+notes = "Use a maintained VT parser/emulator or a thoroughly tested bounded implementation supporting cursor movement, erase, colors/attributes, alternate screen, Unicode width, bracketed paste, application cursor keys, mouse opt-in, title/OSC filtering, and resize/reflow policy. Sanitize or ignore dangerous host-terminal control sequences and never forward child OSC clipboard/title operations without explicit policy."
+
+[[task]]
+id = "SHELL-UI-001"
+milestone = "M9"
+title = "Render and operate the embedded shell workspace"
+status = "NOT_STARTED"
+priority = 113
+required = true
+depends_on = ["SHELL-TERM-001"]
+verify = ["cargo test -p yoctui-ui embedded_shell", "cargo test -p yoctui-app embedded_shell_input"]
+notes = "Add a Shell Navigator destination or dockable workspace with full-screen focus, visible session/cwd/status header, scrollback, copy/search mode, selection, paste confirmation for multiline text, resize, multiple named sessions within a bounded limit, and clear escape/close/restart shortcuts. Normal shell keystrokes go to the PTY only while shell focus is active; Yoctui dialogs and emergency exit retain priority."
+
+[[task]]
+id = "SHELL-INTEGRATION-001"
+milestone = "M9"
+title = "Integrate shell sessions with Yocto context and utilities"
+status = "NOT_STARTED"
+priority = 114
+required = true
+depends_on = ["SHELL-UI-001", "UTIL-MENU-001"]
+verify = ["cargo test -p yoctui -- embedded_shell_integration"]
+notes = "Open shells at build directory, source directory, selected layer/file/recipe workspace, SDK environment, or user-selected safe directory. Allow utility/job output to open in a new shell only by explicit choice. Preserve initialized BitBake variables without re-sourcing. Display when environment or cwd becomes stale and provide controlled refresh/restart rather than silently mutating a running shell."
+
+[[task]]
+id = "SHELL-TEST-001"
+milestone = "M9"
+title = "Add PTY end-to-end tests for the embedded shell"
+status = "NOT_STARTED"
+priority = 115
+required = true
+depends_on = ["SHELL-INTEGRATION-001", "RELVAL-PTY-001"]
+verify = ["./scripts/test-embedded-shell.sh", "cargo test -p yoctui-e2e embedded_shell"]
+notes = "Drive a real shell through the outer Yoctui PTY and nested child PTY. Verify prompt/command/output, interactive programs, Ctrl+C/Ctrl+Z, application cursor mode, resize, Unicode, colors, scrollback/search/copy, paste protection, exit/restart, child-tree cleanup, shell-to-Yoctui escape, focus restoration, build-directory environment, and terminal restoration. Capture both outer and inner terminal evidence on failure."
+
+[[task]]
+id = "SHELL-DOC-001"
+milestone = "M9"
+title = "Document embedded shell behavior and safety"
+status = "NOT_STARTED"
+priority = 116
+required = true
+depends_on = ["SHELL-TEST-001"]
+verify = ["test -s docs/embedded-shell.md", "./scripts/check-docs.sh"]
+notes = "Document input ownership, escape chord, supported terminal behavior, environment/cwd choices, session limits, paste and OSC policy, child cleanup, unsupported terminal features, troubleshooting, and the distinction between typed utility workflows, expert argv mode, and unrestricted commands entered manually inside the user's shell."

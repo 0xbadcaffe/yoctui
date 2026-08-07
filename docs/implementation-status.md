@@ -11,8 +11,9 @@ Status values:
 
 ## Current phase
 
-Product implementation and documentation are complete; all required roadmap
-and completion gates pass.
+Release-quality validation is underway. The acceptance contract is complete;
+the active task is the real PTY harness that subsequent keyboard, flow,
+visual, Poky, compatibility, performance, and CI tasks will consume.
 
 ## Current task
 
@@ -87,7 +88,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-No incomplete registry task remains.
+`RELVAL-PTY-001` is active and depends on completed `RELVAL-SPEC-001`.
 
 ## Rules
 
