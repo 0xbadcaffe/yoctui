@@ -1,0 +1,22 @@
+{
+  "budgets": {
+    "first_frame_seconds": 8,
+    "output_bytes": 262144
+  },
+  "samples": [
+    {
+      "width": 80,
+      "height": 24,
+      "first_frame_seconds": 0.009334655999964525,
+      "bytes": 1084,
+      "returncode": 1
+    },
+    {
+      "width": 160,
+      "height": 48,
+      "first_frame_seconds": 0.011856161000196153,
+      "bytes": 1086,
+      "returncode": 1
+    }
+  ]
+}
