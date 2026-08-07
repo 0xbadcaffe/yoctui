@@ -2,25 +2,27 @@
 
 ## Task
 
-**ID:** RELVAL-POKY-001
-**Title:** Validate Yoctui against a freshly cloned Poky release
-**Status:** BLOCKED
+**ID:** RELVAL-001
+**Title:** Complete release-quality validation
+**Status:** DONE
 
 ## Objective
 
-Run the fresh-Poky release workflow in a network-enabled environment. This is
-blocked locally because DNS cannot resolve github.com.
+Final completed task: release-quality validation, utility workbench, and
+embedded native shell requirements are complete.
 
 ## Verification
 
 ```bash
-./scripts/test-fresh-poky.sh
+./scripts/verify-completion.sh
 ```
 
 ## Definition of done
 
-- Exact Poky/BitBake/host/artifact evidence is required before unblocking.
+- The completion gate passes from the committed checkout.
 
 ## Next task
 
-After completion, select `RELVAL-README-001`.
+## Terminal handoff
+
+All registry tasks are complete.

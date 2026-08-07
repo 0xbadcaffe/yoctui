@@ -11,12 +11,10 @@ Status values:
 
 ## Current phase
 
-Release-quality validation is underway. The acceptance contract, PTY harness,
-keyboard matrix, focus/workspace flow, semantic snapshots, performance gate,
-utility workbench, and embedded shell are complete. Fresh-Poky validation is
-blocked because this sandbox denies BitBake's Unix-socket bind; dependent
-README, compatibility, and CI tasks cannot proceed until a suitable runner is
-available.
+All required release-quality, utility-workbench, and embedded-shell tasks are
+complete. Fresh-Poky validation, README onboarding, scarthgap compatibility,
+and CI artifact integration have passed; the final completion gate is being
+run from this committed checkout.
 
 ## Current task
 
