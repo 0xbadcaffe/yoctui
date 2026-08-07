@@ -19,9 +19,9 @@ complete; Devtool utility coverage is complete and the active task begins
 Recipetool and bitbake-layers workflows are complete; the active task covers
 oe-pkgdata-util workflows are complete; the active task covers core BitBake
 and environment utilities are complete; the active task covers advanced QA,
-maintenance, and release utilities are complete; the active task documents
-utility coverage and extension policy are complete; the active task begins the
-embedded shell session model.
+maintenance, and release utilities are complete; utility documentation is
+complete; the shell session model is complete and the active task adds the
+native PTY backend.
 
 ## Current task
 
@@ -97,7 +97,7 @@ See `docs/current-task.md`.
 ## Priority queue
 
 `RELVAL-POKY-001` is BLOCKED pending a network-enabled CI runner. The active
-eligible task is `SHELL-MODEL-001`.
+eligible task is `SHELL-PTY-001`.
 
 ## Rules
 
@@ -107,3 +107,6 @@ eligible task is `SHELL-MODEL-001`.
 - Every intentional UI change updates `docs/ui-spec.md`.
 - Every architecture change updates `docs/architecture.md`.
 - Completed tasks should include the implementing commit in the registry notes.
+embedded shell session model.
+embedded shell session model is complete; the active task adds the native PTY
+backend.
