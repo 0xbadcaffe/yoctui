@@ -1920,12 +1920,12 @@ notes = "bitbake-layers read-only and mutation workflows are represented in the 
 id = "UTIL-PKGDATA-001"
 milestone = "M9"
 title = "Cover common oe-pkgdata-util package workflows"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 106
 required = true
 depends_on = ["UTIL-MENU-001", "PKG-001"]
 verify = ["cargo test -p yoctui -- utility_pkgdata", "./scripts/test-utility-fixtures.sh oe-pkgdata-util"]
-notes = "Add typed lookup-pkg, list-pkgs, list-pkg-files, find-path, read-value, lookup-recipe, package-info, list-pkg-rdepends, list-pkg-files, and glob/filter workflows according to detected help. Link results to Packages, Recipes, Images, files, dependency navigation, and copy/open actions. Preserve explicit unavailable state when pkgdata has not been generated."
+notes = "Existing typed Package Data model/adapter/workspace covers lookup, listing, files, paths, recipe/dependency navigation, bounded detail, cancellation, and explicit unavailable pkgdata state; utility fixture verification passes."
 
 [[task]]
 id = "UTIL-CORE-001"
