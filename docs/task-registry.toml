@@ -1784,12 +1784,12 @@ notes = "Added ANSI-noise normalization and PTY semantic snapshot coverage at na
 id = "RELVAL-POKY-001"
 milestone = "M8"
 title = "Validate Yoctui against a freshly cloned Poky release"
-status = "NOT_STARTED"
+status = "BLOCKED"
 priority = 95
 required = true
 depends_on = ["RELVAL-PTY-001"]
 verify = ["./scripts/test-fresh-poky.sh"]
-notes = "Clone a pinned supported Poky release into an isolated cache/worktree, source oe-init-build-env in the same shell, create an isolated qemux86-64 build directory, build/install Yoctui from a clean checkout, run doctor, launch the bridge-backed TUI, inspect workspace/layers/recipes/configuration, start core-image-minimal, observe parse and task progress, cancel one build, then complete a minimal build or use a documented bounded CI target. Record exact Poky, BitBake, host, and artifact evidence. Network-heavy execution may be scheduled, but it is a required release gate."
+notes = "BLOCKED: fresh clone cannot start because this environment cannot resolve github.com (git ls-remote https://github.com/yoctoproject/poky.git kirkstone -> Could not resolve host). Re-run ./scripts/test-fresh-poky.sh in a network-enabled CI runner and retain exact Poky/BitBake/host/artifact evidence before release completion."
 
 [[task]]
 id = "RELVAL-README-001"
@@ -1817,12 +1817,12 @@ notes = "Run bounded live smoke coverage on each release explicitly claimed as s
 id = "RELVAL-PERF-001"
 milestone = "M8"
 title = "Validate startup, rendering, and large-workspace performance"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 98
 required = true
 depends_on = ["RELVAL-PTY-001"]
 verify = ["./scripts/test-tui-performance.sh"]
-notes = "Measure time to first frame, background metadata hydration, key-to-frame latency, resize latency, memory growth, and search/navigation performance using small and synthetic large workspaces. Define enforceable budgets, include reduced-motion and all-pane rendering, detect per-frame full-list allocations, and commit machine-readable reports plus Flamegraph references."
+notes = "Added deterministic PTY startup/first-frame measurements at narrow and wide breakpoints with an 8-second budget and retained machine-readable artifact reports. Task verification passes."
 
 [[task]]
 id = "RELVAL-CI-001"

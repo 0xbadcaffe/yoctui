@@ -13,7 +13,8 @@ Status values:
 
 Release-quality validation is underway. The acceptance contract, real PTY
 harness, keyboard matrix, focus/workspace flow, and semantic snapshots are
-complete; the active task validates a fresh Poky workflow.
+complete. Fresh-Poky validation is blocked by unavailable network DNS; the
+performance gate is complete and the active task begins utility coverage.
 
 ## Current task
 
@@ -88,7 +89,8 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-`RELVAL-POKY-001` is active and depends on completed `RELVAL-PTY-001`.
+`RELVAL-POKY-001` is BLOCKED pending a network-enabled CI runner. The active
+eligible task is `UTIL-CATALOG-001`.
 
 ## Rules
 

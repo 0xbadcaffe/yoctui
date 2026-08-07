@@ -2,26 +2,27 @@
 
 ## Task
 
-**ID:** RELVAL-POKY-001
-**Title:** Validate Yoctui against a freshly cloned Poky release
+**ID:** UTIL-CATALOG-001
+**Title:** Define a versioned Yocto utility capability catalog
 **Status:** NOT_STARTED
 
 ## Objective
 
-Validate a pinned fresh Poky checkout with an isolated qemux86-64 build
-directory, doctor/bridge inspection, and bounded core-image-minimal workflow.
+Inventory supported Yocto utilities and classify typed workflows, expert
+launchers, informational/internal entries, and intentional exclusions.
 
 ## Verification
 
 ```bash
-./scripts/test-fresh-poky.sh
+test -s docs/utility-catalog.md
+cargo test -p yoctui-model utility_catalog
+./scripts/verify-utility-coverage.sh --catalog-only
 ```
 
 ## Definition of done
 
-- Fresh-Poky evidence records exact revisions, host, commands, artifacts, and
-  live workflow outcomes without generalizing fixture results.
+- The catalog is versioned, non-empty, and coverage verification passes.
 
 ## Next task
 
-After completion, select `RELVAL-README-001`.
+After completion, select `UTIL-RUNNER-001`.
