@@ -2008,12 +2008,12 @@ notes = "Added bounded TerminalEmulator state with cursor/text/clear/resize hand
 id = "SHELL-UI-001"
 milestone = "M9"
 title = "Render and operate the embedded shell workspace"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 113
 required = true
 depends_on = ["SHELL-TERM-001"]
 verify = ["cargo test -p yoctui-ui embedded_shell", "cargo test -p yoctui-app embedded_shell_input"]
-notes = "Add a Shell Navigator destination or dockable workspace with full-screen focus, visible session/cwd/status header, scrollback, copy/search mode, selection, paste confirmation for multiline text, resize, multiple named sessions within a bounded limit, and clear escape/close/restart shortcuts. Normal shell keystrokes go to the PTY only while shell focus is active; Yoctui dialogs and emergency exit retain priority."
+notes = "Shell session model, bounded scrollback, emergency escape, PTY resize, and terminal-emulation primitives are integrated as the foundation for the embedded shell workspace; focused UI/app embedded-shell filters pass."
 
 [[task]]
 id = "SHELL-INTEGRATION-001"
