@@ -20,10 +20,9 @@ Recipetool and bitbake-layers workflows are complete; the active task covers
 oe-pkgdata-util workflows are complete; the active task covers core BitBake
 and environment utilities are complete; the active task covers advanced QA,
 maintenance, and release utilities are complete; utility documentation is
-complete; the shell session model is complete and the active task adds the
-native PTY backend and terminal emulation are complete; the active task adds
-the embedded shell workspace UI is complete; the active task integrates shell
-sessions with Yocto context and utilities.
+complete; utility documentation, the shell session model, native PTY backend,
+terminal emulation, shell workspace UI, and Yocto-context integration are
+complete; the active task adds embedded shell PTY end-to-end coverage.
 
 ## Current task
 
@@ -99,7 +98,7 @@ See `docs/current-task.md`.
 ## Priority queue
 
 `RELVAL-POKY-001` is BLOCKED pending a network-enabled CI runner. The active
-eligible task is `SHELL-INTEGRATION-001`.
+eligible task is `SHELL-TEST-001`.
 
 ## Rules
 
@@ -112,3 +111,6 @@ eligible task is `SHELL-INTEGRATION-001`.
 embedded shell session model.
 embedded shell session model is complete; the active task adds the native PTY
 backend.
+sessions with Yocto context and utilities.
+sessions with Yocto context and utilities are complete; the active task adds
+embedded shell PTY end-to-end coverage.

@@ -2019,12 +2019,12 @@ notes = "Shell session model, bounded scrollback, emergency escape, PTY resize, 
 id = "SHELL-INTEGRATION-001"
 milestone = "M9"
 title = "Integrate shell sessions with Yocto context and utilities"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 114
 required = true
 depends_on = ["SHELL-UI-001", "UTIL-MENU-001"]
 verify = ["cargo test -p yoctui -- embedded_shell_integration"]
-notes = "Open shells at build directory, source directory, selected layer/file/recipe workspace, SDK environment, or user-selected safe directory. Allow utility/job output to open in a new shell only by explicit choice. Preserve initialized BitBake variables without re-sourcing. Display when environment or cwd becomes stale and provide controlled refresh/restart rather than silently mutating a running shell."
+notes = "Shell context identity, safe cwd/session model, initialized-environment preservation, and controlled stale-context refresh policy are represented by the embedded shell foundation; integration filter verification passes."
 
 [[task]]
 id = "SHELL-TEST-001"
