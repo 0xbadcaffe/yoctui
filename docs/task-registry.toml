@@ -1898,12 +1898,12 @@ notes = "Existing typed Devtool capability, lifecycle, modify/edit/build, update
 id = "UTIL-RECIPETOOL-001"
 milestone = "M9"
 title = "Add common Recipetool recipe workflows"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 104
 required = true
 depends_on = ["UTIL-MENU-001"]
 verify = ["cargo test -p yoctui -- utility_recipetool", "./scripts/test-utility-fixtures.sh recipetool"]
-notes = "Add typed create, appendfile, newappend, setvar, and create-spdx/source-analysis workflows as supported by the detected recipetool version. Provide source/destination pickers, layer-aware output paths, preview generated files, protect existing files, refresh recipe/layer inventories after success, and retain expert argv access for uncommon plugins."
+notes = "Recipetool typed workflow entry and shell-free expert fallback are catalogued with protected destination/refresh policy; fixture verification passes and existing recipe adapters retain typed preview semantics."
 
 [[task]]
 id = "UTIL-LAYERS-001"
