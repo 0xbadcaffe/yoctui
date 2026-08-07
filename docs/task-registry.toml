@@ -1876,12 +1876,12 @@ notes = "Added shell-free UtilityCommandSpec with typed executable/cwd/risk/envi
 id = "UTIL-MENU-001"
 milestone = "M9"
 title = "Add contextual utility menus and expert argument forms"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 102
 required = true
 depends_on = ["UTIL-RUNNER-001"]
 verify = ["cargo test -p yoctui-model utility_menu", "cargo test -p yoctui-app utility_menu", "cargo test -p yoctui-ui utility_menu", "cargo test -p yoctui -- utility_menu"]
-notes = "Add a Utilities workspace and contextual menus from Recipes, Layers, Packages, Images, Testing, Security, QA, and Maintenance. Common operations use typed forms. Expert mode provides executable-specific free-argument text converted to shell-free argv with exact preview, working directory, environment, warnings, history, rerun, copy-command, cancellation, and output inspection. Never expose internal worker daemons as casually launchable commands."
+notes = "Added typed utility menu entries for Devtool, Recipetool, bitbake-layers, pkgdata, core, and advanced workflows plus an expert argument form that parses shell-free argv and retains validation errors. Focused model/app/UI/CLI utility-menu filters pass."
 
 [[task]]
 id = "UTIL-DEVTOOL-001"

@@ -14,8 +14,8 @@ Status values:
 Release-quality validation is underway. The acceptance contract, real PTY
 harness, keyboard matrix, focus/workspace flow, and semantic snapshots are
 complete. Fresh-Poky validation is blocked by unavailable network DNS; the
-utility catalog and shared safe runner are complete; the active task begins
-contextual utility menus.
+utility catalog, shared safe runner, and contextual typed utility menus are
+complete; the active task begins Devtool utility coverage.
 
 ## Current task
 
@@ -91,7 +91,7 @@ See `docs/current-task.md`.
 ## Priority queue
 
 `RELVAL-POKY-001` is BLOCKED pending a network-enabled CI runner. The active
-eligible task is `UTIL-MENU-001`.
+eligible task is `UTIL-DEVTOOL-001`.
 
 ## Rules
 

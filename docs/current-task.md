@@ -2,29 +2,27 @@
 
 ## Task
 
-**ID:** UTIL-MENU-001
-**Title:** Add contextual utility menus and expert argument forms
+**ID:** UTIL-DEVTOOL-001
+**Title:** Cover common Devtool recipe workflows
 **Status:** NOT_STARTED
 
 ## Objective
 
-Add a Utilities workspace and contextual typed menus, with safe expert argv
-forms, exact previews, warnings, history, cancellation, and output inspection.
+Ensure typed UI coverage for common Devtool recipe/workspace workflows with
+exact previews, eligibility reasons, and version-aware expert argv fallback.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model utility_menu
-cargo test -p yoctui-app utility_menu
-cargo test -p yoctui-ui utility_menu
-cargo test -p yoctui -- utility_menu
+cargo test -p yoctui -- utility_devtool
+./scripts/test-utility-fixtures.sh devtool
 ```
 
 ## Definition of done
 
-- Common operations use typed forms; expert operations use the shared shell-free
-  runner and preserve exact previews, warnings, history, and cancellation.
+- Devtool common operations use typed forms with capability-aware disabled
+  reasons and safe expert argv fallback.
 
 ## Next task
 
-After completion, select `UTIL-DEVTOOL-001`.
+After completion, select `UTIL-RECIPETOOL-001`.
