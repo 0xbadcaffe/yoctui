@@ -2,27 +2,28 @@
 
 ## Task
 
-**ID:** UTIL-ADVANCED-001
-**Title:** Integrate advanced QA, maintenance, and release utilities
+**ID:** UTIL-DOC-001
+**Title:** Document utility coverage, safety, and extension points
 **Status:** NOT_STARTED
 
 ## Objective
 
-Expose capability-aware menus for advanced QA, maintenance, release, CVE/SPDX,
-cache, archive, pull-request, and service diagnostics.
+Document every utility's typed coverage, expert-mode availability, supported
+versions, environment, risk, output handling, and intentional exclusions.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui -- utility_advanced
-./scripts/test-utility-fixtures.sh advanced
+test -s docs/utility-catalog.md
+test -s docs/operator-guide.md
+./scripts/check-docs.sh
+./scripts/verify-utility-coverage.sh
 ```
 
 ## Definition of done
 
-- Advanced utility workflows preserve typed safety, capability detection,
-  bounded evidence, and managed-service restrictions.
+- Catalog and operator documentation match utility coverage and safety policy.
 
 ## Next task
 
-After completion, select `UTIL-DOC-001`.
+After completion, select `SHELL-MODEL-001`.
