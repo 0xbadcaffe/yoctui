@@ -11,22 +11,12 @@ Status values:
 
 ## Current phase
 
-Release-quality validation is underway. The acceptance contract, real PTY
-harness, keyboard matrix, focus/workspace flow, and semantic snapshots are
-complete. Fresh-Poky validation is blocked by unavailable network DNS; the
-utility catalog, shared safe runner, and contextual typed utility menus are
-complete; Devtool utility coverage is complete and the active task begins
-Recipetool and bitbake-layers workflows are complete; the active task covers
-oe-pkgdata-util workflows are complete; the active task covers core BitBake
-and environment utilities are complete; the active task covers advanced QA,
-maintenance, and release utilities are complete; utility documentation is
-complete; utility documentation, the shell session model, native PTY backend,
-terminal emulation, shell workspace UI, and Yocto-context integration are
-complete; embedded shell PTY end-to-end coverage is complete and the active
-task documents shell behavior and safety is complete; the active task runs the
-utility and embedded-shell parent gates are complete. Fresh-Poky validation
-remains BLOCKED by unavailable network DNS; no eligible dependent release task
-can proceed until a network-enabled runner supplies live evidence.
+Release-quality validation is underway. The acceptance contract, PTY harness,
+keyboard matrix, focus/workspace flow, semantic snapshots, performance gate,
+utility workbench, and embedded shell are complete. Fresh-Poky validation is
+blocked because this sandbox denies BitBake's Unix-socket bind; dependent
+README, compatibility, and CI tasks cannot proceed until a suitable runner is
+available.
 
 ## Current task
 

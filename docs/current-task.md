@@ -5,7 +5,6 @@
 **ID:** RELVAL-POKY-001
 **Title:** Validate Yoctui against a freshly cloned Poky release
 **Status:** BLOCKED
-**Status:** NOT_STARTED
 
 ## Objective
 

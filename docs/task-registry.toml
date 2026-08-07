@@ -1789,7 +1789,7 @@ priority = 95
 required = true
 depends_on = ["RELVAL-PTY-001"]
 verify = ["./scripts/test-fresh-poky.sh"]
-notes = "BLOCKED: fresh clone cannot start because this environment cannot resolve github.com (git ls-remote https://github.com/yoctoproject/poky.git kirkstone -> Could not resolve host). Re-run ./scripts/test-fresh-poky.sh in a network-enabled CI runner and retain exact Poky/BitBake/host/artifact evidence before release completion."
+notes = "BLOCKED: a local fresh clone now succeeds, but the required BitBake validation fails in this sandbox because bitbake-server cannot bind its Unix socket (PermissionError: [Errno 1] Operation not permitted; see artifacts/release-quality/poky/doctor.txt). Re-run ./scripts/test-fresh-poky.sh in a runner permitting Unix sockets and complete the core-image-minimal workflow before release completion."
 
 [[task]]
 id = "RELVAL-README-001"
