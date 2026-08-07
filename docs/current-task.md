@@ -2,27 +2,26 @@
 
 ## Task
 
-**ID:** RELVAL-VISUAL-001
-**Title:** Add semantic and visual terminal regression tests
+**ID:** RELVAL-POKY-001
+**Title:** Validate Yoctui against a freshly cloned Poky release
 **Status:** NOT_STARTED
 
 ## Objective
 
-Capture normalized terminal-cell snapshots for workspaces, dialogs, lifecycle
-states, themes, no-color, reduced motion, Unicode/path content, and supported
-terminal breakpoints.
+Validate a pinned fresh Poky checkout with an isolated qemux86-64 build
+directory, doctor/bridge inspection, and bounded core-image-minimal workflow.
 
 ## Verification
 
 ```bash
-./scripts/test-tui-snapshots.sh
+./scripts/test-fresh-poky.sh
 ```
 
 ## Definition of done
 
-- Semantic and visual snapshots are deterministic, bounded, and retain failure
-  diffs and rendered artifacts.
+- Fresh-Poky evidence records exact revisions, host, commands, artifacts, and
+  live workflow outcomes without generalizing fixture results.
 
 ## Next task
 
-After completion, select `RELVAL-POKY-001`.
+After completion, select `RELVAL-README-001`.

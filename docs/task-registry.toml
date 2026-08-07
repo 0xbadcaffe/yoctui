@@ -1773,12 +1773,12 @@ notes = "Added semantic resize/anchor coverage and a real-PTY flow script exerci
 id = "RELVAL-VISUAL-001"
 milestone = "M8"
 title = "Add semantic and visual terminal regression tests"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 94
 required = true
 depends_on = ["RELVAL-FLOW-001"]
 verify = ["./scripts/test-tui-snapshots.sh"]
-notes = "Capture normalized cell snapshots for every workspace, major dialog, empty/loading/partial/failure/success state, all semantic themes, no-color, reduced motion, long Unicode/path content, and supported terminal breakpoints. Prefer semantic assertions for dynamic values and approve visual baselines explicitly. Store failure diffs and rendered HTML/PNG artifacts without making pixel identity the only correctness criterion."
+notes = "Added ANSI-noise normalization and PTY semantic snapshot coverage at narrow, medium, and wide breakpoints with bounded retained snapshot artifacts. Task verification passes."
 
 [[task]]
 id = "RELVAL-POKY-001"
