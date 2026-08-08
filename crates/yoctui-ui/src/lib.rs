@@ -92,7 +92,7 @@ impl ThemePalette {
             return Self::monochrome();
         }
         match app.theme {
-            Theme::DarkPro => Self::packrat(
+            Theme::DarkPro => Self::packrat([
                 (28, 28, 28),
                 (36, 36, 36),
                 (68, 68, 68),
@@ -105,8 +105,8 @@ impl ThemePalette {
                 (215, 175, 0),
                 (215, 95, 95),
                 (175, 135, 215),
-            ),
-            Theme::WhiteClassic => Self::packrat(
+            ]),
+            Theme::WhiteClassic => Self::packrat([
                 (248, 248, 248),
                 (240, 240, 240),
                 (192, 192, 192),
@@ -119,8 +119,8 @@ impl ThemePalette {
                 (139, 105, 20),
                 (204, 34, 0),
                 (123, 61, 160),
-            ),
-            Theme::MatrixGreen => Self::packrat(
+            ]),
+            Theme::MatrixGreen => Self::packrat([
                 (0, 0, 0),
                 (6, 14, 6),
                 (20, 60, 20),
@@ -133,8 +133,8 @@ impl ThemePalette {
                 (136, 255, 0),
                 (255, 51, 0),
                 (136, 255, 136),
-            ),
-            Theme::VscodeDark => Self::packrat(
+            ]),
+            Theme::VscodeDark => Self::packrat([
                 (30, 30, 30),
                 (37, 37, 38),
                 (68, 68, 68),
@@ -147,8 +147,8 @@ impl ThemePalette {
                 (220, 220, 170),
                 (244, 71, 71),
                 (197, 134, 192),
-            ),
-            Theme::VscodeLight => Self::packrat(
+            ]),
+            Theme::VscodeLight => Self::packrat([
                 (255, 255, 255),
                 (243, 243, 243),
                 (200, 200, 200),
@@ -161,8 +161,8 @@ impl ThemePalette {
                 (120, 83, 0),
                 (205, 49, 49),
                 (175, 0, 219),
-            ),
-            Theme::AccessibleDark => Self::packrat(
+            ]),
+            Theme::AccessibleDark => Self::packrat([
                 (18, 18, 18),
                 (28, 28, 30),
                 (92, 92, 98),
@@ -175,8 +175,8 @@ impl ThemePalette {
                 (240, 228, 66),
                 (213, 94, 0),
                 (204, 121, 167),
-            ),
-            Theme::SoftLight => Self::packrat(
+            ]),
+            Theme::SoftLight => Self::packrat([
                 (252, 252, 253),
                 (241, 243, 245),
                 (164, 170, 178),
@@ -189,8 +189,8 @@ impl ThemePalette {
                 (139, 100, 0),
                 (184, 44, 52),
                 (128, 70, 160),
-            ),
-            Theme::HighContrast => Self::packrat(
+            ]),
+            Theme::HighContrast => Self::packrat([
                 (0, 0, 0),
                 (12, 12, 12),
                 (210, 210, 210),
@@ -203,25 +203,26 @@ impl ThemePalette {
                 (255, 235, 40),
                 (255, 70, 70),
                 (255, 100, 235),
-            ),
+            ]),
             Theme::Monochrome => Self::monochrome(),
         }
     }
 
-    fn packrat(
-        bg: (u8, u8, u8),
-        _bg2: (u8, u8, u8),
-        border: (u8, u8, u8),
-        selected: (u8, u8, u8),
-        fg: (u8, u8, u8),
-        fg2: (u8, u8, u8),
-        fg3: (u8, u8, u8),
-        cyan: (u8, u8, u8),
-        green: (u8, u8, u8),
-        yellow: (u8, u8, u8),
-        red: (u8, u8, u8),
-        magenta: (u8, u8, u8),
-    ) -> Self {
+    fn packrat(colors: [(u8, u8, u8); 12]) -> Self {
+        let [
+            bg,
+            _bg2,
+            border,
+            selected,
+            fg,
+            fg2,
+            fg3,
+            cyan,
+            green,
+            yellow,
+            red,
+            magenta,
+        ] = colors;
         let rgb = |(r, g, b)| Color::Rgb(r, g, b);
         Self {
             foreground: rgb(fg),
