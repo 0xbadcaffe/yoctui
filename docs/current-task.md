@@ -2,25 +2,26 @@
 
 ## Task
 
-**ID:** THEME-PACKRAT-004
-**Title:** Update source-preview palette assertions
+**ID:** CI-RUFF-001
+**Title:** Pin bridge Ruff policy against evolving defaults
 **Status:** DONE
 
 ## Objective
 
-Final completed task: align source-preview TestBackend assertions with the Dark
-Pro Packrat palette.
+Final completed task: make the bridge's deliberate adapter-boundary lint policy
+explicit across Ruff releases.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui bitbake_preview_highlights_assignments_and_comments
-cargo test --workspace --all-features
+ruff check bridge
+ruff format --check bridge
+python3 -m pytest bridge/tests
 ```
 
 ## Definition of done
 
-- Source-preview semantic colors match Dark Pro exactly.
+- Bridge lint and tests pass with the configured Ruff policy.
 
 ## Next task
 

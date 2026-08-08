@@ -5,3 +5,8 @@ patch = ["subprocess"]
 
 [tool.coverage.report]
 omit = ["bridge/tests/*"]
+
+[tool.ruff.lint]
+# The bridge deliberately normalizes BitBake's third-party exception surface at
+# its adapter boundary. Keep that policy explicit as Ruff evolves.
+ignore = ["BLE001", "EXE001", "I001", "RUF012", "S110", "UP022"]
