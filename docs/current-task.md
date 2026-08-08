@@ -2,25 +2,24 @@
 
 ## Task
 
-**ID:** THEME-PACKRAT-002
-**Title:** Render exact Packrat semantic palettes
+**ID:** THEME-PACKRAT-003
+**Title:** Preserve legacy theme configuration compatibility
 **Status:** DONE
 
 ## Objective
 
-Final completed task: map every Yoctui semantic role to Packrat's eight exact
-RGB palettes while retaining `--no-color` as an accessibility override.
+Final completed task: preserve existing `dark` and `light` configuration values
+while serializing the Packrat theme names.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui theme
+cargo test -p yoctui settings_session_overrides_config_but_cli_no_color_remains_authoritative
 ```
 
 ## Definition of done
 
-- All semantic UI roles use Packrat's palette values.
-- TestBackend coverage preserves no-color accessibility semantics.
+- Legacy configuration values deserialize to their Packrat equivalents.
 
 ## Next task
 

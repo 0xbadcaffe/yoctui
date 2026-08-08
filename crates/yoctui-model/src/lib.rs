@@ -91,7 +91,9 @@ pub enum FocusTarget {
 #[serde(rename_all = "kebab-case")]
 pub enum Theme {
     #[default]
+    #[serde(alias = "dark")]
     DarkPro,
+    #[serde(alias = "light")]
     WhiteClassic,
     MatrixGreen,
     VscodeDark,
