@@ -2090,7 +2090,7 @@ priority = 120
 required = true
 depends_on = ["THEME-PACKRAT-001"]
 verify = ["cargo test -p yoctui-ui theme", "cargo test -p yoctui-ui settings"]
-notes = "Every semantic UI role maps to Packrat's exact RGB palette values; TestBackend coverage verifies semantic rendering and no-color remains attribute-only."
+notes = "Every semantic UI role maps to Packrat's exact RGB palette values through a fixed-size palette record; TestBackend coverage verifies semantic rendering and no-color remains attribute-only."
 
 [[task]]
 id = "THEME-PACKRAT-003"
