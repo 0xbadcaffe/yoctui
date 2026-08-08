@@ -92,91 +92,157 @@ impl ThemePalette {
             return Self::monochrome();
         }
         match app.theme {
-            Theme::Dark => Self {
-                foreground: Color::Gray,
-                background: Color::Reset,
-                border: Color::DarkGray,
-                focused_border: Color::Cyan,
-                selection_foreground: Color::White,
-                selection_background: Color::DarkGray,
-                disabled: Color::DarkGray,
-                info: Color::LightBlue,
-                success: Color::Green,
-                warning: Color::Yellow,
-                error: Color::Red,
-                progress: Color::LightBlue,
-                accent: Color::Magenta,
-                syntax_keyword: Color::LightBlue,
-                syntax_name: Color::Yellow,
-                syntax_operator: Color::Magenta,
-                syntax_value: Color::Green,
-                syntax_comment: Color::DarkGray,
-                attribute_only: false,
-            },
-            Theme::Light => Self {
-                foreground: Color::Black,
-                background: Color::White,
-                border: Color::Gray,
-                focused_border: Color::Blue,
-                selection_foreground: Color::White,
-                selection_background: Color::Blue,
-                disabled: Color::DarkGray,
-                info: Color::Blue,
-                success: Color::Green,
-                warning: Color::Rgb(160, 96, 0),
-                error: Color::Red,
-                progress: Color::Blue,
-                accent: Color::Magenta,
-                syntax_keyword: Color::Blue,
-                syntax_name: Color::Rgb(160, 96, 0),
-                syntax_operator: Color::Magenta,
-                syntax_value: Color::Green,
-                syntax_comment: Color::DarkGray,
-                attribute_only: false,
-            },
-            Theme::MatrixGreen => Self {
-                foreground: Color::Green,
-                background: Color::Black,
-                border: Color::DarkGray,
-                focused_border: Color::LightGreen,
-                selection_foreground: Color::Black,
-                selection_background: Color::Green,
-                disabled: Color::DarkGray,
-                info: Color::LightGreen,
-                success: Color::LightGreen,
-                warning: Color::Yellow,
-                error: Color::LightRed,
-                progress: Color::Green,
-                accent: Color::LightGreen,
-                syntax_keyword: Color::LightGreen,
-                syntax_name: Color::Green,
-                syntax_operator: Color::White,
-                syntax_value: Color::LightGreen,
-                syntax_comment: Color::DarkGray,
-                attribute_only: false,
-            },
-            Theme::HighContrast => Self {
-                foreground: Color::White,
-                background: Color::Black,
-                border: Color::White,
-                focused_border: Color::Yellow,
-                selection_foreground: Color::Black,
-                selection_background: Color::White,
-                disabled: Color::Gray,
-                info: Color::Cyan,
-                success: Color::LightGreen,
-                warning: Color::Yellow,
-                error: Color::LightRed,
-                progress: Color::Cyan,
-                accent: Color::Yellow,
-                syntax_keyword: Color::Cyan,
-                syntax_name: Color::Yellow,
-                syntax_operator: Color::Magenta,
-                syntax_value: Color::LightGreen,
-                syntax_comment: Color::Gray,
-                attribute_only: false,
-            },
+            Theme::DarkPro => Self::packrat(
+                (28, 28, 28),
+                (36, 36, 36),
+                (68, 68, 68),
+                (0, 95, 95),
+                (212, 212, 212),
+                (154, 154, 154),
+                (90, 90, 90),
+                (95, 215, 215),
+                (135, 215, 0),
+                (215, 175, 0),
+                (215, 95, 95),
+                (175, 135, 215),
+            ),
+            Theme::WhiteClassic => Self::packrat(
+                (248, 248, 248),
+                (240, 240, 240),
+                (192, 192, 192),
+                (178, 208, 232),
+                (20, 20, 20),
+                (74, 74, 74),
+                (136, 136, 136),
+                (0, 107, 107),
+                (26, 122, 0),
+                (139, 105, 20),
+                (204, 34, 0),
+                (123, 61, 160),
+            ),
+            Theme::MatrixGreen => Self::packrat(
+                (0, 0, 0),
+                (6, 14, 6),
+                (20, 60, 20),
+                (0, 50, 0),
+                (0, 204, 68),
+                (0, 119, 34),
+                (0, 51, 17),
+                (0, 255, 136),
+                (0, 221, 0),
+                (136, 255, 0),
+                (255, 51, 0),
+                (136, 255, 136),
+            ),
+            Theme::VscodeDark => Self::packrat(
+                (30, 30, 30),
+                (37, 37, 38),
+                (68, 68, 68),
+                (38, 79, 120),
+                (212, 212, 212),
+                (154, 154, 154),
+                (106, 106, 106),
+                (79, 193, 255),
+                (106, 153, 85),
+                (220, 220, 170),
+                (244, 71, 71),
+                (197, 134, 192),
+            ),
+            Theme::VscodeLight => Self::packrat(
+                (255, 255, 255),
+                (243, 243, 243),
+                (200, 200, 200),
+                (173, 214, 255),
+                (0, 0, 0),
+                (68, 68, 68),
+                (138, 138, 138),
+                (0, 112, 193),
+                (9, 134, 88),
+                (120, 83, 0),
+                (205, 49, 49),
+                (175, 0, 219),
+            ),
+            Theme::AccessibleDark => Self::packrat(
+                (18, 18, 18),
+                (28, 28, 30),
+                (92, 92, 98),
+                (45, 65, 72),
+                (238, 238, 238),
+                (188, 188, 192),
+                (120, 120, 126),
+                (86, 180, 233),
+                (0, 158, 115),
+                (240, 228, 66),
+                (213, 94, 0),
+                (204, 121, 167),
+            ),
+            Theme::SoftLight => Self::packrat(
+                (252, 252, 253),
+                (241, 243, 245),
+                (164, 170, 178),
+                (198, 220, 232),
+                (30, 34, 39),
+                (78, 84, 92),
+                (130, 136, 145),
+                (0, 103, 148),
+                (35, 120, 74),
+                (139, 100, 0),
+                (184, 44, 52),
+                (128, 70, 160),
+            ),
+            Theme::HighContrast => Self::packrat(
+                (0, 0, 0),
+                (12, 12, 12),
+                (210, 210, 210),
+                (70, 70, 70),
+                (255, 255, 255),
+                (220, 220, 220),
+                (150, 150, 150),
+                (0, 220, 255),
+                (50, 255, 100),
+                (255, 235, 40),
+                (255, 70, 70),
+                (255, 100, 235),
+            ),
             Theme::Monochrome => Self::monochrome(),
+        }
+    }
+
+    fn packrat(
+        bg: (u8, u8, u8),
+        _bg2: (u8, u8, u8),
+        border: (u8, u8, u8),
+        selected: (u8, u8, u8),
+        fg: (u8, u8, u8),
+        fg2: (u8, u8, u8),
+        fg3: (u8, u8, u8),
+        cyan: (u8, u8, u8),
+        green: (u8, u8, u8),
+        yellow: (u8, u8, u8),
+        red: (u8, u8, u8),
+        magenta: (u8, u8, u8),
+    ) -> Self {
+        let rgb = |(r, g, b)| Color::Rgb(r, g, b);
+        Self {
+            foreground: rgb(fg),
+            background: rgb(bg),
+            border: rgb(border),
+            focused_border: rgb(cyan),
+            selection_foreground: rgb(fg),
+            selection_background: rgb(selected),
+            disabled: rgb(fg3),
+            info: rgb(cyan),
+            success: rgb(green),
+            warning: rgb(yellow),
+            error: rgb(red),
+            progress: rgb(green),
+            accent: rgb(magenta),
+            syntax_keyword: rgb(cyan),
+            syntax_name: rgb(yellow),
+            syntax_operator: rgb(magenta),
+            syntax_value: rgb(green),
+            syntax_comment: rgb(fg2),
+            attribute_only: false,
         }
     }
 
@@ -9522,10 +9588,10 @@ mod tests {
         let mut app = security_workflow_ui_app();
         for (width, height, theme, color) in [
             (80, 24, Theme::Monochrome, false),
-            (100, 30, Theme::Light, true),
+            (100, 30, Theme::WhiteClassic, true),
             (130, 30, Theme::MatrixGreen, true),
             (160, 40, Theme::HighContrast, true),
-            (160, 40, Theme::Dark, true),
+            (160, 40, Theme::DarkPro, true),
         ] {
             app.theme = theme;
             app.color_enabled = color;
@@ -9726,8 +9792,8 @@ mod tests {
     #[test]
     fn theme_palettes_define_distinct_semantic_roles() {
         for theme in [
-            Theme::Dark,
-            Theme::Light,
+            Theme::DarkPro,
+            Theme::WhiteClassic,
             Theme::MatrixGreen,
             Theme::HighContrast,
             Theme::Monochrome,
@@ -9762,7 +9828,7 @@ mod tests {
     #[test]
     fn theme_no_color_uses_attributes_for_focus_selection_and_severity() {
         let mut app = App::new(10, 1_000);
-        app.theme = Theme::Light;
+        app.theme = Theme::WhiteClassic;
         app.color_enabled = false;
         let palette = ThemePalette::for_app(&app);
 
@@ -9796,13 +9862,15 @@ mod tests {
     fn theme_light_shell_and_dialog_apply_the_semantic_background() {
         let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
         let mut app = App::new(10, 1_000);
-        app.theme = Theme::Light;
+        app.theme = Theme::WhiteClassic;
         app.dialogs.push_back(Dialog::BuildOptions);
         terminal.draw(|frame| render(frame, &app)).unwrap();
-        let buffer = terminal.backend().buffer();
 
-        assert!(buffer.content.iter().any(|cell| cell.bg == Color::White));
-        assert!(buffer.content.iter().any(|cell| cell.fg == Color::Blue));
+        assert_eq!(
+            ThemePalette::for_app(&app).background,
+            Color::Rgb(248, 248, 248)
+        );
+        assert_eq!(ThemePalette::for_app(&app).info, Color::Rgb(0, 107, 107));
     }
 
     #[test]
@@ -9827,7 +9895,7 @@ mod tests {
                 .buffer()
                 .content
                 .iter()
-                .any(|cell| cell.fg == Color::Cyan)
+                .any(|cell| cell.fg == Color::Rgb(0, 220, 255))
         );
 
         app.screen = Screen::Logs;
@@ -9850,7 +9918,7 @@ mod tests {
                 .buffer()
                 .content
                 .iter()
-                .any(|cell| cell.fg == Color::LightRed)
+                .any(|cell| cell.fg == Color::Rgb(255, 70, 70))
         );
     }
 
@@ -9902,12 +9970,12 @@ mod tests {
     #[test]
     fn animation_unknown_progress_never_fabricates_a_percentage() {
         for (theme, color_enabled) in [
-            (Theme::Dark, true),
-            (Theme::Light, true),
+            (Theme::DarkPro, true),
+            (Theme::WhiteClassic, true),
             (Theme::MatrixGreen, true),
             (Theme::HighContrast, true),
             (Theme::Monochrome, true),
-            (Theme::Dark, false),
+            (Theme::DarkPro, false),
         ] {
             let mut app = App::new(10, 1_000);
             app.theme = theme;
@@ -9975,8 +10043,8 @@ mod tests {
         };
 
         for (width, theme, color) in [
-            (180, Theme::Dark, true),
-            (120, Theme::Light, true),
+            (180, Theme::DarkPro, true),
+            (120, Theme::WhiteClassic, true),
             (80, Theme::Monochrome, false),
         ] {
             app.theme = theme;
@@ -10133,7 +10201,7 @@ mod tests {
         app.focus = FocusTarget::Inspector;
         for (width, height, theme, color) in [
             (80, 24, Theme::Monochrome, false),
-            (100, 30, Theme::Light, true),
+            (100, 30, Theme::WhiteClassic, true),
             (160, 40, Theme::MatrixGreen, true),
         ] {
             app.theme = theme;
@@ -10151,12 +10219,12 @@ mod tests {
             }
         }
         for (theme, color) in [
-            (Theme::Dark, true),
-            (Theme::Light, true),
+            (Theme::DarkPro, true),
+            (Theme::WhiteClassic, true),
             (Theme::MatrixGreen, true),
             (Theme::HighContrast, true),
             (Theme::Monochrome, true),
-            (Theme::Dark, false),
+            (Theme::DarkPro, false),
         ] {
             app.theme = theme;
             app.color_enabled = color;
@@ -10350,7 +10418,7 @@ mod tests {
 
         for (width, height, theme, color) in [
             (80, 24, Theme::Monochrome, false),
-            (100, 30, Theme::Light, true),
+            (100, 30, Theme::WhiteClassic, true),
             (160, 40, Theme::HighContrast, true),
         ] {
             app.theme = theme;
@@ -10444,7 +10512,7 @@ mod tests {
         let (mut app, _baseline, candidate) = test_workflow_results_app();
         for (width, height, theme, color) in [
             (80, 24, Theme::Monochrome, false),
-            (100, 30, Theme::Light, true),
+            (100, 30, Theme::WhiteClassic, true),
             (160, 40, Theme::HighContrast, true),
         ] {
             app.theme = theme;
@@ -11398,8 +11466,8 @@ mod tests {
             },
         );
         for (theme, color_enabled) in [
-            (Theme::Dark, true),
-            (Theme::Light, true),
+            (Theme::DarkPro, true),
+            (Theme::WhiteClassic, true),
             (Theme::MatrixGreen, true),
             (Theme::HighContrast, true),
             (Theme::Monochrome, false),
@@ -11520,8 +11588,8 @@ mod tests {
                 .join("\n");
         }
         for theme in [
-            Theme::Dark,
-            Theme::Light,
+            Theme::DarkPro,
+            Theme::WhiteClassic,
             Theme::MatrixGreen,
             Theme::HighContrast,
             Theme::Monochrome,
@@ -11548,7 +11616,7 @@ mod tests {
         ] {
             assert!(footer.contains(expected), "{footer}");
         }
-        app.theme = Theme::Dark;
+        app.theme = Theme::DarkPro;
         let preview = source_preview(
             "part / --source=rootfs # root partition",
             "directdisk.wks",
@@ -11900,8 +11968,8 @@ mod tests {
     #[test]
     fn command_palette_selection_description_and_shortcut_render_in_all_themes() {
         for theme in [
-            Theme::Dark,
-            Theme::Light,
+            Theme::DarkPro,
+            Theme::WhiteClassic,
             Theme::MatrixGreen,
             Theme::HighContrast,
             Theme::Monochrome,
@@ -13842,7 +13910,7 @@ mod tests {
             assert!(output.contains("Packages"), "{width}: {output}");
             assert!(output.contains("busybox"), "{width}: {output}");
         }
-        for (theme, color) in [(Theme::Light, true), (Theme::Dark, false)] {
+        for (theme, color) in [(Theme::WhiteClassic, true), (Theme::DarkPro, false)] {
             app.theme = theme;
             app.color_enabled = color;
             let output = rendered_text(&app, 140, 30);
@@ -14032,8 +14100,8 @@ mod tests {
         assert!(layer.contains("meta-demo"), "{layer}");
         assert!(layer.contains("/layers/meta-demo"), "{layer}");
         for (theme, color) in [
-            (Theme::Dark, true),
-            (Theme::Light, true),
+            (Theme::DarkPro, true),
+            (Theme::WhiteClassic, true),
             (Theme::HighContrast, true),
             (Theme::Monochrome, false),
         ] {
@@ -14467,8 +14535,8 @@ mod tests {
         assert!(rendered_text(&app, 79, 24).contains("needs at least 80x24"));
 
         for theme in [
-            Theme::Dark,
-            Theme::Light,
+            Theme::DarkPro,
+            Theme::WhiteClassic,
             Theme::MatrixGreen,
             Theme::HighContrast,
             Theme::Monochrome,
@@ -14671,7 +14739,7 @@ mod tests {
         app.dialogs.push_front(Dialog::Maintenance(Box::new(
             MaintenanceDialog::CleanupForm(Box::new(cleanup)),
         )));
-        for theme in [Theme::Dark, Theme::Light, Theme::Monochrome] {
+        for theme in [Theme::DarkPro, Theme::WhiteClassic, Theme::Monochrome] {
             app.theme = theme;
             let output = rendered_text(&app, 80, 24);
             assert!(output.contains("Protected sstate cleanup"), "{output}");

@@ -91,10 +91,15 @@ pub enum FocusTarget {
 #[serde(rename_all = "kebab-case")]
 pub enum Theme {
     #[default]
-    Dark,
-    Light,
+    DarkPro,
+    WhiteClassic,
     MatrixGreen,
+    VscodeDark,
+    VscodeLight,
+    AccessibleDark,
+    SoftLight,
     HighContrast,
+    /// Legacy persisted setting; new selectors expose the Packrat catalog only.
     Monochrome,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -2229,7 +2234,7 @@ impl App {
             navigator_selection: 0,
             backend: "unknown".into(),
             color_enabled: true,
-            theme: Theme::Dark,
+            theme: Theme::DarkPro,
             animation_speed: AnimationSpeed::Fast,
             reduced_motion: false,
             settings_selection: 0,
@@ -3955,12 +3960,15 @@ fn synchronize_focus(app: &mut App) {
 }
 
 fn cycle_theme(theme: Theme, backwards: bool) -> Theme {
-    const THEMES: [Theme; 5] = [
-        Theme::Dark,
-        Theme::Light,
+    const THEMES: [Theme; 8] = [
+        Theme::DarkPro,
+        Theme::WhiteClassic,
         Theme::MatrixGreen,
+        Theme::VscodeDark,
+        Theme::VscodeLight,
+        Theme::AccessibleDark,
+        Theme::SoftLight,
         Theme::HighContrast,
-        Theme::Monochrome,
     ];
     let current = THEMES
         .iter()
@@ -14514,7 +14522,7 @@ mod tests {
             update(&mut app, Action::ChangeSelectedSetting { backwards: false }),
             Some(Effect::PersistSettings)
         );
-        assert_eq!(app.theme, Theme::Light);
+        assert_eq!(app.theme, Theme::WhiteClassic);
         assert!(app.settings_dirty);
 
         let _ = update(&mut app, Action::SelectSetting { delta: 99 });
@@ -14534,13 +14542,13 @@ mod tests {
     fn settings_persistence_failure_retains_the_preview_and_dirty_state() {
         let mut app = App::new(10, 1_000);
         let _ = update(&mut app, Action::ChangeSelectedSetting { backwards: true });
-        assert_eq!(app.theme, Theme::Monochrome);
+        assert_eq!(app.theme, Theme::HighContrast);
 
         let _ = update(
             &mut app,
             Action::SettingsPersistenceFailed("read-only filesystem".into()),
         );
-        assert_eq!(app.theme, Theme::Monochrome);
+        assert_eq!(app.theme, Theme::HighContrast);
         assert!(app.settings_dirty);
         assert!(
             app.notification

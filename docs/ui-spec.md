@@ -2343,24 +2343,23 @@ $XDG_CONFIG_HOME/yoctui/config.toml
 
 Required built-in themes:
 
-- `dark`
-- `light`
+- `dark-pro`
+- `white-classic`
 - `matrix-green`
+- `vscode-dark`
+- `vscode-light`
+- `accessible-dark`
+- `soft-light`
 - `high-contrast`
-- `monochrome`
 
-Optional future themes:
-
-- `nord`
-- `gruvbox`
-- `solarized-dark`
-- `solarized-light`
+These palettes match Packrat's built-in theme set exactly. `--no-color`
+remains a separate accessibility override rather than a selectable palette.
 
 Example:
 
 ```toml
 [ui]
-theme = "matrix-green"
+theme = "dark-pro"
 animation_speed = "fast"
 reduced_motion = false
 show_icons = true
