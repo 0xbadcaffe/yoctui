@@ -15,6 +15,7 @@ Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. Yoctui now uses Packrat's eight built-in palettes—Dark Pro, White
 Classic, Matrix Green, VSCode Dark/Light, Accessible Dark, Soft Light, and
 High Contrast—while retaining `--no-color` as a separate accessibility override.
+Legacy `dark` and `light` configuration values remain supported as aliases.
 
 ## Current task
 

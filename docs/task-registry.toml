@@ -2091,3 +2091,14 @@ required = true
 depends_on = ["THEME-PACKRAT-001"]
 verify = ["cargo test -p yoctui-ui theme", "cargo test -p yoctui-ui settings"]
 notes = "Every semantic UI role maps to Packrat's exact RGB palette values; TestBackend coverage verifies semantic rendering and no-color remains attribute-only."
+
+[[task]]
+id = "THEME-PACKRAT-003"
+milestone = "M2"
+title = "Preserve legacy theme configuration compatibility"
+status = "DONE"
+priority = 121
+required = true
+depends_on = ["THEME-PACKRAT-002"]
+verify = ["cargo test -p yoctui settings_session_overrides_config_but_cli_no_color_remains_authoritative"]
+notes = "Legacy dark and light configuration values deserialize as dark-pro and white-classic, preserving existing user configuration while new serialization uses Packrat names."
