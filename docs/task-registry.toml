@@ -2124,3 +2124,14 @@ required = true
 depends_on = ["THEME-PACKRAT-004"]
 verify = ["ruff check bridge", "ruff format --check bridge", "python3 -m pytest bridge/tests"]
 notes = "Declared deliberate BitBake adapter exception boundaries and stable lint policy so the CI Ruff version cannot reinterpret existing bridge behavior."
+
+[[task]]
+id = "DOC-README-002"
+milestone = "M7"
+title = "Simplify the Poky README quickstart"
+status = "DONE"
+priority = 124
+required = true
+depends_on = ["CI-RUFF-001"]
+verify = ["./scripts/test-readme-quickstart.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Replaced two overlapping Yocto setup paths with one guarded complete-Poky path. The README explicitly sets BUILDDIR before sourcing oe-init-build-env and passes it as the build-directory argument; documentation checks pass."

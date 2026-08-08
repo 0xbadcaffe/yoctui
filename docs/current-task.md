@@ -2,26 +2,28 @@
 
 ## Task
 
-**ID:** CI-RUFF-001
-**Title:** Pin bridge Ruff policy against evolving defaults
+**ID:** DOC-README-002
+**Title:** Simplify the Poky README quickstart
 **Status:** DONE
 
 ## Objective
 
-Final completed task: make the bridge's deliberate adapter-boundary lint policy
-explicit across Ruff releases.
+Final completed task: provide one Poky build-environment path and explicitly
+set and pass `BUILDDIR` to `oe-init-build-env`.
 
 ## Verification
 
 ```bash
-ruff check bridge
-ruff format --check bridge
-python3 -m pytest bridge/tests
+./scripts/test-readme-quickstart.sh
+./scripts/check-docs.sh
+./scripts/verify-roadmap.sh
 ```
 
 ## Definition of done
 
-- Bridge lint and tests pass with the configured Ruff policy.
+- README presents one guarded Poky setup path.
+- `BUILDDIR` is set before and passed to `oe-init-build-env`.
+- Documentation checks pass.
 
 ## Next task
 

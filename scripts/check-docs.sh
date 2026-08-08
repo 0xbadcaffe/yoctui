@@ -17,9 +17,8 @@ from urllib.parse import unquote, urlsplit
 root = Path(sys.argv[1]).resolve()
 required_documents = {
     "README.md": {
-        "Prerequisites and installation",
-        "Quickstart: current Yocto development setup",
-        "Quickstart: existing Poky checkout",
+        "Install",
+        "Quickstart: Poky build environment",
     },
     "docs/operator-guide.md": {
         "Start a workspace safely",

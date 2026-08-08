@@ -16,6 +16,8 @@ complete. Yoctui now uses Packrat's eight built-in palettes—Dark Pro, White
 Classic, Matrix Green, VSCode Dark/Light, Accessible Dark, Soft Light, and
 High Contrast—while retaining `--no-color` as a separate accessibility override.
 Legacy `dark` and `light` configuration values remain supported as aliases.
+The README now uses one guarded Poky build-environment path and explicitly
+sets `BUILDDIR` before sourcing `oe-init-build-env`.
 
 ## Current task
 
@@ -90,7 +92,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-The registry is complete; the terminal handoff is `RELVAL-HARDEN-001`.
+The registry is complete; the terminal handoff is `DOC-README-002`.
 
 ## Rules
 

@@ -32,11 +32,10 @@ never inferred from this recording._
   shortcuts, themes, persisted sessions, shell escape, and external editor
   support.
 
-## Prerequisites and installation
+## Install
 
-Use a UTF-8 Linux terminal with Git, Python 3, and stable Rust/Cargo. A real
-Yocto build also needs the host packages required by your selected Yocto
-release.
+Use a UTF-8 Linux terminal with Git, Python 3, and stable Rust/Cargo. Your
+Poky release also requires its documented host packages.
 
 ```sh
 export YOCTUI_DIR="$HOME/projects/yoctui"
@@ -48,7 +47,7 @@ cargo install --locked --path crates/yoctui-cli
 yoctui --help
 ```
 
-For repository development, replace `cargo install` with:
+For development, use:
 
 ```sh
 cd "$YOCTUI_DIR"
@@ -56,34 +55,21 @@ cargo build --locked -p yoctui
 cargo build --locked --release -p yoctui
 ```
 
-## Quickstart: current Yocto development setup
+## Quickstart: Poky build environment
 
-Poky's current `master` migration repository may contain only a README. For
-that layout, use BitBake's `bitbake-setup` command. This guarded block creates
-a `qemux86-64` workspace and opens Yoctui; it does **not** start a build.
+Start from a complete Poky checkout containing `oe-init-build-env`. Set
+`BUILDDIR` before sourcing Poky's environment script: it is both the directory
+Poky creates/uses for the build and the directory Yoctui opens.
 
 ```sh
-export BITBAKE_DIR="$HOME/src/bitbake"
-export YOCTUI_SETUP="yoctui-qemux86-64"
+export POKY_DIR="$HOME/src/poky"
+export BUILDDIR="$POKY_DIR/build-yoctui"
 
-test -d "$BITBAKE_DIR/.git" || \
-  git clone https://git.openembedded.org/bitbake "$BITBAKE_DIR"
-test -x "$BITBAKE_DIR/bin/bitbake-setup" || {
-  echo "missing $BITBAKE_DIR/bin/bitbake-setup" >&2
+test -f "$POKY_DIR/oe-init-build-env" || {
+  echo "missing $POKY_DIR/oe-init-build-env; use a complete Poky release" >&2
   exit 1
 }
-
-cd "$BITBAKE_DIR"
-./bin/bitbake-setup init --setup-dir-name "$YOCTUI_SETUP"
-
-# Choose the current Poky template, poky distro, and qemux86-64 machine.
-export YOCTUI_INIT="$BITBAKE_DIR/bitbake-builds/$YOCTUI_SETUP/build/init-build-env"
-test -f "$YOCTUI_INIT" || {
-  echo "missing $YOCTUI_INIT; review the bitbake-setup result" >&2
-  exit 1
-}
-source "$YOCTUI_INIT"
-test -n "${BUILDDIR:-}" || { echo "BUILDDIR is not set" >&2; exit 1; }
+source "$POKY_DIR/oe-init-build-env" "$BUILDDIR"
 
 yoctui --backend bridge --build-dir "$BUILDDIR"
 ```
@@ -91,25 +77,6 @@ yoctui --backend bridge --build-dir "$BUILDDIR"
 Inside Yoctui, press `B`, press `e`, enter `core-image-minimal`, select the
 build action, and confirm it. The first BitBake build starts from that explicit
 TUI confirmation.
-
-## Quickstart: existing Poky checkout
-
-Use this path for a complete Poky release checkout that contains
-`oe-init-build-env`:
-
-```sh
-export YOCTO_DIR="$HOME/src/poky"
-export YOCTUI_BUILD_DIR="build-yoctui"
-
-test -f "$YOCTO_DIR/oe-init-build-env" || {
-  echo "missing $YOCTO_DIR/oe-init-build-env; use a complete Poky release" >&2
-  exit 1
-}
-source "$YOCTO_DIR/oe-init-build-env" "$YOCTUI_BUILD_DIR"
-test -n "${BUILDDIR:-}" || { echo "BUILDDIR is not set" >&2; exit 1; }
-
-yoctui --backend bridge --build-dir "$BUILDDIR"
-```
 
 ## Essential controls
 
