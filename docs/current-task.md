@@ -2,24 +2,25 @@
 
 ## Task
 
-**ID:** THEME-PACKRAT-003
-**Title:** Preserve legacy theme configuration compatibility
+**ID:** THEME-PACKRAT-004
+**Title:** Update source-preview palette assertions
 **Status:** DONE
 
 ## Objective
 
-Final completed task: preserve existing `dark` and `light` configuration values
-while serializing the Packrat theme names.
+Final completed task: align source-preview TestBackend assertions with the Dark
+Pro Packrat palette.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui settings_session_overrides_config_but_cli_no_color_remains_authoritative
+cargo test -p yoctui-ui bitbake_preview_highlights_assignments_and_comments
+cargo test --workspace --all-features
 ```
 
 ## Definition of done
 
-- Legacy configuration values deserialize to their Packrat equivalents.
+- Source-preview semantic colors match Dark Pro exactly.
 
 ## Next task
 

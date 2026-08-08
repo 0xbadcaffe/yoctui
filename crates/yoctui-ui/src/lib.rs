@@ -12635,10 +12635,22 @@ mod tests {
     fn bitbake_preview_highlights_assignments_and_comments() {
         let app = App::new(10, 1_000);
         let preview = source_preview("SUMMARY = \"demo\" # explanation", "demo.bb", &app);
-        assert_eq!(preview.lines[0].spans[0].style.fg, Some(Color::Yellow));
-        assert_eq!(preview.lines[0].spans[1].style.fg, Some(Color::Magenta));
-        assert_eq!(preview.lines[0].spans[2].style.fg, Some(Color::Green));
-        assert_eq!(preview.lines[0].spans[3].style.fg, Some(Color::DarkGray));
+        assert_eq!(
+            preview.lines[0].spans[0].style.fg,
+            Some(Color::Rgb(215, 175, 0))
+        );
+        assert_eq!(
+            preview.lines[0].spans[1].style.fg,
+            Some(Color::Rgb(175, 135, 215))
+        );
+        assert_eq!(
+            preview.lines[0].spans[2].style.fg,
+            Some(Color::Rgb(135, 215, 0))
+        );
+        assert_eq!(
+            preview.lines[0].spans[3].style.fg,
+            Some(Color::Rgb(154, 154, 154))
+        );
     }
     #[test]
     fn renders_image_picker_for_active_machine() {

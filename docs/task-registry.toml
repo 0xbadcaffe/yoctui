@@ -2102,3 +2102,14 @@ required = true
 depends_on = ["THEME-PACKRAT-002"]
 verify = ["cargo test -p yoctui settings_session_overrides_config_but_cli_no_color_remains_authoritative"]
 notes = "Legacy dark and light configuration values deserialize as dark-pro and white-classic, preserving existing user configuration while new serialization uses Packrat names."
+
+[[task]]
+id = "THEME-PACKRAT-004"
+milestone = "M2"
+title = "Update source-preview palette assertions"
+status = "DONE"
+priority = 122
+required = true
+depends_on = ["THEME-PACKRAT-003"]
+verify = ["cargo test -p yoctui-ui bitbake_preview_highlights_assignments_and_comments", "cargo test --workspace --all-features"]
+notes = "Updated source-preview TestBackend expectations to the Dark Pro Packrat RGB values; the complete workspace suite passes."
