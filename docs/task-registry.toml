@@ -2113,3 +2113,14 @@ required = true
 depends_on = ["THEME-PACKRAT-003"]
 verify = ["cargo test -p yoctui-ui bitbake_preview_highlights_assignments_and_comments", "cargo test --workspace --all-features"]
 notes = "Updated source-preview TestBackend expectations to the Dark Pro Packrat RGB values; the complete workspace suite passes."
+
+[[task]]
+id = "CI-RUFF-001"
+milestone = "M7"
+title = "Pin bridge Ruff policy against evolving defaults"
+status = "DONE"
+priority = 123
+required = true
+depends_on = ["THEME-PACKRAT-004"]
+verify = ["ruff check bridge", "ruff format --check bridge", "python3 -m pytest bridge/tests"]
+notes = "Declared deliberate BitBake adapter exception boundaries and stable lint policy so the CI Ruff version cannot reinterpret existing bridge behavior."
