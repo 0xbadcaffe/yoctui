@@ -12,10 +12,9 @@ Status values:
 ## Current phase
 
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
-complete. The Security mapper now retries transient `ETXTBSY` fixture-launch
-failures with the same bounded behavior used by the other native runners; its
-focused regression coverage passes and the aggregate completion gate is being
-run from the terminal handoff.
+complete. Yoctui now uses Packrat's eight built-in palettes—Dark Pro, White
+Classic, Matrix Green, VSCode Dark/Light, Accessible Dark, Soft Light, and
+High Contrast—while retaining `--no-color` as a separate accessibility override.
 
 ## Current task
 

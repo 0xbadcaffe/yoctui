@@ -2069,3 +2069,25 @@ required = true
 depends_on = ["RELVAL-CI-002"]
 verify = ["cargo test -p yoctui-bitbake security_mapper", "./scripts/verify-completion.sh"]
 notes = "Completion validation exposed a transient Text file busy failure while launching a just-written Security mapper fixture. The runner now uses the established bounded ETXTBSY retry behavior, with focused regression coverage; the final aggregate gate is run from the terminal handoff."
+
+[[task]]
+id = "THEME-PACKRAT-001"
+milestone = "M2"
+title = "Adopt Packrat's theme catalog and persistence names"
+status = "DONE"
+priority = 119
+required = true
+depends_on = ["THEME-001"]
+verify = ["cargo test -p yoctui-model theme", "cargo test -p yoctui-app theme", "cargo test -p yoctui -- theme"]
+notes = "Packrat's eight named themes now drive typed settings cycling, CLI/configuration parsing, and session persistence; legacy monochrome values remain readable while --no-color is the supported accessibility override."
+
+[[task]]
+id = "THEME-PACKRAT-002"
+milestone = "M2"
+title = "Render exact Packrat semantic palettes"
+status = "DONE"
+priority = 120
+required = true
+depends_on = ["THEME-PACKRAT-001"]
+verify = ["cargo test -p yoctui-ui theme", "cargo test -p yoctui-ui settings"]
+notes = "Every semantic UI role maps to Packrat's exact RGB palette values; TestBackend coverage verifies semantic rendering and no-color remains attribute-only."

@@ -2,32 +2,28 @@
 
 ## Task
 
-**ID:** RELVAL-HARDEN-001
-**Title:** Make Security mapper launches resilient to transient ETXTBSY
+**ID:** THEME-PACKRAT-002
+**Title:** Render exact Packrat semantic palettes
 **Status:** DONE
 
 ## Objective
 
-Final completed task: eliminate the transient `Text file busy` process-launch
-failure while preserving bounded retries and Security mapper semantics.
+Final completed task: map every Yoctui semantic role to Packrat's eight exact
+RGB palettes while retaining `--no-color` as an accessibility override.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake security_mapper
-./scripts/verify-completion.sh
+cargo test -p yoctui-ui theme
 ```
 
 ## Definition of done
 
-- Security mapper retries only transient `ETXTBSY` errors with a bounded delay.
-- The full completion gate passes.
+- All semantic UI roles use Packrat's palette values.
+- TestBackend coverage preserves no-color accessibility semantics.
 
 ## Next task
 
 ## Terminal handoff
 
-## Terminal handoff
-
-All registry tasks are complete; run the aggregate completion gate from this
-committed checkout.
+All registry tasks are complete.
