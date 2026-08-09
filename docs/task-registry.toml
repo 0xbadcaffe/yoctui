@@ -2289,3 +2289,14 @@ required = true
 depends_on = ["UX-ENV-FORM-001", "UX-THEME-001"]
 verify = ["cargo test --workspace --all-features", "./scripts/test-tui-pty.sh", "./scripts/verify-completion.sh"]
 notes = "Full workspace tests, focused retry for transient process startup, PTY onboarding smoke, and completion verification pass."
+
+[[task]]
+id = "UX-THEME-MENU-001"
+milestone = "M8"
+title = "Add immediate theme submenu selection"
+status = "DONE"
+priority = 138
+required = true
+depends_on = ["UX-INT-001"]
+verify = ["cargo test -p yoctui-model theme_picker", "cargo test -p yoctui-ui theme_picker", "cargo test -p yoctui -- theme_picker"]
+notes = "Added focus-trapped named theme submenu with immediate palette application, persistence on accept, and focused model/UI coverage."

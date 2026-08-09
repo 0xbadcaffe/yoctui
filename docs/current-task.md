@@ -1,29 +1,8 @@
 # Current Task
 
-## Task
-
-**ID:** UX-INT-001
-**Title:** Validate dedicated onboarding UX end to end
-**Status:** DONE
-
-## Objective
-
-Validate startup focus, profile replacement, setup shell, typed image availability,
-theme rendering, and all terminal outcomes.
-
-## Verification
-
-```bash
-cargo test --workspace --all-features
-./scripts/test-tui-pty.sh
-./scripts/verify-completion.sh
-```
-
-## Definition of done
-
-- Full workspace tests and the PTY onboarding smoke pass.
-- Completion gate passes with all registry tasks DONE.
-
 ## Terminal handoff
 
-`UX-INT-001` is the final completed task; no incomplete registry tasks remain.
+`UX-THEME-MENU-001` is the final completed task; no incomplete registry tasks remain.
+
+The Settings Theme row now opens a named submenu. Up/Down applies the highlighted
+theme immediately; Enter persists it and Esc closes the submenu.

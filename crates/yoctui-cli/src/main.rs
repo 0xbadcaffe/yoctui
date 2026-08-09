@@ -5864,6 +5864,24 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     )
                     .await;
                 }
+            } else if matches!(app.active_dialog(), Some(Dialog::ThemePicker { .. })) {
+                let action = match input {
+                    Input::Up | Input::Char('k') => Some(Action::SelectTheme { delta: -1 }),
+                    Input::Down | Input::Char('j') => Some(Action::SelectTheme { delta: 1 }),
+                    Input::Enter => Some(Action::ApplySelectedTheme),
+                    Input::Esc => Some(Action::CloseThemePicker),
+                    _ => None,
+                };
+                if let Some(action) = action {
+                    if let Some(Effect::PersistSettings) = update(&mut app, action) {
+                        let result = persist_settings(session_path.as_deref(), &mut session, &app);
+                        let persistence_action = match result {
+                            Ok(()) => Action::SettingsPersisted,
+                            Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
+                        };
+                        let _ = update(&mut app, persistence_action);
+                    }
+                }
             } else if let Some(Dialog::Maintenance(dialog)) = app.active_dialog().cloned() {
                 let effect = maintenance_dialog_action(&dialog, input)
                     .and_then(|action| update(&mut app, action));
@@ -6912,6 +6930,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 }
             } else if app.screen == Screen::Settings && settings_action(input).is_some() {
+                if app.settings_selection == 0 && matches!(input, Input::Enter | Input::Right) {
+                    let _ = update(&mut app, Action::OpenThemePicker);
+                    continue;
+                }
                 let action = settings_action(input).expect("settings action was checked");
                 match update(&mut app, action) {
                     Some(Effect::PersistSettings) => {

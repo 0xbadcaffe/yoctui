@@ -2438,6 +2438,11 @@ Theme can be changed through:
 - command palette
 - CLI/configuration
 
+In the Settings workspace, activating the Theme row opens a focus-trapped theme
+submenu. Up/Down selects a named theme and applies it immediately; Enter keeps
+the selection and Esc closes the submenu. Theme selection is never a blind
+toggle or an implicit cycle.
+
 Theme changes apply immediately and persist.
 
 ### Preferences

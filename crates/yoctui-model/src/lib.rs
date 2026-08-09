@@ -903,6 +903,9 @@ pub struct ConfigEditRequest {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
+    ThemePicker {
+        selection: usize,
+    },
     BuildOptions,
     BuildCompletion,
     BuildTarget {
@@ -3068,6 +3071,12 @@ pub enum Action {
     SettingsPersistenceFailed(String),
     ConfigureBuildEnvironment(BuildEnvironmentProfile),
     BeginBuildEnvironmentEdit,
+    OpenThemePicker,
+    SelectTheme {
+        delta: isize,
+    },
+    ApplySelectedTheme,
+    CloseThemePicker,
     SelectBuildEnvironmentField {
         delta: isize,
     },
@@ -4129,6 +4138,17 @@ fn cycle_theme(theme: Theme, backwards: bool) -> Theme {
     };
     THEMES[next]
 }
+
+pub const THEMES: [Theme; 8] = [
+    Theme::DarkPro,
+    Theme::WhiteClassic,
+    Theme::MatrixGreen,
+    Theme::VscodeDark,
+    Theme::VscodeLight,
+    Theme::AccessibleDark,
+    Theme::SoftLight,
+    Theme::HighContrast,
+];
 
 fn command_action(app: &App, id: CommandId) -> Action {
     match id {
@@ -5849,6 +5869,39 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some(format!(
                 "Settings changed in memory but could not be saved: {message}"
             ));
+        }
+        Action::OpenThemePicker => {
+            let selection = THEMES
+                .iter()
+                .position(|theme| *theme == app.theme)
+                .unwrap_or(0);
+            open_dialog(app, Dialog::ThemePicker { selection });
+        }
+        Action::SelectTheme { delta } => {
+            if let Some(Dialog::ThemePicker { selection }) = app.active_dialog_mut() {
+                *selection = if delta.is_negative() {
+                    selection.saturating_sub(delta.unsigned_abs())
+                } else {
+                    selection
+                        .saturating_add(delta as usize)
+                        .min(THEMES.len() - 1)
+                };
+                app.theme = THEMES[*selection];
+                app.settings_dirty = true;
+            }
+        }
+        Action::ApplySelectedTheme => {
+            if let Some(Dialog::ThemePicker { selection }) = app.active_dialog().cloned() {
+                app.theme = THEMES[selection.min(THEMES.len() - 1)];
+                app.settings_dirty = true;
+                close_dialog(app);
+                return Some(Effect::PersistSettings);
+            }
+        }
+        Action::CloseThemePicker => {
+            if matches!(app.active_dialog(), Some(Dialog::ThemePicker { .. })) {
+                close_dialog(app);
+            }
         }
         Action::ConfigureBuildEnvironment(profile) => match profile.validate() {
             Ok(()) => {
@@ -14775,6 +14828,24 @@ mod tests {
                 force: false,
             }))
         );
+    }
+
+    #[test]
+    fn theme_picker_applies_named_selection_immediately_and_persists_on_accept() {
+        let mut app = App::new(10, 1_000);
+        assert_eq!(update(&mut app, Action::OpenThemePicker), None);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::ThemePicker { .. })
+        ));
+        let _ = update(&mut app, Action::SelectTheme { delta: 1 });
+        assert_eq!(app.theme, Theme::WhiteClassic);
+        assert!(app.settings_dirty);
+        assert!(matches!(
+            update(&mut app, Action::ApplySelectedTheme),
+            Some(Effect::PersistSettings)
+        ));
+        assert!(app.active_dialog().is_none());
     }
     #[test]
     fn build_completion_stays_open_until_dismissed() {

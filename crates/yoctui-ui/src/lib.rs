@@ -1265,6 +1265,8 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: false }),
             popup,
         );
+    } else if let Some(Dialog::ThemePicker { selection }) = app.active_dialog() {
+        theme_picker(frame, app, *selection, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
         let machine = app
             .workspace
@@ -1328,6 +1330,32 @@ pub fn render(frame: &mut Frame, app: &App) {
             popup,
         );
     }
+}
+
+fn theme_picker(frame: &mut Frame, app: &App, selection: usize, area: Rect) {
+    let popup = Rect::new(
+        area.width / 4,
+        area.height / 5,
+        area.width / 2,
+        area.height * 3 / 5,
+    );
+    clear_popup(frame, app, popup);
+    let rows = yoctui_model::THEMES
+        .iter()
+        .enumerate()
+        .map(|(index, theme)| {
+            Row::new([format!("{:?}", theme)]).style(selected_style(app, index == selection))
+        });
+    frame.render_widget(
+        Table::new(rows, [Constraint::Min(1)])
+            .block(
+                Block::default()
+                    .title("Theme — applies immediately")
+                    .borders(Borders::ALL),
+            )
+            .footer(Row::new(["↑/↓ select  Enter apply  Esc close"])),
+        popup,
+    );
 }
 
 fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
@@ -9932,6 +9960,16 @@ mod tests {
             Color::Rgb(248, 248, 248)
         );
         assert_eq!(ThemePalette::for_app(&app).info, Color::Rgb(0, 107, 107));
+    }
+
+    #[test]
+    fn theme_picker_renders_named_choices_and_immediate_apply_hint() {
+        let mut app = App::new(10, 1_000);
+        app.dialogs.push_back(Dialog::ThemePicker { selection: 1 });
+        let output = rendered_text(&app, 100, 30);
+        assert!(output.contains("Theme — applies immediately"));
+        assert!(output.contains("WhiteClassic"));
+        assert!(output.contains("Enter apply"));
     }
 
     #[test]
