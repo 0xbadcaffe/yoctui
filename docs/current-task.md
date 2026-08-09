@@ -2,31 +2,33 @@
 
 ## Task
 
-**ID:** ENV-CONNECT-002
-**Title:** Install the managed backend after typed verification
-**Status:** NOT_STARTED
+**ID:** ENV-INT-001
+**Title:** Validate in-app build environment onboarding end to end
+**Status:** DONE
 
 ## Objective
 
-Install a managed bridge/process backend only after the typed workspace
-verification succeeds, using the captured child environment.
+Final completed task: run complete fake-process, TestBackend, CLI, PTY, and
+completion validation for in-app build-environment onboarding.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui build_environment
+cargo test --workspace --all-features
+./scripts/test-tui-pty.sh
+./scripts/verify-completion.sh
 ```
 
 ## Definition of done
 
-- Backend installation is gated on typed workspace verification.
-- Captured child environment is applied only to managed backend children.
-- Connection failure, cancellation, and loss remain actionable states.
+- Cross-layer onboarding tests pass.
+- No-argument startup and verified backend setup pass from a clean checkout.
+- Completion gate passes without temporary artifacts.
 
 ## Next task
 
-Implement `ENV-CONNECT-002`.
+All registry tasks are complete.
 
 ## Terminal handoff
 
-`ENV-CONNECT-001` completed; `ENV-CONNECT-002` is eligible to start.
+All registry tasks are complete; this is the terminal handoff.

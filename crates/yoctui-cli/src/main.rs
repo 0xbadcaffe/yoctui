@@ -12,6 +12,7 @@ use crossterm::{
 use ratatui::Terminal;
 use serde::{Deserialize, Serialize};
 use std::{
+    collections::BTreeMap,
     env, fs, io,
     io::{Read as _, Write as _},
     path::{Path, PathBuf},
@@ -774,9 +775,23 @@ async fn select_backend_with_timeout(
     build_dir: PathBuf,
     cancellation_timeout: Option<Duration>,
 ) -> Result<Box<dyn BitBakeBackend>> {
+    select_backend_with_environment(backend, build_dir, cancellation_timeout, None).await
+}
+
+async fn select_backend_with_environment(
+    backend: Backend,
+    build_dir: PathBuf,
+    cancellation_timeout: Option<Duration>,
+    environment: Option<BTreeMap<String, String>>,
+) -> Result<Box<dyn BitBakeBackend>> {
     match backend {
         Backend::Process => {
             let backend = ProcessBackend::new(build_dir);
+            let backend = if let Some(environment) = environment {
+                backend.with_environment(environment)
+            } else {
+                backend
+            };
             let backend = if let Some(timeout) = cancellation_timeout {
                 backend.with_cancellation_timeout(timeout)
             } else {
@@ -793,8 +808,12 @@ async fn select_backend_with_timeout(
                         .join("bridge/yoctui_bridge.py")
                 });
             let python = env::var("PYTHON").unwrap_or_else(|_| "python3".into());
-            BridgeBackend::spawn(&python, script, build_dir)
-                .await
+            let bridge = if let Some(environment) = environment {
+                BridgeBackend::spawn_with_environment(&python, script, build_dir, environment).await
+            } else {
+                BridgeBackend::spawn(&python, script, build_dir).await
+            };
+            bridge
                 .map(|backend| Box::new(backend) as Box<dyn BitBakeBackend>)
                 .context("could not start the BitBake bridge; source oe-init-build-env or use --backend process")
         }
@@ -6827,17 +6846,47 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Effect::VerifyBuildEnvironment {
                         profile,
                         generation,
-                    }) => {
-                        let action =
-                            match BuildEnvironmentAdapter::default().initialize(profile).await {
-                                Ok(_) => Action::BuildEnvironmentVerified { generation },
-                                Err(error) => Action::BuildEnvironmentVerificationFailed {
+                    }) => match BuildEnvironmentAdapter::default().initialize(profile).await {
+                        Ok(response) => {
+                            let profile = response.profile.clone();
+                            let _ =
+                                update(&mut app, Action::BuildEnvironmentVerified { generation });
+                            let _ = backend.shutdown().await;
+                            match select_backend_with_environment(
+                                backend_kind.clone(),
+                                profile.build_dir,
+                                Some(cancellation_timeout),
+                                Some(response.environment),
+                            )
+                            .await
+                            {
+                                Ok(mut connected) => match connected.inspect_workspace().await {
+                                    Ok(workspace) => {
+                                        let _ =
+                                            update(&mut app, Action::WorkspaceLoaded(workspace));
+                                        backend = connected;
+                                    }
+                                    Err(error) => {
+                                        app.notification =
+                                            Some(format!("BitBake verification failed: {error}"))
+                                    }
+                                },
+                                Err(error) => {
+                                    app.notification =
+                                        Some(format!("Could not start BitBake: {error}"))
+                                }
+                            }
+                        }
+                        Err(error) => {
+                            let _ = update(
+                                &mut app,
+                                Action::BuildEnvironmentVerificationFailed {
                                     generation,
                                     message: error.to_string(),
                                 },
-                            };
-                        let _ = update(&mut app, action);
-                    }
+                            );
+                        }
+                    },
                     _ => {}
                 }
             } else if app.screen == Screen::Tasks

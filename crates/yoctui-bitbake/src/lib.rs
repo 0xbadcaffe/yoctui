@@ -124,6 +124,7 @@ pub use signature::{
     SignatureComparisonResponse, SignatureDumpResponse,
 };
 use std::{
+    collections::BTreeMap,
     ffi::OsString,
     path::{Path, PathBuf},
     process::Stdio,
@@ -1277,6 +1278,7 @@ pub struct ProcessBackend {
     signature_adapter: SignatureAdapter,
     executable: PathBuf,
     arguments: Vec<OsString>,
+    environment: Vec<(OsString, OsString)>,
     child: Option<Child>,
     output: Option<tokio::sync::mpsc::Receiver<LogEntry>>,
     build_started_pending: bool,
@@ -1299,6 +1301,7 @@ impl ProcessBackend {
             build_dir,
             executable,
             arguments,
+            environment: Vec::new(),
             child: None,
             output: None,
             build_started_pending: false,
@@ -1309,6 +1312,13 @@ impl ProcessBackend {
     }
     pub fn with_cancellation_timeout(mut self, timeout: Duration) -> Self {
         self.cancellation_timeout = timeout;
+        self
+    }
+    pub fn with_environment(mut self, environment: BTreeMap<String, String>) -> Self {
+        self.environment = environment
+            .into_iter()
+            .map(|(key, value)| (OsString::from(key), OsString::from(value)))
+            .collect();
         self
     }
     async fn collect(&mut self) -> Result<(bool, Option<i32>), BackendError> {
@@ -1342,6 +1352,7 @@ impl ProcessBackend {
         }
 
         let mut command = TokioCommand::new(&self.executable);
+        command.envs(self.environment.iter().map(|(key, value)| (key, value)));
         command
             .args(&self.arguments)
             .arg("-g")
@@ -1487,6 +1498,7 @@ impl BitBakeBackend for ProcessBackend {
             .map_err(|e| BackendError::Bridge(e.to_string()))?;
         let mut cmd = TokioCommand::new(&self.executable);
         cmd.args(&self.arguments);
+        cmd.envs(self.environment.iter().map(|(key, value)| (key, value)));
         if request.force {
             cmd.arg("-f");
         }
@@ -1579,9 +1591,18 @@ impl BridgeBackend {
         script: PathBuf,
         build_dir: PathBuf,
     ) -> Result<Self, BackendError> {
+        Self::spawn_with_environment(python, script, build_dir, BTreeMap::new()).await
+    }
+    pub async fn spawn_with_environment(
+        python: &str,
+        script: PathBuf,
+        build_dir: PathBuf,
+        environment: BTreeMap<String, String>,
+    ) -> Result<Self, BackendError> {
         let mut child = TokioCommand::new(python)
             .arg(script)
             .current_dir(&build_dir)
+            .envs(environment)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
