@@ -664,6 +664,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         ))
         .block(
             Block::default()
+                .style(palette.base())
                 .borders(Borders::ALL)
                 .border_style(build_status_style(app)),
         ),
@@ -1479,6 +1480,7 @@ fn pane_block<'a>(app: &App, title: &'a str, focused: bool) -> Block<'a> {
     Block::default()
         .title(title)
         .borders(Borders::ALL)
+        .style(palette.base())
         .border_style(style)
 }
 
@@ -2385,7 +2387,8 @@ fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
         .block(
             Block::default()
                 .title(format!("Live Tasks ({} visible)", rows.len()))
-                .borders(Borders::ALL),
+                .borders(Borders::ALL)
+                .style(ThemePalette::for_app(app).base()),
         ),
         chunks[2],
     );
@@ -6438,7 +6441,8 @@ fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
         .block(
             Block::default()
                 .title("Settings controls")
-                .borders(Borders::ALL),
+                .borders(Borders::ALL)
+                .style(ThemePalette::for_app(app).base()),
         )
         .wrap(Wrap { trim: true }),
         chunks[1],
@@ -6483,7 +6487,8 @@ fn build_environment_workspace(frame: &mut Frame, app: &App, area: Rect) {
             .block(
                 Block::default()
                     .title("Build environment")
-                    .borders(Borders::ALL),
+                    .borders(Borders::ALL)
+                    .style(ThemePalette::for_app(app).base()),
             )
             .wrap(Wrap { trim: true }),
         area,
@@ -8133,7 +8138,12 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
             ],
         )
         .header(Row::new(["Configured layers", "Pri", "Compat"]).style(Style::default().bold()))
-        .block(Block::default().borders(Borders::ALL)),
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .style(palette.base())
+                .border_style(palette.focus()),
+        ),
         left[0],
     );
 

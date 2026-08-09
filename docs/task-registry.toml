@@ -2272,18 +2272,18 @@ notes = "Added typed source/build/script draft editing, profile replacement inva
 id = "UX-THEME-001"
 milestone = "M8"
 title = "Repair semantic theme application across onboarding and shell"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 136
 required = true
 depends_on = ["UX-ENV-NAV-001"]
 verify = ["cargo test -p yoctui-ui theme", "cargo test -p yoctui -- theme"]
-notes = "Reproduce and fix stale or missing theme application in Navigator, dialogs, notifications, settings, and Build environment rendering with all palettes and no-color."
+notes = "Applied semantic base styles to the shell, Navigator panes, header, Settings, onboarding, and narrow-terminal fallback; all theme/no-color tests pass."
 
 [[task]]
 id = "UX-INT-001"
 milestone = "M8"
 title = "Validate dedicated onboarding UX end to end"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 137
 required = true
 depends_on = ["UX-ENV-FORM-001", "UX-THEME-001"]

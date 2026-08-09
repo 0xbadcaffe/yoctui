@@ -2,34 +2,32 @@
 
 ## Task
 
-**ID:** UX-ENV-FORM-001
-**Title:** Edit build directory, source environment, and unlock images
+**ID:** UX-INT-001
+**Title:** Validate dedicated onboarding UX end to end
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Provide typed source/build/script editing, profile replacement invalidation,
-initialization prompts, verified BitBake image inventory, and image build
-enablement.
+Validate startup focus, profile replacement, setup shell, typed image availability,
+theme rendering, and all terminal outcomes.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model build_environment_form
-cargo test -p yoctui-ui build_environment_form
-cargo test -p yoctui -- build_environment_form
+cargo test --workspace --all-features
+./scripts/test-tui-pty.sh
+./scripts/verify-completion.sh
 ```
 
 ## Definition of done
 
-- Source/build/script fields are editable as typed values.
-- Profile replacement invalidates connection and image inventory.
-- Verified BitBake exposes available images and enables build actions.
+- Full workspace tests and the PTY onboarding smoke pass.
+- Completion gate passes with all registry tasks DONE.
 
 ## Next task
 
-Implement `UX-THEME-001`.
+Implement `UX-INT-001`.
 
 ## Terminal handoff
 
-`UX-ENV-FORM-001` completed; `UX-THEME-001` is eligible to start.
+`UX-THEME-001` completed; `UX-INT-001` is eligible to start.
