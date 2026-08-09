@@ -5558,7 +5558,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     app.theme = theme;
     app.animation_speed = animation_speed;
     app.reduced_motion = reduced_motion;
-    app.screen = session.last_screen.unwrap_or(Screen::Dashboard);
+    if build_dir_configured {
+        app.screen = session.last_screen.unwrap_or(Screen::Dashboard);
+    } else {
+        app.screen = Screen::BuildEnvironment;
+        app.focus = yoctui_model::FocusTarget::Navigator;
+    }
     app.logs.filter = session.log_filter;
     app.logs.recipe_filter = session.log_recipe_filter.clone();
     app.logs.task_filter = session.log_task_filter.clone();
@@ -5872,15 +5877,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Input::Esc => Some(Action::CloseThemePicker),
                     _ => None,
                 };
-                if let Some(action) = action {
-                    if let Some(Effect::PersistSettings) = update(&mut app, action) {
-                        let result = persist_settings(session_path.as_deref(), &mut session, &app);
-                        let persistence_action = match result {
-                            Ok(()) => Action::SettingsPersisted,
-                            Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
-                        };
-                        let _ = update(&mut app, persistence_action);
-                    }
+                if let Some(action) = action
+                    && let Some(Effect::PersistSettings) = update(&mut app, action)
+                {
+                    let result = persist_settings(session_path.as_deref(), &mut session, &app);
+                    let persistence_action = match result {
+                        Ok(()) => Action::SettingsPersisted,
+                        Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
+                    };
+                    let _ = update(&mut app, persistence_action);
                 }
             } else if let Some(Dialog::Maintenance(dialog)) = app.active_dialog().cloned() {
                 let effect = maintenance_dialog_action(&dialog, input)

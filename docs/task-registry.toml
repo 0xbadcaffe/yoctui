@@ -2300,3 +2300,14 @@ required = true
 depends_on = ["UX-INT-001"]
 verify = ["cargo test -p yoctui-model theme_picker", "cargo test -p yoctui-ui theme_picker", "cargo test -p yoctui -- theme_picker"]
 notes = "Added focus-trapped named theme submenu with immediate palette application, persistence on accept, and focused model/UI coverage."
+
+[[task]]
+id = "UX-THEME-STARTUP-001"
+milestone = "M8"
+title = "Apply theme while scrolling and restore Navigator onboarding focus"
+status = "DONE"
+priority = 139
+required = true
+depends_on = ["UX-THEME-MENU-001"]
+verify = ["cargo test -p yoctui-model theme_picker", "cargo test -p yoctui -- startup_focus"]
+notes = "Theme movement now updates the active palette before close, and unconfigured startup overrides stale session screens with Build environment Navigator focus."

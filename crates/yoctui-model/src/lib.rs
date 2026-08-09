@@ -14847,6 +14847,17 @@ mod tests {
         ));
         assert!(app.active_dialog().is_none());
     }
+
+    #[test]
+    fn theme_picker_keeps_scrolled_theme_when_closed_with_escape() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::OpenThemePicker);
+        let _ = update(&mut app, Action::SelectTheme { delta: 2 });
+        assert_eq!(app.theme, Theme::MatrixGreen);
+        let _ = update(&mut app, Action::CloseThemePicker);
+        assert_eq!(app.theme, Theme::MatrixGreen);
+        assert!(app.active_dialog().is_none());
+    }
     #[test]
     fn build_completion_stays_open_until_dismissed() {
         let mut app = App::new(10, 1_000);
