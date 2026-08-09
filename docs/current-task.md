@@ -1,5 +1,11 @@
 # Current Task
 
+## Task
+
+**ID:** UX-THEME-MENU-001
+**Title:** Add immediate theme selection submenu
+**Status:** DONE
+
 ## Terminal handoff
 
 `UX-THEME-MENU-001` is the final completed task; no incomplete registry tasks remain.
