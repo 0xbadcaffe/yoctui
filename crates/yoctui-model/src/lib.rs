@@ -201,6 +201,55 @@ pub struct BuildRequest {
     pub task: Option<String>,
     pub force: bool,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BuildEnvironmentProfile {
+    pub source_dir: PathBuf,
+    pub build_dir: PathBuf,
+    pub init_script: PathBuf,
+}
+
+impl BuildEnvironmentProfile {
+    pub fn validate(&self) -> Result<(), AppError> {
+        let valid = |path: &Path| {
+            path.is_absolute()
+                && !path
+                    .components()
+                    .any(|part| matches!(part, Component::ParentDir))
+        };
+        if valid(&self.source_dir) && valid(&self.build_dir) && valid(&self.init_script) {
+            Ok(())
+        } else {
+            Err(AppError::new(
+                "Build environment",
+                "source, build directory, and environment script must be absolute normal paths",
+                "choose absolute paths in Build environment settings",
+            ))
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum BuildEnvironmentState {
+    #[default]
+    Unconfigured,
+    Configured(BuildEnvironmentProfile),
+    Verifying {
+        profile: BuildEnvironmentProfile,
+        generation: u64,
+    },
+    Connected(BuildEnvironmentProfile),
+    Failed {
+        profile: BuildEnvironmentProfile,
+        message: String,
+    },
+}
+
+impl BuildEnvironmentState {
+    pub fn connected(&self) -> bool {
+        matches!(self, Self::Connected(_))
+    }
+}
 impl BuildRequest {
     pub fn validate(&self) -> Result<(), AppError> {
         let valid_name = |value: &str| {
@@ -2119,6 +2168,8 @@ pub struct App {
     pub focus_return: Option<FocusTarget>,
     pub navigator_selection: usize,
     pub backend: String,
+    pub build_environment: BuildEnvironmentState,
+    pub build_environment_generation: u64,
     pub color_enabled: bool,
     pub theme: Theme,
     pub animation_speed: AnimationSpeed,
@@ -2235,6 +2286,12 @@ impl App {
             focus_return: None,
             navigator_selection: 0,
             backend: "unknown".into(),
+            build_environment: BuildEnvironmentState::Connected(BuildEnvironmentProfile {
+                source_dir: PathBuf::from("/"),
+                build_dir: PathBuf::from("/"),
+                init_script: PathBuf::from("/"),
+            }),
+            build_environment_generation: 0,
             color_enabled: true,
             theme: Theme::DarkPro,
             animation_speed: AnimationSpeed::Fast,
@@ -2343,6 +2400,12 @@ impl App {
             metadata_query: String::new(),
             metadata_searching: false,
         }
+    }
+    pub fn new_unconfigured(max_entries: usize, max_bytes: usize) -> Self {
+        let mut app = Self::new(max_entries, max_bytes);
+        app.build_environment = BuildEnvironmentState::Unconfigured;
+        app.screen = Screen::Settings;
+        app
     }
     pub fn elapsed(&self) -> Option<Duration> {
         self.build
@@ -2938,6 +3001,15 @@ pub enum Action {
     RetrySettingsPersistence,
     SettingsPersisted,
     SettingsPersistenceFailed(String),
+    ConfigureBuildEnvironment(BuildEnvironmentProfile),
+    BeginBuildEnvironmentVerification,
+    BuildEnvironmentVerified {
+        generation: u64,
+    },
+    BuildEnvironmentVerificationFailed {
+        generation: u64,
+        message: String,
+    },
     OpenBuildOptions,
     CloseBuildOptions,
     OpenImagePicker(Vec<String>),
@@ -5701,6 +5773,63 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 "Settings changed in memory but could not be saved: {message}"
             ));
         }
+        Action::ConfigureBuildEnvironment(profile) => match profile.validate() {
+            Ok(()) => {
+                app.build_environment = BuildEnvironmentState::Configured(profile);
+                app.notification = None;
+            }
+            Err(error) => app.notification = Some(error.to_string()),
+        },
+        Action::BeginBuildEnvironmentVerification => {
+            let profile = match &app.build_environment {
+                BuildEnvironmentState::Configured(profile)
+                | BuildEnvironmentState::Failed { profile, .. } => profile.clone(),
+                BuildEnvironmentState::Verifying { .. } => return None,
+                BuildEnvironmentState::Unconfigured | BuildEnvironmentState::Connected(_) => {
+                    app.notification =
+                        Some("Select a build environment before verification.".into());
+                    return None;
+                }
+            };
+            app.build_environment_generation = app.build_environment_generation.wrapping_add(1);
+            let generation = app.build_environment_generation;
+            app.build_environment = BuildEnvironmentState::Verifying {
+                profile: profile.clone(),
+                generation,
+            };
+            return Some(Effect::VerifyBuildEnvironment {
+                profile,
+                generation,
+            });
+        }
+        Action::BuildEnvironmentVerified { generation } => {
+            if let BuildEnvironmentState::Verifying {
+                profile,
+                generation: pending,
+            } = &app.build_environment
+                && *pending == generation
+            {
+                app.build_environment = BuildEnvironmentState::Connected(profile.clone());
+                app.notification = None;
+            }
+        }
+        Action::BuildEnvironmentVerificationFailed {
+            generation,
+            message,
+        } => {
+            if let BuildEnvironmentState::Verifying {
+                profile,
+                generation: pending,
+            } = &app.build_environment
+                && *pending == generation
+            {
+                app.build_environment = BuildEnvironmentState::Failed {
+                    profile: profile.clone(),
+                    message: message.clone(),
+                };
+                app.notification = Some(format!("BitBake connection failed: {message}"));
+            }
+        }
         Action::CycleFocus { backwards } => {
             if matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette) {
                 return None;
@@ -5722,7 +5851,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.focus = TARGETS[next];
         }
         Action::OpenBuildOptions => {
-            open_dialog(app, Dialog::BuildOptions);
+            if app.build_environment.connected() {
+                open_dialog(app, Dialog::BuildOptions);
+            } else {
+                app.notification = Some("Configure and verify a BitBake environment first".into());
+            }
         }
         Action::CloseBuildOptions => {
             if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
@@ -8813,7 +8946,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::Start(r) => {
-            if let Err(e) = r.validate() {
+            if !app.build_environment.connected() {
+                app.notification = Some("Configure and verify a BitBake environment first".into());
+            } else if let Err(e) = r.validate() {
                 app.notification = Some(e.to_string())
             } else {
                 prepare_build(app, r.targets.first().cloned());
@@ -11726,6 +11861,10 @@ fn next_filter(values: &[String], current: Option<String>) -> Option<String> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Effect {
     PersistSettings,
+    VerifyBuildEnvironment {
+        profile: BuildEnvironmentProfile,
+        generation: u64,
+    },
     Start(BuildRequest),
     Cancel,
     OpenInEditor(PathBuf),
@@ -18486,5 +18625,74 @@ mod tests {
         let ignored = app.background_jobs.ignored_transitions;
         let _ = update(&mut app, Action::TestJunitExportSucceeded { request });
         assert_eq!(app.background_jobs.ignored_transitions, ignored + 1);
+    }
+
+    #[test]
+    fn build_environment_requires_a_verified_correlated_connection() {
+        let profile = BuildEnvironmentProfile {
+            source_dir: PathBuf::from("/workspace/poky"),
+            build_dir: PathBuf::from("/workspace/build"),
+            init_script: PathBuf::from("/workspace/poky/oe-init-build-env"),
+        };
+        let mut app = App::new_unconfigured(16, 4096);
+        assert_eq!(app.screen, Screen::Settings);
+        let request = BuildRequest {
+            targets: vec!["core-image-minimal".into()],
+            task: None,
+            force: false,
+        };
+        assert_eq!(update(&mut app, Action::Start(request.clone())), None);
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Configure and verify a BitBake environment first")
+        );
+
+        assert_eq!(
+            update(&mut app, Action::ConfigureBuildEnvironment(profile.clone())),
+            None
+        );
+        let Some(Effect::VerifyBuildEnvironment { generation, .. }) =
+            update(&mut app, Action::BeginBuildEnvironmentVerification)
+        else {
+            panic!("verification effect");
+        };
+        let _ = update(
+            &mut app,
+            Action::BuildEnvironmentVerified {
+                generation: generation + 1,
+            },
+        );
+        assert!(matches!(
+            app.build_environment,
+            BuildEnvironmentState::Verifying { .. }
+        ));
+        let _ = update(&mut app, Action::BuildEnvironmentVerified { generation });
+        assert_eq!(
+            app.build_environment,
+            BuildEnvironmentState::Connected(profile)
+        );
+        assert_eq!(
+            update(&mut app, Action::Start(request.clone())),
+            Some(Effect::Start(request))
+        );
+    }
+
+    #[test]
+    fn build_environment_rejects_relative_profiles_and_preserves_unconfigured_state() {
+        let mut app = App::new_unconfigured(16, 4096);
+        let _ = update(
+            &mut app,
+            Action::ConfigureBuildEnvironment(BuildEnvironmentProfile {
+                source_dir: PathBuf::from("poky"),
+                build_dir: PathBuf::from("/workspace/build"),
+                init_script: PathBuf::from("/workspace/poky/oe-init-build-env"),
+            }),
+        );
+        assert_eq!(app.build_environment, BuildEnvironmentState::Unconfigured);
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("absolute"))
+        );
     }
 }

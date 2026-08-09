@@ -2,31 +2,32 @@
 
 ## Task
 
-**ID:** ENV-MODEL-001
-**Title:** Model build environment profiles and gated connection state
+**ID:** ENV-ADAPTER-001
+**Title:** Validate and initialize a selected build environment
 **Status:** NOT_STARTED
 
 ## Objective
 
-Add pure typed state and reducer behavior for selecting a profile and requiring
-a verified connection before build-capable actions can run.
+Add bounded source/build/script validation and child-only environment
+initialization results for the selected profile.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model build_environment
+cargo test -p yoctui-bitbake build_environment
 ```
 
 ## Definition of done
 
-- Profile drafts validate source/build identities and lifecycle transitions.
-- Build-capable actions remain disabled until a correlated connection succeeds.
-- Reducer effects and failure/cancellation paths have focused tests.
+- Adapter validation is bounded and rejects unsafe paths before execution.
+- Initialization returns child-only environment data or typed
+  interactive-required/failure/cancellation results.
+- Fake-process tests cover normal and failure paths.
 
 ## Next task
 
-Implement `ENV-MODEL-001`.
+Implement `ENV-ADAPTER-001`.
 
 ## Terminal handoff
 
-`ENV-GOV-001` completed; `ENV-MODEL-001` is eligible to start.
+`ENV-MODEL-001` completed; `ENV-ADAPTER-001` is eligible to start.

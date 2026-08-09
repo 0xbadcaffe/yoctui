@@ -2151,12 +2151,12 @@ notes = "Define the no-argument startup, profile, initialization, shell-handoff,
 id = "ENV-MODEL-001"
 milestone = "M8"
 title = "Model build environment profiles and gated connection state"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 126
 required = true
 depends_on = ["ENV-GOV-001"]
 verify = ["cargo test -p yoctui-model build_environment"]
-notes = "Add typed profile drafts, lifecycle/results, action/effect validation, persistence-safe state, and build-action gating."
+notes = "Added typed profile validation, unconfigured/configured/verifying/connected/failed state, correlation-safe verification effects, and direct build gating. Focused reducer tests cover rejection, stale completion, and successful unlock."
 
 [[task]]
 id = "ENV-ADAPTER-001"

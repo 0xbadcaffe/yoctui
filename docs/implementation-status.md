@@ -15,6 +15,8 @@ Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
 operators select or clone a source, initialize it safely, use an interactive
 setup shell when needed, and verify BitBake before build controls unlock.
+The typed profile and correlated connection gate are complete; adapter-backed
+initialization is the active next step.
 Yoctui now uses Packrat's eight built-in palettes—Dark Pro, White
 Classic, Matrix Green, VSCode Dark/Light, Accessible Dark, Soft Light, and
 High Contrast—while retaining `--no-color` as a separate accessibility override.
