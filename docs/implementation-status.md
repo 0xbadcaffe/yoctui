@@ -19,6 +19,8 @@ The typed profile and correlated connection gate are complete; adapter-backed
 initialization now validates paths and captures a bounded child-only
 environment, with interactive-required detection. Reviewed clone setup is the
 active next step.
+Reviewed Poky clone requests now have exact vectors, destination safeguards,
+and fake-git coverage; the setup UI is the active next step.
 Yoctui now uses Packrat's eight built-in palettes—Dark Pro, White
 Classic, Matrix Green, VSCode Dark/Light, Accessible Dark, Soft Light, and
 High Contrast—while retaining `--no-color` as a separate accessibility override.

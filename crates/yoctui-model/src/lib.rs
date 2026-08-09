@@ -209,6 +209,48 @@ pub struct BuildEnvironmentProfile {
     pub init_script: PathBuf,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BuildEnvironmentCloneRequest {
+    pub repository: String,
+    pub destination: PathBuf,
+    pub revision: Option<String>,
+}
+
+impl BuildEnvironmentCloneRequest {
+    pub fn validate(&self) -> Result<(), AppError> {
+        let valid_revision = |value: &str| {
+            !value.is_empty()
+                && value.len() <= 256
+                && value.chars().all(|character| {
+                    character.is_ascii_alphanumeric()
+                        || matches!(character, '-' | '_' | '.' | '/' | '@' | ':')
+                })
+        };
+        if self.repository.is_empty()
+            || self
+                .repository
+                .chars()
+                .any(|character| character.is_ascii_control())
+            || !self.destination.is_absolute()
+            || self
+                .destination
+                .components()
+                .any(|part| matches!(part, Component::ParentDir))
+            || self
+                .revision
+                .as_deref()
+                .is_some_and(|value| !valid_revision(value))
+        {
+            return Err(AppError::new(
+                "Build environment",
+                "invalid Poky clone request",
+                "provide a repository and an absolute empty destination",
+            ));
+        }
+        Ok(())
+    }
+}
+
 impl BuildEnvironmentProfile {
     pub fn validate(&self) -> Result<(), AppError> {
         let valid = |path: &Path| {
@@ -18694,5 +18736,18 @@ mod tests {
                 .as_deref()
                 .is_some_and(|message| message.contains("absolute"))
         );
+    }
+
+    #[test]
+    fn build_environment_clone_request_rejects_unsafe_revision_and_destination() {
+        let mut request = BuildEnvironmentCloneRequest {
+            repository: "https://example.invalid/poky".into(),
+            destination: PathBuf::from("/workspace/poky"),
+            revision: Some("main;rm -rf".into()),
+        };
+        assert!(request.validate().is_err());
+        request.revision = Some("scarthgap".into());
+        request.destination = PathBuf::from("relative/poky");
+        assert!(request.validate().is_err());
     }
 }

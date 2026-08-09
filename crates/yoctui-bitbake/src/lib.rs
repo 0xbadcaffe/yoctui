@@ -54,7 +54,8 @@ mod test_support {
 
 use async_trait::async_trait;
 pub use build_environment::{
-    BuildEnvironmentAdapter, BuildEnvironmentAdapterError, BuildEnvironmentResponse,
+    BuildEnvironmentAdapter, BuildEnvironmentAdapterError, BuildEnvironmentClonePreview,
+    BuildEnvironmentResponse,
 };
 pub use image::{
     ImageArtifactAdapter, ImageArtifactAdapterError, ImageArtifactCancellation,

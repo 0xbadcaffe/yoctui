@@ -4,7 +4,7 @@ use tokio::{
     process::Command,
     time::{error::Elapsed, timeout},
 };
-use yoctui_model::BuildEnvironmentProfile;
+use yoctui_model::{BuildEnvironmentCloneRequest, BuildEnvironmentProfile};
 
 const MAX_OUTPUT: usize = 64 * 1024;
 
@@ -12,6 +12,13 @@ const MAX_OUTPUT: usize = 64 * 1024;
 pub struct BuildEnvironmentResponse {
     pub profile: BuildEnvironmentProfile,
     pub environment: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BuildEnvironmentClonePreview {
+    pub clone_argv: Vec<String>,
+    pub checkout_argv: Option<Vec<String>>,
+    pub destination: PathBuf,
 }
 
 #[derive(Debug, Error)]
@@ -32,11 +39,16 @@ pub enum BuildEnvironmentAdapterError {
     OutputTooLarge,
     #[error("environment output was not valid UTF-8")]
     InvalidOutput,
+    #[error("clone destination is not empty: {0}")]
+    DestinationNotEmpty(PathBuf),
+    #[error("clone destination parent is unavailable: {0}")]
+    DestinationParent(PathBuf),
 }
 
 #[derive(Debug, Clone)]
 pub struct BuildEnvironmentAdapter {
     timeout: Duration,
+    git_program: PathBuf,
 }
 
 impl Default for BuildEnvironmentAdapter {
@@ -47,7 +59,111 @@ impl Default for BuildEnvironmentAdapter {
 
 impl BuildEnvironmentAdapter {
     pub fn new(timeout: Duration) -> Self {
-        Self { timeout }
+        Self {
+            timeout,
+            git_program: PathBuf::from("git"),
+        }
+    }
+
+    pub fn with_git_program(mut self, program: impl Into<PathBuf>) -> Self {
+        self.git_program = program.into();
+        self
+    }
+
+    pub fn preview_clone(
+        &self,
+        request: &BuildEnvironmentCloneRequest,
+    ) -> Result<BuildEnvironmentClonePreview, BuildEnvironmentAdapterError> {
+        request
+            .validate()
+            .map_err(|_| BuildEnvironmentAdapterError::UnsafePath(request.destination.clone()))?;
+        if let Some(parent) = request.destination.parent() {
+            if !parent.is_dir() {
+                return Err(BuildEnvironmentAdapterError::DestinationParent(
+                    parent.to_owned(),
+                ));
+            }
+        }
+        if request.destination.exists() {
+            if request.destination.is_symlink() {
+                return Err(BuildEnvironmentAdapterError::UnsafePath(
+                    request.destination.clone(),
+                ));
+            }
+            if request
+                .destination
+                .read_dir()
+                .map_err(|_| {
+                    BuildEnvironmentAdapterError::DestinationNotEmpty(request.destination.clone())
+                })?
+                .next()
+                .is_some()
+            {
+                return Err(BuildEnvironmentAdapterError::DestinationNotEmpty(
+                    request.destination.clone(),
+                ));
+            }
+        }
+        let mut clone_argv = vec![
+            "clone".into(),
+            request.repository.clone(),
+            request.destination.display().to_string(),
+        ];
+        if request.revision.is_some() {
+            clone_argv.insert(1, "--no-checkout".into());
+        }
+        let checkout_argv = request.revision.as_ref().map(|revision| {
+            vec![
+                "-C".into(),
+                request.destination.display().to_string(),
+                "checkout".into(),
+                revision.clone(),
+            ]
+        });
+        Ok(BuildEnvironmentClonePreview {
+            clone_argv,
+            checkout_argv,
+            destination: request.destination.clone(),
+        })
+    }
+
+    pub async fn clone_poky(
+        &self,
+        request: BuildEnvironmentCloneRequest,
+    ) -> Result<BuildEnvironmentClonePreview, BuildEnvironmentAdapterError> {
+        let preview = self.preview_clone(&request)?;
+        let output = timeout(
+            self.timeout,
+            Command::new(&self.git_program)
+                .args(&preview.clone_argv)
+                .output(),
+        )
+        .await
+        .map_err(|_: Elapsed| BuildEnvironmentAdapterError::Timeout)?
+        .map_err(|error| BuildEnvironmentAdapterError::Failed(error.to_string()))?;
+        if output.stdout.len() > MAX_OUTPUT || output.stderr.len() > MAX_OUTPUT {
+            return Err(BuildEnvironmentAdapterError::OutputTooLarge);
+        }
+        if !output.status.success() {
+            return Err(BuildEnvironmentAdapterError::Failed(
+                String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+            ));
+        }
+        if let Some(checkout) = &preview.checkout_argv {
+            let output = timeout(
+                self.timeout,
+                Command::new(&self.git_program).args(checkout).output(),
+            )
+            .await
+            .map_err(|_: Elapsed| BuildEnvironmentAdapterError::Timeout)?
+            .map_err(|error| BuildEnvironmentAdapterError::Failed(error.to_string()))?;
+            if !output.status.success() {
+                return Err(BuildEnvironmentAdapterError::Failed(
+                    String::from_utf8_lossy(&output.stderr).trim().to_owned(),
+                ));
+            }
+        }
+        Ok(preview)
     }
 
     pub fn validate(
@@ -217,6 +333,29 @@ mod tests {
             BuildEnvironmentAdapter::default().initialize(p).await,
             Err(BuildEnvironmentAdapterError::InteractiveRequired)
         ));
+        let _ = fs::remove_dir_all(root);
+    }
+
+    #[tokio::test]
+    async fn poky_clone_requires_empty_destination_and_uses_reviewed_vectors() {
+        let root = std::env::temp_dir().join(format!("yoctui-clone-{}", std::process::id()));
+        let bin = root.join("git-fixture");
+        let destination = root.join("poky");
+        fs::create_dir_all(&root).unwrap();
+        crate::test_support::write_executable(
+            &bin,
+            "#!/bin/sh\nif [ \"$2\" = \"--no-checkout\" ]; then mkdir -p \"$4\"; else mkdir -p \"$3\"; fi\n",
+        );
+        let request = BuildEnvironmentCloneRequest {
+            repository: "https://example.invalid/poky".into(),
+            destination: destination.clone(),
+            revision: Some("scarthgap".into()),
+        };
+        let adapter = BuildEnvironmentAdapter::default().with_git_program(bin);
+        let preview = adapter.preview_clone(&request).unwrap();
+        assert_eq!(preview.clone_argv[1], "--no-checkout");
+        adapter.clone_poky(request).await.unwrap();
+        assert!(destination.is_dir());
         let _ = fs::remove_dir_all(root);
     }
 }

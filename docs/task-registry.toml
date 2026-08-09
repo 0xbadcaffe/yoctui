@@ -2173,12 +2173,12 @@ notes = "Added bounded source/build/script validation and child-only bash enviro
 id = "ENV-CLONE-001"
 milestone = "M8"
 title = "Add reviewed Poky clone setup"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 128
 required = true
 depends_on = ["ENV-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake poky_clone", "cargo test -p yoctui-model build_environment_clone"]
-notes = "Add exact non-shell clone/checkout previews, empty-destination safeguards, cancellation, and typed outcomes."
+notes = "Added validated clone/checkout request identities, exact reviewed vectors, empty/symlink destination safeguards, non-shell execution with bounded output, and fake-git coverage."
 
 [[task]]
 id = "ENV-UI-001"
