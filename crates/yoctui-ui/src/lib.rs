@@ -6475,9 +6475,9 @@ fn build_environment_workspace(frame: &mut Frame, app: &App, area: Rect) {
         draft.field, draft.source, draft.build, draft.script
     )).unwrap_or_default();
     let images = if app.build_environment.connected() && !app.available_images.is_empty() {
-        format!("\n\nAvailable images:\n{}", app.available_images.join("\n"))
+        format!("\n\navailable images:\n{}", app.available_images.join("\n"))
     } else {
-        "\n\nAvailable images: locked until BitBake verification succeeds.".into()
+        "\n\navailable images: locked until BitBake verification succeeds.".into()
     };
     let text = format!(
         "Build environment\n\n{status}{draft}{images}\n\nChoose e to edit. Choose V to verify BitBake."
