@@ -5666,8 +5666,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     let mut qa_coordinator =
         QaCliCoordinator::new(session_build_dir.clone(), initialized_paths.clone());
     let mut pending_qa_build = None;
+    let maintenance_build_dir = if app.build_environment.connected() {
+        session_build_dir.clone()
+    } else {
+        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/tmp"))
+    };
     let mut maintenance_coordinator =
-        MaintenanceCliCoordinator::new(&app, &session_build_dir, initialized_paths)
+        MaintenanceCliCoordinator::new(&app, &maintenance_build_dir, initialized_paths)
             .map_err(anyhow::Error::msg)?;
     if app.screen == Screen::Packages
         && let Some(effect @ Effect::GetPackageInventory(_)) =
