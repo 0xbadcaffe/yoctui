@@ -2206,12 +2206,23 @@ notes = "Interactive startup now uses App::new_unconfigured and no longer falls 
 id = "ENV-CONNECT-001"
 milestone = "M8"
 title = "Execute onboarding effects and verify managed BitBake connections"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 131
 required = true
 depends_on = ["ENV-CLI-001"]
 verify = ["cargo test -p yoctui build_environment", "./scripts/test-cli.sh"]
-notes = "Execute typed initialization/clone effects, retain child environments only in the managed session, and install a backend only after a typed workspace verification succeeds."
+notes = "Settings verification now executes the typed initialization adapter and dispatches correlated success or failure actions. Adapter output remains child-only and interactive-required outcomes stay actionable."
+
+[[task]]
+id = "ENV-CONNECT-002"
+milestone = "M8"
+title = "Install the managed backend after typed verification"
+status = "NOT_STARTED"
+priority = 132
+required = true
+depends_on = ["ENV-CONNECT-001"]
+verify = ["cargo test -p yoctui build_environment", "./scripts/test-cli.sh"]
+notes = "Construct bridge/process backends from the captured environment only after typed workspace verification; preserve correlated failure, cancellation, and backend-loss states."
 
 [[task]]
 id = "ENV-INT-001"
@@ -2220,6 +2231,6 @@ title = "Validate in-app build environment onboarding end to end"
 status = "NOT_STARTED"
 priority = 131
 required = true
-depends_on = ["ENV-CONNECT-001"]
+depends_on = ["ENV-CONNECT-002"]
 verify = ["cargo test --workspace --all-features", "./scripts/test-tui-pty.sh", "./scripts/verify-completion.sh"]
 notes = "Run complete fake-process, TestBackend, CLI, PTY, and completion validation; live setup remains opt-in and separately evidenced."

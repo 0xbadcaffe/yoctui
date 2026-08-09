@@ -52,23 +52,23 @@ use yoctui_app::{
     wic_write_confirmation_action, wic_write_phrase_action,
 };
 use yoctui_bitbake::{
-    BackendEvent, BitBakeBackend, BridgeBackend, DevtoolCommandSpec, DevtoolInspector,
-    DevtoolJobRunner, DevtoolRunnerEvent, ImageArtifactAdapter, ImageArtifactCancellation,
-    PackageDataAdapter, PackageDataCancellation, ProcessBackend, QaConfiguredLayerInput,
-    QaFamilyTaskBinding, QaLayerCapabilityInput, QaLayerCapabilityInspector, QaLayerCommandSpec,
-    QaLayerJobRunner, QaLayerRunnerEvent, QaReportAdapter, QaReportAdapterError,
-    QaReportCancellation, QaReportCandidate, QaReportOrigin, QaReportRootInput, QaReportScanInput,
-    QaTaskCapabilityInput, QaTaskCapabilityInspector, QaTaskScopeInput, QemuAdapterError,
-    QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner, QemuRunnerEvent, SdkArtifactAdapter,
-    SdkArtifactCancellation, SdkArtifactScanOutcome, SdkToolAdapter, SdkToolAdapterError,
-    SdkToolCommandSpec, SdkToolJobRunner, SdkToolRunnerEvent, SecurityCapabilityInput,
-    SecurityCapabilityInspector, SecurityMapperCommandSpec, SecurityMapperJobRunner,
-    SecurityMapperRunnerEvent, SecurityReportAdapter, SecurityReportAdapterError,
-    SecurityReportCancellation, SecurityReportScanOutcome, SignatureAdapter, SignatureCancellation,
-    TestResultAdapter, TestResultJob, TestResultOperation, TestResultRunnerEvent,
-    TestRunnerAdapter, TestRunnerEvent, TestRunnerJob, VariableValue, WicAdapterError,
-    WicCapabilityInspector, WicCreateCommandSpec, WicDeviceInspector, WicDeviceInventoryResponse,
-    WicJobRunner, WicRunnerEvent,
+    BackendEvent, BitBakeBackend, BridgeBackend, BuildEnvironmentAdapter, DevtoolCommandSpec,
+    DevtoolInspector, DevtoolJobRunner, DevtoolRunnerEvent, ImageArtifactAdapter,
+    ImageArtifactCancellation, PackageDataAdapter, PackageDataCancellation, ProcessBackend,
+    QaConfiguredLayerInput, QaFamilyTaskBinding, QaLayerCapabilityInput,
+    QaLayerCapabilityInspector, QaLayerCommandSpec, QaLayerJobRunner, QaLayerRunnerEvent,
+    QaReportAdapter, QaReportAdapterError, QaReportCancellation, QaReportCandidate, QaReportOrigin,
+    QaReportRootInput, QaReportScanInput, QaTaskCapabilityInput, QaTaskCapabilityInspector,
+    QaTaskScopeInput, QemuAdapterError, QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner,
+    QemuRunnerEvent, SdkArtifactAdapter, SdkArtifactCancellation, SdkArtifactScanOutcome,
+    SdkToolAdapter, SdkToolAdapterError, SdkToolCommandSpec, SdkToolJobRunner, SdkToolRunnerEvent,
+    SecurityCapabilityInput, SecurityCapabilityInspector, SecurityMapperCommandSpec,
+    SecurityMapperJobRunner, SecurityMapperRunnerEvent, SecurityReportAdapter,
+    SecurityReportAdapterError, SecurityReportCancellation, SecurityReportScanOutcome,
+    SignatureAdapter, SignatureCancellation, TestResultAdapter, TestResultJob, TestResultOperation,
+    TestResultRunnerEvent, TestRunnerAdapter, TestRunnerEvent, TestRunnerJob, VariableValue,
+    WicAdapterError, WicCapabilityInspector, WicCreateCommandSpec, WicDeviceInspector,
+    WicDeviceInventoryResponse, WicJobRunner, WicRunnerEvent,
 };
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
@@ -6815,13 +6815,30 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
             } else if app.screen == Screen::Settings && settings_action(input).is_some() {
                 let action = settings_action(input).expect("settings action was checked");
-                if matches!(update(&mut app, action), Some(Effect::PersistSettings)) {
-                    let result = persist_settings(session_path.as_deref(), &mut session, &app);
-                    let persistence_action = match result {
-                        Ok(()) => Action::SettingsPersisted,
-                        Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
-                    };
-                    let _ = update(&mut app, persistence_action);
+                match update(&mut app, action) {
+                    Some(Effect::PersistSettings) => {
+                        let result = persist_settings(session_path.as_deref(), &mut session, &app);
+                        let persistence_action = match result {
+                            Ok(()) => Action::SettingsPersisted,
+                            Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
+                        };
+                        let _ = update(&mut app, persistence_action);
+                    }
+                    Some(Effect::VerifyBuildEnvironment {
+                        profile,
+                        generation,
+                    }) => {
+                        let action =
+                            match BuildEnvironmentAdapter::default().initialize(profile).await {
+                                Ok(_) => Action::BuildEnvironmentVerified { generation },
+                                Err(error) => Action::BuildEnvironmentVerificationFailed {
+                                    generation,
+                                    message: error.to_string(),
+                                },
+                            };
+                        let _ = update(&mut app, action);
+                    }
+                    _ => {}
                 }
             } else if app.screen == Screen::Tasks
                 && tasks_action(app.task_filter_editing, input).is_some()
