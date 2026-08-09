@@ -6859,59 +6859,50 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             {
                 let action =
                     build_environment_action(input).expect("build environment action was checked");
-                if let Some(effect) = update(&mut app, action) {
-                    if let Effect::VerifyBuildEnvironment {
-                        profile,
-                        generation,
-                    } = effect
-                    {
-                        match BuildEnvironmentAdapter::default().initialize(profile).await {
-                            Ok(response) => {
-                                let profile = response.profile.clone();
-                                let _ = update(
-                                    &mut app,
-                                    Action::BuildEnvironmentVerified { generation },
-                                );
-                                let _ = backend.shutdown().await;
-                                match select_backend_with_environment(
-                                    backend_kind.clone(),
-                                    profile.build_dir.clone(),
-                                    Some(cancellation_timeout),
-                                    Some(response.environment),
-                                )
-                                .await
-                                {
-                                    Ok(mut connected) => {
-                                        match connected.inspect_workspace().await {
-                                            Ok(workspace) => {
-                                                let _ = update(
-                                                    &mut app,
-                                                    Action::WorkspaceLoaded(workspace),
-                                                );
-                                                backend = connected;
-                                            }
-                                            Err(error) => {
-                                                app.notification = Some(format!(
-                                                    "BitBake verification failed: {error}"
-                                                ))
-                                            }
-                                        }
+                if let Some(Effect::VerifyBuildEnvironment {
+                    profile,
+                    generation,
+                }) = update(&mut app, action)
+                {
+                    match BuildEnvironmentAdapter::default().initialize(profile).await {
+                        Ok(response) => {
+                            let profile = response.profile.clone();
+                            let _ =
+                                update(&mut app, Action::BuildEnvironmentVerified { generation });
+                            let _ = backend.shutdown().await;
+                            match select_backend_with_environment(
+                                backend_kind.clone(),
+                                profile.build_dir.clone(),
+                                Some(cancellation_timeout),
+                                Some(response.environment),
+                            )
+                            .await
+                            {
+                                Ok(mut connected) => match connected.inspect_workspace().await {
+                                    Ok(workspace) => {
+                                        let _ =
+                                            update(&mut app, Action::WorkspaceLoaded(workspace));
+                                        backend = connected;
                                     }
                                     Err(error) => {
                                         app.notification =
-                                            Some(format!("Could not start BitBake: {error}"))
+                                            Some(format!("BitBake verification failed: {error}"))
                                     }
+                                },
+                                Err(error) => {
+                                    app.notification =
+                                        Some(format!("Could not start BitBake: {error}"))
                                 }
                             }
-                            Err(error) => {
-                                let _ = update(
-                                    &mut app,
-                                    Action::BuildEnvironmentVerificationFailed {
-                                        generation,
-                                        message: error.to_string(),
-                                    },
-                                );
-                            }
+                        }
+                        Err(error) => {
+                            let _ = update(
+                                &mut app,
+                                Action::BuildEnvironmentVerificationFailed {
+                                    generation,
+                                    message: error.to_string(),
+                                },
+                            );
                         }
                     }
                 }
