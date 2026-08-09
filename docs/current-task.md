@@ -2,31 +2,31 @@
 
 ## Task
 
-**ID:** DOC-README-002
-**Title:** Simplify the Poky README quickstart
-**Status:** DONE
+**ID:** ENV-MODEL-001
+**Title:** Model build environment profiles and gated connection state
+**Status:** NOT_STARTED
 
 ## Objective
 
-Final completed task: provide one Poky build-environment path and explicitly
-set and pass `BUILDDIR` to `oe-init-build-env`.
+Add pure typed state and reducer behavior for selecting a profile and requiring
+a verified connection before build-capable actions can run.
 
 ## Verification
 
 ```bash
-./scripts/test-readme-quickstart.sh
-./scripts/check-docs.sh
-./scripts/verify-roadmap.sh
+cargo test -p yoctui-model build_environment
 ```
 
 ## Definition of done
 
-- README presents one guarded Poky setup path.
-- `BUILDDIR` is set before and passed to `oe-init-build-env`.
-- Documentation checks pass.
+- Profile drafts validate source/build identities and lifecycle transitions.
+- Build-capable actions remain disabled until a correlated connection succeeds.
+- Reducer effects and failure/cancellation paths have focused tests.
 
 ## Next task
 
+Implement `ENV-MODEL-001`.
+
 ## Terminal handoff
 
-All registry tasks are complete.
+`ENV-GOV-001` completed; `ENV-MODEL-001` is eligible to start.

@@ -2479,6 +2479,48 @@ Do not persist live BitBake state as authoritative state.
 
 ---
 
+### Build environment onboarding
+
+Yoctui launches without positional targets or a `--build-dir` argument. If it
+does not have a previously verified build environment, it opens Settings with
+the **Build environment** section selected. Until the connection check passes,
+build and metadata actions remain visible but disabled with the reason
+`Configure and verify a BitBake environment first`.
+
+The section is a typed, focus-trapped setup form with these rows:
+
+- **Use existing source**: an absolute Poky/Yocto source path, an absolute
+  build-directory path, and the detected environment script
+  (`oe-init-build-env` or a build wrapper).
+- **Clone Poky**: repository URL, absolute destination, optional revision, and
+  absolute build-directory path. Clone never starts before a review screen
+  shows the exact non-shell `git clone` and checkout vectors and the user
+  confirms them.
+- **Initialize environment**: runs only the selected, validated environment
+  script for the selected build directory. Yoctui captures the resulting child
+  environment for its managed BitBake processes; it never mutates the TUI
+  process environment.
+- **Open setup shell**: opens an inherited embedded shell at the selected
+  source/build context when initialization needs an interactive answer. The
+  shell owns all input until it exits; after exit Yoctui rechecks the selected
+  environment rather than assuming success from terminal text.
+- **Verify connection**: checks the selected build directory and starts the
+  managed BitBake connection. Success requires a typed workspace response;
+  failure shows its bounded diagnostic and keeps build controls disabled.
+
+Source, build, and clone destinations must be absolute canonical directories
+when used. Existing paths are inspected before initialization; a missing,
+unsafe, or mismatched script is explained without execution. Clone may create
+only its reviewed destination, never overwrites a nonempty directory, and is
+cancellable before initialization. Initialization, shell exit, clone, and
+verification retain distinct pending, success, cancelled, and failure states.
+
+The selected source/build profile and recent verified profiles may persist in
+the session. Captured environment values, credentials, live server state, and
+terminal transcripts do not persist. `--build-dir` and `--backend` remain
+supported diagnostic overrides; normal interactive startup does not require
+users to understand backend names such as `bridge`.
+
 ## 26. Responsive layouts
 
 ### Wide terminal

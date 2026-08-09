@@ -151,3 +151,22 @@ Exit criteria:
 - complete compatibility matrix
 - installation and operator documentation
 - final completion gate passes from a fresh checkout
+
+## M8 — In-app build environment onboarding
+
+Goal: make first-run BitBake setup safe and understandable without requiring
+shell setup before starting Yoctui.
+
+Capabilities:
+
+- launch without a build-directory argument
+- typed existing-source and reviewed Poky-clone profiles
+- validated environment initialization and interactive setup-shell handoff
+- managed child-only environment capture
+- explicit BitBake connection verification before build controls unlock
+
+Exit criteria:
+
+- startup never treats the current directory as an implicit build
+- clone, initialize, cancel, shell, and verification outcomes remain distinct
+- no build or metadata action starts before a typed connection succeeds

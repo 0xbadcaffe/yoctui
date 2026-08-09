@@ -12,7 +12,10 @@ Status values:
 ## Current phase
 
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
-complete. Yoctui now uses Packrat's eight built-in palettes—Dark Pro, White
+complete. In-app build-environment onboarding is now in progress: it will let
+operators select or clone a source, initialize it safely, use an interactive
+setup shell when needed, and verify BitBake before build controls unlock.
+Yoctui now uses Packrat's eight built-in palettes—Dark Pro, White
 Classic, Matrix Green, VSCode Dark/Light, Accessible Dark, Soft Light, and
 High Contrast—while retaining `--no-color` as a separate accessibility override.
 Legacy `dark` and `light` configuration values remain supported as aliases.
@@ -92,7 +95,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-The registry is complete; the terminal handoff is `DOC-README-002`.
+The active task is `ENV-GOV-001`; see `docs/current-task.md`.
 
 ## Rules
 

@@ -1056,6 +1056,32 @@ intact and dispatch a visible failure notice.
 Persist only user preferences and recent valid workspace references. Do not
 persist transient secrets or unbounded logs.
 
+### Build-environment onboarding
+
+Interactive startup may begin without a build directory. `yoctui-model` owns a
+typed environment profile and lifecycle for source inspection, clone preview,
+initialization, interactive-shell handoff, and connection verification. It
+does not parse shell output or infer success from a prompt. Until a correlated
+typed workspace response succeeds, it keeps the workspace disconnected and
+build-capable actions disabled.
+
+`yoctui-bitbake` owns source/build/script validation and the bounded setup
+adapter. It executes only an adapter-generated shell invocation to source the
+validated environment script and emit a framed, allowlisted environment for a
+child process. It reports an interactive-required result without attempting to
+answer prompts. It also owns exact non-shell Git clone/checkout vectors and
+their cancellation. The embedded-shell backend receives the validated context
+and owns any interactive exchange. Shell environment changes stay inside its
+child process.
+
+The CLI executes typed onboarding effects, keeps the terminal responsive, and
+constructs the managed backend from the correlated captured child environment.
+It verifies the backend by requesting a typed workspace snapshot before
+installing it as the active session. CLI `--build-dir`/`--backend` values are
+explicit overrides for automation and diagnostics; an omitted build directory
+creates an unconfigured session instead of treating the current directory as
+a build.
+
 ## Terminal ownership
 
 Terminal initialization and restoration use RAII. Restoration includes:

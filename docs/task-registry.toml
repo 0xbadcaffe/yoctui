@@ -2135,3 +2135,80 @@ required = true
 depends_on = ["CI-RUFF-001"]
 verify = ["./scripts/test-readme-quickstart.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "Replaced two overlapping Yocto setup paths with one guarded complete-Poky path. The README explicitly sets BUILDDIR before sourcing oe-init-build-env and passes it as the build-directory argument; documentation checks pass."
+
+[[task]]
+id = "ENV-GOV-001"
+milestone = "M8"
+title = "Specify in-app build environment onboarding"
+status = "DONE"
+priority = 125
+required = true
+depends_on = ["DOC-README-002"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Define the no-argument startup, profile, initialization, shell-handoff, clone, and connection-verification contract before implementation."
+
+[[task]]
+id = "ENV-MODEL-001"
+milestone = "M8"
+title = "Model build environment profiles and gated connection state"
+status = "NOT_STARTED"
+priority = 126
+required = true
+depends_on = ["ENV-GOV-001"]
+verify = ["cargo test -p yoctui-model build_environment"]
+notes = "Add typed profile drafts, lifecycle/results, action/effect validation, persistence-safe state, and build-action gating."
+
+[[task]]
+id = "ENV-ADAPTER-001"
+milestone = "M8"
+title = "Validate and initialize a selected build environment"
+status = "NOT_STARTED"
+priority = 127
+required = true
+depends_on = ["ENV-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake build_environment"]
+notes = "Add bounded source/build/script validation and child-only environment initialization with fake-process, failure, cancellation, and interactive-required coverage."
+
+[[task]]
+id = "ENV-CLONE-001"
+milestone = "M8"
+title = "Add reviewed Poky clone setup"
+status = "NOT_STARTED"
+priority = 128
+required = true
+depends_on = ["ENV-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake poky_clone", "cargo test -p yoctui-model build_environment_clone"]
+notes = "Add exact non-shell clone/checkout previews, empty-destination safeguards, cancellation, and typed outcomes."
+
+[[task]]
+id = "ENV-UI-001"
+milestone = "M8"
+title = "Render build environment settings and setup shell handoff"
+status = "NOT_STARTED"
+priority = 129
+required = true
+depends_on = ["ENV-MODEL-001"]
+verify = ["cargo test -p yoctui-ui build_environment", "cargo test -p yoctui-app build_environment"]
+notes = "Render the focus-trapped setup form, exact previews, disabled reasons, responsive states, and embedded-shell handoff."
+
+[[task]]
+id = "ENV-CLI-001"
+milestone = "M8"
+title = "Start unconfigured sessions and verify managed BitBake connections"
+status = "NOT_STARTED"
+priority = 130
+required = true
+depends_on = ["ENV-ADAPTER-001", "ENV-CLONE-001", "ENV-UI-001"]
+verify = ["cargo test -p yoctui build_environment", "./scripts/test-cli.sh"]
+notes = "Make build-dir optional for interactive startup, execute onboarding effects, retain child environments only in the managed session, and install a backend only after typed verification."
+
+[[task]]
+id = "ENV-INT-001"
+milestone = "M8"
+title = "Validate in-app build environment onboarding end to end"
+status = "NOT_STARTED"
+priority = 131
+required = true
+depends_on = ["ENV-CLI-001"]
+verify = ["cargo test --workspace --all-features", "./scripts/test-tui-pty.sh", "./scripts/verify-completion.sh"]
+notes = "Run complete fake-process, TestBackend, CLI, PTY, and completion validation; live setup remains opt-in and separately evidenced."
