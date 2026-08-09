@@ -77,12 +77,12 @@ impl BuildEnvironmentAdapter {
         request
             .validate()
             .map_err(|_| BuildEnvironmentAdapterError::UnsafePath(request.destination.clone()))?;
-        if let Some(parent) = request.destination.parent() {
-            if !parent.is_dir() {
-                return Err(BuildEnvironmentAdapterError::DestinationParent(
-                    parent.to_owned(),
-                ));
-            }
+        if let Some(parent) = request.destination.parent()
+            && !parent.is_dir()
+        {
+            return Err(BuildEnvironmentAdapterError::DestinationParent(
+                parent.to_owned(),
+            ));
         }
         if request.destination.exists() {
             if request.destination.is_symlink() {
