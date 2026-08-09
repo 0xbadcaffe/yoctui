@@ -7494,6 +7494,22 @@ mod tests {
     }
 
     #[test]
+    fn no_build_directory_resolves_to_unconfigured_startup() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-no-build-{}", std::process::id()));
+        fs::create_dir_all(&directory).unwrap();
+        let config_path = directory.join("config.toml");
+        fs::write(&config_path, "").unwrap();
+        let cli =
+            Cli::try_parse_from(["yoctui", "--config", config_path.to_str().unwrap()]).unwrap();
+        let resolved = resolve_config(&cli, &Session::default()).unwrap();
+        assert!(!resolved.build_dir_configured);
+        assert_eq!(resolved.build_dir, PathBuf::from("/"));
+        fs::remove_file(config_path).unwrap();
+        fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
     fn session_round_trip_preserves_preferences() {
         let directory = std::env::temp_dir().join(format!("yoctui-session-{}", std::process::id()));
         let path = directory.join("session.toml");

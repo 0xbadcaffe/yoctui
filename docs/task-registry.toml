@@ -2195,12 +2195,12 @@ notes = "Settings now visibly includes Build environment state and verification 
 id = "ENV-CLI-001"
 milestone = "M8"
 title = "Start unconfigured sessions without an implicit build directory"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 130
 required = true
 depends_on = ["ENV-ADAPTER-001", "ENV-CLONE-001", "ENV-UI-001"]
 verify = ["cargo test -p yoctui build_environment"]
-notes = "Interactive startup now uses App::new_unconfigured and no longer falls back to the current directory; explicit build-directory configuration retains the existing backend startup path."
+notes = "Interactive startup now uses App::new_unconfigured and no longer falls back to the current directory; explicit build-directory configuration and persisted recent directories retain the existing backend startup path. CLI regression coverage verifies unconfigured resolution."
 
 [[task]]
 id = "ENV-CONNECT-001"

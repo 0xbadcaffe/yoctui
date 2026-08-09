@@ -2,31 +2,33 @@
 
 ## Task
 
-**ID:** ENV-CLI-001
-**Title:** Start unconfigured sessions without an implicit build directory
-**Status:** IN_PROGRESS
+**ID:** ENV-CONNECT-001
+**Title:** Execute onboarding effects and verify managed BitBake connections
+**Status:** NOT_STARTED
 
 ## Objective
 
-Make build-dir optional for interactive startup and create an unconfigured app
-instead of treating the current directory as a build.
+Execute typed initialization/clone effects, retain child environments only in
+the managed session, and install a backend only after a typed workspace
+verification succeeds.
 
 ## Verification
 
 ```bash
 cargo test -p yoctui build_environment
+./scripts/test-cli.sh
 ```
 
 ## Definition of done
 
-- No-argument startup creates an unconfigured app instead of using cwd.
-- Explicit `--build-dir` and persisted recent build directories retain legacy
-  behavior.
+- Setup effects execute without blocking the TUI.
+- Backend installation is gated on typed workspace verification.
+- Connection failure, cancellation, and loss remain actionable states.
 
 ## Next task
 
-Finish `ENV-CLI-001`, then implement `ENV-CONNECT-001`.
+Implement `ENV-CONNECT-001`.
 
 ## Terminal handoff
 
-`ENV-UI-001` completed; `ENV-CLI-001` is in progress.
+`ENV-CLI-001` completed; `ENV-CONNECT-001` is eligible to start.
