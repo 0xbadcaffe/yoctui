@@ -2184,12 +2184,12 @@ notes = "Added validated clone/checkout request identities, exact reviewed vecto
 id = "ENV-UI-001"
 milestone = "M8"
 title = "Render build environment settings and setup shell handoff"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 129
 required = true
 depends_on = ["ENV-MODEL-001"]
 verify = ["cargo test -p yoctui-ui build_environment", "cargo test -p yoctui-app build_environment"]
-notes = "Render the focus-trapped setup form, exact previews, disabled reasons, responsive states, and embedded-shell handoff."
+notes = "Settings now visibly includes Build environment state and verification guidance, exposes the V verification action, and keeps build controls gated; narrow TestBackend rendering and app input coverage pass."
 
 [[task]]
 id = "ENV-CLI-001"

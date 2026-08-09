@@ -21,6 +21,9 @@ environment, with interactive-required detection. Reviewed clone setup is the
 active next step.
 Reviewed Poky clone requests now have exact vectors, destination safeguards,
 and fake-git coverage; the setup UI is the active next step.
+Settings now visibly reports Build environment state and verification guidance,
+with a typed verification shortcut and responsive TestBackend coverage. The
+no-argument CLI startup path is the active next step.
 Yoctui now uses Packrat's eight built-in palettes—Dark Pro, White
 Classic, Matrix Green, VSCode Dark/Light, Accessible Dark, Soft Light, and
 High Contrast—while retaining `--no-color` as a separate accessibility override.

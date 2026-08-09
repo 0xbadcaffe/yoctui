@@ -2,32 +2,33 @@
 
 ## Task
 
-**ID:** ENV-UI-001
-**Title:** Render build environment settings and setup shell handoff
+**ID:** ENV-CLI-001
+**Title:** Start unconfigured sessions and verify managed BitBake connections
 **Status:** NOT_STARTED
 
 ## Objective
 
-Render the focus-trapped setup form, exact previews, disabled reasons,
-responsive states, and embedded-shell handoff.
+Make build-dir optional for interactive startup, execute onboarding effects,
+retain child environments only in the managed session, and install a backend
+only after typed verification.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui build_environment
-cargo test -p yoctui-app build_environment
+cargo test -p yoctui build_environment
+./scripts/test-cli.sh
 ```
 
 ## Definition of done
 
-- Setup fields, connection states, and exact previews render responsively.
-- Build actions show the shared disabled reason until connected.
-- Interactive setup-shell handoff traps focus and restores it safely.
+- No-argument startup creates an unconfigured app instead of using cwd.
+- Typed onboarding effects execute and connection success installs the backend.
+- CLI and process failures preserve the setup state and disabled build actions.
 
 ## Next task
 
-Implement `ENV-UI-001`.
+Implement `ENV-CLI-001`.
 
 ## Terminal handoff
 
-`ENV-CLONE-001` completed; `ENV-UI-001` is eligible to start.
+`ENV-UI-001` completed; `ENV-CLI-001` is eligible to start.

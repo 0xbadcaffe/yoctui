@@ -1565,6 +1565,7 @@ pub fn settings_action(key: Input) -> Option<Action> {
         Input::Left => Some(Action::ChangeSelectedSetting { backwards: true }),
         Input::Right | Input::Enter => Some(Action::ChangeSelectedSetting { backwards: false }),
         Input::Char('r') => Some(Action::RetrySettingsPersistence),
+        Input::Char('V') => Some(Action::BeginBuildEnvironmentVerification),
         _ => None,
     }
 }

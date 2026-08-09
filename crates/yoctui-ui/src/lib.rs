@@ -8,12 +8,12 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 use yoctui_model::{
-    App, BackgroundJobKind, BackgroundJobOutputSource, BackgroundJobStatus, BuildStatus,
-    ConfigCopyValue, DependencyEdgeKind, DependencyGraph, DependencyGraphState, DependencyNodeId,
-    DependencyPathResult, DevtoolAction, DevtoolCapability, DevtoolGitState, DevtoolStatus,
-    DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget, GitFileState, ImageArtifactField,
-    ImageArtifactInventoryState, LayerBrowser, LayerBrowserEntry, LayerInspectorMode,
-    MaintenanceCapability, MaintenanceCapabilitySnapshot, MaintenanceDialog,
+    App, BackgroundJobKind, BackgroundJobOutputSource, BackgroundJobStatus, BuildEnvironmentState,
+    BuildStatus, ConfigCopyValue, DependencyEdgeKind, DependencyGraph, DependencyGraphState,
+    DependencyNodeId, DependencyPathResult, DevtoolAction, DevtoolCapability, DevtoolGitState,
+    DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget, GitFileState,
+    ImageArtifactField, ImageArtifactInventoryState, LayerBrowser, LayerBrowserEntry,
+    LayerInspectorMode, MaintenanceCapability, MaintenanceCapabilitySnapshot, MaintenanceDialog,
     MaintenanceIntegrationDiagnostics, MaintenanceIntegrationsSnapshot, MaintenanceOperation,
     MaintenanceOperationPreview, MaintenanceServiceDiagnostics, MaintenanceSessionStatus,
     MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView,
@@ -6394,7 +6394,7 @@ fn wic_inspector_text(app: &App) -> String {
 }
 
 fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
-    let rows = [
+    let mut rows = vec![
         ("Theme", format!("{:?}", app.theme)),
         ("Animation speed", format!("{:?}", app.animation_speed)),
         ("Reduced motion", app.reduced_motion.to_string()),
@@ -6402,6 +6402,18 @@ fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
         ("Log wrap", app.logs.wrap.to_string()),
         ("Log follow", app.logs.follow.to_string()),
     ];
+    let environment = match &app.build_environment {
+        BuildEnvironmentState::Unconfigured => "not configured".into(),
+        BuildEnvironmentState::Configured(profile) => {
+            format!("configured: {}", profile.build_dir.display())
+        }
+        BuildEnvironmentState::Verifying { .. } => "verifying BitBake connection".into(),
+        BuildEnvironmentState::Connected(profile) => {
+            format!("connected: {}", profile.build_dir.display())
+        }
+        BuildEnvironmentState::Failed { message, .. } => format!("failed: {message}"),
+    };
+    rows.push(("Build environment", environment));
     let chunks = Layout::vertical([Constraint::Min(8), Constraint::Length(4)]).split(area);
     frame.render_widget(
         Table::new(
@@ -6428,7 +6440,7 @@ fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(
-            "↑/↓ or j/k select  ←/→ or Enter change  r retry unsaved changes\nChanges apply immediately and are saved to Yoctui's session preferences.\nCLI flags override session values; session values override config.toml defaults.",
+            "↑/↓ or j/k select  ←/→ or Enter change  r retry unsaved changes\nBuild environment: configure a Poky source/build profile, then press V to verify BitBake.\nBuild actions stay disabled until the connection is verified.",
         )
         .block(
             Block::default()
@@ -9942,6 +9954,8 @@ mod tests {
         assert!(output.contains("Reduced motion"));
         assert!(output.contains("Log wrap"));
         assert!(output.contains("Log follow"));
+        assert!(output.contains("Build environment"));
+        assert!(output.contains("configure a Poky source/build profile"));
         assert!(output.contains("select"));
         assert!(output.contains("change"));
     }

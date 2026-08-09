@@ -5773,6 +5773,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             };
         }
         Action::ChangeSelectedSetting { backwards } => {
+            if app.settings_selection >= SETTINGS.len() {
+                return None;
+            }
             match SETTINGS[app.settings_selection.min(SETTINGS.len() - 1)] {
                 Setting::Theme => app.theme = cycle_theme(app.theme, backwards),
                 Setting::AnimationSpeed => {
