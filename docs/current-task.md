@@ -4,7 +4,7 @@
 
 **ID:** UX-INT-001
 **Title:** Validate dedicated onboarding UX end to end
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -24,10 +24,6 @@ cargo test --workspace --all-features
 - Full workspace tests and the PTY onboarding smoke pass.
 - Completion gate passes with all registry tasks DONE.
 
-## Next task
-
-Implement `UX-INT-001`.
-
 ## Terminal handoff
 
-`UX-THEME-001` completed; `UX-INT-001` is eligible to start.
+`UX-INT-001` is the final completed task; no incomplete registry tasks remain.

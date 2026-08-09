@@ -113,7 +113,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-The active task is `UX-INT-001`; see `docs/current-task.md`.
+The terminal task `UX-INT-001` is complete; see `docs/current-task.md`.
 
 ## Rules
 
