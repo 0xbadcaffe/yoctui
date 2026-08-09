@@ -6466,8 +6466,17 @@ fn build_environment_workspace(frame: &mut Frame, app: &App, area: Rect) {
             format!("failed: {message}\nbuild: {}", profile.build_dir.display())
         }
     };
+    let draft = app.build_environment_draft.as_ref().map(|draft| format!(
+        "\n\nEdit profile (field: {:?})\nsource: {}\nbuild: {}\nscript: {}\n\nType path, ↑/↓ select field, s save, Esc cancel.",
+        draft.field, draft.source, draft.build, draft.script
+    )).unwrap_or_default();
+    let images = if app.build_environment.connected() && !app.available_images.is_empty() {
+        format!("\n\nAvailable images:\n{}", app.available_images.join("\n"))
+    } else {
+        "\n\nAvailable images: locked until BitBake verification succeeds.".into()
+    };
     let text = format!(
-        "Build environment\n\n{status}\n\nChoose e to edit the source/build profile.\nChoose i to initialize the selected environment.\nChoose V to verify BitBake.\n\nBuild actions and available images remain disabled until verification succeeds."
+        "Build environment\n\n{status}{draft}{images}\n\nChoose e to edit. Choose V to verify BitBake."
     );
     frame.render_widget(
         Paragraph::new(text)
@@ -9995,6 +10004,16 @@ mod tests {
         assert!(output.contains("not configured"));
         assert!(output.contains("available images"));
         assert!(output.contains("verification"));
+    }
+
+    #[test]
+    fn build_environment_form_renders_selected_typed_fields() {
+        let mut app = App::new_unconfigured(10, 1_000);
+        let _ = update(&mut app, Action::BeginBuildEnvironmentEdit);
+        let output = rendered_text(&app, 120, 36);
+        assert!(output.contains("Edit profile"));
+        assert!(output.contains("source:"));
+        assert!(output.contains("script:"));
     }
 
     #[test]

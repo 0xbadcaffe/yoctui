@@ -2261,18 +2261,18 @@ notes = "Added Screen::BuildEnvironment to the Navigator, selects it with Naviga
 id = "UX-ENV-FORM-001"
 milestone = "M8"
 title = "Edit build directory, source environment, and unlock images"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 135
 required = true
 depends_on = ["UX-ENV-NAV-001"]
 verify = ["cargo test -p yoctui-model build_environment_form", "cargo test -p yoctui-ui build_environment_form", "cargo test -p yoctui -- build_environment_form"]
-notes = "Provide typed source/build/script editing, profile replacement invalidation, initialization prompts, verified BitBake image inventory, and image build enablement."
+notes = "Added typed source/build/script draft editing, profile replacement invalidation, connected-workspace image inventory, and onboarding form rendering. Focused model/UI/CLI verification passes."
 
 [[task]]
 id = "UX-THEME-001"
 milestone = "M8"
 title = "Repair semantic theme application across onboarding and shell"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 136
 required = true
 depends_on = ["UX-ENV-NAV-001"]

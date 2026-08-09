@@ -16,8 +16,8 @@ complete. In-app build-environment onboarding is now in progress: it will let
 operators select or clone a source, initialize it safely, use an interactive
 setup shell when needed, and verify BitBake before build controls unlock.
 Build environment is now a dedicated Navigator destination and unconfigured
-startup focuses Navigator there; typed profile editing and image unlock are
-the active next step.
+startup focuses Navigator there; typed profile editing and verified image
+inventory are complete, with semantic theme repair active next.
 The typed profile and correlated connection gate are complete; adapter-backed
 initialization now validates paths and captures a bounded child-only
 environment, with interactive-required detection. Reviewed clone setup is the
@@ -113,7 +113,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-The active task is `UX-GOV-001`; see `docs/current-task.md`.
+The active task is `UX-THEME-001`; see `docs/current-task.md`.
 
 ## Rules
 

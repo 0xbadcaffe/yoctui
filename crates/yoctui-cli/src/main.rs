@@ -6833,6 +6833,28 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     .await;
                 }
             } else if app.screen == Screen::BuildEnvironment
+                && app
+                    .build_environment_draft
+                    .as_ref()
+                    .is_some_and(|draft| draft.editing)
+            {
+                let action = match input {
+                    Input::Up | Input::Char('k') => {
+                        Some(Action::SelectBuildEnvironmentField { delta: -1 })
+                    }
+                    Input::Down | Input::Char('j') => {
+                        Some(Action::SelectBuildEnvironmentField { delta: 1 })
+                    }
+                    Input::Enter => Some(Action::ApplyBuildEnvironmentProfile),
+                    Input::Esc => Some(Action::CancelBuildEnvironmentEdit),
+                    Input::Backspace => Some(Action::BackspaceBuildEnvironmentField),
+                    Input::Char(c) => Some(Action::AppendBuildEnvironmentField(c)),
+                    _ => None,
+                };
+                if let Some(action) = action {
+                    let _ = update(&mut app, action);
+                }
+            } else if app.screen == Screen::BuildEnvironment
                 && build_environment_action(input).is_some()
             {
                 let action =

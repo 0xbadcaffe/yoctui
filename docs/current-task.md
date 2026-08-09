@@ -4,7 +4,7 @@
 
 **ID:** UX-ENV-FORM-001
 **Title:** Edit build directory, source environment, and unlock images
-**Status:** NOT_STARTED
+**Status:** IN_PROGRESS
 
 ## Objective
 
@@ -28,8 +28,8 @@ cargo test -p yoctui -- build_environment_form
 
 ## Next task
 
-Implement `UX-ENV-FORM-001`.
+Implement `UX-THEME-001`.
 
 ## Terminal handoff
 
-`UX-ENV-NAV-001` completed; `UX-ENV-FORM-001` is eligible to start.
+`UX-ENV-FORM-001` completed; `UX-THEME-001` is eligible to start.

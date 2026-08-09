@@ -294,6 +294,22 @@ impl BuildEnvironmentState {
         matches!(self, Self::Connected(_))
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BuildEnvironmentField {
+    Source,
+    Build,
+    Script,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BuildEnvironmentDraft {
+    pub source: String,
+    pub build: String,
+    pub script: String,
+    pub field: BuildEnvironmentField,
+    pub editing: bool,
+}
 impl BuildRequest {
     pub fn validate(&self) -> Result<(), AppError> {
         let valid_name = |value: &str| {
@@ -2214,6 +2230,8 @@ pub struct App {
     pub backend: String,
     pub build_environment: BuildEnvironmentState,
     pub build_environment_generation: u64,
+    pub build_environment_draft: Option<BuildEnvironmentDraft>,
+    pub available_images: Vec<String>,
     pub color_enabled: bool,
     pub theme: Theme,
     pub animation_speed: AnimationSpeed,
@@ -2336,6 +2354,8 @@ impl App {
                 init_script: PathBuf::from("/"),
             }),
             build_environment_generation: 0,
+            build_environment_draft: None,
+            available_images: Vec::new(),
             color_enabled: true,
             theme: Theme::DarkPro,
             animation_speed: AnimationSpeed::Fast,
@@ -3047,6 +3067,15 @@ pub enum Action {
     SettingsPersisted,
     SettingsPersistenceFailed(String),
     ConfigureBuildEnvironment(BuildEnvironmentProfile),
+    BeginBuildEnvironmentEdit,
+    SelectBuildEnvironmentField {
+        delta: isize,
+    },
+    AppendBuildEnvironmentField(char),
+    BackspaceBuildEnvironmentField,
+    FinishBuildEnvironmentEdit,
+    CancelBuildEnvironmentEdit,
+    ApplyBuildEnvironmentProfile,
     BeginBuildEnvironmentVerification,
     BuildEnvironmentVerified {
         generation: u64,
@@ -5824,10 +5853,82 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::ConfigureBuildEnvironment(profile) => match profile.validate() {
             Ok(()) => {
                 app.build_environment = BuildEnvironmentState::Configured(profile);
+                app.available_images.clear();
                 app.notification = None;
             }
             Err(error) => app.notification = Some(error.to_string()),
         },
+        Action::BeginBuildEnvironmentEdit => {
+            let profile = match &app.build_environment {
+                BuildEnvironmentState::Configured(profile)
+                | BuildEnvironmentState::Connected(profile)
+                | BuildEnvironmentState::Failed { profile, .. }
+                | BuildEnvironmentState::Verifying { profile, .. } => Some(profile),
+                BuildEnvironmentState::Unconfigured => None,
+            };
+            app.build_environment_draft = Some(BuildEnvironmentDraft {
+                source: profile.map_or_else(String::new, |p| p.source_dir.display().to_string()),
+                build: profile.map_or_else(String::new, |p| p.build_dir.display().to_string()),
+                script: profile.map_or_else(String::new, |p| p.init_script.display().to_string()),
+                field: BuildEnvironmentField::Source,
+                editing: true,
+            });
+        }
+        Action::SelectBuildEnvironmentField { delta } => {
+            if let Some(draft) = app.build_environment_draft.as_mut() {
+                let index: usize = match draft.field {
+                    BuildEnvironmentField::Source => 0,
+                    BuildEnvironmentField::Build => 1,
+                    BuildEnvironmentField::Script => 2,
+                };
+                let next = if delta.is_negative() {
+                    index.saturating_sub(delta.unsigned_abs())
+                } else {
+                    index.saturating_add(delta as usize).min(2)
+                };
+                draft.field = match next {
+                    0 => BuildEnvironmentField::Source,
+                    1 => BuildEnvironmentField::Build,
+                    _ => BuildEnvironmentField::Script,
+                };
+            }
+        }
+        Action::AppendBuildEnvironmentField(character) => {
+            if let Some(draft) = app.build_environment_draft.as_mut() {
+                let value = match draft.field {
+                    BuildEnvironmentField::Source => &mut draft.source,
+                    BuildEnvironmentField::Build => &mut draft.build,
+                    BuildEnvironmentField::Script => &mut draft.script,
+                };
+                value.push(character);
+            }
+        }
+        Action::BackspaceBuildEnvironmentField => {
+            if let Some(draft) = app.build_environment_draft.as_mut() {
+                let value = match draft.field {
+                    BuildEnvironmentField::Source => &mut draft.source,
+                    BuildEnvironmentField::Build => &mut draft.build,
+                    BuildEnvironmentField::Script => &mut draft.script,
+                };
+                value.pop();
+            }
+        }
+        Action::FinishBuildEnvironmentEdit => {
+            if let Some(draft) = app.build_environment_draft.as_mut() {
+                draft.editing = false;
+            }
+        }
+        Action::CancelBuildEnvironmentEdit => app.build_environment_draft = None,
+        Action::ApplyBuildEnvironmentProfile => {
+            if let Some(draft) = app.build_environment_draft.take() {
+                let profile = BuildEnvironmentProfile {
+                    source_dir: PathBuf::from(draft.source),
+                    build_dir: PathBuf::from(draft.build),
+                    init_script: PathBuf::from(draft.script),
+                };
+                let _ = update(app, Action::ConfigureBuildEnvironment(profile));
+            }
+        }
         Action::BeginBuildEnvironmentVerification => {
             let profile = match &app.build_environment {
                 BuildEnvironmentState::Configured(profile)
@@ -11763,6 +11864,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::WorkspaceLoaded(w) => {
             let selected = selected_config_identity(app);
             app.workspace = w;
+            app.available_images = if app.build_environment.connected() {
+                app.workspace
+                    .recipes
+                    .iter()
+                    .filter(|recipe| {
+                        recipe.name.starts_with("core-image-") || recipe.name.ends_with("-image")
+                    })
+                    .map(|recipe| recipe.name.clone())
+                    .collect()
+            } else {
+                Vec::new()
+            };
             if app.config_scope.as_ref().is_some_and(|scope| {
                 !app.workspace
                     .recipes
@@ -18725,6 +18838,31 @@ mod tests {
             update(&mut app, Action::Start(request.clone())),
             Some(Effect::Start(request))
         );
+    }
+
+    #[test]
+    fn build_environment_form_edits_typed_profile_and_clears_inventory() {
+        let mut app = App::new_unconfigured(8, 512);
+        app.available_images = vec!["core-image-minimal".into()];
+        let _ = update(&mut app, Action::BeginBuildEnvironmentEdit);
+        let _ = update(&mut app, Action::AppendBuildEnvironmentField('/'));
+        for c in "src".chars() {
+            let _ = update(&mut app, Action::AppendBuildEnvironmentField(c));
+        }
+        let _ = update(&mut app, Action::SelectBuildEnvironmentField { delta: 1 });
+        for c in "/build".chars() {
+            let _ = update(&mut app, Action::AppendBuildEnvironmentField(c));
+        }
+        let _ = update(&mut app, Action::SelectBuildEnvironmentField { delta: 1 });
+        for c in "/env".chars() {
+            let _ = update(&mut app, Action::AppendBuildEnvironmentField(c));
+        }
+        let _ = update(&mut app, Action::ApplyBuildEnvironmentProfile);
+        assert!(matches!(
+            app.build_environment,
+            BuildEnvironmentState::Configured(_)
+        ));
+        assert!(app.available_images.is_empty());
     }
 
     #[test]
