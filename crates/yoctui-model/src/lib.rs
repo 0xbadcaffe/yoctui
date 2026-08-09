@@ -76,6 +76,7 @@ pub enum Screen {
     Logs,
     Errors,
     Help,
+    BuildEnvironment,
     Settings,
 }
 /// The one active target in Yoctui's persistent workbench shell.
@@ -158,7 +159,7 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-const NAVIGATOR_SCREENS: [Screen; 17] = [
+const NAVIGATOR_SCREENS: [Screen; 18] = [
     Screen::Dashboard,
     Screen::Layers,
     Screen::Recipes,
@@ -175,6 +176,7 @@ const NAVIGATOR_SCREENS: [Screen; 17] = [
     Screen::Dependencies,
     Screen::Recipes,
     Screen::Maintenance,
+    Screen::BuildEnvironment,
     Screen::Settings,
 ];
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -2446,7 +2448,8 @@ impl App {
     pub fn new_unconfigured(max_entries: usize, max_bytes: usize) -> Self {
         let mut app = Self::new(max_entries, max_bytes);
         app.build_environment = BuildEnvironmentState::Unconfigured;
-        app.screen = Screen::Settings;
+        app.screen = Screen::BuildEnvironment;
+        app.focus = FocusTarget::Navigator;
         app
     }
     pub fn elapsed(&self) -> Option<Duration> {
@@ -12115,7 +12118,8 @@ mod tests {
         let _ = update(&mut app, Action::Open(Screen::Settings));
 
         let job = app.background_jobs.get(id).unwrap();
-        assert_eq!(app.screen, Screen::Settings);
+        assert_eq!(app.screen, Screen::BuildEnvironment);
+        assert_eq!(app.focus, FocusTarget::Navigator);
         assert_eq!(job.status, BackgroundJobStatus::Succeeded);
         assert_eq!(
             job.progress,
@@ -18680,7 +18684,8 @@ mod tests {
             init_script: PathBuf::from("/workspace/poky/oe-init-build-env"),
         };
         let mut app = App::new_unconfigured(16, 4096);
-        assert_eq!(app.screen, Screen::Settings);
+        assert_eq!(app.screen, Screen::BuildEnvironment);
+        assert_eq!(app.focus, FocusTarget::Navigator);
         let request = BuildRequest {
             targets: vec!["core-image-minimal".into()],
             task: None,

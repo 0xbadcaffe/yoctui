@@ -583,6 +583,9 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::Settings => {
             "↑/↓ select | ←/→ change | r retry save | Ctrl+P commands | Tab focus | q quit"
         }
+        Screen::BuildEnvironment => {
+            "↑/↓ select | e edit profile | i initialize | V verify | Tab focus | q quit"
+        }
     }
 }
 
@@ -1728,6 +1731,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
         ("Dependencies", Screen::Dependencies),
         ("Devtool", Screen::Recipes),
         ("Maintenance", Screen::Maintenance),
+        ("Build environment", Screen::BuildEnvironment),
         ("Settings", Screen::Settings),
     ];
     let text = entries
@@ -1785,6 +1789,7 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
         Screen::Maintenance => maintenance_workspace(frame, app, area),
         Screen::Help => help(frame, area),
         Screen::Settings => settings_workspace(frame, app, area),
+        Screen::BuildEnvironment => build_environment_workspace(frame, app, area),
     }
 }
 
@@ -6394,7 +6399,7 @@ fn wic_inspector_text(app: &App) -> String {
 }
 
 fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
-    let mut rows = vec![
+    let rows = vec![
         ("Theme", format!("{:?}", app.theme)),
         ("Animation speed", format!("{:?}", app.animation_speed)),
         ("Reduced motion", app.reduced_motion.to_string()),
@@ -6402,18 +6407,6 @@ fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
         ("Log wrap", app.logs.wrap.to_string()),
         ("Log follow", app.logs.follow.to_string()),
     ];
-    let environment = match &app.build_environment {
-        BuildEnvironmentState::Unconfigured => "not configured".into(),
-        BuildEnvironmentState::Configured(profile) => {
-            format!("configured: {}", profile.build_dir.display())
-        }
-        BuildEnvironmentState::Verifying { .. } => "verifying BitBake connection".into(),
-        BuildEnvironmentState::Connected(profile) => {
-            format!("connected: {}", profile.build_dir.display())
-        }
-        BuildEnvironmentState::Failed { message, .. } => format!("failed: {message}"),
-    };
-    rows.push(("Build environment", environment));
     let chunks = Layout::vertical([Constraint::Min(8), Constraint::Length(4)]).split(area);
     frame.render_widget(
         Table::new(
@@ -6449,6 +6442,42 @@ fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
         )
         .wrap(Wrap { trim: true }),
         chunks[1],
+    );
+}
+
+fn build_environment_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let status = match &app.build_environment {
+        BuildEnvironmentState::Unconfigured => "not configured".to_owned(),
+        BuildEnvironmentState::Configured(profile) => format!(
+            "configured\nbuild: {}\nsource: {}\nscript: {}",
+            profile.build_dir.display(),
+            profile.source_dir.display(),
+            profile.init_script.display()
+        ),
+        BuildEnvironmentState::Verifying { profile, .. } => {
+            format!("verifying BitBake\nbuild: {}", profile.build_dir.display())
+        }
+        BuildEnvironmentState::Connected(profile) => format!(
+            "connected\nbuild: {}\nsource: {}",
+            profile.build_dir.display(),
+            profile.source_dir.display()
+        ),
+        BuildEnvironmentState::Failed { profile, message } => {
+            format!("failed: {message}\nbuild: {}", profile.build_dir.display())
+        }
+    };
+    let text = format!(
+        "Build environment\n\n{status}\n\nChoose e to edit the source/build profile.\nChoose i to initialize the selected environment.\nChoose V to verify BitBake.\n\nBuild actions and available images remain disabled until verification succeeds."
+    );
+    frame.render_widget(
+        Paragraph::new(text)
+            .block(
+                Block::default()
+                    .title("Build environment")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: true }),
+        area,
     );
 }
 
@@ -9946,7 +9975,7 @@ mod tests {
         app.reduced_motion = true;
         app.logs.follow = false;
 
-        let output = rendered_text(&app, 80, 24);
+        let output = rendered_text(&app, 100, 30);
         assert!(output.contains("Settings (not saved)"));
         assert!(output.contains("Theme"));
         assert!(output.contains("MatrixGreen"));
@@ -9954,10 +9983,18 @@ mod tests {
         assert!(output.contains("Reduced motion"));
         assert!(output.contains("Log wrap"));
         assert!(output.contains("Log follow"));
-        assert!(output.contains("Build environment"));
-        assert!(output.contains("configure a Poky source/build profile"));
         assert!(output.contains("select"));
         assert!(output.contains("change"));
+    }
+
+    #[test]
+    fn build_environment_workspace_renders_disconnected_state_and_unlock_rule() {
+        let app = App::new_unconfigured(10, 1_000);
+        let output = rendered_text(&app, 100, 30);
+        assert!(output.contains("Build environment"));
+        assert!(output.contains("not configured"));
+        assert!(output.contains("available images"));
+        assert!(output.contains("verification"));
     }
 
     #[test]

@@ -1569,6 +1569,14 @@ pub fn settings_action(key: Input) -> Option<Action> {
         _ => None,
     }
 }
+
+pub fn build_environment_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Char('V') => Some(Action::BeginBuildEnvironmentVerification),
+        Input::Esc => Some(Action::Open(Screen::Dashboard)),
+        _ => None,
+    }
+}
 pub fn tasks_action(editing: bool, key: Input) -> Option<Action> {
     if editing {
         return match key {
@@ -4080,6 +4088,17 @@ mod tests {
             Some(Action::RetrySettingsPersistence)
         );
         assert_eq!(settings_action(Input::Esc), None);
+    }
+    #[test]
+    fn build_environment_input_verifies_and_returns_to_dashboard() {
+        assert_eq!(
+            build_environment_action(Input::Char('V')),
+            Some(Action::BeginBuildEnvironmentVerification)
+        );
+        assert_eq!(
+            build_environment_action(Input::Esc),
+            Some(Action::Open(Screen::Dashboard))
+        );
     }
     #[test]
     fn live_tasks_input_maps_selection_and_filter_controls() {

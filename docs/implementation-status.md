@@ -15,6 +15,9 @@ Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
 operators select or clone a source, initialize it safely, use an interactive
 setup shell when needed, and verify BitBake before build controls unlock.
+Build environment is now a dedicated Navigator destination and unconfigured
+startup focuses Navigator there; typed profile editing and image unlock are
+the active next step.
 The typed profile and correlated connection gate are complete; adapter-backed
 initialization now validates paths and captures a bounded child-only
 environment, with interactive-required detection. Reviewed clone setup is the

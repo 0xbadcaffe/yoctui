@@ -2,33 +2,34 @@
 
 ## Task
 
-**ID:** UX-ENV-NAV-001
-**Title:** Add dedicated Build environment Navigator workspace
+**ID:** UX-ENV-FORM-001
+**Title:** Edit build directory, source environment, and unlock images
 **Status:** NOT_STARTED
 
 ## Objective
 
-Add the Screen/Navigator entry, Navigator startup focus, visible disconnected
-state, and removal of the environment row from general Settings.
+Provide typed source/build/script editing, profile replacement invalidation,
+initialization prompts, verified BitBake image inventory, and image build
+enablement.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model build_environment
-cargo test -p yoctui-app build_environment
-cargo test -p yoctui-ui build_environment
+cargo test -p yoctui-model build_environment_form
+cargo test -p yoctui-ui build_environment_form
+cargo test -p yoctui -- build_environment_form
 ```
 
 ## Definition of done
 
-- Build environment is a dedicated Navigator destination.
-- Unconfigured startup focuses Navigator and selects the destination.
-- General Settings contains only visual/log preferences.
+- Source/build/script fields are editable as typed values.
+- Profile replacement invalidates connection and image inventory.
+- Verified BitBake exposes available images and enables build actions.
 
 ## Next task
 
-Implement `UX-ENV-NAV-001`.
+Implement `UX-ENV-FORM-001`.
 
 ## Terminal handoff
 
-`UX-GOV-001` completed; `UX-ENV-NAV-001` is eligible to start.
+`UX-ENV-NAV-001` completed; `UX-ENV-FORM-001` is eligible to start.

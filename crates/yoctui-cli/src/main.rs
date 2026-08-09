@@ -24,10 +24,10 @@ use std::{ffi::CString, os::unix::ffi::OsStrExt};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
-    BuildJobCoordinator, DevtoolJobCoordinator, Input, config_compare_dialog_action,
-    config_edit_confirmation_action, config_edit_dialog_action, config_scope_picker_action,
-    config_source_picker_action, config_workspace_action, dependency_workspace_action,
-    devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
+    BuildJobCoordinator, DevtoolJobCoordinator, Input, build_environment_action,
+    config_compare_dialog_action, config_edit_confirmation_action, config_edit_dialog_action,
+    config_scope_picker_action, config_source_picker_action, config_workspace_action,
+    dependency_workspace_action, devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
@@ -6831,6 +6831,67 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         editor.as_deref(),
                     )
                     .await;
+                }
+            } else if app.screen == Screen::BuildEnvironment
+                && build_environment_action(input).is_some()
+            {
+                let action =
+                    build_environment_action(input).expect("build environment action was checked");
+                if let Some(effect) = update(&mut app, action) {
+                    if let Effect::VerifyBuildEnvironment {
+                        profile,
+                        generation,
+                    } = effect
+                    {
+                        match BuildEnvironmentAdapter::default().initialize(profile).await {
+                            Ok(response) => {
+                                let profile = response.profile.clone();
+                                let _ = update(
+                                    &mut app,
+                                    Action::BuildEnvironmentVerified { generation },
+                                );
+                                let _ = backend.shutdown().await;
+                                match select_backend_with_environment(
+                                    backend_kind.clone(),
+                                    profile.build_dir.clone(),
+                                    Some(cancellation_timeout),
+                                    Some(response.environment),
+                                )
+                                .await
+                                {
+                                    Ok(mut connected) => {
+                                        match connected.inspect_workspace().await {
+                                            Ok(workspace) => {
+                                                let _ = update(
+                                                    &mut app,
+                                                    Action::WorkspaceLoaded(workspace),
+                                                );
+                                                backend = connected;
+                                            }
+                                            Err(error) => {
+                                                app.notification = Some(format!(
+                                                    "BitBake verification failed: {error}"
+                                                ))
+                                            }
+                                        }
+                                    }
+                                    Err(error) => {
+                                        app.notification =
+                                            Some(format!("Could not start BitBake: {error}"))
+                                    }
+                                }
+                            }
+                            Err(error) => {
+                                let _ = update(
+                                    &mut app,
+                                    Action::BuildEnvironmentVerificationFailed {
+                                        generation,
+                                        message: error.to_string(),
+                                    },
+                                );
+                            }
+                        }
+                    }
                 }
             } else if app.screen == Screen::Settings && settings_action(input).is_some() {
                 let action = settings_action(input).expect("settings action was checked");

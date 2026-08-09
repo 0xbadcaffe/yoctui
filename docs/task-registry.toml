@@ -2250,12 +2250,12 @@ notes = "User-requested UX correction: Build environment becomes a Navigator des
 id = "UX-ENV-NAV-001"
 milestone = "M8"
 title = "Add dedicated Build environment Navigator workspace"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 134
 required = true
 depends_on = ["UX-GOV-001"]
 verify = ["cargo test -p yoctui-model build_environment", "cargo test -p yoctui-app build_environment", "cargo test -p yoctui-ui build_environment"]
-notes = "Add the Screen/Navigator entry, Navigator startup focus, visible disconnected state, and removal of the environment row from general Settings."
+notes = "Added Screen::BuildEnvironment to the Navigator, selects it with Navigator focus for unconfigured startup, renders disconnected/configured/failed states and removes the environment row from visual Settings. Focused model/app/UI tests pass."
 
 [[task]]
 id = "UX-ENV-FORM-001"
