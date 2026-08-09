@@ -2,33 +2,33 @@
 
 ## Task
 
-**ID:** ENV-INT-001
-**Title:** Validate in-app build environment onboarding end to end
-**Status:** DONE
+**ID:** UX-ENV-NAV-001
+**Title:** Add dedicated Build environment Navigator workspace
+**Status:** NOT_STARTED
 
 ## Objective
 
-Final completed task: run complete fake-process, TestBackend, CLI, PTY, and
-completion validation for in-app build-environment onboarding.
+Add the Screen/Navigator entry, Navigator startup focus, visible disconnected
+state, and removal of the environment row from general Settings.
 
 ## Verification
 
 ```bash
-cargo test --workspace --all-features
-./scripts/test-tui-pty.sh
-./scripts/verify-completion.sh
+cargo test -p yoctui-model build_environment
+cargo test -p yoctui-app build_environment
+cargo test -p yoctui-ui build_environment
 ```
 
 ## Definition of done
 
-- Cross-layer onboarding tests pass.
-- No-argument startup and verified backend setup pass from a clean checkout.
-- Completion gate passes without temporary artifacts.
+- Build environment is a dedicated Navigator destination.
+- Unconfigured startup focuses Navigator and selects the destination.
+- General Settings contains only visual/log preferences.
 
 ## Next task
 
-All registry tasks are complete.
+Implement `UX-ENV-NAV-001`.
 
 ## Terminal handoff
 
-All registry tasks are complete; this is the terminal handoff.
+`UX-GOV-001` completed; `UX-ENV-NAV-001` is eligible to start.

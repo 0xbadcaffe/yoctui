@@ -1065,6 +1065,12 @@ does not parse shell output or infer success from a prompt. Until a correlated
 typed workspace response succeeds, it keeps the workspace disconnected and
 build-capable actions disabled.
 
+The Build environment workspace is a first-class `Screen`/Navigator entry,
+separate from visual Settings. Its verified profile owns the active source,
+build directory, captured child environment, and typed image inventory. A
+profile replacement invalidates the active backend and image list before the
+next initialization/verification cycle.
+
 `yoctui-bitbake` owns source/build/script validation and the bounded setup
 adapter. It executes only an adapter-generated shell invocation to source the
 validated environment script and emit a framed, allowlisted environment for a

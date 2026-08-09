@@ -27,8 +27,9 @@ no-argument CLI startup now creates an unconfigured session instead of using
 the current directory; Settings verification now executes the typed
 initialization adapter and dispatches correlated outcomes. Managed backend
 installation now uses the captured environment after typed workspace
-verification. The integrated onboarding gate and all registry tasks are now
-complete.
+verification. A follow-up UX sequence is active to move Build environment out
+of general Settings, restore Navigator startup focus, unlock typed images only
+after verification, and correct theme rendering.
 Yoctui now uses Packrat's eight built-in palettes—Dark Pro, White
 Classic, Matrix Green, VSCode Dark/Light, Accessible Dark, Soft Light, and
 High Contrast—while retaining `--no-color` as a separate accessibility override.
@@ -109,7 +110,7 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-The registry is complete; the terminal handoff is `ENV-INT-001`.
+The active task is `UX-GOV-001`; see `docs/current-task.md`.
 
 ## Rules
 

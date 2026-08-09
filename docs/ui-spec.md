@@ -2479,15 +2479,17 @@ Do not persist live BitBake state as authoritative state.
 
 ---
 
-### Build environment onboarding
+### Build environment workspace
 
-Yoctui launches without positional targets or a `--build-dir` argument. If it
-does not have a previously verified build environment, it opens Settings with
-the **Build environment** section selected. Until the connection check passes,
+`Build environment` is a dedicated Navigator destination immediately above
+`Settings`; it is not a general Settings row. Yoctui launches without
+positional targets or a `--build-dir` argument with Navigator focus. If it does
+not have a previously verified build environment, it selects this destination
+and keeps the Workspace focus available for navigation. Until the connection check passes,
 build and metadata actions remain visible but disabled with the reason
 `Configure and verify a BitBake environment first`.
 
-The section is a typed, focus-trapped setup form with these rows:
+The Build environment workspace is a typed setup form with these rows:
 
 - **Use existing source**: an absolute Poky/Yocto source path, an absolute
   build-directory path, and the detected environment script
@@ -2507,6 +2509,9 @@ The section is a typed, focus-trapped setup form with these rows:
 - **Verify connection**: checks the selected build directory and starts the
   managed BitBake connection. Success requires a typed workspace response;
   failure shows its bounded diagnostic and keeps build controls disabled.
+- **Available images**: appears only after verification succeeds and lists the
+  typed image recipes returned by BitBake. Selecting an image enables the build
+  action; no image is guessed from a filename or shell transcript.
 
 Source, build, and clone destinations must be absolute canonical directories
 when used. Existing paths are inspected before initialization; a missing,
@@ -2519,7 +2524,19 @@ The selected source/build profile and recent verified profiles may persist in
 the session. Captured environment values, credentials, live server state, and
 terminal transcripts do not persist. `--build-dir` and `--backend` remain
 supported diagnostic overrides; normal interactive startup does not require
-users to understand backend names such as `bridge`.
+users to understand backend names such as `bridge`. A verified profile can be
+replaced from this workspace; replacing it clears the active connection and
+returns build controls to the disabled state until the new source is initialized
+and verified.
+
+### Theme rendering contract
+
+Every theme selection must change the semantic palette used by the complete
+shell, including Navigator focus, workspace selection, dialog borders,
+notifications, status/severity, and the Build environment workspace. Theme
+changes must be visible immediately in both wide and narrow layouts and must
+not leave stale colors from the previous theme. No-color mode remains an
+attribute-only override.
 
 ## 26. Responsive layouts
 

@@ -2234,3 +2234,58 @@ required = true
 depends_on = ["ENV-CONNECT-002"]
 verify = ["cargo test --workspace --all-features", "./scripts/test-tui-pty.sh", "./scripts/verify-completion.sh"]
 notes = "Workspace, clippy, bridge tests, PTY, and onboarding-focused checks pass. Completion gate is run from this terminal handoff; live setup remains opt-in and separately evidenced."
+
+[[task]]
+id = "UX-GOV-001"
+milestone = "M8"
+title = "Specify dedicated build environment navigation and theme correction"
+status = "DONE"
+priority = 133
+required = true
+depends_on = ["ENV-INT-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "User-requested UX correction: Build environment becomes a Navigator destination, unconfigured startup focuses Navigator, profile replacement invalidates connection/images, and themes must update every semantic shell role."
+
+[[task]]
+id = "UX-ENV-NAV-001"
+milestone = "M8"
+title = "Add dedicated Build environment Navigator workspace"
+status = "NOT_STARTED"
+priority = 134
+required = true
+depends_on = ["UX-GOV-001"]
+verify = ["cargo test -p yoctui-model build_environment", "cargo test -p yoctui-app build_environment", "cargo test -p yoctui-ui build_environment"]
+notes = "Add the Screen/Navigator entry, Navigator startup focus, visible disconnected state, and removal of the environment row from general Settings."
+
+[[task]]
+id = "UX-ENV-FORM-001"
+milestone = "M8"
+title = "Edit build directory, source environment, and unlock images"
+status = "NOT_STARTED"
+priority = 135
+required = true
+depends_on = ["UX-ENV-NAV-001"]
+verify = ["cargo test -p yoctui-model build_environment_form", "cargo test -p yoctui-ui build_environment_form", "cargo test -p yoctui -- build_environment_form"]
+notes = "Provide typed source/build/script editing, profile replacement invalidation, initialization prompts, verified BitBake image inventory, and image build enablement."
+
+[[task]]
+id = "UX-THEME-001"
+milestone = "M8"
+title = "Repair semantic theme application across onboarding and shell"
+status = "NOT_STARTED"
+priority = 136
+required = true
+depends_on = ["UX-ENV-NAV-001"]
+verify = ["cargo test -p yoctui-ui theme", "cargo test -p yoctui -- theme"]
+notes = "Reproduce and fix stale or missing theme application in Navigator, dialogs, notifications, settings, and Build environment rendering with all palettes and no-color."
+
+[[task]]
+id = "UX-INT-001"
+milestone = "M8"
+title = "Validate dedicated onboarding UX end to end"
+status = "NOT_STARTED"
+priority = 137
+required = true
+depends_on = ["UX-ENV-FORM-001", "UX-THEME-001"]
+verify = ["cargo test --workspace --all-features", "./scripts/test-tui-pty.sh", "./scripts/verify-completion.sh"]
+notes = "Validate startup focus, profile replacement, setup shell, typed image availability, theme rendering, and all terminal outcomes."
