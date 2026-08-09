@@ -147,6 +147,7 @@ struct FileConfig {
 struct Config {
     backend: Backend,
     build_dir: PathBuf,
+    build_dir_configured: bool,
     log_entries: usize,
     log_bytes: usize,
     refresh: Duration,
@@ -427,7 +428,7 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
         .or(file.backend)
         .or(session.last_backend.clone())
         .unwrap_or(Backend::Bridge);
-    let build_dir = cli
+    let configured_build_dir = cli
         .build_dir
         .clone()
         .or_else(|| env::var_os("YOCTUI_BUILD_DIR").map(PathBuf::from))
@@ -438,8 +439,10 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
                 .iter()
                 .find(|directory| directory.is_dir())
                 .cloned()
-        })
-        .unwrap_or(env::current_dir()?);
+        });
+    let build_dir = configured_build_dir
+        .clone()
+        .unwrap_or_else(|| PathBuf::from("/"));
     let log_entries = env_usize("YOCTUI_LOG_RETENTION_ENTRIES")?
         .or(file.log_retention_entries)
         .unwrap_or(10_000);
@@ -460,6 +463,7 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
     Ok(Config {
         backend,
         build_dir,
+        build_dir_configured: configured_build_dir.is_some(),
         log_entries,
         log_bytes,
         refresh: Duration::from_millis(file.refresh_ms.unwrap_or(100).max(16)),
@@ -5510,6 +5514,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     let Config {
         backend: backend_kind,
         build_dir,
+        build_dir_configured,
         log_entries,
         log_bytes,
         refresh,
@@ -5524,7 +5529,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     } = config;
     let guard = TerminalGuard::enter()?;
     let mut terminal = Terminal::new(ratatui::backend::CrosstermBackend::new(io::stdout()))?;
-    let mut app = App::new(log_entries, log_bytes);
+    let mut app = if build_dir_configured {
+        App::new(log_entries, log_bytes)
+    } else {
+        App::new_unconfigured(log_entries, log_bytes)
+    };
     app.backend = backend_kind.to_string();
     app.color_enabled = color;
     app.theme = theme;
@@ -5538,35 +5547,43 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     app.logs.wrap = session.log_wrap.unwrap_or(false);
     app.logs.follow = session.log_follow.unwrap_or(true);
     let session_build_dir = build_dir.clone();
-    let mut backend =
+    let mut backend: Box<dyn BitBakeBackend> = if build_dir_configured {
         select_backend_with_timeout(backend_kind.clone(), build_dir, Some(cancellation_timeout))
-            .await?;
-    match backend.inspect_workspace().await {
-        Ok(workspace) => {
-            let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
-            match backend.list_recipes(None).await {
-                Ok(recipes) => {
-                    let _ = update(&mut app, Action::RecipesLoaded(recipes));
+            .await?
+    } else {
+        Box::new(ProcessBackend::new(PathBuf::from("/")))
+    };
+    if build_dir_configured {
+        match backend.inspect_workspace().await {
+            Ok(workspace) => {
+                let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
+                match backend.list_recipes(None).await {
+                    Ok(recipes) => {
+                        let _ = update(&mut app, Action::RecipesLoaded(recipes));
+                    }
+                    Err(error) => app.notification = Some(format!("Recipes unavailable: {error}")),
                 }
-                Err(error) => app.notification = Some(format!("Recipes unavailable: {error}")),
+                match backend.list_layers().await {
+                    Ok(layers) => {
+                        let _ = update(&mut app, Action::LayersLoaded(layers));
+                    }
+                    Err(error) => app.notification = Some(format!("Layers unavailable: {error}")),
+                }
             }
-            match backend.list_layers().await {
-                Ok(layers) => {
-                    let _ = update(&mut app, Action::LayersLoaded(layers));
-                }
-                Err(error) => app.notification = Some(format!("Layers unavailable: {error}")),
+            Err(error) => {
+                let _ = update(
+                    &mut app,
+                    Action::Failure(AppError::new(
+                        "Backend",
+                        error.to_string(),
+                        "run `yoctui doctor` to diagnose the selected backend",
+                    )),
+                );
             }
         }
-        Err(error) => {
-            let _ = update(
-                &mut app,
-                Action::Failure(AppError::new(
-                    "Backend",
-                    error.to_string(),
-                    "run `yoctui doctor` to diagnose the selected backend",
-                )),
-            );
-        }
+    } else {
+        app.notification =
+            Some("Configure and verify a BitBake environment in Settings before building.".into());
     }
     if !targets.is_empty() {
         app.build.target = targets.first().cloned()

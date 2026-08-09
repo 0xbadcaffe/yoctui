@@ -2194,13 +2194,24 @@ notes = "Settings now visibly includes Build environment state and verification 
 [[task]]
 id = "ENV-CLI-001"
 milestone = "M8"
-title = "Start unconfigured sessions and verify managed BitBake connections"
-status = "NOT_STARTED"
+title = "Start unconfigured sessions without an implicit build directory"
+status = "IN_PROGRESS"
 priority = 130
 required = true
 depends_on = ["ENV-ADAPTER-001", "ENV-CLONE-001", "ENV-UI-001"]
+verify = ["cargo test -p yoctui build_environment"]
+notes = "Interactive startup now uses App::new_unconfigured and no longer falls back to the current directory; explicit build-directory configuration retains the existing backend startup path."
+
+[[task]]
+id = "ENV-CONNECT-001"
+milestone = "M8"
+title = "Execute onboarding effects and verify managed BitBake connections"
+status = "NOT_STARTED"
+priority = 131
+required = true
+depends_on = ["ENV-CLI-001"]
 verify = ["cargo test -p yoctui build_environment", "./scripts/test-cli.sh"]
-notes = "Make build-dir optional for interactive startup, execute onboarding effects, retain child environments only in the managed session, and install a backend only after typed verification."
+notes = "Execute typed initialization/clone effects, retain child environments only in the managed session, and install a backend only after a typed workspace verification succeeds."
 
 [[task]]
 id = "ENV-INT-001"
@@ -2209,6 +2220,6 @@ title = "Validate in-app build environment onboarding end to end"
 status = "NOT_STARTED"
 priority = 131
 required = true
-depends_on = ["ENV-CLI-001"]
+depends_on = ["ENV-CONNECT-001"]
 verify = ["cargo test --workspace --all-features", "./scripts/test-tui-pty.sh", "./scripts/verify-completion.sh"]
 notes = "Run complete fake-process, TestBackend, CLI, PTY, and completion validation; live setup remains opt-in and separately evidenced."
