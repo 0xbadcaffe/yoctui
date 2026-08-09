@@ -2162,12 +2162,12 @@ notes = "Added typed profile validation, unconfigured/configured/verifying/conne
 id = "ENV-ADAPTER-001"
 milestone = "M8"
 title = "Validate and initialize a selected build environment"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 127
 required = true
 depends_on = ["ENV-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake build_environment"]
-notes = "Add bounded source/build/script validation and child-only environment initialization with fake-process, failure, cancellation, and interactive-required coverage."
+notes = "Added bounded source/build/script validation and child-only bash environment capture. Interactive-looking setup failures return InteractiveRequired without answering prompts; missing, unsafe, output-limit, timeout, and failure outcomes remain typed, with fake-script tests."
 
 [[task]]
 id = "ENV-CLONE-001"

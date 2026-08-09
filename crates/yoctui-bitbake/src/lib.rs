@@ -1,4 +1,5 @@
 //! BitBake adapters. They execute BitBake; they never evaluate metadata themselves.
+mod build_environment;
 mod image;
 mod maintenance_optional;
 mod maintenance_release;
@@ -52,6 +53,9 @@ mod test_support {
 }
 
 use async_trait::async_trait;
+pub use build_environment::{
+    BuildEnvironmentAdapter, BuildEnvironmentAdapterError, BuildEnvironmentResponse,
+};
 pub use image::{
     ImageArtifactAdapter, ImageArtifactAdapterError, ImageArtifactCancellation,
     ImageArtifactResponse,

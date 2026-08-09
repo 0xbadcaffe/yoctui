@@ -2,32 +2,32 @@
 
 ## Task
 
-**ID:** ENV-ADAPTER-001
-**Title:** Validate and initialize a selected build environment
+**ID:** ENV-CLONE-001
+**Title:** Add reviewed Poky clone setup
 **Status:** NOT_STARTED
 
 ## Objective
 
-Add bounded source/build/script validation and child-only environment
-initialization results for the selected profile.
+Add exact non-shell clone/checkout previews, empty-destination safeguards,
+cancellation, and typed outcomes.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake build_environment
+cargo test -p yoctui-bitbake poky_clone
+cargo test -p yoctui-model build_environment_clone
 ```
 
 ## Definition of done
 
-- Adapter validation is bounded and rejects unsafe paths before execution.
-- Initialization returns child-only environment data or typed
-  interactive-required/failure/cancellation results.
-- Fake-process tests cover normal and failure paths.
+- Clone previews contain exact shell-free vectors and require confirmation.
+- Nonempty destinations and unsafe revisions are rejected.
+- Fake-process tests cover success, cancellation, and failures.
 
 ## Next task
 
-Implement `ENV-ADAPTER-001`.
+Implement `ENV-CLONE-001`.
 
 ## Terminal handoff
 
-`ENV-MODEL-001` completed; `ENV-ADAPTER-001` is eligible to start.
+`ENV-ADAPTER-001` completed; `ENV-CLONE-001` is eligible to start.
