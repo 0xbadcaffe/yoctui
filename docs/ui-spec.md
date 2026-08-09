@@ -2526,7 +2526,8 @@ cancellable before initialization. Initialization, shell exit, clone, and
 verification retain distinct pending, success, cancelled, and failure states.
 
 The selected source/build profile and recent verified profiles may persist in
-the session. Captured environment values, credentials, live server state, and
+the session as suggestions; recent paths alone never auto-connect or override
+unconfigured startup. Captured environment values, credentials, live server state, and
 terminal transcripts do not persist. `--build-dir` and `--backend` remain
 supported diagnostic overrides; normal interactive startup does not require
 users to understand backend names such as `bridge`. A verified profile can be

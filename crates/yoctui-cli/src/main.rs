@@ -433,14 +433,7 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
         .build_dir
         .clone()
         .or_else(|| env::var_os("YOCTUI_BUILD_DIR").map(PathBuf::from))
-        .or(file.build_dir)
-        .or_else(|| {
-            session
-                .recent_build_dirs
-                .iter()
-                .find(|directory| directory.is_dir())
-                .cloned()
-        });
+        .or(file.build_dir);
     let build_dir = configured_build_dir
         .clone()
         .unwrap_or_else(|| PathBuf::from("/"));
@@ -5794,530 +5787,45 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         }
         let _ = update(&mut app, Action::Tick);
         terminal.draw(|f| render(f, &app))?;
-        if event::poll(refresh)?
-            && let Event::Key(k) = event::read()?
-        {
-            let Some(input) = input_from_key(k) else {
+        if event::poll(refresh)? {
+            let terminal_event = event::read()?;
+            if let Event::Paste(text) = terminal_event {
+                if app.screen == Screen::BuildEnvironment
+                    && app
+                        .build_environment_draft
+                        .as_ref()
+                        .is_some_and(|draft| draft.editing)
+                {
+                    for character in text.chars() {
+                        let _ = update(&mut app, Action::AppendBuildEnvironmentField(character));
+                    }
+                }
                 continue;
-            };
-            if app.command_palette_open {
-                let effect = match input {
-                    Input::Up => update(&mut app, Action::SelectCommandPalette { delta: -1 }),
-                    Input::Down => update(&mut app, Action::SelectCommandPalette { delta: 1 }),
-                    Input::Enter => update(&mut app, Action::ActivateCommandPalette),
-                    Input::Esc => update(&mut app, Action::CloseCommandPalette),
-                    Input::Backspace => update(&mut app, Action::BackspaceCommandPaletteQuery),
-                    Input::Char(character) => {
-                        update(&mut app, Action::AppendCommandPaletteQuery(character))
-                    }
-                    _ => None,
+            }
+            if let Event::Key(k) = terminal_event {
+                let Some(input) = input_from_key(k) else {
+                    continue;
                 };
-                if let Some(effect @ Effect::GetImageArtifacts(_)) = effect {
-                    begin_image_artifact_operation(
-                        &mut app,
-                        image_artifact_adapter.as_ref(),
-                        &mut image_artifact_operation,
-                        effect,
-                    );
-                } else if let Some(
-                    effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
-                ) = effect
-                {
-                    begin_package_operation(
-                        &mut app,
-                        &package_adapter,
-                        &mut package_operation,
-                        effect,
-                    );
-                } else if let Some(effect @ Effect::InspectSdkTools) = effect {
-                    begin_sdk_capability_operation(
-                        &mut app,
-                        sdk_tool_adapter.as_ref(),
-                        &mut sdk_capability_operation,
-                        effect,
-                    );
-                } else if let Some(
-                    effect @ (Effect::InspectTestCapability | Effect::InspectResultToolCapability),
-                ) = effect
-                {
-                    let _ = test_coordinator.handle_effect(&mut app, effect).await;
-                } else if let Some(effect @ Effect::Security(_)) = effect {
-                    let _ = route_independent_security_effect(
-                        &guard,
-                        &mut app,
-                        &mut security_coordinator,
-                        effect,
-                        editor.as_deref(),
-                    )
-                    .await;
-                } else if let Some(effect @ Effect::Qa(_)) = effect {
-                    let _ = route_independent_qa_effect(
-                        &guard,
-                        &mut app,
-                        &mut qa_coordinator,
-                        effect,
-                        editor.as_deref(),
-                    )
-                    .await;
-                } else if let Some(effect @ Effect::Maintenance(_)) = effect {
-                    let _ = route_independent_maintenance_effect(
-                        &guard,
-                        &mut app,
-                        &mut maintenance_coordinator,
-                        effect,
-                        editor.as_deref(),
-                    )
-                    .await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::ThemePicker { .. })) {
-                let action = match input {
-                    Input::Up | Input::Char('k') => Some(Action::SelectTheme { delta: -1 }),
-                    Input::Down | Input::Char('j') => Some(Action::SelectTheme { delta: 1 }),
-                    Input::Enter => Some(Action::ApplySelectedTheme),
-                    Input::Esc => Some(Action::CloseThemePicker),
-                    _ => None,
-                };
-                if let Some(action) = action
-                    && let Some(Effect::PersistSettings) = update(&mut app, action)
-                {
-                    let result = persist_settings(session_path.as_deref(), &mut session, &app);
-                    let persistence_action = match result {
-                        Ok(()) => Action::SettingsPersisted,
-                        Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
+                if app.command_palette_open {
+                    let effect = match input {
+                        Input::Up => update(&mut app, Action::SelectCommandPalette { delta: -1 }),
+                        Input::Down => update(&mut app, Action::SelectCommandPalette { delta: 1 }),
+                        Input::Enter => update(&mut app, Action::ActivateCommandPalette),
+                        Input::Esc => update(&mut app, Action::CloseCommandPalette),
+                        Input::Backspace => update(&mut app, Action::BackspaceCommandPaletteQuery),
+                        Input::Char(character) => {
+                            update(&mut app, Action::AppendCommandPaletteQuery(character))
+                        }
+                        _ => None,
                     };
-                    let _ = update(&mut app, persistence_action);
-                }
-            } else if let Some(Dialog::Maintenance(dialog)) = app.active_dialog().cloned() {
-                let effect = maintenance_dialog_action(&dialog, input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(effect) = effect {
-                    let _ = route_independent_maintenance_effect(
-                        &guard,
-                        &mut app,
-                        &mut maintenance_coordinator,
-                        effect,
-                        editor.as_deref(),
-                    )
-                    .await;
-                }
-            } else if let Some(Dialog::Security(dialog)) = app.active_dialog().cloned() {
-                let effect = security_dialog_action(&dialog, input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(effect) = effect {
-                    let routed = route_independent_security_effect(
-                        &guard,
-                        &mut app,
-                        &mut security_coordinator,
-                        effect.clone(),
-                        editor.as_deref(),
-                    )
-                    .await;
-                    if !routed {
-                        match effect {
-                            Effect::Security(SecurityEffect::StartBuild { id, request }) => {
-                                if begin_security_build(
-                                    &mut backend,
-                                    &mut app,
-                                    &mut build_jobs,
-                                    id,
-                                    request,
-                                )
-                                .await
-                                {
-                                    pending_security_build = Some(id);
-                                }
-                            }
-                            Effect::Security(SecurityEffect::CancelSession(id))
-                                if pending_security_build == Some(id) =>
-                            {
-                                if let Some(action) = build_jobs.request_cancellation() {
-                                    let _ = update(&mut app, action);
-                                }
-                                if let Err(error) = backend.cancel_build().await {
-                                    let _ = update(
-                                        &mut app,
-                                        Action::Security(SecurityAction::RejectCancellation {
-                                            id,
-                                            message: error.to_string(),
-                                        }),
-                                    );
-                                    for action in build_jobs
-                                        .cancellation_failed(error.to_string(), SystemTime::now())
-                                    {
-                                        let _ = update(&mut app, action);
-                                    }
-                                }
-                            }
-                            Effect::Security(SecurityEffect::CancelSession(id)) => {
-                                let _ = update(
-                                    &mut app,
-                                    Action::Security(SecurityAction::RejectCancellation {
-                                        id,
-                                        message: "the CLI does not own this Security operation"
-                                            .into(),
-                                    }),
-                                );
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-            } else if let Some(Dialog::Qa(dialog)) = app.active_dialog().cloned() {
-                let effect =
-                    qa_dialog_action(&dialog, input).and_then(|action| update(&mut app, action));
-                if let Some(effect) = effect {
-                    let routed = route_independent_qa_effect(
-                        &guard,
-                        &mut app,
-                        &mut qa_coordinator,
-                        effect.clone(),
-                        editor.as_deref(),
-                    )
-                    .await;
-                    if !routed {
-                        match effect {
-                            Effect::Qa(QaEffect::StartBuild { session, request }) => {
-                                if begin_qa_build(
-                                    &mut backend,
-                                    &mut app,
-                                    &mut build_jobs,
-                                    session,
-                                    request,
-                                )
-                                .await
-                                {
-                                    pending_qa_build = Some(session);
-                                }
-                            }
-                            Effect::Qa(QaEffect::CancelBuild { session, .. })
-                                if pending_qa_build == Some(session) =>
-                            {
-                                if let Some(action) = build_jobs.request_cancellation() {
-                                    let _ = update(&mut app, action);
-                                }
-                                if let Err(error) = backend.cancel_build().await {
-                                    let _ = update(
-                                        &mut app,
-                                        Action::Qa(QaAction::RejectCancellation {
-                                            session,
-                                            message: error.to_string(),
-                                        }),
-                                    );
-                                    for action in build_jobs
-                                        .cancellation_failed(error.to_string(), SystemTime::now())
-                                    {
-                                        let _ = update(&mut app, action);
-                                    }
-                                }
-                            }
-                            Effect::Qa(QaEffect::CancelBuild { session, .. }) => {
-                                let _ = update(
-                                    &mut app,
-                                    Action::Qa(QaAction::RejectCancellation {
-                                        session,
-                                        message: "the CLI does not own this QA managed build"
-                                            .into(),
-                                    }),
-                                );
-                            }
-                            _ => {}
-                        }
-                    }
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::SdkBuildConfirmation(_))) {
-                let effect = sdk_build_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::Start(request)) = effect {
-                    let tracked = sdk_build_is_populate(&request);
-                    if begin_build(&mut backend, &mut app, &mut build_jobs, request.clone()).await
-                        && tracked
-                    {
-                        pending_sdk_build = Some(request);
-                    }
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::SdkPublish(_))) {
-                let _ =
-                    sdk_publish_dialog_action(input).and_then(|action| update(&mut app, action));
-            } else if matches!(app.active_dialog(), Some(Dialog::SdkPublishConfirmation(_))) {
-                let effect = sdk_publish_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::StartSdkSession { id, operation }) = effect {
-                    begin_sdk_job(
-                        &mut app,
-                        &mut sdk_operation,
-                        sdk_tool_adapter.as_ref(),
-                        cancellation_timeout,
-                        SDK_TOOL_OPERATION_TIMEOUT,
-                        id,
-                        operation,
-                    );
-                }
-            } else if let Some(Dialog::SdkNative(dialog)) = app.active_dialog() {
-                let editing = dialog.editing;
-                let _ = sdk_native_dialog_action(editing, input)
-                    .and_then(|action| update(&mut app, action));
-            } else if matches!(app.active_dialog(), Some(Dialog::SdkNativeConfirmation(_))) {
-                let effect = sdk_native_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::StartSdkSession { id, operation }) = effect {
-                    begin_sdk_job(
-                        &mut app,
-                        &mut sdk_operation,
-                        sdk_tool_adapter.as_ref(),
-                        cancellation_timeout,
-                        SDK_TOOL_OPERATION_TIMEOUT,
-                        id,
-                        operation,
-                    );
-                }
-            } else if matches!(
-                app.active_dialog(),
-                Some(Dialog::SdkCancellationConfirmation(_))
-            ) {
-                let effect = sdk_cancellation_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::CancelSdkSession(id)) = effect {
-                    begin_sdk_cancellation(&mut app, &mut sdk_operation, id);
-                }
-            } else if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog() {
-                let editing = dialog.editing;
-                let _ = test_launch_dialog_action(editing, input)
-                    .and_then(|action| update(&mut app, action));
-            } else if matches!(app.active_dialog(), Some(Dialog::TestLaunchConfirmation(_))) {
-                let effect = test_launch_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                match effect {
-                    Some(effect @ Effect::StartTestSession { .. }) => {
-                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
-                    }
-                    Some(Effect::StartTestBuildSession { id, request }) => {
-                        if begin_test_build(&mut backend, &mut app, &mut build_jobs, id, request)
-                            .await
-                        {
-                            pending_test_build = Some(id);
-                        }
-                    }
-                    _ => {}
-                }
-            } else if matches!(
-                app.active_dialog(),
-                Some(Dialog::TestCancellationConfirmation(_))
-            ) {
-                let effect = test_cancellation_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(effect @ Effect::CancelTestSession(id)) = effect
-                    && !test_coordinator.handle_effect(&mut app, effect).await
-                    && pending_test_build == Some(id)
-                {
-                    if let Some(action) = build_jobs.request_cancellation() {
-                        let _ = update(&mut app, action);
-                    }
-                    if let Err(error) = backend.cancel_build().await {
-                        let _ = update(
+                    if let Some(effect @ Effect::GetImageArtifacts(_)) = effect {
+                        begin_image_artifact_operation(
                             &mut app,
-                            Action::RejectTestSessionCancellation {
-                                id,
-                                message: error.to_string(),
-                            },
-                        );
-                        for action in
-                            build_jobs.cancellation_failed(error.to_string(), SystemTime::now())
-                        {
-                            let _ = update(&mut app, action);
-                        }
-                    }
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::TestResultImport(_))) {
-                let effect = test_result_import_dialog_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(effect) = effect {
-                    let _ = test_coordinator.handle_effect(&mut app, effect).await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::TestComparison(_))) {
-                let _ = test_comparison_dialog_action(input)
-                    .and_then(|action| update(&mut app, action));
-            } else if matches!(
-                app.active_dialog(),
-                Some(Dialog::TestComparisonConfirmation(_))
-            ) {
-                let effect = test_comparison_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(effect) = effect {
-                    let _ = test_coordinator.handle_effect(&mut app, effect).await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::TestJunitExport(_))) {
-                let effect =
-                    test_junit_dialog_action(input).and_then(|action| update(&mut app, action));
-                if let Some(effect) = effect {
-                    let _ = test_coordinator.handle_effect(&mut app, effect).await;
-                }
-            } else if matches!(
-                app.active_dialog(),
-                Some(Dialog::TestJunitExportConfirmation(_))
-            ) {
-                let effect = test_junit_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(effect) = effect {
-                    let _ = test_coordinator.handle_effect(&mut app, effect).await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::WicCreate(_))) {
-                let editing = app.active_dialog().is_some_and(
-                    |dialog| matches!(dialog, Dialog::WicCreate(state) if state.editing),
-                );
-                let _ = wic_create_dialog_action(editing, input)
-                    .and_then(|action| update(&mut app, action));
-            } else if matches!(app.active_dialog(), Some(Dialog::WicCreateConfirmation(_))) {
-                let effect = wic_create_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::StartWicSession { id, operation }) = effect {
-                    begin_wic_job(
-                        &mut app,
-                        &mut wic_operation,
-                        &wic_device_inspector,
-                        &session_build_dir,
-                        cancellation_timeout,
-                        id,
-                        operation,
-                    )
-                    .await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::WicDevicePicker(_))) {
-                let _ = wic_device_picker_action(input).and_then(|action| update(&mut app, action));
-            } else if matches!(app.active_dialog(), Some(Dialog::WicWritePhrase(_))) {
-                let _ = wic_write_phrase_action(input).and_then(|action| update(&mut app, action));
-            } else if matches!(app.active_dialog(), Some(Dialog::WicWriteConfirmation(_))) {
-                let effect = wic_write_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::StartWicSession { id, operation }) = effect {
-                    begin_wic_job(
-                        &mut app,
-                        &mut wic_operation,
-                        &wic_device_inspector,
-                        &session_build_dir,
-                        cancellation_timeout,
-                        id,
-                        operation,
-                    )
-                    .await;
-                }
-            } else if let Some(Dialog::WicCancellationConfirmation {
-                id,
-                incomplete_device_warning,
-            }) = app.active_dialog().cloned()
-            {
-                let effect =
-                    wic_cancellation_confirmation_action(id, incomplete_device_warning, input)
-                        .and_then(|action| update(&mut app, action));
-                if let Some(Effect::CancelWicSession(id)) = effect {
-                    begin_wic_cancellation(&mut app, &mut wic_operation, id);
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::QemuLaunch(_))) {
-                let editing = app.active_dialog().is_some_and(
-                    |dialog| matches!(dialog, Dialog::QemuLaunch(state) if state.editing),
-                );
-                let _ = qemu_launch_dialog_action(editing, input)
-                    .and_then(|action| update(&mut app, action));
-            } else if matches!(app.active_dialog(), Some(Dialog::QemuLaunchConfirmation(_))) {
-                let effect = qemu_launch_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::StartQemuSession { id, request }) = effect {
-                    begin_qemu_job(
-                        &mut app,
-                        &mut qemu_operation,
-                        &session_build_dir,
-                        cancellation_timeout,
-                        id,
-                        request,
-                    )
-                    .await;
-                }
-            } else if matches!(
-                app.active_dialog(),
-                Some(Dialog::QemuCancellationConfirmation(_))
-            ) {
-                let effect = qemu_cancellation_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::CancelQemuSession(id)) = effect {
-                    begin_qemu_cancellation(&mut app, &mut qemu_operation, id);
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
-                let editing = app.active_dialog().is_some_and(
-                    |dialog| matches!(dialog, Dialog::RecipeEditor(editor) if editor.editing),
-                );
-                let effect = recipe_editor_action(editing, input)
-                    .and_then(|action| update(&mut app, action));
-                match effect {
-                    Some(Effect::LoadRecipeEditorFile(path)) => {
-                        load_recipe_editor_file(&mut app, path).await;
-                    }
-                    Some(Effect::SaveRecipeEditorFile { path, content }) => {
-                        save_recipe_editor_file(&mut app, path, content).await;
-                    }
-                    _ => {}
-                }
-            } else if matches!(
-                app.active_dialog(),
-                Some(Dialog::DevtoolModifyConfirmation(_))
-            ) {
-                let effect = devtool_modify_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::DevtoolModify(identity)) = effect {
-                    let recipe = identity.name.clone();
-                    if begin_devtool_job(
-                        &mut app,
-                        &mut devtool_jobs,
-                        &mut devtool_runner,
-                        &session_build_dir,
-                        cancellation_timeout,
-                        DevtoolOperation::Modify { recipe },
-                    )
-                    .await
-                    {
-                        pending_devtool_modify = Some(identity);
-                    }
-                }
-            } else if app.screen == Screen::Signatures
-                && app.active_dialog().is_none()
-                && app.notification.is_none()
-            {
-                let effect =
-                    signature_workspace_action(input).and_then(|action| update(&mut app, action));
-                match effect {
-                    Some(effect @ (Effect::GetSignatureDump(_) | Effect::CompareSignatures(_))) => {
-                        begin_signature_operation(
-                            &mut app,
-                            &signature_adapter,
-                            &mut signature_operation,
+                            image_artifact_adapter.as_ref(),
+                            &mut image_artifact_operation,
                             effect,
-                        )
-                    }
-                    Some(Effect::CancelSignatureOperation) => {
-                        if let Some(operation) = signature_operation.as_ref() {
-                            if operation.cancellation.cancel() {
-                                app.notification = Some("Signature cancellation requested.".into());
-                            }
-                        } else {
-                            app.notification = Some("No signature operation is running.".into());
-                        }
-                    }
-                    Some(Effect::OpenInEditor(path)) => {
-                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                    }
-                    _ => {
-                        if matches!(input, Input::Char('q') | Input::CtrlC) {
-                            let _ = update(&mut app, Action::Quit);
-                        } else if input == Input::Char('?') {
-                            let _ = update(&mut app, Action::Open(Screen::Help));
-                        }
-                    }
-                }
-            } else if matches!(
-                app.focus,
-                yoctui_model::FocusTarget::Navigator | yoctui_model::FocusTarget::Inspector
-            ) {
-                if let Some(action) = focus_action(app.focus, input) {
-                    let effect = update(&mut app, action);
-                    if let Some(
+                        );
+                    } else if let Some(
                         effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
                     ) = effect
                     {
@@ -6327,13 +5835,6 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             &mut package_operation,
                             effect,
                         );
-                    } else if let Some(effect @ Effect::GetImageArtifacts(_)) = effect {
-                        begin_image_artifact_operation(
-                            &mut app,
-                            image_artifact_adapter.as_ref(),
-                            &mut image_artifact_operation,
-                            effect,
-                        );
                     } else if let Some(effect @ Effect::InspectSdkTools) = effect {
                         begin_sdk_capability_operation(
                             &mut app,
@@ -6341,11 +5842,26 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             &mut sdk_capability_operation,
                             effect,
                         );
+                    } else if let Some(
+                        effect @ (Effect::InspectTestCapability
+                        | Effect::InspectResultToolCapability),
+                    ) = effect
+                    {
+                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
                     } else if let Some(effect @ Effect::Security(_)) = effect {
                         let _ = route_independent_security_effect(
                             &guard,
                             &mut app,
                             &mut security_coordinator,
+                            effect,
+                            editor.as_deref(),
+                        )
+                        .await;
+                    } else if let Some(effect @ Effect::Qa(_)) = effect {
+                        let _ = route_independent_qa_effect(
+                            &guard,
+                            &mut app,
+                            &mut qa_coordinator,
                             effect,
                             editor.as_deref(),
                         )
@@ -6360,588 +5876,17 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         )
                         .await;
                     }
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
-                let _ = match input {
-                    Input::Char('Y') => update(&mut app, Action::ConfirmQuit),
-                    Input::Esc => update(&mut app, Action::CancelQuit),
-                    _ => None,
-                };
-            } else if app.layer_browser.is_some()
-                && !app.metadata_searching
-                && app.focus != yoctui_model::FocusTarget::Dialog
-            {
-                let effect = match input {
-                    Input::Tab => update(&mut app, Action::CycleFocus { backwards: false }),
-                    Input::BackTab => update(&mut app, Action::CycleFocus { backwards: true }),
-                    Input::Up => update(&mut app, Action::SelectLayerBrowserEntry { delta: -1 }),
-                    Input::Down => update(&mut app, Action::SelectLayerBrowserEntry { delta: 1 }),
-                    Input::Enter => update(&mut app, Action::LayerBrowserEnter),
-                    Input::Right | Input::Char('l') => update(&mut app, Action::LayerBrowserExpand),
-                    Input::Esc => update(&mut app, Action::CloseLayerBrowser),
-                    Input::Left | Input::Char('h') => update(&mut app, Action::LayerBrowserUp),
-                    Input::Char('r') => update(&mut app, Action::RefreshLayerBrowser),
-                    Input::Char('e') => update(&mut app, Action::EditSelectedLayerBrowserFile),
-                    Input::Char('.') => update(&mut app, Action::ToggleLayerBrowserHidden),
-                    Input::Char('/') => update(&mut app, Action::BeginMetadataSearch),
-                    Input::Char('g') => update(
-                        &mut app,
-                        Action::SetLayerInspectorMode(LayerInspectorMode::Git),
-                    ),
-                    Input::Char('m') => update(
-                        &mut app,
-                        Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
-                    ),
-                    Input::Char('d') => update(
-                        &mut app,
-                        Action::SetLayerInspectorMode(LayerInspectorMode::Dependencies),
-                    ),
-                    _ => None,
-                };
-                match effect {
-                    Some(Effect::LoadLayerBrowserDirectory {
-                        layer,
-                        root,
-                        directory,
-                    }) => load_layer_browser_directory(&mut app, layer, root, directory).await,
-                    Some(Effect::LoadLayerBrowserPreview(path)) => {
-                        load_layer_browser_preview(&mut app, path).await
-                    }
-                    Some(Effect::OpenLayerBrowserEditor { layer, root, file }) => {
-                        if let Some(Effect::LoadRecipeEditorFile(path)) = update(
-                            &mut app,
-                            Action::OpenRecipeEditor {
-                                recipe: format!("Layer: {layer}"),
-                                root,
-                                files: vec![file],
-                            },
-                        ) {
-                            load_recipe_editor_file(&mut app, path).await;
-                        }
-                    }
-                    _ => {}
-                }
-            } else if matches!(
-                app.active_dialog(),
-                Some(Dialog::DevtoolResetConfirmation(_))
-            ) {
-                let effect = devtool_reset_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::DevtoolReset(plan)) = effect {
-                    let operation = plan.operation();
-                    if begin_devtool_job(
-                        &mut app,
-                        &mut devtool_jobs,
-                        &mut devtool_runner,
-                        &session_build_dir,
-                        cancellation_timeout,
-                        operation,
-                    )
-                    .await
+                } else if matches!(app.active_dialog(), Some(Dialog::ThemePicker { .. })) {
+                    let action = match input {
+                        Input::Up | Input::Char('k') => Some(Action::SelectTheme { delta: -1 }),
+                        Input::Down | Input::Char('j') => Some(Action::SelectTheme { delta: 1 }),
+                        Input::Enter => Some(Action::ApplySelectedTheme),
+                        Input::Esc => Some(Action::CloseThemePicker),
+                        _ => None,
+                    };
+                    if let Some(action) = action
+                        && let Some(Effect::PersistSettings) = update(&mut app, action)
                     {
-                        pending_devtool_reset = Some(plan.identity);
-                    }
-                }
-            } else if matches!(
-                app.active_dialog(),
-                Some(Dialog::DevtoolUpdateConfirmation(_))
-            ) {
-                let effect = devtool_update_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::DevtoolUpdateRecipe(identity)) = effect {
-                    let recipe = identity.name.clone();
-                    if begin_devtool_job(
-                        &mut app,
-                        &mut devtool_jobs,
-                        &mut devtool_runner,
-                        &session_build_dir,
-                        cancellation_timeout,
-                        DevtoolOperation::UpdateRecipe { recipe },
-                    )
-                    .await
-                    {
-                        pending_devtool_update = Some(identity);
-                    }
-                }
-            } else if matches!(
-                app.active_dialog(),
-                Some(Dialog::DevtoolFinishConfirmation(_))
-            ) {
-                let effect = devtool_finish_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::DevtoolFinish(plan)) = effect {
-                    let request = plan.request();
-                    if begin_devtool_job(
-                        &mut app,
-                        &mut devtool_jobs,
-                        &mut devtool_runner,
-                        &session_build_dir,
-                        cancellation_timeout,
-                        request.into(),
-                    )
-                    .await
-                    {
-                        pending_devtool_finish = Some(plan.identity);
-                    }
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::DevtoolFinishPicker(_))) {
-                let _ =
-                    devtool_finish_picker_action(input).and_then(|action| update(&mut app, action));
-            } else if matches!(
-                app.active_dialog(),
-                Some(Dialog::DevtoolDeployConfirmation(_))
-            ) {
-                let effect = devtool_deploy_confirmation_action(input)
-                    .and_then(|action| update(&mut app, action));
-                if let Some(Effect::DevtoolDeploy(plan)) = effect {
-                    let request = plan.request();
-                    if begin_devtool_job(
-                        &mut app,
-                        &mut devtool_jobs,
-                        &mut devtool_runner,
-                        &session_build_dir,
-                        cancellation_timeout,
-                        request.into(),
-                    )
-                    .await
-                    {
-                        pending_devtool_deploy = Some(plan.identity);
-                    }
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::DevtoolDeploy(_))) {
-                let _ =
-                    devtool_deploy_dialog_action(input).and_then(|action| update(&mut app, action));
-            } else if matches!(app.active_dialog(), Some(Dialog::BbmaskConfirmation(_))) {
-                let effect = match input {
-                    Input::Enter => update(&mut app, Action::ConfirmBbmaskWrite),
-                    Input::Esc => update(&mut app, Action::CancelBbmaskWrite),
-                    _ => None,
-                };
-                if let Some(Effect::WriteBbmask(value)) = effect {
-                    match write_bbmask(&session_build_dir, value).await {
-                        Ok(()) => {
-                            refresh_workspace(
-                                &mut backend,
-                                &mut app,
-                                "BBMASK saved and workspace metadata refreshed.",
-                            )
-                            .await
-                        }
-                        Err(error) => {
-                            app.notification = Some(format!("Could not save BBMASK: {error}"))
-                        }
-                    }
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::BbmaskEdit { .. })) {
-                let _ = match input {
-                    Input::Char(character) => update(&mut app, Action::AppendBbmask(character)),
-                    Input::Backspace => update(&mut app, Action::BackspaceBbmask),
-                    Input::Enter => update(&mut app, Action::PreviewBbmaskEdit),
-                    Input::Esc => update(&mut app, Action::CancelBbmaskEdit),
-                    _ => None,
-                };
-            } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
-                let action = if input == Input::Enter
-                    && app.build.status == BuildStatus::Failed
-                    && app.build.errors > 0
-                {
-                    Action::OpenBuildCompletionErrors
-                } else {
-                    Action::DismissBuildCompletion
-                };
-                let _ = update(&mut app, action);
-            } else if matches!(app.active_dialog(), Some(Dialog::ImagePicker(_))) {
-                let _ = match input {
-                    Input::Up => update(&mut app, Action::SelectImage { delta: -1 }),
-                    Input::Down => update(&mut app, Action::SelectImage { delta: 1 }),
-                    Input::Enter => update(&mut app, Action::ConfirmImagePicker),
-                    Input::Esc => update(&mut app, Action::CancelImagePicker),
-                    _ => None,
-                };
-            } else if matches!(app.active_dialog(), Some(Dialog::SignatureTaskPicker(_))) {
-                let effect =
-                    signature_task_picker_action(input).and_then(|action| update(&mut app, action));
-                if let Some(effect @ Effect::GetSignatureDump(_)) = effect {
-                    begin_signature_operation(
-                        &mut app,
-                        &signature_adapter,
-                        &mut signature_operation,
-                        effect,
-                    );
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskPicker(_))) {
-                let _ = match input {
-                    Input::Up => update(&mut app, Action::SelectRecipeTask { delta: -1 }),
-                    Input::Down => update(&mut app, Action::SelectRecipeTask { delta: 1 }),
-                    Input::Enter => update(&mut app, Action::PreviewSelectedRecipeTask),
-                    Input::Esc => update(&mut app, Action::CancelRecipeTaskPicker),
-                    _ => None,
-                };
-            } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskLogPicker(_))) {
-                let effect = match input {
-                    Input::Up => update(&mut app, Action::SelectRecipeTaskLog { delta: -1 }),
-                    Input::Down => update(&mut app, Action::SelectRecipeTaskLog { delta: 1 }),
-                    Input::Enter => update(&mut app, Action::OpenSelectedRecipeTaskLog),
-                    Input::Esc => update(&mut app, Action::CancelRecipeTaskLogPicker),
-                    _ => None,
-                };
-                if let Some(Effect::OpenInEditor(path)) = effect {
-                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::RecipePatchPicker(_))) {
-                let effect = match input {
-                    Input::Up => update(&mut app, Action::SelectRecipePatch { delta: -1 }),
-                    Input::Down => update(&mut app, Action::SelectRecipePatch { delta: 1 }),
-                    Input::Enter => update(&mut app, Action::OpenSelectedRecipePatch),
-                    Input::Esc => update(&mut app, Action::CancelRecipePatchPicker),
-                    _ => None,
-                };
-                if let Some(Effect::OpenInEditor(path)) = effect {
-                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::ConfigSourcePicker(_))) {
-                let effect =
-                    config_source_picker_action(input).and_then(|action| update(&mut app, action));
-                if let Some(Effect::OpenInEditor(path)) = effect {
-                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::ConfigScopePicker(_))) {
-                let effect =
-                    config_scope_picker_action(input).and_then(|action| update(&mut app, action));
-                if let Some(Effect::GetVariable(identity)) = effect {
-                    load_config_variable(&mut app, backend.as_mut(), identity).await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::ConfigComparison(_))) {
-                if let Some(action) = config_compare_dialog_action(input) {
-                    let _ = update(&mut app, action);
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::ConfigEdit { .. })) {
-                if let Some(action) = config_edit_dialog_action(input) {
-                    let _ = update(&mut app, action);
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::ConfigEditConfirmation(_))) {
-                if let Some(action) = config_edit_confirmation_action(input)
-                    && let Some(Effect::WriteConfigAssignment(request)) = update(&mut app, action)
-                {
-                    execute_config_edit_write(
-                        backend.as_mut(),
-                        &mut app,
-                        &session_build_dir,
-                        request,
-                    )
-                    .await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
-                let effect = match input {
-                    Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
-                    Input::Esc => update(&mut app, Action::CancelRecipeTask),
-                    _ => None,
-                };
-                if let Some(Effect::Start(request)) = effect {
-                    begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
-                let effect = match input {
-                    Input::Char('b') => update(&mut app, Action::BeginBuildTargetTask(None)),
-                    Input::Char('c') => {
-                        update(&mut app, Action::BeginBuildTargetTask(Some("clean".into())))
-                    }
-                    Input::Char('m') => update(
-                        &mut app,
-                        Action::BeginBuildTargetTask(Some("menuconfig".into())),
-                    ),
-                    Input::Char('e') => update(&mut app, Action::BeginBuildTargetEdit),
-                    Input::Esc => update(&mut app, Action::CloseBuildOptions),
-                    _ => None,
-                };
-                if let Some(Effect::Start(request)) = effect {
-                    begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
-                }
-            } else if matches!(app.active_dialog(), Some(Dialog::BuildTarget { .. })) {
-                let effect = match input {
-                    Input::Char(character) => {
-                        update(&mut app, Action::AppendBuildTarget(character))
-                    }
-                    Input::Backspace => update(&mut app, Action::BackspaceBuildTarget),
-                    Input::Enter => update(&mut app, Action::ConfirmBuildTarget),
-                    Input::Esc => update(&mut app, Action::CancelBuildTargetEdit),
-                    _ => None,
-                };
-                if let Some(Effect::Start(request)) = effect {
-                    begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
-                }
-            } else if app.notification.is_some()
-                && !(app.screen == Screen::Settings
-                    && app.settings_dirty
-                    && input == Input::Char('r'))
-            {
-                if input == Input::Enter {
-                    let _ = update(&mut app, Action::ActivateNotification);
-                } else if input == Input::Esc {
-                    let _ = update(&mut app, Action::DismissNotification);
-                }
-            } else if app.screen == Screen::Packages
-                && package_workspace_action(app.package_searching, input).is_some()
-            {
-                let action = package_workspace_action(app.package_searching, input)
-                    .expect("Packages action was checked");
-                match update(&mut app, action) {
-                    Some(
-                        effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
-                    ) => begin_package_operation(
-                        &mut app,
-                        &package_adapter,
-                        &mut package_operation,
-                        effect,
-                    ),
-                    Some(Effect::CancelPackageOperation) => {
-                        if let Some(operation) = package_operation.as_ref() {
-                            if operation.cancellation.cancel() {
-                                app.notification =
-                                    Some("Package-data cancellation requested.".into());
-                            }
-                        } else {
-                            app.notification = Some("No package-data operation is running.".into());
-                        }
-                    }
-                    Some(Effect::OpenInEditor(path)) => {
-                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                    }
-                    _ => {}
-                }
-            } else if app.screen == Screen::Images
-                && images_workspace_action(app.image_artifact_searching, input).is_some()
-            {
-                let action = images_workspace_action(app.image_artifact_searching, input)
-                    .expect("Images action was checked");
-                match update(&mut app, action) {
-                    Some(effect @ Effect::GetImageArtifacts(_)) => begin_image_artifact_operation(
-                        &mut app,
-                        image_artifact_adapter.as_ref(),
-                        &mut image_artifact_operation,
-                        effect,
-                    ),
-                    Some(effect @ Effect::GetWicDevices(_)) => begin_wic_device_operation(
-                        &wic_device_inspector,
-                        &mut wic_device_operation,
-                        effect,
-                    ),
-                    Some(Effect::CancelImageArtifactOperation) => {
-                        if let Some(operation) = image_artifact_operation.as_ref() {
-                            if operation.cancellation.cancel() {
-                                app.notification =
-                                    Some("Image artifact cancellation requested.".into());
-                            }
-                        } else {
-                            app.notification =
-                                Some("No image artifact operation is running.".into());
-                        }
-                    }
-                    Some(Effect::OpenInEditor(path)) => {
-                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                    }
-                    _ => {}
-                }
-            } else if app.screen == Screen::Sdk
-                && sdk_workspace_action(app.sdk_artifact_searching, input).is_some()
-            {
-                let action = sdk_workspace_action(app.sdk_artifact_searching, input)
-                    .expect("SDK action was checked");
-                match update(&mut app, action) {
-                    Some(effect @ Effect::GetSdkArtifacts(_)) => begin_sdk_artifact_operation(
-                        &mut app,
-                        sdk_artifact_adapter.as_ref(),
-                        &mut sdk_artifact_operation,
-                        effect,
-                    ),
-                    Some(Effect::CancelSdkArtifactOperation) => {
-                        if let Some(operation) = sdk_artifact_operation.as_ref() {
-                            if operation.cancellation.cancel() {
-                                app.notification =
-                                    Some("SDK artifact cancellation requested.".into());
-                            }
-                        } else {
-                            app.notification = Some("No SDK artifact scan is running.".into());
-                        }
-                    }
-                    Some(effect @ Effect::InspectSdkTools) => begin_sdk_capability_operation(
-                        &mut app,
-                        sdk_tool_adapter.as_ref(),
-                        &mut sdk_capability_operation,
-                        effect,
-                    ),
-                    Some(Effect::OpenInEditor(path)) => {
-                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                    }
-                    _ => {}
-                }
-            } else if app.screen == Screen::Testing && testing_screen_action(&app, input).is_some()
-            {
-                let action =
-                    testing_screen_action(&app, input).expect("Testing action was checked");
-                match update(&mut app, action) {
-                    Some(effect @ Effect::ImportTestResults(_))
-                    | Some(effect @ Effect::CompareTestResults(_))
-                    | Some(effect @ Effect::InspectTestJunitDestination { .. })
-                    | Some(effect @ Effect::ExportTestJunit(_))
-                    | Some(effect @ Effect::InspectTestCapability)
-                    | Some(effect @ Effect::InspectResultToolCapability) => {
-                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
-                    }
-                    Some(Effect::OpenInEditor(path)) => {
-                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                    }
-                    _ => {}
-                }
-            } else if app.screen == Screen::Security
-                && security_workspace_action(
-                    app.security.view,
-                    app.security.drilled,
-                    app.security.searching,
-                    input,
-                )
-                .is_some()
-            {
-                let action = security_workspace_action(
-                    app.security.view,
-                    app.security.drilled,
-                    app.security.searching,
-                    input,
-                )
-                .expect("Security action was checked");
-                if let Some(effect) = update(&mut app, action) {
-                    let _ = route_independent_security_effect(
-                        &guard,
-                        &mut app,
-                        &mut security_coordinator,
-                        effect,
-                        editor.as_deref(),
-                    )
-                    .await;
-                }
-            } else if app.screen == Screen::Qa
-                && qa_workspace_action(app.qa.view, app.qa.drilled, app.qa.searching, input)
-                    .is_some()
-            {
-                let action =
-                    qa_workspace_action(app.qa.view, app.qa.drilled, app.qa.searching, input)
-                        .expect("QA action was checked");
-                if let Some(effect) = update(&mut app, action) {
-                    let _ = route_independent_qa_effect(
-                        &guard,
-                        &mut app,
-                        &mut qa_coordinator,
-                        effect,
-                        editor.as_deref(),
-                    )
-                    .await;
-                }
-            } else if app.screen == Screen::Maintenance
-                && maintenance_workspace_action(
-                    app.maintenance.view,
-                    maintenance_row_count(&app),
-                    input,
-                )
-                .is_some()
-            {
-                let action = maintenance_workspace_action(
-                    app.maintenance.view,
-                    maintenance_row_count(&app),
-                    input,
-                )
-                .expect("Maintenance action was checked");
-                if let Some(effect) = update(&mut app, action) {
-                    let _ = route_independent_maintenance_effect(
-                        &guard,
-                        &mut app,
-                        &mut maintenance_coordinator,
-                        effect,
-                        editor.as_deref(),
-                    )
-                    .await;
-                }
-            } else if app.screen == Screen::BuildEnvironment
-                && app
-                    .build_environment_draft
-                    .as_ref()
-                    .is_some_and(|draft| draft.editing)
-            {
-                let action = match input {
-                    Input::Up | Input::Char('k') => {
-                        Some(Action::SelectBuildEnvironmentField { delta: -1 })
-                    }
-                    Input::Down | Input::Char('j') => {
-                        Some(Action::SelectBuildEnvironmentField { delta: 1 })
-                    }
-                    Input::Enter => Some(Action::ApplyBuildEnvironmentProfile),
-                    Input::Esc => Some(Action::CancelBuildEnvironmentEdit),
-                    Input::Backspace => Some(Action::BackspaceBuildEnvironmentField),
-                    Input::Char(c) => Some(Action::AppendBuildEnvironmentField(c)),
-                    _ => None,
-                };
-                if let Some(action) = action {
-                    let _ = update(&mut app, action);
-                }
-            } else if app.screen == Screen::BuildEnvironment
-                && build_environment_action(input).is_some()
-            {
-                let action =
-                    build_environment_action(input).expect("build environment action was checked");
-                if let Some(Effect::VerifyBuildEnvironment {
-                    profile,
-                    generation,
-                }) = update(&mut app, action)
-                {
-                    match BuildEnvironmentAdapter::default().initialize(profile).await {
-                        Ok(response) => {
-                            let profile = response.profile.clone();
-                            let _ =
-                                update(&mut app, Action::BuildEnvironmentVerified { generation });
-                            let _ = backend.shutdown().await;
-                            match select_backend_with_environment(
-                                backend_kind.clone(),
-                                profile.build_dir.clone(),
-                                Some(cancellation_timeout),
-                                Some(response.environment),
-                            )
-                            .await
-                            {
-                                Ok(mut connected) => match connected.inspect_workspace().await {
-                                    Ok(workspace) => {
-                                        let _ =
-                                            update(&mut app, Action::WorkspaceLoaded(workspace));
-                                        backend = connected;
-                                    }
-                                    Err(error) => {
-                                        app.notification =
-                                            Some(format!("BitBake verification failed: {error}"))
-                                    }
-                                },
-                                Err(error) => {
-                                    app.notification =
-                                        Some(format!("Could not start BitBake: {error}"))
-                                }
-                            }
-                        }
-                        Err(error) => {
-                            let _ = update(
-                                &mut app,
-                                Action::BuildEnvironmentVerificationFailed {
-                                    generation,
-                                    message: error.to_string(),
-                                },
-                            );
-                        }
-                    }
-                }
-            } else if app.screen == Screen::Settings && settings_action(input).is_some() {
-                if app.settings_selection == 0 && matches!(input, Input::Enter | Input::Right) {
-                    let _ = update(&mut app, Action::OpenThemePicker);
-                    continue;
-                }
-                let action = settings_action(input).expect("settings action was checked");
-                match update(&mut app, action) {
-                    Some(Effect::PersistSettings) => {
                         let result = persist_settings(session_path.as_deref(), &mut session, &app);
                         let persistence_action = match result {
                             Ok(()) => Action::SettingsPersisted,
@@ -6949,360 +5894,248 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         };
                         let _ = update(&mut app, persistence_action);
                     }
-                    Some(Effect::VerifyBuildEnvironment {
-                        profile,
-                        generation,
-                    }) => match BuildEnvironmentAdapter::default().initialize(profile).await {
-                        Ok(response) => {
-                            let profile = response.profile.clone();
-                            let _ =
-                                update(&mut app, Action::BuildEnvironmentVerified { generation });
-                            let _ = backend.shutdown().await;
-                            match select_backend_with_environment(
-                                backend_kind.clone(),
-                                profile.build_dir,
-                                Some(cancellation_timeout),
-                                Some(response.environment),
+                } else if let Some(Dialog::Maintenance(dialog)) = app.active_dialog().cloned() {
+                    let effect = maintenance_dialog_action(&dialog, input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(effect) = effect {
+                        let _ = route_independent_maintenance_effect(
+                            &guard,
+                            &mut app,
+                            &mut maintenance_coordinator,
+                            effect,
+                            editor.as_deref(),
+                        )
+                        .await;
+                    }
+                } else if let Some(Dialog::Security(dialog)) = app.active_dialog().cloned() {
+                    let effect = security_dialog_action(&dialog, input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(effect) = effect {
+                        let routed = route_independent_security_effect(
+                            &guard,
+                            &mut app,
+                            &mut security_coordinator,
+                            effect.clone(),
+                            editor.as_deref(),
+                        )
+                        .await;
+                        if !routed {
+                            match effect {
+                                Effect::Security(SecurityEffect::StartBuild { id, request }) => {
+                                    if begin_security_build(
+                                        &mut backend,
+                                        &mut app,
+                                        &mut build_jobs,
+                                        id,
+                                        request,
+                                    )
+                                    .await
+                                    {
+                                        pending_security_build = Some(id);
+                                    }
+                                }
+                                Effect::Security(SecurityEffect::CancelSession(id))
+                                    if pending_security_build == Some(id) =>
+                                {
+                                    if let Some(action) = build_jobs.request_cancellation() {
+                                        let _ = update(&mut app, action);
+                                    }
+                                    if let Err(error) = backend.cancel_build().await {
+                                        let _ = update(
+                                            &mut app,
+                                            Action::Security(SecurityAction::RejectCancellation {
+                                                id,
+                                                message: error.to_string(),
+                                            }),
+                                        );
+                                        for action in build_jobs.cancellation_failed(
+                                            error.to_string(),
+                                            SystemTime::now(),
+                                        ) {
+                                            let _ = update(&mut app, action);
+                                        }
+                                    }
+                                }
+                                Effect::Security(SecurityEffect::CancelSession(id)) => {
+                                    let _ = update(
+                                        &mut app,
+                                        Action::Security(SecurityAction::RejectCancellation {
+                                            id,
+                                            message: "the CLI does not own this Security operation"
+                                                .into(),
+                                        }),
+                                    );
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                } else if let Some(Dialog::Qa(dialog)) = app.active_dialog().cloned() {
+                    let effect = qa_dialog_action(&dialog, input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(effect) = effect {
+                        let routed = route_independent_qa_effect(
+                            &guard,
+                            &mut app,
+                            &mut qa_coordinator,
+                            effect.clone(),
+                            editor.as_deref(),
+                        )
+                        .await;
+                        if !routed {
+                            match effect {
+                                Effect::Qa(QaEffect::StartBuild { session, request }) => {
+                                    if begin_qa_build(
+                                        &mut backend,
+                                        &mut app,
+                                        &mut build_jobs,
+                                        session,
+                                        request,
+                                    )
+                                    .await
+                                    {
+                                        pending_qa_build = Some(session);
+                                    }
+                                }
+                                Effect::Qa(QaEffect::CancelBuild { session, .. })
+                                    if pending_qa_build == Some(session) =>
+                                {
+                                    if let Some(action) = build_jobs.request_cancellation() {
+                                        let _ = update(&mut app, action);
+                                    }
+                                    if let Err(error) = backend.cancel_build().await {
+                                        let _ = update(
+                                            &mut app,
+                                            Action::Qa(QaAction::RejectCancellation {
+                                                session,
+                                                message: error.to_string(),
+                                            }),
+                                        );
+                                        for action in build_jobs.cancellation_failed(
+                                            error.to_string(),
+                                            SystemTime::now(),
+                                        ) {
+                                            let _ = update(&mut app, action);
+                                        }
+                                    }
+                                }
+                                Effect::Qa(QaEffect::CancelBuild { session, .. }) => {
+                                    let _ = update(
+                                        &mut app,
+                                        Action::Qa(QaAction::RejectCancellation {
+                                            session,
+                                            message: "the CLI does not own this QA managed build"
+                                                .into(),
+                                        }),
+                                    );
+                                }
+                                _ => {}
+                            }
+                        }
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::SdkBuildConfirmation(_))) {
+                    let effect = sdk_build_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::Start(request)) = effect {
+                        let tracked = sdk_build_is_populate(&request);
+                        if begin_build(&mut backend, &mut app, &mut build_jobs, request.clone())
+                            .await
+                            && tracked
+                        {
+                            pending_sdk_build = Some(request);
+                        }
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::SdkPublish(_))) {
+                    let _ = sdk_publish_dialog_action(input)
+                        .and_then(|action| update(&mut app, action));
+                } else if matches!(app.active_dialog(), Some(Dialog::SdkPublishConfirmation(_))) {
+                    let effect = sdk_publish_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::StartSdkSession { id, operation }) = effect {
+                        begin_sdk_job(
+                            &mut app,
+                            &mut sdk_operation,
+                            sdk_tool_adapter.as_ref(),
+                            cancellation_timeout,
+                            SDK_TOOL_OPERATION_TIMEOUT,
+                            id,
+                            operation,
+                        );
+                    }
+                } else if let Some(Dialog::SdkNative(dialog)) = app.active_dialog() {
+                    let editing = dialog.editing;
+                    let _ = sdk_native_dialog_action(editing, input)
+                        .and_then(|action| update(&mut app, action));
+                } else if matches!(app.active_dialog(), Some(Dialog::SdkNativeConfirmation(_))) {
+                    let effect = sdk_native_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::StartSdkSession { id, operation }) = effect {
+                        begin_sdk_job(
+                            &mut app,
+                            &mut sdk_operation,
+                            sdk_tool_adapter.as_ref(),
+                            cancellation_timeout,
+                            SDK_TOOL_OPERATION_TIMEOUT,
+                            id,
+                            operation,
+                        );
+                    }
+                } else if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::SdkCancellationConfirmation(_))
+                ) {
+                    let effect = sdk_cancellation_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::CancelSdkSession(id)) = effect {
+                        begin_sdk_cancellation(&mut app, &mut sdk_operation, id);
+                    }
+                } else if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog() {
+                    let editing = dialog.editing;
+                    let _ = test_launch_dialog_action(editing, input)
+                        .and_then(|action| update(&mut app, action));
+                } else if matches!(app.active_dialog(), Some(Dialog::TestLaunchConfirmation(_))) {
+                    let effect = test_launch_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    match effect {
+                        Some(effect @ Effect::StartTestSession { .. }) => {
+                            let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                        }
+                        Some(Effect::StartTestBuildSession { id, request }) => {
+                            if begin_test_build(
+                                &mut backend,
+                                &mut app,
+                                &mut build_jobs,
+                                id,
+                                request,
                             )
                             .await
                             {
-                                Ok(mut connected) => match connected.inspect_workspace().await {
-                                    Ok(workspace) => {
-                                        let _ =
-                                            update(&mut app, Action::WorkspaceLoaded(workspace));
-                                        backend = connected;
-                                    }
-                                    Err(error) => {
-                                        app.notification =
-                                            Some(format!("BitBake verification failed: {error}"))
-                                    }
-                                },
-                                Err(error) => {
-                                    app.notification =
-                                        Some(format!("Could not start BitBake: {error}"))
-                                }
+                                pending_test_build = Some(id);
                             }
                         }
-                        Err(error) => {
-                            let _ = update(
-                                &mut app,
-                                Action::BuildEnvironmentVerificationFailed {
-                                    generation,
-                                    message: error.to_string(),
-                                },
-                            );
-                        }
-                    },
-                    _ => {}
-                }
-            } else if app.screen == Screen::Tasks
-                && tasks_action(app.task_filter_editing, input).is_some()
-            {
-                let action =
-                    tasks_action(app.task_filter_editing, input).expect("Tasks action was checked");
-                let _ = update(&mut app, action);
-            } else if app.screen == Screen::Logs && logs_action(app.logs.searching, input).is_some()
-            {
-                let action =
-                    logs_action(app.logs.searching, input).expect("Logs action was checked");
-                match update(&mut app, action) {
-                    Some(Effect::OpenInEditor(path)) => {
-                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                        _ => {}
                     }
-                    Some(Effect::CopyToClipboard(content)) => {
-                        copy_to_clipboard(&mut app, content).await;
-                    }
-                    _ => {}
-                }
-            } else if app.screen == Screen::Errors && errors_action(input).is_some() {
-                let action = errors_action(input).expect("Errors action was checked");
-                if let Some(Effect::OpenInEditor(path)) = update(&mut app, action) {
-                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                }
-            } else if app.screen == Screen::Dependencies
-                && dependency_workspace_action(input).is_some()
-            {
-                let action =
-                    dependency_workspace_action(input).expect("Dependency action was checked");
-                match update(&mut app, action) {
-                    Some(Effect::GetDependencies(recipe)) => {
-                        load_dependency_graph(&mut app, backend.as_mut(), recipe).await;
-                    }
-                    Some(Effect::OpenInEditor(path)) => {
-                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                    }
-                    _ => {}
-                }
-            } else if app.metadata_searching {
-                match input {
-                    Input::Char(character) => {
-                        let _ = update(&mut app, Action::AppendMetadataQuery(character));
-                    }
-                    Input::Enter | Input::Esc => {
-                        let _ = update(&mut app, Action::FinishMetadataSearch);
-                    }
-                    Input::Backspace => {
-                        let _ = update(&mut app, Action::BackspaceMetadataQuery);
-                    }
-                    _ => {}
-                }
-            } else if input == Input::Char('!') {
-                open_yocto_shell(&guard, &mut app).await;
-            } else if input == Input::Char('i') {
-                let images = app
-                    .workspace
-                    .recipes
-                    .iter()
-                    .map(|recipe| recipe.name.as_str())
-                    .filter(|name| name.contains("image"))
-                    .map(str::to_owned)
-                    .collect();
-                let _ = update(&mut app, Action::OpenImagePicker(images));
-            } else if input == Input::Char('B') {
-                let _ = update(&mut app, Action::OpenBuildOptions);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('f') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeForceTask);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('v') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeDevshell);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('K') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeDiffconfig);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('z') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeDiffsigs);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('Z') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeSignatures);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('V') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeCveCheck);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('X') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeSpdx);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('e') {
-                if let Some(Effect::OpenInEditor(path)) =
-                    update(&mut app, Action::OpenSelectedRecipeProvider)
-                {
-                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                }
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('o') {
-                if let Some(Effect::OpenInEditor(path)) =
-                    update(&mut app, Action::BeginSelectedRecipeTaskLog)
-                {
-                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                }
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('p') {
-                if let Some(Effect::OpenInEditor(path)) =
-                    update(&mut app, Action::BeginSelectedRecipePatchReview)
-                {
-                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                }
-            } else if app.screen == yoctui_model::Screen::Dashboard
-                && matches!(input, Input::Up | Input::Down)
-            {
-                let delta = if input == Input::Up { -1 } else { 1 };
-                let _ = update(&mut app, Action::ScrollBuildTasks { delta });
-            } else if app.screen == yoctui_model::Screen::BuildHistory
-                && matches!(input, Input::Up | Input::Down)
-            {
-                let delta = if input == Input::Up { -1 } else { 1 };
-                let _ = update(&mut app, Action::SelectBuildHistory { delta });
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('d') {
-                let root = match update(&mut app, Action::BeginSelectedRecipeDevtoolModify) {
-                    Some(Effect::OpenWorkspaceEditor { label, root }) => Some((label, root)),
-                    _ => None,
-                };
-                if let Some((recipe, root)) = root {
-                    open_workspace_editor(&mut app, recipe, root).await;
-                }
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('t') {
-                inspect_selected_devtool(&mut app, &session_build_dir).await;
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('D') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolReset);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('u') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('F') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolFinish);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('P') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolDeploy);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('g') {
-                if let Some(Effect::GetDependencies(recipe)) =
-                    update(&mut app, Action::BeginSelectedRecipeDependencies)
-                {
-                    load_dependency_graph(&mut app, backend.as_mut(), recipe).await;
-                }
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Enter {
-                if let Some(Effect::GetRecipeMetadata(recipe)) =
-                    update(&mut app, Action::BeginSelectedRecipeMetadata)
-                {
-                    match backend.get_recipe_metadata(recipe.clone()).await {
-                        Ok(metadata) => {
-                            let _ = update(&mut app, Action::RecipeMetadataLoaded(metadata));
-                        }
-                        Err(error) => {
-                            let _ = update(
-                                &mut app,
-                                Action::RecipeMetadataFailed {
-                                    recipe,
-                                    message: error.to_string(),
-                                },
-                            );
-                        }
-                    }
-                }
-                inspect_selected_devtool(&mut app, &session_build_dir).await;
-            } else if input == Input::Char('b') {
-                let _ = update(&mut app, Action::BeginCurrentImageBuild);
-            } else if app.screen == yoctui_model::Screen::Recipes
-                && matches!(input, Input::Up | Input::Down)
-            {
-                let delta = if input == Input::Up { -1 } else { 1 };
-                let _ = update(&mut app, Action::SelectRecipe { delta });
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('C') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeClean);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('M') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeMenuConfig);
-            } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('S') {
-                let _ = update(&mut app, Action::BeginSelectedRecipeCleanState);
-            } else if app.screen == yoctui_model::Screen::Layers
-                && matches!(input, Input::Up | Input::Down)
-            {
-                let delta = if input == Input::Up { -1 } else { 1 };
-                let _ = update(&mut app, Action::SelectLayer { delta });
-            } else if app.screen == yoctui_model::Screen::Layers && input == Input::Enter {
-                if let Some(Effect::LoadLayerBrowserDirectory {
-                    layer,
-                    root,
-                    directory,
-                }) = update(&mut app, Action::BeginSelectedLayerBrowser)
-                {
-                    load_layer_browser_directory(&mut app, layer, root, directory).await;
-                }
-            } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('o') {
-                if let Some(Effect::OpenInEditor(path)) =
-                    update(&mut app, Action::OpenSelectedLayer)
-                {
-                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                }
-            } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('e') {
-                if let Some(Effect::OpenWorkspaceEditor { label, root }) =
-                    update(&mut app, Action::BeginSelectedLayerWorkspaceEditor)
-                {
-                    open_workspace_editor(&mut app, label, root).await;
-                }
-            } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('R') {
-                if matches!(
-                    update(&mut app, Action::BeginLayerRelationships),
-                    Some(Effect::GetLayerRelationships)
+                } else if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::TestCancellationConfirmation(_))
                 ) {
-                    match backend.get_layer_relationships().await {
-                        Ok(layers) => {
-                            let _ = update(
-                                &mut app,
-                                Action::LayerRelationshipsLoaded(LayerRelationships {
-                                    layers: layers
-                                        .into_iter()
-                                        .map(|layer| LayerRelationship {
-                                            name: layer.name,
-                                            priority: layer.priority,
-                                            compatible: layer.compatible,
-                                            depends: layer.depends,
-                                            overlays: layer.overlays,
-                                            appends: layer.appends,
-                                        })
-                                        .collect(),
-                                }),
-                            );
-                        }
-                        Err(error) => {
-                            let _ = update(
-                                &mut app,
-                                Action::Failure(AppError::new(
-                                    "Layers",
-                                    error.to_string(),
-                                    "use a bridge connected to a BitBake server that supports get_layer_relationships",
-                                )),
-                            );
-                        }
-                    }
-                }
-            } else if app.screen == yoctui_model::Screen::Configuration
-                && matches!(
-                    input,
-                    Input::Up | Input::Down | Input::Char('k') | Input::Char('j')
-                )
-            {
-                if let Some(action) = config_workspace_action(false, input) {
-                    let _ = update(&mut app, action);
-                }
-            } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Enter {
-                inspect_selected_config_variable(&mut app, backend.as_mut()).await;
-            } else if app.screen == yoctui_model::Screen::Configuration
-                && matches!(
-                    input,
-                    Input::Char('s') | Input::Char('c') | Input::Char('E')
-                )
-            {
-                if let Some(action) = config_workspace_action(false, input) {
-                    let _ = update(&mut app, action);
-                }
-            } else if app.screen == yoctui_model::Screen::Configuration
-                && matches!(input, Input::Char('C') | Input::Char('U'))
-            {
-                if let Some(Effect::CopyToClipboard(content)) = config_copy_effect(&mut app, input)
-                {
-                    copy_to_clipboard(&mut app, content).await;
-                }
-            } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Char('o')
-            {
-                if let Some(Effect::OpenInEditor(path)) =
-                    update(&mut app, Action::OpenSelectedConfigSource)
-                {
-                    open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
-                }
-            } else if app.screen == yoctui_model::Screen::Bbmask && input == Input::Char('e') {
-                let _ = update(&mut app, Action::BeginBbmaskEdit);
-            } else if matches!(
-                app.screen,
-                yoctui_model::Screen::Recipes
-                    | yoctui_model::Screen::Layers
-                    | yoctui_model::Screen::Configuration
-            ) && input == Input::Char('/')
-            {
-                let _ = update(&mut app, Action::BeginMetadataSearch);
-            } else if app.logs.searching {
-                match input {
-                    Input::Char(character) => {
-                        let _ = update(&mut app, Action::AppendLogQuery(character));
-                    }
-                    Input::Enter | Input::Esc => {
-                        let _ = update(&mut app, Action::FinishLogSearch);
-                    }
-                    Input::Backspace => {
-                        let _ = update(&mut app, Action::BackspaceLogQuery);
-                    }
-                    _ => {}
-                }
-            } else if let Some(action) = key_action(input) {
-                if matches!(action, Action::Cancel) {
-                    if devtool_jobs.active_job_id().is_some() {
-                        if let Some(job_action) = devtool_jobs.request_cancellation() {
-                            let _ = update(&mut app, job_action);
-                        }
-                        let cancellation = if let Some(runner) = devtool_runner.as_mut() {
-                            runner.cancel().await.map(|_| ())
-                        } else {
-                            Err(yoctui_bitbake::DevtoolRunnerError::NotRunning)
-                        };
-                        if let Err(error) = cancellation {
-                            for action in devtool_jobs
-                                .cancellation_failed(error.to_string(), SystemTime::now())
-                            {
-                                let _ = update(&mut app, action);
-                            }
-                        }
-                    } else if let Some(Effect::Cancel) = update(&mut app, action) {
-                        if let Some(job_action) = build_jobs.request_cancellation() {
-                            let _ = update(&mut app, job_action);
+                    let effect = test_cancellation_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(effect @ Effect::CancelTestSession(id)) = effect
+                        && !test_coordinator.handle_effect(&mut app, effect).await
+                        && pending_test_build == Some(id)
+                    {
+                        if let Some(action) = build_jobs.request_cancellation() {
+                            let _ = update(&mut app, action);
                         }
                         if let Err(error) = backend.cancel_build().await {
+                            let _ = update(
+                                &mut app,
+                                Action::RejectTestSessionCancellation {
+                                    id,
+                                    message: error.to_string(),
+                                },
+                            );
                             for action in
                                 build_jobs.cancellation_failed(error.to_string(), SystemTime::now())
                             {
@@ -7310,34 +6143,1248 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             }
                         }
                     }
-                } else {
-                    if let Some(effect) = update(&mut app, action)
-                        && !route_independent_security_effect(
+                } else if matches!(app.active_dialog(), Some(Dialog::TestResultImport(_))) {
+                    let effect = test_result_import_dialog_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(effect) = effect {
+                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::TestComparison(_))) {
+                    let _ = test_comparison_dialog_action(input)
+                        .and_then(|action| update(&mut app, action));
+                } else if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::TestComparisonConfirmation(_))
+                ) {
+                    let effect = test_comparison_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(effect) = effect {
+                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::TestJunitExport(_))) {
+                    let effect =
+                        test_junit_dialog_action(input).and_then(|action| update(&mut app, action));
+                    if let Some(effect) = effect {
+                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                    }
+                } else if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::TestJunitExportConfirmation(_))
+                ) {
+                    let effect = test_junit_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(effect) = effect {
+                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::WicCreate(_))) {
+                    let editing = app.active_dialog().is_some_and(
+                        |dialog| matches!(dialog, Dialog::WicCreate(state) if state.editing),
+                    );
+                    let _ = wic_create_dialog_action(editing, input)
+                        .and_then(|action| update(&mut app, action));
+                } else if matches!(app.active_dialog(), Some(Dialog::WicCreateConfirmation(_))) {
+                    let effect = wic_create_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::StartWicSession { id, operation }) = effect {
+                        begin_wic_job(
+                            &mut app,
+                            &mut wic_operation,
+                            &wic_device_inspector,
+                            &session_build_dir,
+                            cancellation_timeout,
+                            id,
+                            operation,
+                        )
+                        .await;
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::WicDevicePicker(_))) {
+                    let _ =
+                        wic_device_picker_action(input).and_then(|action| update(&mut app, action));
+                } else if matches!(app.active_dialog(), Some(Dialog::WicWritePhrase(_))) {
+                    let _ =
+                        wic_write_phrase_action(input).and_then(|action| update(&mut app, action));
+                } else if matches!(app.active_dialog(), Some(Dialog::WicWriteConfirmation(_))) {
+                    let effect = wic_write_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::StartWicSession { id, operation }) = effect {
+                        begin_wic_job(
+                            &mut app,
+                            &mut wic_operation,
+                            &wic_device_inspector,
+                            &session_build_dir,
+                            cancellation_timeout,
+                            id,
+                            operation,
+                        )
+                        .await;
+                    }
+                } else if let Some(Dialog::WicCancellationConfirmation {
+                    id,
+                    incomplete_device_warning,
+                }) = app.active_dialog().cloned()
+                {
+                    let effect =
+                        wic_cancellation_confirmation_action(id, incomplete_device_warning, input)
+                            .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::CancelWicSession(id)) = effect {
+                        begin_wic_cancellation(&mut app, &mut wic_operation, id);
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::QemuLaunch(_))) {
+                    let editing = app.active_dialog().is_some_and(
+                        |dialog| matches!(dialog, Dialog::QemuLaunch(state) if state.editing),
+                    );
+                    let _ = qemu_launch_dialog_action(editing, input)
+                        .and_then(|action| update(&mut app, action));
+                } else if matches!(app.active_dialog(), Some(Dialog::QemuLaunchConfirmation(_))) {
+                    let effect = qemu_launch_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::StartQemuSession { id, request }) = effect {
+                        begin_qemu_job(
+                            &mut app,
+                            &mut qemu_operation,
+                            &session_build_dir,
+                            cancellation_timeout,
+                            id,
+                            request,
+                        )
+                        .await;
+                    }
+                } else if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::QemuCancellationConfirmation(_))
+                ) {
+                    let effect = qemu_cancellation_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::CancelQemuSession(id)) = effect {
+                        begin_qemu_cancellation(&mut app, &mut qemu_operation, id);
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
+                    let editing = app.active_dialog().is_some_and(
+                        |dialog| matches!(dialog, Dialog::RecipeEditor(editor) if editor.editing),
+                    );
+                    let effect = recipe_editor_action(editing, input)
+                        .and_then(|action| update(&mut app, action));
+                    match effect {
+                        Some(Effect::LoadRecipeEditorFile(path)) => {
+                            load_recipe_editor_file(&mut app, path).await;
+                        }
+                        Some(Effect::SaveRecipeEditorFile { path, content }) => {
+                            save_recipe_editor_file(&mut app, path, content).await;
+                        }
+                        _ => {}
+                    }
+                } else if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::DevtoolModifyConfirmation(_))
+                ) {
+                    let effect = devtool_modify_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::DevtoolModify(identity)) = effect {
+                        let recipe = identity.name.clone();
+                        if begin_devtool_job(
+                            &mut app,
+                            &mut devtool_jobs,
+                            &mut devtool_runner,
+                            &session_build_dir,
+                            cancellation_timeout,
+                            DevtoolOperation::Modify { recipe },
+                        )
+                        .await
+                        {
+                            pending_devtool_modify = Some(identity);
+                        }
+                    }
+                } else if app.screen == Screen::Signatures
+                    && app.active_dialog().is_none()
+                    && app.notification.is_none()
+                {
+                    let effect = signature_workspace_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    match effect {
+                        Some(
+                            effect @ (Effect::GetSignatureDump(_) | Effect::CompareSignatures(_)),
+                        ) => begin_signature_operation(
+                            &mut app,
+                            &signature_adapter,
+                            &mut signature_operation,
+                            effect,
+                        ),
+                        Some(Effect::CancelSignatureOperation) => {
+                            if let Some(operation) = signature_operation.as_ref() {
+                                if operation.cancellation.cancel() {
+                                    app.notification =
+                                        Some("Signature cancellation requested.".into());
+                                }
+                            } else {
+                                app.notification =
+                                    Some("No signature operation is running.".into());
+                            }
+                        }
+                        Some(Effect::OpenInEditor(path)) => {
+                            open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                        }
+                        _ => {
+                            if matches!(input, Input::Char('q') | Input::CtrlC) {
+                                let _ = update(&mut app, Action::Quit);
+                            } else if input == Input::Char('?') {
+                                let _ = update(&mut app, Action::Open(Screen::Help));
+                            }
+                        }
+                    }
+                } else if matches!(
+                    app.focus,
+                    yoctui_model::FocusTarget::Navigator | yoctui_model::FocusTarget::Inspector
+                ) {
+                    if let Some(action) = focus_action(app.focus, input) {
+                        let effect = update(&mut app, action);
+                        if let Some(
+                            effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
+                        ) = effect
+                        {
+                            begin_package_operation(
+                                &mut app,
+                                &package_adapter,
+                                &mut package_operation,
+                                effect,
+                            );
+                        } else if let Some(effect @ Effect::GetImageArtifacts(_)) = effect {
+                            begin_image_artifact_operation(
+                                &mut app,
+                                image_artifact_adapter.as_ref(),
+                                &mut image_artifact_operation,
+                                effect,
+                            );
+                        } else if let Some(effect @ Effect::InspectSdkTools) = effect {
+                            begin_sdk_capability_operation(
+                                &mut app,
+                                sdk_tool_adapter.as_ref(),
+                                &mut sdk_capability_operation,
+                                effect,
+                            );
+                        } else if let Some(effect @ Effect::Security(_)) = effect {
+                            let _ = route_independent_security_effect(
+                                &guard,
+                                &mut app,
+                                &mut security_coordinator,
+                                effect,
+                                editor.as_deref(),
+                            )
+                            .await;
+                        } else if let Some(effect @ Effect::Maintenance(_)) = effect {
+                            let _ = route_independent_maintenance_effect(
+                                &guard,
+                                &mut app,
+                                &mut maintenance_coordinator,
+                                effect,
+                                editor.as_deref(),
+                            )
+                            .await;
+                        }
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
+                    let _ = match input {
+                        Input::Char('Y') => update(&mut app, Action::ConfirmQuit),
+                        Input::Esc => update(&mut app, Action::CancelQuit),
+                        _ => None,
+                    };
+                } else if app.layer_browser.is_some()
+                    && !app.metadata_searching
+                    && app.focus != yoctui_model::FocusTarget::Dialog
+                {
+                    let effect = match input {
+                        Input::Tab => update(&mut app, Action::CycleFocus { backwards: false }),
+                        Input::BackTab => update(&mut app, Action::CycleFocus { backwards: true }),
+                        Input::Up => {
+                            update(&mut app, Action::SelectLayerBrowserEntry { delta: -1 })
+                        }
+                        Input::Down => {
+                            update(&mut app, Action::SelectLayerBrowserEntry { delta: 1 })
+                        }
+                        Input::Enter => update(&mut app, Action::LayerBrowserEnter),
+                        Input::Right | Input::Char('l') => {
+                            update(&mut app, Action::LayerBrowserExpand)
+                        }
+                        Input::Esc => update(&mut app, Action::CloseLayerBrowser),
+                        Input::Left | Input::Char('h') => update(&mut app, Action::LayerBrowserUp),
+                        Input::Char('r') => update(&mut app, Action::RefreshLayerBrowser),
+                        Input::Char('e') => update(&mut app, Action::EditSelectedLayerBrowserFile),
+                        Input::Char('.') => update(&mut app, Action::ToggleLayerBrowserHidden),
+                        Input::Char('/') => update(&mut app, Action::BeginMetadataSearch),
+                        Input::Char('g') => update(
+                            &mut app,
+                            Action::SetLayerInspectorMode(LayerInspectorMode::Git),
+                        ),
+                        Input::Char('m') => update(
+                            &mut app,
+                            Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
+                        ),
+                        Input::Char('d') => update(
+                            &mut app,
+                            Action::SetLayerInspectorMode(LayerInspectorMode::Dependencies),
+                        ),
+                        _ => None,
+                    };
+                    match effect {
+                        Some(Effect::LoadLayerBrowserDirectory {
+                            layer,
+                            root,
+                            directory,
+                        }) => load_layer_browser_directory(&mut app, layer, root, directory).await,
+                        Some(Effect::LoadLayerBrowserPreview(path)) => {
+                            load_layer_browser_preview(&mut app, path).await
+                        }
+                        Some(Effect::OpenLayerBrowserEditor { layer, root, file }) => {
+                            if let Some(Effect::LoadRecipeEditorFile(path)) = update(
+                                &mut app,
+                                Action::OpenRecipeEditor {
+                                    recipe: format!("Layer: {layer}"),
+                                    root,
+                                    files: vec![file],
+                                },
+                            ) {
+                                load_recipe_editor_file(&mut app, path).await;
+                            }
+                        }
+                        _ => {}
+                    }
+                } else if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::DevtoolResetConfirmation(_))
+                ) {
+                    let effect = devtool_reset_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::DevtoolReset(plan)) = effect {
+                        let operation = plan.operation();
+                        if begin_devtool_job(
+                            &mut app,
+                            &mut devtool_jobs,
+                            &mut devtool_runner,
+                            &session_build_dir,
+                            cancellation_timeout,
+                            operation,
+                        )
+                        .await
+                        {
+                            pending_devtool_reset = Some(plan.identity);
+                        }
+                    }
+                } else if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::DevtoolUpdateConfirmation(_))
+                ) {
+                    let effect = devtool_update_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::DevtoolUpdateRecipe(identity)) = effect {
+                        let recipe = identity.name.clone();
+                        if begin_devtool_job(
+                            &mut app,
+                            &mut devtool_jobs,
+                            &mut devtool_runner,
+                            &session_build_dir,
+                            cancellation_timeout,
+                            DevtoolOperation::UpdateRecipe { recipe },
+                        )
+                        .await
+                        {
+                            pending_devtool_update = Some(identity);
+                        }
+                    }
+                } else if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::DevtoolFinishConfirmation(_))
+                ) {
+                    let effect = devtool_finish_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::DevtoolFinish(plan)) = effect {
+                        let request = plan.request();
+                        if begin_devtool_job(
+                            &mut app,
+                            &mut devtool_jobs,
+                            &mut devtool_runner,
+                            &session_build_dir,
+                            cancellation_timeout,
+                            request.into(),
+                        )
+                        .await
+                        {
+                            pending_devtool_finish = Some(plan.identity);
+                        }
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::DevtoolFinishPicker(_))) {
+                    let _ = devtool_finish_picker_action(input)
+                        .and_then(|action| update(&mut app, action));
+                } else if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::DevtoolDeployConfirmation(_))
+                ) {
+                    let effect = devtool_deploy_confirmation_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::DevtoolDeploy(plan)) = effect {
+                        let request = plan.request();
+                        if begin_devtool_job(
+                            &mut app,
+                            &mut devtool_jobs,
+                            &mut devtool_runner,
+                            &session_build_dir,
+                            cancellation_timeout,
+                            request.into(),
+                        )
+                        .await
+                        {
+                            pending_devtool_deploy = Some(plan.identity);
+                        }
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::DevtoolDeploy(_))) {
+                    let _ = devtool_deploy_dialog_action(input)
+                        .and_then(|action| update(&mut app, action));
+                } else if matches!(app.active_dialog(), Some(Dialog::BbmaskConfirmation(_))) {
+                    let effect = match input {
+                        Input::Enter => update(&mut app, Action::ConfirmBbmaskWrite),
+                        Input::Esc => update(&mut app, Action::CancelBbmaskWrite),
+                        _ => None,
+                    };
+                    if let Some(Effect::WriteBbmask(value)) = effect {
+                        match write_bbmask(&session_build_dir, value).await {
+                            Ok(()) => {
+                                refresh_workspace(
+                                    &mut backend,
+                                    &mut app,
+                                    "BBMASK saved and workspace metadata refreshed.",
+                                )
+                                .await
+                            }
+                            Err(error) => {
+                                app.notification = Some(format!("Could not save BBMASK: {error}"))
+                            }
+                        }
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::BbmaskEdit { .. })) {
+                    let _ = match input {
+                        Input::Char(character) => update(&mut app, Action::AppendBbmask(character)),
+                        Input::Backspace => update(&mut app, Action::BackspaceBbmask),
+                        Input::Enter => update(&mut app, Action::PreviewBbmaskEdit),
+                        Input::Esc => update(&mut app, Action::CancelBbmaskEdit),
+                        _ => None,
+                    };
+                } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
+                    let action = if input == Input::Enter
+                        && app.build.status == BuildStatus::Failed
+                        && app.build.errors > 0
+                    {
+                        Action::OpenBuildCompletionErrors
+                    } else {
+                        Action::DismissBuildCompletion
+                    };
+                    let _ = update(&mut app, action);
+                } else if matches!(app.active_dialog(), Some(Dialog::ImagePicker(_))) {
+                    let _ = match input {
+                        Input::Up => update(&mut app, Action::SelectImage { delta: -1 }),
+                        Input::Down => update(&mut app, Action::SelectImage { delta: 1 }),
+                        Input::Enter => update(&mut app, Action::ConfirmImagePicker),
+                        Input::Esc => update(&mut app, Action::CancelImagePicker),
+                        _ => None,
+                    };
+                } else if matches!(app.active_dialog(), Some(Dialog::SignatureTaskPicker(_))) {
+                    let effect = signature_task_picker_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(effect @ Effect::GetSignatureDump(_)) = effect {
+                        begin_signature_operation(
+                            &mut app,
+                            &signature_adapter,
+                            &mut signature_operation,
+                            effect,
+                        );
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskPicker(_))) {
+                    let _ = match input {
+                        Input::Up => update(&mut app, Action::SelectRecipeTask { delta: -1 }),
+                        Input::Down => update(&mut app, Action::SelectRecipeTask { delta: 1 }),
+                        Input::Enter => update(&mut app, Action::PreviewSelectedRecipeTask),
+                        Input::Esc => update(&mut app, Action::CancelRecipeTaskPicker),
+                        _ => None,
+                    };
+                } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskLogPicker(_))) {
+                    let effect = match input {
+                        Input::Up => update(&mut app, Action::SelectRecipeTaskLog { delta: -1 }),
+                        Input::Down => update(&mut app, Action::SelectRecipeTaskLog { delta: 1 }),
+                        Input::Enter => update(&mut app, Action::OpenSelectedRecipeTaskLog),
+                        Input::Esc => update(&mut app, Action::CancelRecipeTaskLogPicker),
+                        _ => None,
+                    };
+                    if let Some(Effect::OpenInEditor(path)) = effect {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::RecipePatchPicker(_))) {
+                    let effect = match input {
+                        Input::Up => update(&mut app, Action::SelectRecipePatch { delta: -1 }),
+                        Input::Down => update(&mut app, Action::SelectRecipePatch { delta: 1 }),
+                        Input::Enter => update(&mut app, Action::OpenSelectedRecipePatch),
+                        Input::Esc => update(&mut app, Action::CancelRecipePatchPicker),
+                        _ => None,
+                    };
+                    if let Some(Effect::OpenInEditor(path)) = effect {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::ConfigSourcePicker(_))) {
+                    let effect = config_source_picker_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::OpenInEditor(path)) = effect {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::ConfigScopePicker(_))) {
+                    let effect = config_scope_picker_action(input)
+                        .and_then(|action| update(&mut app, action));
+                    if let Some(Effect::GetVariable(identity)) = effect {
+                        load_config_variable(&mut app, backend.as_mut(), identity).await;
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::ConfigComparison(_))) {
+                    if let Some(action) = config_compare_dialog_action(input) {
+                        let _ = update(&mut app, action);
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::ConfigEdit { .. })) {
+                    if let Some(action) = config_edit_dialog_action(input) {
+                        let _ = update(&mut app, action);
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::ConfigEditConfirmation(_))) {
+                    if let Some(action) = config_edit_confirmation_action(input)
+                        && let Some(Effect::WriteConfigAssignment(request)) =
+                            update(&mut app, action)
+                    {
+                        execute_config_edit_write(
+                            backend.as_mut(),
+                            &mut app,
+                            &session_build_dir,
+                            request,
+                        )
+                        .await;
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
+                    let effect = match input {
+                        Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
+                        Input::Esc => update(&mut app, Action::CancelRecipeTask),
+                        _ => None,
+                    };
+                    if let Some(Effect::Start(request)) = effect {
+                        begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
+                    let effect = match input {
+                        Input::Char('b') => update(&mut app, Action::BeginBuildTargetTask(None)),
+                        Input::Char('c') => {
+                            update(&mut app, Action::BeginBuildTargetTask(Some("clean".into())))
+                        }
+                        Input::Char('m') => update(
+                            &mut app,
+                            Action::BeginBuildTargetTask(Some("menuconfig".into())),
+                        ),
+                        Input::Char('e') => update(&mut app, Action::BeginBuildTargetEdit),
+                        Input::Esc => update(&mut app, Action::CloseBuildOptions),
+                        _ => None,
+                    };
+                    if let Some(Effect::Start(request)) = effect {
+                        begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::BuildTarget { .. })) {
+                    let effect = match input {
+                        Input::Char(character) => {
+                            update(&mut app, Action::AppendBuildTarget(character))
+                        }
+                        Input::Backspace => update(&mut app, Action::BackspaceBuildTarget),
+                        Input::Enter => update(&mut app, Action::ConfirmBuildTarget),
+                        Input::Esc => update(&mut app, Action::CancelBuildTargetEdit),
+                        _ => None,
+                    };
+                    if let Some(Effect::Start(request)) = effect {
+                        begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
+                    }
+                } else if app.notification.is_some()
+                    && !(app.screen == Screen::Settings
+                        && app.settings_dirty
+                        && input == Input::Char('r'))
+                {
+                    if input == Input::Enter {
+                        let _ = update(&mut app, Action::ActivateNotification);
+                    } else if input == Input::Esc {
+                        let _ = update(&mut app, Action::DismissNotification);
+                    }
+                } else if app.screen == Screen::Packages
+                    && package_workspace_action(app.package_searching, input).is_some()
+                {
+                    let action = package_workspace_action(app.package_searching, input)
+                        .expect("Packages action was checked");
+                    match update(&mut app, action) {
+                        Some(
+                            effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
+                        ) => begin_package_operation(
+                            &mut app,
+                            &package_adapter,
+                            &mut package_operation,
+                            effect,
+                        ),
+                        Some(Effect::CancelPackageOperation) => {
+                            if let Some(operation) = package_operation.as_ref() {
+                                if operation.cancellation.cancel() {
+                                    app.notification =
+                                        Some("Package-data cancellation requested.".into());
+                                }
+                            } else {
+                                app.notification =
+                                    Some("No package-data operation is running.".into());
+                            }
+                        }
+                        Some(Effect::OpenInEditor(path)) => {
+                            open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                        }
+                        _ => {}
+                    }
+                } else if app.screen == Screen::Images
+                    && images_workspace_action(app.image_artifact_searching, input).is_some()
+                {
+                    let action = images_workspace_action(app.image_artifact_searching, input)
+                        .expect("Images action was checked");
+                    match update(&mut app, action) {
+                        Some(effect @ Effect::GetImageArtifacts(_)) => {
+                            begin_image_artifact_operation(
+                                &mut app,
+                                image_artifact_adapter.as_ref(),
+                                &mut image_artifact_operation,
+                                effect,
+                            )
+                        }
+                        Some(effect @ Effect::GetWicDevices(_)) => begin_wic_device_operation(
+                            &wic_device_inspector,
+                            &mut wic_device_operation,
+                            effect,
+                        ),
+                        Some(Effect::CancelImageArtifactOperation) => {
+                            if let Some(operation) = image_artifact_operation.as_ref() {
+                                if operation.cancellation.cancel() {
+                                    app.notification =
+                                        Some("Image artifact cancellation requested.".into());
+                                }
+                            } else {
+                                app.notification =
+                                    Some("No image artifact operation is running.".into());
+                            }
+                        }
+                        Some(Effect::OpenInEditor(path)) => {
+                            open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                        }
+                        _ => {}
+                    }
+                } else if app.screen == Screen::Sdk
+                    && sdk_workspace_action(app.sdk_artifact_searching, input).is_some()
+                {
+                    let action = sdk_workspace_action(app.sdk_artifact_searching, input)
+                        .expect("SDK action was checked");
+                    match update(&mut app, action) {
+                        Some(effect @ Effect::GetSdkArtifacts(_)) => begin_sdk_artifact_operation(
+                            &mut app,
+                            sdk_artifact_adapter.as_ref(),
+                            &mut sdk_artifact_operation,
+                            effect,
+                        ),
+                        Some(Effect::CancelSdkArtifactOperation) => {
+                            if let Some(operation) = sdk_artifact_operation.as_ref() {
+                                if operation.cancellation.cancel() {
+                                    app.notification =
+                                        Some("SDK artifact cancellation requested.".into());
+                                }
+                            } else {
+                                app.notification = Some("No SDK artifact scan is running.".into());
+                            }
+                        }
+                        Some(effect @ Effect::InspectSdkTools) => begin_sdk_capability_operation(
+                            &mut app,
+                            sdk_tool_adapter.as_ref(),
+                            &mut sdk_capability_operation,
+                            effect,
+                        ),
+                        Some(Effect::OpenInEditor(path)) => {
+                            open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                        }
+                        _ => {}
+                    }
+                } else if app.screen == Screen::Testing
+                    && testing_screen_action(&app, input).is_some()
+                {
+                    let action =
+                        testing_screen_action(&app, input).expect("Testing action was checked");
+                    match update(&mut app, action) {
+                        Some(effect @ Effect::ImportTestResults(_))
+                        | Some(effect @ Effect::CompareTestResults(_))
+                        | Some(effect @ Effect::InspectTestJunitDestination { .. })
+                        | Some(effect @ Effect::ExportTestJunit(_))
+                        | Some(effect @ Effect::InspectTestCapability)
+                        | Some(effect @ Effect::InspectResultToolCapability) => {
+                            let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                        }
+                        Some(Effect::OpenInEditor(path)) => {
+                            open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                        }
+                        _ => {}
+                    }
+                } else if app.screen == Screen::Security
+                    && security_workspace_action(
+                        app.security.view,
+                        app.security.drilled,
+                        app.security.searching,
+                        input,
+                    )
+                    .is_some()
+                {
+                    let action = security_workspace_action(
+                        app.security.view,
+                        app.security.drilled,
+                        app.security.searching,
+                        input,
+                    )
+                    .expect("Security action was checked");
+                    if let Some(effect) = update(&mut app, action) {
+                        let _ = route_independent_security_effect(
                             &guard,
                             &mut app,
                             &mut security_coordinator,
-                            effect.clone(),
+                            effect,
                             editor.as_deref(),
                         )
-                        .await
-                        && !route_independent_qa_effect(
+                        .await;
+                    }
+                } else if app.screen == Screen::Qa
+                    && qa_workspace_action(app.qa.view, app.qa.drilled, app.qa.searching, input)
+                        .is_some()
+                {
+                    let action =
+                        qa_workspace_action(app.qa.view, app.qa.drilled, app.qa.searching, input)
+                            .expect("QA action was checked");
+                    if let Some(effect) = update(&mut app, action) {
+                        let _ = route_independent_qa_effect(
                             &guard,
                             &mut app,
                             &mut qa_coordinator,
-                            effect.clone(),
+                            effect,
                             editor.as_deref(),
                         )
-                        .await
-                        && !route_independent_maintenance_effect(
+                        .await;
+                    }
+                } else if app.screen == Screen::Maintenance
+                    && maintenance_workspace_action(
+                        app.maintenance.view,
+                        maintenance_row_count(&app),
+                        input,
+                    )
+                    .is_some()
+                {
+                    let action = maintenance_workspace_action(
+                        app.maintenance.view,
+                        maintenance_row_count(&app),
+                        input,
+                    )
+                    .expect("Maintenance action was checked");
+                    if let Some(effect) = update(&mut app, action) {
+                        let _ = route_independent_maintenance_effect(
                             &guard,
                             &mut app,
                             &mut maintenance_coordinator,
-                            effect.clone(),
+                            effect,
                             editor.as_deref(),
                         )
-                        .await
+                        .await;
+                    }
+                } else if app.screen == Screen::BuildEnvironment
+                    && app
+                        .build_environment_draft
+                        .as_ref()
+                        .is_some_and(|draft| draft.editing)
+                {
+                    let action = match input {
+                        Input::Up => Some(Action::SelectBuildEnvironmentField { delta: -1 }),
+                        Input::Down => Some(Action::SelectBuildEnvironmentField { delta: 1 }),
+                        Input::Enter => Some(Action::ApplyBuildEnvironmentProfile),
+                        Input::Esc => Some(Action::CancelBuildEnvironmentEdit),
+                        Input::Backspace => Some(Action::BackspaceBuildEnvironmentField),
+                        Input::Char(c) => Some(Action::AppendBuildEnvironmentField(c)),
+                        _ => None,
+                    };
+                    if let Some(action) = action {
+                        let _ = update(&mut app, action);
+                    }
+                } else if app.screen == Screen::BuildEnvironment
+                    && build_environment_action(input).is_some()
+                {
+                    let action = build_environment_action(input)
+                        .expect("build environment action was checked");
+                    if let Some(Effect::VerifyBuildEnvironment {
+                        profile,
+                        generation,
+                    }) = update(&mut app, action)
                     {
-                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                        match BuildEnvironmentAdapter::default().initialize(profile).await {
+                            Ok(response) => {
+                                let profile = response.profile.clone();
+                                let _ = update(
+                                    &mut app,
+                                    Action::BuildEnvironmentVerified { generation },
+                                );
+                                let _ = backend.shutdown().await;
+                                match select_backend_with_environment(
+                                    backend_kind.clone(),
+                                    profile.build_dir.clone(),
+                                    Some(cancellation_timeout),
+                                    Some(response.environment),
+                                )
+                                .await
+                                {
+                                    Ok(mut connected) => {
+                                        match connected.inspect_workspace().await {
+                                            Ok(workspace) => {
+                                                let _ = update(
+                                                    &mut app,
+                                                    Action::WorkspaceLoaded(workspace),
+                                                );
+                                                backend = connected;
+                                            }
+                                            Err(error) => {
+                                                app.notification = Some(format!(
+                                                    "BitBake verification failed: {error}"
+                                                ))
+                                            }
+                                        }
+                                    }
+                                    Err(error) => {
+                                        app.notification =
+                                            Some(format!("Could not start BitBake: {error}"))
+                                    }
+                                }
+                            }
+                            Err(error) => {
+                                let _ = update(
+                                    &mut app,
+                                    Action::BuildEnvironmentVerificationFailed {
+                                        generation,
+                                        message: error.to_string(),
+                                    },
+                                );
+                            }
+                        }
+                    }
+                } else if app.screen == Screen::Settings && settings_action(input).is_some() {
+                    if app.settings_selection == 0 && matches!(input, Input::Enter | Input::Right) {
+                        let _ = update(&mut app, Action::OpenThemePicker);
+                        continue;
+                    }
+                    let action = settings_action(input).expect("settings action was checked");
+                    match update(&mut app, action) {
+                        Some(Effect::PersistSettings) => {
+                            let result =
+                                persist_settings(session_path.as_deref(), &mut session, &app);
+                            let persistence_action = match result {
+                                Ok(()) => Action::SettingsPersisted,
+                                Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
+                            };
+                            let _ = update(&mut app, persistence_action);
+                        }
+                        Some(Effect::VerifyBuildEnvironment {
+                            profile,
+                            generation,
+                        }) => match BuildEnvironmentAdapter::default().initialize(profile).await {
+                            Ok(response) => {
+                                let profile = response.profile.clone();
+                                let _ = update(
+                                    &mut app,
+                                    Action::BuildEnvironmentVerified { generation },
+                                );
+                                let _ = backend.shutdown().await;
+                                match select_backend_with_environment(
+                                    backend_kind.clone(),
+                                    profile.build_dir,
+                                    Some(cancellation_timeout),
+                                    Some(response.environment),
+                                )
+                                .await
+                                {
+                                    Ok(mut connected) => {
+                                        match connected.inspect_workspace().await {
+                                            Ok(workspace) => {
+                                                let _ = update(
+                                                    &mut app,
+                                                    Action::WorkspaceLoaded(workspace),
+                                                );
+                                                backend = connected;
+                                            }
+                                            Err(error) => {
+                                                app.notification = Some(format!(
+                                                    "BitBake verification failed: {error}"
+                                                ))
+                                            }
+                                        }
+                                    }
+                                    Err(error) => {
+                                        app.notification =
+                                            Some(format!("Could not start BitBake: {error}"))
+                                    }
+                                }
+                            }
+                            Err(error) => {
+                                let _ = update(
+                                    &mut app,
+                                    Action::BuildEnvironmentVerificationFailed {
+                                        generation,
+                                        message: error.to_string(),
+                                    },
+                                );
+                            }
+                        },
+                        _ => {}
+                    }
+                } else if app.screen == Screen::Tasks
+                    && tasks_action(app.task_filter_editing, input).is_some()
+                {
+                    let action = tasks_action(app.task_filter_editing, input)
+                        .expect("Tasks action was checked");
+                    let _ = update(&mut app, action);
+                } else if app.screen == Screen::Logs
+                    && logs_action(app.logs.searching, input).is_some()
+                {
+                    let action =
+                        logs_action(app.logs.searching, input).expect("Logs action was checked");
+                    match update(&mut app, action) {
+                        Some(Effect::OpenInEditor(path)) => {
+                            open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                        }
+                        Some(Effect::CopyToClipboard(content)) => {
+                            copy_to_clipboard(&mut app, content).await;
+                        }
+                        _ => {}
+                    }
+                } else if app.screen == Screen::Errors && errors_action(input).is_some() {
+                    let action = errors_action(input).expect("Errors action was checked");
+                    if let Some(Effect::OpenInEditor(path)) = update(&mut app, action) {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                } else if app.screen == Screen::Dependencies
+                    && dependency_workspace_action(input).is_some()
+                {
+                    let action =
+                        dependency_workspace_action(input).expect("Dependency action was checked");
+                    match update(&mut app, action) {
+                        Some(Effect::GetDependencies(recipe)) => {
+                            load_dependency_graph(&mut app, backend.as_mut(), recipe).await;
+                        }
+                        Some(Effect::OpenInEditor(path)) => {
+                            open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                        }
+                        _ => {}
+                    }
+                } else if app.metadata_searching {
+                    match input {
+                        Input::Char(character) => {
+                            let _ = update(&mut app, Action::AppendMetadataQuery(character));
+                        }
+                        Input::Enter | Input::Esc => {
+                            let _ = update(&mut app, Action::FinishMetadataSearch);
+                        }
+                        Input::Backspace => {
+                            let _ = update(&mut app, Action::BackspaceMetadataQuery);
+                        }
+                        _ => {}
+                    }
+                } else if input == Input::Char('!') {
+                    open_yocto_shell(&guard, &mut app).await;
+                } else if input == Input::Char('i') {
+                    let images = app
+                        .workspace
+                        .recipes
+                        .iter()
+                        .map(|recipe| recipe.name.as_str())
+                        .filter(|name| name.contains("image"))
+                        .map(str::to_owned)
+                        .collect();
+                    let _ = update(&mut app, Action::OpenImagePicker(images));
+                } else if input == Input::Char('B') {
+                    let _ = update(&mut app, Action::OpenBuildOptions);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('f') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeForceTask);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('v') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeDevshell);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('K') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeDiffconfig);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('z') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeDiffsigs);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('Z') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeSignatures);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('V') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeCveCheck);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('X') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeSpdx);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('e') {
+                    if let Some(Effect::OpenInEditor(path)) =
+                        update(&mut app, Action::OpenSelectedRecipeProvider)
+                    {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('o') {
+                    if let Some(Effect::OpenInEditor(path)) =
+                        update(&mut app, Action::BeginSelectedRecipeTaskLog)
+                    {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('p') {
+                    if let Some(Effect::OpenInEditor(path)) =
+                        update(&mut app, Action::BeginSelectedRecipePatchReview)
+                    {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                } else if app.screen == yoctui_model::Screen::Dashboard
+                    && matches!(input, Input::Up | Input::Down)
+                {
+                    let delta = if input == Input::Up { -1 } else { 1 };
+                    let _ = update(&mut app, Action::ScrollBuildTasks { delta });
+                } else if app.screen == yoctui_model::Screen::BuildHistory
+                    && matches!(input, Input::Up | Input::Down)
+                {
+                    let delta = if input == Input::Up { -1 } else { 1 };
+                    let _ = update(&mut app, Action::SelectBuildHistory { delta });
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('d') {
+                    let root = match update(&mut app, Action::BeginSelectedRecipeDevtoolModify) {
+                        Some(Effect::OpenWorkspaceEditor { label, root }) => Some((label, root)),
+                        _ => None,
+                    };
+                    if let Some((recipe, root)) = root {
+                        open_workspace_editor(&mut app, recipe, root).await;
+                    }
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('t') {
+                    inspect_selected_devtool(&mut app, &session_build_dir).await;
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('D') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolReset);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('u') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('F') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolFinish);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('P') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolDeploy);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('g') {
+                    if let Some(Effect::GetDependencies(recipe)) =
+                        update(&mut app, Action::BeginSelectedRecipeDependencies)
+                    {
+                        load_dependency_graph(&mut app, backend.as_mut(), recipe).await;
+                    }
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Enter {
+                    if let Some(Effect::GetRecipeMetadata(recipe)) =
+                        update(&mut app, Action::BeginSelectedRecipeMetadata)
+                    {
+                        match backend.get_recipe_metadata(recipe.clone()).await {
+                            Ok(metadata) => {
+                                let _ = update(&mut app, Action::RecipeMetadataLoaded(metadata));
+                            }
+                            Err(error) => {
+                                let _ = update(
+                                    &mut app,
+                                    Action::RecipeMetadataFailed {
+                                        recipe,
+                                        message: error.to_string(),
+                                    },
+                                );
+                            }
+                        }
+                    }
+                    inspect_selected_devtool(&mut app, &session_build_dir).await;
+                } else if input == Input::Char('b') {
+                    let _ = update(&mut app, Action::BeginCurrentImageBuild);
+                } else if app.screen == yoctui_model::Screen::Recipes
+                    && matches!(input, Input::Up | Input::Down)
+                {
+                    let delta = if input == Input::Up { -1 } else { 1 };
+                    let _ = update(&mut app, Action::SelectRecipe { delta });
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('C') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeClean);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('M') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeMenuConfig);
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('S') {
+                    let _ = update(&mut app, Action::BeginSelectedRecipeCleanState);
+                } else if app.screen == yoctui_model::Screen::Layers
+                    && matches!(input, Input::Up | Input::Down)
+                {
+                    let delta = if input == Input::Up { -1 } else { 1 };
+                    let _ = update(&mut app, Action::SelectLayer { delta });
+                } else if app.screen == yoctui_model::Screen::Layers && input == Input::Enter {
+                    if let Some(Effect::LoadLayerBrowserDirectory {
+                        layer,
+                        root,
+                        directory,
+                    }) = update(&mut app, Action::BeginSelectedLayerBrowser)
+                    {
+                        load_layer_browser_directory(&mut app, layer, root, directory).await;
+                    }
+                } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('o') {
+                    if let Some(Effect::OpenInEditor(path)) =
+                        update(&mut app, Action::OpenSelectedLayer)
+                    {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('e') {
+                    if let Some(Effect::OpenWorkspaceEditor { label, root }) =
+                        update(&mut app, Action::BeginSelectedLayerWorkspaceEditor)
+                    {
+                        open_workspace_editor(&mut app, label, root).await;
+                    }
+                } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('R') {
+                    if matches!(
+                        update(&mut app, Action::BeginLayerRelationships),
+                        Some(Effect::GetLayerRelationships)
+                    ) {
+                        match backend.get_layer_relationships().await {
+                            Ok(layers) => {
+                                let _ = update(
+                                    &mut app,
+                                    Action::LayerRelationshipsLoaded(LayerRelationships {
+                                        layers: layers
+                                            .into_iter()
+                                            .map(|layer| LayerRelationship {
+                                                name: layer.name,
+                                                priority: layer.priority,
+                                                compatible: layer.compatible,
+                                                depends: layer.depends,
+                                                overlays: layer.overlays,
+                                                appends: layer.appends,
+                                            })
+                                            .collect(),
+                                    }),
+                                );
+                            }
+                            Err(error) => {
+                                let _ = update(
+                                    &mut app,
+                                    Action::Failure(AppError::new(
+                                        "Layers",
+                                        error.to_string(),
+                                        "use a bridge connected to a BitBake server that supports get_layer_relationships",
+                                    )),
+                                );
+                            }
+                        }
+                    }
+                } else if app.screen == yoctui_model::Screen::Configuration
+                    && matches!(
+                        input,
+                        Input::Up | Input::Down | Input::Char('k') | Input::Char('j')
+                    )
+                {
+                    if let Some(action) = config_workspace_action(false, input) {
+                        let _ = update(&mut app, action);
+                    }
+                } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Enter
+                {
+                    inspect_selected_config_variable(&mut app, backend.as_mut()).await;
+                } else if app.screen == yoctui_model::Screen::Configuration
+                    && matches!(
+                        input,
+                        Input::Char('s') | Input::Char('c') | Input::Char('E')
+                    )
+                {
+                    if let Some(action) = config_workspace_action(false, input) {
+                        let _ = update(&mut app, action);
+                    }
+                } else if app.screen == yoctui_model::Screen::Configuration
+                    && matches!(input, Input::Char('C') | Input::Char('U'))
+                {
+                    if let Some(Effect::CopyToClipboard(content)) =
+                        config_copy_effect(&mut app, input)
+                    {
+                        copy_to_clipboard(&mut app, content).await;
+                    }
+                } else if app.screen == yoctui_model::Screen::Configuration
+                    && input == Input::Char('o')
+                {
+                    if let Some(Effect::OpenInEditor(path)) =
+                        update(&mut app, Action::OpenSelectedConfigSource)
+                    {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                } else if app.screen == yoctui_model::Screen::Bbmask && input == Input::Char('e') {
+                    let _ = update(&mut app, Action::BeginBbmaskEdit);
+                } else if matches!(
+                    app.screen,
+                    yoctui_model::Screen::Recipes
+                        | yoctui_model::Screen::Layers
+                        | yoctui_model::Screen::Configuration
+                ) && input == Input::Char('/')
+                {
+                    let _ = update(&mut app, Action::BeginMetadataSearch);
+                } else if app.logs.searching {
+                    match input {
+                        Input::Char(character) => {
+                            let _ = update(&mut app, Action::AppendLogQuery(character));
+                        }
+                        Input::Enter | Input::Esc => {
+                            let _ = update(&mut app, Action::FinishLogSearch);
+                        }
+                        Input::Backspace => {
+                            let _ = update(&mut app, Action::BackspaceLogQuery);
+                        }
+                        _ => {}
+                    }
+                } else if let Some(action) = key_action(input) {
+                    if matches!(action, Action::Cancel) {
+                        if devtool_jobs.active_job_id().is_some() {
+                            if let Some(job_action) = devtool_jobs.request_cancellation() {
+                                let _ = update(&mut app, job_action);
+                            }
+                            let cancellation = if let Some(runner) = devtool_runner.as_mut() {
+                                runner.cancel().await.map(|_| ())
+                            } else {
+                                Err(yoctui_bitbake::DevtoolRunnerError::NotRunning)
+                            };
+                            if let Err(error) = cancellation {
+                                for action in devtool_jobs
+                                    .cancellation_failed(error.to_string(), SystemTime::now())
+                                {
+                                    let _ = update(&mut app, action);
+                                }
+                            }
+                        } else if let Some(Effect::Cancel) = update(&mut app, action) {
+                            if let Some(job_action) = build_jobs.request_cancellation() {
+                                let _ = update(&mut app, job_action);
+                            }
+                            if let Err(error) = backend.cancel_build().await {
+                                for action in build_jobs
+                                    .cancellation_failed(error.to_string(), SystemTime::now())
+                                {
+                                    let _ = update(&mut app, action);
+                                }
+                            }
+                        }
+                    } else {
+                        if let Some(effect) = update(&mut app, action)
+                            && !route_independent_security_effect(
+                                &guard,
+                                &mut app,
+                                &mut security_coordinator,
+                                effect.clone(),
+                                editor.as_deref(),
+                            )
+                            .await
+                            && !route_independent_qa_effect(
+                                &guard,
+                                &mut app,
+                                &mut qa_coordinator,
+                                effect.clone(),
+                                editor.as_deref(),
+                            )
+                            .await
+                            && !route_independent_maintenance_effect(
+                                &guard,
+                                &mut app,
+                                &mut maintenance_coordinator,
+                                effect.clone(),
+                                editor.as_deref(),
+                            )
+                            .await
+                        {
+                            let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                        }
                     }
                 }
             }
@@ -7674,7 +7721,11 @@ mod tests {
         fs::write(&config_path, "").unwrap();
         let cli =
             Cli::try_parse_from(["yoctui", "--config", config_path.to_str().unwrap()]).unwrap();
-        let resolved = resolve_config(&cli, &Session::default()).unwrap();
+        let mut session = Session::default();
+        session
+            .recent_build_dirs
+            .push(std::env::current_dir().unwrap());
+        let resolved = resolve_config(&cli, &session).unwrap();
         assert!(!resolved.build_dir_configured);
         assert_eq!(resolved.build_dir, PathBuf::from("/"));
         fs::remove_file(config_path).unwrap();

@@ -2,10 +2,10 @@
 
 ## Task
 
-**ID:** UX-THEME-STARTUP-001
-**Title:** Apply theme while scrolling and restore Navigator onboarding focus
+**ID:** UX-EDIT-INPUT-001
+**Title:** Support paste and literal k in build environment editor
 **Status:** DONE
 
 ## Terminal handoff
 
-`UX-THEME-STARTUP-001` is the final completed task; no incomplete registry tasks remain.
+`UX-EDIT-INPUT-001` is the final completed task; no incomplete registry tasks remain.
