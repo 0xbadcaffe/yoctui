@@ -2404,18 +2404,18 @@ notes = "Build target now uses a bounded TOML Normal/Insert popup with paste whi
 id = "UX-POPUP-WIC-001"
 milestone = "M8"
 title = "Move Wic create draft into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 148
 required = true
 depends_on = ["UX-POPUP-TARGET-001"]
 verify = ["cargo test -p yoctui-model wic", "cargo test -p yoctui-ui wic"]
-notes = "Migrate the Wic create draft while preserving typed choices, preview, and protected device-write confirmation."
+notes = "Wic creation now uses a bounded TOML Normal/Insert popup with typed capability resolution, exact preview, and unchanged protected write confirmation."
 
 [[task]]
 id = "UX-POPUP-SDK-001"
 milestone = "M8"
 title = "Move SDK editable drafts into TOML popups"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 149
 required = true
 depends_on = ["UX-POPUP-WIC-001"]

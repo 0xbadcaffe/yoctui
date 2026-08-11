@@ -1867,7 +1867,7 @@ distinct typed states.
 `W` in Images opens Wic creation for the active machine and selected image
 target. It is disabled until an exact image target, a canonical executable, and
 at least one adapter-reported canned or configured kickstart are available.
-The creation dialog contains:
+The bounded `Wic create.toml` popup contains:
 
 - read-only machine identity
 - typed image-target selection
@@ -1876,11 +1876,13 @@ The creation dialog contains:
 - optional bmap generation
 - a typed compression choice: none, gzip, bzip2, or xz
 
-The initial selection prefers the active image and configured `WKS_FILE` only
-when both identities occur in the latest typed inventories. `↑`/`↓` or `k`/`j`
-moves between rows. `Enter` edits the output directory or advances a typed
-choice; `←`/`→` or `h`/`l` cycles choices. `p` opens an exact shell-free
-argument preview for cooked mode:
+The initial document prefers the active image and configured `WKS_FILE` only
+when both identities occur in the latest typed inventories. It follows the
+shared Normal/Insert convention and uses named TOML fields. The machine line
+is displayed for context but must exactly match the selected authoritative
+image; kickstart names are resolved only against the latest typed inventory.
+`Enter` validates the document and opens an exact shell-free argument preview
+for cooked mode:
 
 ```text
 wic create <kickstart> -e <image> -o <output-directory> [--bmap] [--compress-with <kind>]

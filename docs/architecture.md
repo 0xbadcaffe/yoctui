@@ -837,8 +837,8 @@ session history remains in the model.
 
 `yoctui-model::wic` owns exact machine/image/kickstart/output/device identities,
 bounded kickstart partition summaries, deterministic creation and write
-previews, dialog drafts, generated-output inventories, and stable Wic job
-context. It reuses the shared background-job lifecycle but does not discover
+previews, the bounded Wic TOML popup document and its Normal/Insert state,
+generated-output inventories, and stable Wic job context. It reuses the shared background-job lifecycle but does not discover
 executables, parse raw command output, inspect files or block devices, or
 authorize privilege escalation.
 

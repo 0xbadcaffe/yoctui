@@ -685,6 +685,34 @@ pub fn render(frame: &mut Frame, app: &App) {
         qemu_launch_confirmation(frame, app, preview, area);
     } else if let Some(Dialog::QemuCancellationConfirmation(id)) = app.active_dialog() {
         qemu_cancellation_confirmation(frame, app, *id, area);
+    } else if let Some(Dialog::WicCreateTomlEditor {
+        content,
+        editing,
+        validation_error,
+    }) = app.active_dialog()
+    {
+        let popup = Rect::new(
+            area.width / 8,
+            area.height / 6,
+            area.width * 3 / 4,
+            area.height * 2 / 3,
+        );
+        clear_popup(frame, app, popup);
+        let error = validation_error
+            .as_deref()
+            .map_or(String::new(), |error| format!("\nValidation: {error}"));
+        frame.render_widget(
+            Paragraph::new(format!(
+                "{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.{}",
+                content,
+                if *editing { "_" } else { "" },
+                if *editing { "INSERT" } else { "NORMAL" },
+                error,
+            ))
+            .block(Block::default().title(format!("Wic create.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+            popup,
+        );
     } else if let Some(Dialog::WicCreate(dialog)) = app.active_dialog() {
         wic_create_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::WicCreateConfirmation(preview)) = app.active_dialog() {
@@ -11380,25 +11408,20 @@ mod tests {
         let _ = yoctui_model::update(&mut app, yoctui_model::Action::BeginSelectedWicCreate);
         for (width, height) in [(80, 24), (100, 30), (160, 40)] {
             let output = rendered_text(&app, width, height);
-            assert!(output.contains("Create Wic"), "{output}");
-            assert!(output.contains("Machine [read-only]"), "{output}");
+            assert!(output.contains("Wic create.toml"), "{output}");
+            assert!(output.contains("machine = \"qemux86-64\""), "{output}");
         }
         assert_eq!(app.focus, FocusTarget::Dialog);
-        let _ = yoctui_model::update(
-            &mut app,
-            yoctui_model::Action::SelectWicCreateField { delta: 3 },
-        );
-        let _ = yoctui_model::update(&mut app, yoctui_model::Action::ActivateWicCreateField);
-        assert!(rendered_text(&app, 80, 24).contains("Output directory [editing]"));
-        if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut() {
-            dialog.draft.output_directory = "relative-output".into();
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::ToggleWicCreateTomlEditor);
+        assert!(rendered_text(&app, 80, 24).contains("INSERT"));
+        if let Some(Dialog::WicCreateTomlEditor { content, .. }) = app.active_dialog_mut() {
+            *content = "machine = \"qemux86-64\"\nimage = \"core-image-minimal\"\nkickstart = \"directdisk\"\noutput_directory = \"relative-output\"\ngenerate_bmap = true\ncompression = \"none\"\n".into();
         }
-        let _ = yoctui_model::update(&mut app, yoctui_model::Action::FinishWicCreateFieldEdit);
         let _ = yoctui_model::update(&mut app, yoctui_model::Action::PreviewWicCreate);
         assert!(rendered_text(&app, 80, 24).contains("Validation:"));
         let _ = yoctui_model::update(&mut app, yoctui_model::Action::DismissNotification);
-        if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut() {
-            dialog.draft.output_directory = "/deploy/qemux86-64".into();
+        if let Some(Dialog::WicCreateTomlEditor { content, .. }) = app.active_dialog_mut() {
+            *content = "machine = \"qemux86-64\"\nimage = \"core-image-minimal\"\nkickstart = \"directdisk\"\noutput_directory = \"/deploy/qemux86-64\"\ngenerate_bmap = true\ncompression = \"none\"\n".into();
         }
         let _ = yoctui_model::update(&mut app, yoctui_model::Action::PreviewWicCreate);
         for (width, height) in [(80, 24), (100, 30), (160, 40)] {

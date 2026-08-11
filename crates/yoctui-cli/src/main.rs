@@ -5806,6 +5806,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::BuildTarget { editing: true, .. }) => {
                         Some(Action::AppendBuildTarget as fn(char) -> Action)
                     }
+                    Some(Dialog::WicCreateTomlEditor { editing: true, .. }) => {
+                        Some(Action::AppendWicCreateTomlEditor as fn(char) -> Action)
+                    }
                     _ => None,
                 };
                 if let Some(action) = popup_action {
@@ -6282,6 +6285,30 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         .and_then(|action| update(&mut app, action));
                     if let Some(effect) = effect {
                         let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                    }
+                } else if let Some(Dialog::WicCreateTomlEditor { editing, .. }) =
+                    app.active_dialog().cloned()
+                {
+                    let action = if editing {
+                        match input {
+                            Input::Esc => Some(Action::ToggleWicCreateTomlEditor),
+                            Input::Enter => Some(Action::PreviewWicCreate),
+                            Input::Backspace => Some(Action::BackspaceWicCreateTomlEditor),
+                            Input::Char(character) => {
+                                Some(Action::AppendWicCreateTomlEditor(character))
+                            }
+                            _ => None,
+                        }
+                    } else {
+                        match input {
+                            Input::Char('i') => Some(Action::ToggleWicCreateTomlEditor),
+                            Input::Char('q') | Input::Esc => Some(Action::CancelWicCreate),
+                            Input::Enter => Some(Action::PreviewWicCreate),
+                            _ => None,
+                        }
+                    };
+                    if let Some(action) = action {
+                        let _ = update(&mut app, action);
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::WicCreate(_))) {
                     let editing = app.active_dialog().is_some_and(

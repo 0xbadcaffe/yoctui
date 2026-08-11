@@ -952,6 +952,11 @@ pub enum Dialog {
     QemuLaunchConfirmation(QemuLaunchPreview),
     QemuCancellationConfirmation(QemuSessionId),
     WicCreate(WicCreateDialog),
+    WicCreateTomlEditor {
+        content: String,
+        editing: bool,
+        validation_error: Option<String>,
+    },
     WicCreateConfirmation(WicCreatePreview),
     WicDevicePicker(WicDevicePickerDialog),
     WicWritePhrase(WicWritePhraseDialog),
@@ -3508,6 +3513,9 @@ pub enum Action {
     InspectWicCapability,
     WicCapabilityLoaded(WicCapability),
     BeginSelectedWicCreate,
+    ToggleWicCreateTomlEditor,
+    AppendWicCreateTomlEditor(char),
+    BackspaceWicCreateTomlEditor,
     SelectWicCreateField {
         delta: isize,
     },
@@ -4623,6 +4631,34 @@ fn popup_toml_document(key: &str, value: &str, comment: Option<&str>) -> String 
         value.replace('\\', "\\\\").replace('\"', "\\\"")
     ));
     document
+}
+
+fn popup_toml_fields(content: &str) -> Result<HashMap<String, String>, String> {
+    let mut fields = HashMap::new();
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let Some((key, raw_value)) = line.split_once('=') else {
+            return Err("Expected TOML `key = value` entries.".into());
+        };
+        let key = key.trim();
+        if key.is_empty() || fields.contains_key(key) {
+            return Err("TOML keys must be nonempty and occur only once.".into());
+        }
+        let raw_value = raw_value.trim();
+        let value =
+            if raw_value.starts_with('\"') && raw_value.ends_with('\"') && raw_value.len() >= 2 {
+                raw_value[1..raw_value.len() - 1]
+                    .replace("\\\\", "\\")
+                    .replace("\\\"", "\"")
+            } else {
+                raw_value.to_owned()
+            };
+        fields.insert(key.to_owned(), value);
+    }
+    Ok(fields)
 }
 
 pub fn validate_config_edit_request(
@@ -8596,15 +8632,48 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .to_string();
             open_dialog(
                 app,
-                Dialog::WicCreate(WicCreateDialog::new(WicCreateDraft {
-                    machine: artifact.identity.machine,
-                    image: artifact.identity.image,
-                    kickstart,
-                    output_directory,
-                    generate_bmap: true,
-                    compression: WicCompression::None,
-                })),
+                Dialog::WicCreateTomlEditor {
+                    content: format!(
+                        "# machine is authoritative and read-only\nmachine = \"{}\"\nimage = \"{}\"\nkickstart = \"{}\"\noutput_directory = \"{}\"\ngenerate_bmap = true\ncompression = \"none\"\n",
+                        artifact.identity.machine,
+                        artifact.identity.image,
+                        kickstart.name,
+                        output_directory,
+                    ),
+                    editing: false,
+                    validation_error: None,
+                },
             );
+        }
+        Action::ToggleWicCreateTomlEditor => {
+            if let Some(Dialog::WicCreateTomlEditor { editing, .. }) = app.active_dialog_mut() {
+                *editing = !*editing;
+            }
+        }
+        Action::AppendWicCreateTomlEditor(character) => {
+            if let Some(Dialog::WicCreateTomlEditor {
+                content,
+                editing,
+                validation_error,
+            }) = app.active_dialog_mut()
+                && *editing
+                && !character.is_control()
+            {
+                content.push(character);
+                *validation_error = None;
+            }
+        }
+        Action::BackspaceWicCreateTomlEditor => {
+            if let Some(Dialog::WicCreateTomlEditor {
+                content,
+                editing,
+                validation_error,
+            }) = app.active_dialog_mut()
+                && *editing
+            {
+                content.pop();
+                *validation_error = None;
+            }
         }
         Action::SelectWicCreateField { delta } => {
             if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut()
@@ -8661,6 +8730,79 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::PreviewWicCreate => {
+            if let Some(Dialog::WicCreateTomlEditor { content, .. }) = app.active_dialog().cloned()
+            {
+                let result = (|| {
+                    let fields = popup_toml_fields(&content)?;
+                    let machine = fields.get("machine").cloned().ok_or("Missing `machine`.")?;
+                    let image = fields.get("image").cloned().ok_or("Missing `image`.")?;
+                    let kickstart_name = fields
+                        .get("kickstart")
+                        .cloned()
+                        .ok_or("Missing `kickstart`.")?;
+                    let output_directory = fields
+                        .get("output_directory")
+                        .cloned()
+                        .ok_or("Missing `output_directory`.")?;
+                    let generate_bmap = match fields.get("generate_bmap").map(String::as_str) {
+                        Some("true") => true,
+                        Some("false") => false,
+                        _ => return Err("`generate_bmap` must be true or false.".to_owned()),
+                    };
+                    let compression = match fields.get("compression").map(String::as_str) {
+                        Some("none") => WicCompression::None,
+                        Some("gzip") => WicCompression::Gzip,
+                        Some("bzip2") => WicCompression::Bzip2,
+                        Some("xz") => WicCompression::Xz,
+                        _ => {
+                            return Err(
+                                "`compression` must be none, gzip, bzip2, or xz.".to_owned()
+                            );
+                        }
+                    };
+                    let expected_machine = app
+                        .selected_image_artifact()
+                        .map(|artifact| artifact.identity.machine.as_str())
+                        .ok_or_else(|| "The selected image artifact is unavailable.".to_owned())?;
+                    if machine != expected_machine {
+                        return Err(
+                            "`machine` is authoritative and cannot differ from the selected image."
+                                .to_owned(),
+                        );
+                    }
+                    let WicCapability::Available { kickstarts, .. } = &app.wic_capability else {
+                        return Err("Wic capability is not available.".to_owned());
+                    };
+                    let kickstart = kickstarts
+                        .iter()
+                        .find(|candidate| candidate.identity.name == kickstart_name)
+                        .map(|candidate| candidate.identity.clone())
+                        .ok_or_else(|| "The selected kickstart is unavailable.".to_owned())?;
+                    WicCreateDraft {
+                        machine,
+                        image,
+                        kickstart,
+                        output_directory,
+                        generate_bmap,
+                        compression,
+                    }
+                    .preview(&app.wic_capability)
+                    .map_err(str::to_owned)
+                })();
+                match result {
+                    Ok(preview) => replace_dialog(app, Dialog::WicCreateConfirmation(preview)),
+                    Err(message) => {
+                        if let Some(Dialog::WicCreateTomlEditor {
+                            validation_error, ..
+                        }) = app.active_dialog_mut()
+                        {
+                            *validation_error = Some(message.clone());
+                        }
+                        app.notification = Some(message);
+                    }
+                }
+                return None;
+            }
             let Some(Dialog::WicCreate(dialog)) = app.active_dialog().cloned() else {
                 app.notification = Some("No Wic creation draft is active.".into());
                 return None;
@@ -8676,7 +8818,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CancelWicCreate => {
-            if matches!(app.active_dialog(), Some(Dialog::WicCreate(_))) {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::WicCreate(_) | Dialog::WicCreateTomlEditor { .. })
+            ) {
                 close_dialog(app);
             }
         }
@@ -18206,41 +18351,19 @@ mod tests {
         assert_eq!(app.focus, FocusTarget::Dialog);
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::WicCreate(WicCreateDialog {
-                selected_field: WicCreateField::Machine,
-                draft: WicCreateDraft {
-                    kickstart: WicKickstartIdentity {
-                        name,
-                        ..
-                    },
-                    ..
-                },
-                ..
-            })) if name == "configured"
+            Some(Dialog::WicCreateTomlEditor { content, editing: false, .. })
+                if content.contains("kickstart = \"configured\"")
         ));
-        let _ = update(&mut app, Action::SelectWicCreateField { delta: 3 });
-        let _ = update(&mut app, Action::ActivateWicCreateField);
-        for _ in 0..(MAX_WIC_OUTPUT_DIRECTORY_INPUT_BYTES + 10) {
-            let _ = update(&mut app, Action::AppendWicCreateField('x'));
-        }
-        let Some(Dialog::WicCreate(dialog)) = app.active_dialog() else {
-            panic!("Wic dialog");
-        };
-        assert_eq!(
-            dialog.draft.output_directory.len(),
-            MAX_WIC_OUTPUT_DIRECTORY_INPUT_BYTES
-        );
-        let _ = update(&mut app, Action::FinishWicCreateFieldEdit);
-        if let Some(Dialog::WicCreate(dialog)) = app.active_dialog_mut() {
-            dialog.draft.output_directory = "relative/output".into();
+        if let Some(Dialog::WicCreateTomlEditor { content, .. }) = app.active_dialog_mut() {
+            *content = "machine = \"qemux86-64\"\nimage = \"core-image-minimal\"\nkickstart = \"configured\"\noutput_directory = \"relative/output\"\ngenerate_bmap = true\ncompression = \"none\"\n".into();
         }
         let _ = update(&mut app, Action::PreviewWicCreate);
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::WicCreate(WicCreateDialog {
+            Some(Dialog::WicCreateTomlEditor {
                 validation_error: Some(_),
                 ..
-            }))
+            })
         ));
         let _ = update(&mut app, Action::CancelWicCreate);
         assert!(app.active_dialog().is_none());

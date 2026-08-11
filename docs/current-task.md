@@ -2,18 +2,18 @@
 
 ## Task
 
-**ID:** UX-POPUP-WIC-001
-**Title:** Move Wic create draft into a TOML popup
+**ID:** UX-POPUP-SDK-001
+**Title:** Move SDK editable drafts into TOML popups
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate the Wic create draft to a bounded vi-style TOML popup without
-weakening typed choices, preview, or protected device-write confirmation.
+Migrate SDK native and publication draft forms to bounded vi-style TOML popups
+without weakening typed previews or validation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model wic
-cargo test -p yoctui-ui wic
+cargo test -p yoctui-model sdk
+cargo test -p yoctui-ui sdk
 ```
