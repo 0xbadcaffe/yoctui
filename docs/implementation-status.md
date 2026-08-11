@@ -116,7 +116,8 @@ See `docs/current-task.md`.
 `UX-POPUP-CONFIG-001` is complete: configuration and BBMASK now use bounded
 TOML Normal/Insert popups with paste, validation, and their existing explicit
 write confirmations. The remaining workflow migration was decomposed into
-build/Wic, SDK, Testing, and operations tasks; `UX-POPUP-BUILD-001` is active.
+build target, Wic, SDK, Testing, and operations tasks; `UX-POPUP-TARGET-001`
+is active.
 
 ## Rules
 

@@ -2381,22 +2381,44 @@ notes = "Split the broad workflow migration into atomic implementation tasks; no
 [[task]]
 id = "UX-POPUP-BUILD-001"
 milestone = "M8"
-title = "Move build-target and Wic drafts into TOML popups"
-status = "IN_PROGRESS"
+title = "Decompose build-target and Wic popup migration"
+status = "DONE"
 priority = 146
 required = true
 depends_on = ["UX-POPUP-WORKFLOWS-001"]
-verify = ["cargo test -p yoctui-model build_target", "cargo test -p yoctui-model wic", "cargo test -p yoctui-ui build_target", "cargo test -p yoctui-ui wic"]
-notes = "Migrate the build target and Wic editable drafts while preserving typed previews and destructive-device confirmation."
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Split independent build-target and Wic popup migrations into coherent atomic implementation tasks."
+
+[[task]]
+id = "UX-POPUP-TARGET-001"
+milestone = "M8"
+title = "Move build target draft into a TOML popup"
+status = "IN_PROGRESS"
+priority = 147
+required = true
+depends_on = ["UX-POPUP-BUILD-001"]
+verify = ["cargo test -p yoctui-model build_target", "cargo test -p yoctui-ui build_target", "cargo check -p yoctui"]
+notes = "Migrate the typed build target draft while retaining task selection and explicit build confirmation."
+
+[[task]]
+id = "UX-POPUP-WIC-001"
+milestone = "M8"
+title = "Move Wic create draft into a TOML popup"
+status = "NOT_STARTED"
+priority = 148
+required = true
+depends_on = ["UX-POPUP-TARGET-001"]
+verify = ["cargo test -p yoctui-model wic", "cargo test -p yoctui-ui wic"]
+notes = "Migrate the Wic create draft while preserving typed choices, preview, and protected device-write confirmation."
 
 [[task]]
 id = "UX-POPUP-SDK-001"
 milestone = "M8"
 title = "Move SDK editable drafts into TOML popups"
 status = "NOT_STARTED"
-priority = 147
+priority = 149
 required = true
-depends_on = ["UX-POPUP-BUILD-001"]
+depends_on = ["UX-POPUP-WIC-001"]
 verify = ["cargo test -p yoctui-model sdk", "cargo test -p yoctui-ui sdk"]
 notes = "Migrate SDK native and publication draft forms without weakening typed previews or validation."
 
@@ -2405,7 +2427,7 @@ id = "UX-POPUP-TEST-001"
 milestone = "M8"
 title = "Move testing editable drafts into TOML popups"
 status = "NOT_STARTED"
-priority = 148
+priority = 150
 required = true
 depends_on = ["UX-POPUP-SDK-001"]
 verify = ["cargo test -p yoctui-model test_", "cargo test -p yoctui-ui test_"]
@@ -2416,7 +2438,7 @@ id = "UX-POPUP-OPS-001"
 milestone = "M8"
 title = "Move QA, security, and maintenance editable drafts into TOML popups"
 status = "NOT_STARTED"
-priority = 149
+priority = 151
 required = true
 depends_on = ["UX-POPUP-TEST-001"]
 verify = ["cargo test -p yoctui-model qa", "cargo test -p yoctui-model security", "cargo test -p yoctui-model maintenance", "cargo test -p yoctui-ui qa", "cargo test -p yoctui-ui security", "cargo test -p yoctui-ui maintenance"]
