@@ -2,10 +2,21 @@
 
 ## Task
 
-**ID:** UX-EDIT-INPUT-001
-**Title:** Support paste and literal k in build environment editor
-**Status:** DONE
+**ID:** UX-CLONE-REVIEW-001
+**Title:** Implement in-app Poky clone review and initialization
+**Status:** IN_PROGRESS
 
-## Terminal handoff
+## Objective
 
-`UX-EDIT-INPUT-001` is the final completed task; no incomplete registry tasks remain.
+Add the in-app clone/review workflow described by the UI specification.
+
+## Verification
+
+```bash
+cargo test -p yoctui-model build_environment_clone
+cargo test -p yoctui-bitbake poky_clone
+```
+
+## Next task
+
+Implement `UX-CLONE-REVIEW-001`.

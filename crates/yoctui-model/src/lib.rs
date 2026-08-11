@@ -903,6 +903,10 @@ pub struct ConfigEditRequest {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
+    BuildEnvironmentEditor {
+        content: String,
+        editing: bool,
+    },
     ThemePicker {
         selection: usize,
     },
@@ -3070,6 +3074,12 @@ pub enum Action {
     SettingsPersisted,
     SettingsPersistenceFailed(String),
     ConfigureBuildEnvironment(BuildEnvironmentProfile),
+    OpenBuildEnvironmentEditor,
+    ToggleBuildEnvironmentEditor,
+    AppendBuildEnvironmentEditor(char),
+    BackspaceBuildEnvironmentEditor,
+    ApplyBuildEnvironmentEditor,
+    CloseBuildEnvironmentEditor,
     BeginBuildEnvironmentEdit,
     OpenThemePicker,
     SelectTheme {
@@ -5869,6 +5879,83 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some(format!(
                 "Settings changed in memory but could not be saved: {message}"
             ));
+        }
+        Action::OpenBuildEnvironmentEditor => {
+            let profile = match &app.build_environment {
+                BuildEnvironmentState::Configured(profile)
+                | BuildEnvironmentState::Connected(profile)
+                | BuildEnvironmentState::Failed { profile, .. }
+                | BuildEnvironmentState::Verifying { profile, .. } => Some(profile),
+                BuildEnvironmentState::Unconfigured => None,
+            };
+            let value = |name: &str, path: Option<&Path>| {
+                format!(
+                    "{name} = \"{}\"",
+                    path.map_or_else(String::new, |p| p.display().to_string())
+                )
+            };
+            let content = format!(
+                "{}\n{}\n{}\n",
+                value("source", profile.map(|p| p.source_dir.as_path())),
+                value("build", profile.map(|p| p.build_dir.as_path())),
+                value("script", profile.map(|p| p.init_script.as_path()))
+            );
+            open_dialog(
+                app,
+                Dialog::BuildEnvironmentEditor {
+                    content,
+                    editing: false,
+                },
+            );
+        }
+        Action::ToggleBuildEnvironmentEditor => {
+            if let Some(Dialog::BuildEnvironmentEditor { editing, .. }) = app.active_dialog_mut() {
+                *editing = !*editing;
+            }
+        }
+        Action::AppendBuildEnvironmentEditor(character) => {
+            if let Some(Dialog::BuildEnvironmentEditor { content, editing }) =
+                app.active_dialog_mut()
+                && *editing
+            {
+                content.push(character);
+            }
+        }
+        Action::BackspaceBuildEnvironmentEditor => {
+            if let Some(Dialog::BuildEnvironmentEditor { content, editing }) =
+                app.active_dialog_mut()
+                && *editing
+            {
+                content.pop();
+            }
+        }
+        Action::ApplyBuildEnvironmentEditor => {
+            if let Some(Dialog::BuildEnvironmentEditor { content, .. }) =
+                app.active_dialog().cloned()
+            {
+                let mut values = HashMap::new();
+                for line in content.lines() {
+                    if let Some((name, value)) = line.split_once('=') {
+                        let value = value.trim().trim_matches('"').to_owned();
+                        values.insert(name.trim().to_owned(), value);
+                    }
+                }
+                let profile = BuildEnvironmentProfile {
+                    source_dir: PathBuf::from(values.remove("source").unwrap_or_default()),
+                    build_dir: PathBuf::from(values.remove("build").unwrap_or_default()),
+                    init_script: PathBuf::from(values.remove("script").unwrap_or_default()),
+                };
+                close_dialog(app);
+                return update(app, Action::ConfigureBuildEnvironment(profile));
+            }
+        }
+        Action::CloseBuildEnvironmentEditor => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::BuildEnvironmentEditor { .. })
+            ) {
+                close_dialog(app);
+            }
         }
         Action::OpenThemePicker => {
             let selection = THEMES
@@ -18945,6 +19032,25 @@ mod tests {
             BuildEnvironmentState::Configured(_)
         ));
         assert!(app.available_images.is_empty());
+    }
+
+    #[test]
+    fn build_environment_toml_editor_applies_profile_from_popup() {
+        let mut app = App::new_unconfigured(8, 512);
+        let _ = update(&mut app, Action::OpenBuildEnvironmentEditor);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::BuildEnvironmentEditor { editing: false, .. })
+        ));
+        if let Some(Dialog::BuildEnvironmentEditor { content, editing }) = app.active_dialog_mut() {
+            *editing = true;
+            *content = "source = \"/src/poky\"\nbuild = \"/src/build\"\nscript = \"/src/poky/oe-init-build-env\"\n".into();
+        }
+        let _ = update(&mut app, Action::ApplyBuildEnvironmentEditor);
+        assert!(matches!(
+            app.build_environment,
+            BuildEnvironmentState::Configured(_)
+        ));
     }
 
     #[test]

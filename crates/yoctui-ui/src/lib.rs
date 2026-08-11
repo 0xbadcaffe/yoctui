@@ -1265,6 +1265,8 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: false }),
             popup,
         );
+    } else if let Some(Dialog::BuildEnvironmentEditor { content, editing }) = app.active_dialog() {
+        build_environment_editor(frame, app, content, *editing, area);
     } else if let Some(Dialog::ThemePicker { selection }) = app.active_dialog() {
         theme_picker(frame, app, *selection, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
@@ -1356,6 +1358,40 @@ fn theme_picker(frame: &mut Frame, app: &App, selection: usize, area: Rect) {
             .footer(Row::new(["↑/↓ select  Enter apply  Esc close"])),
         popup,
     );
+}
+
+fn build_environment_editor(
+    frame: &mut Frame,
+    app: &App,
+    content: &str,
+    editing: bool,
+    area: Rect,
+) {
+    let popup = Rect::new(
+        area.width / 8,
+        area.height / 8,
+        area.width * 3 / 4,
+        area.height * 3 / 4,
+    );
+    clear_popup(frame, app, popup);
+    let mode = if editing { "INSERT" } else { "NORMAL" };
+    frame.render_widget(
+        Paragraph::new(content.to_owned())
+            .block(
+                Block::default()
+                    .title(format!("Build environment.toml — {mode}"))
+                    .borders(Borders::ALL),
+            )
+            .style(ThemePalette::for_app(app).base()),
+        popup,
+    );
+    let footer = Rect::new(
+        popup.x,
+        popup.y + popup.height.saturating_sub(2),
+        popup.width,
+        2,
+    );
+    frame.render_widget(Paragraph::new("Normal: i insert, Enter apply, Esc/q close | Insert: type, Backspace, Enter apply, Esc normal").style(ThemePalette::for_app(app).focus()), footer);
 }
 
 fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
@@ -10062,6 +10098,19 @@ mod tests {
         assert!(output.contains("Edit profile"));
         assert!(output.contains("source:"));
         assert!(output.contains("script:"));
+    }
+
+    #[test]
+    fn build_environment_editor_renders_large_vi_style_popup() {
+        let mut app = App::new_unconfigured(10, 1_000);
+        app.dialogs.push_back(Dialog::BuildEnvironmentEditor {
+            content: "source = \"/home/poky\"\nbuild = \"/home/build\"".into(),
+            editing: false,
+        });
+        let output = rendered_text(&app, 120, 40);
+        assert!(output.contains("Build environment.toml"));
+        assert!(output.contains("NORMAL"));
+        assert!(output.contains("/home/poky"));
     }
 
     #[test]

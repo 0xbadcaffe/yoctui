@@ -2496,6 +2496,12 @@ build and metadata actions remain visible but disabled with the reason
 
 The Build environment workspace is a typed setup form with these rows:
 
+Activating any editable setup row opens a bounded, focus-trapped popup editor.
+The Build environment profile popup is a TOML document with a vi-like Normal
+and Insert mode: `i` enters Insert, Esc returns to Normal, Enter applies the
+validated document, and `q` closes without applying. Paste and literal path
+characters are accepted as document input.
+
 - **Use existing source**: an absolute Poky/Yocto source path, an absolute
   build-directory path, and the detected environment script
   (`oe-init-build-env` or a build wrapper).

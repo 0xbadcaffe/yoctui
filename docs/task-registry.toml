@@ -2322,3 +2322,25 @@ required = true
 depends_on = ["UX-THEME-STARTUP-001"]
 verify = ["cargo check -p yoctui", "cargo test -p yoctui -- no_build_directory_resolves_to_unconfigured_startup"]
 notes = "Bracketed paste now inserts into the active profile field, k/j remain literal while editing, and recent paths no longer auto-configure startup."
+
+[[task]]
+id = "UX-EDIT-POPUP-001"
+milestone = "M8"
+title = "Add bounded vi-style TOML build profile popup"
+status = "DONE"
+priority = 141
+required = true
+depends_on = ["UX-EDIT-INPUT-001"]
+verify = ["cargo test -p yoctui-model build_environment_toml_editor", "cargo test -p yoctui-ui build_environment_editor", "cargo check -p yoctui"]
+notes = "Build environment editing now uses a bounded TOML popup with Normal/Insert modes and typed profile validation."
+
+[[task]]
+id = "UX-CLONE-REVIEW-001"
+milestone = "M8"
+title = "Implement in-app Poky clone review and initialization"
+status = "IN_PROGRESS"
+priority = 142
+required = true
+depends_on = ["UX-EDIT-POPUP-001"]
+verify = ["cargo test -p yoctui-model build_environment_clone", "cargo test -p yoctui-bitbake poky_clone"]
+notes = "Add repository/revision/destination TOML editing, exact clone review, confirmation, initialization, and interactive setup shell routing."

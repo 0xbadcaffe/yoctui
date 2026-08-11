@@ -5876,6 +5876,32 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         )
                         .await;
                     }
+                } else if let Some(Dialog::BuildEnvironmentEditor { editing, .. }) =
+                    app.active_dialog().cloned()
+                {
+                    let action = if editing {
+                        match input {
+                            Input::Esc => Some(Action::ToggleBuildEnvironmentEditor),
+                            Input::Enter => Some(Action::ApplyBuildEnvironmentEditor),
+                            Input::Backspace => Some(Action::BackspaceBuildEnvironmentEditor),
+                            Input::Char(character) => {
+                                Some(Action::AppendBuildEnvironmentEditor(character))
+                            }
+                            _ => None,
+                        }
+                    } else {
+                        match input {
+                            Input::Char('i') => Some(Action::ToggleBuildEnvironmentEditor),
+                            Input::Char('q') | Input::Esc => {
+                                Some(Action::CloseBuildEnvironmentEditor)
+                            }
+                            Input::Enter => Some(Action::ApplyBuildEnvironmentEditor),
+                            _ => None,
+                        }
+                    };
+                    if let Some(action) = action {
+                        let _ = update(&mut app, action);
+                    }
                 } else if matches!(app.active_dialog(), Some(Dialog::ThemePicker { .. })) {
                     let action = match input {
                         Input::Up | Input::Char('k') => Some(Action::SelectTheme { delta: -1 }),
