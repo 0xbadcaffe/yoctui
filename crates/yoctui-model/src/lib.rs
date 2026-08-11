@@ -967,6 +967,10 @@ pub enum Dialog {
     },
     SdkBuildConfirmation(SdkBuildPreview),
     SdkPublish(SdkPublishDraft),
+    SdkPublishTomlEditor {
+        content: String,
+        editing: bool,
+    },
     SdkPublishConfirmation(SdkPublishPreview),
     SdkNative(SdkNativeDialog),
     SdkNativeConfirmation(SdkNativePreview),
@@ -3207,6 +3211,9 @@ pub enum Action {
     OpenSelectedSdkArtifact,
     SdkToolCapabilityLoaded(SdkToolCapability),
     BeginSelectedSdkPublish,
+    ToggleSdkPublishTomlEditor,
+    AppendSdkPublishTomlEditor(char),
+    BackspaceSdkPublishTomlEditor,
     AppendSdkPublishDestination(char),
     BackspaceSdkPublishDestination,
     PreviewSdkPublish,
@@ -6732,7 +6739,34 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some(message.into());
                 return None;
             }
-            open_dialog(app, Dialog::SdkPublish(SdkPublishDraft::default()));
+            open_dialog(
+                app,
+                Dialog::SdkPublishTomlEditor {
+                    content: popup_toml_document("destination", "", None),
+                    editing: false,
+                },
+            );
+        }
+        Action::ToggleSdkPublishTomlEditor => {
+            if let Some(Dialog::SdkPublishTomlEditor { editing, .. }) = app.active_dialog_mut() {
+                *editing = !*editing;
+            }
+        }
+        Action::AppendSdkPublishTomlEditor(character) => {
+            if let Some(Dialog::SdkPublishTomlEditor { content, editing }) = app.active_dialog_mut()
+                && *editing
+                && !character.is_control()
+                && content.len() < 4_096
+            {
+                content.push(character);
+            }
+        }
+        Action::BackspaceSdkPublishTomlEditor => {
+            if let Some(Dialog::SdkPublishTomlEditor { content, editing }) = app.active_dialog_mut()
+                && *editing
+            {
+                content.pop();
+            }
         }
         Action::AppendSdkPublishDestination(character) => {
             if let Some(Dialog::SdkPublish(draft)) = app.active_dialog_mut()
@@ -6748,6 +6782,37 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::PreviewSdkPublish => {
+            if let Some(Dialog::SdkPublishTomlEditor { content, .. }) = app.active_dialog().cloned()
+            {
+                let destination = match popup_toml_value(&content, "destination") {
+                    Ok(value) => value,
+                    Err(message) => {
+                        app.notification = Some(message);
+                        return None;
+                    }
+                };
+                let Some(artifact) = app.selected_sdk_artifact() else {
+                    app.notification = Some("The selected SDK artifact is stale.".into());
+                    return None;
+                };
+                let preview = app
+                    .sdk_tool_capability
+                    .publish_executable()
+                    .map_err(str::to_owned)
+                    .and_then(|executable| {
+                        SdkPublishPreview::new(
+                            executable,
+                            artifact.identity.clone(),
+                            PathBuf::from(destination),
+                        )
+                        .map_err(str::to_owned)
+                    });
+                match preview {
+                    Ok(preview) => replace_dialog(app, Dialog::SdkPublishConfirmation(preview)),
+                    Err(message) => app.notification = Some(message),
+                }
+                return None;
+            }
             let Some(Dialog::SdkPublish(draft)) = app.active_dialog().cloned() else {
                 return None;
             };
@@ -6773,7 +6838,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CancelSdkPublish => {
-            if matches!(app.active_dialog(), Some(Dialog::SdkPublish(_))) {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::SdkPublish(_) | Dialog::SdkPublishTomlEditor { .. })
+            ) {
                 close_dialog(app);
             }
         }
@@ -18547,8 +18615,8 @@ mod tests {
         );
 
         let _ = update(&mut app, Action::BeginSelectedSdkPublish);
-        if let Some(Dialog::SdkPublish(draft)) = app.active_dialog_mut() {
-            draft.destination = "/srv/sdk".into();
+        if let Some(Dialog::SdkPublishTomlEditor { content, .. }) = app.active_dialog_mut() {
+            *content = "destination = \"/srv/sdk\"\n".into();
         }
         let _ = update(&mut app, Action::PreviewSdkPublish);
         let Some(Effect::StartSdkSession { id, operation }) =

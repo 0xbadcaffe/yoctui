@@ -2426,18 +2426,18 @@ notes = "Split publication and native-tool form migrations into coherent atomic 
 id = "UX-POPUP-SDK-PUBLISH-001"
 milestone = "M8"
 title = "Move SDK publication draft into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 150
 required = true
 depends_on = ["UX-POPUP-SDK-001"]
 verify = ["cargo test -p yoctui-model sdk", "cargo test -p yoctui-ui sdk"]
-notes = "Migrate SDK publication destination editing without weakening its typed preview or confirmation."
+notes = "SDK publication now uses a bounded TOML Normal/Insert popup with paste and preserves its typed preview and confirmation."
 
 [[task]]
 id = "UX-POPUP-SDK-NATIVE-001"
 milestone = "M8"
 title = "Move SDK native-tool draft into a TOML popup"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 151
 required = true
 depends_on = ["UX-POPUP-SDK-PUBLISH-001"]

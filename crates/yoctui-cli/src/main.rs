@@ -5809,6 +5809,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::WicCreateTomlEditor { editing: true, .. }) => {
                         Some(Action::AppendWicCreateTomlEditor as fn(char) -> Action)
                     }
+                    Some(Dialog::SdkPublishTomlEditor { editing: true, .. }) => {
+                        Some(Action::AppendSdkPublishTomlEditor as fn(char) -> Action)
+                    }
                     _ => None,
                 };
                 if let Some(action) = popup_action {
@@ -6154,6 +6157,30 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         {
                             pending_sdk_build = Some(request);
                         }
+                    }
+                } else if let Some(Dialog::SdkPublishTomlEditor { editing, .. }) =
+                    app.active_dialog().cloned()
+                {
+                    let action = if editing {
+                        match input {
+                            Input::Esc => Some(Action::ToggleSdkPublishTomlEditor),
+                            Input::Enter => Some(Action::PreviewSdkPublish),
+                            Input::Backspace => Some(Action::BackspaceSdkPublishTomlEditor),
+                            Input::Char(character) => {
+                                Some(Action::AppendSdkPublishTomlEditor(character))
+                            }
+                            _ => None,
+                        }
+                    } else {
+                        match input {
+                            Input::Char('i') => Some(Action::ToggleSdkPublishTomlEditor),
+                            Input::Char('q') | Input::Esc => Some(Action::CancelSdkPublish),
+                            Input::Enter => Some(Action::PreviewSdkPublish),
+                            _ => None,
+                        }
+                    };
+                    if let Some(action) = action {
+                        let _ = update(&mut app, action);
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::SdkPublish(_))) {
                     let _ = sdk_publish_dialog_action(input)

@@ -2520,6 +2520,8 @@ separate explicit step after validation; a popup editor never bypasses them.
 The build-target command uses `Build target.toml` with its `target` value and
 read-only requested task line; validating it still opens the existing build
 confirmation rather than starting a build directly.
+SDK publication uses `SDK publish.toml` with its absolute `destination`; its
+validated document still opens the existing exact publication confirmation.
 
 - **Use existing source**: an absolute Poky/Yocto source path, an absolute
   build-directory path, and the detected environment script

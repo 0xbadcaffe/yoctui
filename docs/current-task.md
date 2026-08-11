@@ -2,14 +2,14 @@
 
 ## Task
 
-**ID:** UX-POPUP-SDK-PUBLISH-001
-**Title:** Move SDK publication draft into a TOML popup
+**ID:** UX-POPUP-SDK-NATIVE-001
+**Title:** Move SDK native-tool draft into a TOML popup
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate SDK publication destination editing to a bounded vi-style TOML popup
-without weakening its typed preview or confirmation.
+Migrate SDK native-tool editing to a bounded vi-style TOML popup without
+weakening mode-specific typed validation or confirmation.
 
 ## Verification
 

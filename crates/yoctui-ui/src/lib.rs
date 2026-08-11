@@ -731,6 +731,16 @@ pub fn render(frame: &mut Frame, app: &App) {
         wic_cancellation_confirmation(frame, app, *id, *incomplete_device_warning, area);
     } else if let Some(Dialog::SdkBuildConfirmation(preview)) = app.active_dialog() {
         sdk_build_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::SdkPublishTomlEditor { content, editing }) = app.active_dialog() {
+        let popup = Rect::new(
+            area.width / 8,
+            area.height / 6,
+            area.width * 3 / 4,
+            area.height * 2 / 3,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(Paragraph::new(format!("{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.", content, if *editing { "_" } else { "" }, if *editing { "INSERT" } else { "NORMAL" }))
+            .block(Block::default().title(format!("SDK publish.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL)).wrap(Wrap { trim: false }), popup);
     } else if let Some(Dialog::SdkPublish(draft)) = app.active_dialog() {
         sdk_publish_dialog(frame, app, draft, area);
     } else if let Some(Dialog::SdkPublishConfirmation(preview)) = app.active_dialog() {
@@ -10430,8 +10440,8 @@ mod tests {
     fn sdk_workflow_running_ui_app() -> (App, SdkSessionId) {
         let mut app = sdk_workflow_ui_app();
         let _ = update(&mut app, Action::BeginSelectedSdkPublish);
-        if let Some(Dialog::SdkPublish(draft)) = app.active_dialog_mut() {
-            draft.destination = "/srv/sdk-publish".into();
+        if let Some(Dialog::SdkPublishTomlEditor { content, .. }) = app.active_dialog_mut() {
+            *content = "destination = \"/srv/sdk-publish\"\n".into();
         }
         let _ = update(&mut app, Action::PreviewSdkPublish);
         let Some(yoctui_model::Effect::StartSdkSession { id, .. }) =
@@ -10626,12 +10636,15 @@ mod tests {
         app.focus = FocusTarget::Workspace;
         let _ = update(&mut app, Action::BeginSelectedSdkPublish);
         assert_eq!(app.focus, FocusTarget::Dialog);
-        if let Some(Dialog::SdkPublish(draft)) = app.active_dialog_mut() {
-            draft.destination = format!("/srv/{}", "long-destination-".repeat(80));
+        if let Some(Dialog::SdkPublishTomlEditor { content, .. }) = app.active_dialog_mut() {
+            *content = format!(
+                "destination = \"/srv/{}\"\n",
+                "long-destination-".repeat(80)
+            );
         }
-        assert!(rendered_text(&app, 80, 24).contains("Publish SDK installer"));
-        if let Some(Dialog::SdkPublish(draft)) = app.active_dialog_mut() {
-            draft.destination = "/srv/sdk-publish".into();
+        assert!(rendered_text(&app, 80, 24).contains("SDK publish.toml"));
+        if let Some(Dialog::SdkPublishTomlEditor { content, .. }) = app.active_dialog_mut() {
+            *content = "destination = \"/srv/sdk-publish\"\n".into();
         }
         let _ = update(&mut app, Action::PreviewSdkPublish);
         let publish = rendered_text(&app, 80, 24);

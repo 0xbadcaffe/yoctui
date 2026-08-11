@@ -118,7 +118,8 @@ TOML Normal/Insert popups with paste, validation, and their existing explicit
 write confirmations. The remaining workflow migration was decomposed into
 build target, Wic, SDK, Testing, and operations tasks; `UX-POPUP-TARGET-001`
 is complete; `UX-POPUP-WIC-001` now provides typed TOML editing and the SDK
-migration is split into publication and native-tool tasks, with publication active.
+migration is split into publication and native-tool tasks; publication is
+complete and native-tool editing is active.
 
 ## Rules
 
