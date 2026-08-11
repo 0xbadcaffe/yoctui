@@ -2530,6 +2530,8 @@ authoritative context while scope, selector, parallelism, verbosity, and
 network policy are validated before the existing launch confirmation.
 Test result import uses `Test result import.toml` with one normalized absolute
 `root`, preserving the existing bounded typed import operation.
+Test comparison uses `Test comparison.toml` with baseline and candidate result
+paths, resolved only against the current typed result inventory before preview.
 
 - **Use existing source**: an absolute Poky/Yocto source path, an absolute
   build-directory path, and the detected environment script

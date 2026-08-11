@@ -125,6 +125,7 @@ launch and result-management tasks, with launch active.
 launch is complete. Result management is split into import, comparison, and
 JUnit export tasks, with import active.
 JUnit export tasks; import is complete and comparison is active.
+JUnit export tasks; import and comparison are complete and JUnit export is active.
 
 ## Rules
 

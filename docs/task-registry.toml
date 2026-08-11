@@ -2492,18 +2492,18 @@ notes = "Test result import now uses a bounded TOML Normal/Insert popup with typ
 id = "UX-POPUP-TEST-COMPARE-001"
 milestone = "M8"
 title = "Move test comparison into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 156
 required = true
 depends_on = ["UX-POPUP-TEST-IMPORT-001"]
 verify = ["cargo test -p yoctui-model test_", "cargo test -p yoctui-ui test_"]
-notes = "Migrate comparison selection without weakening typed preview or confirmation."
+notes = "Test comparison now uses a bounded TOML Normal/Insert popup resolved against the typed result inventory."
 
 [[task]]
 id = "UX-POPUP-TEST-JUNIT-001"
 milestone = "M8"
 title = "Move JUnit export into a TOML popup"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 157
 required = true
 depends_on = ["UX-POPUP-TEST-COMPARE-001"]

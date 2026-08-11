@@ -2,14 +2,14 @@
 
 ## Task
 
-**ID:** UX-POPUP-TEST-COMPARE-001
-**Title:** Move test comparison into a TOML popup
+**ID:** UX-POPUP-TEST-JUNIT-001
+**Title:** Move JUnit export into a TOML popup
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate comparison selection to a bounded vi-style TOML popup without weakening
-typed preview or confirmation.
+Migrate JUnit export destination editing to a bounded vi-style TOML popup
+without weakening typed validation or confirmation.
 
 ## Verification
 

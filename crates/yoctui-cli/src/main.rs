@@ -6364,6 +6364,30 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if let Some(effect) = effect {
                         let _ = test_coordinator.handle_effect(&mut app, effect).await;
                     }
+                } else if let Some(Dialog::TestComparisonTomlEditor { editing, .. }) =
+                    app.active_dialog().cloned()
+                {
+                    let action = if editing {
+                        match input {
+                            Input::Esc => Some(Action::ToggleTestComparisonTomlEditor),
+                            Input::Enter => Some(Action::PreviewTestComparison),
+                            Input::Backspace => Some(Action::BackspaceTestComparisonTomlEditor),
+                            Input::Char(character) => {
+                                Some(Action::AppendTestComparisonTomlEditor(character))
+                            }
+                            _ => None,
+                        }
+                    } else {
+                        match input {
+                            Input::Char('i') => Some(Action::ToggleTestComparisonTomlEditor),
+                            Input::Char('q') | Input::Esc => Some(Action::CancelTestComparison),
+                            Input::Enter => Some(Action::PreviewTestComparison),
+                            _ => None,
+                        }
+                    };
+                    if let Some(action) = action {
+                        let _ = update(&mut app, action);
+                    }
                 } else if matches!(app.active_dialog(), Some(Dialog::TestComparison(_))) {
                     let _ = test_comparison_dialog_action(input)
                         .and_then(|action| update(&mut app, action));

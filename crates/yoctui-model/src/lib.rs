@@ -993,6 +993,11 @@ pub enum Dialog {
         validation_error: Option<String>,
     },
     TestComparison(TestComparisonPicker),
+    TestComparisonTomlEditor {
+        content: String,
+        editing: bool,
+        validation_error: Option<String>,
+    },
     TestComparisonConfirmation(TestComparisonPreview),
     TestJunitExport(TestJunitExportDialog),
     TestJunitExportConfirmation(TestJunitExportPreview),
@@ -3413,6 +3418,9 @@ pub enum Action {
     },
     OpenSelectedTestCaseLog,
     BeginTestComparison,
+    ToggleTestComparisonTomlEditor,
+    AppendTestComparisonTomlEditor(char),
+    BackspaceTestComparisonTomlEditor,
     SelectTestComparisonChoice {
         delta: isize,
     },
@@ -8082,13 +8090,57 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     Some("At least two exact test results are required for comparison.".into());
                 return None;
             }
+            let picker = TestComparisonPicker::new(app.test_result_selection.clone(), records);
             open_dialog(
                 app,
-                Dialog::TestComparison(TestComparisonPicker::new(
-                    app.test_result_selection.clone(),
-                    records,
-                )),
+                Dialog::TestComparisonTomlEditor {
+                    content: format!(
+                        "baseline = \"{}\"\ncandidate = \"{}\"\n",
+                        picker
+                            .baseline
+                            .as_ref()
+                            .map_or_else(String::new, |value| value.path.display().to_string()),
+                        picker
+                            .candidate
+                            .as_ref()
+                            .map_or_else(String::new, |value| value.path.display().to_string())
+                    ),
+                    editing: false,
+                    validation_error: None,
+                },
             );
+        }
+        Action::ToggleTestComparisonTomlEditor => {
+            if let Some(Dialog::TestComparisonTomlEditor { editing, .. }) = app.active_dialog_mut()
+            {
+                *editing = !*editing;
+            }
+        }
+        Action::AppendTestComparisonTomlEditor(character) => {
+            if let Some(Dialog::TestComparisonTomlEditor {
+                content,
+                editing,
+                validation_error,
+            }) = app.active_dialog_mut()
+                && *editing
+                && !character.is_control()
+                && content.len() < MAX_TEST_TEXT_BYTES
+            {
+                content.push(character);
+                *validation_error = None;
+            }
+        }
+        Action::BackspaceTestComparisonTomlEditor => {
+            if let Some(Dialog::TestComparisonTomlEditor {
+                content,
+                editing,
+                validation_error,
+            }) = app.active_dialog_mut()
+                && *editing
+            {
+                content.pop();
+                *validation_error = None;
+            }
         }
         Action::SelectTestComparisonChoice { delta } => {
             let records = app.test_results.records().to_vec();
@@ -8107,6 +8159,47 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::PreviewTestComparison => {
+            if let Some(Dialog::TestComparisonTomlEditor { content, .. }) =
+                app.active_dialog().cloned()
+            {
+                let preview = (|| {
+                    let fields = popup_toml_fields(&content)?;
+                    let lookup = |key: &str| {
+                        let path = fields.get(key).ok_or_else(|| format!("Missing `{key}`."))?;
+                        app.test_results
+                            .records()
+                            .iter()
+                            .find(|record| record.identity.path == Path::new(path))
+                            .map(|record| record.identity.clone())
+                            .ok_or_else(|| format!("`{key}` is not an available test result."))
+                    };
+                    app.test_comparison_generation =
+                        app.test_comparison_generation.wrapping_add(1).max(1);
+                    let request = TestComparisonRequest::new(
+                        app.test_comparison_generation,
+                        lookup("baseline")?,
+                        lookup("candidate")?,
+                    )
+                    .map_err(str::to_owned)?;
+                    let executable = app
+                        .result_tool_capability
+                        .executable()
+                        .map_err(str::to_owned)?;
+                    TestComparisonPreview::new(executable, request).map_err(str::to_owned)
+                })();
+                match preview {
+                    Ok(preview) => replace_dialog(app, Dialog::TestComparisonConfirmation(preview)),
+                    Err(message) => {
+                        if let Some(Dialog::TestComparisonTomlEditor {
+                            validation_error, ..
+                        }) = app.active_dialog_mut()
+                        {
+                            *validation_error = Some(message);
+                        }
+                    }
+                }
+                return None;
+            }
             let Some(Dialog::TestComparison(dialog)) = app.active_dialog().cloned() else {
                 return None;
             };
@@ -8130,7 +8223,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CancelTestComparison => {
-            if matches!(app.active_dialog(), Some(Dialog::TestComparison(_))) {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::TestComparison(_) | Dialog::TestComparisonTomlEditor { .. })
+            ) {
                 close_dialog(app);
             }
         }
