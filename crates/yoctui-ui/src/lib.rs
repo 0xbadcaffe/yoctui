@@ -1265,6 +1265,12 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: false }),
             popup,
         );
+    } else if let Some(Dialog::BuildEnvironmentCloneEditor { content, editing }) =
+        app.active_dialog()
+    {
+        build_environment_clone_editor(frame, app, content, *editing, area);
+    } else if let Some(Dialog::BuildEnvironmentCloneReview(plan)) = app.active_dialog() {
+        build_environment_clone_review(frame, app, plan, area);
     } else if let Some(Dialog::BuildEnvironmentEditor { content, editing }) = app.active_dialog() {
         build_environment_editor(frame, app, content, *editing, area);
     } else if let Some(Dialog::ThemePicker { selection }) = app.active_dialog() {
@@ -1392,6 +1398,78 @@ fn build_environment_editor(
         2,
     );
     frame.render_widget(Paragraph::new("Normal: i insert, Enter apply, Esc/q close | Insert: type, Backspace, Enter apply, Esc normal").style(ThemePalette::for_app(app).focus()), footer);
+}
+
+fn build_environment_clone_editor(
+    frame: &mut Frame,
+    app: &App,
+    content: &str,
+    editing: bool,
+    area: Rect,
+) {
+    let popup = Rect::new(
+        area.width / 8,
+        area.height / 8,
+        area.width * 3 / 4,
+        area.height * 3 / 4,
+    );
+    clear_popup(frame, app, popup);
+    let mode = if editing { "INSERT" } else { "NORMAL" };
+    frame.render_widget(
+        Paragraph::new(content.to_owned())
+            .block(
+                Block::default()
+                    .title(format!("Clone Poky.toml — {mode}"))
+                    .borders(Borders::ALL),
+            )
+            .style(ThemePalette::for_app(app).base()),
+        popup,
+    );
+}
+
+fn build_environment_clone_review(
+    frame: &mut Frame,
+    app: &App,
+    plan: &yoctui_model::BuildEnvironmentClonePlan,
+    area: Rect,
+) {
+    let popup = Rect::new(
+        area.width / 8,
+        area.height / 4,
+        area.width * 3 / 4,
+        area.height / 2,
+    );
+    clear_popup(frame, app, popup);
+    let clone = if plan.request.revision.is_some() {
+        format!(
+            "git clone --no-checkout {} {}",
+            plan.request.repository,
+            plan.request.destination.display()
+        )
+    } else {
+        format!(
+            "git clone {} {}",
+            plan.request.repository,
+            plan.request.destination.display()
+        )
+    };
+    let checkout = plan
+        .request
+        .revision
+        .as_ref()
+        .map_or_else(String::new, |revision| {
+            format!(
+                "\ngit -C {} checkout {revision}",
+                plan.request.destination.display()
+            )
+        });
+    frame.render_widget(
+        Paragraph::new(format!("Review before cloning:\n\n{clone}{checkout}\n\nBuild directory: {}\n\nEnter confirms this network operation. Esc cancels.", plan.build_dir.display()))
+            .block(Block::default().title("Clone Poky review").borders(Borders::ALL))
+            .style(ThemePalette::for_app(app).base())
+            .wrap(Wrap { trim: true }),
+        popup,
+    );
 }
 
 fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
@@ -6544,7 +6622,7 @@ fn build_environment_workspace(frame: &mut Frame, app: &App, area: Rect) {
         "\n\navailable images: locked until BitBake verification succeeds.".into()
     };
     let text = format!(
-        "Build environment\n\n{status}{draft}{images}\n\nChoose e to edit. Choose V to verify BitBake."
+        "Build environment\n\n{status}{draft}{images}\n\nChoose e to edit, c to clone Poky, or V to verify BitBake."
     );
     frame.render_widget(
         Paragraph::new(text)

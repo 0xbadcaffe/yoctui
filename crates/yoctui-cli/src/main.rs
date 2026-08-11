@@ -5876,6 +5876,65 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         )
                         .await;
                     }
+                } else if let Some(Dialog::BuildEnvironmentCloneEditor { editing, .. }) =
+                    app.active_dialog().cloned()
+                {
+                    let action = if editing {
+                        match input {
+                            Input::Esc => Some(Action::ToggleBuildEnvironmentCloneEditor),
+                            Input::Enter => Some(Action::ReviewBuildEnvironmentClone),
+                            Input::Backspace => Some(Action::BackspaceBuildEnvironmentCloneEditor),
+                            Input::Char(character) => {
+                                Some(Action::AppendBuildEnvironmentCloneEditor(character))
+                            }
+                            _ => None,
+                        }
+                    } else {
+                        match input {
+                            Input::Char('i') => Some(Action::ToggleBuildEnvironmentCloneEditor),
+                            Input::Enter => Some(Action::ReviewBuildEnvironmentClone),
+                            Input::Esc | Input::Char('q') => {
+                                Some(Action::CancelBuildEnvironmentClone)
+                            }
+                            _ => None,
+                        }
+                    };
+                    if let Some(action) = action {
+                        let _ = update(&mut app, action);
+                    }
+                } else if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::BuildEnvironmentCloneReview(_))
+                ) {
+                    let action = match input {
+                        Input::Enter => Some(Action::ConfirmBuildEnvironmentClone),
+                        Input::Esc => Some(Action::CancelBuildEnvironmentClone),
+                        _ => None,
+                    };
+                    if let Some(action) = action
+                        && let Some(Effect::CloneBuildEnvironment(plan)) = update(&mut app, action)
+                    {
+                        match BuildEnvironmentAdapter::default()
+                            .clone_poky(plan.request.clone())
+                            .await
+                        {
+                            Ok(_) => {
+                                let profile = yoctui_model::BuildEnvironmentProfile {
+                                    source_dir: plan.request.destination.clone(),
+                                    build_dir: plan.build_dir,
+                                    init_script: plan.request.destination.join("oe-init-build-env"),
+                                };
+                                let _ =
+                                    update(&mut app, Action::ConfigureBuildEnvironment(profile));
+                                app.notification = Some(
+                                    "Poky cloned. Press V to initialize and verify BitBake.".into(),
+                                );
+                            }
+                            Err(error) => {
+                                app.notification = Some(format!("Poky clone failed: {error}"))
+                            }
+                        }
+                    }
                 } else if let Some(Dialog::BuildEnvironmentEditor { editing, .. }) =
                     app.active_dialog().cloned()
                 {

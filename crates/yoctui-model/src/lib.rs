@@ -218,6 +218,31 @@ pub struct BuildEnvironmentCloneRequest {
     pub revision: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BuildEnvironmentClonePlan {
+    pub request: BuildEnvironmentCloneRequest,
+    pub build_dir: PathBuf,
+}
+
+impl BuildEnvironmentClonePlan {
+    pub fn validate(&self) -> Result<(), AppError> {
+        self.request.validate()?;
+        if !self.build_dir.is_absolute()
+            || self
+                .build_dir
+                .components()
+                .any(|part| matches!(part, Component::ParentDir))
+        {
+            return Err(AppError::new(
+                "Build environment",
+                "invalid clone build directory",
+                "provide an absolute build directory",
+            ));
+        }
+        Ok(())
+    }
+}
+
 impl BuildEnvironmentCloneRequest {
     pub fn validate(&self) -> Result<(), AppError> {
         let valid_revision = |value: &str| {
@@ -903,6 +928,11 @@ pub struct ConfigEditRequest {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
+    BuildEnvironmentCloneEditor {
+        content: String,
+        editing: bool,
+    },
+    BuildEnvironmentCloneReview(BuildEnvironmentClonePlan),
     BuildEnvironmentEditor {
         content: String,
         editing: bool,
@@ -3074,6 +3104,13 @@ pub enum Action {
     SettingsPersisted,
     SettingsPersistenceFailed(String),
     ConfigureBuildEnvironment(BuildEnvironmentProfile),
+    OpenBuildEnvironmentCloneEditor,
+    ToggleBuildEnvironmentCloneEditor,
+    AppendBuildEnvironmentCloneEditor(char),
+    BackspaceBuildEnvironmentCloneEditor,
+    ReviewBuildEnvironmentClone,
+    ConfirmBuildEnvironmentClone,
+    CancelBuildEnvironmentClone,
     OpenBuildEnvironmentEditor,
     ToggleBuildEnvironmentEditor,
     AppendBuildEnvironmentEditor(char),
@@ -5879,6 +5916,81 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some(format!(
                 "Settings changed in memory but could not be saved: {message}"
             ));
+        }
+        Action::OpenBuildEnvironmentCloneEditor => {
+            open_dialog(app, Dialog::BuildEnvironmentCloneEditor {
+                content: "repository = \"https://git.yoctoproject.org/poky\"\ndestination = \"/home/user/src/poky\"\nrevision = \"\"\nbuild = \"/home/user/src/poky/build-yoctui\"\n".into(),
+                editing: false,
+            });
+        }
+        Action::ToggleBuildEnvironmentCloneEditor => {
+            if let Some(Dialog::BuildEnvironmentCloneEditor { editing, .. }) =
+                app.active_dialog_mut()
+            {
+                *editing = !*editing;
+            }
+        }
+        Action::AppendBuildEnvironmentCloneEditor(character) => {
+            if let Some(Dialog::BuildEnvironmentCloneEditor { content, editing }) =
+                app.active_dialog_mut()
+                && *editing
+            {
+                content.push(character);
+            }
+        }
+        Action::BackspaceBuildEnvironmentCloneEditor => {
+            if let Some(Dialog::BuildEnvironmentCloneEditor { content, editing }) =
+                app.active_dialog_mut()
+                && *editing
+            {
+                content.pop();
+            }
+        }
+        Action::ReviewBuildEnvironmentClone => {
+            if let Some(Dialog::BuildEnvironmentCloneEditor { content, .. }) =
+                app.active_dialog().cloned()
+            {
+                let mut values = HashMap::new();
+                for line in content.lines() {
+                    if let Some((name, value)) = line.split_once('=') {
+                        values.insert(
+                            name.trim().to_owned(),
+                            value.trim().trim_matches('"').to_owned(),
+                        );
+                    }
+                }
+                let plan = BuildEnvironmentClonePlan {
+                    request: BuildEnvironmentCloneRequest {
+                        repository: values.remove("repository").unwrap_or_default(),
+                        destination: PathBuf::from(
+                            values.remove("destination").unwrap_or_default(),
+                        ),
+                        revision: values.remove("revision").filter(|value| !value.is_empty()),
+                    },
+                    build_dir: PathBuf::from(values.remove("build").unwrap_or_default()),
+                };
+                match plan.validate() {
+                    Ok(()) => replace_dialog(app, Dialog::BuildEnvironmentCloneReview(plan)),
+                    Err(error) => app.notification = Some(error.to_string()),
+                }
+            }
+        }
+        Action::ConfirmBuildEnvironmentClone => {
+            if let Some(Dialog::BuildEnvironmentCloneReview(plan)) = app.active_dialog().cloned() {
+                close_dialog(app);
+                return Some(Effect::CloneBuildEnvironment(plan));
+            }
+        }
+        Action::CancelBuildEnvironmentClone => {
+            if matches!(
+                app.active_dialog(),
+                Some(
+                    Dialog::BuildEnvironmentCloneEditor { .. }
+                        | Dialog::BuildEnvironmentCloneReview(_)
+                )
+            ) {
+                close_dialog(app);
+            }
         }
         Action::OpenBuildEnvironmentEditor => {
             let profile = match &app.build_environment {
@@ -12166,6 +12278,7 @@ pub enum Effect {
         profile: BuildEnvironmentProfile,
         generation: u64,
     },
+    CloneBuildEnvironment(BuildEnvironmentClonePlan),
     Start(BuildRequest),
     Cancel,
     OpenInEditor(PathBuf),
@@ -19083,5 +19196,23 @@ mod tests {
         request.revision = Some("scarthgap".into());
         request.destination = PathBuf::from("relative/poky");
         assert!(request.validate().is_err());
+    }
+
+    #[test]
+    fn build_environment_clone_editor_requires_review_before_emitting_clone_effect() {
+        let mut app = App::new_unconfigured(8, 512);
+        let _ = update(&mut app, Action::OpenBuildEnvironmentCloneEditor);
+        if let Some(Dialog::BuildEnvironmentCloneEditor { content, .. }) = app.active_dialog_mut() {
+            *content = "repository = \"https://git.yoctoproject.org/poky\"\ndestination = \"/tmp/poky\"\nrevision = \"\"\nbuild = \"/tmp/poky/build\"\n".into();
+        }
+        let _ = update(&mut app, Action::ReviewBuildEnvironmentClone);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::BuildEnvironmentCloneReview(_))
+        ));
+        assert!(matches!(
+            update(&mut app, Action::ConfirmBuildEnvironmentClone),
+            Some(Effect::CloneBuildEnvironment(_))
+        ));
     }
 }

@@ -1572,6 +1572,7 @@ pub fn settings_action(key: Input) -> Option<Action> {
 pub fn build_environment_action(key: Input) -> Option<Action> {
     match key {
         Input::Char('e') => Some(Action::OpenBuildEnvironmentEditor),
+        Input::Char('c') => Some(Action::OpenBuildEnvironmentCloneEditor),
         Input::Up | Input::Char('k') => Some(Action::SelectBuildEnvironmentField { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectBuildEnvironmentField { delta: 1 }),
         Input::Char('s') => Some(Action::ApplyBuildEnvironmentProfile),
