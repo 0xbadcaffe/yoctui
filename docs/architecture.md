@@ -4,6 +4,12 @@
 
 Yoctui is a Rust/Ratatui terminal workbench for Yocto and BitBake. BitBake remains the authority for metadata and build state. Yoctui requests operations, normalizes events, stores bounded state, and renders typed views.
 
+Editable workflows use a model-owned bounded popup-document state. The model
+serializes typed drafts to TOML and validates parsed values before emitting the
+existing typed effects; the UI renders only the document/mode and the CLI maps
+vi-like input. This keeps parsing and validation out of Ratatui widgets and
+preserves each workflow's confirmation boundary.
+
 ## Architectural principles
 
 1. Domain state is independent of terminal rendering.

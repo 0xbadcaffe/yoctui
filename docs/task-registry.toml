@@ -2344,3 +2344,36 @@ required = true
 depends_on = ["UX-EDIT-POPUP-001"]
 verify = ["cargo test -p yoctui-model build_environment_clone", "cargo test -p yoctui-bitbake poky_clone"]
 notes = "Added TOML clone form, explicit review, shell-free clone confirmation through the existing adapter, and installation of the cloned profile for V initialization/verification."
+
+[[task]]
+id = "UX-POPUP-GOV-001"
+milestone = "M8"
+title = "Specify reusable vi-style TOML popup editors"
+status = "DONE"
+priority = 143
+required = true
+depends_on = ["UX-CLONE-REVIEW-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Defines the popup-editor interaction contract and model/UI/CLI boundary."
+
+[[task]]
+id = "UX-POPUP-CONFIG-001"
+milestone = "M8"
+title = "Move configuration and BBMASK editing into TOML popups"
+status = "IN_PROGRESS"
+priority = 144
+required = true
+depends_on = ["UX-POPUP-GOV-001"]
+verify = ["cargo test -p yoctui-model config_edit", "cargo test -p yoctui-ui config"]
+notes = "Replace inline configuration and BBMASK text editing while retaining validation and confirmation."
+
+[[task]]
+id = "UX-POPUP-WORKFLOWS-001"
+milestone = "M8"
+title = "Migrate remaining editable workflow dialogs to popups"
+status = "NOT_STARTED"
+priority = 145
+required = true
+depends_on = ["UX-POPUP-CONFIG-001"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings"]
+notes = "Migrate build target, Wic, SDK, Testing, QA, Security, and Maintenance editable drafts without weakening typed validation or confirmations."

@@ -2502,6 +2502,15 @@ and Insert mode: `i` enters Insert, Esc returns to Normal, Enter applies the
 validated document, and `q` closes without applying. Paste and literal path
 characters are accepted as document input.
 
+### Editable-popup convention
+
+Every editable workflow uses a bounded, focus-trapped popup rather than an
+inline text field. Structured settings are presented as TOML documents with
+their typed field names. Popup editors use vi-like Normal and Insert modes:
+`i` enters Insert, Esc returns to Normal, Enter validates/applies, and `q`
+closes without applying. Existing destructive confirmation dialogs remain a
+separate explicit step after validation; a popup editor never bypasses them.
+
 - **Use existing source**: an absolute Poky/Yocto source path, an absolute
   build-directory path, and the detected environment script
   (`oe-init-build-env` or a build wrapper).
