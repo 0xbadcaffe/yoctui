@@ -2414,22 +2414,44 @@ notes = "Wic creation now uses a bounded TOML Normal/Insert popup with typed cap
 [[task]]
 id = "UX-POPUP-SDK-001"
 milestone = "M8"
-title = "Move SDK editable drafts into TOML popups"
-status = "IN_PROGRESS"
+title = "Decompose SDK popup migration"
+status = "DONE"
 priority = 149
 required = true
 depends_on = ["UX-POPUP-WIC-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Split publication and native-tool form migrations into coherent atomic tasks."
+
+[[task]]
+id = "UX-POPUP-SDK-PUBLISH-001"
+milestone = "M8"
+title = "Move SDK publication draft into a TOML popup"
+status = "IN_PROGRESS"
+priority = 150
+required = true
+depends_on = ["UX-POPUP-SDK-001"]
 verify = ["cargo test -p yoctui-model sdk", "cargo test -p yoctui-ui sdk"]
-notes = "Migrate SDK native and publication draft forms without weakening typed previews or validation."
+notes = "Migrate SDK publication destination editing without weakening its typed preview or confirmation."
+
+[[task]]
+id = "UX-POPUP-SDK-NATIVE-001"
+milestone = "M8"
+title = "Move SDK native-tool draft into a TOML popup"
+status = "NOT_STARTED"
+priority = 151
+required = true
+depends_on = ["UX-POPUP-SDK-PUBLISH-001"]
+verify = ["cargo test -p yoctui-model sdk", "cargo test -p yoctui-ui sdk"]
+notes = "Migrate SDK native-tool editing without weakening mode-specific typed validation or confirmation."
 
 [[task]]
 id = "UX-POPUP-TEST-001"
 milestone = "M8"
 title = "Move testing editable drafts into TOML popups"
 status = "NOT_STARTED"
-priority = 150
+priority = 152
 required = true
-depends_on = ["UX-POPUP-SDK-001"]
+depends_on = ["UX-POPUP-SDK-NATIVE-001"]
 verify = ["cargo test -p yoctui-model test_", "cargo test -p yoctui-ui test_"]
 notes = "Migrate test launch, import, comparison, and export draft forms while preserving review and confirmation steps."
 
@@ -2438,7 +2460,7 @@ id = "UX-POPUP-OPS-001"
 milestone = "M8"
 title = "Move QA, security, and maintenance editable drafts into TOML popups"
 status = "NOT_STARTED"
-priority = 151
+priority = 153
 required = true
 depends_on = ["UX-POPUP-TEST-001"]
 verify = ["cargo test -p yoctui-model qa", "cargo test -p yoctui-model security", "cargo test -p yoctui-model maintenance", "cargo test -p yoctui-ui qa", "cargo test -p yoctui-ui security", "cargo test -p yoctui-ui maintenance"]
