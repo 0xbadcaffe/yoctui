@@ -2,18 +2,18 @@
 
 ## Task
 
-**ID:** UX-POPUP-TEST-LAUNCH-001
-**Title:** Move test launch draft into a TOML popup
+**ID:** UX-POPUP-TEST-RESULTS-001
+**Title:** Move test result forms into TOML popups
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate the test launch form to a bounded vi-style TOML popup without weakening
-typed selection, validation, preview, or confirmation.
+Migrate import, comparison, and JUnit export forms to bounded vi-style TOML
+popups without weakening review or confirmation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model test_launch
-cargo test -p yoctui-ui test_launch
+cargo test -p yoctui-model test_
+cargo test -p yoctui-ui test_
 ```

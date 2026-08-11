@@ -980,6 +980,10 @@ pub enum Dialog {
     SdkNativeConfirmation(SdkNativePreview),
     SdkCancellationConfirmation(SdkSessionId),
     TestLaunch(TestLaunchDialog),
+    TestLaunchTomlEditor {
+        content: String,
+        editing: bool,
+    },
     TestLaunchConfirmation(TestLaunchPreview),
     TestCancellationConfirmation(TestSessionId),
     TestResultImport(TestResultImportDialog),
@@ -3290,6 +3294,9 @@ pub enum Action {
         delta: isize,
     },
     BeginSelectedTestLaunch,
+    ToggleTestLaunchTomlEditor,
+    AppendTestLaunchTomlEditor(char),
+    BackspaceTestLaunchTomlEditor,
     UpdateTestLaunchDraft(TestLaunchDraft),
     SelectTestLaunchField {
         delta: isize,
@@ -7305,7 +7312,40 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::BeginSelectedTestLaunch => {
             let draft = test_launch_draft(app, app.test_family_selection);
-            open_dialog(app, Dialog::TestLaunch(TestLaunchDialog::new(draft)));
+            open_dialog(
+                app,
+                Dialog::TestLaunchTomlEditor {
+                    content: format!(
+                        "# family, machine, distro, and image are authoritative\nfamily = \"{}\"\nmachine = \"{}\"\ndistro = \"{}\"\nimage = \"{}\"\nscope = \"all\"\nselector = \"\"\nparallelism = 1\nverbose = false\nskip_network = false\n",
+                        draft.family.label(),
+                        draft.machine,
+                        draft.distro,
+                        draft.image
+                    ),
+                    editing: false,
+                },
+            );
+        }
+        Action::ToggleTestLaunchTomlEditor => {
+            if let Some(Dialog::TestLaunchTomlEditor { editing, .. }) = app.active_dialog_mut() {
+                *editing = !*editing;
+            }
+        }
+        Action::AppendTestLaunchTomlEditor(character) => {
+            if let Some(Dialog::TestLaunchTomlEditor { content, editing }) = app.active_dialog_mut()
+                && *editing
+                && !character.is_control()
+                && content.len() < 8_192
+            {
+                content.push(character);
+            }
+        }
+        Action::BackspaceTestLaunchTomlEditor => {
+            if let Some(Dialog::TestLaunchTomlEditor { content, editing }) = app.active_dialog_mut()
+                && *editing
+            {
+                content.pop();
+            }
         }
         Action::UpdateTestLaunchDraft(draft) => {
             if matches!(app.active_dialog(), Some(Dialog::TestLaunch(_))) {
@@ -7340,6 +7380,57 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::PreviewTestLaunch => {
+            if let Some(Dialog::TestLaunchTomlEditor { content, .. }) = app.active_dialog().cloned()
+            {
+                let preview = (|| {
+                    let fields = popup_toml_fields(&content)?;
+                    let get = |key: &str| {
+                        fields
+                            .get(key)
+                            .cloned()
+                            .ok_or_else(|| format!("Missing `{key}`."))
+                    };
+                    let family = match get("family")?.as_str() {
+                        "OE selftest" => TestFamily::OeSelftest,
+                        "BitBake selftest" => TestFamily::BitbakeSelftest,
+                        "Image runtime" => TestFamily::TestImage,
+                        "Standard SDK" => TestFamily::TestSdk,
+                        "Extensible SDK" => TestFamily::TestSdkExt,
+                        "Package tests" => TestFamily::Ptest,
+                        _ => return Err("Unknown test family.".to_owned()),
+                    };
+                    let scope = match get("scope")?.as_str() {
+                        "all" => TestSelectorScope::All,
+                        "selected" => TestSelectorScope::Selected,
+                        _ => return Err("`scope` must be all or selected.".to_owned()),
+                    };
+                    let parallelism = get("parallelism")?
+                        .parse()
+                        .map_err(|_| "`parallelism` must be a number.".to_owned())?;
+                    let boolean = |key: &str| match get(key)?.as_str() {
+                        "true" => Ok(true),
+                        "false" => Ok(false),
+                        _ => Err(format!("`{key}` must be true or false.")),
+                    };
+                    let draft = TestLaunchDraft {
+                        family,
+                        machine: get("machine")?,
+                        distro: get("distro")?,
+                        image: get("image")?,
+                        scope,
+                        selector: get("selector")?,
+                        parallelism,
+                        verbose: boolean("verbose")?,
+                        skip_network: boolean("skip_network")?,
+                    };
+                    draft.preview(&app.test_capability).map_err(str::to_owned)
+                })();
+                match preview {
+                    Ok(preview) => replace_dialog(app, Dialog::TestLaunchConfirmation(preview)),
+                    Err(message) => app.notification = Some(message),
+                }
+                return None;
+            }
             let Some(Dialog::TestLaunch(dialog)) = app.active_dialog().cloned() else {
                 return None;
             };
@@ -7355,7 +7446,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CancelTestLaunch => {
-            if matches!(app.active_dialog(), Some(Dialog::TestLaunch(_))) {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::TestLaunch(_) | Dialog::TestLaunchTomlEditor { .. })
+            ) {
                 close_dialog(app);
             }
         }
@@ -18831,18 +18925,9 @@ mod tests {
         let capability = test_workflow_app().test_capability;
         let _ = update(&mut app, Action::TestCapabilityLoaded(capability));
         let _ = update(&mut app, Action::BeginSelectedTestLaunch);
-        let _ = update(&mut app, Action::ActivateTestLaunchField);
-        let _ = update(&mut app, Action::SelectTestLaunchField { delta: 1 });
-        let _ = update(&mut app, Action::ActivateTestLaunchField);
-        for character in "tinfoil.TinfoilTests.test_getvar".chars() {
-            let _ = update(&mut app, Action::AppendTestLaunchField(character));
+        if let Some(Dialog::TestLaunchTomlEditor { content, .. }) = app.active_dialog_mut() {
+            *content = "family = \"OE selftest\"\nmachine = \"qemux86-64\"\ndistro = \"poky\"\nimage = \"core-image-minimal\"\nscope = \"selected\"\nselector = \"tinfoil.TinfoilTests.test_getvar\"\nparallelism = 8\nverbose = false\nskip_network = false\n".into();
         }
-        let _ = update(&mut app, Action::FinishTestLaunchFieldEdit);
-        let _ = update(&mut app, Action::SelectTestLaunchField { delta: 1 });
-        let _ = update(&mut app, Action::ActivateTestLaunchField);
-        let _ = update(&mut app, Action::BackspaceTestLaunchField);
-        let _ = update(&mut app, Action::AppendTestLaunchField('8'));
-        let _ = update(&mut app, Action::FinishTestLaunchFieldEdit);
         let _ = update(&mut app, Action::PreviewTestLaunch);
         assert!(matches!(
             app.active_dialog(),

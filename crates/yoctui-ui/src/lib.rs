@@ -761,6 +761,15 @@ pub fn render(frame: &mut Frame, app: &App) {
         sdk_native_confirmation(frame, app, preview, area);
     } else if let Some(Dialog::SdkCancellationConfirmation(id)) = app.active_dialog() {
         sdk_cancellation_confirmation(frame, app, *id, area);
+    } else if let Some(Dialog::TestLaunchTomlEditor { content, editing }) = app.active_dialog() {
+        let popup = Rect::new(
+            area.width / 8,
+            area.height / 6,
+            area.width * 3 / 4,
+            area.height * 2 / 3,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(Paragraph::new(format!("{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.", content, if *editing { "_" } else { "" }, if *editing { "INSERT" } else { "NORMAL" })).block(Block::default().title(format!("Test launch.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL)).wrap(Wrap { trim: false }), popup);
     } else if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog() {
         test_launch_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::TestLaunchConfirmation(preview)) = app.active_dialog() {
@@ -11048,16 +11057,12 @@ mod tests {
     fn test_workflow_dialogs_render_exact_previews_at_responsive_boundaries() {
         let (mut app, baseline, candidate) = test_workflow_results_app();
         app.focus = FocusTarget::Dialog;
-        let draft = yoctui_model::TestLaunchDraft::new(
-            yoctui_model::TestFamily::OeSelftest,
-            "qemux86-64".into(),
-            "poky".into(),
-            "core-image-minimal".into(),
-        );
-        let launch = yoctui_model::TestLaunchDialog::new(draft);
-        app.dialogs.push_front(Dialog::TestLaunch(launch));
+        app.dialogs.push_front(Dialog::TestLaunchTomlEditor {
+            content: "family = \"OE selftest\"\nmachine = \"qemux86-64\"\ndistro = \"poky\"\nimage = \"core-image-minimal\"\nscope = \"all\"\nselector = \"\"\nparallelism = 1\nverbose = false\nskip_network = false\n".into(),
+            editing: false,
+        });
         assert!(
-            rendered_text(&app, 80, 24).contains("Testing launch"),
+            rendered_text(&app, 80, 24).contains("Test launch.toml"),
             "{}",
             rendered_text(&app, 80, 24)
         );

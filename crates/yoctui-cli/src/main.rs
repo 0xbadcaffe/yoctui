@@ -5815,6 +5815,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::SdkNativeTomlEditor { editing: true, .. }) => {
                         Some(Action::AppendSdkNativeTomlEditor as fn(char) -> Action)
                     }
+                    Some(Dialog::TestLaunchTomlEditor { editing: true, .. }) => {
+                        Some(Action::AppendTestLaunchTomlEditor as fn(char) -> Action)
+                    }
                     _ => None,
                 };
                 if let Some(action) = popup_action {
@@ -6252,6 +6255,30 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         .and_then(|action| update(&mut app, action));
                     if let Some(Effect::CancelSdkSession(id)) = effect {
                         begin_sdk_cancellation(&mut app, &mut sdk_operation, id);
+                    }
+                } else if let Some(Dialog::TestLaunchTomlEditor { editing, .. }) =
+                    app.active_dialog().cloned()
+                {
+                    let action = if editing {
+                        match input {
+                            Input::Esc => Some(Action::ToggleTestLaunchTomlEditor),
+                            Input::Enter => Some(Action::PreviewTestLaunch),
+                            Input::Backspace => Some(Action::BackspaceTestLaunchTomlEditor),
+                            Input::Char(character) => {
+                                Some(Action::AppendTestLaunchTomlEditor(character))
+                            }
+                            _ => None,
+                        }
+                    } else {
+                        match input {
+                            Input::Char('i') => Some(Action::ToggleTestLaunchTomlEditor),
+                            Input::Char('q') | Input::Esc => Some(Action::CancelTestLaunch),
+                            Input::Enter => Some(Action::PreviewTestLaunch),
+                            _ => None,
+                        }
+                    };
+                    if let Some(action) = action {
+                        let _ = update(&mut app, action);
                     }
                 } else if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog() {
                     let editing = dialog.editing;

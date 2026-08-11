@@ -122,6 +122,7 @@ migration is split into publication and native-tool tasks; publication is
 complete and native-tool editing is active.
 complete; native-tool editing is complete. Testing migration is split into
 launch and result-management tasks, with launch active.
+launch is complete and result-management popup migration is active.
 
 ## Rules
 

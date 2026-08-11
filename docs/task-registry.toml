@@ -2459,18 +2459,18 @@ notes = "Split test launch and result-management form migrations into atomic tas
 id = "UX-POPUP-TEST-LAUNCH-001"
 milestone = "M8"
 title = "Move test launch draft into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 153
 required = true
 depends_on = ["UX-POPUP-TEST-001"]
-verify = ["cargo test -p yoctui-model test_launch", "cargo test -p yoctui-ui test_launch"]
-notes = "Migrate test launch form without weakening typed selection, validation, preview, or confirmation."
+verify = ["cargo test -p yoctui-model test_workflow_model", "cargo test -p yoctui-ui test_workflow_dialogs"]
+notes = "Test launch now uses a bounded TOML Normal/Insert popup while preserving typed validation, preview, and confirmation."
 
 [[task]]
 id = "UX-POPUP-TEST-RESULTS-001"
 milestone = "M8"
 title = "Move test result forms into TOML popups"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 154
 required = true
 depends_on = ["UX-POPUP-TEST-LAUNCH-001"]
