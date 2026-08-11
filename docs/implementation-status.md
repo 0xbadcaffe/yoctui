@@ -120,6 +120,7 @@ build target, Wic, SDK, Testing, and operations tasks; `UX-POPUP-TARGET-001`
 is complete; `UX-POPUP-WIC-001` now provides typed TOML editing and the SDK
 migration is split into publication and native-tool tasks; publication is
 complete and native-tool editing is active.
+complete; native-tool editing is complete and Testing popup migration is active.
 
 ## Rules
 

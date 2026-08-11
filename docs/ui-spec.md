@@ -2522,6 +2522,9 @@ read-only requested task line; validating it still opens the existing build
 confirmation rather than starting a build directly.
 SDK publication uses `SDK publish.toml` with its absolute `destination`; its
 validated document still opens the existing exact publication confirmation.
+SDK native tools use `SDK native.toml` with `mode`, `workspace`, `recipe`,
+`tool`, and bounded space-separated `arguments`; validation retains the
+existing FindSysroot versus RunNative restrictions before confirmation.
 
 - **Use existing source**: an absolute Poky/Yocto source path, an absolute
   build-directory path, and the detected environment script

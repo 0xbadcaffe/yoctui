@@ -5812,6 +5812,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::SdkPublishTomlEditor { editing: true, .. }) => {
                         Some(Action::AppendSdkPublishTomlEditor as fn(char) -> Action)
                     }
+                    Some(Dialog::SdkNativeTomlEditor { editing: true, .. }) => {
+                        Some(Action::AppendSdkNativeTomlEditor as fn(char) -> Action)
+                    }
                     _ => None,
                 };
                 if let Some(action) = popup_action {
@@ -6198,6 +6201,30 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             id,
                             operation,
                         );
+                    }
+                } else if let Some(Dialog::SdkNativeTomlEditor { editing, .. }) =
+                    app.active_dialog().cloned()
+                {
+                    let action = if editing {
+                        match input {
+                            Input::Esc => Some(Action::ToggleSdkNativeTomlEditor),
+                            Input::Enter => Some(Action::PreviewSdkNative),
+                            Input::Backspace => Some(Action::BackspaceSdkNativeTomlEditor),
+                            Input::Char(character) => {
+                                Some(Action::AppendSdkNativeTomlEditor(character))
+                            }
+                            _ => None,
+                        }
+                    } else {
+                        match input {
+                            Input::Char('i') => Some(Action::ToggleSdkNativeTomlEditor),
+                            Input::Char('q') | Input::Esc => Some(Action::CancelSdkNative),
+                            Input::Enter => Some(Action::PreviewSdkNative),
+                            _ => None,
+                        }
+                    };
+                    if let Some(action) = action {
+                        let _ = update(&mut app, action);
                     }
                 } else if let Some(Dialog::SdkNative(dialog)) = app.active_dialog() {
                     let editing = dialog.editing;

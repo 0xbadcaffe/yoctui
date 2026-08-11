@@ -745,6 +745,16 @@ pub fn render(frame: &mut Frame, app: &App) {
         sdk_publish_dialog(frame, app, draft, area);
     } else if let Some(Dialog::SdkPublishConfirmation(preview)) = app.active_dialog() {
         sdk_publish_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::SdkNativeTomlEditor { content, editing }) = app.active_dialog() {
+        let popup = Rect::new(
+            area.width / 8,
+            area.height / 6,
+            area.width * 3 / 4,
+            area.height * 2 / 3,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(Paragraph::new(format!("{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.", content, if *editing { "_" } else { "" }, if *editing { "INSERT" } else { "NORMAL" }))
+            .block(Block::default().title(format!("SDK native.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL)).wrap(Wrap { trim: false }), popup);
     } else if let Some(Dialog::SdkNative(draft)) = app.active_dialog() {
         sdk_native_dialog(frame, app, draft, area);
     } else if let Some(Dialog::SdkNativeConfirmation(preview)) = app.active_dialog() {

@@ -2437,18 +2437,18 @@ notes = "SDK publication now uses a bounded TOML Normal/Insert popup with paste 
 id = "UX-POPUP-SDK-NATIVE-001"
 milestone = "M8"
 title = "Move SDK native-tool draft into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 151
 required = true
 depends_on = ["UX-POPUP-SDK-PUBLISH-001"]
 verify = ["cargo test -p yoctui-model sdk", "cargo test -p yoctui-ui sdk"]
-notes = "Migrate SDK native-tool editing without weakening mode-specific typed validation or confirmation."
+notes = "SDK native tools now use a bounded TOML Normal/Insert popup while preserving mode-specific typed validation and confirmation."
 
 [[task]]
 id = "UX-POPUP-TEST-001"
 milestone = "M8"
 title = "Move testing editable drafts into TOML popups"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 152
 required = true
 depends_on = ["UX-POPUP-SDK-NATIVE-001"]

@@ -2,18 +2,18 @@
 
 ## Task
 
-**ID:** UX-POPUP-SDK-NATIVE-001
-**Title:** Move SDK native-tool draft into a TOML popup
+**ID:** UX-POPUP-TEST-001
+**Title:** Move testing editable drafts into TOML popups
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate SDK native-tool editing to a bounded vi-style TOML popup without
-weakening mode-specific typed validation or confirmation.
+Migrate test launch, import, comparison, and export draft forms to bounded
+vi-style TOML popups without weakening review and confirmation steps.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model sdk
-cargo test -p yoctui-ui sdk
+cargo test -p yoctui-model test_
+cargo test -p yoctui-ui test_
 ```
