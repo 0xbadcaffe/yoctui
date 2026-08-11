@@ -2528,6 +2528,8 @@ existing FindSysroot versus RunNative restrictions before confirmation.
 Test launch uses `Test launch.toml`; family, machine, distro, and image are
 authoritative context while scope, selector, parallelism, verbosity, and
 network policy are validated before the existing launch confirmation.
+Test result import uses `Test result import.toml` with one normalized absolute
+`root`, preserving the existing bounded typed import operation.
 
 - **Use existing source**: an absolute Poky/Yocto source path, an absolute
   build-directory path, and the detected environment script

@@ -124,6 +124,7 @@ complete; native-tool editing is complete. Testing migration is split into
 launch and result-management tasks, with launch active.
 launch is complete. Result management is split into import, comparison, and
 JUnit export tasks, with import active.
+JUnit export tasks; import is complete and comparison is active.
 
 ## Rules
 

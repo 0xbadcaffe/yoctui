@@ -776,6 +776,20 @@ pub fn render(frame: &mut Frame, app: &App) {
         test_launch_confirmation(frame, app, preview, area);
     } else if let Some(Dialog::TestCancellationConfirmation(id)) = app.active_dialog() {
         test_cancellation_confirmation(frame, app, *id, area);
+    } else if let Some(Dialog::TestResultImportTomlEditor {
+        content,
+        editing,
+        validation_error,
+    }) = app.active_dialog()
+    {
+        let popup = Rect::new(
+            area.width / 8,
+            area.height / 6,
+            area.width * 3 / 4,
+            area.height * 2 / 3,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(Paragraph::new(format!("{}{}\n{}: i inserts, Enter imports, q closes.\nInsert: type, Backspace, Esc normal.{}", content, if *editing { "_" } else { "" }, if *editing { "INSERT" } else { "NORMAL" }, validation_error.as_deref().map_or(String::new(), |error| format!("\nValidation: {error}")))).block(Block::default().title(format!("Test result import.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL)).wrap(Wrap { trim: false }), popup);
     } else if let Some(Dialog::TestResultImport(dialog)) = app.active_dialog() {
         test_result_import_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::TestComparison(picker)) = app.active_dialog() {

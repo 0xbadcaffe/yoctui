@@ -2481,18 +2481,18 @@ notes = "Split import, comparison, and JUnit export form migrations into atomic 
 id = "UX-POPUP-TEST-IMPORT-001"
 milestone = "M8"
 title = "Move test result import into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 155
 required = true
 depends_on = ["UX-POPUP-TEST-RESULTS-001"]
 verify = ["cargo test -p yoctui-model test_", "cargo test -p yoctui-ui test_"]
-notes = "Migrate test result import without weakening typed validation or confirmation."
+notes = "Test result import now uses a bounded TOML Normal/Insert popup with typed path validation."
 
 [[task]]
 id = "UX-POPUP-TEST-COMPARE-001"
 milestone = "M8"
 title = "Move test comparison into a TOML popup"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 156
 required = true
 depends_on = ["UX-POPUP-TEST-IMPORT-001"]

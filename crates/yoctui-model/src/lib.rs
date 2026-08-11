@@ -987,6 +987,11 @@ pub enum Dialog {
     TestLaunchConfirmation(TestLaunchPreview),
     TestCancellationConfirmation(TestSessionId),
     TestResultImport(TestResultImportDialog),
+    TestResultImportTomlEditor {
+        content: String,
+        editing: bool,
+        validation_error: Option<String>,
+    },
     TestComparison(TestComparisonPicker),
     TestComparisonConfirmation(TestComparisonPreview),
     TestJunitExport(TestJunitExportDialog),
@@ -3366,6 +3371,9 @@ pub enum Action {
     ResultToolCapabilityLoaded(ResultToolCapability),
     CycleTestView,
     BeginTestResultImport,
+    ToggleTestResultImportTomlEditor,
+    AppendTestResultImportTomlEditor(char),
+    BackspaceTestResultImportTomlEditor,
     AppendTestResultImport(char),
     BackspaceTestResultImport,
     ConfirmTestResultImport,
@@ -7773,8 +7781,45 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::BeginTestResultImport => {
             open_dialog(
                 app,
-                Dialog::TestResultImport(TestResultImportDialog::default()),
+                Dialog::TestResultImportTomlEditor {
+                    content: popup_toml_document("root", "", None),
+                    editing: false,
+                    validation_error: None,
+                },
             );
+        }
+        Action::ToggleTestResultImportTomlEditor => {
+            if let Some(Dialog::TestResultImportTomlEditor { editing, .. }) =
+                app.active_dialog_mut()
+            {
+                *editing = !*editing;
+            }
+        }
+        Action::AppendTestResultImportTomlEditor(character) => {
+            if let Some(Dialog::TestResultImportTomlEditor {
+                content,
+                editing,
+                validation_error,
+            }) = app.active_dialog_mut()
+                && *editing
+                && !character.is_control()
+                && content.len() < MAX_TEST_TEXT_BYTES
+            {
+                content.push(character);
+                *validation_error = None;
+            }
+        }
+        Action::BackspaceTestResultImportTomlEditor => {
+            if let Some(Dialog::TestResultImportTomlEditor {
+                content,
+                editing,
+                validation_error,
+            }) = app.active_dialog_mut()
+                && *editing
+            {
+                content.pop();
+                *validation_error = None;
+            }
         }
         Action::AppendTestResultImport(character) => {
             if let Some(Dialog::TestResultImport(dialog)) = app.active_dialog_mut() {
@@ -7787,6 +7832,32 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::ConfirmTestResultImport => {
+            if let Some(Dialog::TestResultImportTomlEditor { content, .. }) =
+                app.active_dialog().cloned()
+            {
+                let root = popup_toml_value(&content, "root")
+                    .map(PathBuf::from)
+                    .and_then(|root| {
+                        absolute_normal_path(&root).then_some(root).ok_or_else(|| {
+                            "result import path must be normalized and absolute".to_owned()
+                        })
+                    });
+                match root {
+                    Ok(root) => {
+                        close_dialog(app);
+                        return begin_test_result_import(app, vec![root]);
+                    }
+                    Err(message) => {
+                        if let Some(Dialog::TestResultImportTomlEditor {
+                            validation_error, ..
+                        }) = app.active_dialog_mut()
+                        {
+                            *validation_error = Some(message);
+                        }
+                    }
+                }
+                return None;
+            }
             let Some(Dialog::TestResultImport(dialog)) = app.active_dialog().cloned() else {
                 return None;
             };
@@ -7803,7 +7874,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CancelTestResultImport => {
-            if matches!(app.active_dialog(), Some(Dialog::TestResultImport(_))) {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::TestResultImport(_) | Dialog::TestResultImportTomlEditor { .. })
+            ) {
                 close_dialog(app);
             }
         }

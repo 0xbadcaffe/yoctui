@@ -6334,6 +6334,30 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             }
                         }
                     }
+                } else if let Some(Dialog::TestResultImportTomlEditor { editing, .. }) =
+                    app.active_dialog().cloned()
+                {
+                    let action = if editing {
+                        match input {
+                            Input::Esc => Some(Action::ToggleTestResultImportTomlEditor),
+                            Input::Enter => Some(Action::ConfirmTestResultImport),
+                            Input::Backspace => Some(Action::BackspaceTestResultImportTomlEditor),
+                            Input::Char(character) => {
+                                Some(Action::AppendTestResultImportTomlEditor(character))
+                            }
+                            _ => None,
+                        }
+                    } else {
+                        match input {
+                            Input::Char('i') => Some(Action::ToggleTestResultImportTomlEditor),
+                            Input::Char('q') | Input::Esc => Some(Action::CancelTestResultImport),
+                            Input::Enter => Some(Action::ConfirmTestResultImport),
+                            _ => None,
+                        }
+                    };
+                    if let Some(effect) = action.and_then(|action| update(&mut app, action)) {
+                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                    }
                 } else if matches!(app.active_dialog(), Some(Dialog::TestResultImport(_))) {
                     let effect = test_result_import_dialog_action(input)
                         .and_then(|action| update(&mut app, action));

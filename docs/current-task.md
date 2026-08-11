@@ -2,14 +2,14 @@
 
 ## Task
 
-**ID:** UX-POPUP-TEST-IMPORT-001
-**Title:** Move test result import into a TOML popup
+**ID:** UX-POPUP-TEST-COMPARE-001
+**Title:** Move test comparison into a TOML popup
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate test result import to a bounded vi-style TOML popup without weakening
-typed validation or confirmation.
+Migrate comparison selection to a bounded vi-style TOML popup without weakening
+typed preview or confirmation.
 
 ## Verification
 
