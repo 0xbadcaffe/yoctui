@@ -2,14 +2,14 @@
 
 ## Task
 
-**ID:** UX-POPUP-TEST-RESULTS-001
-**Title:** Move test result forms into TOML popups
+**ID:** UX-POPUP-TEST-IMPORT-001
+**Title:** Move test result import into a TOML popup
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate import, comparison, and JUnit export forms to bounded vi-style TOML
-popups without weakening review or confirmation.
+Migrate test result import to a bounded vi-style TOML popup without weakening
+typed validation or confirmation.
 
 ## Verification
 
