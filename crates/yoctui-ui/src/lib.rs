@@ -830,17 +830,29 @@ pub fn render(frame: &mut Frame, app: &App) {
             ),
             popup,
         );
-    } else if let Some(Dialog::ConfigEdit { identity, input }) = app.active_dialog() {
-        let popup = Rect::new(area.width / 6, area.height / 3, area.width * 2 / 3, 7);
+    } else if let Some(Dialog::ConfigEdit {
+        identity: _,
+        content,
+        editing,
+    }) = app.active_dialog()
+    {
+        let popup = Rect::new(
+            area.width / 8,
+            area.height / 6,
+            area.width * 3 / 4,
+            area.height * 2 / 3,
+        );
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Variable: {}\nNew effective value:\n{}_\n\nEnter previews; Esc cancels.",
-                identity.name, input
+                "{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.",
+                content,
+                if *editing { "_" } else { "" },
+                if *editing { "INSERT" } else { "NORMAL" }
             ))
             .block(
                 Block::default()
-                    .title("Edit global configuration")
+                    .title(format!("Configuration.toml — {}", if *editing { "INSERT" } else { "NORMAL" }))
                     .borders(Borders::ALL),
             )
             .wrap(Wrap { trim: false }),
@@ -1207,23 +1219,24 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: false }),
             popup,
         );
-    } else if let Some(Dialog::BbmaskEdit { input }) = app.active_dialog() {
-        let width = area.width.saturating_sub(12).clamp(40, 96);
+    } else if let Some(Dialog::BbmaskEdit { content, editing }) = app.active_dialog() {
         let popup = Rect::new(
-            (area.width.saturating_sub(width)) / 2,
-            area.height.saturating_sub(6) / 2,
-            width,
-            6,
+            area.width / 8,
+            area.height / 6,
+            area.width * 3 / 4,
+            area.height * 2 / 3,
         );
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "BBMASK: {}_\n\nEnter previews the exact local.conf assignment; Esc cancels.",
-                input
+                "{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.",
+                content,
+                if *editing { "_" } else { "" },
+                if *editing { "INSERT" } else { "NORMAL" }
             ))
             .block(
                 Block::default()
-                    .title("Edit effective BBMASK")
+                    .title(format!("BBMASK.toml — {}", if *editing { "INSERT" } else { "NORMAL" }))
                     .borders(Borders::ALL),
             )
             .wrap(Wrap { trim: false }),
@@ -12164,9 +12177,10 @@ mod tests {
             ),
             (
                 Dialog::BbmaskEdit {
-                    input: "meta-old/.*".into(),
+                    content: "bbmask = \"meta-old/.*\"\n".into(),
+                    editing: false,
                 },
-                "Edit effective BBMASK",
+                "BBMASK.toml",
             ),
             (
                 Dialog::BbmaskConfirmation("meta-old/.*".into()),
@@ -13739,10 +13753,11 @@ mod tests {
 
             app.dialogs.push_back(Dialog::ConfigEdit {
                 identity: identity.clone(),
-                input: "qemux86-64".into(),
+                content: "# MACHINE\nvalue = \"qemux86-64\"\n".into(),
+                editing: false,
             });
             let output = rendered_text(&app, width, height);
-            assert!(output.contains("Edit global configuration"), "{output}");
+            assert!(output.contains("Configuration.toml"), "{output}");
             assert!(output.contains("qemux86-64"), "{output}");
 
             app.dialogs.pop_back();

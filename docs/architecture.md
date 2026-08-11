@@ -233,6 +233,10 @@ and writes a permission-preserving same-directory temporary file before an
 atomic rename. It then requests the same typed identity from the backend.
 Reducer actions alone own write/refresh lifecycle notifications and cached
 detail updates; a failed refresh does not discard the prior detail.
+Before that typed request is created, the model owns the bounded popup TOML
+document and its Normal/Insert mode for both configuration values and BBMASK;
+the UI only renders it and the CLI maps editor input and paste to typed reducer
+actions.
 
 Recipe discovery is split into a bounded summary query and a selected-recipe
 detail query. Summary records carry the resolved version, provider path/layer,

@@ -1083,10 +1083,11 @@ shows a read-only reason. Editing is global-scope only and requires the exact
 selected identity's loaded effective value plus an active build directory.
 Recipe-scoped, loading, failed, not-loaded, and absent values remain inert.
 
-`E` opens a focus-trapping value editor prefilled from that authoritative
-effective value. `Enter` validates a single-line value, escaping quotes and
-backslashes, then opens a separate confirmation dialog. Newline and other
-control-character injection is rejected. The confirmation shows the exact
+`E` opens a bounded, focus-trapping `Configuration.toml` editor prefilled from
+that authoritative effective value as `value = "..."`. It follows the shared
+Normal/Insert convention. `Enter` validates that one quoted TOML value,
+escaping quotes and backslashes, then opens a separate confirmation dialog.
+Newline and other control-character injection is rejected. The confirmation shows the exact
 destination `build/conf/local.conf` and exact quoted assignment. Its `Enter`
 revalidates the typed request, replaces the exact active variable assignment
 or appends it when absent through a permission-preserving atomic rename, then
@@ -1097,6 +1098,10 @@ write and restores the exact prior pane. Editing never writes before the
 second, preview-confirming `Enter`.
 
 No silent edits.
+
+The BBMASK edit shortcut opens the same bounded editor as `BBMASK.toml`, using
+one `bbmask = "..."` value. Its validation and explicit write confirmation
+remain separate from editing.
 
 ---
 

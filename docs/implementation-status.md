@@ -113,7 +113,10 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-The terminal task `UX-INT-001` is complete; see `docs/current-task.md`.
+`UX-POPUP-CONFIG-001` is complete: configuration and BBMASK now use bounded
+TOML Normal/Insert popups with paste, validation, and their existing explicit
+write confirmations. `UX-POPUP-WORKFLOWS-001` is active; it must be split into
+atomic workflow tasks before implementation.
 
 ## Rules
 

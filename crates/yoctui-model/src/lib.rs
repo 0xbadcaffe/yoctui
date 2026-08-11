@@ -986,7 +986,8 @@ pub enum Dialog {
     ConfigComparison(ConfigComparison),
     ConfigEdit {
         identity: VariableIdentity,
-        input: String,
+        content: String,
+        editing: bool,
     },
     ConfigEditConfirmation(ConfigEditRequest),
     DevtoolModifyConfirmation(RecipeIdentity),
@@ -997,7 +998,8 @@ pub enum Dialog {
     DevtoolDeploy(DevtoolDeployDraft),
     DevtoolDeployConfirmation(DevtoolDeployPlan),
     BbmaskEdit {
-        input: String,
+        content: String,
+        editing: bool,
     },
     BbmaskConfirmation(String),
     RecipeEditor(RecipeEditor),
@@ -3968,6 +3970,7 @@ pub enum Action {
     OpenConfigComparison,
     CloseConfigComparison,
     BeginConfigEdit,
+    ToggleConfigEdit,
     AppendConfigEdit(char),
     BackspaceConfigEdit,
     PreviewConfigEdit,
@@ -3994,6 +3997,7 @@ pub enum Action {
     },
     OpenSelectedConfigSource,
     BeginBbmaskEdit,
+    ToggleBbmaskEdit,
     AppendBbmask(char),
     BackspaceBbmask,
     PreviewBbmaskEdit,
@@ -4583,6 +4587,40 @@ pub fn config_edit_assignment(name: &str, value: &str) -> Result<String, String>
     }
     let escaped = value.replace('\\', "\\\\").replace('"', "\\\"");
     Ok(format!("{name} = \"{escaped}\""))
+}
+
+fn popup_toml_value(content: &str, key: &str) -> Result<String, String> {
+    let mut value = None;
+    for line in content.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let Some((name, raw_value)) = line.split_once('=') else {
+            return Err(format!("Expected `{key} = \"value\"`."));
+        };
+        if name.trim() != key || value.is_some() {
+            return Err(format!("Only one `{key} = \"value\"` entry is allowed."));
+        }
+        let raw_value = raw_value.trim();
+        if !(raw_value.starts_with('\"') && raw_value.ends_with('\"')) || raw_value.len() < 2 {
+            return Err(format!("`{key}` must be a quoted TOML string."));
+        }
+        let unescaped = raw_value[1..raw_value.len() - 1]
+            .replace("\\\\", "\\")
+            .replace("\\\"", "\"");
+        value = Some(unescaped);
+    }
+    value.ok_or_else(|| format!("Missing `{key} = \"value\"` entry."))
+}
+
+fn popup_toml_document(key: &str, value: &str, comment: Option<&str>) -> String {
+    let mut document = comment.map_or_else(String::new, |comment| format!("# {comment}\n"));
+    document.push_str(&format!(
+        "{key} = \"{}\"\n",
+        value.replace('\\', "\\\\").replace('\"', "\\\"")
+    ));
+    document
 }
 
 pub fn validate_config_edit_request(
@@ -11919,31 +11957,54 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             Ok((identity, value, _)) => open_dialog(
                 app,
                 Dialog::ConfigEdit {
+                    content: popup_toml_document("value", &value, Some(&identity.name)),
                     identity,
-                    input: value,
+                    editing: false,
                 },
             ),
             Err(reason) => app.notification = Some(reason),
         },
+        Action::ToggleConfigEdit => {
+            if let Some(Dialog::ConfigEdit { editing, .. }) = app.active_dialog_mut() {
+                *editing = !*editing;
+            }
+        }
         Action::AppendConfigEdit(character) => {
             if character.is_control() {
                 app.notification =
                     Some("Configuration values cannot contain control characters.".into());
-            } else if let Some(Dialog::ConfigEdit { input, .. }) = app.active_dialog_mut() {
-                input.push(character);
+            } else if let Some(Dialog::ConfigEdit {
+                content, editing, ..
+            }) = app.active_dialog_mut()
+                && *editing
+            {
+                content.push(character);
             }
         }
         Action::BackspaceConfigEdit => {
-            if let Some(Dialog::ConfigEdit { input, .. }) = app.active_dialog_mut() {
-                input.pop();
+            if let Some(Dialog::ConfigEdit {
+                content, editing, ..
+            }) = app.active_dialog_mut()
+                && *editing
+            {
+                content.pop();
             }
         }
         Action::PreviewConfigEdit => {
             let edit = app.active_dialog().and_then(|dialog| match dialog {
-                Dialog::ConfigEdit { identity, input } => Some((identity.clone(), input.clone())),
+                Dialog::ConfigEdit {
+                    identity, content, ..
+                } => Some((identity.clone(), popup_toml_value(content, "value"))),
                 _ => None,
             });
             let (identity, value) = edit?;
+            let value = match value {
+                Ok(value) => value,
+                Err(reason) => {
+                    app.notification = Some(reason);
+                    return None;
+                }
+            };
             match config_edit_assignment(&identity.name, &value) {
                 Ok(assignment) => {
                     let Some(build_dir) = app.workspace.build_dir.as_ref() else {
@@ -12020,24 +12081,46 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .get("BBMASK")
                 .cloned()
                 .unwrap_or_default();
-            open_dialog(app, Dialog::BbmaskEdit { input });
+            open_dialog(
+                app,
+                Dialog::BbmaskEdit {
+                    content: popup_toml_document("bbmask", &input, None),
+                    editing: false,
+                },
+            );
+        }
+        Action::ToggleBbmaskEdit => {
+            if let Some(Dialog::BbmaskEdit { editing, .. }) = app.active_dialog_mut() {
+                *editing = !*editing;
+            }
         }
         Action::AppendBbmask(character) => {
-            if let Some(Dialog::BbmaskEdit { input }) = app.active_dialog_mut() {
-                input.push(character);
+            if let Some(Dialog::BbmaskEdit { content, editing }) = app.active_dialog_mut()
+                && *editing
+            {
+                content.push(character);
             }
         }
         Action::BackspaceBbmask => {
-            if let Some(Dialog::BbmaskEdit { input }) = app.active_dialog_mut() {
-                input.pop();
+            if let Some(Dialog::BbmaskEdit { content, editing }) = app.active_dialog_mut()
+                && *editing
+            {
+                content.pop();
             }
         }
         Action::PreviewBbmaskEdit => {
-            if let Some(Dialog::BbmaskEdit { input }) = app.active_dialog() {
+            if let Some(Dialog::BbmaskEdit { content, .. }) = app.active_dialog() {
+                let input = match popup_toml_value(content, "bbmask") {
+                    Ok(value) => value,
+                    Err(reason) => {
+                        app.notification = Some(reason);
+                        return None;
+                    }
+                };
                 if input.contains(['\n', '\r']) {
                     app.notification = Some("BBMASK must be entered on one line.".into());
                 } else {
-                    replace_dialog(app, Dialog::BbmaskConfirmation(input.clone()));
+                    replace_dialog(app, Dialog::BbmaskConfirmation(input));
                 }
             }
         }
@@ -15252,11 +15335,13 @@ mod tests {
         assert_eq!(
             app.active_dialog(),
             Some(&Dialog::BbmaskEdit {
-                input: "meta-old/.*".into()
+                content: "bbmask = \"meta-old/.*\"\n".into(),
+                editing: false,
             })
         );
-        let _ = update(&mut app, Action::AppendBbmask(' '));
-        let _ = update(&mut app, Action::AppendBbmask('x'));
+        if let Some(Dialog::BbmaskEdit { content, .. }) = app.active_dialog_mut() {
+            *content = "bbmask = \"meta-old/.* x\"\n".into();
+        }
         let _ = update(&mut app, Action::PreviewBbmaskEdit);
         assert_eq!(
             app.active_dialog(),
@@ -16354,10 +16439,12 @@ mod tests {
         let _ = update(&mut app, Action::BeginConfigEdit);
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::ConfigEdit { identity: selected, input })
-                if selected == &identity && input == "qemux86-64"
+            Some(Dialog::ConfigEdit { identity: selected, content, editing: false })
+                if selected == &identity && content.contains("value = \"qemux86-64\"")
         ));
-        let _ = update(&mut app, Action::AppendConfigEdit('"'));
+        if let Some(Dialog::ConfigEdit { content, .. }) = app.active_dialog_mut() {
+            *content = "# MACHINE\nvalue = \"qemux86-64\\\"\"\n".into();
+        }
         let _ = update(&mut app, Action::PreviewConfigEdit);
         let Some(Dialog::ConfigEditConfirmation(request)) = app.active_dialog() else {
             panic!("confirmation was not opened");

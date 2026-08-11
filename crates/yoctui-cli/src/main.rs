@@ -25,9 +25,9 @@ use std::{ffi::CString, os::unix::ffi::OsStrExt};
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
     BuildJobCoordinator, DevtoolJobCoordinator, Input, build_environment_action,
-    config_compare_dialog_action, config_edit_confirmation_action, config_edit_dialog_action,
-    config_scope_picker_action, config_source_picker_action, config_workspace_action,
-    dependency_workspace_action, devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
+    config_compare_dialog_action, config_edit_confirmation_action, config_scope_picker_action,
+    config_source_picker_action, config_workspace_action, dependency_workspace_action,
+    devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
@@ -5790,7 +5790,26 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         if event::poll(refresh)? {
             let terminal_event = event::read()?;
             if let Event::Paste(text) = terminal_event {
-                if app.screen == Screen::BuildEnvironment
+                let popup_action = match app.active_dialog() {
+                    Some(Dialog::BuildEnvironmentEditor { editing: true, .. }) => {
+                        Some(Action::AppendBuildEnvironmentEditor as fn(char) -> Action)
+                    }
+                    Some(Dialog::BuildEnvironmentCloneEditor { editing: true, .. }) => {
+                        Some(Action::AppendBuildEnvironmentCloneEditor as fn(char) -> Action)
+                    }
+                    Some(Dialog::ConfigEdit { editing: true, .. }) => {
+                        Some(Action::AppendConfigEdit as fn(char) -> Action)
+                    }
+                    Some(Dialog::BbmaskEdit { editing: true, .. }) => {
+                        Some(Action::AppendBbmask as fn(char) -> Action)
+                    }
+                    _ => None,
+                };
+                if let Some(action) = popup_action {
+                    for character in text.chars().filter(|character| !character.is_control()) {
+                        let _ = update(&mut app, action(character));
+                    }
+                } else if app.screen == Screen::BuildEnvironment
                     && app
                         .build_environment_draft
                         .as_ref()
@@ -6643,14 +6662,28 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             }
                         }
                     }
-                } else if matches!(app.active_dialog(), Some(Dialog::BbmaskEdit { .. })) {
-                    let _ = match input {
-                        Input::Char(character) => update(&mut app, Action::AppendBbmask(character)),
-                        Input::Backspace => update(&mut app, Action::BackspaceBbmask),
-                        Input::Enter => update(&mut app, Action::PreviewBbmaskEdit),
-                        Input::Esc => update(&mut app, Action::CancelBbmaskEdit),
-                        _ => None,
+                } else if let Some(Dialog::BbmaskEdit { editing, .. }) =
+                    app.active_dialog().cloned()
+                {
+                    let action = if editing {
+                        match input {
+                            Input::Esc => Some(Action::ToggleBbmaskEdit),
+                            Input::Enter => Some(Action::PreviewBbmaskEdit),
+                            Input::Backspace => Some(Action::BackspaceBbmask),
+                            Input::Char(character) => Some(Action::AppendBbmask(character)),
+                            _ => None,
+                        }
+                    } else {
+                        match input {
+                            Input::Char('i') => Some(Action::ToggleBbmaskEdit),
+                            Input::Char('q') | Input::Esc => Some(Action::CancelBbmaskEdit),
+                            Input::Enter => Some(Action::PreviewBbmaskEdit),
+                            _ => None,
+                        }
                     };
+                    if let Some(action) = action {
+                        let _ = update(&mut app, action);
+                    }
                 } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
                     let action = if input == Input::Enter
                         && app.build.status == BuildStatus::Failed
@@ -6726,8 +6759,26 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if let Some(action) = config_compare_dialog_action(input) {
                         let _ = update(&mut app, action);
                     }
-                } else if matches!(app.active_dialog(), Some(Dialog::ConfigEdit { .. })) {
-                    if let Some(action) = config_edit_dialog_action(input) {
+                } else if let Some(Dialog::ConfigEdit { editing, .. }) =
+                    app.active_dialog().cloned()
+                {
+                    let action = if editing {
+                        match input {
+                            Input::Esc => Some(Action::ToggleConfigEdit),
+                            Input::Enter => Some(Action::PreviewConfigEdit),
+                            Input::Backspace => Some(Action::BackspaceConfigEdit),
+                            Input::Char(character) => Some(Action::AppendConfigEdit(character)),
+                            _ => None,
+                        }
+                    } else {
+                        match input {
+                            Input::Char('i') => Some(Action::ToggleConfigEdit),
+                            Input::Char('q') | Input::Esc => Some(Action::CancelConfigEdit),
+                            Input::Enter => Some(Action::PreviewConfigEdit),
+                            _ => None,
+                        }
+                    };
+                    if let Some(action) = action {
                         let _ = update(&mut app, action);
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::ConfigEditConfirmation(_))) {

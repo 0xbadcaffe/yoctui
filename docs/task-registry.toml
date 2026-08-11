@@ -2360,18 +2360,18 @@ notes = "Defines the popup-editor interaction contract and model/UI/CLI boundary
 id = "UX-POPUP-CONFIG-001"
 milestone = "M8"
 title = "Move configuration and BBMASK editing into TOML popups"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 144
 required = true
 depends_on = ["UX-POPUP-GOV-001"]
 verify = ["cargo test -p yoctui-model config_edit", "cargo test -p yoctui-ui config"]
-notes = "Replace inline configuration and BBMASK text editing while retaining validation and confirmation."
+notes = "Configuration and BBMASK now use bounded TOML Normal/Insert popups with paste, typed validation, and the existing explicit confirmations."
 
 [[task]]
 id = "UX-POPUP-WORKFLOWS-001"
 milestone = "M8"
 title = "Migrate remaining editable workflow dialogs to popups"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 145
 required = true
 depends_on = ["UX-POPUP-CONFIG-001"]
