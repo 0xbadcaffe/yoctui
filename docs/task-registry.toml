@@ -2393,18 +2393,18 @@ notes = "Split independent build-target and Wic popup migrations into coherent a
 id = "UX-POPUP-TARGET-001"
 milestone = "M8"
 title = "Move build target draft into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 147
 required = true
 depends_on = ["UX-POPUP-BUILD-001"]
 verify = ["cargo test -p yoctui-model build_target", "cargo test -p yoctui-ui build_target", "cargo check -p yoctui"]
-notes = "Migrate the typed build target draft while retaining task selection and explicit build confirmation."
+notes = "Build target now uses a bounded TOML Normal/Insert popup with paste while retaining task selection and explicit confirmation."
 
 [[task]]
 id = "UX-POPUP-WIC-001"
 milestone = "M8"
 title = "Move Wic create draft into a TOML popup"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 148
 required = true
 depends_on = ["UX-POPUP-TARGET-001"]

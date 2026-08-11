@@ -5803,6 +5803,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::BbmaskEdit { editing: true, .. }) => {
                         Some(Action::AppendBbmask as fn(char) -> Action)
                     }
+                    Some(Dialog::BuildTarget { editing: true, .. }) => {
+                        Some(Action::AppendBuildTarget as fn(char) -> Action)
+                    }
                     _ => None,
                 };
                 if let Some(action) = popup_action {
@@ -6820,16 +6823,26 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if let Some(Effect::Start(request)) = effect {
                         begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
                     }
-                } else if matches!(app.active_dialog(), Some(Dialog::BuildTarget { .. })) {
-                    let effect = match input {
-                        Input::Char(character) => {
-                            update(&mut app, Action::AppendBuildTarget(character))
+                } else if let Some(Dialog::BuildTarget { editing, .. }) =
+                    app.active_dialog().cloned()
+                {
+                    let action = if editing {
+                        match input {
+                            Input::Esc => Some(Action::ToggleBuildTargetEdit),
+                            Input::Enter => Some(Action::ConfirmBuildTarget),
+                            Input::Backspace => Some(Action::BackspaceBuildTarget),
+                            Input::Char(character) => Some(Action::AppendBuildTarget(character)),
+                            _ => None,
                         }
-                        Input::Backspace => update(&mut app, Action::BackspaceBuildTarget),
-                        Input::Enter => update(&mut app, Action::ConfirmBuildTarget),
-                        Input::Esc => update(&mut app, Action::CancelBuildTargetEdit),
-                        _ => None,
+                    } else {
+                        match input {
+                            Input::Char('i') => Some(Action::ToggleBuildTargetEdit),
+                            Input::Char('q') | Input::Esc => Some(Action::CancelBuildTargetEdit),
+                            Input::Enter => Some(Action::ConfirmBuildTarget),
+                            _ => None,
+                        }
                     };
+                    let effect = action.and_then(|action| update(&mut app, action));
                     if let Some(Effect::Start(request)) = effect {
                         begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
                     }

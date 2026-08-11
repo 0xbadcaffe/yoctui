@@ -2515,6 +2515,9 @@ their typed field names. Popup editors use vi-like Normal and Insert modes:
 `i` enters Insert, Esc returns to Normal, Enter validates/applies, and `q`
 closes without applying. Existing destructive confirmation dialogs remain a
 separate explicit step after validation; a popup editor never bypasses them.
+The build-target command uses `Build target.toml` with its `target` value and
+read-only requested task line; validating it still opens the existing build
+confirmation rather than starting a build directly.
 
 - **Use existing source**: an absolute Poky/Yocto source path, an absolute
   build-directory path, and the detected environment script

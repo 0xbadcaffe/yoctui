@@ -2,19 +2,18 @@
 
 ## Task
 
-**ID:** UX-POPUP-TARGET-001
-**Title:** Move build target draft into a TOML popup
+**ID:** UX-POPUP-WIC-001
+**Title:** Move Wic create draft into a TOML popup
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate the build target draft to a bounded vi-style TOML popup without
-weakening task selection, validation, or build confirmation.
+Migrate the Wic create draft to a bounded vi-style TOML popup without
+weakening typed choices, preview, or protected device-write confirmation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model build_target
-cargo test -p yoctui-ui build_target
-cargo check -p yoctui
+cargo test -p yoctui-model wic
+cargo test -p yoctui-ui wic
 ```

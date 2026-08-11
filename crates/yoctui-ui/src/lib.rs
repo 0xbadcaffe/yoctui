@@ -1310,22 +1310,24 @@ pub fn render(frame: &mut Frame, app: &App) {
             .block(Block::default().title("Image build options").borders(Borders::ALL)),
             popup,
         );
-    } else if let Some(Dialog::BuildTarget { input, task }) = app.active_dialog() {
-        let width = area.width.saturating_sub(12).clamp(30, 80);
-        let popup = Rect::new(
-            (area.width.saturating_sub(width)) / 2,
-            area.height.saturating_sub(5) / 2,
-            width,
-            5,
-        );
+    } else if let Some(Dialog::BuildTarget {
+        content,
+        task,
+        editing,
+    }) = app.active_dialog()
+    {
+        let width = area.width * 3 / 4;
+        let popup = Rect::new(area.width / 8, area.height / 6, width, area.height * 2 / 3);
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Target: {}_\nTask: {}\n\nEnter starts the build; Esc cancels.",
-                input,
-                task.as_deref().unwrap_or("default")
+                "{}{}\ntask = \"{}\"\n\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.",
+                content,
+                if *editing { "_" } else { "" },
+                task.as_deref().unwrap_or("default"),
+                if *editing { "INSERT" } else { "NORMAL" }
             ))
-            .block(Block::default().title("Build target").borders(Borders::ALL)),
+            .block(Block::default().title(format!("Build target.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL)),
             popup,
         );
     } else if let Some(notification) = app.notification.as_deref() {
@@ -12082,8 +12084,9 @@ mod tests {
             (Dialog::BuildCompletion, "Build finished"),
             (
                 Dialog::BuildTarget {
-                    input: "busybox".into(),
+                    content: "target = \"busybox\"\n".into(),
                     task: None,
+                    editing: false,
                 },
                 "Build target",
             ),
@@ -12560,8 +12563,9 @@ mod tests {
         let mut terminal = Terminal::new(TestBackend::new(140, 30)).unwrap();
         let mut app = App::new(10, 1_000);
         app.dialogs.push_back(Dialog::BuildTarget {
-            input: "core-image-minimal".into(),
+            content: "target = \"core-image-minimal\"\n".into(),
             task: None,
+            editing: false,
         });
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
@@ -12571,7 +12575,7 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(output.contains("Build target"));
+        assert!(output.contains("Build target.toml"));
         assert!(output.contains("core-image-minimal"));
     }
     #[test]

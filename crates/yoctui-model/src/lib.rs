@@ -943,8 +943,9 @@ pub enum Dialog {
     BuildOptions,
     BuildCompletion,
     BuildTarget {
-        input: String,
+        content: String,
         task: Option<String>,
+        editing: bool,
     },
     ImagePicker(ImagePicker),
     QemuLaunch(QemuLaunchDialog),
@@ -3607,6 +3608,7 @@ pub enum Action {
         finished_at: SystemTime,
     },
     BeginBuildTargetEdit,
+    ToggleBuildTargetEdit,
     BeginBuildTargetTask(Option<String>),
     AppendBuildTarget(char),
     BackspaceBuildTarget,
@@ -9341,8 +9343,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             replace_dialog(
                 app,
                 Dialog::BuildTarget {
-                    input: app.build.target.clone().unwrap_or_default(),
+                    content: popup_toml_document(
+                        "target",
+                        app.build.target.as_deref().unwrap_or_default(),
+                        None,
+                    ),
                     task: None,
+                    editing: false,
                 },
             );
         }
@@ -9350,19 +9357,37 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             replace_dialog(
                 app,
                 Dialog::BuildTarget {
-                    input: app.build.target.clone().unwrap_or_default(),
+                    content: popup_toml_document(
+                        "target",
+                        app.build.target.as_deref().unwrap_or_default(),
+                        None,
+                    ),
                     task,
+                    editing: false,
                 },
             );
         }
+        Action::ToggleBuildTargetEdit => {
+            if let Some(Dialog::BuildTarget { editing, .. }) = app.active_dialog_mut() {
+                *editing = !*editing;
+            }
+        }
         Action::AppendBuildTarget(character) => {
-            if let Some(Dialog::BuildTarget { input, .. }) = app.active_dialog_mut() {
-                input.push(character);
+            if let Some(Dialog::BuildTarget {
+                content, editing, ..
+            }) = app.active_dialog_mut()
+                && *editing
+            {
+                content.push(character);
             }
         }
         Action::BackspaceBuildTarget => {
-            if let Some(Dialog::BuildTarget { input, .. }) = app.active_dialog_mut() {
-                input.pop();
+            if let Some(Dialog::BuildTarget {
+                content, editing, ..
+            }) = app.active_dialog_mut()
+                && *editing
+            {
+                content.pop();
             }
         }
         Action::CancelBuildTargetEdit => {
@@ -9371,9 +9396,16 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::ConfirmBuildTarget => {
-            if let Some(Dialog::BuildTarget { input, task }) = app.active_dialog() {
+            if let Some(Dialog::BuildTarget { content, task, .. }) = app.active_dialog() {
+                let input = match popup_toml_value(content, "target") {
+                    Ok(value) => value,
+                    Err(reason) => {
+                        app.notification = Some(reason);
+                        return None;
+                    }
+                };
                 let request = BuildRequest {
-                    targets: vec![input.clone()],
+                    targets: vec![input],
                     task: task.clone(),
                     force: false,
                 };
@@ -15077,8 +15109,8 @@ mod tests {
     fn build_target_editor_requires_confirmation_before_starting() {
         let mut app = App::new(10, 1_000);
         let _ = update(&mut app, Action::BeginBuildTargetEdit);
-        for character in "core-image-minimal".chars() {
-            let _ = update(&mut app, Action::AppendBuildTarget(character));
+        if let Some(Dialog::BuildTarget { content, .. }) = app.active_dialog_mut() {
+            *content = "target = \"core-image-minimal\"\n".into();
         }
         let effect = update(&mut app, Action::ConfirmBuildTarget);
 
@@ -15168,8 +15200,8 @@ mod tests {
 
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::BuildTarget { input, task })
-                if input == "core-image-minimal" && task.as_deref() == Some("clean")
+            Some(Dialog::BuildTarget { content, task, editing: false })
+                if content.contains("target = \"core-image-minimal\"") && task.as_deref() == Some("clean")
         ));
     }
     #[test]
