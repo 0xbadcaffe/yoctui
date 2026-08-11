@@ -2517,6 +2517,16 @@ their typed field names. Popup editors use vi-like Normal and Insert modes:
 `i` enters Insert, Esc returns to Normal, Enter validates/applies, and `q`
 closes without applying. Existing destructive confirmation dialogs remain a
 separate explicit step after validation; a popup editor never bypasses them.
+
+Every bounded popup editor has a real cursor and value selection. `Home` and
+`End` move to the beginning and end of the current line; `h`/`l` and arrow
+keys move by character, while `j`/`k` and arrows move by line. Opening a
+single-field edit selects the field value so the first Insert-mode type or
+paste replaces it rather than appending after the TOML document. Bracketed
+paste inserts at the cursor, and copy copies the selected value or line through
+the existing clipboard effect. A persistent final popup row shows the active
+shortcuts: `i insert  e change value  Enter save/preview  Esc normal  q close
+Home/End line  Ctrl+C copy  Ctrl+V paste`.
 The build-target command uses `Build target.toml` with its `target` value and
 read-only requested task line; validating it still opens the existing build
 confirmation rather than starting a build directly.

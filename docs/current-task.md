@@ -2,18 +2,19 @@
 
 ## Task
 
-**ID:** UX-POPUP-TEST-JUNIT-001
-**Title:** Move JUnit export into a TOML popup
+**ID:** UX-POPUP-EDITOR-002
+**Title:** Add shared bounded TOML popup editing controls
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate JUnit export destination editing to a bounded vi-style TOML popup
-without weakening typed validation or confirmation.
+Add model-owned cursor/selection, Home/End, replacement-on-edit, paste, copy,
+and a persistent shortcut row for every bounded TOML popup.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model test_
-cargo test -p yoctui-ui test_
+cargo test -p yoctui-model popup_editor
+cargo test -p yoctui-ui popup_editor
+cargo check -p yoctui
 ```

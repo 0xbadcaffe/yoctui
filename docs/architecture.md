@@ -238,6 +238,12 @@ document and its Normal/Insert mode for both configuration values and BBMASK;
 the UI only renders it and the CLI maps editor input and paste to typed reducer
 actions.
 
+All TOML popup workflows share model-owned cursor, selection, and edit-mode
+state. The UI never owns text editing state: it renders the current document,
+cursor, selection, and common shortcut row; the CLI maps keys, paste, and copy
+to typed editor actions; workflow reducers only serialize and validate their
+typed drafts.
+
 Recipe discovery is split into a bounded summary query and a selected-recipe
 detail query. Summary records carry the resolved version, provider path/layer,
 and append count from BitBake's provider/cache tables. A typed
