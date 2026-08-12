@@ -222,7 +222,9 @@ typed authoritative metadata refresh. Daemon-owned PTY architecture
 specification is complete, including ownership, byte transport, environment,
 resize, attach/detach, single-writer, termination, scrollback, copy/search,
 paste, recovery, and security semantics. The typed PTY session model is active
-next.
+and now complete with checked identity/context/lifecycle, dimensions, bounded
+scrollback metadata, live ownership, exit state, viewers, and epoch-protected
+single-writer control. The daemon-owned Unix PTY runner is active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

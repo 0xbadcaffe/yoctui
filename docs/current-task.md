@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** PTY-MODEL-001
-**Title:** Add typed PTY session model
+**ID:** PTY-RUNNER-001
+**Title:** Implement daemon-owned Unix PTY runner
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add pure typed PTY session state with stable session ID and name, typed kind and
-command identity, validated cwd/workspace ownership, lifecycle and exit state,
-bounded dimensions and scrollback metadata, live process-group identity,
-attached viewers and one writer lease, restartability, and checked reducer
-transitions.
+Implement a daemon-owned Unix PTY runner using the typed session model. Own the
+master and child process group, carry interactive raw bytes in both directions,
+apply validated resize and terminal modes, bound output and queues, support
+graceful then forced cancellation, reap children and descendants, and report
+typed lifecycle/output/exit/loss events without UI dependencies.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model pty_session
+cargo test -p yoctui-bitbake pty_runner
 ```

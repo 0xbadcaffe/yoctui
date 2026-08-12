@@ -3068,18 +3068,18 @@ notes = "Architecture and UI specifications now define daemon ownership of PTY m
 id = "PTY-MODEL-001"
 milestone = "M11"
 title = "Add typed PTY session model"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 415
 required = true
 depends_on = ["PTY-SPEC-001", "DAEMON-STATE-001"]
 verify = ["cargo test -p yoctui-model pty_session"]
-notes = "Model stable IDs, names, kinds, cwd, command identity, lifecycle, dimensions, clients, process groups, bounded scrollback metadata, exits, restartability, and workspace context."
+notes = "The pure model now validates stable nonzero IDs, bounded names, typed kinds and exact command identity, workspace-scoped cwd, dimensions, restartability and live-only process groups. Checked transitions cover start/run/terminate/exit/loss, bounded monotonic scrollback metadata, viewers, single-writer epoch leases, detach release and writer-only resize; terminal states clear all live ownership honestly."
 
 [[task]]
 id = "PTY-RUNNER-001"
 milestone = "M11"
 title = "Implement daemon-owned Unix PTY runner"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 416
 required = true
 depends_on = ["PTY-MODEL-001"]
