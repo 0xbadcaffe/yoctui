@@ -1688,6 +1688,10 @@ pub enum MaintenanceDialog {
         validation_error: Option<String>,
     },
     PrServiceForm(Box<MaintenancePrServiceDraft>),
+    LockedCacheToml {
+        editor: PopupEditor,
+        validation_error: Option<String>,
+    },
     LockedCacheForm(Box<MaintenanceLockedCacheDraft>),
     BuildHistoryForm(Box<MaintenanceBuildHistoryDraft>),
     GitArchiveForm(Box<MaintenanceGitArchiveDraft>),
@@ -1804,6 +1808,7 @@ pub enum MaintenanceAction {
     UpdatePrServiceForm(Box<MaintenancePrServiceDraft>),
     ConfirmPrServiceForm(Box<MaintenancePrServiceDraft>),
     OpenLockedCacheForm,
+    ConfirmLockedCacheToml(String),
     UpdateLockedCacheForm(Box<MaintenanceLockedCacheDraft>),
     ConfirmLockedCacheForm(Box<MaintenanceLockedCacheDraft>),
     OpenBuildHistoryForm,
@@ -2460,12 +2465,68 @@ pub fn update_maintenance(
             if let Some(snapshot) = state.capability.snapshot()
                 && let Ok(draft) = MaintenanceLockedCacheDraft::from_metadata(&snapshot.metadata)
             {
+                let mut editor = PopupEditor::new(format!(
+                    "# locked-signature cache request\n# Native LSB (read-only): {}\nlocked_signatures = \"\"\ninput_cache = \"\"\noutput_cache = \"\"\nfilter = \"\"\n",
+                    draft.native_lsb,
+                ));
+                let _ = editor.select_toml_value("locked_signatures");
                 return MaintenanceTransition {
                     dialog: MaintenanceDialogUpdate::Open(Box::new(
-                        MaintenanceDialog::LockedCacheForm(Box::new(draft)),
+                        MaintenanceDialog::LockedCacheToml {
+                            editor,
+                            validation_error: None,
+                        },
                     )),
                     ..MaintenanceTransition::none()
                 };
+            }
+        }
+        MaintenanceAction::ConfirmLockedCacheToml(document) => {
+            let parsed = (|| {
+                let fields = popup_toml_fields(&document)?;
+                let get = |key: &str| {
+                    fields
+                        .get(key)
+                        .cloned()
+                        .ok_or_else(|| format!("Missing `{key}`."))
+                };
+                let snapshot = state
+                    .capability
+                    .snapshot()
+                    .ok_or_else(|| "Locked-cache capability is unavailable.".to_owned())?;
+                let mut draft = MaintenanceLockedCacheDraft::from_metadata(&snapshot.metadata)
+                    .map_err(str::to_owned)?;
+                draft.locked_signatures = get("locked_signatures")?;
+                draft.input_cache = get("input_cache")?;
+                draft.output_cache = get("output_cache")?;
+                draft.filter = get("filter")?;
+                draft.request().map_err(str::to_owned)
+            })();
+            match parsed {
+                Ok(request) => {
+                    let Some(capability_request) = state.capability.request() else {
+                        return MaintenanceTransition::none();
+                    };
+                    return MaintenanceTransition {
+                        effect: Some(MaintenanceEffect::PreviewLockedSignatureCache {
+                            capability_request,
+                            request,
+                        }),
+                        dialog: MaintenanceDialogUpdate::Close,
+                        notification: None,
+                    };
+                }
+                Err(message) => {
+                    return MaintenanceTransition {
+                        dialog: MaintenanceDialogUpdate::Open(Box::new(
+                            MaintenanceDialog::LockedCacheToml {
+                                editor: PopupEditor::new(document),
+                                validation_error: Some(message),
+                            },
+                        )),
+                        ..MaintenanceTransition::none()
+                    };
+                }
             }
         }
         MaintenanceAction::UpdateLockedCacheForm(draft) if draft.is_bounded() => {
@@ -3594,30 +3655,27 @@ timeout = 45
         let MaintenanceDialogUpdate::Open(dialog) = transition.dialog else {
             panic!("locked-cache form did not open");
         };
-        let MaintenanceDialog::LockedCacheForm(mut draft) = *dialog else {
+        let MaintenanceDialog::LockedCacheToml { editor, .. } = *dialog else {
             panic!("wrong locked-cache dialog");
         };
-        assert_eq!(draft.native_lsb, "ubuntu");
-        assert_eq!(
-            draft.field.cycle(false),
-            MaintenanceLockedCacheField::InputCache
-        );
+        assert_eq!(editor.selected_text(), Some(""));
+        assert!(editor.text.contains("# Native LSB (read-only): ubuntu"));
         let invalid = update_maintenance(
             &mut state,
-            MaintenanceAction::ConfirmLockedCacheForm(draft.clone()),
+            MaintenanceAction::ConfirmLockedCacheToml(editor.text),
         );
         assert!(matches!(
             invalid.dialog,
             MaintenanceDialogUpdate::Open(dialog)
-                if matches!(*dialog, MaintenanceDialog::LockedCacheForm(ref draft) if draft.validation.is_some())
+                if matches!(*dialog, MaintenanceDialog::LockedCacheToml { validation_error: Some(_), .. })
         ));
 
-        draft.locked_signatures = "/build/conf/locked-sigs.inc".into();
-        draft.input_cache = "/cache/input".into();
-        draft.output_cache = "/cache/release".into();
-        draft.filter = "/build/conf/locked-filter.inc".into();
-        let valid =
-            update_maintenance(&mut state, MaintenanceAction::ConfirmLockedCacheForm(draft));
+        let valid = update_maintenance(
+            &mut state,
+            MaintenanceAction::ConfirmLockedCacheToml(
+                "locked_signatures = \"/build/conf/locked-sigs.inc\"\ninput_cache = \"/cache/input\"\noutput_cache = \"/cache/release\"\nfilter = \"/build/conf/locked-filter.inc\"\n".into(),
+            ),
+        );
         assert!(matches!(
             valid.effect,
             Some(MaintenanceEffect::PreviewLockedSignatureCache {

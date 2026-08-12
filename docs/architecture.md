@@ -709,6 +709,11 @@ roots, and evidence, then runs shell-free commands with bounded output. The
 optional adapter reports pull-request, error-report, repo-manifest, and Toaster
 capability without network or lifecycle side effects.
 
+Locked-cache popup validation reconstructs the native LSB identity from current
+capability metadata and accepts only typed path fields from the shared editor.
+The established adapter preview, changed-evidence detection, and separate
+destructive confirmation remain downstream requirements.
+
 Service diagnostics cross the boundary as typed endpoint-role, local/remote,
 reachability, PID, and executable-name records rather than raw process or
 socket text. The adapter bounds an explicit process-root scan and records

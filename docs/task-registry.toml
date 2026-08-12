@@ -2745,18 +2745,18 @@ notes = "PR-service import/export now use operation-specific shared PopupEditor 
 id = "UX-POPUP-OPS-MAINT-LOCKED-001"
 milestone = "M8"
 title = "Move Maintenance locked-cache form into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 164
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-SERVICE-001"]
 verify = ["cargo test -p yoctui-model maintenance_release", "cargo test -p yoctui-app maintenance_release_locked", "cargo test -p yoctui-ui maintenance_release_locked", "cargo check -p yoctui"]
-notes = "Migrate locked-signature cache input/output/filter editing while retaining changed-evidence and exact native preview gates."
+notes = "Locked-cache path and filter editing now uses the shared PopupEditor; native LSB remains capability-owned and exact preview, changed-evidence, and destructive confirmation gates remain intact."
 
 [[task]]
 id = "UX-POPUP-OPS-MAINT-HISTORY-001"
 milestone = "M8"
 title = "Move Maintenance build-history form into a TOML popup"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 165
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-LOCKED-001"]

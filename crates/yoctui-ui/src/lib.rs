@@ -851,6 +851,10 @@ pub fn render(frame: &mut Frame, app: &App) {
                 editor,
                 validation_error,
             )),
+            MaintenanceDialog::LockedCacheToml {
+                editor,
+                validation_error,
+            } => Some(("Locked cache.toml", editor, validation_error)),
             _ => None,
         }
     {
@@ -9443,6 +9447,9 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
         MaintenanceDialog::PrServiceToml { .. } => {
             unreachable!("PR service forms use the shared editor")
         }
+        MaintenanceDialog::LockedCacheToml { .. } => {
+            unreachable!("locked-cache form uses the shared editor")
+        }
         MaintenanceDialog::ReadinessForm(draft) => (
             "Sstate readiness check",
             format!(
@@ -15293,30 +15300,22 @@ mod tests {
     #[test]
     fn maintenance_release_locked_workspace_renders_context_warning_and_validation_responsively() {
         let mut app = maintenance_workflow_ui_app();
-        let metadata = yoctui_model::MaintenanceMetadata {
-            native_lsb: Some("ubuntu-24.04".into()),
-            ..yoctui_model::MaintenanceMetadata::default()
-        };
-        let mut draft =
-            yoctui_model::MaintenanceLockedCacheDraft::from_metadata(&metadata).unwrap();
-        draft.locked_signatures = "/build/conf/locked-sigs.inc".into();
-        draft.input_cache = "/cache/input".into();
-        draft.output_cache = "/cache/release".into();
-        draft.filter = "/build/conf/filter.inc".into();
-        draft.validation = Some("input and output cache must differ".into());
+        let editor = yoctui_model::PopupEditor::new(
+            "# Native LSB (read-only): ubuntu-24.04\nlocked_signatures = \"/build/conf/locked-sigs.inc\"\ninput_cache = \"/cache/input\"\noutput_cache = \"/cache/release\"\nfilter = \"/build/conf/filter.inc\"\n".into(),
+        );
         app.dialogs.push_front(Dialog::Maintenance(Box::new(
-            MaintenanceDialog::LockedCacheForm(Box::new(draft)),
+            MaintenanceDialog::LockedCacheToml {
+                editor,
+                validation_error: Some("input and output cache must differ".into()),
+            },
         )));
         app.focus = FocusTarget::Dialog;
         for (width, height) in [(160, 40), (100, 26), (80, 24)] {
             let output = rendered_text(&app, width, height);
-            assert!(
-                output.contains("Locked-signature cache"),
-                "{width}: {output}"
-            );
+            assert!(output.contains("Locked cache.toml"), "{width}: {output}");
             assert!(output.contains("/cache/release"), "{width}: {output}");
             assert!(output.contains("ubuntu-24.04"), "{width}: {output}");
-            assert!(output.contains("may be replaced"), "{width}: {output}");
+            assert!(output.contains("Home/End line"), "{width}: {output}");
             assert!(
                 output.contains("input and output cache must differ"),
                 "{width}: {output}"

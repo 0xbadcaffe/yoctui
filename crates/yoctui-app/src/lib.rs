@@ -2132,6 +2132,15 @@ pub fn maintenance_dialog_action(dialog: &MaintenanceDialog, key: Input) -> Opti
             }
             input => popup_editor_action(editor.editing, input),
         },
+        MaintenanceDialog::LockedCacheToml { editor, .. } => match key {
+            Input::Enter => maintenance(MaintenanceAction::ConfirmLockedCacheToml(
+                editor.text.clone(),
+            )),
+            Input::Char('q') | Input::Esc if !editor.editing => {
+                maintenance(MaintenanceAction::CancelDialog)
+            }
+            input => popup_editor_action(editor.editing, input),
+        },
         MaintenanceDialog::ReadinessForm(draft) => {
             let mut next = (**draft).clone();
             next.validation = None;
@@ -3147,39 +3156,40 @@ mod tests {
             maintenance_workspace_action(MaintenanceView::Services, 3, Input::Char('l')),
             None
         );
-        let metadata = yoctui_model::MaintenanceMetadata {
-            native_lsb: Some("ubuntu".into()),
-            ..yoctui_model::MaintenanceMetadata::default()
-        };
-        let draft = yoctui_model::MaintenanceLockedCacheDraft::from_metadata(&metadata).unwrap();
+        let mut editor = yoctui_model::PopupEditor::new(
+            "locked_signatures = \"\"\ninput_cache = \"\"\noutput_cache = \"\"\nfilter = \"\"\n"
+                .into(),
+        );
+        editor.select_range(21, 21);
+        editor.editing = true;
         assert!(matches!(
             maintenance_dialog_action(
-                &MaintenanceDialog::LockedCacheForm(Box::new(draft.clone())),
+                &MaintenanceDialog::LockedCacheToml {
+                    editor: editor.clone(),
+                    validation_error: None,
+                },
                 Input::Char('/'),
             ),
-            Some(Action::Maintenance(MaintenanceAction::UpdateLockedCacheForm(next)))
-                if next.locked_signatures == "/"
+            Some(Action::EditActivePopup(PopupEditorCommand::Insert('/')))
         ));
         assert!(matches!(
             maintenance_dialog_action(
-                &MaintenanceDialog::LockedCacheForm(Box::new(draft.clone())),
-                Input::Tab,
-            ),
-            Some(Action::Maintenance(MaintenanceAction::UpdateLockedCacheForm(next)))
-                if next.field == MaintenanceLockedCacheField::InputCache
-        ));
-        assert!(matches!(
-            maintenance_dialog_action(
-                &MaintenanceDialog::LockedCacheForm(Box::new(draft.clone())),
+                &MaintenanceDialog::LockedCacheToml {
+                    editor: editor.clone(),
+                    validation_error: None,
+                },
                 Input::Enter,
             ),
-            Some(Action::Maintenance(
-                MaintenanceAction::ConfirmLockedCacheForm(_)
-            ))
+            Some(Action::Maintenance(MaintenanceAction::ConfirmLockedCacheToml(document)))
+                if document == editor.text
         ));
+        editor.editing = false;
         assert_eq!(
             maintenance_dialog_action(
-                &MaintenanceDialog::LockedCacheForm(Box::new(draft)),
+                &MaintenanceDialog::LockedCacheToml {
+                    editor,
+                    validation_error: None,
+                },
                 Input::Esc,
             ),
             Some(Action::Maintenance(MaintenanceAction::CancelDialog))

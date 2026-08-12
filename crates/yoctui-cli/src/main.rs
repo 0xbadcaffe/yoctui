@@ -5828,6 +5828,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             yoctui_model::MaintenanceDialog::ReadinessToml { editor, .. }
                                 | yoctui_model::MaintenanceDialog::CleanupToml { editor, .. }
                                 | yoctui_model::MaintenanceDialog::PrServiceToml { editor, .. }
+                                | yoctui_model::MaintenanceDialog::LockedCacheToml { editor, .. }
                                 if editor.editing
                         )
                 ) {
