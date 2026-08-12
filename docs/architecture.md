@@ -1581,6 +1581,80 @@ viewers render/crop the authoritative terminal state without fighting the
 size. Daemon-global operations such as BitBake restart additionally report all
 affected clients/jobs before confirmation.
 
+### Daemon-owned PTY session contract
+
+The daemon owns each PTY master, child and process group, terminal-emulator
+state, authoritative dimensions, bounded scrollback, exit status, and session
+metadata. The interactive client never inherits or proxies the master file
+descriptor. Closing, crashing, or detaching the last client removes a viewer;
+it does not signal the child. Each session has a daemon-allocated stable,
+non-reused ID plus a validated bounded display name and typed kind (build/source
+shell, layer/recipe/devtool context, SDK/native shell, devshell, menuconfig, or
+another registered interactive workflow). Command identity is a typed workflow
+and exact executable/argument identity, not an arbitrary project-profile shell
+string.
+
+The daemon opens a Unix PTY, creates a new owned child process group/session,
+sets the slave as controlling terminal, applies the initial window size and
+terminal modes, and closes unrelated descriptors. Working directories must be
+absolute, canonical, non-symlink-resolved typed workspace locations authorized
+by the workflow. Environment comes from the already verified build or SDK
+environment plus a small explicit terminal allowlist/override; project profile
+loading never sources files or executes hooks. Secrets and full environments
+are neither broadcast nor persisted. Child PID/process-group identity is live
+daemon state only.
+
+PTY transport uses versioned typed commands and events carrying stable session
+ID, monotonically ordered output sequence, writer lease epoch, and bounded byte
+chunks. Input and output are terminal bytes, not presumed UTF-8; the emulator
+retains decoded cells and replacement behavior while raw bytes remain bounded
+and available only as needed for terminal fidelity. IPC frame, chunk, queue,
+scrollback, session-count, and terminal-dimension limits apply before
+allocation. Backpressure produces explicit dropped-output/refresh-required
+metadata; it never creates an unbounded queue. A client recovering from an
+event gap requests a consistent emulator screen plus bounded scrollback
+snapshot and resumes after its watermark.
+
+Resize is a typed, range-checked command. Only the current writer may change
+the authoritative rows and columns; the daemon applies `TIOCSWINSZ` to the PTY
+and signals the foreground process group as the platform requires. Viewers crop
+or letterbox locally and do not race dimensions. Attaching adds a viewer and
+returns the current emulator/screen, scrollback bounds, lifecycle, dimensions,
+and writer identity. Detaching removes that viewer and releases its writer
+lease without closing the session. Client EOF, SSH loss, or normal UI exit has
+the same detach semantics. Reattach to a running or exited session restores its
+current or final terminal state; recovered metadata whose process cannot be
+proved becomes `Lost`, never `Running`.
+
+Many clients may view one session, but exactly one may write. Control is
+acquired explicitly against the current epoch, exposes the writer client
+identity to all viewers, and is released on explicit relinquish, disconnect,
+lease timeout, session exit, or daemon restart. Stale-epoch input and resize are
+rejected. Input from two clients is never merged. A prefix command is consumed
+client-side before PTY input so detach, pane navigation, help, and control
+actions cannot leak into the terminal application; prefix timeout and literal
+prefix forwarding are defined by the later keyboard task.
+
+Normal close sends the typed workflow's graceful termination signal to the
+owned foreground/process group, waits a configured bounded interval, then
+requires a separate forced-termination action or explicit policy before
+`SIGKILL`. Session kill and other destructive operations use Yoctui preview and
+confirmation rules. Child exit closes the slave, drains bounded remaining
+output, records exit/signal status, freezes the final emulator state, releases
+control, and reaps every owned child. Daemon shutdown applies its explicit
+session policy; daemon crash recovery marks an unrecoverable PTY `Lost`.
+
+Scrollback is daemon-owned and bounded by lines, cells, and bytes. Search query,
+match selection, viewport, and copy-mode cursor are client-local; the daemon
+serves bounded text/cell ranges from the session snapshot and never writes the
+host clipboard. Copy uses the existing client clipboard effect. Paste is
+accepted only from the current writer, is byte- and rate-bounded, and is sent
+as literal terminal input without shell interpretation. When the emulator says
+bracketed paste is enabled, the daemon wraps the payload with the standard
+terminal markers; otherwise it sends the literal payload. NUL/control bytes
+outside explicitly supported terminal input and oversized payloads are
+rejected. Profiles cannot provide automatic paste or startup keystrokes.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only

@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** PTY-SPEC-001
-**Title:** Specify daemon-owned PTY session architecture
+**ID:** PTY-MODEL-001
+**Title:** Add typed PTY session model
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Specify daemon ownership of PTYs, terminal emulation, process groups, validated
-environment and working directory, stable session identity and dimensions,
-bounded byte input/output and scrollback, resize, attach/detach and multi-client
-semantics, termination, copy/search modes, and paste policy. Define the boundary
-before runner or UI implementation.
+Add pure typed PTY session state with stable session ID and name, typed kind and
+command identity, validated cwd/workspace ownership, lifecycle and exit state,
+bounded dimensions and scrollback metadata, live process-group identity,
+attached viewers and one writer lease, restartability, and checked reducer
+transitions.
 
 ## Verification
 
 ```bash
-./scripts/check-docs.sh
+cargo test -p yoctui-model pty_session
 ```

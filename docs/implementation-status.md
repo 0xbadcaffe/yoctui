@@ -219,7 +219,10 @@ environment execution, bounded output, deadlines, process-group cancellation,
 and typed outcomes. Controlled BitBake restart is complete with exact active-job
 confirmation, stale-state rejection, bounded controller orchestration, and a
 typed authoritative metadata refresh. Daemon-owned PTY architecture
-specification is active next.
+specification is complete, including ownership, byte transport, environment,
+resize, attach/detach, single-writer, termination, scrollback, copy/search,
+paste, recovery, and security semantics. The typed PTY session model is active
+next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

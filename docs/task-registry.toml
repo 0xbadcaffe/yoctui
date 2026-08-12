@@ -3057,18 +3057,18 @@ notes = "The pure model derives a bounded affected-work preview from authoritati
 id = "PTY-SPEC-001"
 milestone = "M11"
 title = "Specify daemon-owned PTY session architecture"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 414
 required = true
 depends_on = ["DAEMON-SPEC-001"]
 verify = ["./scripts/check-docs.sh"]
-notes = "Define PTY/process-group/environment/cwd/session identity/dimensions/input-output/scrollback/resize/attach/detach/multi-client/termination/copy-search/paste policies."
+notes = "Architecture and UI specifications now define daemon ownership of PTY masters, child groups, emulator state, dimensions and bounded scrollback; stable typed sessions and trusted environments/cwds; byte-safe ordered transport and recovery snapshots; single-writer multi-client attach/detach/resize; honest exit/loss and TERM/forced termination; client-local copy/search; bounded literal bracketed paste; prefix and terminal-mouse boundaries."
 
 [[task]]
 id = "PTY-MODEL-001"
 milestone = "M11"
 title = "Add typed PTY session model"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 415
 required = true
 depends_on = ["PTY-SPEC-001", "DAEMON-STATE-001"]

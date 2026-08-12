@@ -2557,6 +2557,31 @@ them. Scope, selector, parallelism, verbosity, and network policy remain
 editable and are validated before the existing launch confirmation. The popup
 initially selects `scope` for immediate keyboard replacement and shows typed
 validation failures above the persistent shortcut row.
+
+### Persistent terminal-session interaction
+
+Terminal sessions render the daemon-owned emulator screen and bounded
+scrollback. Entering a session attaches as a viewer; typing, paste, terminal
+mouse reports, and resize are enabled only after the client visibly owns the
+single writer lease. Other attached clients remain read-only and show the
+writer identity. Taking control is explicit, and loss of the client or SSH
+connection releases control without terminating the session.
+
+The configured prefix returns input handling to Yoctui for detach, pane/session
+navigation, help, and later split commands; those keys are not forwarded to the
+terminal application unless the literal-prefix route is chosen. Detach and
+normal client exit leave daemon sessions running. Reattach restores the current
+screen, dimensions, lifecycle, and bounded scrollback. Exited and Lost sessions
+remain distinguishable, and Lost never implies a surviving process.
+
+Copy/search mode is client-local and operates on bounded daemon-provided screen
+and scrollback ranges; copy uses the normal clipboard effect. Paste requires
+writer ownership, is bounded, and is sent literally, using bracketed-paste
+markers only when the terminal application enabled that mode. Session close or
+kill shows the exact session/process-group effect and follows normal destructive
+confirmation policy. Keyboard routes remain mandatory; terminal mouse input is
+forwarded only while the session is focused, writer-owned, and the application
+has requested mouse reporting.
 Test result import uses `Test result import.toml` with one normalized absolute
 `root`, initially selected for immediate replacement, preserving the existing
 bounded typed import operation.
