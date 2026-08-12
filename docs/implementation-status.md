@@ -151,7 +151,10 @@ their typed apply/review gates. Configuration and BBMASK now use the same state,
 key, cursor/selection, and clipboard paths while retaining allowlisted previews
 and explicit writes. Build-target editing now shares cursor, selection,
 navigation, and clipboard behavior while its requested task remains read-only
-and its build confirmation remains mandatory; Wic creation migration is active.
+and its build confirmation remains mandatory. Wic creation now shares the
+editor path, selects its output directory, and reserves responsive validation
+space while retaining all typed Wic preview gates; SDK publication migration is
+active.
 
 ## Rules
 

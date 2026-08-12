@@ -5806,7 +5806,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::BuildTarget { editor, .. }) if editor.editing => {
                         Some(Action::AppendBuildTarget as fn(char) -> Action)
                     }
-                    Some(Dialog::WicCreateTomlEditor { editing: true, .. }) => {
+                    Some(Dialog::WicCreateTomlEditor { editor, .. }) if editor.editing => {
                         Some(Action::AppendWicCreateTomlEditor as fn(char) -> Action)
                     }
                     Some(Dialog::SdkPublishTomlEditor { editing: true, .. }) => {
@@ -6450,29 +6450,20 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if let Some(effect) = effect {
                         let _ = test_coordinator.handle_effect(&mut app, effect).await;
                     }
-                } else if let Some(Dialog::WicCreateTomlEditor { editing, .. }) =
+                } else if let Some(Dialog::WicCreateTomlEditor { editor, .. }) =
                     app.active_dialog().cloned()
                 {
-                    let action = if editing {
-                        match input {
-                            Input::Esc => Some(Action::ToggleWicCreateTomlEditor),
-                            Input::Enter => Some(Action::PreviewWicCreate),
-                            Input::Backspace => Some(Action::BackspaceWicCreateTomlEditor),
-                            Input::Char(character) => {
-                                Some(Action::AppendWicCreateTomlEditor(character))
-                            }
-                            _ => None,
+                    let action = match input {
+                        Input::Enter => Some(Action::PreviewWicCreate),
+                        Input::Char('q') | Input::Esc if !editor.editing => {
+                            Some(Action::CancelWicCreate)
                         }
-                    } else {
-                        match input {
-                            Input::Char('i') => Some(Action::ToggleWicCreateTomlEditor),
-                            Input::Char('q') | Input::Esc => Some(Action::CancelWicCreate),
-                            Input::Enter => Some(Action::PreviewWicCreate),
-                            _ => None,
-                        }
+                        input => popup_editor_action(editor.editing, input),
                     };
-                    if let Some(action) = action {
-                        let _ = update(&mut app, action);
+                    if let Some(Effect::CopyToClipboard(content)) =
+                        action.and_then(|action| update(&mut app, action))
+                    {
+                        copy_to_clipboard(&mut app, content).await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::WicCreate(_))) {
                     let editing = app.active_dialog().is_some_and(

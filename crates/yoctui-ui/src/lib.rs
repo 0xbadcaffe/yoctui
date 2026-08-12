@@ -686,32 +686,17 @@ pub fn render(frame: &mut Frame, app: &App) {
     } else if let Some(Dialog::QemuCancellationConfirmation(id)) = app.active_dialog() {
         qemu_cancellation_confirmation(frame, app, *id, area);
     } else if let Some(Dialog::WicCreateTomlEditor {
-        content,
-        editing,
+        editor,
         validation_error,
     }) = app.active_dialog()
     {
-        let popup = Rect::new(
-            area.width / 8,
-            area.height / 6,
-            area.width * 3 / 4,
-            area.height * 2 / 3,
-        );
-        clear_popup(frame, app, popup);
-        let error = validation_error
-            .as_deref()
-            .map_or(String::new(), |error| format!("\nValidation: {error}"));
-        frame.render_widget(
-            Paragraph::new(format!(
-                "{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.{}",
-                content,
-                if *editing { "_" } else { "" },
-                if *editing { "INSERT" } else { "NORMAL" },
-                error,
-            ))
-            .block(Block::default().title(format!("Wic create.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL))
-            .wrap(Wrap { trim: false }),
-            popup,
+        toml_popup_editor(
+            frame,
+            app,
+            area,
+            "Wic create.toml",
+            editor,
+            validation_error.as_deref(),
         );
     } else if let Some(Dialog::WicCreate(dialog)) = app.active_dialog() {
         wic_create_dialog(frame, app, dialog, area);
@@ -4601,24 +4586,41 @@ fn toml_popup_editor(
     );
     clear_popup(frame, app, popup);
     let mode = if editor.editing { "INSERT" } else { "NORMAL" };
-    let error = validation_error.map_or_else(String::new, |error| format!("\nValidation: {error}"));
     let content = popup_editor_text(editor);
     let body = format!(
-        "{content}\n{mode}: i inserts, e changes selected value, Enter saves/previews, q closes.\nInsert: arrows/Home/End move, type/paste replace selection, Backspace deletes, Esc normal.{error}",
+        "{content}\n{mode}: i inserts, e changes selected value, Enter saves/previews, q closes.\nInsert: arrows/Home/End move, type/paste replace selection, Backspace deletes, Esc normal.",
     );
     let block = Block::default()
         .title(format!("{title} — {mode}"))
         .borders(Borders::ALL);
     let inner = block.inner(popup);
     frame.render_widget(block, popup);
-    let rows = Layout::vertical([Constraint::Min(0), Constraint::Length(3)]).split(inner);
+    let rows = Layout::vertical(if validation_error.is_some() {
+        vec![
+            Constraint::Min(0),
+            Constraint::Length(2),
+            Constraint::Length(3),
+        ]
+    } else {
+        vec![Constraint::Min(0), Constraint::Length(3)]
+    })
+    .split(inner);
     frame.render_widget(Paragraph::new(body).wrap(Wrap { trim: false }), rows[0]);
+    let shortcuts = if let Some(error) = validation_error {
+        frame.render_widget(
+            Paragraph::new(format!("Validation: {error}")).wrap(Wrap { trim: false }),
+            rows[1],
+        );
+        rows[2]
+    } else {
+        rows[1]
+    };
     frame.render_widget(
         Paragraph::new(
             "i insert  e change value  Enter save/preview  Esc normal  q close\nHome/End line  Ctrl+C copy  Ctrl+V paste",
         )
         .wrap(Wrap { trim: false }),
-        rows[1],
+        shortcuts,
     );
 }
 
@@ -11488,18 +11490,22 @@ mod tests {
             let output = rendered_text(&app, width, height);
             assert!(output.contains("Wic create.toml"), "{output}");
             assert!(output.contains("machine = \"qemux86-64\""), "{output}");
+            assert!(output.contains("⟦/deploy/qemux86-64⟧▏"), "{output}");
+            assert!(output.contains("Ctrl+V paste"), "{output}");
         }
         assert_eq!(app.focus, FocusTarget::Dialog);
         let _ = yoctui_model::update(&mut app, yoctui_model::Action::ToggleWicCreateTomlEditor);
         assert!(rendered_text(&app, 80, 24).contains("INSERT"));
-        if let Some(Dialog::WicCreateTomlEditor { content, .. }) = app.active_dialog_mut() {
-            *content = "machine = \"qemux86-64\"\nimage = \"core-image-minimal\"\nkickstart = \"directdisk\"\noutput_directory = \"relative-output\"\ngenerate_bmap = true\ncompression = \"none\"\n".into();
+        if let Some(Dialog::WicCreateTomlEditor { editor, .. }) = app.active_dialog_mut() {
+            editor.text = "machine = \"qemux86-64\"\nimage = \"core-image-minimal\"\nkickstart = \"directdisk\"\noutput_directory = \"relative-output\"\ngenerate_bmap = true\ncompression = \"none\"\n".into();
+            editor.cursor = editor.text.len();
         }
         let _ = yoctui_model::update(&mut app, yoctui_model::Action::PreviewWicCreate);
         assert!(rendered_text(&app, 80, 24).contains("Validation:"));
         let _ = yoctui_model::update(&mut app, yoctui_model::Action::DismissNotification);
-        if let Some(Dialog::WicCreateTomlEditor { content, .. }) = app.active_dialog_mut() {
-            *content = "machine = \"qemux86-64\"\nimage = \"core-image-minimal\"\nkickstart = \"directdisk\"\noutput_directory = \"/deploy/qemux86-64\"\ngenerate_bmap = true\ncompression = \"none\"\n".into();
+        if let Some(Dialog::WicCreateTomlEditor { editor, .. }) = app.active_dialog_mut() {
+            editor.text = "machine = \"qemux86-64\"\nimage = \"core-image-minimal\"\nkickstart = \"directdisk\"\noutput_directory = \"/deploy/qemux86-64\"\ngenerate_bmap = true\ncompression = \"none\"\n".into();
+            editor.cursor = editor.text.len();
         }
         let _ = yoctui_model::update(&mut app, yoctui_model::Action::PreviewWicCreate);
         for (width, height) in [(80, 24), (100, 30), (160, 40)] {

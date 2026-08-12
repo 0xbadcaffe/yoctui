@@ -1172,8 +1172,7 @@ pub enum Dialog {
     QemuCancellationConfirmation(QemuSessionId),
     WicCreate(WicCreateDialog),
     WicCreateTomlEditor {
-        content: String,
-        editing: bool,
+        editor: PopupEditor,
         validation_error: Option<String>,
     },
     WicCreateConfirmation(WicCreatePreview),
@@ -6264,14 +6263,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             ));
         }
         Action::EditActivePopup(command) => {
-            let editor = match app.active_dialog_mut() {
+            let (editor, validation_error) = match app.active_dialog_mut() {
                 Some(
                     Dialog::BuildEnvironmentEditor(editor)
                     | Dialog::BuildEnvironmentCloneEditor(editor)
                     | Dialog::BbmaskEdit(editor),
-                ) => editor,
-                Some(Dialog::ConfigEdit { editor, .. }) => editor,
-                Some(Dialog::BuildTarget { editor, .. }) => editor,
+                ) => (editor, None),
+                Some(Dialog::ConfigEdit { editor, .. }) => (editor, None),
+                Some(Dialog::BuildTarget { editor, .. }) => (editor, None),
+                Some(Dialog::WicCreateTomlEditor {
+                    editor,
+                    validation_error,
+                }) => (editor, Some(validation_error)),
                 _ => return None,
             };
             match command {
@@ -6282,9 +6285,17 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                         && editor.text.len() + character.len_utf8() <= 16_384 =>
                 {
                     editor.insert(&character.to_string());
+                    if let Some(error) = validation_error {
+                        *error = None;
+                    }
                 }
                 PopupEditorCommand::Insert(_) => {}
-                PopupEditorCommand::Backspace if editor.editing => editor.backspace(),
+                PopupEditorCommand::Backspace if editor.editing => {
+                    editor.backspace();
+                    if let Some(error) = validation_error {
+                        *error = None;
+                    }
+                }
                 PopupEditorCommand::Backspace => {}
                 PopupEditorCommand::Left => editor.left(),
                 PopupEditorCommand::Right => editor.right(),
@@ -6299,7 +6310,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 PopupEditorCommand::Copy => {
                     return Some(Effect::CopyToClipboard(editor.copy_selection_or_line()));
                 }
-                PopupEditorCommand::Paste if editor.editing => editor.paste(),
+                PopupEditorCommand::Paste if editor.editing => {
+                    editor.paste();
+                    if let Some(error) = validation_error {
+                        *error = None;
+                    }
+                }
                 PopupEditorCommand::Paste => {}
             }
         }
@@ -9433,48 +9449,47 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .unwrap_or(Path::new("/"))
                 .display()
                 .to_string();
+            let mut editor = PopupEditor::new(format!(
+                "# machine is authoritative and read-only\nmachine = \"{}\"\nimage = \"{}\"\nkickstart = \"{}\"\noutput_directory = \"{}\"\ngenerate_bmap = true\ncompression = \"none\"\n",
+                artifact.identity.machine,
+                artifact.identity.image,
+                kickstart.name,
+                output_directory,
+            ));
+            let _ = editor.select_toml_value("output_directory");
             open_dialog(
                 app,
                 Dialog::WicCreateTomlEditor {
-                    content: format!(
-                        "# machine is authoritative and read-only\nmachine = \"{}\"\nimage = \"{}\"\nkickstart = \"{}\"\noutput_directory = \"{}\"\ngenerate_bmap = true\ncompression = \"none\"\n",
-                        artifact.identity.machine,
-                        artifact.identity.image,
-                        kickstart.name,
-                        output_directory,
-                    ),
-                    editing: false,
+                    editor,
                     validation_error: None,
                 },
             );
         }
         Action::ToggleWicCreateTomlEditor => {
-            if let Some(Dialog::WicCreateTomlEditor { editing, .. }) = app.active_dialog_mut() {
-                *editing = !*editing;
+            if let Some(Dialog::WicCreateTomlEditor { editor, .. }) = app.active_dialog_mut() {
+                editor.editing = !editor.editing;
             }
         }
         Action::AppendWicCreateTomlEditor(character) => {
             if let Some(Dialog::WicCreateTomlEditor {
-                content,
-                editing,
+                editor,
                 validation_error,
             }) = app.active_dialog_mut()
-                && *editing
+                && editor.editing
                 && !character.is_control()
             {
-                content.push(character);
+                editor.insert(&character.to_string());
                 *validation_error = None;
             }
         }
         Action::BackspaceWicCreateTomlEditor => {
             if let Some(Dialog::WicCreateTomlEditor {
-                content,
-                editing,
+                editor,
                 validation_error,
             }) = app.active_dialog_mut()
-                && *editing
+                && editor.editing
             {
-                content.pop();
+                editor.backspace();
                 *validation_error = None;
             }
         }
@@ -9533,10 +9548,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::PreviewWicCreate => {
-            if let Some(Dialog::WicCreateTomlEditor { content, .. }) = app.active_dialog().cloned()
-            {
+            if let Some(Dialog::WicCreateTomlEditor { editor, .. }) = app.active_dialog().cloned() {
                 let result = (|| {
-                    let fields = popup_toml_fields(&content)?;
+                    let fields = popup_toml_fields(&editor.text)?;
                     let machine = fields.get("machine").cloned().ok_or("Missing `machine`.")?;
                     let image = fields.get("image").cloned().ok_or("Missing `image`.")?;
                     let kickstart_name = fields
@@ -19145,11 +19159,14 @@ mod tests {
         assert_eq!(app.focus, FocusTarget::Dialog);
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::WicCreateTomlEditor { content, editing: false, .. })
-                if content.contains("kickstart = \"configured\"")
+            Some(Dialog::WicCreateTomlEditor { editor, .. })
+                if !editor.editing
+                    && editor.text.contains("kickstart = \"configured\"")
+                    && editor.selected_text() == Some("/build/tmp/deploy/images/qemux86-64")
         ));
-        if let Some(Dialog::WicCreateTomlEditor { content, .. }) = app.active_dialog_mut() {
-            *content = "machine = \"qemux86-64\"\nimage = \"core-image-minimal\"\nkickstart = \"configured\"\noutput_directory = \"relative/output\"\ngenerate_bmap = true\ncompression = \"none\"\n".into();
+        if let Some(Dialog::WicCreateTomlEditor { editor, .. }) = app.active_dialog_mut() {
+            editor.text = "machine = \"qemux86-64\"\nimage = \"core-image-minimal\"\nkickstart = \"configured\"\noutput_directory = \"relative/output\"\ngenerate_bmap = true\ncompression = \"none\"\n".into();
+            editor.cursor = editor.text.len();
         }
         let _ = update(&mut app, Action::PreviewWicCreate);
         assert!(matches!(
