@@ -139,7 +139,10 @@ and explicit stale/ambiguous resolution without a command-string escape hatch.
 Safe optional loading and explicit generation now pass CLI and app tests with
 bounded TOML, schema validation, symlink rejection, atomic no-clobber writes,
 confirmed replacement, inert startup state, and typed generation effects.
-Profile rendering and interaction are next.
+Profile rendering and interaction now expose team-intent rows in Build
+environment with explicit resolution states, keyboard selection, authoritative
+favorite navigation, and preset-to-existing-confirmation routing. No profile
+selection starts work; real-Poky no-profile/with-profile validation is next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

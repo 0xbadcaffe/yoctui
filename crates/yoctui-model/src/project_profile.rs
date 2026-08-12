@@ -1,3 +1,4 @@
+use crate::Workspace;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{collections::BTreeSet, fmt};
 use thiserror::Error;
@@ -238,6 +239,129 @@ pub enum ProjectProfileState {
     Generating(ProjectProfile),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProjectProfileItemKind {
+    FavoriteRecipe(usize),
+    FavoriteImage(usize),
+    FavoriteLayer(usize),
+    BuildPreset(usize),
+    Workflow(usize),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProjectProfileItemStatus {
+    Resolved,
+    Stale(String),
+    Ambiguous(usize),
+    Unavailable(String),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProjectProfileItem {
+    pub kind: ProjectProfileItemKind,
+    pub label: String,
+    pub status: ProjectProfileItemStatus,
+}
+
+pub fn project_profile_items(
+    state: &ProjectProfileState,
+    workspace: &Workspace,
+    available_images: &[String],
+) -> Vec<ProjectProfileItem> {
+    let (ProjectProfileState::Loaded(profile)
+    | ProjectProfileState::GenerationPreview(profile)
+    | ProjectProfileState::Generating(profile)) = state
+    else {
+        return Vec::new();
+    };
+    let unavailable = workspace.recipes.is_empty() && workspace.layers.is_empty();
+    let status = |count: usize, reason: &str| match count {
+        _ if unavailable => ProjectProfileItemStatus::Unavailable(reason.into()),
+        0 => ProjectProfileItemStatus::Stale("not reported by BitBake".into()),
+        1 => ProjectProfileItemStatus::Resolved,
+        count => ProjectProfileItemStatus::Ambiguous(count),
+    };
+    let mut items = Vec::new();
+    for (index, identity) in profile.favorites.recipes.iter().enumerate() {
+        let count = workspace
+            .recipes
+            .iter()
+            .filter(|item| item.name == *identity)
+            .count();
+        items.push(ProjectProfileItem {
+            kind: ProjectProfileItemKind::FavoriteRecipe(index),
+            label: format!("Recipe favorite: {identity}"),
+            status: status(count, "recipe inventory unavailable"),
+        });
+    }
+    for (index, identity) in profile.favorites.images.iter().enumerate() {
+        let count = available_images
+            .iter()
+            .filter(|item| *item == identity)
+            .count();
+        items.push(ProjectProfileItem {
+            kind: ProjectProfileItemKind::FavoriteImage(index),
+            label: format!("Image favorite: {identity}"),
+            status: status(count, "image inventory unavailable"),
+        });
+    }
+    for (index, identity) in profile.favorites.layers.iter().enumerate() {
+        let count = workspace
+            .layers
+            .iter()
+            .filter(|item| item.name == *identity)
+            .count();
+        items.push(ProjectProfileItem {
+            kind: ProjectProfileItemKind::FavoriteLayer(index),
+            label: format!("Layer favorite: {identity}"),
+            status: status(count, "layer inventory unavailable"),
+        });
+    }
+    for (index, preset) in profile.build_presets.iter().enumerate() {
+        let counts = preset
+            .targets
+            .iter()
+            .map(|target| {
+                workspace
+                    .recipes
+                    .iter()
+                    .filter(|recipe| recipe.name == *target)
+                    .count()
+            })
+            .collect::<Vec<_>>();
+        let preset_status = if unavailable {
+            ProjectProfileItemStatus::Unavailable("recipe inventory unavailable".into())
+        } else if counts.contains(&0) {
+            ProjectProfileItemStatus::Stale(
+                "one or more targets are not reported by BitBake".into(),
+            )
+        } else if let Some(count) = counts.iter().find(|count| **count > 1) {
+            ProjectProfileItemStatus::Ambiguous(*count)
+        } else {
+            ProjectProfileItemStatus::Resolved
+        };
+        items.push(ProjectProfileItem {
+            kind: ProjectProfileItemKind::BuildPreset(index),
+            label: format!("Build preset: {}", preset.name),
+            status: preset_status,
+        });
+    }
+    for (index, workflow) in profile.workflows.iter().enumerate() {
+        items.push(ProjectProfileItem {
+            kind: ProjectProfileItemKind::Workflow(index),
+            label: format!("Workflow: {}", workflow.name),
+            status: if unavailable {
+                ProjectProfileItemStatus::Unavailable(
+                    "authoritative workspace inventory unavailable".into(),
+                )
+            } else {
+                ProjectProfileItemStatus::Resolved
+            },
+        });
+    }
+    items
+}
+
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum ProjectProfileError {
     #[error("unsupported project profile schema version {0}")]
@@ -337,6 +461,8 @@ fn validate_portable_path(value: &str) -> Result<(), ProjectProfileError> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{Layer, Recipe};
+    use std::path::PathBuf;
 
     fn profile() -> ProjectProfile {
         ProjectProfile {
@@ -435,5 +561,42 @@ mod tests {
             ambiguous,
             ProjectIdentityResolution::Ambiguous { .. }
         ));
+    }
+
+    #[test]
+    fn project_profile_items_resolve_only_against_authoritative_workspace() {
+        let profile = profile();
+        let state = ProjectProfileState::Loaded(profile);
+        let workspace = Workspace {
+            recipes: vec![
+                Recipe {
+                    name: "busybox".into(),
+                    ..Recipe::default()
+                },
+                Recipe {
+                    name: "core-image-minimal".into(),
+                    ..Recipe::default()
+                },
+            ],
+            layers: vec![Layer {
+                name: "meta-poky".into(),
+                path: PathBuf::from("/src/meta-poky"),
+                priority: Some(5),
+            }],
+            ..Workspace::default()
+        };
+        let items = project_profile_items(&state, &workspace, &["core-image-minimal".into()]);
+        assert!(
+            items
+                .iter()
+                .all(|item| matches!(item.status, ProjectProfileItemStatus::Resolved))
+        );
+
+        let stale = project_profile_items(&state, &Workspace::default(), &[]);
+        assert!(
+            stale
+                .iter()
+                .all(|item| matches!(item.status, ProjectProfileItemStatus::Unavailable(_)))
+        );
     }
 }

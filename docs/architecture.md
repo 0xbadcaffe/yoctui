@@ -1147,6 +1147,13 @@ manual navigation. A sequence pauses at each required user decision and never
 executes merely because the file was loaded. Unknown step kinds and stale or
 ambiguous inputs fail closed.
 
+`project_profile_items` derives renderable resolved, stale, ambiguous, and
+unavailable rows from profile intent plus the current authoritative workspace
+and image inventory. The reducer may navigate a resolved favorite or create
+the existing build-confirmation dialog for a resolved preset; it never emits a
+build effect from profile activation. Workflow rows remain inert until their
+typed steps are reviewed through the normal action-specific boundaries.
+
 Profile generation is a separate explicit typed effect. It serializes a
 minimal deterministic current-schema document to a reviewed destination using
 atomic replacement rules. Existing files require replacement confirmation.

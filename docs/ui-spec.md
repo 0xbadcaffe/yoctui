@@ -2786,3 +2786,13 @@ user-local session/configuration. The project profile cannot override CLI,
 environment, user-local safety preferences, current capability state, or
 BitBake metadata. The UI labels profile values as team intent and separately
 shows the currently resolved authoritative value.
+
+The Build environment workspace includes a `Project profile: team intent`
+section. `N`/`n` moves through favorites, presets, and workflows, and `p`
+previews or opens the selected resolved item. Each row is labelled `resolved`,
+`STALE`, `AMBIGUOUS`, or `UNAVAILABLE` with an exact reason. Recipe and layer
+favorites navigate to their existing authoritative selections; image favorites
+open Images. A resolved build preset opens the existing typed build
+confirmation and does not start a build. A workflow selection remains inert
+and requires explicit review of its typed steps. Unresolved entries cannot be
+activated. No profile shortcut bypasses existing confirmations.

@@ -2,18 +2,18 @@
 
 ## Task
 
-**ID:** PROFILE-UI-001
-**Title:** Render typed project profile workflows
+**ID:** PROFILE-LIVE-POKY-001
+**Title:** Validate project profiles on a real Poky workspace
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Expose project-profile favorites, typed presets, and workflows with explicit
-absent, invalid, stale, ambiguous, and unavailable states while preserving the
-normal Yoctui confirmation policies.
+Exercise both no-profile and explicitly created-profile paths against a fresh
+supported Poky workspace. Fixture-only results must not be presented as live
+compatibility evidence.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui project_profile
+./scripts/live-project-profile-poky.sh
 ```

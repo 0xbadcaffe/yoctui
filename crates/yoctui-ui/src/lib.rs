@@ -6738,8 +6738,48 @@ fn build_environment_workspace(frame: &mut Frame, app: &App, area: Rect) {
     } else {
         "\n\navailable images: locked until BitBake verification succeeds.".into()
     };
+    let profile = match &app.project_profile {
+        yoctui_model::ProjectProfileState::NotLoaded => "Project profile: not inspected".to_owned(),
+        yoctui_model::ProjectProfileState::Absent => "Project profile: none (optional)".to_owned(),
+        yoctui_model::ProjectProfileState::Invalid(message) => {
+            format!("Project profile: invalid\n! {message}")
+        }
+        state => {
+            let items =
+                yoctui_model::project_profile_items(state, &app.workspace, &app.available_images);
+            let rows = items
+                .iter()
+                .enumerate()
+                .map(|(index, item)| {
+                    let status = match &item.status {
+                        yoctui_model::ProjectProfileItemStatus::Resolved => "resolved".into(),
+                        yoctui_model::ProjectProfileItemStatus::Stale(reason) => {
+                            format!("STALE: {reason}")
+                        }
+                        yoctui_model::ProjectProfileItemStatus::Ambiguous(count) => {
+                            format!("AMBIGUOUS: {count} matches")
+                        }
+                        yoctui_model::ProjectProfileItemStatus::Unavailable(reason) => {
+                            format!("UNAVAILABLE: {reason}")
+                        }
+                    };
+                    format!(
+                        "{} {} — {status}",
+                        if index == app.project_profile_selection {
+                            ">"
+                        } else {
+                            " "
+                        },
+                        item.label
+                    )
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            format!("Project profile: team intent\n{rows}")
+        }
+    };
     let text = format!(
-        "Build environment\n\n{status}{draft}{images}\n\nChoose e to edit, c to clone Poky, or V to verify BitBake."
+        "Build environment\n\n{status}{draft}{images}\n\n{profile}\n\nChoose e to edit, c to clone Poky, or V to verify BitBake. N/n profile item | p preview/open."
     );
     frame.render_widget(
         Paragraph::new(text)
@@ -10306,6 +10346,45 @@ mod tests {
         assert!(output.contains("not configured"));
         assert!(output.contains("available images"));
         assert!(output.contains("verification"));
+    }
+
+    #[test]
+    fn project_profile_renders_team_intent_and_explicit_resolution_states() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::BuildEnvironment;
+        app.project_profile =
+            yoctui_model::ProjectProfileState::Loaded(yoctui_model::ProjectProfile {
+                schema_version: yoctui_model::PROJECT_PROFILE_SCHEMA_VERSION,
+                favorites: yoctui_model::ProjectFavorites {
+                    recipes: vec!["busybox".into(), "removed-recipe".into()],
+                    images: Vec::new(),
+                    layers: Vec::new(),
+                },
+                build_presets: Vec::new(),
+                workflows: Vec::new(),
+            });
+        app.workspace.recipes.push(yoctui_model::Recipe {
+            name: "busybox".into(),
+            ..yoctui_model::Recipe::default()
+        });
+        for (width, height) in [(160, 40), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Project profile: team intent"), "{output}");
+            assert!(output.contains("Recipe favorite: busybox"), "{output}");
+            if height >= 30 {
+                assert!(
+                    output.contains("STALE: not reported by BitBake"),
+                    "{output}"
+                );
+            }
+            assert!(output.contains("p preview/open"), "{output}");
+        }
+
+        app.project_profile =
+            yoctui_model::ProjectProfileState::Invalid("unsupported schema version 9".into());
+        let output = rendered_text(&app, 100, 30);
+        assert!(output.contains("Project profile: invalid"), "{output}");
+        assert!(output.contains("unsupported schema version 9"), "{output}");
     }
 
     #[test]

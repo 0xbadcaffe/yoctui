@@ -2835,18 +2835,18 @@ notes = "Configured startup loads optional bounded profiles inertly; invalid/sch
 id = "PROFILE-UI-001"
 milestone = "M10"
 title = "Render typed project profile workflows"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 303
 required = true
 depends_on = ["PROFILE-LOAD-001"]
 verify = ["cargo test -p yoctui-ui project_profile"]
-notes = "Expose favorites and typed presets with explicit stale/unavailable state and normal Yoctui confirmation policies."
+notes = "Build environment renders profile team intent with resolved/stale/ambiguous/unavailable rows; favorites navigate authoritatively, presets enter the existing build confirmation, workflows remain inert, and no selection starts work."
 
 [[task]]
 id = "PROFILE-LIVE-POKY-001"
 milestone = "M10"
 title = "Validate project profiles on a real Poky workspace"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 304
 required = true
 depends_on = ["PROFILE-UI-001"]

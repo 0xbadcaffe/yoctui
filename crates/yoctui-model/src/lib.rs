@@ -2517,6 +2517,7 @@ pub struct App {
     pub navigator_selection: usize,
     pub backend: String,
     pub project_profile: ProjectProfileState,
+    pub project_profile_selection: usize,
     pub build_environment: BuildEnvironmentState,
     pub build_environment_generation: u64,
     pub build_environment_draft: Option<BuildEnvironmentDraft>,
@@ -2638,6 +2639,7 @@ impl App {
             navigator_selection: 0,
             backend: "unknown".into(),
             project_profile: ProjectProfileState::NotLoaded,
+            project_profile_selection: 0,
             build_environment: BuildEnvironmentState::Connected(BuildEnvironmentProfile {
                 source_dir: PathBuf::from("/"),
                 build_dir: PathBuf::from("/"),
@@ -3339,6 +3341,10 @@ pub enum Action {
     },
     ProjectProfileGenerated(ProjectProfile),
     ProjectProfileGenerationFailed(String),
+    SelectProjectProfileItem {
+        delta: isize,
+    },
+    ActivateProjectProfileItem,
     Open(Screen),
     SelectNavigator {
         delta: isize,
@@ -6002,6 +6008,72 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some(format!("Project profile was not generated: {message}"));
             if let ProjectProfileState::Generating(profile) = &app.project_profile {
                 app.project_profile = ProjectProfileState::GenerationPreview(profile.clone());
+            }
+        }
+        Action::SelectProjectProfileItem { delta } => {
+            let count =
+                project_profile_items(&app.project_profile, &app.workspace, &app.available_images)
+                    .len();
+            app.project_profile_selection = if delta < 0 {
+                app.project_profile_selection
+                    .saturating_sub(delta.unsigned_abs())
+            } else {
+                app.project_profile_selection
+                    .saturating_add(delta as usize)
+                    .min(count.saturating_sub(1))
+            };
+        }
+        Action::ActivateProjectProfileItem => {
+            let items =
+                project_profile_items(&app.project_profile, &app.workspace, &app.available_images);
+            let item = items.get(app.project_profile_selection)?;
+            if !matches!(item.status, ProjectProfileItemStatus::Resolved) {
+                app.notification = Some(format!("{} is not currently resolved.", item.label));
+                return None;
+            }
+            let ProjectProfileState::Loaded(profile) = &app.project_profile else {
+                app.notification = Some("Project profile is not ready for activation.".into());
+                return None;
+            };
+            match item.kind {
+                ProjectProfileItemKind::BuildPreset(index) => {
+                    let preset = &profile.build_presets[index];
+                    replace_dialog(
+                        app,
+                        Dialog::RecipeTaskConfirmation(BuildRequest {
+                            targets: preset.targets.clone(),
+                            task: None,
+                            force: false,
+                        }),
+                    );
+                }
+                ProjectProfileItemKind::FavoriteRecipe(index) => {
+                    let identity = &profile.favorites.recipes[index];
+                    app.recipe_selection = app
+                        .workspace
+                        .recipes
+                        .iter()
+                        .position(|recipe| &recipe.name == identity)
+                        .unwrap_or(0);
+                    app.screen = Screen::Recipes;
+                }
+                ProjectProfileItemKind::FavoriteImage(_) => app.screen = Screen::Images,
+                ProjectProfileItemKind::FavoriteLayer(index) => {
+                    let identity = &profile.favorites.layers[index];
+                    app.layer_selection = app
+                        .workspace
+                        .layers
+                        .iter()
+                        .position(|layer| &layer.name == identity)
+                        .unwrap_or(0);
+                    app.screen = Screen::Layers;
+                }
+                ProjectProfileItemKind::Workflow(_) => {
+                    app.notification = Some(
+                        "Workflow selected. Review each typed step; loading never executes it."
+                            .into(),
+                    );
+                }
             }
         }
         Action::Open(s) => {
