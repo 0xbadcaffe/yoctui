@@ -95,6 +95,9 @@ use yoctui_ui::render;
 
 #[cfg(unix)]
 #[cfg_attr(not(test), allow(dead_code))]
+mod client_runtime;
+#[cfg(unix)]
+#[cfg_attr(not(test), allow(dead_code))]
 mod client_transport;
 mod maintenance_cli;
 #[cfg(unix)]
@@ -1167,6 +1170,8 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                         boot_id: record.boot_id.clone(),
                         capabilities: vec![
                             Capability::StateSnapshots,
+                            Capability::IncrementalEvents,
+                            Capability::EventReplay,
                             Capability::BackgroundJobs,
                             Capability::GracefulShutdown,
                         ],
@@ -1597,6 +1602,44 @@ async fn begin_build(
             false
         }
     }
+}
+
+#[cfg(unix)]
+async fn begin_runtime_build(
+    runtime: &mut Option<client_runtime::InteractiveDaemonRuntime>,
+    backend: &mut Box<dyn BitBakeBackend>,
+    app: &mut App,
+    build_jobs: &mut BuildJobCoordinator,
+    request: BuildRequest,
+) -> bool {
+    if let Some(runtime) = runtime.as_mut() {
+        match runtime.route_effect(app, &Effect::Start(request.clone())) {
+            Ok(client_runtime::RuntimeEffectRoute::Daemon(request_id)) => {
+                app.notification = Some(format!(
+                    "Build request {} submitted to the Yoctui daemon.",
+                    request_id.0
+                ));
+                return true;
+            }
+            Ok(client_runtime::RuntimeEffectRoute::ClientLocal) => {}
+            Err(error) => {
+                app.notification = Some(format!("Daemon build request was not sent: {error}"));
+                return false;
+            }
+        }
+    }
+    begin_build(backend, app, build_jobs, request).await
+}
+
+#[cfg(not(unix))]
+async fn begin_runtime_build(
+    _runtime: &mut Option<()>,
+    backend: &mut Box<dyn BitBakeBackend>,
+    app: &mut App,
+    build_jobs: &mut BuildJobCoordinator,
+    request: BuildRequest,
+) -> bool {
+    begin_build(backend, app, build_jobs, request).await
 }
 
 async fn begin_test_build(
@@ -6302,6 +6345,19 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     app.theme = theme;
     app.animation_speed = animation_speed;
     app.reduced_motion = reduced_motion;
+    #[cfg(unix)]
+    let mut daemon_runtime = match client_runtime::InteractiveDaemonRuntime::connect(
+        &mut app,
+        Duration::from_millis(250),
+    ) {
+        Ok(runtime) => Some(runtime),
+        Err(error) => {
+            app.notification = Some(format!(
+                "Daemon unavailable; interactive runtime is local: {error}"
+            ));
+            None
+        }
+    };
     if build_dir_configured && let Some(root) = project_profile_root(&build_dir) {
         let action = match load_project_profile(&root) {
             Ok(Some(profile)) => Action::ProjectProfileLoaded(profile),
@@ -6492,6 +6548,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         #[cfg(unix)]
         if termination_requested(&mut termination) {
             break;
+        }
+        #[cfg(unix)]
+        if let Some(runtime) = daemon_runtime.as_mut()
+            && let Err(error) = runtime.poll(&mut app)
+        {
+            app.notification = Some(format!("Daemon connection lost: {error}"));
+            daemon_runtime = None;
+            app.daemon.status = yoctui_model::ClientReplicaStatus::Disconnected;
         }
         poll_signature_operation(&mut app, &mut signature_operation).await;
         poll_package_operation(&mut app, &mut package_operation).await;
@@ -6970,8 +7034,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         .and_then(|action| update(&mut app, action));
                     if let Some(Effect::Start(request)) = effect {
                         let tracked = sdk_build_is_populate(&request);
-                        if begin_build(&mut backend, &mut app, &mut build_jobs, request.clone())
-                            .await
+                        if begin_runtime_build(
+                            &mut daemon_runtime,
+                            &mut backend,
+                            &mut app,
+                            &mut build_jobs,
+                            request.clone(),
+                        )
+                        .await
                             && tracked
                         {
                             pending_sdk_build = Some(request);
@@ -7760,7 +7830,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         _ => None,
                     };
                     if let Some(Effect::Start(request)) = effect {
-                        begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
+                        begin_runtime_build(
+                            &mut daemon_runtime,
+                            &mut backend,
+                            &mut app,
+                            &mut build_jobs,
+                            request,
+                        )
+                        .await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
                     let effect = match input {
@@ -7777,7 +7854,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         _ => None,
                     };
                     if let Some(Effect::Start(request)) = effect {
-                        begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
+                        begin_runtime_build(
+                            &mut daemon_runtime,
+                            &mut backend,
+                            &mut app,
+                            &mut build_jobs,
+                            request,
+                        )
+                        .await;
                     }
                 } else if let Some(Dialog::BuildTarget { editor, .. }) =
                     app.active_dialog().cloned()
@@ -7792,7 +7876,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let effect = action.and_then(|action| update(&mut app, action));
                     match effect {
                         Some(Effect::Start(request)) => {
-                            begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
+                            begin_runtime_build(
+                                &mut daemon_runtime,
+                                &mut backend,
+                                &mut app,
+                                &mut build_jobs,
+                                request,
+                            )
+                            .await;
                         }
                         Some(Effect::CopyToClipboard(content)) => {
                             copy_to_clipboard(&mut app, content).await;
@@ -8446,7 +8537,20 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                     let _ = update(&mut app, action);
                                 }
                             }
-                        } else if let Some(Effect::Cancel) = update(&mut app, action) {
+                        } else if let Some(effect @ Effect::Cancel) = update(&mut app, action) {
+                            #[cfg(unix)]
+                            if let Some(runtime) = daemon_runtime.as_mut() {
+                                match runtime.route_effect(&app, &effect) {
+                                    Ok(client_runtime::RuntimeEffectRoute::Daemon(_)) => continue,
+                                    Ok(client_runtime::RuntimeEffectRoute::ClientLocal) => {}
+                                    Err(error) => {
+                                        app.notification = Some(format!(
+                                            "Daemon cancellation was not sent: {error}"
+                                        ));
+                                        continue;
+                                    }
+                                }
+                            }
                             if let Some(job_action) = build_jobs.request_cancellation() {
                                 let _ = update(&mut app, job_action);
                             }
@@ -8639,6 +8743,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         if app.should_quit {
             break;
         }
+    }
+    #[cfg(unix)]
+    if let Some(runtime) = daemon_runtime.take()
+        && let Err(error) = runtime.detach(&mut app)
+    {
+        tracing::warn!(%error, "daemon detach failed during client shutdown");
     }
     if let Some(operation) = signature_operation.take() {
         operation.cancellation.cancel();

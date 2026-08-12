@@ -3186,15 +3186,37 @@ verify = ["cargo test -p yoctui-app client_replica", "cargo test -p yoctui-ui cl
 notes = "yoctui-app maps gap-checked protocol snapshots/events into a protocol-free ClientDaemonView carrying revision, instance, BitBake lifecycle, daemon job/PTY summaries, client count, logs and recovery warnings. Replacement and disconnect update only the daemon replica; screen, focus, Navigator selection, theme, dialogs/editors and other presentation fields remain client-local. The persistent header renders typed replica/BitBake/job/PTY health, with focused app and TestBackend tests plus full baseline passing."
 
 [[task]]
-id = "CLIENT-RUNTIME-001"
+id = "CLIENT-RUNTIME-BUILD-001"
 milestone = "M11"
-title = "Wire Ratatui runtime to daemon-owned execution"
+title = "Wire Ratatui attach runtime and daemon build routing"
+status = "DONE"
+priority = 424
+required = true
+depends_on = ["CLIENT-REPLICA-001"]
+verify = ["cargo test -p yoctui client_runtime", "cargo test -p yoctui-ui client_runtime"]
+notes = "Interactive startup attempts authenticated daemon attach, installs the snapshot, nonblocking-polls typed messages on every UI loop, keeps daemon health visible, routes ordinary BitBake build/cancel effects as correlated generation-checked daemon commands, and explicitly detaches on exit. Unavailable attach reports an honest local-runtime diagnostic pending standalone policy."
+
+[[task]]
+id = "CLIENT-RUNTIME-JOBS-001"
+milestone = "M11"
+title = "Move remaining interactive job families behind daemon actions"
 status = "IN_PROGRESS"
 priority = 424
 required = true
-depends_on = ["CLIENT-REPLICA-001", "BITBAKE-SERVER-001", "PTY-ATTACH-001"]
+depends_on = ["CLIENT-RUNTIME-BUILD-001"]
+verify = ["cargo test -p yoctui client_runtime_jobs"]
+notes = "Reuse typed actions/effects to move Devtool, SDK, QEMU, Wic, testing, QA, security, maintenance and utility runner ownership out of the interactive client; closing the client must not cancel daemon-owned work."
+
+[[task]]
+id = "CLIENT-RUNTIME-001"
+milestone = "M11"
+title = "Wire Ratatui runtime to daemon-owned execution"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-BUILD-001", "CLIENT-RUNTIME-JOBS-001", "BITBAKE-SERVER-001", "PTY-ATTACH-001"]
 verify = ["cargo test -p yoctui client_runtime", "cargo test -p yoctui-ui client_runtime"]
-notes = "Connect startup and the event loop to daemon state/actions, detach cleanly, and remove remaining interactive-client ownership of long-running execution without creating parallel command paths."
+notes = "Parent gate: startup/event loop uses daemon state/actions, detach is clean, and no long-running process ownership remains in the interactive client or a parallel command path."
 
 [[task]]
 id = "CLIENT-ARCH-001"

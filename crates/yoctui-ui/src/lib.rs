@@ -9824,6 +9824,19 @@ mod tests {
         assert!(output.contains("Layers"), "{output}");
     }
 
+    #[test]
+    fn client_runtime_daemon_health_remains_visible_during_navigation() {
+        let mut app = App::new(32, 8192);
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Connecting;
+        for screen in [Screen::Dashboard, Screen::Tasks, Screen::Recipes] {
+            app.screen = screen;
+            let output = rendered_text(&app, 160, 40);
+            assert!(output.contains("Daemon Current"), "{screen:?}: {output}");
+            assert!(output.contains("BB Connecting"), "{screen:?}: {output}");
+        }
+    }
+
     fn security_report_identity(
         path: &str,
         fingerprint: &str,

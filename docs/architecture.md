@@ -1758,6 +1758,16 @@ theme, dialogs, editor state, layout and other presentation fields are never
 part of replica replacement; disconnect changes connection status without
 discarding the last honest daemon snapshot.
 
+The first interactive runtime slice attaches before terminal work begins,
+installs and nonblocking-polls the replica during every event-loop iteration,
+and explicitly detaches at shutdown. Ordinary `Effect::Start` and
+`Effect::Cancel` requests are translated—not re-parsed—into correlated,
+generation-checked daemon build commands when attached. Local execution remains
+only as an explicitly reported compatibility path while standalone policy is
+pending. Moving the other existing typed job families and their runner
+ownership is a separate required child gate; attach wiring alone is not proof
+that those jobs survive client exit.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only

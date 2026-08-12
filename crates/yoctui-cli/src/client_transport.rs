@@ -191,6 +191,22 @@ impl DaemonClientTransport {
         }
     }
 
+    pub fn try_receive(
+        &mut self,
+        timeout: Duration,
+    ) -> Result<Option<ClientServerEvent>, ClientTransportError> {
+        self.require_attached()?;
+        self.connection
+            .as_ref()
+            .ok_or(ClientTransportError::Disconnected)?
+            .set_timeout(Some(timeout))?;
+        match self.receive() {
+            Ok(event) => Ok(Some(event)),
+            Err(ClientTransportError::Ipc(IpcError::Timeout(_))) => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
+
     pub fn detach(&mut self) -> Result<(), ClientTransportError> {
         self.require_attached()?;
         self.send(&ClientMessage::Detach)?;

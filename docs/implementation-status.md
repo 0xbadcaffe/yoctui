@@ -255,7 +255,11 @@ for explicit detach acknowledgement. Replica installation is active next.
 Replica installation is complete: typed daemon BitBake/job/PTY/client/log/
 recovery state renders in the persistent header while every presentation field
 remains client-local across replacement and disconnect. Interactive runtime
-wiring and process-ownership migration are active next.
+wiring now attaches, polls snapshots/events without blocking terminal input,
+routes standard build/cancel effects to correlated daemon commands, and
+detaches explicitly. The runtime gate was further split because existing
+Devtool/SDK/QEMU/Wic/testing/QA/security/maintenance/utility coordinators still
+own processes in the client; migrating those job families is active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded
