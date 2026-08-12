@@ -2,19 +2,21 @@
 
 ## Task
 
-**ID:** CLIENT-TRANSPORT-001
-**Title:** Implement attachable daemon client transport
+**ID:** CLIENT-REPLICA-001
+**Title:** Install daemon state into the interactive client replica
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add one typed client session over the secure local IPC transport. It negotiates
-the version and capabilities, attaches with an optional resume cursor, receives
-bounded snapshots/events/results, reconnects with clear diagnostics, and
-explicitly detaches without affecting daemon-owned work.
+Map a bounded authoritative daemon snapshot and ordered incremental events into
+typed state consumed by the Ratatui client. Preserve focus, screen, theme,
+dialogs, editor state, layout, and other presentation choices locally while
+daemon-owned BitBake, jobs, logs, recovery, clients, and PTY summaries replace
+stale replicas safely.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_transport
+cargo test -p yoctui-app client_replica
+cargo test -p yoctui-ui client_replica
 ```

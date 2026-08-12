@@ -93,6 +93,9 @@ use yoctui_model::{
 };
 use yoctui_ui::render;
 
+#[cfg(unix)]
+#[cfg_attr(not(test), allow(dead_code))]
+mod client_transport;
 mod maintenance_cli;
 #[cfg(unix)]
 #[cfg_attr(not(test), allow(dead_code))]

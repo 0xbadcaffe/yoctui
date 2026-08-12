@@ -3167,18 +3167,18 @@ notes = "SdkShellAdapter inspects exactly one canonical direct-child environment
 id = "CLIENT-TRANSPORT-001"
 milestone = "M11"
 title = "Implement attachable daemon client transport"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["DAEMON-IPC-001", "DAEMON-PROTOCOL-001", "DAEMON-SNAPSHOT-001"]
 verify = ["cargo test -p yoctui client_transport"]
-notes = "Add one typed client session that securely connects, negotiates, attaches with a resume cursor, receives snapshots/events/results, reports diagnostics, reconnects, and explicitly detaches."
+notes = "The typed transport connects through authenticated local IPC, validates client/daemon identities, exact version, required capabilities, uniqueness and advertised bounds, then attaches with optional resume cursor and checks snapshot instance/watermark. It exposes snapshot/event/correlated-result/resync messages, handles heartbeat internally, supports subscription changes and identity-preserving reconnect, and waits for detach acknowledgement. Real Unix-socket tests cover negotiation, attach, command correlation, ping, detach, reconnect/resume and invalid hellos."
 
 [[task]]
 id = "CLIENT-REPLICA-001"
 milestone = "M11"
 title = "Install daemon state into the interactive client replica"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 424
 required = true
 depends_on = ["CLIENT-TRANSPORT-001"]

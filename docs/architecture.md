@@ -1737,6 +1737,17 @@ the already verified build context as `NativeShell`; both launch only the
 exact interactive shell argv through the daemon PTY runner. Project profiles
 cannot name an environment setup script or inject capture commands.
 
+The attachable client transport is a typed session layered directly on the
+authenticated local IPC connection. It validates nonzero client/daemon
+identities, exact protocol compatibility, unique negotiated capabilities, and
+daemon-advertised resource limits before attach. Attach accepts the replica's
+resume cursor, collects ordered replay messages, verifies the final snapshot
+instance and watermark, and exposes typed snapshot/event/command-result/
+resynchronization messages to the client runtime. Subscribe, unsubscribe and
+command requests use only protocol types. Ping handling is internal, explicit
+detach waits for daemon acknowledgement, and reconnect creates a fresh secure
+connection while retaining client identity; it never owns jobs or PTYs.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only

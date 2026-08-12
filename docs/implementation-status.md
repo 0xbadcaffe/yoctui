@@ -248,7 +248,10 @@ complete with digest-revalidated setup-file capture in an isolated bounded
 child environment, exact installed-SDK and native-build routes, and no parent
 environment mutation. The attachable Ratatui client gate was split into atomic
 transport, replica, and runtime-ownership migrations; typed client transport is
-active next.
+active next. The transport now negotiates the bounded protocol over same-user
+Unix IPC, attaches/resumes with verified instance watermarks, exposes typed
+events and correlated command results, answers heartbeat messages, and waits
+for explicit detach acknowledgement. Replica installation is active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded
