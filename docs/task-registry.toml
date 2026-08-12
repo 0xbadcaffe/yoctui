@@ -3197,15 +3197,48 @@ verify = ["cargo test -p yoctui client_runtime", "cargo test -p yoctui-ui client
 notes = "Interactive startup attempts authenticated daemon attach, installs the snapshot, nonblocking-polls typed messages on every UI loop, keeps daemon health visible, routes ordinary BitBake build/cancel effects as correlated generation-checked daemon commands, and explicitly detaches on exit. Unavailable attach reports an honest local-runtime diagnostic pending standalone policy."
 
 [[task]]
-id = "CLIENT-RUNTIME-JOBS-001"
+id = "CLIENT-RUNTIME-DEVTOOL-001"
 milestone = "M11"
-title = "Move remaining interactive job families behind daemon actions"
+title = "Move Devtool job ownership into the daemon"
 status = "IN_PROGRESS"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-BUILD-001"]
+verify = ["cargo test -p yoctui client_runtime_devtool"]
+notes = "Extend the typed protocol and daemon runtime for existing Devtool operations and cancellation, then remove interactive-client runner ownership without adding command strings."
+
+[[task]]
+id = "CLIENT-RUNTIME-ARTIFACTS-001"
+milestone = "M11"
+title = "Move SDK QEMU and Wic job ownership into the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-DEVTOOL-001"]
+verify = ["cargo test -p yoctui client_runtime_artifacts"]
+notes = "Route existing typed SDK, QEMU and Wic operations through daemon-owned adapters/runners with correlated lifecycle and cancellation."
+
+[[task]]
+id = "CLIENT-RUNTIME-QUALITY-001"
+milestone = "M11"
+title = "Move testing QA security and maintenance jobs into the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-ARTIFACTS-001"]
+verify = ["cargo test -p yoctui client_runtime_quality"]
+notes = "Route existing typed testing, QA, security, maintenance and bounded utility effects through daemon-owned runners and correlated events."
+
+[[task]]
+id = "CLIENT-RUNTIME-JOBS-001"
+milestone = "M11"
+title = "Move remaining interactive job families behind daemon actions"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-DEVTOOL-001", "CLIENT-RUNTIME-ARTIFACTS-001", "CLIENT-RUNTIME-QUALITY-001"]
 verify = ["cargo test -p yoctui client_runtime_jobs"]
-notes = "Reuse typed actions/effects to move Devtool, SDK, QEMU, Wic, testing, QA, security, maintenance and utility runner ownership out of the interactive client; closing the client must not cancel daemon-owned work."
+notes = "Parent gate: all long-lived job families reuse typed daemon actions/events, interactive client shutdown owns no runner cleanup, and detach leaves daemon work running."
 
 [[task]]
 id = "CLIENT-RUNTIME-001"

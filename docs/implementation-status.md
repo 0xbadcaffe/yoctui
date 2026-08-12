@@ -260,6 +260,9 @@ routes standard build/cancel effects to correlated daemon commands, and
 detaches explicitly. The runtime gate was further split because existing
 Devtool/SDK/QEMU/Wic/testing/QA/security/maintenance/utility coordinators still
 own processes in the client; migrating those job families is active next.
+That migration is split by existing typed boundaries: Devtool is active first,
+followed by SDK/QEMU/Wic and then testing/QA/security/maintenance, with a final
+client-shutdown ownership gate. No generic command payload is permitted.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded
