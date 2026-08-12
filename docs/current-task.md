@@ -2,18 +2,17 @@
 
 ## Task
 
-**ID:** PROFILE-LIVE-POKY-001
-**Title:** Validate project profiles on a real Poky workspace
+**ID:** README-PROFILE-001
+**Title:** Document optional project profiles
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Exercise both no-profile and explicitly created-profile paths against a fresh
-supported Poky workspace. Fixture-only results must not be presented as live
-compatibility evidence.
+Document examples, portability and trust boundaries, the zero-vendor-change
+contract, and the distinction between team intent and BitBake authority.
 
 ## Verification
 
 ```bash
-./scripts/live-project-profile-poky.sh
+./scripts/check-docs.sh
 ```

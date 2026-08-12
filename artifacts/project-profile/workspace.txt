@@ -1,0 +1,4 @@
+poky_revision=077627338ac18aeca34bfe0c52777fab38e2e0c0
+poky_branch=scarthgap
+hosttool_limitation=lz4c unavailable; removed from the isolated metadata-only HOSTTOOLS check
+userns_limitation=user namespaces unavailable; isolated metadata-only sanity hook disabled

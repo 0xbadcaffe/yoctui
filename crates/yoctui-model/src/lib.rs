@@ -13395,6 +13395,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .map(|recipe| recipe.name.clone())
                 .collect::<HashSet<_>>();
             app.workspace.recipes = recipes;
+            app.available_images = if app.build_environment.connected() {
+                app.workspace
+                    .recipes
+                    .iter()
+                    .filter(|recipe| {
+                        recipe.name.starts_with("core-image-") || recipe.name.ends_with("-image")
+                    })
+                    .map(|recipe| recipe.name.clone())
+                    .collect()
+            } else {
+                Vec::new()
+            };
             if app
                 .config_scope
                 .as_ref()
@@ -20423,6 +20435,25 @@ mod tests {
             BuildEnvironmentState::Configured(_)
         ));
         assert!(app.available_images.is_empty());
+    }
+
+    #[test]
+    fn recipe_refresh_rebuilds_authoritative_image_inventory() {
+        let mut app = App::new(16, 4096);
+        let _ = update(
+            &mut app,
+            Action::RecipesLoaded(vec![
+                Recipe {
+                    name: "base-files".into(),
+                    ..Recipe::default()
+                },
+                Recipe {
+                    name: "core-image-minimal".into(),
+                    ..Recipe::default()
+                },
+            ]),
+        );
+        assert_eq!(app.available_images, vec!["core-image-minimal"]);
     }
 
     #[test]

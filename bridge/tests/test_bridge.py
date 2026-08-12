@@ -43,6 +43,24 @@ class BridgeProtocolTests(unittest.TestCase):
         )
         self.assertEqual([m["sequence"] for m in messages], [1, 2])
 
+    def test_protocol_output_isolated_from_process_stdout(self) -> None:
+        script = (
+            "import importlib.util, pathlib; "
+            f"p=pathlib.Path({str(BRIDGE)!r}); "
+            "s=importlib.util.spec_from_file_location('bridge', p); "
+            "m=importlib.util.module_from_spec(s); s.loader.exec_module(m); "
+            "m.isolate_protocol_output(); print('bitbake diagnostic'); "
+            "m.emit({'type':'hello_ack'})"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", script],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        self.assertEqual(json.loads(result.stdout)["message"]["type"], "hello_ack")
+        self.assertEqual(result.stderr, b"bitbake diagnostic\n")
+
     def test_malformed_input_is_reported_without_crashing(self) -> None:
         result = run_bridge(b"not json")
         self.assertEqual(result.returncode, 0)

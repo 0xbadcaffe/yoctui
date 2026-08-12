@@ -142,7 +142,11 @@ confirmed replacement, inert startup state, and typed generation effects.
 Profile rendering and interaction now expose team-intent rows in Build
 environment with explicit resolution states, keyboard selection, authoritative
 favorite navigation, and preset-to-existing-confirmation routing. No profile
-selection starts work; real-Poky no-profile/with-profile validation is next.
+selection starts work. A fresh isolated Poky Scarthgap clone now passes both
+optional no-profile and explicit-profile paths through the real bridge and
+BitBake 2.8.1 metadata inventories; all five representative team-intent items
+resolve authoritatively. The recorded metadata-only host limitations do not
+claim an image build. Project-profile documentation is next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

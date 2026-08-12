@@ -2846,18 +2846,18 @@ notes = "Build environment renders profile team intent with resolved/stale/ambig
 id = "PROFILE-LIVE-POKY-001"
 milestone = "M10"
 title = "Validate project profiles on a real Poky workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 304
 required = true
 depends_on = ["PROFILE-UI-001"]
 verify = ["./scripts/live-project-profile-poky.sh"]
-notes = "Exercise no-profile and explicitly created-profile paths on fresh supported Poky; fake tests do not establish live compatibility."
+notes = "A fresh isolated Poky Scarthgap clone passes absent and explicit profile inspection through the real bridge and BitBake 2.8.1 inventories; artifacts record the revision and metadata-only host-tool/user-namespace limitations without claiming an image build."
 
 [[task]]
 id = "README-PROFILE-001"
 milestone = "M10"
 title = "Document optional project profiles"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 305
 required = true
 depends_on = ["PROFILE-LIVE-POKY-001"]

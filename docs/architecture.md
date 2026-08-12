@@ -1166,6 +1166,14 @@ unless replacement was explicitly confirmed, and never follows a profile or
 profile-directory symlink. The reducer retains a generation preview on write
 failure and installs the loaded profile only after success.
 
+The `profile` CLI inspection route uses the same bounded loader, reducer, and
+selected backend as the interactive client. It loads live workspace, recipe,
+and layer inventories before reporting every team-intent item as resolved,
+stale, ambiguous, or unavailable. The bridge keeps a duplicated protocol file
+descriptor and redirects ordinary process stdout to stderr before BitBake is
+initialized, so BitBake startup diagnostics cannot contaminate the bounded
+NDJSON protocol stream.
+
 ### Build-environment onboarding
 
 Interactive startup may begin without a build directory. `yoctui-model` owns a

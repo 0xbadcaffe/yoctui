@@ -15,6 +15,21 @@ MAX_LINE_BYTES = 1024 * 1024
 MAX_DEPENDENCY_NODES = 1500
 MAX_DEPENDENCY_EDGES = 3000
 sequence = 0
+protocol_output = sys.stdout
+
+
+def isolate_protocol_output():
+    """Keep BitBake and child-process stdout away from the NDJSON channel."""
+    global protocol_output
+    protocol_fd = os.dup(sys.stdout.fileno())
+    protocol_output = os.fdopen(
+        protocol_fd,
+        "w",
+        buffering=1,
+        encoding=sys.stdout.encoding or "utf-8",
+        errors="replace",
+    )
+    os.dup2(sys.stderr.fileno(), sys.stdout.fileno())
 
 
 def emit(message, correlation_id=None):
@@ -23,10 +38,10 @@ def emit(message, correlation_id=None):
     value = {"protocol_version": VERSION, "sequence": sequence, "message": message}
     if correlation_id is not None:
         value["correlation_id"] = correlation_id
-    sys.stdout.write(
+    protocol_output.write(
         json.dumps(value, ensure_ascii=False, separators=(",", ":")) + "\n"
     )
-    sys.stdout.flush()
+    protocol_output.flush()
 
 
 def error(code, message, correlation_id=None):
@@ -1885,6 +1900,7 @@ def handle(command, correlation_id, adapter):
 
 
 def main():
+    isolate_protocol_output()
     try:
         adapter = select_adapter()
     except CompatibilityError as exc:

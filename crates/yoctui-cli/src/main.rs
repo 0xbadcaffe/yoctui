@@ -196,6 +196,7 @@ struct Session {
 #[derive(Subcommand, Debug)]
 enum Command {
     Inspect,
+    Profile,
     Build { targets: Vec<String> },
     Recipes,
     Layers,
@@ -599,6 +600,9 @@ async fn main() -> Result<()> {
         Some(Command::Inspect) => {
             return inspect_workspace(config.backend.clone(), build_dir).await;
         }
+        Some(Command::Profile) => {
+            return inspect_project_profile(config.backend.clone(), build_dir).await;
+        }
         Some(Command::Recipes) => return print_recipes(config.backend.clone(), build_dir).await,
         Some(Command::Layers) => return print_layers(config.backend.clone(), build_dir).await,
         Some(Command::Config { name }) => {
@@ -659,6 +663,72 @@ async fn inspect_workspace(backend: Backend, build_dir: PathBuf) -> Result<()> {
         println!("{name}={value}");
     }
     Ok(())
+}
+
+async fn inspect_project_profile(backend_kind: Backend, build_dir: PathBuf) -> Result<()> {
+    let root = project_profile_root(&build_dir)
+        .context("could not determine the project root for the selected build directory")?;
+    let profile = load_project_profile(&root)?;
+    let mut backend = select_backend(backend_kind, build_dir).await?;
+    let result = async {
+        let workspace = backend.inspect_workspace().await?;
+        let recipes = backend.list_recipes(None).await?;
+        let layers = backend.list_layers().await?;
+        let mut app = App::new(1_000, 16 * 1024 * 1024);
+        let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
+        let _ = update(&mut app, Action::RecipesLoaded(recipes));
+        let _ = update(&mut app, Action::LayersLoaded(layers));
+        match profile {
+            Some(profile) => {
+                let _ = update(&mut app, Action::ProjectProfileLoaded(profile));
+                print_project_profile_summary(&app);
+            }
+            None => println!("project profile: absent (optional)"),
+        }
+        println!(
+            "BitBake version: {}",
+            app.workspace
+                .bitbake_version
+                .as_deref()
+                .unwrap_or("unknown")
+        );
+        Ok::<(), anyhow::Error>(())
+    }
+    .await;
+    let shutdown = backend.shutdown().await;
+    result?;
+    Ok(shutdown?)
+}
+
+fn print_project_profile_summary(app: &App) {
+    for line in project_profile_summary(app) {
+        println!("{line}");
+    }
+}
+
+fn project_profile_summary(app: &App) -> Vec<String> {
+    let items = yoctui_model::project_profile_items(
+        &app.project_profile,
+        &app.workspace,
+        &app.available_images,
+    );
+    let mut lines = vec!["project profile: loaded".to_owned()];
+    lines.extend(items.into_iter().map(|item| {
+        let status = match item.status {
+            yoctui_model::ProjectProfileItemStatus::Resolved => "resolved".to_owned(),
+            yoctui_model::ProjectProfileItemStatus::Stale(reason) => {
+                format!("stale ({reason})")
+            }
+            yoctui_model::ProjectProfileItemStatus::Ambiguous(count) => {
+                format!("ambiguous ({count} matches)")
+            }
+            yoctui_model::ProjectProfileItemStatus::Unavailable(reason) => {
+                format!("unavailable ({reason})")
+            }
+        };
+        format!("profile item: {status} {:?}", item.kind)
+    }));
+    lines
 }
 
 async fn print_recipes(backend: Backend, build_dir: PathBuf) -> Result<()> {
@@ -8159,6 +8229,27 @@ mod tests {
         generate_project_profile(&root, &replacement, true).unwrap();
         assert_eq!(load_project_profile(&root).unwrap(), Some(replacement));
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn project_profile_summary_keeps_resolution_explicit() {
+        let mut app = App::new(16, 4096);
+        app.project_profile = yoctui_model::ProjectProfileState::Loaded(project_profile_fixture());
+        app.workspace.recipes = vec![yoctui_model::Recipe {
+            name: "core-image-minimal".into(),
+            ..yoctui_model::Recipe::default()
+        }];
+        app.available_images = vec!["core-image-minimal".into()];
+        assert_eq!(
+            project_profile_summary(&app),
+            vec![
+                "project profile: loaded",
+                "profile item: resolved FavoriteImage(0)",
+            ]
+        );
+
+        app.available_images.clear();
+        assert!(project_profile_summary(&app)[1].contains("stale"));
     }
 
     #[cfg(unix)]

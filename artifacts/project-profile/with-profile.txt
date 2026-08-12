@@ -1,0 +1,7 @@
+project profile: loaded
+profile item: resolved FavoriteRecipe(0)
+profile item: resolved FavoriteImage(0)
+profile item: resolved FavoriteLayer(0)
+profile item: resolved BuildPreset(0)
+profile item: resolved Workflow(0)
+BitBake version: 2.8.1
