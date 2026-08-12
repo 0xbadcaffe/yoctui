@@ -175,7 +175,9 @@ Optional systemd user-service integration is complete with safe atomic unit
 generation, one-binary foreground execution, shell-free no-root user-manager
 operations, explicit enablement, unsafe-file rejection, and a tested direct
 fallback diagnostic. Migration of authoritative long-lived state into the
-daemon is active.
+daemon was split before implementation into typed partition, job-family
+migration, runtime ownership, and parent-gate tasks. The typed partition is
+active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

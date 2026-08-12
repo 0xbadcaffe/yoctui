@@ -2922,15 +2922,48 @@ verify = ["cargo test -p yoctui daemon_service", "./scripts/check-docs.sh"]
 notes = "The CLI atomically installs/removes a no-root user unit for the canonical Rust binary, manages it through shell-free systemctl --user argv, documents explicit enable --now auto-start, rejects unsafe service files, and reports direct yoctui daemon start fallback when the user manager is unavailable."
 
 [[task]]
-id = "DAEMON-STATE-001"
+id = "DAEMON-STATE-MODEL-001"
 milestone = "M11"
-title = "Move authoritative long-lived state into daemon"
+title = "Partition daemon-global and client-local state"
 status = "IN_PROGRESS"
 priority = 405
 required = true
 depends_on = ["DAEMON-LIFECYCLE-001"]
+verify = ["cargo test -p yoctui-model daemon_state_partition"]
+notes = "Define pure typed daemon-global state, client replica/presentation boundaries, generation/sequence metadata, BitBake/profile/session ownership, and bounded global collections without moving job families or runtime execution yet."
+
+[[task]]
+id = "DAEMON-STATE-JOBS-001"
+milestone = "M11"
+title = "Move all long-lived job families into daemon state"
+status = "NOT_STARTED"
+priority = 405
+required = true
+depends_on = ["DAEMON-STATE-MODEL-001"]
+verify = ["cargo test -p yoctui-model daemon_state_jobs", "cargo test -p yoctui-app daemon_state_jobs"]
+notes = "Migrate bounded logs/errors/task history, background jobs, QEMU/Wic/SDK/testing/QA/security/maintenance/utility state and PTY session metadata behind the daemon-global boundary while reusing existing typed models."
+
+[[task]]
+id = "DAEMON-STATE-RUNTIME-001"
+milestone = "M11"
+title = "Make daemon runtime own authoritative state"
+status = "NOT_STARTED"
+priority = 405
+required = true
+depends_on = ["DAEMON-STATE-JOBS-001", "DAEMON-LIFECYCLE-001"]
+verify = ["cargo test -p yoctui daemon_state_runtime", "cargo test -p yoctui-app daemon_state_runtime"]
+notes = "Install the typed global state in the foreground daemon runtime, route typed mutations through its reducer, and expose client replicas without moving long-running ownership back into the interactive client."
+
+[[task]]
+id = "DAEMON-STATE-001"
+milestone = "M11"
+title = "Move authoritative long-lived state into daemon"
+status = "NOT_STARTED"
+priority = 405
+required = true
+depends_on = ["DAEMON-STATE-MODEL-001", "DAEMON-STATE-JOBS-001", "DAEMON-STATE-RUNTIME-001"]
 verify = ["cargo test -p yoctui-model daemon_state", "cargo test -p yoctui-app daemon_state"]
-notes = "Daemon owns BitBake state, bounded logs/errors/history, all background job families, QEMU/Wic/SDK/testing/QA/security/maintenance/utility jobs, PTYs, profile state, and session metadata; clients render it."
+notes = "Parent gate: daemon owns BitBake state, bounded logs/errors/history, all background job families, QEMU/Wic/SDK/testing/QA/security/maintenance/utility jobs, PTYs, profile state, and session metadata; clients render it."
 
 [[task]]
 id = "DAEMON-SNAPSHOT-001"
