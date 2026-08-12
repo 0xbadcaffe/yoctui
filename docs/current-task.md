@@ -2,21 +2,23 @@
 
 ## Task
 
-**ID:** UX-POPUP-OPS-MAINT-RELEASE-001
-**Title:** Move Maintenance release forms into TOML popups
+**ID:** UX-POPUP-OPS-001
+**Title:** Move QA, security, and maintenance editable drafts into TOML popups
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Verify locked-cache, build-history, and Git archive popup migrations together,
-including repository evidence, changed-output safeguards, bounded comparisons,
-and separate local/network confirmation.
+Verify the Security import, QA import, and all Maintenance shared-popup
+migrations together without weakening their typed adapter, confirmation, and
+side-effect boundaries.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model maintenance_release
-cargo test -p yoctui-app maintenance_release
-cargo test -p yoctui-ui maintenance_release
-cargo check -p yoctui
+cargo test -p yoctui-model qa
+cargo test -p yoctui-model security
+cargo test -p yoctui-model maintenance
+cargo test -p yoctui-ui qa
+cargo test -p yoctui-ui security
+cargo test -p yoctui-ui maintenance
 ```

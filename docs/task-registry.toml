@@ -2778,18 +2778,18 @@ notes = "Git archive paths, flags, templates, messages, exclusions, notes, and o
 id = "UX-POPUP-OPS-MAINT-RELEASE-001"
 milestone = "M8"
 title = "Move Maintenance release forms into TOML popups"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 167
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-LOCKED-001", "UX-POPUP-OPS-MAINT-HISTORY-001", "UX-POPUP-OPS-MAINT-ARCHIVE-001"]
 verify = ["cargo test -p yoctui-model maintenance_release", "cargo test -p yoctui-app maintenance_release", "cargo test -p yoctui-ui maintenance_release", "cargo check -p yoctui"]
-notes = "Migrate locked-cache, build-history, and Git archive drafts while retaining repository evidence, local/network separation, and explicit push confirmation."
+notes = "All three Maintenance release popup migrations pass their combined model, app, TestBackend, and CLI gates while retaining repository evidence, changed-output safeguards, and local/network separation."
 
 [[task]]
 id = "UX-POPUP-OPS-001"
 milestone = "M8"
 title = "Move QA, security, and maintenance editable drafts into TOML popups"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 168
 required = true
 depends_on = ["UX-POPUP-OPS-SECURITY-001", "UX-POPUP-OPS-QA-001", "UX-POPUP-OPS-MAINT-SSTATE-001", "UX-POPUP-OPS-MAINT-SERVICE-001", "UX-POPUP-OPS-MAINT-RELEASE-001"]
