@@ -2506,27 +2506,60 @@ title = "Move JUnit export into a TOML popup"
 status = "NOT_STARTED"
 priority = 157
 required = true
-depends_on = ["UX-POPUP-TEST-COMPARE-001"]
+depends_on = ["UX-POPUP-TEST-COMPARE-001", "UX-POPUP-EDITOR-005"]
 verify = ["cargo test -p yoctui-model test_", "cargo test -p yoctui-ui test_"]
 notes = "Migrate JUnit export destination editing without weakening typed validation or confirmation."
 
 [[task]]
 id = "UX-POPUP-EDITOR-002"
 milestone = "M8"
-title = "Add shared bounded TOML popup editing controls"
+title = "Adopt a reusable bounded popup text editor"
 status = "IN_PROGRESS"
 priority = 157
 required = true
 depends_on = ["UX-POPUP-GOV-001"]
 verify = ["cargo test -p yoctui-model popup_editor", "cargo test -p yoctui-ui popup_editor", "cargo check -p yoctui"]
-notes = "Provide model-owned cursor/selection, Home/End, replacement-on-edit, paste, copy, and a persistent shortcut row for every TOML popup."
+notes = "Introduce the reusable editor boundary and select/adapt tui-textarea rather than maintaining append-only per-dialog fields."
+
+[[task]]
+id = "UX-POPUP-EDITOR-003"
+milestone = "M8"
+title = "Add typed popup-editor state and field selection"
+status = "NOT_STARTED"
+priority = 158
+required = true
+depends_on = ["UX-POPUP-EDITOR-002"]
+verify = ["cargo test -p yoctui-model popup_editor", "cargo test -p yoctui-app popup_editor"]
+notes = "Model a shared editor document, cursor, selection, edit mode, field-value replacement, and bounded undo history without exposing widget state to workflows."
+
+[[task]]
+id = "UX-POPUP-EDITOR-004"
+milestone = "M8"
+title = "Wire shared popup-editor input and rendering"
+status = "NOT_STARTED"
+priority = 159
+required = true
+depends_on = ["UX-POPUP-EDITOR-003"]
+verify = ["cargo test -p yoctui-ui popup_editor", "cargo check -p yoctui"]
+notes = "Route Home/End, arrows, vi Normal/Insert actions, bracketed paste, copy, and visible shortcut hints through one popup renderer and CLI input path."
+
+[[task]]
+id = "UX-POPUP-EDITOR-005"
+milestone = "M8"
+title = "Migrate existing TOML forms onto the shared editor"
+status = "NOT_STARTED"
+priority = 160
+required = true
+depends_on = ["UX-POPUP-EDITOR-004"]
+verify = ["cargo test -p yoctui-model popup_editor", "cargo test -p yoctui-ui popup_editor", "cargo check -p yoctui"]
+notes = "Replace append-only implementation in build environment, clone, configuration, BBMASK, target, Wic, SDK, and Testing forms while retaining typed parsers, previews, and confirmations."
 
 [[task]]
 id = "UX-POPUP-OPS-001"
 milestone = "M8"
 title = "Move QA, security, and maintenance editable drafts into TOML popups"
 status = "NOT_STARTED"
-priority = 158
+priority = 161
 required = true
 depends_on = ["UX-POPUP-TEST-JUNIT-001"]
 verify = ["cargo test -p yoctui-model qa", "cargo test -p yoctui-model security", "cargo test -p yoctui-model maintenance", "cargo test -p yoctui-ui qa", "cargo test -p yoctui-ui security", "cargo test -p yoctui-ui maintenance"]

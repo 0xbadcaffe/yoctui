@@ -127,6 +127,8 @@ JUnit export tasks, with import active.
 JUnit export tasks; import is complete and comparison is active.
 JUnit export tasks; import and comparison are complete and JUnit export is active.
 JUnit export is queued behind the active shared popup-editor controls task.
+The editor agenda now has explicit adoption, typed state, routing/rendering,
+and migration tasks; JUnit export and operations remain sequenced after it.
 
 ## Rules
 

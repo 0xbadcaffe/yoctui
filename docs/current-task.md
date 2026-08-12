@@ -3,13 +3,13 @@
 ## Task
 
 **ID:** UX-POPUP-EDITOR-002
-**Title:** Add shared bounded TOML popup editing controls
+**Title:** Adopt a reusable bounded popup text editor
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add model-owned cursor/selection, Home/End, replacement-on-edit, paste, copy,
-and a persistent shortcut row for every bounded TOML popup.
+Introduce the reusable editor boundary and select/adapt `tui-textarea` rather
+than maintaining append-only per-dialog fields.
 
 ## Verification
 
