@@ -2607,6 +2607,18 @@ the exact recipe, task, executable identity, and build directory; acceptance
 creates/focuses a daemon terminal session without suspending the Yoctui client.
 Unavailable or stale providers/tasks show a refresh reason instead of falling
 back to a guessed recipe or free-form command.
+
+Open SDK shell is enabled only for a selected, inspected SDK root containing
+exactly one safe `environment-setup-*` file. Its preview shows SDK identity,
+setup-file identity, resolved root, and interactive shell. Confirmation first
+captures the environment in a bounded child process and then creates a
+persistent daemon-owned SDK terminal; it never asks the operator to paste or
+export environment expressions. If the setup file changes after preview,
+capture fails with a refresh instruction. Open native shell uses the already
+verified build environment and build directory and is labeled distinctly from
+an installed SDK shell. Neither route reads executable text from the optional
+project profile.
+
 Test result import uses `Test result import.toml` with one normalized absolute
 `root`, initially selected for immediate replacement, preserving the existing
 bounded typed import operation.

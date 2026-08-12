@@ -17,6 +17,7 @@ mod qa_report;
 mod qa_task;
 mod qemu;
 mod sdk;
+mod sdk_shell;
 mod sdk_tool;
 mod security;
 mod security_mapper;
@@ -125,6 +126,7 @@ pub use sdk::{
     SdkArtifactAdapter, SdkArtifactAdapterError, SdkArtifactCancellation, SdkArtifactResponse,
     SdkArtifactScanOutcome,
 };
+pub use sdk_shell::{SdkShellAdapter, SdkShellEnvironment, SdkShellError, SdkShellPreview};
 pub use sdk_tool::{
     SdkToolAdapter, SdkToolAdapterError, SdkToolCapabilityInspector, SdkToolCommandSpec,
     SdkToolJobRunner, SdkToolRunnerEvent,

@@ -47,6 +47,7 @@ pub enum PtySessionKind {
     RecipeShell,
     DevtoolShell,
     SdkShell,
+    NativeShell,
     DeployShell,
     Devshell,
     Menuconfig,

@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** PTY-SDK-SHELL-001
-**Title:** Support SDK and native environment PTYs
+**ID:** CLIENT-ARCH-001
+**Title:** Refactor Ratatui UI into an attachable daemon client
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Safely capture a selected SDK or native toolchain environment without mutating
-the Yoctui process, validate its identity and paths, and open a persistent
-interactive shell through the daemon-owned PTY infrastructure. Ensure stale or
-untrusted environment setup inputs fail closed and exact launch intent remains
-previewable.
+Connect the interactive Ratatui client to the local daemon, request and install
+authoritative snapshots, subscribe to ordered events, send typed actions, and
+detach cleanly. Move any remaining long-running process ownership out of the
+interactive client while preserving client-local presentation state.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui pty_sdk_shell
+cargo test -p yoctui client_arch
+cargo test -p yoctui-ui client_arch
 ```

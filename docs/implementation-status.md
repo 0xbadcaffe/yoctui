@@ -244,6 +244,9 @@ noninteractive actions remain managed jobs. Menuconfig/devshell PTY routing is
 complete with exact authoritative recipe/task validation, current kernel and
 U-Boot provider resolution, verified build environments, previewed argv, and
 fail-closed stale handling. Safe persistent SDK/native environment shells are
+complete with digest-revalidated setup-file capture in an isolated bounded
+child environment, exact installed-SDK and native-build routes, and no parent
+environment mutation. Refactoring Ratatui into an attachable daemon client is
 active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and

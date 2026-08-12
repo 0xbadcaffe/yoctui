@@ -2,6 +2,7 @@
 mod pty_context;
 mod pty_devtool;
 mod pty_menuconfig;
+mod pty_sdk_shell;
 
 pub use pty_context::{
     PtyContextAction, PtyContextAuthority, PtyContextEntry, PtyContextError, PtyContextLaunch,
@@ -12,6 +13,7 @@ pub use pty_menuconfig::{
     PtyBitBakeInteractiveTask, PtyInteractiveRecipe, PtyMenuconfigAction, PtyMenuconfigError,
     PtyMenuconfigPreview, PtyMenuconfigRouter,
 };
+pub use pty_sdk_shell::{PtySdkShellAction, PtySdkShellPreview, PtySdkShellRouter};
 use std::time::SystemTime;
 use yoctui_bitbake::{
     BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QaLayerCapabilityResponse,

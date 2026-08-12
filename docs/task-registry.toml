@@ -3156,18 +3156,18 @@ notes = "The typed router accepts only exact current recipe identities and autho
 id = "PTY-SDK-SHELL-001"
 milestone = "M11"
 title = "Support SDK and native environment PTYs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 423
 required = true
 depends_on = ["PTY-CONTEXT-001"]
 verify = ["cargo test -p yoctui pty_sdk_shell"]
-notes = "Safely initialize selected SDK/native environment and keep persistent interactive shell sessions."
+notes = "SdkShellAdapter inspects exactly one canonical direct-child environment-setup file, records and revalidates its SHA-256 identity, then captures bounded NUL-delimited variables through a constant argv-separated Bash program in a minimal child environment without mutating Yoctui. Unsafe paths, setup changes, dangerous shell-control variables, timeouts and bounds fail closed. The typed app router distinguishes installed SdkShell from verified-build NativeShell launches; adapter, app and CLI integration tests pass."
 
 [[task]]
 id = "CLIENT-ARCH-001"
 milestone = "M11"
 title = "Refactor Ratatui UI into attachable daemon client"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 424
 required = true
 depends_on = ["DAEMON-SNAPSHOT-001", "BITBAKE-SERVER-001", "PTY-ATTACH-001"]

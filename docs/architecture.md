@@ -1723,6 +1723,20 @@ exact recipe file identity and advertised task, then emits only
 environment. There is no free-form task/argument field and the client remains
 attached to Yoctui while the daemon-owned PTY runs the terminal application.
 
+SDK shell initialization is split across the adapter and typed context
+authority. `SdkShellAdapter` inspects one canonical, direct-child
+`environment-setup-*` file under an explicitly selected SDK root, records its
+bounded content digest, and revalidates that identity before capture. Capture
+uses an argv-separated constant Bash program in an isolated child with a
+minimal inherited environment; it never mutates the daemon or client process.
+NUL-delimited output, variable count/value/total bytes, names, timeout, and
+dangerous shell-control variables are bounded or rejected. The resulting
+environment and canonical interactive shell become a verified SDK context.
+The app router previews either that installed SDK context as `SdkShell`, or
+the already verified build context as `NativeShell`; both launch only the
+exact interactive shell argv through the daemon PTY runner. Project profiles
+cannot name an environment setup script or inject capture commands.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only
