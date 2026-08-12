@@ -72,6 +72,22 @@ Exit criteria:
 - all dialogs trap focus
 - no terminal size causes a panic
 
+## M10 — Optional project profiles
+
+Goal: let teams record portable Yoctui intent in an optional
+`.yoctui/project.toml` without changing vendor/layer metadata or replacing
+BitBake authority. Profiles contain typed favorites, presets, and workflows;
+they never execute arbitrary shell text when loaded, and personal settings
+remain user-local.
+
+## M11 — Persistent daemon and session architecture
+
+Goal: provide one Rust-native, terminal-native Yoctui daemon that owns BitBake,
+background work, and PTYs while attachable Ratatui clients render and control
+that state. Local IPC is the default; SSH clients attach on the build host
+without opening an unauthenticated TCP service. Client disconnect, SSH loss,
+daemon restart, and host reboot semantics must be explicit and honest.
+
 ## M3 — Recipe, layer, metadata, and dependency development
 
 Goal: complete daily recipe and layer work without leaving Yoctui except for intentional editor/terminal launches.

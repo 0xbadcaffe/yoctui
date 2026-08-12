@@ -2564,3 +2564,612 @@ required = true
 depends_on = ["UX-POPUP-TEST-JUNIT-001"]
 verify = ["cargo test -p yoctui-model qa", "cargo test -p yoctui-model security", "cargo test -p yoctui-model maintenance", "cargo test -p yoctui-ui qa", "cargo test -p yoctui-ui security", "cargo test -p yoctui-ui maintenance"]
 notes = "Migrate operational editable drafts while retaining exact validation, review, and confirmation semantics."
+
+# M10 — Optional Project Profile. Profiles record team intent only; BitBake and
+# user-local settings remain authoritative for execution and personal choices.
+[[task]]
+id = "PROFILE-SPEC-001"
+milestone = "M10"
+title = "Specify optional project profile behavior"
+status = "NOT_STARTED"
+priority = 300
+required = true
+depends_on = []
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Define optional .yoctui/project.toml, schema versioning, team versus personal state, portable repository-relative references, trust boundaries, stale identities, and no automatic execution."
+
+[[task]]
+id = "PROFILE-MODEL-001"
+milestone = "M10"
+title = "Add typed project profile model and validation"
+status = "NOT_STARTED"
+priority = 301
+required = true
+depends_on = ["PROFILE-SPEC-001"]
+verify = ["cargo test -p yoctui-model project_profile"]
+notes = "Model favorites, typed build presets, workflows, schema versions, safe relative references, and explicit stale-identity results without arbitrary command strings."
+
+[[task]]
+id = "PROFILE-LOAD-001"
+milestone = "M10"
+title = "Load and generate project profiles safely"
+status = "NOT_STARTED"
+priority = 302
+required = true
+depends_on = ["PROFILE-MODEL-001"]
+verify = ["cargo test -p yoctui project_profile", "cargo test -p yoctui-app project_profile"]
+notes = "Load optional profiles without vendor or layer changes, generate safe profiles on explicit action only, and keep personal settings user-local."
+
+[[task]]
+id = "PROFILE-UI-001"
+milestone = "M10"
+title = "Render typed project profile workflows"
+status = "NOT_STARTED"
+priority = 303
+required = true
+depends_on = ["PROFILE-LOAD-001"]
+verify = ["cargo test -p yoctui-ui project_profile"]
+notes = "Expose favorites and typed presets with explicit stale/unavailable state and normal Yoctui confirmation policies."
+
+[[task]]
+id = "PROFILE-LIVE-POKY-001"
+milestone = "M10"
+title = "Validate project profiles on a real Poky workspace"
+status = "NOT_STARTED"
+priority = 304
+required = true
+depends_on = ["PROFILE-UI-001"]
+verify = ["./scripts/live-project-profile-poky.sh"]
+notes = "Exercise no-profile and explicitly created-profile paths on fresh supported Poky; fake tests do not establish live compatibility."
+
+[[task]]
+id = "README-PROFILE-001"
+milestone = "M10"
+title = "Document optional project profiles"
+status = "NOT_STARTED"
+priority = 305
+required = true
+depends_on = ["PROFILE-LIVE-POKY-001"]
+verify = ["./scripts/check-docs.sh"]
+notes = "Document examples, portability, trust model, zero vendor changes, and the distinction between team intent and BitBake authority."
+
+# M11 — Persistent Daemon and Session Architecture. The daemon is Rust-native,
+# local-only by default, and owns long-running work independently of clients.
+[[task]]
+id = "DAEMON-SPEC-001"
+milestone = "M11"
+title = "Specify daemon and attachable client architecture"
+status = "NOT_STARTED"
+priority = 400
+required = true
+depends_on = []
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Define daemon/client roles, BitBake/jobs/PTY ownership, persistence, IPC, attach/detach, shutdown, crash/restart, compatibility, multi-client, local security, SSH, reboot honesty, and standalone-mode interaction before implementation."
+
+[[task]]
+id = "DAEMON-PROTOCOL-001"
+milestone = "M11"
+title = "Define typed daemon client protocol"
+status = "NOT_STARTED"
+priority = 401
+required = true
+depends_on = ["DAEMON-SPEC-001"]
+verify = ["cargo test -p yoctui-protocol daemon_protocol"]
+notes = "Versioned bounded framed handshake/capabilities, identities, subscriptions, snapshots/events, correlated commands/jobs/PTY/layout/mouse events, detach/shutdown/errors/stale clients, and reconnect synchronization with explicit compatibility rules."
+
+[[task]]
+id = "DAEMON-IPC-001"
+milestone = "M11"
+title = "Implement secure local daemon IPC"
+status = "NOT_STARTED"
+priority = 402
+required = true
+depends_on = ["DAEMON-PROTOCOL-001"]
+verify = ["cargo test -p yoctui-protocol daemon_ipc"]
+notes = "Unix-domain local-only IPC with deterministic runtime path, secure permissions, peer verification where available, symlink-safe stale cleanup, bounded messages, timeout/reconnect, and unavailable diagnostics."
+
+[[task]]
+id = "DAEMON-LIFECYCLE-001"
+milestone = "M11"
+title = "Implement daemon lifecycle commands"
+status = "NOT_STARTED"
+priority = 403
+required = true
+depends_on = ["DAEMON-IPC-001"]
+verify = ["cargo test -p yoctui daemon_lifecycle", "cargo test -p yoctui-protocol daemon_lifecycle"]
+notes = "Implement daemon start/status/stop/restart, foreground debug, client auto-connect/optional auto-start, PID/runtime state, crash recovery, and clean socket cleanup without fragile shell daemonization."
+
+[[task]]
+id = "DAEMON-SERVICE-INTEGRATION-001"
+milestone = "M11"
+title = "Add systemd user service integration"
+status = "NOT_STARTED"
+priority = 404
+required = true
+depends_on = ["DAEMON-LIFECYCLE-001"]
+verify = ["cargo test -p yoctui daemon_service", "./scripts/check-docs.sh"]
+notes = "Generate/install/manage systemd user service first, require no root, provide a clear non-systemd fallback, and document auto-start."
+
+[[task]]
+id = "DAEMON-STATE-001"
+milestone = "M11"
+title = "Move authoritative long-lived state into daemon"
+status = "NOT_STARTED"
+priority = 405
+required = true
+depends_on = ["DAEMON-LIFECYCLE-001"]
+verify = ["cargo test -p yoctui-model daemon_state", "cargo test -p yoctui-app daemon_state"]
+notes = "Daemon owns BitBake state, bounded logs/errors/history, all background job families, QEMU/Wic/SDK/testing/QA/security/maintenance/utility jobs, PTYs, profile state, and session metadata; clients render it."
+
+[[task]]
+id = "DAEMON-SNAPSHOT-001"
+milestone = "M11"
+title = "Synchronize snapshots and incremental daemon events"
+status = "NOT_STARTED"
+priority = 406
+required = true
+depends_on = ["DAEMON-STATE-001", "DAEMON-PROTOCOL-001"]
+verify = ["cargo test -p yoctui-protocol daemon_snapshot", "cargo test -p yoctui-app daemon_snapshot"]
+notes = "Provide bounded consistent attach snapshot followed by ordered events without gaps, sequence tracking, missed-event reconnect, and safe stale-state replacement."
+
+[[task]]
+id = "DAEMON-PERSIST-001"
+milestone = "M11"
+title = "Persist safe daemon metadata"
+status = "NOT_STARTED"
+priority = 407
+required = true
+depends_on = ["DAEMON-STATE-001"]
+verify = ["cargo test -p yoctui daemon_persist"]
+notes = "Persist workspace/profile/session/layout metadata, job history, optional bounded logs, preferences, and reconnect metadata only; never claim live child survival over reboot."
+
+[[task]]
+id = "DAEMON-RECOVERY-001"
+milestone = "M11"
+title = "Recover honestly after daemon restart"
+status = "NOT_STARTED"
+priority = 408
+required = true
+depends_on = ["DAEMON-PERSIST-001", "DAEMON-SNAPSHOT-001"]
+verify = ["cargo test -p yoctui daemon_recovery"]
+notes = "Reload metadata, mark unrecoverable jobs/PTYs Lost, reconnect BitBake where possible, restore visible session list, and restore only supported external services."
+
+[[task]]
+id = "HOST-REBOOT-001"
+milestone = "M11"
+title = "Define and implement host reboot behavior"
+status = "NOT_STARTED"
+priority = 409
+required = true
+depends_on = ["DAEMON-SERVICE-INTEGRATION-001", "DAEMON-RECOVERY-001"]
+verify = ["cargo test -p yoctui reboot_recovery", "./scripts/check-docs.sh"]
+notes = "Auto-start through supported user service, list persisted sessions, mark reboot-killed processes Lost/Stopped, offer only explicit restart/relaunch, and document exact guarantees."
+
+[[task]]
+id = "BITBAKE-SERVER-001"
+milestone = "M11"
+title = "Create daemon-owned BitBake controller"
+status = "NOT_STARTED"
+priority = 410
+required = true
+depends_on = ["DAEMON-STATE-001"]
+verify = ["cargo test -p yoctui-bitbake server_controller"]
+notes = "Typed detect/connect/disconnect/start/stop/restart/reconnect lifecycle using supported BitBake interfaces; UI remains independent."
+
+[[task]]
+id = "BITBAKE-SOCKET-001"
+milestone = "M11"
+title = "Integrate supported BitBake server socket APIs"
+status = "NOT_STARTED"
+priority = 411
+required = true
+depends_on = ["BITBAKE-SERVER-001"]
+verify = ["cargo test -p yoctui-bitbake bitbake_socket"]
+notes = "Add typed lifecycle, timeout, reconnect, version/capability detection, command correlation, and server-loss handling without UI dependencies."
+
+[[task]]
+id = "BITBAKE-CLI-CONTROL-001"
+milestone = "M11"
+title = "Provide shell-free BitBake CLI control fallback"
+status = "NOT_STARTED"
+priority = 412
+required = true
+depends_on = ["BITBAKE-SERVER-001"]
+verify = ["cargo test -p yoctui-bitbake cli_control"]
+notes = "Use capability-aware bounded cancellable previewable argv vectors only when socket APIs are insufficient."
+
+[[task]]
+id = "BITBAKE-RESTART-001"
+milestone = "M11"
+title = "Implement controlled BitBake restart"
+status = "NOT_STARTED"
+priority = 413
+required = true
+depends_on = ["BITBAKE-SOCKET-001", "BITBAKE-CLI-CONTROL-001"]
+verify = ["cargo test -p yoctui-bitbake bitbake_restart", "cargo test -p yoctui-model bitbake_restart"]
+notes = "Preview affected jobs, require confirmation, refuse unsafe restart, reconnect and refresh authoritative metadata while preserving daemon/client state where possible."
+
+[[task]]
+id = "PTY-SPEC-001"
+milestone = "M11"
+title = "Specify daemon-owned PTY session architecture"
+status = "NOT_STARTED"
+priority = 414
+required = true
+depends_on = ["DAEMON-SPEC-001"]
+verify = ["./scripts/check-docs.sh"]
+notes = "Define PTY/process-group/environment/cwd/session identity/dimensions/input-output/scrollback/resize/attach/detach/multi-client/termination/copy-search/paste policies."
+
+[[task]]
+id = "PTY-MODEL-001"
+milestone = "M11"
+title = "Add typed PTY session model"
+status = "NOT_STARTED"
+priority = 415
+required = true
+depends_on = ["PTY-SPEC-001", "DAEMON-STATE-001"]
+verify = ["cargo test -p yoctui-model pty_session"]
+notes = "Model stable IDs, names, kinds, cwd, command identity, lifecycle, dimensions, clients, process groups, bounded scrollback metadata, exits, restartability, and workspace context."
+
+[[task]]
+id = "PTY-RUNNER-001"
+milestone = "M11"
+title = "Implement daemon-owned Unix PTY runner"
+status = "NOT_STARTED"
+priority = 416
+required = true
+depends_on = ["PTY-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake pty_runner"]
+notes = "Own PTY/process group, interactive bytes, resize, bounded output, UTF-8/raw handling, cancellation, graceful/forced termination, child cleanup, and terminal modes."
+
+[[task]]
+id = "PTY-EMU-001"
+milestone = "M11"
+title = "Add maintained terminal-emulation state machine"
+status = "NOT_STARTED"
+priority = 417
+required = true
+depends_on = ["PTY-RUNNER-001"]
+verify = ["cargo test -p yoctui-model terminal_emulation"]
+notes = "Adopt a maintained ANSI/VT parser/emulator suitable for shells, menuconfig, devshell, editors, and interactive utilities; do not parse VT ad hoc."
+
+[[task]]
+id = "PTY-ATTACH-001"
+milestone = "M11"
+title = "Implement PTY attach and detach"
+status = "NOT_STARTED"
+priority = 418
+required = true
+depends_on = ["PTY-EMU-001", "DAEMON-SNAPSHOT-001"]
+verify = ["cargo test -p yoctui pty_attach"]
+notes = "Prefix return/detach leaves PTY running, client exit cannot kill it, reattach restores screen state, and list exposes running/exited/lost sessions."
+
+[[task]]
+id = "PTY-MULTI-001"
+milestone = "M11"
+title = "Support bounded multiple PTY sessions"
+status = "NOT_STARTED"
+priority = 419
+required = true
+depends_on = ["PTY-ATTACH-001"]
+verify = ["cargo test -p yoctui-model pty_multi"]
+notes = "Add named create/close/rename/switch/history/resource limits without assuming one active PTY."
+
+[[task]]
+id = "PTY-CONTEXT-001"
+milestone = "M11"
+title = "Open PTYs in typed Yocto contexts"
+status = "NOT_STARTED"
+priority = 420
+required = true
+depends_on = ["PTY-MULTI-001"]
+verify = ["cargo test -p yoctui-app pty_context"]
+notes = "Provide typed shells for build/source/layer/recipe/devtool/SDK/image-deploy contexts without untrusted profile shell execution."
+
+[[task]]
+id = "PTY-DEVTOOL-001"
+milestone = "M11"
+title = "Route interactive Devtool through daemon PTYs"
+status = "NOT_STARTED"
+priority = 421
+required = true
+depends_on = ["PTY-CONTEXT-001"]
+verify = ["cargo test -p yoctui pty_devtool"]
+notes = "Use daemon-owned sessions for appropriate interactive Devtool workflows."
+
+[[task]]
+id = "PTY-MENUCONFIG-001"
+milestone = "M11"
+title = "Support interactive menuconfig and devshell PTYs"
+status = "NOT_STARTED"
+priority = 422
+required = true
+depends_on = ["PTY-CONTEXT-001"]
+verify = ["cargo test -p yoctui pty_menuconfig"]
+notes = "Run recipe/kernel/U-Boot menuconfig, devshell, and interactive tasks inside PTYs without suspending the client."
+
+[[task]]
+id = "PTY-SDK-SHELL-001"
+milestone = "M11"
+title = "Support SDK and native environment PTYs"
+status = "NOT_STARTED"
+priority = 423
+required = true
+depends_on = ["PTY-CONTEXT-001"]
+verify = ["cargo test -p yoctui pty_sdk_shell"]
+notes = "Safely initialize selected SDK/native environment and keep persistent interactive shell sessions."
+
+[[task]]
+id = "CLIENT-ARCH-001"
+milestone = "M11"
+title = "Refactor Ratatui UI into attachable daemon client"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["DAEMON-SNAPSHOT-001", "BITBAKE-SERVER-001", "PTY-ATTACH-001"]
+verify = ["cargo test -p yoctui client_arch", "cargo test -p yoctui-ui client_arch"]
+notes = "Client connects, requests/render snapshots, sends typed actions, subscribes, and detaches; process ownership no longer lives in client."
+
+[[task]]
+id = "CLIENT-FALLBACK-001"
+milestone = "M11"
+title = "Define standalone client fallback policy"
+status = "NOT_STARTED"
+priority = 425
+required = true
+depends_on = ["CLIENT-ARCH-001"]
+verify = ["cargo test -p yoctui standalone_mode", "./scripts/check-docs.sh"]
+notes = "Explicitly choose and test mandatory daemon or supported standalone debugging/minimal mode."
+
+[[task]]
+id = "MULTICLIENT-001"
+milestone = "M11"
+title = "Support multiple daemon clients safely"
+status = "NOT_STARTED"
+priority = 426
+required = true
+depends_on = ["CLIENT-ARCH-001"]
+verify = ["cargo test -p yoctui multiclient"]
+notes = "Two terminals receive global updates while focus/layout stays client-local and conflicting global actions serialize or reject clearly."
+
+[[task]]
+id = "MULTICLIENT-PTY-001"
+milestone = "M11"
+title = "Define explicit multi-client PTY input ownership"
+status = "NOT_STARTED"
+priority = 427
+required = true
+depends_on = ["MULTICLIENT-001", "PTY-ATTACH-001"]
+verify = ["cargo test -p yoctui multiclient_pty"]
+notes = "Allow many viewers and one visible writer with explicit take-control and timeout/disconnect release; never merge competing keystrokes silently."
+
+[[task]]
+id = "KEYBOARD-PREFIX-001"
+milestone = "M11"
+title = "Add tmux-style prefix keyboard layer"
+status = "NOT_STARTED"
+priority = 428
+required = true
+depends_on = ["CLIENT-ARCH-001", "PTY-MULTI-001"]
+verify = ["cargo test -p yoctui-app keyboard_prefix", "cargo test -p yoctui-ui keyboard_prefix"]
+notes = "Configurable documented prefix supports sessions, splits, navigation, detach, palette/help, and visible timeout state without stealing terminal-app input."
+
+[[task]]
+id = "LAYOUT-MODEL-001"
+milestone = "M11"
+title = "Add typed client-local pane layout tree"
+status = "NOT_STARTED"
+priority = 429
+required = true
+depends_on = ["CLIENT-ARCH-001"]
+verify = ["cargo test -p yoctui-model pane_layout"]
+notes = "Model stable panes and horizontal/vertical splits, minima, focus, resize, serialization, and safe narrow collapse separately from daemon state."
+
+[[task]]
+id = "PANE-SPLIT-001"
+milestone = "M11"
+title = "Add explicit split-pane terminal sessions"
+status = "NOT_STARTED"
+priority = 430
+required = true
+depends_on = ["LAYOUT-MODEL-001", "PTY-MULTI-001"]
+verify = ["cargo test -p yoctui-ui pane_split"]
+notes = "Support horizontal/vertical split, close/focus/resize, existing-session attachment, and new shell panes while retaining workbench primacy."
+
+[[task]]
+id = "MOUSE-001"
+milestone = "M11"
+title = "Make mouse input first-class"
+status = "NOT_STARTED"
+priority = 431
+required = true
+depends_on = ["CLIENT-ARCH-001"]
+verify = ["cargo test -p yoctui-ui mouse_input"]
+notes = "Support semantic clicks, row/tree selection, scrolling, dialog controls, scrollbars, terminal focus, and session tabs without requiring mouse for core use."
+
+[[task]]
+id = "MOUSE-SPLIT-001"
+milestone = "M11"
+title = "Implement drag-resizable splits"
+status = "NOT_STARTED"
+priority = 432
+required = true
+depends_on = ["PANE-SPLIT-001", "MOUSE-001"]
+verify = ["cargo test -p yoctui-ui mouse_split"]
+notes = "Drag separators with minimum dimensions and client-local persistence while preserving keyboard resizing and safe responsive modes."
+
+[[task]]
+id = "LAYOUT-RESTORE-001"
+milestone = "M11"
+title = "Restore client-local layout on reconnect"
+status = "NOT_STARTED"
+priority = 433
+required = true
+depends_on = ["LAYOUT-MODEL-001", "DAEMON-PERSIST-001"]
+verify = ["cargo test -p yoctui layout_restore"]
+notes = "Restore layout separately from daemon global state and handle unavailable sessions safely."
+
+[[task]]
+id = "REMOTE-SSH-001"
+milestone = "M11"
+title = "Validate local daemon reattachment over SSH"
+status = "NOT_STARTED"
+priority = 434
+required = true
+depends_on = ["CLIENT-ARCH-001", "DAEMON-IPC-001"]
+verify = ["cargo test -p yoctui ssh_reattach"]
+notes = "Client attaches to build-host local socket after SSH login; SSH loss cannot stop daemon work and no unauthenticated TCP daemon is added."
+
+[[task]]
+id = "SECURITY-DAEMON-001"
+milestone = "M11"
+title = "Harden daemon IPC and process ownership"
+status = "NOT_STARTED"
+priority = 435
+required = true
+depends_on = ["DAEMON-IPC-001", "PTY-RUNNER-001", "PROFILE-LOAD-001"]
+verify = ["cargo test -p yoctui security_daemon", "cargo test -p yoctui-protocol security_daemon"]
+notes = "Enforce socket/peer/path safety, command and PTY ownership validation, environment filtering, profile trust rules, and no escalation."
+
+[[task]]
+id = "RESOURCE-LIMITS-001"
+milestone = "M11"
+title = "Add daemon resource limits"
+status = "NOT_STARTED"
+priority = 436
+required = true
+depends_on = ["DAEMON-STATE-001", "PTY-MULTI-001"]
+verify = ["cargo test -p yoctui resource_limits"]
+notes = "Bound client/PTY counts, scrollback/log/history, IPC queues/requests/snapshots, dimensions, and utility output."
+
+[[task]]
+id = "DAEMON-TELEMETRY-001"
+milestone = "M11"
+title = "Expose daemon and session health telemetry"
+status = "NOT_STARTED"
+priority = 437
+required = true
+depends_on = ["DAEMON-STATE-001", "RESOURCE-LIMITS-001"]
+verify = ["cargo test -p yoctui-model daemon_telemetry"]
+notes = "Report uptime, BitBake state, clients, jobs, PTYs, queue pressure, available memory data, and restart/recovery state."
+
+[[task]]
+id = "DAEMON-UI-001"
+milestone = "M11"
+title = "Add daemon and session status UI"
+status = "NOT_STARTED"
+priority = 438
+required = true
+depends_on = ["DAEMON-TELEMETRY-001", "CLIENT-ARCH-001"]
+verify = ["cargo test -p yoctui-ui daemon_status"]
+notes = "Render connection/instance/BitBake/session/client/recovery state and confirmed restart/stop actions."
+
+[[task]]
+id = "DAEMON-CLI-001"
+milestone = "M11"
+title = "Add typed daemon and session CLI commands"
+status = "NOT_STARTED"
+priority = 439
+required = true
+depends_on = ["DAEMON-LIFECYCLE-001", "PTY-MULTI-001"]
+verify = ["cargo test -p yoctui daemon_cli"]
+notes = "Add daemon start/stop/restart/status, attach, sessions, session attach, and session kill commands with typed documented behavior."
+
+[[task]]
+id = "DAEMON-TEST-001"
+milestone = "M11"
+title = "Add daemon protocol and lifecycle integration tests"
+status = "NOT_STARTED"
+priority = 440
+required = true
+depends_on = ["MULTICLIENT-PTY-001", "SECURITY-DAEMON-001", "RESOURCE-LIMITS-001"]
+verify = ["cargo test -p yoctui daemon_integration"]
+notes = "Cover handshake, reconnect, stale sockets, multiple/dropped clients, restart, BitBake loss, ordering, snapshots, malformed protocol, and limits."
+
+[[task]]
+id = "PTY-TEST-001"
+milestone = "M11"
+title = "Add real PTY integration tests"
+status = "NOT_STARTED"
+priority = 441
+required = true
+depends_on = ["PTY-SDK-SHELL-001", "MULTICLIENT-PTY-001"]
+verify = ["cargo test -p yoctui pty_integration"]
+notes = "Use real PTYs to test prompt, typing, resize, detach/reattach, sessions, exit, cancellation, ncurses fixture, raw keys, mouse where supported, and scrollback bounds."
+
+[[task]]
+id = "SSH-TEST-001"
+milestone = "M11"
+title = "Test SSH-style disconnect and reconnect"
+status = "NOT_STARTED"
+priority = 442
+required = true
+depends_on = ["REMOTE-SSH-001", "DAEMON-TEST-001"]
+verify = ["cargo test -p yoctui ssh_disconnect"]
+notes = "Use local controlled fixtures in CI and opt-in real SSH validation; client termination must not terminate daemon jobs or PTYs."
+
+[[task]]
+id = "DAEMON-REBOOT-TEST-001"
+milestone = "M11"
+title = "Test daemon restart and recovery acceptance"
+status = "NOT_STARTED"
+priority = 443
+required = true
+depends_on = ["HOST-REBOOT-001", "DAEMON-TEST-001"]
+verify = ["cargo test -p yoctui daemon_reboot"]
+notes = "Simulate daemon death/restart and verify metadata reload, honest Lost children, BitBake/client reconnect, and session recovery semantics."
+
+[[task]]
+id = "LIVE-DAEMON-POKY-001"
+milestone = "M11"
+title = "Validate daemon workflow on real Poky"
+status = "NOT_STARTED"
+priority = 444
+required = true
+depends_on = ["DAEMON-UI-001", "DAEMON-CLI-001", "PTY-TEST-001", "SSH-TEST-001", "DAEMON-REBOOT-TEST-001", "BITBAKE-RESTART-001"]
+verify = ["./scripts/live-daemon-poky.sh"]
+notes = "Fresh supported Poky acceptance: daemon/client build detach/reconnect, tasks/logs, shell detach/reattach, available interactive tasks, cancel/restart, and clean shutdown; claim only proven behavior."
+
+[[task]]
+id = "README-DAEMON-001"
+milestone = "M11"
+title = "Document daemon and attach workflows"
+status = "NOT_STARTED"
+priority = 445
+required = true
+depends_on = ["LIVE-DAEMON-POKY-001"]
+verify = ["./scripts/check-docs.sh"]
+notes = "Document start/auto-start/attach/detach/SSH/service/session/reboot/troubleshooting/security behavior."
+
+[[task]]
+id = "UX-KEYBOARD-MOUSE-001"
+milestone = "M11"
+title = "Document and test keyboard mouse parity"
+status = "NOT_STARTED"
+priority = 446
+required = true
+depends_on = ["KEYBOARD-PREFIX-001", "MOUSE-SPLIT-001"]
+verify = ["cargo test -p yoctui-ui keyboard_mouse_parity", "./scripts/check-docs.sh"]
+notes = "Every meaningful navigation operation has keyboard access and mouse access where semantic; mouse is never required."
+
+[[task]]
+id = "BINARY-ONE-RUST-001"
+milestone = "M11"
+title = "Preserve one Rust-native Yoctui product"
+status = "NOT_STARTED"
+priority = 447
+required = true
+depends_on = ["DAEMON-CLI-001"]
+verify = ["cargo test -p yoctui binary_product", "./scripts/check-docs.sh"]
+notes = "Keep daemon/client as one installed Rust Yoctui package or documented same-workspace helpers; no Electron or browser runtime."
+
+[[task]]
+id = "DAEMON-001"
+milestone = "M11"
+title = "Complete persistent Yoctui daemon session architecture"
+status = "NOT_STARTED"
+priority = 448
+required = true
+depends_on = ["README-DAEMON-001", "UX-KEYBOARD-MOUSE-001", "BINARY-ONE-RUST-001"]
+verify = ["./scripts/verify-completion.sh", "./scripts/live-daemon-poky.sh"]
+notes = "Parent gate: daemon-owned BitBake/jobs/PTYs survive client and SSH disconnect, safely support clients/input ownership/keyboard/mouse, enforce limits/security, state honest reboot semantics, and pass real Poky acceptance."

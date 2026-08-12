@@ -130,6 +130,11 @@ JUnit export is queued behind the active shared popup-editor controls task.
 The editor agenda now has explicit adoption, typed state, routing/rendering,
 and migration tasks; JUnit export and operations remain sequenced after it.
 
+M10 optional project profiles and M11 persistent daemon/session architecture
+are specified as required dependency-ordered implementation queues. Neither is
+implemented or live-validated yet; the current popup-editor task remains the
+active compatible task.
+
 ## Rules
 
 - This document must agree with `docs/task-registry.toml`.
