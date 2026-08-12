@@ -2092,15 +2092,17 @@ operation, configured endpoint, build identity, indexed native vector, and
 known helper side effects are all visible. Undocumented helper commands are
 not inferred or exposed.
 
-`e` opens a PR export form and `m` opens a PR import form only when the exact
+`e` opens `PR service export.toml` and `m` opens `PR service import.toml` only when the exact
 native helper, initialized build directory, and configured PR endpoint are
 available. The shortcut fixes the operation; the build directory and endpoint
-are read-only, while the file begins empty and accepts one canonical absolute
-`.conf` or `.inc` path. Normal typing and `Backspace` edit that path. `Enter`
-validates and requests an exact adapter preview without running the helper;
-`Esc` closes without side effects. Both forms show the native server-stop and
-cache-invalidation warning, import additionally states that it changes PR
-data, and export states that it may replace the selected destination.
+are read-only informational comments, while the selected `file` TOML string
+begins empty and accepts one canonical absolute `.conf` or `.inc` path. The
+shared popup Normal/Insert navigation, Home/End, selection, copy/paste, undo,
+and shortcut footer apply. `Enter` validates and requests an exact adapter
+preview without running the helper; Normal-mode `Esc` or `q` closes without
+side effects. The resulting typed preview shows the native server-stop and
+cache-invalidation warning, labels import as changing PR data, and states that
+export may replace the selected destination.
 
 ### 20.4 Release evidence
 

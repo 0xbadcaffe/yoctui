@@ -1682,6 +1682,11 @@ pub enum MaintenanceDialog {
         validation_error: Option<String>,
     },
     CleanupForm(Box<MaintenanceCleanupDraft>),
+    PrServiceToml {
+        operation: PrServiceOperation,
+        editor: PopupEditor,
+        validation_error: Option<String>,
+    },
     PrServiceForm(Box<MaintenancePrServiceDraft>),
     LockedCacheForm(Box<MaintenanceLockedCacheDraft>),
     BuildHistoryForm(Box<MaintenanceBuildHistoryDraft>),
@@ -1792,6 +1797,10 @@ pub enum MaintenanceAction {
     UpdateCleanupForm(Box<MaintenanceCleanupDraft>),
     ConfirmCleanupForm(Box<MaintenanceCleanupDraft>),
     OpenPrServiceForm(PrServiceOperation),
+    ConfirmPrServiceToml {
+        operation: PrServiceOperation,
+        document: String,
+    },
     UpdatePrServiceForm(Box<MaintenancePrServiceDraft>),
     ConfirmPrServiceForm(Box<MaintenancePrServiceDraft>),
     OpenLockedCacheForm,
@@ -2337,12 +2346,74 @@ pub fn update_maintenance(
                 && let Ok(draft) =
                     MaintenancePrServiceDraft::from_metadata(&snapshot.metadata, operation)
             {
+                let mut editor = PopupEditor::new(format!(
+                    "# PR service {} request\n# Build directory (read-only): {}\n# Endpoint (read-only): {}\nfile = \"\"\n",
+                    match operation {
+                        PrServiceOperation::Export => "export",
+                        PrServiceOperation::Import => "import",
+                    },
+                    draft.build_dir.display(),
+                    draft.endpoint,
+                ));
+                let _ = editor.select_toml_value("file");
                 return MaintenanceTransition {
                     dialog: MaintenanceDialogUpdate::Open(Box::new(
-                        MaintenanceDialog::PrServiceForm(Box::new(draft)),
+                        MaintenanceDialog::PrServiceToml {
+                            operation,
+                            editor,
+                            validation_error: None,
+                        },
                     )),
                     ..MaintenanceTransition::none()
                 };
+            }
+        }
+        MaintenanceAction::ConfirmPrServiceToml {
+            operation,
+            document,
+        } => {
+            let parsed = (|| {
+                let fields = popup_toml_fields(&document)?;
+                let file = fields
+                    .get("file")
+                    .cloned()
+                    .ok_or_else(|| "Missing `file`.".to_owned())?;
+                let snapshot = state
+                    .capability
+                    .snapshot()
+                    .ok_or_else(|| "PR service capability is unavailable.".to_owned())?;
+                let mut draft =
+                    MaintenancePrServiceDraft::from_metadata(&snapshot.metadata, operation)
+                        .map_err(str::to_owned)?;
+                draft.file = file;
+                draft.request().map_err(str::to_owned)
+            })();
+            match parsed {
+                Ok(request) => {
+                    let Some(capability_request) = state.capability.request() else {
+                        return MaintenanceTransition::none();
+                    };
+                    return MaintenanceTransition {
+                        effect: Some(MaintenanceEffect::PreviewPrService {
+                            capability_request,
+                            request,
+                        }),
+                        dialog: MaintenanceDialogUpdate::Close,
+                        notification: None,
+                    };
+                }
+                Err(message) => {
+                    return MaintenanceTransition {
+                        dialog: MaintenanceDialogUpdate::Open(Box::new(
+                            MaintenanceDialog::PrServiceToml {
+                                operation,
+                                editor: PopupEditor::new(document),
+                                validation_error: Some(message),
+                            },
+                        )),
+                        ..MaintenanceTransition::none()
+                    };
+                }
             }
         }
         MaintenanceAction::UpdatePrServiceForm(draft) if draft.is_bounded() => {
@@ -3447,28 +3518,49 @@ timeout = 45
             let MaintenanceDialogUpdate::Open(dialog) = transition.dialog else {
                 panic!("PR service form did not open");
             };
-            let MaintenanceDialog::PrServiceForm(mut draft) = *dialog else {
+            let MaintenanceDialog::PrServiceToml {
+                operation: actual,
+                editor,
+                ..
+            } = *dialog
+            else {
                 panic!("wrong PR service dialog");
             };
-            assert_eq!(draft.operation, operation);
-            assert_eq!(draft.build_dir, Path::new("/build"));
-            assert_eq!(draft.endpoint, "localhost:8585");
-            draft.file = "/evidence/pr.txt".into();
+            assert_eq!(actual, operation);
+            assert_eq!(editor.selected_text(), Some(""));
+            assert!(
+                editor
+                    .text
+                    .contains("# Build directory (read-only): /build")
+            );
+            assert!(
+                editor
+                    .text
+                    .contains("# Endpoint (read-only): localhost:8585")
+            );
             let invalid = update_maintenance(
                 &mut state,
-                MaintenanceAction::ConfirmPrServiceForm(draft.clone()),
+                MaintenanceAction::ConfirmPrServiceToml {
+                    operation,
+                    document: "file = \"/evidence/pr.txt\"\n".into(),
+                },
             );
             assert!(matches!(
                 invalid.dialog,
                 MaintenanceDialogUpdate::Open(dialog)
-                    if matches!(*dialog, MaintenanceDialog::PrServiceForm(ref draft) if draft.validation.is_some())
+                    if matches!(*dialog, MaintenanceDialog::PrServiceToml { validation_error: Some(_), .. })
             ));
-            draft.file = match operation {
-                PrServiceOperation::Export => "/evidence/pr.conf".into(),
-                PrServiceOperation::Import => "/evidence/pr.inc".into(),
+            let file = match operation {
+                PrServiceOperation::Export => "/evidence/pr.conf",
+                PrServiceOperation::Import => "/evidence/pr.inc",
             };
-            let valid =
-                update_maintenance(&mut state, MaintenanceAction::ConfirmPrServiceForm(draft));
+            let valid = update_maintenance(
+                &mut state,
+                MaintenanceAction::ConfirmPrServiceToml {
+                    operation,
+                    document: format!("file = \"{file}\"\n"),
+                },
+            );
             assert!(matches!(
                 valid.effect,
                 Some(MaintenanceEffect::PreviewPrService {

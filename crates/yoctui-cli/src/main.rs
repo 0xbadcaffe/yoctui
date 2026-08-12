@@ -5827,6 +5827,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             dialog.as_ref(),
                             yoctui_model::MaintenanceDialog::ReadinessToml { editor, .. }
                                 | yoctui_model::MaintenanceDialog::CleanupToml { editor, .. }
+                                | yoctui_model::MaintenanceDialog::PrServiceToml { editor, .. }
                                 if editor.editing
                         )
                 ) {

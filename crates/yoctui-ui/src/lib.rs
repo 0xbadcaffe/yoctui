@@ -839,6 +839,18 @@ pub fn render(frame: &mut Frame, app: &App) {
                 editor,
                 validation_error,
             } => Some(("Sstate cleanup.toml", editor, validation_error)),
+            MaintenanceDialog::PrServiceToml {
+                operation,
+                editor,
+                validation_error,
+            } => Some((
+                match operation {
+                    yoctui_model::PrServiceOperation::Export => "PR service export.toml",
+                    yoctui_model::PrServiceOperation::Import => "PR service import.toml",
+                },
+                editor,
+                validation_error,
+            )),
             _ => None,
         }
     {
@@ -9428,6 +9440,9 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
         MaintenanceDialog::CleanupToml { .. } => {
             unreachable!("sstate cleanup uses the shared editor")
         }
+        MaintenanceDialog::PrServiceToml { .. } => {
+            unreachable!("PR service forms use the shared editor")
+        }
         MaintenanceDialog::ReadinessForm(draft) => (
             "Sstate readiness check",
             format!(
@@ -15246,25 +15261,28 @@ mod tests {
             yoctui_model::PrServiceOperation::Export,
             yoctui_model::PrServiceOperation::Import,
         ] {
-            let mut draft =
-                yoctui_model::MaintenancePrServiceDraft::from_metadata(&metadata, operation)
-                    .unwrap();
-            draft.file = "/build/pr-data.inc".into();
-            if operation == yoctui_model::PrServiceOperation::Export {
-                draft.validation = Some("destination parent is unavailable".into());
-            }
+            let editor = yoctui_model::PopupEditor::new(format!(
+                "# Build directory (read-only): {}\n# Endpoint (read-only): {}\nfile = \"/build/pr-data.inc\"\n",
+                metadata.build_dir.as_ref().unwrap().display(),
+                metadata.prserv_host.as_ref().unwrap(),
+            ));
             app.dialogs.clear();
             app.dialogs.push_front(Dialog::Maintenance(Box::new(
-                MaintenanceDialog::PrServiceForm(Box::new(draft)),
+                MaintenanceDialog::PrServiceToml {
+                    operation,
+                    editor,
+                    validation_error: (operation == yoctui_model::PrServiceOperation::Export)
+                        .then(|| "destination parent is unavailable".into()),
+                },
             )));
             app.focus = FocusTarget::Dialog;
             for (width, height) in [(160, 40), (100, 26), (80, 24)] {
                 let output = rendered_text(&app, width, height);
                 assert!(output.contains("/build/pr-data.inc"), "{width}: {output}");
                 assert!(output.contains("localhost:8585"), "{width}: {output}");
-                assert!(output.contains("memory-resident"), "{width}: {output}");
+                assert!(output.contains("Home/End line"), "{width}: {output}");
                 if operation == yoctui_model::PrServiceOperation::Import {
-                    assert!(output.contains("changes PR service data"), "{output}");
+                    assert!(output.contains("PR service import.toml"), "{output}");
                 } else {
                     assert!(output.contains("destination parent"), "{output}");
                 }

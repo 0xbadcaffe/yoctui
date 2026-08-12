@@ -2120,6 +2120,18 @@ pub fn maintenance_dialog_action(dialog: &MaintenanceDialog, key: Input) -> Opti
             }
             input => popup_editor_action(editor.editing, input),
         },
+        MaintenanceDialog::PrServiceToml {
+            operation, editor, ..
+        } => match key {
+            Input::Enter => maintenance(MaintenanceAction::ConfirmPrServiceToml {
+                operation: *operation,
+                document: editor.text.clone(),
+            }),
+            Input::Char('q') | Input::Esc if !editor.editing => {
+                maintenance(MaintenanceAction::CancelDialog)
+            }
+            input => popup_editor_action(editor.editing, input),
+        },
         MaintenanceDialog::ReadinessForm(draft) => {
             let mut next = (**draft).clone();
             next.validation = None;
@@ -3095,33 +3107,33 @@ mod tests {
             maintenance_workspace_action(MaintenanceView::Sstate, 2, Input::Char('e')),
             None
         );
-        let metadata = yoctui_model::MaintenanceMetadata::new(yoctui_model::MaintenanceMetadata {
-            build_dir: Some("/build".into()),
-            prserv_host: Some("localhost:8585".into()),
-            ..yoctui_model::MaintenanceMetadata::default()
-        })
-        .unwrap();
-        let draft = yoctui_model::MaintenancePrServiceDraft::from_metadata(
-            &metadata,
-            yoctui_model::PrServiceOperation::Import,
-        )
-        .unwrap();
+        let mut editor = yoctui_model::PopupEditor::new("file = \"\"\n".into());
+        editor.select_range(8, 8);
+        editor.editing = true;
         assert!(matches!(
             maintenance_dialog_action(
-                &MaintenanceDialog::PrServiceForm(Box::new(draft.clone())),
+                &MaintenanceDialog::PrServiceToml {
+                    operation: yoctui_model::PrServiceOperation::Import,
+                    editor: editor.clone(),
+                    validation_error: None,
+                },
                 Input::Char('/'),
             ),
-            Some(Action::Maintenance(MaintenanceAction::UpdatePrServiceForm(next)))
-                if next.file == "/"
+            Some(Action::EditActivePopup(PopupEditorCommand::Insert('/')))
         ));
         assert!(matches!(
             maintenance_dialog_action(
-                &MaintenanceDialog::PrServiceForm(Box::new(draft)),
+                &MaintenanceDialog::PrServiceToml {
+                    operation: yoctui_model::PrServiceOperation::Import,
+                    editor: editor.clone(),
+                    validation_error: None,
+                },
                 Input::Enter,
             ),
-            Some(Action::Maintenance(
-                MaintenanceAction::ConfirmPrServiceForm(_)
-            ))
+            Some(Action::Maintenance(MaintenanceAction::ConfirmPrServiceToml {
+                operation: yoctui_model::PrServiceOperation::Import,
+                document,
+            })) if document == editor.text
         ));
     }
 

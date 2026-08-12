@@ -720,7 +720,10 @@ Typed endpoint observations allow deterministic worker and fixture input but
 cannot turn process-name evidence into service health. PR export/import retains
 the exact build directory and configured endpoint, revalidates the canonical
 helper plus source/destination identities, and reuses the same Maintenance
-process-group runner as sstate operations.
+process-group runner as sstate operations. Its shared popup carries only the
+selected operation and editable `file` field; current build-directory and
+endpoint identities are reconstructed from capability metadata during
+validation, so edited informational comments cannot change execution context.
 
 Release commands use the same runner through a guarded external-command
 specification. `gen-lockedsig-cache` retains its ordered positional interface

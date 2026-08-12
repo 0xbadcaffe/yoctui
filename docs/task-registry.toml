@@ -2734,18 +2734,18 @@ notes = "The readiness and cleanup shared-popup migrations pass their combined m
 id = "UX-POPUP-OPS-MAINT-SERVICE-001"
 milestone = "M8"
 title = "Move Maintenance service forms into TOML popups"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 163
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-SSTATE-001"]
 verify = ["cargo test -p yoctui-model maintenance_service", "cargo test -p yoctui-app maintenance_service", "cargo test -p yoctui-ui maintenance_service", "cargo check -p yoctui"]
-notes = "Migrate PR-service import/export drafts without weakening canonical destination checks, side-effect previews, or confirmation."
+notes = "PR-service import/export now use operation-specific shared PopupEditor documents; only the file is editable, current build/endpoint context remains capability-owned, and existing typed preview and confirmation rules remain intact."
 
 [[task]]
 id = "UX-POPUP-OPS-MAINT-LOCKED-001"
 milestone = "M8"
 title = "Move Maintenance locked-cache form into a TOML popup"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 164
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-SERVICE-001"]
