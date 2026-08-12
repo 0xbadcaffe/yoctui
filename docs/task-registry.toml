@@ -2635,18 +2635,18 @@ notes = "SDK publication now uses PopupEditor and shared input/clipboard routing
 id = "UX-POPUP-EDITOR-SDK-NATIVE-001"
 milestone = "M8"
 title = "Migrate SDK native tools popup to shared editor state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 168
 required = true
 depends_on = ["UX-POPUP-EDITOR-SDK-PUBLISH-001"]
 verify = ["cargo test -p yoctui-model sdk_", "cargo test -p yoctui-ui sdk_", "cargo test -p yoctui sdk_workflow_cli_", "cargo check -p yoctui"]
-notes = "Adopt shared multi-field editing without weakening FindSysroot versus RunNative restrictions."
+notes = "SDK native tools now use PopupEditor and shared multi-field navigation/clipboard routing, start with mode selected, and retain typed FindSysroot versus RunNative parsing, exact previews, and confirmation."
 
 [[task]]
 id = "UX-POPUP-EDITOR-TEST-LAUNCH-001"
 milestone = "M8"
 title = "Migrate Testing launch popup to shared editor state"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 169
 required = true
 depends_on = ["UX-POPUP-EDITOR-SDK-NATIVE-001"]

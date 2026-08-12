@@ -155,7 +155,9 @@ and its build confirmation remains mandatory. Wic creation now shares the
 editor path, selects its output directory, and reserves responsive validation
 space while retaining all typed Wic preview gates. SDK publication now shares
 the editor path and immediate destination replacement while retaining exact
-path validation and confirmation; SDK native-tools migration is active.
+path validation and confirmation. SDK native tools now share multi-field
+editing while retaining FindSysroot versus RunNative restrictions and exact
+previews; Testing launch migration is active.
 
 ## Rules
 

@@ -1188,10 +1188,7 @@ pub enum Dialog {
     SdkPublishTomlEditor(PopupEditor),
     SdkPublishConfirmation(SdkPublishPreview),
     SdkNative(SdkNativeDialog),
-    SdkNativeTomlEditor {
-        content: String,
-        editing: bool,
-    },
+    SdkNativeTomlEditor(PopupEditor),
     SdkNativeConfirmation(SdkNativePreview),
     SdkCancellationConfirmation(SdkSessionId),
     TestLaunch(TestLaunchDialog),
@@ -6265,7 +6262,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     Dialog::BuildEnvironmentEditor(editor)
                     | Dialog::BuildEnvironmentCloneEditor(editor)
                     | Dialog::BbmaskEdit(editor)
-                    | Dialog::SdkPublishTomlEditor(editor),
+                    | Dialog::SdkPublishTomlEditor(editor)
+                    | Dialog::SdkNativeTomlEditor(editor),
                 ) => (editor, None),
                 Some(Dialog::ConfigEdit { editor, .. }) => (editor, None),
                 Some(Dialog::BuildTarget { editor, .. }) => (editor, None),
@@ -7161,33 +7159,29 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             return queue_sdk_session(app, SdkOperation::Publish(preview.request));
         }
         Action::BeginSdkNative => {
-            open_dialog(
-                app,
-                Dialog::SdkNativeTomlEditor {
-                    content: "mode = \"find-sysroot\"\nworkspace = \"\"\nrecipe = \"\"\ntool = \"\"\narguments = \"\"\n".into(),
-                    editing: false,
-                },
-            );
+            let mut editor = PopupEditor::new("mode = \"find-sysroot\"\nworkspace = \"\"\nrecipe = \"\"\ntool = \"\"\narguments = \"\"\n".into());
+            let _ = editor.select_toml_value("mode");
+            open_dialog(app, Dialog::SdkNativeTomlEditor(editor));
         }
         Action::ToggleSdkNativeTomlEditor => {
-            if let Some(Dialog::SdkNativeTomlEditor { editing, .. }) = app.active_dialog_mut() {
-                *editing = !*editing;
+            if let Some(Dialog::SdkNativeTomlEditor(editor)) = app.active_dialog_mut() {
+                editor.editing = !editor.editing;
             }
         }
         Action::AppendSdkNativeTomlEditor(character) => {
-            if let Some(Dialog::SdkNativeTomlEditor { content, editing }) = app.active_dialog_mut()
-                && *editing
+            if let Some(Dialog::SdkNativeTomlEditor(editor)) = app.active_dialog_mut()
+                && editor.editing
                 && !character.is_control()
-                && content.len() < 8_192
+                && editor.text.len() < 8_192
             {
-                content.push(character);
+                editor.insert(&character.to_string());
             }
         }
         Action::BackspaceSdkNativeTomlEditor => {
-            if let Some(Dialog::SdkNativeTomlEditor { content, editing }) = app.active_dialog_mut()
-                && *editing
+            if let Some(Dialog::SdkNativeTomlEditor(editor)) = app.active_dialog_mut()
+                && editor.editing
             {
-                content.pop();
+                editor.backspace();
             }
         }
         Action::UpdateSdkNativeDraft(draft) => {
@@ -7264,10 +7258,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::PreviewSdkNative => {
-            if let Some(Dialog::SdkNativeTomlEditor { content, .. }) = app.active_dialog().cloned()
-            {
+            if let Some(Dialog::SdkNativeTomlEditor(editor)) = app.active_dialog().cloned() {
                 let request = (|| {
-                    let fields = popup_toml_fields(&content)?;
+                    let fields = popup_toml_fields(&editor.text)?;
                     let mode = match fields.get("mode").map(String::as_str) {
                         Some("find-sysroot") => SdkNativeMode::FindSysroot,
                         Some("run-native") => SdkNativeMode::RunNative,
@@ -7329,7 +7322,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::CancelSdkNative => {
             if matches!(
                 app.active_dialog(),
-                Some(Dialog::SdkNative(_) | Dialog::SdkNativeTomlEditor { .. })
+                Some(Dialog::SdkNative(_) | Dialog::SdkNativeTomlEditor(_))
             ) {
                 close_dialog(app);
             }
@@ -19399,10 +19392,11 @@ mod tests {
         assert!(job.output[0].truncated);
 
         let _ = update(&mut app, Action::BeginSdkNative);
-        let Some(Dialog::SdkNativeTomlEditor { content, .. }) = app.active_dialog_mut() else {
+        let Some(Dialog::SdkNativeTomlEditor(editor)) = app.active_dialog_mut() else {
             panic!("SDK native dialog");
         };
-        *content = "mode = \"run-native\"\nworkspace = \"/opt/sdk\"\nrecipe = \"cmake-native\"\ntool = \"cmake\"\narguments = \"--version\"\n".into();
+        editor.text = "mode = \"run-native\"\nworkspace = \"/opt/sdk\"\nrecipe = \"cmake-native\"\ntool = \"cmake\"\narguments = \"--version\"\n".into();
+        editor.cursor = editor.text.len();
         let _ = update(&mut app, Action::PreviewSdkNative);
         assert!(matches!(
             app.active_dialog(),
@@ -19411,8 +19405,9 @@ mod tests {
         let _ = update(&mut app, Action::CancelSdkNativePreview);
 
         let _ = update(&mut app, Action::BeginSdkNative);
-        if let Some(Dialog::SdkNativeTomlEditor { content, .. }) = app.active_dialog_mut() {
-            *content = "mode = \"run-native\"\nworkspace = \"/opt/sdk\"\nrecipe = \"cmake-native\"\ntool = \"cmake\"\narguments = \"--version\"\n".into();
+        if let Some(Dialog::SdkNativeTomlEditor(editor)) = app.active_dialog_mut() {
+            editor.text = "mode = \"run-native\"\nworkspace = \"/opt/sdk\"\nrecipe = \"cmake-native\"\ntool = \"cmake\"\narguments = \"--version\"\n".into();
+            editor.cursor = editor.text.len();
         }
         let _ = update(&mut app, Action::PreviewSdkNative);
         let Some(Effect::StartSdkSession { id: native_id, .. }) =

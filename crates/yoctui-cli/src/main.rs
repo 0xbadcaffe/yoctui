@@ -5812,7 +5812,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::SdkPublishTomlEditor(editor)) if editor.editing => {
                         Some(Action::AppendSdkPublishTomlEditor as fn(char) -> Action)
                     }
-                    Some(Dialog::SdkNativeTomlEditor { editing: true, .. }) => {
+                    Some(Dialog::SdkNativeTomlEditor(editor)) if editor.editing => {
                         Some(Action::AppendSdkNativeTomlEditor as fn(char) -> Action)
                     }
                     Some(Dialog::TestLaunchTomlEditor { editing: true, .. }) => {
@@ -6178,29 +6178,20 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             operation,
                         );
                     }
-                } else if let Some(Dialog::SdkNativeTomlEditor { editing, .. }) =
+                } else if let Some(Dialog::SdkNativeTomlEditor(editor)) =
                     app.active_dialog().cloned()
                 {
-                    let action = if editing {
-                        match input {
-                            Input::Esc => Some(Action::ToggleSdkNativeTomlEditor),
-                            Input::Enter => Some(Action::PreviewSdkNative),
-                            Input::Backspace => Some(Action::BackspaceSdkNativeTomlEditor),
-                            Input::Char(character) => {
-                                Some(Action::AppendSdkNativeTomlEditor(character))
-                            }
-                            _ => None,
+                    let action = match input {
+                        Input::Enter => Some(Action::PreviewSdkNative),
+                        Input::Char('q') | Input::Esc if !editor.editing => {
+                            Some(Action::CancelSdkNative)
                         }
-                    } else {
-                        match input {
-                            Input::Char('i') => Some(Action::ToggleSdkNativeTomlEditor),
-                            Input::Char('q') | Input::Esc => Some(Action::CancelSdkNative),
-                            Input::Enter => Some(Action::PreviewSdkNative),
-                            _ => None,
-                        }
+                        input => popup_editor_action(editor.editing, input),
                     };
-                    if let Some(action) = action {
-                        let _ = update(&mut app, action);
+                    if let Some(Effect::CopyToClipboard(content)) =
+                        action.and_then(|action| update(&mut app, action))
+                    {
+                        copy_to_clipboard(&mut app, content).await;
                     }
                 } else if let Some(Dialog::SdkNative(dialog)) = app.active_dialog() {
                     let editing = dialog.editing;
@@ -10795,20 +10786,21 @@ esac"#,
     }
 
     fn set_sdk_native_draft(app: &mut App, draft: yoctui_model::SdkNativeDraft) {
-        let Some(Dialog::SdkNativeTomlEditor { content, .. }) = app.active_dialog_mut() else {
+        let Some(Dialog::SdkNativeTomlEditor(editor)) = app.active_dialog_mut() else {
             panic!("SDK native TOML editor");
         };
         let mode = match draft.mode {
             yoctui_model::SdkNativeMode::FindSysroot => "find-sysroot",
             yoctui_model::SdkNativeMode::RunNative => "run-native",
         };
-        *content = format!(
+        editor.text = format!(
             "mode = \"{mode}\"\nworkspace = \"{}\"\nrecipe = \"{}\"\ntool = \"{}\"\narguments = \"{}\"\n",
             draft.extracted_root,
             draft.recipe,
             draft.tool,
             draft.arguments.join(" ")
         );
+        editor.cursor = editor.text.len();
     }
 
     async fn sdk_workflow_poll_scan(
@@ -11032,7 +11024,7 @@ esac"#,
         let _ = update(&mut app, Action::BeginSdkNative);
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::SdkNativeTomlEditor { .. })
+            Some(Dialog::SdkNativeTomlEditor(_))
         ));
         set_sdk_native_draft(
             &mut app,

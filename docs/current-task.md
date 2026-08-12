@@ -2,21 +2,20 @@
 
 ## Task
 
-**ID:** UX-POPUP-EDITOR-SDK-NATIVE-001
-**Title:** Migrate SDK native tools popup to shared editor state
+**ID:** UX-POPUP-EDITOR-TEST-LAUNCH-001
+**Title:** Migrate Testing launch popup to shared editor state
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Adopt shared reducer-owned multi-field editing for SDK native tools without
-weakening FindSysroot versus RunNative restrictions, exact previews, or
+Adopt shared reducer-owned editing for Testing launch fields while preserving
+authoritative machine/distro/image context, typed policy validation, and launch
 confirmation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model sdk_
-cargo test -p yoctui-ui sdk_
-cargo test -p yoctui sdk_workflow_cli_
+cargo test -p yoctui-model test_workflow
+cargo test -p yoctui-ui test_workflow
 cargo check -p yoctui
 ```
