@@ -1,4 +1,7 @@
-use crate::{BackgroundJobId, BuildRequest, RecipeIdentity};
+use crate::{
+    BackgroundJobId, BuildRequest, PopupEditor, RecipeIdentity, popup_toml_document,
+    popup_toml_value,
+};
 use std::{
     collections::VecDeque,
     path::{Component, Path, PathBuf},
@@ -1037,7 +1040,8 @@ pub enum QaDialog {
     Operation(QaOperationPreview),
     LayerOperation(QaLayerOperationPreview),
     Import {
-        input: String,
+        editor: PopupEditor,
+        validation_error: Option<String>,
     },
     Cancellation {
         session: QaSessionId,
@@ -2050,28 +2054,62 @@ pub fn update_qa(state: &mut QaState, action: QaAction) -> QaTransition {
         }
         QaAction::BeginImport => QaTransition {
             dialog: QaDialogUpdate::Open(Box::new(QaDialog::Import {
-                input: String::new(),
+                editor: {
+                    let mut editor = PopupEditor::new(popup_toml_document(
+                        "root",
+                        "",
+                        Some("normalized absolute QA report or bounded directory"),
+                    ));
+                    let _ = editor.select_toml_value("root");
+                    editor
+                },
+                validation_error: None,
             })),
             ..QaTransition::none()
         },
-        QaAction::UpdateImport(input)
-            if input.len() <= MAX_QA_TEXT_BYTES
-                && !input.chars().any(|character| character.is_control()) =>
-        {
-            QaTransition {
-                dialog: QaDialogUpdate::Open(Box::new(QaDialog::Import { input })),
-                ..QaTransition::none()
-            }
-        }
+        QaAction::UpdateImport(document) if document.len() <= MAX_QA_TEXT_BYTES => QaTransition {
+            dialog: QaDialogUpdate::Open(Box::new(QaDialog::Import {
+                editor: PopupEditor::new(document),
+                validation_error: None,
+            })),
+            ..QaTransition::none()
+        },
         QaAction::UpdateImport(_) => QaTransition::none(),
-        QaAction::ConfirmImport(input) => {
-            match begin_report_request(state, vec![PathBuf::from(input)]) {
+        QaAction::ConfirmImport(document) => {
+            let root = match popup_toml_value(&document, "root") {
+                Ok(root) => PathBuf::from(root),
+                Err(message) => {
+                    return QaTransition {
+                        dialog: QaDialogUpdate::Open(Box::new(QaDialog::Import {
+                            editor: PopupEditor::new(document),
+                            validation_error: Some(message),
+                        })),
+                        ..QaTransition::none()
+                    };
+                }
+            };
+            if !absolute_normal_path(&root) {
+                return QaTransition {
+                    dialog: QaDialogUpdate::Open(Box::new(QaDialog::Import {
+                        editor: PopupEditor::new(document),
+                        validation_error: Some("`root` must be a normalized absolute path.".into()),
+                    })),
+                    ..QaTransition::none()
+                };
+            }
+            match begin_report_request(state, vec![root]) {
                 Ok(effect) => QaTransition {
                     effect: Some(effect),
                     dialog: QaDialogUpdate::Close,
                     notification: None,
                 },
-                Err(message) => QaTransition::notify(message),
+                Err(message) => QaTransition {
+                    dialog: QaDialogUpdate::Open(Box::new(QaDialog::Import {
+                        editor: PopupEditor::new(document),
+                        validation_error: Some(message.into()),
+                    })),
+                    ..QaTransition::none()
+                },
             }
         }
         QaAction::CancelDialog => {
@@ -2988,7 +3026,10 @@ mod tests {
     fn qa_check_workflow_report_generations_bounds_partial_and_terminal_states() {
         let mut state = QaState::default();
         load(&mut state);
-        let transition = update_qa(&mut state, QaAction::ConfirmImport("/reports".into()));
+        let transition = update_qa(
+            &mut state,
+            QaAction::ConfirmImport("root = \"/reports\"\n".into()),
+        );
         let Some(QaEffect::ImportReports(request)) = transition.effect else {
             panic!("expected report import")
         };
@@ -3645,8 +3686,23 @@ mod tests {
         let _ = update(&mut app, Action::Qa(QaAction::BeginImport));
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::Qa(QaDialog::Import { .. }))
+            Some(Dialog::Qa(QaDialog::Import { editor, .. }))
+                if editor.selected_text() == Some("")
         ));
         assert_eq!(app.focus, FocusTarget::Dialog);
+
+        let transition = update_qa(
+            &mut app.qa,
+            QaAction::ConfirmImport("root = \"relative/report.json\"\n".into()),
+        );
+        assert!(matches!(
+            transition.dialog,
+            QaDialogUpdate::Open(dialog)
+                if matches!(*dialog, QaDialog::Import {
+                    validation_error: Some(ref message),
+                    ..
+                } if message.contains("absolute"))
+        ));
+        assert!(transition.effect.is_none());
     }
 }

@@ -814,6 +814,19 @@ pub fn render(frame: &mut Frame, app: &App) {
         );
     } else if let Some(Dialog::Security(dialog)) = app.active_dialog() {
         security_dialog(frame, app, dialog, area);
+    } else if let Some(Dialog::Qa(QaDialog::Import {
+        editor,
+        validation_error,
+    })) = app.active_dialog()
+    {
+        toml_popup_editor(
+            frame,
+            app,
+            area,
+            "QA import.toml",
+            editor,
+            validation_error.as_deref(),
+        );
     } else if let Some(Dialog::Qa(dialog)) = app.active_dialog() {
         qa_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::Maintenance(dialog)) = app.active_dialog() {
@@ -3032,10 +3045,7 @@ fn qa_dialog(frame: &mut Frame, app: &App, dialog: &QaDialog, area: Rect) {
                 preview.indexed_arguments.join("\n")
             ),
         ),
-        QaDialog::Import { input } => (
-            "Import QA reports",
-            format!("Exact absolute report or directory:\n{input}_\n\nEnter imports | Esc cancels"),
-        ),
+        QaDialog::Import { .. } => unreachable!("QA import uses the shared editor"),
         QaDialog::Cancellation {
             session,
             background_job,
@@ -14666,9 +14676,16 @@ mod tests {
             ),
             (
                 QaDialog::Import {
-                    input: "/build/reports".into(),
+                    editor: {
+                        let mut editor = yoctui_model::PopupEditor::new(
+                            "# exact absolute report\nroot = \"/build/reports\"\n".into(),
+                        );
+                        editor.select_toml_value("root").unwrap();
+                        editor
+                    },
+                    validation_error: Some("normalized absolute path required".into()),
                 },
-                "Exact absolute report",
+                "QA import.toml",
             ),
             (
                 QaDialog::Cancellation {
@@ -14688,6 +14705,13 @@ mod tests {
             for (width, height) in [(160, 40), (100, 26), (80, 24)] {
                 let output = rendered_text(&app, width, height);
                 assert!(output.contains(expected), "{width}: {output}");
+                if expected == "QA import.toml" {
+                    assert!(output.contains("Home/End line"), "{width}: {output}");
+                    assert!(
+                        output.contains("normalized absolute path required"),
+                        "{width}: {output}"
+                    );
+                }
             }
         }
     }

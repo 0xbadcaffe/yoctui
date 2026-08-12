@@ -2690,18 +2690,18 @@ notes = "Security report import now uses the shared PopupEditor with root select
 id = "UX-POPUP-OPS-QA-001"
 milestone = "M8"
 title = "Move QA report import into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 159
 required = true
 depends_on = ["UX-POPUP-OPS-SECURITY-001"]
 verify = ["cargo test -p yoctui-model qa", "cargo test -p yoctui-app qa", "cargo test -p yoctui-ui qa", "cargo check -p yoctui"]
-notes = "Migrate the QA report import path while retaining exact scope/report identity, bounded adapter import, and typed validation."
+notes = "QA report import now uses the shared PopupEditor with root selected, Normal/Insert navigation, copy/paste, in-popup validation, and the same exact normalized request passed to the bounded QA report adapter."
 
 [[task]]
 id = "UX-POPUP-OPS-MAINT-SSTATE-001"
 milestone = "M8"
 title = "Move Maintenance sstate forms into TOML popups"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 160
 required = true
 depends_on = ["UX-POPUP-OPS-QA-001"]

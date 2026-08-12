@@ -1732,8 +1732,10 @@ start, stale tool/layer identity, and worker loss are separate outcomes.
 
 #### Reports, imports, lifecycle, and dialogs
 
-`I` opens a focus-trapping import dialog for one normalized absolute canonical
-regular QA report or a bounded canonical directory. Only documented adapter
+`I` opens the bounded `QA import.toml` popup with the `root` value selected and
+the shared Normal/Insert navigation, Home/End, copy/paste, persistent shortcut
+row, and in-popup typed validation. It accepts one normalized absolute
+canonical regular QA report or a bounded canonical directory. Only documented adapter
 formats are parsed. Imports and successful operations replace the current
 report generation; `R` rescans the same exact paths. Scans are bounded by
 directory/file count, total bytes, record count, field length, and time, refuse

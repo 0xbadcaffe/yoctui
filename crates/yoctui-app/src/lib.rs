@@ -2045,23 +2045,10 @@ pub fn qa_dialog_action(dialog: &QaDialog, key: Input) -> Option<Action> {
             Input::Esc => qa(QaAction::CancelDialog),
             _ => None,
         },
-        QaDialog::Import { input } => match key {
-            Input::Char(character)
-                if !character.is_control()
-                    && input.len() + character.len_utf8() <= yoctui_model::MAX_QA_TEXT_BYTES =>
-            {
-                let mut next = input.clone();
-                next.push(character);
-                qa(QaAction::UpdateImport(next))
-            }
-            Input::Backspace => {
-                let mut next = input.clone();
-                next.pop();
-                qa(QaAction::UpdateImport(next))
-            }
-            Input::Enter => qa(QaAction::ConfirmImport(input.clone())),
-            Input::Esc => qa(QaAction::CancelDialog),
-            _ => None,
+        QaDialog::Import { editor, .. } => match key {
+            Input::Enter => qa(QaAction::ConfirmImport(editor.text.clone())),
+            Input::Char('q') | Input::Esc if !editor.editing => qa(QaAction::CancelDialog),
+            input => popup_editor_action(editor.editing, input),
         },
     }
 }
@@ -6195,13 +6182,19 @@ mod tests {
             Some(Action::Qa(QaAction::ConfirmOperation(preview)))
         );
         assert_eq!(
-            qa_dialog_action(
-                &QaDialog::Import {
-                    input: "/reports".into()
-                },
-                Input::Char('r')
-            ),
-            Some(Action::Qa(QaAction::UpdateImport("/reportsr".into()))),
+            {
+                let mut editor = yoctui_model::PopupEditor::new("root = \"/reports\"\n".into());
+                editor.select_toml_value("root").unwrap();
+                editor.editing = true;
+                qa_dialog_action(
+                    &QaDialog::Import {
+                        editor,
+                        validation_error: None,
+                    },
+                    Input::Char('r'),
+                )
+            },
+            Some(Action::EditActivePopup(PopupEditorCommand::Insert('r'))),
             "modal text editing does not leak QA run"
         );
         assert_eq!(
@@ -6251,9 +6244,10 @@ mod tests {
         assert_eq!(
             qa_dialog_action(
                 &QaDialog::Import {
-                    input: String::new()
+                    editor: yoctui_model::PopupEditor::new("root = \"\"\n".into()),
+                    validation_error: None,
                 },
-                Input::Char('\0')
+                Input::Tab
             ),
             None
         );

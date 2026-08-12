@@ -6285,6 +6285,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     editor,
                     validation_error,
                 })) => (editor, Some(validation_error)),
+                Some(Dialog::Qa(QaDialog::Import {
+                    editor,
+                    validation_error,
+                })) => (editor, Some(validation_error)),
                 _ => return None,
             };
             match command {

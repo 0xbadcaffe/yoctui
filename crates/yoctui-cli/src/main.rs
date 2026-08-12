@@ -5805,6 +5805,21 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                     continue;
                 }
+                if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::Qa(yoctui_model::QaDialog::Import { editor, .. }))
+                        if editor.editing
+                ) {
+                    for character in text.chars().filter(|character| !character.is_control()) {
+                        let _ = update(
+                            &mut app,
+                            Action::EditActivePopup(yoctui_model::PopupEditorCommand::Insert(
+                                character,
+                            )),
+                        );
+                    }
+                    continue;
+                }
                 let popup_action = match app.active_dialog() {
                     Some(Dialog::BuildEnvironmentEditor(editor)) if editor.editing => {
                         Some(Action::AppendBuildEnvironmentEditor as fn(char) -> Action)
@@ -6100,6 +6115,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let effect = qa_dialog_action(&dialog, input)
                         .and_then(|action| update(&mut app, action));
                     if let Some(effect) = effect {
+                        if let Effect::CopyToClipboard(content) = effect {
+                            copy_to_clipboard(&mut app, content).await;
+                            continue;
+                        }
                         let routed = route_independent_qa_effect(
                             &guard,
                             &mut app,
@@ -12537,7 +12556,10 @@ esac"#,
         let _ = update(&mut app, Action::Qa(QaAction::BeginImport));
         let effect = update(
             &mut app,
-            Action::Qa(QaAction::ConfirmImport(report.display().to_string())),
+            Action::Qa(QaAction::ConfirmImport(format!(
+                "root = \"{}\"\n",
+                report.display()
+            ))),
         )
         .unwrap();
         assert!(coordinator.handle_effect(&mut app, effect).await);
@@ -12902,8 +12924,12 @@ esac"#,
                 "unrouted QA workspace key: {key:?}"
             );
         }
+        let mut editor = yoctui_model::PopupEditor::new("root = \"\"\n".into());
+        editor.select_toml_value("root").unwrap();
+        editor.editing = true;
         let dialog = yoctui_model::QaDialog::Import {
-            input: String::new(),
+            editor,
+            validation_error: None,
         };
         assert!(qa_dialog_action(&dialog, Input::Char('x')).is_some());
         assert!(qa_dialog_action(&dialog, Input::Backspace).is_some());

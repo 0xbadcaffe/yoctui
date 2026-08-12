@@ -606,7 +606,10 @@ recipe/provider and configured-layer scopes, capability-supplied check
 catalog, stable operation/session/report/finding identities, deterministic
 previews, search/filter/drill selection, bounded retained session output,
 managed-job association, dialog state, cancellation, and correlated lifecycle
-outcomes. It may reuse `BuildRequest`, `RecipeIdentity`, `Layer`, and the shared
+outcomes. Its explicit report import dialog owns the shared bounded
+`PopupEditor` document and validation state; the app maps keys to typed
+editor/QA actions and the UI only renders that state. It may reuse
+`BuildRequest`, `RecipeIdentity`, `Layer`, and the shared
 background-job collection, but it never inspects the host, guesses a task or
 tool, walks report directories, parses logs/reports/process text, launches a
 child, or opens a path.

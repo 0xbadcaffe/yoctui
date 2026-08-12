@@ -2,20 +2,21 @@
 
 ## Task
 
-**ID:** UX-POPUP-OPS-QA-001
-**Title:** Move QA report import into a TOML popup
+**ID:** UX-POPUP-OPS-MAINT-SSTATE-001
+**Title:** Move Maintenance sstate forms into TOML popups
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate QA report import to the shared bounded TOML popup while retaining
-exact scope/report identity, bounded adapter import, and typed validation.
+Migrate Maintenance readiness and cleanup editable drafts to shared bounded
+TOML popups without weakening exact candidate previews or destructive cleanup
+phrase confirmation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model qa
-cargo test -p yoctui-app qa
-cargo test -p yoctui-ui qa
+cargo test -p yoctui-model maintenance_sstate
+cargo test -p yoctui-app maintenance_sstate
+cargo test -p yoctui-ui maintenance_sstate
 cargo check -p yoctui
 ```
