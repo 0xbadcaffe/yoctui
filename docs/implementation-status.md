@@ -177,6 +177,9 @@ operations, explicit enablement, unsafe-file rejection, and a tested direct
 fallback diagnostic. Migration of authoritative long-lived state into the
 daemon was split before implementation into typed partition, job-family
 migration, runtime ownership, and parent-gate tasks. The typed partition is
+complete with checked revision/generation, validated bounds, authoritative
+workspace/environment/profile/BitBake/recovery state, replaceable replicas,
+and independent client presentation. Long-lived job-family migration is
 active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and

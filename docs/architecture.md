@@ -1269,6 +1269,19 @@ credentials, confirmation leases, and arbitrary child environment values are
 not durable state. Layout records refer to stable session identities but remain
 client-local; unavailable sessions collapse safely on restoration.
 
+`yoctui-model::DaemonGlobalState` is the pure first implementation of this
+partition. It owns daemon instance/sequence/generation revision, validated
+collection limits, authoritative workspace, build-environment, project-profile,
+BitBake lifecycle/capabilities, boot/recovery session metadata, and bounded
+global log/error/task-history placeholders. Every global mutation trims its
+collections and advances sequence and generation with checked arithmetic.
+`ClientDaemonReplica` moves explicitly through disconnected, synchronizing,
+current, and stale states and replaces its entire snapshot safely.
+`ClientPresentationState` separately owns screen, focus, Navigator selection,
+theme, and pane-layout revision; changing it cannot mutate global authority.
+Job-family fields and execution ownership enter only through the following
+registered state-migration tasks.
+
 ### Local IPC and instance identity
 
 Unix uses a Unix-domain socket. The deterministic default is

@@ -2925,18 +2925,18 @@ notes = "The CLI atomically installs/removes a no-root user unit for the canonic
 id = "DAEMON-STATE-MODEL-001"
 milestone = "M11"
 title = "Partition daemon-global and client-local state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 405
 required = true
 depends_on = ["DAEMON-LIFECYCLE-001"]
 verify = ["cargo test -p yoctui-model daemon_state_partition"]
-notes = "Define pure typed daemon-global state, client replica/presentation boundaries, generation/sequence metadata, BitBake/profile/session ownership, and bounded global collections without moving job families or runtime execution yet."
+notes = "The pure model now separates daemon-global revision/workspace/build-environment/profile/BitBake/recovery/bounded collections from replaceable client replicas and independent screen/focus/theme/pane presentation, with checked generations and validated limits."
 
 [[task]]
 id = "DAEMON-STATE-JOBS-001"
 milestone = "M11"
 title = "Move all long-lived job families into daemon state"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 405
 required = true
 depends_on = ["DAEMON-STATE-MODEL-001"]

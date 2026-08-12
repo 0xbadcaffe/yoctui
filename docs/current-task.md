@@ -2,19 +2,20 @@
 
 ## Task
 
-**ID:** DAEMON-STATE-MODEL-001
-**Title:** Partition daemon-global and client-local state
+**ID:** DAEMON-STATE-JOBS-001
+**Title:** Move all long-lived job families into daemon state
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Define the pure typed daemon-global state and client replica/presentation
-boundaries, including generation/sequence metadata, BitBake, project-profile,
-workspace/session ownership, and bounded collection policy. Job-family
-migration and runtime installation remain separate dependent tasks.
+Migrate bounded logs, errors, task/build history, background jobs,
+QEMU/Wic/SDK/testing/QA/security/maintenance/utility workflow state, and PTY
+session metadata behind the daemon-global boundary while reusing the existing
+typed models and reducer/event infrastructure.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model daemon_state_partition
+cargo test -p yoctui-model daemon_state_jobs
+cargo test -p yoctui-app daemon_state_jobs
 ```
