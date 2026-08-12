@@ -1472,6 +1472,19 @@ the build host; survival through logout depends on the configured user service
 and is reported explicitly. Nothing here claims process survival across an
 actual host reboot.
 
+Restart recovery now validates the durable checkpoint before constructing the
+new daemon instance and event sequence. It restores workspace/profile summary,
+bounded logs, job history, and terminal name/kind/cwd/dimensions, but clears
+all client presence, viewers, and writer leases. Every job or PTY whose prior
+lifecycle was nonterminal becomes `Lost`; terminal history remains terminal.
+A persisted BitBake version or capability set is restored only as disconnected
+identity with a typed reconnect recommendation, never as proof of a live
+server. A profile summary does not reconstruct profile contents: the model
+returns to `NotLoaded` and requires the normal bounded validation path. Same-
+boot daemon restart and changed-boot recovery produce distinct visible
+warnings. The later BitBake controller may attempt a supported reconnect; no
+external process is restored merely by PID or command resemblance.
+
 ### Multi-client arbitration
 
 Multiple authenticated clients may observe the same global state and receive

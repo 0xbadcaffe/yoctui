@@ -49,6 +49,94 @@ pub fn client_replica_from_daemon(
     replica
 }
 
+pub fn recover_daemon_model_metadata(
+    state: &mut yoctui_model::DaemonGlobalState,
+    persisted: &yoctui_protocol::daemon_persist::DaemonPersistedState,
+    current_boot_id: &str,
+) -> Result<(), yoctui_model::DaemonStateError> {
+    if let Some(identity) = &persisted.workspace {
+        let workspace = yoctui_model::Workspace {
+            source_dir: Some(std::path::PathBuf::from(&identity.canonical_source)),
+            build_dir: Some(std::path::PathBuf::from(&identity.canonical_build)),
+            ..yoctui_model::Workspace::default()
+        };
+        reduce_daemon_state(
+            state,
+            yoctui_model::DaemonStateAction::ReplaceWorkspace(workspace),
+        )?;
+    }
+    let mut warnings = persisted.recovery_warnings.clone();
+    let profile = match &persisted.project_profile {
+        yoctui_protocol::daemon::ProjectProfileSummary::NotLoaded => {
+            yoctui_model::ProjectProfileState::NotLoaded
+        }
+        yoctui_protocol::daemon::ProjectProfileSummary::Absent => {
+            yoctui_model::ProjectProfileState::Absent
+        }
+        yoctui_protocol::daemon::ProjectProfileSummary::Loaded { schema_version } => {
+            warnings.push(format!(
+                "project profile schema {schema_version} metadata was restored; contents must be reloaded and validated"
+            ));
+            yoctui_model::ProjectProfileState::NotLoaded
+        }
+        yoctui_protocol::daemon::ProjectProfileSummary::Invalid { message } => {
+            yoctui_model::ProjectProfileState::Invalid(message.clone())
+        }
+    };
+    reduce_daemon_state(
+        state,
+        yoctui_model::DaemonStateAction::ReplaceProjectProfile(profile),
+    )?;
+    let bitbake_reconnect_recommended =
+        persisted.bitbake.version.is_some() || !persisted.bitbake.capabilities.is_empty();
+    reduce_daemon_state(
+        state,
+        yoctui_model::DaemonStateAction::ReplaceBitBake(yoctui_model::DaemonBitBakeState {
+            lifecycle: yoctui_model::DaemonBitBakeLifecycle::Disconnected,
+            version: persisted.bitbake.version.clone(),
+            capabilities: persisted
+                .bitbake
+                .capabilities
+                .iter()
+                .map(|capability| match capability {
+                    yoctui_protocol::daemon::BitBakeCapability::WorkspaceInspection => {
+                        "workspace_inspection"
+                    }
+                    yoctui_protocol::daemon::BitBakeCapability::RecipeInventory => {
+                        "recipe_inventory"
+                    }
+                    yoctui_protocol::daemon::BitBakeCapability::LayerInventory => "layer_inventory",
+                    yoctui_protocol::daemon::BitBakeCapability::BuildControl => "build_control",
+                    yoctui_protocol::daemon::BitBakeCapability::Cancellation => "cancellation",
+                    yoctui_protocol::daemon::BitBakeCapability::ServerRestart => "server_restart",
+                    yoctui_protocol::daemon::BitBakeCapability::Unknown => "unknown",
+                })
+                .map(str::to_owned)
+                .collect(),
+            diagnostic: bitbake_reconnect_recommended
+                .then(|| "persisted BitBake identity requires a supported reconnect probe".into()),
+        }),
+    )?;
+    let boot_changed = persisted.previous_boot_id != current_boot_id;
+    warnings.push(if boot_changed {
+        "host boot identity changed; persisted process metadata cannot be live".into()
+    } else {
+        "daemon restarted; persisted process metadata cannot be assumed live".into()
+    });
+    reduce_daemon_state(
+        state,
+        yoctui_model::DaemonStateAction::ReplaceRecovery {
+            state: if boot_changed {
+                yoctui_model::DaemonRecoveryState::Degraded
+            } else {
+                yoctui_model::DaemonRecoveryState::Recovered
+            },
+            warnings,
+        },
+    )?;
+    Ok(())
+}
+
 pub fn daemon_protocol_snapshot(
     state: &yoctui_model::DaemonGlobalState,
 ) -> yoctui_protocol::daemon::DaemonSnapshot {
@@ -3350,6 +3438,61 @@ mod tests {
             yoctui_model::ClientReplicaStatus::Disconnected
         );
         assert_eq!(client.snapshot.as_ref(), Some(&initial));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn daemon_recovery_restores_metadata_without_claiming_live_bitbake_or_profile() {
+        let mut state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([5; 16]),
+            123,
+            "current-boot".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut snapshot = daemon_protocol_snapshot(&state);
+        snapshot.workspace = Some(yoctui_protocol::daemon::WorkspaceIdentity {
+            canonical_source: "/work/poky".into(),
+            canonical_build: "/work/poky/build".into(),
+            identity_hash: "identity".into(),
+        });
+        snapshot.project_profile =
+            yoctui_protocol::daemon::ProjectProfileSummary::Loaded { schema_version: 1 };
+        snapshot.bitbake.version = Some("2.8.1".into());
+        snapshot.bitbake.capabilities =
+            vec![yoctui_protocol::daemon::BitBakeCapability::WorkspaceInspection];
+        let persisted = yoctui_protocol::daemon_persist::DaemonPersistedState::capture(
+            &snapshot,
+            1,
+            "previous-boot".into(),
+            Vec::new(),
+            yoctui_protocol::daemon_persist::PersistedPreferences::default(),
+        );
+
+        recover_daemon_model_metadata(&mut state, &persisted, "current-boot").unwrap();
+        assert_eq!(
+            state.workspace.build_dir.as_deref(),
+            Some(std::path::Path::new("/work/poky/build"))
+        );
+        assert_eq!(
+            state.project_profile,
+            yoctui_model::ProjectProfileState::NotLoaded
+        );
+        assert_eq!(
+            state.bitbake.lifecycle,
+            yoctui_model::DaemonBitBakeLifecycle::Disconnected
+        );
+        assert_eq!(
+            state.session.recovery,
+            yoctui_model::DaemonRecoveryState::Degraded
+        );
+        assert!(
+            state
+                .session
+                .recovery_warnings
+                .iter()
+                .any(|warning| warning.contains("must be reloaded"))
+        );
     }
     use std::{path::PathBuf, time::Duration};
     use yoctui_model::{

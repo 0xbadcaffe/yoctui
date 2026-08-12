@@ -2991,18 +2991,18 @@ notes = "Versioned 4 MiB-bounded daemon state is now atomically fsynced to a pri
 id = "DAEMON-RECOVERY-001"
 milestone = "M11"
 title = "Recover honestly after daemon restart"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 408
 required = true
 depends_on = ["DAEMON-PERSIST-001", "DAEMON-SNAPSHOT-001"]
 verify = ["cargo test -p yoctui daemon_recovery"]
-notes = "Reload metadata, mark unrecoverable jobs/PTYs Lost, reconnect BitBake where possible, restore visible session list, and restore only supported external services."
+notes = "Validated checkpoints now seed a new daemon instance/event sequence, restore visible workspace/profile/log/job/PTY metadata, clear clients/writers/viewers, classify every formerly nonterminal job and PTY Lost, and retain BitBake only as disconnected identity with reconnect recommendation. Same-boot versus changed-boot warnings are distinct; no PID resemblance restores work."
 
 [[task]]
 id = "HOST-REBOOT-001"
 milestone = "M11"
 title = "Define and implement host reboot behavior"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 409
 required = true
 depends_on = ["DAEMON-SERVICE-INTEGRATION-001", "DAEMON-RECOVERY-001"]

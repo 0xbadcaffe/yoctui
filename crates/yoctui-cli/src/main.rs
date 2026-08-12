@@ -40,7 +40,7 @@ use yoctui_app::{
     qa_report_response_action, qa_task_capability_action, qa_workspace_action,
     qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
     qemu_launch_confirmation_action, qemu_launch_dialog_action, recipe_editor_action,
-    sdk_actions_for_runner_event, sdk_build_confirmation_action,
+    recover_daemon_model_metadata, sdk_actions_for_runner_event, sdk_build_confirmation_action,
     sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
     sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
     security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
@@ -1071,7 +1071,8 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
             read_runtime_record, remove_runtime_record, write_runtime_record,
         },
         daemon_persist::{
-            DaemonPersistedState, PersistedPreferences, persist_paths_for, write_persisted_state,
+            DaemonPersistedState, PersistedPreferences, persist_paths_for, read_persisted_state,
+            recover_persisted_snapshot, write_persisted_state,
         },
     };
     let paths = runtime_paths()?;
@@ -1111,11 +1112,17 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
             &App::new(daemon_log_limit, MAX_FRAME_BYTES),
         ))),
     )?;
-    let daemon_journal = DaemonSnapshotJournal::new(
-        daemon_protocol_snapshot(&daemon_state),
-        DaemonSnapshotLimits::default(),
-    )?;
     let persist_paths = persist_paths_for(&daemon_state_root()?)?;
+    let persisted = read_persisted_state(&persist_paths)?;
+    if let Some(persisted) = &persisted {
+        recover_daemon_model_metadata(&mut daemon_state, persisted, &record.boot_id)?;
+    }
+    let snapshot = daemon_protocol_snapshot(&daemon_state);
+    let snapshot = persisted
+        .as_ref()
+        .map(|persisted| recover_persisted_snapshot(snapshot.clone(), persisted, &record.boot_id).0)
+        .unwrap_or(snapshot);
+    let daemon_journal = DaemonSnapshotJournal::new(snapshot, DaemonSnapshotLimits::default())?;
     write_persisted_state(
         &persist_paths,
         &DaemonPersistedState::capture(

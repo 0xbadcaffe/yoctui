@@ -1,7 +1,7 @@
 //! Safe, bounded persistence for reconstructable daemon metadata.
 use crate::daemon::{
-    BitBakeCapability, DaemonInstanceId, DaemonSnapshot, JobSummary, LifecycleState, LogRecord,
-    ProjectProfileSummary, PtyKind, TerminalDimensions, WorkspaceIdentity,
+    BitBakeCapability, BitBakeState, DaemonInstanceId, DaemonSnapshot, JobSummary, LifecycleState,
+    LogRecord, ProjectProfileSummary, PtyKind, TerminalDimensions, WorkspaceIdentity,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -131,6 +131,106 @@ impl DaemonPersistedState {
             preferences,
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DaemonRecoveryReport {
+    pub previous_boot_changed: bool,
+    pub lost_jobs: usize,
+    pub lost_terminal_sessions: usize,
+    pub bitbake_reconnect_recommended: bool,
+}
+
+pub fn recover_persisted_snapshot(
+    mut current: DaemonSnapshot,
+    persisted: &DaemonPersistedState,
+    current_boot_id: &str,
+) -> (DaemonSnapshot, DaemonRecoveryReport) {
+    let previous_boot_changed = persisted.previous_boot_id != current_boot_id;
+    let mut lost_jobs = 0;
+    let mut lost_terminal_sessions = 0;
+    current.workspace.clone_from(&persisted.workspace);
+    current
+        .project_profile
+        .clone_from(&persisted.project_profile);
+    let bitbake_reconnect_recommended =
+        persisted.bitbake.version.is_some() || !persisted.bitbake.capabilities.is_empty();
+    current.bitbake = BitBakeState {
+        lifecycle: LifecycleState::Disconnected,
+        version: persisted.bitbake.version.clone(),
+        capabilities: persisted.bitbake.capabilities.clone(),
+        diagnostic: bitbake_reconnect_recommended
+            .then(|| "persisted BitBake identity requires a supported reconnect probe".into()),
+    };
+    current.jobs = persisted
+        .job_history
+        .iter()
+        .cloned()
+        .map(|mut job| {
+            if !matches!(
+                job.lifecycle,
+                LifecycleState::Exited | LifecycleState::Failed | LifecycleState::Lost
+            ) {
+                job.lifecycle = LifecycleState::Lost;
+                lost_jobs += 1;
+            }
+            job
+        })
+        .collect();
+    current.pty_sessions = persisted
+        .terminal_sessions
+        .iter()
+        .map(|session| {
+            let lifecycle = if matches!(
+                session.previous_lifecycle,
+                LifecycleState::Exited | LifecycleState::Failed | LifecycleState::Lost
+            ) {
+                session.previous_lifecycle
+            } else {
+                lost_terminal_sessions += 1;
+                LifecycleState::Lost
+            };
+            crate::daemon::PtySessionSummary {
+                id: crate::daemon::PtySessionId(session.id),
+                name: session.name.clone(),
+                kind: session.kind,
+                cwd: session.cwd.clone(),
+                lifecycle,
+                dimensions: session.dimensions,
+                writer: None,
+                writer_epoch: 0,
+                viewers: 0,
+                exit_code: session.exit_code,
+                restartable: session.restartable,
+            }
+        })
+        .collect();
+    current.recent_logs.clone_from(&persisted.recent_logs);
+    let current_warnings = std::mem::take(&mut current.recovery_warnings);
+    current
+        .recovery_warnings
+        .clone_from(&persisted.recovery_warnings);
+    for warning in current_warnings {
+        if !current.recovery_warnings.contains(&warning) {
+            current.recovery_warnings.push(warning);
+        }
+    }
+    current.recovery_warnings.push(if previous_boot_changed {
+        "host boot changed; all previously nonterminal jobs and PTYs were classified Lost".into()
+    } else {
+        "daemon instance restarted; all unrecoverable nonterminal jobs and PTYs were classified Lost"
+            .into()
+    });
+    current.clients.clear();
+    (
+        current,
+        DaemonRecoveryReport {
+            previous_boot_changed,
+            lost_jobs,
+            lost_terminal_sessions,
+            bitbake_reconnect_recommended,
+        },
+    )
 }
 
 pub fn persist_paths_for(root: &Path) -> Result<DaemonPersistPaths, DaemonPersistError> {
@@ -443,5 +543,60 @@ mod tests {
             Err(DaemonPersistError::Unsafe { .. })
         ));
         fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn daemon_recovery_marks_unrecoverable_work_lost_and_clears_live_attachments() {
+        let mut prior = snapshot();
+        prior.jobs.push(crate::daemon::JobSummary {
+            id: crate::daemon::JobId(1),
+            kind: crate::daemon::JobKind::BitBakeBuild,
+            label: "core-image-minimal".into(),
+            lifecycle: LifecycleState::Running,
+            progress_current: Some(2),
+            progress_total: Some(10),
+            exit_code: None,
+        });
+        prior.pty_sessions.push(crate::daemon::PtySessionSummary {
+            id: crate::daemon::PtySessionId(7),
+            name: "devshell".into(),
+            kind: PtyKind::Devshell,
+            cwd: "/work/build".into(),
+            lifecycle: LifecycleState::Running,
+            dimensions: TerminalDimensions {
+                columns: 120,
+                rows: 40,
+            },
+            writer: Some(crate::daemon::ClientId([9; 16])),
+            writer_epoch: 4,
+            viewers: 2,
+            exit_code: None,
+            restartable: true,
+        });
+        let persisted = DaemonPersistedState::capture(
+            &prior,
+            99,
+            "old-boot".into(),
+            Vec::new(),
+            PersistedPreferences::default(),
+        );
+        let mut current = snapshot();
+        current.daemon_instance_id = DaemonInstanceId([8; 16]);
+        current.sequence = 0;
+        current.generation = 0;
+        let (recovered, report) = recover_persisted_snapshot(current, &persisted, "new-boot");
+
+        assert_eq!(recovered.daemon_instance_id, DaemonInstanceId([8; 16]));
+        assert_eq!(recovered.jobs[0].lifecycle, LifecycleState::Lost);
+        assert_eq!(recovered.pty_sessions[0].lifecycle, LifecycleState::Lost);
+        assert_eq!(recovered.pty_sessions[0].writer, None);
+        assert_eq!(recovered.pty_sessions[0].viewers, 0);
+        assert_eq!(recovered.bitbake.lifecycle, LifecycleState::Disconnected);
+        assert!(recovered.bitbake.diagnostic.is_some());
+        assert!(recovered.clients.is_empty());
+        assert_eq!(report.lost_jobs, 1);
+        assert_eq!(report.lost_terminal_sessions, 1);
+        assert!(report.previous_boot_changed);
+        assert!(report.bitbake_reconnect_recommended);
     }
 }

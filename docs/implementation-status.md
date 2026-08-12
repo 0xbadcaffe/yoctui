@@ -197,7 +197,12 @@ withholds stale resume cursors.
 Safe persistence is complete with a versioned private atomic user-state file,
 strict schema/size/type/ownership checks, reconstructable workflow/session
 metadata, optional logs, and an enforced prohibition on persisted live-process
-claims. Honest daemon restart recovery is active.
+claims.
+Restart recovery is complete: validated state seeds a new daemon instance,
+formerly nonterminal jobs and PTYs become `Lost`, writer/viewer/client liveness
+is cleared, history and names remain visible, profiles require reload, and
+BitBake remains disconnected pending a supported probe. Explicit host-reboot
+behavior is active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

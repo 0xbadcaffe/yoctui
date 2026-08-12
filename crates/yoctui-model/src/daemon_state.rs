@@ -183,6 +183,10 @@ pub enum DaemonStateAction {
     ReplaceProjectProfile(ProjectProfileState),
     ReplaceBitBake(DaemonBitBakeState),
     ReplaceJobs(Box<DaemonJobState>),
+    ReplaceRecovery {
+        state: DaemonRecoveryState,
+        warnings: Vec<String>,
+    },
     RecordLog(String),
     RecordError(String),
     RecordTaskHistory(String),
@@ -200,6 +204,13 @@ pub fn update_daemon_state(
         DaemonStateAction::ReplaceProjectProfile(profile) => state.project_profile = profile,
         DaemonStateAction::ReplaceBitBake(bitbake) => state.bitbake = bitbake,
         DaemonStateAction::ReplaceJobs(jobs) => state.jobs = Some(*jobs),
+        DaemonStateAction::ReplaceRecovery {
+            state: recovery,
+            warnings,
+        } => {
+            state.session.recovery = recovery;
+            state.session.recovery_warnings = warnings;
+        }
         DaemonStateAction::RecordLog(message) => state.recent_logs.push_back(message),
         DaemonStateAction::RecordError(message) => state.recent_errors.push_back(message),
         DaemonStateAction::RecordTaskHistory(message) => state.task_history.push_back(message),
