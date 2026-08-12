@@ -136,8 +136,8 @@ implemented or live-validated yet; the current popup-editor task remains the
 active compatible task.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
-reference rendering; `UX-POPUP-EDITOR-003` is active to make that state common
-to every popup form.
+reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded
+undo; input/rendering integration is now active.
 
 ## Rules
 

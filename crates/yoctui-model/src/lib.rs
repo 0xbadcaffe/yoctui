@@ -933,6 +933,7 @@ pub struct PopupEditor {
     pub cursor: usize,
     pub selection: Option<(usize, usize)>,
     pub editing: bool,
+    history: Vec<String>,
 }
 
 impl PopupEditor {
@@ -943,6 +944,7 @@ impl PopupEditor {
             cursor,
             selection: None,
             editing: false,
+            history: Vec::new(),
         }
     }
     pub fn select_range(&mut self, start: usize, end: usize) {
@@ -950,6 +952,7 @@ impl PopupEditor {
         self.cursor = end.min(self.text.len());
     }
     pub fn insert(&mut self, value: &str) {
+        self.remember();
         if let Some((start, end)) = self.selection.take() {
             self.text.replace_range(start..end, value);
             self.cursor = start + value.len();
@@ -972,6 +975,51 @@ impl PopupEditor {
     }
     pub fn selected_text(&self) -> Option<&str> {
         self.selection.map(|(start, end)| &self.text[start..end])
+    }
+    pub fn select_toml_value(&mut self, key: &str) -> Result<(), String> {
+        let prefix = format!("{key} = ");
+        let line_start = self
+            .text
+            .lines()
+            .scan(0usize, |offset, line| {
+                let start = *offset;
+                *offset += line.len() + 1;
+                Some((start, line))
+            })
+            .find_map(|(start, line)| line.trim_start().starts_with(&prefix).then_some(start))
+            .ok_or_else(|| format!("Missing `{key}` TOML value."))?;
+        let line_end = self.text[line_start..]
+            .find('\n')
+            .map_or(self.text.len(), |index| line_start + index);
+        let line = &self.text[line_start..line_end];
+        let value_start = line
+            .find('"')
+            .map(|index| line_start + index + 1)
+            .ok_or_else(|| format!("`{key}` must be a quoted TOML string."))?;
+        let value_end = self.text[value_start..line_end]
+            .find('"')
+            .map(|index| value_start + index)
+            .ok_or_else(|| format!("`{key}` must be a quoted TOML string."))?;
+        self.select_range(value_start, value_end);
+        Ok(())
+    }
+    pub fn undo(&mut self) -> bool {
+        let Some(text) = self.history.pop() else {
+            return false;
+        };
+        self.text = text;
+        self.cursor = self.cursor.min(self.text.len());
+        self.selection = None;
+        true
+    }
+    fn remember(&mut self) {
+        const MAX_HISTORY: usize = 32;
+        if self.history.last() != Some(&self.text) {
+            self.history.push(self.text.clone());
+            if self.history.len() > MAX_HISTORY {
+                self.history.remove(0);
+            }
+        }
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -19993,5 +20041,17 @@ mod tests {
         assert_eq!(editor.cursor, editor.text.find('\n').unwrap());
         editor.home();
         assert_eq!(editor.cursor, 0);
+    }
+
+    #[test]
+    fn popup_editor_selects_a_toml_value_and_undoes_replacement() {
+        let mut editor = PopupEditor::new("path = \"/old\"\nmode = \"safe\"\n".into());
+        editor.select_toml_value("path").unwrap();
+        assert_eq!(editor.selected_text(), Some("/old"));
+        editor.insert("/new");
+        assert_eq!(editor.text, "path = \"/new\"\nmode = \"safe\"\n");
+        assert!(editor.undo());
+        assert_eq!(editor.text, "path = \"/old\"\nmode = \"safe\"\n");
+        assert!(!editor.undo());
     }
 }

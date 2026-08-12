@@ -2,18 +2,18 @@
 
 ## Task
 
-**ID:** UX-POPUP-EDITOR-003
-**Title:** Add typed popup-editor state and field selection
+**ID:** UX-POPUP-EDITOR-004
+**Title:** Wire shared popup-editor input and rendering
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Model a shared editor document, cursor, selection, edit mode, field-value
-replacement, and bounded undo history without exposing widget state to workflows.
+Route Home/End, arrows, vi Normal/Insert actions, bracketed paste, copy, and
+visible shortcut hints through one popup renderer and CLI input path.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model popup_editor
-cargo test -p yoctui-app popup_editor
+cargo test -p yoctui-ui popup_editor
+cargo check -p yoctui
 ```

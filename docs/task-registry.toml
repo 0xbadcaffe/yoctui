@@ -2525,18 +2525,18 @@ notes = "Established a model-owned reusable editor boundary informed by tui-text
 id = "UX-POPUP-EDITOR-003"
 milestone = "M8"
 title = "Add typed popup-editor state and field selection"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 158
 required = true
 depends_on = ["UX-POPUP-EDITOR-002"]
 verify = ["cargo test -p yoctui-model popup_editor", "cargo test -p yoctui-app popup_editor"]
-notes = "Model a shared editor document, cursor, selection, edit mode, field-value replacement, and bounded undo history without exposing widget state to workflows."
+notes = "Model-owned PopupEditor now supports typed document/cursor/selection/edit state, TOML value selection/replacement, and bounded undo without widget-owned workflow state."
 
 [[task]]
 id = "UX-POPUP-EDITOR-004"
 milestone = "M8"
 title = "Wire shared popup-editor input and rendering"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 159
 required = true
 depends_on = ["UX-POPUP-EDITOR-003"]
