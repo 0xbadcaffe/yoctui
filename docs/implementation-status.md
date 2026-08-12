@@ -133,7 +133,10 @@ Optional project-profile specification is now active.
 M10 optional project profiles and M11 persistent daemon/session architecture
 are specified as required dependency-ordered implementation queues. Neither is
 implemented or live-validated yet; the optional profile behavior and trust
-boundary are now specified, with its typed model implementation next.
+boundary are specified, and the pure typed version-1 model now validates
+favorites, presets, workflows, portable paths, bounds, duplicates, references,
+and explicit stale/ambiguous resolution without a command-string escape hatch.
+Safe optional loading and generation are next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

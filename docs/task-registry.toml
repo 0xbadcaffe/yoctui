@@ -2813,18 +2813,18 @@ notes = "The authoritative UI, architecture, and roadmap documents now define th
 id = "PROFILE-MODEL-001"
 milestone = "M10"
 title = "Add typed project profile model and validation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 301
 required = true
 depends_on = ["PROFILE-SPEC-001"]
 verify = ["cargo test -p yoctui-model project_profile"]
-notes = "Model favorites, typed build presets, workflows, schema versions, safe relative references, and explicit stale-identity results without arbitrary command strings."
+notes = "The pure version-1 ProjectProfile model validates bounded favorites, typed presets/options, closed workflow steps, cross-references, duplicates, portable paths, and explicit resolved/stale/ambiguous results without arbitrary commands."
 
 [[task]]
 id = "PROFILE-LOAD-001"
 milestone = "M10"
 title = "Load and generate project profiles safely"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 302
 required = true
 depends_on = ["PROFILE-MODEL-001"]

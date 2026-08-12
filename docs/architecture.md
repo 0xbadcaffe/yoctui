@@ -1119,6 +1119,12 @@ and explicit resolved/stale/ambiguous identity states. No profile model type
 contains a free-form command, shell fragment, environment assignment, secret,
 or host-absolute path.
 
+Schema version 1 is represented by `ProjectProfile`, `ProjectFavorites`,
+`ProjectBuildPreset`, `ProjectBuildOptions`, `ProjectWorkflow`, and the closed
+`ProjectWorkflowStep` enum. `PortableProjectPath` validates during construction
+and deserialization; `ProjectIdentityResolution<T>` keeps resolved, stale, and
+ambiguous results distinct for later authoritative reconciliation.
+
 The CLI owns bounded file discovery beneath the canonical project root and
 read-only TOML decoding. It rejects symlink escape and unsupported schemas and
 passes typed data into the model. Loading has no execution effect. The app

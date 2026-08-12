@@ -2,18 +2,18 @@
 
 ## Task
 
-**ID:** PROFILE-MODEL-001
-**Title:** Add typed project profile model and validation
+**ID:** PROFILE-LOAD-001
+**Title:** Load and generate project profiles safely
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Implement the pure typed project-profile model for favorites, build presets,
-allowlisted workflows, schema versions, safe portable references, and explicit
-stale-identity results without arbitrary command strings.
+Load optional profiles without vendor or layer changes, generate safe profiles
+only through explicit typed actions, and keep personal settings user-local.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model project_profile
+cargo test -p yoctui project_profile
+cargo test -p yoctui-app project_profile
 ```
