@@ -2,23 +2,19 @@
 
 ## Task
 
-**ID:** UX-POPUP-OPS-001
-**Title:** Move QA, security, and maintenance editable drafts into TOML popups
+**ID:** PROFILE-SPEC-001
+**Title:** Specify optional project profile behavior
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Verify the Security import, QA import, and all Maintenance shared-popup
-migrations together without weakening their typed adapter, confirmation, and
-side-effect boundaries.
+Define the optional `.yoctui/project.toml` contract, schema versioning, team
+versus personal state, portable repository-relative references, trust
+boundaries, stale identities, and prohibition on automatic execution.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model qa
-cargo test -p yoctui-model security
-cargo test -p yoctui-model maintenance
-cargo test -p yoctui-ui qa
-cargo test -p yoctui-ui security
-cargo test -p yoctui-ui maintenance
+./scripts/check-docs.sh
+./scripts/verify-roadmap.sh
 ```

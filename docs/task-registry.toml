@@ -2789,12 +2789,12 @@ notes = "All three Maintenance release popup migrations pass their combined mode
 id = "UX-POPUP-OPS-001"
 milestone = "M8"
 title = "Move QA, security, and maintenance editable drafts into TOML popups"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 168
 required = true
 depends_on = ["UX-POPUP-OPS-SECURITY-001", "UX-POPUP-OPS-QA-001", "UX-POPUP-OPS-MAINT-SSTATE-001", "UX-POPUP-OPS-MAINT-SERVICE-001", "UX-POPUP-OPS-MAINT-RELEASE-001"]
 verify = ["cargo test -p yoctui-model qa", "cargo test -p yoctui-model security", "cargo test -p yoctui-model maintenance", "cargo test -p yoctui-ui qa", "cargo test -p yoctui-ui security", "cargo test -p yoctui-ui maintenance"]
-notes = "Parent gate for atomic Security import, QA import, Maintenance sstate, Maintenance service, and Maintenance release popup migrations."
+notes = "The complete Security import, QA import, and Maintenance popup migration matrix passes model and TestBackend parent verification without weakening typed adapter or confirmation boundaries."
 
 # M10 — Optional Project Profile. Profiles record team intent only; BitBake and
 # user-local settings remain authoritative for execution and personal choices.
@@ -2802,7 +2802,7 @@ notes = "Parent gate for atomic Security import, QA import, Maintenance sstate, 
 id = "PROFILE-SPEC-001"
 milestone = "M10"
 title = "Specify optional project profile behavior"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 300
 required = true
 depends_on = []

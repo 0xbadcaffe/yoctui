@@ -127,7 +127,8 @@ release forms are likewise split into locked cache, build history, and Git
 archive tasks; all three now use the shared popup while retaining their typed
 preview and local/network separation, and the release parent gate is next.
 The editor agenda now has explicit adoption, typed state, routing/rendering,
-and migration tasks; JUnit export and operations remain sequenced after it.
+and migration tasks; JUnit export and the full operations parent gate pass.
+Optional project-profile specification is now active.
 
 M10 optional project profiles and M11 persistent daemon/session architecture
 are specified as required dependency-ordered implementation queues. Neither is
