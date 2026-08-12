@@ -244,6 +244,11 @@ cursor, selection, and common shortcut row; the CLI maps keys, paste, and copy
 to typed editor actions; workflow reducers only serialize and validate their
 typed drafts.
 
+The popup editor remains a small model-owned adapter rather than storing a
+`tui-textarea` widget in UI state. `tui-textarea` informed the supported
+editing contract (cursor movement, selection, copy/paste, and line bounds),
+but its widget-owned mutable state would violate Yoctui's reducer boundary.
+
 Recipe discovery is split into a bounded summary query and a selected-recipe
 detail query. Summary records carry the resolved version, provider path/layer,
 and append count from BitBake's provider/cache tables. A typed

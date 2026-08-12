@@ -926,6 +926,54 @@ pub struct ConfigEditRequest {
     pub destination: PathBuf,
     pub assignment: String,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PopupEditor {
+    pub text: String,
+    pub cursor: usize,
+    pub selection: Option<(usize, usize)>,
+    pub editing: bool,
+}
+
+impl PopupEditor {
+    pub fn new(text: String) -> Self {
+        let cursor = text.len();
+        Self {
+            text,
+            cursor,
+            selection: None,
+            editing: false,
+        }
+    }
+    pub fn select_range(&mut self, start: usize, end: usize) {
+        self.selection = Some((start.min(self.text.len()), end.min(self.text.len())));
+        self.cursor = end.min(self.text.len());
+    }
+    pub fn insert(&mut self, value: &str) {
+        if let Some((start, end)) = self.selection.take() {
+            self.text.replace_range(start..end, value);
+            self.cursor = start + value.len();
+        } else {
+            self.text.insert_str(self.cursor, value);
+            self.cursor += value.len();
+        }
+    }
+    pub fn home(&mut self) {
+        self.cursor = self.text[..self.cursor]
+            .rfind('\n')
+            .map_or(0, |index| index + 1);
+        self.selection = None;
+    }
+    pub fn end(&mut self) {
+        self.cursor = self.text[self.cursor..]
+            .find('\n')
+            .map_or(self.text.len(), |index| self.cursor + index);
+        self.selection = None;
+    }
+    pub fn selected_text(&self) -> Option<&str> {
+        self.selection.map(|(start, end)| &self.text[start..end])
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
     BuildEnvironmentCloneEditor {
@@ -1000,6 +1048,12 @@ pub enum Dialog {
     },
     TestComparisonConfirmation(TestComparisonPreview),
     TestJunitExport(TestJunitExportDialog),
+    TestJunitTomlEditor {
+        result: TestResultIdentity,
+        content: String,
+        editing: bool,
+        validation_error: Option<String>,
+    },
     TestJunitExportConfirmation(TestJunitExportPreview),
     Security(SecurityDialog),
     Qa(QaDialog),
@@ -3454,6 +3508,9 @@ pub enum Action {
     },
     OpenSelectedTestTransitionLog,
     BeginTestJunitExport,
+    ToggleTestJunitTomlEditor,
+    AppendTestJunitTomlEditor(char),
+    BackspaceTestJunitTomlEditor,
     AppendTestJunitDestination(char),
     BackspaceTestJunitDestination,
     PreviewTestJunitExport,
@@ -8401,8 +8458,46 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
             open_dialog(
                 app,
-                Dialog::TestJunitExport(TestJunitExportDialog::new(identity)),
+                Dialog::TestJunitTomlEditor {
+                    result: identity,
+                    content: popup_toml_document("destination", "", None),
+                    editing: false,
+                    validation_error: None,
+                },
             );
+        }
+        Action::ToggleTestJunitTomlEditor => {
+            if let Some(Dialog::TestJunitTomlEditor { editing, .. }) = app.active_dialog_mut() {
+                *editing = !*editing;
+            }
+        }
+        Action::AppendTestJunitTomlEditor(character) => {
+            if let Some(Dialog::TestJunitTomlEditor {
+                content,
+                editing,
+                validation_error,
+                ..
+            }) = app.active_dialog_mut()
+                && *editing
+                && !character.is_control()
+                && content.len() < MAX_TEST_TEXT_BYTES
+            {
+                content.push(character);
+                *validation_error = None;
+            }
+        }
+        Action::BackspaceTestJunitTomlEditor => {
+            if let Some(Dialog::TestJunitTomlEditor {
+                content,
+                editing,
+                validation_error,
+                ..
+            }) = app.active_dialog_mut()
+                && *editing
+            {
+                content.pop();
+                *validation_error = None;
+            }
         }
         Action::AppendTestJunitDestination(character) => {
             if let Some(Dialog::TestJunitExport(dialog)) = app.active_dialog_mut() {
@@ -8415,6 +8510,42 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::PreviewTestJunitExport => {
+            if let Some(Dialog::TestJunitTomlEditor {
+                result, content, ..
+            }) = app.active_dialog().cloned()
+            {
+                let destination = popup_toml_value(&content, "destination")
+                    .map(PathBuf::from)
+                    .and_then(|path| {
+                        (absolute_normal_path(&path)
+                            && path.extension().and_then(|value| value.to_str()) == Some("xml"))
+                        .then_some(path)
+                        .ok_or_else(|| {
+                            "JUnit destination must be a normalized absolute .xml path".to_owned()
+                        })
+                    });
+                match destination {
+                    Ok(destination) => {
+                        app.test_junit_export = TestJunitExportState::Inspecting {
+                            result: result.clone(),
+                            destination: destination.clone(),
+                        };
+                        return Some(Effect::InspectTestJunitDestination {
+                            result,
+                            destination,
+                        });
+                    }
+                    Err(message) => {
+                        if let Some(Dialog::TestJunitTomlEditor {
+                            validation_error, ..
+                        }) = app.active_dialog_mut()
+                        {
+                            *validation_error = Some(message);
+                        }
+                    }
+                }
+                return None;
+            }
             let Some(Dialog::TestJunitExport(dialog)) = app.active_dialog().cloned() else {
                 return None;
             };
@@ -8437,7 +8568,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CancelTestJunitExport => {
-            if matches!(app.active_dialog(), Some(Dialog::TestJunitExport(_))) {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::TestJunitExport(_) | Dialog::TestJunitTomlEditor { .. })
+            ) {
                 close_dialog(app);
                 app.test_junit_export = TestJunitExportState::NotStarted;
             }
@@ -8452,10 +8586,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             ) && app
                 .selected_test_result()
                 .is_some_and(|record| record.identity == result)
-                && matches!(
-                    app.active_dialog(),
-                    Some(Dialog::TestJunitExport(dialog)) if dialog.result == result
-                );
+                && matches!(app.active_dialog(),
+                    Some(Dialog::TestJunitExport(dialog)) if dialog.result == result)
+                || matches!(app.active_dialog(),
+                        Some(Dialog::TestJunitTomlEditor { result: dialog_result, .. }) if *dialog_result == result);
             if !current {
                 note_stale_test_event(app);
                 return None;
@@ -8475,8 +8609,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 }
                 Err(message) => {
                     app.test_junit_export = TestJunitExportState::NotStarted;
-                    if let Some(Dialog::TestJunitExport(dialog)) = app.active_dialog_mut() {
-                        dialog.validation_error = Some(message.into());
+                    match app.active_dialog_mut() {
+                        Some(Dialog::TestJunitExport(dialog)) => {
+                            dialog.validation_error = Some(message.into())
+                        }
+                        Some(Dialog::TestJunitTomlEditor {
+                            validation_error, ..
+                        }) => *validation_error = Some(message.into()),
+                        _ => {}
                     }
                 }
             }
@@ -19601,8 +19741,8 @@ mod tests {
             ResultToolCapability::Available("/workspace/resulttool".into());
         load_test_results(&mut app, vec![result.clone()], Vec::new());
         let _ = update(&mut app, Action::BeginTestJunitExport);
-        for character in "/exports/candidate.xml".chars() {
-            let _ = update(&mut app, Action::AppendTestJunitDestination(character));
+        if let Some(Dialog::TestJunitTomlEditor { content, .. }) = app.active_dialog_mut() {
+            *content = "destination = \"/exports/candidate.xml\"\n".into();
         }
         let Some(Effect::InspectTestJunitDestination {
             result: inspected_result,
@@ -19629,7 +19769,10 @@ mod tests {
         );
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::TestJunitExport(dialog)) if dialog.validation_error.is_some()
+            Some(Dialog::TestJunitTomlEditor {
+                validation_error: Some(_),
+                ..
+            })
         ));
         assert!(
             update(&mut app, Action::PreviewTestJunitExport).is_some(),
@@ -19837,5 +19980,18 @@ mod tests {
             update(&mut app, Action::ConfirmBuildEnvironmentClone),
             Some(Effect::CloneBuildEnvironment(_))
         ));
+    }
+
+    #[test]
+    fn popup_editor_replaces_selection_and_moves_to_line_bounds() {
+        let mut editor = PopupEditor::new("path = \"old\"\nnext = \"value\"".into());
+        editor.select_range(8, 11);
+        assert_eq!(editor.selected_text(), Some("old"));
+        editor.insert("/home/user/poky");
+        assert!(editor.text.contains("/home/user/poky"));
+        editor.end();
+        assert_eq!(editor.cursor, editor.text.find('\n').unwrap());
+        editor.home();
+        assert_eq!(editor.cursor, 0);
     }
 }

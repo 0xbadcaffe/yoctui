@@ -5818,6 +5818,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::TestLaunchTomlEditor { editing: true, .. }) => {
                         Some(Action::AppendTestLaunchTomlEditor as fn(char) -> Action)
                     }
+                    Some(Dialog::TestJunitTomlEditor { editing: true, .. }) => {
+                        Some(Action::AppendTestJunitTomlEditor as fn(char) -> Action)
+                    }
                     _ => None,
                 };
                 if let Some(action) = popup_action {
@@ -6398,6 +6401,30 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let effect = test_comparison_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
                     if let Some(effect) = effect {
+                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                    }
+                } else if let Some(Dialog::TestJunitTomlEditor { editing, .. }) =
+                    app.active_dialog().cloned()
+                {
+                    let action = if editing {
+                        match input {
+                            Input::Esc => Some(Action::ToggleTestJunitTomlEditor),
+                            Input::Enter => Some(Action::PreviewTestJunitExport),
+                            Input::Backspace => Some(Action::BackspaceTestJunitTomlEditor),
+                            Input::Char(character) => {
+                                Some(Action::AppendTestJunitTomlEditor(character))
+                            }
+                            _ => None,
+                        }
+                    } else {
+                        match input {
+                            Input::Char('i') => Some(Action::ToggleTestJunitTomlEditor),
+                            Input::Char('q') | Input::Esc => Some(Action::CancelTestJunitExport),
+                            Input::Enter => Some(Action::PreviewTestJunitExport),
+                            _ => None,
+                        }
+                    };
+                    if let Some(effect) = action.and_then(|action| update(&mut app, action)) {
                         let _ = test_coordinator.handle_effect(&mut app, effect).await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::TestJunitExport(_))) {

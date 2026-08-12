@@ -810,6 +810,21 @@ pub fn render(frame: &mut Frame, app: &App) {
         test_comparison_dialog(frame, app, picker, area);
     } else if let Some(Dialog::TestComparisonConfirmation(preview)) = app.active_dialog() {
         test_comparison_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::TestJunitTomlEditor {
+        content,
+        editing,
+        validation_error,
+        ..
+    }) = app.active_dialog()
+    {
+        let popup = Rect::new(
+            area.width / 8,
+            area.height / 6,
+            area.width * 3 / 4,
+            area.height * 2 / 3,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(Paragraph::new(format!("{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.\n\ni insert  e change value  Enter save/preview  Esc normal  q close  Home/End line  Ctrl+C copy  Ctrl+V paste{}", content, if *editing { "_" } else { "" }, if *editing { "INSERT" } else { "NORMAL" }, validation_error.as_deref().map_or(String::new(), |error| format!("\nValidation: {error}")))).block(Block::default().title(format!("JUnit export.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL)).wrap(Wrap { trim: false }), popup);
     } else if let Some(Dialog::TestJunitExport(dialog)) = app.active_dialog() {
         test_junit_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::TestJunitExportConfirmation(preview)) = app.active_dialog() {
@@ -11172,6 +11187,26 @@ mod tests {
             assert!(output.contains("Confirm JUnit export"), "{output}");
             assert!(output.contains("never overwrites"), "{output}");
         }
+    }
+
+    #[test]
+    fn popup_editor_renders_persistent_shortcut_row() {
+        let mut app = App::new(10, 1_000);
+        app.dialogs.push_front(Dialog::TestJunitTomlEditor {
+            result: yoctui_model::TestResultIdentity {
+                path: "/results/testresults.json".into(),
+                fingerprint: "fixture".into(),
+                byte_size: 1,
+                modified_at: SystemTime::UNIX_EPOCH,
+            },
+            content: "destination = \"/exports/result.xml\"\n".into(),
+            editing: false,
+            validation_error: None,
+        });
+        let output = rendered_text(&app, 100, 30);
+        assert!(output.contains("Home/End line"), "{output}");
+        assert!(output.contains("Ctrl+C copy"), "{output}");
+        assert!(output.contains("Ctrl+V paste"), "{output}");
     }
 
     fn qemu_workspace_app() -> App {

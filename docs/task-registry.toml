@@ -2514,18 +2514,18 @@ notes = "Migrate JUnit export destination editing without weakening typed valida
 id = "UX-POPUP-EDITOR-002"
 milestone = "M8"
 title = "Adopt a reusable bounded popup text editor"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 157
 required = true
 depends_on = ["UX-POPUP-GOV-001"]
 verify = ["cargo test -p yoctui-model popup_editor", "cargo test -p yoctui-ui popup_editor", "cargo check -p yoctui"]
-notes = "Introduce the reusable editor boundary and select/adapt tui-textarea rather than maintaining append-only per-dialog fields."
+notes = "Established a model-owned reusable editor boundary informed by tui-textarea semantics, with selection replacement, Home/End, paste reference routing, and shortcut-row TestBackend coverage."
 
 [[task]]
 id = "UX-POPUP-EDITOR-003"
 milestone = "M8"
 title = "Add typed popup-editor state and field selection"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 158
 required = true
 depends_on = ["UX-POPUP-EDITOR-002"]

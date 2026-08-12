@@ -2,19 +2,18 @@
 
 ## Task
 
-**ID:** UX-POPUP-EDITOR-002
-**Title:** Adopt a reusable bounded popup text editor
+**ID:** UX-POPUP-EDITOR-003
+**Title:** Add typed popup-editor state and field selection
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Introduce the reusable editor boundary and select/adapt `tui-textarea` rather
-than maintaining append-only per-dialog fields.
+Model a shared editor document, cursor, selection, edit mode, field-value
+replacement, and bounded undo history without exposing widget state to workflows.
 
 ## Verification
 
 ```bash
 cargo test -p yoctui-model popup_editor
-cargo test -p yoctui-ui popup_editor
-cargo check -p yoctui
+cargo test -p yoctui-app popup_editor
 ```
