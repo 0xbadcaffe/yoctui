@@ -3035,18 +3035,18 @@ notes = "A UI-independent Unix adapter now validates same-UID non-symlink server
 id = "BITBAKE-CLI-CONTROL-001"
 milestone = "M11"
 title = "Provide shell-free BitBake CLI control fallback"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 412
 required = true
 depends_on = ["BITBAKE-SERVER-001"]
 verify = ["cargo test -p yoctui-bitbake cli_control"]
-notes = "Use capability-aware bounded cancellable previewable argv vectors only when socket APIs are insufficient."
+notes = "A UI-independent typed fallback exposes only capability-authorized --status-only, --server-only, and --kill-server operations. Immutable exact argv/cwd/deadline/output previews execute directly without a shell in a captured environment, retain bounded stdout/stderr while fully draining pipes, own cancellable process groups, and report typed success, nonzero, timeout, and cancellation outcomes."
 
 [[task]]
 id = "BITBAKE-RESTART-001"
 milestone = "M11"
 title = "Implement controlled BitBake restart"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 413
 required = true
 depends_on = ["BITBAKE-SOCKET-001", "BITBAKE-CLI-CONTROL-001"]

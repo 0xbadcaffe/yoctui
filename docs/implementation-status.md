@@ -214,7 +214,9 @@ validates endpoint ownership and type, delegates the native process-server
 protocol to workspace Tinfoil, correlates bounded commands, and reports typed
 capabilities, identities, timeouts, and server loss. Live compatibility remains
 reserved for the real-Poky acceptance gate. Shell-free BitBake CLI control is
-active next.
+complete with capability-authorized exact server-control argv, captured
+environment execution, bounded output, deadlines, process-group cancellation,
+and typed outcomes. Controlled BitBake restart is active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

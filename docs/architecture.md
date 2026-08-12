@@ -1294,6 +1294,18 @@ adapter errors become typed controller failure. This does not make the Python
 bridge a second product or UI: BitBake itself is Python, while all Yoctui
 ownership, lifecycle, validation, state, and user interaction remain Rust.
 
+The socket adapter remains the primary server-control path. Where a supported
+socket operation is unavailable, `BitBakeCliCommand` exposes only the typed
+status, server-start, and server-stop fallbacks corresponding to BitBake's
+`--status-only`, `--server-only`, and `--kill-server` options. Capability flags
+must authorize the operation before an immutable command is constructed. Its
+preview contains the exact executable, single argument, working directory,
+deadline, and per-stream bound; execution uses `tokio::process::Command`
+directly with the captured build environment and no shell. The runner drains
+but retains only bounded output, owns a child process group, applies a deadline,
+and supports TERM-then-KILL cancellation. Typed success, nonzero, timeout, and
+cancellation outcomes prevent UI code from parsing process output or status.
+
 ### State partitions
 
 State has three explicit partitions:
