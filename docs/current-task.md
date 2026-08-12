@@ -2,19 +2,19 @@
 
 ## Task
 
-**ID:** BITBAKE-SOCKET-001
-**Title:** Integrate supported BitBake server socket APIs
+**ID:** BITBAKE-CLI-CONTROL-001
+**Title:** Provide shell-free BitBake CLI control fallback
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Implement the supported BitBake socket/server adapter beneath the typed
-controller. Detect capabilities and versions, enforce connect/command timeouts,
-correlate commands, handle server loss and reconnect explicitly, and keep all
-transport details independent of UI state.
+Provide typed, capability-aware BitBake CLI control paths for operations where
+the supported socket adapter is insufficient. Every command must use a
+shell-free argv vector, expose an exact preview, bound output and runtime,
+support cancellation, and report typed outcomes without depending on UI state.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake bitbake_socket
+cargo test -p yoctui-bitbake cli_control
 ```

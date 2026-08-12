@@ -1,4 +1,6 @@
 //! BitBake adapters. They execute BitBake; they never evaluate metadata themselves.
+#[cfg(unix)]
+mod bitbake_socket;
 mod build_environment;
 mod image;
 mod maintenance_optional;
@@ -54,6 +56,8 @@ mod test_support {
 }
 
 use async_trait::async_trait;
+#[cfg(unix)]
+pub use bitbake_socket::BitBakeSocketAdapter;
 pub use build_environment::{
     BuildEnvironmentAdapter, BuildEnvironmentAdapterError, BuildEnvironmentClonePreview,
     BuildEnvironmentResponse,
@@ -131,7 +135,7 @@ pub use signature::{
     SignatureComparisonResponse, SignatureDumpResponse,
 };
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, VecDeque},
     ffi::OsString,
     path::{Path, PathBuf},
     process::Stdio,
@@ -1590,6 +1594,7 @@ pub struct BridgeBackend {
     lines: BufReader<tokio::process::ChildStdout>,
     sequence: u64,
     last_sequence: u64,
+    accepted_correlations: VecDeque<String>,
     signature_adapter: SignatureAdapter,
 }
 impl BridgeBackend {
@@ -1613,6 +1618,7 @@ impl BridgeBackend {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
+            .kill_on_drop(true)
             .spawn()?;
         let stdin = child
             .stdin
@@ -1628,6 +1634,7 @@ impl BridgeBackend {
             lines: BufReader::new(stdout),
             sequence: 0,
             last_sequence: 0,
+            accepted_correlations: VecDeque::new(),
             signature_adapter: SignatureAdapter::new(build_dir),
         };
         backend.handshake().await?;
@@ -1635,14 +1642,33 @@ impl BridgeBackend {
     }
     async fn command(&mut self, message: Command) -> Result<(), BackendError> {
         self.sequence += 1;
+        let correlation = self.sequence.to_string();
+        self.accepted_correlations.push_back(correlation.clone());
+        while self.accepted_correlations.len() > 32 {
+            self.accepted_correlations.pop_front();
+        }
         let bytes = encode_line(&Envelope {
             protocol_version: VERSION,
             sequence: self.sequence,
-            correlation_id: Some(self.sequence.to_string()),
+            correlation_id: Some(correlation),
             message,
         })?;
         self.stdin.write_all(&bytes).await?;
         self.stdin.flush().await?;
+        Ok(())
+    }
+
+    fn validate_correlation(&self, envelope: &Envelope<Event>) -> Result<(), BackendError> {
+        let Some(correlation) = envelope.correlation_id.as_ref() else {
+            return Err(BackendError::Bridge(
+                "bridge response omitted its command correlation".into(),
+            ));
+        };
+        if !self.accepted_correlations.contains(correlation) {
+            return Err(BackendError::Bridge(format!(
+                "bridge response used unknown correlation {correlation}"
+            )));
+        }
         Ok(())
     }
 
@@ -1679,6 +1705,7 @@ impl BridgeBackend {
             ));
         };
         let envelope: Envelope<Event> = decode_line(&line, Some(self.last_sequence))?;
+        self.validate_correlation(&envelope)?;
         self.last_sequence = envelope.sequence;
         match envelope.message {
             Event::HelloAck { .. } => Ok(()),
@@ -1700,6 +1727,7 @@ impl BridgeBackend {
             ));
         };
         let envelope: Envelope<Event> = decode_line(&line, Some(self.last_sequence))?;
+        self.validate_correlation(&envelope)?;
         self.last_sequence = envelope.sequence;
         match envelope.message {
             Event::BridgeShutdown => {}
@@ -1718,6 +1746,41 @@ impl BridgeBackend {
             .await
             .map_err(|_| {
                 BackendError::Bridge("bridge did not exit after shutdown acknowledgement".into())
+            })??;
+        Ok(())
+    }
+
+    /// Terminate the connected BitBake process server through Tinfoil's
+    /// supported process-server connection, then wait for the bridge to exit.
+    pub async fn terminate_server(&mut self) -> Result<(), BackendError> {
+        self.command(Command::TerminateServer).await?;
+        let Some(line) = self.next_line().await? else {
+            return Err(BackendError::Bridge(
+                "bridge disconnected before acknowledging server termination".into(),
+            ));
+        };
+        let envelope: Envelope<Event> = decode_line(&line, Some(self.last_sequence))?;
+        self.validate_correlation(&envelope)?;
+        self.last_sequence = envelope.sequence;
+        match envelope.message {
+            Event::ServerTerminated => {}
+            Event::CommandFailed { code, message } | Event::ProtocolError { code, message } => {
+                return Err(BackendError::Bridge(format!(
+                    "server termination rejected: {code}: {message}"
+                )));
+            }
+            _ => {
+                return Err(BackendError::Bridge(
+                    "bridge sent an unexpected server termination event".into(),
+                ));
+            }
+        }
+        tokio::time::timeout(Duration::from_secs(2), self.child.wait())
+            .await
+            .map_err(|_| {
+                BackendError::Bridge(
+                    "bridge did not exit after server termination acknowledgement".into(),
+                )
             })??;
         Ok(())
     }
@@ -2045,7 +2108,7 @@ impl BridgeBackend {
             Event::CommandFailed { code, message } | Event::ProtocolError { code, message } => {
                 BackendEvent::CommandFailed { code, message }
             }
-            Event::BridgeShutdown => BackendEvent::Disconnected,
+            Event::BridgeShutdown | Event::ServerTerminated => BackendEvent::Disconnected,
             Event::HelloAck { .. } | Event::Unknown => BackendEvent::Ignored,
         })
     }
@@ -2546,6 +2609,7 @@ impl BitBakeBackend for BridgeBackend {
             return Ok(BackendEvent::Disconnected);
         };
         let e: Envelope<Event> = decode_line(&line, Some(self.last_sequence))?;
+        self.validate_correlation(&e)?;
         self.last_sequence = e.sequence;
         Self::event(e.message)
     }

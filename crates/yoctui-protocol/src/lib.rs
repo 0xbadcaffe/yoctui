@@ -71,6 +71,7 @@ pub enum Command {
         force: bool,
     },
     CancelBuild,
+    TerminateServer,
     ListRecipes {
         filter: Option<String>,
     },
@@ -338,6 +339,7 @@ pub enum Event {
         message: String,
     },
     BridgeShutdown,
+    ServerTerminated,
     #[serde(other)]
     Unknown,
 }

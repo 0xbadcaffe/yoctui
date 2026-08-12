@@ -3024,18 +3024,18 @@ notes = "yoctui-bitbake now provides a UI-independent generic server controller 
 id = "BITBAKE-SOCKET-001"
 milestone = "M11"
 title = "Integrate supported BitBake server socket APIs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 411
 required = true
 depends_on = ["BITBAKE-SERVER-001"]
 verify = ["cargo test -p yoctui-bitbake bitbake_socket"]
-notes = "Add typed lifecycle, timeout, reconnect, version/capability detection, command correlation, and server-loss handling without UI dependencies."
+notes = "A UI-independent Unix adapter now validates same-UID non-symlink server sockets, uses the supported workspace Tinfoil/process-server connection through the bounded bridge, correlates every command, reports typed versions/capabilities and server loss, and implements explicit start/connect/disconnect/stop lifecycles with timeouts. Real Unix-socket fixtures cover lifecycle, correlation, invalid endpoints, and loss; live Poky compatibility remains gated by LIVE-DAEMON-POKY-001."
 
 [[task]]
 id = "BITBAKE-CLI-CONTROL-001"
 milestone = "M11"
 title = "Provide shell-free BitBake CLI control fallback"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 412
 required = true
 depends_on = ["BITBAKE-SERVER-001"]

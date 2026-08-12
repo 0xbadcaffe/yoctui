@@ -1272,6 +1272,28 @@ only the session. The abstraction does not yet claim a live BitBake transport:
 supported socket behavior is implemented by `BITBAKE-SOCKET-001`, while
 shell-free previewable CLI gaps belong to `BITBAKE-CLI-CONTROL-001`.
 
+`BitBakeSocketAdapter` supplies the Unix implementation without reimplementing
+BitBake's Python pickle or file-descriptor-passing protocol in ad-hoc Rust.
+The daemon launches the existing bounded NDJSON bridge in the selected build
+environment; the bridge imports that workspace's own `bb.tinfoil`, whose
+official process-server connector passes the event, command, and reply file
+descriptors over `bitbake.sock`. Rust validates the configured absolute bridge
+path, build identity, non-symlink same-UID socket (or explicit `BBSERVER`
+identity), version, capabilities, and server inode identity before adopting
+the transport. Bridge children are kill-on-drop, messages remain bounded, and
+responses must carry one of the bounded known command correlations.
+
+Detection proves usability by completing a Tinfoil connection and authoritative
+workspace inspection rather than treating socket existence as connection
+proof. Start allows Tinfoil to use BitBake's supported start-or-reconnect path;
+connect transfers that proven transport into the controller session; disconnect
+runs Tinfoil `clientComplete`; stop sends the process-server `terminateServer`
+operation used by BitBake's own kill-server path and waits for socket removal.
+Unexpected EOF, malformed socket identity, wrong correlation, timeout, and
+adapter errors become typed controller failure. This does not make the Python
+bridge a second product or UI: BitBake itself is Python, while all Yoctui
+ownership, lifecycle, validation, state, and user interaction remain Rust.
+
 ### State partitions
 
 State has three explicit partitions:

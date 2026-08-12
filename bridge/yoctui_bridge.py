@@ -520,6 +520,21 @@ class TinfoilConnection:
             self.tinfoil = None
         self.active = False
 
+    def terminate_server(self):
+        """Terminate through the process-server interface used by bitbake -m."""
+        if self.tinfoil is None or self.tinfoil.server_connection is None:
+            raise RuntimeError("BitBake server connection is unavailable")
+        connection = self.tinfoil.server_connection
+        connection.connection.terminateServer()
+        connection.terminate()
+        try:
+            self.tinfoil_module._server_connections.remove(connection)
+        except (AttributeError, ValueError):
+            pass
+        self.tinfoil.server_connection = None
+        self.tinfoil = None
+        self.active = False
+
 
 class BitBakeAdapter:
     def __init__(self, version, family, module=None):
@@ -1894,6 +1909,16 @@ def handle(command, correlation_id, adapter):
     elif kind == "shutdown":
         emit({"type": "bridge_shutdown"}, correlation_id)
         return False
+    elif kind == "terminate_server":
+        try:
+            adapter.server().terminate_server()
+        except (ServerUnavailable, RuntimeError) as exc:
+            error("bitbake_server_unavailable", str(exc), correlation_id)
+        else:
+            adapter.connection = None
+            adapter.build_active = False
+            emit({"type": "server_terminated"}, correlation_id)
+            return False
     else:
         error("unknown_command", f"unknown command: {kind!r}", correlation_id)
     return True

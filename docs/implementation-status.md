@@ -209,7 +209,12 @@ host-reboot gate is complete.
 The daemon-owned BitBake controller abstraction is complete with typed
 contexts, observations, capabilities, sessions, transitions, generations,
 timeouts, restart/reconnect composition, and explicit failures independent of
-the UI. Supported BitBake socket integration is active.
+the UI. Supported BitBake socket integration is complete: the Unix adapter
+validates endpoint ownership and type, delegates the native process-server
+protocol to workspace Tinfoil, correlates bounded commands, and reports typed
+capabilities, identities, timeouts, and server loss. Live compatibility remains
+reserved for the real-Poky acceptance gate. Shell-free BitBake CLI control is
+active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded
