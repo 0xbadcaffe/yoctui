@@ -149,6 +149,36 @@ references fail closed with a diagnostic.
 Shortcuts always appear in the footer. Destructive operations show an exact
 preview and require confirmation.
 
+## Daemon service preview
+
+Persistent daemon mode is being introduced milestone by milestone. Lifecycle
+and optional systemd user-service management are available now; the Ratatui
+client remains in standalone mode until the registered attach/parity task is
+complete.
+
+```sh
+yoctui daemon start
+yoctui daemon status
+yoctui daemon restart
+yoctui daemon stop
+```
+
+On a host with a systemd user manager, install the no-root user unit and enable
+automatic startup:
+
+```sh
+yoctui daemon service install
+systemctl --user enable --now yoctui.service
+yoctui daemon service status
+```
+
+`yoctui daemon service start|stop|restart|status|uninstall` manages only the
+user unit. If `systemctl --user` is unavailable, use the direct-process
+`yoctui daemon start` fallback. `yoctui daemon foreground` is the debug/service
+entry point. Daemon persistence does not mean arbitrary processes survive a
+host reboot; recovery states and guarantees are implemented and documented by
+later milestone tasks.
+
 ## Performance evidence
 
 The completion gate captured the deterministic release workload with real

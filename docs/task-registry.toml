@@ -2914,18 +2914,18 @@ notes = "One Rust binary now provides daemon start/status/stop/restart/foregroun
 id = "DAEMON-SERVICE-INTEGRATION-001"
 milestone = "M11"
 title = "Add systemd user service integration"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 404
 required = true
 depends_on = ["DAEMON-LIFECYCLE-001"]
 verify = ["cargo test -p yoctui daemon_service", "./scripts/check-docs.sh"]
-notes = "Generate/install/manage systemd user service first, require no root, provide a clear non-systemd fallback, and document auto-start."
+notes = "The CLI atomically installs/removes a no-root user unit for the canonical Rust binary, manages it through shell-free systemctl --user argv, documents explicit enable --now auto-start, rejects unsafe service files, and reports direct yoctui daemon start fallback when the user manager is unavailable."
 
 [[task]]
 id = "DAEMON-STATE-001"
 milestone = "M11"
 title = "Move authoritative long-lived state into daemon"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 405
 required = true
 depends_on = ["DAEMON-LIFECYCLE-001"]

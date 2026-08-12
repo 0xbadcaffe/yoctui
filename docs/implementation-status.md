@@ -170,7 +170,12 @@ Lifecycle commands now pass process-level start/status/restart/typed-stop and
 SIGTERM cleanup tests using the one Rust binary, authenticated runtime records,
 boot/executable/instance liveness checks, safe stale recovery, and no shell
 daemonization. Client auto-attach remains intentionally gated on client parity;
-systemd user-service integration is active.
+systemd user-service integration is complete.
+Optional systemd user-service integration is complete with safe atomic unit
+generation, one-binary foreground execution, shell-free no-root user-manager
+operations, explicit enablement, unsafe-file rejection, and a tested direct
+fallback diagnostic. Migration of authoritative long-lived state into the
+daemon is active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

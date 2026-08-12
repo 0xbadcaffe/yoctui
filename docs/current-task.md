@@ -2,20 +2,21 @@
 
 ## Task
 
-**ID:** DAEMON-SERVICE-INTEGRATION-001
-**Title:** Add systemd user service integration
+**ID:** DAEMON-STATE-001
+**Title:** Move authoritative long-lived state into daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Generate, install, and manage a systemd user service where available without
-root. Support start, stop, restart, and status, document daemon auto-start, and
-provide a clear direct-process fallback when the user service manager is
-unavailable.
+Move BitBake connection state, all background-job families, bounded logs and
+errors, task history, QEMU/Wic/SDK/testing/QA/security/maintenance/utility
+state, PTY sessions, project-profile state, and session metadata into one typed
+daemon-owned authoritative model. Clients must render this state rather than
+owning long-running execution.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui daemon_service
-./scripts/check-docs.sh
+cargo test -p yoctui-model daemon_state
+cargo test -p yoctui-app daemon_state
 ```

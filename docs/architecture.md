@@ -1374,6 +1374,19 @@ stop and start. Interactive automatic attach/optional auto-start will call
 these same lifecycle APIs when `CLIENT-ARCH-001` moves the client boundary;
 the current single-process TUI is not falsely reported as attached meanwhile.
 
+Optional service-manager integration generates
+`$XDG_CONFIG_HOME/systemd/user/yoctui.service` (or the corresponding
+`~/.config` path) with the canonical installed executable and `daemon
+foreground` argv. The unit is a simple unprivileged user service with
+`Restart=on-failure` and `NoNewPrivileges=true`. Generation rejects control
+characters and unsafe existing service-file types and atomically writes a
+private regular file. `yoctui daemon service
+install|uninstall|start|stop|restart|status` invokes only shell-free
+`systemctl --user` vectors. Install reloads the user manager and prints the
+explicit `enable --now` auto-start command. A missing or failed user manager
+returns the exact direct-process `yoctui daemon start` fallback; no command
+requests root access or silently claims service activation.
+
 ### Crash, daemon restart, and host reboot
 
 On daemon crash, connected clients detect EOF/timeout and enter disconnected
