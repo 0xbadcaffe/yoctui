@@ -193,7 +193,11 @@ gate passes.
 Snapshot synchronization is complete with atomic checked watermarks, bounded
 snapshot/event/log retention, exact same-instance replay, explicit replacement
 for expired or invalid cursors, and a client synchronizer that rejects gaps and
-withholds stale resume cursors. Safe daemon metadata persistence is active.
+withholds stale resume cursors.
+Safe persistence is complete with a versioned private atomic user-state file,
+strict schema/size/type/ownership checks, reconstructable workflow/session
+metadata, optional logs, and an enforced prohibition on persisted live-process
+claims. Honest daemon restart recovery is active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

@@ -1432,6 +1432,20 @@ explicit `enable --now` auto-start command. A missing or failed user manager
 returns the exact direct-process `yoctui daemon start` fallback; no command
 requests root access or silently claims service activation.
 
+Version 1 daemon persistence lives in the user state directory
+(`$XDG_STATE_HOME/yoctui/daemon-state.json`, with the standard user-state
+fallback when needed), not the reboot-volatile runtime socket directory. The
+directory is private and the atomically replaced, fsynced file is mode `0600`,
+same-UID, non-symlink, regular, and bounded to 4 MiB. Its typed schema contains
+only prior daemon/boot/reconnect watermarks, workspace and profile summaries,
+BitBake version/capabilities, job history, terminal name/kind/cwd/dimensions and
+prior lifecycle, optional bounded logs, recovery warnings, layout revision and
+session-name metadata, and user preferences. It has no PID, process group,
+writer lease, or client-presence field. Every terminal entry carries a required
+false `live_process_persisted` invariant, which both reads and writes reject if
+violated. Runtime startup and clean shutdown write this safe checkpoint;
+classification and reconstruction belong to `DAEMON-RECOVERY-001`.
+
 ### Crash, daemon restart, and host reboot
 
 On daemon crash, connected clients detect EOF/timeout and enter disconnected

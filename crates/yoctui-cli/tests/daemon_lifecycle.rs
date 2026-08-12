@@ -13,6 +13,7 @@ fn run(binary: &Path, runtime: &Path, action: &str) -> std::process::Output {
     Command::new(binary)
         .args(["daemon", action])
         .env("XDG_RUNTIME_DIR", runtime)
+        .env("XDG_STATE_HOME", runtime.join("state"))
         .output()
         .unwrap()
 }

@@ -2,19 +2,19 @@
 
 ## Task
 
-**ID:** DAEMON-PERSIST-001
-**Title:** Persist safe daemon metadata
+**ID:** DAEMON-RECOVERY-001
+**Title:** Recover honestly after daemon restart
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Persist only safe, meaningful daemon metadata: workspace/profile identity, job
-history, terminal session and layout metadata, session names, configured
-bounded recent logs, user preferences, and reconnect metadata. Never serialize
-or imply that live child PIDs survive daemon or host restart.
+Reload validated persisted metadata after daemon restart. Restore client-visible
+history and session names, classify formerly live jobs and unrecoverable PTYs
+as `Lost`, identify BitBake reconnection intent without claiming a connection,
+and restore only external services whose supported interface proves them live.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui daemon_persist
+cargo test -p yoctui daemon_recovery
 ```

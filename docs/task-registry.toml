@@ -2980,18 +2980,18 @@ notes = "DaemonSnapshotJournal now atomically maintains a byte-bounded snapshot 
 id = "DAEMON-PERSIST-001"
 milestone = "M11"
 title = "Persist safe daemon metadata"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 407
 required = true
 depends_on = ["DAEMON-STATE-001"]
 verify = ["cargo test -p yoctui daemon_persist"]
-notes = "Persist workspace/profile/session/layout metadata, job history, optional bounded logs, preferences, and reconnect metadata only; never claim live child survival over reboot."
+notes = "Versioned 4 MiB-bounded daemon state is now atomically fsynced to a private same-UID non-symlink user-state file on startup and clean shutdown. It stores only reconstructable workspace/profile/BitBake/job/PTY/layout/preference/log/reconnect metadata, excludes PID/process-group/writer/client liveness, and rejects any terminal entry claiming a live process was persisted."
 
 [[task]]
 id = "DAEMON-RECOVERY-001"
 milestone = "M11"
 title = "Recover honestly after daemon restart"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 408
 required = true
 depends_on = ["DAEMON-PERSIST-001", "DAEMON-SNAPSHOT-001"]

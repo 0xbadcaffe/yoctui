@@ -25,6 +25,7 @@ impl Drop for DaemonGuard {
         let _ = Command::new(&self.binary)
             .args(["daemon", "stop"])
             .env("XDG_RUNTIME_DIR", &self.runtime)
+            .env("XDG_STATE_HOME", self.runtime.join("state"))
             .output();
         let _ = fs::remove_dir_all(&self.runtime);
     }
@@ -89,6 +90,7 @@ fn daemon_state_runtime_owns_snapshot_across_client_detach_and_reattach() {
     let start = Command::new(&binary)
         .args(["daemon", "start"])
         .env("XDG_RUNTIME_DIR", &runtime)
+        .env("XDG_STATE_HOME", runtime.join("state"))
         .output()
         .unwrap();
     assert!(
@@ -140,6 +142,7 @@ fn daemon_state_runtime_owns_snapshot_across_client_detach_and_reattach() {
     let status = Command::new(&binary)
         .args(["daemon", "status"])
         .env("XDG_RUNTIME_DIR", &runtime)
+        .env("XDG_STATE_HOME", runtime.join("state"))
         .output()
         .unwrap();
     assert!(status.status.success());

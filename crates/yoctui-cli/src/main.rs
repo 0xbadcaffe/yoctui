@@ -1070,6 +1070,9 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
             DaemonRuntimeRecord, RuntimeRecordState, classify_runtime_record, read_boot_id,
             read_runtime_record, remove_runtime_record, write_runtime_record,
         },
+        daemon_persist::{
+            DaemonPersistedState, PersistedPreferences, persist_paths_for, write_persisted_state,
+        },
     };
     let paths = runtime_paths()?;
     let listener = DaemonListener::bind(&paths)?;
@@ -1111,6 +1114,17 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     let daemon_journal = DaemonSnapshotJournal::new(
         daemon_protocol_snapshot(&daemon_state),
         DaemonSnapshotLimits::default(),
+    )?;
+    let persist_paths = persist_paths_for(&daemon_state_root()?)?;
+    write_persisted_state(
+        &persist_paths,
+        &DaemonPersistedState::capture(
+            daemon_journal.snapshot(),
+            unix_ms(),
+            record.boot_id.clone(),
+            Vec::new(),
+            PersistedPreferences::default(),
+        ),
     )?;
     write_runtime_record(&paths, &record)?;
     let record_guard = DaemonRuntimeGuard {
@@ -1213,10 +1227,28 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
             }
         }
     }
+    write_persisted_state(
+        &persist_paths,
+        &DaemonPersistedState::capture(
+            daemon_journal.snapshot(),
+            unix_ms(),
+            record.boot_id.clone(),
+            Vec::new(),
+            PersistedPreferences::default(),
+        ),
+    )?;
     remove_runtime_record(&paths, instance)?;
     std::mem::forget(record_guard);
     drop(listener);
     Ok(())
+}
+
+#[cfg(unix)]
+fn daemon_state_root() -> Result<PathBuf> {
+    env::var_os("XDG_STATE_HOME")
+        .map(PathBuf::from)
+        .or_else(|| env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/state")))
+        .context("XDG_STATE_HOME or HOME is required for daemon state persistence")
 }
 
 #[cfg(unix)]
