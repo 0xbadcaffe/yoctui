@@ -3112,18 +3112,18 @@ notes = "DaemonPtySession composes the real runner and emulator: attach returns 
 id = "PTY-MULTI-001"
 milestone = "M11"
 title = "Support bounded multiple PTY sessions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 419
 required = true
 depends_on = ["PTY-ATTACH-001"]
 verify = ["cargo test -p yoctui-model pty_multi"]
-notes = "Add named create/close/rename/switch/history/resource limits without assuming one active PTY."
+notes = "The pure registry allocates bounded monotonic non-reused IDs, validates unique names, owns multiple typed sessions, and tracks independent client selections. Running close returns TerminationRequired for the owning runner; only terminal sessions archive/remove. Session, client and bounded-history limits are explicit, dropped history is counted, abandoned reservations cancel without ID reuse, and no global active-session slot exists."
 
 [[task]]
 id = "PTY-CONTEXT-001"
 milestone = "M11"
 title = "Open PTYs in typed Yocto contexts"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 420
 required = true
 depends_on = ["PTY-MULTI-001"]
