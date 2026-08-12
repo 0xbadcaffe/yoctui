@@ -78,6 +78,61 @@ Inside Yoctui, press `B`, press `e`, enter `core-image-minimal`, select the
 build action, and confirm it. The first BitBake build starts from that explicit
 TUI confirmation.
 
+## Optional project profile
+
+Yoctui works normally without a profile. A team may optionally commit
+`.yoctui/project.toml` at the Poky/project root to share favorites, typed build
+presets, and typed workflow intent without modifying Poky, vendor layers,
+recipes, or BitBake configuration:
+
+```toml
+schema_version = 1
+
+[favorites]
+recipes = ["base-files"]
+images = ["core-image-minimal"]
+layers = ["core"]
+
+[[build_presets]]
+name = "minimal"
+targets = ["core-image-minimal"]
+machine = "qemux86-64"
+
+[build_presets.options]
+jobs = 8
+continue_on_error = false
+
+[[workflows]]
+name = "refresh-metadata"
+
+[[workflows.steps]]
+type = "refresh_metadata"
+```
+
+Logical recipe, image, and layer names are portable. File references, when a
+typed workflow supports them, must be repository-relative and cannot escape
+the project root. Host paths, credentials, environment snapshots, shell
+fragments, arbitrary commands, and executable hooks are rejected. Themes,
+recent paths, aliases, trust decisions, and other personal preferences remain
+in the user-local configuration.
+
+Loading the file is inert: it never runs a command, sources an environment,
+changes metadata, or starts a build. Yoctui resolves its team intent against
+the current BitBake inventory and visibly marks missing or ambiguous entries;
+BitBake remains authoritative. Selecting a resolved preset or workflow still
+uses the normal preview, capability checks, and confirmations.
+
+After sourcing the Poky environment, inspect resolution without opening the
+full-screen client:
+
+```sh
+yoctui --backend bridge --build-dir "$BUILDDIR" profile
+```
+
+An absent file reports `project profile: absent (optional)`. Unknown fields,
+unsupported schema versions, symlinked profile files, and invalid portable
+references fail closed with a diagnostic.
+
 ## Essential controls
 
 | Key | Action |

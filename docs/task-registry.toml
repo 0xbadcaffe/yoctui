@@ -2857,12 +2857,12 @@ notes = "A fresh isolated Poky Scarthgap clone passes absent and explicit profil
 id = "README-PROFILE-001"
 milestone = "M10"
 title = "Document optional project profiles"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 305
 required = true
 depends_on = ["PROFILE-LIVE-POKY-001"]
 verify = ["./scripts/check-docs.sh"]
-notes = "Document examples, portability, trust model, zero vendor changes, and the distinction between team intent and BitBake authority."
+notes = "README documents the optional no-profile default, a schema-v1 example, portable identities, local-versus-team ownership, inert loading, fail-closed trust rules, BitBake authority, and the live profile inspection command."
 
 # M11 — Persistent Daemon and Session Architecture. The daemon is Rust-native,
 # local-only by default, and owns long-running work independently of clients.
@@ -2870,7 +2870,7 @@ notes = "Document examples, portability, trust model, zero vendor changes, and t
 id = "DAEMON-SPEC-001"
 milestone = "M11"
 title = "Specify daemon and attachable client architecture"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 400
 required = true
 depends_on = []
