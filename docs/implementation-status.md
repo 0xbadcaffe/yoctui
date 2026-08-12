@@ -239,6 +239,8 @@ resource limits.
 Typed Yocto PTY contexts are complete for build/source/layer/recipe/Devtool/
 SDK/deploy identities with canonical path and captured-environment validation;
 project profiles cannot supply commands. Interactive Devtool PTY routing is
+complete for authoritative workspace shells and exact `edit-recipe` while
+noninteractive actions remain managed jobs. Menuconfig/devshell PTY routing is
 active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and

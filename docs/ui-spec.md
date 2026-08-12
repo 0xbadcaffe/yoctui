@@ -2591,6 +2591,14 @@ session listing show the typed context identity and resolved directory. The
 action never exposes a general shell-command field and never loads commands
 from `.yoctui/project.toml`; stale or changed identities disable creation with
 an explicit refresh instruction.
+
+The Devtool workspace exposes two terminal-backed interactive routes when
+authoritative status is current: Open workspace shell and Edit recipe. Edit
+recipe previews the exact `devtool edit-recipe <recipe>` identity before
+creating a session; the editor runs in that daemon-owned PTY. Modify,
+update-recipe, finish, deploy and reset retain their existing background-job
+dialogs and lifecycle rather than opening a terminal merely because PTYs are
+available.
 Test result import uses `Test result import.toml` with one normalized absolute
 `root`, initially selected for immediate replacement, preserving the existing
 bounded typed import operation.

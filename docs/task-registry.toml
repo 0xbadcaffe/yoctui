@@ -3134,18 +3134,18 @@ notes = "PtyContextAuthority canonicalizes and bounds verified build/SDK environ
 id = "PTY-DEVTOOL-001"
 milestone = "M11"
 title = "Route interactive Devtool through daemon PTYs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 421
 required = true
 depends_on = ["PTY-CONTEXT-001"]
 verify = ["cargo test -p yoctui pty_devtool"]
-notes = "Use daemon-owned sessions for appropriate interactive Devtool workflows."
+notes = "The PTY router accepts current authoritative Devtool status and exposes only an identity/path-revalidated workspace shell or exact verified-executable `devtool edit-recipe <validated recipe>` preview. Missing/stale status, unsafe names and changed workspaces fail. Modify, update-recipe, finish, deploy and reset explicitly return UseBackgroundJob and retain existing typed command/job infrastructure; CLI composition coverage passes."
 
 [[task]]
 id = "PTY-MENUCONFIG-001"
 milestone = "M11"
 title = "Support interactive menuconfig and devshell PTYs"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 422
 required = true
 depends_on = ["PTY-CONTEXT-001"]

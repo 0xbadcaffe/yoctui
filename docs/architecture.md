@@ -1705,6 +1705,15 @@ model. External configured layers, Devtool workspaces, deploy roots, and SDK
 roots become explicit authorized context roots. Project-profile command text is
 not an input to this path and cannot cause shell execution.
 
+Interactive Devtool routing is a narrow layer above that catalog. It accepts an
+authoritative `DevtoolStatus` and supports only the selected Devtool workspace
+shell or exact `devtool edit-recipe <validated-recipe>` PTY preview. Workspace
+identity and canonical source must still match at preview time, and the
+executable is a verified regular executable. Modify, update-recipe, finish,
+deploy and reset explicitly return `UseBackgroundJob`, preserving the existing
+typed `DevtoolCommandSpec`/job coordinator rather than duplicating long-running
+execution inside a terminal.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only

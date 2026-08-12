@@ -97,6 +97,8 @@ mod maintenance_cli;
 #[cfg(unix)]
 #[cfg_attr(not(test), allow(dead_code))]
 mod pty_attach;
+#[cfg(test)]
+mod pty_workflow_tests;
 
 use maintenance_cli::MaintenanceCliCoordinator;
 #[derive(Parser, Debug)]
