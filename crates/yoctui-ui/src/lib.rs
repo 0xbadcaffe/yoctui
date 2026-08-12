@@ -855,6 +855,10 @@ pub fn render(frame: &mut Frame, app: &App) {
                 editor,
                 validation_error,
             } => Some(("Locked cache.toml", editor, validation_error)),
+            MaintenanceDialog::BuildHistoryToml {
+                editor,
+                validation_error,
+            } => Some(("Build history.toml", editor, validation_error)),
             _ => None,
         }
     {
@@ -9450,6 +9454,7 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
         MaintenanceDialog::LockedCacheToml { .. } => {
             unreachable!("locked-cache form uses the shared editor")
         }
+        MaintenanceDialog::BuildHistoryToml { .. } => unreachable!("build-history form uses the shared editor"),
         MaintenanceDialog::ReadinessForm(draft) => (
             "Sstate readiness check",
             format!(
@@ -15326,33 +15331,24 @@ mod tests {
     #[test]
     fn maintenance_release_history_workspace_renders_exact_choices_responsively() {
         let mut app = maintenance_workflow_ui_app();
-        let metadata = yoctui_model::MaintenanceMetadata {
-            buildhistory_dir: Some("/build/buildhistory".into()),
-            ..yoctui_model::MaintenanceMetadata::default()
-        };
-        let mut draft =
-            yoctui_model::MaintenanceBuildHistoryDraft::from_metadata(&metadata).unwrap();
-        draft.from_revision = "HEAD~2".into();
-        draft.to_revision = "HEAD".into();
-        draft.signatures = true;
-        draft.signature_diff = true;
-        draft.exclude_paths = "images/*,packages/*".into();
-        draft.no_colour = true;
-        draft.validation = Some("repository identity changed".into());
+        let editor = yoctui_model::PopupEditor::new("# Repository (read-only): /build/buildhistory\nfrom_revision = \"HEAD~2\"\nto_revision = \"HEAD\"\nreport_version = false\nreport_all = false\nsignatures = true\nsignature_diff = true\nexclude_paths = \"images/*,packages/*\"\nno_colour = true\n".into());
         app.dialogs.push_front(Dialog::Maintenance(Box::new(
-            MaintenanceDialog::BuildHistoryForm(Box::new(draft)),
+            MaintenanceDialog::BuildHistoryToml {
+                editor,
+                validation_error: Some("repository identity changed".into()),
+            },
         )));
         app.focus = FocusTarget::Dialog;
         for (width, height) in [(160, 40), (100, 26), (80, 24)] {
             let output = rendered_text(&app, width, height);
-            assert!(
-                output.contains("Build-history comparison"),
-                "{width}: {output}"
-            );
+            assert!(output.contains("Build history.toml"), "{width}: {output}");
             assert!(output.contains("/build/buildhistory"), "{width}: {output}");
             assert!(output.contains("HEAD~2"), "{width}: {output}");
-            assert!(output.contains("[x] signature diff"), "{width}: {output}");
-            assert!(output.contains("[x] no colour"), "{width}: {output}");
+            assert!(
+                output.contains("signature_diff = true"),
+                "{width}: {output}"
+            );
+            assert!(output.contains("no_colour = true"), "{width}: {output}");
             assert!(
                 output.contains("repository identity changed"),
                 "{width}: {output}"

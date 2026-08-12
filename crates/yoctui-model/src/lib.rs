@@ -6314,6 +6314,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     | MaintenanceDialog::LockedCacheToml {
                         editor,
                         validation_error,
+                    }
+                    | MaintenanceDialog::BuildHistoryToml {
+                        editor,
+                        validation_error,
                     } => (editor, Some(validation_error)),
                     _ => return None,
                 },

@@ -2756,18 +2756,18 @@ notes = "Locked-cache path and filter editing now uses the shared PopupEditor; n
 id = "UX-POPUP-OPS-MAINT-HISTORY-001"
 milestone = "M8"
 title = "Move Maintenance build-history form into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 165
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-LOCKED-001"]
 verify = ["cargo test -p yoctui-model maintenance_release", "cargo test -p yoctui-app maintenance_release_history", "cargo test -p yoctui-ui maintenance_release_history", "cargo check -p yoctui"]
-notes = "Migrate build-history repositories, revisions, paths, and flags while retaining exact comparison semantics."
+notes = "Build-history revisions, exclusions, and report booleans now use the shared PopupEditor; repository identity remains capability-owned and the existing exact bounded comparison preview remains intact."
 
 [[task]]
 id = "UX-POPUP-OPS-MAINT-ARCHIVE-001"
 milestone = "M8"
 title = "Move Maintenance Git archive form into a TOML popup"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 166
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-HISTORY-001"]

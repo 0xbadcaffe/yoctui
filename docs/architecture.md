@@ -714,6 +714,10 @@ capability metadata and accepts only typed path fields from the shared editor.
 The established adapter preview, changed-evidence detection, and separate
 destructive confirmation remain downstream requirements.
 
+Build-history popup validation likewise reconstructs the canonical repository
+from current capability metadata, parses only revision/exclusion strings and
+typed report booleans, and emits the existing bounded comparison preview.
+
 Service diagnostics cross the boundary as typed endpoint-role, local/remote,
 reachability, PID, and executable-name records rather than raw process or
 socket text. The adapter bounds an explicit process-root scan and records

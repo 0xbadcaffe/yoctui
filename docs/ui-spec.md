@@ -2132,17 +2132,16 @@ Its report is replaceable, bounded, and retains both resolved revisions.
 `build-compare` is a separate optional capability and is disabled when absent;
 it is never emulated by relabelling `buildhistory-diff`.
 
-`h` opens the build-history comparison form only when the exact
+`h` opens the bounded `Build history.toml` popup only when the exact
 `buildhistory-diff` capability and authoritative canonical `BUILDHISTORY_DIR`
-repository are available. Repository is read-only. From revision, to revision,
-and comma-separated exclude paths begin empty; report-version, report-all,
-signatures, signature-diff, and no-colour begin clear. `Tab`/`Shift+Tab`
-traverses those fields in that order, with exclude paths between signature-diff
-and no-colour. Normal typing and `Backspace` edit only text fields, while
-`Space` or `Left`/`Right` toggles only the selected choice. `Enter` validates
-and requests an exact adapter preview without running a comparison; `Esc`
-closes without side effects. The form labels bounded session output and states
-that `build-compare` is a separate unsupported interface.
+repository is available. Repository is read-only context. The document exposes
+revision and comma-separated exclusion strings plus native TOML booleans for
+report-version, report-all, signatures, signature-diff, and no-colour. Shared
+Normal/Insert navigation, Home/End, selection, copy/paste, undo, and shortcut
+footer apply. `Enter` validates and requests an exact adapter preview without
+running a comparison; Normal-mode `Esc` or `q` closes without side effects.
+Bounded session output and the separate unsupported `build-compare` interface
+remain explicit in the typed workflow.
 
 Git archival uses `oe-git-archive` with exact data and repository directories,
 typed create/bare/tag choices, branch/tag/message templates, exclusions, and

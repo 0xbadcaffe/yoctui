@@ -2141,6 +2141,15 @@ pub fn maintenance_dialog_action(dialog: &MaintenanceDialog, key: Input) -> Opti
             }
             input => popup_editor_action(editor.editing, input),
         },
+        MaintenanceDialog::BuildHistoryToml { editor, .. } => match key {
+            Input::Enter => maintenance(MaintenanceAction::ConfirmBuildHistoryToml(
+                editor.text.clone(),
+            )),
+            Input::Char('q') | Input::Esc if !editor.editing => {
+                maintenance(MaintenanceAction::CancelDialog)
+            }
+            input => popup_editor_action(editor.editing, input),
+        },
         MaintenanceDialog::ReadinessForm(draft) => {
             let mut next = (**draft).clone();
             next.validation = None;
@@ -3206,41 +3215,38 @@ mod tests {
             maintenance_workspace_action(MaintenanceView::Sstate, 3, Input::Char('h')),
             None
         );
-        let metadata = yoctui_model::MaintenanceMetadata {
-            buildhistory_dir: Some("/build/buildhistory".into()),
-            ..yoctui_model::MaintenanceMetadata::default()
-        };
-        let draft = yoctui_model::MaintenanceBuildHistoryDraft::from_metadata(&metadata).unwrap();
+        let mut editor =
+            yoctui_model::PopupEditor::new("from_revision = \"\"\nreport_version = false\n".into());
+        editor.editing = true;
         assert!(matches!(
             maintenance_dialog_action(
-                &MaintenanceDialog::BuildHistoryForm(Box::new(draft.clone())),
+                &MaintenanceDialog::BuildHistoryToml {
+                    editor: editor.clone(),
+                    validation_error: None
+                },
                 Input::Char('H'),
             ),
-            Some(Action::Maintenance(MaintenanceAction::UpdateBuildHistoryForm(next)))
-                if next.from_revision == "H"
-        ));
-        let mut toggle = draft.clone();
-        toggle.field = MaintenanceBuildHistoryField::ReportVersion;
-        assert!(matches!(
-            maintenance_dialog_action(
-                &MaintenanceDialog::BuildHistoryForm(Box::new(toggle)),
-                Input::Char(' '),
-            ),
-            Some(Action::Maintenance(MaintenanceAction::UpdateBuildHistoryForm(next)))
-                if next.report_version
+            Some(Action::EditActivePopup(PopupEditorCommand::Insert('H')))
         ));
         assert!(matches!(
             maintenance_dialog_action(
-                &MaintenanceDialog::BuildHistoryForm(Box::new(draft.clone())),
+                &MaintenanceDialog::BuildHistoryToml {
+                    editor: editor.clone(),
+                    validation_error: None
+                },
                 Input::Enter,
             ),
             Some(Action::Maintenance(
-                MaintenanceAction::ConfirmBuildHistoryForm(_)
+                MaintenanceAction::ConfirmBuildHistoryToml(_)
             ))
         ));
+        editor.editing = false;
         assert_eq!(
             maintenance_dialog_action(
-                &MaintenanceDialog::BuildHistoryForm(Box::new(draft)),
+                &MaintenanceDialog::BuildHistoryToml {
+                    editor,
+                    validation_error: None
+                },
                 Input::Esc,
             ),
             Some(Action::Maintenance(MaintenanceAction::CancelDialog))

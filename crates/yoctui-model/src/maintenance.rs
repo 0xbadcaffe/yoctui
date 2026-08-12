@@ -1693,6 +1693,10 @@ pub enum MaintenanceDialog {
         validation_error: Option<String>,
     },
     LockedCacheForm(Box<MaintenanceLockedCacheDraft>),
+    BuildHistoryToml {
+        editor: PopupEditor,
+        validation_error: Option<String>,
+    },
     BuildHistoryForm(Box<MaintenanceBuildHistoryDraft>),
     GitArchiveForm(Box<MaintenanceGitArchiveDraft>),
     Confirm(MaintenanceOperationPreview),
@@ -1812,6 +1816,7 @@ pub enum MaintenanceAction {
     UpdateLockedCacheForm(Box<MaintenanceLockedCacheDraft>),
     ConfirmLockedCacheForm(Box<MaintenanceLockedCacheDraft>),
     OpenBuildHistoryForm,
+    ConfirmBuildHistoryToml(String),
     UpdateBuildHistoryForm(Box<MaintenanceBuildHistoryDraft>),
     ConfirmBuildHistoryForm(Box<MaintenanceBuildHistoryDraft>),
     OpenGitArchiveForm,
@@ -2573,12 +2578,77 @@ pub fn update_maintenance(
             if let Some(snapshot) = state.capability.snapshot()
                 && let Ok(draft) = MaintenanceBuildHistoryDraft::from_metadata(&snapshot.metadata)
             {
+                let mut editor = PopupEditor::new(format!(
+                    "# build-history comparison\n# Repository (read-only): {}\nfrom_revision = \"\"\nto_revision = \"\"\nreport_version = false\nreport_all = false\nsignatures = false\nsignature_diff = false\nexclude_paths = \"\"\nno_colour = false\n",
+                    draft.repository.display(),
+                ));
+                let _ = editor.select_toml_value("from_revision");
                 return MaintenanceTransition {
                     dialog: MaintenanceDialogUpdate::Open(Box::new(
-                        MaintenanceDialog::BuildHistoryForm(Box::new(draft)),
+                        MaintenanceDialog::BuildHistoryToml {
+                            editor,
+                            validation_error: None,
+                        },
                     )),
                     ..MaintenanceTransition::none()
                 };
+            }
+        }
+        MaintenanceAction::ConfirmBuildHistoryToml(document) => {
+            let parsed = (|| {
+                let fields = popup_toml_fields(&document)?;
+                let get = |key: &str| {
+                    fields
+                        .get(key)
+                        .cloned()
+                        .ok_or_else(|| format!("Missing `{key}`."))
+                };
+                let boolean = |key: &str| match get(key)?.as_str() {
+                    "true" => Ok(true),
+                    "false" => Ok(false),
+                    _ => Err(format!("`{key}` must be `true` or `false`.")),
+                };
+                let snapshot = state
+                    .capability
+                    .snapshot()
+                    .ok_or_else(|| "Build-history capability is unavailable.".to_owned())?;
+                let mut draft = MaintenanceBuildHistoryDraft::from_metadata(&snapshot.metadata)
+                    .map_err(str::to_owned)?;
+                draft.from_revision = get("from_revision")?;
+                draft.to_revision = get("to_revision")?;
+                draft.report_version = boolean("report_version")?;
+                draft.report_all = boolean("report_all")?;
+                draft.signatures = boolean("signatures")?;
+                draft.signature_diff = boolean("signature_diff")?;
+                draft.exclude_paths = get("exclude_paths")?;
+                draft.no_colour = boolean("no_colour")?;
+                draft.request().map_err(str::to_owned)
+            })();
+            match parsed {
+                Ok(request) => {
+                    let Some(capability_request) = state.capability.request() else {
+                        return MaintenanceTransition::none();
+                    };
+                    return MaintenanceTransition {
+                        effect: Some(MaintenanceEffect::PreviewBuildHistoryComparison {
+                            capability_request,
+                            request,
+                        }),
+                        dialog: MaintenanceDialogUpdate::Close,
+                        notification: None,
+                    };
+                }
+                Err(message) => {
+                    return MaintenanceTransition {
+                        dialog: MaintenanceDialogUpdate::Open(Box::new(
+                            MaintenanceDialog::BuildHistoryToml {
+                                editor: PopupEditor::new(document),
+                                validation_error: Some(message),
+                            },
+                        )),
+                        ..MaintenanceTransition::none()
+                    };
+                }
             }
         }
         MaintenanceAction::UpdateBuildHistoryForm(draft) if draft.is_bounded() => {
@@ -3725,24 +3795,17 @@ timeout = 45
         let MaintenanceDialogUpdate::Open(dialog) = transition.dialog else {
             panic!("build-history form did not open");
         };
-        let MaintenanceDialog::BuildHistoryForm(mut draft) = *dialog else {
+        let MaintenanceDialog::BuildHistoryToml { editor, .. } = *dialog else {
             panic!("wrong build-history dialog");
         };
-        assert_eq!(draft.repository, Path::new("/build/buildhistory"));
-        assert_eq!(
-            draft.field.cycle(true),
-            MaintenanceBuildHistoryField::NoColour
+        assert!(
+            editor
+                .text
+                .contains("# Repository (read-only): /build/buildhistory")
         );
-        draft.from_revision = "HEAD~2".into();
-        draft.to_revision = "HEAD".into();
-        draft.report_version = true;
-        draft.signatures = true;
-        draft.signature_diff = true;
-        draft.exclude_paths = "images/*, packages/*, images/*".into();
-        draft.no_colour = true;
         let valid = update_maintenance(
             &mut state,
-            MaintenanceAction::ConfirmBuildHistoryForm(draft),
+            MaintenanceAction::ConfirmBuildHistoryToml("from_revision = \"HEAD~2\"\nto_revision = \"HEAD\"\nreport_version = true\nreport_all = false\nsignatures = true\nsignature_diff = true\nexclude_paths = \"images/*, packages/*, images/*\"\nno_colour = true\n".into()),
         );
         assert!(matches!(
             valid.effect,
