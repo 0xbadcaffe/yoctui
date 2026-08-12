@@ -276,6 +276,7 @@ mod tests {
                 workspace: PtyWorkspaceContext {
                     source_dir: "/work".into(),
                     build_dir: "/work/build".into(),
+                    authorized_context_roots: Vec::new(),
                     owner_identity: "workspace".into(),
                 },
             },

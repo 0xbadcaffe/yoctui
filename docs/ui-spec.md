@@ -2582,6 +2582,15 @@ kill shows the exact session/process-group effect and follows normal destructive
 confirmation policy. Keyboard routes remain mandatory; terminal mouse input is
 forwarded only while the session is focused, writer-owned, and the application
 has requested mouse reporting.
+
+Contextual Open terminal actions are available only when their authoritative
+context exists: current build directory, source tree, selected configured
+layer, selected authoritative recipe source, current Devtool workspace,
+verified SDK environment, and selected image/deploy directory. The preview and
+session listing show the typed context identity and resolved directory. The
+action never exposes a general shell-command field and never loads commands
+from `.yoctui/project.toml`; stale or changed identities disable creation with
+an explicit refresh instruction.
 Test result import uses `Test result import.toml` with one normalized absolute
 `root`, initially selected for immediate replacement, preserving the existing
 bounded typed import operation.

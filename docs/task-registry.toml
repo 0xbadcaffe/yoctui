@@ -3123,18 +3123,18 @@ notes = "The pure registry allocates bounded monotonic non-reused IDs, validates
 id = "PTY-CONTEXT-001"
 milestone = "M11"
 title = "Open PTYs in typed Yocto contexts"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 420
 required = true
 depends_on = ["PTY-MULTI-001"]
 verify = ["cargo test -p yoctui-app pty_context"]
-notes = "Provide typed shells for build/source/layer/recipe/devtool/SDK/image-deploy contexts without untrusted profile shell execution."
+notes = "PtyContextAuthority canonicalizes and bounds verified build/SDK environments, exact executable shell identity, and authoritative build/source/layer/recipe/Devtool/deploy/SDK directories. Typed identity-only actions revalidate paths/executable and produce model-valid exact launch context, including explicit external roots. Stale/duplicate identities, changed paths and unsafe environments fail; project profile command text is structurally absent."
 
 [[task]]
 id = "PTY-DEVTOOL-001"
 milestone = "M11"
 title = "Route interactive Devtool through daemon PTYs"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 421
 required = true
 depends_on = ["PTY-CONTEXT-001"]

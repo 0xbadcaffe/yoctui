@@ -235,7 +235,11 @@ complete with real-process detach survival, current-screen reattach,
 writer release on client loss, and honest Running/Exited/Lost listings. The
 bounded multi-session registry is complete with monotonic IDs, unique names,
 independent client selection, close/termination coordination, history and
-resource limits. Typed Yocto PTY contexts are active next.
+resource limits.
+Typed Yocto PTY contexts are complete for build/source/layer/recipe/Devtool/
+SDK/deploy identities with canonical path and captured-environment validation;
+project profiles cannot supply commands. Interactive Devtool PTY routing is
+active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

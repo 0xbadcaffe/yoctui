@@ -63,6 +63,7 @@ pub struct PtyCommandIdentity {
 pub struct PtyWorkspaceContext {
     pub source_dir: PathBuf,
     pub build_dir: PathBuf,
+    pub authorized_context_roots: Vec<PathBuf>,
     pub owner_identity: String,
 }
 
@@ -340,7 +341,10 @@ fn validate_spec(spec: &PtySessionSpec) -> Result<(), PtySessionError> {
         &spec.command.executable,
         &spec.workspace.source_dir,
         &spec.workspace.build_dir,
-    ] {
+    ]
+    .into_iter()
+    .chain(spec.workspace.authorized_context_roots.iter())
+    {
         if !path.is_absolute()
             || path
                 .components()
@@ -351,6 +355,11 @@ fn validate_spec(spec: &PtySessionSpec) -> Result<(), PtySessionError> {
     }
     if !spec.cwd.starts_with(&spec.workspace.source_dir)
         && !spec.cwd.starts_with(&spec.workspace.build_dir)
+        && !spec
+            .workspace
+            .authorized_context_roots
+            .iter()
+            .any(|root| spec.cwd.starts_with(root))
     {
         return Err(PtySessionError::CwdOutsideWorkspace);
     }
@@ -447,6 +456,7 @@ mod tests {
             workspace: PtyWorkspaceContext {
                 source_dir: "/work/poky".into(),
                 build_dir: "/work/poky/build".into(),
+                authorized_context_roots: Vec::new(),
                 owner_identity: "workspace-1".into(),
             },
         }

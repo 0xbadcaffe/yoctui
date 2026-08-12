@@ -2184,6 +2184,7 @@ dependencies = [
 name = "yoctui-app"
 version = "0.1.0"
 dependencies = [
+ "thiserror 2.0.19",
  "yoctui-bitbake",
  "yoctui-model",
  "yoctui-protocol",

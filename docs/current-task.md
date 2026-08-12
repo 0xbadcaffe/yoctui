@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** PTY-CONTEXT-001
-**Title:** Open PTYs in typed Yocto contexts
+**ID:** PTY-DEVTOOL-001
+**Title:** Route interactive Devtool through daemon PTYs
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add typed terminal creation actions for build directory, source tree, selected
-layer, selected recipe source, Devtool workspace, verified SDK environment and
-image/deploy directory contexts. Canonicalize and authorize paths against the
-current workspace, construct exact shell identity from trusted configuration,
-and never execute project-profile shell strings.
+Route interactive Devtool workflows through typed daemon-owned PTY requests.
+Reuse authoritative recipe/Devtool workspace identity and captured build
+environment, construct only allowlisted shell-free Devtool argv, preview the
+exact operation, reject stale context, and preserve noninteractive Devtool job
+paths for workflows that do not require a terminal.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app pty_context
+cargo test -p yoctui-app pty_devtool
 ```

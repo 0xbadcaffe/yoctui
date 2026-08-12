@@ -1693,6 +1693,18 @@ distinct `Lost` listing. The current coordinator is staged in the CLI daemon
 composition for the subsequent multi-session/runtime protocol tasks and is not
 a client-owned lifetime wrapper.
 
+PTY context launch resolution lives in `yoctui-app`. A
+`PtyContextAuthority` is constructed only from the verified build environment
+and authoritative workspace/layer/recipe/Devtool/deploy/SDK inventories. It
+canonicalizes directories and executable shell identity, validates bounded
+captured environments, rejects duplicate or stale typed identities, and
+revalidates both path and executable at launch. Actions select an identity—not
+an editable path or command—and produce an exact `PtyCommandIdentity`, cwd,
+environment identity/data, kind, and workspace context accepted by the PTY
+model. External configured layers, Devtool workspaces, deploy roots, and SDK
+roots become explicit authorized context roots. Project-profile command text is
+not an input to this path and cannot cause shell execution.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only

@@ -467,6 +467,7 @@ mod tests {
             workspace: PtyWorkspaceContext {
                 source_dir: root.clone(),
                 build_dir: root.join("build"),
+                authorized_context_roots: Vec::new(),
                 owner_identity: format!("fixture-{id}"),
             },
         };
