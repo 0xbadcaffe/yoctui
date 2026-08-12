@@ -716,16 +716,8 @@ pub fn render(frame: &mut Frame, app: &App) {
         wic_cancellation_confirmation(frame, app, *id, *incomplete_device_warning, area);
     } else if let Some(Dialog::SdkBuildConfirmation(preview)) = app.active_dialog() {
         sdk_build_confirmation(frame, app, preview, area);
-    } else if let Some(Dialog::SdkPublishTomlEditor { content, editing }) = app.active_dialog() {
-        let popup = Rect::new(
-            area.width / 8,
-            area.height / 6,
-            area.width * 3 / 4,
-            area.height * 2 / 3,
-        );
-        clear_popup(frame, app, popup);
-        frame.render_widget(Paragraph::new(format!("{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.", content, if *editing { "_" } else { "" }, if *editing { "INSERT" } else { "NORMAL" }))
-            .block(Block::default().title(format!("SDK publish.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL)).wrap(Wrap { trim: false }), popup);
+    } else if let Some(Dialog::SdkPublishTomlEditor(editor)) = app.active_dialog() {
+        toml_popup_editor(frame, app, area, "SDK publish.toml", editor, None);
     } else if let Some(Dialog::SdkPublish(draft)) = app.active_dialog() {
         sdk_publish_dialog(frame, app, draft, area);
     } else if let Some(Dialog::SdkPublishConfirmation(preview)) = app.active_dialog() {
@@ -4628,25 +4620,33 @@ fn popup_editor_text(editor: &yoctui_model::PopupEditor) -> String {
     let mut output = String::with_capacity(editor.text.len() + 7);
     let selection = editor.selection;
     for (index, character) in editor.text.char_indices() {
+        let empty_selection = selection.is_some_and(|(start, end)| start == index && end == index);
         if selection.is_some_and(|(start, _)| start == index) {
             output.push('⟦');
         }
         if editor.cursor == index {
             output.push('▏');
         }
+        if empty_selection {
+            output.push('⟧');
+        }
         output.push(character);
         let next = index + character.len_utf8();
-        if selection.is_some_and(|(_, end)| end == next) {
+        if selection.is_some_and(|(start, end)| start < end && end == next) {
             output.push('⟧');
         }
     }
+    let empty_selection_at_end = selection
+        .is_some_and(|(start, end)| start == editor.text.len() && end == editor.text.len());
     if selection.is_some_and(|(start, _)| start == editor.text.len()) {
         output.push('⟦');
     }
     if editor.cursor == editor.text.len() {
         output.push('▏');
     }
-    if selection.is_some_and(|(_, end)| end == editor.text.len()) {
+    if empty_selection_at_end
+        || selection.is_some_and(|(start, end)| start < end && end == editor.text.len())
+    {
         output.push('⟧');
     }
     output
@@ -10486,8 +10486,9 @@ mod tests {
     fn sdk_workflow_running_ui_app() -> (App, SdkSessionId) {
         let mut app = sdk_workflow_ui_app();
         let _ = update(&mut app, Action::BeginSelectedSdkPublish);
-        if let Some(Dialog::SdkPublishTomlEditor { content, .. }) = app.active_dialog_mut() {
-            *content = "destination = \"/srv/sdk-publish\"\n".into();
+        if let Some(Dialog::SdkPublishTomlEditor(editor)) = app.active_dialog_mut() {
+            editor.text = "destination = \"/srv/sdk-publish\"\n".into();
+            editor.cursor = editor.text.len();
         }
         let _ = update(&mut app, Action::PreviewSdkPublish);
         let Some(yoctui_model::Effect::StartSdkSession { id, .. }) =
@@ -10682,15 +10683,20 @@ mod tests {
         app.focus = FocusTarget::Workspace;
         let _ = update(&mut app, Action::BeginSelectedSdkPublish);
         assert_eq!(app.focus, FocusTarget::Dialog);
-        if let Some(Dialog::SdkPublishTomlEditor { content, .. }) = app.active_dialog_mut() {
-            *content = format!(
+        let editor = rendered_text(&app, 80, 24);
+        assert!(editor.contains("destination = \"⟦▏⟧\""), "{editor}");
+        assert!(editor.contains("Ctrl+V paste"), "{editor}");
+        if let Some(Dialog::SdkPublishTomlEditor(editor)) = app.active_dialog_mut() {
+            editor.text = format!(
                 "destination = \"/srv/{}\"\n",
                 "long-destination-".repeat(80)
             );
+            editor.cursor = editor.text.len();
         }
         assert!(rendered_text(&app, 80, 24).contains("SDK publish.toml"));
-        if let Some(Dialog::SdkPublishTomlEditor { content, .. }) = app.active_dialog_mut() {
-            *content = "destination = \"/srv/sdk-publish\"\n".into();
+        if let Some(Dialog::SdkPublishTomlEditor(editor)) = app.active_dialog_mut() {
+            editor.text = "destination = \"/srv/sdk-publish\"\n".into();
+            editor.cursor = editor.text.len();
         }
         let _ = update(&mut app, Action::PreviewSdkPublish);
         let publish = rendered_text(&app, 80, 24);

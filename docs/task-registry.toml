@@ -2624,18 +2624,18 @@ notes = "Wic creation now uses PopupEditor and shared key/clipboard routing, sel
 id = "UX-POPUP-EDITOR-SDK-PUBLISH-001"
 milestone = "M8"
 title = "Migrate SDK publication popup to shared editor state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 167
 required = true
 depends_on = ["UX-POPUP-EDITOR-WIC-001"]
 verify = ["cargo test -p yoctui-model sdk_", "cargo test -p yoctui-ui sdk_", "cargo test -p yoctui sdk_workflow_cli_", "cargo check -p yoctui"]
-notes = "Adopt selected destination replacement and shared navigation while retaining exact publication validation and confirmation."
+notes = "SDK publication now uses PopupEditor and shared input/clipboard routing, opens with the empty destination selected for immediate replacement, renders empty selections correctly, and retains exact path validation plus confirmation."
 
 [[task]]
 id = "UX-POPUP-EDITOR-SDK-NATIVE-001"
 milestone = "M8"
 title = "Migrate SDK native tools popup to shared editor state"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 168
 required = true
 depends_on = ["UX-POPUP-EDITOR-SDK-PUBLISH-001"]

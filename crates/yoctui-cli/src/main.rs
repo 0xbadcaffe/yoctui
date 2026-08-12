@@ -5809,7 +5809,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::WicCreateTomlEditor { editor, .. }) if editor.editing => {
                         Some(Action::AppendWicCreateTomlEditor as fn(char) -> Action)
                     }
-                    Some(Dialog::SdkPublishTomlEditor { editing: true, .. }) => {
+                    Some(Dialog::SdkPublishTomlEditor(editor)) if editor.editing => {
                         Some(Action::AppendSdkPublishTomlEditor as fn(char) -> Action)
                     }
                     Some(Dialog::SdkNativeTomlEditor { editing: true, .. }) => {
@@ -6146,29 +6146,20 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             pending_sdk_build = Some(request);
                         }
                     }
-                } else if let Some(Dialog::SdkPublishTomlEditor { editing, .. }) =
+                } else if let Some(Dialog::SdkPublishTomlEditor(editor)) =
                     app.active_dialog().cloned()
                 {
-                    let action = if editing {
-                        match input {
-                            Input::Esc => Some(Action::ToggleSdkPublishTomlEditor),
-                            Input::Enter => Some(Action::PreviewSdkPublish),
-                            Input::Backspace => Some(Action::BackspaceSdkPublishTomlEditor),
-                            Input::Char(character) => {
-                                Some(Action::AppendSdkPublishTomlEditor(character))
-                            }
-                            _ => None,
+                    let action = match input {
+                        Input::Enter => Some(Action::PreviewSdkPublish),
+                        Input::Char('q') | Input::Esc if !editor.editing => {
+                            Some(Action::CancelSdkPublish)
                         }
-                    } else {
-                        match input {
-                            Input::Char('i') => Some(Action::ToggleSdkPublishTomlEditor),
-                            Input::Char('q') | Input::Esc => Some(Action::CancelSdkPublish),
-                            Input::Enter => Some(Action::PreviewSdkPublish),
-                            _ => None,
-                        }
+                        input => popup_editor_action(editor.editing, input),
                     };
-                    if let Some(action) = action {
-                        let _ = update(&mut app, action);
+                    if let Some(Effect::CopyToClipboard(content)) =
+                        action.and_then(|action| update(&mut app, action))
+                    {
+                        copy_to_clipboard(&mut app, content).await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::SdkPublish(_))) {
                     let _ = sdk_publish_dialog_action(input)
@@ -10796,10 +10787,11 @@ esac"#,
     }
 
     fn set_sdk_publish_destination(app: &mut App, destination: &Path) {
-        let Some(Dialog::SdkPublishTomlEditor { content, .. }) = app.active_dialog_mut() else {
+        let Some(Dialog::SdkPublishTomlEditor(editor)) = app.active_dialog_mut() else {
             panic!("SDK publication TOML editor");
         };
-        *content = format!("destination = \"{}\"\n", destination.display());
+        editor.text = format!("destination = \"{}\"\n", destination.display());
+        editor.cursor = editor.text.len();
     }
 
     fn set_sdk_native_draft(app: &mut App, draft: yoctui_model::SdkNativeDraft) {

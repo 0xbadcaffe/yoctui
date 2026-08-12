@@ -153,8 +153,9 @@ and explicit writes. Build-target editing now shares cursor, selection,
 navigation, and clipboard behavior while its requested task remains read-only
 and its build confirmation remains mandatory. Wic creation now shares the
 editor path, selects its output directory, and reserves responsive validation
-space while retaining all typed Wic preview gates; SDK publication migration is
-active.
+space while retaining all typed Wic preview gates. SDK publication now shares
+the editor path and immediate destination replacement while retaining exact
+path validation and confirmation; SDK native-tools migration is active.
 
 ## Rules
 
