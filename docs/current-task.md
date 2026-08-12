@@ -2,20 +2,19 @@
 
 ## Task
 
-**ID:** PTY-ATTACH-001
-**Title:** Implement PTY attach and detach
+**ID:** PTY-MULTI-001
+**Title:** Support bounded multiple PTY sessions
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Integrate daemon-owned runner and emulator sessions with typed client
-attach/detach. A prefix return or detach must leave the PTY alive, client exit
-must release only its viewer/writer lease, attach and reattach must receive the
-current bounded terminal snapshot, and session listings must distinguish
-Running, Exited and Lost honestly.
+Add a bounded daemon PTY session registry with stable non-reused IDs, validated
+unique names, create/close/rename/switch and history operations, explicit
+resource-limit failures, and no single-active-session assumption. Closing one
+session must affect only its owned runner/process group.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui pty_attach
+cargo test -p yoctui-model pty_multi
 ```

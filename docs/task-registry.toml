@@ -3101,18 +3101,18 @@ notes = "Yoctui-model now wraps maintained vt100/vte parsing behind owned typed 
 id = "PTY-ATTACH-001"
 milestone = "M11"
 title = "Implement PTY attach and detach"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 418
 required = true
 depends_on = ["PTY-EMU-001", "DAEMON-SNAPSHOT-001"]
 verify = ["cargo test -p yoctui pty_attach"]
-notes = "Prefix return/detach leaves PTY running, client exit cannot kill it, reattach restores screen state, and list exposes running/exited/lost sessions."
+notes = "DaemonPtySession composes the real runner and emulator: attach returns the current typed listing/screen, continuous output updates daemon emulator state, and detach/prefix/client EOF release only viewer/writer epochs. Real PTY coverage proves first-client output survives prefix detach, reattach restores it, SSH-like client loss leaves the process running, writer control transfers explicitly, and final exit/listing semantics distinguish Running, Exited and Lost."
 
 [[task]]
 id = "PTY-MULTI-001"
 milestone = "M11"
 title = "Support bounded multiple PTY sessions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 419
 required = true
 depends_on = ["PTY-ATTACH-001"]

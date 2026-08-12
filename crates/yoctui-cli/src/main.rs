@@ -94,6 +94,9 @@ use yoctui_model::{
 use yoctui_ui::render;
 
 mod maintenance_cli;
+#[cfg(unix)]
+#[cfg_attr(not(test), allow(dead_code))]
+mod pty_attach;
 
 use maintenance_cli::MaintenanceCliCoordinator;
 #[derive(Parser, Debug)]

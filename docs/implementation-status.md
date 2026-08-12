@@ -230,8 +230,10 @@ resize, child sessions/process groups, graceful and forced termination, honest
 exit status, and real-PTY coverage. Maintained terminal emulation is complete
 through a bounded typed `vt100` wrapper covering terminal
 cells/styles, cursor, alternate screen, scrollback, resize, bracketed paste,
-application and mouse modes without ad-hoc parsing. PTY attach/detach is active
-next.
+application and mouse modes without ad-hoc parsing. PTY attach/detach is
+complete with real-process detach survival, current-screen reattach,
+writer release on client loss, and honest Running/Exited/Lost listings. The
+bounded multi-session registry is active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

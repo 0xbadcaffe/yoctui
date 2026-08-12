@@ -1680,6 +1680,19 @@ clipboard requests or other external side effects. Shell/editor/ncurses-style
 fixtures cover cursor addressing, Unicode box drawing, SGR, alternate screen,
 scrollback, resize, paste, keypad, cursor, and mouse modes.
 
+`DaemonPtySession` composes one runner and emulator for attach semantics while
+the bounded multi-session registry remains a later task. The daemon pump feeds
+every output event into the emulator independently of viewer presence. Attach
+adds the typed client viewer and returns the current listing plus bounded screen
+snapshot; reattach therefore does not replay output through a client. Detach,
+prefix return, client EOF, and SSH loss all use the same model detach transition,
+which also releases an owned writer epoch but never signals the runner. Input
+and resize remain writer-epoch checked, and resize updates both PTY and emulator.
+Natural exit freezes the final emulator and listing; runner/model loss maps to a
+distinct `Lost` listing. The current coordinator is staged in the CLI daemon
+composition for the subsequent multi-session/runtime protocol tasks and is not
+a client-owned lifetime wrapper.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only
