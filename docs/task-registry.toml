@@ -2936,18 +2936,18 @@ notes = "The pure model now separates daemon-global revision/workspace/build-env
 id = "DAEMON-STATE-JOBS-001"
 milestone = "M11"
 title = "Move all long-lived job families into daemon state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 405
 required = true
 depends_on = ["DAEMON-STATE-MODEL-001"]
 verify = ["cargo test -p yoctui-model daemon_state_jobs", "cargo test -p yoctui-app daemon_state_jobs"]
-notes = "Migrate bounded logs/errors/task history, background jobs, QEMU/Wic/SDK/testing/QA/security/maintenance/utility state and PTY session metadata behind the daemon-global boundary while reusing existing typed models."
+notes = "DaemonJobState now captures and installs replicas of the existing typed build, background-job, history, task, log, artifact, SDK, testing, security, QA, maintenance, QEMU, and Wic state families plus bounded PTY metadata without copying client screen, focus, theme, editor, or notification presentation state. Focused model/app tests and the full workspace baseline pass."
 
 [[task]]
 id = "DAEMON-STATE-RUNTIME-001"
 milestone = "M11"
 title = "Make daemon runtime own authoritative state"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 405
 required = true
 depends_on = ["DAEMON-STATE-JOBS-001", "DAEMON-LIFECYCLE-001"]

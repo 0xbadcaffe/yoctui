@@ -1282,6 +1282,16 @@ theme, and pane-layout revision; changing it cannot mutate global authority.
 Job-family fields and execution ownership enter only through the following
 registered state-migration tasks.
 
+`DaemonJobState` now reuses the existing typed build/background-job, active and
+completed task, bounded `LogState`, signature, package, image, SDK, testing,
+security, QA, maintenance, QEMU, and Wic state instead of defining parallel
+summaries or coordinators. It also provides the typed placeholder list for
+daemon PTY session metadata. Capture and replica installation copy only these
+long-lived workflow fields; client screen, focus, dialog/editor drafts,
+searches, selections, and notifications remain untouched. The app boundary
+exposes mechanical capture/install functions so later protocol/runtime work
+does not parse or reinterpret workflow state.
+
 ### Local IPC and instance identity
 
 Unix uses a Unix-domain socket. The deterministic default is

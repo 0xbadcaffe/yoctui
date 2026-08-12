@@ -22,6 +22,17 @@ use yoctui_model::{
     WicCapability, WicOutput, WicOutputStream, WicSessionId,
 };
 
+pub fn daemon_job_state_from_app(app: &yoctui_model::App) -> yoctui_model::DaemonJobState {
+    yoctui_model::DaemonJobState::capture(app)
+}
+
+pub fn install_daemon_job_replica(
+    app: &mut yoctui_model::App,
+    jobs: &yoctui_model::DaemonJobState,
+) {
+    jobs.install_replica(app);
+}
+
 pub fn qa_layer_capability_action(response: QaLayerCapabilityResponse) -> Action {
     match response {
         QaLayerCapabilityResponse::Available(snapshot) => {
@@ -2934,6 +2945,23 @@ pub fn config_edit_confirmation_action(key: Input) -> Option<Action> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn daemon_state_jobs_cross_app_boundary_without_replacing_presentation() {
+        let mut authoritative = yoctui_model::App::new(16, 4096);
+        authoritative.qemu_session_generation = 9;
+        authoritative.screen = Screen::Maintenance;
+        let jobs = daemon_job_state_from_app(&authoritative);
+
+        let mut client = yoctui_model::App::new(16, 4096);
+        client.screen = Screen::Layers;
+        client.focus = FocusTarget::Navigator;
+        install_daemon_job_replica(&mut client, &jobs);
+        assert_eq!(client.qemu_sessions, authoritative.qemu_sessions);
+        assert_eq!(client.background_jobs, authoritative.background_jobs);
+        assert_eq!(client.screen, Screen::Layers);
+        assert_eq!(client.focus, FocusTarget::Navigator);
+    }
     use std::{path::PathBuf, time::Duration};
     use yoctui_model::{
         App, BackgroundJobStatus, BuildStatus, DependencyEdge, DependencyEdgeKind, DependencyGraph,

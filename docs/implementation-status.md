@@ -180,7 +180,11 @@ migration, runtime ownership, and parent-gate tasks. The typed partition is
 complete with checked revision/generation, validated bounds, authoritative
 workspace/environment/profile/BitBake/recovery state, replaceable replicas,
 and independent client presentation. Long-lived job-family migration is
-active.
+complete: the daemon boundary now reuses the existing typed build,
+background-job, task/history/log, artifact, SDK, testing, security, QA,
+maintenance, QEMU, and Wic models plus bounded PTY metadata, while replica
+installation deliberately leaves screen, focus, theme, editors, and
+notifications client-local. Foreground runtime ownership is active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded
