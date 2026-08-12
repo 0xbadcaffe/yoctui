@@ -2,18 +2,17 @@
 
 ## Task
 
-**ID:** UX-POPUP-EDITOR-INPUT-001
-**Title:** Normalize popup editor keyboard and clipboard input
+**ID:** UX-POPUP-EDITOR-RENDER-001
+**Title:** Render shared popup editor cursor selection and shortcuts
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Map Home/End, arrows, Ctrl+C, Ctrl+V, bracketed paste, and vi editor commands
-into typed client input without stealing terminal-session input.
+Render one bounded editor view with cursor/selection and persistent shortcut
+row at safe responsive sizes.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui input_from_key
-cargo check -p yoctui
+cargo test -p yoctui-ui popup_editor
 ```

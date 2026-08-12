@@ -1486,6 +1486,7 @@ pub enum Input {
     Esc,
     Enter,
     CtrlC,
+    CtrlV,
     CtrlB,
     CtrlP,
     F5,
@@ -1497,6 +1498,8 @@ pub enum Input {
     Backspace,
     Left,
     Right,
+    Home,
+    End,
 }
 pub fn key_action(key: Input) -> Option<Action> {
     match key {

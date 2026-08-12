@@ -7988,6 +7988,7 @@ fn termination_requested(receiver: &mut tokio::sync::mpsc::Receiver<()>) -> bool
 fn input_from_key(key: KeyEvent) -> Option<Input> {
     match key.code {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlC),
+        KeyCode::Char('v') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlV),
         KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlS),
         KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlB),
         KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlP),
@@ -8002,6 +8003,8 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Backspace => Some(Input::Backspace),
         KeyCode::Left => Some(Input::Left),
         KeyCode::Right => Some(Input::Right),
+        KeyCode::Home => Some(Input::Home),
+        KeyCode::End => Some(Input::End),
         _ => None,
     }
 }
@@ -8441,6 +8444,22 @@ mod tests {
     fn ctrl_c_is_not_the_regular_cancel_key() {
         let key = KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL);
         assert_eq!(input_from_key(key), Some(Input::CtrlC));
+    }
+
+    #[test]
+    fn popup_editor_keys_decode_home_end_and_paste() {
+        assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::Home, KeyModifiers::NONE)),
+            Some(Input::Home)
+        );
+        assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::End, KeyModifiers::NONE)),
+            Some(Input::End)
+        );
+        assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::Char('v'), KeyModifiers::CONTROL)),
+            Some(Input::CtrlV)
+        );
     }
 
     #[test]

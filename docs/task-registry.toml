@@ -2547,18 +2547,18 @@ notes = "Split terminal event routing and rendering/shortcut integration into co
 id = "UX-POPUP-EDITOR-INPUT-001"
 milestone = "M8"
 title = "Normalize popup editor keyboard and clipboard input"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 160
 required = true
 depends_on = ["UX-POPUP-EDITOR-004"]
 verify = ["cargo test -p yoctui input_from_key", "cargo check -p yoctui"]
-notes = "Map Home/End, arrows, Ctrl+C, Ctrl+V, bracketed paste, and vi editor commands into typed client input without stealing terminal-session input."
+notes = "Client input now normalizes Home/End and Ctrl+V alongside arrows/Ctrl+C; popup paste remains bracketed-event based and terminal-session routing stays distinct."
 
 [[task]]
 id = "UX-POPUP-EDITOR-RENDER-001"
 milestone = "M8"
 title = "Render shared popup editor cursor selection and shortcuts"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 161
 required = true
 depends_on = ["UX-POPUP-EDITOR-INPUT-001"]

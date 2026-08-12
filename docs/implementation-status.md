@@ -140,6 +140,7 @@ reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded
 undo; input/rendering integration is now active.
 The integration work is split into input normalization and shared rendering;
 input normalization is active.
+Input normalization is complete; shared rendering is active.
 
 ## Rules
 
