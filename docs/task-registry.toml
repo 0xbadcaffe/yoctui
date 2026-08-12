@@ -3090,18 +3090,18 @@ notes = "The Unix adapter uses a real openpty master/slave, a new child session 
 id = "PTY-EMU-001"
 milestone = "M11"
 title = "Add maintained terminal-emulation state machine"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 417
 required = true
 depends_on = ["PTY-RUNNER-001"]
 verify = ["cargo test -p yoctui-model terminal_emulation"]
-notes = "Adopt a maintained ANSI/VT parser/emulator suitable for shells, menuconfig, devshell, editors, and interactive utilities; do not parse VT ad hoc."
+notes = "Yoctui-model now wraps maintained vt100/vte parsing behind owned typed cells, colors, styles, cursor and mode snapshots. Raw feeds, resize, screen cells and scrollback are bounded; viewport snapshots clamp and restore safely; OSC side-effect callbacks are inert. Fixtures cover Unicode/SGR/cursor addressing, alternate screen, scrollback, resize, bracketed paste, application keypad/cursor and mouse modes without ad-hoc escape parsing."
 
 [[task]]
 id = "PTY-ATTACH-001"
 milestone = "M11"
 title = "Implement PTY attach and detach"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 418
 required = true
 depends_on = ["PTY-EMU-001", "DAEMON-SNAPSHOT-001"]

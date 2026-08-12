@@ -224,9 +224,13 @@ resize, attach/detach, single-writer, termination, scrollback, copy/search,
 paste, recovery, and security semantics. The typed PTY session model is
 complete with checked identity/context/lifecycle, dimensions, bounded
 scrollback metadata, live ownership, exit state, viewers, and epoch-protected
-single-writer control. The Unix runner is complete with real PTY ownership, raw bounded I/O,
+single-writer control. The Unix runner is complete with real PTY ownership,
+raw bounded I/O,
 resize, child sessions/process groups, graceful and forced termination, honest
-exit status, and real-PTY coverage. Maintained terminal emulation is active
+exit status, and real-PTY coverage. Maintained terminal emulation is complete
+through a bounded typed `vt100` wrapper covering terminal
+cells/styles, cursor, alternate screen, scrollback, resize, bracketed paste,
+application and mouse modes without ad-hoc parsing. PTY attach/detach is active
 next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and

@@ -11,6 +11,7 @@ mod qa;
 mod qemu;
 mod sdk;
 mod security;
+mod terminal_emulation;
 mod testing;
 mod utility_menu;
 mod wic;
@@ -34,6 +35,7 @@ use std::{
     path::{Component, Path, PathBuf},
     time::{Duration, SystemTime},
 };
+pub use terminal_emulation::*;
 pub use testing::*;
 use thiserror::Error;
 pub use utility_menu::*;

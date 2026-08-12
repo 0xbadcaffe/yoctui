@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** PTY-EMU-001
-**Title:** Add maintained terminal-emulation state machine
+**ID:** PTY-ATTACH-001
+**Title:** Implement PTY attach and detach
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Adopt a maintained ANSI/VT parser and terminal emulator behind a pure typed
-model boundary. Feed raw PTY output, expose bounded screen/scrollback snapshots,
-resize safely, and support the common cursor, style, alternate-screen,
-bracketed-paste and terminal modes required by shells, editors, ncurses,
-menuconfig and devshell without ad-hoc escape parsing.
+Integrate daemon-owned runner and emulator sessions with typed client
+attach/detach. A prefix return or detach must leave the PTY alive, client exit
+must release only its viewer/writer lease, attach and reattach must receive the
+current bounded terminal snapshot, and session listings must distinguish
+Running, Exited and Lost honestly.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model terminal_emulation
+cargo test -p yoctui pty_attach
 ```

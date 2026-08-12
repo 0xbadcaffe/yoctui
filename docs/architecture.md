@@ -1668,6 +1668,18 @@ bounded grace interval, escalates to `SIGKILL`, reaps the child, and reports the
 actual exit identity. Dropping a live runner kills only its recorded group and
 child. The adapter contains no terminal rendering or UI state.
 
+Terminal interpretation uses the maintained Rust `vt100` parser/emulator behind
+`yoctui-model::TerminalEmulator`; Yoctui does not parse ANSI/VT sequences ad
+hoc. The wrapper accepts bounded raw-byte feeds, owns configured bounded
+scrollback, validates resize and maximum screen cells, and exports Yoctui-owned
+typed cells, colors, styles, cursor, alternate-screen, application cursor/keypad,
+bracketed-paste, and mouse modes. Snapshots clamp requested scrollback offsets,
+restore the live viewport after inspection, and contain no crate-specific types
+across the model boundary. Default callbacks deliberately do not execute OSC
+clipboard requests or other external side effects. Shell/editor/ncurses-style
+fixtures cover cursor addressing, Unicode box drawing, SGR, alternate screen,
+scrollback, resize, paste, keypad, cursor, and mouse modes.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only
