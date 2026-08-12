@@ -2824,18 +2824,18 @@ notes = "The pure version-1 ProjectProfile model validates bounded favorites, ty
 id = "PROFILE-LOAD-001"
 milestone = "M10"
 title = "Load and generate project profiles safely"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 302
 required = true
 depends_on = ["PROFILE-MODEL-001"]
 verify = ["cargo test -p yoctui project_profile", "cargo test -p yoctui-app project_profile"]
-notes = "Load optional profiles without vendor or layer changes, generate safe profiles on explicit action only, and keep personal settings user-local."
+notes = "Configured startup loads optional bounded profiles inertly; invalid/schema/symlink cases fail visibly, while typed explicit generation uses atomic no-clobber writes and confirmed replacement without touching personal settings."
 
 [[task]]
 id = "PROFILE-UI-001"
 milestone = "M10"
 title = "Render typed project profile workflows"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 303
 required = true
 depends_on = ["PROFILE-LOAD-001"]

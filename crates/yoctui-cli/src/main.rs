@@ -360,6 +360,103 @@ fn session_path(config: Option<&Path>) -> Option<PathBuf> {
         .map(|directory| directory.join("session.toml"))
 }
 
+const MAX_PROJECT_PROFILE_BYTES: u64 = 1_048_576;
+
+fn load_project_profile(root: &Path) -> Result<Option<yoctui_model::ProjectProfile>> {
+    let root = root
+        .canonicalize()
+        .with_context(|| format!("could not resolve project root {}", root.display()))?;
+    let directory = root.join(".yoctui");
+    let path = directory.join("project.toml");
+    if !path.exists() {
+        return Ok(None);
+    }
+    let directory_metadata = fs::symlink_metadata(&directory)
+        .with_context(|| format!("could not inspect {}", directory.display()))?;
+    if directory_metadata.file_type().is_symlink() || !directory_metadata.is_dir() {
+        anyhow::bail!("project profile directory must be a regular directory");
+    }
+    let metadata = fs::symlink_metadata(&path)
+        .with_context(|| format!("could not inspect {}", path.display()))?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        anyhow::bail!("project profile must be a regular non-symlink file");
+    }
+    if metadata.len() > MAX_PROJECT_PROFILE_BYTES {
+        anyhow::bail!("project profile exceeds the 1 MiB limit");
+    }
+    let text =
+        fs::read_to_string(&path).with_context(|| format!("could not read {}", path.display()))?;
+    let profile: yoctui_model::ProjectProfile = toml::from_str(&text)
+        .with_context(|| format!("invalid project profile {}", path.display()))?;
+    profile.validate().map_err(anyhow::Error::msg)?;
+    Ok(Some(profile))
+}
+
+pub fn generate_project_profile(
+    root: &Path,
+    profile: &yoctui_model::ProjectProfile,
+    replace: bool,
+) -> Result<()> {
+    profile.validate().map_err(anyhow::Error::msg)?;
+    let root = root
+        .canonicalize()
+        .with_context(|| format!("could not resolve project root {}", root.display()))?;
+    let directory = root.join(".yoctui");
+    if directory.exists() {
+        let metadata = fs::symlink_metadata(&directory)
+            .with_context(|| format!("could not inspect {}", directory.display()))?;
+        if metadata.file_type().is_symlink() || !metadata.is_dir() {
+            anyhow::bail!("project profile directory must be a regular directory");
+        }
+    } else {
+        fs::create_dir(&directory)
+            .with_context(|| format!("could not create {}", directory.display()))?;
+    }
+    let destination = directory.join("project.toml");
+    if destination.exists() {
+        let metadata = fs::symlink_metadata(&destination)
+            .with_context(|| format!("could not inspect {}", destination.display()))?;
+        if metadata.file_type().is_symlink() || !metadata.is_file() {
+            anyhow::bail!("project profile destination must be a regular non-symlink file");
+        }
+        if !replace {
+            anyhow::bail!("project profile already exists; replacement was not confirmed");
+        }
+    }
+    let text = toml::to_string_pretty(profile).context("could not serialize project profile")?;
+    if text.len() as u64 > MAX_PROJECT_PROFILE_BYTES {
+        anyhow::bail!("generated project profile exceeds the 1 MiB limit");
+    }
+    let temporary = directory.join(format!("project.toml.{}.tmp", std::process::id()));
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temporary)
+        .with_context(|| format!("could not create {}", temporary.display()))?;
+    let result = (|| -> Result<()> {
+        file.write_all(text.as_bytes())?;
+        file.sync_all()?;
+        drop(file);
+        if replace {
+            fs::rename(&temporary, &destination)?;
+        } else {
+            fs::hard_link(&temporary, &destination)?;
+            fs::remove_file(&temporary)?;
+        }
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    result.with_context(|| format!("could not write {}", destination.display()))
+}
+
+fn project_profile_root(build_dir: &Path) -> Option<PathBuf> {
+    env::var_os("OEROOT")
+        .map(PathBuf::from)
+        .or_else(|| build_dir.parent().map(Path::to_path_buf))
+}
+
 fn read_session(path: Option<&Path>) -> Result<Session> {
     let Some(path) = path else {
         return Ok(Session::default());
@@ -5551,6 +5648,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     app.theme = theme;
     app.animation_speed = animation_speed;
     app.reduced_motion = reduced_motion;
+    if build_dir_configured && let Some(root) = project_profile_root(&build_dir) {
+        let action = match load_project_profile(&root) {
+            Ok(Some(profile)) => Action::ProjectProfileLoaded(profile),
+            Ok(None) => Action::ProjectProfileAbsent,
+            Err(error) => Action::ProjectProfileLoadFailed(error.to_string()),
+        };
+        let _ = update(&mut app, action);
+    }
     if build_dir_configured {
         app.screen = session.last_screen.unwrap_or(Screen::Dashboard);
     } else {
@@ -8023,6 +8128,66 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn project_profile_fixture() -> yoctui_model::ProjectProfile {
+        yoctui_model::ProjectProfile {
+            schema_version: yoctui_model::PROJECT_PROFILE_SCHEMA_VERSION,
+            favorites: yoctui_model::ProjectFavorites {
+                images: vec!["core-image-minimal".into()],
+                ..yoctui_model::ProjectFavorites::default()
+            },
+            build_presets: Vec::new(),
+            workflows: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn project_profile_optional_load_and_explicit_generation_are_safe() {
+        let root =
+            std::env::temp_dir().join(format!("yoctui-project-profile-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir(&root).unwrap();
+        assert_eq!(load_project_profile(&root).unwrap(), None);
+
+        let profile = project_profile_fixture();
+        generate_project_profile(&root, &profile, false).unwrap();
+        assert_eq!(load_project_profile(&root).unwrap(), Some(profile.clone()));
+        assert!(generate_project_profile(&root, &profile, false).is_err());
+
+        let mut replacement = profile;
+        replacement.favorites.recipes.push("busybox".into());
+        generate_project_profile(&root, &replacement, true).unwrap();
+        assert_eq!(load_project_profile(&root).unwrap(), Some(replacement));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn project_profile_rejects_symlinks_invalid_schema_and_unknown_fields() {
+        use std::os::unix::fs::symlink;
+
+        let root = std::env::temp_dir().join(format!(
+            "yoctui-project-profile-reject-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir(&root).unwrap();
+        let outside = root.join("outside.toml");
+        fs::write(&outside, "schema_version = 1\n").unwrap();
+        fs::create_dir(root.join(".yoctui")).unwrap();
+        symlink(&outside, root.join(".yoctui/project.toml")).unwrap();
+        assert!(load_project_profile(&root).is_err());
+        fs::remove_file(root.join(".yoctui/project.toml")).unwrap();
+        fs::write(root.join(".yoctui/project.toml"), "schema_version = 2\n").unwrap();
+        assert!(load_project_profile(&root).is_err());
+        fs::write(
+            root.join(".yoctui/project.toml"),
+            "schema_version = 1\ncommand = 'false'\n",
+        )
+        .unwrap();
+        assert!(load_project_profile(&root).is_err());
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[cfg(unix)]
     fn write_test_executable(path: &Path, body: &str) {

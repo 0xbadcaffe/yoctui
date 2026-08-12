@@ -136,7 +136,10 @@ implemented or live-validated yet; the optional profile behavior and trust
 boundary are specified, and the pure typed version-1 model now validates
 favorites, presets, workflows, portable paths, bounds, duplicates, references,
 and explicit stale/ambiguous resolution without a command-string escape hatch.
-Safe optional loading and generation are next.
+Safe optional loading and explicit generation now pass CLI and app tests with
+bounded TOML, schema validation, symlink rejection, atomic no-clobber writes,
+confirmed replacement, inert startup state, and typed generation effects.
+Profile rendering and interaction are next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

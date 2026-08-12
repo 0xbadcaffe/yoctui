@@ -2,18 +2,18 @@
 
 ## Task
 
-**ID:** PROFILE-LOAD-001
-**Title:** Load and generate project profiles safely
+**ID:** PROFILE-UI-001
+**Title:** Render typed project profile workflows
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Load optional profiles without vendor or layer changes, generate safe profiles
-only through explicit typed actions, and keep personal settings user-local.
+Expose project-profile favorites, typed presets, and workflows with explicit
+absent, invalid, stale, ambiguous, and unavailable states while preserving the
+normal Yoctui confirmation policies.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui project_profile
-cargo test -p yoctui-app project_profile
+cargo test -p yoctui-ui project_profile
 ```

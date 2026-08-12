@@ -1133,6 +1133,13 @@ and adapters; it does not create a second recipe, image, layer, or build-state
 catalog. A profile remains team intent while BitBake-derived state remains
 authoritative.
 
+Configured startup selects the project root from the validated `OEROOT` when
+present, otherwise from the configured build directory's parent until the
+onboarding profile supplies a more exact source root. The CLI treats a missing
+file as `Absent`, caps input and generated output at 1 MiB, rejects symlinked
+profile directories/files, and reports parse/schema failures as typed invalid
+state without preventing ordinary Yoctui startup.
+
 Workflow steps reference a closed enum of existing typed Yoctui actions.
 Activation produces the same previews, capability checks, correlations,
 confirmations, background-job effects, and destructive-operation policies as
@@ -1145,6 +1152,12 @@ minimal deterministic current-schema document to a reviewed destination using
 atomic replacement rules. Existing files require replacement confirmation.
 Personal settings stay in user-local `config.toml`/`session.toml` and are never
 imported into or overridden by a project profile.
+
+The write adapter creates `.yoctui` only beneath a canonical project root,
+uses a create-new temporary regular file plus sync, refuses an existing target
+unless replacement was explicitly confirmed, and never follows a profile or
+profile-directory symlink. The reducer retains a generation preview on write
+failure and installs the loaded profile only after success.
 
 ### Build-environment onboarding
 

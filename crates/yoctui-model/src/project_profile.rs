@@ -227,6 +227,17 @@ pub enum ProjectIdentityResolution<T> {
     },
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub enum ProjectProfileState {
+    #[default]
+    NotLoaded,
+    Absent,
+    Loaded(ProjectProfile),
+    Invalid(String),
+    GenerationPreview(ProjectProfile),
+    Generating(ProjectProfile),
+}
+
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum ProjectProfileError {
     #[error("unsupported project profile schema version {0}")]

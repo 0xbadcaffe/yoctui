@@ -2516,6 +2516,7 @@ pub struct App {
     pub focus_return: Option<FocusTarget>,
     pub navigator_selection: usize,
     pub backend: String,
+    pub project_profile: ProjectProfileState,
     pub build_environment: BuildEnvironmentState,
     pub build_environment_generation: u64,
     pub build_environment_draft: Option<BuildEnvironmentDraft>,
@@ -2636,6 +2637,7 @@ impl App {
             focus_return: None,
             navigator_selection: 0,
             backend: "unknown".into(),
+            project_profile: ProjectProfileState::NotLoaded,
             build_environment: BuildEnvironmentState::Connected(BuildEnvironmentProfile {
                 source_dir: PathBuf::from("/"),
                 build_dir: PathBuf::from("/"),
@@ -3328,6 +3330,15 @@ fn task_state_order(state: TaskState) -> u8 {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     Tick,
+    ProjectProfileAbsent,
+    ProjectProfileLoaded(ProjectProfile),
+    ProjectProfileLoadFailed(String),
+    PreviewProjectProfileGeneration(ProjectProfile),
+    ConfirmProjectProfileGeneration {
+        replace: bool,
+    },
+    ProjectProfileGenerated(ProjectProfile),
+    ProjectProfileGenerationFailed(String),
     Open(Screen),
     SelectNavigator {
         delta: isize,
@@ -5961,6 +5972,38 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         return None;
     }
     match action {
+        Action::ProjectProfileAbsent => {
+            app.project_profile = ProjectProfileState::Absent;
+        }
+        Action::ProjectProfileLoaded(profile) => match profile.validate() {
+            Ok(()) => app.project_profile = ProjectProfileState::Loaded(profile),
+            Err(error) => app.project_profile = ProjectProfileState::Invalid(error.to_string()),
+        },
+        Action::ProjectProfileLoadFailed(message) => {
+            app.project_profile = ProjectProfileState::Invalid(message);
+        }
+        Action::PreviewProjectProfileGeneration(profile) => match profile.validate() {
+            Ok(()) => app.project_profile = ProjectProfileState::GenerationPreview(profile),
+            Err(error) => app.notification = Some(error.to_string()),
+        },
+        Action::ConfirmProjectProfileGeneration { replace } => {
+            let ProjectProfileState::GenerationPreview(profile) = &app.project_profile else {
+                return None;
+            };
+            let profile = profile.clone();
+            app.project_profile = ProjectProfileState::Generating(profile.clone());
+            return Some(Effect::GenerateProjectProfile { profile, replace });
+        }
+        Action::ProjectProfileGenerated(profile) => {
+            app.project_profile = ProjectProfileState::Loaded(profile);
+            app.notification = Some("Project profile generated.".into());
+        }
+        Action::ProjectProfileGenerationFailed(message) => {
+            app.notification = Some(format!("Project profile was not generated: {message}"));
+            if let ProjectProfileState::Generating(profile) = &app.project_profile {
+                app.project_profile = ProjectProfileState::GenerationPreview(profile.clone());
+            }
+        }
         Action::Open(s) => {
             app.screen = s;
             app.focus = FocusTarget::Workspace;
@@ -13385,6 +13428,10 @@ fn next_filter(values: &[String], current: Option<String>) -> Option<String> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Effect {
     PersistSettings,
+    GenerateProjectProfile {
+        profile: ProjectProfile,
+        replace: bool,
+    },
     VerifyBuildEnvironment {
         profile: BuildEnvironmentProfile,
         generation: u64,
