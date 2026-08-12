@@ -2542,9 +2542,13 @@ editable and are validated before the existing launch confirmation. The popup
 initially selects `scope` for immediate keyboard replacement and shows typed
 validation failures above the persistent shortcut row.
 Test result import uses `Test result import.toml` with one normalized absolute
-`root`, preserving the existing bounded typed import operation.
+`root`, initially selected for immediate replacement, preserving the existing
+bounded typed import operation.
 Test comparison uses `Test comparison.toml` with baseline and candidate result
-paths, resolved only against the current typed result inventory before preview.
+paths; the baseline initially has value selection. Both paths resolve only
+against the current typed result inventory before preview. Import and
+comparison validation failures render above the shared persistent shortcut
+row.
 
 - **Use existing source**: an absolute Poky/Yocto source path, an absolute
   build-directory path, and the detected environment script

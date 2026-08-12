@@ -114,9 +114,9 @@ See `docs/current-task.md`.
 ## Priority queue
 
 Configuration, BBMASK, build target, Wic creation, SDK publication, SDK native
-tools, and Testing launch now use the shared bounded popup editor. Testing
-result import and comparison migration is active; JUnit export and the
-remaining operations popups follow it.
+tools, Testing launch, result import, and result comparison now use the shared
+bounded popup editor. The shared migration gate is active; JUnit export and
+the remaining operations popups follow it.
 The editor agenda now has explicit adoption, typed state, routing/rendering,
 and migration tasks; JUnit export and operations remain sequenced after it.
 
@@ -148,8 +148,9 @@ the editor path and immediate destination replacement while retaining exact
 path validation and confirmation. SDK native tools now share multi-field
 editing while retaining FindSysroot versus RunNative restrictions and exact
 previews. Testing launch now shares navigation and clipboard behavior, renders
-validation in-popup, and enforces its authoritative context; Testing result
-migration is active.
+validation in-popup, and enforces its authoritative context. Testing result
+import and comparison share those editor behaviors while preserving absolute
+import paths and current-inventory comparison identity resolution.
 
 ## Rules
 

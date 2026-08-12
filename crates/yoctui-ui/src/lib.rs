@@ -750,35 +750,33 @@ pub fn render(frame: &mut Frame, app: &App) {
     } else if let Some(Dialog::TestCancellationConfirmation(id)) = app.active_dialog() {
         test_cancellation_confirmation(frame, app, *id, area);
     } else if let Some(Dialog::TestResultImportTomlEditor {
-        content,
-        editing,
+        editor,
         validation_error,
     }) = app.active_dialog()
     {
-        let popup = Rect::new(
-            area.width / 8,
-            area.height / 6,
-            area.width * 3 / 4,
-            area.height * 2 / 3,
+        toml_popup_editor(
+            frame,
+            app,
+            area,
+            "Test result import.toml",
+            editor,
+            validation_error.as_deref(),
         );
-        clear_popup(frame, app, popup);
-        frame.render_widget(Paragraph::new(format!("{}{}\n{}: i inserts, Enter imports, q closes.\nInsert: type, Backspace, Esc normal.{}", content, if *editing { "_" } else { "" }, if *editing { "INSERT" } else { "NORMAL" }, validation_error.as_deref().map_or(String::new(), |error| format!("\nValidation: {error}")))).block(Block::default().title(format!("Test result import.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL)).wrap(Wrap { trim: false }), popup);
     } else if let Some(Dialog::TestResultImport(dialog)) = app.active_dialog() {
         test_result_import_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::TestComparisonTomlEditor {
-        content,
-        editing,
+        editor,
         validation_error,
     }) = app.active_dialog()
     {
-        let popup = Rect::new(
-            area.width / 8,
-            area.height / 6,
-            area.width * 3 / 4,
-            area.height * 2 / 3,
+        toml_popup_editor(
+            frame,
+            app,
+            area,
+            "Test comparison.toml",
+            editor,
+            validation_error.as_deref(),
         );
-        clear_popup(frame, app, popup);
-        frame.render_widget(Paragraph::new(format!("{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.{}", content, if *editing { "_" } else { "" }, if *editing { "INSERT" } else { "NORMAL" }, validation_error.as_deref().map_or(String::new(), |error| format!("\nValidation: {error}")))).block(Block::default().title(format!("Test comparison.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL)).wrap(Wrap { trim: false }), popup);
     } else if let Some(Dialog::TestComparison(picker)) = app.active_dialog() {
         test_comparison_dialog(frame, app, picker, area);
     } else if let Some(Dialog::TestComparisonConfirmation(preview)) = app.active_dialog() {
@@ -11120,6 +11118,37 @@ mod tests {
             yoctui_model::TestSessionId(9),
         ));
         assert!(rendered_text(&app, 80, 24).contains("Confirm Testing cancellation"));
+
+        app.dialogs.clear();
+        let mut import_editor =
+            yoctui_model::PopupEditor::new("root = \"/results/testresults.json\"\n".into());
+        import_editor.select_toml_value("root").unwrap();
+        app.dialogs.push_front(Dialog::TestResultImportTomlEditor {
+            editor: import_editor,
+            validation_error: Some("normalized absolute path required".into()),
+        });
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("Test result import.toml"), "{output}");
+        assert!(output.contains("Home/End line"), "{output}");
+        assert!(
+            output.contains("normalized absolute path required"),
+            "{output}"
+        );
+
+        app.dialogs.clear();
+        let mut comparison_editor = yoctui_model::PopupEditor::new(format!(
+            "baseline = \"{}\"\ncandidate = \"{}\"\n",
+            baseline.identity.path.display(),
+            candidate.identity.path.display()
+        ));
+        comparison_editor.select_toml_value("baseline").unwrap();
+        app.dialogs.push_front(Dialog::TestComparisonTomlEditor {
+            editor: comparison_editor,
+            validation_error: None,
+        });
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("Test comparison.toml"), "{output}");
+        assert!(output.contains("Ctrl+C copy"), "{output}");
 
         app.dialogs.clear();
         let import = yoctui_model::TestResultImportDialog {

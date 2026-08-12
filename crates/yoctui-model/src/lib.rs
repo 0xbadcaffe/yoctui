@@ -1200,14 +1200,12 @@ pub enum Dialog {
     TestCancellationConfirmation(TestSessionId),
     TestResultImport(TestResultImportDialog),
     TestResultImportTomlEditor {
-        content: String,
-        editing: bool,
+        editor: PopupEditor,
         validation_error: Option<String>,
     },
     TestComparison(TestComparisonPicker),
     TestComparisonTomlEditor {
-        content: String,
-        editing: bool,
+        editor: PopupEditor,
         validation_error: Option<String>,
     },
     TestComparisonConfirmation(TestComparisonPreview),
@@ -6274,6 +6272,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 | Some(Dialog::TestLaunchTomlEditor {
                     editor,
                     validation_error,
+                })
+                | Some(Dialog::TestResultImportTomlEditor {
+                    editor,
+                    validation_error,
+                })
+                | Some(Dialog::TestComparisonTomlEditor {
+                    editor,
+                    validation_error,
                 }) => (editor, Some(validation_error)),
                 _ => return None,
             };
@@ -8068,45 +8074,43 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.test_view = app.test_view.next();
         }
         Action::BeginTestResultImport => {
+            let mut editor = PopupEditor::new(popup_toml_document("root", "", None));
+            let _ = editor.select_toml_value("root");
             open_dialog(
                 app,
                 Dialog::TestResultImportTomlEditor {
-                    content: popup_toml_document("root", "", None),
-                    editing: false,
+                    editor,
                     validation_error: None,
                 },
             );
         }
         Action::ToggleTestResultImportTomlEditor => {
-            if let Some(Dialog::TestResultImportTomlEditor { editing, .. }) =
-                app.active_dialog_mut()
+            if let Some(Dialog::TestResultImportTomlEditor { editor, .. }) = app.active_dialog_mut()
             {
-                *editing = !*editing;
+                editor.editing = !editor.editing;
             }
         }
         Action::AppendTestResultImportTomlEditor(character) => {
             if let Some(Dialog::TestResultImportTomlEditor {
-                content,
-                editing,
+                editor,
                 validation_error,
             }) = app.active_dialog_mut()
-                && *editing
+                && editor.editing
                 && !character.is_control()
-                && content.len() < MAX_TEST_TEXT_BYTES
+                && editor.text.len() + character.len_utf8() <= MAX_TEST_TEXT_BYTES
             {
-                content.push(character);
+                editor.insert(&character.to_string());
                 *validation_error = None;
             }
         }
         Action::BackspaceTestResultImportTomlEditor => {
             if let Some(Dialog::TestResultImportTomlEditor {
-                content,
-                editing,
+                editor,
                 validation_error,
             }) = app.active_dialog_mut()
-                && *editing
+                && editor.editing
             {
-                content.pop();
+                editor.backspace();
                 *validation_error = None;
             }
         }
@@ -8121,10 +8125,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::ConfirmTestResultImport => {
-            if let Some(Dialog::TestResultImportTomlEditor { content, .. }) =
+            if let Some(Dialog::TestResultImportTomlEditor { editor, .. }) =
                 app.active_dialog().cloned()
             {
-                let root = popup_toml_value(&content, "root")
+                let root = popup_toml_value(&editor.text, "root")
                     .map(PathBuf::from)
                     .and_then(|root| {
                         absolute_normal_path(&root).then_some(root).ok_or_else(|| {
@@ -8372,54 +8376,52 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return None;
             }
             let picker = TestComparisonPicker::new(app.test_result_selection.clone(), records);
+            let mut editor = PopupEditor::new(format!(
+                "baseline = \"{}\"\ncandidate = \"{}\"\n",
+                picker
+                    .baseline
+                    .as_ref()
+                    .map_or_else(String::new, |value| value.path.display().to_string()),
+                picker
+                    .candidate
+                    .as_ref()
+                    .map_or_else(String::new, |value| value.path.display().to_string())
+            ));
+            let _ = editor.select_toml_value("baseline");
             open_dialog(
                 app,
                 Dialog::TestComparisonTomlEditor {
-                    content: format!(
-                        "baseline = \"{}\"\ncandidate = \"{}\"\n",
-                        picker
-                            .baseline
-                            .as_ref()
-                            .map_or_else(String::new, |value| value.path.display().to_string()),
-                        picker
-                            .candidate
-                            .as_ref()
-                            .map_or_else(String::new, |value| value.path.display().to_string())
-                    ),
-                    editing: false,
+                    editor,
                     validation_error: None,
                 },
             );
         }
         Action::ToggleTestComparisonTomlEditor => {
-            if let Some(Dialog::TestComparisonTomlEditor { editing, .. }) = app.active_dialog_mut()
-            {
-                *editing = !*editing;
+            if let Some(Dialog::TestComparisonTomlEditor { editor, .. }) = app.active_dialog_mut() {
+                editor.editing = !editor.editing;
             }
         }
         Action::AppendTestComparisonTomlEditor(character) => {
             if let Some(Dialog::TestComparisonTomlEditor {
-                content,
-                editing,
+                editor,
                 validation_error,
             }) = app.active_dialog_mut()
-                && *editing
+                && editor.editing
                 && !character.is_control()
-                && content.len() < MAX_TEST_TEXT_BYTES
+                && editor.text.len() + character.len_utf8() <= MAX_TEST_TEXT_BYTES
             {
-                content.push(character);
+                editor.insert(&character.to_string());
                 *validation_error = None;
             }
         }
         Action::BackspaceTestComparisonTomlEditor => {
             if let Some(Dialog::TestComparisonTomlEditor {
-                content,
-                editing,
+                editor,
                 validation_error,
             }) = app.active_dialog_mut()
-                && *editing
+                && editor.editing
             {
-                content.pop();
+                editor.backspace();
                 *validation_error = None;
             }
         }
@@ -8440,11 +8442,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::PreviewTestComparison => {
-            if let Some(Dialog::TestComparisonTomlEditor { content, .. }) =
+            if let Some(Dialog::TestComparisonTomlEditor { editor, .. }) =
                 app.active_dialog().cloned()
             {
                 let preview = (|| {
-                    let fields = popup_toml_fields(&content)?;
+                    let fields = popup_toml_fields(&editor.text)?;
                     let lookup = |key: &str| {
                         let path = fields.get(key).ok_or_else(|| format!("Missing `{key}`."))?;
                         app.test_results
@@ -20030,6 +20032,47 @@ mod tests {
             },
         );
         assert_eq!(app.background_jobs.ignored_transitions, ignored + 1);
+    }
+
+    #[test]
+    fn test_results_popup_editors_share_selection_navigation_and_clipboard() {
+        let mut app = test_workflow_app();
+        let _ = update(&mut app, Action::BeginTestResultImport);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TestResultImportTomlEditor { editor, .. })
+                if editor.selected_text() == Some("")
+        ));
+        assert!(matches!(
+            update(
+                &mut app,
+                Action::EditActivePopup(PopupEditorCommand::Copy)
+            ),
+            Some(Effect::CopyToClipboard(value)) if value.is_empty()
+        ));
+
+        app.dialogs.clear();
+        let baseline =
+            test_results_record("baseline", "base", &[("case", TestCaseOutcome::Passed)]);
+        let candidate = test_results_record(
+            "candidate",
+            "candidate",
+            &[("case", TestCaseOutcome::Failed)],
+        );
+        load_test_results(&mut app, vec![baseline, candidate], Vec::new());
+        let _ = update(&mut app, Action::BeginTestComparison);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TestComparisonTomlEditor { editor, .. })
+                if editor.selected_text().is_some_and(|value| value.starts_with("/build/results/"))
+        ));
+        assert!(matches!(
+            update(
+                &mut app,
+                Action::EditActivePopup(PopupEditorCommand::Copy)
+            ),
+            Some(Effect::CopyToClipboard(value)) if value.starts_with("/build/results/")
+        ));
     }
 
     #[test]

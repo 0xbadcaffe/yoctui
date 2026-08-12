@@ -2657,18 +2657,18 @@ notes = "Testing launch now uses PopupEditor with shared cursor/navigation/clipb
 id = "UX-POPUP-EDITOR-TEST-RESULTS-001"
 milestone = "M8"
 title = "Migrate Testing import and comparison popups to shared editor state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 170
 required = true
 depends_on = ["UX-POPUP-EDITOR-TEST-LAUNCH-001"]
 verify = ["cargo test -p yoctui-model test_results", "cargo test -p yoctui-ui test_workflow", "cargo check -p yoctui"]
-notes = "Adopt shared editing for result import and comparison while retaining exact identity resolution and typed validation."
+notes = "Testing result import and comparison now use PopupEditor with shared cursor/navigation/clipboard routing, initial path-value selection, in-popup validation, normalized absolute import paths, current-inventory comparison identity resolution, and the existing confirmation gates."
 
 [[task]]
 id = "UX-POPUP-EDITOR-MIGRATION-001"
 milestone = "M8"
 title = "Complete shared popup editor migration"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 171
 required = true
 depends_on = ["UX-POPUP-EDITOR-BUILD-001", "UX-POPUP-EDITOR-CONFIG-001", "UX-POPUP-EDITOR-TARGET-001", "UX-POPUP-EDITOR-WIC-001", "UX-POPUP-EDITOR-SDK-PUBLISH-001", "UX-POPUP-EDITOR-SDK-NATIVE-001", "UX-POPUP-EDITOR-TEST-LAUNCH-001", "UX-POPUP-EDITOR-TEST-RESULTS-001"]
