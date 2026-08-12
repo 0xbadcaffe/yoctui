@@ -3013,18 +3013,18 @@ notes = "Changed boot identity is now a typed HostReboot boundary: persisted ses
 id = "BITBAKE-SERVER-001"
 milestone = "M11"
 title = "Create daemon-owned BitBake controller"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 410
 required = true
 depends_on = ["DAEMON-STATE-001"]
 verify = ["cargo test -p yoctui-bitbake server_controller"]
-notes = "Typed detect/connect/disconnect/start/stop/restart/reconnect lifecycle using supported BitBake interfaces; UI remains independent."
+notes = "yoctui-bitbake now provides a UI-independent generic server controller with validated workspace context, checked lifecycle/generation, typed endpoint/version/capabilities and server/session identities, bounded async operations, explicit unavailable/failure states, and composed disconnect/stop/start/reconnect behavior. Concrete socket and CLI adapters remain separately gated."
 
 [[task]]
 id = "BITBAKE-SOCKET-001"
 milestone = "M11"
 title = "Integrate supported BitBake server socket APIs"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 411
 required = true
 depends_on = ["BITBAKE-SERVER-001"]

@@ -205,7 +205,11 @@ BitBake remains disconnected pending a supported probe.
 Host-reboot behavior is complete with an explicit changed-boot boundary,
 honest `Lost` session visibility, typed metadata-only relaunch intent, and
 documented unprivileged user-service enable/login/lingering guarantees. The
-daemon-owned BitBake controller abstraction is active.
+host-reboot gate is complete.
+The daemon-owned BitBake controller abstraction is complete with typed
+contexts, observations, capabilities, sessions, transitions, generations,
+timeouts, restart/reconnect composition, and explicit failures independent of
+the UI. Supported BitBake socket integration is active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

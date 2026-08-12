@@ -15,6 +15,7 @@ mod sdk_tool;
 mod security;
 mod security_mapper;
 mod security_report;
+mod server_controller;
 mod signature;
 mod test_results;
 mod test_runner;
@@ -118,6 +119,12 @@ pub use security_mapper::{
 pub use security_report::{
     SecurityReportAdapter, SecurityReportAdapterError, SecurityReportCancellation,
     SecurityReportResponse, SecurityReportScanOutcome,
+};
+pub use server_controller::{
+    BitBakeDetection, BitBakeServerAdapter, BitBakeServerAdapterError, BitBakeServerCapability,
+    BitBakeServerContext, BitBakeServerController, BitBakeServerControllerError,
+    BitBakeServerControllerState, BitBakeServerEndpoint, BitBakeServerLifecycle,
+    BitBakeServerObservation, BitBakeServerOperation, BitBakeServerSession,
 };
 pub use signature::{
     SignatureAdapter, SignatureAdapterError, SignatureCancellation, SignatureCommandSpec,

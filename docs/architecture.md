@@ -1252,6 +1252,26 @@ not move UI concerns into backend adapters. Existing typed actions, effects,
 job coordinators, correlations, and confirmation policies are migrated into
 the daemon boundary rather than duplicated.
 
+### Daemon-owned BitBake controller
+
+`yoctui-bitbake::BitBakeServerController` is the UI-independent lifecycle
+authority used by the daemon. It validates the absolute source/build/init
+context once, then delegates supported interface details to a typed async
+`BitBakeServerAdapter`; it never accepts a shell command string. Detection,
+start, connect, disconnect, stop, restart, and reconnect move through explicit
+`Unknown`, `Detecting`, `Unavailable`, `Available`, transitional, `Connected`,
+`Recovering`, and `Failed` states with a checked generation and diagnostic.
+Every adapter operation has a configured nonzero timeout.
+
+Observations bind a validated endpoint, bounded server identity, optional
+version, and deduplicated typed capabilities. A connected session must name the
+same server and supplies a bounded connection identity. Restart disconnects
+the owned session, stops the observed server, starts a new observation, and
+reconnects only when the controller was connected before; reconnect replaces
+only the session. The abstraction does not yet claim a live BitBake transport:
+supported socket behavior is implemented by `BITBAKE-SOCKET-001`, while
+shell-free previewable CLI gaps belong to `BITBAKE-CLI-CONTROL-001`.
+
 ### State partitions
 
 State has three explicit partitions:

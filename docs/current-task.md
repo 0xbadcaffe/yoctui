@@ -2,19 +2,19 @@
 
 ## Task
 
-**ID:** BITBAKE-SERVER-001
-**Title:** Create daemon-owned BitBake controller
+**ID:** BITBAKE-SOCKET-001
+**Title:** Integrate supported BitBake server socket APIs
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Create a daemon-owned, UI-independent BitBake controller abstraction with typed
-detect, connect, disconnect, start, stop, restart, and reconnect lifecycle.
-Prefer supported BitBake interfaces, preserve structured capability/version
-state, enforce timeouts, and make failure/recovery transitions explicit.
+Implement the supported BitBake socket/server adapter beneath the typed
+controller. Detect capabilities and versions, enforce connect/command timeouts,
+correlate commands, handle server loss and reconnect explicitly, and keep all
+transport details independent of UI state.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake server_controller
+cargo test -p yoctui-bitbake bitbake_socket
 ```
