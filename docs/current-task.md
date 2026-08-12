@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** DAEMON-SPEC-001
-**Title:** Specify daemon and attachable client architecture
+**ID:** DAEMON-PROTOCOL-001
+**Title:** Define typed daemon client protocol
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Define the daemon/client responsibilities, long-lived ownership and persistence
-boundaries, IPC and attach semantics, lifecycle and recovery behavior,
-compatibility, multi-client security, SSH/reboot guarantees, and interaction
-with the existing single-process mode before implementation begins.
+Add versioned bounded daemon/client wire types for handshake and capabilities,
+identities, subscriptions, snapshots and incremental events, correlated
+commands, jobs, PTYs, layout/mouse events, attach/detach, graceful shutdown,
+errors, stale-client detection, and reconnect synchronization with explicit
+compatibility rules.
 
 ## Verification
 
 ```bash
-./scripts/check-docs.sh
-./scripts/verify-roadmap.sh
+cargo test -p yoctui-protocol daemon_protocol
 ```

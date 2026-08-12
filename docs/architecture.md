@@ -1206,6 +1206,207 @@ explicit overrides for automation and diagnostics; an omitted build directory
 creates an unconfigured session instead of treating the current directory as
 a build.
 
+## Persistent daemon and attachable client architecture
+
+Yoctui remains one Rust-native terminal product. The installed package may
+expose daemon and client modes as subcommands of the `yoctui` executable; it
+does not introduce Electron, a browser runtime, or a network service. The
+normal end state is an attachable Ratatui client connected to one per-user
+daemon on the build host. An explicit standalone mode remains available for
+debugging and minimal environments while migration is in progress. Standalone
+mode uses the same model, typed effects, adapters, and safety policies; it is
+never a second ad-hoc execution implementation and it does not promise that
+work survives client exit.
+
+### Process and crate responsibilities
+
+The daemon is the sole authority for state and execution that must outlive a
+client connection. It owns:
+
+- the selected workspace/project identity and loaded optional project profile
+- the BitBake controller, connection, capabilities, metadata snapshots, and
+  reconnect/restart lifecycle
+- every background-job coordinator and retained bounded history, log, error,
+  QEMU, Wic, SDK, testing, QA, security, maintenance, and utility result
+- PTY masters, terminal-emulator state, process groups, scrollback, and session
+  metadata
+- global sequence allocation, client subscriptions, request arbitration,
+  confirmation leases, persistence, recovery classification, and resource
+  limits
+
+The client owns terminal initialization/restoration, crossterm input, Ratatui
+rendering, responsive focus, open dialogs and editors, command-palette state,
+pane layout, scroll position, local selections, and prefix/mouse interaction.
+It sends typed intent and renders daemon snapshots/events. It never becomes a
+parent or lifetime owner of a BitBake process, background job, or persistent
+PTY. Client-local presentation state is not broadcast merely because two
+clients view the same daemon.
+
+Existing dependency direction remains binding. `yoctui-model` contains pure
+global and client-local domain types; `yoctui-protocol` contains stable wire
+types and framing; `yoctui-bitbake` contains BitBake/process/PTY adapters;
+`yoctui-app` maps typed input, daemon commands, events, and effects; the UI
+renders replicas; CLI modes compose these pieces. A daemon runtime support
+crate may sit beside the CLI, but it may depend only in that direction and may
+not move UI concerns into backend adapters. Existing typed actions, effects,
+job coordinators, correlations, and confirmation policies are migrated into
+the daemon boundary rather than duplicated.
+
+### State partitions
+
+State has three explicit partitions:
+
+| Partition | Owner | Examples | Persistence |
+|---|---|---|---|
+| Global live | daemon | BitBake connection, active jobs, PTYs, global metadata and logs | metadata only; live handles are never serialized |
+| Durable safe | daemon | workspace identity, bounded history/logs, session names/kinds, profile identity, recovery records | atomic versioned files under the user state directory |
+| Presentation | each client | focus, dialogs, pane tree, scroll offsets, terminal dimensions, prefix state | user-local client preferences only |
+
+A persisted process ID is evidence about a former process, never proof that it
+is still owned or running. Secrets, captured build environments, PTY contents
+unless explicitly enabled within bounds, open file descriptors, socket
+credentials, confirmation leases, and arbitrary child environment values are
+not durable state. Layout records refer to stable session identities but remain
+client-local; unavailable sessions collapse safely on restoration.
+
+### Local IPC and instance identity
+
+Unix uses a Unix-domain socket. The deterministic default is
+`$XDG_RUNTIME_DIR/yoctui/daemon.sock`; when `XDG_RUNTIME_DIR` is absent Yoctui
+may use the verified per-user `/run/user/<uid>` directory, but it fails with a
+clear diagnostic rather than falling back to a shared `/tmp` path. The runtime
+directory is owned by the effective user with mode `0700`; the socket is mode
+`0600`. Creation and stale cleanup use no-follow, ownership, type, and peer-UID
+checks. No TCP listener exists by default.
+
+Each daemon start creates an unpredictable `DaemonInstanceId`, start time, and
+boot identity. Clients also receive stable-for-one-connection identities. The
+typed protocol uses bounded length-delimited frames, bounded queues, deadlines,
+and a versioned handshake with capability negotiation. Client requests carry
+correlation IDs; daemon events carry a monotonically increasing instance-local
+sequence. Unsupported major versions fail closed with actionable diagnostics.
+Minor evolution is additive: unknown optional capabilities and events may be
+ignored only when the negotiated version says that is safe. A daemon instance
+change always invalidates outstanding requests, writer leases, and incremental
+sequence assumptions.
+
+### Attach, detach, and synchronization
+
+Attach authenticates the local peer, negotiates protocol/capabilities, then
+atomically installs a subscription at a sequence watermark. The daemon sends a
+bounded consistent snapshot for that watermark followed by ordered events
+strictly after it, so there is no snapshot/subscription gap. A client that has
+a retained sequence may request replay; if history is missing, the daemon
+explicitly replaces the stale replica with a new snapshot. Until synchronization
+completes the client shows reconnecting state and does not issue consequential
+commands against stale data.
+
+Detach closes only the client subscription and releases its ephemeral focus,
+confirmation, and PTY-writer leases. It does not cancel jobs, disconnect
+BitBake, close PTYs, or shut down the daemon. EOF, terminal close, client crash,
+SSH loss, and ordinary `q` follow the same detach path. Reattachment restores
+daemon-global state and terminal-emulator screens; client-local layout is
+restored separately and only for still-valid session IDs.
+
+### Lifecycle and shutdown
+
+`yoctui` normally connects to the local daemon and may auto-start it according
+to an explicit user setting. `yoctui daemon foreground` is the debuggable
+non-daemonizing service form. Start, status, stop, and restart use Rust process
+and service-manager APIs, PID/runtime records, and the typed control protocol;
+they do not use shell backgrounding tricks.
+
+Stopping or restarting the daemon is distinct from detaching a client. With
+active jobs or PTYs, a normal stop/restart is refused until the UI/CLI displays
+the affected identities and receives the usual explicit confirmation. An
+approved graceful stop stops accepting work, flushes safe state, asks owned
+jobs and process groups to terminate, applies bounded graceful then forced
+cleanup, disconnects BitBake, acknowledges clients, and removes its socket.
+Force remains explicit and reports what may become `Lost`. Systemd user-service
+integration is preferred where available and requires no root; an unavailable
+user manager produces a documented direct-process fallback rather than a
+false success.
+
+### Crash, daemon restart, and host reboot
+
+On daemon crash, connected clients detect EOF/timeout and enter disconnected
+state. They may retry with bounded backoff and must handshake again. Recovery
+loads only validated durable state and classifies every former operation:
+
+- a supported external BitBake server may be detected and reconnected, after
+  identity/capability validation
+- a job with no provable live owner becomes `Lost`, never `Running`
+- a PTY whose master/emulator ownership was lost becomes `Lost` or `Exited`;
+  the daemon does not attach to an arbitrary matching PID
+- persisted history, names, layouts, and bounded logs may be restored as
+  historical records
+- explicitly restartable workflows may offer a reviewed relaunch, never an
+  automatic arbitrary command replay
+
+A host reboot is a stronger boundary. The daemon may auto-start after login or
+boot through supported user-service configuration, but arbitrary child
+processes and PTYs did not survive. Boot identity mismatch marks former live
+records `Lost`/`Stopped`, lists them honestly, and offers relaunch only for a
+typed restartable workflow. No PID reuse check can upgrade such a record to
+running. Jobs survive an SSH/network disconnect because the daemon is local to
+the build host; survival through logout depends on the configured user service
+and is reported explicitly. Nothing here claims process survival across an
+actual host reboot.
+
+### Multi-client arbitration
+
+Multiple authenticated clients may observe the same global state and receive
+the same ordered events. Global commands are serialized through the daemon
+reducer. Commands include the authoritative state generation they were
+reviewed against; stale or conflicting commands are rejected with a typed
+reason and refreshed context. Destructive confirmations use short-lived,
+single-use daemon-issued leases bound to client, request, preview hash, and
+state generation, so one client cannot confirm another client's preview.
+
+Focus, dialogs, selections, layout, mouse hover/drag, and terminal dimensions
+remain client-local. PTYs allow many viewers but exactly one active writer.
+Taking control is explicit, the writer identity is visible, and disconnect or
+lease timeout releases control. Input from competing clients is never silently
+interleaved. Resize policy is explicit: the writer controls PTY dimensions;
+viewers render/crop the authoritative terminal state without fighting the
+size. Daemon-global operations such as BitBake restart additionally report all
+affected clients/jobs before confirmation.
+
+### Security and trust
+
+The daemon runs as the invoking user and never escalates privilege. Local-only
+access, runtime-directory ownership, socket mode, peer credentials where
+available, bounded decoding, command allowlists, correlation validation,
+queue/resource limits, and environment filtering form the IPC boundary. Paths
+are canonicalized and checked against their typed workspace/context before
+use. PTY process groups are daemon-owned and signals target only recorded
+owned groups.
+
+Project profiles remain inert team intent. Connecting a persistent daemon does
+not grant a profile permission to source scripts, run hooks, create PTYs, or
+relaunch persisted commands. Environment initialization, clone, build,
+destructive maintenance, daemon/BitBake restart, and PTY creation still cross
+their existing typed preview/confirmation/capability boundaries. Client input,
+including mouse events, becomes a server command only when it has daemon-global
+meaning; raw terminal mouse/input bytes are accepted only from the current PTY
+writer and within negotiated bounds.
+
+### SSH and standalone interaction
+
+Remote use means SSH into the build host and run the normal client there. The
+client connects to that host's local Unix socket. No unauthenticated TCP proxy
+or remote browser service is added. Dropping SSH detaches that client; daemon
+jobs and PTYs continue subject to the service/lifecycle guarantees above, and
+the next SSH session performs normal authenticated reattachment.
+
+During migration, `--standalone` is an explicit diagnostic/minimal mode and the
+current single-process implementation supplies it. Default behavior changes to
+daemon attach only after client/daemon parity tests pass. Thereafter standalone
+remains tested but clearly reports that client exit owns and stops its work.
+Daemon and standalone modes share persisted user preferences but use separate
+runtime/process state and cannot simultaneously own the same workspace's
+BitBake controller. The second owner request is rejected rather than racing.
+
 ## Terminal ownership
 
 Terminal initialization and restoration use RAII. Restoration includes:

@@ -2870,18 +2870,18 @@ notes = "README documents the optional no-profile default, a schema-v1 example, 
 id = "DAEMON-SPEC-001"
 milestone = "M11"
 title = "Specify daemon and attachable client architecture"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 400
 required = true
 depends_on = []
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Define daemon/client roles, BitBake/jobs/PTY ownership, persistence, IPC, attach/detach, shutdown, crash/restart, compatibility, multi-client, local security, SSH, reboot honesty, and standalone-mode interaction before implementation."
+notes = "Architecture now fixes daemon/client ownership, state partitions, local Unix IPC, handshake/instance compatibility, gap-free attach, lifecycle/shutdown, honest crash/reboot recovery, multi-client arbitration, PTY writer policy, security, SSH, and explicit shared-path standalone migration policy."
 
 [[task]]
 id = "DAEMON-PROTOCOL-001"
 milestone = "M11"
 title = "Define typed daemon client protocol"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 401
 required = true
 depends_on = ["DAEMON-SPEC-001"]
