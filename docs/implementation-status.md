@@ -267,6 +267,9 @@ Devtool migration is complete with a closed wire enum, canonical context
 validation, the existing shell-free command spec, daemon-owned real runner and
 process group, sequenced job/log state, correlated cancellation, and detach-
 survival coverage. SDK/QEMU/Wic ownership is active next.
+The artifact migration is further split along its distinct safety boundaries:
+SDK is active first, followed by QEMU and destructive Wic, then a shared parent
+gate.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

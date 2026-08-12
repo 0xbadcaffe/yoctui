@@ -3208,15 +3208,48 @@ verify = ["cargo test -p yoctui client_runtime_devtool"]
 notes = "A closed DaemonDevtoolOperation wire enum represents modify/update/finish/deploy/undeploy/reset without argv or command strings. The client maps existing typed effects with authoritative build-directory identity. The daemon revalidates paths/operations, reuses DevtoolCommandSpec and owns the real DevtoolJobRunner process group, bounded output, cancellation channel, job IDs and sequenced job/log terminal state. Attached UI routes no longer start the local runner; a real-process test proves completion after client scope is dropped."
 
 [[task]]
-id = "CLIENT-RUNTIME-ARTIFACTS-001"
+id = "CLIENT-RUNTIME-SDK-001"
 milestone = "M11"
-title = "Move SDK QEMU and Wic job ownership into the daemon"
+title = "Move SDK job ownership into the daemon"
 status = "IN_PROGRESS"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-DEVTOOL-001"]
+verify = ["cargo test -p yoctui client_runtime_sdk"]
+notes = "Route existing typed SDK build/publication/native operations through daemon-owned adapters and runners with exact identities, output, lifecycle and cancellation."
+
+[[task]]
+id = "CLIENT-RUNTIME-QEMU-001"
+milestone = "M11"
+title = "Move QEMU job ownership into the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-SDK-001"]
+verify = ["cargo test -p yoctui client_runtime_qemu"]
+notes = "Route confirmed typed QEMU launches and cancellation through the daemon-owned runner and sequenced state."
+
+[[task]]
+id = "CLIENT-RUNTIME-WIC-001"
+milestone = "M11"
+title = "Move Wic job ownership into the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-QEMU-001"]
+verify = ["cargo test -p yoctui client_runtime_wic"]
+notes = "Route typed Wic create/device operations through daemon ownership while retaining destructive confirmation and exact device identity safeguards."
+
+[[task]]
+id = "CLIENT-RUNTIME-ARTIFACTS-001"
+milestone = "M11"
+title = "Move SDK QEMU and Wic job ownership into the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-SDK-001", "CLIENT-RUNTIME-QEMU-001", "CLIENT-RUNTIME-WIC-001"]
 verify = ["cargo test -p yoctui client_runtime_artifacts"]
-notes = "Route existing typed SDK, QEMU and Wic operations through daemon-owned adapters/runners with correlated lifecycle and cancellation."
+notes = "Parent gate: SDK, QEMU and Wic operations use daemon-owned typed adapters/runners with correlated lifecycle and cancellation."
 
 [[task]]
 id = "CLIENT-RUNTIME-QUALITY-001"
