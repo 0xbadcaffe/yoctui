@@ -138,6 +138,8 @@ active compatible task.
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded
 undo; input/rendering integration is now active.
+The integration work is split into input normalization and shared rendering;
+input normalization is active.
 
 ## Rules
 

@@ -2,18 +2,18 @@
 
 ## Task
 
-**ID:** UX-POPUP-EDITOR-004
-**Title:** Wire shared popup-editor input and rendering
+**ID:** UX-POPUP-EDITOR-INPUT-001
+**Title:** Normalize popup editor keyboard and clipboard input
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Route Home/End, arrows, vi Normal/Insert actions, bracketed paste, copy, and
-visible shortcut hints through one popup renderer and CLI input path.
+Map Home/End, arrows, Ctrl+C, Ctrl+V, bracketed paste, and vi editor commands
+into typed client input without stealing terminal-session input.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui popup_editor
+cargo test -p yoctui input_from_key
 cargo check -p yoctui
 ```

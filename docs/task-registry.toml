@@ -2535,22 +2535,44 @@ notes = "Model-owned PopupEditor now supports typed document/cursor/selection/ed
 [[task]]
 id = "UX-POPUP-EDITOR-004"
 milestone = "M8"
-title = "Wire shared popup-editor input and rendering"
-status = "IN_PROGRESS"
+title = "Decompose popup-editor input and rendering integration"
+status = "DONE"
 priority = 159
 required = true
 depends_on = ["UX-POPUP-EDITOR-003"]
-verify = ["cargo test -p yoctui-ui popup_editor", "cargo check -p yoctui"]
-notes = "Route Home/End, arrows, vi Normal/Insert actions, bracketed paste, copy, and visible shortcut hints through one popup renderer and CLI input path."
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Split terminal event routing and rendering/shortcut integration into coherent atomic tasks before implementation."
+
+[[task]]
+id = "UX-POPUP-EDITOR-INPUT-001"
+milestone = "M8"
+title = "Normalize popup editor keyboard and clipboard input"
+status = "IN_PROGRESS"
+priority = 160
+required = true
+depends_on = ["UX-POPUP-EDITOR-004"]
+verify = ["cargo test -p yoctui input_from_key", "cargo check -p yoctui"]
+notes = "Map Home/End, arrows, Ctrl+C, Ctrl+V, bracketed paste, and vi editor commands into typed client input without stealing terminal-session input."
+
+[[task]]
+id = "UX-POPUP-EDITOR-RENDER-001"
+milestone = "M8"
+title = "Render shared popup editor cursor selection and shortcuts"
+status = "NOT_STARTED"
+priority = 161
+required = true
+depends_on = ["UX-POPUP-EDITOR-INPUT-001"]
+verify = ["cargo test -p yoctui-ui popup_editor"]
+notes = "Render one bounded editor view with cursor/selection and persistent shortcut row at safe responsive sizes."
 
 [[task]]
 id = "UX-POPUP-EDITOR-005"
 milestone = "M8"
 title = "Migrate existing TOML forms onto the shared editor"
 status = "NOT_STARTED"
-priority = 160
+priority = 162
 required = true
-depends_on = ["UX-POPUP-EDITOR-004"]
+depends_on = ["UX-POPUP-EDITOR-RENDER-001"]
 verify = ["cargo test -p yoctui-model popup_editor", "cargo test -p yoctui-ui popup_editor", "cargo check -p yoctui"]
 notes = "Replace append-only implementation in build environment, clone, configuration, BBMASK, target, Wic, SDK, and Testing forms while retaining typed parsers, previews, and confirmations."
 
