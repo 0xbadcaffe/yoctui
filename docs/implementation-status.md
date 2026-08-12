@@ -147,7 +147,9 @@ and a shortcut row that remains visible at every supported breakpoint. Existing
 TOML workflow migration is split into atomic build, configuration, target, Wic,
 SDK, and Testing tasks. Build environment and clone now use shared model state,
 key routing, cursor/selection rendering, and clipboard behavior while retaining
-their typed apply/review gates; configuration and BBMASK migration is active.
+their typed apply/review gates. Configuration and BBMASK now use the same state,
+key, cursor/selection, and clipboard paths while retaining allowlisted previews
+and explicit writes; build-target migration is active.
 
 ## Rules
 

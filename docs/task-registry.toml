@@ -2591,18 +2591,18 @@ notes = "Build environment and clone dialogs now use PopupEditor plus the shared
 id = "UX-POPUP-EDITOR-CONFIG-001"
 milestone = "M8"
 title = "Migrate configuration and BBMASK popups to shared editor state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 164
 required = true
 depends_on = ["UX-POPUP-EDITOR-BUILD-001"]
 verify = ["cargo test -p yoctui-model config_", "cargo test -p yoctui-ui config_", "cargo check -p yoctui"]
-notes = "Use shared cursor, selection, and clipboard behavior without weakening allowlisted writes or BBMASK confirmation."
+notes = "Configuration and BBMASK dialogs now use PopupEditor and shared key routing, select their authoritative current value on open, render persistent responsive shortcuts, and retain allowlisted assignment previews and explicit write confirmations."
 
 [[task]]
 id = "UX-POPUP-EDITOR-TARGET-001"
 milestone = "M8"
 title = "Migrate build target popup to shared editor state"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 165
 required = true
 depends_on = ["UX-POPUP-EDITOR-CONFIG-001"]

@@ -5797,10 +5797,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::BuildEnvironmentCloneEditor(editor)) if editor.editing => {
                         Some(Action::AppendBuildEnvironmentCloneEditor as fn(char) -> Action)
                     }
-                    Some(Dialog::ConfigEdit { editing: true, .. }) => {
+                    Some(Dialog::ConfigEdit { editor, .. }) if editor.editing => {
                         Some(Action::AppendConfigEdit as fn(char) -> Action)
                     }
-                    Some(Dialog::BbmaskEdit { editing: true, .. }) => {
+                    Some(Dialog::BbmaskEdit(editor)) if editor.editing => {
                         Some(Action::AppendBbmask as fn(char) -> Action)
                     }
                     Some(Dialog::BuildTarget { editing: true, .. }) => {
@@ -6856,27 +6856,18 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             }
                         }
                     }
-                } else if let Some(Dialog::BbmaskEdit { editing, .. }) =
-                    app.active_dialog().cloned()
-                {
-                    let action = if editing {
-                        match input {
-                            Input::Esc => Some(Action::ToggleBbmaskEdit),
-                            Input::Enter => Some(Action::PreviewBbmaskEdit),
-                            Input::Backspace => Some(Action::BackspaceBbmask),
-                            Input::Char(character) => Some(Action::AppendBbmask(character)),
-                            _ => None,
+                } else if let Some(Dialog::BbmaskEdit(editor)) = app.active_dialog().cloned() {
+                    let action = match input {
+                        Input::Enter => Some(Action::PreviewBbmaskEdit),
+                        Input::Char('q') | Input::Esc if !editor.editing => {
+                            Some(Action::CancelBbmaskEdit)
                         }
-                    } else {
-                        match input {
-                            Input::Char('i') => Some(Action::ToggleBbmaskEdit),
-                            Input::Char('q') | Input::Esc => Some(Action::CancelBbmaskEdit),
-                            Input::Enter => Some(Action::PreviewBbmaskEdit),
-                            _ => None,
-                        }
+                        input => popup_editor_action(editor.editing, input),
                     };
-                    if let Some(action) = action {
-                        let _ = update(&mut app, action);
+                    if let Some(Effect::CopyToClipboard(content)) =
+                        action.and_then(|action| update(&mut app, action))
+                    {
+                        copy_to_clipboard(&mut app, content).await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
                     let action = if input == Input::Enter
@@ -6953,27 +6944,19 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if let Some(action) = config_compare_dialog_action(input) {
                         let _ = update(&mut app, action);
                     }
-                } else if let Some(Dialog::ConfigEdit { editing, .. }) =
-                    app.active_dialog().cloned()
+                } else if let Some(Dialog::ConfigEdit { editor, .. }) = app.active_dialog().cloned()
                 {
-                    let action = if editing {
-                        match input {
-                            Input::Esc => Some(Action::ToggleConfigEdit),
-                            Input::Enter => Some(Action::PreviewConfigEdit),
-                            Input::Backspace => Some(Action::BackspaceConfigEdit),
-                            Input::Char(character) => Some(Action::AppendConfigEdit(character)),
-                            _ => None,
+                    let action = match input {
+                        Input::Enter => Some(Action::PreviewConfigEdit),
+                        Input::Char('q') | Input::Esc if !editor.editing => {
+                            Some(Action::CancelConfigEdit)
                         }
-                    } else {
-                        match input {
-                            Input::Char('i') => Some(Action::ToggleConfigEdit),
-                            Input::Char('q') | Input::Esc => Some(Action::CancelConfigEdit),
-                            Input::Enter => Some(Action::PreviewConfigEdit),
-                            _ => None,
-                        }
+                        input => popup_editor_action(editor.editing, input),
                     };
-                    if let Some(action) = action {
-                        let _ = update(&mut app, action);
+                    if let Some(Effect::CopyToClipboard(content)) =
+                        action.and_then(|action| update(&mut app, action))
+                    {
+                        copy_to_clipboard(&mut app, content).await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::ConfigEditConfirmation(_))) {
                     if let Some(action) = config_edit_confirmation_action(input)

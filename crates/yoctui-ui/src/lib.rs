@@ -931,32 +931,10 @@ pub fn render(frame: &mut Frame, app: &App) {
         );
     } else if let Some(Dialog::ConfigEdit {
         identity: _,
-        content,
-        editing,
+        editor,
     }) = app.active_dialog()
     {
-        let popup = Rect::new(
-            area.width / 8,
-            area.height / 6,
-            area.width * 3 / 4,
-            area.height * 2 / 3,
-        );
-        clear_popup(frame, app, popup);
-        frame.render_widget(
-            Paragraph::new(format!(
-                "{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.",
-                content,
-                if *editing { "_" } else { "" },
-                if *editing { "INSERT" } else { "NORMAL" }
-            ))
-            .block(
-                Block::default()
-                    .title(format!("Configuration.toml — {}", if *editing { "INSERT" } else { "NORMAL" }))
-                    .borders(Borders::ALL),
-            )
-            .wrap(Wrap { trim: false }),
-            popup,
-        );
+        toml_popup_editor(frame, app, area, "Configuration.toml", editor, None);
     } else if let Some(Dialog::ConfigEditConfirmation(request)) = app.active_dialog() {
         let popup = Rect::new(
             area.width / 8,
@@ -1318,29 +1296,8 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: false }),
             popup,
         );
-    } else if let Some(Dialog::BbmaskEdit { content, editing }) = app.active_dialog() {
-        let popup = Rect::new(
-            area.width / 8,
-            area.height / 6,
-            area.width * 3 / 4,
-            area.height * 2 / 3,
-        );
-        clear_popup(frame, app, popup);
-        frame.render_widget(
-            Paragraph::new(format!(
-                "{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.",
-                content,
-                if *editing { "_" } else { "" },
-                if *editing { "INSERT" } else { "NORMAL" }
-            ))
-            .block(
-                Block::default()
-                    .title(format!("BBMASK.toml — {}", if *editing { "INSERT" } else { "NORMAL" }))
-                    .borders(Borders::ALL),
-            )
-            .wrap(Wrap { trim: false }),
-            popup,
-        );
+    } else if let Some(Dialog::BbmaskEdit(editor)) = app.active_dialog() {
+        toml_popup_editor(frame, app, area, "BBMASK.toml", editor, None);
     } else if let Some(Dialog::ImagePicker(picker)) = app.active_dialog() {
         let width = area.width.saturating_sub(24).clamp(42, 90);
         let height = area.height.saturating_sub(8).clamp(10, 24);
@@ -4672,7 +4629,7 @@ fn toml_popup_editor(
     frame.render_widget(Paragraph::new(body).wrap(Wrap { trim: false }), rows[0]);
     frame.render_widget(
         Paragraph::new(
-            "i insert  e change value  Enter save/preview  Esc normal  q close  Home/End line  Ctrl+C copy  Ctrl+V paste",
+            "i insert  e change value  Enter save/preview  Esc normal  q close\nHome/End line  Ctrl+C copy  Ctrl+V paste",
         )
         .wrap(Wrap { trim: false }),
         rows[1],
@@ -12337,10 +12294,9 @@ mod tests {
                 "Confirm Devtool deploy-target",
             ),
             (
-                Dialog::BbmaskEdit {
-                    content: "bbmask = \"meta-old/.*\"\n".into(),
-                    editing: false,
-                },
+                Dialog::BbmaskEdit(yoctui_model::PopupEditor::new(
+                    "bbmask = \"meta-old/.*\"\n".into(),
+                )),
                 "BBMASK.toml",
             ),
             (
@@ -13913,14 +13869,17 @@ mod tests {
                 assert!(output.contains("enabled"), "{output}");
             }
 
+            let mut editor =
+                yoctui_model::PopupEditor::new("# MACHINE\nvalue = \"qemux86-64\"\n".into());
+            editor.select_toml_value("value").unwrap();
             app.dialogs.push_back(Dialog::ConfigEdit {
                 identity: identity.clone(),
-                content: "# MACHINE\nvalue = \"qemux86-64\"\n".into(),
-                editing: false,
+                editor,
             });
             let output = rendered_text(&app, width, height);
             assert!(output.contains("Configuration.toml"), "{output}");
-            assert!(output.contains("qemux86-64"), "{output}");
+            assert!(output.contains("⟦qemux86-64⟧▏"), "{output}");
+            assert!(output.contains("Ctrl+V paste"), "{output}");
 
             app.dialogs.pop_back();
             app.dialogs.push_back(Dialog::ConfigEditConfirmation(
@@ -13974,6 +13933,21 @@ mod tests {
     fn bbmask_edit_preview_shows_the_exact_assignment() {
         let mut terminal = Terminal::new(TestBackend::new(160, 30)).unwrap();
         let mut app = App::new(10, 1_000);
+        app.workspace
+            .variables
+            .insert("BBMASK".into(), "meta-broken/.*".into());
+        let _ = update(&mut app, Action::BeginBbmaskEdit);
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("⟦meta-broken/.*⟧▏"), "{output}");
+        assert!(output.contains("Home/End line"), "{output}");
+        app.dialogs.clear();
         app.dialogs
             .push_back(Dialog::BbmaskConfirmation("meta-broken/.*".into()));
         terminal.draw(|frame| render(frame, &app)).unwrap();
