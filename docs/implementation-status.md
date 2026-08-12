@@ -144,7 +144,8 @@ Input normalization and shared rendering are complete. The JUnit reference
 popup now exercises reducer-owned cursor/selection, Unicode-safe movement,
 Home/End, selection replacement, clipboard copy, internal and bracketed paste,
 and a shortcut row that remains visible at every supported breakpoint. Existing
-TOML workflow migration is active.
+TOML workflow migration is split into atomic build, configuration, target, Wic,
+SDK, and Testing tasks; build environment and clone migration is active.
 
 ## Rules
 
