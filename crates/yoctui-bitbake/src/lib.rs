@@ -1,5 +1,6 @@
 //! BitBake adapters. They execute BitBake; they never evaluate metadata themselves.
 mod bitbake_cli_control;
+mod bitbake_restart;
 #[cfg(unix)]
 mod bitbake_socket;
 mod build_environment;
@@ -60,6 +61,10 @@ use async_trait::async_trait;
 pub use bitbake_cli_control::{
     BitBakeCliCapabilities, BitBakeCliCommand, BitBakeCliControlError, BitBakeCliOperation,
     BitBakeCliOutcome, BitBakeCliPreview, BitBakeCliRunner,
+};
+pub use bitbake_restart::{
+    BitBakeMetadataRefresher, BitBakeRestartCoordinator, BitBakeRestartError,
+    BitBakeRestartMetadata,
 };
 #[cfg(unix)]
 pub use bitbake_socket::BitBakeSocketAdapter;

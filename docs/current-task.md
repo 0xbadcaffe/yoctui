@@ -2,21 +2,20 @@
 
 ## Task
 
-**ID:** BITBAKE-RESTART-001
-**Title:** Implement controlled BitBake restart
+**ID:** PTY-SPEC-001
+**Title:** Specify daemon-owned PTY session architecture
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Implement a controlled daemon-owned BitBake restart workflow. Preview affected
-active jobs, reject unsafe restarts unless the exact operation is explicitly
-confirmed, disconnect and stop through supported adapters, restart and
-reconnect, refresh authoritative metadata, and preserve daemon/client state
-where safe.
+Specify daemon ownership of PTYs, terminal emulation, process groups, validated
+environment and working directory, stable session identity and dimensions,
+bounded byte input/output and scrollback, resize, attach/detach and multi-client
+semantics, termination, copy/search modes, and paste policy. Define the boundary
+before runner or UI implementation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake bitbake_restart
-cargo test -p yoctui-model bitbake_restart
+./scripts/check-docs.sh
 ```

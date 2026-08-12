@@ -216,7 +216,10 @@ capabilities, identities, timeouts, and server loss. Live compatibility remains
 reserved for the real-Poky acceptance gate. Shell-free BitBake CLI control is
 complete with capability-authorized exact server-control argv, captured
 environment execution, bounded output, deadlines, process-group cancellation,
-and typed outcomes. Controlled BitBake restart is active next.
+and typed outcomes. Controlled BitBake restart is complete with exact active-job
+confirmation, stale-state rejection, bounded controller orchestration, and a
+typed authoritative metadata refresh. Daemon-owned PTY architecture
+specification is active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

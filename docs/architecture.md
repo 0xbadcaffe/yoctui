@@ -1306,6 +1306,17 @@ but retains only bounded output, owns a child process group, applies a deadline,
 and supports TERM-then-KILL cancellation. Typed success, nonzero, timeout, and
 cancellation outcomes prevent UI code from parsing process output or status.
 
+Controlled restart is daemon orchestration above that controller. The pure
+model derives a bounded affected-work list from the authoritative primary build
+and background jobs, and binds confirmation to the server identity, controller
+generation, and exact job identities. Immediately before execution the
+coordinator reconstructs that preview from current work; changed server state
+or jobs make it stale. With active work it refuses missing or mismatched
+confirmation. An accepted operation uses the controller's bounded
+disconnect/stop/start/reconnect sequence and then invokes a typed authoritative
+metadata refresh. Job state, histories, client replicas, and presentation state
+are inputs or consumers rather than being replaced by restart orchestration.
+
 ### State partitions
 
 State has three explicit partitions:

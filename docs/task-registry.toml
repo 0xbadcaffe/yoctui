@@ -3046,18 +3046,18 @@ notes = "A UI-independent typed fallback exposes only capability-authorized --st
 id = "BITBAKE-RESTART-001"
 milestone = "M11"
 title = "Implement controlled BitBake restart"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 413
 required = true
 depends_on = ["BITBAKE-SOCKET-001", "BITBAKE-CLI-CONTROL-001"]
 verify = ["cargo test -p yoctui-bitbake bitbake_restart", "cargo test -p yoctui-model bitbake_restart"]
-notes = "Preview affected jobs, require confirmation, refuse unsafe restart, reconnect and refresh authoritative metadata while preserving daemon/client state where possible."
+notes = "The pure model derives a bounded affected-work preview from authoritative primary/background jobs and binds confirmation to exact job identities, server identity, and controller generation. The daemon coordinator revalidates current work, lifecycle, and stop/restart capabilities before using bounded disconnect/stop/start/reconnect controller operations and a typed authoritative metadata refresh; it never replaces daemon job/history or client presentation state."
 
 [[task]]
 id = "PTY-SPEC-001"
 milestone = "M11"
 title = "Specify daemon-owned PTY session architecture"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 414
 required = true
 depends_on = ["DAEMON-SPEC-001"]

@@ -1,4 +1,5 @@
 //! Domain model and pure state transitions. BitBake remains authoritative.
+mod bitbake_restart;
 mod daemon_state;
 mod embedded_shell;
 mod image;
@@ -13,6 +14,7 @@ mod testing;
 mod utility_menu;
 mod wic;
 
+pub use bitbake_restart::*;
 pub use daemon_state::*;
 pub use embedded_shell::*;
 pub use image::*;
