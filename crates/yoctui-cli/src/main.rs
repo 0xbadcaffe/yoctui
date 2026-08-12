@@ -29,9 +29,9 @@ use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
     BuildJobCoordinator, DevtoolJobCoordinator, Input, build_environment_action,
     config_compare_dialog_action, config_edit_confirmation_action, config_scope_picker_action,
-    config_source_picker_action, config_workspace_action, dependency_workspace_action,
-    devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
-    devtool_finish_confirmation_action, devtool_finish_picker_action,
+    config_source_picker_action, config_workspace_action, daemon_job_state_from_app,
+    daemon_protocol_snapshot, dependency_workspace_action, devtool_deploy_confirmation_action,
+    devtool_deploy_dialog_action, devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
     key_action, logs_action, maintenance_dialog_action, maintenance_workspace_action,
@@ -1094,6 +1094,19 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         boot_id,
         executable: env::current_exe()?.canonicalize()?,
     };
+    let mut daemon_state = yoctui_model::DaemonGlobalState::new(
+        yoctui_model::DaemonModelInstanceId(instance.0),
+        record.started_unix_ms,
+        record.boot_id.clone(),
+        yoctui_model::DaemonStateLimits::default(),
+    )?;
+    let daemon_log_limit = daemon_state.limits.logs;
+    yoctui_app::reduce_daemon_state(
+        &mut daemon_state,
+        yoctui_model::DaemonStateAction::ReplaceJobs(Box::new(daemon_job_state_from_app(
+            &App::new(daemon_log_limit, MAX_FRAME_BYTES),
+        ))),
+    )?;
     write_runtime_record(&paths, &record)?;
     let record_guard = DaemonRuntimeGuard {
         paths: paths.clone(),
@@ -1110,39 +1123,66 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
             Err(error) => return Err(error.into()),
         };
         connection.set_timeout(Some(Duration::from_secs(2)))?;
-        match connection.receive::<ClientMessage>() {
-            Ok(ClientMessage::Hello(_)) => connection.send(&ServerMessage::Hello(DaemonHello {
-                selected_version: ProtocolVersion::CURRENT,
-                daemon_instance_id: instance,
-                boot_id: record.boot_id.clone(),
-                capabilities: vec![Capability::GracefulShutdown],
-                limits: ProtocolLimits {
-                    maximum_frame_bytes: MAX_FRAME_BYTES as u32,
-                    maximum_snapshot_bytes: MAX_FRAME_BYTES as u32,
-                    maximum_pending_requests: 64,
-                    maximum_queue_depth: 256,
-                    maximum_terminal_rows: 512,
-                    maximum_terminal_columns: 512,
-                },
-            }))?,
-            Ok(ClientMessage::Command(request))
-                if matches!(request.command, DaemonCommand::PrepareShutdown) =>
-            {
-                connection.send(&ServerMessage::CommandResult(CommandResult {
-                    request_id: request.request_id,
-                    outcome: CommandOutcome::Completed,
-                }))?;
-                shutting_down = true;
+        let mut negotiated = false;
+        loop {
+            match connection.receive::<ClientMessage>() {
+                Ok(ClientMessage::Hello(_)) => {
+                    connection.send(&ServerMessage::Hello(DaemonHello {
+                        selected_version: ProtocolVersion::CURRENT,
+                        daemon_instance_id: instance,
+                        boot_id: record.boot_id.clone(),
+                        capabilities: vec![
+                            Capability::StateSnapshots,
+                            Capability::BackgroundJobs,
+                            Capability::GracefulShutdown,
+                        ],
+                        limits: ProtocolLimits {
+                            maximum_frame_bytes: MAX_FRAME_BYTES as u32,
+                            maximum_snapshot_bytes: MAX_FRAME_BYTES as u32,
+                            maximum_pending_requests: 64,
+                            maximum_queue_depth: 256,
+                            maximum_terminal_rows: 512,
+                            maximum_terminal_columns: 512,
+                        },
+                    }))?;
+                    negotiated = true;
+                }
+                Ok(ClientMessage::Attach { .. }) if negotiated => {
+                    let snapshot = daemon_protocol_snapshot(&daemon_state);
+                    let replayed_through = snapshot.sequence;
+                    connection.send(&ServerMessage::Attached {
+                        snapshot,
+                        replayed_through,
+                    })?;
+                }
+                Ok(ClientMessage::Detach) if negotiated => {
+                    connection.send(&ServerMessage::Detaching)?;
+                    break;
+                }
+                Ok(ClientMessage::Command(request))
+                    if matches!(request.command, DaemonCommand::PrepareShutdown) =>
+                {
+                    connection.send(&ServerMessage::CommandResult(CommandResult {
+                        request_id: request.request_id,
+                        outcome: CommandOutcome::Completed,
+                    }))?;
+                    shutting_down = true;
+                    break;
+                }
+                Ok(_) => connection.send(&ServerMessage::Error(
+                    yoctui_protocol::daemon::ProtocolFailure {
+                        request_id: None,
+                        code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
+                        message: "complete the daemon handshake before attach; this runtime currently supports state attach, detach, and graceful shutdown".into(),
+                        retryable: false,
+                    },
+                ))?,
+                Err(IpcError::Disconnected | IpcError::Timeout(_)) => break,
+                Err(error) => {
+                    tracing::warn!(%error, "daemon client disconnected during request");
+                    break;
+                }
             }
-            Ok(_) => connection.send(&ServerMessage::Error(
-                yoctui_protocol::daemon::ProtocolFailure {
-                    request_id: None,
-                    code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
-                    message: "daemon lifecycle shell supports handshake and shutdown only".into(),
-                    retryable: false,
-                },
-            ))?,
-            Err(error) => tracing::warn!(%error, "daemon client disconnected during request"),
         }
     }
     remove_runtime_record(&paths, instance)?;

@@ -1292,6 +1292,16 @@ searches, selections, and notifications remain untouched. The app boundary
 exposes mechanical capture/install functions so later protocol/runtime work
 does not parse or reinterpret workflow state.
 
+The foreground daemon constructs `DaemonGlobalState` from its authenticated
+runtime instance and boot metadata, installs initial typed job state through
+`DaemonStateAction` and the checked daemon reducer, and retains that authority
+outside every client connection. After a successful protocol handshake,
+`Attach` returns a typed protocol snapshot derived by the app boundary;
+`Detach` closes only that client attachment. Reattachment reads the same
+daemon-owned state and revision. The current runtime snapshot is deliberately
+an attach baseline, not the gap-free incremental synchronization promised by
+`DAEMON-SNAPSHOT-001`, and it does not move process runners into clients.
+
 ### Local IPC and instance identity
 
 Unix uses a Unix-domain socket. The deterministic default is

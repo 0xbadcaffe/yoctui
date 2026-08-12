@@ -184,7 +184,12 @@ complete: the daemon boundary now reuses the existing typed build,
 background-job, task/history/log, artifact, SDK, testing, security, QA,
 maintenance, QEMU, and Wic models plus bounded PTY metadata, while replica
 installation deliberately leaves screen, focus, theme, editors, and
-notifications client-local. Foreground runtime ownership is active.
+notifications client-local. Foreground runtime ownership is complete: the
+authenticated daemon instance initializes state through the checked reducer,
+advertises snapshot capability, and returns the same authoritative typed
+snapshot after a real client detach/reattach while remaining alive. Gap-free
+incremental synchronization remains separately gated. The daemon-state parent
+gate is active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

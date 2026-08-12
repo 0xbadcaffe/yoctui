@@ -33,6 +33,235 @@ pub fn install_daemon_job_replica(
     jobs.install_replica(app);
 }
 
+pub fn reduce_daemon_state(
+    state: &mut yoctui_model::DaemonGlobalState,
+    action: yoctui_model::DaemonStateAction,
+) -> Result<yoctui_model::DaemonRevision, yoctui_model::DaemonStateError> {
+    yoctui_model::update_daemon_state(state, action)
+}
+
+pub fn client_replica_from_daemon(
+    state: &yoctui_model::DaemonGlobalState,
+) -> yoctui_model::ClientDaemonReplica {
+    let mut replica = yoctui_model::ClientDaemonReplica::default();
+    replica.begin_synchronization();
+    replica.replace(state.clone());
+    replica
+}
+
+pub fn daemon_protocol_snapshot(
+    state: &yoctui_model::DaemonGlobalState,
+) -> yoctui_protocol::daemon::DaemonSnapshot {
+    use yoctui_protocol::daemon::{
+        BitBakeCapability, BitBakeState, ClientSummary, DaemonInstanceId, DaemonSnapshot,
+        LifecycleState, LogRecord, LogSeverity, ProjectProfileSummary, PtyKind, PtySessionId,
+        PtySessionSummary, TerminalDimensions, WorkspaceIdentity,
+    };
+
+    let workspace = match (&state.workspace.source_dir, &state.workspace.build_dir) {
+        (Some(source), Some(build)) => {
+            let source = source.to_string_lossy().into_owned();
+            let build = build.to_string_lossy().into_owned();
+            Some(WorkspaceIdentity {
+                identity_hash: stable_workspace_hash(&source, &build),
+                canonical_source: source,
+                canonical_build: build,
+            })
+        }
+        _ => None,
+    };
+    let project_profile = match &state.project_profile {
+        yoctui_model::ProjectProfileState::NotLoaded => ProjectProfileSummary::NotLoaded,
+        yoctui_model::ProjectProfileState::Absent => ProjectProfileSummary::Absent,
+        yoctui_model::ProjectProfileState::Loaded(profile)
+        | yoctui_model::ProjectProfileState::GenerationPreview(profile)
+        | yoctui_model::ProjectProfileState::Generating(profile) => ProjectProfileSummary::Loaded {
+            schema_version: profile.schema_version,
+        },
+        yoctui_model::ProjectProfileState::Invalid(message) => ProjectProfileSummary::Invalid {
+            message: message.clone(),
+        },
+    };
+    let bitbake = BitBakeState {
+        lifecycle: daemon_bitbake_lifecycle(state.bitbake.lifecycle),
+        version: state.bitbake.version.clone(),
+        capabilities: state
+            .bitbake
+            .capabilities
+            .iter()
+            .map(|capability| match capability.as_str() {
+                "workspace_inspection" => BitBakeCapability::WorkspaceInspection,
+                "recipe_inventory" => BitBakeCapability::RecipeInventory,
+                "layer_inventory" => BitBakeCapability::LayerInventory,
+                "build_control" => BitBakeCapability::BuildControl,
+                "cancellation" => BitBakeCapability::Cancellation,
+                "server_restart" => BitBakeCapability::ServerRestart,
+                _ => BitBakeCapability::Unknown,
+            })
+            .collect(),
+        diagnostic: state.bitbake.diagnostic.clone(),
+    };
+    let jobs = state
+        .jobs
+        .as_ref()
+        .map(|jobs| {
+            jobs.background_jobs
+                .jobs
+                .iter()
+                .map(|job| yoctui_protocol::daemon::JobSummary {
+                    id: yoctui_protocol::daemon::JobId(job.id.0),
+                    kind: daemon_job_kind(job.kind),
+                    label: job.title.clone(),
+                    lifecycle: daemon_job_lifecycle(job.status),
+                    progress_current: match job.progress {
+                        yoctui_model::BackgroundJobProgress::Indeterminate => None,
+                        yoctui_model::BackgroundJobProgress::Percent(percent) => {
+                            Some(u64::from(percent))
+                        }
+                        yoctui_model::BackgroundJobProgress::Units { completed, .. } => {
+                            Some(completed)
+                        }
+                    },
+                    progress_total: match job.progress {
+                        yoctui_model::BackgroundJobProgress::Indeterminate => None,
+                        yoctui_model::BackgroundJobProgress::Percent(_) => Some(100),
+                        yoctui_model::BackgroundJobProgress::Units { total, .. } => Some(total),
+                    },
+                    exit_code: None,
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let pty_sessions = state
+        .jobs
+        .as_ref()
+        .map(|jobs| {
+            jobs.pty_sessions
+                .iter()
+                .map(|session| PtySessionSummary {
+                    id: PtySessionId(session.id),
+                    name: session.name.clone(),
+                    kind: match session.kind.as_str() {
+                        "build_shell" => PtyKind::BuildShell,
+                        "source_shell" => PtyKind::SourceShell,
+                        "layer_shell" => PtyKind::LayerShell,
+                        "recipe_shell" => PtyKind::RecipeShell,
+                        "devtool_shell" => PtyKind::DevtoolShell,
+                        "devshell" => PtyKind::Devshell,
+                        "menuconfig" => PtyKind::Menuconfig,
+                        "sdk_shell" => PtyKind::SdkShell,
+                        "native_shell" => PtyKind::NativeShell,
+                        _ => PtyKind::Utility,
+                    },
+                    cwd: String::new(),
+                    lifecycle: match session.lifecycle {
+                        yoctui_model::DaemonPtyLifecycle::Running => LifecycleState::Running,
+                        yoctui_model::DaemonPtyLifecycle::Exited => LifecycleState::Exited,
+                        yoctui_model::DaemonPtyLifecycle::Lost => LifecycleState::Lost,
+                    },
+                    dimensions: TerminalDimensions {
+                        columns: 80,
+                        rows: 24,
+                    },
+                    writer: None,
+                    writer_epoch: 0,
+                    viewers: 0,
+                    exit_code: None,
+                    restartable: session.restartable,
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let mut recent_logs: Vec<LogRecord> = state
+        .recent_logs
+        .iter()
+        .map(|message| LogRecord {
+            source: "daemon".into(),
+            severity: LogSeverity::Info,
+            message: message.clone(),
+            unix_ms: 0,
+        })
+        .chain(state.recent_errors.iter().map(|message| LogRecord {
+            source: "daemon".into(),
+            severity: LogSeverity::Error,
+            message: message.clone(),
+            unix_ms: 0,
+        }))
+        .collect();
+    if recent_logs.len() > state.limits.logs {
+        recent_logs.drain(..recent_logs.len() - state.limits.logs);
+    }
+
+    DaemonSnapshot {
+        daemon_instance_id: DaemonInstanceId(state.revision.instance_id.0),
+        sequence: state.revision.sequence,
+        generation: state.revision.generation,
+        workspace,
+        project_profile,
+        bitbake,
+        jobs,
+        pty_sessions,
+        clients: Vec::<ClientSummary>::new(),
+        recent_logs,
+        recovery_warnings: state.session.recovery_warnings.clone(),
+    }
+}
+
+fn stable_workspace_hash(source: &str, build: &str) -> String {
+    let mut hash = 0xcbf29ce484222325_u64;
+    for byte in source.bytes().chain([0]).chain(build.bytes()) {
+        hash ^= u64::from(byte);
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    format!("{hash:016x}")
+}
+
+fn daemon_bitbake_lifecycle(
+    lifecycle: yoctui_model::DaemonBitBakeLifecycle,
+) -> yoctui_protocol::daemon::LifecycleState {
+    use yoctui_protocol::daemon::LifecycleState;
+    match lifecycle {
+        yoctui_model::DaemonBitBakeLifecycle::Disconnected => LifecycleState::Disconnected,
+        yoctui_model::DaemonBitBakeLifecycle::Connecting => LifecycleState::Connecting,
+        yoctui_model::DaemonBitBakeLifecycle::Connected => LifecycleState::Running,
+        yoctui_model::DaemonBitBakeLifecycle::Stopping => LifecycleState::Stopping,
+        yoctui_model::DaemonBitBakeLifecycle::Failed => LifecycleState::Failed,
+        yoctui_model::DaemonBitBakeLifecycle::Recovering => LifecycleState::Connecting,
+    }
+}
+
+fn daemon_job_kind(kind: yoctui_model::BackgroundJobKind) -> yoctui_protocol::daemon::JobKind {
+    use yoctui_protocol::daemon::JobKind;
+    match kind {
+        yoctui_model::BackgroundJobKind::Build => JobKind::BitBakeBuild,
+        yoctui_model::BackgroundJobKind::CveCheck => JobKind::Security,
+        yoctui_model::BackgroundJobKind::Spdx => JobKind::Qa,
+        yoctui_model::BackgroundJobKind::Qemu => JobKind::Qemu,
+        yoctui_model::BackgroundJobKind::Wic => JobKind::Wic,
+        yoctui_model::BackgroundJobKind::Sdk => JobKind::Sdk,
+        yoctui_model::BackgroundJobKind::Test => JobKind::Testing,
+        yoctui_model::BackgroundJobKind::Devtool => JobKind::Devtool,
+        yoctui_model::BackgroundJobKind::Maintenance => JobKind::Maintenance,
+    }
+}
+
+fn daemon_job_lifecycle(
+    status: yoctui_model::BackgroundJobStatus,
+) -> yoctui_protocol::daemon::LifecycleState {
+    use yoctui_protocol::daemon::LifecycleState;
+    match status {
+        yoctui_model::BackgroundJobStatus::Queued | yoctui_model::BackgroundJobStatus::Starting => {
+            LifecycleState::Connecting
+        }
+        yoctui_model::BackgroundJobStatus::Running => LifecycleState::Running,
+        yoctui_model::BackgroundJobStatus::Cancelling => LifecycleState::Stopping,
+        yoctui_model::BackgroundJobStatus::Succeeded => LifecycleState::Exited,
+        yoctui_model::BackgroundJobStatus::Failed => LifecycleState::Failed,
+        yoctui_model::BackgroundJobStatus::Cancelled => LifecycleState::Exited,
+        yoctui_model::BackgroundJobStatus::Lost => LifecycleState::Lost,
+    }
+}
+
 pub fn qa_layer_capability_action(response: QaLayerCapabilityResponse) -> Action {
     match response {
         QaLayerCapabilityResponse::Available(snapshot) => {
@@ -2961,6 +3190,38 @@ mod tests {
         assert_eq!(client.background_jobs, authoritative.background_jobs);
         assert_eq!(client.screen, Screen::Layers);
         assert_eq!(client.focus, FocusTarget::Navigator);
+    }
+
+    #[test]
+    fn daemon_state_runtime_reduces_authority_and_exposes_current_replica() {
+        let mut state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([7; 16]),
+            123,
+            "boot-id".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let jobs = daemon_job_state_from_app(&yoctui_model::App::new(16, 4096));
+        let revision = reduce_daemon_state(
+            &mut state,
+            yoctui_model::DaemonStateAction::ReplaceJobs(Box::new(jobs)),
+        )
+        .unwrap();
+
+        assert_eq!(revision.sequence, 1);
+        assert_eq!(revision.generation, 1);
+        assert!(state.jobs.is_some());
+        let replica = client_replica_from_daemon(&state);
+        assert_eq!(replica.status, yoctui_model::ClientReplicaStatus::Current);
+        assert_eq!(replica.state.as_ref(), Some(&state));
+        let snapshot = daemon_protocol_snapshot(&state);
+        assert_eq!(snapshot.daemon_instance_id.0, [7; 16]);
+        assert_eq!(snapshot.sequence, 1);
+        assert_eq!(snapshot.generation, 1);
+        assert!(matches!(
+            snapshot.bitbake.lifecycle,
+            yoctui_protocol::daemon::LifecycleState::Disconnected
+        ));
     }
     use std::{path::PathBuf, time::Duration};
     use yoctui_model::{

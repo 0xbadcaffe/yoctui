@@ -177,6 +177,36 @@ impl DaemonGlobalState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DaemonStateAction {
+    ReplaceWorkspace(Workspace),
+    ReplaceBuildEnvironment(BuildEnvironmentState),
+    ReplaceProjectProfile(ProjectProfileState),
+    ReplaceBitBake(DaemonBitBakeState),
+    ReplaceJobs(Box<DaemonJobState>),
+    RecordLog(String),
+    RecordError(String),
+    RecordTaskHistory(String),
+}
+
+pub fn update_daemon_state(
+    state: &mut DaemonGlobalState,
+    action: DaemonStateAction,
+) -> Result<DaemonRevision, DaemonStateError> {
+    state.mutate(|state| match action {
+        DaemonStateAction::ReplaceWorkspace(workspace) => state.workspace = workspace,
+        DaemonStateAction::ReplaceBuildEnvironment(environment) => {
+            state.build_environment = environment;
+        }
+        DaemonStateAction::ReplaceProjectProfile(profile) => state.project_profile = profile,
+        DaemonStateAction::ReplaceBitBake(bitbake) => state.bitbake = bitbake,
+        DaemonStateAction::ReplaceJobs(jobs) => state.jobs = Some(*jobs),
+        DaemonStateAction::RecordLog(message) => state.recent_logs.push_back(message),
+        DaemonStateAction::RecordError(message) => state.recent_errors.push_back(message),
+        DaemonStateAction::RecordTaskHistory(message) => state.task_history.push_back(message),
+    })
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DaemonPtySessionMetadata {
     pub id: u64,
     pub name: String,

@@ -2947,18 +2947,18 @@ notes = "DaemonJobState now captures and installs replicas of the existing typed
 id = "DAEMON-STATE-RUNTIME-001"
 milestone = "M11"
 title = "Make daemon runtime own authoritative state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 405
 required = true
 depends_on = ["DAEMON-STATE-JOBS-001", "DAEMON-LIFECYCLE-001"]
 verify = ["cargo test -p yoctui daemon_state_runtime", "cargo test -p yoctui-app daemon_state_runtime"]
-notes = "Install the typed global state in the foreground daemon runtime, route typed mutations through its reducer, and expose client replicas without moving long-running ownership back into the interactive client."
+notes = "The foreground daemon now constructs authoritative typed global state from its authenticated instance and boot metadata, installs job state only through the checked daemon reducer, advertises snapshot capability, and serves stable typed attach snapshots across client detach/reattach. A real Unix-socket process test proves client exit leaves daemon authority running; incremental synchronization remains separately gated."
 
 [[task]]
 id = "DAEMON-STATE-001"
 milestone = "M11"
 title = "Move authoritative long-lived state into daemon"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 405
 required = true
 depends_on = ["DAEMON-STATE-MODEL-001", "DAEMON-STATE-JOBS-001", "DAEMON-STATE-RUNTIME-001"]
