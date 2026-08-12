@@ -2,22 +2,21 @@
 
 ## Task
 
-**ID:** UX-POPUP-OPS-001
-**Title:** Move QA, security, and maintenance editable drafts into TOML popups
+**ID:** UX-POPUP-OPS-SECURITY-001
+**Title:** Move Security report import into a TOML popup
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate operational editable drafts to bounded TOML popups while retaining
-their exact typed validation, preview, review, and confirmation semantics.
+Migrate Security report import to the shared bounded TOML popup while
+retaining canonical report identity, bounded adapter import, and typed
+validation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model qa
 cargo test -p yoctui-model security
-cargo test -p yoctui-model maintenance
-cargo test -p yoctui-ui qa
+cargo test -p yoctui-app security
 cargo test -p yoctui-ui security
-cargo test -p yoctui-ui maintenance
+cargo check -p yoctui
 ```

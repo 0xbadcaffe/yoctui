@@ -2676,15 +2676,70 @@ verify = ["cargo test -p yoctui-model popup_editor", "cargo test -p yoctui-ui po
 notes = "The audited child set stores PopupEditor in every declared workflow dialog, routes input through shared typed actions, renders the common shortcut row, and passes focused plus full-workspace gates without bypassing workflow previews or confirmations."
 
 [[task]]
+id = "UX-POPUP-OPS-SECURITY-001"
+milestone = "M8"
+title = "Move Security report import into a TOML popup"
+status = "IN_PROGRESS"
+priority = 158
+required = true
+depends_on = ["UX-POPUP-TEST-JUNIT-001"]
+verify = ["cargo test -p yoctui-model security", "cargo test -p yoctui-app security", "cargo test -p yoctui-ui security", "cargo check -p yoctui"]
+notes = "Migrate the Security report import path while retaining canonical report identity, bounded adapter import, and typed validation."
+
+[[task]]
+id = "UX-POPUP-OPS-QA-001"
+milestone = "M8"
+title = "Move QA report import into a TOML popup"
+status = "NOT_STARTED"
+priority = 159
+required = true
+depends_on = ["UX-POPUP-OPS-SECURITY-001"]
+verify = ["cargo test -p yoctui-model qa", "cargo test -p yoctui-app qa", "cargo test -p yoctui-ui qa", "cargo check -p yoctui"]
+notes = "Migrate the QA report import path while retaining exact scope/report identity, bounded adapter import, and typed validation."
+
+[[task]]
+id = "UX-POPUP-OPS-MAINT-SSTATE-001"
+milestone = "M8"
+title = "Move Maintenance sstate forms into TOML popups"
+status = "NOT_STARTED"
+priority = 160
+required = true
+depends_on = ["UX-POPUP-OPS-QA-001"]
+verify = ["cargo test -p yoctui-model maintenance_sstate", "cargo test -p yoctui-app maintenance_sstate", "cargo test -p yoctui-ui maintenance_sstate", "cargo check -p yoctui"]
+notes = "Migrate readiness and cleanup editable drafts without weakening exact candidate previews or destructive cleanup phrase confirmation."
+
+[[task]]
+id = "UX-POPUP-OPS-MAINT-SERVICE-001"
+milestone = "M8"
+title = "Move Maintenance service forms into TOML popups"
+status = "NOT_STARTED"
+priority = 161
+required = true
+depends_on = ["UX-POPUP-OPS-MAINT-SSTATE-001"]
+verify = ["cargo test -p yoctui-model maintenance_service", "cargo test -p yoctui-app maintenance_service", "cargo test -p yoctui-ui maintenance_service", "cargo check -p yoctui"]
+notes = "Migrate PR-service import/export drafts without weakening canonical destination checks, side-effect previews, or confirmation."
+
+[[task]]
+id = "UX-POPUP-OPS-MAINT-RELEASE-001"
+milestone = "M8"
+title = "Move Maintenance release forms into TOML popups"
+status = "NOT_STARTED"
+priority = 162
+required = true
+depends_on = ["UX-POPUP-OPS-MAINT-SERVICE-001"]
+verify = ["cargo test -p yoctui-model maintenance_release", "cargo test -p yoctui-app maintenance_release", "cargo test -p yoctui-ui maintenance_release", "cargo check -p yoctui"]
+notes = "Migrate locked-cache, build-history, and Git archive drafts while retaining repository evidence, local/network separation, and explicit push confirmation."
+
+[[task]]
 id = "UX-POPUP-OPS-001"
 milestone = "M8"
 title = "Move QA, security, and maintenance editable drafts into TOML popups"
-status = "IN_PROGRESS"
-priority = 161
+status = "NOT_STARTED"
+priority = 163
 required = true
-depends_on = ["UX-POPUP-TEST-JUNIT-001"]
+depends_on = ["UX-POPUP-OPS-SECURITY-001", "UX-POPUP-OPS-QA-001", "UX-POPUP-OPS-MAINT-SSTATE-001", "UX-POPUP-OPS-MAINT-SERVICE-001", "UX-POPUP-OPS-MAINT-RELEASE-001"]
 verify = ["cargo test -p yoctui-model qa", "cargo test -p yoctui-model security", "cargo test -p yoctui-model maintenance", "cargo test -p yoctui-ui qa", "cargo test -p yoctui-ui security", "cargo test -p yoctui-ui maintenance"]
-notes = "Migrate operational editable drafts while retaining exact validation, review, and confirmation semantics."
+notes = "Parent gate for atomic Security import, QA import, Maintenance sstate, Maintenance service, and Maintenance release popup migrations."
 
 # M10 — Optional Project Profile. Profiles record team intent only; BitBake and
 # user-local settings remain authoritative for execution and personal choices.
