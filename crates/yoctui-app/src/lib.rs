@@ -390,6 +390,15 @@ impl DaemonClientSnapshot {
         self.status = yoctui_model::ClientReplicaStatus::Current;
     }
 
+    pub fn replace_app(
+        &mut self,
+        app: &mut yoctui_model::App,
+        snapshot: yoctui_protocol::daemon::DaemonSnapshot,
+    ) {
+        self.replace(snapshot);
+        self.install_app(app);
+    }
+
     pub fn apply_event(
         &mut self,
         event: &yoctui_protocol::daemon::SequencedEvent,
@@ -406,6 +415,20 @@ impl DaemonClientSnapshot {
         Ok(())
     }
 
+    pub fn apply_event_to_app(
+        &mut self,
+        app: &mut yoctui_model::App,
+        event: &yoctui_protocol::daemon::SequencedEvent,
+    ) -> Result<(), DaemonClientSyncError> {
+        self.apply_event(event)?;
+        self.install_app(app);
+        Ok(())
+    }
+
+    pub fn install_app(&self, app: &mut yoctui_model::App) {
+        app.daemon = daemon_client_view(self.status, self.snapshot.as_ref());
+    }
+
     pub fn resume_cursor(&self) -> Option<yoctui_protocol::daemon::ResumeCursor> {
         if self.status != yoctui_model::ClientReplicaStatus::Current {
             return None;
@@ -420,6 +443,82 @@ impl DaemonClientSnapshot {
 
     pub fn disconnect(&mut self) {
         self.status = yoctui_model::ClientReplicaStatus::Disconnected;
+    }
+
+    pub fn disconnect_app(&mut self, app: &mut yoctui_model::App) {
+        self.disconnect();
+        self.install_app(app);
+    }
+}
+
+fn daemon_client_view(
+    status: yoctui_model::ClientReplicaStatus,
+    snapshot: Option<&yoctui_protocol::daemon::DaemonSnapshot>,
+) -> yoctui_model::ClientDaemonView {
+    use yoctui_model::{ClientDaemonJobSummary, ClientDaemonPtySummary, ClientDaemonView};
+    let Some(snapshot) = snapshot else {
+        return ClientDaemonView {
+            status,
+            ..ClientDaemonView::default()
+        };
+    };
+    ClientDaemonView {
+        status,
+        instance_identity: Some(
+            snapshot
+                .daemon_instance_id
+                .0
+                .iter()
+                .take(4)
+                .map(|byte| format!("{byte:02x}"))
+                .collect(),
+        ),
+        sequence: snapshot.sequence,
+        generation: snapshot.generation,
+        bitbake: client_daemon_lifecycle(snapshot.bitbake.lifecycle),
+        jobs: snapshot
+            .jobs
+            .iter()
+            .map(|job| ClientDaemonJobSummary {
+                id: job.id.0,
+                label: job.label.clone(),
+                lifecycle: client_daemon_lifecycle(job.lifecycle),
+            })
+            .collect(),
+        pty_sessions: snapshot
+            .pty_sessions
+            .iter()
+            .map(|pty| ClientDaemonPtySummary {
+                id: pty.id.0,
+                name: pty.name.clone(),
+                lifecycle: client_daemon_lifecycle(pty.lifecycle),
+                viewers: pty.viewers,
+            })
+            .collect(),
+        connected_clients: snapshot.clients.len(),
+        recent_logs: snapshot
+            .recent_logs
+            .iter()
+            .map(|record| record.message.clone())
+            .collect(),
+        recovery_warnings: snapshot.recovery_warnings.clone(),
+    }
+}
+
+fn client_daemon_lifecycle(
+    lifecycle: yoctui_protocol::daemon::LifecycleState,
+) -> yoctui_model::ClientDaemonLifecycle {
+    use yoctui_model::ClientDaemonLifecycle;
+    match lifecycle {
+        yoctui_protocol::daemon::LifecycleState::Disconnected => {
+            ClientDaemonLifecycle::Disconnected
+        }
+        yoctui_protocol::daemon::LifecycleState::Connecting => ClientDaemonLifecycle::Connecting,
+        yoctui_protocol::daemon::LifecycleState::Running => ClientDaemonLifecycle::Running,
+        yoctui_protocol::daemon::LifecycleState::Stopping => ClientDaemonLifecycle::Stopping,
+        yoctui_protocol::daemon::LifecycleState::Exited => ClientDaemonLifecycle::Exited,
+        yoctui_protocol::daemon::LifecycleState::Failed => ClientDaemonLifecycle::Failed,
+        yoctui_protocol::daemon::LifecycleState::Lost => ClientDaemonLifecycle::Lost,
     }
 }
 
@@ -3453,6 +3552,92 @@ mod tests {
             yoctui_model::ClientReplicaStatus::Disconnected
         );
         assert_eq!(client.snapshot.as_ref(), Some(&initial));
+    }
+
+    #[test]
+    fn client_replica_installs_authority_without_replacing_presentation() {
+        use yoctui_protocol::daemon::{
+            DaemonEvent, JobId, JobKind, JobSummary, LifecycleState, PtyKind, PtySessionId,
+            PtySessionSummary, TerminalDimensions,
+        };
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([4; 16]),
+            123,
+            "boot-id".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut initial = daemon_protocol_snapshot(&state);
+        initial.bitbake.lifecycle = LifecycleState::Running;
+        initial.jobs.push(JobSummary {
+            id: JobId(8),
+            kind: JobKind::BitBakeBuild,
+            label: "core-image-minimal".into(),
+            lifecycle: LifecycleState::Running,
+            progress_current: Some(3),
+            progress_total: Some(10),
+            exit_code: None,
+        });
+        initial.pty_sessions.push(PtySessionSummary {
+            id: PtySessionId(9),
+            name: "devshell".into(),
+            kind: PtyKind::Devshell,
+            cwd: "/build".into(),
+            lifecycle: LifecycleState::Running,
+            dimensions: TerminalDimensions {
+                columns: 80,
+                rows: 24,
+            },
+            writer: None,
+            writer_epoch: 0,
+            viewers: 2,
+            exit_code: None,
+            restartable: true,
+        });
+        let mut app = yoctui_model::App::new(16, 4096);
+        app.screen = Screen::Recipes;
+        app.focus = FocusTarget::Inspector;
+        app.theme = yoctui_model::Theme::MatrixGreen;
+        app.dialogs
+            .push_back(yoctui_model::Dialog::QuitConfirmation);
+        let mut client = DaemonClientSnapshot::default();
+        client.begin_synchronization();
+        client.replace_app(&mut app, initial);
+        assert_eq!(
+            app.daemon.status,
+            yoctui_model::ClientReplicaStatus::Current
+        );
+        assert_eq!(
+            app.daemon.bitbake,
+            yoctui_model::ClientDaemonLifecycle::Running
+        );
+        assert_eq!(app.daemon.jobs[0].label, "core-image-minimal");
+        assert_eq!(app.daemon.pty_sessions[0].viewers, 2);
+        assert_eq!(app.screen, Screen::Recipes);
+        assert_eq!(app.focus, FocusTarget::Inspector);
+        assert_eq!(app.theme, yoctui_model::Theme::MatrixGreen);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(yoctui_model::Dialog::QuitConfirmation)
+        ));
+
+        client
+            .apply_event_to_app(
+                &mut app,
+                &yoctui_protocol::daemon::SequencedEvent {
+                    sequence: 1,
+                    generation: 1,
+                    event: DaemonEvent::JobRemoved { job_id: JobId(8) },
+                },
+            )
+            .unwrap();
+        assert!(app.daemon.jobs.is_empty());
+        client.disconnect_app(&mut app);
+        assert_eq!(
+            app.daemon.status,
+            yoctui_model::ClientReplicaStatus::Disconnected
+        );
+        assert_eq!(app.screen, Screen::Recipes);
     }
 
     #[cfg(unix)]

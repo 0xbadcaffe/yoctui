@@ -343,6 +343,63 @@ pub enum ClientReplicaStatus {
     Stale,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClientDaemonLifecycle {
+    Disconnected,
+    Connecting,
+    Running,
+    Stopping,
+    Exited,
+    Failed,
+    Lost,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClientDaemonJobSummary {
+    pub id: u64,
+    pub label: String,
+    pub lifecycle: ClientDaemonLifecycle,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClientDaemonPtySummary {
+    pub id: u64,
+    pub name: String,
+    pub lifecycle: ClientDaemonLifecycle,
+    pub viewers: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClientDaemonView {
+    pub status: ClientReplicaStatus,
+    pub instance_identity: Option<String>,
+    pub sequence: u64,
+    pub generation: u64,
+    pub bitbake: ClientDaemonLifecycle,
+    pub jobs: Vec<ClientDaemonJobSummary>,
+    pub pty_sessions: Vec<ClientDaemonPtySummary>,
+    pub connected_clients: usize,
+    pub recent_logs: Vec<String>,
+    pub recovery_warnings: Vec<String>,
+}
+
+impl Default for ClientDaemonView {
+    fn default() -> Self {
+        Self {
+            status: ClientReplicaStatus::Disconnected,
+            instance_identity: None,
+            sequence: 0,
+            generation: 0,
+            bitbake: ClientDaemonLifecycle::Disconnected,
+            jobs: Vec::new(),
+            pty_sessions: Vec::new(),
+            connected_clients: 0,
+            recent_logs: Vec::new(),
+            recovery_warnings: Vec::new(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClientDaemonReplica {
     pub status: ClientReplicaStatus,

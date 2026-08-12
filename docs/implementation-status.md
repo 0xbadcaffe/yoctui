@@ -252,6 +252,10 @@ active next. The transport now negotiates the bounded protocol over same-user
 Unix IPC, attaches/resumes with verified instance watermarks, exposes typed
 events and correlated command results, answers heartbeat messages, and waits
 for explicit detach acknowledgement. Replica installation is active next.
+Replica installation is complete: typed daemon BitBake/job/PTY/client/log/
+recovery state renders in the persistent header while every presentation field
+remains client-local across replacement and disconnect. Interactive runtime
+wiring and process-ownership migration are active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

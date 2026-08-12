@@ -2,21 +2,21 @@
 
 ## Task
 
-**ID:** CLIENT-REPLICA-001
-**Title:** Install daemon state into the interactive client replica
+**ID:** CLIENT-RUNTIME-001
+**Title:** Wire Ratatui runtime to daemon-owned execution
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Map a bounded authoritative daemon snapshot and ordered incremental events into
-typed state consumed by the Ratatui client. Preserve focus, screen, theme,
-dialogs, editor state, layout, and other presentation choices locally while
-daemon-owned BitBake, jobs, logs, recovery, clients, and PTY summaries replace
-stale replicas safely.
+Connect interactive startup and the terminal event loop to the typed daemon
+transport and client replica. Route global execution actions to daemon commands,
+process daemon state updates without blocking UI input, detach cleanly on exit,
+and remove remaining interactive-client ownership of long-running work without
+creating a parallel command path.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app client_replica
-cargo test -p yoctui-ui client_replica
+cargo test -p yoctui client_runtime
+cargo test -p yoctui-ui client_runtime
 ```

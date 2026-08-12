@@ -646,12 +646,16 @@ pub fn render(frame: &mut Frame, app: &App) {
     );
     frame.render_widget(
         Paragraph::new(format!(
-            " Yoctui | {:?} | Yocto: {} | Target {} | MACHINE {} | DISTRO {}\n Status {:?} | Tasks {}/{} | Active {} | W {} | E {} | {} | CPU {} | {}",
+            " Yoctui | {:?} | Yocto: {} | Target {} | MACHINE {} | DISTRO {}\n Daemon {:?} | BB {:?} | Jobs {} | PTYs {} | Status {:?} | Tasks {}/{} | Active {} | W {} | E {} | {} | CPU {} | {}",
             app.backend,
             active_yocto(app),
             app.build.target.as_deref().unwrap_or("not selected"),
             machine,
             distro,
+            app.daemon.status,
+            app.daemon.bitbake,
+            app.daemon.jobs.len(),
+            app.daemon.pty_sessions.len(),
             app.build.status,
             app.build.completed,
             app.build.total.map_or_else(|| "?".into(), |total| total.to_string()),
@@ -9788,6 +9792,36 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect()
+    }
+
+    #[test]
+    fn client_replica_status_renders_without_replacing_local_presentation() {
+        let mut app = App::new(32, 8192);
+        app.screen = Screen::Layers;
+        app.focus = FocusTarget::Navigator;
+        app.theme = Theme::MatrixGreen;
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Running;
+        app.daemon.instance_identity = Some("04040404".into());
+        app.daemon.jobs.push(yoctui_model::ClientDaemonJobSummary {
+            id: 1,
+            label: "core-image-minimal".into(),
+            lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+        });
+        app.daemon
+            .pty_sessions
+            .push(yoctui_model::ClientDaemonPtySummary {
+                id: 2,
+                name: "devshell".into(),
+                lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                viewers: 1,
+            });
+        let output = rendered_text(&app, 160, 40);
+        assert!(output.contains("Daemon Current"), "{output}");
+        assert!(output.contains("BB Running"), "{output}");
+        assert!(output.contains("Jobs 1"), "{output}");
+        assert!(output.contains("PTYs 1"), "{output}");
+        assert!(output.contains("Layers"), "{output}");
     }
 
     fn security_report_identity(

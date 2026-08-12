@@ -3178,18 +3178,18 @@ notes = "The typed transport connects through authenticated local IPC, validates
 id = "CLIENT-REPLICA-001"
 milestone = "M11"
 title = "Install daemon state into the interactive client replica"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-TRANSPORT-001"]
 verify = ["cargo test -p yoctui-app client_replica", "cargo test -p yoctui-ui client_replica"]
-notes = "Map bounded daemon snapshots and ordered events into renderable typed client state while preserving focus, layout, dialogs, theme and other presentation state as client-local."
+notes = "yoctui-app maps gap-checked protocol snapshots/events into a protocol-free ClientDaemonView carrying revision, instance, BitBake lifecycle, daemon job/PTY summaries, client count, logs and recovery warnings. Replacement and disconnect update only the daemon replica; screen, focus, Navigator selection, theme, dialogs/editors and other presentation fields remain client-local. The persistent header renders typed replica/BitBake/job/PTY health, with focused app and TestBackend tests plus full baseline passing."
 
 [[task]]
 id = "CLIENT-RUNTIME-001"
 milestone = "M11"
 title = "Wire Ratatui runtime to daemon-owned execution"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 424
 required = true
 depends_on = ["CLIENT-REPLICA-001", "BITBAKE-SERVER-001", "PTY-ATTACH-001"]

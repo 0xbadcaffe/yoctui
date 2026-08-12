@@ -2619,6 +2619,15 @@ verified build environment and build directory and is labeled distinctly from
 an installed SDK shell. Neither route reads executable text from the optional
 project profile.
 
+The persistent header shows the client replica connection state, daemon-owned
+BitBake lifecycle, active daemon job count, and daemon PTY count. These values
+come only from the current typed daemon snapshot/event stream. Synchronizing,
+Current, Stale, and Disconnected remain visually distinct text states; a
+disconnect may retain the last values for inspection but must label them
+Disconnected. Installing or replacing daemon state never changes the selected
+screen, focused pane, Navigator row, theme, open dialog/editor, or client-local
+layout.
+
 Test result import uses `Test result import.toml` with one normalized absolute
 `root`, initially selected for immediate replacement, preserving the existing
 bounded typed import operation.

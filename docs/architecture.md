@@ -1748,6 +1748,16 @@ command requests use only protocol types. Ping handling is internal, explicit
 detach waits for daemon acknowledgement, and reconnect creates a fresh secure
 connection while retaining client identity; it never owns jobs or PTYs.
 
+Replica installation converts protocol-owned snapshots into a protocol-free
+`ClientDaemonView` in `yoctui-model`. The view carries revision, daemon
+identity, BitBake lifecycle, bounded job/PTY summaries, client count, logs and
+recovery warnings. `yoctui-app` owns the mapping and applies only gap-checked
+protocol events before replacing the derived view. Ratatui renders this typed
+state and does not inspect wire messages. Screen, focus, Navigator selection,
+theme, dialogs, editor state, layout and other presentation fields are never
+part of replica replacement; disconnect changes connection status without
+discarding the last honest daemon snapshot.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only

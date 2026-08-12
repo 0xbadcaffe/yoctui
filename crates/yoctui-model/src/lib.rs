@@ -2521,6 +2521,7 @@ fn diagnostic_for_entry(entry: &LogEntry) -> DiagnosticInfo {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
+    pub daemon: ClientDaemonView,
     pub screen: Screen,
     pub focus: FocusTarget,
     pub focus_return: Option<FocusTarget>,
@@ -2643,6 +2644,7 @@ pub struct App {
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
+            daemon: ClientDaemonView::default(),
             screen: Screen::Dashboard,
             focus: FocusTarget::Workspace,
             focus_return: None,
