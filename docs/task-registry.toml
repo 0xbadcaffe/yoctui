@@ -2503,12 +2503,12 @@ notes = "Test comparison now uses a bounded TOML Normal/Insert popup resolved ag
 id = "UX-POPUP-TEST-JUNIT-001"
 milestone = "M8"
 title = "Move JUnit export into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 157
 required = true
 depends_on = ["UX-POPUP-TEST-COMPARE-001", "UX-POPUP-EDITOR-MIGRATION-001"]
 verify = ["cargo test -p yoctui-model test_", "cargo test -p yoctui-ui test_"]
-notes = "Migrate JUnit export destination editing without weakening typed validation or confirmation."
+notes = "The production JUnit entry opens the shared bounded TOML editor with destination selected, retains exact result identity and typed canonical destination inspection, refuses existing/symlink destinations, and requires the existing explicit export confirmation; focused and full-workspace tests pass."
 
 [[task]]
 id = "UX-POPUP-EDITOR-002"
@@ -2679,7 +2679,7 @@ notes = "The audited child set stores PopupEditor in every declared workflow dia
 id = "UX-POPUP-OPS-001"
 milestone = "M8"
 title = "Move QA, security, and maintenance editable drafts into TOML popups"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 161
 required = true
 depends_on = ["UX-POPUP-TEST-JUNIT-001"]

@@ -2,19 +2,22 @@
 
 ## Task
 
-**ID:** UX-POPUP-TEST-JUNIT-001
-**Title:** Move JUnit export into a TOML popup
+**ID:** UX-POPUP-OPS-001
+**Title:** Move QA, security, and maintenance editable drafts into TOML popups
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Complete and verify the shared TOML popup path for JUnit export destination
-editing without weakening typed destination inspection, non-overwrite policy,
-or explicit export confirmation.
+Migrate operational editable drafts to bounded TOML popups while retaining
+their exact typed validation, preview, review, and confirmation semantics.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model test_
-cargo test -p yoctui-ui test_
+cargo test -p yoctui-model qa
+cargo test -p yoctui-model security
+cargo test -p yoctui-model maintenance
+cargo test -p yoctui-ui qa
+cargo test -p yoctui-ui security
+cargo test -p yoctui-ui maintenance
 ```
