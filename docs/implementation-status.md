@@ -121,7 +121,7 @@ operations popup migration is split by subsystem and workflow family; Security
 and QA report imports are complete, and Maintenance sstate form migration is
 split into readiness and cleanup tasks; both now use the shared bounded TOML
 editor without weakening typed preview, candidate discovery, or destructive
-confirmation, and their parent verification is next. Maintenance
+confirmation, and their parent gate passes; service import/export is active. Maintenance
 release forms are likewise split into locked cache, build history, and Git
 archive tasks.
 The editor agenda now has explicit adoption, typed state, routing/rendering,

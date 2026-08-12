@@ -2723,18 +2723,18 @@ notes = "Sstate cleanup now uses the shared bounded PopupEditor for native TOML 
 id = "UX-POPUP-OPS-MAINT-SSTATE-001"
 milestone = "M8"
 title = "Move Maintenance sstate forms into TOML popups"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 162
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-READINESS-001", "UX-POPUP-OPS-MAINT-CLEANUP-001"]
 verify = ["cargo test -p yoctui-model maintenance_sstate", "cargo test -p yoctui-app maintenance_sstate", "cargo test -p yoctui-ui maintenance_sstate", "cargo check -p yoctui"]
-notes = "Migrate readiness and cleanup editable drafts without weakening exact candidate previews or destructive cleanup phrase confirmation."
+notes = "The readiness and cleanup shared-popup migrations pass their combined model, app, TestBackend, CLI, baseline, and roadmap gates while retaining typed previews and the complete protected cleanup sequence."
 
 [[task]]
 id = "UX-POPUP-OPS-MAINT-SERVICE-001"
 milestone = "M8"
 title = "Move Maintenance service forms into TOML popups"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 163
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-SSTATE-001"]
