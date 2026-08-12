@@ -156,7 +156,11 @@ presentation and typed intent. It specifies secure local Unix IPC, gap-free
 attach/reconnect, explicit stop/restart, honest crash and host-reboot states,
 multi-client and single-writer arbitration, SSH-local attachment, and a shared
 implementation path for explicit standalone mode. Typed daemon protocol work
-is active.
+is complete with a separate bounded length-prefixed wire format, negotiated
+versions/capabilities/limits, typed identities, attach/replay snapshots,
+ordered events, correlated generation guards, job and PTY state, writer
+epochs, layout/mouse messages, confirmations, heartbeat, resync, and explicit
+errors. Secure local Unix IPC is active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

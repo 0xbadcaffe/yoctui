@@ -2881,18 +2881,18 @@ notes = "Architecture now fixes daemon/client ownership, state partitions, local
 id = "DAEMON-PROTOCOL-001"
 milestone = "M11"
 title = "Define typed daemon client protocol"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 401
 required = true
 depends_on = ["DAEMON-SPEC-001"]
 verify = ["cargo test -p yoctui-protocol daemon_protocol"]
-notes = "Versioned bounded framed handshake/capabilities, identities, subscriptions, snapshots/events, correlated commands/jobs/PTY/layout/mouse events, detach/shutdown/errors/stale clients, and reconnect synchronization with explicit compatibility rules."
+notes = "A separate length-prefixed 4 MiB-bounded protocol now types version/capability negotiation, identities, limits, attach/resume/subscriptions, snapshots/sequences, correlated generation-guarded commands, jobs, PTYs, writer epochs, layout/mouse input, shutdown confirmations, heartbeat, resync, errors, and additive unknown events."
 
 [[task]]
 id = "DAEMON-IPC-001"
 milestone = "M11"
 title = "Implement secure local daemon IPC"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 402
 required = true
 depends_on = ["DAEMON-PROTOCOL-001"]

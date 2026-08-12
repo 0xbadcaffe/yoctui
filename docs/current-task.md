@@ -2,20 +2,19 @@
 
 ## Task
 
-**ID:** DAEMON-PROTOCOL-001
-**Title:** Define typed daemon client protocol
+**ID:** DAEMON-IPC-001
+**Title:** Implement secure local daemon IPC
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add versioned bounded daemon/client wire types for handshake and capabilities,
-identities, subscriptions, snapshots and incremental events, correlated
-commands, jobs, PTYs, layout/mouse events, attach/detach, graceful shutdown,
-errors, stale-client detection, and reconnect synchronization with explicit
-compatibility rules.
+Implement local-only Unix-domain transport with deterministic secure runtime
+paths, socket permissions, peer verification where available, symlink-safe
+stale cleanup, bounded messages, reconnect and timeouts, and actionable daemon
+unavailable diagnostics. Do not open a network listener.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-protocol daemon_protocol
+cargo test -p yoctui-protocol daemon_ipc
 ```

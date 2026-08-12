@@ -1290,6 +1290,27 @@ ignored only when the negotiated version says that is safe. A daemon instance
 change always invalidates outstanding requests, writer leases, and incremental
 sequence assumptions.
 
+The daemon wire protocol is separate from the Python bridge's NDJSON protocol.
+It uses a four-byte big-endian length followed by one JSON payload, capped at
+4 MiB before allocation or decoding. `ClientMessage` and `ServerMessage` are
+closed typed envelopes. The handshake exchanges supported version ranges,
+client/daemon/boot identities, capabilities, and concrete limits. Attach and
+resume carry a daemon instance plus last sequence; snapshots carry both their
+sequence watermark and state generation; incremental events carry the next
+ordered sequence and resulting generation. Commands carry a request ID and
+the generation reviewed by the client, while results return the same request
+ID. Ping/Pong deadlines expose stale clients. Resync is an explicit server
+message rather than an inferred timeout.
+
+Daemon messages include typed BitBake lifecycle, job families, profile state,
+PTY summaries/screens/raw output, client presence, recovery warnings, and
+bounded logs. Client messages include subscriptions, typed build/lifecycle and
+PTY commands, writer-epoch-guarded input/resize, pane-to-session attachment,
+server-relevant terminal mouse input, detach, and heartbeat response. Unknown
+major versions fail. Within a negotiated compatible minor version, unknown
+optional capabilities and incremental daemon events decode as `Unknown` and
+are ignored; unknown commands and required snapshot fields are errors.
+
 ### Attach, detach, and synchronization
 
 Attach authenticates the local peer, negotiates protocol/capabilities, then

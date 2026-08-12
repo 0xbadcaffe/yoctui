@@ -1,4 +1,5 @@
 //! Versioned, newline-delimited JSON protocol shared with the Python bridge.
+pub mod daemon;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;
