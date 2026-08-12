@@ -118,7 +118,7 @@ tools, Testing launch, result import, and result comparison now use the shared
 bounded popup editor. The shared migration gate is complete; JUnit export is
 verified on that path, and the remaining QA, security, and maintenance
 operations popup migration is split by subsystem and workflow family; Security
-report import is active.
+report import is complete and QA report import is active.
 The editor agenda now has explicit adoption, typed state, routing/rendering,
 and migration tasks; JUnit export and operations remain sequenced after it.
 

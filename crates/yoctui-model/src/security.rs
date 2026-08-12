@@ -1,4 +1,7 @@
-use crate::{BackgroundJobId, BuildRequest, RecipeIdentity};
+use crate::{
+    BackgroundJobId, BuildRequest, PopupEditor, RecipeIdentity, popup_toml_document,
+    popup_toml_value,
+};
 use std::{
     path::{Component, Path, PathBuf},
     time::SystemTime,
@@ -673,7 +676,10 @@ impl CveStatusFilter {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SecurityDialog {
     Operation(SecurityOperationPreview),
-    Import { input: String },
+    Import {
+        editor: PopupEditor,
+        validation_error: Option<String>,
+    },
     Cancellation(SecuritySessionId),
 }
 
@@ -1391,28 +1397,66 @@ pub fn update_security(state: &mut SecurityState, action: SecurityAction) -> Sec
         }
         SecurityAction::BeginImport => SecurityTransition {
             dialog: SecurityDialogUpdate::Open(SecurityDialog::Import {
-                input: String::new(),
+                editor: {
+                    let mut editor = PopupEditor::new(popup_toml_document(
+                        "root",
+                        "",
+                        Some(
+                            "normalized absolute CVE/SPDX report or bounded directory; exact canonical non-symlink path only",
+                        ),
+                    ));
+                    let _ = editor.select_toml_value("root");
+                    editor
+                },
+                validation_error: None,
             }),
             ..SecurityTransition::none()
         },
-        SecurityAction::UpdateImport(input)
-            if input.len() <= MAX_SECURITY_TEXT_BYTES
-                && !input.chars().any(|character| character.is_control()) =>
-        {
+        SecurityAction::UpdateImport(document) if document.len() <= MAX_SECURITY_TEXT_BYTES => {
             SecurityTransition {
-                dialog: SecurityDialogUpdate::Open(SecurityDialog::Import { input }),
+                dialog: SecurityDialogUpdate::Open(SecurityDialog::Import {
+                    editor: PopupEditor::new(document),
+                    validation_error: None,
+                }),
                 ..SecurityTransition::none()
             }
         }
         SecurityAction::UpdateImport(_) => SecurityTransition::none(),
-        SecurityAction::ConfirmImport(input) => {
-            match begin_report_request(state, vec![PathBuf::from(input)]) {
+        SecurityAction::ConfirmImport(document) => {
+            let root = match popup_toml_value(&document, "root") {
+                Ok(root) => PathBuf::from(root),
+                Err(message) => {
+                    return SecurityTransition {
+                        dialog: SecurityDialogUpdate::Open(SecurityDialog::Import {
+                            editor: PopupEditor::new(document),
+                            validation_error: Some(message),
+                        }),
+                        ..SecurityTransition::none()
+                    };
+                }
+            };
+            if !absolute_normal_path(&root) {
+                return SecurityTransition {
+                    dialog: SecurityDialogUpdate::Open(SecurityDialog::Import {
+                        editor: PopupEditor::new(document),
+                        validation_error: Some("`root` must be a normalized absolute path.".into()),
+                    }),
+                    ..SecurityTransition::none()
+                };
+            }
+            match begin_report_request(state, vec![root]) {
                 Ok(effect) => SecurityTransition {
                     effect: Some(effect),
                     dialog: SecurityDialogUpdate::Close,
                     notification: None,
                 },
-                Err(message) => SecurityTransition::notify(message),
+                Err(message) => SecurityTransition {
+                    dialog: SecurityDialogUpdate::Open(SecurityDialog::Import {
+                        editor: PopupEditor::new(document),
+                        validation_error: Some(message.into()),
+                    }),
+                    ..SecurityTransition::none()
+                },
             }
         }
         SecurityAction::CancelDialog => SecurityTransition {
@@ -1883,5 +1927,29 @@ mod tests {
             Some(Effect::Security(SecurityEffect::StartBuild { .. }))
         ));
         assert_eq!(app.focus, FocusTarget::Workspace);
+    }
+
+    #[test]
+    fn security_import_popup_selects_root_and_keeps_validation_in_dialog() {
+        let mut state = SecurityState::default();
+        let transition = update_security(&mut state, SecurityAction::BeginImport);
+        assert!(matches!(
+            transition.dialog,
+            SecurityDialogUpdate::Open(SecurityDialog::Import { editor, .. })
+                if editor.selected_text() == Some("")
+        ));
+
+        let transition = update_security(
+            &mut state,
+            SecurityAction::ConfirmImport("root = \"relative/report.json\"\n".into()),
+        );
+        assert!(matches!(
+            transition.dialog,
+            SecurityDialogUpdate::Open(SecurityDialog::Import {
+                validation_error: Some(message),
+                ..
+            }) if message.contains("absolute")
+        ));
+        assert!(transition.effect.is_none());
     }
 }

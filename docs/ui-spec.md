@@ -1579,7 +1579,10 @@ reported artifact remains an explicit empty result.
 
 Security scans only canonical absolute roots supplied by typed BitBake
 configuration, exact artifact paths emitted by managed jobs, or paths chosen
-through `I` import. Import accepts one normalized absolute regular
+through `I` import. `I` opens the bounded `Security import.toml` popup with
+the `root` value selected and the shared Normal/Insert navigation, Home/End,
+copy/paste, and persistent shortcut row. Typed path errors remain visible in
+the popup. Import accepts one normalized absolute regular
 non-symlink CVE JSON/text report, SPDX JSON document, or supported archive; a
 directory import is bounded to that canonical directory and never escapes or
 recursively searches the build tree. Report identities are revalidated before

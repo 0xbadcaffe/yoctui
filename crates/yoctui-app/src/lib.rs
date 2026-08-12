@@ -1949,24 +1949,12 @@ pub fn security_dialog_action(dialog: &SecurityDialog, key: Input) -> Option<Act
             Input::Esc => security(SecurityAction::CancelDialog),
             _ => None,
         },
-        SecurityDialog::Import { input } => match key {
-            Input::Char(character)
-                if !character.is_control()
-                    && input.len() + character.len_utf8()
-                        <= yoctui_model::MAX_SECURITY_TEXT_BYTES =>
-            {
-                let mut next = input.clone();
-                next.push(character);
-                security(SecurityAction::UpdateImport(next))
+        SecurityDialog::Import { editor, .. } => match key {
+            Input::Enter => security(SecurityAction::ConfirmImport(editor.text.clone())),
+            Input::Char('q') | Input::Esc if !editor.editing => {
+                security(SecurityAction::CancelDialog)
             }
-            Input::Backspace => {
-                let mut next = input.clone();
-                next.pop();
-                security(SecurityAction::UpdateImport(next))
-            }
-            Input::Enter => security(SecurityAction::ConfirmImport(input.clone())),
-            Input::Esc => security(SecurityAction::CancelDialog),
-            _ => None,
+            input => popup_editor_action(editor.editing, input),
         },
     }
 }
@@ -5938,16 +5926,18 @@ mod tests {
             security_dialog_action(&SecurityDialog::Operation(preview.clone()), Input::Enter),
             Some(Action::Security(SecurityAction::ConfirmOperation(preview)))
         );
+        let mut import_editor = yoctui_model::PopupEditor::new("root = \"/reports\"\n".into());
+        import_editor.select_toml_value("root").unwrap();
+        import_editor.editing = true;
         assert_eq!(
             security_dialog_action(
                 &SecurityDialog::Import {
-                    input: "/reports".into()
+                    editor: import_editor,
+                    validation_error: None,
                 },
                 Input::Char('V')
             ),
-            Some(Action::Security(SecurityAction::UpdateImport(
-                "/reportsV".into()
-            ))),
+            Some(Action::EditActivePopup(PopupEditorCommand::Insert('V'))),
             "modal text editing does not leak CVE launch"
         );
         assert_eq!(

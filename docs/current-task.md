@@ -2,21 +2,20 @@
 
 ## Task
 
-**ID:** UX-POPUP-OPS-SECURITY-001
-**Title:** Move Security report import into a TOML popup
+**ID:** UX-POPUP-OPS-QA-001
+**Title:** Move QA report import into a TOML popup
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate Security report import to the shared bounded TOML popup while
-retaining canonical report identity, bounded adapter import, and typed
-validation.
+Migrate QA report import to the shared bounded TOML popup while retaining
+exact scope/report identity, bounded adapter import, and typed validation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model security
-cargo test -p yoctui-app security
-cargo test -p yoctui-ui security
+cargo test -p yoctui-model qa
+cargo test -p yoctui-app qa
+cargo test -p yoctui-ui qa
 cargo check -p yoctui
 ```

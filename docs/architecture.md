@@ -554,7 +554,9 @@ release-dependent task choices supplied as typed data, stable operation and
 report-generation identities, CVE findings and package mappings, SPDX
 document/component summaries, bounded typed mapper stream retention,
 search/filter/drill selection, previews, background-job association, and
-correlated lifecycle state. It may reuse
+correlated lifecycle state. Its explicit report import dialog owns the shared
+bounded `PopupEditor` document and validation state; the app maps keys to
+typed editor/security actions and the UI only renders that state. It may reuse
 `BuildRequest` and the shared background-job collection, but it never inspects
 the host, guesses tasks or report roots, walks directories, parses reports or
 process output, launches a child, or opens a path/URL.

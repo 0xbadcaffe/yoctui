@@ -4860,7 +4860,7 @@ pub fn config_edit_assignment(name: &str, value: &str) -> Result<String, String>
     Ok(format!("{name} = \"{escaped}\""))
 }
 
-fn popup_toml_value(content: &str, key: &str) -> Result<String, String> {
+pub(crate) fn popup_toml_value(content: &str, key: &str) -> Result<String, String> {
     let mut value = None;
     for line in content.lines() {
         let line = line.trim();
@@ -4885,7 +4885,7 @@ fn popup_toml_value(content: &str, key: &str) -> Result<String, String> {
     value.ok_or_else(|| format!("Missing `{key} = \"value\"` entry."))
 }
 
-fn popup_toml_document(key: &str, value: &str, comment: Option<&str>) -> String {
+pub(crate) fn popup_toml_document(key: &str, value: &str, comment: Option<&str>) -> String {
     let mut document = comment.map_or_else(String::new, |comment| format!("# {comment}\n"));
     document.push_str(&format!(
         "{key} = \"{}\"\n",
@@ -6281,6 +6281,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     editor,
                     validation_error,
                 }) => (editor, Some(validation_error)),
+                Some(Dialog::Security(SecurityDialog::Import {
+                    editor,
+                    validation_error,
+                })) => (editor, Some(validation_error)),
                 _ => return None,
             };
             match command {

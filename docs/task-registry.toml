@@ -2679,18 +2679,18 @@ notes = "The audited child set stores PopupEditor in every declared workflow dia
 id = "UX-POPUP-OPS-SECURITY-001"
 milestone = "M8"
 title = "Move Security report import into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 158
 required = true
 depends_on = ["UX-POPUP-TEST-JUNIT-001"]
 verify = ["cargo test -p yoctui-model security", "cargo test -p yoctui-app security", "cargo test -p yoctui-ui security", "cargo check -p yoctui"]
-notes = "Migrate the Security report import path while retaining canonical report identity, bounded adapter import, and typed validation."
+notes = "Security report import now uses the shared PopupEditor with root selected, Normal/Insert navigation, copy/paste, in-popup validation, and the same normalized absolute request passed to bounded canonical adapter validation."
 
 [[task]]
 id = "UX-POPUP-OPS-QA-001"
 milestone = "M8"
 title = "Move QA report import into a TOML popup"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 159
 required = true
 depends_on = ["UX-POPUP-OPS-SECURITY-001"]

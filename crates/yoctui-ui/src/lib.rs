@@ -799,6 +799,19 @@ pub fn render(frame: &mut Frame, app: &App) {
         test_junit_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::TestJunitExportConfirmation(preview)) = app.active_dialog() {
         test_junit_confirmation(frame, app, preview, area);
+    } else if let Some(Dialog::Security(SecurityDialog::Import {
+        editor,
+        validation_error,
+    })) = app.active_dialog()
+    {
+        toml_popup_editor(
+            frame,
+            app,
+            area,
+            "Security import.toml",
+            editor,
+            validation_error.as_deref(),
+        );
     } else if let Some(Dialog::Security(dialog)) = app.active_dialog() {
         security_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::Qa(dialog)) = app.active_dialog() {
@@ -3687,7 +3700,6 @@ fn display_security_paths(paths: &[std::path::PathBuf]) -> String {
 }
 
 fn security_dialog(frame: &mut Frame, app: &App, dialog: &SecurityDialog, area: Rect) {
-    let import_field_width = usize::from(area.width.saturating_sub(6)).saturating_mul(2);
     let (title, text, height) = match dialog {
         SecurityDialog::Operation(preview) => {
             let roots = display_security_paths(&preview.report_roots);
@@ -3703,14 +3715,7 @@ fn security_dialog(frame: &mut Frame, app: &App, dialog: &SecurityDialog, area: 
                 18,
             )
         }
-        SecurityDialog::Import { input } => (
-            "Import Security reports".into(),
-            format!(
-                "Normalized absolute CVE JSON/text, SPDX JSON/archive, or bounded directory:\n{}_\n\nOnly this exact canonical non-symlink path is scanned.\nEnter imports; Esc cancels.",
-                bounded_security_field(input, import_field_width)
-            ),
-            11,
-        ),
+        SecurityDialog::Import { .. } => unreachable!("Security import uses the shared editor"),
         SecurityDialog::Cancellation(id) => (
             "Confirm Security cancellation".into(),
             format!(
@@ -3728,15 +3733,6 @@ fn security_dialog(frame: &mut Frame, app: &App, dialog: &SecurityDialog, area: 
             .wrap(Wrap { trim: false }),
         popup,
     );
-}
-
-fn bounded_security_field(value: &str, max_chars: usize) -> String {
-    let mut characters = value.chars();
-    let mut bounded = characters.by_ref().take(max_chars).collect::<String>();
-    if characters.next().is_some() {
-        bounded.push('…');
-    }
-    bounded
 }
 
 fn security_operation_label(operation: &SecurityOperation) -> &'static str {
@@ -10044,12 +10040,19 @@ mod tests {
         }
 
         app.dialogs.clear();
+        let mut editor = yoctui_model::PopupEditor::new(format!(
+            "# exact canonical non-symlink path\nroot = \"/reports/{}\"\n",
+            "long-path-".repeat(80)
+        ));
+        editor.select_toml_value("root").unwrap();
         app.dialogs
             .push_front(Dialog::Security(SecurityDialog::Import {
-                input: format!("/reports/{}", "long-path-".repeat(80)),
+                editor,
+                validation_error: None,
             }));
         let import = rendered_text(&app, 80, 24);
-        assert!(import.contains("Import Security reports"), "{import}");
+        assert!(import.contains("Security import.toml"), "{import}");
+        assert!(import.contains("Home/End line"), "{import}");
         assert!(import.contains("canonical non-symlink"), "{import}");
 
         app.dialogs.clear();
