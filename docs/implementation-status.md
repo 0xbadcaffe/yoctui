@@ -145,7 +145,9 @@ popup now exercises reducer-owned cursor/selection, Unicode-safe movement,
 Home/End, selection replacement, clipboard copy, internal and bracketed paste,
 and a shortcut row that remains visible at every supported breakpoint. Existing
 TOML workflow migration is split into atomic build, configuration, target, Wic,
-SDK, and Testing tasks; build environment and clone migration is active.
+SDK, and Testing tasks. Build environment and clone now use shared model state,
+key routing, cursor/selection rendering, and clipboard behavior while retaining
+their typed apply/review gates; configuration and BBMASK migration is active.
 
 ## Rules
 

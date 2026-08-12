@@ -2580,18 +2580,18 @@ notes = "Split the broad migration into atomic workflow-family tasks and a final
 id = "UX-POPUP-EDITOR-BUILD-001"
 milestone = "M8"
 title = "Migrate build environment and clone popups to shared editor state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 163
 required = true
 depends_on = ["UX-POPUP-EDITOR-005"]
 verify = ["cargo test -p yoctui-model build_environment", "cargo test -p yoctui-ui build_environment", "cargo check -p yoctui"]
-notes = "Replace append-only build environment and clone TOML dialog state while preserving typed validation, review, and verification."
+notes = "Build environment and clone dialogs now use PopupEditor plus the shared app input mapper, open with their first TOML value selected, render the common cursor/selection/shortcut view, and retain typed profile validation, clone review, and verification."
 
 [[task]]
 id = "UX-POPUP-EDITOR-CONFIG-001"
 milestone = "M8"
 title = "Migrate configuration and BBMASK popups to shared editor state"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 164
 required = true
 depends_on = ["UX-POPUP-EDITOR-BUILD-001"]

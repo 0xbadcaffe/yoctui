@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** UX-POPUP-EDITOR-BUILD-001
-**Title:** Migrate build environment and clone popups to shared editor state
+**ID:** UX-POPUP-EDITOR-CONFIG-001
+**Title:** Migrate configuration and BBMASK popups to shared editor state
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Replace append-only build environment and clone TOML dialog state with the
-shared reducer-owned editor while preserving typed profile validation, clone
-review, and environment verification.
+Use the shared reducer-owned cursor, selection, navigation, and clipboard
+behavior for configuration and BBMASK TOML popups without weakening allowlisted
+configuration writes or BBMASK confirmation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model build_environment
-cargo test -p yoctui-ui build_environment
+cargo test -p yoctui-model config_
+cargo test -p yoctui-ui config_
 cargo check -p yoctui
 ```

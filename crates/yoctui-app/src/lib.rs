@@ -15,8 +15,8 @@ use yoctui_model::{
     LayerInspectorMode, LayerRelationship, LayerRelationships, MaintenanceAction,
     MaintenanceBuildHistoryField, MaintenanceCleanupField, MaintenanceDialog,
     MaintenanceGitArchiveField, MaintenanceLockedCacheField, MaintenanceReadinessField,
-    MaintenanceView, QaAction, QaDialog, QaReportFailureKind, QaReportRequest, QaView,
-    QemuOutputStream, QemuSessionId, RecipeDependencies, Screen, SdkBuildAction, SdkKind,
+    MaintenanceView, PopupEditorCommand, QaAction, QaDialog, QaReportFailureKind, QaReportRequest,
+    QaView, QemuOutputStream, QemuSessionId, RecipeDependencies, Screen, SdkBuildAction, SdkKind,
     SdkOutputStream, SdkSessionId, SecurityAction, SecurityDialog, SecurityOutputStream,
     SecurityView, Severity, TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity,
     WicCapability, WicOutput, WicOutputStream, WicSessionId,
@@ -1500,6 +1500,39 @@ pub enum Input {
     Right,
     Home,
     End,
+}
+
+pub fn popup_editor_action(editing: bool, key: Input) -> Option<Action> {
+    let command = if editing {
+        match key {
+            Input::Esc => PopupEditorCommand::ToggleInsert,
+            Input::Backspace => PopupEditorCommand::Backspace,
+            Input::Left => PopupEditorCommand::Left,
+            Input::Right => PopupEditorCommand::Right,
+            Input::Up => PopupEditorCommand::Up,
+            Input::Down => PopupEditorCommand::Down,
+            Input::Home => PopupEditorCommand::Home,
+            Input::End => PopupEditorCommand::End,
+            Input::CtrlC => PopupEditorCommand::Copy,
+            Input::CtrlV => PopupEditorCommand::Paste,
+            Input::Char(character) => PopupEditorCommand::Insert(character),
+            _ => return None,
+        }
+    } else {
+        match key {
+            Input::Char('i') => PopupEditorCommand::ToggleInsert,
+            Input::Char('e') => PopupEditorCommand::SelectValue,
+            Input::Left | Input::Char('h') => PopupEditorCommand::Left,
+            Input::Right | Input::Char('l') => PopupEditorCommand::Right,
+            Input::Up | Input::Char('k') => PopupEditorCommand::Up,
+            Input::Down | Input::Char('j') => PopupEditorCommand::Down,
+            Input::Home => PopupEditorCommand::Home,
+            Input::End => PopupEditorCommand::End,
+            Input::CtrlC => PopupEditorCommand::Copy,
+            _ => return None,
+        }
+    };
+    Some(Action::EditActivePopup(command))
 }
 pub fn key_action(key: Input) -> Option<Action> {
     match key {
@@ -4106,6 +4139,31 @@ mod tests {
             build_environment_action(Input::Esc),
             Some(Action::Open(Screen::Dashboard))
         );
+    }
+    #[test]
+    fn popup_editor_input_maps_normal_and_insert_modes_without_leakage() {
+        assert_eq!(
+            popup_editor_action(false, Input::Char('e')),
+            Some(Action::EditActivePopup(PopupEditorCommand::SelectValue))
+        );
+        assert_eq!(
+            popup_editor_action(false, Input::Char('j')),
+            Some(Action::EditActivePopup(PopupEditorCommand::Down))
+        );
+        assert_eq!(popup_editor_action(false, Input::Char('x')), None);
+        assert_eq!(
+            popup_editor_action(true, Input::Char('k')),
+            Some(Action::EditActivePopup(PopupEditorCommand::Insert('k')))
+        );
+        assert_eq!(
+            popup_editor_action(true, Input::Home),
+            Some(Action::EditActivePopup(PopupEditorCommand::Home))
+        );
+        assert_eq!(
+            popup_editor_action(true, Input::CtrlV),
+            Some(Action::EditActivePopup(PopupEditorCommand::Paste))
+        );
+        assert_eq!(popup_editor_action(true, Input::Enter), None);
     }
     #[test]
     fn live_tasks_input_maps_selection_and_filter_controls() {

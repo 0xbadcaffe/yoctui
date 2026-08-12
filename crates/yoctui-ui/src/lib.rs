@@ -1377,14 +1377,12 @@ pub fn render(frame: &mut Frame, app: &App) {
             .wrap(Wrap { trim: false }),
             popup,
         );
-    } else if let Some(Dialog::BuildEnvironmentCloneEditor { content, editing }) =
-        app.active_dialog()
-    {
-        build_environment_clone_editor(frame, app, content, *editing, area);
+    } else if let Some(Dialog::BuildEnvironmentCloneEditor(editor)) = app.active_dialog() {
+        build_environment_clone_editor(frame, app, editor, area);
     } else if let Some(Dialog::BuildEnvironmentCloneReview(plan)) = app.active_dialog() {
         build_environment_clone_review(frame, app, plan, area);
-    } else if let Some(Dialog::BuildEnvironmentEditor { content, editing }) = app.active_dialog() {
-        build_environment_editor(frame, app, content, *editing, area);
+    } else if let Some(Dialog::BuildEnvironmentEditor(editor)) = app.active_dialog() {
+        build_environment_editor(frame, app, editor, area);
     } else if let Some(Dialog::ThemePicker { selection }) = app.active_dialog() {
         theme_picker(frame, app, *selection, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
@@ -1483,62 +1481,19 @@ fn theme_picker(frame: &mut Frame, app: &App, selection: usize, area: Rect) {
 fn build_environment_editor(
     frame: &mut Frame,
     app: &App,
-    content: &str,
-    editing: bool,
+    editor: &yoctui_model::PopupEditor,
     area: Rect,
 ) {
-    let popup = Rect::new(
-        area.width / 8,
-        area.height / 8,
-        area.width * 3 / 4,
-        area.height * 3 / 4,
-    );
-    clear_popup(frame, app, popup);
-    let mode = if editing { "INSERT" } else { "NORMAL" };
-    frame.render_widget(
-        Paragraph::new(content.to_owned())
-            .block(
-                Block::default()
-                    .title(format!("Build environment.toml — {mode}"))
-                    .borders(Borders::ALL),
-            )
-            .style(ThemePalette::for_app(app).base()),
-        popup,
-    );
-    let footer = Rect::new(
-        popup.x,
-        popup.y + popup.height.saturating_sub(2),
-        popup.width,
-        2,
-    );
-    frame.render_widget(Paragraph::new("Normal: i insert, Enter apply, Esc/q close | Insert: type, Backspace, Enter apply, Esc normal").style(ThemePalette::for_app(app).focus()), footer);
+    toml_popup_editor(frame, app, area, "Build environment.toml", editor, None);
 }
 
 fn build_environment_clone_editor(
     frame: &mut Frame,
     app: &App,
-    content: &str,
-    editing: bool,
+    editor: &yoctui_model::PopupEditor,
     area: Rect,
 ) {
-    let popup = Rect::new(
-        area.width / 8,
-        area.height / 8,
-        area.width * 3 / 4,
-        area.height * 3 / 4,
-    );
-    clear_popup(frame, app, popup);
-    let mode = if editing { "INSERT" } else { "NORMAL" };
-    frame.render_widget(
-        Paragraph::new(content.to_owned())
-            .block(
-                Block::default()
-                    .title(format!("Clone Poky.toml — {mode}"))
-                    .borders(Borders::ALL),
-            )
-            .style(ThemePalette::for_app(app).base()),
-        popup,
-    );
+    toml_popup_editor(frame, app, area, "Clone Poky.toml", editor, None);
 }
 
 fn build_environment_clone_review(
@@ -10360,14 +10315,34 @@ mod tests {
     #[test]
     fn build_environment_editor_renders_large_vi_style_popup() {
         let mut app = App::new_unconfigured(10, 1_000);
-        app.dialogs.push_back(Dialog::BuildEnvironmentEditor {
-            content: "source = \"/home/poky\"\nbuild = \"/home/build\"".into(),
-            editing: false,
-        });
-        let output = rendered_text(&app, 120, 40);
-        assert!(output.contains("Build environment.toml"));
-        assert!(output.contains("NORMAL"));
-        assert!(output.contains("/home/poky"));
+        let mut editor = yoctui_model::PopupEditor::new(
+            "source = \"/home/poky\"\nbuild = \"/home/build\"".into(),
+        );
+        editor.select_toml_value("source").unwrap();
+        app.dialogs
+            .push_back(Dialog::BuildEnvironmentEditor(editor));
+        for (width, height) in [(80, 24), (120, 40)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Build environment.toml"));
+            assert!(output.contains("NORMAL"));
+            assert!(output.contains("⟦/home/poky⟧▏"));
+            assert!(output.contains("Home/End line"));
+            assert!(output.contains("Ctrl+V paste"));
+        }
+    }
+
+    #[test]
+    fn build_environment_clone_editor_uses_shared_popup_at_minimum_size() {
+        let mut app = App::new_unconfigured(10, 1_000);
+        let _ = update(&mut app, Action::OpenBuildEnvironmentCloneEditor);
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("Clone Poky.toml"), "{output}");
+        assert!(
+            output.contains("⟦https://git.yoctoproject.org/poky⟧▏"),
+            "{output}"
+        );
+        assert!(output.contains("e change value"), "{output}");
+        assert!(output.contains("Ctrl+C copy"), "{output}");
     }
 
     #[test]

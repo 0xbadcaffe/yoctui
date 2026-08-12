@@ -32,8 +32,8 @@ use yoctui_app::{
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
     key_action, logs_action, maintenance_dialog_action, maintenance_workspace_action,
-    model_action_from_backend_event, package_workspace_action, qa_dialog_action,
-    qa_layer_capability_action, qa_layer_runner_action, qa_report_error_action,
+    model_action_from_backend_event, package_workspace_action, popup_editor_action,
+    qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action, qa_report_error_action,
     qa_report_response_action, qa_task_capability_action, qa_workspace_action,
     qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
     qemu_launch_confirmation_action, qemu_launch_dialog_action, recipe_editor_action,
@@ -5791,10 +5791,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             let terminal_event = event::read()?;
             if let Event::Paste(text) = terminal_event {
                 let popup_action = match app.active_dialog() {
-                    Some(Dialog::BuildEnvironmentEditor { editing: true, .. }) => {
+                    Some(Dialog::BuildEnvironmentEditor(editor)) if editor.editing => {
                         Some(Action::AppendBuildEnvironmentEditor as fn(char) -> Action)
                     }
-                    Some(Dialog::BuildEnvironmentCloneEditor { editing: true, .. }) => {
+                    Some(Dialog::BuildEnvironmentCloneEditor(editor)) if editor.editing => {
                         Some(Action::AppendBuildEnvironmentCloneEditor as fn(char) -> Action)
                     }
                     Some(Dialog::ConfigEdit { editing: true, .. }) => {
@@ -5913,31 +5913,21 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         )
                         .await;
                     }
-                } else if let Some(Dialog::BuildEnvironmentCloneEditor { editing, .. }) =
+                } else if let Some(Dialog::BuildEnvironmentCloneEditor(editor)) =
                     app.active_dialog().cloned()
                 {
-                    let action = if editing {
-                        match input {
-                            Input::Esc => Some(Action::ToggleBuildEnvironmentCloneEditor),
-                            Input::Enter => Some(Action::ReviewBuildEnvironmentClone),
-                            Input::Backspace => Some(Action::BackspaceBuildEnvironmentCloneEditor),
-                            Input::Char(character) => {
-                                Some(Action::AppendBuildEnvironmentCloneEditor(character))
-                            }
-                            _ => None,
+                    let action = match input {
+                        Input::Enter => Some(Action::ReviewBuildEnvironmentClone),
+                        Input::Esc if !editor.editing => Some(Action::CancelBuildEnvironmentClone),
+                        Input::Char('q') if !editor.editing => {
+                            Some(Action::CancelBuildEnvironmentClone)
                         }
-                    } else {
-                        match input {
-                            Input::Char('i') => Some(Action::ToggleBuildEnvironmentCloneEditor),
-                            Input::Enter => Some(Action::ReviewBuildEnvironmentClone),
-                            Input::Esc | Input::Char('q') => {
-                                Some(Action::CancelBuildEnvironmentClone)
-                            }
-                            _ => None,
-                        }
+                        input => popup_editor_action(editor.editing, input),
                     };
-                    if let Some(action) = action {
-                        let _ = update(&mut app, action);
+                    if let Some(Effect::CopyToClipboard(content)) =
+                        action.and_then(|action| update(&mut app, action))
+                    {
+                        copy_to_clipboard(&mut app, content).await;
                     }
                 } else if matches!(
                     app.active_dialog(),
@@ -5972,31 +5962,20 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             }
                         }
                     }
-                } else if let Some(Dialog::BuildEnvironmentEditor { editing, .. }) =
+                } else if let Some(Dialog::BuildEnvironmentEditor(editor)) =
                     app.active_dialog().cloned()
                 {
-                    let action = if editing {
-                        match input {
-                            Input::Esc => Some(Action::ToggleBuildEnvironmentEditor),
-                            Input::Enter => Some(Action::ApplyBuildEnvironmentEditor),
-                            Input::Backspace => Some(Action::BackspaceBuildEnvironmentEditor),
-                            Input::Char(character) => {
-                                Some(Action::AppendBuildEnvironmentEditor(character))
-                            }
-                            _ => None,
+                    let action = match input {
+                        Input::Enter => Some(Action::ApplyBuildEnvironmentEditor),
+                        Input::Char('q') | Input::Esc if !editor.editing => {
+                            Some(Action::CloseBuildEnvironmentEditor)
                         }
-                    } else {
-                        match input {
-                            Input::Char('i') => Some(Action::ToggleBuildEnvironmentEditor),
-                            Input::Char('q') | Input::Esc => {
-                                Some(Action::CloseBuildEnvironmentEditor)
-                            }
-                            Input::Enter => Some(Action::ApplyBuildEnvironmentEditor),
-                            _ => None,
-                        }
+                        input => popup_editor_action(editor.editing, input),
                     };
-                    if let Some(action) = action {
-                        let _ = update(&mut app, action);
+                    if let Some(Effect::CopyToClipboard(content)) =
+                        action.and_then(|action| update(&mut app, action))
+                    {
+                        copy_to_clipboard(&mut app, content).await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::ThemePicker { .. })) {
                     let action = match input {

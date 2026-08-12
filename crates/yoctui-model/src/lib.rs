@@ -1090,6 +1090,25 @@ impl PopupEditor {
         self.select_range(value_start, value_end);
         Ok(())
     }
+    pub fn select_toml_value_at_cursor(&mut self) -> Result<(), String> {
+        let line_start = self.text[..self.cursor]
+            .rfind('\n')
+            .map_or(0, |index| index + 1);
+        let line_end = self.text[self.cursor..]
+            .find('\n')
+            .map_or(self.text.len(), |index| self.cursor + index);
+        let line = &self.text[line_start..line_end];
+        let value_start = line
+            .find('"')
+            .map(|index| line_start + index + 1)
+            .ok_or_else(|| "The current TOML line has no quoted value.".to_owned())?;
+        let value_end = self.text[value_start..line_end]
+            .find('"')
+            .map(|index| value_start + index)
+            .ok_or_else(|| "The current TOML line has no closing quote.".to_owned())?;
+        self.select_range(value_start, value_end);
+        Ok(())
+    }
     pub fn undo(&mut self) -> bool {
         let Some(text) = self.history.pop() else {
             return false;
@@ -1116,17 +1135,28 @@ impl PopupEditor {
         index
     }
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PopupEditorCommand {
+    ToggleInsert,
+    Insert(char),
+    Backspace,
+    Left,
+    Right,
+    Up,
+    Down,
+    Home,
+    End,
+    SelectValue,
+    Copy,
+    Paste,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
-    BuildEnvironmentCloneEditor {
-        content: String,
-        editing: bool,
-    },
+    BuildEnvironmentCloneEditor(PopupEditor),
     BuildEnvironmentCloneReview(BuildEnvironmentClonePlan),
-    BuildEnvironmentEditor {
-        content: String,
-        editing: bool,
-    },
+    BuildEnvironmentEditor(PopupEditor),
     ThemePicker {
         selection: usize,
     },
@@ -3328,6 +3358,7 @@ pub enum Action {
     RetrySettingsPersistence,
     SettingsPersisted,
     SettingsPersistenceFailed(String),
+    EditActivePopup(PopupEditorCommand),
     ConfigureBuildEnvironment(BuildEnvironmentProfile),
     OpenBuildEnvironmentCloneEditor,
     ToggleBuildEnvironmentCloneEditor,
@@ -6237,41 +6268,72 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 "Settings changed in memory but could not be saved: {message}"
             ));
         }
+        Action::EditActivePopup(command) => {
+            let editor = match app.active_dialog_mut() {
+                Some(
+                    Dialog::BuildEnvironmentEditor(editor)
+                    | Dialog::BuildEnvironmentCloneEditor(editor),
+                ) => editor,
+                _ => return None,
+            };
+            match command {
+                PopupEditorCommand::ToggleInsert => editor.editing = !editor.editing,
+                PopupEditorCommand::Insert(character)
+                    if editor.editing
+                        && !character.is_control()
+                        && editor.text.len() + character.len_utf8() <= 16_384 =>
+                {
+                    editor.insert(&character.to_string());
+                }
+                PopupEditorCommand::Insert(_) => {}
+                PopupEditorCommand::Backspace if editor.editing => editor.backspace(),
+                PopupEditorCommand::Backspace => {}
+                PopupEditorCommand::Left => editor.left(),
+                PopupEditorCommand::Right => editor.right(),
+                PopupEditorCommand::Up => editor.up(),
+                PopupEditorCommand::Down => editor.down(),
+                PopupEditorCommand::Home => editor.home(),
+                PopupEditorCommand::End => editor.end(),
+                PopupEditorCommand::SelectValue => match editor.select_toml_value_at_cursor() {
+                    Ok(()) => editor.editing = true,
+                    Err(message) => app.notification = Some(message),
+                },
+                PopupEditorCommand::Copy => {
+                    return Some(Effect::CopyToClipboard(editor.copy_selection_or_line()));
+                }
+                PopupEditorCommand::Paste if editor.editing => editor.paste(),
+                PopupEditorCommand::Paste => {}
+            }
+        }
         Action::OpenBuildEnvironmentCloneEditor => {
-            open_dialog(app, Dialog::BuildEnvironmentCloneEditor {
-                content: "repository = \"https://git.yoctoproject.org/poky\"\ndestination = \"/home/user/src/poky\"\nrevision = \"\"\nbuild = \"/home/user/src/poky/build-yoctui\"\n".into(),
-                editing: false,
-            });
+            let mut editor = PopupEditor::new("repository = \"https://git.yoctoproject.org/poky\"\ndestination = \"/home/user/src/poky\"\nrevision = \"\"\nbuild = \"/home/user/src/poky/build-yoctui\"\n".into());
+            let _ = editor.select_toml_value("repository");
+            open_dialog(app, Dialog::BuildEnvironmentCloneEditor(editor));
         }
         Action::ToggleBuildEnvironmentCloneEditor => {
-            if let Some(Dialog::BuildEnvironmentCloneEditor { editing, .. }) =
-                app.active_dialog_mut()
-            {
-                *editing = !*editing;
+            if let Some(Dialog::BuildEnvironmentCloneEditor(editor)) = app.active_dialog_mut() {
+                editor.editing = !editor.editing;
             }
         }
         Action::AppendBuildEnvironmentCloneEditor(character) => {
-            if let Some(Dialog::BuildEnvironmentCloneEditor { content, editing }) =
-                app.active_dialog_mut()
-                && *editing
+            if let Some(Dialog::BuildEnvironmentCloneEditor(editor)) = app.active_dialog_mut()
+                && editor.editing
             {
-                content.push(character);
+                editor.insert(&character.to_string());
             }
         }
         Action::BackspaceBuildEnvironmentCloneEditor => {
-            if let Some(Dialog::BuildEnvironmentCloneEditor { content, editing }) =
-                app.active_dialog_mut()
-                && *editing
+            if let Some(Dialog::BuildEnvironmentCloneEditor(editor)) = app.active_dialog_mut()
+                && editor.editing
             {
-                content.pop();
+                editor.backspace();
             }
         }
         Action::ReviewBuildEnvironmentClone => {
-            if let Some(Dialog::BuildEnvironmentCloneEditor { content, .. }) =
-                app.active_dialog().cloned()
+            if let Some(Dialog::BuildEnvironmentCloneEditor(editor)) = app.active_dialog().cloned()
             {
                 let mut values = HashMap::new();
-                for line in content.lines() {
+                for line in editor.text.lines() {
                     if let Some((name, value)) = line.split_once('=') {
                         values.insert(
                             name.trim().to_owned(),
@@ -6305,8 +6367,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             if matches!(
                 app.active_dialog(),
                 Some(
-                    Dialog::BuildEnvironmentCloneEditor { .. }
-                        | Dialog::BuildEnvironmentCloneReview(_)
+                    Dialog::BuildEnvironmentCloneEditor(_) | Dialog::BuildEnvironmentCloneReview(_)
                 )
             ) {
                 close_dialog(app);
@@ -6332,41 +6393,33 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 value("build", profile.map(|p| p.build_dir.as_path())),
                 value("script", profile.map(|p| p.init_script.as_path()))
             );
-            open_dialog(
-                app,
-                Dialog::BuildEnvironmentEditor {
-                    content,
-                    editing: false,
-                },
-            );
+            let mut editor = PopupEditor::new(content);
+            let _ = editor.select_toml_value("source");
+            open_dialog(app, Dialog::BuildEnvironmentEditor(editor));
         }
         Action::ToggleBuildEnvironmentEditor => {
-            if let Some(Dialog::BuildEnvironmentEditor { editing, .. }) = app.active_dialog_mut() {
-                *editing = !*editing;
+            if let Some(Dialog::BuildEnvironmentEditor(editor)) = app.active_dialog_mut() {
+                editor.editing = !editor.editing;
             }
         }
         Action::AppendBuildEnvironmentEditor(character) => {
-            if let Some(Dialog::BuildEnvironmentEditor { content, editing }) =
-                app.active_dialog_mut()
-                && *editing
+            if let Some(Dialog::BuildEnvironmentEditor(editor)) = app.active_dialog_mut()
+                && editor.editing
             {
-                content.push(character);
+                editor.insert(&character.to_string());
             }
         }
         Action::BackspaceBuildEnvironmentEditor => {
-            if let Some(Dialog::BuildEnvironmentEditor { content, editing }) =
-                app.active_dialog_mut()
-                && *editing
+            if let Some(Dialog::BuildEnvironmentEditor(editor)) = app.active_dialog_mut()
+                && editor.editing
             {
-                content.pop();
+                editor.backspace();
             }
         }
         Action::ApplyBuildEnvironmentEditor => {
-            if let Some(Dialog::BuildEnvironmentEditor { content, .. }) =
-                app.active_dialog().cloned()
-            {
+            if let Some(Dialog::BuildEnvironmentEditor(editor)) = app.active_dialog().cloned() {
                 let mut values = HashMap::new();
-                for line in content.lines() {
+                for line in editor.text.lines() {
                     if let Some((name, value)) = line.split_once('=') {
                         let value = value.trim().trim_matches('"').to_owned();
                         values.insert(name.trim().to_owned(), value);
@@ -6382,10 +6435,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CloseBuildEnvironmentEditor => {
-            if matches!(
-                app.active_dialog(),
-                Some(Dialog::BuildEnvironmentEditor { .. })
-            ) {
+            if matches!(app.active_dialog(), Some(Dialog::BuildEnvironmentEditor(_))) {
                 close_dialog(app);
             }
         }
@@ -20126,17 +20176,53 @@ mod tests {
         let _ = update(&mut app, Action::OpenBuildEnvironmentEditor);
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::BuildEnvironmentEditor { editing: false, .. })
+            Some(Dialog::BuildEnvironmentEditor(editor)) if !editor.editing
         ));
-        if let Some(Dialog::BuildEnvironmentEditor { content, editing }) = app.active_dialog_mut() {
-            *editing = true;
-            *content = "source = \"/src/poky\"\nbuild = \"/src/build\"\nscript = \"/src/poky/oe-init-build-env\"\n".into();
+        if let Some(Dialog::BuildEnvironmentEditor(editor)) = app.active_dialog_mut() {
+            editor.editing = true;
+            editor.text = "source = \"/src/poky\"\nbuild = \"/src/build\"\nscript = \"/src/poky/oe-init-build-env\"\n".into();
+            editor.cursor = editor.text.len();
         }
         let _ = update(&mut app, Action::ApplyBuildEnvironmentEditor);
         assert!(matches!(
             app.build_environment,
             BuildEnvironmentState::Configured(_)
         ));
+    }
+
+    #[test]
+    fn build_environment_popup_uses_shared_selection_navigation_and_clipboard() {
+        let mut app = App::new_unconfigured(8, 512);
+        let _ = update(
+            &mut app,
+            Action::ConfigureBuildEnvironment(BuildEnvironmentProfile {
+                source_dir: "/old/source".into(),
+                build_dir: "/old/build".into(),
+                init_script: "/old/source/oe-init-build-env".into(),
+            }),
+        );
+        let _ = update(&mut app, Action::OpenBuildEnvironmentEditor);
+        assert!(matches!(
+            update(
+                &mut app,
+                Action::EditActivePopup(PopupEditorCommand::Copy)
+            ),
+            Some(Effect::CopyToClipboard(value)) if value == "/old/source"
+        ));
+        let _ = update(
+            &mut app,
+            Action::EditActivePopup(PopupEditorCommand::ToggleInsert),
+        );
+        for character in "/new/source".chars() {
+            let _ = update(
+                &mut app,
+                Action::EditActivePopup(PopupEditorCommand::Insert(character)),
+            );
+        }
+        let Some(Dialog::BuildEnvironmentEditor(editor)) = app.active_dialog() else {
+            panic!("build environment editor");
+        };
+        assert!(editor.text.starts_with("source = \"/new/source\""));
     }
 
     #[test]
@@ -20175,8 +20261,9 @@ mod tests {
     fn build_environment_clone_editor_requires_review_before_emitting_clone_effect() {
         let mut app = App::new_unconfigured(8, 512);
         let _ = update(&mut app, Action::OpenBuildEnvironmentCloneEditor);
-        if let Some(Dialog::BuildEnvironmentCloneEditor { content, .. }) = app.active_dialog_mut() {
-            *content = "repository = \"https://git.yoctoproject.org/poky\"\ndestination = \"/tmp/poky\"\nrevision = \"\"\nbuild = \"/tmp/poky/build\"\n".into();
+        if let Some(Dialog::BuildEnvironmentCloneEditor(editor)) = app.active_dialog_mut() {
+            editor.text = "repository = \"https://git.yoctoproject.org/poky\"\ndestination = \"/tmp/poky\"\nrevision = \"\"\nbuild = \"/tmp/poky/build\"\n".into();
+            editor.cursor = editor.text.len();
         }
         let _ = update(&mut app, Action::ReviewBuildEnvironmentClone);
         assert!(matches!(
