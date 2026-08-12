@@ -1768,6 +1768,16 @@ pending. Moving the other existing typed job families and their runner
 ownership is a separate required child gate; attach wiring alone is not proof
 that those jobs survive client exit.
 
+Devtool is the first migrated job family. The protocol uses a closed
+`DaemonDevtoolOperation` enum with typed recipe/target/destination fields and a
+canonical build-directory identity. The client converts existing Devtool
+effects into that wire type and never sends argv or shell text. The daemon
+revalidates the build directory and operation, builds the existing
+`DevtoolCommandSpec`, and owns `DevtoolJobRunner`, its process group, bounded
+output, cancellation channel and terminal event. Job/log changes enter the
+same sequenced daemon journal. The supervisor outlives any client connection;
+detaching a client neither drops nor cancels the runner.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only

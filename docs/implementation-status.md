@@ -263,6 +263,10 @@ own processes in the client; migrating those job families is active next.
 That migration is split by existing typed boundaries: Devtool is active first,
 followed by SDK/QEMU/Wic and then testing/QA/security/maintenance, with a final
 client-shutdown ownership gate. No generic command payload is permitted.
+Devtool migration is complete with a closed wire enum, canonical context
+validation, the existing shell-free command spec, daemon-owned real runner and
+process group, sequenced job/log state, correlated cancellation, and detach-
+survival coverage. SDK/QEMU/Wic ownership is active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

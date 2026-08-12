@@ -150,6 +150,10 @@ pub enum DaemonCommand {
     CancelJob {
         job_id: JobId,
     },
+    StartDevtool {
+        operation: DaemonDevtoolOperation,
+        build_directory: String,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,
@@ -180,6 +184,17 @@ pub enum DaemonCommand {
     ConfirmShutdown {
         confirmation: ConfirmationLease,
     },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum DaemonDevtoolOperation {
+    Modify { recipe: String },
+    UpdateRecipe { recipe: String },
+    Finish { recipe: String, destination: String },
+    DeployTarget { recipe: String, target: String },
+    UndeployTarget { recipe: String, target: String },
+    Reset { recipe: String },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

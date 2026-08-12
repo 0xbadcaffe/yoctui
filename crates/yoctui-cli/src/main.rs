@@ -99,6 +99,8 @@ mod client_runtime;
 #[cfg(unix)]
 #[cfg_attr(not(test), allow(dead_code))]
 mod client_transport;
+#[cfg(unix)]
+mod daemon_devtool;
 mod maintenance_cli;
 #[cfg(unix)]
 #[cfg_attr(not(test), allow(dead_code))]
@@ -1134,6 +1136,8 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         .map(|persisted| recover_persisted_snapshot(snapshot.clone(), persisted, &record.boot_id).0)
         .unwrap_or(snapshot);
     let daemon_journal = DaemonSnapshotJournal::new(snapshot, DaemonSnapshotLimits::default())?;
+    let mut daemon_journal = daemon_journal;
+    let mut devtool_supervisor = daemon_devtool::DaemonDevtoolSupervisor::default();
     write_persisted_state(
         &persist_paths,
         &DaemonPersistedState::capture(
@@ -1151,6 +1155,9 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     };
     let mut shutting_down = false;
     while !shutting_down {
+        while let Some(event) = devtool_supervisor.try_event() {
+            publish_daemon_devtool_event(&mut daemon_journal, event)?;
+        }
         if termination_requested(termination) {
             break;
         }
@@ -1231,6 +1238,70 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                     shutting_down = true;
                     break;
                 }
+                Ok(ClientMessage::Command(request)) if negotiated => {
+                    use yoctui_protocol::daemon::{CommandOutcome, CommandResult};
+                    if request.expected_generation.is_some_and(|generation| {
+                        generation != daemon_journal.snapshot().generation
+                    }) {
+                        connection.send(&ServerMessage::CommandResult(CommandResult {
+                            request_id: request.request_id,
+                            outcome: CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::StaleGeneration,
+                                message: "daemon generation changed; refresh and retry".into(),
+                                current_generation: daemon_journal.snapshot().generation,
+                            },
+                        }))?;
+                        continue;
+                    }
+                    let outcome = match request.command {
+                        DaemonCommand::StartDevtool {
+                            operation,
+                            build_directory,
+                        } => match devtool_supervisor.start(operation, build_directory.into()) {
+                            Ok(job_id) => {
+                                let event = daemon_journal.publish(
+                                    yoctui_protocol::daemon::DaemonEvent::JobChanged(
+                                        yoctui_protocol::daemon::JobSummary {
+                                            id: job_id,
+                                            kind: yoctui_protocol::daemon::JobKind::Devtool,
+                                            label: "Devtool starting".into(),
+                                            lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting,
+                                            progress_current: None,
+                                            progress_total: None,
+                                            exit_code: None,
+                                        },
+                                    ),
+                                )?;
+                                connection.send(&ServerMessage::Event(event))?;
+                                CommandOutcome::Accepted
+                            }
+                            Err(error) => CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,
+                                message: error.to_string(),
+                                current_generation: daemon_journal.snapshot().generation,
+                            },
+                        },
+                        DaemonCommand::CancelJob { job_id } => {
+                            match devtool_supervisor.cancel(job_id) {
+                                Ok(()) => CommandOutcome::Accepted,
+                                Err(error) => CommandOutcome::Rejected {
+                                    code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                                    message: error.to_string(),
+                                    current_generation: daemon_journal.snapshot().generation,
+                                },
+                            }
+                        }
+                        _ => CommandOutcome::Rejected {
+                            code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
+                            message: "daemon command is not implemented by this runtime".into(),
+                            current_generation: daemon_journal.snapshot().generation,
+                        },
+                    };
+                    connection.send(&ServerMessage::CommandResult(CommandResult {
+                        request_id: request.request_id,
+                        outcome,
+                    }))?;
+                }
                 Ok(_) => connection.send(&ServerMessage::Error(
                     yoctui_protocol::daemon::ProtocolFailure {
                         request_id: None,
@@ -1260,6 +1331,96 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     remove_runtime_record(&paths, instance)?;
     std::mem::forget(record_guard);
     drop(listener);
+    Ok(())
+}
+
+#[cfg(unix)]
+fn publish_daemon_devtool_event(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    event: daemon_devtool::DaemonDevtoolEvent,
+) -> Result<()> {
+    use daemon_devtool::DaemonDevtoolEvent;
+    use yoctui_protocol::daemon::{
+        DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
+    };
+    let job_id = event.job_id();
+    let existing = journal
+        .snapshot()
+        .jobs
+        .iter()
+        .find(|job| job.id == job_id)
+        .cloned();
+    let label = existing
+        .as_ref()
+        .map(|job| job.label.clone())
+        .unwrap_or_else(|| "Devtool".into());
+    let mapped = match event {
+        DaemonDevtoolEvent::Started { label, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Devtool,
+            label,
+            lifecycle: LifecycleState::Running,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+        DaemonDevtoolEvent::Output {
+            stream,
+            line,
+            truncated,
+            ..
+        } => DaemonEvent::Log(LogRecord {
+            source: format!("devtool:{stream:?}"),
+            severity: if matches!(stream, yoctui_bitbake::DevtoolOutputStream::Stderr) {
+                LogSeverity::Warning
+            } else {
+                LogSeverity::Info
+            },
+            message: if truncated {
+                format!("{line} [truncated]")
+            } else {
+                line
+            },
+            unix_ms: unix_ms(),
+        }),
+        DaemonDevtoolEvent::Completed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Devtool,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonDevtoolEvent::Failed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Devtool,
+            label,
+            lifecycle: LifecycleState::Failed,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonDevtoolEvent::Cancelled { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Devtool,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonDevtoolEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Devtool,
+            label: format!("{label}: {message}"),
+            lifecycle: LifecycleState::Lost,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+    };
+    journal.publish(mapped)?;
     Ok(())
 }
 
@@ -1629,6 +1790,29 @@ async fn begin_runtime_build(
         }
     }
     begin_build(backend, app, build_jobs, request).await
+}
+
+#[cfg(unix)]
+fn submit_daemon_effect(
+    runtime: &mut Option<client_runtime::InteractiveDaemonRuntime>,
+    app: &mut App,
+    effect: &Effect,
+) -> Option<bool> {
+    let runtime = runtime.as_mut()?;
+    match runtime.route_effect(app, effect) {
+        Ok(client_runtime::RuntimeEffectRoute::Daemon(request_id)) => {
+            app.notification = Some(format!(
+                "Request {} submitted to the Yoctui daemon.",
+                request_id.0
+            ));
+            Some(true)
+        }
+        Ok(client_runtime::RuntimeEffectRoute::ClientLocal) => None,
+        Err(error) => {
+            app.notification = Some(format!("Daemon request was not sent: {error}"));
+            Some(false)
+        }
+    }
 }
 
 #[cfg(not(unix))]
@@ -7430,6 +7614,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let effect = devtool_modify_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
                     if let Some(Effect::DevtoolModify(identity)) = effect {
+                        if submit_daemon_effect(
+                            &mut daemon_runtime,
+                            &mut app,
+                            &Effect::DevtoolModify(identity.clone()),
+                        )
+                        .is_some()
+                        {
+                            continue;
+                        }
                         let recipe = identity.name.clone();
                         if begin_devtool_job(
                             &mut app,
@@ -7604,6 +7797,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let effect = devtool_reset_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
                     if let Some(Effect::DevtoolReset(plan)) = effect {
+                        if submit_daemon_effect(
+                            &mut daemon_runtime,
+                            &mut app,
+                            &Effect::DevtoolReset(plan.clone()),
+                        )
+                        .is_some()
+                        {
+                            continue;
+                        }
                         let operation = plan.operation();
                         if begin_devtool_job(
                             &mut app,
@@ -7625,6 +7827,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let effect = devtool_update_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
                     if let Some(Effect::DevtoolUpdateRecipe(identity)) = effect {
+                        if submit_daemon_effect(
+                            &mut daemon_runtime,
+                            &mut app,
+                            &Effect::DevtoolUpdateRecipe(identity.clone()),
+                        )
+                        .is_some()
+                        {
+                            continue;
+                        }
                         let recipe = identity.name.clone();
                         if begin_devtool_job(
                             &mut app,
@@ -7646,6 +7857,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let effect = devtool_finish_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
                     if let Some(Effect::DevtoolFinish(plan)) = effect {
+                        if submit_daemon_effect(
+                            &mut daemon_runtime,
+                            &mut app,
+                            &Effect::DevtoolFinish(plan.clone()),
+                        )
+                        .is_some()
+                        {
+                            continue;
+                        }
                         let request = plan.request();
                         if begin_devtool_job(
                             &mut app,
@@ -7670,6 +7890,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let effect = devtool_deploy_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
                     if let Some(Effect::DevtoolDeploy(plan)) = effect {
+                        if submit_daemon_effect(
+                            &mut daemon_runtime,
+                            &mut app,
+                            &Effect::DevtoolDeploy(plan.clone()),
+                        )
+                        .is_some()
+                        {
+                            continue;
+                        }
                         let request = plan.request();
                         if begin_devtool_job(
                             &mut app,

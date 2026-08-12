@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-DEVTOOL-001
-**Title:** Move Devtool job ownership into the daemon
+**ID:** CLIENT-RUNTIME-ARTIFACTS-001
+**Title:** Move SDK QEMU and Wic job ownership into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Extend the bounded protocol and daemon runtime with closed typed representations
-of the existing Devtool operations. Route Devtool start/cancel effects through
-correlated daemon requests and events, run them with the existing adapter/job
-infrastructure in the daemon, and remove interactive-client runner ownership so
-detach cannot cancel active Devtool work.
+Extend the bounded protocol with closed typed SDK, QEMU, and Wic operations.
+Route their existing effects through correlated daemon requests and sequenced
+events, reuse current adapters/runners under daemon ownership, preserve normal
+confirmation and cancellation rules, and ensure client detach never terminates
+active artifact or emulator work.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_devtool
+cargo test -p yoctui client_runtime_artifacts
 ```

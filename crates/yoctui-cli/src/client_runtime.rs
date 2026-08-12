@@ -4,7 +4,7 @@ use thiserror::Error;
 use yoctui_app::DaemonClientSnapshot;
 use yoctui_model::{App, ClientDaemonLifecycle, Effect};
 use yoctui_protocol::daemon::{
-    ClientId, CommandRequest, DaemonCommand, JobId, RequestId, Subscription,
+    ClientId, CommandRequest, DaemonCommand, DaemonDevtoolOperation, JobId, RequestId, Subscription,
 };
 
 use crate::client_transport::{ClientServerEvent, ClientTransportError, DaemonClientTransport};
@@ -79,29 +79,8 @@ impl InteractiveDaemonRuntime {
         app: &App,
         effect: &Effect,
     ) -> Result<RuntimeEffectRoute, ClientRuntimeError> {
-        let command = match effect {
-            Effect::Start(request) => DaemonCommand::StartBuild {
-                targets: request.targets.clone(),
-                task: request.task.clone(),
-                force: request.force,
-            },
-            Effect::Cancel => {
-                let job = app
-                    .daemon
-                    .jobs
-                    .iter()
-                    .find(|job| {
-                        matches!(
-                            job.lifecycle,
-                            ClientDaemonLifecycle::Connecting | ClientDaemonLifecycle::Running
-                        )
-                    })
-                    .ok_or(ClientRuntimeError::NoActiveDaemonJob)?;
-                DaemonCommand::CancelJob {
-                    job_id: JobId(job.id),
-                }
-            }
-            _ => return Ok(RuntimeEffectRoute::ClientLocal),
+        let Some(command) = daemon_command_for_effect(app, effect)? else {
+            return Ok(RuntimeEffectRoute::ClientLocal);
         };
         let request_id = RequestId(self.next_request);
         self.next_request = self
@@ -121,6 +100,75 @@ impl InteractiveDaemonRuntime {
         self.replica.disconnect_app(app);
         Ok(())
     }
+}
+
+fn daemon_command_for_effect(
+    app: &App,
+    effect: &Effect,
+) -> Result<Option<DaemonCommand>, ClientRuntimeError> {
+    let build_directory = || {
+        app.workspace
+            .build_dir
+            .as_ref()
+            .map(|path| path.display().to_string())
+            .ok_or(ClientRuntimeError::MissingBuildDirectory)
+    };
+    Ok(Some(match effect {
+        Effect::Start(request) => DaemonCommand::StartBuild {
+            targets: request.targets.clone(),
+            task: request.task.clone(),
+            force: request.force,
+        },
+        Effect::Cancel => {
+            let job = app
+                .daemon
+                .jobs
+                .iter()
+                .find(|job| {
+                    matches!(
+                        job.lifecycle,
+                        ClientDaemonLifecycle::Connecting | ClientDaemonLifecycle::Running
+                    )
+                })
+                .ok_or(ClientRuntimeError::NoActiveDaemonJob)?;
+            DaemonCommand::CancelJob {
+                job_id: JobId(job.id),
+            }
+        }
+        Effect::DevtoolModify(identity) => DaemonCommand::StartDevtool {
+            operation: DaemonDevtoolOperation::Modify {
+                recipe: identity.name.clone(),
+            },
+            build_directory: build_directory()?,
+        },
+        Effect::DevtoolReset(plan) => DaemonCommand::StartDevtool {
+            operation: DaemonDevtoolOperation::Reset {
+                recipe: plan.identity.name.clone(),
+            },
+            build_directory: build_directory()?,
+        },
+        Effect::DevtoolUpdateRecipe(identity) => DaemonCommand::StartDevtool {
+            operation: DaemonDevtoolOperation::UpdateRecipe {
+                recipe: identity.name.clone(),
+            },
+            build_directory: build_directory()?,
+        },
+        Effect::DevtoolFinish(plan) => DaemonCommand::StartDevtool {
+            operation: DaemonDevtoolOperation::Finish {
+                recipe: plan.identity.name.clone(),
+                destination: plan.layer.path.display().to_string(),
+            },
+            build_directory: build_directory()?,
+        },
+        Effect::DevtoolDeploy(plan) => DaemonCommand::StartDevtool {
+            operation: DaemonDevtoolOperation::DeployTarget {
+                recipe: plan.identity.name.clone(),
+                target: plan.target.clone(),
+            },
+            build_directory: build_directory()?,
+        },
+        _ => return Ok(None),
+    }))
 }
 
 fn random_client_id() -> Result<ClientId, ClientRuntimeError> {
@@ -146,6 +194,8 @@ pub enum ClientRuntimeError {
     NoActiveDaemonJob,
     #[error("daemon request ID space exhausted")]
     RequestSpaceExhausted,
+    #[error("authoritative build directory is unavailable")]
+    MissingBuildDirectory,
 }
 
 #[cfg(test)]
@@ -185,5 +235,75 @@ mod tests {
     #[test]
     fn client_runtime_random_identity_is_nonzero() {
         assert_ne!(random_client_id().unwrap().0, [0; 16]);
+    }
+
+    #[test]
+    fn client_runtime_devtool_maps_every_effect_to_closed_wire_type() {
+        let mut app = App::new(16, 4096);
+        app.workspace.build_dir = Some("/build".into());
+        let identity = yoctui_model::RecipeIdentity {
+            name: "busybox".into(),
+            file: "/layers/busybox.bb".into(),
+        };
+        let cases = [
+            (
+                Effect::DevtoolModify(identity.clone()),
+                DaemonDevtoolOperation::Modify {
+                    recipe: "busybox".into(),
+                },
+            ),
+            (
+                Effect::DevtoolUpdateRecipe(identity.clone()),
+                DaemonDevtoolOperation::UpdateRecipe {
+                    recipe: "busybox".into(),
+                },
+            ),
+            (
+                Effect::DevtoolReset(yoctui_model::DevtoolResetPlan {
+                    identity: identity.clone(),
+                    source_path: "/workspace/busybox".into(),
+                }),
+                DaemonDevtoolOperation::Reset {
+                    recipe: "busybox".into(),
+                },
+            ),
+            (
+                Effect::DevtoolFinish(yoctui_model::DevtoolFinishPlan {
+                    identity: identity.clone(),
+                    layer: yoctui_model::Layer {
+                        name: "meta-test".into(),
+                        path: "/layers/meta-test".into(),
+                        priority: Some(7),
+                    },
+                }),
+                DaemonDevtoolOperation::Finish {
+                    recipe: "busybox".into(),
+                    destination: "/layers/meta-test".into(),
+                },
+            ),
+            (
+                Effect::DevtoolDeploy(yoctui_model::DevtoolDeployPlan {
+                    identity,
+                    target: "root@example".into(),
+                }),
+                DaemonDevtoolOperation::DeployTarget {
+                    recipe: "busybox".into(),
+                    target: "root@example".into(),
+                },
+            ),
+        ];
+        for (effect, expected) in cases {
+            assert_eq!(
+                daemon_command_for_effect(&app, &effect).unwrap(),
+                Some(DaemonCommand::StartDevtool {
+                    operation: expected,
+                    build_directory: "/build".into(),
+                })
+            );
+        }
+        assert_eq!(
+            daemon_command_for_effect(&app, &Effect::PersistSettings).unwrap(),
+            None
+        );
     }
 }
