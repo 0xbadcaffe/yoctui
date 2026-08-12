@@ -20,7 +20,10 @@ use std::{
     time::{Duration, Instant, SystemTime},
 };
 #[cfg(unix)]
-use std::{ffi::CString, os::unix::ffi::OsStrExt};
+use std::{
+    ffi::CString,
+    os::unix::{ffi::OsStrExt, process::CommandExt},
+};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
@@ -197,11 +200,28 @@ struct Session {
 enum Command {
     Inspect,
     Profile,
-    Build { targets: Vec<String> },
+    Build {
+        targets: Vec<String>,
+    },
     Recipes,
     Layers,
-    Config { name: String },
+    Config {
+        name: String,
+    },
     Doctor,
+    Daemon {
+        #[command(subcommand)]
+        command: DaemonCliCommand,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone, Copy, PartialEq, Eq)]
+enum DaemonCliCommand {
+    Start,
+    Status,
+    Stop,
+    Restart,
+    Foreground,
 }
 struct TerminalGuard;
 impl TerminalGuard {
@@ -586,6 +606,9 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
 async fn main() -> Result<()> {
     install_panic_hook();
     let cli = Cli::parse();
+    if let Some(Command::Daemon { command }) = &cli.command {
+        return daemon_cli(*command).await;
+    }
     let session = read_session(session_path(config_path(&cli).as_deref()).as_deref())?;
     let config = resolve_config(&cli, &session)?;
     tracing_subscriber::fmt()
@@ -609,6 +632,7 @@ async fn main() -> Result<()> {
             return print_variable(config.backend.clone(), build_dir, name).await;
         }
         Some(Command::Doctor) | Some(Command::Build { .. }) | None => {}
+        Some(Command::Daemon { .. }) => unreachable!("daemon command handled before config"),
     }
     let targets = match &cli.command {
         Some(Command::Build { targets }) => targets.clone(),
@@ -860,6 +884,296 @@ async fn doctor(build_dir: &Path) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(unix)]
+async fn daemon_cli(command: DaemonCliCommand) -> Result<()> {
+    match command {
+        DaemonCliCommand::Start => start_daemon(),
+        DaemonCliCommand::Status => daemon_status(),
+        DaemonCliCommand::Stop => stop_daemon(),
+        DaemonCliCommand::Restart => {
+            if daemon_is_available().is_ok() {
+                stop_daemon()?;
+            }
+            start_daemon()
+        }
+        DaemonCliCommand::Foreground => {
+            let mut termination = termination_receiver()?;
+            run_daemon_foreground(&mut termination)
+        }
+    }
+}
+
+#[cfg(not(unix))]
+async fn daemon_cli(_command: DaemonCliCommand) -> Result<()> {
+    anyhow::bail!("Yoctui daemon mode currently requires secure Unix peer credentials")
+}
+
+#[cfg(unix)]
+fn start_daemon() -> Result<()> {
+    use yoctui_protocol::daemon_ipc::{DaemonConnection, runtime_paths};
+    let paths = runtime_paths()?;
+    if DaemonConnection::connect(&paths, Duration::from_millis(50)).is_ok() {
+        anyhow::bail!(
+            "Yoctui daemon is already running at {}",
+            paths.socket.display()
+        );
+    }
+    let executable = env::current_exe().context("could not resolve the Yoctui executable")?;
+    let mut command = ProcessCommand::new(executable);
+    command
+        .args(["daemon", "foreground"])
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .process_group(0);
+    let mut child = command
+        .spawn()
+        .context("could not start the Yoctui daemon")?;
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        if let Some(status) = child.try_wait()? {
+            anyhow::bail!("Yoctui daemon exited during startup with {status}");
+        }
+        if let Ok(record) = daemon_is_available() {
+            println!(
+                "Yoctui daemon started (pid {}, instance {})",
+                record.pid,
+                format_instance(record.daemon_instance_id)
+            );
+            return Ok(());
+        }
+        if Instant::now() >= deadline {
+            anyhow::bail!(
+                "Yoctui daemon did not become available at {} within 5 seconds",
+                paths.socket.display()
+            );
+        }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+}
+
+#[cfg(unix)]
+fn daemon_status() -> Result<()> {
+    let record = daemon_is_available()?;
+    println!("status: running");
+    println!("pid: {}", record.pid);
+    println!("instance: {}", format_instance(record.daemon_instance_id));
+    println!("started_unix_ms: {}", record.started_unix_ms);
+    println!(
+        "socket: {}",
+        yoctui_protocol::daemon_ipc::runtime_paths()?
+            .socket
+            .display()
+    );
+    Ok(())
+}
+
+#[cfg(unix)]
+fn daemon_is_available() -> Result<yoctui_protocol::daemon_lifecycle::DaemonRuntimeRecord> {
+    use yoctui_protocol::{
+        daemon::{
+            Capability, ClientHello, ClientId, ClientMessage, ProtocolVersion, ServerMessage,
+        },
+        daemon_ipc::{DaemonConnection, runtime_paths},
+        daemon_lifecycle::{
+            RuntimeRecordState, classify_runtime_record, read_boot_id, read_runtime_record,
+        },
+    };
+    let paths = runtime_paths()?;
+    let record = read_runtime_record(&paths)?
+        .context("Yoctui daemon is not running (runtime record is absent)")?;
+    match classify_runtime_record(&record, &read_boot_id()?) {
+        RuntimeRecordState::Current => {}
+        RuntimeRecordState::Stale => anyhow::bail!("Yoctui daemon runtime record is stale"),
+        RuntimeRecordState::ForeignProcess => {
+            anyhow::bail!("Yoctui daemon PID belongs to another process")
+        }
+    }
+    let mut connection = DaemonConnection::connect(&paths, Duration::from_millis(250))?;
+    connection.set_timeout(Some(Duration::from_secs(1)))?;
+    connection.send(&ClientMessage::Hello(ClientHello {
+        minimum_version: ProtocolVersion::CURRENT,
+        maximum_version: ProtocolVersion::CURRENT,
+        client_id: ClientId([0; 16]),
+        client_name: "yoctui-lifecycle".into(),
+        capabilities: vec![Capability::GracefulShutdown],
+    }))?;
+    let ServerMessage::Hello(hello) = connection.receive()? else {
+        anyhow::bail!("Yoctui daemon returned an unexpected lifecycle handshake")
+    };
+    if hello.daemon_instance_id != record.daemon_instance_id {
+        anyhow::bail!("Yoctui daemon runtime record does not match the live instance")
+    }
+    Ok(record)
+}
+
+#[cfg(unix)]
+fn stop_daemon() -> Result<()> {
+    use yoctui_protocol::{
+        daemon::{ClientMessage, CommandRequest, DaemonCommand, RequestId, ServerMessage},
+        daemon_ipc::{DaemonConnection, runtime_paths},
+    };
+    let record = daemon_is_available()?;
+    let paths = runtime_paths()?;
+    let mut connection = DaemonConnection::connect(&paths, Duration::from_secs(1))?;
+    connection.set_timeout(Some(Duration::from_secs(2)))?;
+    connection.send(&ClientMessage::Command(CommandRequest {
+        request_id: RequestId(1),
+        expected_generation: None,
+        command: DaemonCommand::PrepareShutdown,
+    }))?;
+    let response: ServerMessage = connection.receive()?;
+    if !matches!(response, ServerMessage::CommandResult(_)) {
+        anyhow::bail!("Yoctui daemon refused graceful shutdown: {response:?}");
+    }
+    let deadline = Instant::now() + Duration::from_secs(5);
+    while paths.socket.exists() && Instant::now() < deadline {
+        std::thread::sleep(Duration::from_millis(25));
+    }
+    if paths.socket.exists() {
+        anyhow::bail!("Yoctui daemon did not stop within 5 seconds");
+    }
+    println!(
+        "Yoctui daemon stopped (instance {})",
+        format_instance(record.daemon_instance_id)
+    );
+    Ok(())
+}
+
+#[cfg(unix)]
+fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> Result<()> {
+    use yoctui_protocol::{
+        daemon::{
+            Capability, ClientMessage, CommandOutcome, CommandResult, DaemonCommand, DaemonHello,
+            MAX_FRAME_BYTES, ProtocolLimits, ProtocolVersion, ServerMessage,
+        },
+        daemon_ipc::{DaemonListener, IpcError, runtime_paths},
+        daemon_lifecycle::{
+            DaemonRuntimeRecord, RuntimeRecordState, classify_runtime_record, read_boot_id,
+            read_runtime_record, remove_runtime_record, write_runtime_record,
+        },
+    };
+    let paths = runtime_paths()?;
+    let listener = DaemonListener::bind(&paths)?;
+    let boot_id = read_boot_id()?;
+    if let Some(previous) = read_runtime_record(&paths)? {
+        match classify_runtime_record(&previous, &boot_id) {
+            RuntimeRecordState::Stale => {
+                remove_runtime_record(&paths, previous.daemon_instance_id)?;
+            }
+            RuntimeRecordState::Current | RuntimeRecordState::ForeignProcess => {
+                anyhow::bail!(
+                    "refusing to replace live daemon runtime record for pid {}",
+                    previous.pid
+                );
+            }
+        }
+    }
+    let instance = random_instance_id()?;
+    let record = DaemonRuntimeRecord {
+        pid: std::process::id(),
+        daemon_instance_id: instance,
+        started_unix_ms: unix_ms(),
+        boot_id,
+        executable: env::current_exe()?.canonicalize()?,
+    };
+    write_runtime_record(&paths, &record)?;
+    let record_guard = DaemonRuntimeGuard {
+        paths: paths.clone(),
+        instance,
+    };
+    let mut shutting_down = false;
+    while !shutting_down {
+        if termination_requested(termination) {
+            break;
+        }
+        let mut connection = match listener.accept(Duration::from_millis(250)) {
+            Ok(connection) => connection,
+            Err(IpcError::Timeout(_)) => continue,
+            Err(error) => return Err(error.into()),
+        };
+        connection.set_timeout(Some(Duration::from_secs(2)))?;
+        match connection.receive::<ClientMessage>() {
+            Ok(ClientMessage::Hello(_)) => connection.send(&ServerMessage::Hello(DaemonHello {
+                selected_version: ProtocolVersion::CURRENT,
+                daemon_instance_id: instance,
+                boot_id: record.boot_id.clone(),
+                capabilities: vec![Capability::GracefulShutdown],
+                limits: ProtocolLimits {
+                    maximum_frame_bytes: MAX_FRAME_BYTES as u32,
+                    maximum_snapshot_bytes: MAX_FRAME_BYTES as u32,
+                    maximum_pending_requests: 64,
+                    maximum_queue_depth: 256,
+                    maximum_terminal_rows: 512,
+                    maximum_terminal_columns: 512,
+                },
+            }))?,
+            Ok(ClientMessage::Command(request))
+                if matches!(request.command, DaemonCommand::PrepareShutdown) =>
+            {
+                connection.send(&ServerMessage::CommandResult(CommandResult {
+                    request_id: request.request_id,
+                    outcome: CommandOutcome::Completed,
+                }))?;
+                shutting_down = true;
+            }
+            Ok(_) => connection.send(&ServerMessage::Error(
+                yoctui_protocol::daemon::ProtocolFailure {
+                    request_id: None,
+                    code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
+                    message: "daemon lifecycle shell supports handshake and shutdown only".into(),
+                    retryable: false,
+                },
+            ))?,
+            Err(error) => tracing::warn!(%error, "daemon client disconnected during request"),
+        }
+    }
+    remove_runtime_record(&paths, instance)?;
+    std::mem::forget(record_guard);
+    drop(listener);
+    Ok(())
+}
+
+#[cfg(unix)]
+struct DaemonRuntimeGuard {
+    paths: yoctui_protocol::daemon_ipc::RuntimePaths,
+    instance: yoctui_protocol::daemon::DaemonInstanceId,
+}
+
+#[cfg(unix)]
+impl Drop for DaemonRuntimeGuard {
+    fn drop(&mut self) {
+        let _ =
+            yoctui_protocol::daemon_lifecycle::remove_runtime_record(&self.paths, self.instance);
+    }
+}
+
+#[cfg(unix)]
+fn random_instance_id() -> Result<yoctui_protocol::daemon::DaemonInstanceId> {
+    let mut bytes = [0_u8; 16];
+    fs::File::open("/dev/urandom")?.read_exact(&mut bytes)?;
+    Ok(yoctui_protocol::daemon::DaemonInstanceId(bytes))
+}
+
+#[cfg(unix)]
+fn unix_ms() -> u64 {
+    SystemTime::UNIX_EPOCH
+        .elapsed()
+        .unwrap_or_default()
+        .as_millis()
+        .try_into()
+        .unwrap_or(u64::MAX)
+}
+
+#[cfg(unix)]
+fn format_instance(instance: yoctui_protocol::daemon::DaemonInstanceId) -> String {
+    instance
+        .0
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
 }
 async fn headless(
     backend_kind: Backend,

@@ -2149,6 +2149,7 @@ dependencies = [
  "yoctui-app",
  "yoctui-bitbake",
  "yoctui-model",
+ "yoctui-protocol",
  "yoctui-ui",
 ]
 

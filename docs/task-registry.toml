@@ -2903,18 +2903,18 @@ notes = "Unix-only local IPC now validates a canonical same-UID private runtime 
 id = "DAEMON-LIFECYCLE-001"
 milestone = "M11"
 title = "Implement daemon lifecycle commands"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 403
 required = true
 depends_on = ["DAEMON-IPC-001"]
 verify = ["cargo test -p yoctui daemon_lifecycle", "cargo test -p yoctui-protocol daemon_lifecycle"]
-notes = "Implement daemon start/status/stop/restart, foreground debug, client auto-connect/optional auto-start, PID/runtime state, crash recovery, and clean socket cleanup without fragile shell daemonization."
+notes = "One Rust binary now provides daemon start/status/stop/restart/foreground; direct start uses an argv-only new process group, status authenticates PID/executable/boot/instance/socket, stop is typed, SIGTERM is clean, stale records recover safely, and private atomic runtime metadata is bounded. Client attach/optional auto-start calls these APIs in CLIENT-ARCH-001 after parity exists."
 
 [[task]]
 id = "DAEMON-SERVICE-INTEGRATION-001"
 milestone = "M11"
 title = "Add systemd user service integration"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 404
 required = true
 depends_on = ["DAEMON-LIFECYCLE-001"]

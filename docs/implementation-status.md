@@ -165,7 +165,12 @@ Local IPC now passes real Unix-socket tests for canonical private paths,
 same-UID peer authentication, mode enforcement, symlink/non-socket rejection,
 owned stale cleanup, reconnect, disconnect, frame limits, and deadlines. It
 contains no TCP listener and fails closed where native peer credentials are
-not implemented. Daemon lifecycle commands are active.
+not implemented. Daemon lifecycle commands are complete.
+Lifecycle commands now pass process-level start/status/restart/typed-stop and
+SIGTERM cleanup tests using the one Rust binary, authenticated runtime records,
+boot/executable/instance liveness checks, safe stale recovery, and no shell
+daemonization. Client auto-attach remains intentionally gated on client parity;
+systemd user-service integration is active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

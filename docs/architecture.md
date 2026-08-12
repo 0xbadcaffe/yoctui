@@ -1359,6 +1359,21 @@ integration is preferred where available and requires no root; an unavailable
 user manager produces a documented direct-process fallback rather than a
 false success.
 
+The first lifecycle slice is implemented as `yoctui daemon
+start|status|stop|restart|foreground`. Direct start resolves the current Rust
+executable and starts its foreground subcommand in a new process group with
+closed standard streams; it does not construct a shell command or double-fork.
+It waits for an authenticated typed handshake before reporting success.
+Foreground mode binds IPC, replaces only a provably stale prior runtime record,
+writes an atomic private `daemon.json` containing PID, random instance ID,
+boot ID, executable identity, and start time, and handles graceful protocol
+shutdown plus SIGTERM cleanup. Status validates boot identity, PID liveness,
+`/proc/<pid>/exe`, live socket handshake, and matching daemon instance. Stop
+uses a typed request and waits for socket cleanup; restart composes verified
+stop and start. Interactive automatic attach/optional auto-start will call
+these same lifecycle APIs when `CLIENT-ARCH-001` moves the client boundary;
+the current single-process TUI is not falsely reported as attached meanwhile.
+
 ### Crash, daemon restart, and host reboot
 
 On daemon crash, connected clients detect EOF/timeout and enter disconnected

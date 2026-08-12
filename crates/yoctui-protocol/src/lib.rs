@@ -2,6 +2,8 @@
 pub mod daemon;
 #[cfg(unix)]
 pub mod daemon_ipc;
+#[cfg(unix)]
+pub mod daemon_lifecycle;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;

@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** DAEMON-LIFECYCLE-001
-**Title:** Implement daemon lifecycle commands
+**ID:** DAEMON-SERVICE-INTEGRATION-001
+**Title:** Add systemd user service integration
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Implement `yoctui daemon start/status/stop/restart`, a foreground debug mode,
-typed automatic client connection with optional auto-start, secure PID/runtime
-state, crash recovery, and clean socket cleanup using a robust Rust service
-model rather than shell-specific daemonization.
+Generate, install, and manage a systemd user service where available without
+root. Support start, stop, restart, and status, document daemon auto-start, and
+provide a clear direct-process fallback when the user service manager is
+unavailable.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui daemon_lifecycle
-cargo test -p yoctui-protocol daemon_lifecycle
+cargo test -p yoctui daemon_service
+./scripts/check-docs.sh
 ```

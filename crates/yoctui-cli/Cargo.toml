@@ -11,6 +11,7 @@ ratatui.workspace = true
 yoctui-app = { version = "0.1.0", path = "../yoctui-app" }
 yoctui-bitbake = { version = "0.1.0", path = "../yoctui-bitbake" }
 yoctui-model = { version = "0.1.0", path = "../yoctui-model" }
+yoctui-protocol = { version = "0.1.0", path = "../yoctui-protocol" }
 yoctui-ui = { version = "0.1.0", path = "../yoctui-ui" }
 serde.workspace = true
 thiserror.workspace = true
