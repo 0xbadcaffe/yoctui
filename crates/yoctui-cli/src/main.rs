@@ -1062,7 +1062,8 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     use yoctui_protocol::{
         daemon::{
             Capability, ClientMessage, CommandOutcome, CommandResult, DaemonCommand, DaemonHello,
-            MAX_FRAME_BYTES, ProtocolLimits, ProtocolVersion, ServerMessage,
+            DaemonSnapshotJournal, DaemonSnapshotLimits, DaemonSnapshotSync, MAX_FRAME_BYTES,
+            ProtocolLimits, ProtocolVersion, ServerMessage, SnapshotReplacementReason,
         },
         daemon_ipc::{DaemonListener, IpcError, runtime_paths},
         daemon_lifecycle::{
@@ -1107,6 +1108,10 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
             &App::new(daemon_log_limit, MAX_FRAME_BYTES),
         ))),
     )?;
+    let daemon_journal = DaemonSnapshotJournal::new(
+        daemon_protocol_snapshot(&daemon_state),
+        DaemonSnapshotLimits::default(),
+    )?;
     write_runtime_record(&paths, &record)?;
     let record_guard = DaemonRuntimeGuard {
         paths: paths.clone(),
@@ -1147,13 +1152,36 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                     }))?;
                     negotiated = true;
                 }
-                Ok(ClientMessage::Attach { .. }) if negotiated => {
-                    let snapshot = daemon_protocol_snapshot(&daemon_state);
-                    let replayed_through = snapshot.sequence;
-                    connection.send(&ServerMessage::Attached {
-                        snapshot,
-                        replayed_through,
-                    })?;
+                Ok(ClientMessage::Attach { resume, .. }) if negotiated => {
+                    match daemon_journal.synchronize(resume) {
+                        DaemonSnapshotSync::Replace { snapshot, reason } => {
+                            if reason != SnapshotReplacementReason::InitialAttach {
+                                connection.send(&ServerMessage::ResyncRequired {
+                                    reason: format!(
+                                        "client replica must be replaced: {reason:?}"
+                                    ),
+                                    current_sequence: snapshot.sequence,
+                                })?;
+                            }
+                            let replayed_through = snapshot.sequence;
+                            connection.send(&ServerMessage::Attached {
+                                snapshot: *snapshot,
+                                replayed_through,
+                            })?;
+                        }
+                        DaemonSnapshotSync::Replay {
+                            events,
+                            replayed_through,
+                        } => {
+                            for event in events {
+                                connection.send(&ServerMessage::Event(event))?;
+                            }
+                            connection.send(&ServerMessage::Attached {
+                                snapshot: daemon_journal.snapshot().clone(),
+                                replayed_through,
+                            })?;
+                        }
+                    }
                 }
                 Ok(ClientMessage::Detach) if negotiated => {
                     connection.send(&ServerMessage::Detaching)?;

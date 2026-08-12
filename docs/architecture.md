@@ -1366,6 +1366,18 @@ explicitly replaces the stale replica with a new snapshot. Until synchronization
 completes the client shows reconnecting state and does not issue consequential
 commands against stale data.
 
+`DaemonSnapshotJournal` implements that single-owner cut with validated limits
+for snapshot bytes, retained event count, recent logs, and individual framed
+events. Publishing checks sequence and generation overflow, applies the event
+to a candidate snapshot, verifies its bound, and only then atomically commits
+both snapshot and retained event. A same-instance cursor within retention gets
+only strictly later ordered events; a missing, wrong-instance, expired, or
+future cursor receives an explicit replacement reason and the current bounded
+snapshot. `DaemonClientSnapshot` rejects any sequence/generation gap, marks its
+replica stale, withholds its resume cursor, and becomes current only after a
+safe full replacement. The foreground runtime uses the same journal for fresh
+attach and resume rather than maintaining separate socket-specific state.
+
 Detach closes only the client subscription and releases its ephemeral focus,
 confirmation, and PTY-writer leases. It does not cancel jobs, disconnect
 BitBake, close PTYs, or shut down the daemon. EOF, terminal close, client crash,

@@ -1,11 +1,14 @@
 //! Typed, bounded protocol for the persistent daemon and attachable clients.
 use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
 use thiserror::Error;
 
 pub const PROTOCOL_MAJOR: u16 = 1;
 pub const PROTOCOL_MINOR: u16 = 0;
 pub const MAX_FRAME_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_CAPABILITIES: usize = 128;
+pub const MAX_RETAINED_EVENTS: usize = 65_536;
+pub const MAX_SNAPSHOT_LOGS: usize = 100_000;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProtocolVersion {
@@ -461,6 +464,257 @@ pub struct LogRecord {
     pub unix_ms: u64,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DaemonSnapshotLimits {
+    pub retained_events: usize,
+    pub recent_logs: usize,
+    pub snapshot_bytes: usize,
+}
+
+impl Default for DaemonSnapshotLimits {
+    fn default() -> Self {
+        Self {
+            retained_events: 4_096,
+            recent_logs: 10_000,
+            snapshot_bytes: MAX_FRAME_BYTES,
+        }
+    }
+}
+
+impl DaemonSnapshotLimits {
+    fn validate(self) -> Result<Self, DaemonSnapshotError> {
+        if self.retained_events == 0 || self.retained_events > MAX_RETAINED_EVENTS {
+            return Err(DaemonSnapshotError::InvalidLimit("retained events"));
+        }
+        if self.recent_logs == 0 || self.recent_logs > MAX_SNAPSHOT_LOGS {
+            return Err(DaemonSnapshotError::InvalidLimit("recent logs"));
+        }
+        if self.snapshot_bytes == 0 || self.snapshot_bytes > MAX_FRAME_BYTES {
+            return Err(DaemonSnapshotError::InvalidLimit("snapshot bytes"));
+        }
+        Ok(self)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DaemonSnapshotSync {
+    Replace {
+        snapshot: Box<DaemonSnapshot>,
+        reason: SnapshotReplacementReason,
+    },
+    Replay {
+        events: Vec<SequencedEvent>,
+        replayed_through: u64,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SnapshotReplacementReason {
+    InitialAttach,
+    DaemonInstanceChanged,
+    HistoryExpired,
+    CursorAhead,
+}
+
+/// Single-owner snapshot/event journal. Calling `synchronize` while holding the
+/// daemon state's lock establishes the snapshot/replay watermark before a
+/// client is added to the live subscriber set.
+#[derive(Debug, Clone)]
+pub struct DaemonSnapshotJournal {
+    snapshot: DaemonSnapshot,
+    events: VecDeque<SequencedEvent>,
+    limits: DaemonSnapshotLimits,
+}
+
+impl DaemonSnapshotJournal {
+    pub fn new(
+        snapshot: DaemonSnapshot,
+        limits: DaemonSnapshotLimits,
+    ) -> Result<Self, DaemonSnapshotError> {
+        let limits = limits.validate()?;
+        ensure_snapshot_bound(&snapshot, limits.snapshot_bytes)?;
+        Ok(Self {
+            snapshot,
+            events: VecDeque::new(),
+            limits,
+        })
+    }
+
+    pub fn snapshot(&self) -> &DaemonSnapshot {
+        &self.snapshot
+    }
+
+    pub fn publish(&mut self, event: DaemonEvent) -> Result<SequencedEvent, DaemonSnapshotError> {
+        let sequence = self
+            .snapshot
+            .sequence
+            .checked_add(1)
+            .ok_or(DaemonSnapshotError::SequenceExhausted)?;
+        let generation = self
+            .snapshot
+            .generation
+            .checked_add(1)
+            .ok_or(DaemonSnapshotError::GenerationExhausted)?;
+        let sequenced = SequencedEvent {
+            sequence,
+            generation,
+            event,
+        };
+        let event_bytes = serde_json::to_vec(&sequenced)?.len();
+        if event_bytes > MAX_FRAME_BYTES {
+            return Err(DaemonSnapshotError::EventTooLarge {
+                actual: event_bytes,
+                maximum: MAX_FRAME_BYTES,
+            });
+        }
+        let mut candidate = self.snapshot.clone();
+        apply_sequenced_event(&mut candidate, &sequenced)?;
+        while candidate.recent_logs.len() > self.limits.recent_logs {
+            candidate.recent_logs.remove(0);
+        }
+        ensure_snapshot_bound(&candidate, self.limits.snapshot_bytes)?;
+        self.snapshot = candidate;
+        self.events.push_back(sequenced.clone());
+        while self.events.len() > self.limits.retained_events {
+            self.events.pop_front();
+        }
+        Ok(sequenced)
+    }
+
+    pub fn synchronize(&self, resume: Option<ResumeCursor>) -> DaemonSnapshotSync {
+        let Some(cursor) = resume else {
+            return DaemonSnapshotSync::Replace {
+                snapshot: Box::new(self.snapshot.clone()),
+                reason: SnapshotReplacementReason::InitialAttach,
+            };
+        };
+        if cursor.daemon_instance_id != self.snapshot.daemon_instance_id {
+            return DaemonSnapshotSync::Replace {
+                snapshot: Box::new(self.snapshot.clone()),
+                reason: SnapshotReplacementReason::DaemonInstanceChanged,
+            };
+        }
+        if cursor.last_sequence > self.snapshot.sequence {
+            return DaemonSnapshotSync::Replace {
+                snapshot: Box::new(self.snapshot.clone()),
+                reason: SnapshotReplacementReason::CursorAhead,
+            };
+        }
+        let first_retained = self
+            .events
+            .front()
+            .map(|event| event.sequence)
+            .unwrap_or_else(|| self.snapshot.sequence.saturating_add(1));
+        if cursor.last_sequence.saturating_add(1) < first_retained {
+            return DaemonSnapshotSync::Replace {
+                snapshot: Box::new(self.snapshot.clone()),
+                reason: SnapshotReplacementReason::HistoryExpired,
+            };
+        }
+        DaemonSnapshotSync::Replay {
+            events: self
+                .events
+                .iter()
+                .filter(|event| event.sequence > cursor.last_sequence)
+                .cloned()
+                .collect(),
+            replayed_through: self.snapshot.sequence,
+        }
+    }
+}
+
+pub fn apply_sequenced_event(
+    snapshot: &mut DaemonSnapshot,
+    sequenced: &SequencedEvent,
+) -> Result<(), DaemonSnapshotError> {
+    let expected_sequence = snapshot
+        .sequence
+        .checked_add(1)
+        .ok_or(DaemonSnapshotError::SequenceExhausted)?;
+    let expected_generation = snapshot
+        .generation
+        .checked_add(1)
+        .ok_or(DaemonSnapshotError::GenerationExhausted)?;
+    if sequenced.sequence != expected_sequence || sequenced.generation != expected_generation {
+        return Err(DaemonSnapshotError::EventGap {
+            expected_sequence,
+            actual_sequence: sequenced.sequence,
+            expected_generation,
+            actual_generation: sequenced.generation,
+        });
+    }
+    match &sequenced.event {
+        DaemonEvent::BitBakeChanged(bitbake) => snapshot.bitbake = bitbake.clone(),
+        DaemonEvent::JobChanged(job) => replace_by(&mut snapshot.jobs, job.clone(), |item| item.id),
+        DaemonEvent::JobRemoved { job_id } => snapshot.jobs.retain(|job| job.id != *job_id),
+        DaemonEvent::PtyChanged(pty) => {
+            replace_by(&mut snapshot.pty_sessions, pty.clone(), |item| item.id);
+        }
+        DaemonEvent::PtyOutput { .. } | DaemonEvent::PtyScreen(_) | DaemonEvent::Unknown => {}
+        DaemonEvent::ClientChanged(client) => {
+            replace_by(&mut snapshot.clients, client.clone(), |item| item.id);
+        }
+        DaemonEvent::ClientRemoved { client_id } => {
+            snapshot.clients.retain(|client| client.id != *client_id);
+        }
+        DaemonEvent::RecoveryWarning { message } => {
+            snapshot.recovery_warnings.push(message.clone());
+        }
+        DaemonEvent::Log(record) => snapshot.recent_logs.push(record.clone()),
+    }
+    snapshot.sequence = sequenced.sequence;
+    snapshot.generation = sequenced.generation;
+    Ok(())
+}
+
+fn replace_by<T, K: PartialEq>(items: &mut Vec<T>, replacement: T, key: impl Fn(&T) -> K) {
+    let replacement_key = key(&replacement);
+    if let Some(index) = items.iter().position(|item| key(item) == replacement_key) {
+        items[index] = replacement;
+    } else {
+        items.push(replacement);
+    }
+}
+
+fn ensure_snapshot_bound(
+    snapshot: &DaemonSnapshot,
+    maximum_bytes: usize,
+) -> Result<(), DaemonSnapshotError> {
+    let encoded = serde_json::to_vec(snapshot)?;
+    if encoded.len() > maximum_bytes {
+        return Err(DaemonSnapshotError::SnapshotTooLarge {
+            actual: encoded.len(),
+            maximum: maximum_bytes,
+        });
+    }
+    Ok(())
+}
+
+#[derive(Debug, Error)]
+pub enum DaemonSnapshotError {
+    #[error("invalid daemon snapshot limit for {0}")]
+    InvalidLimit(&'static str),
+    #[error("daemon snapshot is {actual} bytes, exceeding the {maximum}-byte limit")]
+    SnapshotTooLarge { actual: usize, maximum: usize },
+    #[error("daemon event is {actual} bytes, exceeding the {maximum}-byte limit")]
+    EventTooLarge { actual: usize, maximum: usize },
+    #[error("daemon snapshot sequence space is exhausted")]
+    SequenceExhausted,
+    #[error("daemon snapshot generation space is exhausted")]
+    GenerationExhausted,
+    #[error(
+        "daemon event gap: expected sequence/generation {expected_sequence}/{expected_generation}, got {actual_sequence}/{actual_generation}"
+    )]
+    EventGap {
+        expected_sequence: u64,
+        actual_sequence: u64,
+        expected_generation: u64,
+        actual_generation: u64,
+    },
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LogSeverity {
@@ -644,6 +898,27 @@ mod tests {
         ClientId([byte; 16])
     }
 
+    fn daemon_snapshot_fixture() -> DaemonSnapshot {
+        DaemonSnapshot {
+            daemon_instance_id: DaemonInstanceId([7; 16]),
+            sequence: 0,
+            generation: 0,
+            workspace: None,
+            project_profile: ProjectProfileSummary::Absent,
+            bitbake: BitBakeState {
+                lifecycle: LifecycleState::Disconnected,
+                version: None,
+                capabilities: Vec::new(),
+                diagnostic: None,
+            },
+            jobs: Vec::new(),
+            pty_sessions: Vec::new(),
+            clients: Vec::new(),
+            recent_logs: Vec::new(),
+            recovery_warnings: Vec::new(),
+        }
+    }
+
     #[test]
     fn daemon_protocol_negotiates_versions_and_capabilities_explicitly() {
         assert_eq!(
@@ -810,5 +1085,115 @@ mod tests {
                 message
             );
         }
+    }
+
+    #[test]
+    fn daemon_snapshot_is_gap_free_bounded_and_replays_only_retained_events() {
+        let mut journal = DaemonSnapshotJournal::new(
+            daemon_snapshot_fixture(),
+            DaemonSnapshotLimits {
+                retained_events: 2,
+                recent_logs: 2,
+                snapshot_bytes: MAX_FRAME_BYTES,
+            },
+        )
+        .unwrap();
+        for index in 1..=3 {
+            let event = journal
+                .publish(DaemonEvent::Log(LogRecord {
+                    source: "test".into(),
+                    severity: LogSeverity::Info,
+                    message: format!("event-{index}"),
+                    unix_ms: index,
+                }))
+                .unwrap();
+            assert_eq!(event.sequence, index);
+            assert_eq!(event.generation, index);
+        }
+        assert_eq!(journal.snapshot().sequence, 3);
+        assert_eq!(journal.snapshot().recent_logs.len(), 2);
+        assert_eq!(journal.snapshot().recent_logs[0].message, "event-2");
+
+        let replay = journal.synchronize(Some(ResumeCursor {
+            daemon_instance_id: DaemonInstanceId([7; 16]),
+            last_sequence: 1,
+        }));
+        assert!(matches!(
+            replay,
+            DaemonSnapshotSync::Replay {
+                ref events,
+                replayed_through: 3
+            } if events.iter().map(|event| event.sequence).collect::<Vec<_>>() == vec![2, 3]
+        ));
+        assert!(matches!(
+            journal.synchronize(Some(ResumeCursor {
+                daemon_instance_id: DaemonInstanceId([7; 16]),
+                last_sequence: 0,
+            })),
+            DaemonSnapshotSync::Replace {
+                reason: SnapshotReplacementReason::HistoryExpired,
+                ..
+            }
+        ));
+        assert!(matches!(
+            journal.synchronize(Some(ResumeCursor {
+                daemon_instance_id: DaemonInstanceId([8; 16]),
+                last_sequence: 3,
+            })),
+            DaemonSnapshotSync::Replace {
+                reason: SnapshotReplacementReason::DaemonInstanceChanged,
+                ..
+            }
+        ));
+
+        let mut client = daemon_snapshot_fixture();
+        let gap = SequencedEvent {
+            sequence: 2,
+            generation: 2,
+            event: DaemonEvent::Unknown,
+        };
+        assert!(matches!(
+            apply_sequenced_event(&mut client, &gap),
+            Err(DaemonSnapshotError::EventGap { .. })
+        ));
+        assert_eq!(client.sequence, 0);
+    }
+
+    #[test]
+    fn daemon_snapshot_rejects_invalid_limits_and_oversized_snapshots() {
+        assert!(matches!(
+            DaemonSnapshotJournal::new(
+                daemon_snapshot_fixture(),
+                DaemonSnapshotLimits {
+                    retained_events: 0,
+                    ..DaemonSnapshotLimits::default()
+                },
+            ),
+            Err(DaemonSnapshotError::InvalidLimit("retained events"))
+        ));
+        assert!(matches!(
+            DaemonSnapshotJournal::new(
+                daemon_snapshot_fixture(),
+                DaemonSnapshotLimits {
+                    snapshot_bytes: 1,
+                    ..DaemonSnapshotLimits::default()
+                },
+            ),
+            Err(DaemonSnapshotError::SnapshotTooLarge { .. })
+        ));
+
+        let mut journal =
+            DaemonSnapshotJournal::new(daemon_snapshot_fixture(), DaemonSnapshotLimits::default())
+                .unwrap();
+        assert!(matches!(
+            journal.publish(DaemonEvent::Log(LogRecord {
+                source: "test".into(),
+                severity: LogSeverity::Error,
+                message: "x".repeat(MAX_FRAME_BYTES),
+                unix_ms: 0,
+            })),
+            Err(DaemonSnapshotError::EventTooLarge { .. })
+        ));
+        assert_eq!(journal.snapshot().sequence, 0);
     }
 }

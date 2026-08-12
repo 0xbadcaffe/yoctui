@@ -30,7 +30,10 @@ impl Drop for DaemonGuard {
     }
 }
 
-fn attach_snapshot(runtime: &Path) -> (yoctui_protocol::daemon::DaemonHello, ServerMessage) {
+fn attach_snapshot(
+    runtime: &Path,
+    resume: Option<yoctui_protocol::daemon::ResumeCursor>,
+) -> (yoctui_protocol::daemon::DaemonHello, ServerMessage) {
     let paths = runtime_paths_for(runtime.to_path_buf(), unsafe { libc::geteuid() }).unwrap();
     let mut connection = DaemonConnection::connect(&paths, Duration::from_secs(2)).unwrap();
     connection
@@ -58,7 +61,7 @@ fn attach_snapshot(runtime: &Path) -> (yoctui_protocol::daemon::DaemonHello, Ser
                 logs: true,
                 pty_sessions: Vec::new(),
             },
-            resume: None,
+            resume,
         })
         .unwrap();
     let attached = connection.receive().unwrap();
@@ -94,7 +97,7 @@ fn daemon_state_runtime_owns_snapshot_across_client_detach_and_reattach() {
         String::from_utf8_lossy(&start.stderr)
     );
 
-    let (first_hello, first_attached) = attach_snapshot(&runtime);
+    let (first_hello, first_attached) = attach_snapshot(&runtime, None);
     let first_snapshot = match first_attached {
         ServerMessage::Attached {
             snapshot,
@@ -117,7 +120,13 @@ fn daemon_state_runtime_owns_snapshot_across_client_detach_and_reattach() {
     ));
     assert!(first_snapshot.jobs.is_empty());
 
-    let (second_hello, second_attached) = attach_snapshot(&runtime);
+    let (second_hello, second_attached) = attach_snapshot(
+        &runtime,
+        Some(yoctui_protocol::daemon::ResumeCursor {
+            daemon_instance_id: first_snapshot.daemon_instance_id,
+            last_sequence: first_snapshot.sequence,
+        }),
+    );
     let second_snapshot = match second_attached {
         ServerMessage::Attached { snapshot, .. } => snapshot,
         response => panic!("expected attached snapshot, got {response:?}"),

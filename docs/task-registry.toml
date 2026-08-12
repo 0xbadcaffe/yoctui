@@ -2969,18 +2969,18 @@ notes = "Parent gate complete: typed partition, existing long-lived workflow-fam
 id = "DAEMON-SNAPSHOT-001"
 milestone = "M11"
 title = "Synchronize snapshots and incremental daemon events"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 406
 required = true
 depends_on = ["DAEMON-STATE-001", "DAEMON-PROTOCOL-001"]
 verify = ["cargo test -p yoctui-protocol daemon_snapshot", "cargo test -p yoctui-app daemon_snapshot"]
-notes = "Provide bounded consistent attach snapshot followed by ordered events without gaps, sequence tracking, missed-event reconnect, and safe stale-state replacement."
+notes = "DaemonSnapshotJournal now atomically maintains a byte-bounded snapshot and count-bounded ordered event history with checked sequence/generation, framed event limits, exact retained replay, and explicit initial/wrong-instance/expired/future replacement reasons. DaemonClientSnapshot rejects gaps and withholds stale cursors; the foreground runtime uses the journal for attach/resume."
 
 [[task]]
 id = "DAEMON-PERSIST-001"
 milestone = "M11"
 title = "Persist safe daemon metadata"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 407
 required = true
 depends_on = ["DAEMON-STATE-001"]

@@ -2,20 +2,19 @@
 
 ## Task
 
-**ID:** DAEMON-SNAPSHOT-001
-**Title:** Synchronize snapshots and incremental daemon events
+**ID:** DAEMON-PERSIST-001
+**Title:** Persist safe daemon metadata
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Provide a bounded consistent state snapshot followed by ordered incremental
-events without a subscription gap. Track daemon sequence/generation, replay
-missed events on reconnect where retained, require safe replacement when a
-client is stale, and keep snapshot/replay queues within configured limits.
+Persist only safe, meaningful daemon metadata: workspace/profile identity, job
+history, terminal session and layout metadata, session names, configured
+bounded recent logs, user preferences, and reconnect metadata. Never serialize
+or imply that live child PIDs survive daemon or host restart.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-protocol daemon_snapshot
-cargo test -p yoctui-app daemon_snapshot
+cargo test -p yoctui daemon_persist
 ```
