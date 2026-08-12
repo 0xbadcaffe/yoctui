@@ -6318,6 +6318,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     | MaintenanceDialog::BuildHistoryToml {
                         editor,
                         validation_error,
+                    }
+                    | MaintenanceDialog::GitArchiveToml {
+                        editor,
+                        validation_error,
                     } => (editor, Some(validation_error)),
                     _ => return None,
                 },

@@ -859,6 +859,10 @@ pub fn render(frame: &mut Frame, app: &App) {
                 editor,
                 validation_error,
             } => Some(("Build history.toml", editor, validation_error)),
+            MaintenanceDialog::GitArchiveToml {
+                editor,
+                validation_error,
+            } => Some(("Git archive.toml", editor, validation_error)),
             _ => None,
         }
     {
@@ -9455,6 +9459,9 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
             unreachable!("locked-cache form uses the shared editor")
         }
         MaintenanceDialog::BuildHistoryToml { .. } => unreachable!("build-history form uses the shared editor"),
+        MaintenanceDialog::GitArchiveToml { .. } => {
+            unreachable!("Git archive form uses the shared editor")
+        }
         MaintenanceDialog::ReadinessForm(draft) => (
             "Sstate readiness check",
             format!(
@@ -15359,28 +15366,23 @@ mod tests {
     #[test]
     fn maintenance_release_archive_workspace_renders_local_and_network_intent_responsively() {
         let mut app = maintenance_workflow_ui_app();
-        let mut draft = yoctui_model::MaintenanceGitArchiveDraft {
-            data_dir: "/release/data".into(),
-            git_dir: "/release/archive.git".into(),
-            bare: true,
-            exclusions: "tmp/*,downloads/*".into(),
-            notes: "release=/release/note.txt".into(),
-            push_remote: "origin".into(),
-            validation: Some("note identity changed".into()),
-            ..yoctui_model::MaintenanceGitArchiveDraft::default()
-        };
-        draft.field = yoctui_model::MaintenanceGitArchiveField::PushRemote;
+        let editor = yoctui_model::PopupEditor::new("data_dir = \"/release/data\"\ngit_dir = \"/release/archive.git\"\ncreate = true\nbare = true\ncreate_tag = true\nbranch_name = \"release/{machine}\"\ntag_name = \"release/{tag_number}\"\ncommit_subject = \"Release {commit}\"\ncommit_body = \"\"\ntag_subject = \"Release tag {tag_number}\"\ntag_body = \"\"\nexclusions = \"tmp/*,downloads/*\"\nnotes = \"release=/release/note.txt\"\npush_remote = \"origin\"\n".into());
         app.dialogs.push_front(Dialog::Maintenance(Box::new(
-            MaintenanceDialog::GitArchiveForm(Box::new(draft)),
+            MaintenanceDialog::GitArchiveToml {
+                editor,
+                validation_error: Some("note identity changed".into()),
+            },
         )));
         app.focus = FocusTarget::Dialog;
         for (width, height) in [(160, 40), (100, 26), (80, 24)] {
             let output = rendered_text(&app, width, height);
-            assert!(output.contains("Git release archive"), "{width}: {output}");
+            assert!(output.contains("Git archive.toml"), "{width}: {output}");
             assert!(output.contains("/release/archive.git"), "{width}: {output}");
-            assert!(output.contains("[x] bare"), "{width}: {output}");
-            assert!(output.contains("origin"), "{width}: {output}");
-            assert!(output.contains("second network"), "{width}: {output}");
+            assert!(output.contains("bare = true"), "{width}: {output}");
+            if width == 160 {
+                assert!(output.contains("origin"), "{width}: {output}");
+            }
+            assert!(output.contains("Home/End line"), "{width}: {output}");
             assert!(
                 output.contains("note identity changed"),
                 "{width}: {output}"

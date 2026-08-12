@@ -2150,16 +2150,19 @@ repository creation, tag replacement risk, or overwriting tracked output is
 called out in confirmation. A requested remote push is a second network side
 effect requiring a separate explicit confirmation after the local result.
 
-`a` opens the Git archive form only when the exact `oe-git-archive` capability
+`a` opens the bounded `Git archive.toml` popup only when the exact
+`oe-git-archive` capability
 is available. Data and Git directories begin empty. Create and create-tag begin
 selected, bare begins clear; branch, tag, commit-subject, and tag-subject begin
 as `release/{machine}`, `release/{tag_number}`, `Release {commit}`, and
 `Release tag {tag_number}`. Commit/tag bodies, comma-separated exclusions,
 comma-separated `reference=/absolute/file` notes, and push remote begin empty.
-`Tab`/`Shift+Tab` traverses those fields in the displayed order. Normal typing
-and `Backspace` edit text; `Space` or `Left`/`Right` toggles only create, bare,
-and create-tag. `Enter` validates and requests an exact adapter preview without
-creating, tagging, or pushing; `Esc` closes without side effects. A non-empty
+The document uses strings for paths, names, messages, exclusions, notes, and
+remote, plus native TOML booleans for create, bare, and create-tag. Shared
+Normal/Insert navigation, Home/End, selection, copy/paste, undo, and shortcut
+footer apply. `Enter` validates and requests an exact adapter preview without
+creating, tagging, or pushing; Normal-mode `Esc` or `q` closes without side
+effects. A non-empty
 push remote records intent only: local archival is confirmed and completed
 first, then push requires the separate network confirmation. The form always
 shows repository-creation, tag-replacement, and tracked-output overwrite risk.

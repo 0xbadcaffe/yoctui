@@ -124,8 +124,8 @@ editor without weakening typed preview, candidate discovery, or destructive
 confirmation, and their parent gate passes; service import/export now uses the
 shared popup while retaining capability-owned context. Maintenance
 release forms are likewise split into locked cache, build history, and Git
-archive tasks; locked cache and build history now use the shared popup, with Git
-archive next.
+archive tasks; all three now use the shared popup while retaining their typed
+preview and local/network separation, and the release parent gate is next.
 The editor agenda now has explicit adoption, typed state, routing/rendering,
 and migration tasks; JUnit export and operations remain sequenced after it.
 

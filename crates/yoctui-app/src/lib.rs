@@ -2150,6 +2150,15 @@ pub fn maintenance_dialog_action(dialog: &MaintenanceDialog, key: Input) -> Opti
             }
             input => popup_editor_action(editor.editing, input),
         },
+        MaintenanceDialog::GitArchiveToml { editor, .. } => match key {
+            Input::Enter => maintenance(MaintenanceAction::ConfirmGitArchiveToml(
+                editor.text.clone(),
+            )),
+            Input::Char('q') | Input::Esc if !editor.editing => {
+                maintenance(MaintenanceAction::CancelDialog)
+            }
+            input => popup_editor_action(editor.editing, input),
+        },
         MaintenanceDialog::ReadinessForm(draft) => {
             let mut next = (**draft).clone();
             next.validation = None;
@@ -3263,45 +3272,38 @@ mod tests {
             maintenance_workspace_action(MaintenanceView::Services, 3, Input::Char('a')),
             None
         );
-        let draft = yoctui_model::MaintenanceGitArchiveDraft::default();
+        let mut editor = yoctui_model::PopupEditor::new(
+            "data_dir = \"\"\ncreate = true\npush_remote = \"\"\n".into(),
+        );
+        editor.editing = true;
         assert!(matches!(
             maintenance_dialog_action(
-                &MaintenanceDialog::GitArchiveForm(Box::new(draft.clone())),
+                &MaintenanceDialog::GitArchiveToml {
+                    editor: editor.clone(),
+                    validation_error: None,
+                },
                 Input::Char('/'),
             ),
-            Some(Action::Maintenance(MaintenanceAction::UpdateGitArchiveForm(next)))
-                if next.data_dir == "/"
-        ));
-        let mut toggle = draft.clone();
-        toggle.field = MaintenanceGitArchiveField::Bare;
-        assert!(matches!(
-            maintenance_dialog_action(
-                &MaintenanceDialog::GitArchiveForm(Box::new(toggle)),
-                Input::Right,
-            ),
-            Some(Action::Maintenance(MaintenanceAction::UpdateGitArchiveForm(next)))
-                if next.bare
+            Some(Action::EditActivePopup(PopupEditorCommand::Insert('/')))
         ));
         assert!(matches!(
             maintenance_dialog_action(
-                &MaintenanceDialog::GitArchiveForm(Box::new(draft.clone())),
-                Input::BackTab,
-            ),
-            Some(Action::Maintenance(MaintenanceAction::UpdateGitArchiveForm(next)))
-                if next.field == MaintenanceGitArchiveField::PushRemote
-        ));
-        assert!(matches!(
-            maintenance_dialog_action(
-                &MaintenanceDialog::GitArchiveForm(Box::new(draft.clone())),
+                &MaintenanceDialog::GitArchiveToml {
+                    editor: editor.clone(),
+                    validation_error: None,
+                },
                 Input::Enter,
             ),
-            Some(Action::Maintenance(
-                MaintenanceAction::ConfirmGitArchiveForm(_)
-            ))
+            Some(Action::Maintenance(MaintenanceAction::ConfirmGitArchiveToml(document)))
+                if document == editor.text
         ));
+        editor.editing = false;
         assert_eq!(
             maintenance_dialog_action(
-                &MaintenanceDialog::GitArchiveForm(Box::new(draft)),
+                &MaintenanceDialog::GitArchiveToml {
+                    editor,
+                    validation_error: None,
+                },
                 Input::Esc,
             ),
             Some(Action::Maintenance(MaintenanceAction::CancelDialog))

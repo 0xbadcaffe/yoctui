@@ -718,6 +718,11 @@ Build-history popup validation likewise reconstructs the canonical repository
 from current capability metadata, parses only revision/exclusion strings and
 typed report booleans, and emits the existing bounded comparison preview.
 
+Git-archive popup validation maps bounded string fields and native booleans
+into the established typed archive request. A remote remains intent inside the
+local request: local evidence must complete before the separate network-push
+confirmation can be offered.
+
 Service diagnostics cross the boundary as typed endpoint-role, local/remote,
 reachability, PID, and executable-name records rather than raw process or
 socket text. The adapter bounds an explicit process-root scan and records

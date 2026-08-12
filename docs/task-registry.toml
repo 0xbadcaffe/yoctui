@@ -2767,18 +2767,18 @@ notes = "Build-history revisions, exclusions, and report booleans now use the sh
 id = "UX-POPUP-OPS-MAINT-ARCHIVE-001"
 milestone = "M8"
 title = "Move Maintenance Git archive form into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 166
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-HISTORY-001"]
 verify = ["cargo test -p yoctui-model maintenance_release", "cargo test -p yoctui-app maintenance_release_archive", "cargo test -p yoctui-ui maintenance_release_archive", "cargo check -p yoctui"]
-notes = "Migrate Git archive repository/message/path/push editing while preserving local commit evidence and explicit network push confirmation."
+notes = "Git archive paths, flags, templates, messages, exclusions, notes, and optional remote now use the shared PopupEditor while local evidence and explicit post-local network push confirmation remain separate."
 
 [[task]]
 id = "UX-POPUP-OPS-MAINT-RELEASE-001"
 milestone = "M8"
 title = "Move Maintenance release forms into TOML popups"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 167
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-LOCKED-001", "UX-POPUP-OPS-MAINT-HISTORY-001", "UX-POPUP-OPS-MAINT-ARCHIVE-001"]

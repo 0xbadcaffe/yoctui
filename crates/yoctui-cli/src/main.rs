@@ -5830,6 +5830,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                 | yoctui_model::MaintenanceDialog::PrServiceToml { editor, .. }
                                 | yoctui_model::MaintenanceDialog::LockedCacheToml { editor, .. }
                                 | yoctui_model::MaintenanceDialog::BuildHistoryToml { editor, .. }
+                                | yoctui_model::MaintenanceDialog::GitArchiveToml { editor, .. }
                                 if editor.editing
                         )
                 ) {
