@@ -933,6 +933,7 @@ pub struct PopupEditor {
     pub cursor: usize,
     pub selection: Option<(usize, usize)>,
     pub editing: bool,
+    clipboard: String,
     history: Vec<String>,
 }
 
@@ -944,11 +945,14 @@ impl PopupEditor {
             cursor,
             selection: None,
             editing: false,
+            clipboard: String::new(),
             history: Vec::new(),
         }
     }
     pub fn select_range(&mut self, start: usize, end: usize) {
-        self.selection = Some((start.min(self.text.len()), end.min(self.text.len())));
+        let start = self.clamp_boundary(start);
+        let end = self.clamp_boundary(end);
+        self.selection = Some((start.min(end), start.max(end)));
         self.cursor = end.min(self.text.len());
     }
     pub fn insert(&mut self, value: &str) {
@@ -960,6 +964,70 @@ impl PopupEditor {
             self.text.insert_str(self.cursor, value);
             self.cursor += value.len();
         }
+    }
+    pub fn backspace(&mut self) {
+        if let Some((start, end)) = self.selection.take() {
+            self.remember();
+            self.text.replace_range(start..end, "");
+            self.cursor = start;
+        } else if self.cursor > 0 {
+            self.remember();
+            let previous = self.text[..self.cursor]
+                .char_indices()
+                .next_back()
+                .map_or(0, |(index, _)| index);
+            self.text.replace_range(previous..self.cursor, "");
+            self.cursor = previous;
+        }
+    }
+    pub fn left(&mut self) {
+        self.cursor = self.text[..self.cursor]
+            .char_indices()
+            .next_back()
+            .map_or(0, |(index, _)| index);
+        self.selection = None;
+    }
+    pub fn right(&mut self) {
+        self.cursor = self.text[self.cursor..]
+            .chars()
+            .next()
+            .map_or(self.text.len(), |character| {
+                self.cursor + character.len_utf8()
+            });
+        self.selection = None;
+    }
+    pub fn up(&mut self) {
+        let line_start = self.text[..self.cursor]
+            .rfind('\n')
+            .map_or(0, |index| index + 1);
+        if line_start == 0 {
+            self.home();
+            return;
+        }
+        let previous_end = line_start - 1;
+        let previous_start = self.text[..previous_end]
+            .rfind('\n')
+            .map_or(0, |index| index + 1);
+        self.cursor = self.clamp_boundary(
+            previous_start + (self.cursor - line_start).min(previous_end - previous_start),
+        );
+        self.selection = None;
+    }
+    pub fn down(&mut self) {
+        let line_start = self.text[..self.cursor]
+            .rfind('\n')
+            .map_or(0, |index| index + 1);
+        let Some(relative_end) = self.text[self.cursor..].find('\n') else {
+            self.end();
+            return;
+        };
+        let next_start = self.cursor + relative_end + 1;
+        let next_end = self.text[next_start..]
+            .find('\n')
+            .map_or(self.text.len(), |index| next_start + index);
+        self.cursor =
+            self.clamp_boundary(next_start + (self.cursor - line_start).min(next_end - next_start));
+        self.selection = None;
     }
     pub fn home(&mut self) {
         self.cursor = self.text[..self.cursor]
@@ -975,6 +1043,25 @@ impl PopupEditor {
     }
     pub fn selected_text(&self) -> Option<&str> {
         self.selection.map(|(start, end)| &self.text[start..end])
+    }
+    pub fn copy_selection_or_line(&mut self) -> String {
+        let value = self.selected_text().map(str::to_owned).unwrap_or_else(|| {
+            let start = self.text[..self.cursor]
+                .rfind('\n')
+                .map_or(0, |index| index + 1);
+            let end = self.text[self.cursor..]
+                .find('\n')
+                .map_or(self.text.len(), |index| self.cursor + index);
+            self.text[start..end].to_owned()
+        });
+        self.clipboard.clone_from(&value);
+        value
+    }
+    pub fn paste(&mut self) {
+        if !self.clipboard.is_empty() {
+            let value = self.clipboard.clone();
+            self.insert(&value);
+        }
     }
     pub fn select_toml_value(&mut self, key: &str) -> Result<(), String> {
         let prefix = format!("{key} = ");
@@ -1020,6 +1107,13 @@ impl PopupEditor {
                 self.history.remove(0);
             }
         }
+    }
+    fn clamp_boundary(&self, mut index: usize) -> usize {
+        index = index.min(self.text.len());
+        while !self.text.is_char_boundary(index) {
+            index -= 1;
+        }
+        index
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -1098,8 +1192,7 @@ pub enum Dialog {
     TestJunitExport(TestJunitExportDialog),
     TestJunitTomlEditor {
         result: TestResultIdentity,
-        content: String,
-        editing: bool,
+        editor: PopupEditor,
         validation_error: Option<String>,
     },
     TestJunitExportConfirmation(TestJunitExportPreview),
@@ -3559,6 +3652,15 @@ pub enum Action {
     ToggleTestJunitTomlEditor,
     AppendTestJunitTomlEditor(char),
     BackspaceTestJunitTomlEditor,
+    MoveTestJunitTomlEditorLeft,
+    MoveTestJunitTomlEditorRight,
+    MoveTestJunitTomlEditorUp,
+    MoveTestJunitTomlEditorDown,
+    MoveTestJunitTomlEditorHome,
+    MoveTestJunitTomlEditorEnd,
+    SelectTestJunitDestination,
+    CopyTestJunitTomlEditor,
+    PasteTestJunitTomlEditor,
     AppendTestJunitDestination(char),
     BackspaceTestJunitDestination,
     PreviewTestJunitExport,
@@ -8504,46 +8606,103 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some("resulttool is unavailable for JUnit export.".into());
                 return None;
             }
+            let mut editor = PopupEditor::new(popup_toml_document("destination", "", None));
+            let _ = editor.select_toml_value("destination");
             open_dialog(
                 app,
                 Dialog::TestJunitTomlEditor {
                     result: identity,
-                    content: popup_toml_document("destination", "", None),
-                    editing: false,
+                    editor,
                     validation_error: None,
                 },
             );
         }
         Action::ToggleTestJunitTomlEditor => {
-            if let Some(Dialog::TestJunitTomlEditor { editing, .. }) = app.active_dialog_mut() {
-                *editing = !*editing;
+            if let Some(Dialog::TestJunitTomlEditor { editor, .. }) = app.active_dialog_mut() {
+                editor.editing = !editor.editing;
             }
         }
         Action::AppendTestJunitTomlEditor(character) => {
             if let Some(Dialog::TestJunitTomlEditor {
-                content,
-                editing,
+                editor,
                 validation_error,
                 ..
             }) = app.active_dialog_mut()
-                && *editing
+                && editor.editing
                 && !character.is_control()
-                && content.len() < MAX_TEST_TEXT_BYTES
+                && editor.text.len() < MAX_TEST_TEXT_BYTES
             {
-                content.push(character);
+                editor.insert(&character.to_string());
                 *validation_error = None;
             }
         }
         Action::BackspaceTestJunitTomlEditor => {
             if let Some(Dialog::TestJunitTomlEditor {
-                content,
-                editing,
+                editor,
                 validation_error,
                 ..
             }) = app.active_dialog_mut()
-                && *editing
+                && editor.editing
             {
-                content.pop();
+                editor.backspace();
+                *validation_error = None;
+            }
+        }
+        Action::MoveTestJunitTomlEditorLeft => {
+            if let Some(Dialog::TestJunitTomlEditor { editor, .. }) = app.active_dialog_mut() {
+                editor.left();
+            }
+        }
+        Action::MoveTestJunitTomlEditorRight => {
+            if let Some(Dialog::TestJunitTomlEditor { editor, .. }) = app.active_dialog_mut() {
+                editor.right();
+            }
+        }
+        Action::MoveTestJunitTomlEditorUp => {
+            if let Some(Dialog::TestJunitTomlEditor { editor, .. }) = app.active_dialog_mut() {
+                editor.up();
+            }
+        }
+        Action::MoveTestJunitTomlEditorDown => {
+            if let Some(Dialog::TestJunitTomlEditor { editor, .. }) = app.active_dialog_mut() {
+                editor.down();
+            }
+        }
+        Action::MoveTestJunitTomlEditorHome => {
+            if let Some(Dialog::TestJunitTomlEditor { editor, .. }) = app.active_dialog_mut() {
+                editor.home();
+            }
+        }
+        Action::MoveTestJunitTomlEditorEnd => {
+            if let Some(Dialog::TestJunitTomlEditor { editor, .. }) = app.active_dialog_mut() {
+                editor.end();
+            }
+        }
+        Action::SelectTestJunitDestination => {
+            if let Some(Dialog::TestJunitTomlEditor {
+                editor,
+                validation_error,
+                ..
+            }) = app.active_dialog_mut()
+            {
+                *validation_error = editor.select_toml_value("destination").err();
+                editor.editing = validation_error.is_none();
+            }
+        }
+        Action::CopyTestJunitTomlEditor => {
+            if let Some(Dialog::TestJunitTomlEditor { editor, .. }) = app.active_dialog_mut() {
+                return Some(Effect::CopyToClipboard(editor.copy_selection_or_line()));
+            }
+        }
+        Action::PasteTestJunitTomlEditor => {
+            if let Some(Dialog::TestJunitTomlEditor {
+                editor,
+                validation_error,
+                ..
+            }) = app.active_dialog_mut()
+                && editor.editing
+            {
+                editor.paste();
                 *validation_error = None;
             }
         }
@@ -8558,11 +8717,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::PreviewTestJunitExport => {
-            if let Some(Dialog::TestJunitTomlEditor {
-                result, content, ..
-            }) = app.active_dialog().cloned()
+            if let Some(Dialog::TestJunitTomlEditor { result, editor, .. }) =
+                app.active_dialog().cloned()
             {
-                let destination = popup_toml_value(&content, "destination")
+                let destination = popup_toml_value(&editor.text, "destination")
                     .map(PathBuf::from)
                     .and_then(|path| {
                         (absolute_normal_path(&path)
@@ -19789,8 +19947,9 @@ mod tests {
             ResultToolCapability::Available("/workspace/resulttool".into());
         load_test_results(&mut app, vec![result.clone()], Vec::new());
         let _ = update(&mut app, Action::BeginTestJunitExport);
-        if let Some(Dialog::TestJunitTomlEditor { content, .. }) = app.active_dialog_mut() {
-            *content = "destination = \"/exports/candidate.xml\"\n".into();
+        if let Some(Dialog::TestJunitTomlEditor { editor, .. }) = app.active_dialog_mut() {
+            editor.text = "destination = \"/exports/candidate.xml\"\n".into();
+            editor.cursor = editor.text.len();
         }
         let Some(Effect::InspectTestJunitDestination {
             result: inspected_result,
@@ -20053,5 +20212,50 @@ mod tests {
         assert!(editor.undo());
         assert_eq!(editor.text, "path = \"/old\"\nmode = \"safe\"\n");
         assert!(!editor.undo());
+    }
+
+    #[test]
+    fn popup_editor_supports_unicode_navigation_copy_paste_and_backspace() {
+        let mut editor = PopupEditor::new("path = \"hé\"\n".into());
+        editor.select_toml_value("path").unwrap();
+        assert_eq!(editor.copy_selection_or_line(), "hé");
+        editor.editing = true;
+        editor.insert("x");
+        editor.paste();
+        assert_eq!(editor.text, "path = \"xhé\"\n");
+        editor.left();
+        editor.backspace();
+        assert_eq!(editor.text, "path = \"xé\"\n");
+        editor.home();
+        assert_eq!(editor.cursor, 0);
+        editor.end();
+        assert_eq!(editor.cursor, "path = \"xé\"".len());
+    }
+
+    #[test]
+    fn junit_popup_editor_routes_selection_navigation_and_clipboard_actions() {
+        let result = test_results_record("candidate", "candidate", &[]);
+        let mut app = test_workflow_app();
+        app.result_tool_capability =
+            ResultToolCapability::Available("/workspace/resulttool".into());
+        load_test_results(&mut app, vec![result], Vec::new());
+        let _ = update(&mut app, Action::BeginTestJunitExport);
+        let _ = update(&mut app, Action::SelectTestJunitDestination);
+        let _ = update(&mut app, Action::AppendTestJunitTomlEditor('x'));
+        assert!(matches!(
+            update(&mut app, Action::CopyTestJunitTomlEditor),
+            Some(Effect::CopyToClipboard(value)) if value.contains("destination")
+        ));
+        let _ = update(&mut app, Action::MoveTestJunitTomlEditorHome);
+        let _ = update(&mut app, Action::MoveTestJunitTomlEditorEnd);
+        let _ = update(&mut app, Action::PasteTestJunitTomlEditor);
+        let Some(Dialog::TestJunitTomlEditor { editor, .. }) = app.active_dialog() else {
+            panic!("JUnit editor");
+        };
+        assert!(
+            editor
+                .text
+                .contains("destination = \"x\"destination = \"x\"")
+        );
     }
 }

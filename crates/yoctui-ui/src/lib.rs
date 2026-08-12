@@ -811,20 +811,19 @@ pub fn render(frame: &mut Frame, app: &App) {
     } else if let Some(Dialog::TestComparisonConfirmation(preview)) = app.active_dialog() {
         test_comparison_confirmation(frame, app, preview, area);
     } else if let Some(Dialog::TestJunitTomlEditor {
-        content,
-        editing,
+        editor,
         validation_error,
         ..
     }) = app.active_dialog()
     {
-        let popup = Rect::new(
-            area.width / 8,
-            area.height / 6,
-            area.width * 3 / 4,
-            area.height * 2 / 3,
+        toml_popup_editor(
+            frame,
+            app,
+            area,
+            "JUnit export.toml",
+            editor,
+            validation_error.as_deref(),
         );
-        clear_popup(frame, app, popup);
-        frame.render_widget(Paragraph::new(format!("{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.\n\ni insert  e change value  Enter save/preview  Esc normal  q close  Home/End line  Ctrl+C copy  Ctrl+V paste{}", content, if *editing { "_" } else { "" }, if *editing { "INSERT" } else { "NORMAL" }, validation_error.as_deref().map_or(String::new(), |error| format!("\nValidation: {error}")))).block(Block::default().title(format!("JUnit export.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL)).wrap(Wrap { trim: false }), popup);
     } else if let Some(Dialog::TestJunitExport(dialog)) = app.active_dialog() {
         test_junit_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::TestJunitExportConfirmation(preview)) = app.active_dialog() {
@@ -4686,6 +4685,71 @@ fn test_result_import_dialog(
         ),
         10,
     );
+}
+
+fn toml_popup_editor(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    title: &str,
+    editor: &yoctui_model::PopupEditor,
+    validation_error: Option<&str>,
+) {
+    let popup = Rect::new(
+        area.width / 8,
+        area.height / 6,
+        area.width * 3 / 4,
+        area.height * 2 / 3,
+    );
+    clear_popup(frame, app, popup);
+    let mode = if editor.editing { "INSERT" } else { "NORMAL" };
+    let error = validation_error.map_or_else(String::new, |error| format!("\nValidation: {error}"));
+    let content = popup_editor_text(editor);
+    let body = format!(
+        "{content}\n{mode}: i inserts, e changes selected value, Enter saves/previews, q closes.\nInsert: arrows/Home/End move, type/paste replace selection, Backspace deletes, Esc normal.{error}",
+    );
+    let block = Block::default()
+        .title(format!("{title} — {mode}"))
+        .borders(Borders::ALL);
+    let inner = block.inner(popup);
+    frame.render_widget(block, popup);
+    let rows = Layout::vertical([Constraint::Min(0), Constraint::Length(3)]).split(inner);
+    frame.render_widget(Paragraph::new(body).wrap(Wrap { trim: false }), rows[0]);
+    frame.render_widget(
+        Paragraph::new(
+            "i insert  e change value  Enter save/preview  Esc normal  q close  Home/End line  Ctrl+C copy  Ctrl+V paste",
+        )
+        .wrap(Wrap { trim: false }),
+        rows[1],
+    );
+}
+
+fn popup_editor_text(editor: &yoctui_model::PopupEditor) -> String {
+    let mut output = String::with_capacity(editor.text.len() + 7);
+    let selection = editor.selection;
+    for (index, character) in editor.text.char_indices() {
+        if selection.is_some_and(|(start, _)| start == index) {
+            output.push('⟦');
+        }
+        if editor.cursor == index {
+            output.push('▏');
+        }
+        output.push(character);
+        let next = index + character.len_utf8();
+        if selection.is_some_and(|(_, end)| end == next) {
+            output.push('⟧');
+        }
+    }
+    if selection.is_some_and(|(start, _)| start == editor.text.len()) {
+        output.push('⟦');
+    }
+    if editor.cursor == editor.text.len() {
+        output.push('▏');
+    }
+    if selection.is_some_and(|(_, end)| end == editor.text.len()) {
+        output.push('⟧');
+    }
+    output
 }
 
 fn test_comparison_dialog(
@@ -11192,6 +11256,9 @@ mod tests {
     #[test]
     fn popup_editor_renders_persistent_shortcut_row() {
         let mut app = App::new(10, 1_000);
+        let mut editor =
+            yoctui_model::PopupEditor::new("destination = \"/exports/result.xml\"\n".into());
+        editor.select_toml_value("destination").unwrap();
         app.dialogs.push_front(Dialog::TestJunitTomlEditor {
             result: yoctui_model::TestResultIdentity {
                 path: "/results/testresults.json".into(),
@@ -11199,14 +11266,16 @@ mod tests {
                 byte_size: 1,
                 modified_at: SystemTime::UNIX_EPOCH,
             },
-            content: "destination = \"/exports/result.xml\"\n".into(),
-            editing: false,
+            editor,
             validation_error: None,
         });
-        let output = rendered_text(&app, 100, 30);
-        assert!(output.contains("Home/End line"), "{output}");
-        assert!(output.contains("Ctrl+C copy"), "{output}");
-        assert!(output.contains("Ctrl+V paste"), "{output}");
+        for (width, height) in [(80, 24), (100, 30), (160, 40)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("⟦/exports/result.xml⟧▏"), "{output}");
+            assert!(output.contains("Home/End line"), "{output}");
+            assert!(output.contains("Ctrl+C copy"), "{output}");
+            assert!(output.contains("Ctrl+V paste"), "{output}");
+        }
     }
 
     fn qemu_workspace_app() -> App {

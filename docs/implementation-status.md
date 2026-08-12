@@ -140,7 +140,11 @@ reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded
 undo; input/rendering integration is now active.
 The integration work is split into input normalization and shared rendering;
 input normalization is active.
-Input normalization is complete; shared rendering is active.
+Input normalization and shared rendering are complete. The JUnit reference
+popup now exercises reducer-owned cursor/selection, Unicode-safe movement,
+Home/End, selection replacement, clipboard copy, internal and bracketed paste,
+and a shortcut row that remains visible at every supported breakpoint. Existing
+TOML workflow migration is active.
 
 ## Rules
 

@@ -5818,7 +5818,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::TestLaunchTomlEditor { editing: true, .. }) => {
                         Some(Action::AppendTestLaunchTomlEditor as fn(char) -> Action)
                     }
-                    Some(Dialog::TestJunitTomlEditor { editing: true, .. }) => {
+                    Some(Dialog::TestJunitTomlEditor { editor, .. }) if editor.editing => {
                         Some(Action::AppendTestJunitTomlEditor as fn(char) -> Action)
                     }
                     _ => None,
@@ -6403,14 +6403,22 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if let Some(effect) = effect {
                         let _ = test_coordinator.handle_effect(&mut app, effect).await;
                     }
-                } else if let Some(Dialog::TestJunitTomlEditor { editing, .. }) =
+                } else if let Some(Dialog::TestJunitTomlEditor { editor, .. }) =
                     app.active_dialog().cloned()
                 {
-                    let action = if editing {
+                    let action = if editor.editing {
                         match input {
                             Input::Esc => Some(Action::ToggleTestJunitTomlEditor),
                             Input::Enter => Some(Action::PreviewTestJunitExport),
                             Input::Backspace => Some(Action::BackspaceTestJunitTomlEditor),
+                            Input::Left => Some(Action::MoveTestJunitTomlEditorLeft),
+                            Input::Right => Some(Action::MoveTestJunitTomlEditorRight),
+                            Input::Up => Some(Action::MoveTestJunitTomlEditorUp),
+                            Input::Down => Some(Action::MoveTestJunitTomlEditorDown),
+                            Input::Home => Some(Action::MoveTestJunitTomlEditorHome),
+                            Input::End => Some(Action::MoveTestJunitTomlEditorEnd),
+                            Input::CtrlC => Some(Action::CopyTestJunitTomlEditor),
+                            Input::CtrlV => Some(Action::PasteTestJunitTomlEditor),
                             Input::Char(character) => {
                                 Some(Action::AppendTestJunitTomlEditor(character))
                             }
@@ -6419,13 +6427,34 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     } else {
                         match input {
                             Input::Char('i') => Some(Action::ToggleTestJunitTomlEditor),
+                            Input::Char('e') => Some(Action::SelectTestJunitDestination),
+                            Input::Left | Input::Char('h') => {
+                                Some(Action::MoveTestJunitTomlEditorLeft)
+                            }
+                            Input::Right | Input::Char('l') => {
+                                Some(Action::MoveTestJunitTomlEditorRight)
+                            }
+                            Input::Up | Input::Char('k') => Some(Action::MoveTestJunitTomlEditorUp),
+                            Input::Down | Input::Char('j') => {
+                                Some(Action::MoveTestJunitTomlEditorDown)
+                            }
+                            Input::Home => Some(Action::MoveTestJunitTomlEditorHome),
+                            Input::End => Some(Action::MoveTestJunitTomlEditorEnd),
+                            Input::CtrlC => Some(Action::CopyTestJunitTomlEditor),
                             Input::Char('q') | Input::Esc => Some(Action::CancelTestJunitExport),
                             Input::Enter => Some(Action::PreviewTestJunitExport),
                             _ => None,
                         }
                     };
                     if let Some(effect) = action.and_then(|action| update(&mut app, action)) {
-                        let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                        match effect {
+                            Effect::CopyToClipboard(content) => {
+                                copy_to_clipboard(&mut app, content).await;
+                            }
+                            effect => {
+                                let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                            }
+                        }
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::TestJunitExport(_))) {
                     let effect =
@@ -10816,6 +10845,30 @@ esac"#,
         (directory, build, artifact_adapter, tool_adapter, app)
     }
 
+    fn set_sdk_publish_destination(app: &mut App, destination: &Path) {
+        let Some(Dialog::SdkPublishTomlEditor { content, .. }) = app.active_dialog_mut() else {
+            panic!("SDK publication TOML editor");
+        };
+        *content = format!("destination = \"{}\"\n", destination.display());
+    }
+
+    fn set_sdk_native_draft(app: &mut App, draft: yoctui_model::SdkNativeDraft) {
+        let Some(Dialog::SdkNativeTomlEditor { content, .. }) = app.active_dialog_mut() else {
+            panic!("SDK native TOML editor");
+        };
+        let mode = match draft.mode {
+            yoctui_model::SdkNativeMode::FindSysroot => "find-sysroot",
+            yoctui_model::SdkNativeMode::RunNative => "run-native",
+        };
+        *content = format!(
+            "mode = \"{mode}\"\nworkspace = \"{}\"\nrecipe = \"{}\"\ntool = \"{}\"\narguments = \"{}\"\n",
+            draft.extracted_root,
+            draft.recipe,
+            draft.tool,
+            draft.arguments.join(" ")
+        );
+    }
+
     async fn sdk_workflow_poll_scan(
         app: &mut App,
         operation: &mut Option<SdkArtifactBackgroundOperation>,
@@ -10983,9 +11036,7 @@ esac"#,
         let destination = directory.join("published");
         fs::create_dir(&destination).unwrap();
         let _ = update(&mut app, Action::BeginSelectedSdkPublish);
-        for character in destination.to_string_lossy().chars() {
-            let _ = update(&mut app, Action::AppendSdkPublishDestination(character));
-        }
+        set_sdk_publish_destination(&mut app, &destination);
         let _ = update(&mut app, Action::PreviewSdkPublish);
         let Some(Effect::StartSdkSession { id, operation }) =
             update(&mut app, Action::ConfirmSdkPublish)
@@ -11037,23 +11088,19 @@ esac"#,
             capability => panic!("unexpected SDK capability: {capability:?}"),
         };
         let _ = update(&mut app, Action::BeginSdkNative);
-        let native_input = sdk_native_dialog_action(false, Input::Enter)
-            .and_then(|action| update(&mut app, action));
-        assert!(native_input.is_none());
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::SdkNative(dialog))
-                if dialog.draft.mode == yoctui_model::SdkNativeMode::RunNative
+            Some(Dialog::SdkNativeTomlEditor { .. })
         ));
-        let _ = update(
+        set_sdk_native_draft(
             &mut app,
-            Action::UpdateSdkNativeDraft(yoctui_model::SdkNativeDraft {
+            yoctui_model::SdkNativeDraft {
                 mode: yoctui_model::SdkNativeMode::RunNative,
                 extracted_root: extracted.display().to_string(),
                 recipe: "busybox".into(),
                 tool: "sh".into(),
                 arguments: vec!["--version".into()],
-            }),
+            },
         );
         let _ = update(&mut app, Action::PreviewSdkNative);
         let Some(Effect::StartSdkSession {
@@ -11152,9 +11199,7 @@ esac"#,
         let destination = directory.join("failure-destination");
         fs::create_dir(&destination).unwrap();
         let _ = update(&mut app, Action::BeginSelectedSdkPublish);
-        for character in destination.to_string_lossy().chars() {
-            let _ = update(&mut app, Action::AppendSdkPublishDestination(character));
-        }
+        set_sdk_publish_destination(&mut app, &destination);
         let _ = update(&mut app, Action::PreviewSdkPublish);
         let Some(Effect::StartSdkSession { id, operation }) =
             update(&mut app, Action::ConfirmSdkPublish)
@@ -11186,15 +11231,15 @@ esac"#,
         );
 
         let _ = update(&mut app, Action::BeginSdkNative);
-        let _ = update(
+        set_sdk_native_draft(
             &mut app,
-            Action::UpdateSdkNativeDraft(yoctui_model::SdkNativeDraft {
+            yoctui_model::SdkNativeDraft {
                 mode: yoctui_model::SdkNativeMode::RunNative,
                 extracted_root: String::new(),
                 recipe: "busybox".into(),
                 tool: "sh".into(),
                 arguments: Vec::new(),
-            }),
+            },
         );
         let _ = update(&mut app, Action::PreviewSdkNative);
         let Some(Effect::StartSdkSession {
@@ -11228,15 +11273,15 @@ esac"#,
         );
 
         let _ = update(&mut app, Action::BeginSdkNative);
-        let _ = update(
+        set_sdk_native_draft(
             &mut app,
-            Action::UpdateSdkNativeDraft(yoctui_model::SdkNativeDraft {
+            yoctui_model::SdkNativeDraft {
                 mode: yoctui_model::SdkNativeMode::RunNative,
                 extracted_root: String::new(),
                 recipe: "busybox".into(),
                 tool: "sh".into(),
                 arguments: Vec::new(),
-            }),
+            },
         );
         let _ = update(&mut app, Action::PreviewSdkNative);
         let Some(Effect::StartSdkSession {
@@ -11294,15 +11339,15 @@ esac"#,
         );
 
         let _ = update(&mut app, Action::BeginSdkNative);
-        let _ = update(
+        set_sdk_native_draft(
             &mut app,
-            Action::UpdateSdkNativeDraft(yoctui_model::SdkNativeDraft {
+            yoctui_model::SdkNativeDraft {
                 mode: yoctui_model::SdkNativeMode::FindSysroot,
                 extracted_root: String::new(),
                 recipe: "busybox".into(),
                 tool: String::new(),
                 arguments: Vec::new(),
-            }),
+            },
         );
         let _ = update(&mut app, Action::PreviewSdkNative);
         let Some(Effect::StartSdkSession {

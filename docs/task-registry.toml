@@ -2558,18 +2558,18 @@ notes = "Client input now normalizes Home/End and Ctrl+V alongside arrows/Ctrl+C
 id = "UX-POPUP-EDITOR-RENDER-001"
 milestone = "M8"
 title = "Render shared popup editor cursor selection and shortcuts"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 161
 required = true
 depends_on = ["UX-POPUP-EDITOR-INPUT-001"]
 verify = ["cargo test -p yoctui-ui popup_editor"]
-notes = "Render one bounded editor view with cursor/selection and persistent shortcut row at safe responsive sizes."
+notes = "The JUnit reference popup now renders model-owned cursor and selection state plus a persistent shortcut row at every supported breakpoint; reducer-owned Unicode-safe movement, selection replacement, copy, paste, and deletion are covered."
 
 [[task]]
 id = "UX-POPUP-EDITOR-005"
 milestone = "M8"
 title = "Migrate existing TOML forms onto the shared editor"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 162
 required = true
 depends_on = ["UX-POPUP-EDITOR-RENDER-001"]
