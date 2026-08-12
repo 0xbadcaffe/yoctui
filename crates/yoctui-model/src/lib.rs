@@ -1163,9 +1163,8 @@ pub enum Dialog {
     BuildOptions,
     BuildCompletion,
     BuildTarget {
-        content: String,
+        editor: PopupEditor,
         task: Option<String>,
-        editing: bool,
     },
     ImagePicker(ImagePicker),
     QemuLaunch(QemuLaunchDialog),
@@ -6272,6 +6271,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     | Dialog::BbmaskEdit(editor),
                 ) => editor,
                 Some(Dialog::ConfigEdit { editor, .. }) => editor,
+                Some(Dialog::BuildTarget { editor, .. }) => editor,
                 _ => return None,
             };
             match command {
@@ -10288,54 +10288,40 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 });
         }
         Action::BeginBuildTargetEdit => {
-            replace_dialog(
-                app,
-                Dialog::BuildTarget {
-                    content: popup_toml_document(
-                        "target",
-                        app.build.target.as_deref().unwrap_or_default(),
-                        None,
-                    ),
-                    task: None,
-                    editing: false,
-                },
-            );
+            let mut editor = PopupEditor::new(popup_toml_document(
+                "target",
+                app.build.target.as_deref().unwrap_or_default(),
+                None,
+            ));
+            let _ = editor.select_toml_value("target");
+            replace_dialog(app, Dialog::BuildTarget { editor, task: None });
         }
         Action::BeginBuildTargetTask(task) => {
-            replace_dialog(
-                app,
-                Dialog::BuildTarget {
-                    content: popup_toml_document(
-                        "target",
-                        app.build.target.as_deref().unwrap_or_default(),
-                        None,
-                    ),
-                    task,
-                    editing: false,
-                },
-            );
+            let mut editor = PopupEditor::new(popup_toml_document(
+                "target",
+                app.build.target.as_deref().unwrap_or_default(),
+                None,
+            ));
+            let _ = editor.select_toml_value("target");
+            replace_dialog(app, Dialog::BuildTarget { editor, task });
         }
         Action::ToggleBuildTargetEdit => {
-            if let Some(Dialog::BuildTarget { editing, .. }) = app.active_dialog_mut() {
-                *editing = !*editing;
+            if let Some(Dialog::BuildTarget { editor, .. }) = app.active_dialog_mut() {
+                editor.editing = !editor.editing;
             }
         }
         Action::AppendBuildTarget(character) => {
-            if let Some(Dialog::BuildTarget {
-                content, editing, ..
-            }) = app.active_dialog_mut()
-                && *editing
+            if let Some(Dialog::BuildTarget { editor, .. }) = app.active_dialog_mut()
+                && editor.editing
             {
-                content.push(character);
+                editor.insert(&character.to_string());
             }
         }
         Action::BackspaceBuildTarget => {
-            if let Some(Dialog::BuildTarget {
-                content, editing, ..
-            }) = app.active_dialog_mut()
-                && *editing
+            if let Some(Dialog::BuildTarget { editor, .. }) = app.active_dialog_mut()
+                && editor.editing
             {
-                content.pop();
+                editor.backspace();
             }
         }
         Action::CancelBuildTargetEdit => {
@@ -10344,8 +10330,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::ConfirmBuildTarget => {
-            if let Some(Dialog::BuildTarget { content, task, .. }) = app.active_dialog() {
-                let input = match popup_toml_value(content, "target") {
+            if let Some(Dialog::BuildTarget { editor, task }) = app.active_dialog() {
+                let input = match popup_toml_value(&editor.text, "target") {
                     Ok(value) => value,
                     Err(reason) => {
                         app.notification = Some(reason);
@@ -16047,8 +16033,9 @@ mod tests {
     fn build_target_editor_requires_confirmation_before_starting() {
         let mut app = App::new(10, 1_000);
         let _ = update(&mut app, Action::BeginBuildTargetEdit);
-        if let Some(Dialog::BuildTarget { content, .. }) = app.active_dialog_mut() {
-            *content = "target = \"core-image-minimal\"\n".into();
+        if let Some(Dialog::BuildTarget { editor, .. }) = app.active_dialog_mut() {
+            editor.text = "target = \"core-image-minimal\"\n".into();
+            editor.cursor = editor.text.len();
         }
         let effect = update(&mut app, Action::ConfirmBuildTarget);
 
@@ -16138,8 +16125,11 @@ mod tests {
 
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::BuildTarget { content, task, editing: false })
-                if content.contains("target = \"core-image-minimal\"") && task.as_deref() == Some("clean")
+            Some(Dialog::BuildTarget { editor, task })
+                if !editor.editing
+                    && editor.text.contains("target = \"core-image-minimal\"")
+                    && editor.selected_text() == Some("core-image-minimal")
+                    && task.as_deref() == Some("clean")
         ));
     }
     #[test]

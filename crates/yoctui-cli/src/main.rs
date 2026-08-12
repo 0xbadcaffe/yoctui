@@ -5803,7 +5803,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::BbmaskEdit(editor)) if editor.editing => {
                         Some(Action::AppendBbmask as fn(char) -> Action)
                     }
-                    Some(Dialog::BuildTarget { editing: true, .. }) => {
+                    Some(Dialog::BuildTarget { editor, .. }) if editor.editing => {
                         Some(Action::AppendBuildTarget as fn(char) -> Action)
                     }
                     Some(Dialog::WicCreateTomlEditor { editing: true, .. }) => {
@@ -6997,28 +6997,25 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if let Some(Effect::Start(request)) = effect {
                         begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
                     }
-                } else if let Some(Dialog::BuildTarget { editing, .. }) =
+                } else if let Some(Dialog::BuildTarget { editor, .. }) =
                     app.active_dialog().cloned()
                 {
-                    let action = if editing {
-                        match input {
-                            Input::Esc => Some(Action::ToggleBuildTargetEdit),
-                            Input::Enter => Some(Action::ConfirmBuildTarget),
-                            Input::Backspace => Some(Action::BackspaceBuildTarget),
-                            Input::Char(character) => Some(Action::AppendBuildTarget(character)),
-                            _ => None,
+                    let action = match input {
+                        Input::Enter => Some(Action::ConfirmBuildTarget),
+                        Input::Char('q') | Input::Esc if !editor.editing => {
+                            Some(Action::CancelBuildTargetEdit)
                         }
-                    } else {
-                        match input {
-                            Input::Char('i') => Some(Action::ToggleBuildTargetEdit),
-                            Input::Char('q') | Input::Esc => Some(Action::CancelBuildTargetEdit),
-                            Input::Enter => Some(Action::ConfirmBuildTarget),
-                            _ => None,
-                        }
+                        input => popup_editor_action(editor.editing, input),
                     };
                     let effect = action.and_then(|action| update(&mut app, action));
-                    if let Some(Effect::Start(request)) = effect {
-                        begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
+                    match effect {
+                        Some(Effect::Start(request)) => {
+                            begin_build(&mut backend, &mut app, &mut build_jobs, request).await;
+                        }
+                        Some(Effect::CopyToClipboard(content)) => {
+                            copy_to_clipboard(&mut app, content).await;
+                        }
+                        _ => {}
                     }
                 } else if app.notification.is_some()
                     && !(app.screen == Screen::Settings

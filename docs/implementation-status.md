@@ -149,7 +149,9 @@ SDK, and Testing tasks. Build environment and clone now use shared model state,
 key routing, cursor/selection rendering, and clipboard behavior while retaining
 their typed apply/review gates. Configuration and BBMASK now use the same state,
 key, cursor/selection, and clipboard paths while retaining allowlisted previews
-and explicit writes; build-target migration is active.
+and explicit writes. Build-target editing now shares cursor, selection,
+navigation, and clipboard behavior while its requested task remains read-only
+and its build confirmation remains mandatory; Wic creation migration is active.
 
 ## Rules
 

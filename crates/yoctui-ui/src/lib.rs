@@ -1364,26 +1364,12 @@ pub fn render(frame: &mut Frame, app: &App) {
             .block(Block::default().title("Image build options").borders(Borders::ALL)),
             popup,
         );
-    } else if let Some(Dialog::BuildTarget {
-        content,
-        task,
-        editing,
-    }) = app.active_dialog()
-    {
-        let width = area.width * 3 / 4;
-        let popup = Rect::new(area.width / 8, area.height / 6, width, area.height * 2 / 3);
-        clear_popup(frame, app, popup);
-        frame.render_widget(
-            Paragraph::new(format!(
-                "{}{}\ntask = \"{}\"\n\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.",
-                content,
-                if *editing { "_" } else { "" },
-                task.as_deref().unwrap_or("default"),
-                if *editing { "INSERT" } else { "NORMAL" }
-            ))
-            .block(Block::default().title(format!("Build target.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL)),
-            popup,
+    } else if let Some(Dialog::BuildTarget { editor, task }) = app.active_dialog() {
+        let title = format!(
+            "Build target.toml | requested task: {}",
+            task.as_deref().unwrap_or("default")
         );
+        toml_popup_editor(frame, app, area, &title, editor, None);
     } else if let Some(notification) = app.notification.as_deref() {
         let palette = ThemePalette::for_app(app);
         let width = area.width.saturating_sub(8).clamp(24, 80);
@@ -12199,9 +12185,8 @@ mod tests {
             (Dialog::BuildCompletion, "Build finished"),
             (
                 Dialog::BuildTarget {
-                    content: "target = \"busybox\"\n".into(),
+                    editor: yoctui_model::PopupEditor::new("target = \"busybox\"\n".into()),
                     task: None,
-                    editing: false,
                 },
                 "Build target",
             ),
@@ -12676,10 +12661,11 @@ mod tests {
     fn renders_build_target_editor() {
         let mut terminal = Terminal::new(TestBackend::new(140, 30)).unwrap();
         let mut app = App::new(10, 1_000);
+        let mut editor = yoctui_model::PopupEditor::new("target = \"core-image-minimal\"\n".into());
+        editor.select_toml_value("target").unwrap();
         app.dialogs.push_back(Dialog::BuildTarget {
-            content: "target = \"core-image-minimal\"\n".into(),
-            task: None,
-            editing: false,
+            editor,
+            task: Some("menuconfig".into()),
         });
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
@@ -12690,7 +12676,9 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(output.contains("Build target.toml"));
-        assert!(output.contains("core-image-minimal"));
+        assert!(output.contains("requested task: menuconfig"));
+        assert!(output.contains("⟦core-image-minimal⟧▏"));
+        assert!(output.contains("Ctrl+V paste"));
     }
     #[test]
     fn renders_machine_aware_build_options() {

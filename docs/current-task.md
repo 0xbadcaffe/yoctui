@@ -2,20 +2,19 @@
 
 ## Task
 
-**ID:** UX-POPUP-EDITOR-TARGET-001
-**Title:** Migrate build target popup to shared editor state
+**ID:** UX-POPUP-EDITOR-WIC-001
+**Title:** Migrate Wic creation popup to shared editor state
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Select and edit the build target TOML value through shared reducer-owned editor
-state while retaining the requested task context and explicit build
-confirmation.
+Adopt shared reducer-owned editing for Wic creation TOML while preserving typed
+kickstart, output, compression, preview, and confirmation semantics.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model build_target
-cargo test -p yoctui-ui build_target
+cargo test -p yoctui-model wic_
+cargo test -p yoctui-ui wic_
 cargo check -p yoctui
 ```

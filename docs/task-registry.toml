@@ -2602,18 +2602,18 @@ notes = "Configuration and BBMASK dialogs now use PopupEditor and shared key rou
 id = "UX-POPUP-EDITOR-TARGET-001"
 milestone = "M8"
 title = "Migrate build target popup to shared editor state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 165
 required = true
 depends_on = ["UX-POPUP-EDITOR-CONFIG-001"]
 verify = ["cargo test -p yoctui-model build_target", "cargo test -p yoctui-ui build_target", "cargo check -p yoctui"]
-notes = "Select and edit the target value through shared state while retaining task context and build confirmation."
+notes = "Build target editing now uses PopupEditor and shared input/clipboard routing, selects the current target on open, keeps the requested task visible but non-editable, and retains BuildRequest validation plus explicit confirmation."
 
 [[task]]
 id = "UX-POPUP-EDITOR-WIC-001"
 milestone = "M8"
 title = "Migrate Wic creation popup to shared editor state"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 166
 required = true
 depends_on = ["UX-POPUP-EDITOR-TARGET-001"]
