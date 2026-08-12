@@ -1,4 +1,4 @@
-use crate::Screen;
+use crate::{PopupEditor, Screen, popup_toml_fields};
 use std::{
     collections::VecDeque,
     path::{Component, Path, PathBuf},
@@ -1672,6 +1672,10 @@ impl MaintenanceSession {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum MaintenanceDialog {
+    ReadinessToml {
+        editor: PopupEditor,
+        validation_error: Option<String>,
+    },
     ReadinessForm(Box<MaintenanceReadinessDraft>),
     CleanupForm(Box<MaintenanceCleanupDraft>),
     PrServiceForm(Box<MaintenancePrServiceDraft>),
@@ -1776,6 +1780,7 @@ pub enum MaintenanceAction {
         message: String,
     },
     OpenReadinessForm,
+    ConfirmReadinessToml(String),
     UpdateReadinessForm(Box<MaintenanceReadinessDraft>),
     ConfirmReadinessForm(Box<MaintenanceReadinessDraft>),
     OpenCleanupForm,
@@ -2093,12 +2098,72 @@ pub fn update_maintenance(
                     .snapshot()
                     .is_some_and(|snapshot| snapshot.supports(MaintenanceTool::OeCheckSstate)) =>
         {
+            let mut editor = PopupEditor::new(
+                "# exact sstate readiness request\ntargets = \"\"\nmode = \"isolated_tmpdir\"\noutput = \"\"\nlog = \"\"\ntimeout = 3600\n"
+                    .into(),
+            );
+            let _ = editor.select_toml_value("targets");
             return MaintenanceTransition {
-                dialog: MaintenanceDialogUpdate::Open(Box::new(MaintenanceDialog::ReadinessForm(
-                    Box::default(),
-                ))),
+                dialog: MaintenanceDialogUpdate::Open(Box::new(MaintenanceDialog::ReadinessToml {
+                    editor,
+                    validation_error: None,
+                })),
                 ..MaintenanceTransition::none()
             };
+        }
+        MaintenanceAction::ConfirmReadinessToml(document) => {
+            let parsed = (|| {
+                let fields = popup_toml_fields(&document)?;
+                let get = |key: &str| {
+                    fields
+                        .get(key)
+                        .cloned()
+                        .ok_or_else(|| format!("Missing `{key}`."))
+                };
+                let mode = match get("mode")?.as_str() {
+                    "isolated_tmpdir" => SstateReadinessMode::IsolatedTmpdir,
+                    "same_tmpdir" => SstateReadinessMode::SameTmpdir,
+                    _ => {
+                        return Err("`mode` must be `isolated_tmpdir` or `same_tmpdir`.".to_owned());
+                    }
+                };
+                let draft = MaintenanceReadinessDraft {
+                    field: MaintenanceReadinessField::Targets,
+                    targets: get("targets")?,
+                    mode,
+                    output: get("output")?,
+                    log: get("log")?,
+                    timeout: get("timeout")?,
+                    validation: None,
+                };
+                draft.request().map_err(str::to_owned)
+            })();
+            match parsed {
+                Ok(request) => {
+                    let Some(capability_request) = state.capability.request() else {
+                        return MaintenanceTransition::none();
+                    };
+                    return MaintenanceTransition {
+                        effect: Some(MaintenanceEffect::PreviewReadiness {
+                            capability_request,
+                            request,
+                        }),
+                        dialog: MaintenanceDialogUpdate::Close,
+                        notification: None,
+                    };
+                }
+                Err(message) => {
+                    return MaintenanceTransition {
+                        dialog: MaintenanceDialogUpdate::Open(Box::new(
+                            MaintenanceDialog::ReadinessToml {
+                                editor: PopupEditor::new(document),
+                                validation_error: Some(message),
+                            },
+                        )),
+                        ..MaintenanceTransition::none()
+                    };
+                }
+            }
         }
         MaintenanceAction::UpdateReadinessForm(draft) if draft.is_bounded() => {
             return MaintenanceTransition {
@@ -3210,21 +3275,30 @@ mod tests {
         let MaintenanceDialogUpdate::Open(dialog) = transition.dialog else {
             panic!("readiness form did not open");
         };
-        let MaintenanceDialog::ReadinessForm(mut draft) = *dialog else {
+        let MaintenanceDialog::ReadinessToml { editor, .. } = *dialog else {
             panic!("wrong readiness dialog");
         };
+        assert_eq!(editor.selected_text(), Some(""));
         let invalid = update_maintenance(
             &mut state,
-            MaintenanceAction::ConfirmReadinessForm(draft.clone()),
+            MaintenanceAction::ConfirmReadinessToml(editor.text.clone()),
         );
         assert!(matches!(
             invalid.dialog,
             MaintenanceDialogUpdate::Open(dialog)
-                if matches!(*dialog, MaintenanceDialog::ReadinessForm(ref draft) if draft.validation.is_some())
+                if matches!(*dialog, MaintenanceDialog::ReadinessToml { validation_error: Some(_), .. })
         ));
-        draft.targets = "core-image-minimal busybox".into();
-        draft.timeout = "45".into();
-        let valid = update_maintenance(&mut state, MaintenanceAction::ConfirmReadinessForm(draft));
+        let document = r#"# exact sstate readiness request
+targets = "core-image-minimal busybox"
+mode = "isolated_tmpdir"
+output = ""
+log = ""
+timeout = 45
+"#;
+        let valid = update_maintenance(
+            &mut state,
+            MaintenanceAction::ConfirmReadinessToml(document.into()),
+        );
         assert!(matches!(
             valid.effect,
             Some(MaintenanceEffect::PreviewReadiness {

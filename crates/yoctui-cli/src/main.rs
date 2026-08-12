@@ -5820,6 +5820,21 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                     continue;
                 }
+                if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::Maintenance(dialog))
+                        if matches!(dialog.as_ref(), yoctui_model::MaintenanceDialog::ReadinessToml { editor, .. } if editor.editing)
+                ) {
+                    for character in text.chars().filter(|character| !character.is_control()) {
+                        let _ = update(
+                            &mut app,
+                            Action::EditActivePopup(yoctui_model::PopupEditorCommand::Insert(
+                                character,
+                            )),
+                        );
+                    }
+                    continue;
+                }
                 let popup_action = match app.active_dialog() {
                     Some(Dialog::BuildEnvironmentEditor(editor)) if editor.editing => {
                         Some(Action::AppendBuildEnvironmentEditor as fn(char) -> Action)
@@ -6035,6 +6050,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let effect = maintenance_dialog_action(&dialog, input)
                         .and_then(|action| update(&mut app, action));
                     if let Some(effect) = effect {
+                        if let Effect::CopyToClipboard(content) = effect {
+                            copy_to_clipboard(&mut app, content).await;
+                            continue;
+                        }
                         let _ = route_independent_maintenance_effect(
                             &guard,
                             &mut app,

@@ -4894,7 +4894,7 @@ pub(crate) fn popup_toml_document(key: &str, value: &str, comment: Option<&str>)
     document
 }
 
-fn popup_toml_fields(content: &str) -> Result<HashMap<String, String>, String> {
+pub(crate) fn popup_toml_fields(content: &str) -> Result<HashMap<String, String>, String> {
     let mut fields = HashMap::new();
     for line in content.lines() {
         let line = line.trim();
@@ -6289,6 +6289,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     editor,
                     validation_error,
                 })) => (editor, Some(validation_error)),
+                Some(Dialog::Maintenance(dialog)) => match dialog.as_mut() {
+                    MaintenanceDialog::ReadinessToml {
+                        editor,
+                        validation_error,
+                    } => (editor, Some(validation_error)),
+                    _ => return None,
+                },
                 _ => return None,
             };
             match command {

@@ -829,6 +829,20 @@ pub fn render(frame: &mut Frame, app: &App) {
         );
     } else if let Some(Dialog::Qa(dialog)) = app.active_dialog() {
         qa_dialog(frame, app, dialog, area);
+    } else if let Some(Dialog::Maintenance(dialog)) = app.active_dialog()
+        && let MaintenanceDialog::ReadinessToml {
+            editor,
+            validation_error,
+        } = dialog.as_ref()
+    {
+        toml_popup_editor(
+            frame,
+            app,
+            area,
+            "Sstate readiness.toml",
+            editor,
+            validation_error.as_deref(),
+        );
     } else if let Some(Dialog::Maintenance(dialog)) = app.active_dialog() {
         maintenance_dialog(frame, app, dialog, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
@@ -9408,6 +9422,9 @@ fn indexed_arguments(arguments: &[String]) -> String {
 fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, area: Rect) {
     let palette = ThemePalette::for_app(app);
     let (title, body, style) = match dialog {
+        MaintenanceDialog::ReadinessToml { .. } => {
+            unreachable!("sstate readiness uses the shared editor")
+        }
         MaintenanceDialog::ReadinessForm(draft) => (
             "Sstate readiness check",
             format!(
@@ -15164,20 +15181,20 @@ mod tests {
     #[test]
     fn maintenance_sstate_workspace_renders_forms_validation_and_responsive_fields() {
         let mut app = maintenance_workflow_ui_app();
-        let readiness = yoctui_model::MaintenanceReadinessDraft {
-            targets: "core-image-minimal busybox".into(),
-            output: "/build/sstate.txt".into(),
-            validation: Some("timeout must be a positive integer".into()),
-            ..yoctui_model::MaintenanceReadinessDraft::default()
-        };
+        let readiness = yoctui_model::PopupEditor::new(
+            "targets = \"core-image-minimal busybox\"\nmode = \"isolated_tmpdir\"\noutput = \"/build/sstate.txt\"\nlog = \"\"\ntimeout = 0\n".into(),
+        );
         app.dialogs.push_front(Dialog::Maintenance(Box::new(
-            MaintenanceDialog::ReadinessForm(Box::new(readiness)),
+            MaintenanceDialog::ReadinessToml {
+                editor: readiness,
+                validation_error: Some("timeout must be a positive integer".into()),
+            },
         )));
         app.focus = FocusTarget::Dialog;
         for (width, height) in [(160, 40), (100, 26), (80, 24)] {
             let output = rendered_text(&app, width, height);
             assert!(
-                output.contains("Sstate readiness check"),
+                output.contains("Sstate readiness.toml"),
                 "{width}: {output}"
             );
             assert!(
@@ -15188,6 +15205,7 @@ mod tests {
                 output.contains("timeout must be a positive"),
                 "{width}: {output}"
             );
+            assert!(output.contains("Home/End line"), "{width}: {output}");
         }
 
         let metadata = yoctui_model::MaintenanceMetadata::new(yoctui_model::MaintenanceMetadata {

@@ -2028,14 +2028,16 @@ indexed argument vector, target list, selected mode, output/log paths, and
 timeout. The result contains exact restored task names, totals, bounded output,
 limitations, and terminal outcome. Readiness does not mutate the shared cache.
 
-`c` opens the readiness form only when the exact readiness capability is
-available. Targets begin empty and are entered as whitespace- or comma-separated
-tokens; mode begins as `isolated TMPDIR`, output and log paths begin absent, and
-timeout begins at 3600 seconds. `Tab`/`Shift+Tab` moves through Targets, Mode,
-Output, Log, and Timeout. `Space` or `Left`/`Right` changes only Mode; normal
-text edits the selected text field. `Enter` validates and requests an adapter
-preview without running a command, while `Esc` closes without side effects.
-Validation remains visible in the focus-trapped form.
+`c` opens the bounded `Sstate readiness.toml` popup only when the exact
+readiness capability is available. The document exposes `targets`, `mode`,
+`output`, `log`, and `timeout`; targets begin selected and empty, mode begins as
+`isolated_tmpdir`, output and log paths begin absent, and timeout begins at 3600
+seconds. Mode accepts only `isolated_tmpdir` or `same_tmpdir`. The shared popup
+Normal/Insert navigation, Home/End, selection, copy/paste, undo, and shortcut
+footer apply. `Enter` validates the whole document and requests the existing
+typed adapter preview without running a command, while Normal-mode `Esc` or `q`
+closes without side effects. Validation remains visible in the focus-trapped
+popup.
 
 Cleanup supports only an interface reported by capability inspection. Current
 `sstate-cache-management.py` operations are typed as `duplicates`, `orphans`,

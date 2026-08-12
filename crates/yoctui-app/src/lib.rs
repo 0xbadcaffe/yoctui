@@ -2104,6 +2104,15 @@ pub fn maintenance_workspace_action(
 pub fn maintenance_dialog_action(dialog: &MaintenanceDialog, key: Input) -> Option<Action> {
     let maintenance = |action| Some(Action::Maintenance(action));
     match dialog {
+        MaintenanceDialog::ReadinessToml { editor, .. } => match key {
+            Input::Enter => {
+                maintenance(MaintenanceAction::ConfirmReadinessToml(editor.text.clone()))
+            }
+            Input::Char('q') | Input::Esc if !editor.editing => {
+                maintenance(MaintenanceAction::CancelDialog)
+            }
+            input => popup_editor_action(editor.editing, input),
+        },
         MaintenanceDialog::ReadinessForm(draft) => {
             let mut next = (**draft).clone();
             next.validation = None;
@@ -2997,23 +3006,32 @@ mod tests {
             None
         );
 
-        let readiness = yoctui_model::MaintenanceReadinessDraft::default();
+        let mut readiness = yoctui_model::PopupEditor::new(
+            "targets = \"\"\nmode = \"isolated_tmpdir\"\ntimeout = 3600\n".into(),
+        );
+        readiness.select_range(11, 11);
+        readiness.editing = true;
         assert!(matches!(
             maintenance_dialog_action(
-                &MaintenanceDialog::ReadinessForm(Box::new(readiness.clone())),
+                &MaintenanceDialog::ReadinessToml {
+                    editor: readiness.clone(),
+                    validation_error: None,
+                },
                 Input::Char('c'),
             ),
-            Some(Action::Maintenance(MaintenanceAction::UpdateReadinessForm(draft)))
-                if draft.targets == "c"
+            Some(Action::EditActivePopup(PopupEditorCommand::Insert('c')))
         ));
         assert!(matches!(
             maintenance_dialog_action(
-                &MaintenanceDialog::ReadinessForm(Box::new(readiness)),
+                &MaintenanceDialog::ReadinessToml {
+                    editor: readiness.clone(),
+                    validation_error: None,
+                },
                 Input::Enter,
             ),
             Some(Action::Maintenance(
-                MaintenanceAction::ConfirmReadinessForm(_)
-            ))
+                MaintenanceAction::ConfirmReadinessToml(document)
+            )) if document == readiness.text
         ));
 
         let metadata = yoctui_model::MaintenanceMetadata::new(yoctui_model::MaintenanceMetadata {
@@ -3033,7 +3051,10 @@ mod tests {
         ));
         assert_eq!(
             maintenance_dialog_action(
-                &MaintenanceDialog::ReadinessForm(Box::default()),
+                &MaintenanceDialog::ReadinessToml {
+                    editor: yoctui_model::PopupEditor::new("targets = \"\"\n".into()),
+                    validation_error: None,
+                },
                 Input::Esc,
             ),
             Some(Action::Maintenance(MaintenanceAction::CancelDialog))

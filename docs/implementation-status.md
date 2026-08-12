@@ -119,7 +119,8 @@ bounded popup editor. The shared migration gate is complete; JUnit export is
 verified on that path, and the remaining QA, security, and maintenance
 operations popup migration is split by subsystem and workflow family; Security
 and QA report imports are complete, and Maintenance sstate form migration is
-split into readiness and cleanup tasks; readiness is active. Maintenance
+split into readiness and cleanup tasks; readiness now uses the shared bounded
+TOML editor without weakening its typed preview, and cleanup is next. Maintenance
 release forms are likewise split into locked cache, build history, and Git
 archive tasks.
 The editor agenda now has explicit adoption, typed state, routing/rendering,

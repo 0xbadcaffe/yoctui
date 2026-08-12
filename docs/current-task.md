@@ -2,15 +2,15 @@
 
 ## Task
 
-**ID:** UX-POPUP-OPS-MAINT-READINESS-001
-**Title:** Move Maintenance sstate readiness form into a TOML popup
+**ID:** UX-POPUP-OPS-MAINT-CLEANUP-001
+**Title:** Move Maintenance sstate cleanup form into a TOML popup
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate Maintenance readiness mode, recipes, mirrors, and timeout editing to a
-shared bounded TOML popup without weakening the exact capability-derived
-preview.
+Migrate Maintenance cleanup scope and toggles to a shared bounded TOML popup
+without weakening exact candidate discovery or the destructive phrase and
+confirmation sequence.
 
 ## Verification
 

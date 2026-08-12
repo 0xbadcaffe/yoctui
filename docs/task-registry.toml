@@ -2701,18 +2701,18 @@ notes = "QA report import now uses the shared PopupEditor with root selected, No
 id = "UX-POPUP-OPS-MAINT-READINESS-001"
 milestone = "M8"
 title = "Move Maintenance sstate readiness form into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 160
 required = true
 depends_on = ["UX-POPUP-OPS-QA-001"]
 verify = ["cargo test -p yoctui-model maintenance_sstate", "cargo test -p yoctui-app maintenance_sstate", "cargo test -p yoctui-ui maintenance_sstate", "cargo check -p yoctui"]
-notes = "Migrate readiness mode, recipes, mirrors, and timeout editing while retaining the exact capability-derived preview."
+notes = "Sstate readiness now uses the shared bounded PopupEditor for targets, exact mode, output/log paths, and timeout; validation converts only into the existing capability-correlated typed preview request."
 
 [[task]]
 id = "UX-POPUP-OPS-MAINT-CLEANUP-001"
 milestone = "M8"
 title = "Move Maintenance sstate cleanup form into a TOML popup"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 161
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-READINESS-001"]
