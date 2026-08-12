@@ -189,7 +189,7 @@ authenticated daemon instance initializes state through the checked reducer,
 advertises snapshot capability, and returns the same authoritative typed
 snapshot after a real client detach/reattach while remaining alive. Gap-free
 incremental synchronization remains separately gated. The daemon-state parent
-gate is active.
+gate passes; full snapshot and ordered incremental synchronization is active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

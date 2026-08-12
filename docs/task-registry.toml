@@ -2958,18 +2958,18 @@ notes = "The foreground daemon now constructs authoritative typed global state f
 id = "DAEMON-STATE-001"
 milestone = "M11"
 title = "Move authoritative long-lived state into daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 405
 required = true
 depends_on = ["DAEMON-STATE-MODEL-001", "DAEMON-STATE-JOBS-001", "DAEMON-STATE-RUNTIME-001"]
 verify = ["cargo test -p yoctui-model daemon_state", "cargo test -p yoctui-app daemon_state"]
-notes = "Parent gate: daemon owns BitBake state, bounded logs/errors/history, all background job families, QEMU/Wic/SDK/testing/QA/security/maintenance/utility jobs, PTYs, profile state, and session metadata; clients render it."
+notes = "Parent gate complete: typed partition, existing long-lived workflow-family migration, bounded PTY metadata, checked reducer ownership, protocol snapshots, and real daemon detach/reattach runtime coverage all pass without replacing client-local presentation or moving process authority into clients."
 
 [[task]]
 id = "DAEMON-SNAPSHOT-001"
 milestone = "M11"
 title = "Synchronize snapshots and incremental daemon events"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 406
 required = true
 depends_on = ["DAEMON-STATE-001", "DAEMON-PROTOCOL-001"]

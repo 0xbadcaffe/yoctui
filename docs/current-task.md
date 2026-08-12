@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** DAEMON-STATE-001
-**Title:** Move authoritative long-lived state into daemon
+**ID:** DAEMON-SNAPSHOT-001
+**Title:** Synchronize snapshots and incremental daemon events
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Verify the parent state-ownership gate: the daemon owns typed BitBake state,
-bounded logs/errors/history, all background workflow families, PTY metadata,
-project-profile state, and session metadata while interactive clients consume
-replaceable replicas and retain only client-local presentation.
+Provide a bounded consistent state snapshot followed by ordered incremental
+events without a subscription gap. Track daemon sequence/generation, replay
+missed events on reconnect where retained, require safe replacement when a
+client is stale, and keep snapshot/replay queues within configured limits.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model daemon_state
-cargo test -p yoctui-app daemon_state
+cargo test -p yoctui-protocol daemon_snapshot
+cargo test -p yoctui-app daemon_snapshot
 ```
