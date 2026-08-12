@@ -3002,18 +3002,18 @@ notes = "Validated checkpoints now seed a new daemon instance/event sequence, re
 id = "HOST-REBOOT-001"
 milestone = "M11"
 title = "Define and implement host reboot behavior"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 409
 required = true
 depends_on = ["DAEMON-SERVICE-INTEGRATION-001", "DAEMON-RECOVERY-001"]
 verify = ["cargo test -p yoctui reboot_recovery", "./scripts/check-docs.sh"]
-notes = "Auto-start through supported user service, list persisted sessions, mark reboot-killed processes Lost/Stopped, offer only explicit restart/relaunch, and document exact guarantees."
+notes = "Changed boot identity is now a typed HostReboot boundary: persisted sessions remain listed as Lost with client/writer/viewer liveness cleared, and only previously restartable terminals expose typed name/kind/cwd/dimensions relaunch intent without argv/environment/PID replay. The unprivileged default-target user service supports explicit enablement after login; exact logout/lingering guarantees are documented."
 
 [[task]]
 id = "BITBAKE-SERVER-001"
 milestone = "M11"
 title = "Create daemon-owned BitBake controller"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 410
 required = true
 depends_on = ["DAEMON-STATE-001"]

@@ -1485,6 +1485,18 @@ boot daemon restart and changed-boot recovery produce distinct visible
 warnings. The later BitBake controller may attempt a supported reconnect; no
 external process is restored merely by PID or command resemblance.
 
+For host reboot, installing the generated user unit is not itself an implicit
+enablement: the user explicitly runs the printed `systemctl --user enable
+--now yoctui.service` command. Once enabled, `WantedBy=default.target` starts
+the unprivileged foreground daemon with the user manager after login (or under
+the host's configured user-lingering policy); `Restart=on-failure` covers
+daemon failure, not host power loss. Changed boot identity is always reported
+as `HostReboot`. Persisted sessions remain listed as `Lost`, and only entries
+already marked restartable yield a typed relaunch intent containing prior
+session ID, name, kind, cwd, and dimensions. No argv, environment, PID, or
+process group is persisted or automatically executed. A future session action
+must reconstruct and confirm a supported typed workflow before relaunch.
+
 ### Multi-client arbitration
 
 Multiple authenticated clients may observe the same global state and receive

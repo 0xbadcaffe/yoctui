@@ -17,8 +17,8 @@ use yoctui_protocol::{
     daemon_ipc::{DaemonConnection, runtime_paths_for},
     daemon_lifecycle::read_boot_id,
     daemon_persist::{
-        DaemonPersistedState, PersistedPreferences, persist_paths_for, read_persisted_state,
-        write_persisted_state,
+        DaemonPersistedState, DaemonRecoveryBoundary, PersistedPreferences, persist_paths_for,
+        read_persisted_state, recover_persisted_snapshot, write_persisted_state,
     },
 };
 
@@ -222,4 +222,66 @@ fn daemon_recovery_restores_history_but_marks_live_work_lost() {
     drop(connection);
     assert!(run(binary, &runtime, &state_root, "stop").status.success());
     drop(cleanup);
+}
+
+#[test]
+fn reboot_recovery_exposes_only_typed_explicit_relaunch_intent() {
+    let previous = DaemonSnapshot {
+        daemon_instance_id: DaemonInstanceId([1; 16]),
+        sequence: 4,
+        generation: 4,
+        workspace: None,
+        project_profile: ProjectProfileSummary::Absent,
+        bitbake: BitBakeState {
+            lifecycle: LifecycleState::Running,
+            version: None,
+            capabilities: Vec::new(),
+            diagnostic: None,
+        },
+        jobs: Vec::new(),
+        pty_sessions: vec![PtySessionSummary {
+            id: PtySessionId(9),
+            name: "sdk-shell".into(),
+            kind: PtyKind::SdkShell,
+            cwd: "/opt/sdk".into(),
+            lifecycle: LifecycleState::Running,
+            dimensions: TerminalDimensions {
+                columns: 90,
+                rows: 28,
+            },
+            writer: Some(ClientId([2; 16])),
+            writer_epoch: 3,
+            viewers: 1,
+            exit_code: None,
+            restartable: true,
+        }],
+        clients: Vec::new(),
+        recent_logs: Vec::new(),
+        recovery_warnings: Vec::new(),
+    };
+    let persisted = DaemonPersistedState::capture(
+        &previous,
+        1,
+        "previous-host-boot".into(),
+        Vec::new(),
+        PersistedPreferences::default(),
+    );
+    let mut current = previous.clone();
+    current.daemon_instance_id = DaemonInstanceId([8; 16]);
+    current.sequence = 0;
+    current.generation = 0;
+    current.jobs.clear();
+    current.pty_sessions.clear();
+    let (recovered, report) = recover_persisted_snapshot(current, &persisted, "new-host-boot");
+
+    assert_eq!(report.boundary, DaemonRecoveryBoundary::HostReboot);
+    assert!(report.previous_boot_changed);
+    assert_eq!(recovered.pty_sessions[0].lifecycle, LifecycleState::Lost);
+    assert_eq!(recovered.pty_sessions[0].writer, None);
+    assert_eq!(report.terminal_relaunch_intents.len(), 1);
+    let relaunch = &report.terminal_relaunch_intents[0];
+    assert_eq!(relaunch.name, "sdk-shell");
+    assert_eq!(relaunch.kind, PtyKind::SdkShell);
+    assert_eq!(relaunch.cwd, "/opt/sdk");
+    assert_eq!(relaunch.dimensions.columns, 90);
 }

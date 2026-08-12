@@ -201,8 +201,11 @@ claims.
 Restart recovery is complete: validated state seeds a new daemon instance,
 formerly nonterminal jobs and PTYs become `Lost`, writer/viewer/client liveness
 is cleared, history and names remain visible, profiles require reload, and
-BitBake remains disconnected pending a supported probe. Explicit host-reboot
-behavior is active.
+BitBake remains disconnected pending a supported probe.
+Host-reboot behavior is complete with an explicit changed-boot boundary,
+honest `Lost` session visibility, typed metadata-only relaunch intent, and
+documented unprivileged user-service enable/login/lingering guarantees. The
+daemon-owned BitBake controller abstraction is active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

@@ -133,12 +133,29 @@ impl DaemonPersistedState {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DaemonRecoveryReport {
+    pub boundary: DaemonRecoveryBoundary,
     pub previous_boot_changed: bool,
     pub lost_jobs: usize,
     pub lost_terminal_sessions: usize,
     pub bitbake_reconnect_recommended: bool,
+    pub terminal_relaunch_intents: Vec<TerminalRelaunchIntent>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DaemonRecoveryBoundary {
+    DaemonRestart,
+    HostReboot,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TerminalRelaunchIntent {
+    pub previous_session_id: u64,
+    pub name: String,
+    pub kind: PtyKind,
+    pub cwd: String,
+    pub dimensions: TerminalDimensions,
 }
 
 pub fn recover_persisted_snapshot(
@@ -149,6 +166,7 @@ pub fn recover_persisted_snapshot(
     let previous_boot_changed = persisted.previous_boot_id != current_boot_id;
     let mut lost_jobs = 0;
     let mut lost_terminal_sessions = 0;
+    let mut terminal_relaunch_intents = Vec::new();
     current.workspace.clone_from(&persisted.workspace);
     current
         .project_profile
@@ -188,6 +206,15 @@ pub fn recover_persisted_snapshot(
                 session.previous_lifecycle
             } else {
                 lost_terminal_sessions += 1;
+                if session.restartable {
+                    terminal_relaunch_intents.push(TerminalRelaunchIntent {
+                        previous_session_id: session.id,
+                        name: session.name.clone(),
+                        kind: session.kind,
+                        cwd: session.cwd.clone(),
+                        dimensions: session.dimensions,
+                    });
+                }
                 LifecycleState::Lost
             };
             crate::daemon::PtySessionSummary {
@@ -225,10 +252,16 @@ pub fn recover_persisted_snapshot(
     (
         current,
         DaemonRecoveryReport {
+            boundary: if previous_boot_changed {
+                DaemonRecoveryBoundary::HostReboot
+            } else {
+                DaemonRecoveryBoundary::DaemonRestart
+            },
             previous_boot_changed,
             lost_jobs,
             lost_terminal_sessions,
             bitbake_reconnect_recommended,
+            terminal_relaunch_intents,
         },
     )
 }
@@ -597,6 +630,10 @@ mod tests {
         assert_eq!(report.lost_jobs, 1);
         assert_eq!(report.lost_terminal_sessions, 1);
         assert!(report.previous_boot_changed);
+        assert_eq!(report.boundary, DaemonRecoveryBoundary::HostReboot);
         assert!(report.bitbake_reconnect_recommended);
+        assert_eq!(report.terminal_relaunch_intents.len(), 1);
+        assert_eq!(report.terminal_relaunch_intents[0].name, "devshell");
+        assert_eq!(report.terminal_relaunch_intents[0].cwd, "/work/build");
     }
 }
