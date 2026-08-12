@@ -78,6 +78,12 @@ pub struct PtySessionSpec {
     pub workspace: PtyWorkspaceContext,
 }
 
+impl PtySessionSpec {
+    pub fn validate(&self) -> Result<(), PtySessionError> {
+        validate_spec(self)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PtySessionLifecycle {
     Starting,

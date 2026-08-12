@@ -3079,18 +3079,18 @@ notes = "The pure model now validates stable nonzero IDs, bounded names, typed k
 id = "PTY-RUNNER-001"
 milestone = "M11"
 title = "Implement daemon-owned Unix PTY runner"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 416
 required = true
 depends_on = ["PTY-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake pty_runner"]
-notes = "Own PTY/process group, interactive bytes, resize, bounded output, UTF-8/raw handling, cancellation, graceful/forced termination, child cleanup, and terminal modes."
+notes = "The Unix adapter uses a real openpty master/slave, a new child session and controlling terminal, exact validated cwd/argv/captured environment, fixed raw-byte chunks through a bounded queue, writer-epoch input, checked TIOCSWINSZ resize, actual code/signal exits, TERM-then-KILL group termination, reaping and drop cleanup. Real PTY tests cover stty resize, interactive I/O, invalid UTF-8 bytes, input bounds, graceful and forced termination."
 
 [[task]]
 id = "PTY-EMU-001"
 milestone = "M11"
 title = "Add maintained terminal-emulation state machine"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 417
 required = true
 depends_on = ["PTY-RUNNER-001"]

@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** PTY-RUNNER-001
-**Title:** Implement daemon-owned Unix PTY runner
+**ID:** PTY-EMU-001
+**Title:** Add maintained terminal-emulation state machine
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Implement a daemon-owned Unix PTY runner using the typed session model. Own the
-master and child process group, carry interactive raw bytes in both directions,
-apply validated resize and terminal modes, bound output and queues, support
-graceful then forced cancellation, reap children and descendants, and report
-typed lifecycle/output/exit/loss events without UI dependencies.
+Adopt a maintained ANSI/VT parser and terminal emulator behind a pure typed
+model boundary. Feed raw PTY output, expose bounded screen/scrollback snapshots,
+resize safely, and support the common cursor, style, alternate-screen,
+bracketed-paste and terminal modes required by shells, editors, ncurses,
+menuconfig and devshell without ad-hoc escape parsing.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake pty_runner
+cargo test -p yoctui-model terminal_emulation
 ```

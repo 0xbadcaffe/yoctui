@@ -10,6 +10,8 @@ mod maintenance_release;
 mod maintenance_service;
 mod maintenance_sstate;
 mod package;
+#[cfg(unix)]
+mod pty_runner;
 mod qa_layer;
 mod qa_report;
 mod qa_task;
@@ -103,6 +105,8 @@ pub use package::{
     PackageDataAdapter, PackageDataAdapterError, PackageDataCancellation, PackageDataCommandSpec,
     PackageDetailResponse, PackageInventoryResponse,
 };
+#[cfg(unix)]
+pub use pty_runner::{PtyRunner, PtyRunnerError, PtyRunnerEvent};
 pub use qa_layer::{
     QaConfiguredLayerInput, QaLayerAdapterError, QaLayerCapabilityInput,
     QaLayerCapabilityInspector, QaLayerCapabilityResponse, QaLayerCommandSpec, QaLayerJobRunner,

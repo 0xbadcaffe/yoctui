@@ -1655,6 +1655,19 @@ terminal markers; otherwise it sends the literal payload. NUL/control bytes
 outside explicitly supported terminal input and oversized payloads are
 rejected. Profiles cannot provide automatic paste or startup keystrokes.
 
+`yoctui-bitbake::PtyRunner` is the Unix execution adapter beneath that model.
+It opens a real master/slave PTY, creates a child session with the slave as its
+controlling terminal, assigns the session leader as the owned process group,
+and executes only the validated exact command/cwd and captured environment.
+The master is split into daemon-owned asynchronous reader/writer handles; raw
+bytes, including invalid UTF-8, cross fixed-size chunks through a bounded queue.
+Writer-epoch checks guard bounded input, and resize first validates a model
+transition before applying `TIOCSWINSZ`. Natural exit reports the real code or
+signal and clears live ownership. Termination signals the owned group, waits a
+bounded grace interval, escalates to `SIGKILL`, reaps the child, and reports the
+actual exit identity. Dropping a live runner kills only its recorded group and
+child. The adapter contains no terminal rendering or UI state.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only
