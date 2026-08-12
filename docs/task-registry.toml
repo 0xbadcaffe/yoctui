@@ -3145,18 +3145,18 @@ notes = "The PTY router accepts current authoritative Devtool status and exposes
 id = "PTY-MENUCONFIG-001"
 milestone = "M11"
 title = "Support interactive menuconfig and devshell PTYs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 422
 required = true
 depends_on = ["PTY-CONTEXT-001"]
 verify = ["cargo test -p yoctui pty_menuconfig"]
-notes = "Run recipe/kernel/U-Boot menuconfig, devshell, and interactive tasks inside PTYs without suspending the client."
+notes = "The typed router accepts only exact current recipe identities and authoritative advertised interactive tasks, resolves kernel and U-Boot menuconfig through their current provider identities, and emits previewed exact `bitbake -c <task> <recipe>` PTY launches in the verified build environment. Stale recipes, missing providers, unavailable tasks, unsafe identities and changed executables fail closed; focused app and CLI composition tests pass."
 
 [[task]]
 id = "PTY-SDK-SHELL-001"
 milestone = "M11"
 title = "Support SDK and native environment PTYs"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 423
 required = true
 depends_on = ["PTY-CONTEXT-001"]

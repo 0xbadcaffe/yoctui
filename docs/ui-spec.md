@@ -2599,6 +2599,14 @@ creating a session; the editor runs in that daemon-owned PTY. Modify,
 update-recipe, finish, deploy and reset retain their existing background-job
 dialogs and lifecycle rather than opening a terminal merely because PTYs are
 available.
+
+Recipe actions expose Devshell and only the interactive configuration tasks
+advertised by authoritative BitBake metadata. Kernel menuconfig and U-Boot
+menuconfig resolve their current provider identities. The confirmation shows
+the exact recipe, task, executable identity, and build directory; acceptance
+creates/focuses a daemon terminal session without suspending the Yoctui client.
+Unavailable or stale providers/tasks show a refresh reason instead of falling
+back to a guessed recipe or free-form command.
 Test result import uses `Test result import.toml` with one normalized absolute
 `root`, initially selected for immediate replacement, preserving the existing
 bounded typed import operation.

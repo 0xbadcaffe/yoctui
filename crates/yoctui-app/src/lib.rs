@@ -1,12 +1,17 @@
 //! Application-owned input mapping, keeping terminal concerns outside the reducer.
 mod pty_context;
 mod pty_devtool;
+mod pty_menuconfig;
 
 pub use pty_context::{
     PtyContextAction, PtyContextAuthority, PtyContextEntry, PtyContextError, PtyContextLaunch,
     VerifiedPtyEnvironment,
 };
 pub use pty_devtool::{PtyDevtoolAction, PtyDevtoolError, PtyDevtoolPreview, PtyDevtoolRouter};
+pub use pty_menuconfig::{
+    PtyBitBakeInteractiveTask, PtyInteractiveRecipe, PtyMenuconfigAction, PtyMenuconfigError,
+    PtyMenuconfigPreview, PtyMenuconfigRouter,
+};
 use std::time::SystemTime;
 use yoctui_bitbake::{
     BackendEvent, DevtoolOutputStream, DevtoolRunnerEvent, QaLayerCapabilityResponse,

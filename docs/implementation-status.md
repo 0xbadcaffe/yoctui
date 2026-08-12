@@ -241,6 +241,9 @@ SDK/deploy identities with canonical path and captured-environment validation;
 project profiles cannot supply commands. Interactive Devtool PTY routing is
 complete for authoritative workspace shells and exact `edit-recipe` while
 noninteractive actions remain managed jobs. Menuconfig/devshell PTY routing is
+complete with exact authoritative recipe/task validation, current kernel and
+U-Boot provider resolution, verified build environments, previewed argv, and
+fail-closed stale handling. Safe persistent SDK/native environment shells are
 active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and

@@ -1714,6 +1714,15 @@ deploy and reset explicitly return `UseBackgroundJob`, preserving the existing
 typed `DevtoolCommandSpec`/job coordinator rather than duplicating long-running
 execution inside a terminal.
 
+Menuconfig/devshell routing likewise consumes an authoritative bounded recipe
+and task catalog. A closed Rust enum permits only `menuconfig`, `devshell`,
+`nconfig`, and `xconfig`; kernel and U-Boot shortcuts resolve the current typed
+provider identities rather than assuming recipe names. The preview verifies the
+exact recipe file identity and advertised task, then emits only
+`bitbake -c <task> <recipe>` with the verified executable and captured build
+environment. There is no free-form task/argument field and the client remains
+attached to Yoctui while the daemon-owned PTY runs the terminal application.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only

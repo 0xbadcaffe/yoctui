@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** PTY-MENUCONFIG-001
-**Title:** Support interactive menuconfig and devshell PTYs
+**ID:** PTY-SDK-SHELL-001
+**Title:** Support SDK and native environment PTYs
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add typed daemon-PTY requests for `bitbake -c menuconfig <recipe>`, kernel and
-U-Boot menuconfig, `devshell`, and other explicitly allowlisted interactive
-BitBake tasks. Validate authoritative recipe/task identity and exact argv,
-reuse the verified build environment, preview before launch, and never suspend
-or hand terminal ownership to the main client.
+Safely capture a selected SDK or native toolchain environment without mutating
+the Yoctui process, validate its identity and paths, and open a persistent
+interactive shell through the daemon-owned PTY infrastructure. Ensure stale or
+untrusted environment setup inputs fail closed and exact launch intent remains
+previewable.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui pty_menuconfig
+cargo test -p yoctui pty_sdk_shell
 ```
