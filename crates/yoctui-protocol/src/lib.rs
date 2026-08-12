@@ -1,5 +1,7 @@
 //! Versioned, newline-delimited JSON protocol shared with the Python bridge.
 pub mod daemon;
+#[cfg(unix)]
+pub mod daemon_ipc;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;

@@ -1279,6 +1279,17 @@ directory is owned by the effective user with mode `0700`; the socket is mode
 `0600`. Creation and stale cleanup use no-follow, ownership, type, and peer-UID
 checks. No TCP listener exists by default.
 
+`yoctui-protocol::daemon_ipc` implements this boundary without exposing a TCP
+transport. It canonicalizes and verifies the private runtime root, creates the
+`yoctui` directory with mode `0700`, binds `daemon.sock` with mode `0600`, and
+authenticates Linux peers with `SO_PEERCRED`. Unix targets without an
+implemented native peer-credential API fail closed. Stale cleanup rejects
+symlinks and non-sockets, removes only a same-UID socket that refuses a local
+connection, and refuses a socket that accepts. Listener cleanup records the
+bound device/inode and removes only that exact socket. Client connect retries
+only expected unavailable states until its deadline; reads/writes apply
+deadlines and reject oversized length prefixes before allocating payloads.
+
 Each daemon start creates an unpredictable `DaemonInstanceId`, start time, and
 boot identity. Clients also receive stable-for-one-connection identities. The
 typed protocol uses bounded length-delimited frames, bounded queues, deadlines,

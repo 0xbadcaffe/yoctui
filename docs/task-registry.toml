@@ -2892,18 +2892,18 @@ notes = "A separate length-prefixed 4 MiB-bounded protocol now types version/cap
 id = "DAEMON-IPC-001"
 milestone = "M11"
 title = "Implement secure local daemon IPC"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 402
 required = true
 depends_on = ["DAEMON-PROTOCOL-001"]
 verify = ["cargo test -p yoctui-protocol daemon_ipc"]
-notes = "Unix-domain local-only IPC with deterministic runtime path, secure permissions, peer verification where available, symlink-safe stale cleanup, bounded messages, timeout/reconnect, and unavailable diagnostics."
+notes = "Unix-only local IPC now validates a canonical same-UID private runtime root, creates 0700/0600 directory/socket paths, verifies Linux SO_PEERCRED, fails closed elsewhere, cleans only owned refused stale sockets, protects listener cleanup by inode, and provides bounded timed framed connect/send/receive diagnostics with no TCP API."
 
 [[task]]
 id = "DAEMON-LIFECYCLE-001"
 milestone = "M11"
 title = "Implement daemon lifecycle commands"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 403
 required = true
 depends_on = ["DAEMON-IPC-001"]

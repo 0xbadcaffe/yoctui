@@ -160,7 +160,12 @@ is complete with a separate bounded length-prefixed wire format, negotiated
 versions/capabilities/limits, typed identities, attach/replay snapshots,
 ordered events, correlated generation guards, job and PTY state, writer
 epochs, layout/mouse messages, confirmations, heartbeat, resync, and explicit
-errors. Secure local Unix IPC is active.
+errors. Secure local Unix IPC is complete.
+Local IPC now passes real Unix-socket tests for canonical private paths,
+same-UID peer authentication, mode enforcement, symlink/non-socket rejection,
+owned stale cleanup, reconnect, disconnect, frame limits, and deadlines. It
+contains no TCP listener and fails closed where native peer credentials are
+not implemented. Daemon lifecycle commands are active.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded
