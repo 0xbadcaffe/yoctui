@@ -830,19 +830,19 @@ pub fn render(frame: &mut Frame, app: &App) {
     } else if let Some(Dialog::Qa(dialog)) = app.active_dialog() {
         qa_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::Maintenance(dialog)) = app.active_dialog()
-        && let MaintenanceDialog::ReadinessToml {
-            editor,
-            validation_error,
-        } = dialog.as_ref()
+        && let Some((title, editor, validation_error)) = match dialog.as_ref() {
+            MaintenanceDialog::ReadinessToml {
+                editor,
+                validation_error,
+            } => Some(("Sstate readiness.toml", editor, validation_error)),
+            MaintenanceDialog::CleanupToml {
+                editor,
+                validation_error,
+            } => Some(("Sstate cleanup.toml", editor, validation_error)),
+            _ => None,
+        }
     {
-        toml_popup_editor(
-            frame,
-            app,
-            area,
-            "Sstate readiness.toml",
-            editor,
-            validation_error.as_deref(),
-        );
+        toml_popup_editor(frame, app, area, title, editor, validation_error.as_deref());
     } else if let Some(Dialog::Maintenance(dialog)) = app.active_dialog() {
         maintenance_dialog(frame, app, dialog, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
@@ -9425,6 +9425,9 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
         MaintenanceDialog::ReadinessToml { .. } => {
             unreachable!("sstate readiness uses the shared editor")
         }
+        MaintenanceDialog::CleanupToml { .. } => {
+            unreachable!("sstate cleanup uses the shared editor")
+        }
         MaintenanceDialog::ReadinessForm(draft) => (
             "Sstate readiness check",
             format!(
@@ -15208,25 +15211,24 @@ mod tests {
             assert!(output.contains("Home/End line"), "{width}: {output}");
         }
 
-        let metadata = yoctui_model::MaintenanceMetadata::new(yoctui_model::MaintenanceMetadata {
-            sstate_dir: Some("/cache/sstate".into()),
-            stamps_dirs: vec!["/build/tmp/stamps".into()],
-            ..yoctui_model::MaintenanceMetadata::default()
-        })
-        .unwrap();
-        let mut cleanup = yoctui_model::MaintenanceCleanupDraft::from_metadata(&metadata).unwrap();
-        cleanup.orphans = true;
+        let cleanup = yoctui_model::PopupEditor::new(
+            "# Cache (read-only): /cache/sstate\n# Stamps (read-only): /build/tmp/stamps\nduplicates = true\norphans = true\nunreferenced_by_stamps = false\njobs = 1\n".into(),
+        );
         app.dialogs.clear();
         app.dialogs.push_front(Dialog::Maintenance(Box::new(
-            MaintenanceDialog::CleanupForm(Box::new(cleanup)),
+            MaintenanceDialog::CleanupToml {
+                editor: cleanup,
+                validation_error: Some("jobs must be a positive integer".into()),
+            },
         )));
         for theme in [Theme::DarkPro, Theme::WhiteClassic, Theme::Monochrome] {
             app.theme = theme;
             let output = rendered_text(&app, 80, 24);
-            assert!(output.contains("Protected sstate cleanup"), "{output}");
+            assert!(output.contains("Sstate cleanup.toml"), "{output}");
             assert!(output.contains("/cache/sstate"), "{output}");
-            assert!(output.contains("[x] orphans"), "{output}");
-            assert!(output.contains("discover candidates"), "{output}");
+            assert!(output.contains("orphans = true"), "{output}");
+            assert!(output.contains("jobs must be a positive"), "{output}");
+            assert!(output.contains("Home/End line"), "{output}");
         }
     }
 

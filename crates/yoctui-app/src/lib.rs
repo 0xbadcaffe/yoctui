@@ -2113,6 +2113,13 @@ pub fn maintenance_dialog_action(dialog: &MaintenanceDialog, key: Input) -> Opti
             }
             input => popup_editor_action(editor.editing, input),
         },
+        MaintenanceDialog::CleanupToml { editor, .. } => match key {
+            Input::Enter => maintenance(MaintenanceAction::ConfirmCleanupToml(editor.text.clone())),
+            Input::Char('q') | Input::Esc if !editor.editing => {
+                maintenance(MaintenanceAction::CancelDialog)
+            }
+            input => popup_editor_action(editor.editing, input),
+        },
         MaintenanceDialog::ReadinessForm(draft) => {
             let mut next = (**draft).clone();
             next.validation = None;
@@ -3034,25 +3041,34 @@ mod tests {
             )) if document == readiness.text
         ));
 
-        let metadata = yoctui_model::MaintenanceMetadata::new(yoctui_model::MaintenanceMetadata {
-            sstate_dir: Some("/cache".into()),
-            stamps_dirs: vec!["/build/tmp/stamps".into()],
-            ..yoctui_model::MaintenanceMetadata::default()
-        })
-        .unwrap();
-        let cleanup = yoctui_model::MaintenanceCleanupDraft::from_metadata(&metadata).unwrap();
+        let cleanup = yoctui_model::PopupEditor::new(
+            "duplicates = true\norphans = false\nunreferenced_by_stamps = false\njobs = 1\n".into(),
+        );
         assert!(matches!(
             maintenance_dialog_action(
-                &MaintenanceDialog::CleanupForm(Box::new(cleanup)),
-                Input::Char(' '),
+                &MaintenanceDialog::CleanupToml {
+                    editor: cleanup.clone(),
+                    validation_error: None,
+                },
+                Input::Char('e'),
             ),
-            Some(Action::Maintenance(MaintenanceAction::UpdateCleanupForm(draft)))
-                if !draft.duplicates
+            Some(Action::EditActivePopup(PopupEditorCommand::SelectValue))
+        ));
+        assert!(matches!(
+            maintenance_dialog_action(
+                &MaintenanceDialog::CleanupToml {
+                    editor: cleanup.clone(),
+                    validation_error: None,
+                },
+                Input::Enter,
+            ),
+            Some(Action::Maintenance(MaintenanceAction::ConfirmCleanupToml(document)))
+                if document == cleanup.text
         ));
         assert_eq!(
             maintenance_dialog_action(
-                &MaintenanceDialog::ReadinessToml {
-                    editor: yoctui_model::PopupEditor::new("targets = \"\"\n".into()),
+                &MaintenanceDialog::CleanupToml {
+                    editor: cleanup,
                     validation_error: None,
                 },
                 Input::Esc,

@@ -1079,14 +1079,7 @@ impl PopupEditor {
             .find('\n')
             .map_or(self.text.len(), |index| line_start + index);
         let line = &self.text[line_start..line_end];
-        let value_start = line
-            .find('"')
-            .map(|index| line_start + index + 1)
-            .ok_or_else(|| format!("`{key}` must be a quoted TOML string."))?;
-        let value_end = self.text[value_start..line_end]
-            .find('"')
-            .map(|index| value_start + index)
-            .ok_or_else(|| format!("`{key}` must be a quoted TOML string."))?;
+        let (value_start, value_end) = popup_toml_value_range(line, line_start)?;
         self.select_range(value_start, value_end);
         Ok(())
     }
@@ -1098,14 +1091,7 @@ impl PopupEditor {
             .find('\n')
             .map_or(self.text.len(), |index| self.cursor + index);
         let line = &self.text[line_start..line_end];
-        let value_start = line
-            .find('"')
-            .map(|index| line_start + index + 1)
-            .ok_or_else(|| "The current TOML line has no quoted value.".to_owned())?;
-        let value_end = self.text[value_start..line_end]
-            .find('"')
-            .map(|index| value_start + index)
-            .ok_or_else(|| "The current TOML line has no closing quote.".to_owned())?;
+        let (value_start, value_end) = popup_toml_value_range(line, line_start)?;
         self.select_range(value_start, value_end);
         Ok(())
     }
@@ -1134,6 +1120,28 @@ impl PopupEditor {
         }
         index
     }
+}
+
+fn popup_toml_value_range(line: &str, line_start: usize) -> Result<(usize, usize), String> {
+    let equals = line
+        .find('=')
+        .ok_or_else(|| "The current TOML line has no value.".to_owned())?;
+    let raw = &line[equals + 1..];
+    let leading = raw.len() - raw.trim_start().len();
+    let value = raw.trim_start();
+    let value_start = line_start + equals + 1 + leading;
+    if let Some(quoted) = value.strip_prefix('"') {
+        let end = quoted
+            .find('"')
+            .ok_or_else(|| "The current TOML line has no closing quote.".to_owned())?;
+        return Ok((value_start + 1, value_start + 1 + end));
+    }
+    let value = value.split_once('#').map_or(value, |(value, _)| value);
+    let value = value.trim_end();
+    if value.is_empty() {
+        return Err("The current TOML line has no value.".into());
+    }
+    Ok((value_start, value_start + value.len()))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -6291,6 +6299,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 })) => (editor, Some(validation_error)),
                 Some(Dialog::Maintenance(dialog)) => match dialog.as_mut() {
                     MaintenanceDialog::ReadinessToml {
+                        editor,
+                        validation_error,
+                    }
+                    | MaintenanceDialog::CleanupToml {
                         editor,
                         validation_error,
                     } => (editor, Some(validation_error)),
@@ -20404,6 +20416,16 @@ mod tests {
         assert!(editor.undo());
         assert_eq!(editor.text, "path = \"/old\"\nmode = \"safe\"\n");
         assert!(!editor.undo());
+    }
+
+    #[test]
+    fn popup_editor_selects_native_toml_boolean_and_integer_values() {
+        let mut editor = PopupEditor::new("enabled = true\njobs = 12 # bounded\n".into());
+        editor.select_toml_value("enabled").unwrap();
+        assert_eq!(editor.selected_text(), Some("true"));
+        editor.cursor = editor.text.find("jobs").unwrap();
+        editor.select_toml_value_at_cursor().unwrap();
+        assert_eq!(editor.selected_text(), Some("12"));
     }
 
     #[test]

@@ -2712,18 +2712,18 @@ notes = "Sstate readiness now uses the shared bounded PopupEditor for targets, e
 id = "UX-POPUP-OPS-MAINT-CLEANUP-001"
 milestone = "M8"
 title = "Move Maintenance sstate cleanup form into a TOML popup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 161
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-READINESS-001"]
 verify = ["cargo test -p yoctui-model maintenance_sstate", "cargo test -p yoctui-app maintenance_sstate", "cargo test -p yoctui-ui maintenance_sstate", "cargo check -p yoctui"]
-notes = "Migrate cleanup scope and toggles while retaining exact candidate discovery and destructive phrase confirmation."
+notes = "Sstate cleanup now uses the shared bounded PopupEditor for native TOML mode flags and jobs; cache/stamps remain capability-owned, and exact candidate discovery plus phrase and destructive confirmation remain mandatory."
 
 [[task]]
 id = "UX-POPUP-OPS-MAINT-SSTATE-001"
 milestone = "M8"
 title = "Move Maintenance sstate forms into TOML popups"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 162
 required = true
 depends_on = ["UX-POPUP-OPS-MAINT-READINESS-001", "UX-POPUP-OPS-MAINT-CLEANUP-001"]

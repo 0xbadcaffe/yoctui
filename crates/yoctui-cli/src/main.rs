@@ -5823,7 +5823,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 if matches!(
                     app.active_dialog(),
                     Some(Dialog::Maintenance(dialog))
-                        if matches!(dialog.as_ref(), yoctui_model::MaintenanceDialog::ReadinessToml { editor, .. } if editor.editing)
+                        if matches!(
+                            dialog.as_ref(),
+                            yoctui_model::MaintenanceDialog::ReadinessToml { editor, .. }
+                                | yoctui_model::MaintenanceDialog::CleanupToml { editor, .. }
+                                if editor.editing
+                        )
                 ) {
                     for character in text.chars().filter(|character| !character.is_control()) {
                         let _ = update(

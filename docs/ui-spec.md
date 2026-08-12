@@ -2055,14 +2055,18 @@ candidate set, symlink, escape, identity, or capability rejects execution.
 Arbitrary age-based deletion and free-form cleanup arguments are outside this
 workflow.
 
-`d` opens the cleanup form only when the exact cleanup capability and canonical
-`SSTATE_DIR` are available. Cache and stamps roots are read-only; duplicates is
-selected initially, orphans and unreferenced-by-stamps begin clear, and jobs
-begins at one. `Tab`/`Shift+Tab` moves through the three modes and Jobs,
-`Space` or `Left`/`Right` toggles a selected mode, and digits edit Jobs.
+`d` opens the bounded `Sstate cleanup.toml` popup only when the exact cleanup
+capability and canonical `SSTATE_DIR` are available. Informational comments
+show the read-only cache and stamps roots; edits to those comments cannot alter
+the authoritative capability metadata. Native TOML fields expose `duplicates`,
+`orphans`, `unreferenced_by_stamps`, and `jobs`; duplicates begins true, the
+other modes begin false, and jobs begins at one. The shared popup can select
+quoted strings, native booleans, and integers with `e`, and retains its
+Normal/Insert navigation, Home/End, copy/paste, undo, and shortcut footer.
 `Enter` validates and requests read-only candidate discovery; it cannot open
 the deletion phrase or destructive confirmation until the adapter returns an
-exact typed candidate preview. `Esc` closes without discovery or deletion.
+exact typed candidate preview. Normal-mode `Esc` or `q` closes without
+discovery or deletion.
 
 Readiness and cleanup are independent cancellable background operations.
 Cancellation of cleanup requires an additional warning that a partially

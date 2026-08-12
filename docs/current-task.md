@@ -2,15 +2,15 @@
 
 ## Task
 
-**ID:** UX-POPUP-OPS-MAINT-CLEANUP-001
-**Title:** Move Maintenance sstate cleanup form into a TOML popup
+**ID:** UX-POPUP-OPS-MAINT-SSTATE-001
+**Title:** Move Maintenance sstate forms into TOML popups
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Migrate Maintenance cleanup scope and toggles to a shared bounded TOML popup
-without weakening exact candidate discovery or the destructive phrase and
-confirmation sequence.
+Verify the readiness and cleanup popup migrations together, including typed
+preview boundaries, authoritative cleanup identities, exact candidate
+discovery, and destructive cleanup confirmation.
 
 ## Verification
 

@@ -687,12 +687,15 @@ access, raw process parsing, or command construction. Existing Signatures,
 Security, QA, and recipe patch-review state remains authoritative and is
 reached through typed navigation actions.
 
-The Sstate readiness entry point owns a shared bounded `PopupEditor` document
-in model state. Parsing accepts only the named TOML fields and exact readiness
-mode values, then converts them into the pre-existing typed readiness request.
+The Sstate readiness and cleanup entry points own shared bounded `PopupEditor`
+documents in model state. Parsing accepts named TOML fields, native booleans
+and integers, and exact readiness mode values, then converts them into the
+pre-existing typed requests. Cleanup cache and stamps identities always come
+from current capability metadata rather than editable document content.
 Invalid documents stay in the popup with visible validation; valid documents
 still cross the adapter's capability-derived preview boundary and never create
-an execution path in UI or input-routing code.
+an execution path in UI or input-routing code. Exact cleanup candidate
+discovery, phrase entry, and destructive confirmation remain separate stages.
 
 `yoctui-bitbake` owns four adapter families. The sstate adapter detects the
 installed readiness and cleanup interface, constructs validated native vectors,

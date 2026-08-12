@@ -1677,6 +1677,10 @@ pub enum MaintenanceDialog {
         validation_error: Option<String>,
     },
     ReadinessForm(Box<MaintenanceReadinessDraft>),
+    CleanupToml {
+        editor: PopupEditor,
+        validation_error: Option<String>,
+    },
     CleanupForm(Box<MaintenanceCleanupDraft>),
     PrServiceForm(Box<MaintenancePrServiceDraft>),
     LockedCacheForm(Box<MaintenanceLockedCacheDraft>),
@@ -1784,6 +1788,7 @@ pub enum MaintenanceAction {
     UpdateReadinessForm(Box<MaintenanceReadinessDraft>),
     ConfirmReadinessForm(Box<MaintenanceReadinessDraft>),
     OpenCleanupForm,
+    ConfirmCleanupToml(String),
     UpdateCleanupForm(Box<MaintenanceCleanupDraft>),
     ConfirmCleanupForm(Box<MaintenanceCleanupDraft>),
     OpenPrServiceForm(PrServiceOperation),
@@ -2208,12 +2213,83 @@ pub fn update_maintenance(
             if let Some(snapshot) = state.capability.snapshot()
                 && let Ok(draft) = MaintenanceCleanupDraft::from_metadata(&snapshot.metadata)
             {
+                let stamps = if draft.stamps_dirs.is_empty() {
+                    "none".to_owned()
+                } else {
+                    draft
+                        .stamps_dirs
+                        .iter()
+                        .map(|path| path.display().to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                };
+                let mut editor = PopupEditor::new(format!(
+                    "# protected sstate candidate discovery\n# Cache (read-only): {}\n# Stamps (read-only): {stamps}\n# Context comments are informational; current capability metadata is authoritative.\nduplicates = true\norphans = false\nunreferenced_by_stamps = false\njobs = 1\n",
+                    draft.cache_dir.display()
+                ));
+                let _ = editor.select_toml_value("duplicates");
                 return MaintenanceTransition {
                     dialog: MaintenanceDialogUpdate::Open(Box::new(
-                        MaintenanceDialog::CleanupForm(Box::new(draft)),
+                        MaintenanceDialog::CleanupToml {
+                            editor,
+                            validation_error: None,
+                        },
                     )),
                     ..MaintenanceTransition::none()
                 };
+            }
+        }
+        MaintenanceAction::ConfirmCleanupToml(document) => {
+            let parsed = (|| {
+                let fields = popup_toml_fields(&document)?;
+                let get = |key: &str| {
+                    fields
+                        .get(key)
+                        .cloned()
+                        .ok_or_else(|| format!("Missing `{key}`."))
+                };
+                let boolean = |key: &str| match get(key)?.as_str() {
+                    "true" => Ok(true),
+                    "false" => Ok(false),
+                    _ => Err(format!("`{key}` must be `true` or `false`.")),
+                };
+                let snapshot = state
+                    .capability
+                    .snapshot()
+                    .ok_or_else(|| "Sstate capability is unavailable.".to_owned())?;
+                let mut draft = MaintenanceCleanupDraft::from_metadata(&snapshot.metadata)
+                    .map_err(str::to_owned)?;
+                draft.duplicates = boolean("duplicates")?;
+                draft.orphans = boolean("orphans")?;
+                draft.unreferenced_by_stamps = boolean("unreferenced_by_stamps")?;
+                draft.jobs = get("jobs")?;
+                draft.request().map_err(str::to_owned)
+            })();
+            match parsed {
+                Ok(request) => {
+                    let Some(capability_request) = state.capability.request() else {
+                        return MaintenanceTransition::none();
+                    };
+                    return MaintenanceTransition {
+                        effect: Some(MaintenanceEffect::PreviewCleanup {
+                            capability_request,
+                            request,
+                        }),
+                        dialog: MaintenanceDialogUpdate::Close,
+                        notification: None,
+                    };
+                }
+                Err(message) => {
+                    return MaintenanceTransition {
+                        dialog: MaintenanceDialogUpdate::Open(Box::new(
+                            MaintenanceDialog::CleanupToml {
+                                editor: PopupEditor::new(document),
+                                validation_error: Some(message),
+                            },
+                        )),
+                        ..MaintenanceTransition::none()
+                    };
+                }
             }
         }
         MaintenanceAction::UpdateCleanupForm(draft) if draft.is_bounded() => {
@@ -3315,30 +3391,36 @@ timeout = 45
         let MaintenanceDialogUpdate::Open(dialog) = cleanup.dialog else {
             panic!("cleanup form did not open");
         };
-        let MaintenanceDialog::CleanupForm(mut draft) = *dialog else {
+        let MaintenanceDialog::CleanupToml { editor, .. } = *dialog else {
             panic!("wrong cleanup dialog");
         };
-        assert_eq!(draft.cache_dir, Path::new("/cache"));
-        assert_eq!(draft.stamps_dirs, vec![PathBuf::from("/build/tmp/stamps")]);
-        draft.duplicates = false;
+        assert_eq!(editor.selected_text(), Some("true"));
+        assert!(editor.text.contains("# Cache (read-only): /cache"));
         let invalid = update_maintenance(
             &mut state,
-            MaintenanceAction::ConfirmCleanupForm(draft.clone()),
+            MaintenanceAction::ConfirmCleanupToml(
+                "duplicates = false\norphans = false\nunreferenced_by_stamps = false\njobs = 1\n"
+                    .into(),
+            ),
         );
         assert!(matches!(
             invalid.dialog,
             MaintenanceDialogUpdate::Open(dialog)
-                if matches!(*dialog, MaintenanceDialog::CleanupForm(ref draft) if draft.validation.is_some())
+                if matches!(*dialog, MaintenanceDialog::CleanupToml { validation_error: Some(_), .. })
         ));
-        draft.orphans = true;
-        draft.jobs = "3".into();
-        let valid = update_maintenance(&mut state, MaintenanceAction::ConfirmCleanupForm(draft));
+        let valid = update_maintenance(
+            &mut state,
+            MaintenanceAction::ConfirmCleanupToml(
+                "duplicates = false\norphans = true\nunreferenced_by_stamps = false\njobs = 3\n"
+                    .into(),
+            ),
+        );
         assert!(matches!(
             valid.effect,
             Some(MaintenanceEffect::PreviewCleanup {
                 capability_request: 1,
-                request: SstateCleanupRequest { jobs: 3, .. },
-            })
+                request: SstateCleanupRequest { jobs: 3, ref cache_dir, ref stamps_dirs, .. },
+            }) if cache_dir == Path::new("/cache") && stamps_dirs == &[PathBuf::from("/build/tmp/stamps")]
         ));
     }
 
