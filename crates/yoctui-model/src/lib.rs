@@ -1193,8 +1193,8 @@ pub enum Dialog {
     SdkCancellationConfirmation(SdkSessionId),
     TestLaunch(TestLaunchDialog),
     TestLaunchTomlEditor {
-        content: String,
-        editing: bool,
+        editor: PopupEditor,
+        validation_error: Option<String>,
     },
     TestLaunchConfirmation(TestLaunchPreview),
     TestCancellationConfirmation(TestSessionId),
@@ -6270,6 +6270,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 Some(Dialog::WicCreateTomlEditor {
                     editor,
                     validation_error,
+                })
+                | Some(Dialog::TestLaunchTomlEditor {
+                    editor,
+                    validation_error,
                 }) => (editor, Some(validation_error)),
                 _ => return None,
             };
@@ -7585,39 +7589,41 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::BeginSelectedTestLaunch => {
             let draft = test_launch_draft(app, app.test_family_selection);
+            let mut editor = PopupEditor::new(format!(
+                "# family, machine, distro, and image are authoritative\nfamily = \"{}\"\nmachine = \"{}\"\ndistro = \"{}\"\nimage = \"{}\"\nscope = \"all\"\nselector = \"\"\nparallelism = 1\nverbose = false\nskip_network = false\n",
+                draft.family.label(),
+                draft.machine,
+                draft.distro,
+                draft.image
+            ));
+            let _ = editor.select_toml_value("scope");
             open_dialog(
                 app,
                 Dialog::TestLaunchTomlEditor {
-                    content: format!(
-                        "# family, machine, distro, and image are authoritative\nfamily = \"{}\"\nmachine = \"{}\"\ndistro = \"{}\"\nimage = \"{}\"\nscope = \"all\"\nselector = \"\"\nparallelism = 1\nverbose = false\nskip_network = false\n",
-                        draft.family.label(),
-                        draft.machine,
-                        draft.distro,
-                        draft.image
-                    ),
-                    editing: false,
+                    editor,
+                    validation_error: None,
                 },
             );
         }
         Action::ToggleTestLaunchTomlEditor => {
-            if let Some(Dialog::TestLaunchTomlEditor { editing, .. }) = app.active_dialog_mut() {
-                *editing = !*editing;
+            if let Some(Dialog::TestLaunchTomlEditor { editor, .. }) = app.active_dialog_mut() {
+                editor.editing = !editor.editing;
             }
         }
         Action::AppendTestLaunchTomlEditor(character) => {
-            if let Some(Dialog::TestLaunchTomlEditor { content, editing }) = app.active_dialog_mut()
-                && *editing
+            if let Some(Dialog::TestLaunchTomlEditor { editor, .. }) = app.active_dialog_mut()
+                && editor.editing
                 && !character.is_control()
-                && content.len() < 8_192
+                && editor.text.len() + character.len_utf8() <= 16_384
             {
-                content.push(character);
+                editor.insert(&character.to_string());
             }
         }
         Action::BackspaceTestLaunchTomlEditor => {
-            if let Some(Dialog::TestLaunchTomlEditor { content, editing }) = app.active_dialog_mut()
-                && *editing
+            if let Some(Dialog::TestLaunchTomlEditor { editor, .. }) = app.active_dialog_mut()
+                && editor.editing
             {
-                content.pop();
+                editor.backspace();
             }
         }
         Action::UpdateTestLaunchDraft(draft) => {
@@ -7653,10 +7659,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::PreviewTestLaunch => {
-            if let Some(Dialog::TestLaunchTomlEditor { content, .. }) = app.active_dialog().cloned()
+            if let Some(Dialog::TestLaunchTomlEditor { editor, .. }) = app.active_dialog().cloned()
             {
                 let preview = (|| {
-                    let fields = popup_toml_fields(&content)?;
+                    let fields = popup_toml_fields(&editor.text)?;
                     let get = |key: &str| {
                         fields
                             .get(key)
@@ -7696,11 +7702,29 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                         verbose: boolean("verbose")?,
                         skip_network: boolean("skip_network")?,
                     };
+                    let authoritative = test_launch_draft(app, app.test_family_selection);
+                    if draft.family != authoritative.family
+                        || draft.machine != authoritative.machine
+                        || draft.distro != authoritative.distro
+                        || draft.image != authoritative.image
+                    {
+                        return Err(
+                            "`family`, `machine`, `distro`, and `image` must match the current Testing context."
+                                .to_owned(),
+                        );
+                    }
                     draft.preview(&app.test_capability).map_err(str::to_owned)
                 })();
                 match preview {
                     Ok(preview) => replace_dialog(app, Dialog::TestLaunchConfirmation(preview)),
-                    Err(message) => app.notification = Some(message),
+                    Err(message) => {
+                        if let Some(Dialog::TestLaunchTomlEditor {
+                            validation_error, ..
+                        }) = app.active_dialog_mut()
+                        {
+                            *validation_error = Some(message);
+                        }
+                    }
                 }
                 return None;
             }
@@ -19486,8 +19510,13 @@ mod tests {
         let capability = test_workflow_app().test_capability;
         let _ = update(&mut app, Action::TestCapabilityLoaded(capability));
         let _ = update(&mut app, Action::BeginSelectedTestLaunch);
-        if let Some(Dialog::TestLaunchTomlEditor { content, .. }) = app.active_dialog_mut() {
-            *content = "family = \"OE selftest\"\nmachine = \"qemux86-64\"\ndistro = \"poky\"\nimage = \"core-image-minimal\"\nscope = \"selected\"\nselector = \"tinfoil.TinfoilTests.test_getvar\"\nparallelism = 8\nverbose = false\nskip_network = false\n".into();
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TestLaunchTomlEditor { editor, .. })
+                if editor.selected_text() == Some("all")
+        ));
+        if let Some(Dialog::TestLaunchTomlEditor { editor, .. }) = app.active_dialog_mut() {
+            editor.text = "family = \"OE selftest\"\nmachine = \"qemux86-64\"\ndistro = \"poky\"\nimage = \"core-image-minimal\"\nscope = \"selected\"\nselector = \"tinfoil.TinfoilTests.test_getvar\"\nparallelism = 8\nverbose = false\nskip_network = false\n".into();
         }
         let _ = update(&mut app, Action::PreviewTestLaunch);
         assert!(matches!(
@@ -19565,6 +19594,29 @@ mod tests {
         let job = app.background_jobs.get(job_id).unwrap();
         assert_eq!(job.status, BackgroundJobStatus::Cancelled);
         assert!(job.output[0].truncated);
+    }
+
+    #[test]
+    fn test_workflow_launch_editor_rejects_changed_authoritative_context() {
+        let mut app = test_workflow_app();
+        let _ = update(&mut app, Action::BeginSelectedTestLaunch);
+        let Some(Dialog::TestLaunchTomlEditor { editor, .. }) = app.active_dialog_mut() else {
+            panic!("test launch TOML editor");
+        };
+        editor.text = editor.text.replace(
+            "machine = \"qemux86-64\"",
+            "machine = \"untrusted-machine\"",
+        );
+
+        let _ = update(&mut app, Action::PreviewTestLaunch);
+
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TestLaunchTomlEditor {
+                validation_error: Some(message),
+                ..
+            }) if message.contains("must match the current Testing context")
+        ));
     }
 
     #[test]

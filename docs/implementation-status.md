@@ -113,20 +113,10 @@ See `docs/current-task.md`.
 
 ## Priority queue
 
-`UX-POPUP-CONFIG-001` is complete: configuration and BBMASK now use bounded
-TOML Normal/Insert popups with paste, validation, and their existing explicit
-write confirmations. The remaining workflow migration was decomposed into
-build target, Wic, SDK, Testing, and operations tasks; `UX-POPUP-TARGET-001`
-is complete; `UX-POPUP-WIC-001` now provides typed TOML editing and the SDK
-migration is split into publication and native-tool tasks; publication is
-complete and native-tool editing is active.
-complete; native-tool editing is complete. Testing migration is split into
-launch and result-management tasks, with launch active.
-launch is complete. Result management is split into import, comparison, and
-JUnit export tasks, with import active.
-JUnit export tasks; import is complete and comparison is active.
-JUnit export tasks; import and comparison are complete and JUnit export is active.
-JUnit export is queued behind the active shared popup-editor controls task.
+Configuration, BBMASK, build target, Wic creation, SDK publication, SDK native
+tools, and Testing launch now use the shared bounded popup editor. Testing
+result import and comparison migration is active; JUnit export and the
+remaining operations popups follow it.
 The editor agenda now has explicit adoption, typed state, routing/rendering,
 and migration tasks; JUnit export and operations remain sequenced after it.
 
@@ -157,7 +147,9 @@ space while retaining all typed Wic preview gates. SDK publication now shares
 the editor path and immediate destination replacement while retaining exact
 path validation and confirmation. SDK native tools now share multi-field
 editing while retaining FindSysroot versus RunNative restrictions and exact
-previews; Testing launch migration is active.
+previews. Testing launch now shares navigation and clipboard behavior, renders
+validation in-popup, and enforces its authoritative context; Testing result
+migration is active.
 
 ## Rules
 

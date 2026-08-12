@@ -730,15 +730,19 @@ pub fn render(frame: &mut Frame, app: &App) {
         sdk_native_confirmation(frame, app, preview, area);
     } else if let Some(Dialog::SdkCancellationConfirmation(id)) = app.active_dialog() {
         sdk_cancellation_confirmation(frame, app, *id, area);
-    } else if let Some(Dialog::TestLaunchTomlEditor { content, editing }) = app.active_dialog() {
-        let popup = Rect::new(
-            area.width / 8,
-            area.height / 6,
-            area.width * 3 / 4,
-            area.height * 2 / 3,
+    } else if let Some(Dialog::TestLaunchTomlEditor {
+        editor,
+        validation_error,
+    }) = app.active_dialog()
+    {
+        toml_popup_editor(
+            frame,
+            app,
+            area,
+            "Test launch.toml",
+            editor,
+            validation_error.as_deref(),
         );
-        clear_popup(frame, app, popup);
-        frame.render_widget(Paragraph::new(format!("{}{}\n{}: i inserts, Enter previews, q closes.\nInsert: type, Backspace, Esc normal.", content, if *editing { "_" } else { "" }, if *editing { "INSERT" } else { "NORMAL" })).block(Block::default().title(format!("Test launch.toml — {}", if *editing { "INSERT" } else { "NORMAL" })).borders(Borders::ALL)).wrap(Wrap { trim: false }), popup);
     } else if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog() {
         test_launch_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::TestLaunchConfirmation(preview)) = app.active_dialog() {
@@ -11082,15 +11086,17 @@ mod tests {
     fn test_workflow_dialogs_render_exact_previews_at_responsive_boundaries() {
         let (mut app, baseline, candidate) = test_workflow_results_app();
         app.focus = FocusTarget::Dialog;
+        let mut editor = yoctui_model::PopupEditor::new("family = \"OE selftest\"\nmachine = \"qemux86-64\"\ndistro = \"poky\"\nimage = \"core-image-minimal\"\nscope = \"all\"\nselector = \"\"\nparallelism = 1\nverbose = false\nskip_network = false\n".into());
+        editor.select_toml_value("scope").unwrap();
         app.dialogs.push_front(Dialog::TestLaunchTomlEditor {
-            content: "family = \"OE selftest\"\nmachine = \"qemux86-64\"\ndistro = \"poky\"\nimage = \"core-image-minimal\"\nscope = \"all\"\nselector = \"\"\nparallelism = 1\nverbose = false\nskip_network = false\n".into(),
-            editing: false,
+            editor,
+            validation_error: Some("typed launch validation".into()),
         });
-        assert!(
-            rendered_text(&app, 80, 24).contains("Test launch.toml"),
-            "{}",
-            rendered_text(&app, 80, 24)
-        );
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("Test launch.toml"), "{output}");
+        assert!(output.contains("Home/End line"), "{output}");
+        assert!(output.contains("typed launch validation"), "{output}");
+        assert!(output.contains("⟦all⟧▏"), "{output}");
 
         app.dialogs.clear();
         let request = yoctui_model::TestSelftestRequest::new(

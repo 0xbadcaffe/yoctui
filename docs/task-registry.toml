@@ -2646,18 +2646,18 @@ notes = "SDK native tools now use PopupEditor and shared multi-field navigation/
 id = "UX-POPUP-EDITOR-TEST-LAUNCH-001"
 milestone = "M8"
 title = "Migrate Testing launch popup to shared editor state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 169
 required = true
 depends_on = ["UX-POPUP-EDITOR-SDK-NATIVE-001"]
 verify = ["cargo test -p yoctui-model test_workflow", "cargo test -p yoctui-ui test_workflow", "cargo check -p yoctui"]
-notes = "Adopt shared editing for launch fields while preserving authoritative context and launch confirmation."
+notes = "Testing launch now uses PopupEditor with shared cursor/navigation/clipboard routing, selects scope initially, renders typed validation in-popup, rejects changes to authoritative family/machine/distro/image context, and retains launch confirmation."
 
 [[task]]
 id = "UX-POPUP-EDITOR-TEST-RESULTS-001"
 milestone = "M8"
 title = "Migrate Testing import and comparison popups to shared editor state"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 170
 required = true
 depends_on = ["UX-POPUP-EDITOR-TEST-LAUNCH-001"]

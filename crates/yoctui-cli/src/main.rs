@@ -5815,7 +5815,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::SdkNativeTomlEditor(editor)) if editor.editing => {
                         Some(Action::AppendSdkNativeTomlEditor as fn(char) -> Action)
                     }
-                    Some(Dialog::TestLaunchTomlEditor { editing: true, .. }) => {
+                    Some(Dialog::TestLaunchTomlEditor { editor, .. }) if editor.editing => {
                         Some(Action::AppendTestLaunchTomlEditor as fn(char) -> Action)
                     }
                     Some(Dialog::TestJunitTomlEditor { editor, .. }) if editor.editing => {
@@ -6220,29 +6220,20 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if let Some(Effect::CancelSdkSession(id)) = effect {
                         begin_sdk_cancellation(&mut app, &mut sdk_operation, id);
                     }
-                } else if let Some(Dialog::TestLaunchTomlEditor { editing, .. }) =
+                } else if let Some(Dialog::TestLaunchTomlEditor { editor, .. }) =
                     app.active_dialog().cloned()
                 {
-                    let action = if editing {
-                        match input {
-                            Input::Esc => Some(Action::ToggleTestLaunchTomlEditor),
-                            Input::Enter => Some(Action::PreviewTestLaunch),
-                            Input::Backspace => Some(Action::BackspaceTestLaunchTomlEditor),
-                            Input::Char(character) => {
-                                Some(Action::AppendTestLaunchTomlEditor(character))
-                            }
-                            _ => None,
+                    let action = match input {
+                        Input::Enter => Some(Action::PreviewTestLaunch),
+                        Input::Char('q') | Input::Esc if !editor.editing => {
+                            Some(Action::CancelTestLaunch)
                         }
-                    } else {
-                        match input {
-                            Input::Char('i') => Some(Action::ToggleTestLaunchTomlEditor),
-                            Input::Char('q') | Input::Esc => Some(Action::CancelTestLaunch),
-                            Input::Enter => Some(Action::PreviewTestLaunch),
-                            _ => None,
-                        }
+                        input => popup_editor_action(editor.editing, input),
                     };
-                    if let Some(action) = action {
-                        let _ = update(&mut app, action);
+                    if let Some(Effect::CopyToClipboard(content)) =
+                        action.and_then(|action| update(&mut app, action))
+                    {
+                        copy_to_clipboard(&mut app, content).await;
                     }
                 } else if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog() {
                     let editing = dialog.editing;
