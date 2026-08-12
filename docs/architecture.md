@@ -1109,6 +1109,37 @@ intact and dispatch a visible failure notice.
 Persist only user preferences and recent valid workspace references. Do not
 persist transient secrets or unbounded logs.
 
+## Optional project-profile boundary
+
+`.yoctui/project.toml` is an optional, repository-owned declaration of team
+intent. `yoctui-model` owns its versioned pure domain representation:
+`ProjectProfile`, typed recipe/image/layer favorites, typed build presets,
+allowlisted workflow steps, portable relative references, validation results,
+and explicit resolved/stale/ambiguous identity states. No profile model type
+contains a free-form command, shell fragment, environment assignment, secret,
+or host-absolute path.
+
+The CLI owns bounded file discovery beneath the canonical project root and
+read-only TOML decoding. It rejects symlink escape and unsupported schemas and
+passes typed data into the model. Loading has no execution effect. The app
+resolves logical identities through existing authoritative metadata actions
+and adapters; it does not create a second recipe, image, layer, or build-state
+catalog. A profile remains team intent while BitBake-derived state remains
+authoritative.
+
+Workflow steps reference a closed enum of existing typed Yoctui actions.
+Activation produces the same previews, capability checks, correlations,
+confirmations, background-job effects, and destructive-operation policies as
+manual navigation. A sequence pauses at each required user decision and never
+executes merely because the file was loaded. Unknown step kinds and stale or
+ambiguous inputs fail closed.
+
+Profile generation is a separate explicit typed effect. It serializes a
+minimal deterministic current-schema document to a reviewed destination using
+atomic replacement rules. Existing files require replacement confirmation.
+Personal settings stay in user-local `config.toml`/`session.toml` and are never
+imported into or overridden by a project profile.
+
 ### Build-environment onboarding
 
 Interactive startup may begin without a build directory. `yoctui-model` owns a

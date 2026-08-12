@@ -2802,18 +2802,18 @@ notes = "The complete Security import, QA import, and Maintenance popup migratio
 id = "PROFILE-SPEC-001"
 milestone = "M10"
 title = "Specify optional project profile behavior"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 300
 required = true
 depends_on = []
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Define optional .yoctui/project.toml, schema versioning, team versus personal state, portable repository-relative references, trust boundaries, stale identities, and no automatic execution."
+notes = "The authoritative UI, architecture, and roadmap documents now define the optional versioned profile schema boundary, inert loading, team/personal ownership, escape-safe portable references, explicit stale identities, typed workflows, and reviewed generation."
 
 [[task]]
 id = "PROFILE-MODEL-001"
 milestone = "M10"
 title = "Add typed project profile model and validation"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 301
 required = true
 depends_on = ["PROFILE-SPEC-001"]

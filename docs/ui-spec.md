@@ -2725,3 +2725,64 @@ When the user provides a new UI requirement:
 5. verify the behavior
 6. commit the coherent change
 7. then resume the implementation-status checklist
+
+---
+
+## 31. Optional project profiles
+
+A repository may contain `.yoctui/project.toml`. The file is optional: absence
+is the normal `No project profile` state and must not disable discovery,
+onboarding, builds, or any other Yoctui workflow. Creating or using a profile
+requires no changes to Poky, vendor layers, recipes, or BitBake metadata.
+
+The root document has one required `schema_version` and may contain only these
+typed team-intent collections:
+
+- recipe, image, and layer favorites identified by portable logical identity
+- named build presets containing targets plus optional machine, distro, and
+  supported typed build-option preferences
+- named workflows containing ordered references to supported Yoctui typed
+  actions and presets
+- repository-relative references to team-owned files when a typed action
+  explicitly supports a file
+
+Schema version `1` is the first supported version. A missing, zero, newer, or
+malformed version is shown as `Unsupported` or `Invalid`; Yoctui never guesses
+an interpretation or silently rewrites it. Unknown fields are rejected with a
+field location so team intent cannot be silently ignored.
+
+Profile paths use `/`-separated repository-relative syntax. Empty paths,
+absolute paths, `.` or `..` components, platform prefixes, NUL/control bytes,
+and references that resolve outside the canonical repository root are invalid.
+Resolution rejects symlink escape. A profile may identify team-owned inputs;
+it may not store build-host paths, SDK secrets, credentials, environment
+snapshots, shell fragments, or executable names.
+
+Favorites and preset/workflow references are resolved against the current
+BitBake-authoritative layer, recipe, image, task, and configuration inventory.
+Missing, ambiguous, renamed, or provider-changed identities are displayed as
+`Stale` with the original profile identity and an exact reason. They are never
+silently substituted. A partially stale profile remains inspectable, but an
+action that depends on stale input is disabled.
+
+Loading a profile is read-only and inert. It may populate labels, favorites,
+presets, and workflow choices, but it never starts a build, changes
+configuration, sources a shell, clones a repository, invokes a tool, or opens
+a network connection. Workflows are an allowlisted sequence of typed Yoctui
+actions; arbitrary command strings, shell syntax, environment assignments, and
+implicit hooks are not part of the schema. Choosing a preset or workflow opens
+the normal typed preview and confirmation route for every consequential or
+destructive action.
+
+Profile generation occurs only from an explicit `Generate project profile`
+action followed by a preview and confirmation. Generation writes a minimal,
+deterministically ordered versioned document using portable identities, never
+copies personal state, never overwrites an existing file without the normal
+replacement confirmation, and never executes generated content.
+
+Theme, animation, layout, recent paths, local aliases, local default preset,
+credentials, trust decisions, and other personal preferences remain in the
+user-local session/configuration. The project profile cannot override CLI,
+environment, user-local safety preferences, current capability state, or
+BitBake metadata. The UI labels profile values as team intent and separately
+shows the currently resolved authoritative value.

@@ -2,19 +2,18 @@
 
 ## Task
 
-**ID:** PROFILE-SPEC-001
-**Title:** Specify optional project profile behavior
+**ID:** PROFILE-MODEL-001
+**Title:** Add typed project profile model and validation
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Define the optional `.yoctui/project.toml` contract, schema versioning, team
-versus personal state, portable repository-relative references, trust
-boundaries, stale identities, and prohibition on automatic execution.
+Implement the pure typed project-profile model for favorites, build presets,
+allowlisted workflows, schema versions, safe portable references, and explicit
+stale-identity results without arbitrary command strings.
 
 ## Verification
 
 ```bash
-./scripts/check-docs.sh
-./scripts/verify-roadmap.sh
+cargo test -p yoctui-model project_profile
 ```

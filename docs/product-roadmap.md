@@ -80,6 +80,12 @@ BitBake authority. Profiles contain typed favorites, presets, and workflows;
 they never execute arbitrary shell text when loaded, and personal settings
 remain user-local.
 
+The profile contract is versioned and fail-closed. References are portable and
+repository-relative, stale authoritative identities remain explicit, loading
+is inert, and generation is an explicit reviewed action. Real-Poky acceptance
+must cover both an unmodified no-profile checkout and an explicitly generated
+profile before compatibility is claimed.
+
 ## M11 — Persistent daemon and session architecture
 
 Goal: provide one Rust-native, terminal-native Yoctui daemon that owns BitBake,
