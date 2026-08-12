@@ -3164,15 +3164,48 @@ verify = ["cargo test -p yoctui pty_sdk_shell"]
 notes = "SdkShellAdapter inspects exactly one canonical direct-child environment-setup file, records and revalidates its SHA-256 identity, then captures bounded NUL-delimited variables through a constant argv-separated Bash program in a minimal child environment without mutating Yoctui. Unsafe paths, setup changes, dangerous shell-control variables, timeouts and bounds fail closed. The typed app router distinguishes installed SdkShell from verified-build NativeShell launches; adapter, app and CLI integration tests pass."
 
 [[task]]
-id = "CLIENT-ARCH-001"
+id = "CLIENT-TRANSPORT-001"
 milestone = "M11"
-title = "Refactor Ratatui UI into attachable daemon client"
+title = "Implement attachable daemon client transport"
 status = "IN_PROGRESS"
 priority = 424
 required = true
-depends_on = ["DAEMON-SNAPSHOT-001", "BITBAKE-SERVER-001", "PTY-ATTACH-001"]
+depends_on = ["DAEMON-IPC-001", "DAEMON-PROTOCOL-001", "DAEMON-SNAPSHOT-001"]
+verify = ["cargo test -p yoctui client_transport"]
+notes = "Add one typed client session that securely connects, negotiates, attaches with a resume cursor, receives snapshots/events/results, reports diagnostics, reconnects, and explicitly detaches."
+
+[[task]]
+id = "CLIENT-REPLICA-001"
+milestone = "M11"
+title = "Install daemon state into the interactive client replica"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-TRANSPORT-001"]
+verify = ["cargo test -p yoctui-app client_replica", "cargo test -p yoctui-ui client_replica"]
+notes = "Map bounded daemon snapshots and ordered events into renderable typed client state while preserving focus, layout, dialogs, theme and other presentation state as client-local."
+
+[[task]]
+id = "CLIENT-RUNTIME-001"
+milestone = "M11"
+title = "Wire Ratatui runtime to daemon-owned execution"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-REPLICA-001", "BITBAKE-SERVER-001", "PTY-ATTACH-001"]
+verify = ["cargo test -p yoctui client_runtime", "cargo test -p yoctui-ui client_runtime"]
+notes = "Connect startup and the event loop to daemon state/actions, detach cleanly, and remove remaining interactive-client ownership of long-running execution without creating parallel command paths."
+
+[[task]]
+id = "CLIENT-ARCH-001"
+milestone = "M11"
+title = "Refactor Ratatui UI into attachable daemon client"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-TRANSPORT-001", "CLIENT-REPLICA-001", "CLIENT-RUNTIME-001"]
 verify = ["cargo test -p yoctui client_arch", "cargo test -p yoctui-ui client_arch"]
-notes = "Client connects, requests/render snapshots, sends typed actions, subscribes, and detaches; process ownership no longer lives in client."
+notes = "Parent gate: client connects, requests/renders snapshots, sends typed actions, subscribes, and detaches; process ownership no longer lives in the interactive client."
 
 [[task]]
 id = "CLIENT-FALLBACK-001"
