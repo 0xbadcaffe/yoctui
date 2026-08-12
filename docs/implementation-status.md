@@ -115,8 +115,8 @@ See `docs/current-task.md`.
 
 Configuration, BBMASK, build target, Wic creation, SDK publication, SDK native
 tools, Testing launch, result import, and result comparison now use the shared
-bounded popup editor. The shared migration gate is active; JUnit export and
-the remaining operations popups follow it.
+bounded popup editor. The shared migration gate is complete; JUnit export is
+active and the remaining operations popups follow it.
 The editor agenda now has explicit adoption, typed state, routing/rendering,
 and migration tasks; JUnit export and operations remain sequenced after it.
 

@@ -2,21 +2,19 @@
 
 ## Task
 
-**ID:** UX-POPUP-EDITOR-MIGRATION-001
-**Title:** Complete shared popup editor migration
+**ID:** UX-POPUP-TEST-JUNIT-001
+**Title:** Move JUnit export into a TOML popup
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Verify the migrated build, configuration, target, Wic, SDK, and Testing
-workflows use the shared reducer-owned editor consistently without bypassing
-their typed preview, validation, or confirmation gates.
+Complete and verify the shared TOML popup path for JUnit export destination
+editing without weakening typed destination inspection, non-overwrite policy,
+or explicit export confirmation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model popup_editor
-cargo test -p yoctui-ui popup_editor
-cargo test --workspace --all-features
-cargo check -p yoctui
+cargo test -p yoctui-model test_
+cargo test -p yoctui-ui test_
 ```

@@ -2503,7 +2503,7 @@ notes = "Test comparison now uses a bounded TOML Normal/Insert popup resolved ag
 id = "UX-POPUP-TEST-JUNIT-001"
 milestone = "M8"
 title = "Move JUnit export into a TOML popup"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 157
 required = true
 depends_on = ["UX-POPUP-TEST-COMPARE-001", "UX-POPUP-EDITOR-MIGRATION-001"]
@@ -2668,12 +2668,12 @@ notes = "Testing result import and comparison now use PopupEditor with shared cu
 id = "UX-POPUP-EDITOR-MIGRATION-001"
 milestone = "M8"
 title = "Complete shared popup editor migration"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 171
 required = true
 depends_on = ["UX-POPUP-EDITOR-BUILD-001", "UX-POPUP-EDITOR-CONFIG-001", "UX-POPUP-EDITOR-TARGET-001", "UX-POPUP-EDITOR-WIC-001", "UX-POPUP-EDITOR-SDK-PUBLISH-001", "UX-POPUP-EDITOR-SDK-NATIVE-001", "UX-POPUP-EDITOR-TEST-LAUNCH-001", "UX-POPUP-EDITOR-TEST-RESULTS-001"]
 verify = ["cargo test -p yoctui-model popup_editor", "cargo test -p yoctui-ui popup_editor", "cargo test --workspace --all-features", "cargo check -p yoctui"]
-notes = "Parent gate proving that every existing TOML popup uses the shared reducer-owned editor without bypassing typed previews or confirmations."
+notes = "The audited child set stores PopupEditor in every declared workflow dialog, routes input through shared typed actions, renders the common shortcut row, and passes focused plus full-workspace gates without bypassing workflow previews or confirmations."
 
 [[task]]
 id = "UX-POPUP-OPS-001"
