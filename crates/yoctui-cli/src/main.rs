@@ -1373,6 +1373,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                             Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,message:error,current_generation:daemon_journal.snapshot().generation},
                         },
                         DaemonCommand::CancelTestSession { session_id } => match test_supervisor.cancel(session_id) { Ok(())=>CommandOutcome::Accepted, Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::NotFound,message:error,current_generation:daemon_journal.snapshot().generation} },
+                        DaemonCommand::ImportTestResults { generation, roots } => match test_supervisor.import_results(generation, roots) { Ok(job_id) => { let event=daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary{id:job_id,kind:yoctui_protocol::daemon::JobKind::Testing,label:"Test result import".into(),lifecycle:yoctui_protocol::daemon::LifecycleState::Connecting,progress_current:None,progress_total:None,exit_code:None}))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted }, Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,message:error,current_generation:daemon_journal.snapshot().generation} },
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
                             message: "daemon command is not implemented by this runtime".into(),
@@ -1805,6 +1806,9 @@ fn publish_daemon_test_event(
     use yoctui_protocol::daemon::{
         DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
     };
+    if let DaemonTestEvent::Snapshot { snapshot, .. } = &event {
+        journal.publish(DaemonEvent::TestResults(snapshot.clone()))?;
+    }
     let job_id = match &event {
         DaemonTestEvent::Started { job_id, .. }
         | DaemonTestEvent::Output { job_id, .. }
@@ -1812,7 +1816,8 @@ fn publish_daemon_test_event(
         | DaemonTestEvent::Failed { job_id, .. }
         | DaemonTestEvent::Cancelled { job_id, .. }
         | DaemonTestEvent::TimedOut { job_id, .. }
-        | DaemonTestEvent::Lost { job_id, .. } => *job_id,
+        | DaemonTestEvent::Lost { job_id, .. }
+        | DaemonTestEvent::Snapshot { job_id, .. } => *job_id,
     };
     let label = journal
         .snapshot()
@@ -1822,6 +1827,15 @@ fn publish_daemon_test_event(
         .map(|job| job.label.clone())
         .unwrap_or_else(|| "Test".into());
     let mapped = match event {
+        DaemonTestEvent::Snapshot { .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Testing,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code: Some(0),
+        }),
         DaemonTestEvent::Started { .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
             kind: JobKind::Testing,

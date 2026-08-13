@@ -3348,7 +3348,7 @@ priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-SNAPSHOT-001"]
 verify = ["cargo test -p yoctui client_runtime_test_import"]
-notes = "Route typed result import and comparison operations through daemon-owned bounded workers and snapshot events."
+notes = "Result import now runs through a daemon-owned bounded worker and publishes typed snapshots; comparison remains client-local pending a typed comparison request/event extension."
 
 [[task]]
 id = "CLIENT-RUNTIME-TEST-JUNIT-001"

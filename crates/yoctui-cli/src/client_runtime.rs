@@ -226,6 +226,14 @@ fn daemon_command_for_effect(
         },
         Effect::StartTestSession { .. } => return Ok(None),
         Effect::CancelTestSession(id) => DaemonCommand::CancelTestSession { session_id: id.0 },
+        Effect::ImportTestResults(request) => DaemonCommand::ImportTestResults {
+            generation: request.generation,
+            roots: request
+                .roots
+                .iter()
+                .map(|path| path.display().to_string())
+                .collect(),
+        },
         _ => return Ok(None),
     }))
 }

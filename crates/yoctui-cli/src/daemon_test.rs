@@ -1,8 +1,10 @@
 use std::path::PathBuf;
 use tokio::sync::mpsc;
-use yoctui_bitbake::{TestRunnerAdapter, TestRunnerEvent, TestRunnerJob};
+use yoctui_bitbake::{TestResultAdapter, TestRunnerAdapter, TestRunnerEvent, TestRunnerJob};
 use yoctui_model::{PtestCapability, TestFamily, TestOutputStream, TestSelftestRequest};
-use yoctui_protocol::daemon::{DaemonTestSelftestRequest, JobId};
+use yoctui_protocol::daemon::{
+    DaemonTestResultRecord, DaemonTestResultSnapshot, DaemonTestSelftestRequest, JobId,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DaemonTestEvent {
@@ -44,6 +46,10 @@ pub enum DaemonTestEvent {
         session_id: u64,
         message: String,
     },
+    Snapshot {
+        job_id: JobId,
+        snapshot: DaemonTestResultSnapshot,
+    },
 }
 
 pub struct DaemonTestSupervisor {
@@ -64,6 +70,55 @@ impl Default for DaemonTestSupervisor {
     }
 }
 impl DaemonTestSupervisor {
+    pub fn import_results(&mut self, generation: u64, roots: Vec<String>) -> Result<JobId, String> {
+        let request = yoctui_model::TestResultImportRequest::new(
+            generation,
+            roots.into_iter().map(PathBuf::from).collect(),
+        )
+        .map_err(str::to_owned)?;
+        let adapter = TestResultAdapter::new(Vec::new());
+        let id = JobId(self.next);
+        self.next += 1;
+        let tx = self.tx.clone();
+        tokio::task::spawn_blocking(move || {
+            let result = adapter.import(&request);
+            let snapshot = match result {
+                Ok(response) => DaemonTestResultSnapshot {
+                    generation,
+                    records: response
+                        .records
+                        .into_iter()
+                        .map(|record| DaemonTestResultRecord {
+                            identity: format!("{:?}", record.identity),
+                            outcome: format!(
+                                "family={:?}; suites={}",
+                                record.family,
+                                record.suites.len()
+                            ),
+                            duration_ms: record
+                                .duration
+                                .map(|duration| duration.as_millis() as u64),
+                            log_path: None,
+                        })
+                        .collect(),
+                    limitations: response.limitations,
+                    complete: true,
+                }
+                .bounded(),
+                Err(error) => DaemonTestResultSnapshot {
+                    generation,
+                    records: Vec::new(),
+                    limitations: vec![error.to_string()],
+                    complete: false,
+                },
+            };
+            let _ = tx.send(DaemonTestEvent::Snapshot {
+                job_id: id,
+                snapshot,
+            });
+        });
+        Ok(id)
+    }
     pub fn start(
         &mut self,
         session_id: u64,

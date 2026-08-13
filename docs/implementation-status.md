@@ -336,3 +336,8 @@ Selftest requests now cross the daemon boundary as closed typed identities.
 The daemon reconstructs the validated TestRunnerAdapter command, owns the
 process group and publishes bounded output, cancellation, timeout and loss
 events independently of the attached client.
+### Daemon-owned test-result import
+
+Result imports now execute in the daemon and publish bounded typed snapshots.
+Comparison remains explicitly client-local until its request and diff payload
+are represented in the versioned protocol.

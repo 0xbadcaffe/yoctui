@@ -202,6 +202,10 @@ pub enum DaemonCommand {
     CancelTestSession {
         session_id: u64,
     },
+    ImportTestResults {
+        generation: u64,
+        roots: Vec<String>,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,
@@ -544,6 +548,7 @@ pub enum DaemonEvent {
         message: String,
     },
     Log(LogRecord),
+    TestResults(DaemonTestResultSnapshot),
     #[serde(other)]
     Unknown,
 }
@@ -845,7 +850,10 @@ pub fn apply_sequenced_event(
         DaemonEvent::PtyChanged(pty) => {
             replace_by(&mut snapshot.pty_sessions, pty.clone(), |item| item.id);
         }
-        DaemonEvent::PtyOutput { .. } | DaemonEvent::PtyScreen(_) | DaemonEvent::Unknown => {}
+        DaemonEvent::PtyOutput { .. }
+        | DaemonEvent::PtyScreen(_)
+        | DaemonEvent::TestResults(_)
+        | DaemonEvent::Unknown => {}
         DaemonEvent::ClientChanged(client) => {
             replace_by(&mut snapshot.clients, client.clone(), |item| item.id);
         }
