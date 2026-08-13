@@ -3458,7 +3458,29 @@ priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TESTING-001"]
 verify = ["cargo test -p yoctui client_runtime_qa_security"]
-notes = "Route typed QA, CVE, SPDX and security mapper jobs through daemon ownership."
+notes = "Parent gate split into QA/report and security mapper/report children."
+
+[[task]]
+id = "CLIENT-RUNTIME-QA-REPORT-001"
+milestone = "M11"
+title = "Move QA jobs into the daemon"
+status = "IN_PROGRESS"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-TESTING-001"]
+verify = ["cargo test -p yoctui client_runtime_qa"]
+notes = "Route typed QA capability, task and report jobs through daemon ownership."
+
+[[task]]
+id = "CLIENT-RUNTIME-SECURITY-REPORT-001"
+milestone = "M11"
+title = "Move security and SPDX jobs into the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-QA-REPORT-001"]
+verify = ["cargo test -p yoctui client_runtime_security"]
+notes = "Route typed CVE, SPDX, security report and mapper jobs through daemon ownership."
 
 [[task]]
 id = "CLIENT-RUNTIME-MAINTENANCE-001"
