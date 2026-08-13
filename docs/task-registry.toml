@@ -3530,12 +3530,12 @@ notes = "Parent gate split into QA capability command mapping and daemon executi
 id = "CLIENT-RUNTIME-QA-COMMAND-001"
 milestone = "M11"
 title = "Define daemon QA capability command"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QA-INPUT-001"]
 verify = ["cargo test -p yoctui daemon_qa_command"]
-notes = "Add versioned command/event types for QA capability inspection with bounded input identity."
+notes = "Added versioned InspectQaCapability command and typed QaCapability event using bounded request DTOs."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-EXECUTION-001"
