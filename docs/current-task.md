@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-TEST-COMPARE-001
-**Title:** Move test-result comparison into the daemon
+**ID:** CLIENT-RUNTIME-TEST-RESULT-CACHE-001
+**Title:** Retain authoritative imported test results in the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Route typed comparison requests through daemon-owned bounded workers and diff
-events.
+Retain bounded typed imported records by generation for later comparison, with
+stale-generation replacement and bounded memory.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_test_compare
+cargo test -p yoctui daemon_test_result_cache
 ```
