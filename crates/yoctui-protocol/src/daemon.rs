@@ -206,6 +206,11 @@ pub enum DaemonCommand {
         generation: u64,
         roots: Vec<String>,
     },
+    CompareTestResults {
+        generation: u64,
+        baseline_identity: String,
+        candidate_identity: String,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,
@@ -591,6 +596,7 @@ pub enum DaemonEvent {
     },
     Log(LogRecord),
     TestResults(DaemonTestResultSnapshot),
+    TestComparison(DaemonTestComparisonDiff),
     #[serde(other)]
     Unknown,
 }
@@ -895,6 +901,7 @@ pub fn apply_sequenced_event(
         DaemonEvent::PtyOutput { .. }
         | DaemonEvent::PtyScreen(_)
         | DaemonEvent::TestResults(_)
+        | DaemonEvent::TestComparison(_)
         | DaemonEvent::Unknown => {}
         DaemonEvent::ClientChanged(client) => {
             replace_by(&mut snapshot.clients, client.clone(), |item| item.id);

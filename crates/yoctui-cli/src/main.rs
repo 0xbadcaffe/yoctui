@@ -1374,6 +1374,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                         },
                         DaemonCommand::CancelTestSession { session_id } => match test_supervisor.cancel(session_id) { Ok(())=>CommandOutcome::Accepted, Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::NotFound,message:error,current_generation:daemon_journal.snapshot().generation} },
                         DaemonCommand::ImportTestResults { generation, roots } => match test_supervisor.import_results(generation, roots) { Ok(job_id) => { let event=daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary{id:job_id,kind:yoctui_protocol::daemon::JobKind::Testing,label:"Test result import".into(),lifecycle:yoctui_protocol::daemon::LifecycleState::Connecting,progress_current:None,progress_total:None,exit_code:None}))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted }, Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,message:error,current_generation:daemon_journal.snapshot().generation} },
+                        DaemonCommand::CompareTestResults { generation, baseline_identity, candidate_identity } => match test_supervisor.compare_results(generation, baseline_identity, candidate_identity) { Ok(job_id)=>{let event=daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary{id:job_id,kind:yoctui_protocol::daemon::JobKind::Testing,label:"Test comparison".into(),lifecycle:yoctui_protocol::daemon::LifecycleState::Exited,progress_current:None,progress_total:None,exit_code:Some(0)}))?;connection.send(&ServerMessage::Event(event))?;CommandOutcome::Accepted},Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::NotFound,message:error,current_generation:daemon_journal.snapshot().generation}},
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
                             message: "daemon command is not implemented by this runtime".into(),
@@ -1818,6 +1819,7 @@ fn publish_daemon_test_event(
         | DaemonTestEvent::TimedOut { job_id, .. }
         | DaemonTestEvent::Lost { job_id, .. }
         | DaemonTestEvent::Snapshot { job_id, .. } => *job_id,
+        DaemonTestEvent::Comparison { job_id, .. } => *job_id,
     };
     let label = journal
         .snapshot()
@@ -1827,6 +1829,7 @@ fn publish_daemon_test_event(
         .map(|job| job.label.clone())
         .unwrap_or_else(|| "Test".into());
     let mapped = match event {
+        DaemonTestEvent::Comparison { diff, .. } => DaemonEvent::TestComparison(diff),
         DaemonTestEvent::Snapshot { .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
             kind: JobKind::Testing,
@@ -8771,8 +8774,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         testing_screen_action(&app, input).expect("Testing action was checked");
                     match update(&mut app, action) {
                         Some(effect @ Effect::ImportTestResults(_))
-                        | Some(effect @ Effect::CompareTestResults(_))
-                        | Some(effect @ Effect::InspectTestJunitDestination { .. })
+                        | Some(effect @ Effect::CompareTestResults(_)) => {
+                            if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect)
+                                .is_none()
+                            {
+                                let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                            }
+                        }
+                        Some(effect @ Effect::InspectTestJunitDestination { .. })
                         | Some(effect @ Effect::ExportTestJunit(_))
                         | Some(effect @ Effect::InspectTestCapability)
                         | Some(effect @ Effect::InspectResultToolCapability) => {

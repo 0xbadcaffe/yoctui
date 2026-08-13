@@ -234,6 +234,11 @@ fn daemon_command_for_effect(
                 .map(|path| path.display().to_string())
                 .collect(),
         },
+        Effect::CompareTestResults(request) => DaemonCommand::CompareTestResults {
+            generation: request.generation,
+            baseline_identity: format!("{:?}", request.baseline),
+            candidate_identity: format!("{:?}", request.candidate),
+        },
         _ => return Ok(None),
     }))
 }

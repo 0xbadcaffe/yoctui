@@ -1884,3 +1884,7 @@ controller path until their dedicated migration gate.
 Test-result synchronization uses bounded daemon snapshots with explicit
 generation and completion fields; result records are wire DTOs rather than UI
 or model internals.
+
+Comparison requests resolve only retained authoritative generations. The daemon
+computes bounded transition DTOs and emits a typed comparison event; stale or
+missing generations fail closed.

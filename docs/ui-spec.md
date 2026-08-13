@@ -2885,3 +2885,6 @@ job history after client detach.
 
 Confirmed selftest sessions are submitted to the daemon when attached; output
 and terminal state remain visible while the client detaches or reconnects.
+
+Test-result comparisons submitted while attached use daemon-retained result
+generations and report stale-generation failures explicitly.

@@ -2,17 +2,16 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-TEST-COMPARE-WORKER-001
-**Title:** Move test-result comparison into the daemon
+**ID:** CLIENT-RUNTIME-TEST-JUNIT-001
+**Title:** Move JUnit export into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Route typed comparison requests through daemon-owned bounded workers and diff
-events using the retained authoritative result generations.
+Route typed JUnit destination inspection and export through daemon ownership.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_test_compare
+cargo test -p yoctui client_runtime_test_junit
 ```

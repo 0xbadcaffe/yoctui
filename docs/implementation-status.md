@@ -343,3 +343,5 @@ Comparison remains explicitly client-local until its request and diff payload
 are represented in the versioned protocol.
 The daemon test cache now retains both bounded wire snapshots and authoritative
 import records by generation, enabling safe comparison worker reconstruction.
+Daemon test comparisons now resolve retained authoritative result generations,
+compute bounded typed transitions, and publish versioned comparison diff events.

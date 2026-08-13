@@ -3387,12 +3387,12 @@ notes = "Daemon supervisor retains bounded imported snapshots plus authoritative
 id = "CLIENT-RUNTIME-TEST-COMPARE-WORKER-001"
 milestone = "M11"
 title = "Move test-result comparison into the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-RESULT-CACHE-001"]
 verify = ["cargo test -p yoctui client_runtime_test_compare"]
-notes = "Route typed comparison requests through daemon-owned bounded workers and diff events."
+notes = "Comparison requests use retained authoritative generations; daemon computes bounded typed transitions and publishes TestComparison diff events, while stale generations are rejected."
 
 [[task]]
 id = "CLIENT-RUNTIME-TEST-JUNIT-001"

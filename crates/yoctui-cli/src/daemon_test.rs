@@ -53,6 +53,10 @@ pub enum DaemonTestEvent {
         snapshot: DaemonTestResultSnapshot,
         authoritative: Option<TestResultImportResponse>,
     },
+    Comparison {
+        job_id: JobId,
+        diff: yoctui_protocol::daemon::DaemonTestComparisonDiff,
+    },
 }
 
 pub struct DaemonTestSupervisor {
@@ -186,6 +190,56 @@ impl DaemonTestSupervisor {
             .ok_or_else(|| format!("unknown test session {session_id}"))?
             .send(())
             .map_err(|_| "test session is no longer active".into())
+    }
+
+    pub fn compare_results(
+        &mut self,
+        generation: u64,
+        baseline: String,
+        candidate: String,
+    ) -> Result<JobId, String> {
+        let response = self
+            .cache
+            .authoritative
+            .get(&generation)
+            .ok_or_else(|| "result generation is not retained".to_string())?;
+        let baseline_record = response
+            .records
+            .iter()
+            .find(|record| format!("{:?}", record.identity) == baseline)
+            .ok_or_else(|| "baseline result is not retained".to_string())?;
+        let candidate_record = response
+            .records
+            .iter()
+            .find(|record| format!("{:?}", record.identity) == candidate)
+            .ok_or_else(|| "candidate result is not retained".to_string())?;
+        let comparison = yoctui_model::TestComparison::between(baseline_record, candidate_record)
+            .map_err(str::to_owned)?;
+        let diff = yoctui_protocol::daemon::DaemonTestComparisonDiff {
+            generation,
+            baseline,
+            candidate,
+            transitions: comparison
+                .transitions
+                .into_iter()
+                .map(
+                    |transition| yoctui_protocol::daemon::DaemonTestComparisonTransition {
+                        identity: format!("{:?}", transition.identity),
+                        baseline: transition.baseline.map(|value| format!("{:?}", value)),
+                        candidate: transition.candidate.map(|value| format!("{:?}", value)),
+                        category: format!("{:?}", transition.category),
+                    },
+                )
+                .collect(),
+            limitations: Vec::new(),
+        }
+        .bounded();
+        let id = JobId(self.next);
+        self.next += 1;
+        let _ = self
+            .tx
+            .send(DaemonTestEvent::Comparison { job_id: id, diff });
+        Ok(id)
     }
     pub fn try_event(&mut self) -> Option<DaemonTestEvent> {
         let e = self.rx.try_recv().ok()?;
