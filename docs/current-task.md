@@ -2,16 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-QA-TASK-WORKER-001
-**Title:** Move QA capability and task jobs into the daemon
+**ID:** CLIENT-RUNTIME-QA-INPUT-001
+**Title:** Define typed daemon QA capability inputs
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Daemon owns typed QA task capability inspection and managed task lifecycle.
+Represent bounded workspace, layer, recipe and report scope inputs without raw
+shell/config execution.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_qa_task
+cargo test -p yoctui daemon_qa_input
 ```
