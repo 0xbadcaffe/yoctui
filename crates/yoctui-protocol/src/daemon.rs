@@ -340,6 +340,7 @@ pub struct DaemonTestSelftestRequest {
 
 pub const MAX_TEST_RESULT_RECORDS: usize = 4096;
 pub const MAX_TEST_RESULT_LIMITATIONS: usize = 256;
+pub const MAX_QA_RECORDS: usize = 4096;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DaemonTestResultRecord {
@@ -347,6 +348,24 @@ pub struct DaemonTestResultRecord {
     pub outcome: String,
     pub duration_ms: Option<u64>,
     pub log_path: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonQaSnapshot {
+    pub generation: u64,
+    pub capability: String,
+    pub task_bindings: Vec<String>,
+    pub reports: Vec<String>,
+    pub limitations: Vec<String>,
+}
+
+impl DaemonQaSnapshot {
+    pub fn bounded(mut self) -> Self {
+        self.task_bindings.truncate(MAX_QA_RECORDS);
+        self.reports.truncate(MAX_QA_RECORDS);
+        self.limitations.truncate(MAX_TEST_RESULT_LIMITATIONS);
+        self
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -433,6 +452,20 @@ mod daemon_test_snapshot_tests {
             serde_json::from_slice::<DaemonTestComparisonDiff>(&bytes).unwrap(),
             diff
         );
+    }
+
+    #[test]
+    fn daemon_qa_snapshot_is_bounded() {
+        let snapshot = DaemonQaSnapshot {
+            generation: 1,
+            capability: "available".into(),
+            task_bindings: (0..MAX_QA_RECORDS + 1).map(|i| i.to_string()).collect(),
+            reports: (0..MAX_QA_RECORDS + 1).map(|i| i.to_string()).collect(),
+            limitations: Vec::new(),
+        }
+        .bounded();
+        assert_eq!(snapshot.task_bindings.len(), MAX_QA_RECORDS);
+        assert_eq!(snapshot.reports.len(), MAX_QA_RECORDS);
     }
 }
 
@@ -614,6 +647,7 @@ pub enum DaemonEvent {
     TestResults(DaemonTestResultSnapshot),
     TestComparison(DaemonTestComparisonDiff),
     TestResultTool(DaemonTestResultToolCapability),
+    QaSnapshot(DaemonQaSnapshot),
     #[serde(other)]
     Unknown,
 }
@@ -920,6 +954,7 @@ pub fn apply_sequenced_event(
         | DaemonEvent::TestResults(_)
         | DaemonEvent::TestComparison(_)
         | DaemonEvent::TestResultTool(_)
+        | DaemonEvent::QaSnapshot(_)
         | DaemonEvent::Unknown => {}
         DaemonEvent::ClientChanged(client) => {
             replace_by(&mut snapshot.clients, client.clone(), |item| item.id);

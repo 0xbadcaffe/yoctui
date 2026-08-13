@@ -3475,12 +3475,12 @@ notes = "Parent gate split into typed QA capability/report protocol and daemon r
 id = "CLIENT-RUNTIME-QA-SNAPSHOT-001"
 milestone = "M11"
 title = "Define typed daemon QA snapshots"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TESTING-001"]
 verify = ["cargo test -p yoctui daemon_qa_snapshot"]
-notes = "Define bounded wire DTOs for QA capability, task bindings and report inventories."
+notes = "Added bounded QA capability/task/report snapshot DTOs and truncation coverage."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-WORKER-001"

@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-QA-SNAPSHOT-001
-**Title:** Define typed daemon QA snapshots
+**ID:** CLIENT-RUNTIME-QA-WORKER-001
+**Title:** Move QA report workers into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Define bounded wire DTOs for QA capability, task bindings and report
-inventories.
+Route typed QA capability, task and report jobs through daemon-owned bounded
+workers.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui daemon_qa_snapshot
+cargo test -p yoctui client_runtime_qa
 ```
