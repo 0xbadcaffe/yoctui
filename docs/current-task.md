@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-QUALITY-001
-**Title:** Move testing QA security and maintenance jobs into the daemon
+**ID:** CLIENT-RUNTIME-TESTING-001
+**Title:** Move testing jobs into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Route existing typed testing, QA, security, maintenance and bounded utility
-effects through daemon-owned runners and correlated events.
+Route typed testing/selftest/import/export jobs through daemon ownership and
+correlated lifecycle events.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_quality
+cargo test -p yoctui client_runtime_testing
 ```
