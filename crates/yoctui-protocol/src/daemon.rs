@@ -219,6 +219,9 @@ pub enum DaemonCommand {
     InspectTestResultTool {
         path_directories: Vec<String>,
     },
+    InspectQaCapability {
+        request: DaemonQaCapabilityRequest,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,
@@ -367,6 +370,12 @@ pub struct DaemonQaCapabilityInput {
     pub layer_directories: Vec<String>,
     pub recipe_names: Vec<String>,
     pub report_roots: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonQaCapabilityRequest {
+    pub request_id: RequestId,
+    pub input: DaemonQaCapabilityInput,
 }
 
 impl DaemonQaCapabilityInput {
@@ -681,6 +690,7 @@ pub enum DaemonEvent {
     TestComparison(DaemonTestComparisonDiff),
     TestResultTool(DaemonTestResultToolCapability),
     QaSnapshot(DaemonQaSnapshot),
+    QaCapability(DaemonQaSnapshot),
     #[serde(other)]
     Unknown,
 }
@@ -988,6 +998,7 @@ pub fn apply_sequenced_event(
         | DaemonEvent::TestComparison(_)
         | DaemonEvent::TestResultTool(_)
         | DaemonEvent::QaSnapshot(_)
+        | DaemonEvent::QaCapability(_)
         | DaemonEvent::Unknown => {}
         DaemonEvent::ClientChanged(client) => {
             replace_by(&mut snapshot.clients, client.clone(), |item| item.id);
