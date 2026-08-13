@@ -3425,6 +3425,28 @@ priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-JUNIT-SPEC-001"]
 verify = ["cargo test -p yoctui client_runtime_test_junit"]
+notes = "Parent gate split into daemon resulttool capability ownership and JUnit runner children."
+
+[[task]]
+id = "CLIENT-RUNTIME-TEST-RESULTTOOL-001"
+milestone = "M11"
+title = "Move resulttool capability ownership into the daemon"
+status = "IN_PROGRESS"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-TEST-JUNIT-SPEC-001", "CLIENT-RUNTIME-TEST-RESULT-CACHE-001"]
+verify = ["cargo test -p yoctui daemon_test_resulttool"]
+notes = "Daemon owns validated resulttool discovery and exposes typed capability state for JUnit/comparison operations."
+
+[[task]]
+id = "CLIENT-RUNTIME-TEST-JUNIT-RUNNER-001"
+milestone = "M11"
+title = "Run JUnit export in the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-TEST-RESULTTOOL-001"]
+verify = ["cargo test -p yoctui client_runtime_test_junit"]
 notes = "Route typed JUnit export through daemon-owned validated resulttool runner and lifecycle events."
 
 [[task]]

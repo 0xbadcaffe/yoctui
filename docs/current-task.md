@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-TEST-JUNIT-WORKER-001
-**Title:** Move JUnit export into the daemon
+**ID:** CLIENT-RUNTIME-TEST-RESULTTOOL-001
+**Title:** Move resulttool capability ownership into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Route typed JUnit export through daemon-owned validated resulttool runner and
-lifecycle events.
+Daemon owns validated resulttool discovery and exposes typed capability state
+for JUnit and comparison operations.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_test_junit
+cargo test -p yoctui daemon_test_resulttool
 ```
