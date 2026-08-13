@@ -3354,12 +3354,12 @@ notes = "Result import runs through a daemon-owned bounded worker and publishes 
 id = "CLIENT-RUNTIME-TEST-COMPARE-SPEC-001"
 milestone = "M11"
 title = "Define typed daemon test comparison diffs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-SNAPSHOT-001"]
 verify = ["cargo test -p yoctui daemon_test_compare"]
-notes = "Add bounded wire types for comparison identity, categories, limitations and generation correlation."
+notes = "Added bounded comparison diff and transition wire DTOs with generation/limitation fields and round-trip coverage."
 
 [[task]]
 id = "CLIENT-RUNTIME-TEST-COMPARE-001"
