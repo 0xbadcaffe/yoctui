@@ -321,6 +321,62 @@ pub struct DaemonTestSelftestRequest {
     pub skip_network: bool,
 }
 
+pub const MAX_TEST_RESULT_RECORDS: usize = 4096;
+pub const MAX_TEST_RESULT_LIMITATIONS: usize = 256;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonTestResultRecord {
+    pub identity: String,
+    pub outcome: String,
+    pub duration_ms: Option<u64>,
+    pub log_path: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonTestResultSnapshot {
+    pub generation: u64,
+    pub records: Vec<DaemonTestResultRecord>,
+    pub limitations: Vec<String>,
+    pub complete: bool,
+}
+
+#[cfg(test)]
+mod daemon_test_snapshot_tests {
+    use super::*;
+    #[test]
+    fn daemon_test_snapshot_is_bounded_and_round_trips() {
+        let snapshot = DaemonTestResultSnapshot {
+            generation: 4,
+            records: (0..(MAX_TEST_RESULT_RECORDS + 2))
+                .map(|index| DaemonTestResultRecord {
+                    identity: index.to_string(),
+                    outcome: "pass".into(),
+                    duration_ms: None,
+                    log_path: None,
+                })
+                .collect(),
+            limitations: (0..(MAX_TEST_RESULT_LIMITATIONS + 2))
+                .map(|index| index.to_string())
+                .collect(),
+            complete: true,
+        }
+        .bounded();
+        assert_eq!(snapshot.records.len(), MAX_TEST_RESULT_RECORDS);
+        assert_eq!(snapshot.limitations.len(), MAX_TEST_RESULT_LIMITATIONS);
+        let encoded = serde_json::to_vec(&snapshot).unwrap();
+        let decoded: DaemonTestResultSnapshot = serde_json::from_slice(&encoded).unwrap();
+        assert_eq!(decoded, snapshot);
+    }
+}
+
+impl DaemonTestResultSnapshot {
+    pub fn bounded(mut self) -> Self {
+        self.records.truncate(MAX_TEST_RESULT_RECORDS);
+        self.limitations.truncate(MAX_TEST_RESULT_LIMITATIONS);
+        self
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum BitBakeOperation {

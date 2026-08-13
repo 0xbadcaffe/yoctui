@@ -3332,12 +3332,12 @@ notes = "Parent gate split into a typed result snapshot protocol prerequisite an
 id = "CLIENT-RUNTIME-TEST-SNAPSHOT-001"
 milestone = "M11"
 title = "Define typed daemon test-result snapshots"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-SESSION-001"]
 verify = ["cargo test -p yoctui daemon_test_snapshot"]
-notes = "Add bounded protocol types for result records, limitations, import generations and comparison state without leaking model internals into UI code."
+notes = "Added bounded version-independent result record/snapshot wire types with generation and completion state; serialization and truncation are tested."
 
 [[task]]
 id = "CLIENT-RUNTIME-TEST-IMPORT-WORKER-001"

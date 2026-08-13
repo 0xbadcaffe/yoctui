@@ -2,18 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-TEST-SNAPSHOT-001
-**Title:** Define typed daemon test-result snapshots
+**ID:** CLIENT-RUNTIME-TEST-IMPORT-WORKER-001
+**Title:** Move test-result import and comparison workers into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add bounded protocol types for test-result records, limitations, import
-generations and comparison state so result workers can migrate without leaking
-model internals into UI code.
+Route typed result import and comparison operations through daemon-owned bounded
+workers and snapshot events.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui daemon_test_snapshot
+cargo test -p yoctui client_runtime_test_import
 ```

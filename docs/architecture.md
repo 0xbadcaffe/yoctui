@@ -1880,3 +1880,7 @@ can be revalidated before execution.
 Selftest sessions also use daemon-owned typed requests and the existing
 validated test runner; managed BitBake test builds remain on the BitBake job
 controller path until their dedicated migration gate.
+
+Test-result synchronization uses bounded daemon snapshots with explicit
+generation and completion fields; result records are wire DTOs rather than UI
+or model internals.
