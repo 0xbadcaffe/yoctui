@@ -2,16 +2,16 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-QUALITY-001
-**Title:** Move testing QA security and maintenance jobs into the daemon
+**ID:** CLIENT-RUNTIME-QA-SECURITY-001
+**Title:** Move QA and security jobs into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Complete the remaining testing, QA/security and maintenance daemon migrations.
+Route typed QA, CVE, SPDX and security mapper jobs through daemon ownership.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_quality
+cargo test -p yoctui client_runtime_qa_security
 ```
