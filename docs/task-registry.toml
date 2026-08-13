@@ -3508,12 +3508,12 @@ notes = "Parent gate split into QA capability input protocol and daemon task wor
 id = "CLIENT-RUNTIME-QA-INPUT-001"
 milestone = "M11"
 title = "Define typed daemon QA capability inputs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QA-SNAPSHOT-001"]
 verify = ["cargo test -p yoctui daemon_qa_input"]
-notes = "Represent bounded workspace, layer, recipe and report scope inputs without raw shell/config execution."
+notes = "Added bounded typed QA capability input DTO for workspace, layers, recipes and report roots with truncation coverage."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-TASK-RUNNER-001"
