@@ -3442,12 +3442,12 @@ notes = "Daemon owns validated resulttool discovery and publishes typed capabili
 id = "CLIENT-RUNTIME-TEST-JUNIT-RUNNER-001"
 milestone = "M11"
 title = "Run JUnit export in the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-RESULTTOOL-001"]
 verify = ["cargo test -p yoctui client_runtime_test_junit"]
-notes = "Route typed JUnit export through daemon-owned validated resulttool runner and lifecycle events."
+notes = "JUnit export reconstructs retained result identity and validated destination, then runs through daemon-owned TestResultJob with terminal lifecycle publication."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-SECURITY-001"

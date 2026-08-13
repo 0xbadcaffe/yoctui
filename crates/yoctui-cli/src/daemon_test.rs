@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 use tokio::sync::mpsc;
 use yoctui_bitbake::{
-    TestResultAdapter, TestResultImportResponse, TestRunnerAdapter, TestRunnerEvent, TestRunnerJob,
+    TestResultAdapter, TestResultImportResponse, TestResultJob, TestResultRunnerEvent,
+    TestRunnerAdapter, TestRunnerEvent, TestRunnerJob,
 };
 use yoctui_model::{PtestCapability, TestFamily, TestOutputStream, TestSelftestRequest};
 use yoctui_protocol::daemon::{
@@ -56,6 +57,11 @@ pub enum DaemonTestEvent {
     Comparison {
         job_id: JobId,
         diff: yoctui_protocol::daemon::DaemonTestComparisonDiff,
+    },
+    JunitCompleted {
+        job_id: JobId,
+        success: bool,
+        message: Option<String>,
     },
 }
 
@@ -133,6 +139,87 @@ impl DaemonTestSupervisor {
                 snapshot,
                 authoritative,
             });
+        });
+        Ok(id)
+    }
+
+    pub fn start_junit(
+        &mut self,
+        generation: u64,
+        identity: String,
+        destination: String,
+    ) -> Result<JobId, String> {
+        let response = self
+            .cache
+            .authoritative
+            .get(&generation)
+            .ok_or_else(|| "result generation is not retained".to_string())?;
+        let result = response
+            .records
+            .iter()
+            .find(|record| format!("{:?}", record.identity) == identity)
+            .ok_or_else(|| "result is not retained".to_string())?
+            .clone();
+        let adapter = TestResultAdapter::new(Vec::new());
+        let inspection = adapter.inspect_junit_destination(destination.into());
+        let request = yoctui_model::TestJunitExportRequest::new(
+            generation,
+            result.identity.clone(),
+            &inspection,
+        )
+        .map_err(str::to_owned)?;
+        let executable = adapter.capability().executable().map_err(str::to_owned)?;
+        let preview = yoctui_model::TestJunitExportPreview::new(executable, request)
+            .map_err(str::to_owned)?;
+        let command = adapter
+            .junit_command(&preview, &result)
+            .map_err(|e| e.to_string())?;
+        let id = JobId(self.next);
+        self.next += 1;
+        let tx = self.tx.clone();
+        tokio::spawn(async move {
+            let mut runner = TestResultJob::new();
+            if let Err(error) = runner.start(command).await {
+                let _ = tx.send(DaemonTestEvent::JunitCompleted {
+                    job_id: id,
+                    success: false,
+                    message: Some(error.to_string()),
+                });
+                return;
+            }
+            loop {
+                match runner.next_event().await {
+                    Ok(TestResultRunnerEvent::Completed { .. }) => {
+                        let _ = tx.send(DaemonTestEvent::JunitCompleted {
+                            job_id: id,
+                            success: true,
+                            message: None,
+                        });
+                        return;
+                    }
+                    Ok(TestResultRunnerEvent::Failed { .. })
+                    | Ok(TestResultRunnerEvent::Cancelled { .. })
+                    | Ok(TestResultRunnerEvent::TimedOut { .. }) => {
+                        let _ = tx.send(DaemonTestEvent::JunitCompleted {
+                            job_id: id,
+                            success: false,
+                            message: Some("JUnit export failed".into()),
+                        });
+                        return;
+                    }
+                    Ok(TestResultRunnerEvent::Output { .. })
+                    | Ok(TestResultRunnerEvent::Started { .. }) => {}
+                    Ok(TestResultRunnerEvent::Lost { .. }) | Err(_) => {
+                        let _ = tx.send(DaemonTestEvent::JunitCompleted {
+                            job_id: id,
+                            success: false,
+                            message: Some("JUnit export lost".into()),
+                        });
+                        return;
+                    }
+                    Ok(TestResultRunnerEvent::CancellationRejected { .. }) => {}
+                }
+            }
         });
         Ok(id)
     }

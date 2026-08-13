@@ -1375,7 +1375,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                         DaemonCommand::CancelTestSession { session_id } => match test_supervisor.cancel(session_id) { Ok(())=>CommandOutcome::Accepted, Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::NotFound,message:error,current_generation:daemon_journal.snapshot().generation} },
                         DaemonCommand::ImportTestResults { generation, roots } => match test_supervisor.import_results(generation, roots) { Ok(job_id) => { let event=daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary{id:job_id,kind:yoctui_protocol::daemon::JobKind::Testing,label:"Test result import".into(),lifecycle:yoctui_protocol::daemon::LifecycleState::Connecting,progress_current:None,progress_total:None,exit_code:None}))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted }, Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,message:error,current_generation:daemon_journal.snapshot().generation} },
                         DaemonCommand::CompareTestResults { generation, baseline_identity, candidate_identity } => match test_supervisor.compare_results(generation, baseline_identity, candidate_identity) { Ok(job_id)=>{let event=daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary{id:job_id,kind:yoctui_protocol::daemon::JobKind::Testing,label:"Test comparison".into(),lifecycle:yoctui_protocol::daemon::LifecycleState::Exited,progress_current:None,progress_total:None,exit_code:Some(0)}))?;connection.send(&ServerMessage::Event(event))?;CommandOutcome::Accepted},Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::NotFound,message:error,current_generation:daemon_journal.snapshot().generation}},
-                        DaemonCommand::ExportTestJunit { .. } => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability, message: "JUnit export worker is not yet connected to the daemon result cache".into(), current_generation: daemon_journal.snapshot().generation },
+                        DaemonCommand::ExportTestJunit { generation, result_identity, destination } => match test_supervisor.start_junit(generation, result_identity, destination) { Ok(job_id)=>{let event=daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary{id:job_id,kind:yoctui_protocol::daemon::JobKind::Testing,label:"JUnit export".into(),lifecycle:yoctui_protocol::daemon::LifecycleState::Connecting,progress_current:None,progress_total:None,exit_code:None}))?;connection.send(&ServerMessage::Event(event))?;CommandOutcome::Accepted},Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,message:error,current_generation:daemon_journal.snapshot().generation}},
                         DaemonCommand::InspectTestResultTool { path_directories } => { let capability = yoctui_bitbake::TestResultAdapter::new(path_directories.into_iter().map(std::path::PathBuf::from).collect()).capability(); let wire = match capability { yoctui_model::ResultToolCapability::NotInspected => yoctui_protocol::daemon::DaemonTestResultToolCapability::NotInspected, yoctui_model::ResultToolCapability::Missing => yoctui_protocol::daemon::DaemonTestResultToolCapability::Missing, yoctui_model::ResultToolCapability::Available(path) => yoctui_protocol::daemon::DaemonTestResultToolCapability::Available { executable: path.display().to_string() }, yoctui_model::ResultToolCapability::Failed(message) => yoctui_protocol::daemon::DaemonTestResultToolCapability::Failed { message } }; let event=daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::TestResultTool(wire))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted },
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
@@ -1822,6 +1822,7 @@ fn publish_daemon_test_event(
         | DaemonTestEvent::Lost { job_id, .. }
         | DaemonTestEvent::Snapshot { job_id, .. } => *job_id,
         DaemonTestEvent::Comparison { job_id, .. } => *job_id,
+        DaemonTestEvent::JunitCompleted { job_id, .. } => *job_id,
     };
     let label = journal
         .snapshot()
@@ -1831,6 +1832,21 @@ fn publish_daemon_test_event(
         .map(|job| job.label.clone())
         .unwrap_or_else(|| "Test".into());
     let mapped = match event {
+        DaemonTestEvent::JunitCompleted {
+            success, message, ..
+        } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Testing,
+            label: message.unwrap_or_else(|| "JUnit export".into()),
+            lifecycle: if success {
+                LifecycleState::Exited
+            } else {
+                LifecycleState::Failed
+            },
+            progress_current: None,
+            progress_total: None,
+            exit_code: Some(if success { 0 } else { 1 }),
+        }),
         DaemonTestEvent::Comparison { diff, .. } => DaemonEvent::TestComparison(diff),
         DaemonTestEvent::Snapshot { .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
