@@ -359,6 +359,25 @@ pub struct DaemonQaSnapshot {
     pub limitations: Vec<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonQaCapabilityInput {
+    pub generation: u64,
+    pub build_directory: String,
+    pub source_directory: Option<String>,
+    pub layer_directories: Vec<String>,
+    pub recipe_names: Vec<String>,
+    pub report_roots: Vec<String>,
+}
+
+impl DaemonQaCapabilityInput {
+    pub fn bounded(mut self) -> Self {
+        self.layer_directories.truncate(MAX_QA_RECORDS);
+        self.recipe_names.truncate(MAX_QA_RECORDS);
+        self.report_roots.truncate(MAX_QA_RECORDS);
+        self
+    }
+}
+
 impl DaemonQaSnapshot {
     pub fn bounded(mut self) -> Self {
         self.task_bindings.truncate(MAX_QA_RECORDS);
@@ -466,6 +485,20 @@ mod daemon_test_snapshot_tests {
         .bounded();
         assert_eq!(snapshot.task_bindings.len(), MAX_QA_RECORDS);
         assert_eq!(snapshot.reports.len(), MAX_QA_RECORDS);
+    }
+
+    #[test]
+    fn daemon_qa_input_is_bounded() {
+        let input = DaemonQaCapabilityInput {
+            generation: 1,
+            build_directory: "/build".into(),
+            source_directory: None,
+            layer_directories: (0..MAX_QA_RECORDS + 1).map(|i| i.to_string()).collect(),
+            recipe_names: Vec::new(),
+            report_roots: Vec::new(),
+        }
+        .bounded();
+        assert_eq!(input.layer_directories.len(), MAX_QA_RECORDS);
     }
 }
 
