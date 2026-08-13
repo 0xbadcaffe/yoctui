@@ -1,6 +1,8 @@
 use std::path::PathBuf;
 use tokio::sync::mpsc;
-use yoctui_bitbake::{TestResultAdapter, TestRunnerAdapter, TestRunnerEvent, TestRunnerJob};
+use yoctui_bitbake::{
+    TestResultAdapter, TestResultImportResponse, TestRunnerAdapter, TestRunnerEvent, TestRunnerJob,
+};
 use yoctui_model::{PtestCapability, TestFamily, TestOutputStream, TestSelftestRequest};
 use yoctui_protocol::daemon::{
     DaemonTestResultRecord, DaemonTestResultSnapshot, DaemonTestSelftestRequest, JobId,
@@ -49,6 +51,7 @@ pub enum DaemonTestEvent {
     Snapshot {
         job_id: JobId,
         snapshot: DaemonTestResultSnapshot,
+        authoritative: Option<TestResultImportResponse>,
     },
 }
 
@@ -84,39 +87,47 @@ impl DaemonTestSupervisor {
         let tx = self.tx.clone();
         tokio::task::spawn_blocking(move || {
             let result = adapter.import(&request);
-            let snapshot = match result {
-                Ok(response) => DaemonTestResultSnapshot {
-                    generation,
-                    records: response
-                        .records
-                        .into_iter()
-                        .map(|record| DaemonTestResultRecord {
-                            identity: format!("{:?}", record.identity),
-                            outcome: format!(
-                                "family={:?}; suites={}",
-                                record.family,
-                                record.suites.len()
-                            ),
-                            duration_ms: record
-                                .duration
-                                .map(|duration| duration.as_millis() as u64),
-                            log_path: None,
-                        })
-                        .collect(),
-                    limitations: response.limitations,
-                    complete: true,
-                }
-                .bounded(),
-                Err(error) => DaemonTestResultSnapshot {
-                    generation,
-                    records: Vec::new(),
-                    limitations: vec![error.to_string()],
-                    complete: false,
-                },
+            let (snapshot, authoritative) = match result {
+                Ok(response) => (
+                    DaemonTestResultSnapshot {
+                        generation,
+                        records: response
+                            .records
+                            .clone()
+                            .into_iter()
+                            .map(|record| DaemonTestResultRecord {
+                                identity: format!("{:?}", record.identity),
+                                outcome: format!(
+                                    "family={:?}; suites={}",
+                                    record.family,
+                                    record.suites.len()
+                                ),
+                                duration_ms: record
+                                    .duration
+                                    .map(|duration| duration.as_millis() as u64),
+                                log_path: None,
+                            })
+                            .collect(),
+                        limitations: response.limitations.clone(),
+                        complete: true,
+                    }
+                    .bounded(),
+                    Some(response),
+                ),
+                Err(error) => (
+                    DaemonTestResultSnapshot {
+                        generation,
+                        records: Vec::new(),
+                        limitations: vec![error.to_string()],
+                        complete: false,
+                    },
+                    None,
+                ),
             };
             let _ = tx.send(DaemonTestEvent::Snapshot {
                 job_id: id,
                 snapshot,
+                authoritative,
             });
         });
         Ok(id)
@@ -178,8 +189,16 @@ impl DaemonTestSupervisor {
     }
     pub fn try_event(&mut self) -> Option<DaemonTestEvent> {
         let e = self.rx.try_recv().ok()?;
-        if let DaemonTestEvent::Snapshot { snapshot, .. } = &e {
+        if let DaemonTestEvent::Snapshot {
+            snapshot,
+            authoritative,
+            ..
+        } = &e
+        {
             self.cache.insert(snapshot.clone());
+            if let Some(response) = authoritative.clone() {
+                self.cache.insert_authoritative(response);
+            }
         }
         if matches!(
             e,
@@ -206,6 +225,7 @@ impl DaemonTestSupervisor {
 #[derive(Debug, Default)]
 pub struct DaemonTestResultCache {
     snapshots: std::collections::BTreeMap<u64, DaemonTestResultSnapshot>,
+    authoritative: std::collections::BTreeMap<u64, TestResultImportResponse>,
 }
 
 impl DaemonTestResultCache {
@@ -217,6 +237,16 @@ impl DaemonTestResultCache {
         while self.snapshots.len() > Self::MAX_GENERATIONS {
             if let Some(generation) = self.snapshots.keys().next().copied() {
                 self.snapshots.remove(&generation);
+            }
+        }
+    }
+
+    pub fn insert_authoritative(&mut self, response: TestResultImportResponse) {
+        self.authoritative
+            .insert(response.request.generation, response);
+        while self.authoritative.len() > Self::MAX_GENERATIONS {
+            if let Some(generation) = self.authoritative.keys().next().copied() {
+                self.authoritative.remove(&generation);
             }
         }
     }
