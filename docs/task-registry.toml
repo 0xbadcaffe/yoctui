@@ -3288,7 +3288,7 @@ notes = "Parent gate split into testing, QA/security and maintenance child migra
 id = "CLIENT-RUNTIME-TESTING-001"
 milestone = "M11"
 title = "Move testing jobs into the daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-ARTIFACTS-001"]
@@ -3304,7 +3304,7 @@ priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-ARTIFACTS-001"]
 verify = ["cargo test -p yoctui client_runtime_test_session"]
-notes = "Route typed selftest and managed test-build sessions through daemon-owned runners with correlated lifecycle events."
+notes = "Selftest sessions now use a closed daemon request and daemon-owned TestRunnerJob with bounded output, cancellation, timeout and terminal events. Managed BitBake test-build effects retain the existing BitBake job path."
 
 [[task]]
 id = "CLIENT-RUNTIME-TEST-RESULTS-001"

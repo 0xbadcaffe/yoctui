@@ -1876,3 +1876,7 @@ events.
 Wic image creation uses the same daemon-owned runner boundary. Device writes
 remain a separate destructive operation so exact discovered device identity
 can be revalidated before execution.
+
+Selftest sessions also use daemon-owned typed requests and the existing
+validated test runner; managed BitBake test builds remain on the BitBake job
+controller path until their dedicated migration gate.

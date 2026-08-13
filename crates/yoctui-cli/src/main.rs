@@ -106,6 +106,8 @@ mod daemon_qemu;
 #[cfg(unix)]
 mod daemon_sdk;
 #[cfg(unix)]
+mod daemon_test;
+#[cfg(unix)]
 mod daemon_wic;
 mod maintenance_cli;
 #[cfg(unix)]
@@ -1147,6 +1149,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     let mut sdk_supervisor = daemon_sdk::DaemonSdkSupervisor::default();
     let mut qemu_supervisor = daemon_qemu::DaemonQemuSupervisor::default();
     let mut wic_supervisor = daemon_wic::DaemonWicSupervisor::default();
+    let mut test_supervisor = daemon_test::DaemonTestSupervisor::default();
     write_persisted_state(
         &persist_paths,
         &DaemonPersistedState::capture(
@@ -1175,6 +1178,9 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         }
         while let Some(event) = wic_supervisor.try_event() {
             publish_daemon_wic_event(&mut daemon_journal, event)?;
+        }
+        while let Some(event) = test_supervisor.try_event() {
+            publish_daemon_test_event(&mut daemon_journal, event)?;
         }
         if termination_requested(termination) {
             break;
@@ -1362,6 +1368,11 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                             Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage, message: error, current_generation: daemon_journal.snapshot().generation },
                         },
                         DaemonCommand::CancelWic { session_id } => match wic_supervisor.cancel(session_id) { Ok(()) => CommandOutcome::Accepted, Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound, message: error, current_generation: daemon_journal.snapshot().generation } },
+                        DaemonCommand::StartTestSession { session_id, request, build_directory, path_directories } => match test_supervisor.start(session_id, request, build_directory, path_directories) {
+                            Ok(job_id) => { let event=daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary{id:job_id,kind:yoctui_protocol::daemon::JobKind::Testing,label:format!("Test session {session_id}"),lifecycle:yoctui_protocol::daemon::LifecycleState::Connecting,progress_current:None,progress_total:None,exit_code:None}))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted },
+                            Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,message:error,current_generation:daemon_journal.snapshot().generation},
+                        },
+                        DaemonCommand::CancelTestSession { session_id } => match test_supervisor.cancel(session_id) { Ok(())=>CommandOutcome::Accepted, Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::NotFound,message:error,current_generation:daemon_journal.snapshot().generation} },
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
                             message: "daemon command is not implemented by this runtime".into(),
@@ -1774,6 +1785,110 @@ fn publish_daemon_wic_event(
         DaemonWicEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
             kind: JobKind::Wic,
+            label: format!("{label}: {message}"),
+            lifecycle: LifecycleState::Lost,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+    };
+    journal.publish(mapped)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn publish_daemon_test_event(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    event: daemon_test::DaemonTestEvent,
+) -> Result<()> {
+    use daemon_test::DaemonTestEvent;
+    use yoctui_protocol::daemon::{
+        DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
+    };
+    let job_id = match &event {
+        DaemonTestEvent::Started { job_id, .. }
+        | DaemonTestEvent::Output { job_id, .. }
+        | DaemonTestEvent::Completed { job_id, .. }
+        | DaemonTestEvent::Failed { job_id, .. }
+        | DaemonTestEvent::Cancelled { job_id, .. }
+        | DaemonTestEvent::TimedOut { job_id, .. }
+        | DaemonTestEvent::Lost { job_id, .. } => *job_id,
+    };
+    let label = journal
+        .snapshot()
+        .jobs
+        .iter()
+        .find(|job| job.id == job_id)
+        .map(|job| job.label.clone())
+        .unwrap_or_else(|| "Test".into());
+    let mapped = match event {
+        DaemonTestEvent::Started { .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Testing,
+            label,
+            lifecycle: LifecycleState::Running,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+        DaemonTestEvent::Output {
+            stream,
+            line,
+            truncated,
+            ..
+        } => DaemonEvent::Log(LogRecord {
+            source: format!("test:{stream:?}"),
+            severity: if matches!(stream, yoctui_model::TestOutputStream::Stderr) {
+                LogSeverity::Warning
+            } else {
+                LogSeverity::Info
+            },
+            message: if truncated {
+                format!("{line} [truncated]")
+            } else {
+                line
+            },
+            unix_ms: unix_ms(),
+        }),
+        DaemonTestEvent::Completed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Testing,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonTestEvent::Failed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Testing,
+            label,
+            lifecycle: LifecycleState::Failed,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonTestEvent::Cancelled { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Testing,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonTestEvent::TimedOut { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Testing,
+            label,
+            lifecycle: LifecycleState::Failed,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonTestEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Testing,
             label: format!("{label}: {message}"),
             lifecycle: LifecycleState::Lost,
             progress_current: None,
@@ -7708,7 +7823,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         .and_then(|action| update(&mut app, action));
                     match effect {
                         Some(effect @ Effect::StartTestSession { .. }) => {
-                            let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                            if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect)
+                                .is_none()
+                            {
+                                let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                            }
                         }
                         Some(Effect::StartTestBuildSession { id, request }) => {
                             if begin_test_build(
@@ -7732,6 +7851,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let effect = test_cancellation_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
                     if let Some(effect @ Effect::CancelTestSession(id)) = effect
+                        && submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_none()
                         && !test_coordinator.handle_effect(&mut app, effect).await
                         && pending_test_build == Some(id)
                     {

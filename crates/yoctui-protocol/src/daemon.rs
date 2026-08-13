@@ -193,6 +193,15 @@ pub enum DaemonCommand {
     CancelWic {
         session_id: u64,
     },
+    StartTestSession {
+        session_id: u64,
+        request: DaemonTestSelftestRequest,
+        build_directory: String,
+        path_directories: Vec<String>,
+    },
+    CancelTestSession {
+        session_id: u64,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,
@@ -300,6 +309,16 @@ pub struct DaemonWicCreateRequest {
     pub output_directory: String,
     pub generate_bmap: bool,
     pub compression: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonTestSelftestRequest {
+    pub executable: String,
+    pub family: String,
+    pub selector: Option<String>,
+    pub parallelism: u16,
+    pub verbose: bool,
+    pub skip_network: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

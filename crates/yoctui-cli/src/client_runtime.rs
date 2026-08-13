@@ -6,7 +6,7 @@ use yoctui_model::{App, ClientDaemonLifecycle, Effect};
 use yoctui_protocol::daemon::{
     ClientId, CommandRequest, DaemonCommand, DaemonDevtoolOperation, DaemonQemuRequest,
     DaemonSdkArtifactIdentity, DaemonSdkContext, DaemonSdkNativeMode, DaemonSdkOperation,
-    DaemonWicCreateRequest, JobId, RequestId, Subscription,
+    DaemonTestSelftestRequest, DaemonWicCreateRequest, JobId, RequestId, Subscription,
 };
 
 use crate::client_transport::{ClientServerEvent, ClientTransportError, DaemonClientTransport};
@@ -203,6 +203,29 @@ fn daemon_command_for_effect(
             },
         },
         Effect::CancelWicSession(id) => DaemonCommand::CancelWic { session_id: id.0 },
+        Effect::StartTestSession {
+            id,
+            operation: yoctui_model::TestOperation::Selftest(request),
+        } => DaemonCommand::StartTestSession {
+            session_id: id.0,
+            request: DaemonTestSelftestRequest {
+                executable: request.executable.display().to_string(),
+                family: format!("{:?}", request.family),
+                selector: request.selector.clone(),
+                parallelism: request.parallelism,
+                verbose: request.verbose,
+                skip_network: request.skip_network,
+            },
+            build_directory: build_directory()?,
+            path_directories: app
+                .workspace
+                .source_dir
+                .iter()
+                .map(|path| path.display().to_string())
+                .collect(),
+        },
+        Effect::StartTestSession { .. } => return Ok(None),
+        Effect::CancelTestSession(id) => DaemonCommand::CancelTestSession { session_id: id.0 },
         _ => return Ok(None),
     }))
 }

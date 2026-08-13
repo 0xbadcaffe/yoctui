@@ -2882,3 +2882,6 @@ safe to detach while the emulator continues under daemon ownership.
 
 Confirmed Wic image creation is submitted to the daemon and remains visible in
 job history after client detach.
+
+Confirmed selftest sessions are submitted to the daemon when attached; output
+and terminal state remain visible while the client detaches or reconnects.

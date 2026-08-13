@@ -330,3 +330,9 @@ validated Wic command and bounded process runner.
 Confirmed device writes now submit exact image/device identities to the daemon,
 which revalidates the device through the existing inspector before owning the
 process group, output, cancellation and terminal state.
+### Daemon-owned selftest sessions
+
+Selftest requests now cross the daemon boundary as closed typed identities.
+The daemon reconstructs the validated TestRunnerAdapter command, owns the
+process group and publishes bounded output, cancellation, timeout and loss
+events independently of the attached client.
