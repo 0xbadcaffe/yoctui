@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-TEST-IMPORT-WORKER-001
-**Title:** Move test-result import and comparison workers into the daemon
+**ID:** CLIENT-RUNTIME-TEST-COMPARE-SPEC-001
+**Title:** Define typed daemon test comparison diffs
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Route typed result import and comparison operations through daemon-owned bounded
-workers and snapshot events.
+Add bounded wire types for comparison identity, categories, limitations and
+generation correlation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_test_import
+cargo test -p yoctui daemon_test_compare
 ```

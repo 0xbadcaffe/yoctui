@@ -3343,12 +3343,34 @@ notes = "Added bounded version-independent result record/snapshot wire types wit
 id = "CLIENT-RUNTIME-TEST-IMPORT-WORKER-001"
 milestone = "M11"
 title = "Move test-result import and comparison workers into the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-SNAPSHOT-001"]
 verify = ["cargo test -p yoctui client_runtime_test_import"]
-notes = "Result import now runs through a daemon-owned bounded worker and publishes typed snapshots; comparison remains client-local pending a typed comparison request/event extension."
+notes = "Result import runs through a daemon-owned bounded worker and publishes typed snapshots. Comparison is split into a typed diff protocol and worker child."
+
+[[task]]
+id = "CLIENT-RUNTIME-TEST-COMPARE-SPEC-001"
+milestone = "M11"
+title = "Define typed daemon test comparison diffs"
+status = "IN_PROGRESS"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-TEST-SNAPSHOT-001"]
+verify = ["cargo test -p yoctui daemon_test_compare"]
+notes = "Add bounded wire types for comparison identity, categories, limitations and generation correlation."
+
+[[task]]
+id = "CLIENT-RUNTIME-TEST-COMPARE-001"
+milestone = "M11"
+title = "Move test-result comparison into the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-TEST-COMPARE-SPEC-001"]
+verify = ["cargo test -p yoctui client_runtime_test_compare"]
+notes = "Route typed comparison requests through daemon-owned bounded workers and diff events."
 
 [[task]]
 id = "CLIENT-RUNTIME-TEST-JUNIT-001"
