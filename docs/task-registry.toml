@@ -3326,7 +3326,29 @@ priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-SESSION-001"]
 verify = ["cargo test -p yoctui client_runtime_test_import"]
-notes = "Route typed result import and comparison operations through daemon-owned bounded workers."
+notes = "Parent gate split into a typed result snapshot protocol prerequisite and daemon worker migration."
+
+[[task]]
+id = "CLIENT-RUNTIME-TEST-SNAPSHOT-001"
+milestone = "M11"
+title = "Define typed daemon test-result snapshots"
+status = "IN_PROGRESS"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-TEST-SESSION-001"]
+verify = ["cargo test -p yoctui daemon_test_snapshot"]
+notes = "Add bounded protocol types for result records, limitations, import generations and comparison state without leaking model internals into UI code."
+
+[[task]]
+id = "CLIENT-RUNTIME-TEST-IMPORT-WORKER-001"
+milestone = "M11"
+title = "Move test-result import and comparison workers into the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-TEST-SNAPSHOT-001"]
+verify = ["cargo test -p yoctui client_runtime_test_import"]
+notes = "Route typed result import and comparison operations through daemon-owned bounded workers and snapshot events."
 
 [[task]]
 id = "CLIENT-RUNTIME-TEST-JUNIT-001"
