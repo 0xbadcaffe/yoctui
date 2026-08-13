@@ -211,6 +211,11 @@ pub enum DaemonCommand {
         baseline_identity: String,
         candidate_identity: String,
     },
+    ExportTestJunit {
+        generation: u64,
+        result_identity: String,
+        destination: String,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,

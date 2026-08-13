@@ -239,6 +239,11 @@ fn daemon_command_for_effect(
             baseline_identity: format!("{:?}", request.baseline),
             candidate_identity: format!("{:?}", request.candidate),
         },
+        Effect::ExportTestJunit(request) => DaemonCommand::ExportTestJunit {
+            generation: request.generation,
+            result_identity: format!("{:?}", request.result),
+            destination: request.destination.display().to_string(),
+        },
         _ => return Ok(None),
     }))
 }

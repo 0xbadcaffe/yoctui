@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-TEST-JUNIT-SPEC-001
-**Title:** Define typed daemon JUnit export requests
+**ID:** CLIENT-RUNTIME-TEST-JUNIT-WORKER-001
+**Title:** Move JUnit export into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add bounded wire identity for selected result generation and destination with
-explicit preview validation.
+Route typed JUnit export through daemon-owned validated resulttool runner and
+lifecycle events.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui daemon_test_junit
+cargo test -p yoctui client_runtime_test_junit
 ```
