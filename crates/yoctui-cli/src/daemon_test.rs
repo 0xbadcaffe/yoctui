@@ -57,6 +57,7 @@ pub struct DaemonTestSupervisor {
     active: std::collections::HashMap<u64, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonTestEvent>,
     rx: mpsc::UnboundedReceiver<DaemonTestEvent>,
+    pub cache: DaemonTestResultCache,
 }
 impl Default for DaemonTestSupervisor {
     fn default() -> Self {
@@ -66,6 +67,7 @@ impl Default for DaemonTestSupervisor {
             active: Default::default(),
             tx,
             rx,
+            cache: DaemonTestResultCache::default(),
         }
     }
 }
@@ -176,6 +178,9 @@ impl DaemonTestSupervisor {
     }
     pub fn try_event(&mut self) -> Option<DaemonTestEvent> {
         let e = self.rx.try_recv().ok()?;
+        if let DaemonTestEvent::Snapshot { snapshot, .. } = &e {
+            self.cache.insert(snapshot.clone());
+        }
         if matches!(
             e,
             DaemonTestEvent::Completed { .. }
@@ -195,6 +200,30 @@ impl DaemonTestSupervisor {
             self.active.remove(&id);
         }
         Some(e)
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct DaemonTestResultCache {
+    snapshots: std::collections::BTreeMap<u64, DaemonTestResultSnapshot>,
+}
+
+impl DaemonTestResultCache {
+    const MAX_GENERATIONS: usize = 8;
+
+    pub fn insert(&mut self, snapshot: DaemonTestResultSnapshot) {
+        self.snapshots
+            .insert(snapshot.generation, snapshot.bounded());
+        while self.snapshots.len() > Self::MAX_GENERATIONS {
+            if let Some(generation) = self.snapshots.keys().next().copied() {
+                self.snapshots.remove(&generation);
+            }
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn get(&self, generation: u64) -> Option<&DaemonTestResultSnapshot> {
+        self.snapshots.get(&generation)
     }
 }
 
@@ -218,5 +247,20 @@ mod tests {
             Vec::new(),
         );
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn daemon_test_result_cache_replaces_and_bounds_generations() {
+        let mut cache = DaemonTestResultCache::default();
+        for generation in 1..=10 {
+            cache.insert(DaemonTestResultSnapshot {
+                generation,
+                records: Vec::new(),
+                limitations: Vec::new(),
+                complete: true,
+            });
+        }
+        assert!(cache.get(1).is_none());
+        assert!(cache.get(10).is_some());
     }
 }
