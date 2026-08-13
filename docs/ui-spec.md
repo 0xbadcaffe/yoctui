@@ -2628,6 +2628,13 @@ Disconnected. Installing or replacing daemon state never changes the selected
 screen, focused pane, Navigator row, theme, open dialog/editor, or client-local
 layout.
 
+SDK publication and native-tool confirmations submit their exact typed
+operation and selected SDK context to the daemon when attached. The client
+continues rendering the existing typed SDK session from daemon events; it does
+not start a second local runner. If daemon attach is unavailable, the UI shows
+the explicit compatibility diagnostic and retains the existing standalone
+policy until that policy is selected and tested.
+
 Test result import uses `Test result import.toml` with one normalized absolute
 `root`, initially selected for immediate replacement, preserving the existing
 bounded typed import operation.

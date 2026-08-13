@@ -1778,6 +1778,15 @@ output, cancellation channel and terminal event. Job/log changes enter the
 same sequenced daemon journal. The supervisor outlives any client connection;
 detaching a client neither drops nor cancels the runner.
 
+SDK jobs use the same ownership boundary with a separate closed protocol. The
+wire operation distinguishes typed publication and native-tool requests,
+including exact artifact identity, setup root, executable, bounded arguments,
+and selected SDK context roots. The daemon reconstructs the existing
+`SdkPublishPreview` or `SdkNativePreview`, validates it through
+`SdkToolAdapter`, and owns `SdkToolJobRunner`, output, timeout, cancellation and
+terminal state. Client disconnect has no effect on the runner; output is
+converted into bounded sequenced daemon logs/job events.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only

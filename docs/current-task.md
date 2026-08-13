@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-SDK-001
-**Title:** Move SDK job ownership into the daemon
+**ID:** CLIENT-RUNTIME-QEMU-001
+**Title:** Move QEMU job ownership into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Extend the bounded protocol with closed typed SDK build, publication, and native
-operations. Route existing SDK effects through correlated daemon requests and
-sequenced events, reuse the current validated adapters/runners under daemon
-ownership, preserve exact artifact/environment identities and cancellation,
-and ensure client detach never terminates active SDK work.
+Extend the bounded protocol with a closed typed QEMU launch operation. Route
+confirmed QEMU effects through correlated daemon requests and sequenced events,
+reuse the current validated capability/command runner under daemon ownership,
+preserve display/network/device confirmation rules, and ensure client detach
+never terminates an active emulator session.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_sdk
+cargo test -p yoctui client_runtime_qemu
 ```

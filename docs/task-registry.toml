@@ -3211,18 +3211,18 @@ notes = "A closed DaemonDevtoolOperation wire enum represents modify/update/fini
 id = "CLIENT-RUNTIME-SDK-001"
 milestone = "M11"
 title = "Move SDK job ownership into the daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-DEVTOOL-001"]
 verify = ["cargo test -p yoctui client_runtime_sdk"]
-notes = "Route existing typed SDK build/publication/native operations through daemon-owned adapters and runners with exact identities, output, lifecycle and cancellation."
+notes = "Closed DaemonSdkOperation/Context wire types carry exact publication/native identities, bounded arguments and authoritative build/deploy/tool roots. The client maps existing StartSdkSession/CancelSdkSession effects; the daemon reconstructs and revalidates SdkPublishPreview/SdkNativePreview through SdkToolAdapter and owns SdkToolJobRunner, output, timeout, cancellation, terminal events and sequenced job/log state. Focused wire and runner checks plus full baseline pass."
 
 [[task]]
 id = "CLIENT-RUNTIME-QEMU-001"
 milestone = "M11"
 title = "Move QEMU job ownership into the daemon"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-SDK-001"]

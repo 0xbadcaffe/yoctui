@@ -268,8 +268,9 @@ validation, the existing shell-free command spec, daemon-owned real runner and
 process group, sequenced job/log state, correlated cancellation, and detach-
 survival coverage. SDK/QEMU/Wic ownership is active next.
 The artifact migration is further split along its distinct safety boundaries:
-SDK is active first, followed by QEMU and destructive Wic, then a shared parent
-gate.
+SDK is complete: closed typed operations carry exact artifact/tool/environment
+identities, daemon reconstruction reuses the validated adapter, and the daemon
+owns output, timeout, cancellation and terminal state. QEMU is active next.
 
 `UX-POPUP-EDITOR-002` is complete with the model-owned editor boundary and
 reference rendering. `UX-POPUP-EDITOR-003` added typed selection and bounded

@@ -101,6 +101,8 @@ mod client_runtime;
 mod client_transport;
 #[cfg(unix)]
 mod daemon_devtool;
+#[cfg(unix)]
+mod daemon_sdk;
 mod maintenance_cli;
 #[cfg(unix)]
 #[cfg_attr(not(test), allow(dead_code))]
@@ -1138,6 +1140,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     let daemon_journal = DaemonSnapshotJournal::new(snapshot, DaemonSnapshotLimits::default())?;
     let mut daemon_journal = daemon_journal;
     let mut devtool_supervisor = daemon_devtool::DaemonDevtoolSupervisor::default();
+    let mut sdk_supervisor = daemon_sdk::DaemonSdkSupervisor::default();
     write_persisted_state(
         &persist_paths,
         &DaemonPersistedState::capture(
@@ -1157,6 +1160,9 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     while !shutting_down {
         while let Some(event) = devtool_supervisor.try_event() {
             publish_daemon_devtool_event(&mut daemon_journal, event)?;
+        }
+        while let Some(event) = sdk_supervisor.try_event() {
+            publish_daemon_sdk_event(&mut daemon_journal, event)?;
         }
         if termination_requested(termination) {
             break;
@@ -1291,6 +1297,40 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                                 },
                             }
                         }
+                        DaemonCommand::StartSdk { session_id, operation, context } => {
+                            match sdk_supervisor.start(session_id, operation, context) {
+                                Ok(job_id) => {
+                                    let event = daemon_journal.publish(
+                                        yoctui_protocol::daemon::DaemonEvent::JobChanged(
+                                            yoctui_protocol::daemon::JobSummary {
+                                                id: job_id,
+                                                kind: yoctui_protocol::daemon::JobKind::Sdk,
+                                                label: format!("SDK session {session_id}"),
+                                                lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting,
+                                                progress_current: None,
+                                                progress_total: None,
+                                                exit_code: None,
+                                            },
+                                        ),
+                                    )?;
+                                    connection.send(&ServerMessage::Event(event))?;
+                                    CommandOutcome::Accepted
+                                }
+                                Err(error) => CommandOutcome::Rejected {
+                                    code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,
+                                    message: error.to_string(),
+                                    current_generation: daemon_journal.snapshot().generation,
+                                },
+                            }
+                        }
+                        DaemonCommand::CancelSdk { session_id } => match sdk_supervisor.cancel(session_id) {
+                            Ok(()) => CommandOutcome::Accepted,
+                            Err(error) => CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                                message: error.to_string(),
+                                current_generation: daemon_journal.snapshot().generation,
+                            },
+                        },
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
                             message: "daemon command is not implemented by this runtime".into(),
@@ -1413,6 +1453,104 @@ fn publish_daemon_devtool_event(
         DaemonDevtoolEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
             kind: JobKind::Devtool,
+            label: format!("{label}: {message}"),
+            lifecycle: LifecycleState::Lost,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+    };
+    journal.publish(mapped)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn publish_daemon_sdk_event(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    event: daemon_sdk::DaemonSdkEvent,
+) -> Result<()> {
+    use daemon_sdk::DaemonSdkEvent;
+    use yoctui_protocol::daemon::{
+        DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
+    };
+    let job_id = event.job_id();
+    let existing = journal
+        .snapshot()
+        .jobs
+        .iter()
+        .find(|job| job.id == job_id)
+        .cloned();
+    let label = existing
+        .map(|job| job.label)
+        .unwrap_or_else(|| "SDK".into());
+    let mapped = match event {
+        DaemonSdkEvent::Started { .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Sdk,
+            label,
+            lifecycle: LifecycleState::Running,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+        DaemonSdkEvent::Output {
+            stream,
+            line,
+            truncated,
+            ..
+        } => DaemonEvent::Log(LogRecord {
+            source: format!("sdk:{stream:?}"),
+            severity: if matches!(stream, yoctui_model::SdkOutputStream::Stderr) {
+                LogSeverity::Warning
+            } else {
+                LogSeverity::Info
+            },
+            message: if truncated {
+                format!("{line} [truncated]")
+            } else {
+                line
+            },
+            unix_ms: unix_ms(),
+        }),
+        DaemonSdkEvent::Completed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Sdk,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonSdkEvent::Failed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Sdk,
+            label,
+            lifecycle: LifecycleState::Failed,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonSdkEvent::Cancelled { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Sdk,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonSdkEvent::TimedOut { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Sdk,
+            label,
+            lifecycle: LifecycleState::Failed,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonSdkEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Sdk,
             label: format!("{label}: {message}"),
             lifecycle: LifecycleState::Lost,
             progress_current: None,
@@ -7252,7 +7390,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 } else if matches!(app.active_dialog(), Some(Dialog::SdkPublishConfirmation(_))) {
                     let effect = sdk_publish_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
-                    if let Some(Effect::StartSdkSession { id, operation }) = effect {
+                    if let Some(effect @ Effect::StartSdkSession { .. }) = effect {
+                        if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
+                            continue;
+                        }
+                        let Effect::StartSdkSession { id, operation } = effect else {
+                            unreachable!()
+                        };
                         begin_sdk_job(
                             &mut app,
                             &mut sdk_operation,
@@ -7285,7 +7429,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 } else if matches!(app.active_dialog(), Some(Dialog::SdkNativeConfirmation(_))) {
                     let effect = sdk_native_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
-                    if let Some(Effect::StartSdkSession { id, operation }) = effect {
+                    if let Some(effect @ Effect::StartSdkSession { .. }) = effect {
+                        if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
+                            continue;
+                        }
+                        let Effect::StartSdkSession { id, operation } = effect else {
+                            unreachable!()
+                        };
                         begin_sdk_job(
                             &mut app,
                             &mut sdk_operation,
@@ -7302,7 +7452,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 ) {
                     let effect = sdk_cancellation_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
-                    if let Some(Effect::CancelSdkSession(id)) = effect {
+                    if let Some(effect @ Effect::CancelSdkSession(_)) = effect {
+                        if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
+                            continue;
+                        }
+                        let Effect::CancelSdkSession(id) = effect else {
+                            unreachable!()
+                        };
                         begin_sdk_cancellation(&mut app, &mut sdk_operation, id);
                     }
                 } else if let Some(Dialog::TestLaunchTomlEditor { editor, .. }) =

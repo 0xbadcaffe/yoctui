@@ -154,6 +154,14 @@ pub enum DaemonCommand {
         operation: DaemonDevtoolOperation,
         build_directory: String,
     },
+    StartSdk {
+        session_id: u64,
+        operation: DaemonSdkOperation,
+        context: DaemonSdkContext,
+    },
+    CancelSdk {
+        session_id: u64,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,
@@ -195,6 +203,45 @@ pub enum DaemonDevtoolOperation {
     DeployTarget { recipe: String, target: String },
     UndeployTarget { recipe: String, target: String },
     Reset { recipe: String },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonSdkContext {
+    pub build_directory: String,
+    pub sdk_deploy_root: String,
+    pub workspace_roots: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonSdkArtifactIdentity {
+    pub path: String,
+    pub size_bytes: u64,
+    pub modified_unix_seconds: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DaemonSdkNativeMode {
+    FindSysroot,
+    RunNative,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum DaemonSdkOperation {
+    Publish {
+        executable: String,
+        artifact: DaemonSdkArtifactIdentity,
+        destination: String,
+    },
+    Native {
+        executable: String,
+        mode: DaemonSdkNativeMode,
+        extracted_root: Option<String>,
+        recipe: String,
+        tool: Option<String>,
+        arguments: Vec<String>,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

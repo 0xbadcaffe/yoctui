@@ -4,7 +4,8 @@ use thiserror::Error;
 use yoctui_app::DaemonClientSnapshot;
 use yoctui_model::{App, ClientDaemonLifecycle, Effect};
 use yoctui_protocol::daemon::{
-    ClientId, CommandRequest, DaemonCommand, DaemonDevtoolOperation, JobId, RequestId, Subscription,
+    ClientId, CommandRequest, DaemonCommand, DaemonDevtoolOperation, DaemonSdkArtifactIdentity,
+    DaemonSdkContext, DaemonSdkNativeMode, DaemonSdkOperation, JobId, RequestId, Subscription,
 };
 
 use crate::client_transport::{ClientServerEvent, ClientTransportError, DaemonClientTransport};
@@ -167,8 +168,86 @@ fn daemon_command_for_effect(
             },
             build_directory: build_directory()?,
         },
+        Effect::StartSdkSession { id, operation } => DaemonCommand::StartSdk {
+            session_id: id.0,
+            operation: wire_sdk_operation(operation),
+            context: sdk_context(app, operation)?,
+        },
+        Effect::CancelSdkSession(id) => DaemonCommand::CancelSdk { session_id: id.0 },
         _ => return Ok(None),
     }))
+}
+
+fn wire_sdk_operation(operation: &yoctui_model::SdkOperation) -> DaemonSdkOperation {
+    match operation {
+        yoctui_model::SdkOperation::Publish(request) => DaemonSdkOperation::Publish {
+            executable: request.executable.display().to_string(),
+            artifact: DaemonSdkArtifactIdentity {
+                path: request.artifact.path.display().to_string(),
+                size_bytes: request.artifact.size_bytes,
+                modified_unix_seconds: request.artifact.modified_unix_seconds,
+            },
+            destination: request.destination.display().to_string(),
+        },
+        yoctui_model::SdkOperation::Native(request) => DaemonSdkOperation::Native {
+            executable: request.executable.display().to_string(),
+            mode: match request.mode {
+                yoctui_model::SdkNativeMode::FindSysroot => DaemonSdkNativeMode::FindSysroot,
+                yoctui_model::SdkNativeMode::RunNative => DaemonSdkNativeMode::RunNative,
+            },
+            extracted_root: request
+                .extracted_root
+                .as_ref()
+                .map(|path| path.display().to_string()),
+            recipe: request.recipe.clone(),
+            tool: request.tool.clone(),
+            arguments: request.arguments.clone(),
+        },
+    }
+}
+
+fn sdk_context(
+    app: &App,
+    operation: &yoctui_model::SdkOperation,
+) -> Result<DaemonSdkContext, ClientRuntimeError> {
+    let build_directory = app
+        .workspace
+        .build_dir
+        .as_ref()
+        .ok_or(ClientRuntimeError::MissingBuildDirectory)?;
+    let sdk_deploy_root = app
+        .workspace
+        .variables
+        .get("SDK_DEPLOY")
+        .cloned()
+        .ok_or(ClientRuntimeError::MissingSdkDeployRoot)?;
+    let executable = match operation {
+        yoctui_model::SdkOperation::Publish(request) => &request.executable,
+        yoctui_model::SdkOperation::Native(request) => &request.executable,
+    };
+    let mut workspace_roots = Vec::new();
+    if let Some(source) = &app.workspace.source_dir {
+        workspace_roots.push(source.display().to_string());
+    }
+    if let Some(parent) = executable.parent() {
+        let root = if parent.file_name().is_some_and(|name| name == "scripts") {
+            parent.parent().unwrap_or(parent)
+        } else {
+            parent
+        };
+        let root = root.display().to_string();
+        if !workspace_roots.contains(&root) {
+            workspace_roots.push(root);
+        }
+    }
+    if workspace_roots.is_empty() {
+        return Err(ClientRuntimeError::MissingSdkWorkspaceRoot);
+    }
+    Ok(DaemonSdkContext {
+        build_directory: build_directory.display().to_string(),
+        sdk_deploy_root,
+        workspace_roots,
+    })
 }
 
 fn random_client_id() -> Result<ClientId, ClientRuntimeError> {
@@ -196,6 +275,10 @@ pub enum ClientRuntimeError {
     RequestSpaceExhausted,
     #[error("authoritative build directory is unavailable")]
     MissingBuildDirectory,
+    #[error("authoritative SDK deploy root is unavailable")]
+    MissingSdkDeployRoot,
+    #[error("authoritative SDK tool root is unavailable")]
+    MissingSdkWorkspaceRoot,
 }
 
 #[cfg(test)]
