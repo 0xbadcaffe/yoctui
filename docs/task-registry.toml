@@ -3403,7 +3403,29 @@ priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-IMPORT-001"]
 verify = ["cargo test -p yoctui client_runtime_test_junit"]
-notes = "Route typed JUnit destination inspection and export through daemon ownership."
+notes = "Parent gate split into typed JUnit request protocol and daemon export worker children."
+
+[[task]]
+id = "CLIENT-RUNTIME-TEST-JUNIT-SPEC-001"
+milestone = "M11"
+title = "Define typed daemon JUnit export requests"
+status = "IN_PROGRESS"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-TEST-RESULT-CACHE-001"]
+verify = ["cargo test -p yoctui daemon_test_junit"]
+notes = "Add bounded wire identity for selected result generation and destination with explicit preview validation."
+
+[[task]]
+id = "CLIENT-RUNTIME-TEST-JUNIT-WORKER-001"
+milestone = "M11"
+title = "Move JUnit export into the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-TEST-JUNIT-SPEC-001"]
+verify = ["cargo test -p yoctui client_runtime_test_junit"]
+notes = "Route typed JUnit export through daemon-owned validated resulttool runner and lifecycle events."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-SECURITY-001"
