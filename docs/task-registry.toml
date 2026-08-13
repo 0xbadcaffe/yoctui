@@ -3546,7 +3546,29 @@ priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QA-COMMAND-001"]
 verify = ["cargo test -p yoctui client_runtime_qa_task"]
-notes = "Daemon owns typed QA capability inspection and managed task lifecycle."
+notes = "Parent gate split into daemon QA capability adapter and managed check runner children."
+
+[[task]]
+id = "CLIENT-RUNTIME-QA-ADAPTER-001"
+milestone = "M11"
+title = "Run QA capability inspection in the daemon"
+status = "IN_PROGRESS"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-QA-COMMAND-001"]
+verify = ["cargo test -p yoctui client_runtime_qa_adapter"]
+notes = "Daemon reconstructs bounded QA input and invokes QaTaskCapabilityInspector, publishing typed capability snapshots."
+
+[[task]]
+id = "CLIENT-RUNTIME-QA-CHECK-RUNNER-001"
+milestone = "M11"
+title = "Run managed QA checks in the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-QA-ADAPTER-001"]
+verify = ["cargo test -p yoctui client_runtime_qa_task"]
+notes = "Daemon owns managed QA check process runners, output, cancellation and terminal state."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-REPORT-WORKER-001"

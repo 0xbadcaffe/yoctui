@@ -2,16 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-QA-EXECUTION-001
-**Title:** Execute QA capability and checks in the daemon
+**ID:** CLIENT-RUNTIME-QA-ADAPTER-001
+**Title:** Run QA capability inspection in the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Daemon owns typed QA capability inspection and managed task lifecycle.
+Daemon reconstructs bounded QA input and invokes QaTaskCapabilityInspector,
+publishing typed capability snapshots.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_qa_task
+cargo test -p yoctui client_runtime_qa_adapter
 ```
