@@ -325,3 +325,8 @@ of the attached client.
 Wic image creation now crosses the daemon boundary as a closed typed request;
 the daemon reconstructs the kickstart/output identity and reuses the existing
 validated Wic command and bounded process runner.
+### Daemon-owned Wic device writes
+
+Confirmed device writes now submit exact image/device identities to the daemon,
+which revalidates the device through the existing inspector before owning the
+process group, output, cancellation and terminal state.

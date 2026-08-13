@@ -3233,12 +3233,12 @@ notes = "Closed typed QEMU request identity is reconstructed and revalidated by 
 id = "CLIENT-RUNTIME-WIC-001"
 milestone = "M11"
 title = "Move Wic job ownership into the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QEMU-001"]
 verify = ["cargo test -p yoctui client_runtime_wic"]
-notes = "Parent gate split into independent create and device-write daemon ownership tasks."
+notes = "Parent gate complete: Wic creation and destructive device writes are daemon-owned with typed validation and cancellation."
 
 [[task]]
 id = "CLIENT-RUNTIME-WIC-CREATE-001"
@@ -3255,12 +3255,12 @@ notes = "Closed typed Wic create identity is reconstructed and revalidated throu
 id = "CLIENT-RUNTIME-WIC-DEVICE-001"
 milestone = "M11"
 title = "Move Wic device writes into the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-WIC-CREATE-001"]
 verify = ["cargo test -p yoctui client_runtime_wic_device"]
-notes = "Route confirmed destructive device writes through daemon ownership and exact device identity revalidation."
+notes = "Confirmed device writes now use a closed identity, daemon-owned WicDeviceInspector/WicJobRunner path, and correlated cancellation/terminal events."
 
 [[task]]
 id = "CLIENT-RUNTIME-ARTIFACTS-001"

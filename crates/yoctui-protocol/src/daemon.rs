@@ -178,6 +178,18 @@ pub enum DaemonCommand {
         build_directory: String,
         executable: String,
     },
+    StartWicWrite {
+        session_id: u64,
+        executable: String,
+        image_path: String,
+        device_path: String,
+        device_major_minor: String,
+        device_size_bytes: u64,
+        device_model: Option<String>,
+        device_serial: Option<String>,
+        device_transport: Option<String>,
+        build_directory: String,
+    },
     CancelWic {
         session_id: u64,
     },

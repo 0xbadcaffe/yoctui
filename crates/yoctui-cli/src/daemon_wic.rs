@@ -1,9 +1,10 @@
 use std::path::PathBuf;
 use tokio::sync::mpsc;
+use yoctui_bitbake::WicDeviceInspector;
 use yoctui_bitbake::{WicCreateCommandSpec, WicJobRunner, WicRunnerEvent, WicRunnerOutputStream};
 use yoctui_model::{
-    WicCapability, WicCompression, WicCreatePreview, WicCreateRequest, WicKickstart,
-    WicKickstartIdentity,
+    WicCapability, WicCompression, WicCreatePreview, WicCreateRequest, WicDeviceIdentity,
+    WicKickstart, WicKickstartIdentity, WicOutputIdentity, WicWriteRequest,
 };
 use yoctui_protocol::daemon::{DaemonWicCreateRequest, JobId};
 
@@ -61,6 +62,46 @@ impl Default for DaemonWicSupervisor {
     }
 }
 impl DaemonWicSupervisor {
+    pub fn start_write(
+        &mut self,
+        session_id: u64,
+        executable: String,
+        image_path: String,
+        device: WicDeviceIdentity,
+        build: String,
+    ) -> Result<JobId, String> {
+        device.validate().map_err(str::to_owned)?;
+        let request = WicWriteRequest {
+            executable: executable.into(),
+            image: WicOutputIdentity {
+                path: image_path.into(),
+                size_bytes: 0,
+                modified_unix_seconds: 0,
+            },
+            device,
+        };
+        let id = JobId(self.next);
+        self.next += 1;
+        let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
+        self.active.insert(session_id, cancel_tx);
+        let tx = self.tx.clone();
+        tokio::spawn(async move {
+            let mut runner = WicJobRunner::new(build.into());
+            let inspector = WicDeviceInspector::default();
+            if let Err(e) = runner.start_write(&inspector, request).await {
+                let _ = tx.send(DaemonWicEvent::Lost {
+                    job_id: id,
+                    session_id,
+                    message: e.to_string(),
+                });
+                return;
+            }
+            loop {
+                tokio::select! { c=cancel_rx.recv()=>{if c.is_some(){let _=runner.cancel().await;}}, e=runner.next_event()=>{ let event=match e { Ok(WicRunnerEvent::Starting)|Ok(WicRunnerEvent::Started)=>DaemonWicEvent::Started{job_id:id,session_id}, Ok(WicRunnerEvent::Output{stream,line,truncated})=>DaemonWicEvent::Output{job_id:id,session_id,stream,line,truncated}, Ok(WicRunnerEvent::Completed{exit_code,..})=>DaemonWicEvent::Completed{job_id:id,session_id,exit_code}, Ok(WicRunnerEvent::Failed{message,exit_code})=>DaemonWicEvent::Failed{job_id:id,session_id,exit_code,message}, Ok(WicRunnerEvent::Cancelled{forced,exit_code})=>DaemonWicEvent::Cancelled{job_id:id,session_id,forced,exit_code}, Ok(WicRunnerEvent::CancellationRejected{message})|Ok(WicRunnerEvent::Lost{message})=>DaemonWicEvent::Lost{job_id:id,session_id,message}, Err(e)=>DaemonWicEvent::Lost{job_id:id,session_id,message:e.to_string()} }; let terminal=matches!(event,DaemonWicEvent::Completed{..}|DaemonWicEvent::Failed{..}|DaemonWicEvent::Cancelled{..}|DaemonWicEvent::Lost{..}); if tx.send(event).is_err()||terminal{return;} } }
+            }
+        });
+        Ok(id)
+    }
     pub fn start(
         &mut self,
         session_id: u64,
