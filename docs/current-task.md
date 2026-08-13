@@ -2,16 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-QA-TASK-RUNNER-001
-**Title:** Move QA task capability and checks into the daemon
+**ID:** CLIENT-RUNTIME-QA-COMMAND-001
+**Title:** Define daemon QA capability command
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Daemon owns typed QA task capability inspection and managed task lifecycle.
+Add versioned command/event types for QA capability inspection with bounded
+input identity.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_qa_task
+cargo test -p yoctui daemon_qa_command
 ```
