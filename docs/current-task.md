@@ -2,20 +2,18 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-QEMU-001
-**Title:** Move QEMU job ownership into the daemon
+**ID:** CLIENT-RUNTIME-WIC-001
+**Title:** Move Wic job ownership into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Extend the bounded protocol with a closed typed QEMU launch operation. Route
-confirmed QEMU effects through correlated daemon requests and sequenced events,
-reuse the current validated capability/command runner under daemon ownership,
-preserve display/network/device confirmation rules, and ensure client detach
-never terminates an active emulator session.
+Extend the bounded protocol with closed typed Wic operations. Route confirmed
+Wic effects through correlated daemon requests and sequenced events, reusing
+the validated adapter/runner while preserving destructive device confirmation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_qemu
+cargo test -p yoctui client_runtime_wic
 ```

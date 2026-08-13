@@ -104,6 +104,7 @@ pub struct Subscription {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
+#[allow(clippy::large_enum_variant)]
 pub enum ClientMessage {
     Hello(ClientHello),
     Attach {
@@ -160,6 +161,15 @@ pub enum DaemonCommand {
         context: DaemonSdkContext,
     },
     CancelSdk {
+        session_id: u64,
+    },
+    StartQemu {
+        session_id: u64,
+        request: DaemonQemuRequest,
+        build_directory: String,
+        executable: String,
+    },
+    CancelQemu {
         session_id: u64,
     },
     BitBakeLifecycle {
@@ -242,6 +252,22 @@ pub enum DaemonSdkOperation {
         tool: Option<String>,
         arguments: Vec<String>,
     },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonQemuRequest {
+    pub machine: String,
+    pub image_machine: String,
+    pub image: String,
+    pub image_path: String,
+    pub artifact_kind: String,
+    pub kernel: Option<String>,
+    pub rootfs: Option<String>,
+    pub networking: String,
+    pub display: String,
+    pub serial: String,
+    pub memory_mib: u32,
+    pub extra_arguments: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

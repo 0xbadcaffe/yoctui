@@ -102,6 +102,8 @@ mod client_transport;
 #[cfg(unix)]
 mod daemon_devtool;
 #[cfg(unix)]
+mod daemon_qemu;
+#[cfg(unix)]
 mod daemon_sdk;
 mod maintenance_cli;
 #[cfg(unix)]
@@ -1141,6 +1143,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     let mut daemon_journal = daemon_journal;
     let mut devtool_supervisor = daemon_devtool::DaemonDevtoolSupervisor::default();
     let mut sdk_supervisor = daemon_sdk::DaemonSdkSupervisor::default();
+    let mut qemu_supervisor = daemon_qemu::DaemonQemuSupervisor::default();
     write_persisted_state(
         &persist_paths,
         &DaemonPersistedState::capture(
@@ -1163,6 +1166,9 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         }
         while let Some(event) = sdk_supervisor.try_event() {
             publish_daemon_sdk_event(&mut daemon_journal, event)?;
+        }
+        while let Some(event) = qemu_supervisor.try_event() {
+            publish_daemon_qemu_event(&mut daemon_journal, event)?;
         }
         if termination_requested(termination) {
             break;
@@ -1330,6 +1336,16 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                                 message: error.to_string(),
                                 current_generation: daemon_journal.snapshot().generation,
                             },
+                        },
+                        DaemonCommand::StartQemu { session_id, request, build_directory, executable } => {
+                            match qemu_supervisor.start(session_id, request, build_directory, executable) {
+                                Ok(job_id) => { let event = daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary { id: job_id, kind: yoctui_protocol::daemon::JobKind::Qemu, label: format!("QEMU session {session_id}"), lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting, progress_current: None, progress_total: None, exit_code: None }))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted }
+                                Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage, message: error, current_generation: daemon_journal.snapshot().generation }
+                            }
+                        }
+                        DaemonCommand::CancelQemu { session_id } => match qemu_supervisor.cancel(session_id) {
+                            Ok(()) => CommandOutcome::Accepted,
+                            Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound, message: error, current_generation: daemon_journal.snapshot().generation }
                         },
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
@@ -1551,6 +1567,102 @@ fn publish_daemon_sdk_event(
         DaemonSdkEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
             kind: JobKind::Sdk,
+            label: format!("{label}: {message}"),
+            lifecycle: LifecycleState::Lost,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+    };
+    journal.publish(mapped)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn publish_daemon_qemu_event(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    event: daemon_qemu::DaemonQemuEvent,
+) -> Result<()> {
+    use daemon_qemu::DaemonQemuEvent;
+    use yoctui_protocol::daemon::{
+        DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
+    };
+    let job_id = match &event {
+        DaemonQemuEvent::Started { job_id, .. }
+        | DaemonQemuEvent::Output { job_id, .. }
+        | DaemonQemuEvent::Completed { job_id, .. }
+        | DaemonQemuEvent::Failed { job_id, .. }
+        | DaemonQemuEvent::Cancelled { job_id, .. }
+        | DaemonQemuEvent::Lost { job_id, .. } => *job_id,
+    };
+    let label = journal
+        .snapshot()
+        .jobs
+        .iter()
+        .find(|job| job.id == job_id)
+        .map(|job| job.label.clone())
+        .unwrap_or_else(|| "QEMU".into());
+    let mapped = match event {
+        DaemonQemuEvent::Started { .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Qemu,
+            label,
+            lifecycle: LifecycleState::Running,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+        DaemonQemuEvent::Output {
+            stream,
+            line,
+            truncated,
+            ..
+        } => DaemonEvent::Log(LogRecord {
+            source: format!("qemu:{stream:?}"),
+            severity: if matches!(stream, yoctui_bitbake::QemuRunnerOutputStream::Stderr) {
+                LogSeverity::Warning
+            } else {
+                LogSeverity::Info
+            },
+            message: if truncated {
+                format!("{line} [truncated]")
+            } else {
+                line
+            },
+            unix_ms: unix_ms(),
+        }),
+        DaemonQemuEvent::Completed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Qemu,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code: Some(exit_code),
+        }),
+        DaemonQemuEvent::Failed {
+            exit_code, message, ..
+        } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Qemu,
+            label: format!("{label}: {message}"),
+            lifecycle: LifecycleState::Failed,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonQemuEvent::Cancelled { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Qemu,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonQemuEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Qemu,
             label: format!("{label}: {message}"),
             lifecycle: LifecycleState::Lost,
             progress_current: None,
@@ -7728,7 +7840,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 } else if matches!(app.active_dialog(), Some(Dialog::QemuLaunchConfirmation(_))) {
                     let effect = qemu_launch_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
-                    if let Some(Effect::StartQemuSession { id, request }) = effect {
+                    if let Some(effect @ Effect::StartQemuSession { .. }) = effect {
+                        if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
+                            continue;
+                        }
+                        let Effect::StartQemuSession { id, request } = effect else {
+                            unreachable!()
+                        };
                         begin_qemu_job(
                             &mut app,
                             &mut qemu_operation,
@@ -7745,7 +7863,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 ) {
                     let effect = qemu_cancellation_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
-                    if let Some(Effect::CancelQemuSession(id)) = effect {
+                    if let Some(effect @ Effect::CancelQemuSession(_)) = effect {
+                        if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
+                            continue;
+                        }
+                        let Effect::CancelQemuSession(id) = effect else {
+                            unreachable!()
+                        };
                         begin_qemu_cancellation(&mut app, &mut qemu_operation, id);
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {

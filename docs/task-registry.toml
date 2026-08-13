@@ -3222,12 +3222,12 @@ notes = "Closed DaemonSdkOperation/Context wire types carry exact publication/na
 id = "CLIENT-RUNTIME-QEMU-001"
 milestone = "M11"
 title = "Move QEMU job ownership into the daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-SDK-001"]
 verify = ["cargo test -p yoctui client_runtime_qemu"]
-notes = "Route confirmed typed QEMU launches and cancellation through the daemon-owned runner and sequenced state."
+notes = "Closed typed QEMU request identity is reconstructed and revalidated by the daemon-owned QemuCommandSpec/QemuJobRunner; confirmed launch and cancellation route through correlated daemon commands, with bounded output and terminal state."
 
 [[task]]
 id = "CLIENT-RUNTIME-WIC-001"

@@ -4,8 +4,9 @@ use thiserror::Error;
 use yoctui_app::DaemonClientSnapshot;
 use yoctui_model::{App, ClientDaemonLifecycle, Effect};
 use yoctui_protocol::daemon::{
-    ClientId, CommandRequest, DaemonCommand, DaemonDevtoolOperation, DaemonSdkArtifactIdentity,
-    DaemonSdkContext, DaemonSdkNativeMode, DaemonSdkOperation, JobId, RequestId, Subscription,
+    ClientId, CommandRequest, DaemonCommand, DaemonDevtoolOperation, DaemonQemuRequest,
+    DaemonSdkArtifactIdentity, DaemonSdkContext, DaemonSdkNativeMode, DaemonSdkOperation, JobId,
+    RequestId, Subscription,
 };
 
 use crate::client_transport::{ClientServerEvent, ClientTransportError, DaemonClientTransport};
@@ -174,8 +175,58 @@ fn daemon_command_for_effect(
             context: sdk_context(app, operation)?,
         },
         Effect::CancelSdkSession(id) => DaemonCommand::CancelSdk { session_id: id.0 },
+        Effect::StartQemuSession { id, request } => DaemonCommand::StartQemu {
+            session_id: id.0,
+            request: wire_qemu_request(request),
+            build_directory: build_directory()?,
+            executable: qemu_executable(app, request)?,
+        },
+        Effect::CancelQemuSession(id) => DaemonCommand::CancelQemu { session_id: id.0 },
         _ => return Ok(None),
     }))
+}
+
+fn qemu_executable(
+    app: &App,
+    request: &yoctui_model::QemuLaunchRequest,
+) -> Result<String, ClientRuntimeError> {
+    let yoctui_model::QemuCapability::Available {
+        executable,
+        compatible_images,
+    } = &app.qemu_capability
+    else {
+        return Err(ClientRuntimeError::MissingQemuCapability);
+    };
+    if !compatible_images
+        .iter()
+        .any(|image| image == &request.image)
+    {
+        return Err(ClientRuntimeError::MissingQemuCapability);
+    }
+    Ok(executable.display().to_string())
+}
+
+fn wire_qemu_request(request: &yoctui_model::QemuLaunchRequest) -> DaemonQemuRequest {
+    DaemonQemuRequest {
+        machine: request.machine.clone(),
+        image_machine: request.image.machine.clone(),
+        image: request.image.image.clone(),
+        image_path: request.image.path.display().to_string(),
+        artifact_kind: format!("{:?}", request.artifact_kind),
+        kernel: request
+            .kernel
+            .as_ref()
+            .map(|path| path.display().to_string()),
+        rootfs: request
+            .rootfs
+            .as_ref()
+            .map(|path| path.display().to_string()),
+        networking: format!("{:?}", request.networking),
+        display: format!("{:?}", request.display),
+        serial: format!("{:?}", request.serial),
+        memory_mib: request.memory_mib,
+        extra_arguments: request.extra_arguments.clone(),
+    }
 }
 
 fn wire_sdk_operation(operation: &yoctui_model::SdkOperation) -> DaemonSdkOperation {
@@ -279,6 +330,8 @@ pub enum ClientRuntimeError {
     MissingSdkDeployRoot,
     #[error("authoritative SDK tool root is unavailable")]
     MissingSdkWorkspaceRoot,
+    #[error("runqemu capability is unavailable for the selected image")]
+    MissingQemuCapability,
 }
 
 #[cfg(test)]

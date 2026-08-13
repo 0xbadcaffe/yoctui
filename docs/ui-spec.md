@@ -2874,3 +2874,8 @@ open Images. A resolved build preset opens the existing typed build
 confirmation and does not start a build. A workflow selection remains inert
 and requires explicit review of its typed steps. Unresolved entries cannot be
 activated. No profile shortcut bypasses existing confirmations.
+### QEMU daemon routing
+
+After confirmation, attached clients submit QEMU launch and cancellation
+effects to the daemon. The client renders the resulting job state and remains
+safe to detach while the emulator continues under daemon ownership.

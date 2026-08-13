@@ -313,3 +313,10 @@ backend.
 sessions with Yocto context and utilities.
 sessions with Yocto context and utilities are complete; the active task adds
 embedded shell PTY end-to-end coverage.
+### Daemon-owned QEMU jobs
+
+Confirmed runqemu launches now use a closed typed daemon request. The daemon
+reconstructs and validates the image identity, executable, launch modes,
+memory and bounded arguments before starting the existing process-group-aware
+runner; output, cancellation and terminal state are published independently
+of the attached client.

@@ -1865,3 +1865,10 @@ The repeatable opt-in entry point for this boundary is
 `scripts/verify-live-bitbake.sh`. It validates preconditions before starting
 BitBake and records the tested matrix in `docs/compatibility.md` only after the
 full cycle succeeds.
+### Daemon-owned QEMU jobs
+
+QEMU launch requests use closed typed identities. The client sends the
+validated image, executable, launch modes, bounded arguments and build
+directory; the daemon reconstructs the command through `QemuCommandSpec`, owns
+the process group, and publishes output, cancellation and terminal lifecycle
+events.
