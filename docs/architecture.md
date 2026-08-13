@@ -1872,3 +1872,7 @@ validated image, executable, launch modes, bounded arguments and build
 directory; the daemon reconstructs the command through `QemuCommandSpec`, owns
 the process group, and publishes output, cancellation and terminal lifecycle
 events.
+
+Wic image creation uses the same daemon-owned runner boundary. Device writes
+remain a separate destructive operation so exact discovered device identity
+can be revalidated before execution.

@@ -5,8 +5,8 @@ use yoctui_app::DaemonClientSnapshot;
 use yoctui_model::{App, ClientDaemonLifecycle, Effect};
 use yoctui_protocol::daemon::{
     ClientId, CommandRequest, DaemonCommand, DaemonDevtoolOperation, DaemonQemuRequest,
-    DaemonSdkArtifactIdentity, DaemonSdkContext, DaemonSdkNativeMode, DaemonSdkOperation, JobId,
-    RequestId, Subscription,
+    DaemonSdkArtifactIdentity, DaemonSdkContext, DaemonSdkNativeMode, DaemonSdkOperation,
+    DaemonWicCreateRequest, JobId, RequestId, Subscription,
 };
 
 use crate::client_transport::{ClientServerEvent, ClientTransportError, DaemonClientTransport};
@@ -182,6 +182,16 @@ fn daemon_command_for_effect(
             executable: qemu_executable(app, request)?,
         },
         Effect::CancelQemuSession(id) => DaemonCommand::CancelQemu { session_id: id.0 },
+        Effect::StartWicSession { id, operation } => match operation {
+            yoctui_model::WicOperation::Create(request) => DaemonCommand::StartWicCreate {
+                session_id: id.0,
+                request: wire_wic_create(request),
+                build_directory: build_directory()?,
+                executable: wic_executable(app)?,
+            },
+            yoctui_model::WicOperation::Write(_) => return Ok(None),
+        },
+        Effect::CancelWicSession(id) => DaemonCommand::CancelWic { session_id: id.0 },
         _ => return Ok(None),
     }))
 }
@@ -226,6 +236,29 @@ fn wire_qemu_request(request: &yoctui_model::QemuLaunchRequest) -> DaemonQemuReq
         serial: format!("{:?}", request.serial),
         memory_mib: request.memory_mib,
         extra_arguments: request.extra_arguments.clone(),
+    }
+}
+
+fn wic_executable(app: &App) -> Result<String, ClientRuntimeError> {
+    let yoctui_model::WicCapability::Available { executable, .. } = &app.wic_capability else {
+        return Err(ClientRuntimeError::MissingWicCapability);
+    };
+    Ok(executable.display().to_string())
+}
+
+fn wire_wic_create(request: &yoctui_model::WicCreateRequest) -> DaemonWicCreateRequest {
+    DaemonWicCreateRequest {
+        machine: request.machine.clone(),
+        image: request.image.clone(),
+        kickstart_name: request.kickstart.name.clone(),
+        kickstart_path: request
+            .kickstart
+            .path
+            .as_ref()
+            .map(|path| path.display().to_string()),
+        output_directory: request.output_directory.display().to_string(),
+        generate_bmap: request.generate_bmap,
+        compression: format!("{:?}", request.compression),
     }
 }
 
@@ -332,6 +365,8 @@ pub enum ClientRuntimeError {
     MissingSdkWorkspaceRoot,
     #[error("runqemu capability is unavailable for the selected image")]
     MissingQemuCapability,
+    #[error("Wic capability is unavailable")]
+    MissingWicCapability,
 }
 
 #[cfg(test)]

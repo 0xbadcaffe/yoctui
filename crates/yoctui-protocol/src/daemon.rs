@@ -172,6 +172,15 @@ pub enum DaemonCommand {
     CancelQemu {
         session_id: u64,
     },
+    StartWicCreate {
+        session_id: u64,
+        request: DaemonWicCreateRequest,
+        build_directory: String,
+        executable: String,
+    },
+    CancelWic {
+        session_id: u64,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,
@@ -268,6 +277,17 @@ pub struct DaemonQemuRequest {
     pub serial: String,
     pub memory_mib: u32,
     pub extra_arguments: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonWicCreateRequest {
+    pub machine: String,
+    pub image: String,
+    pub kickstart_name: String,
+    pub kickstart_path: Option<String>,
+    pub output_directory: String,
+    pub generate_bmap: bool,
+    pub compression: String,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

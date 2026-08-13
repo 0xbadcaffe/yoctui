@@ -2879,3 +2879,6 @@ activated. No profile shortcut bypasses existing confirmations.
 After confirmation, attached clients submit QEMU launch and cancellation
 effects to the daemon. The client renders the resulting job state and remains
 safe to detach while the emulator continues under daemon ownership.
+
+Confirmed Wic image creation is submitted to the daemon and remains visible in
+job history after client detach.

@@ -105,6 +105,8 @@ mod daemon_devtool;
 mod daemon_qemu;
 #[cfg(unix)]
 mod daemon_sdk;
+#[cfg(unix)]
+mod daemon_wic;
 mod maintenance_cli;
 #[cfg(unix)]
 #[cfg_attr(not(test), allow(dead_code))]
@@ -1144,6 +1146,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     let mut devtool_supervisor = daemon_devtool::DaemonDevtoolSupervisor::default();
     let mut sdk_supervisor = daemon_sdk::DaemonSdkSupervisor::default();
     let mut qemu_supervisor = daemon_qemu::DaemonQemuSupervisor::default();
+    let mut wic_supervisor = daemon_wic::DaemonWicSupervisor::default();
     write_persisted_state(
         &persist_paths,
         &DaemonPersistedState::capture(
@@ -1169,6 +1172,9 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         }
         while let Some(event) = qemu_supervisor.try_event() {
             publish_daemon_qemu_event(&mut daemon_journal, event)?;
+        }
+        while let Some(event) = wic_supervisor.try_event() {
+            publish_daemon_wic_event(&mut daemon_journal, event)?;
         }
         if termination_requested(termination) {
             break;
@@ -1347,6 +1353,11 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                             Ok(()) => CommandOutcome::Accepted,
                             Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound, message: error, current_generation: daemon_journal.snapshot().generation }
                         },
+                        DaemonCommand::StartWicCreate { session_id, request, build_directory, executable } => match wic_supervisor.start(session_id, request, build_directory, executable) {
+                            Ok(job_id) => { let event = daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary { id: job_id, kind: yoctui_protocol::daemon::JobKind::Wic, label: format!("Wic session {session_id}"), lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting, progress_current: None, progress_total: None, exit_code: None }))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted },
+                            Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage, message: error, current_generation: daemon_journal.snapshot().generation },
+                        },
+                        DaemonCommand::CancelWic { session_id } => match wic_supervisor.cancel(session_id) { Ok(()) => CommandOutcome::Accepted, Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound, message: error, current_generation: daemon_journal.snapshot().generation } },
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
                             message: "daemon command is not implemented by this runtime".into(),
@@ -1663,6 +1674,102 @@ fn publish_daemon_qemu_event(
         DaemonQemuEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
             kind: JobKind::Qemu,
+            label: format!("{label}: {message}"),
+            lifecycle: LifecycleState::Lost,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+    };
+    journal.publish(mapped)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn publish_daemon_wic_event(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    event: daemon_wic::DaemonWicEvent,
+) -> Result<()> {
+    use daemon_wic::DaemonWicEvent;
+    use yoctui_protocol::daemon::{
+        DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
+    };
+    let job_id = match &event {
+        DaemonWicEvent::Started { job_id, .. }
+        | DaemonWicEvent::Output { job_id, .. }
+        | DaemonWicEvent::Completed { job_id, .. }
+        | DaemonWicEvent::Failed { job_id, .. }
+        | DaemonWicEvent::Cancelled { job_id, .. }
+        | DaemonWicEvent::Lost { job_id, .. } => *job_id,
+    };
+    let label = journal
+        .snapshot()
+        .jobs
+        .iter()
+        .find(|job| job.id == job_id)
+        .map(|job| job.label.clone())
+        .unwrap_or_else(|| "Wic".into());
+    let mapped = match event {
+        DaemonWicEvent::Started { .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Wic,
+            label,
+            lifecycle: LifecycleState::Running,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+        DaemonWicEvent::Output {
+            stream,
+            line,
+            truncated,
+            ..
+        } => DaemonEvent::Log(LogRecord {
+            source: format!("wic:{stream:?}"),
+            severity: if matches!(stream, yoctui_bitbake::WicRunnerOutputStream::Stderr) {
+                LogSeverity::Warning
+            } else {
+                LogSeverity::Info
+            },
+            message: if truncated {
+                format!("{line} [truncated]")
+            } else {
+                line
+            },
+            unix_ms: unix_ms(),
+        }),
+        DaemonWicEvent::Completed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Wic,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code: Some(exit_code),
+        }),
+        DaemonWicEvent::Failed {
+            exit_code, message, ..
+        } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Wic,
+            label: format!("{label}: {message}"),
+            lifecycle: LifecycleState::Failed,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonWicEvent::Cancelled { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Wic,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonWicEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Wic,
             label: format!("{label}: {message}"),
             lifecycle: LifecycleState::Lost,
             progress_current: None,
@@ -7787,7 +7894,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 } else if matches!(app.active_dialog(), Some(Dialog::WicCreateConfirmation(_))) {
                     let effect = wic_create_confirmation_action(input)
                         .and_then(|action| update(&mut app, action));
-                    if let Some(Effect::StartWicSession { id, operation }) = effect {
+                    if let Some(effect @ Effect::StartWicSession { .. }) = effect {
+                        if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
+                            continue;
+                        }
+                        let Effect::StartWicSession { id, operation } = effect else {
+                            unreachable!()
+                        };
                         begin_wic_job(
                             &mut app,
                             &mut wic_operation,
@@ -7828,7 +7941,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let effect =
                         wic_cancellation_confirmation_action(id, incomplete_device_warning, input)
                             .and_then(|action| update(&mut app, action));
-                    if let Some(Effect::CancelWicSession(id)) = effect {
+                    if let Some(effect @ Effect::CancelWicSession(_)) = effect {
+                        if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
+                            continue;
+                        }
+                        let Effect::CancelWicSession(id) = effect else {
+                            unreachable!()
+                        };
                         begin_wic_cancellation(&mut app, &mut wic_operation, id);
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::QemuLaunch(_))) {

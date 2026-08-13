@@ -3244,12 +3244,12 @@ notes = "Parent gate split into independent create and device-write daemon owner
 id = "CLIENT-RUNTIME-WIC-CREATE-001"
 milestone = "M11"
 title = "Move Wic image creation into the daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QEMU-001"]
 verify = ["cargo test -p yoctui client_runtime_wic_create"]
-notes = "Route typed Wic create previews through daemon-owned WicJobRunner with bounded output and cancellation."
+notes = "Closed typed Wic create identity is reconstructed and revalidated through WicCreateCommandSpec; daemon owns WicJobRunner output, cancellation and terminal state."
 
 [[task]]
 id = "CLIENT-RUNTIME-WIC-DEVICE-001"

@@ -320,3 +320,8 @@ reconstructs and validates the image identity, executable, launch modes,
 memory and bounded arguments before starting the existing process-group-aware
 runner; output, cancellation and terminal state are published independently
 of the attached client.
+### Daemon-owned Wic creation
+
+Wic image creation now crosses the daemon boundary as a closed typed request;
+the daemon reconstructs the kickstart/output identity and reuses the existing
+validated Wic command and bounded process runner.

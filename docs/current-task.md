@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-WIC-CREATE-001
-**Title:** Move Wic image creation into the daemon
+**ID:** CLIENT-RUNTIME-WIC-DEVICE-001
+**Title:** Move Wic device writes into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Route typed Wic image-creation effects through correlated daemon requests and
-sequenced events, reusing the validated adapter/runner.
+Route confirmed destructive Wic device-write effects through correlated daemon
+requests and sequenced events, retaining exact device identity safeguards.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_wic_create
+cargo test -p yoctui client_runtime_wic_device
 ```
