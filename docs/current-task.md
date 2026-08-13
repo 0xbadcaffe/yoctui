@@ -9,7 +9,8 @@
 ## Objective
 
 Route typed result import and comparison operations through daemon-owned
-bounded workers and correlated lifecycle events.
+bounded workers and correlated lifecycle events. The existing result snapshot
+protocol must be extended before client-local result state can migrate safely.
 
 ## Verification
 
