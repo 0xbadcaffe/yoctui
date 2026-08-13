@@ -216,6 +216,9 @@ pub enum DaemonCommand {
         result_identity: String,
         destination: String,
     },
+    InspectTestResultTool {
+        path_directories: Vec<String>,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,
@@ -361,6 +364,14 @@ pub struct DaemonTestComparisonDiff {
     pub candidate: String,
     pub transitions: Vec<DaemonTestComparisonTransition>,
     pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum DaemonTestResultToolCapability {
+    NotInspected,
+    Missing,
+    Available { executable: String },
+    Failed { message: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -602,6 +613,7 @@ pub enum DaemonEvent {
     Log(LogRecord),
     TestResults(DaemonTestResultSnapshot),
     TestComparison(DaemonTestComparisonDiff),
+    TestResultTool(DaemonTestResultToolCapability),
     #[serde(other)]
     Unknown,
 }
@@ -907,6 +919,7 @@ pub fn apply_sequenced_event(
         | DaemonEvent::PtyScreen(_)
         | DaemonEvent::TestResults(_)
         | DaemonEvent::TestComparison(_)
+        | DaemonEvent::TestResultTool(_)
         | DaemonEvent::Unknown => {}
         DaemonEvent::ClientChanged(client) => {
             replace_by(&mut snapshot.clients, client.clone(), |item| item.id);

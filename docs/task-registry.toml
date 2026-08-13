@@ -3431,12 +3431,12 @@ notes = "Parent gate split into daemon resulttool capability ownership and JUnit
 id = "CLIENT-RUNTIME-TEST-RESULTTOOL-001"
 milestone = "M11"
 title = "Move resulttool capability ownership into the daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-JUNIT-SPEC-001", "CLIENT-RUNTIME-TEST-RESULT-CACHE-001"]
 verify = ["cargo test -p yoctui daemon_test_resulttool"]
-notes = "Daemon owns validated resulttool discovery and exposes typed capability state for JUnit/comparison operations."
+notes = "Daemon owns validated resulttool discovery and publishes typed capability events for JUnit/comparison operations."
 
 [[task]]
 id = "CLIENT-RUNTIME-TEST-JUNIT-RUNNER-001"

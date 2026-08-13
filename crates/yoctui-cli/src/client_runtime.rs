@@ -244,6 +244,14 @@ fn daemon_command_for_effect(
             result_identity: format!("{:?}", request.result),
             destination: request.destination.display().to_string(),
         },
+        Effect::InspectResultToolCapability => DaemonCommand::InspectTestResultTool {
+            path_directories: app
+                .workspace
+                .source_dir
+                .iter()
+                .map(|path| path.display().to_string())
+                .collect(),
+        },
         _ => return Ok(None),
     }))
 }
