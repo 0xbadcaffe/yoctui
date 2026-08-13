@@ -344,6 +344,31 @@ pub struct DaemonTestResultSnapshot {
     pub complete: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonTestComparisonDiff {
+    pub generation: u64,
+    pub baseline: String,
+    pub candidate: String,
+    pub transitions: Vec<DaemonTestComparisonTransition>,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonTestComparisonTransition {
+    pub identity: String,
+    pub baseline: Option<String>,
+    pub candidate: Option<String>,
+    pub category: String,
+}
+
+impl DaemonTestComparisonDiff {
+    pub fn bounded(mut self) -> Self {
+        self.transitions.truncate(MAX_TEST_RESULT_RECORDS);
+        self.limitations.truncate(MAX_TEST_RESULT_LIMITATIONS);
+        self
+    }
+}
+
 #[cfg(test)]
 mod daemon_test_snapshot_tests {
     use super::*;
@@ -370,6 +395,23 @@ mod daemon_test_snapshot_tests {
         let encoded = serde_json::to_vec(&snapshot).unwrap();
         let decoded: DaemonTestResultSnapshot = serde_json::from_slice(&encoded).unwrap();
         assert_eq!(decoded, snapshot);
+    }
+
+    #[test]
+    fn daemon_test_compare_diff_is_bounded_and_round_trips() {
+        let diff = DaemonTestComparisonDiff {
+            generation: 2,
+            baseline: "a".into(),
+            candidate: "b".into(),
+            transitions: Vec::new(),
+            limitations: vec!["limited".into()],
+        }
+        .bounded();
+        let bytes = serde_json::to_vec(&diff).unwrap();
+        assert_eq!(
+            serde_json::from_slice::<DaemonTestComparisonDiff>(&bytes).unwrap(),
+            diff
+        );
     }
 }
 
