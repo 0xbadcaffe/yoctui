@@ -3398,12 +3398,12 @@ notes = "Comparison requests use retained authoritative generations; daemon comp
 id = "CLIENT-RUNTIME-TEST-JUNIT-001"
 milestone = "M11"
 title = "Move JUnit export into the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-IMPORT-001"]
 verify = ["cargo test -p yoctui client_runtime_test_junit"]
-notes = "Parent gate split into typed JUnit request protocol and daemon export worker children."
+notes = "Parent gate complete: typed JUnit request, resulttool capability and daemon runner children are complete."
 
 [[task]]
 id = "CLIENT-RUNTIME-TEST-JUNIT-SPEC-001"
