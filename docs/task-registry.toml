@@ -3315,7 +3315,29 @@ priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-SESSION-001"]
 verify = ["cargo test -p yoctui client_runtime_test_results"]
-notes = "Route typed result import, comparison and JUnit export jobs through daemon ownership."
+notes = "Parent gate split into result import/compare and JUnit export children."
+
+[[task]]
+id = "CLIENT-RUNTIME-TEST-IMPORT-001"
+milestone = "M11"
+title = "Move test-result import and comparison into the daemon"
+status = "IN_PROGRESS"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-TEST-SESSION-001"]
+verify = ["cargo test -p yoctui client_runtime_test_import"]
+notes = "Route typed result import and comparison operations through daemon-owned bounded workers."
+
+[[task]]
+id = "CLIENT-RUNTIME-TEST-JUNIT-001"
+milestone = "M11"
+title = "Move JUnit export into the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-TEST-IMPORT-001"]
+verify = ["cargo test -p yoctui client_runtime_test_junit"]
+notes = "Route typed JUnit destination inspection and export through daemon ownership."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-SECURITY-001"
