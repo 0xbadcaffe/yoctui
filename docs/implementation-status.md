@@ -341,3 +341,5 @@ events independently of the attached client.
 Result imports now execute in the daemon and publish bounded typed snapshots.
 Comparison remains explicitly client-local until its request and diff payload
 are represented in the versioned protocol.
+The daemon test cache now retains both bounded wire snapshots and authoritative
+import records by generation, enabling safe comparison worker reconstruction.

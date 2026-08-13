@@ -3381,7 +3381,7 @@ priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TEST-IMPORT-WORKER-001", "CLIENT-RUNTIME-TEST-COMPARE-SPEC-001"]
 verify = ["cargo test -p yoctui daemon_test_result_cache"]
-notes = "Daemon supervisor now retains bounded imported result snapshots by generation, replacing stale values and evicting older generations beyond the memory bound."
+notes = "Daemon supervisor retains bounded imported snapshots plus authoritative TestResultImportResponse records by generation, replacing stale values and evicting older generations beyond the memory bound."
 
 [[task]]
 id = "CLIENT-RUNTIME-TEST-COMPARE-WORKER-001"
