@@ -2,18 +2,17 @@
 
 ## Task
 
-**ID:** KEYBOARD-PREFIX-RUNTIME-001
-**Title:** Route prefix commands to session and layout actions
+**ID:** LAYOUT-MODEL-001
+**Title:** Add typed client-local pane layout tree
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Execute create/switch/close/split/focus/resize/detach/take-control commands
-through typed client effects and daemon requests; no notification-only
-placeholders.
+Add stable panes and horizontal/vertical splits, minimum dimensions, focus,
+resize, serialization, and safe narrow collapse separately from daemon state.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui --test keyboard_prefix_runtime keyboard_prefix
+cargo test -p yoctui-model pane_layout
 ```

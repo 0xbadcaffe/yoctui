@@ -3857,6 +3857,28 @@ verify = ["cargo test -p yoctui keyboard_prefix_runtime", "cargo clippy -p yoctu
 notes = "Create-session and take-writer-control now route through typed daemon requests and detach releases the client transport. Session switching, close, split, focus, resize, and non-placeholder command effects remain to be wired."
 
 [[task]]
+id = "KEYBOARD-PREFIX-SESSION-001"
+milestone = "M11"
+title = "Route prefix session create, selection, control, and detach"
+status = "DONE"
+priority = 428
+required = true
+depends_on = ["KEYBOARD-PREFIX-MODEL-001", "PTY-MULTI-001"]
+verify = ["cargo test -p yoctui keyboard_prefix_runtime", "cargo clippy -p yoctui --tests --all-features -- -D warnings"]
+notes = "Ctrl+B c creates a typed build-shell request, o requests epoch-guarded writer control, n/p update client-local PTY selection, and d detaches the client without killing daemon sessions."
+
+[[task]]
+id = "KEYBOARD-PREFIX-LAYOUT-001"
+milestone = "M11"
+title = "Route prefix close and split actions through pane layout"
+status = "NOT_STARTED"
+priority = 428
+required = true
+depends_on = ["KEYBOARD-PREFIX-SESSION-001", "LAYOUT-MODEL-001", "PANE-SPLIT-001"]
+verify = ["cargo test -p yoctui --test keyboard_prefix_runtime keyboard_prefix_layout"]
+notes = "Close requires the normal destructive confirmation; % and quote create typed horizontal/vertical splits, while focus and resize remain client-local layout effects."
+
+[[task]]
 id = "LAYOUT-MODEL-001"
 milestone = "M11"
 title = "Add typed client-local pane layout tree"

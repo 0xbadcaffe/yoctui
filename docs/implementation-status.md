@@ -389,7 +389,10 @@ daemon integration covers a shell PTY and epoch-guarded input/resize. The next
 active split routes the tmux-style keyboard prefix commands to real session and
 layout effects. The prefix state machine itself is complete: Ctrl+B timeout,
 double-prefix literal input, typed command mapping, and visible footer/help
-documentation are covered without intercepting dialogs or editors.
+documentation are covered without intercepting dialogs or editors. Session
+create/selection/writer-control/detach routes are complete; the next active
+layout-model gate supplies real split/close/focus targets for the remaining
+prefix commands.
 The interactive runtime attach/poll/detach path is verified for typed daemon
 effects and UI daemon-health rendering; the parent client-architecture gate is
 next.
