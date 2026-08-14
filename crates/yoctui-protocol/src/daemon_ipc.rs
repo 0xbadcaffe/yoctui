@@ -247,6 +247,7 @@ impl DaemonConnection {
 fn is_peer_disconnect(error: &IpcError) -> bool {
     match error {
         IpcError::Disconnected => true,
+        IpcError::Timeout(_) => true,
         IpcError::Io(source) => matches!(
             source.kind(),
             io::ErrorKind::BrokenPipe

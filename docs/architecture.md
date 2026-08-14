@@ -1461,10 +1461,11 @@ replica stale, withholds its resume cursor, and becomes current only after a
 safe full replacement. The foreground runtime uses the same journal for fresh
 attach and resume rather than maintaining separate socket-specific state.
 
-Accepted server-side sockets treat a peer disconnect as client-local failure:
-best-effort responses and event fan-out do not tear down the daemon or its
-workers. The client is removed on the next bounded receive cycle, while a
-fresh client can continue to attach and observe the same global state.
+Accepted server-side sockets treat peer disconnects and bounded write timeouts
+as client-local failure: best-effort responses and event fan-out do not tear
+down the daemon or its workers. The client is removed on the next bounded
+receive cycle, while a fresh client can continue to attach and observe the same
+global state.
 
 Detach closes only the client subscription and releases its ephemeral focus,
 confirmation, and PTY-writer leases. It does not cancel jobs, disconnect

@@ -460,6 +460,6 @@ High-volume BitBake output now exercises byte-aware journal eviction: the
 daemon drops only the oldest bounded log records before rejecting a snapshot,
 preventing a long build from taking down the daemon when its frame limit is
 reached.
-Server-side IPC now also treats BrokenPipe/connection-reset sends as a
-client-local disconnect, preventing a timed-out status client from terminating
-the daemon while its BitBake worker continues.
+Server-side IPC now also treats BrokenPipe, connection-reset, and bounded write
+timeouts as client-local disconnects, preventing a slow status client from
+terminating the daemon while its BitBake worker continues.
