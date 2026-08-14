@@ -424,3 +424,7 @@ pressure, optional resident memory, and recovery phase. Daemon/session status UI
 now renders those health values, instance identity, warnings, and PTY/session
 state in the persistent header with Ratatui TestBackend coverage. Typed daemon
 CLI management is the next active gate.
+Typed daemon CLI management is now available: lifecycle start/status/stop/
+restart, interactive attach, session listing/availability checks, and explicit
+`--force` session termination use versioned IPC commands. Daemon integration
+tests are the next active gate.

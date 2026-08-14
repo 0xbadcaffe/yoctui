@@ -241,9 +241,30 @@ enum Command {
         name: String,
     },
     Doctor,
+    /// Attach the interactive client to the persistent daemon.
+    Attach,
+    /// List daemon-owned terminal sessions.
+    Sessions,
+    /// Manage one daemon-owned terminal session.
+    Session {
+        #[command(subcommand)]
+        command: SessionCliCommand,
+    },
     Daemon {
         #[command(subcommand)]
         command: DaemonCliCommand,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone, PartialEq, Eq)]
+enum SessionCliCommand {
+    Attach {
+        id: u64,
+    },
+    Kill {
+        id: u64,
+        #[arg(long)]
+        force: bool,
     },
 }
 
@@ -656,6 +677,12 @@ async fn main() -> Result<()> {
     if let Some(Command::Daemon { command }) = &cli.command {
         return daemon_cli(command.clone()).await;
     }
+    if matches!(&cli.command, Some(Command::Sessions)) {
+        return daemon_sessions();
+    }
+    if let Some(Command::Session { command }) = &cli.command {
+        return daemon_session_command(command.clone());
+    }
     let session = read_session(session_path(config_path(&cli).as_deref()).as_deref())?;
     let config = resolve_config(&cli, &session)?;
     tracing_subscriber::fmt()
@@ -678,7 +705,8 @@ async fn main() -> Result<()> {
         Some(Command::Config { name }) => {
             return print_variable(config.backend.clone(), build_dir, name).await;
         }
-        Some(Command::Doctor) | Some(Command::Build { .. }) | None => {}
+        Some(Command::Doctor) | Some(Command::Build { .. }) | Some(Command::Attach) | None => {}
+        Some(Command::Sessions | Command::Session { .. }) => unreachable!(),
         Some(Command::Daemon { .. }) => unreachable!("daemon command handled before config"),
     }
     let targets = match &cli.command {
@@ -1016,6 +1044,132 @@ fn daemon_status() -> Result<()> {
             .display()
     );
     Ok(())
+}
+
+#[cfg(unix)]
+fn daemon_connection_with_snapshot() -> Result<(
+    yoctui_protocol::daemon_ipc::DaemonConnection,
+    yoctui_protocol::daemon::DaemonSnapshot,
+)> {
+    use yoctui_protocol::{
+        daemon::{
+            Capability, ClientHello, ClientId, ClientMessage, ProtocolVersion, ServerMessage,
+            Subscription,
+        },
+        daemon_ipc::{DaemonConnection, runtime_paths},
+    };
+    let paths = runtime_paths()?;
+    let mut connection = DaemonConnection::connect(&paths, Duration::from_secs(1))?;
+    connection.set_timeout(Some(Duration::from_secs(2)))?;
+    connection.send(&ClientMessage::Hello(ClientHello {
+        minimum_version: ProtocolVersion::CURRENT,
+        maximum_version: ProtocolVersion::CURRENT,
+        client_id: ClientId([2; 16]),
+        client_name: "yoctui-cli".into(),
+        capabilities: vec![
+            Capability::StateSnapshots,
+            Capability::IncrementalEvents,
+            Capability::PtySessions,
+        ],
+    }))?;
+    let ServerMessage::Hello(_) = connection.receive()? else {
+        anyhow::bail!("daemon returned an unexpected hello response");
+    };
+    connection.send(&ClientMessage::Attach {
+        workspace: None,
+        subscription: Subscription {
+            state: true,
+            jobs: true,
+            logs: true,
+            pty_sessions: Vec::new(),
+        },
+        resume: None,
+    })?;
+    let ServerMessage::Attached { snapshot, .. } = connection.receive()? else {
+        anyhow::bail!("daemon returned an unexpected attach response");
+    };
+    Ok((connection, snapshot))
+}
+
+#[cfg(unix)]
+fn daemon_sessions() -> Result<()> {
+    let (mut connection, snapshot) = daemon_connection_with_snapshot()?;
+    if snapshot.pty_sessions.is_empty() {
+        println!("no daemon terminal sessions");
+    } else {
+        for session in snapshot.pty_sessions {
+            println!(
+                "{}\t{}\t{:?}\t{} viewer(s)",
+                session.id.0, session.name, session.lifecycle, session.viewers
+            );
+        }
+    }
+    connection.send(&yoctui_protocol::daemon::ClientMessage::Detach)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn daemon_session_command(command: SessionCliCommand) -> Result<()> {
+    match command {
+        SessionCliCommand::Attach { id } => {
+            let (mut connection, snapshot) = daemon_connection_with_snapshot()?;
+            anyhow::ensure!(
+                snapshot
+                    .pty_sessions
+                    .iter()
+                    .any(|session| session.id.0 == id),
+                "daemon PTY session {id} was not found"
+            );
+            println!("session {id} is available; start `yoctui attach` for the interactive client");
+            connection.send(&yoctui_protocol::daemon::ClientMessage::Detach)?;
+            Ok(())
+        }
+        SessionCliCommand::Kill { id, force } => {
+            anyhow::ensure!(force, "session kill is destructive; repeat with --force");
+            let (mut connection, snapshot) = daemon_connection_with_snapshot()?;
+            anyhow::ensure!(
+                snapshot
+                    .pty_sessions
+                    .iter()
+                    .any(|session| session.id.0 == id),
+                "daemon PTY session {id} was not found"
+            );
+            use yoctui_protocol::daemon::{
+                ClientMessage, CommandRequest, DaemonCommand, PtySessionId, RequestId,
+                ServerMessage,
+            };
+            connection.send(&ClientMessage::Command(CommandRequest {
+                request_id: RequestId(1),
+                expected_generation: Some(snapshot.generation),
+                command: DaemonCommand::TerminatePty {
+                    session_id: PtySessionId(id),
+                    force: true,
+                    confirmation: None,
+                },
+            }))?;
+            loop {
+                match connection.receive::<ServerMessage>()? {
+                    ServerMessage::CommandResult(result) => {
+                        println!("session {id}: {:?}", result.outcome);
+                        break;
+                    }
+                    ServerMessage::Event(_) => {}
+                    response => anyhow::bail!("unexpected daemon response: {response:?}"),
+                }
+            }
+            Ok(())
+        }
+    }
+}
+
+#[cfg(not(unix))]
+fn daemon_sessions() -> Result<()> {
+    anyhow::bail!("daemon sessions currently require Unix local IPC")
+}
+
+#[cfg(not(unix))]
+fn daemon_session_command(_command: SessionCliCommand) -> Result<()> {
+    anyhow::bail!("daemon sessions currently require Unix local IPC")
 }
 
 #[cfg(unix)]
@@ -10658,6 +10812,24 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn daemon_cli_commands_are_typed_and_destructive_session_kill_is_explicit() {
+        let attach = Cli::try_parse_from(["yoctui", "attach"]).unwrap();
+        assert!(matches!(attach.command, Some(Command::Attach)));
+        let sessions = Cli::try_parse_from(["yoctui", "sessions"]).unwrap();
+        assert!(matches!(sessions.command, Some(Command::Sessions)));
+        let kill = Cli::try_parse_from(["yoctui", "session", "kill", "7"]).unwrap();
+        assert!(matches!(
+            kill.command,
+            Some(Command::Session {
+                command: SessionCliCommand::Kill {
+                    id: 7,
+                    force: false
+                }
+            })
+        ));
+    }
 
     #[test]
     fn pane_split_runtime_updates_client_local_layout_without_daemon_state() {

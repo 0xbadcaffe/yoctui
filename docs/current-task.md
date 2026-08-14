@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** DAEMON-CLI-001
-**Title:** Add typed daemon and session CLI commands
+**ID:** DAEMON-TEST-001
+**Title:** Add daemon protocol and lifecycle integration tests
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add typed daemon and session management commands for start, stop, restart,
-status, attach, sessions, session attach, and session kill.
+Cover handshake, reconnect, stale sockets, multiple/dropped clients, restart,
+BitBake loss, ordering, snapshots, malformed protocol, and limits.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui daemon_cli
+cargo test -p yoctui daemon_integration
 ```

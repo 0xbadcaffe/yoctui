@@ -4036,12 +4036,12 @@ notes = "The persistent header and Ratatui TestBackend coverage render daemon co
 id = "DAEMON-CLI-001"
 milestone = "M11"
 title = "Add typed daemon and session CLI commands"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 439
 required = true
 depends_on = ["DAEMON-LIFECYCLE-001", "PTY-MULTI-001"]
 verify = ["cargo test -p yoctui daemon_cli"]
-notes = "Add daemon start/stop/restart/status, attach, sessions, session attach, and session kill commands with typed documented behavior."
+notes = "Typed CLI routes now provide daemon lifecycle commands plus attach, sessions, session attach validation, and explicit --force session termination; parser, generation, and destructive-command tests are covered."
 
 [[task]]
 id = "DAEMON-TEST-001"

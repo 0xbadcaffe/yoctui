@@ -161,6 +161,10 @@ yoctui daemon start
 yoctui daemon status
 yoctui daemon restart
 yoctui daemon stop
+yoctui attach
+yoctui sessions
+yoctui session attach <id>
+yoctui session kill <id> --force
 ```
 
 On a host with a systemd user manager, install the no-root user unit and enable
@@ -178,6 +182,11 @@ user unit. If `systemctl --user` is unavailable, use the direct-process
 entry point. Daemon persistence does not mean arbitrary processes survive a
 host reboot; recovery states and guarantees are implemented and documented by
 later milestone tasks.
+
+`yoctui attach` opens the interactive client against the local daemon.
+`yoctui sessions` lists daemon-owned PTYs. `yoctui session attach <id>` checks
+that a session is available for the interactive client, while terminating a
+session requires the explicit `--force` flag.
 
 ## Performance evidence
 
