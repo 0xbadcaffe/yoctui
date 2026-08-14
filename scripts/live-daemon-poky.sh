@@ -19,6 +19,7 @@ work_root="$(mktemp -d "$repo_root/.yoctui-live-daemon.XXXXXX")"
 runtime="$work_root/runtime"
 state="$work_root/state"
 build_dir="$work_root/build"
+daemon_log="$work_root/daemon.log"
 mkdir -p "$runtime" "$state"
 chmod 700 "$runtime" "$state"
 trap 'YOCTUI_BUILD_DIR="$build_dir" XDG_RUNTIME_DIR="$runtime" XDG_STATE_HOME="$state" "$repo_root/target/debug/yoctui" daemon stop >/dev/null 2>&1 || true; rm -rf "$work_root"' EXIT
@@ -39,6 +40,7 @@ fi
 export YOCTUI_BUILD_DIR="$build_dir"
 export XDG_RUNTIME_DIR="$runtime"
 export XDG_STATE_HOME="$state"
+export YOCTUI_DAEMON_LOG="$daemon_log"
 
 binary="${YOCTUI_LIVE_BINARY:-$repo_root/target/debug/yoctui}"
 if [[ ! -x "$binary" ]]; then
@@ -53,6 +55,11 @@ seen_running=0
 while (( SECONDS < deadline )); do
   status="$("$binary" daemon status 2>&1 || true)"
   printf '%s\n' "$status"
+  if grep -q 'daemon unavailable\|daemon is not running' <<<"$status"; then
+    printf 'live daemon Poky: daemon disappeared; diagnostic:\n' >&2
+    tail -80 "$daemon_log" >&2 || true
+    exit 1
+  fi
   grep -q 'job .*Running\|lifecycle: Running' <<<"$status" && seen_running=1 || true
   if grep -q 'job .*Exited\|lifecycle: Exited' <<<"$status"; then
     (( seen_running == 1 )) || { printf 'live daemon Poky: build never reported Running\n' >&2; exit 1; }

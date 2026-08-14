@@ -161,6 +161,7 @@ yoctui daemon start
 yoctui daemon status
 yoctui daemon restart
 yoctui daemon stop
+yoctui daemon build core-image-minimal
 yoctui attach
 yoctui sessions
 yoctui session attach <id>
@@ -198,10 +199,16 @@ daemon is exposed by default.
 Daemon sockets and persisted metadata are user-private. Peer UID checks,
 canonical runtime paths, bounded frames/logs/scrollback, typed commands, and
 normal destructive confirmations apply to daemon management and PTY control.
+For a controlled live Poky acceptance run, use
+`YOCTUI_LIVE_POKY_TARGET=core-image-minimal ./scripts/live-daemon-poky.sh`;
+set `YOCTUI_LIVE_CACHE=/path/to/cache` to retain downloads and sstate between
+runs. `YOCTUI_DAEMON_LOG=/path/to/daemon.log` enables daemon diagnostics when
+debugging a foreground service startup. The live harness fails closed when
+Poky's host prerequisites are unavailable.
 After a host reboot, persisted metadata is restored but arbitrary child
 processes and PTYs are reported Lost; only an explicit supported relaunch may
-restart them. The real-Poky daemon acceptance script is not available in this
-checkout, so no live build-survival claim is made yet.
+restart them. The real-Poky daemon acceptance has not yet completed in this
+environment, so no live build-survival claim is made until that run completes.
 
 ## Performance evidence
 

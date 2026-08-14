@@ -1004,12 +1004,20 @@ fn start_daemon() -> Result<()> {
     }
     let executable = env::current_exe().context("could not resolve the Yoctui executable")?;
     let mut command = ProcessCommand::new(executable);
-    command
-        .args(["daemon", "foreground"])
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .process_group(0);
+    command.args(["daemon", "foreground"]).stdin(Stdio::null());
+    if let Some(log_path) = env::var_os("YOCTUI_DAEMON_LOG") {
+        let log = fs::OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(log_path)
+            .context("could not open YOCTUI_DAEMON_LOG")?;
+        command
+            .stdout(Stdio::from(log.try_clone()?))
+            .stderr(Stdio::from(log));
+    } else {
+        command.stdout(Stdio::null()).stderr(Stdio::null());
+    }
+    command.process_group(0);
     let mut child = command
         .spawn()
         .context("could not start the Yoctui daemon")?;
