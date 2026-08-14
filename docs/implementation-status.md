@@ -440,10 +440,14 @@ and the `yoctui daemon build <target>` command; status reconnects show durable
 job lifecycle and exit codes after the initiating client detaches. The real
 Poky acceptance script clones a fresh workspace, initializes a private build
 directory, starts the daemon, submits a build, reconnects for status, and
-cleans up. That acceptance remains externally blocked on this host because
-Poky rejects the host's unprivileged user-namespace policy
-(`kernel.apparmor_restrict_unprivileged_userns=1`); the script fails closed and
-no live compatibility claim is made. The next independent one-Rust product gate is verified: daemon/client remain modes of
+cleans up. After the host namespace restriction was temporarily disabled, the
+harness passed setup, detached submission, and repeated reconnect checks. Its
+real `core-image-minimal` build reached task 2459/4090 before the host fell to
+4 GB free at 100% filesystem use, so the disposable run was stopped rather
+than exhausting the filesystem. The harness now also prefers system host tools
+and clears inherited pyenv internal hook state after that state was shown to
+stall BitBake execution. Live acceptance remains blocked on sufficient build
+space and no compatibility claim is made. The next independent one-Rust product gate is verified: daemon/client remain modes of
 the single Rust package and tests guard against Electron/browser drift. The
 mouse runtime interaction gate is now verified with typed dialog, workspace,
 Navigator, Inspector, and PTY session routing plus integration/TestBackend

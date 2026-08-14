@@ -5,6 +5,14 @@ repo_root="$(git rev-parse --show-toplevel)"
 source_poky="${YOCTUI_POKY_SOURCE:-/home/bspguy-dev/src/poky}"
 target="${YOCTUI_LIVE_POKY_TARGET:-core-image-minimal}"
 timeout_seconds="${YOCTUI_LIVE_BUILD_TIMEOUT:-3600}"
+
+# Keep the live acceptance independent of interactive Python version managers.
+# BitBake snapshots host tools while initializing the build; inheriting pyenv's
+# internal hook state can make that snapshot point at a recursively expanding
+# shim environment instead of the host Python used to launch BitBake.
+unset PYENV_DIR PYENV_HOOK_PATH PYENV_VERSION
+export PATH="/usr/bin:/bin:$PATH"
+
 if [[ ! -x "$source_poky/oe-init-build-env" ]]; then
   printf 'live daemon Poky: source is unavailable: %s\n' "$source_poky" >&2
   exit 2

@@ -20,7 +20,11 @@ state honest reboot semantics, and pass real Poky acceptance.
 ```
 
 The daemon-owned BitBake build path and live validation harness are implemented.
-The remaining gate is blocked by the current host's AppArmor user-namespace
-policy; the harness fails closed rather than claiming unsupported Poky support.
-Resume on a host where a non-root user can create the user namespaces required
-by Poky BitBake, then rerun the live acceptance before changing this status.
+The AppArmor user-namespace restriction was temporarily disabled and the live
+harness passed its namespace preflight, fresh clone, environment initialization,
+daemon start, detached build submission, and repeated reconnect checks. The
+real `core-image-minimal` run reached task 2459 of 4090 before the host fell to
+4 GB free (100% filesystem use), so it was stopped to avoid exhausting the
+filesystem. Free sufficient build space, then rerun the live acceptance before
+changing this status. The harness now also excludes inherited pyenv shim state
+after that state was shown to stall BitBake host-tool execution.
