@@ -188,6 +188,21 @@ later milestone tasks.
 that a session is available for the interactive client, while terminating a
 session requires the explicit `--force` flag.
 
+The interactive client may be detached with the configured prefix command;
+detaching or closing the client does not stop daemon-owned jobs or PTYs. A new
+client on the same build host reconnects through the per-user Unix socket. SSH
+reconnect uses the same workflow: the daemon stays on the build host and the
+next `yoctui attach` restores the current snapshot and session list. No TCP
+daemon is exposed by default.
+
+Daemon sockets and persisted metadata are user-private. Peer UID checks,
+canonical runtime paths, bounded frames/logs/scrollback, typed commands, and
+normal destructive confirmations apply to daemon management and PTY control.
+After a host reboot, persisted metadata is restored but arbitrary child
+processes and PTYs are reported Lost; only an explicit supported relaunch may
+restart them. The real-Poky daemon acceptance script is not available in this
+checkout, so no live build-survival claim is made yet.
+
 ## Performance evidence
 
 The completion gate captured the deterministic release workload with real

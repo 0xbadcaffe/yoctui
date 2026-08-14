@@ -447,3 +447,7 @@ tree with keyboard-equivalent bounds and persistence. Keyboard/mouse parity is
 now has explicit specification and TestBackend coverage; every core route keeps
 a keyboard path and meaningful mouse path. The persistent daemon parent gate is
 the remaining product gate, with real Poky validation still externally blocked.
+Daemon and attach documentation now covers direct/service lifecycle, client
+attach/detach, SSH reconnect, PTY/session management, security/resource limits,
+host reboot guarantees, troubleshooting, and the currently blocked live-Poky
+validation script. The parent daemon gate remains blocked by that live proof.

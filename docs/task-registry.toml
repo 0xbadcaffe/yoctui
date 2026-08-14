@@ -4102,12 +4102,12 @@ notes = "BLOCKED 2026-08-14: required scripts/live-daemon-poky.sh is absent, and
 id = "README-DAEMON-001"
 milestone = "M11"
 title = "Document daemon and attach workflows"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 445
 required = true
-depends_on = ["LIVE-DAEMON-POKY-001"]
+depends_on = ["DAEMON-CLI-001"]
 verify = ["./scripts/check-docs.sh"]
-notes = "Document start/auto-start/attach/detach/SSH/service/session/reboot/troubleshooting/security behavior."
+notes = "README documents lifecycle/auto-start, attach/detach, SSH reconnect, service/session commands, security/resource limits, host-reboot honesty, troubleshooting, and the unavailable live-Poky validation limitation."
 
 [[task]]
 id = "UX-KEYBOARD-MOUSE-001"
