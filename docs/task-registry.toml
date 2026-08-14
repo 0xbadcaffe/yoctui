@@ -3750,12 +3750,34 @@ notes = "Daemon attach is preferred; unavailable attach keeps an explicitly labe
 id = "MULTICLIENT-001"
 milestone = "M11"
 title = "Support multiple daemon clients safely"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 426
 required = true
 depends_on = ["CLIENT-ARCH-001"]
 verify = ["cargo test -p yoctui multiclient"]
-notes = "Two terminals receive global updates while focus/layout stays client-local and conflicting global actions serialize or reject clearly."
+notes = "Split into typed client-state protocol coverage and the remaining concurrent daemon connection runtime work."
+
+[[task]]
+id = "MULTICLIENT-PROTOCOL-001"
+milestone = "M11"
+title = "Define typed multi-client state and identity protocol"
+status = "DONE"
+priority = 426
+required = true
+depends_on = ["CLIENT-ARCH-001"]
+verify = ["cargo test -p yoctui-protocol multi_client"]
+notes = "Client identity, attached-client summaries, global daemon state, and client-local replica boundaries are typed and bounded."
+
+[[task]]
+id = "MULTICLIENT-RUNTIME-001"
+milestone = "M11"
+title = "Support simultaneous daemon client connections"
+status = "NOT_STARTED"
+priority = 426
+required = true
+depends_on = ["MULTICLIENT-PROTOCOL-001"]
+verify = ["cargo test -p yoctui multiclient"]
+notes = "Run concurrent attached clients with global event fan-out and explicit serialization/rejection of conflicting commands."
 
 [[task]]
 id = "MULTICLIENT-PTY-001"

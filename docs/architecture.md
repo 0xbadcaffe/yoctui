@@ -1927,3 +1927,6 @@ Standalone policy: daemon attach is preferred, but a client may remain in
 single-process local mode when the daemon is unavailable. The UI reports that
 degraded mode explicitly; daemon-owned jobs are not claimed to survive through
 that local fallback.
+The wire snapshot carries bounded attached-client identities while focus/layout
+remains client-local; concurrent connection ownership and event fan-out are
+tracked separately as runtime work.

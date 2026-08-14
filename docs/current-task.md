@@ -2,14 +2,14 @@
 
 ## Task
 
-**ID:** MULTICLIENT-001
-**Title:** Support multiple daemon clients safely
+**ID:** MULTICLIENT-RUNTIME-001
+**Title:** Support simultaneous daemon client connections
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Two terminals may attach, both receive global updates, focus/layout remains
-client-local, and conflicting global actions serialize or reject clearly.
+Run concurrent attached clients with global event fan-out and explicit
+serialization/rejection of conflicting commands.
 
 ## Verification
 

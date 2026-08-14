@@ -376,6 +376,8 @@ runtime routing, and UI daemon-health rendering; standalone policy is next.
 Standalone fallback is explicitly local-only: attach failures produce a visible
 diagnostic and preserve the existing single-process UI without implying daemon
 job ownership.
+Multi-client protocol state is typed and bounded, including client identity and
+client-local replica boundaries; concurrent connection fan-out remains active.
 The interactive runtime attach/poll/detach path is verified for typed daemon
 effects and UI daemon-health rendering; the parent client-architecture gate is
 next.
