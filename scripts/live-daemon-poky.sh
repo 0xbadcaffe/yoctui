@@ -34,8 +34,11 @@ export YOCTUI_BUILD_DIR="$build_dir"
 export XDG_RUNTIME_DIR="$runtime"
 export XDG_STATE_HOME="$state"
 
-cargo build -p yoctui >/dev/null
-binary="$repo_root/target/debug/yoctui"
+binary="${YOCTUI_LIVE_BINARY:-$repo_root/target/debug/yoctui}"
+if [[ ! -x "$binary" ]]; then
+  cargo build -p yoctui >/dev/null
+  binary="$repo_root/target/debug/yoctui"
+fi
 "$binary" daemon start
 "$binary" daemon build "$target"
 

@@ -1056,6 +1056,9 @@ fn daemon_status() -> Result<()> {
                 job.id.0, job.lifecycle, job.label, job.exit_code
             );
         }
+        for log in snapshot.recent_logs.iter().rev().take(8).rev() {
+            println!("log {:?} {}: {}", log.severity, log.source, log.message);
+        }
         let _ = connection.send(&yoctui_protocol::daemon::ClientMessage::Detach);
         let _ = connection.receive::<yoctui_protocol::daemon::ServerMessage>();
     }
