@@ -622,7 +622,7 @@ pub fn render(frame: &mut Frame, app: &App) {
         return;
     }
     let chunks = Layout::vertical([
-        Constraint::Length(4),
+        Constraint::Length(5),
         Constraint::Min(1),
         Constraint::Length(1),
     ])
@@ -645,9 +645,23 @@ pub fn render(frame: &mut Frame, app: &App) {
         || "Disk --".into(),
         |bytes| format!("Disk {}", format_bytes(bytes)),
     );
+    let daemon_health = app.daemon.telemetry.as_ref().map_or_else(
+        || "Telemetry --".to_owned(),
+        |telemetry| {
+            format!(
+                "Up {}s | Queue {} | Mem {} | Recovery {:?}",
+                telemetry.uptime_seconds,
+                telemetry.queue_depth,
+                telemetry
+                    .memory_bytes
+                    .map_or_else(|| "--".into(), format_bytes),
+                telemetry.recovery,
+            )
+        },
+    );
     frame.render_widget(
         Paragraph::new(format!(
-            " Yoctui | {:?} | Yocto: {} | Target {} | MACHINE {} | DISTRO {}\n Daemon {:?} | BB {:?} | Jobs {} | PTYs {} | Status {:?} | Tasks {}/{} | Active {} | W {} | E {} | {} | CPU {} | {}",
+            " Yoctui | {:?} | Yocto: {} | Target {} | MACHINE {} | DISTRO {}\n Daemon {:?} | BB {:?} | Jobs {} | PTYs {} | Status {:?} | Tasks {}/{} | Active {} | W {} | E {} | {} | CPU {} | {}\n {}",
             app.backend,
             active_yocto(app),
             app.build.target.as_deref().unwrap_or("not selected"),
@@ -666,6 +680,7 @@ pub fn render(frame: &mut Frame, app: &App) {
             elapsed,
             app.host_telemetry.cpu_utilization_percent.map_or_else(|| "CPU --".into(), |cpu| format!("CPU {cpu}%")),
             disk,
+            daemon_health,
         ))
         .block(
             Block::default()
@@ -9915,6 +9930,24 @@ mod tests {
             assert!(output.contains("Daemon Current"), "{screen:?}: {output}");
             assert!(output.contains("BB Connecting"), "{screen:?}: {output}");
         }
+    }
+
+    #[test]
+    fn daemon_status_renders_telemetry_and_recovery() {
+        let mut app = App::new(32, 8192);
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        app.daemon.telemetry = Some(yoctui_model::ClientDaemonTelemetry {
+            uptime_seconds: 17,
+            active_jobs: 2,
+            pty_sessions: 1,
+            queue_depth: 3,
+            memory_bytes: Some(8 * 1024 * 1024),
+            recovery: yoctui_model::DaemonRecoveryState::Recovered,
+        });
+        let output = rendered_text(&app, 160, 40);
+        assert!(output.contains("Up 17s"), "{output}");
+        assert!(output.contains("Queue 3"), "{output}");
+        assert!(output.contains("Recovery Recovered"), "{output}");
     }
 
     fn security_report_identity(

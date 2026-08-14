@@ -4025,12 +4025,12 @@ notes = "Typed DaemonTelemetry state and wire events report uptime, BitBake life
 id = "DAEMON-UI-001"
 milestone = "M11"
 title = "Add daemon and session status UI"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 438
 required = true
 depends_on = ["DAEMON-TELEMETRY-001", "CLIENT-ARCH-001"]
 verify = ["cargo test -p yoctui-ui daemon_status"]
-notes = "Render connection/instance/BitBake/session/client/recovery state and confirmed restart/stop actions."
+notes = "The persistent header and Ratatui TestBackend coverage render daemon connection/instance state, BitBake lifecycle, job/PTY counts, uptime, queue pressure, memory, recovery phase, and recovery warnings; destructive daemon actions retain confirmation policy."
 
 [[task]]
 id = "DAEMON-CLI-001"

@@ -394,6 +394,16 @@ pub struct ClientDaemonPtySummary {
     pub viewers: u16,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ClientDaemonTelemetry {
+    pub uptime_seconds: u64,
+    pub active_jobs: usize,
+    pub pty_sessions: usize,
+    pub queue_depth: usize,
+    pub memory_bytes: Option<u64>,
+    pub recovery: DaemonRecoveryState,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClientDaemonView {
     pub status: ClientReplicaStatus,
@@ -406,6 +416,7 @@ pub struct ClientDaemonView {
     pub connected_clients: usize,
     pub recent_logs: Vec<String>,
     pub recovery_warnings: Vec<String>,
+    pub telemetry: Option<ClientDaemonTelemetry>,
 }
 
 impl Default for ClientDaemonView {
@@ -421,6 +432,7 @@ impl Default for ClientDaemonView {
             connected_clients: 0,
             recent_logs: Vec::new(),
             recovery_warnings: Vec::new(),
+            telemetry: None,
         }
     }
 }

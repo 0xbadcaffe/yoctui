@@ -421,4 +421,6 @@ for clients, PTY sessions, dimensions, scrollback, and output, with journal
 and terminal-emulator bounds retained. Daemon health telemetry is now a typed,
 periodic protocol event with uptime, BitBake, client/job/PTY counts, queue
 pressure, optional resident memory, and recovery phase. Daemon/session status UI
-is the next active gate.
+now renders those health values, instance identity, warnings, and PTY/session
+state in the persistent header with Ratatui TestBackend coverage. Typed daemon
+CLI management is the next active gate.

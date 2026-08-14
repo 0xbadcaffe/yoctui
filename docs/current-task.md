@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** DAEMON-UI-001
-**Title:** Add daemon and session status UI
+**ID:** DAEMON-CLI-001
+**Title:** Add typed daemon and session CLI commands
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Render connection/instance/BitBake/session/client/recovery state and confirmed
-restart/stop actions.
+Add typed daemon and session management commands for start, stop, restart,
+status, attach, sessions, session attach, and session kill.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui daemon_status
+cargo test -p yoctui daemon_cli
 ```

@@ -2630,13 +2630,16 @@ an installed SDK shell. Neither route reads executable text from the optional
 project profile.
 
 The persistent header shows the client replica connection state, daemon-owned
-BitBake lifecycle, active daemon job count, and daemon PTY count. These values
-come only from the current typed daemon snapshot/event stream. Synchronizing,
-Current, Stale, and Disconnected remain visually distinct text states; a
-disconnect may retain the last values for inspection but must label them
-Disconnected. Installing or replacing daemon state never changes the selected
-screen, focused pane, Navigator row, theme, open dialog/editor, or client-local
-layout.
+BitBake lifecycle, active daemon job count, daemon PTY count, and a health line
+for uptime, queue pressure, resident memory when available, and recovery phase.
+These values come only from the current typed daemon snapshot/event stream.
+Synchronizing, Current, Stale, and Disconnected remain visually distinct text
+states; a disconnect may retain the last values for inspection but must label
+them Disconnected. Installing or replacing daemon state never changes the
+selected screen, focused pane, Navigator row, theme, open dialog/editor, or
+client-local layout. The status UI also exposes the daemon instance identity,
+connected client/session counts, recovery warnings, and confirmation-gated
+restart/stop actions when those commands are available.
 
 SDK publication and native-tool confirmations submit their exact typed
 operation and selected SDK context to the daemon when attached. The client

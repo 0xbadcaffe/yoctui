@@ -372,6 +372,7 @@ fn daemon_job_lifecycle(
 pub struct DaemonClientSnapshot {
     pub status: yoctui_model::ClientReplicaStatus,
     pub snapshot: Option<yoctui_protocol::daemon::DaemonSnapshot>,
+    pub telemetry: Option<yoctui_protocol::daemon::DaemonTelemetry>,
 }
 
 impl Default for DaemonClientSnapshot {
@@ -379,6 +380,7 @@ impl Default for DaemonClientSnapshot {
         Self {
             status: yoctui_model::ClientReplicaStatus::Disconnected,
             snapshot: None,
+            telemetry: None,
         }
     }
 }
@@ -390,6 +392,7 @@ impl DaemonClientSnapshot {
 
     pub fn replace(&mut self, snapshot: yoctui_protocol::daemon::DaemonSnapshot) {
         self.snapshot = Some(snapshot);
+        self.telemetry = None;
         self.status = yoctui_model::ClientReplicaStatus::Current;
     }
 
@@ -406,6 +409,9 @@ impl DaemonClientSnapshot {
         &mut self,
         event: &yoctui_protocol::daemon::SequencedEvent,
     ) -> Result<(), DaemonClientSyncError> {
+        if let yoctui_protocol::daemon::DaemonEvent::Telemetry(telemetry) = &event.event {
+            self.telemetry = Some(*telemetry);
+        }
         let Some(snapshot) = self.snapshot.as_mut() else {
             self.status = yoctui_model::ClientReplicaStatus::Stale;
             return Err(DaemonClientSyncError::MissingSnapshot);
@@ -429,7 +435,7 @@ impl DaemonClientSnapshot {
     }
 
     pub fn install_app(&self, app: &mut yoctui_model::App) {
-        app.daemon = daemon_client_view(self.status, self.snapshot.as_ref());
+        app.daemon = daemon_client_view(self.status, self.snapshot.as_ref(), self.telemetry);
     }
 
     pub fn resume_cursor(&self) -> Option<yoctui_protocol::daemon::ResumeCursor> {
@@ -457,6 +463,7 @@ impl DaemonClientSnapshot {
 fn daemon_client_view(
     status: yoctui_model::ClientReplicaStatus,
     snapshot: Option<&yoctui_protocol::daemon::DaemonSnapshot>,
+    telemetry: Option<yoctui_protocol::daemon::DaemonTelemetry>,
 ) -> yoctui_model::ClientDaemonView {
     use yoctui_model::{ClientDaemonJobSummary, ClientDaemonPtySummary, ClientDaemonView};
     let Some(snapshot) = snapshot else {
@@ -505,6 +512,27 @@ fn daemon_client_view(
             .map(|record| record.message.clone())
             .collect(),
         recovery_warnings: snapshot.recovery_warnings.clone(),
+        telemetry: telemetry.map(|telemetry| yoctui_model::ClientDaemonTelemetry {
+            uptime_seconds: telemetry.uptime_seconds,
+            active_jobs: telemetry.active_jobs as usize,
+            pty_sessions: telemetry.pty_sessions as usize,
+            queue_depth: telemetry.queue_depth as usize,
+            memory_bytes: telemetry.memory_bytes,
+            recovery: match telemetry.recovery {
+                yoctui_protocol::daemon::DaemonRecoveryState::CleanStart => {
+                    yoctui_model::DaemonRecoveryState::CleanStart
+                }
+                yoctui_protocol::daemon::DaemonRecoveryState::Recovering => {
+                    yoctui_model::DaemonRecoveryState::Recovering
+                }
+                yoctui_protocol::daemon::DaemonRecoveryState::Recovered => {
+                    yoctui_model::DaemonRecoveryState::Recovered
+                }
+                yoctui_protocol::daemon::DaemonRecoveryState::Degraded => {
+                    yoctui_model::DaemonRecoveryState::Degraded
+                }
+            },
+        }),
     }
 }
 
@@ -3627,6 +3655,40 @@ mod tests {
             yoctui_model::ClientReplicaStatus::Disconnected
         );
         assert_eq!(client.snapshot.as_ref(), Some(&initial));
+    }
+
+    #[test]
+    fn daemon_status_event_updates_client_telemetry_without_mutating_snapshot_shape() {
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([5; 16]),
+            123,
+            "boot-id".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let initial = daemon_protocol_snapshot(&state);
+        let mut client = DaemonClientSnapshot::default();
+        client.replace(initial);
+        client
+            .apply_event(&yoctui_protocol::daemon::SequencedEvent {
+                sequence: 1,
+                generation: 1,
+                event: yoctui_protocol::daemon::DaemonEvent::Telemetry(
+                    yoctui_protocol::daemon::DaemonTelemetry {
+                        uptime_seconds: 7,
+                        bitbake: yoctui_protocol::daemon::LifecycleState::Running,
+                        connected_clients: 2,
+                        active_jobs: 1,
+                        pty_sessions: 1,
+                        queue_depth: 3,
+                        memory_bytes: Some(4096),
+                        recovery: yoctui_protocol::daemon::DaemonRecoveryState::Recovered,
+                    },
+                ),
+            })
+            .unwrap();
+        assert_eq!(client.telemetry.unwrap().uptime_seconds, 7);
+        assert_eq!(client.snapshot.unwrap().sequence, 1);
     }
 
     #[test]
