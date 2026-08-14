@@ -4124,12 +4124,12 @@ notes = "Every meaningful navigation operation has keyboard access and mouse acc
 id = "BINARY-ONE-RUST-001"
 milestone = "M11"
 title = "Preserve one Rust-native Yoctui product"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 447
 required = true
 depends_on = ["DAEMON-CLI-001"]
 verify = ["cargo test -p yoctui binary_product", "./scripts/check-docs.sh"]
-notes = "Keep daemon/client as one installed Rust Yoctui package or documented same-workspace helpers; no Electron or browser runtime."
+notes = "The daemon and interactive client remain subcommands/modes of the one Rust Yoctui package; manifest and parser tests guard against Electron/browser runtime drift."
 
 [[task]]
 id = "DAEMON-001"

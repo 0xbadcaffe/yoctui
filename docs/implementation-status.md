@@ -438,4 +438,6 @@ marks unrecoverable jobs/PTYs Lost, and exposes explicit host-reboot relaunch
 intent. Real Poky daemon validation is currently blocked because the required
 live script is absent and the daemon BitBake controller/build command surface
 is not yet implemented; no live compatibility claim is made. The next
-independent gate preserves the one-Rust product constraint.
+independent one-Rust product gate is verified: daemon/client remain modes of
+the single Rust package and tests guard against Electron/browser drift. The
+remaining mouse runtime interaction gate is now active.

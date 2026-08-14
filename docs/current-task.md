@@ -2,18 +2,19 @@
 
 ## Task
 
-**ID:** BINARY-ONE-RUST-001
-**Title:** Preserve one Rust-native Yoctui product
+**ID:** MOUSE-RUNTIME-001
+**Title:** Route widget and terminal mouse interactions
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Keep daemon/client as one installed Rust Yoctui package or documented
-same-workspace helpers; no Electron or browser runtime.
+Add row/tree clicks, dialog controls, scrollbar and drag semantics, terminal
+focus/session tabs, and server-relevant PTY mouse reports with explicit writer
+ownership.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui binary_product
-./scripts/check-docs.sh
+cargo test -p yoctui-ui mouse_runtime
+cargo test -p yoctui --test mouse_runtime mouse
 ```
