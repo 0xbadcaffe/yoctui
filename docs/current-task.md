@@ -2,17 +2,18 @@
 
 ## Task
 
-**ID:** PANE-SPLIT-001
-**Title:** Add explicit split-pane terminal sessions
+**ID:** PANE-SPLIT-RUNTIME-001
+**Title:** Wire split-pane actions and session attachment
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Support horizontal/vertical split, close/focus/resize, existing-session
-attachment, and new shell panes while retaining workbench primacy.
+Typed actions must split/close/focus/resize panes, attach existing PTYs, create
+shells, and preserve workbench navigation without notification-only
+placeholders.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui pane_split
+cargo test -p yoctui --test pane_split_runtime pane_split
 ```

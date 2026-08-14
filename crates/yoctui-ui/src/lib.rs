@@ -17,25 +17,26 @@ use yoctui_model::{
     MaintenanceIntegrationDiagnostics, MaintenanceIntegrationsSnapshot, MaintenanceOperation,
     MaintenanceOperationPreview, MaintenanceServiceDiagnostics, MaintenanceSessionStatus,
     MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView,
-    PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PreviewKind,
-    QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus, QaLayerCapability,
-    QaLayerRunCapability, QaOutputStream, QaReportFailureKind, QaReportInventoryState,
-    QaSessionStatus, QaStatusFilter, QaView, QemuCapability, QemuDisplayMode, QemuLaunchDialog,
-    QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe,
-    RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, SdkArtifactInventoryState,
-    SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog, SdkNativeField, SdkNativeMode,
-    SdkNativePreview, SdkOperation, SdkPublishDraft, SdkPublishPreview, SdkSessionId,
-    SdkToolCapability, SecurityCapability, SecurityDialog, SecurityInventoryState,
-    SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope, SecuritySessionStatus,
-    SecurityView, Severity, SignatureComparisonState, SignatureDifferenceCategory,
-    SignatureDumpState, SpdxArtifactKind, TaskFilterField, TaskRow, TaskState,
-    TestComparisonCategory, TestComparisonState, TestExecutableCapability, TestJunitExportState,
-    TestLaunchDialog, TestLaunchField, TestLaunchPreview, TestResultInventoryState,
-    TestWorkspaceView, Theme, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
-    WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog,
-    WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog,
-    WicWritePreview, config_comparison, config_edit_disabled_reason, config_source_disabled_reason,
-    format_duration, selected_config_copy_value,
+    PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PaneNode,
+    PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus,
+    QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
+    QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView, QemuCapability,
+    QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode,
+    QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen,
+    SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog,
+    SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation, SdkPublishDraft,
+    SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
+    SecurityInventoryState, SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope,
+    SecuritySessionStatus, SecurityView, Severity, SignatureComparisonState,
+    SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskFilterField,
+    TaskRow, TaskState, TestComparisonCategory, TestComparisonState, TestExecutableCapability,
+    TestJunitExportState, TestLaunchDialog, TestLaunchField, TestLaunchPreview,
+    TestResultInventoryState, TestWorkspaceView, Theme, VariableIdentity, WicCapability,
+    WicCompression, WicCreateDialog, WicCreateField, WicCreatePreview, WicDevice,
+    WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart, WicOperation,
+    WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
+    config_comparison, config_edit_disabled_reason, config_source_disabled_reason, format_duration,
+    selected_config_copy_value,
 };
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
@@ -1608,6 +1609,10 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn responsive_shell(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {
+    if app.screen == Screen::Dashboard && !app.daemon.pty_sessions.is_empty() {
+        terminal_session_panes(frame, app, area);
+        return;
+    }
     if app.screen == Screen::Signatures {
         signatures_workspace(frame, app, area, terminal_width);
         return;
@@ -1639,6 +1644,81 @@ fn responsive_shell(frame: &mut Frame, app: &App, area: Rect, terminal_width: u1
             FocusTarget::Workspace | FocusTarget::Dialog | FocusTarget::CommandPalette => {
                 workspace(frame, app, rows[1]);
             }
+        }
+    }
+}
+
+fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
+    let layout = &app.pane_layout;
+    let mut panes = Vec::new();
+    collect_terminal_panes(&layout.root, area, &mut panes);
+    for (index, (rect, id)) in panes.into_iter().enumerate() {
+        let session = app.daemon.pty_sessions.get(index);
+        let title = session
+            .map(|session| format!(" {} #{} {:?} ", session.name, id.0, session.lifecycle))
+            .unwrap_or_else(|| format!(" pane #{} ", id.0));
+        frame.render_widget(
+            Paragraph::new(session.map_or("No PTY session".into(), |session| {
+                format!(
+                    "{} viewer(s) | selection {}",
+                    session.viewers,
+                    app.pty_selection + 1
+                )
+            }))
+            .block(pane_block(app, &title, index == app.pty_selection)),
+            rect,
+        );
+    }
+}
+
+fn collect_terminal_panes(
+    node: &PaneNode,
+    area: Rect,
+    output: &mut Vec<(Rect, yoctui_model::PaneId)>,
+) {
+    match node {
+        PaneNode::Leaf { id } => output.push((area, *id)),
+        PaneNode::Split {
+            axis,
+            ratio_per_mille,
+            first,
+            second,
+        } => {
+            let ratio = f32::from(*ratio_per_mille) / 1000.0;
+            let (first_area, second_area) = match axis {
+                SplitAxis::Horizontal => {
+                    let first_width = (f32::from(area.width) * ratio) as u16;
+                    let first_width = first_width.max(1).min(area.width.saturating_sub(1));
+                    (
+                        Rect {
+                            width: first_width,
+                            ..area
+                        },
+                        Rect {
+                            x: area.x + first_width,
+                            width: area.width - first_width,
+                            ..area
+                        },
+                    )
+                }
+                SplitAxis::Vertical => {
+                    let first_height = (f32::from(area.height) * ratio) as u16;
+                    let first_height = first_height.max(1).min(area.height.saturating_sub(1));
+                    (
+                        Rect {
+                            height: first_height,
+                            ..area
+                        },
+                        Rect {
+                            y: area.y + first_height,
+                            height: area.height - first_height,
+                            ..area
+                        },
+                    )
+                }
+            };
+            collect_terminal_panes(first, first_area, output);
+            collect_terminal_panes(second, second_area, output);
         }
     }
 }
@@ -12224,6 +12304,22 @@ mod tests {
         let app = App::new(32, 4096);
         let footer = footer_shortcuts(&app);
         assert!(footer.contains("Ctrl+B prefix"), "{footer}");
+    }
+
+    #[test]
+    fn pane_split_renders_daemon_sessions_with_focus_and_narrow_safety() {
+        let mut app = App::new(32, 4096);
+        app.daemon
+            .pty_sessions
+            .push(yoctui_model::ClientDaemonPtySummary {
+                id: 1,
+                name: "build shell".into(),
+                lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                viewers: 1,
+            });
+        let rendered = rendered_text(&app, 80, 24);
+        assert!(rendered.contains("build shell"), "{rendered}");
+        assert!(rendered.contains("selection 1"), "{rendered}");
     }
 
     #[test]

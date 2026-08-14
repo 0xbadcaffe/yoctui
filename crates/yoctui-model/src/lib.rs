@@ -2525,6 +2525,7 @@ fn diagnostic_for_entry(entry: &LogEntry) -> DiagnosticInfo {
 pub struct App {
     pub daemon: ClientDaemonView,
     pub pty_selection: usize,
+    pub pane_layout: PaneLayout,
     pub screen: Screen,
     pub focus: FocusTarget,
     pub focus_return: Option<FocusTarget>,
@@ -2649,6 +2650,7 @@ impl App {
         Self {
             daemon: ClientDaemonView::default(),
             pty_selection: 0,
+            pane_layout: PaneLayout::new(PaneId(1)).expect("valid root pane"),
             screen: Screen::Dashboard,
             focus: FocusTarget::Workspace,
             focus_return: None,

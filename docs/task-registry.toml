@@ -3893,12 +3893,34 @@ notes = "PaneLayout provides monotonic stable IDs, typed horizontal/vertical spl
 id = "PANE-SPLIT-001"
 milestone = "M11"
 title = "Add explicit split-pane terminal sessions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 430
 required = true
 depends_on = ["LAYOUT-MODEL-001", "PTY-MULTI-001"]
 verify = ["cargo test -p yoctui-ui pane_split"]
-notes = "Support horizontal/vertical split, close/focus/resize, existing-session attachment, and new shell panes while retaining workbench primacy."
+notes = "Split into the verified client-local pane renderer and the remaining typed action/runtime wiring for create/attach/close/focus/resize."
+
+[[task]]
+id = "PANE-SPLIT-UI-001"
+milestone = "M11"
+title = "Render client-local terminal pane tree"
+status = "DONE"
+priority = 430
+required = true
+depends_on = ["LAYOUT-MODEL-001", "PTY-MULTI-001"]
+verify = ["cargo test -p yoctui-ui pane_split", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings"]
+notes = "Dashboard renders daemon PTY sessions into the typed pane tree with focused borders, session/viewer labels, and narrow-terminal-safe collapse."
+
+[[task]]
+id = "PANE-SPLIT-RUNTIME-001"
+milestone = "M11"
+title = "Wire split-pane actions and session attachment"
+status = "NOT_STARTED"
+priority = 430
+required = true
+depends_on = ["PANE-SPLIT-UI-001"]
+verify = ["cargo test -p yoctui --test pane_split_runtime pane_split"]
+notes = "Typed actions must split/close/focus/resize panes, attach existing PTYs, create shells, and preserve workbench navigation without notification-only placeholders."
 
 [[task]]
 id = "MOUSE-001"
