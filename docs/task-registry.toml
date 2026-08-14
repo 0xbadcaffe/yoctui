@@ -3277,12 +3277,12 @@ notes = "Parent gate verified: SDK, QEMU and Wic create/device operations use da
 id = "CLIENT-RUNTIME-QUALITY-001"
 milestone = "M11"
 title = "Move testing QA security and maintenance jobs into the daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-ARTIFACTS-001"]
 verify = ["cargo test -p yoctui client_runtime_quality"]
-notes = "Parent gate split into testing, QA/security and maintenance child migrations."
+notes = "Unified parent gate complete: testing, QA, security, and maintenance families are daemon-owned with typed requests, bounded output, cancellation, and terminal state."
 
 [[task]]
 id = "CLIENT-RUNTIME-TESTING-001"
@@ -3618,12 +3618,12 @@ notes = "Daemon reconstructs validated cve-check-map-pkgs commands, owns process
 id = "CLIENT-RUNTIME-MAINTENANCE-001"
 milestone = "M11"
 title = "Move maintenance jobs into the daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QA-SECURITY-001"]
 verify = ["cargo test -p yoctui client_runtime_maintenance"]
-notes = "Parent gate split into capability inspection and daemon-owned maintenance runner families."
+notes = "Parent gate complete: daemon owns maintenance capability, sstate runners, service diagnostics, and release/utility runner routing."
 
 [[task]]
 id = "CLIENT-RUNTIME-MAINTENANCE-CAPABILITY-001"
@@ -3651,12 +3651,12 @@ notes = "Confirmed oe-check-sstate readiness now reconstructs capability and pre
 id = "CLIENT-RUNTIME-MAINTENANCE-SERVICE-RELEASE-001"
 milestone = "M11"
 title = "Move maintenance service and release jobs into the daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-MAINTENANCE-SSTATE-001"]
 verify = ["cargo test -p yoctui client_runtime_maintenance_service"]
-notes = "Parent gate split into service inspection and release/utility runner children."
+notes = "Parent gate complete: service capability and release/utility runner children are verified."
 
 [[task]]
 id = "CLIENT-RUNTIME-MAINTENANCE-SERVICE-CAPABILITY-001"
@@ -3695,12 +3695,12 @@ notes = "Daemon maintenance capability snapshots include release/build-history/s
 id = "CLIENT-RUNTIME-MAINTENANCE-RELEASE-RUNNER-001"
 milestone = "M11"
 title = "Run release and utility maintenance jobs in the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-MAINTENANCE-RELEASE-CAPABILITY-001"]
 verify = ["cargo test -p yoctui client_runtime_maintenance_release"]
-notes = "Route typed release, signature cache, build-history, and archive runners through daemon ownership."
+notes = "Release/utility operations map to daemon-owned validated external runners with bounded process output, cancellation, and terminal state."
 
 [[task]]
 id = "CLIENT-RUNTIME-JOBS-001"

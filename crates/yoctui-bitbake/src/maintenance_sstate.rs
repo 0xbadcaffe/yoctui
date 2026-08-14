@@ -647,6 +647,48 @@ pub struct MaintenanceSstateCommandSpec {
 }
 
 impl MaintenanceSstateCommandSpec {
+    pub fn external_from_paths(
+        session: MaintenanceSessionId,
+        executable: PathBuf,
+        expected_name: String,
+        arguments: Vec<String>,
+        current_directory: PathBuf,
+    ) -> Result<Self, MaintenanceSstateAdapterError> {
+        if session.0 == 0 || arguments.is_empty() || expected_name.is_empty() {
+            return Err(MaintenanceSstateAdapterError::InvalidInput(
+                "external command identity is invalid".into(),
+            ));
+        }
+        let identity = executable_identity(&executable, &expected_name)?;
+        let request = SstateReadinessRequest::new(
+            vec!["maintenance".into()],
+            SstateReadinessMode::SameTmpdir,
+            None,
+            None,
+            1,
+        )
+        .map_err(|message| MaintenanceSstateAdapterError::InvalidInput(message.into()))?;
+        let preview = MaintenanceOperationPreview::new(
+            session.0,
+            1,
+            MaintenanceOperation::SstateReadiness(request),
+            indexed_arguments(&executable, &arguments),
+            Vec::new(),
+        )
+        .map_err(|message| MaintenanceSstateAdapterError::InvalidInput(message.into()))?;
+        Self::external(MaintenanceExternalCommand {
+            session,
+            kind: MaintenanceSstateCommandKind::GitArchiveLocal,
+            executable_identity: identity,
+            expected_executable_name: expected_name,
+            arguments: arguments.into_iter().map(OsString::from).collect(),
+            current_directory,
+            timeout: SSTATE_OPERATION_TIMEOUT,
+            preview,
+            guards: Vec::new(),
+        })
+    }
+
     pub fn readiness(
         session: MaintenanceSessionId,
         capability_request: u64,

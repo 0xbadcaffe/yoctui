@@ -1918,3 +1918,5 @@ Service inspection similarly keeps process and endpoint diagnostics daemon-owned
 and publishes only bounded typed maintenance snapshots.
 Release/build-history/signature/archive capability discovery is included in the
 same daemon-owned snapshot boundary.
+Release and utility commands reuse the daemon maintenance runner boundary with
+revalidated executable identity and shell-free argv.

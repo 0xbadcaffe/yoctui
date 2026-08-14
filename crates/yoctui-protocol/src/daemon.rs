@@ -285,6 +285,13 @@ pub enum DaemonCommand {
     CancelMaintenance {
         session_id: u64,
     },
+    StartMaintenanceExternal {
+        session_id: u64,
+        executable: String,
+        expected_name: String,
+        arguments: Vec<String>,
+        current_directory: String,
+    },
     InspectMaintenanceServices {
         request: u64,
         build_directory: String,

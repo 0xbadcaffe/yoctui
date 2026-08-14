@@ -116,6 +116,36 @@ impl DaemonMaintenanceSupervisor {
             request,
         )
         .map_err(|error| error.to_string())?;
+        self.start_command(session_id, command)
+    }
+
+    pub fn start_external(
+        &mut self,
+        session_id: u64,
+        executable: String,
+        expected_name: String,
+        arguments: Vec<String>,
+        current_directory: String,
+    ) -> Result<JobId, String> {
+        if session_id == 0 || self.active.contains_key(&session_id) {
+            return Err("maintenance session is already active or invalid".into());
+        }
+        let command = MaintenanceSstateCommandSpec::external_from_paths(
+            MaintenanceSessionId(session_id),
+            executable.into(),
+            expected_name,
+            arguments,
+            current_directory.into(),
+        )
+        .map_err(|error| error.to_string())?;
+        self.start_command(session_id, command)
+    }
+
+    fn start_command(
+        &mut self,
+        session_id: u64,
+        command: MaintenanceSstateCommandSpec,
+    ) -> Result<JobId, String> {
         let job_id = JobId(self.next_job_id);
         self.next_job_id = self.next_job_id.saturating_add(1);
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
@@ -134,16 +164,7 @@ impl DaemonMaintenanceSupervisor {
             loop {
                 tokio::select! {
                     cancel = cancel_rx.recv() => { if cancel.is_some() { let _ = runner.cancel(MaintenanceSessionId(session_id)).await; } }
-                    event = runner.next_event() => { let mapped = match event {
-                        Ok(MaintenanceSstateRunnerEvent::Started { .. }) => DaemonMaintenanceEvent::Started { job_id, session_id },
-                        Ok(MaintenanceSstateRunnerEvent::Output { stream, line, truncated, .. }) => DaemonMaintenanceEvent::Output { job_id, session_id, stream, line, truncated },
-                        Ok(MaintenanceSstateRunnerEvent::Completed { exit_code, .. }) => DaemonMaintenanceEvent::Completed { job_id, session_id, exit_code },
-                        Ok(MaintenanceSstateRunnerEvent::Failed { exit_code, .. }) | Ok(MaintenanceSstateRunnerEvent::TimedOut { exit_code, .. }) => DaemonMaintenanceEvent::Failed { job_id, session_id, exit_code },
-                        Ok(MaintenanceSstateRunnerEvent::Cancelled { exit_code, .. }) => DaemonMaintenanceEvent::Cancelled { job_id, session_id, exit_code },
-                        Ok(MaintenanceSstateRunnerEvent::CancellationRequested { .. }) => continue,
-                        Ok(MaintenanceSstateRunnerEvent::CancellationRejected { message, .. }) | Ok(MaintenanceSstateRunnerEvent::Lost { message, .. }) => DaemonMaintenanceEvent::Lost { job_id, session_id, message },
-                        Err(error) => DaemonMaintenanceEvent::Lost { job_id, session_id, message: error.to_string() },
-                    }; let terminal = matches!(mapped, DaemonMaintenanceEvent::Completed { .. } | DaemonMaintenanceEvent::Failed { .. } | DaemonMaintenanceEvent::Cancelled { .. } | DaemonMaintenanceEvent::Lost { .. }); if tx.send(mapped).is_err() || terminal { break; } }
+                    event = runner.next_event() => { let mapped = match event { Ok(MaintenanceSstateRunnerEvent::Started { .. }) => DaemonMaintenanceEvent::Started { job_id, session_id }, Ok(MaintenanceSstateRunnerEvent::Output { stream, line, truncated, .. }) => DaemonMaintenanceEvent::Output { job_id, session_id, stream, line, truncated }, Ok(MaintenanceSstateRunnerEvent::Completed { exit_code, .. }) => DaemonMaintenanceEvent::Completed { job_id, session_id, exit_code }, Ok(MaintenanceSstateRunnerEvent::Failed { exit_code, .. }) | Ok(MaintenanceSstateRunnerEvent::TimedOut { exit_code, .. }) => DaemonMaintenanceEvent::Failed { job_id, session_id, exit_code }, Ok(MaintenanceSstateRunnerEvent::Cancelled { exit_code, .. }) => DaemonMaintenanceEvent::Cancelled { job_id, session_id, exit_code }, Ok(MaintenanceSstateRunnerEvent::CancellationRequested { .. }) => continue, Ok(MaintenanceSstateRunnerEvent::CancellationRejected { message, .. }) | Ok(MaintenanceSstateRunnerEvent::Lost { message, .. }) => DaemonMaintenanceEvent::Lost { job_id, session_id, message }, Err(error) => DaemonMaintenanceEvent::Lost { job_id, session_id, message: error.to_string() } }; let terminal = matches!(mapped, DaemonMaintenanceEvent::Completed { .. } | DaemonMaintenanceEvent::Failed { .. } | DaemonMaintenanceEvent::Cancelled { .. } | DaemonMaintenanceEvent::Lost { .. }); if tx.send(mapped).is_err() || terminal { break; } }
                 }
             }
         });
@@ -311,5 +332,10 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn client_runtime_maintenance_release_rejects_invalid_session() {
+        assert!(DaemonMaintenanceSupervisor::default().start_external(0, "/missing/tool".into(), "tool".into(), vec!["--help".into()], "/build".into()).is_err());
     }
 }

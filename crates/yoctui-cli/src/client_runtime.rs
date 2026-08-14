@@ -357,39 +357,80 @@ fn daemon_command_for_effect(
             }
         }
         Effect::Maintenance(yoctui_model::MaintenanceEffect::StartOperation { id, preview }) => {
-            let yoctui_model::MaintenanceOperation::SstateReadiness(request) = &preview.operation
-            else {
-                return Ok(None);
-            };
-            DaemonCommand::StartMaintenanceSstateReadiness {
-                session_id: id.0,
-                capability_request: preview.capability_request,
-                operation_id: preview.id,
-                build_directory: build_directory()?,
-                sstate_directory: app.workspace.variables.get("SSTATE_DIR").cloned(),
-                tmp_directory: app.workspace.variables.get("TMPDIR").cloned(),
-                stamps_directories: app
-                    .workspace
-                    .variables
-                    .get("STAMPS_DIR")
-                    .or_else(|| app.workspace.variables.get("STAMP"))
-                    .into_iter()
-                    .cloned()
-                    .collect(),
-                executable_search_path: app
-                    .workspace
-                    .source_dir
-                    .iter()
-                    .map(|path| path.display().to_string())
-                    .collect(),
-                targets: request.targets.clone(),
-                mode: format!("{:?}", request.mode).to_lowercase(),
-                output: request
-                    .output
-                    .as_ref()
-                    .map(|path| path.display().to_string()),
-                log: request.log.as_ref().map(|path| path.display().to_string()),
-                timeout_seconds: request.timeout_seconds,
+            if let yoctui_model::MaintenanceOperation::SstateReadiness(request) = &preview.operation
+            {
+                DaemonCommand::StartMaintenanceSstateReadiness {
+                    session_id: id.0,
+                    capability_request: preview.capability_request,
+                    operation_id: preview.id,
+                    build_directory: build_directory()?,
+                    sstate_directory: app.workspace.variables.get("SSTATE_DIR").cloned(),
+                    tmp_directory: app.workspace.variables.get("TMPDIR").cloned(),
+                    stamps_directories: app
+                        .workspace
+                        .variables
+                        .get("STAMPS_DIR")
+                        .or_else(|| app.workspace.variables.get("STAMP"))
+                        .into_iter()
+                        .cloned()
+                        .collect(),
+                    executable_search_path: app
+                        .workspace
+                        .source_dir
+                        .iter()
+                        .map(|path| path.display().to_string())
+                        .collect(),
+                    targets: request.targets.clone(),
+                    mode: format!("{:?}", request.mode).to_lowercase(),
+                    output: request
+                        .output
+                        .as_ref()
+                        .map(|path| path.display().to_string()),
+                    log: request.log.as_ref().map(|path| path.display().to_string()),
+                    timeout_seconds: request.timeout_seconds,
+                }
+            } else {
+                let tool = match &preview.operation {
+                    yoctui_model::MaintenanceOperation::LockedSignatureCache(_) => {
+                        yoctui_model::MaintenanceTool::LockedSignatureCache
+                    }
+                    yoctui_model::MaintenanceOperation::BuildHistoryComparison(_) => {
+                        yoctui_model::MaintenanceTool::BuildHistoryDiff
+                    }
+                    yoctui_model::MaintenanceOperation::BuildCompare(_) => {
+                        yoctui_model::MaintenanceTool::BuildCompare
+                    }
+                    yoctui_model::MaintenanceOperation::GitArchive(_) => {
+                        yoctui_model::MaintenanceTool::GitArchive
+                    }
+                    _ => return Ok(None),
+                };
+                let executable = app
+                    .maintenance
+                    .capability
+                    .snapshot()
+                    .and_then(|snapshot| {
+                        snapshot.tools.iter().find_map(|entry| match entry {
+                            yoctui_model::MaintenanceToolCapability::Available {
+                                tool: candidate,
+                                executable,
+                                ..
+                            } if *candidate == tool => Some(executable.path.clone()),
+                            _ => None,
+                        })
+                    })
+                    .ok_or(ClientRuntimeError::MissingMaintenanceTool)?;
+                DaemonCommand::StartMaintenanceExternal {
+                    session_id: id.0,
+                    executable: executable.display().to_string(),
+                    expected_name: executable
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .unwrap_or_default()
+                        .into(),
+                    arguments: preview.arguments.clone(),
+                    current_directory: build_directory()?,
+                }
             }
         }
         Effect::Maintenance(yoctui_model::MaintenanceEffect::CancelOperation(id)) => {
@@ -682,6 +723,8 @@ pub enum ClientRuntimeError {
     MissingQaLayerSession,
     #[error("security session is unavailable")]
     MissingSecuritySession,
+    #[error("maintenance tool is unavailable")]
+    MissingMaintenanceTool,
 }
 
 #[cfg(test)]
