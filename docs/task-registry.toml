@@ -3882,12 +3882,12 @@ notes = "Close requires the normal destructive confirmation; % and quote create 
 id = "LAYOUT-MODEL-001"
 milestone = "M11"
 title = "Add typed client-local pane layout tree"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 429
 required = true
 depends_on = ["CLIENT-ARCH-001"]
 verify = ["cargo test -p yoctui-model pane_layout"]
-notes = "Model stable panes and horizontal/vertical splits, minima, focus, resize, serialization, and safe narrow collapse separately from daemon state."
+notes = "PaneLayout provides monotonic stable IDs, typed horizontal/vertical split nodes, focus, ratio-bounded resize, close/collapse, derived minimum-size narrow fallback, validation, and serde-ready client-local state."
 
 [[task]]
 id = "PANE-SPLIT-001"

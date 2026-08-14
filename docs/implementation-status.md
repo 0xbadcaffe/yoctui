@@ -393,6 +393,10 @@ documentation are covered without intercepting dialogs or editors. Session
 create/selection/writer-control/detach routes are complete; the next active
 layout-model gate supplies real split/close/focus targets for the remaining
 prefix commands.
+The client-local pane layout model is now typed and independent of daemon
+state, with stable IDs, split axes, bounded ratios, focus/close operations, and
+narrow-terminal collapse behavior covered by model tests. Split-pane widget
+attachment remains the active UI gate.
 The interactive runtime attach/poll/detach path is verified for typed daemon
 effects and UI daemon-health rendering; the parent client-architecture gate is
 next.

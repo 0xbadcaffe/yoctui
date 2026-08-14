@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** LAYOUT-MODEL-001
-**Title:** Add typed client-local pane layout tree
+**ID:** PANE-SPLIT-001
+**Title:** Add explicit split-pane terminal sessions
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add stable panes and horizontal/vertical splits, minimum dimensions, focus,
-resize, serialization, and safe narrow collapse separately from daemon state.
+Support horizontal/vertical split, close/focus/resize, existing-session
+attachment, and new shell panes while retaining workbench primacy.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model pane_layout
+cargo test -p yoctui-ui pane_split
 ```
