@@ -1160,6 +1160,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     let mut qa_report_supervisor = daemon_qa::DaemonQaReportSupervisor::default();
     let mut security_supervisor = daemon_security::DaemonSecuritySupervisor::default();
     let mut security_mapper_supervisor = daemon_security::DaemonSecurityMapperSupervisor::default();
+    let mut maintenance_supervisor = daemon_maintenance::DaemonMaintenanceSupervisor::default();
     write_persisted_state(
         &persist_paths,
         &DaemonPersistedState::capture(
@@ -1203,6 +1204,9 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         }
         while let Some(event) = security_mapper_supervisor.try_event() {
             publish_daemon_security_mapper_event(&mut daemon_journal, event)?;
+        }
+        while let Some(event) = maintenance_supervisor.try_event() {
+            publish_daemon_maintenance_event(&mut daemon_journal, event)?;
         }
         if termination_requested(termination) {
             break;
@@ -1435,6 +1439,14 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                         DaemonCommand::InspectMaintenanceCapability { request, build_directory, sstate_directory, tmp_directory, stamps_directories, executable_search_path } => match daemon_maintenance::inspect(request, build_directory, sstate_directory, tmp_directory, stamps_directories, executable_search_path) {
                             Ok(snapshot) => { let event = daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::MaintenanceSnapshot(snapshot))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted },
                             Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage, message: error, current_generation: daemon_journal.snapshot().generation },
+                        },
+                        DaemonCommand::StartMaintenanceSstateReadiness { session_id, capability_request, operation_id, build_directory, sstate_directory, tmp_directory, stamps_directories, executable_search_path, targets, mode, output, log, timeout_seconds } => match maintenance_supervisor.start_readiness(session_id, capability_request, operation_id, build_directory, sstate_directory, tmp_directory, stamps_directories, executable_search_path, targets, mode, output, log, timeout_seconds) {
+                            Ok(job_id) => { let event = daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary { id: job_id, kind: yoctui_protocol::daemon::JobKind::Maintenance, label: format!("Maintenance session {session_id}"), lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting, progress_current: None, progress_total: None, exit_code: None }))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted },
+                            Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage, message: error, current_generation: daemon_journal.snapshot().generation },
+                        },
+                        DaemonCommand::CancelMaintenance { session_id } => match maintenance_supervisor.cancel(session_id) {
+                            Ok(()) => CommandOutcome::Accepted,
+                            Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound, message: error, current_generation: daemon_journal.snapshot().generation },
                         },
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
@@ -2337,6 +2349,104 @@ fn publish_daemon_security_mapper_event(
         DaemonSecurityMapperEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
             kind: JobKind::Security,
+            label: format!("{label}: {message}"),
+            lifecycle: LifecycleState::Lost,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+    };
+    journal.publish(mapped)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn publish_daemon_maintenance_event(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    event: daemon_maintenance::DaemonMaintenanceEvent,
+) -> Result<()> {
+    use daemon_maintenance::DaemonMaintenanceEvent;
+    use yoctui_protocol::daemon::{
+        DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
+    };
+    let job_id = match &event {
+        DaemonMaintenanceEvent::Started { job_id, .. }
+        | DaemonMaintenanceEvent::Output { job_id, .. }
+        | DaemonMaintenanceEvent::Completed { job_id, .. }
+        | DaemonMaintenanceEvent::Failed { job_id, .. }
+        | DaemonMaintenanceEvent::Cancelled { job_id, .. }
+        | DaemonMaintenanceEvent::Lost { job_id, .. } => *job_id,
+    };
+    let label = journal
+        .snapshot()
+        .jobs
+        .iter()
+        .find(|job| job.id == job_id)
+        .map(|job| job.label.clone())
+        .unwrap_or_else(|| "Maintenance".into());
+    let mapped = match event {
+        DaemonMaintenanceEvent::Started { .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Maintenance,
+            label,
+            lifecycle: LifecycleState::Running,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+        DaemonMaintenanceEvent::Output {
+            stream,
+            line,
+            truncated,
+            ..
+        } => DaemonEvent::Log(LogRecord {
+            source: format!("maintenance:{stream:?}"),
+            severity: if matches!(stream, yoctui_model::MaintenanceOutputStream::Stderr) {
+                LogSeverity::Warning
+            } else {
+                LogSeverity::Info
+            },
+            message: if truncated {
+                format!("{line} [truncated]")
+            } else {
+                line
+            },
+            unix_ms: unix_ms(),
+        }),
+        DaemonMaintenanceEvent::Completed { exit_code, .. } => {
+            DaemonEvent::JobChanged(JobSummary {
+                id: job_id,
+                kind: JobKind::Maintenance,
+                label,
+                lifecycle: LifecycleState::Exited,
+                progress_current: None,
+                progress_total: None,
+                exit_code,
+            })
+        }
+        DaemonMaintenanceEvent::Failed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Maintenance,
+            label,
+            lifecycle: LifecycleState::Failed,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonMaintenanceEvent::Cancelled { exit_code, .. } => {
+            DaemonEvent::JobChanged(JobSummary {
+                id: job_id,
+                kind: JobKind::Maintenance,
+                label,
+                lifecycle: LifecycleState::Exited,
+                progress_current: None,
+                progress_total: None,
+                exit_code,
+            })
+        }
+        DaemonMaintenanceEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Maintenance,
             label: format!("{label}: {message}"),
             lifecycle: LifecycleState::Lost,
             progress_current: None,

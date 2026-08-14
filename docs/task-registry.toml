@@ -3640,12 +3640,23 @@ notes = "Sstate capability inspection uses typed build metadata and publishes a 
 id = "CLIENT-RUNTIME-MAINTENANCE-SSTATE-001"
 milestone = "M11"
 title = "Run sstate maintenance jobs in the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-MAINTENANCE-CAPABILITY-001"]
 verify = ["cargo test -p yoctui client_runtime_maintenance_sstate"]
-notes = "Route confirmed oe-check-sstate and sstate cleanup operations through daemon-owned runners."
+notes = "Confirmed oe-check-sstate readiness now reconstructs capability and preview on the daemon, then owns bounded runner output/cancellation and terminal state."
+
+[[task]]
+id = "CLIENT-RUNTIME-MAINTENANCE-SERVICE-RELEASE-001"
+milestone = "M11"
+title = "Move maintenance service and release jobs into the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-MAINTENANCE-SSTATE-001"]
+verify = ["cargo test -p yoctui client_runtime_maintenance_service"]
+notes = "Route typed PR service, signature, build-history, archive, and release operations through daemon-owned runners."
 
 [[task]]
 id = "CLIENT-RUNTIME-JOBS-001"

@@ -335,6 +335,45 @@ fn daemon_command_for_effect(
                     .collect(),
             }
         }
+        Effect::Maintenance(yoctui_model::MaintenanceEffect::StartOperation { id, preview }) => {
+            let yoctui_model::MaintenanceOperation::SstateReadiness(request) = &preview.operation
+            else {
+                return Ok(None);
+            };
+            DaemonCommand::StartMaintenanceSstateReadiness {
+                session_id: id.0,
+                capability_request: preview.capability_request,
+                operation_id: preview.id,
+                build_directory: build_directory()?,
+                sstate_directory: app.workspace.variables.get("SSTATE_DIR").cloned(),
+                tmp_directory: app.workspace.variables.get("TMPDIR").cloned(),
+                stamps_directories: app
+                    .workspace
+                    .variables
+                    .get("STAMPS_DIR")
+                    .or_else(|| app.workspace.variables.get("STAMP"))
+                    .into_iter()
+                    .cloned()
+                    .collect(),
+                executable_search_path: app
+                    .workspace
+                    .source_dir
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect(),
+                targets: request.targets.clone(),
+                mode: format!("{:?}", request.mode).to_lowercase(),
+                output: request
+                    .output
+                    .as_ref()
+                    .map(|path| path.display().to_string()),
+                log: request.log.as_ref().map(|path| path.display().to_string()),
+                timeout_seconds: request.timeout_seconds,
+            }
+        }
+        Effect::Maintenance(yoctui_model::MaintenanceEffect::CancelOperation(id)) => {
+            DaemonCommand::CancelMaintenance { session_id: id.0 }
+        }
         Effect::Qa(yoctui_model::QaEffect::StartLayerCheck {
             session,
             layer,

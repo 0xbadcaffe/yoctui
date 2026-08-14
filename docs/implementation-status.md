@@ -362,3 +362,6 @@ cancellation, and terminal/lost security job state.
 Maintenance capability inspection now crosses the daemon boundary with typed
 build/sstate metadata and bounded tool/limitation snapshots; sstate execution
 is the next maintenance split gate.
+Confirmed sstate readiness now reconstructs the validated capability/preview on
+the daemon and owns runner output, cancellation, and terminal state; service
+and release operations remain the next split gate.

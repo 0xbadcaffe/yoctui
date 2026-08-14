@@ -1912,3 +1912,5 @@ and explicit cancellation/lost states.
 Maintenance capability requests now carry bounded build/sstate metadata to the
 daemon, which invokes the existing typed capability inspector and publishes a
 bounded tool/limitation snapshot without making the client the owner.
+Sstate readiness requests then reconstruct the existing validated command spec
+inside the daemon and publish bounded process output and lifecycle events.

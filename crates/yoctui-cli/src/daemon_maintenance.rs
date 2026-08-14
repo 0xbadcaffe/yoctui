@@ -1,5 +1,180 @@
-use yoctui_bitbake::{MaintenanceSstateCapabilityInput, MaintenanceSstateCapabilityInspector};
-use yoctui_protocol::daemon::DaemonMaintenanceSnapshot;
+use std::collections::HashMap;
+use tokio::sync::mpsc;
+use yoctui_bitbake::{
+    MaintenanceSstateCapabilityInput, MaintenanceSstateCapabilityInspector,
+    MaintenanceSstateCommandSpec, MaintenanceSstateJobRunner, MaintenanceSstateRunnerEvent,
+};
+use yoctui_model::{
+    MaintenanceOutputStream, MaintenanceSessionId, SstateReadinessMode, SstateReadinessRequest,
+};
+use yoctui_protocol::daemon::{DaemonMaintenanceSnapshot, JobId};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DaemonMaintenanceEvent {
+    Started {
+        job_id: JobId,
+        session_id: u64,
+    },
+    Output {
+        job_id: JobId,
+        session_id: u64,
+        stream: MaintenanceOutputStream,
+        line: String,
+        truncated: bool,
+    },
+    Completed {
+        job_id: JobId,
+        session_id: u64,
+        exit_code: Option<i32>,
+    },
+    Failed {
+        job_id: JobId,
+        session_id: u64,
+        exit_code: Option<i32>,
+    },
+    Cancelled {
+        job_id: JobId,
+        session_id: u64,
+        exit_code: Option<i32>,
+    },
+    Lost {
+        job_id: JobId,
+        session_id: u64,
+        message: String,
+    },
+}
+
+pub struct DaemonMaintenanceSupervisor {
+    next_job_id: u64,
+    active: HashMap<u64, mpsc::UnboundedSender<()>>,
+    tx: mpsc::UnboundedSender<DaemonMaintenanceEvent>,
+    rx: mpsc::UnboundedReceiver<DaemonMaintenanceEvent>,
+}
+
+impl Default for DaemonMaintenanceSupervisor {
+    fn default() -> Self {
+        let (tx, rx) = mpsc::unbounded_channel();
+        Self {
+            next_job_id: 1,
+            active: HashMap::new(),
+            tx,
+            rx,
+        }
+    }
+}
+
+impl DaemonMaintenanceSupervisor {
+    #[allow(clippy::too_many_arguments)]
+    pub fn start_readiness(
+        &mut self,
+        session_id: u64,
+        capability_request: u64,
+        operation_id: u64,
+        build_directory: String,
+        sstate_directory: Option<String>,
+        tmp_directory: Option<String>,
+        stamps_directories: Vec<String>,
+        executable_search_path: Vec<String>,
+        targets: Vec<String>,
+        mode: String,
+        output: Option<String>,
+        log: Option<String>,
+        timeout_seconds: u64,
+    ) -> Result<JobId, String> {
+        if session_id == 0 || self.active.contains_key(&session_id) {
+            return Err("maintenance session is already active or invalid".into());
+        }
+        let input = MaintenanceSstateCapabilityInput {
+            build_dir: build_directory.clone().into(),
+            sstate_dir: sstate_directory.map(Into::into),
+            tmp_dir: tmp_directory.map(Into::into),
+            stamps_dirs: stamps_directories.into_iter().map(Into::into).collect(),
+            executable_search_path: executable_search_path.into_iter().map(Into::into).collect(),
+        };
+        let snapshot = MaintenanceSstateCapabilityInspector::inspect(input)
+            .map_err(|error| error.to_string())?;
+        let mode = match mode.as_str() {
+            "isolated_tmpdir" => SstateReadinessMode::IsolatedTmpdir,
+            "same_tmpdir" => SstateReadinessMode::SameTmpdir,
+            _ => return Err("invalid sstate readiness mode".into()),
+        };
+        let request = SstateReadinessRequest::new(
+            targets,
+            mode,
+            output.map(Into::into),
+            log.map(Into::into),
+            timeout_seconds,
+        )
+        .map_err(str::to_owned)?;
+        let (_, command) = MaintenanceSstateCommandSpec::readiness(
+            MaintenanceSessionId(session_id),
+            capability_request,
+            &snapshot,
+            operation_id,
+            request,
+        )
+        .map_err(|error| error.to_string())?;
+        let job_id = JobId(self.next_job_id);
+        self.next_job_id = self.next_job_id.saturating_add(1);
+        let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
+        self.active.insert(session_id, cancel_tx);
+        let tx = self.tx.clone();
+        tokio::spawn(async move {
+            let mut runner = MaintenanceSstateJobRunner::new();
+            if let Err(error) = runner.start(command).await {
+                let _ = tx.send(DaemonMaintenanceEvent::Lost {
+                    job_id,
+                    session_id,
+                    message: error.to_string(),
+                });
+                return;
+            }
+            loop {
+                tokio::select! {
+                    cancel = cancel_rx.recv() => { if cancel.is_some() { let _ = runner.cancel(MaintenanceSessionId(session_id)).await; } }
+                    event = runner.next_event() => { let mapped = match event {
+                        Ok(MaintenanceSstateRunnerEvent::Started { .. }) => DaemonMaintenanceEvent::Started { job_id, session_id },
+                        Ok(MaintenanceSstateRunnerEvent::Output { stream, line, truncated, .. }) => DaemonMaintenanceEvent::Output { job_id, session_id, stream, line, truncated },
+                        Ok(MaintenanceSstateRunnerEvent::Completed { exit_code, .. }) => DaemonMaintenanceEvent::Completed { job_id, session_id, exit_code },
+                        Ok(MaintenanceSstateRunnerEvent::Failed { exit_code, .. }) | Ok(MaintenanceSstateRunnerEvent::TimedOut { exit_code, .. }) => DaemonMaintenanceEvent::Failed { job_id, session_id, exit_code },
+                        Ok(MaintenanceSstateRunnerEvent::Cancelled { exit_code, .. }) => DaemonMaintenanceEvent::Cancelled { job_id, session_id, exit_code },
+                        Ok(MaintenanceSstateRunnerEvent::CancellationRequested { .. }) => continue,
+                        Ok(MaintenanceSstateRunnerEvent::CancellationRejected { message, .. }) | Ok(MaintenanceSstateRunnerEvent::Lost { message, .. }) => DaemonMaintenanceEvent::Lost { job_id, session_id, message },
+                        Err(error) => DaemonMaintenanceEvent::Lost { job_id, session_id, message: error.to_string() },
+                    }; let terminal = matches!(mapped, DaemonMaintenanceEvent::Completed { .. } | DaemonMaintenanceEvent::Failed { .. } | DaemonMaintenanceEvent::Cancelled { .. } | DaemonMaintenanceEvent::Lost { .. }); if tx.send(mapped).is_err() || terminal { break; } }
+                }
+            }
+        });
+        Ok(job_id)
+    }
+    pub fn cancel(&mut self, session_id: u64) -> Result<(), String> {
+        self.active
+            .get(&session_id)
+            .ok_or_else(|| format!("unknown maintenance session {session_id}"))?
+            .send(())
+            .map_err(|_| "maintenance session is no longer active".into())
+    }
+    pub fn try_event(&mut self) -> Option<DaemonMaintenanceEvent> {
+        let event = self.rx.try_recv().ok()?;
+        if matches!(
+            event,
+            DaemonMaintenanceEvent::Completed { .. }
+                | DaemonMaintenanceEvent::Failed { .. }
+                | DaemonMaintenanceEvent::Cancelled { .. }
+                | DaemonMaintenanceEvent::Lost { .. }
+        ) {
+            let id = match &event {
+                DaemonMaintenanceEvent::Completed { session_id, .. }
+                | DaemonMaintenanceEvent::Failed { session_id, .. }
+                | DaemonMaintenanceEvent::Cancelled { session_id, .. }
+                | DaemonMaintenanceEvent::Lost { session_id, .. } => *session_id,
+                _ => 0,
+            };
+            self.active.remove(&id);
+        }
+        Some(event)
+    }
+}
 
 pub fn inspect(
     request: u64,
@@ -39,5 +214,26 @@ mod tests {
     #[test]
     fn client_runtime_maintenance_rejects_invalid_request() {
         assert!(inspect(0, "/build".into(), None, None, Vec::new(), Vec::new()).is_err());
+    }
+
+    #[test]
+    fn client_runtime_maintenance_sstate_rejects_invalid_session() {
+        assert!(DaemonMaintenanceSupervisor::default()
+            .start_readiness(
+                0,
+                1,
+                1,
+                "/build".into(),
+                None,
+                None,
+                Vec::new(),
+                Vec::new(),
+                vec!["core-image-minimal".into()],
+                "isolated_tmpdir".into(),
+                None,
+                None,
+                1,
+            )
+            .is_err());
     }
 }
