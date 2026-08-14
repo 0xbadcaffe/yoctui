@@ -1491,7 +1491,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         }
         match listener.accept(Duration::from_millis(1)) {
             Ok(connection) if clients.len() < MAX_DAEMON_CLIENTS => {
-                connection.set_timeout(Some(Duration::from_millis(5)))?;
+                connection.set_timeout(Some(Duration::from_millis(250)))?;
                 clients.push((
                     connection,
                     false,
