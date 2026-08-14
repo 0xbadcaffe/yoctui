@@ -285,6 +285,16 @@ pub enum DaemonCommand {
     CancelMaintenance {
         session_id: u64,
     },
+    InspectMaintenanceServices {
+        request: u64,
+        build_directory: String,
+        prserv_host: Option<String>,
+        hashserve: Option<String>,
+        hashserve_upstream: Option<String>,
+        signature_handler: Option<String>,
+        executable_search_path: Vec<String>,
+        process_root: String,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,

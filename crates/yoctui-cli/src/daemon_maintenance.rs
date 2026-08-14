@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use tokio::sync::mpsc;
 use yoctui_bitbake::{
+    MaintenanceServiceCapabilityInput, MaintenanceServiceCapabilityInspector,
     MaintenanceSstateCapabilityInput, MaintenanceSstateCapabilityInspector,
     MaintenanceSstateCommandSpec, MaintenanceSstateJobRunner, MaintenanceSstateRunnerEvent,
 };
@@ -207,6 +208,44 @@ pub fn inspect(
     })
 }
 
+pub fn inspect_services(
+    request: u64,
+    build_directory: String,
+    prserv_host: Option<String>,
+    hashserve: Option<String>,
+    hashserve_upstream: Option<String>,
+    signature_handler: Option<String>,
+    executable_search_path: Vec<String>,
+    process_root: String,
+) -> Result<DaemonMaintenanceSnapshot, String> {
+    if request == 0 {
+        return Err("maintenance service request is invalid".into());
+    }
+    let inspection =
+        MaintenanceServiceCapabilityInspector::inspect(MaintenanceServiceCapabilityInput {
+            build_dir: build_directory.into(),
+            prserv_host,
+            hashserve,
+            hashserve_upstream,
+            signature_handler,
+            executable_search_path: executable_search_path.into_iter().map(Into::into).collect(),
+            process_root: process_root.into(),
+            endpoint_probe_timeout: std::time::Duration::from_secs(1),
+            endpoint_observations: Vec::new(),
+        })
+        .map_err(|error| error.to_string())?;
+    Ok(DaemonMaintenanceSnapshot {
+        request,
+        tools: inspection
+            .capability
+            .tools
+            .iter()
+            .map(|tool| format!("{:?}", tool.tool()))
+            .collect(),
+        limitations: inspection.limitations,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -218,22 +257,41 @@ mod tests {
 
     #[test]
     fn client_runtime_maintenance_sstate_rejects_invalid_session() {
-        assert!(DaemonMaintenanceSupervisor::default()
-            .start_readiness(
+        assert!(
+            DaemonMaintenanceSupervisor::default()
+                .start_readiness(
+                    0,
+                    1,
+                    1,
+                    "/build".into(),
+                    None,
+                    None,
+                    Vec::new(),
+                    Vec::new(),
+                    vec!["core-image-minimal".into()],
+                    "isolated_tmpdir".into(),
+                    None,
+                    None,
+                    1,
+                )
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn client_runtime_maintenance_service_rejects_invalid_request() {
+        assert!(
+            inspect_services(
                 0,
-                1,
-                1,
                 "/build".into(),
                 None,
                 None,
-                Vec::new(),
-                Vec::new(),
-                vec!["core-image-minimal".into()],
-                "isolated_tmpdir".into(),
                 None,
                 None,
-                1,
+                Vec::new(),
+                "/proc".into()
             )
-            .is_err());
+            .is_err()
+        );
     }
 }

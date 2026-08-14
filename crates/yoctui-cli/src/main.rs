@@ -1448,6 +1448,10 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                             Ok(()) => CommandOutcome::Accepted,
                             Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound, message: error, current_generation: daemon_journal.snapshot().generation },
                         },
+                        DaemonCommand::InspectMaintenanceServices { request, build_directory, prserv_host, hashserve, hashserve_upstream, signature_handler, executable_search_path, process_root } => match daemon_maintenance::inspect_services(request, build_directory, prserv_host, hashserve, hashserve_upstream, signature_handler, executable_search_path, process_root) {
+                            Ok(snapshot) => { let event = daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::MaintenanceSnapshot(snapshot))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted },
+                            Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage, message: error, current_generation: daemon_journal.snapshot().generation },
+                        },
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
                             message: "daemon command is not implemented by this runtime".into(),

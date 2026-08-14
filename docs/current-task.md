@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-MAINTENANCE-SERVICE-RELEASE-001
-**Title:** Move maintenance service and release jobs into the daemon
+**ID:** CLIENT-RUNTIME-MAINTENANCE-RELEASE-001
+**Title:** Move release and utility maintenance jobs into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Route typed PR service, signature, build-history, archive, and release
-operations through daemon-owned runners.
+Route typed signature cache, build-history, archive, and release operations
+through daemon-owned runners.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_maintenance_service
+cargo test -p yoctui client_runtime_maintenance_release
 ```

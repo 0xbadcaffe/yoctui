@@ -335,6 +335,27 @@ fn daemon_command_for_effect(
                     .collect(),
             }
         }
+        Effect::Maintenance(yoctui_model::MaintenanceEffect::InspectServices { request }) => {
+            DaemonCommand::InspectMaintenanceServices {
+                request: *request,
+                build_directory: build_directory()?,
+                prserv_host: app.workspace.variables.get("PRSERV_HOST").cloned(),
+                hashserve: app.workspace.variables.get("BB_HASHSERVE").cloned(),
+                hashserve_upstream: app
+                    .workspace
+                    .variables
+                    .get("BB_HASHSERVE_UPSTREAM")
+                    .cloned(),
+                signature_handler: app.workspace.variables.get("BB_SIGNATURE_HANDLER").cloned(),
+                executable_search_path: app
+                    .workspace
+                    .source_dir
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect(),
+                process_root: "/proc".into(),
+            }
+        }
         Effect::Maintenance(yoctui_model::MaintenanceEffect::StartOperation { id, preview }) => {
             let yoctui_model::MaintenanceOperation::SstateReadiness(request) = &preview.operation
             else {

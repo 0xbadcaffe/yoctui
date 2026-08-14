@@ -1914,3 +1914,5 @@ daemon, which invokes the existing typed capability inspector and publishes a
 bounded tool/limitation snapshot without making the client the owner.
 Sstate readiness requests then reconstruct the existing validated command spec
 inside the daemon and publish bounded process output and lifecycle events.
+Service inspection similarly keeps process and endpoint diagnostics daemon-owned
+and publishes only bounded typed maintenance snapshots.
