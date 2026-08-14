@@ -468,3 +468,5 @@ seconds to complete while BitBake is emitting logs; short probes remain
 bounded, but no longer report a healthy daemon as unavailable under load.
 The live acceptance script now preserves actionable cooker-log diagnostics
 when a real BitBake build fails before its temporary workspace is removed.
+Its reconnect/status probe is deliberately paced so high-volume task events do
+not compete with the daemon's bounded snapshot writer.

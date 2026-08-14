@@ -81,7 +81,10 @@ while (( SECONDS < deadline )); do
     print_build_diagnostics
     exit 1
   fi
-  sleep 2
+  # Keep status attach traffic bounded while BitBake is emitting a large
+  # stream of task events; a reconnect probe every ten seconds is sufficient
+  # to prove detach/reconnect without competing with the build worker.
+  sleep 10
 done
 printf 'live daemon Poky: timed out after %ss\n' "$timeout_seconds" >&2
 exit 1
