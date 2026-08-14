@@ -4135,9 +4135,9 @@ notes = "The daemon and interactive client remain subcommands/modes of the one R
 id = "DAEMON-001"
 milestone = "M11"
 title = "Complete persistent Yoctui daemon session architecture"
-status = "IN_PROGRESS"
+status = "BLOCKED"
 priority = 448
 required = true
 depends_on = ["README-DAEMON-001", "UX-KEYBOARD-MOUSE-001", "BINARY-ONE-RUST-001"]
 verify = ["./scripts/verify-completion.sh", "./scripts/live-daemon-poky.sh"]
-notes = "Parent gate: daemon-owned BitBake/jobs/PTYs survive client and SSH disconnect, safely support clients/input ownership/keyboard/mouse, enforce limits/security, state honest reboot semantics, and pass real Poky acceptance. All component tasks are implemented and verified except LIVE-DAEMON-POKY-001, which is blocked by the host's AppArmor user-namespace policy."
+notes = "BLOCKED 2026-08-14: all component daemon/client/PTY/mouse tasks and the daemon-owned BitBake build path are implemented and verified. The parent gate cannot complete until LIVE-DAEMON-POKY-001 runs on a supported host: this host denies unprivileged user-namespace mapping (kernel.apparmor_restrict_unprivileged_userns=1), while running Poky as root is rejected by Poky's sanity checker. No unsupported live compatibility claim is made."
