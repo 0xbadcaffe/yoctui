@@ -401,8 +401,9 @@ split and pane-close actions mutate only client-local layout; existing daemon
 session metadata remains authoritative and session termination still follows
 its separate confirmation path. The complete keyboard-prefix parent gate is
 now verified; typed crossterm mouse focus/scroll routing is complete and widget
-row/dialog/scrollbar/terminal interaction remains queued. Client-local layout
-reconnect restoration is the next independent eligible gate.
+row/dialog/scrollbar/terminal interaction remains queued. Client-local
+PaneLayout persistence and safe reconnect restoration are now verified; local
+Unix-socket SSH reattachment is the next independent eligible gate.
 The interactive runtime attach/poll/detach path is verified for typed daemon
 effects and UI daemon-health rendering; the parent client-architecture gate is
 next.

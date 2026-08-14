@@ -3970,12 +3970,12 @@ notes = "Drag separators with minimum dimensions and client-local persistence wh
 id = "LAYOUT-RESTORE-001"
 milestone = "M11"
 title = "Restore client-local layout on reconnect"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 433
 required = true
 depends_on = ["LAYOUT-MODEL-001", "DAEMON-PERSIST-001"]
 verify = ["cargo test -p yoctui layout_restore"]
-notes = "Restore layout separately from daemon global state and handle unavailable sessions safely."
+notes = "Session TOML persists the validated client-local PaneLayout, reloads it before daemon attach, rejects invalid layouts safely, and leaves daemon-global state authoritative."
 
 [[task]]
 id = "REMOTE-SSH-001"

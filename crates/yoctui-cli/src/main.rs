@@ -225,6 +225,8 @@ struct Session {
     last_backend: Option<Backend>,
     #[serde(default)]
     recent_build_dirs: Vec<PathBuf>,
+    #[serde(default)]
+    pane_layout: Option<yoctui_model::PaneLayout>,
 }
 #[derive(Subcommand, Debug)]
 enum Command {
@@ -558,6 +560,7 @@ fn persist_settings(path: Option<&Path>, session: &mut Session, app: &App) -> Re
     updated.color_enabled = Some(app.color_enabled);
     updated.log_wrap = Some(app.logs.wrap);
     updated.log_follow = Some(app.logs.follow);
+    updated.pane_layout = Some(app.pane_layout.clone());
     write_session(path, &updated)?;
     *session = updated;
     Ok(())
@@ -7845,6 +7848,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     app.theme = theme;
     app.animation_speed = animation_speed;
     app.reduced_motion = reduced_motion;
+    if let Some(layout) = session.pane_layout.clone()
+        && layout.validate().is_ok()
+    {
+        app.pane_layout = layout;
+    }
     #[cfg(unix)]
     let mut daemon_runtime = match client_runtime::InteractiveDaemonRuntime::connect(
         &mut app,
@@ -10545,6 +10553,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     session.reduced_motion = Some(app.reduced_motion);
     session.color_enabled = Some(app.color_enabled);
     session.last_backend = Some(backend_kind);
+    session.pane_layout = Some(app.pane_layout.clone());
     session.recent_build_dirs = std::iter::once(session_build_dir)
         .chain(session.recent_build_dirs)
         .fold(Vec::new(), |mut directories, directory| {
@@ -10783,6 +10792,7 @@ mod tests {
                 color_enabled: Some(true),
                 last_backend: Some(Backend::Process),
                 recent_build_dirs: vec![PathBuf::from("/build")],
+                pane_layout: None,
             },
         )
         .unwrap();
@@ -10803,6 +10813,7 @@ mod tests {
                 color_enabled: Some(true),
                 last_backend: Some(Backend::Process),
                 recent_build_dirs: vec![PathBuf::from("/build")],
+                pane_layout: None,
             }
         );
         fs::remove_file(&path).unwrap();
@@ -10874,6 +10885,25 @@ mod tests {
         assert_eq!(saved.log_wrap, Some(true));
         assert_eq!(saved.log_follow, Some(false));
 
+        fs::remove_file(path).unwrap();
+        fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
+    fn layout_restore_round_trips_client_local_pane_tree() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-layout-restore-{}", std::process::id()));
+        fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("session.toml");
+        let mut session = Session::default();
+        let mut app = App::new(8, 1024);
+        let root = app.pane_layout.focused;
+        app.pane_layout
+            .split(root, yoctui_model::SplitAxis::Vertical)
+            .unwrap();
+        persist_settings(Some(&path), &mut session, &app).unwrap();
+        let restored = read_session(Some(&path)).unwrap().pane_layout.unwrap();
+        assert_eq!(restored, app.pane_layout);
         fs::remove_file(path).unwrap();
         fs::remove_dir(directory).unwrap();
     }

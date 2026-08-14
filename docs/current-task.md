@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** LAYOUT-RESTORE-001
-**Title:** Restore client-local layout on reconnect
+**ID:** REMOTE-SSH-001
+**Title:** Validate local daemon reattachment over SSH
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Restore layout separately from daemon global state and handle unavailable
-sessions safely.
+Client attaches to build-host local socket after SSH login; SSH loss cannot
+stop daemon work and no unauthenticated TCP daemon is added.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui layout_restore
+cargo test -p yoctui ssh_reattach
 ```
