@@ -2,19 +2,17 @@
 
 ## Task
 
-**ID:** MOUSE-RUNTIME-001
-**Title:** Route widget and terminal mouse interactions
+**ID:** LAYOUT-RESTORE-001
+**Title:** Restore client-local layout on reconnect
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add row/tree clicks, dialog controls, scrollbar and drag semantics, terminal
-focus/session tabs, and server-relevant PTY mouse reports with explicit writer
-ownership.
+Restore layout separately from daemon global state and handle unavailable
+sessions safely.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui mouse_runtime
-cargo test -p yoctui --test mouse_runtime mouse
+cargo test -p yoctui layout_restore
 ```
