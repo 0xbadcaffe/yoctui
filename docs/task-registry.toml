@@ -3794,12 +3794,12 @@ notes = "The bounded daemon journal replays the same ordered global event stream
 id = "MULTICLIENT-PTY-001"
 milestone = "M11"
 title = "Define explicit multi-client PTY input ownership"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 427
 required = true
 depends_on = ["MULTICLIENT-001", "PTY-ATTACH-001"]
-verify = ["cargo test -p yoctui multiclient_pty"]
-notes = "Split into the verified single-writer model/attach boundary and the remaining daemon command/runtime integration; allow many viewers and one visible writer with explicit take-control and timeout/disconnect release."
+verify = ["cargo test -p yoctui-model pty_session", "cargo test -p yoctui pty_attach", "cargo test -p yoctui --test daemon_pty_runtime multiclient_pty"]
+notes = "Parent gate complete: the typed single-writer model, attach wrapper, and daemon command/runtime integration enforce many viewers, explicit epoch-guarded control, input/resize authorization, and disconnect release."
 
 [[task]]
 id = "MULTICLIENT-PTY-MODEL-001"
@@ -3816,12 +3816,12 @@ notes = "The typed PTY session model and daemon-owned attach wrapper allow multi
 id = "MULTICLIENT-PTY-RUNTIME-001"
 milestone = "M11"
 title = "Route multi-client PTY ownership through the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 427
 required = true
 depends_on = ["MULTICLIENT-PTY-MODEL-001"]
-verify = ["cargo test -p yoctui --test daemon_pty_runtime multiclient_pty"]
-notes = "Expose create/attach/detach/take-control/input/resize through daemon-owned sessions, publish typed PTY state/output events to all viewers, and release writer leases on client loss."
+verify = ["cargo test -p yoctui --test daemon_pty_runtime multiclient_pty", "cargo clippy -p yoctui --tests --all-features -- -D warnings"]
+notes = "Daemon owns PTY runners and emulator updates, routes create/attach/take/release/input/resize/terminate through typed commands, publishes bounded PTY state/output events, and releases leases on client loss."
 
 [[task]]
 id = "KEYBOARD-PREFIX-001"

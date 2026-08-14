@@ -381,11 +381,12 @@ client-local replica boundaries. The daemon now services attached Unix sockets
 in bounded slices, accepts a second client while the first is idle, and fans
 out ordered journal events from independent per-client replay cursors. The
 runtime integration test exercises both concurrent attach and cross-client
-event delivery. The MULTICLIENT parent gate is complete; the next active split
-defines daemon routing for PTY writer ownership across those clients. The
-underlying PTY session model and attach wrapper already verify bounded viewers,
-single-writer epochs, stale-input rejection, and disconnect release; daemon
-wire/runtime integration remains explicitly open.
+event delivery. The MULTICLIENT parent gate is complete. PTY writer ownership
+now crosses the daemon boundary: create/attach/take/release/input/resize/
+terminate commands use the daemon-owned runner, PTY state and output are
+published as typed events, and disconnect releases the writer lease. Real
+daemon integration covers a shell PTY and epoch-guarded input/resize. The next
+active split is the tmux-style keyboard prefix layer.
 The interactive runtime attach/poll/detach path is verified for typed daemon
 effects and UI daemon-health rendering; the parent client-architecture gate is
 next.

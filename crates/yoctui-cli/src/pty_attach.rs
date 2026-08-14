@@ -36,7 +36,7 @@ pub(crate) struct PtyAttachSnapshot {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) enum PtyAttachEvent {
     Started,
-    Output { sequence: u64 },
+    Output { sequence: u64, bytes: Vec<u8> },
     Exited(PtyExitStatus),
     Lost { message: String },
 }
@@ -117,6 +117,19 @@ impl DaemonPtySession {
         Ok(self.listing()?.writer_epoch)
     }
 
+    pub fn release_control(
+        &mut self,
+        client: PtyClientId,
+        expected_epoch: u64,
+    ) -> Result<(), PtyAttachError> {
+        self.runner
+            .apply_session_action(PtySessionAction::ReleaseControl {
+                client,
+                expected_epoch,
+            })?;
+        Ok(())
+    }
+
     pub async fn input(
         &mut self,
         client: PtyClientId,
@@ -146,6 +159,10 @@ impl DaemonPtySession {
         Ok(())
     }
 
+    pub async fn terminate(&mut self) -> Result<bool, PtyAttachError> {
+        Ok(self.runner.terminate().await?)
+    }
+
     pub fn snapshot(
         &mut self,
         scrollback_offset: usize,
@@ -161,7 +178,7 @@ impl DaemonPtySession {
             PtyRunnerEvent::Started => Ok(PtyAttachEvent::Started),
             PtyRunnerEvent::Output { sequence, bytes } => {
                 self.emulator.process(&bytes)?;
-                Ok(PtyAttachEvent::Output { sequence })
+                Ok(PtyAttachEvent::Output { sequence, bytes })
             }
             PtyRunnerEvent::Exited(status) => Ok(PtyAttachEvent::Exited(status)),
             PtyRunnerEvent::Lost { message } => Ok(PtyAttachEvent::Lost { message }),

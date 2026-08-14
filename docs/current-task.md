@@ -2,18 +2,19 @@
 
 ## Task
 
-**ID:** MULTICLIENT-PTY-RUNTIME-001
-**Title:** Route multi-client PTY ownership through the daemon
+**ID:** KEYBOARD-PREFIX-001
+**Title:** Add tmux-style prefix keyboard layer
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Expose create/attach/detach/take-control/input/resize through daemon-owned
-sessions, publish typed PTY state/output events to all viewers, and release
-writer leases when a client disconnects.
+Add a configurable documented prefix for terminal-session creation, switching,
+splitting, navigation, detach, help, and command-palette actions without
+stealing input from the active terminal application.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui --test daemon_pty_runtime multiclient_pty
+cargo test -p yoctui-app keyboard_prefix
+cargo test -p yoctui-ui keyboard_prefix
 ```

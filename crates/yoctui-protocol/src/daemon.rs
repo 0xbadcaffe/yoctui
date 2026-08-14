@@ -324,9 +324,11 @@ pub enum DaemonCommand {
     },
     TakePtyControl {
         session_id: PtySessionId,
+        expected_epoch: u64,
     },
     ReleasePtyControl {
         session_id: PtySessionId,
+        expected_epoch: u64,
     },
     PrepareShutdown,
     ConfirmShutdown {
@@ -1444,6 +1446,7 @@ mod tests {
             expected_generation: Some(9),
             command: DaemonCommand::TakePtyControl {
                 session_id: PtySessionId(3),
+                expected_epoch: 0,
             },
         });
         assert_eq!(

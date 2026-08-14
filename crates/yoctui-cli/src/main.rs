@@ -104,6 +104,8 @@ mod daemon_devtool;
 #[cfg(unix)]
 mod daemon_maintenance;
 #[cfg(unix)]
+mod daemon_pty;
+#[cfg(unix)]
 mod daemon_qa;
 #[cfg(unix)]
 mod daemon_qemu;
@@ -1088,9 +1090,10 @@ fn stop_daemon() -> Result<()> {
 fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> Result<()> {
     use yoctui_protocol::{
         daemon::{
-            Capability, ClientMessage, CommandOutcome, CommandResult, DaemonCommand, DaemonHello,
-            DaemonSnapshotJournal, DaemonSnapshotLimits, DaemonSnapshotSync, MAX_FRAME_BYTES,
-            ProtocolLimits, ProtocolVersion, ServerMessage, SnapshotReplacementReason,
+            Capability, ClientId, ClientMessage, CommandOutcome, CommandResult, DaemonCommand,
+            DaemonHello, DaemonSnapshotJournal, DaemonSnapshotLimits, DaemonSnapshotSync,
+            MAX_FRAME_BYTES, ProtocolLimits, ProtocolVersion, ServerMessage,
+            SnapshotReplacementReason,
         },
         daemon_ipc::{DaemonConnection, DaemonListener, IpcError, runtime_paths},
         daemon_lifecycle::{
@@ -1161,6 +1164,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     let mut security_supervisor = daemon_security::DaemonSecuritySupervisor::default();
     let mut security_mapper_supervisor = daemon_security::DaemonSecurityMapperSupervisor::default();
     let mut maintenance_supervisor = daemon_maintenance::DaemonMaintenanceSupervisor::default();
+    let mut pty_supervisor = daemon_pty::DaemonPtySupervisor::default();
     write_persisted_state(
         &persist_paths,
         &DaemonPersistedState::capture(
@@ -1179,7 +1183,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     // Connections are serviced in short, bounded slices.  Keeping the
     // negotiated state and replay cursor alongside each socket lets one idle
     // client yield to other clients while the daemon continues polling jobs.
-    let mut clients: Vec<(DaemonConnection, bool, bool, u64)> = Vec::new();
+    let mut clients: Vec<(DaemonConnection, bool, bool, u64, ClientId)> = Vec::new();
     let mut shutting_down = false;
     while !shutting_down {
         while let Some(event) = devtool_supervisor.try_event() {
@@ -1212,20 +1216,31 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         while let Some(event) = maintenance_supervisor.try_event() {
             publish_daemon_maintenance_event(&mut daemon_journal, event)?;
         }
+        while let Some(event) = pty_supervisor.try_event() {
+            publish_daemon_pty_event(&mut daemon_journal, event)?;
+        }
         if termination_requested(termination) {
             break;
         }
         match listener.accept(Duration::from_millis(1)) {
             Ok(connection) => {
                 connection.set_timeout(Some(Duration::from_millis(5)))?;
-                clients.push((connection, false, false, daemon_journal.snapshot().sequence));
+                clients.push((
+                    connection,
+                    false,
+                    false,
+                    daemon_journal.snapshot().sequence,
+                    ClientId([0; 16]),
+                ));
             }
             Err(IpcError::Timeout(_)) => {}
             Err(error) => return Err(error.into()),
         }
 
         let mut remaining_clients = Vec::with_capacity(clients.len());
-        for (mut connection, mut negotiated, mut attached, mut last_sequence) in clients.drain(..) {
+        for (mut connection, mut negotiated, mut attached, mut last_sequence, mut client_id) in
+            clients.drain(..)
+        {
             let mut keep_client = true;
             if attached {
                 match daemon_journal.synchronize(Some(yoctui_protocol::daemon::ResumeCursor {
@@ -1262,7 +1277,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
             }
             loop {
                 match connection.receive::<ClientMessage>() {
-                Ok(ClientMessage::Hello(_)) => {
+                Ok(ClientMessage::Hello(hello)) => {
                     connection.send(&ServerMessage::Hello(DaemonHello {
                         selected_version: ProtocolVersion::CURRENT,
                         daemon_instance_id: instance,
@@ -1272,6 +1287,10 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                             Capability::IncrementalEvents,
                             Capability::EventReplay,
                             Capability::BackgroundJobs,
+                            Capability::PtySessions,
+                            Capability::PtyWriterLease,
+                            Capability::PaneAttachments,
+                            Capability::TerminalMouse,
                             Capability::GracefulShutdown,
                         ],
                         limits: ProtocolLimits {
@@ -1283,9 +1302,16 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                             maximum_terminal_columns: 512,
                         },
                     }))?;
+                    client_id = hello.client_id;
                     negotiated = true;
                 }
-                Ok(ClientMessage::Attach { resume, .. }) if negotiated => {
+                Ok(ClientMessage::Attach { resume, subscription, .. }) if negotiated => {
+                    for session_id in &subscription.pty_sessions {
+                        let _ = pty_supervisor.attach(
+                            yoctui_model::PtySessionId(session_id.0),
+                            yoctui_model::PtyClientId(client_id.0),
+                        );
+                    }
                     match daemon_journal.synchronize(resume) {
                         DaemonSnapshotSync::Replace { snapshot, reason } => {
                             if reason != SnapshotReplacementReason::InitialAttach {
@@ -1322,8 +1348,50 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                 }
                 Ok(ClientMessage::Detach) if negotiated => {
                     connection.send(&ServerMessage::Detaching)?;
+                    pty_supervisor.disconnect_client(yoctui_model::PtyClientId(client_id.0));
                     keep_client = false;
                     break;
+                }
+                Ok(ClientMessage::PtyInput(input)) if negotiated && attached => {
+                    let outcome = pty_supervisor
+                        .input(
+                            yoctui_model::PtySessionId(input.session_id.0),
+                            yoctui_model::PtyClientId(client_id.0),
+                            input.writer_epoch,
+                            input.bytes,
+                        )
+                        .map(|_| CommandOutcome::Accepted)
+                        .unwrap_or_else(|message| CommandOutcome::Rejected {
+                            code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                            message,
+                            current_generation: daemon_journal.snapshot().generation,
+                        });
+                    connection.send(&ServerMessage::CommandResult(CommandResult {
+                        request_id: input.request_id,
+                        outcome,
+                    }))?;
+                }
+                Ok(ClientMessage::PtyResize(resize)) if negotiated && attached => {
+                    let outcome = pty_supervisor
+                        .resize(
+                            yoctui_model::PtySessionId(resize.session_id.0),
+                            yoctui_model::PtyClientId(client_id.0),
+                            resize.writer_epoch,
+                            yoctui_model::PtyDimensions {
+                                columns: resize.dimensions.columns,
+                                rows: resize.dimensions.rows,
+                            },
+                        )
+                        .map(|_| CommandOutcome::Accepted)
+                        .unwrap_or_else(|message| CommandOutcome::Rejected {
+                            code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                            message,
+                            current_generation: daemon_journal.snapshot().generation,
+                        });
+                    connection.send(&ServerMessage::CommandResult(CommandResult {
+                        request_id: resize.request_id,
+                        outcome,
+                    }))?;
                 }
                 Ok(ClientMessage::Command(request))
                     if matches!(request.command, DaemonCommand::PrepareShutdown) =>
@@ -1503,6 +1571,74 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                             Ok(snapshot) => { let event = daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::MaintenanceSnapshot(snapshot))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted },
                             Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage, message: error, current_generation: daemon_journal.snapshot().generation },
                         },
+                        DaemonCommand::CreatePty {
+                            name,
+                            kind,
+                            cwd,
+                            command,
+                            dimensions,
+                        } => match pty_supervisor.start_new(name, kind, cwd, command, dimensions) {
+                            Ok(session_id) => {
+                                let _ = daemon_journal.publish(
+                                    yoctui_protocol::daemon::DaemonEvent::PtyChanged(
+                                        yoctui_protocol::daemon::PtySessionSummary {
+                                            id: yoctui_protocol::daemon::PtySessionId(session_id.0),
+                                            name: "starting".into(),
+                                            kind: yoctui_protocol::daemon::PtyKind::Utility,
+                                            cwd: String::new(),
+                                            lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting,
+                                            dimensions,
+                                            writer: None,
+                                            writer_epoch: 0,
+                                            viewers: 0,
+                                            exit_code: None,
+                                            restartable: true,
+                                        },
+                                    ),
+                                )?;
+                                CommandOutcome::Accepted
+                            }
+                            Err(message) => CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,
+                                message,
+                                current_generation: daemon_journal.snapshot().generation,
+                            },
+                        },
+                        DaemonCommand::TakePtyControl { session_id, expected_epoch } => match pty_supervisor
+                            .take(yoctui_model::PtySessionId(session_id.0), yoctui_model::PtyClientId(client_id.0), expected_epoch)
+                        {
+                            Ok(_) => CommandOutcome::Accepted,
+                            Err(message) => CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                                message,
+                                current_generation: daemon_journal.snapshot().generation,
+                            },
+                        },
+                        DaemonCommand::ReleasePtyControl { session_id, expected_epoch } => match pty_supervisor
+                            .release(yoctui_model::PtySessionId(session_id.0), yoctui_model::PtyClientId(client_id.0), expected_epoch)
+                        {
+                            Ok(()) => CommandOutcome::Accepted,
+                            Err(message) => CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                                message,
+                                current_generation: daemon_journal.snapshot().generation,
+                            },
+                        },
+                        DaemonCommand::TerminatePty { session_id, .. } => {
+                            match pty_supervisor.terminate(yoctui_model::PtySessionId(session_id.0)) {
+                                Ok(()) => CommandOutcome::Accepted,
+                                Err(message) => CommandOutcome::Rejected {
+                                    code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                                    message,
+                                    current_generation: daemon_journal.snapshot().generation,
+                                },
+                            }
+                        }
+                        DaemonCommand::RenamePty { .. } => CommandOutcome::Rejected {
+                            code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
+                            message: "PTY rename is not yet exposed by the daemon runner".into(),
+                            current_generation: daemon_journal.snapshot().generation,
+                        },
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
                             message: "daemon command is not implemented by this runtime".into(),
@@ -1528,6 +1664,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                 ))?,
                 Err(IpcError::Timeout(_)) => break,
                 Err(IpcError::Disconnected) => {
+                    pty_supervisor.disconnect_client(yoctui_model::PtyClientId(client_id.0));
                     keep_client = false;
                     break;
                 }
@@ -1539,7 +1676,13 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
             }
             }
             if keep_client {
-                remaining_clients.push((connection, negotiated, attached, last_sequence));
+                remaining_clients.push((
+                    connection,
+                    negotiated,
+                    attached,
+                    last_sequence,
+                    client_id,
+                ));
             }
         }
         clients = remaining_clients;
@@ -1557,6 +1700,75 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     remove_runtime_record(&paths, instance)?;
     std::mem::forget(record_guard);
     drop(listener);
+    Ok(())
+}
+
+#[cfg(unix)]
+fn publish_daemon_pty_event(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    event: daemon_pty::DaemonPtyEvent,
+) -> Result<()> {
+    use daemon_pty::DaemonPtyEvent;
+    use yoctui_protocol::daemon::DaemonEvent;
+    match event {
+        DaemonPtyEvent::Started {
+            session_id,
+            snapshot,
+        }
+        | DaemonPtyEvent::Changed {
+            session_id,
+            snapshot,
+        } => {
+            let _ = session_id;
+            journal.publish(DaemonEvent::PtyChanged(snapshot))?;
+        }
+        DaemonPtyEvent::Output { session_id, bytes } => {
+            journal.publish(DaemonEvent::PtyOutput {
+                session_id: yoctui_protocol::daemon::PtySessionId(session_id.0),
+                bytes,
+            })?;
+        }
+        DaemonPtyEvent::Exited {
+            session_id,
+            exit_code,
+        } => {
+            if let Some(existing) = journal
+                .snapshot()
+                .pty_sessions
+                .iter()
+                .find(|session| session.id.0 == session_id.0)
+                .cloned()
+            {
+                journal.publish(DaemonEvent::PtyChanged(
+                    yoctui_protocol::daemon::PtySessionSummary {
+                        lifecycle: yoctui_protocol::daemon::LifecycleState::Exited,
+                        exit_code,
+                        ..existing
+                    },
+                ))?;
+            }
+        }
+        DaemonPtyEvent::Lost {
+            session_id,
+            message,
+        } => {
+            if let Some(existing) = journal
+                .snapshot()
+                .pty_sessions
+                .iter()
+                .find(|session| session.id.0 == session_id.0)
+                .cloned()
+            {
+                journal.publish(DaemonEvent::PtyChanged(
+                    yoctui_protocol::daemon::PtySessionSummary {
+                        lifecycle: yoctui_protocol::daemon::LifecycleState::Lost,
+                        name: format!("{}: {message}", existing.name),
+                        ..existing
+                    },
+                ))?;
+            }
+        }
+    }
     Ok(())
 }
 
