@@ -1461,6 +1461,10 @@ replica stale, withholds its resume cursor, and becomes current only after a
 safe full replacement. The foreground runtime uses the same journal for fresh
 attach and resume rather than maintaining separate socket-specific state.
 
+The default snapshot retains 512 recent log records. This keeps local attach and
+status snapshots responsive during high-volume BitBake output while incremental
+events continue to deliver newer records to attached clients.
+
 Accepted server-side sockets treat peer disconnects and bounded write timeouts
 as client-local failure: best-effort responses and event fan-out do not tear
 down the daemon or its workers. The client is removed on the next bounded

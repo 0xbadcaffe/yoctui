@@ -950,7 +950,10 @@ impl Default for DaemonSnapshotLimits {
     fn default() -> Self {
         Self {
             retained_events: 4_096,
-            recent_logs: 10_000,
+            // Keep attach/status snapshots responsive during high-volume
+            // BitBake output. The journal remains sequence/event bounded;
+            // clients can still follow incremental log events after attach.
+            recent_logs: 512,
             snapshot_bytes: MAX_FRAME_BYTES,
         }
     }

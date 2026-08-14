@@ -470,3 +470,5 @@ The live acceptance script now preserves actionable cooker-log diagnostics
 when a real BitBake build fails before its temporary workspace is removed.
 Its reconnect/status probe is deliberately paced so high-volume task events do
 not compete with the daemon's bounded snapshot writer.
+The default attach snapshot now retains 512 recent records, preserving a useful
+bounded history without repeatedly serializing the full high-volume log stream.
