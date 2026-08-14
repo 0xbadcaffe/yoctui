@@ -1314,6 +1314,15 @@ but retains only bounded output, owns a child process group, applies a deadline,
 and supports TERM-then-KILL cancellation. Typed success, nonzero, timeout, and
 cancellation outcomes prevent UI code from parsing process output or status.
 
+The daemon's build supervisor is a separate execution owner above these
+adapters. A validated `BuildRequest` is handed to a `ProcessBackend` worker
+with an absolute build directory; the worker owns the child process group,
+bounded stdout/stderr stream, cancellation, and terminal outcome. It emits
+typed start, log, completion, and failure events into the daemon journal, so
+clients can detach and later reconnect to the same job summary. The supervisor
+never accepts shell text and does not let a missing build directory terminate
+the daemon; the command is rejected with a typed protocol outcome instead.
+
 Controlled restart is daemon orchestration above that controller. The pure
 model derives a bounded affected-work list from the authoritative primary build
 and background jobs, and binds confirmation to the server identity, controller

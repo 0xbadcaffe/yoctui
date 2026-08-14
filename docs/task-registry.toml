@@ -4096,7 +4096,7 @@ priority = 444
 required = true
 depends_on = ["DAEMON-UI-001", "DAEMON-CLI-001", "PTY-TEST-001", "SSH-TEST-001", "DAEMON-REBOOT-TEST-001", "BITBAKE-RESTART-001"]
 verify = ["./scripts/live-daemon-poky.sh"]
-notes = "BLOCKED 2026-08-14: required scripts/live-daemon-poky.sh is absent, and the current daemon command surface does not yet expose an authoritative BitBake build lifecycle for the requested live detach/reconnect acceptance. Reproduce with ./scripts/live-daemon-poky.sh (No such file or directory); do not claim live Poky compatibility until the script and controller are implemented."
+notes = "BLOCKED 2026-08-14: scripts/live-daemon-poky.sh and the daemon-owned BitBake build command now exist, but this host rejects the unprivileged user namespaces required by Poky BitBake (kernel.apparmor_restrict_unprivileged_userns=1). The script fails closed with an explicit host-policy diagnostic; no live Poky compatibility claim is made. Re-run ./scripts/live-daemon-poky.sh on a supported host before marking this task DONE."
 
 [[task]]
 id = "README-DAEMON-001"

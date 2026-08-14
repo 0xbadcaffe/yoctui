@@ -101,6 +101,8 @@ mod client_runtime;
 #[cfg_attr(not(test), allow(dead_code))]
 mod client_transport;
 #[cfg(unix)]
+mod daemon_bitbake;
+#[cfg(unix)]
 mod daemon_devtool;
 #[cfg(unix)]
 mod daemon_maintenance;
@@ -271,6 +273,9 @@ enum SessionCliCommand {
 #[derive(Subcommand, Debug, Clone, PartialEq, Eq)]
 enum DaemonCliCommand {
     Start,
+    Build {
+        targets: Vec<String>,
+    },
     Status,
     Stop,
     Restart,
@@ -965,6 +970,7 @@ async fn doctor(build_dir: &Path) -> Result<()> {
 async fn daemon_cli(command: DaemonCliCommand) -> Result<()> {
     match command {
         DaemonCliCommand::Start => start_daemon(),
+        DaemonCliCommand::Build { targets } => daemon_start_build(targets),
         DaemonCliCommand::Status => daemon_status(),
         DaemonCliCommand::Stop => stop_daemon(),
         DaemonCliCommand::Restart => {
@@ -1043,7 +1049,56 @@ fn daemon_status() -> Result<()> {
             .socket
             .display()
     );
+    if let Ok((mut connection, snapshot)) = daemon_connection_with_snapshot() {
+        for job in snapshot.jobs {
+            println!(
+                "job {} {:?} {:?} exit_code={:?}",
+                job.id.0, job.lifecycle, job.label, job.exit_code
+            );
+        }
+        let _ = connection.send(&yoctui_protocol::daemon::ClientMessage::Detach);
+        let _ = connection.receive::<yoctui_protocol::daemon::ServerMessage>();
+    }
     Ok(())
+}
+
+#[cfg(unix)]
+fn daemon_start_build(targets: Vec<String>) -> Result<()> {
+    anyhow::ensure!(
+        !targets.is_empty(),
+        "daemon build requires at least one target"
+    );
+    let (mut connection, snapshot) = daemon_connection_with_snapshot()?;
+    use yoctui_protocol::daemon::{
+        ClientMessage, CommandRequest, DaemonCommand, RequestId, ServerMessage,
+    };
+    connection.send(&ClientMessage::Command(CommandRequest {
+        request_id: RequestId(1),
+        expected_generation: Some(snapshot.generation),
+        command: DaemonCommand::StartBuild {
+            targets,
+            task: None,
+            force: false,
+        },
+    }))?;
+    loop {
+        match connection.receive::<ServerMessage>()? {
+            ServerMessage::CommandResult(result) => {
+                println!("daemon build: {:?}", result.outcome);
+                break;
+            }
+            ServerMessage::Event(_) => {}
+            response => anyhow::bail!("unexpected daemon build response: {response:?}"),
+        }
+    }
+    connection.send(&ClientMessage::Detach)?;
+    let _ = connection.receive::<ServerMessage>()?;
+    Ok(())
+}
+
+#[cfg(not(unix))]
+fn daemon_start_build(_targets: Vec<String>) -> Result<()> {
+    anyhow::bail!("daemon BitBake builds currently require Unix local IPC")
 }
 
 #[cfg(unix)]
@@ -1105,6 +1160,7 @@ fn daemon_sessions() -> Result<()> {
         }
     }
     connection.send(&yoctui_protocol::daemon::ClientMessage::Detach)?;
+    let _ = connection.receive::<yoctui_protocol::daemon::ServerMessage>()?;
     Ok(())
 }
 
@@ -1122,6 +1178,7 @@ fn daemon_session_command(command: SessionCliCommand) -> Result<()> {
             );
             println!("session {id} is available; start `yoctui attach` for the interactive client");
             connection.send(&yoctui_protocol::daemon::ClientMessage::Detach)?;
+            let _ = connection.receive::<yoctui_protocol::daemon::ServerMessage>()?;
             Ok(())
         }
         SessionCliCommand::Kill { id, force } => {
@@ -1157,6 +1214,8 @@ fn daemon_session_command(command: SessionCliCommand) -> Result<()> {
                     response => anyhow::bail!("unexpected daemon response: {response:?}"),
                 }
             }
+            connection.send(&ClientMessage::Detach)?;
+            let _ = connection.receive::<ServerMessage>()?;
             Ok(())
         }
     }
@@ -1314,6 +1373,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     let daemon_journal = DaemonSnapshotJournal::new(snapshot, DaemonSnapshotLimits::default())?;
     let mut daemon_journal = daemon_journal;
     let mut devtool_supervisor = daemon_devtool::DaemonDevtoolSupervisor::default();
+    let mut bitbake_supervisor = daemon_bitbake::DaemonBitBakeSupervisor::default();
     let mut sdk_supervisor = daemon_sdk::DaemonSdkSupervisor::default();
     let mut qemu_supervisor = daemon_qemu::DaemonQemuSupervisor::default();
     let mut wic_supervisor = daemon_wic::DaemonWicSupervisor::default();
@@ -1348,6 +1408,9 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     while !shutting_down {
         while let Some(event) = devtool_supervisor.try_event() {
             publish_daemon_devtool_event(&mut daemon_journal, event)?;
+        }
+        while let Some(event) = bitbake_supervisor.try_event() {
+            publish_daemon_bitbake_event(&mut daemon_journal, event)?;
         }
         while let Some(event) = sdk_supervisor.try_event() {
             publish_daemon_sdk_event(&mut daemon_journal, event)?;
@@ -1619,6 +1682,46 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                         continue;
                     }
                     let outcome = match request.command {
+                        DaemonCommand::StartBuild { targets, task, force } => {
+                            let Some(build_dir) = std::env::var_os("YOCTUI_BUILD_DIR") else {
+                                connection.send(&ServerMessage::CommandResult(CommandResult {
+                                    request_id: request.request_id,
+                                    outcome: CommandOutcome::Rejected {
+                                        code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,
+                                        message: "daemon BitBake build requires YOCTUI_BUILD_DIR".into(),
+                                        current_generation: daemon_journal.snapshot().generation,
+                                    },
+                                }))?;
+                                continue;
+                            };
+                            match bitbake_supervisor.start(
+                                PathBuf::from(build_dir),
+                                BuildRequest { targets, task, force },
+                            ) {
+                                Ok(job_id) => {
+                                    let event = daemon_journal.publish(
+                                        yoctui_protocol::daemon::DaemonEvent::JobChanged(
+                                            yoctui_protocol::daemon::JobSummary {
+                                                id: job_id,
+                                                kind: yoctui_protocol::daemon::JobKind::BitBakeBuild,
+                                                label: "BitBake build starting".into(),
+                                                lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting,
+                                                progress_current: None,
+                                                progress_total: None,
+                                                exit_code: None,
+                                            },
+                                        ),
+                                    )?;
+                                    connection.send(&ServerMessage::Event(event))?;
+                                    CommandOutcome::Accepted
+                                }
+                                Err(error) => CommandOutcome::Rejected {
+                                    code: yoctui_protocol::daemon::ProtocolErrorCode::LimitExceeded,
+                                    message: error,
+                                    current_generation: daemon_journal.snapshot().generation,
+                                },
+                            }
+                        }
                         DaemonCommand::StartDevtool {
                             operation,
                             build_directory,
@@ -1647,7 +1750,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                             },
                         },
                         DaemonCommand::CancelJob { job_id } => {
-                            match devtool_supervisor.cancel(job_id) {
+                            match devtool_supervisor.cancel(job_id).or_else(|_| bitbake_supervisor.cancel(job_id)) {
                                 Ok(()) => CommandOutcome::Accepted,
                                 Err(error) => CommandOutcome::Rejected {
                                     code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
@@ -1973,6 +2076,78 @@ fn publish_daemon_pty_event(
 }
 
 #[cfg(unix)]
+fn publish_daemon_bitbake_event(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    event: daemon_bitbake::DaemonBitBakeEvent,
+) -> Result<()> {
+    use daemon_bitbake::DaemonBitBakeEvent;
+    use yoctui_protocol::daemon::{
+        DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
+    };
+    let (job_id, mapped) = match event {
+        DaemonBitBakeEvent::Started { job_id } => (
+            job_id,
+            DaemonEvent::JobChanged(JobSummary {
+                id: job_id,
+                kind: JobKind::BitBakeBuild,
+                label: "BitBake build".into(),
+                lifecycle: LifecycleState::Running,
+                progress_current: None,
+                progress_total: None,
+                exit_code: None,
+            }),
+        ),
+        DaemonBitBakeEvent::Log { job_id, message } => (
+            job_id,
+            DaemonEvent::Log(LogRecord {
+                source: "bitbake".into(),
+                severity: LogSeverity::Info,
+                message,
+                unix_ms: unix_ms(),
+            }),
+        ),
+        DaemonBitBakeEvent::Completed {
+            job_id,
+            success,
+            exit_code,
+        } => (
+            job_id,
+            DaemonEvent::JobChanged(JobSummary {
+                id: job_id,
+                kind: JobKind::BitBakeBuild,
+                label: if success {
+                    "BitBake build".into()
+                } else {
+                    format!("BitBake build failed (exit code {:?})", exit_code)
+                },
+                lifecycle: if success {
+                    LifecycleState::Exited
+                } else {
+                    LifecycleState::Failed
+                },
+                progress_current: None,
+                progress_total: None,
+                exit_code,
+            }),
+        ),
+        DaemonBitBakeEvent::Failed { job_id, message } => (
+            job_id,
+            DaemonEvent::JobChanged(JobSummary {
+                id: job_id,
+                kind: JobKind::BitBakeBuild,
+                label: format!("BitBake build: {message}"),
+                lifecycle: LifecycleState::Failed,
+                progress_current: None,
+                progress_total: None,
+                exit_code: None,
+            }),
+        ),
+    };
+    let _ = journal.publish(mapped)?;
+    let _ = job_id;
+    Ok(())
+}
+
 fn publish_daemon_devtool_event(
     journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
     event: daemon_devtool::DaemonDevtoolEvent,

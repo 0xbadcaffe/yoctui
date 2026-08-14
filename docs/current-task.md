@@ -18,3 +18,7 @@ state honest reboot semantics, and pass real Poky acceptance.
 ./scripts/verify-completion.sh
 ./scripts/live-daemon-poky.sh
 ```
+
+The daemon-owned BitBake build path and live validation harness are implemented.
+The remaining gate is blocked by the current host's AppArmor user-namespace
+policy; the harness fails closed rather than claiming unsupported Poky support.

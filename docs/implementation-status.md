@@ -435,10 +435,15 @@ scrollback, and terminal-emulator coverage in the PTY unit suite. SSH-style
 disconnect/reconnect testing is verified with a local controlled fixture. Daemon
 restart/recovery acceptance now reloads persisted metadata, reconnects clients,
 marks unrecoverable jobs/PTYs Lost, and exposes explicit host-reboot relaunch
-intent. Real Poky daemon validation is currently blocked because the required
-live script is absent and the daemon BitBake controller/build command surface
-is not yet implemented; no live compatibility claim is made. The next
-independent one-Rust product gate is verified: daemon/client remain modes of
+intent. The daemon now owns a bounded `ProcessBackend` BitBake build supervisor
+and the `yoctui daemon build <target>` command; status reconnects show durable
+job lifecycle and exit codes after the initiating client detaches. The real
+Poky acceptance script clones a fresh workspace, initializes a private build
+directory, starts the daemon, submits a build, reconnects for status, and
+cleans up. That acceptance remains externally blocked on this host because
+Poky rejects the host's unprivileged user-namespace policy
+(`kernel.apparmor_restrict_unprivileged_userns=1`); the script fails closed and
+no live compatibility claim is made. The next independent one-Rust product gate is verified: daemon/client remain modes of
 the single Rust package and tests guard against Electron/browser drift. The
 mouse runtime interaction gate is now verified with typed dialog, workspace,
 Navigator, Inspector, and PTY session routing plus integration/TestBackend
