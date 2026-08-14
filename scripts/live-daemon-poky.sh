@@ -30,6 +30,12 @@ set -u
 if ! command -v lz4c >/dev/null 2>&1; then
   printf '\nHOSTTOOLS:remove = "lz4c"\n' >>"$build_dir/conf/local.conf"
 fi
+if [[ -n "${YOCTUI_LIVE_CACHE:-}" ]]; then
+  cache_root="${YOCTUI_LIVE_CACHE}"
+  mkdir -p "$cache_root/downloads" "$cache_root/sstate-cache"
+  printf '\nDL_DIR = "%s/downloads"\nSSTATE_DIR = "%s/sstate-cache"\n' \
+    "$cache_root" "$cache_root" >>"$build_dir/conf/local.conf"
+fi
 export YOCTUI_BUILD_DIR="$build_dir"
 export XDG_RUNTIME_DIR="$runtime"
 export XDG_STATE_HOME="$state"
