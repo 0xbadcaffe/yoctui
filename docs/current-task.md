@@ -2,17 +2,18 @@
 
 ## Task
 
-**ID:** DAEMON-REBOOT-TEST-001
-**Title:** Test daemon restart and recovery acceptance
+**ID:** LIVE-DAEMON-POKY-001
+**Title:** Validate daemon workflow on real Poky
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Simulate daemon death/restart and verify metadata reload, honest Lost children,
-BitBake/client reconnect, and session recovery semantics.
+Using a fresh supported Poky clone, validate daemon/client build detach/reconnect,
+tasks/logs, shell detach/reattach, interactive tasks where available, cancel and
+restart workflows, and clean shutdown.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui daemon_reboot
+./scripts/live-daemon-poky.sh
 ```

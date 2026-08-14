@@ -433,4 +433,6 @@ Real Unix PTY integration now verifies a shell prompt, typed input, resize,
 writer lease routing, and process lifecycle, with detach/reattach, cancellation,
 scrollback, and terminal-emulator coverage in the PTY unit suite. SSH-style
 disconnect/reconnect testing is verified with a local controlled fixture. Daemon
-restart/recovery acceptance is the next active gate.
+restart/recovery acceptance now reloads persisted metadata, reconnects clients,
+marks unrecoverable jobs/PTYs Lost, and exposes explicit host-reboot relaunch
+intent. Real Poky daemon validation is the next active gate.

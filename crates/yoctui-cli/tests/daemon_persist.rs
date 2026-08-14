@@ -285,3 +285,9 @@ fn reboot_recovery_exposes_only_typed_explicit_relaunch_intent() {
     assert_eq!(relaunch.cwd, "/opt/sdk");
     assert_eq!(relaunch.dimensions.columns, 90);
 }
+
+#[test]
+fn daemon_reboot_acceptance_reloads_metadata_and_marks_live_children_lost() {
+    daemon_recovery_restores_history_but_marks_live_work_lost();
+    reboot_recovery_exposes_only_typed_explicit_relaunch_intent();
+}

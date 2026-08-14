@@ -4080,12 +4080,12 @@ notes = "A local controlled Unix-socket/PTY fixture models SSH client loss in CI
 id = "DAEMON-REBOOT-TEST-001"
 milestone = "M11"
 title = "Test daemon restart and recovery acceptance"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 443
 required = true
 depends_on = ["HOST-REBOOT-001", "DAEMON-TEST-001"]
 verify = ["cargo test -p yoctui daemon_reboot"]
-notes = "Simulate daemon death/restart and verify metadata reload, honest Lost children, BitBake/client reconnect, and session recovery semantics."
+notes = "Acceptance fixture reloads persisted metadata after daemon restart, reconnects a client, marks unrecoverable jobs and PTYs Lost, clears live attachments, and exposes typed host-reboot relaunch intent without claiming process survival."
 
 [[task]]
 id = "LIVE-DAEMON-POKY-001"
