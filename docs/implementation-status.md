@@ -466,3 +466,5 @@ terminating the daemon while its BitBake worker continues.
 Lifecycle/status clients now allow bounded multi-megabyte snapshots several
 seconds to complete while BitBake is emitting logs; short probes remain
 bounded, but no longer report a healthy daemon as unavailable under load.
+The live acceptance script now preserves actionable cooker-log diagnostics
+when a real BitBake build fails before its temporary workspace is removed.

@@ -42,6 +42,16 @@ export XDG_RUNTIME_DIR="$runtime"
 export XDG_STATE_HOME="$state"
 export YOCTUI_DAEMON_LOG="$daemon_log"
 
+print_build_diagnostics() {
+  printf 'live daemon Poky: BitBake diagnostics:\n' >&2
+  if [[ -d "$build_dir/tmp/log/cooker" ]]; then
+    find "$build_dir/tmp/log/cooker" -type f -maxdepth 2 -print0 2>/dev/null |
+      xargs -0r grep -HnE '(^|[[:space:]])ERROR:|Task .* failed|FetchError' 2>/dev/null |
+      tail -80 >&2 || true
+  fi
+  tail -80 "$build_dir/bitbake-cookerdaemon.log" >&2 2>/dev/null || true
+}
+
 binary="${YOCTUI_LIVE_BINARY:-$repo_root/target/debug/yoctui}"
 if [[ ! -x "$binary" ]]; then
   cargo build -p yoctui >/dev/null
@@ -68,6 +78,7 @@ while (( SECONDS < deadline )); do
   fi
   if grep -q 'job .*Failed\|lifecycle: Failed' <<<"$status"; then
     printf 'live daemon Poky: daemon build failed\n' >&2
+    print_build_diagnostics
     exit 1
   fi
   sleep 2
