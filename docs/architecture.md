@@ -1451,8 +1451,9 @@ commands against stale data.
 `DaemonSnapshotJournal` implements that single-owner cut with validated limits
 for snapshot bytes, retained event count, recent logs, and individual framed
 events. Publishing checks sequence and generation overflow, applies the event
-to a candidate snapshot, verifies its bound, and only then atomically commits
-both snapshot and retained event. A same-instance cursor within retention gets
+to a candidate snapshot, evicts the oldest retained log records when the byte
+bound would otherwise be exceeded, verifies its bound, and only then atomically
+commits both snapshot and retained event. A same-instance cursor within retention gets
 only strictly later ordered events; a missing, wrong-instance, expired, or
 future cursor receives an explicit replacement reason and the current bounded
 snapshot. `DaemonClientSnapshot` rejects any sequence/generation gap, marks its

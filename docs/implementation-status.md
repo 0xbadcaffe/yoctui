@@ -456,3 +456,7 @@ Daemon and attach documentation now covers direct/service lifecycle, client
 attach/detach, SSH reconnect, PTY/session management, security/resource limits,
 host reboot guarantees, troubleshooting, and the currently blocked live-Poky
 validation script. The parent daemon gate remains blocked by that live proof.
+High-volume BitBake output now exercises byte-aware journal eviction: the
+daemon drops only the oldest bounded log records before rejecting a snapshot,
+preventing a long build from taking down the daemon when its frame limit is
+reached.
