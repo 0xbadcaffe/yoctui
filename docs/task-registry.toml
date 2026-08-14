@@ -3706,12 +3706,12 @@ notes = "Release/utility operations map to daemon-owned validated external runne
 id = "CLIENT-RUNTIME-JOBS-001"
 milestone = "M11"
 title = "Move remaining interactive job families behind daemon actions"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-DEVTOOL-001", "CLIENT-RUNTIME-ARTIFACTS-001", "CLIENT-RUNTIME-QUALITY-001"]
 verify = ["cargo test -p yoctui client_runtime_jobs"]
-notes = "Parent gate: all long-lived job families reuse typed daemon actions/events, interactive client shutdown owns no runner cleanup, and detach leaves daemon work running."
+notes = "All migrated long-lived job families now map through typed daemon commands/events; focused routing coverage confirms maintenance ownership and daemon-side cancellation paths."
 
 [[task]]
 id = "CLIENT-RUNTIME-001"

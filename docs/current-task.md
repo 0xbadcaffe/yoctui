@@ -2,17 +2,18 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-JOBS-001
-**Title:** Move remaining interactive job families behind daemon actions
+**ID:** CLIENT-RUNTIME-001
+**Title:** Wire Ratatui runtime to daemon-owned execution
 **Status:** IN_PROGRESS
 
 ## Objective
 
-All long-lived job families reuse typed daemon actions/events; interactive
-client shutdown owns no runner cleanup and detach leaves daemon work running.
+Startup/event loop uses daemon state/actions, detach is clean, and no
+long-running process ownership remains in the interactive client path.
 
 ## Verification
 
 ```bash
 cargo test -p yoctui client_runtime_jobs
+cargo test -p yoctui client_runtime
 ```

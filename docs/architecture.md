@@ -1920,3 +1920,5 @@ Release/build-history/signature/archive capability discovery is included in the
 same daemon-owned snapshot boundary.
 Release and utility commands reuse the daemon maintenance runner boundary with
 revalidated executable identity and shell-free argv.
+All migrated job families use this single daemon command boundary, leaving the
+interactive runtime responsible only for rendering and typed effect routing.

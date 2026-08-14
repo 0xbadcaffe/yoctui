@@ -369,6 +369,8 @@ Release/build-history/signature/archive tool discovery is now included in the
 daemon maintenance capability snapshot; the release runner remains next.
 Release/utility operations now map to daemon-owned validated external runners
 with bounded output, cancellation, and terminal/lost state.
+The migrated job families now share one typed daemon routing path; runtime
+ownership/detach integration is the next gate.
 Service capability inspection now runs in the daemon with bounded PR/hash/
 signature metadata and process diagnostics; release and utility runners remain
 the next split gate.
