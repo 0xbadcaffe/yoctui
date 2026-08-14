@@ -1126,7 +1126,10 @@ fn daemon_connection_with_snapshot() -> Result<(
     };
     let paths = runtime_paths()?;
     let mut connection = DaemonConnection::connect(&paths, Duration::from_secs(1))?;
-    connection.set_timeout(Some(Duration::from_secs(2)))?;
+    // A busy BitBake build can produce a near-limit snapshot while the
+    // daemon is serializing and writing it. Keep the lifecycle handshake
+    // bounded, but allow enough time for a full local snapshot to arrive.
+    connection.set_timeout(Some(Duration::from_secs(10)))?;
     connection.send(&ClientMessage::Hello(ClientHello {
         minimum_version: ProtocolVersion::CURRENT,
         maximum_version: ProtocolVersion::CURRENT,
@@ -1491,7 +1494,10 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         }
         match listener.accept(Duration::from_millis(1)) {
             Ok(connection) if clients.len() < MAX_DAEMON_CLIENTS => {
-                connection.set_timeout(Some(Duration::from_millis(250)))?;
+                // Snapshot/event frames are bounded but may be several MiB
+                // while BitBake is emitting logs. A short timeout makes a
+                // healthy local client look disconnected under load.
+                connection.set_timeout(Some(Duration::from_secs(5)))?;
                 clients.push((
                     connection,
                     false,

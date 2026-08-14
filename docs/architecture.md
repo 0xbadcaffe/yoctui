@@ -1467,6 +1467,11 @@ down the daemon or its workers. The client is removed on the next bounded
 receive cycle, while a fresh client can continue to attach and observe the same
 global state.
 
+Lifecycle/status clients use a longer bounded local timeout for the initial
+snapshot than the daemon accept loop uses for idle peers. This accommodates a
+near-limit snapshot during high-volume BitBake logging without making IPC
+unbounded or exposing a network listener.
+
 Detach closes only the client subscription and releases its ephemeral focus,
 confirmation, and PTY-writer leases. It does not cancel jobs, disconnect
 BitBake, close PTYs, or shut down the daemon. EOF, terminal close, client crash,
