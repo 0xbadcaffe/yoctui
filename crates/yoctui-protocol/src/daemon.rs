@@ -9,6 +9,11 @@ pub const MAX_FRAME_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_CAPABILITIES: usize = 128;
 pub const MAX_RETAINED_EVENTS: usize = 65_536;
 pub const MAX_SNAPSHOT_LOGS: usize = 100_000;
+pub const MAX_DAEMON_CLIENTS: usize = 32;
+pub const MAX_DAEMON_PTY_SESSIONS: usize = 64;
+pub const MAX_TERMINAL_SCROLLBACK_LINES: usize = 100_000;
+pub const MAX_UTILITY_OUTPUT_BYTES: usize = 4 * 1024 * 1024;
+pub const MAX_PTY_OUTPUT_EVENT_BYTES: usize = 64 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProtocolVersion {
@@ -79,6 +84,10 @@ pub struct ProtocolLimits {
     pub maximum_queue_depth: u16,
     pub maximum_terminal_rows: u16,
     pub maximum_terminal_columns: u16,
+    pub maximum_clients: u16,
+    pub maximum_pty_sessions: u16,
+    pub maximum_scrollback_lines: u32,
+    pub maximum_utility_output_bytes: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1700,5 +1709,31 @@ mod tests {
             Err(DaemonSnapshotError::EventTooLarge { .. })
         ));
         assert_eq!(journal.snapshot().sequence, 0);
+    }
+
+    #[test]
+    fn resource_limits_are_explicit_and_bounded() {
+        const {
+            assert!(MAX_DAEMON_CLIENTS < u16::MAX as usize);
+            assert!(MAX_DAEMON_PTY_SESSIONS < u16::MAX as usize);
+            assert!(MAX_TERMINAL_SCROLLBACK_LINES <= MAX_SNAPSHOT_LOGS);
+            assert!(MAX_PTY_OUTPUT_EVENT_BYTES <= MAX_FRAME_BYTES);
+            assert!(MAX_UTILITY_OUTPUT_BYTES <= MAX_FRAME_BYTES);
+        }
+        let limits = ProtocolLimits {
+            maximum_frame_bytes: MAX_FRAME_BYTES as u32,
+            maximum_snapshot_bytes: MAX_FRAME_BYTES as u32,
+            maximum_pending_requests: 64,
+            maximum_queue_depth: 256,
+            maximum_terminal_rows: 512,
+            maximum_terminal_columns: 512,
+            maximum_clients: MAX_DAEMON_CLIENTS as u16,
+            maximum_pty_sessions: MAX_DAEMON_PTY_SESSIONS as u16,
+            maximum_scrollback_lines: MAX_TERMINAL_SCROLLBACK_LINES as u32,
+            maximum_utility_output_bytes: MAX_UTILITY_OUTPUT_BYTES as u32,
+        };
+        let round_trip: ProtocolLimits =
+            serde_json::from_slice(&serde_json::to_vec(&limits).unwrap()).unwrap();
+        assert_eq!(round_trip, limits);
     }
 }

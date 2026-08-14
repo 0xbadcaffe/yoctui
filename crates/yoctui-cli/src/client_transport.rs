@@ -443,6 +443,10 @@ mod tests {
                 maximum_queue_depth: 16,
                 maximum_terminal_rows: 512,
                 maximum_terminal_columns: 512,
+                maximum_clients: 32,
+                maximum_pty_sessions: 64,
+                maximum_scrollback_lines: 100_000,
+                maximum_utility_output_bytes: 4 * 1024 * 1024,
             },
         }
     }

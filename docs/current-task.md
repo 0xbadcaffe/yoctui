@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** RESOURCE-LIMITS-001
-**Title:** Add daemon resource limits
+**ID:** DAEMON-TELEMETRY-001
+**Title:** Expose daemon and session health telemetry
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Bound client/PTY counts, scrollback/log/history, IPC queues/requests/snapshots,
-dimensions, and utility output.
+Report uptime, BitBake state, clients, jobs, PTYs, queue pressure, available
+memory data, and restart/recovery state.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui resource_limits
+cargo test -p yoctui-model daemon_telemetry
 ```

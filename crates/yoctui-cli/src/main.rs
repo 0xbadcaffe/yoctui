@@ -1096,8 +1096,9 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         daemon::{
             Capability, ClientId, ClientMessage, CommandOutcome, CommandResult, DaemonCommand,
             DaemonHello, DaemonSnapshotJournal, DaemonSnapshotLimits, DaemonSnapshotSync,
-            MAX_FRAME_BYTES, ProtocolLimits, ProtocolVersion, ServerMessage,
-            SnapshotReplacementReason,
+            MAX_DAEMON_CLIENTS, MAX_DAEMON_PTY_SESSIONS, MAX_FRAME_BYTES,
+            MAX_TERMINAL_SCROLLBACK_LINES, MAX_UTILITY_OUTPUT_BYTES, ProtocolLimits,
+            ProtocolVersion, ServerMessage, SnapshotReplacementReason,
         },
         daemon_ipc::{DaemonConnection, DaemonListener, IpcError, runtime_paths},
         daemon_lifecycle::{
@@ -1227,7 +1228,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
             break;
         }
         match listener.accept(Duration::from_millis(1)) {
-            Ok(connection) => {
+            Ok(connection) if clients.len() < MAX_DAEMON_CLIENTS => {
                 connection.set_timeout(Some(Duration::from_millis(5)))?;
                 clients.push((
                     connection,
@@ -1236,6 +1237,9 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                     daemon_journal.snapshot().sequence,
                     ClientId([0; 16]),
                 ));
+            }
+            Ok(_) => {
+                tracing::warn!(limit = MAX_DAEMON_CLIENTS, "daemon client limit reached");
             }
             Err(IpcError::Timeout(_)) => {}
             Err(error) => return Err(error.into()),
@@ -1304,6 +1308,10 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                             maximum_queue_depth: 256,
                             maximum_terminal_rows: 512,
                             maximum_terminal_columns: 512,
+                            maximum_clients: MAX_DAEMON_CLIENTS as u16,
+                            maximum_pty_sessions: MAX_DAEMON_PTY_SESSIONS as u16,
+                            maximum_scrollback_lines: MAX_TERMINAL_SCROLLBACK_LINES as u32,
+                            maximum_utility_output_bytes: MAX_UTILITY_OUTPUT_BYTES as u32,
                         },
                     }))?;
                     client_id = hello.client_id;

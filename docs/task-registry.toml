@@ -4003,12 +4003,12 @@ notes = "Private canonical runtime paths, 0600 sockets, same-UID peer authentica
 id = "RESOURCE-LIMITS-001"
 milestone = "M11"
 title = "Add daemon resource limits"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 436
 required = true
 depends_on = ["DAEMON-STATE-001", "PTY-MULTI-001"]
 verify = ["cargo test -p yoctui resource_limits"]
-notes = "Bound client/PTY counts, scrollback/log/history, IPC queues/requests/snapshots, dimensions, and utility output."
+notes = "Advertised typed limits now cover frame/snapshot size, clients, PTYs, pending requests, queue depth, terminal dimensions, scrollback, utility output, and PTY output events; runtime enforces client/session/dimension/output bounds while existing journals and terminal emulation retain bounded history."
 
 [[task]]
 id = "DAEMON-TELEMETRY-001"

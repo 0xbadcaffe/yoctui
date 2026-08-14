@@ -9,7 +9,9 @@ use yoctui_model::{
     PtyClientId, PtyCommandIdentity, PtyDimensions, PtySessionId, PtySessionKind, PtySessionSpec,
     PtyWorkspaceContext,
 };
-use yoctui_protocol::daemon::{PtyCommand, PtyKind, TerminalDimensions};
+use yoctui_protocol::daemon::{
+    MAX_DAEMON_PTY_SESSIONS, MAX_PTY_OUTPUT_EVENT_BYTES, PtyCommand, PtyKind, TerminalDimensions,
+};
 
 use crate::pty_attach::{DaemonPtySession, PtyAttachEvent};
 
@@ -87,6 +89,11 @@ impl DaemonPtySupervisor {
         command: PtyCommand,
         dimensions: TerminalDimensions,
     ) -> Result<PtySessionId, String> {
+        if self.sessions.len() >= MAX_DAEMON_PTY_SESSIONS {
+            return Err(format!(
+                "PTY session limit reached ({MAX_DAEMON_PTY_SESSIONS})"
+            ));
+        }
         let id = PtySessionId(
             self.sessions
                 .keys()
@@ -164,7 +171,8 @@ impl DaemonPtySupervisor {
                     event = session.next_event() => {
                         match event {
                             Ok(PtyAttachEvent::Started) => {}
-                            Ok(PtyAttachEvent::Output { bytes, .. }) => {
+                            Ok(PtyAttachEvent::Output { mut bytes, .. }) => {
+                                bytes.truncate(MAX_PTY_OUTPUT_EVENT_BYTES);
                                 let _ = event_tx.send(DaemonPtyEvent::Output { session_id, bytes });
                             }
                             Ok(PtyAttachEvent::Exited(status)) => {
@@ -269,6 +277,13 @@ fn wire_spec(
     if !cwd.is_absolute() {
         return Err("PTY cwd must be absolute".into());
     }
+    if dimensions.columns == 0
+        || dimensions.rows == 0
+        || dimensions.columns > 512
+        || dimensions.rows > 512
+    {
+        return Err("PTY dimensions must be within 1..=512".into());
+    }
     Ok(PtySessionSpec {
         id,
         name,
@@ -351,5 +366,34 @@ fn snapshot_to_wire(
             yoctui_model::PtyExitStatus::Signal(_) => None,
         }),
         restartable: true,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn resource_limits_reject_oversized_pty_dimensions() {
+        let command = PtyCommand {
+            program: "/bin/sh".into(),
+            arguments: Vec::new(),
+            environment_profile_id: None,
+        };
+        let dimensions = TerminalDimensions {
+            columns: 513,
+            rows: 24,
+        };
+        assert!(
+            wire_spec(
+                PtySessionId(1),
+                "bounded".into(),
+                PtyKind::BuildShell,
+                "/tmp".into(),
+                command,
+                dimensions,
+            )
+            .is_err()
+        );
     }
 }

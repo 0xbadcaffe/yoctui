@@ -18,6 +18,11 @@ preserves each workflow's confirmation boundary.
 4. Long-running work is represented as persistent background jobs.
 5. Destructive actions are previewed and confirmed.
 6. External tools are adapters behind shared execution contracts.
+
+Daemon resource limits are part of the typed protocol contract. The daemon
+advertises bounded frame/snapshot sizes, client and PTY counts, request/queue
+depth, terminal dimensions, scrollback, and output sizes; journals and terminal
+emulation enforce those bounds before state or events cross the IPC boundary.
 7. Bounded memory behavior is mandatory.
 8. Live compatibility claims require live validation.
 

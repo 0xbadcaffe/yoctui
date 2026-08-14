@@ -416,4 +416,7 @@ client does not terminate the daemon and a fresh same-host Unix-socket client
 can reattach. Security hardening is verified: runtime directories and sockets
 are private and canonical, peer UIDs are authenticated, stale socket identity
 is checked, and untrusted project profiles/shell-command fields are rejected.
-Resource limits are the next active gate.
+Resource limits are now explicit in the versioned daemon handshake and enforced
+for clients, PTY sessions, dimensions, scrollback, and output, with journal
+and terminal-emulator bounds retained. Daemon health telemetry is the next
+active gate.
