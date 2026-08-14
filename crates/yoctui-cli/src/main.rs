@@ -1092,7 +1092,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
             DaemonSnapshotJournal, DaemonSnapshotLimits, DaemonSnapshotSync, MAX_FRAME_BYTES,
             ProtocolLimits, ProtocolVersion, ServerMessage, SnapshotReplacementReason,
         },
-        daemon_ipc::{DaemonListener, IpcError, runtime_paths},
+        daemon_ipc::{DaemonConnection, DaemonListener, IpcError, runtime_paths},
         daemon_lifecycle::{
             DaemonRuntimeRecord, RuntimeRecordState, classify_runtime_record, read_boot_id,
             read_runtime_record, remove_runtime_record, write_runtime_record,
@@ -1176,6 +1176,10 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         paths: paths.clone(),
         instance,
     };
+    // Connections are serviced in short, bounded slices.  Keeping the
+    // negotiated state and replay cursor alongside each socket lets one idle
+    // client yield to other clients while the daemon continues polling jobs.
+    let mut clients: Vec<(DaemonConnection, bool, bool, u64)> = Vec::new();
     let mut shutting_down = false;
     while !shutting_down {
         while let Some(event) = devtool_supervisor.try_event() {
@@ -1211,15 +1215,53 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         if termination_requested(termination) {
             break;
         }
-        let mut connection = match listener.accept(Duration::from_millis(250)) {
-            Ok(connection) => connection,
-            Err(IpcError::Timeout(_)) => continue,
+        match listener.accept(Duration::from_millis(1)) {
+            Ok(connection) => {
+                connection.set_timeout(Some(Duration::from_millis(5)))?;
+                clients.push((connection, false, false, daemon_journal.snapshot().sequence));
+            }
+            Err(IpcError::Timeout(_)) => {}
             Err(error) => return Err(error.into()),
-        };
-        connection.set_timeout(Some(Duration::from_secs(2)))?;
-        let mut negotiated = false;
-        loop {
-            match connection.receive::<ClientMessage>() {
+        }
+
+        let mut remaining_clients = Vec::with_capacity(clients.len());
+        for (mut connection, mut negotiated, mut attached, mut last_sequence) in clients.drain(..) {
+            let mut keep_client = true;
+            if attached {
+                match daemon_journal.synchronize(Some(yoctui_protocol::daemon::ResumeCursor {
+                    daemon_instance_id: instance,
+                    last_sequence,
+                })) {
+                    yoctui_protocol::daemon::DaemonSnapshotSync::Replay { events, .. } => {
+                        for event in events {
+                            last_sequence = event.sequence;
+                            if let Err(error) = connection.send(&ServerMessage::Event(event)) {
+                                tracing::debug!(%error, "dropping daemon client during event fan-out");
+                                keep_client = false;
+                                break;
+                            }
+                        }
+                    }
+                    yoctui_protocol::daemon::DaemonSnapshotSync::Replace { snapshot, reason } => {
+                        if reason != SnapshotReplacementReason::InitialAttach {
+                            connection.send(&ServerMessage::ResyncRequired {
+                                reason: format!("client replica must be replaced: {reason:?}"),
+                                current_sequence: snapshot.sequence,
+                            })?;
+                        }
+                        last_sequence = snapshot.sequence;
+                        connection.send(&ServerMessage::Attached {
+                            snapshot: *snapshot,
+                            replayed_through: last_sequence,
+                        })?;
+                    }
+                }
+            }
+            if !keep_client {
+                continue;
+            }
+            loop {
+                match connection.receive::<ClientMessage>() {
                 Ok(ClientMessage::Hello(_)) => {
                     connection.send(&ServerMessage::Hello(DaemonHello {
                         selected_version: ProtocolVersion::CURRENT,
@@ -1255,6 +1297,8 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                                 })?;
                             }
                             let replayed_through = snapshot.sequence;
+                            last_sequence = replayed_through;
+                            attached = true;
                             connection.send(&ServerMessage::Attached {
                                 snapshot: *snapshot,
                                 replayed_through,
@@ -1271,11 +1315,14 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                                 snapshot: daemon_journal.snapshot().clone(),
                                 replayed_through,
                             })?;
+                            last_sequence = replayed_through;
+                            attached = true;
                         }
                     }
                 }
                 Ok(ClientMessage::Detach) if negotiated => {
                     connection.send(&ServerMessage::Detaching)?;
+                    keep_client = false;
                     break;
                 }
                 Ok(ClientMessage::Command(request))
@@ -1466,6 +1513,10 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                         request_id: request.request_id,
                         outcome,
                     }))?;
+                    // Command-created events are sent directly above. Advance
+                    // this client's replay cursor so the next fan-out pass
+                    // does not duplicate them.
+                    last_sequence = daemon_journal.snapshot().sequence;
                 }
                 Ok(_) => connection.send(&ServerMessage::Error(
                     yoctui_protocol::daemon::ProtocolFailure {
@@ -1475,13 +1526,23 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                         retryable: false,
                     },
                 ))?,
-                Err(IpcError::Disconnected | IpcError::Timeout(_)) => break,
+                Err(IpcError::Timeout(_)) => break,
+                Err(IpcError::Disconnected) => {
+                    keep_client = false;
+                    break;
+                }
                 Err(error) => {
                     tracing::warn!(%error, "daemon client disconnected during request");
+                    keep_client = false;
                     break;
                 }
             }
+            }
+            if keep_client {
+                remaining_clients.push((connection, negotiated, attached, last_sequence));
+            }
         }
+        clients = remaining_clients;
     }
     write_persisted_state(
         &persist_paths,

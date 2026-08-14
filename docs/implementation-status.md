@@ -377,7 +377,12 @@ Standalone fallback is explicitly local-only: attach failures produce a visible
 diagnostic and preserve the existing single-process UI without implying daemon
 job ownership.
 Multi-client protocol state is typed and bounded, including client identity and
-client-local replica boundaries; concurrent connection fan-out remains active.
+client-local replica boundaries. The daemon now services attached Unix sockets
+in bounded slices, accepts a second client while the first is idle, and fans
+out ordered journal events from independent per-client replay cursors. The
+runtime integration test exercises both concurrent attach and cross-client
+event delivery. The MULTICLIENT parent gate is complete; the next active split
+defines PTY writer ownership across those clients.
 The interactive runtime attach/poll/detach path is verified for typed daemon
 effects and UI daemon-health rendering; the parent client-architecture gate is
 next.

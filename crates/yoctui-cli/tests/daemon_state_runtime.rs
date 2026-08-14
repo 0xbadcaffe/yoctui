@@ -9,8 +9,8 @@ use std::{
 };
 use yoctui_protocol::{
     daemon::{
-        Capability, ClientHello, ClientId, ClientMessage, ProjectProfileSummary, ProtocolVersion,
-        ServerMessage, Subscription,
+        Capability, ClientHello, ClientId, ClientMessage, CommandRequest, DaemonCommand,
+        ProjectProfileSummary, ProtocolVersion, RequestId, ServerMessage, Subscription,
     },
     daemon_ipc::{DaemonConnection, runtime_paths_for},
 };
@@ -72,6 +72,44 @@ fn attach_snapshot(
         ServerMessage::Detaching
     ));
     (hello, attached)
+}
+
+fn connect_and_attach(runtime: &Path, client_id: ClientId) -> DaemonConnection {
+    let paths = runtime_paths_for(runtime.to_path_buf(), unsafe { libc::geteuid() }).unwrap();
+    let mut connection = DaemonConnection::connect(&paths, Duration::from_secs(2)).unwrap();
+    connection
+        .set_timeout(Some(Duration::from_secs(2)))
+        .unwrap();
+    connection
+        .send(&ClientMessage::Hello(ClientHello {
+            minimum_version: ProtocolVersion::CURRENT,
+            maximum_version: ProtocolVersion::CURRENT,
+            client_id,
+            client_name: format!("multi-client-{}", client_id.0[0]),
+            capabilities: vec![Capability::StateSnapshots, Capability::BackgroundJobs],
+        }))
+        .unwrap();
+    assert!(matches!(
+        connection.receive::<ServerMessage>().unwrap(),
+        ServerMessage::Hello(_)
+    ));
+    connection
+        .send(&ClientMessage::Attach {
+            workspace: None,
+            subscription: Subscription {
+                state: true,
+                jobs: true,
+                logs: true,
+                pty_sessions: Vec::new(),
+            },
+            resume: None,
+        })
+        .unwrap();
+    assert!(matches!(
+        connection.receive::<ServerMessage>().unwrap(),
+        ServerMessage::Attached { .. }
+    ));
+    connection
 }
 
 #[test]
@@ -146,5 +184,71 @@ fn daemon_state_runtime_owns_snapshot_across_client_detach_and_reattach() {
         .output()
         .unwrap();
     assert!(status.status.success());
+    drop(guard);
+}
+
+#[test]
+fn daemon_runtime_accepts_a_second_client_while_the_first_is_idle() {
+    let binary = PathBuf::from(env!("CARGO_BIN_EXE_yoctui"));
+    let runtime = std::env::temp_dir().join(format!(
+        "yoctui-cli-daemon-multi-client-runtime-{}",
+        std::process::id()
+    ));
+    let _ = fs::remove_dir_all(&runtime);
+    fs::DirBuilder::new().mode(0o700).create(&runtime).unwrap();
+    let guard = DaemonGuard {
+        binary: binary.clone(),
+        runtime: runtime.clone(),
+    };
+    let start = Command::new(&binary)
+        .args(["daemon", "start"])
+        .env("XDG_RUNTIME_DIR", &runtime)
+        .env("XDG_STATE_HOME", runtime.join("state"))
+        .output()
+        .unwrap();
+    assert!(
+        start.status.success(),
+        "{}",
+        String::from_utf8_lossy(&start.stderr)
+    );
+
+    let mut first = connect_and_attach(&runtime, ClientId([1; 16]));
+    // The first socket remains attached and sends no further frames. A
+    // single-client daemon would block here waiting for its next request and
+    // never complete the second handshake.
+    let mut second = connect_and_attach(&runtime, ClientId([2; 16]));
+
+    first
+        .send(&ClientMessage::Command(CommandRequest {
+            request_id: RequestId(7),
+            expected_generation: None,
+            command: DaemonCommand::InspectTestResultTool {
+                path_directories: Vec::new(),
+            },
+        }))
+        .unwrap();
+    assert!(matches!(
+        first.receive::<ServerMessage>().unwrap(),
+        ServerMessage::Event(_)
+    ));
+    assert!(matches!(
+        first.receive::<ServerMessage>().unwrap(),
+        ServerMessage::CommandResult(_)
+    ));
+    assert!(matches!(
+        second.receive::<ServerMessage>().unwrap(),
+        ServerMessage::Event(_)
+    ));
+
+    first.send(&ClientMessage::Detach).unwrap();
+    assert!(matches!(
+        first.receive::<ServerMessage>().unwrap(),
+        ServerMessage::Detaching
+    ));
+    second.send(&ClientMessage::Detach).unwrap();
+    assert!(matches!(
+        second.receive::<ServerMessage>().unwrap(),
+        ServerMessage::Detaching
+    ));
     drop(guard);
 }

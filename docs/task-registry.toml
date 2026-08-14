@@ -3750,12 +3750,12 @@ notes = "Daemon attach is preferred; unavailable attach keeps an explicitly labe
 id = "MULTICLIENT-001"
 milestone = "M11"
 title = "Support multiple daemon clients safely"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 426
 required = true
 depends_on = ["CLIENT-ARCH-001"]
-verify = ["cargo test -p yoctui multiclient"]
-notes = "Split into typed client-state protocol coverage and the remaining concurrent daemon connection runtime work."
+verify = ["cargo test -p yoctui --test daemon_state_runtime daemon_runtime_accepts_a_second_client_while_the_first_is_idle"]
+notes = "Typed identity/state, concurrent connection servicing, bounded event fan-out, and explicit client replay cursors are verified together."
 
 [[task]]
 id = "MULTICLIENT-PROTOCOL-001"
@@ -3772,12 +3772,12 @@ notes = "Client identity, attached-client summaries, global daemon state, and cl
 id = "MULTICLIENT-RUNTIME-001"
 milestone = "M11"
 title = "Support simultaneous daemon client connections"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 426
 required = true
 depends_on = ["MULTICLIENT-PROTOCOL-001"]
-verify = ["cargo test -p yoctui multiclient"]
-notes = "Concurrent attached-client runtime remains active; journal fan-out/replay coverage is split and verified independently."
+verify = ["cargo test -p yoctui --test daemon_state_runtime daemon_runtime_accepts_a_second_client_while_the_first_is_idle"]
+notes = "The foreground daemon services each attached socket in bounded slices, retains negotiated/replay state, and fans out ordered journal events without blocking on an idle client."
 
 [[task]]
 id = "MULTICLIENT-FANOUT-001"
