@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-QA-TASK-RUNNER-001
-**Title:** Move QA task capability and checks into the daemon
+**ID:** CLIENT-RUNTIME-SECURITY-MAPPER-001
+**Title:** Run security package mapping in the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Daemon routes QA capability and task checks through typed daemon commands so
-the interactive client does not own long-running QA execution.
+Route confirmed cve-check-map-pkgs operations through daemon-owned typed
+process execution.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_runtime_qa_task
+cargo test -p yoctui client_runtime_security_mapper
 ```

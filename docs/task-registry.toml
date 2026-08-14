@@ -3464,12 +3464,12 @@ notes = "Parent gate split into QA/report and security mapper/report children."
 id = "CLIENT-RUNTIME-QA-REPORT-001"
 milestone = "M11"
 title = "Move QA jobs into the daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TESTING-001"]
 verify = ["cargo test -p yoctui client_runtime_qa"]
-notes = "Parent gate split into typed QA capability/report protocol and daemon runner children."
+notes = "Parent gate complete: typed capability requests, managed layer checks, and report scan workers are daemon-owned."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-SNAPSHOT-001"
@@ -3486,23 +3486,23 @@ notes = "Added bounded QA capability/task/report snapshot DTOs and truncation co
 id = "CLIENT-RUNTIME-QA-WORKER-001"
 milestone = "M11"
 title = "Move QA report workers into the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QA-SNAPSHOT-001"]
 verify = ["cargo test -p yoctui client_runtime_qa"]
-notes = "Parent gate split into QA capability/task and report worker children."
+notes = "Parent gate complete: QA capability/task and report workers are verified behind daemon commands."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-TASK-WORKER-001"
 milestone = "M11"
 title = "Move QA capability and task jobs into the daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QA-SNAPSHOT-001"]
 verify = ["cargo test -p yoctui client_runtime_qa_task"]
-notes = "Parent gate split into QA capability input protocol and daemon task worker children."
+notes = "Parent gate complete: bounded QA capability inputs, daemon inspection command mapping, and daemon-owned layer check runner are verified."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-INPUT-001"
@@ -3519,12 +3519,12 @@ notes = "Added bounded typed QA capability input DTO for workspace, layers, reci
 id = "CLIENT-RUNTIME-QA-TASK-RUNNER-001"
 milestone = "M11"
 title = "Move QA task capability and checks into the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QA-INPUT-001"]
 verify = ["cargo test -p yoctui client_runtime_qa_task"]
-notes = "Parent gate split into QA capability command mapping and daemon execution children."
+notes = "Client capability inspection now maps workspace identities into the typed daemon request; daemon inspection and managed checks remain outside client process ownership."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-COMMAND-001"
@@ -3541,12 +3541,12 @@ notes = "Added versioned InspectQaCapability command and typed QaCapability even
 id = "CLIENT-RUNTIME-QA-EXECUTION-001"
 milestone = "M11"
 title = "Execute QA capability and checks in the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QA-COMMAND-001"]
 verify = ["cargo test -p yoctui client_runtime_qa_task"]
-notes = "Parent gate split into daemon QA capability adapter and managed check runner children."
+notes = "Parent gate complete: daemon QA capability adapter and managed layer check runner are both verified."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-ADAPTER-001"
@@ -3574,23 +3574,45 @@ notes = "Daemon reconstructs and revalidates confirmed layer-QA identities, owns
 id = "CLIENT-RUNTIME-QA-REPORT-WORKER-001"
 milestone = "M11"
 title = "Move QA report scans into the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QA-TASK-WORKER-001"]
 verify = ["cargo test -p yoctui client_runtime_qa_report"]
-notes = "Daemon owns bounded QA report discovery, parsing and terminal state."
+notes = "Daemon builds exact bounded import candidates, runs QaReportAdapter with cancellation, and publishes report snapshots and terminal QA job state."
 
 [[task]]
 id = "CLIENT-RUNTIME-SECURITY-REPORT-001"
 milestone = "M11"
 title = "Move security and SPDX jobs into the daemon"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QA-REPORT-001"]
 verify = ["cargo test -p yoctui client_runtime_security"]
-notes = "Route typed CVE, SPDX, security report and mapper jobs through daemon ownership."
+notes = "Parent gate split into report scanning and package-mapper children before implementation."
+
+[[task]]
+id = "CLIENT-RUNTIME-SECURITY-REPORT-WORKER-001"
+milestone = "M11"
+title = "Run security and SPDX report scans in the daemon"
+status = "DONE"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-SECURITY-REPORT-001"]
+verify = ["cargo test -p yoctui client_runtime_security"]
+notes = "Daemon owns bounded SecurityReportAdapter scans, cancellation, report snapshots, and terminal security job state."
+
+[[task]]
+id = "CLIENT-RUNTIME-SECURITY-MAPPER-001"
+milestone = "M11"
+title = "Run security package mapping in the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-SECURITY-REPORT-WORKER-001"]
+verify = ["cargo test -p yoctui client_runtime_security_mapper"]
+notes = "Route confirmed cve-check-map-pkgs operations through daemon-owned typed process execution."
 
 [[task]]
 id = "CLIENT-RUNTIME-MAINTENANCE-001"

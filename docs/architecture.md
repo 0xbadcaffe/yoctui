@@ -1897,3 +1897,12 @@ revalidates the executable, layer, and report roots, then owns the existing
 process-group-aware runner. Output is bounded into daemon logs and job events;
 cancellation and terminal/lost states are published without relying on the
 attached client remaining alive.
+QA report imports use a separate daemon worker request carrying canonical,
+bounded paths. The daemon builds exact import candidates, runs the existing
+bounded report adapter with cancellation, and publishes a report snapshot plus
+job terminal state; report parsing is no longer tied to the client poll loop.
+
+Security and SPDX report scans follow the same daemon boundary: requests carry
+only bounded generation/path identities, the daemon owns cancellation and
+parsing through `SecurityReportAdapter`, and clients receive typed report
+snapshots and terminal job state.

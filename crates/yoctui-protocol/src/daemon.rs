@@ -235,6 +235,21 @@ pub enum DaemonCommand {
     CancelQaLayerCheck {
         session_id: u64,
     },
+    StartQaReportScan {
+        generation: u64,
+        build_directory: String,
+        paths: Vec<String>,
+    },
+    CancelQaReportScan {
+        generation: u64,
+    },
+    StartSecurityReportScan {
+        generation: u64,
+        paths: Vec<String>,
+    },
+    CancelSecurityReportScan {
+        generation: u64,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,
@@ -520,6 +535,8 @@ mod daemon_test_snapshot_tests {
             layer_directories: (0..MAX_QA_RECORDS + 1).map(|i| i.to_string()).collect(),
             recipe_names: Vec::new(),
             report_roots: Vec::new(),
+            selected_recipe_name: "recipe".into(),
+            selected_recipe_file: "/build/recipe.bb".into(),
         }
         .bounded();
         assert_eq!(input.layer_directories.len(), MAX_QA_RECORDS);
@@ -706,8 +723,16 @@ pub enum DaemonEvent {
     TestResultTool(DaemonTestResultToolCapability),
     QaSnapshot(DaemonQaSnapshot),
     QaCapability(DaemonQaSnapshot),
+    SecuritySnapshot(DaemonSecuritySnapshot),
     #[serde(other)]
     Unknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonSecuritySnapshot {
+    pub generation: u64,
+    pub reports: Vec<String>,
+    pub limitations: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1014,6 +1039,7 @@ pub fn apply_sequenced_event(
         | DaemonEvent::TestResultTool(_)
         | DaemonEvent::QaSnapshot(_)
         | DaemonEvent::QaCapability(_)
+        | DaemonEvent::SecuritySnapshot(_)
         | DaemonEvent::Unknown => {}
         DaemonEvent::ClientChanged(client) => {
             replace_by(&mut snapshot.clients, client.clone(), |item| item.id);

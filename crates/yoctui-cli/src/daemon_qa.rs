@@ -1,12 +1,13 @@
 use std::{collections::HashMap, path::PathBuf};
 use tokio::sync::mpsc;
 use yoctui_bitbake::{
-    QaLayerCommandSpec, QaLayerJobRunner, QaLayerRunnerEvent, QaTaskCapabilityInput,
-    QaTaskCapabilityInspector, QaTaskScopeInput,
+    QaLayerCommandSpec, QaLayerJobRunner, QaLayerRunnerEvent, QaReportAdapter, QaReportCandidate,
+    QaReportOrigin, QaReportScanInput, QaTaskCapabilityInput, QaTaskCapabilityInspector,
+    QaTaskScopeInput,
 };
 use yoctui_model::{
-    QaCheckId, QaLayerIdentity, QaLayerOperationId, QaLayerSessionId, QaOutputStream,
-    RecipeIdentity,
+    QaCheckId, QaFindingScope, QaLayerIdentity, QaLayerOperationId, QaLayerSessionId,
+    QaOutputStream, QaReportRequest, RecipeIdentity,
 };
 use yoctui_protocol::daemon::{DaemonQaCapabilityInput, DaemonQaSnapshot, JobId};
 
@@ -164,7 +165,149 @@ impl DaemonQaSupervisor {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DaemonQaReportEvent {
+    Started {
+        job_id: JobId,
+        generation: u64,
+    },
+    Completed {
+        job_id: JobId,
+        generation: u64,
+        reports: Vec<String>,
+        limitations: Vec<String>,
+    },
+    Failed {
+        job_id: JobId,
+        generation: u64,
+        message: String,
+    },
+    Cancelled {
+        job_id: JobId,
+        generation: u64,
+    },
+}
+
+pub struct DaemonQaReportSupervisor {
+    next_job_id: u64,
+    active: HashMap<u64, mpsc::UnboundedSender<()>>,
+    tx: mpsc::UnboundedSender<DaemonQaReportEvent>,
+    rx: mpsc::UnboundedReceiver<DaemonQaReportEvent>,
+}
+
+impl Default for DaemonQaReportSupervisor {
+    fn default() -> Self {
+        let (tx, rx) = mpsc::unbounded_channel();
+        Self {
+            next_job_id: 1,
+            active: HashMap::new(),
+            tx,
+            rx,
+        }
+    }
+}
+
+impl DaemonQaReportSupervisor {
+    pub fn start(
+        &mut self,
+        generation: u64,
+        build_directory: String,
+        paths: Vec<String>,
+    ) -> Result<JobId, String> {
+        if generation == 0 || self.active.contains_key(&generation) {
+            return Err("QA report generation is already active or invalid".into());
+        }
+        let build = PathBuf::from(build_directory);
+        let request = QaReportRequest::new(generation, paths.into_iter().map(Into::into).collect())
+            .map_err(str::to_owned)?;
+        let producer = QaCheckId::new("imported-report".into()).map_err(str::to_owned)?;
+        let scope = QaFindingScope::Layer(
+            QaLayerIdentity::new("workspace".into(), build.clone()).map_err(str::to_owned)?,
+        );
+        let candidates = request
+            .paths
+            .iter()
+            .map(|path| QaReportCandidate {
+                path: path.clone(),
+                origin: QaReportOrigin::Import,
+                format: None,
+                producer: producer.clone(),
+                scope: scope.clone(),
+                task: None,
+                test_name: Some("imported".into()),
+            })
+            .collect();
+        let input = QaReportScanInput {
+            build_directory: build,
+            request,
+            candidates,
+            known_checks: vec![producer],
+            known_scopes: vec![scope],
+        };
+        let job_id = JobId(self.next_job_id);
+        self.next_job_id = self.next_job_id.saturating_add(1);
+        let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
+        self.active.insert(generation, cancel_tx);
+        let tx = self.tx.clone();
+        tokio::spawn(async move {
+            let _ = tx.send(DaemonQaReportEvent::Started { job_id, generation });
+            let cancellation = yoctui_bitbake::QaReportCancellation::default();
+            let worker_cancel = cancellation.clone();
+            let mut worker = tokio::spawn(async move {
+                QaReportAdapter::new()
+                    .scan_with_cancellation(input, worker_cancel)
+                    .await
+            });
+            tokio::select! {
+                cancel = cancel_rx.recv() => {
+                    if cancel.is_some() { cancellation.cancel(); }
+                    let _ = worker.await;
+                    let _ = tx.send(DaemonQaReportEvent::Cancelled { job_id, generation });
+                }
+                result = &mut worker => match result {
+                    Ok(Ok(response)) => {
+                        let reports = response.outcome.reports().iter().map(|report| report.identity.path.display().to_string()).collect();
+                        let limitations = response.outcome.limitations().to_vec();
+                        let _ = tx.send(DaemonQaReportEvent::Completed { job_id, generation, reports, limitations });
+                    }
+                    Ok(Err(error)) => { let _ = tx.send(DaemonQaReportEvent::Failed { job_id, generation, message: error.to_string() }); }
+                    Err(error) => { let _ = tx.send(DaemonQaReportEvent::Failed { job_id, generation, message: error.to_string() }); }
+                }
+            }
+        });
+        Ok(job_id)
+    }
+
+    pub fn cancel(&mut self, generation: u64) -> Result<(), String> {
+        self.active
+            .get(&generation)
+            .ok_or_else(|| format!("unknown QA report generation {generation}"))?
+            .send(())
+            .map_err(|_| "QA report worker is no longer active".into())
+    }
+
+    pub fn try_event(&mut self) -> Option<DaemonQaReportEvent> {
+        let event = self.rx.try_recv().ok()?;
+        if matches!(
+            event,
+            DaemonQaReportEvent::Completed { .. }
+                | DaemonQaReportEvent::Failed { .. }
+                | DaemonQaReportEvent::Cancelled { .. }
+        ) {
+            let generation = match &event {
+                DaemonQaReportEvent::Completed { generation, .. }
+                | DaemonQaReportEvent::Failed { generation, .. }
+                | DaemonQaReportEvent::Cancelled { generation, .. } => *generation,
+                _ => 0,
+            };
+            self.active.remove(&generation);
+        }
+        Some(event)
+    }
+}
+
 pub fn inspect(input: DaemonQaCapabilityInput) -> Result<DaemonQaSnapshot, String> {
+    let input = input.bounded();
     let selected = RecipeIdentity {
         name: input.selected_recipe_name.clone(),
         file: PathBuf::from(input.selected_recipe_file),
@@ -236,5 +379,15 @@ mod tests {
             Vec::new(),
         );
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn client_runtime_qa_report_rejects_invalid_generation() {
+        let mut supervisor = DaemonQaReportSupervisor::default();
+        assert!(
+            supervisor
+                .start(0, "/build".into(), vec!["/tmp/report.json".into()])
+                .is_err()
+        );
     }
 }

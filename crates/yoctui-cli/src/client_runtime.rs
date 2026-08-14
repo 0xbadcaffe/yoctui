@@ -4,9 +4,10 @@ use thiserror::Error;
 use yoctui_app::DaemonClientSnapshot;
 use yoctui_model::{App, ClientDaemonLifecycle, Effect};
 use yoctui_protocol::daemon::{
-    ClientId, CommandRequest, DaemonCommand, DaemonDevtoolOperation, DaemonQemuRequest,
-    DaemonSdkArtifactIdentity, DaemonSdkContext, DaemonSdkNativeMode, DaemonSdkOperation,
-    DaemonTestSelftestRequest, DaemonWicCreateRequest, JobId, RequestId, Subscription,
+    ClientId, CommandRequest, DaemonCommand, DaemonDevtoolOperation, DaemonQaCapabilityInput,
+    DaemonQaCapabilityRequest, DaemonQemuRequest, DaemonSdkArtifactIdentity, DaemonSdkContext,
+    DaemonSdkNativeMode, DaemonSdkOperation, DaemonTestSelftestRequest, DaemonWicCreateRequest,
+    JobId, RequestId, Subscription,
 };
 
 use crate::client_transport::{ClientServerEvent, ClientTransportError, DaemonClientTransport};
@@ -89,6 +90,13 @@ impl InteractiveDaemonRuntime {
             .next_request
             .checked_add(1)
             .ok_or(ClientRuntimeError::RequestSpaceExhausted)?;
+        let command = match command {
+            DaemonCommand::InspectQaCapability { mut request } => {
+                request.request_id = request_id;
+                DaemonCommand::InspectQaCapability { request }
+            }
+            command => command,
+        };
         self.transport.command(CommandRequest {
             request_id,
             expected_generation: Some(app.daemon.generation),
@@ -252,6 +260,32 @@ fn daemon_command_for_effect(
                 .map(|path| path.display().to_string())
                 .collect(),
         },
+        Effect::Qa(yoctui_model::QaEffect::InspectCapability { scope }) => {
+            DaemonCommand::InspectQaCapability {
+                request: qa_capability_request(app, scope.as_ref())?,
+            }
+        }
+        Effect::Qa(yoctui_model::QaEffect::ImportReports(request)) => {
+            DaemonCommand::StartQaReportScan {
+                generation: request.generation,
+                build_directory: build_directory()?,
+                paths: request
+                    .paths
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect(),
+            }
+        }
+        Effect::Security(yoctui_model::SecurityEffect::ImportReports(request)) => {
+            DaemonCommand::StartSecurityReportScan {
+                generation: request.generation,
+                paths: request
+                    .paths
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect(),
+            }
+        }
         Effect::Qa(yoctui_model::QaEffect::StartLayerCheck {
             session,
             layer,
@@ -288,6 +322,80 @@ fn daemon_command_for_effect(
         }
         _ => return Ok(None),
     }))
+}
+
+fn qa_capability_request(
+    app: &App,
+    requested_scope: Option<&yoctui_model::QaScope>,
+) -> Result<DaemonQaCapabilityRequest, ClientRuntimeError> {
+    let selected = requested_scope
+        .map(|scope| scope.recipe.clone())
+        .or_else(|| app.qa.scope.as_ref().map(|scope| scope.recipe.clone()))
+        .or_else(|| {
+            app.workspace
+                .recipes
+                .get(app.recipe_selection)
+                .and_then(|recipe| {
+                    recipe
+                        .file
+                        .clone()
+                        .map(|file| yoctui_model::RecipeIdentity {
+                            name: recipe.name.clone(),
+                            file,
+                        })
+                })
+        })
+        .or_else(|| {
+            app.workspace.recipes.iter().find_map(|recipe| {
+                recipe
+                    .file
+                    .clone()
+                    .map(|file| yoctui_model::RecipeIdentity {
+                        name: recipe.name.clone(),
+                        file,
+                    })
+            })
+        })
+        .ok_or(ClientRuntimeError::MissingQaLayerSession)?;
+    let recipe_names = app
+        .workspace
+        .recipes
+        .iter()
+        .map(|recipe| recipe.name.clone())
+        .collect();
+    let report_roots = app
+        .workspace
+        .variables
+        .iter()
+        .filter_map(|(name, value)| name.ends_with("_REPORT_ROOT").then(|| value.clone()))
+        .collect();
+    Ok(DaemonQaCapabilityRequest {
+        request_id: RequestId(0),
+        input: DaemonQaCapabilityInput {
+            generation: app.daemon.generation,
+            build_directory: app
+                .workspace
+                .build_dir
+                .as_ref()
+                .map(|path| path.display().to_string())
+                .ok_or(ClientRuntimeError::MissingBuildDirectory)?,
+            source_directory: app
+                .workspace
+                .source_dir
+                .as_ref()
+                .map(|path| path.display().to_string()),
+            layer_directories: app
+                .workspace
+                .layers
+                .iter()
+                .map(|layer| layer.path.display().to_string())
+                .collect(),
+            recipe_names,
+            report_roots,
+            selected_recipe_name: selected.name,
+            selected_recipe_file: selected.file.display().to_string(),
+        },
+    })
 }
 
 fn qemu_executable(
@@ -502,6 +610,39 @@ mod tests {
     #[test]
     fn client_runtime_random_identity_is_nonzero() {
         assert_ne!(random_client_id().unwrap().0, [0; 16]);
+    }
+
+    #[test]
+    fn client_runtime_qa_task_maps_capability_inspection_to_typed_daemon_input() {
+        let mut app = App::new(16, 4096);
+        app.workspace.build_dir = Some("/build".into());
+        app.workspace.recipes.push(yoctui_model::Recipe {
+            name: "busybox".into(),
+            file: Some("/layers/busybox.bb".into()),
+            ..Default::default()
+        });
+        let effect = Effect::Qa(yoctui_model::QaEffect::InspectCapability { scope: None });
+        let Some(DaemonCommand::InspectQaCapability { request }) =
+            daemon_command_for_effect(&app, &effect).unwrap()
+        else {
+            panic!("expected typed QA capability command");
+        };
+        assert_eq!(request.input.build_directory, "/build");
+        assert_eq!(request.input.selected_recipe_name, "busybox");
+        assert_eq!(request.input.recipe_names, vec!["busybox"]);
+    }
+
+    #[test]
+    fn client_runtime_qa_report_maps_import_to_daemon_worker() {
+        let mut app = App::new(16, 4096);
+        app.workspace.build_dir = Some("/build".into());
+        let request =
+            yoctui_model::QaReportRequest::new(1, vec!["/tmp/report.json".into()]).unwrap();
+        let effect = Effect::Qa(yoctui_model::QaEffect::ImportReports(request));
+        assert!(matches!(
+            daemon_command_for_effect(&app, &effect).unwrap(),
+            Some(DaemonCommand::StartQaReportScan { generation: 1, build_directory, .. }) if build_directory == "/build"
+        ));
     }
 
     #[test]

@@ -349,3 +349,11 @@ Layer QA checks now use a daemon-owned typed runner: confirmed executable/layer
 identities are revalidated at the daemon boundary, bounded output is published
 as daemon logs, and cancellation plus terminal/lost states survive client
 detach.
+QA capability inspection is now routed from the interactive client through the
+bounded daemon request, preserving selected recipe identity and workspace
+roots while keeping capability/task execution out of the client process.
+QA report imports now use a daemon-owned bounded worker with typed generation,
+path, cancellation, report snapshot, and terminal job events.
+Security/CVE/SPDX report scans now use a daemon-owned bounded worker with typed
+generation and path requests, cancellation, report snapshots, and terminal
+security job events; package mapping remains the next split gate.
