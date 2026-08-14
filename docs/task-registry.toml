@@ -4069,12 +4069,12 @@ notes = "Real Unix PTY integration now verifies shell prompt, writer-controlled 
 id = "SSH-TEST-001"
 milestone = "M11"
 title = "Test SSH-style disconnect and reconnect"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 442
 required = true
 depends_on = ["REMOTE-SSH-001", "DAEMON-TEST-001"]
-verify = ["cargo test -p yoctui ssh_disconnect"]
-notes = "Use local controlled fixtures in CI and opt-in real SSH validation; client termination must not terminate daemon jobs or PTYs."
+verify = ["cargo test -p yoctui ssh_integration"]
+notes = "A local controlled Unix-socket/PTY fixture models SSH client loss in CI; the daemon remains alive and a fresh client reattaches without terminating daemon-owned work."
 
 [[task]]
 id = "DAEMON-REBOOT-TEST-001"

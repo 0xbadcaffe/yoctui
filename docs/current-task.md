@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** SSH-TEST-001
-**Title:** Test SSH-style disconnect and reconnect
+**ID:** DAEMON-REBOOT-TEST-001
+**Title:** Test daemon restart and recovery acceptance
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Verify that client termination does not terminate daemon work using a local
-pseudo-SSH/process fixture, with optional real SSH coverage.
+Simulate daemon death/restart and verify metadata reload, honest Lost children,
+BitBake/client reconnect, and session recovery semantics.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui ssh_integration
+cargo test -p yoctui daemon_reboot
 ```

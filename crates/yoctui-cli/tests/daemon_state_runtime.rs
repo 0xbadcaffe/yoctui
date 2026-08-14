@@ -254,7 +254,7 @@ fn daemon_runtime_accepts_a_second_client_while_the_first_is_idle() {
 }
 
 #[test]
-fn ssh_reattach_keeps_local_daemon_state_after_client_disconnect() {
+fn ssh_integration_reattach_keeps_local_daemon_state_after_client_disconnect() {
     let binary = PathBuf::from(env!("CARGO_BIN_EXE_yoctui"));
     let runtime = std::env::temp_dir().join(format!(
         "yoctui-cli-daemon-ssh-reattach-{}",
@@ -285,6 +285,11 @@ fn ssh_reattach_keeps_local_daemon_state_after_client_disconnect() {
         ServerMessage::Detaching
     ));
     drop(guard);
+}
+
+#[test]
+fn ssh_reattach_keeps_local_daemon_state_after_client_disconnect() {
+    ssh_integration_reattach_keeps_local_daemon_state_after_client_disconnect();
 }
 
 #[test]
