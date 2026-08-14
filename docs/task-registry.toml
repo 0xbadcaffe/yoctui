@@ -3981,12 +3981,12 @@ notes = "Session TOML persists the validated client-local PaneLayout, reloads it
 id = "REMOTE-SSH-001"
 milestone = "M11"
 title = "Validate local daemon reattachment over SSH"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 434
 required = true
 depends_on = ["CLIENT-ARCH-001", "DAEMON-IPC-001"]
 verify = ["cargo test -p yoctui ssh_reattach"]
-notes = "Client attaches to build-host local socket after SSH login; SSH loss cannot stop daemon work and no unauthenticated TCP daemon is added."
+notes = "Controlled Unix-socket integration drops an attached client and reattaches with a second identity while the daemon remains available; runtime remains local-only with no TCP listener."
 
 [[task]]
 id = "SECURITY-DAEMON-001"

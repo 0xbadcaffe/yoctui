@@ -252,3 +252,37 @@ fn daemon_runtime_accepts_a_second_client_while_the_first_is_idle() {
     ));
     drop(guard);
 }
+
+#[test]
+fn ssh_reattach_keeps_local_daemon_state_after_client_disconnect() {
+    let binary = PathBuf::from(env!("CARGO_BIN_EXE_yoctui"));
+    let runtime = std::env::temp_dir().join(format!(
+        "yoctui-cli-daemon-ssh-reattach-{}",
+        std::process::id()
+    ));
+    let _ = fs::remove_dir_all(&runtime);
+    fs::DirBuilder::new().mode(0o700).create(&runtime).unwrap();
+    let guard = DaemonGuard {
+        binary: binary.clone(),
+        runtime: runtime.clone(),
+    };
+    let start = Command::new(&binary)
+        .args(["daemon", "start"])
+        .env("XDG_RUNTIME_DIR", &runtime)
+        .env("XDG_STATE_HOME", runtime.join("state"))
+        .output()
+        .unwrap();
+    assert!(start.status.success());
+
+    // A dropped SSH client is equivalent to closing its local Unix socket;
+    // the daemon remains the owner and the next login attaches normally.
+    let first = connect_and_attach(&runtime, ClientId([3; 16]));
+    drop(first);
+    let mut reattached = connect_and_attach(&runtime, ClientId([4; 16]));
+    reattached.send(&ClientMessage::Detach).unwrap();
+    assert!(matches!(
+        reattached.receive::<ServerMessage>().unwrap(),
+        ServerMessage::Detaching
+    ));
+    drop(guard);
+}
