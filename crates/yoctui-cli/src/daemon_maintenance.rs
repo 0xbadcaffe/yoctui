@@ -247,6 +247,7 @@ pub fn inspect(
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn inspect_services(
     request: u64,
     build_directory: String,

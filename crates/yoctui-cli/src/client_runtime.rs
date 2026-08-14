@@ -517,7 +517,8 @@ fn qa_capability_request(
         .workspace
         .variables
         .iter()
-        .filter_map(|(name, value)| name.ends_with("_REPORT_ROOT").then(|| value.clone()))
+        .filter(|(name, _)| name.ends_with("_REPORT_ROOT"))
+        .map(|(_, value)| value.clone())
         .collect();
     Ok(DaemonQaCapabilityRequest {
         request_id: RequestId(0),
