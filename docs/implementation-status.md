@@ -382,7 +382,10 @@ in bounded slices, accepts a second client while the first is idle, and fans
 out ordered journal events from independent per-client replay cursors. The
 runtime integration test exercises both concurrent attach and cross-client
 event delivery. The MULTICLIENT parent gate is complete; the next active split
-defines PTY writer ownership across those clients.
+defines daemon routing for PTY writer ownership across those clients. The
+underlying PTY session model and attach wrapper already verify bounded viewers,
+single-writer epochs, stale-input rejection, and disconnect release; daemon
+wire/runtime integration remains explicitly open.
 The interactive runtime attach/poll/detach path is verified for typed daemon
 effects and UI daemon-health rendering; the parent client-architecture gate is
 next.

@@ -2,19 +2,18 @@
 
 ## Task
 
-**ID:** MULTICLIENT-PTY-001
-**Title:** Define explicit multi-client PTY input ownership
+**ID:** MULTICLIENT-PTY-RUNTIME-001
+**Title:** Route multi-client PTY ownership through the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Ensure many clients can view a daemon-owned PTY while exactly one explicit
-writer lease controls input and resize, with stale epochs and disconnects
-handled safely.
+Expose create/attach/detach/take-control/input/resize through daemon-owned
+sessions, publish typed PTY state/output events to all viewers, and release
+writer leases when a client disconnects.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model pty_session
-cargo test -p yoctui --test daemon_state_runtime daemon_runtime_accepts_a_second_client_while_the_first_is_idle
+cargo test -p yoctui --test daemon_pty_runtime multiclient_pty
 ```

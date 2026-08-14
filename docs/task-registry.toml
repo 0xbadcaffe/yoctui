@@ -3799,7 +3799,29 @@ priority = 427
 required = true
 depends_on = ["MULTICLIENT-001", "PTY-ATTACH-001"]
 verify = ["cargo test -p yoctui multiclient_pty"]
-notes = "Allow many viewers and one visible writer with explicit take-control and timeout/disconnect release; never merge competing keystrokes silently."
+notes = "Split into the verified single-writer model/attach boundary and the remaining daemon command/runtime integration; allow many viewers and one visible writer with explicit take-control and timeout/disconnect release."
+
+[[task]]
+id = "MULTICLIENT-PTY-MODEL-001"
+milestone = "M11"
+title = "Verify bounded multi-client PTY writer model"
+status = "DONE"
+priority = 427
+required = true
+depends_on = ["MULTICLIENT-001", "PTY-ATTACH-001"]
+verify = ["cargo test -p yoctui-model pty_session", "cargo test -p yoctui pty_attach"]
+notes = "The typed PTY session model and daemon-owned attach wrapper allow multiple viewers, enforce one writer lease with monotonic epochs, reject stale/non-writer input and resize, and release ownership on detach/disconnect."
+
+[[task]]
+id = "MULTICLIENT-PTY-RUNTIME-001"
+milestone = "M11"
+title = "Route multi-client PTY ownership through the daemon"
+status = "NOT_STARTED"
+priority = 427
+required = true
+depends_on = ["MULTICLIENT-PTY-MODEL-001"]
+verify = ["cargo test -p yoctui --test daemon_pty_runtime multiclient_pty"]
+notes = "Expose create/attach/detach/take-control/input/resize through daemon-owned sessions, publish typed PTY state/output events to all viewers, and release writer leases on client loss."
 
 [[task]]
 id = "KEYBOARD-PREFIX-001"
