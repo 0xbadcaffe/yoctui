@@ -8237,6 +8237,25 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             continue;
                         }
                         PrefixEvent::Command(command) => {
+                            if matches!(
+                                command,
+                                PrefixCommand::CreateSession | PrefixCommand::TakeControl
+                            ) {
+                                if let Some(runtime) = daemon_runtime.as_mut() {
+                                    if let Err(error) = runtime.route_prefix(&app, command) {
+                                        app.notification =
+                                            Some(format!("Prefix command failed: {error}"));
+                                    }
+                                } else {
+                                    app.notification =
+                                        Some("Daemon is unavailable for terminal sessions.".into());
+                                }
+                            }
+                            if command == PrefixCommand::Detach
+                                && let Some(runtime) = daemon_runtime.take()
+                            {
+                                let _ = runtime.detach(&mut app);
+                            }
                             app.notification = Some(match command {
                                 PrefixCommand::CommandPalette => {
                                     let _ = update(&mut app, Action::OpenCommandPalette);

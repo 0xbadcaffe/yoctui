@@ -1,7 +1,7 @@
 use std::{fs::File, io::Read, time::Duration};
 
 use thiserror::Error;
-use yoctui_app::DaemonClientSnapshot;
+use yoctui_app::{DaemonClientSnapshot, PrefixCommand};
 use yoctui_model::{App, ClientDaemonLifecycle, Effect};
 use yoctui_protocol::daemon::{
     ClientId, CommandRequest, DaemonCommand, DaemonDevtoolOperation, DaemonQaCapabilityInput,
@@ -105,11 +105,80 @@ impl InteractiveDaemonRuntime {
         Ok(RuntimeEffectRoute::Daemon(request_id))
     }
 
+    pub fn route_prefix(
+        &mut self,
+        app: &App,
+        command: PrefixCommand,
+    ) -> Result<RuntimeEffectRoute, ClientRuntimeError> {
+        let Some(daemon_command) = prefix_daemon_command(app, command)? else {
+            return Ok(RuntimeEffectRoute::ClientLocal);
+        };
+        let request_id = RequestId(self.next_request);
+        self.next_request = self
+            .next_request
+            .checked_add(1)
+            .ok_or(ClientRuntimeError::RequestSpaceExhausted)?;
+        self.transport.command(CommandRequest {
+            request_id,
+            expected_generation: Some(app.daemon.generation),
+            command: daemon_command,
+        })?;
+        Ok(RuntimeEffectRoute::Daemon(request_id))
+    }
+
     pub fn detach(mut self, app: &mut App) -> Result<(), ClientRuntimeError> {
         self.transport.detach()?;
         self.replica.disconnect_app(app);
         Ok(())
     }
+}
+
+fn prefix_daemon_command(
+    app: &App,
+    command: PrefixCommand,
+) -> Result<Option<DaemonCommand>, ClientRuntimeError> {
+    let daemon_command = match command {
+        PrefixCommand::CreateSession => {
+            let cwd = app
+                .workspace
+                .build_dir
+                .as_ref()
+                .ok_or(ClientRuntimeError::MissingBuildDirectory)?;
+            DaemonCommand::CreatePty {
+                name: "build shell".into(),
+                kind: yoctui_protocol::daemon::PtyKind::BuildShell,
+                cwd: cwd.display().to_string(),
+                command: yoctui_protocol::daemon::PtyCommand {
+                    program: "/bin/sh".into(),
+                    arguments: Vec::new(),
+                    environment_profile_id: None,
+                },
+                dimensions: yoctui_protocol::daemon::TerminalDimensions {
+                    columns: 120,
+                    rows: 40,
+                },
+            }
+        }
+        PrefixCommand::TakeControl => {
+            let session = app
+                .daemon
+                .pty_sessions
+                .iter()
+                .find(|session| matches!(session.lifecycle, ClientDaemonLifecycle::Running))
+                .ok_or(ClientRuntimeError::MissingPtySession)?;
+            DaemonCommand::TakePtyControl {
+                session_id: yoctui_protocol::daemon::PtySessionId(session.id),
+                expected_epoch: 0,
+            }
+        }
+        PrefixCommand::CommandPalette | PrefixCommand::Help => return Ok(None),
+        PrefixCommand::NextSession
+        | PrefixCommand::PreviousSession
+        | PrefixCommand::SplitHorizontal
+        | PrefixCommand::SplitVertical
+        | PrefixCommand::Detach => return Ok(None),
+    };
+    Ok(Some(daemon_command))
 }
 
 fn daemon_command_for_effect(
@@ -710,6 +779,8 @@ pub enum ClientRuntimeError {
     NoActiveDaemonJob,
     #[error("daemon request ID space exhausted")]
     RequestSpaceExhausted,
+    #[error("no running PTY session is available")]
+    MissingPtySession,
     #[error("authoritative build directory is unavailable")]
     MissingBuildDirectory,
     #[error("authoritative SDK deploy root is unavailable")]
@@ -816,6 +887,36 @@ mod tests {
     fn standalone_mode_remains_an_explicit_local_fallback() {
         assert!(
             "Daemon unavailable; interactive runtime is local".starts_with("Daemon unavailable")
+        );
+    }
+
+    #[test]
+    fn keyboard_prefix_runtime_maps_create_and_writer_commands() {
+        let mut app = App::new(16, 4096);
+        app.workspace.build_dir = Some("/build".into());
+        let Some(DaemonCommand::CreatePty { cwd, .. }) =
+            prefix_daemon_command(&app, PrefixCommand::CreateSession).unwrap()
+        else {
+            panic!("expected typed PTY create command");
+        };
+        assert_eq!(cwd, "/build");
+        app.daemon
+            .pty_sessions
+            .push(yoctui_model::ClientDaemonPtySummary {
+                id: 3,
+                name: "shell".into(),
+                lifecycle: ClientDaemonLifecycle::Running,
+                viewers: 1,
+            });
+        assert!(matches!(
+            prefix_daemon_command(&app, PrefixCommand::TakeControl).unwrap(),
+            Some(DaemonCommand::TakePtyControl { session_id, expected_epoch: 0 })
+                if session_id.0 == 3
+        ));
+        assert!(
+            prefix_daemon_command(&app, PrefixCommand::SplitHorizontal)
+                .unwrap()
+                .is_none()
         );
     }
 

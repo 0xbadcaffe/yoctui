@@ -3853,7 +3853,7 @@ status = "NOT_STARTED"
 priority = 428
 required = true
 depends_on = ["KEYBOARD-PREFIX-MODEL-001", "PTY-MULTI-001"]
-verify = ["cargo test -p yoctui --test keyboard_prefix_runtime keyboard_prefix"]
+verify = ["cargo test -p yoctui keyboard_prefix_runtime", "cargo clippy -p yoctui --tests --all-features -- -D warnings"]
 notes = "Execute create/switch/close/split/focus/resize/detach/take-control commands through typed client effects and daemon requests; no notification-only placeholders."
 
 [[task]]
