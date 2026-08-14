@@ -370,6 +370,8 @@ pub struct DaemonQaCapabilityInput {
     pub layer_directories: Vec<String>,
     pub recipe_names: Vec<String>,
     pub report_roots: Vec<String>,
+    pub selected_recipe_name: String,
+    pub selected_recipe_file: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
