@@ -413,4 +413,7 @@ signature metadata and process diagnostics; release and utility runners remain
 the next split gate.
 The local SSH-style disconnect/reconnect acceptance test now proves a dropped
 client does not terminate the daemon and a fresh same-host Unix-socket client
-can reattach. Security hardening is the next active gate.
+can reattach. Security hardening is verified: runtime directories and sockets
+are private and canonical, peer UIDs are authenticated, stale socket identity
+is checked, and untrusted project profiles/shell-command fields are rejected.
+Resource limits are the next active gate.

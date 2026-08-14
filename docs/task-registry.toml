@@ -3992,12 +3992,12 @@ notes = "Controlled Unix-socket integration drops an attached client and reattac
 id = "SECURITY-DAEMON-001"
 milestone = "M11"
 title = "Harden daemon IPC and process ownership"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 435
 required = true
 depends_on = ["DAEMON-IPC-001", "PTY-RUNNER-001", "PROFILE-LOAD-001"]
 verify = ["cargo test -p yoctui security_daemon", "cargo test -p yoctui-protocol security_daemon"]
-notes = "Enforce socket/peer/path safety, command and PTY ownership validation, environment filtering, profile trust rules, and no escalation."
+notes = "Private canonical runtime paths, 0600 sockets, same-UID peer authentication, stale-socket identity checks, trusted profile loading, and explicit rejection of untrusted shell-command fields are covered by protocol and CLI tests."
 
 [[task]]
 id = "RESOURCE-LIMITS-001"
