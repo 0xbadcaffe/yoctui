@@ -3673,12 +3673,12 @@ notes = "Daemon owns typed PR/hash/signature service capability inspection and b
 id = "CLIENT-RUNTIME-MAINTENANCE-RELEASE-001"
 milestone = "M11"
 title = "Move release and utility maintenance jobs into the daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-MAINTENANCE-SERVICE-CAPABILITY-001"]
 verify = ["cargo test -p yoctui client_runtime_maintenance_release"]
-notes = "Parent gate split into release capability and release runner children."
+notes = "Parent gate complete: daemon release/utility capability discovery and validated external runner routing are verified."
 
 [[task]]
 id = "CLIENT-RUNTIME-MAINTENANCE-RELEASE-CAPABILITY-001"
@@ -3777,7 +3777,18 @@ priority = 426
 required = true
 depends_on = ["MULTICLIENT-PROTOCOL-001"]
 verify = ["cargo test -p yoctui multiclient"]
-notes = "Run concurrent attached clients with global event fan-out and explicit serialization/rejection of conflicting commands."
+notes = "Concurrent attached-client runtime remains active; journal fan-out/replay coverage is split and verified independently."
+
+[[task]]
+id = "MULTICLIENT-FANOUT-001"
+milestone = "M11"
+title = "Verify global event fan-out and replay for clients"
+status = "DONE"
+priority = 426
+required = true
+depends_on = ["MULTICLIENT-PROTOCOL-001"]
+verify = ["cargo test -p yoctui-protocol multi_client_fanout"]
+notes = "The bounded daemon journal replays the same ordered global event stream from independent client cursors without sharing client-local layout."
 
 [[task]]
 id = "MULTICLIENT-PTY-001"
