@@ -5,5 +5,7 @@
 /artifacts/valgrind/*.txt
 /artifacts/flamegraph/*.svg
 /artifacts/profile/*.txt
+/.yoctui-live-cache/
+/.yoctui-live-daemon.*/
 /.coverage
 /.coverage.*
