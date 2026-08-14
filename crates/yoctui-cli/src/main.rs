@@ -27,11 +27,12 @@ use std::{
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
-    BuildJobCoordinator, DevtoolJobCoordinator, Input, build_environment_action,
-    config_compare_dialog_action, config_edit_confirmation_action, config_scope_picker_action,
-    config_source_picker_action, config_workspace_action, daemon_job_state_from_app,
-    daemon_protocol_snapshot, dependency_workspace_action, devtool_deploy_confirmation_action,
-    devtool_deploy_dialog_action, devtool_finish_confirmation_action, devtool_finish_picker_action,
+    BuildJobCoordinator, DevtoolJobCoordinator, Input, PrefixCommand, PrefixEvent, PrefixState,
+    build_environment_action, config_compare_dialog_action, config_edit_confirmation_action,
+    config_scope_picker_action, config_source_picker_action, config_workspace_action,
+    daemon_job_state_from_app, daemon_protocol_snapshot, dependency_workspace_action,
+    devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
+    devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
     key_action, logs_action, maintenance_dialog_action, maintenance_workspace_action,
@@ -8041,6 +8042,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     }
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
+    let mut prefix_state = PrefixState::default();
     #[cfg(unix)]
     let mut termination = termination_receiver()?;
     loop {
@@ -8222,9 +8224,47 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 continue;
             }
             if let Event::Key(k) = terminal_event {
-                let Some(input) = input_from_key(k) else {
+                let Some(mut input) = input_from_key(k) else {
                     continue;
                 };
+                if app.active_dialog().is_none() {
+                    match prefix_state.feed(input, Instant::now()) {
+                        PrefixEvent::Awaiting => {
+                            app.notification = Some(
+                                "Prefix Ctrl+B: c create | n/p session | %/\" split | d detach | : palette | ? help"
+                                    .into(),
+                            );
+                            continue;
+                        }
+                        PrefixEvent::Command(command) => {
+                            app.notification = Some(match command {
+                                PrefixCommand::CommandPalette => {
+                                    let _ = update(&mut app, Action::OpenCommandPalette);
+                                    "Command palette opened".into()
+                                }
+                                PrefixCommand::Help => {
+                                    let _ = update(&mut app, Action::Open(Screen::Help));
+                                    "Help opened".into()
+                                }
+                                PrefixCommand::CreateSession => {
+                                    "Create terminal session requested".into()
+                                }
+                                PrefixCommand::NextSession => "Next terminal session".into(),
+                                PrefixCommand::PreviousSession => {
+                                    "Previous terminal session".into()
+                                }
+                                PrefixCommand::SplitHorizontal => {
+                                    "Horizontal split requested".into()
+                                }
+                                PrefixCommand::SplitVertical => "Vertical split requested".into(),
+                                PrefixCommand::Detach => "Detached from terminal session".into(),
+                                PrefixCommand::TakeControl => "PTY writer control requested".into(),
+                            });
+                            continue;
+                        }
+                        PrefixEvent::Literal(next) => input = next,
+                    }
+                }
                 if app.command_palette_open {
                     let effect = match input {
                         Input::Up => update(&mut app, Action::SelectCommandPalette { delta: -1 }),

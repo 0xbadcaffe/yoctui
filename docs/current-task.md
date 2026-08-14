@@ -2,19 +2,18 @@
 
 ## Task
 
-**ID:** KEYBOARD-PREFIX-001
-**Title:** Add tmux-style prefix keyboard layer
+**ID:** KEYBOARD-PREFIX-RUNTIME-001
+**Title:** Route prefix commands to session and layout actions
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add a configurable documented prefix for terminal-session creation, switching,
-splitting, navigation, detach, help, and command-palette actions without
-stealing input from the active terminal application.
+Execute create/switch/close/split/focus/resize/detach/take-control commands
+through typed client effects and daemon requests; no notification-only
+placeholders.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app keyboard_prefix
-cargo test -p yoctui-ui keyboard_prefix
+cargo test -p yoctui --test keyboard_prefix_runtime keyboard_prefix
 ```

@@ -3827,12 +3827,34 @@ notes = "Daemon owns PTY runners and emulator updates, routes create/attach/take
 id = "KEYBOARD-PREFIX-001"
 milestone = "M11"
 title = "Add tmux-style prefix keyboard layer"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 428
 required = true
 depends_on = ["CLIENT-ARCH-001", "PTY-MULTI-001"]
 verify = ["cargo test -p yoctui-app keyboard_prefix", "cargo test -p yoctui-ui keyboard_prefix"]
-notes = "Configurable documented prefix supports sessions, splits, navigation, detach, palette/help, and visible timeout state without stealing terminal-app input."
+notes = "Split into the verified prefix state machine/UI documentation and the remaining routing of prefix commands to daemon session/layout actions."
+
+[[task]]
+id = "KEYBOARD-PREFIX-MODEL-001"
+milestone = "M11"
+title = "Implement configurable prefix state machine"
+status = "DONE"
+priority = 428
+required = true
+depends_on = ["CLIENT-ARCH-001", "PTY-MULTI-001"]
+verify = ["cargo test -p yoctui-app keyboard_prefix", "cargo test -p yoctui-ui keyboard_prefix", "./scripts/check-docs.sh"]
+notes = "Default Ctrl+B prefix, one-second timeout, double-prefix literal route, typed command map, visible footer hint, and help documentation are verified without stealing dialog/editor input."
+
+[[task]]
+id = "KEYBOARD-PREFIX-RUNTIME-001"
+milestone = "M11"
+title = "Route prefix commands to session and layout actions"
+status = "NOT_STARTED"
+priority = 428
+required = true
+depends_on = ["KEYBOARD-PREFIX-MODEL-001", "PTY-MULTI-001"]
+verify = ["cargo test -p yoctui --test keyboard_prefix_runtime keyboard_prefix"]
+notes = "Execute create/switch/close/split/focus/resize/detach/take-control commands through typed client effects and daemon requests; no notification-only placeholders."
 
 [[task]]
 id = "LAYOUT-MODEL-001"

@@ -159,6 +159,12 @@ Keyboard:
 - `Enter`: activate entry
 - single-letter global shortcuts may jump directly to common workspaces
 - `Tab`: move focus to workspace
+- `Ctrl+B`: enter the configurable terminal-session prefix layer; the default
+  second-key map is `c` create, `n`/`p` next/previous session, `%` horizontal
+  split, `"` vertical split, `d` detach, `:` command palette, `?` help, and
+  `o` take PTY writer control
+- the prefix waits at most one second, shows its pending state in the footer,
+  and `Ctrl+B Ctrl+B` sends a literal prefix byte to the terminal
 
 ---
 
@@ -2327,6 +2333,10 @@ Global example:
 ```text
 ? Help  F5 Build  Ctrl+P Commands  / Search  Tab Focus  e Errors  l Logs  q Quit
 ```
+
+When terminal sessions are available, the footer also shows `Ctrl+B prefix`
+and the pending prefix map. Prefix commands are client-local navigation intent;
+PTY input remains daemon-authorized by the active writer lease.
 
 Layers example:
 

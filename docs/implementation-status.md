@@ -386,7 +386,10 @@ now crosses the daemon boundary: create/attach/take/release/input/resize/
 terminate commands use the daemon-owned runner, PTY state and output are
 published as typed events, and disconnect releases the writer lease. Real
 daemon integration covers a shell PTY and epoch-guarded input/resize. The next
-active split is the tmux-style keyboard prefix layer.
+active split routes the tmux-style keyboard prefix commands to real session and
+layout effects. The prefix state machine itself is complete: Ctrl+B timeout,
+double-prefix literal input, typed command mapping, and visible footer/help
+documentation are covered without intercepting dialogs or editors.
 The interactive runtime attach/poll/detach path is verified for typed daemon
 effects and UI daemon-health rendering; the parent client-architecture gate is
 next.

@@ -506,7 +506,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
         return "↑/↓ select | 1/2 sides | c compare | r refresh | e provider | Esc back/cancel";
     }
     if app.focus == FocusTarget::Navigator {
-        return "j/k or ↑/↓ select | Enter open | Tab workspace | Shift+Tab inspector | q quit";
+        return "j/k or ↑/↓ select | Enter open | Ctrl+B prefix | Tab workspace | Shift+Tab inspector | q quit";
     }
     if app.focus == FocusTarget::Inspector {
         return "Tab navigator | Shift+Tab workspace | ↑/↓ scroll inspector | / search | q quit";
@@ -516,7 +516,7 @@ fn footer_shortcuts(app: &App) -> &'static str {
     }
     match app.screen {
         Screen::Dashboard => {
-            "F5 build | Ctrl+P commands | Tab focus | ↑/↓ package progress | i image | ! shell | c cancel | r recipes | y layers | ? help | q quit"
+            "F5 build | Ctrl+P commands | Ctrl+B prefix | Tab focus | ↑/↓ package progress | i image | ! shell | c cancel | r recipes | y layers | ? help | q quit"
         }
         Screen::Tasks => {
             "↑/↓ select | f state | F field | / edit filter | d duration | c cancel | Tab focus"
@@ -12217,6 +12217,13 @@ mod tests {
             &app,
         );
         assert_ne!(preview.lines[0].spans[0].style, Style::default());
+    }
+
+    #[test]
+    fn dashboard_footer_documents_keyboard_prefix_layer() {
+        let app = App::new(32, 4096);
+        let footer = footer_shortcuts(&app);
+        assert!(footer.contains("Ctrl+B prefix"), "{footer}");
     }
 
     #[test]

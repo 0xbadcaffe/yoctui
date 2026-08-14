@@ -1,8 +1,11 @@
 //! Application-owned input mapping, keeping terminal concerns outside the reducer.
+mod keyboard_prefix;
 mod pty_context;
 mod pty_devtool;
 mod pty_menuconfig;
 mod pty_sdk_shell;
+
+pub use keyboard_prefix::{DEFAULT_PREFIX_TIMEOUT, PrefixCommand, PrefixEvent, PrefixState};
 
 pub use pty_context::{
     PtyContextAction, PtyContextAuthority, PtyContextEntry, PtyContextError, PtyContextLaunch,
