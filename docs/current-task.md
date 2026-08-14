@@ -2,17 +2,17 @@
 
 ## Task
 
-**ID:** DAEMON-TELEMETRY-001
-**Title:** Expose daemon and session health telemetry
+**ID:** DAEMON-UI-001
+**Title:** Add daemon and session status UI
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Report uptime, BitBake state, clients, jobs, PTYs, queue pressure, available
-memory data, and restart/recovery state.
+Render connection/instance/BitBake/session/client/recovery state and confirmed
+restart/stop actions.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model daemon_telemetry
+cargo test -p yoctui-ui daemon_status
 ```

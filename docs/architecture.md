@@ -23,6 +23,9 @@ Daemon resource limits are part of the typed protocol contract. The daemon
 advertises bounded frame/snapshot sizes, client and PTY counts, request/queue
 depth, terminal dimensions, scrollback, and output sizes; journals and terminal
 emulation enforce those bounds before state or events cross the IPC boundary.
+The daemon also emits a typed `DaemonTelemetry` event at a bounded cadence,
+covering uptime, BitBake lifecycle, clients, active jobs, PTYs, queue pressure,
+resident memory when available, and honest recovery phase.
 7. Bounded memory behavior is mandatory.
 8. Live compatibility claims require live validation.
 

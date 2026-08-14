@@ -108,6 +108,31 @@ pub enum DaemonRecoveryState {
     Degraded,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DaemonTelemetry {
+    pub uptime_seconds: u64,
+    pub connected_clients: usize,
+    pub active_jobs: usize,
+    pub pty_sessions: usize,
+    pub queue_depth: usize,
+    pub memory_bytes: Option<u64>,
+    pub recovery: DaemonRecoveryState,
+}
+
+impl Default for DaemonTelemetry {
+    fn default() -> Self {
+        Self {
+            uptime_seconds: 0,
+            connected_clients: 0,
+            active_jobs: 0,
+            pty_sessions: 0,
+            queue_depth: 0,
+            memory_bytes: None,
+            recovery: DaemonRecoveryState::CleanStart,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DaemonSessionMetadata {
     pub started_unix_ms: u64,
@@ -550,6 +575,26 @@ mod tests {
             generation: 0,
         };
         assert_eq!(revision.advance(), Err(DaemonStateError::RevisionExhausted));
+    }
+
+    #[test]
+    fn daemon_telemetry_defaults_are_safe_and_track_runtime_counts() {
+        let telemetry = DaemonTelemetry {
+            uptime_seconds: 42,
+            connected_clients: 2,
+            active_jobs: 3,
+            pty_sessions: 1,
+            queue_depth: 4,
+            memory_bytes: Some(8 * 1024 * 1024),
+            recovery: DaemonRecoveryState::Recovered,
+        };
+        assert_eq!(
+            DaemonTelemetry::default().recovery,
+            DaemonRecoveryState::CleanStart
+        );
+        assert_eq!(telemetry.uptime_seconds, 42);
+        assert_eq!(telemetry.connected_clients + telemetry.pty_sessions, 3);
+        assert_eq!(telemetry.memory_bytes, Some(8 * 1024 * 1024));
     }
 
     #[test]

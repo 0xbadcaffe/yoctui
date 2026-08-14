@@ -4014,12 +4014,12 @@ notes = "Advertised typed limits now cover frame/snapshot size, clients, PTYs, p
 id = "DAEMON-TELEMETRY-001"
 milestone = "M11"
 title = "Expose daemon and session health telemetry"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 437
 required = true
 depends_on = ["DAEMON-STATE-001", "RESOURCE-LIMITS-001"]
 verify = ["cargo test -p yoctui-model daemon_telemetry"]
-notes = "Report uptime, BitBake state, clients, jobs, PTYs, queue pressure, available memory data, and restart/recovery state."
+notes = "Typed DaemonTelemetry state and wire events report uptime, BitBake lifecycle, connected clients, active jobs, PTY count, queue pressure, optional resident memory, and recovery phase; the daemon publishes bounded health events periodically."
 
 [[task]]
 id = "DAEMON-UI-001"

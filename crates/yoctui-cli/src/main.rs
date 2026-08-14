@@ -1095,10 +1095,10 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     use yoctui_protocol::{
         daemon::{
             Capability, ClientId, ClientMessage, CommandOutcome, CommandResult, DaemonCommand,
-            DaemonHello, DaemonSnapshotJournal, DaemonSnapshotLimits, DaemonSnapshotSync,
-            MAX_DAEMON_CLIENTS, MAX_DAEMON_PTY_SESSIONS, MAX_FRAME_BYTES,
-            MAX_TERMINAL_SCROLLBACK_LINES, MAX_UTILITY_OUTPUT_BYTES, ProtocolLimits,
-            ProtocolVersion, ServerMessage, SnapshotReplacementReason,
+            DaemonHello, DaemonRecoveryState, DaemonSnapshotJournal, DaemonSnapshotLimits,
+            DaemonSnapshotSync, DaemonTelemetry, MAX_DAEMON_CLIENTS, MAX_DAEMON_PTY_SESSIONS,
+            MAX_FRAME_BYTES, MAX_TERMINAL_SCROLLBACK_LINES, MAX_UTILITY_OUTPUT_BYTES,
+            ProtocolLimits, ProtocolVersion, ServerMessage, SnapshotReplacementReason,
         },
         daemon_ipc::{DaemonConnection, DaemonListener, IpcError, runtime_paths},
         daemon_lifecycle::{
@@ -1190,6 +1190,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     // client yield to other clients while the daemon continues polling jobs.
     let mut clients: Vec<(DaemonConnection, bool, bool, u64, ClientId)> = Vec::new();
     let mut shutting_down = false;
+    let mut last_telemetry_ms = record.started_unix_ms;
     while !shutting_down {
         while let Some(event) = devtool_supervisor.try_event() {
             publish_daemon_devtool_event(&mut daemon_journal, event)?;
@@ -1223,6 +1224,39 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         }
         while let Some(event) = pty_supervisor.try_event() {
             publish_daemon_pty_event(&mut daemon_journal, event)?;
+        }
+        let now_ms = unix_ms();
+        if now_ms.saturating_sub(last_telemetry_ms) >= 1_000 {
+            let snapshot = daemon_journal.snapshot();
+            let active_jobs = snapshot
+                .jobs
+                .iter()
+                .filter(|job| {
+                    matches!(
+                        job.lifecycle,
+                        yoctui_protocol::daemon::LifecycleState::Connecting
+                            | yoctui_protocol::daemon::LifecycleState::Running
+                            | yoctui_protocol::daemon::LifecycleState::Stopping
+                    )
+                })
+                .count();
+            let _ = daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::Telemetry(
+                DaemonTelemetry {
+                    uptime_seconds: now_ms.saturating_sub(record.started_unix_ms) / 1_000,
+                    bitbake: snapshot.bitbake.lifecycle,
+                    connected_clients: clients.len().min(u16::MAX as usize) as u16,
+                    active_jobs: active_jobs.min(u16::MAX as usize) as u16,
+                    pty_sessions: snapshot.pty_sessions.len().min(u16::MAX as usize) as u16,
+                    queue_depth: clients.len().min(u16::MAX as usize) as u16,
+                    memory_bytes: process_memory_bytes(),
+                    recovery: if persisted.is_some() {
+                        DaemonRecoveryState::Recovered
+                    } else {
+                        DaemonRecoveryState::CleanStart
+                    },
+                },
+            ))?;
+            last_telemetry_ms = now_ms;
         }
         if termination_requested(termination) {
             break;
@@ -2788,6 +2822,13 @@ fn unix_ms() -> u64 {
         .as_millis()
         .try_into()
         .unwrap_or(u64::MAX)
+}
+
+#[cfg(unix)]
+fn process_memory_bytes() -> Option<u64> {
+    let fields = fs::read_to_string("/proc/self/statm").ok()?;
+    let resident_pages = fields.split_whitespace().nth(1)?.parse::<u64>().ok()?;
+    Some(resident_pages.saturating_mul(4096))
 }
 
 #[cfg(unix)]

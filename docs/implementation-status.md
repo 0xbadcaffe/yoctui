@@ -418,5 +418,7 @@ are private and canonical, peer UIDs are authenticated, stale socket identity
 is checked, and untrusted project profiles/shell-command fields are rejected.
 Resource limits are now explicit in the versioned daemon handshake and enforced
 for clients, PTY sessions, dimensions, scrollback, and output, with journal
-and terminal-emulator bounds retained. Daemon health telemetry is the next
-active gate.
+and terminal-emulator bounds retained. Daemon health telemetry is now a typed,
+periodic protocol event with uptime, BitBake, client/job/PTY counts, queue
+pressure, optional resident memory, and recovery phase. Daemon/session status UI
+is the next active gate.

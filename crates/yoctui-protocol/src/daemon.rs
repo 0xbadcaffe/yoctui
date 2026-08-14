@@ -788,6 +788,7 @@ pub enum DaemonEvent {
     QaCapability(DaemonQaSnapshot),
     SecuritySnapshot(DaemonSecuritySnapshot),
     MaintenanceSnapshot(DaemonMaintenanceSnapshot),
+    Telemetry(DaemonTelemetry),
     #[serde(other)]
     Unknown,
 }
@@ -897,6 +898,27 @@ pub struct ClientSummary {
     pub name: String,
     pub attached_unix_ms: u64,
     pub last_seen_unix_ms: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DaemonRecoveryState {
+    CleanStart,
+    Recovering,
+    Recovered,
+    Degraded,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonTelemetry {
+    pub uptime_seconds: u64,
+    pub bitbake: LifecycleState,
+    pub connected_clients: u16,
+    pub active_jobs: u16,
+    pub pty_sessions: u16,
+    pub queue_depth: u16,
+    pub memory_bytes: Option<u64>,
+    pub recovery: DaemonRecoveryState,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1112,6 +1134,7 @@ pub fn apply_sequenced_event(
         | DaemonEvent::QaCapability(_)
         | DaemonEvent::SecuritySnapshot(_)
         | DaemonEvent::MaintenanceSnapshot(_)
+        | DaemonEvent::Telemetry(_)
         | DaemonEvent::Unknown => {}
         DaemonEvent::ClientChanged(client) => {
             replace_by(&mut snapshot.clients, client.clone(), |item| item.id);
