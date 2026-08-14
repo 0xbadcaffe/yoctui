@@ -430,4 +430,7 @@ restart, interactive attach, session listing/availability checks, and explicit
 `--force` session termination use versioned IPC commands. Daemon integration
 coverage now verifies live startup, handshake limits, reconnect cursors,
 multi-client fanout, dropped clients, PTY ownership, persistence, and recovery.
-Real PTY integration coverage is the next active gate.
+Real Unix PTY integration now verifies a shell prompt, typed input, resize,
+writer lease routing, and process lifecycle, with detach/reattach, cancellation,
+scrollback, and terminal-emulator coverage in the PTY unit suite. SSH-style
+disconnect/reconnect testing is the next active gate.

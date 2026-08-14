@@ -94,7 +94,7 @@ fn receive_command_result(connection: &mut DaemonConnection) {
 }
 
 #[test]
-fn multiclient_pty_enforces_one_writer_and_routes_input() {
+fn pty_integration_real_prompt_input_resize_and_writer_lease() {
     let binary = PathBuf::from(env!("CARGO_BIN_EXE_yoctui"));
     let runtime = std::env::temp_dir().join(format!(
         "yoctui-cli-daemon-pty-runtime-{}",

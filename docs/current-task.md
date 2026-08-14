@@ -2,18 +2,17 @@
 
 ## Task
 
-**ID:** PTY-TEST-001
-**Title:** Add real PTY integration tests
+**ID:** SSH-TEST-001
+**Title:** Test SSH-style disconnect and reconnect
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Use real PTYs to test prompt, typing, resize, detach/reattach, sessions, exit,
-cancellation, ncurses fixture, raw keys, mouse where supported, and scrollback
-bounds.
+Verify that client termination does not terminate daemon work using a local
+pseudo-SSH/process fixture, with optional real SSH coverage.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui pty_integration
+cargo test -p yoctui ssh_integration
 ```

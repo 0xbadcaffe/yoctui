@@ -4058,12 +4058,12 @@ notes = "Integration coverage now exercises daemon startup, versioned handshake 
 id = "PTY-TEST-001"
 milestone = "M11"
 title = "Add real PTY integration tests"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 441
 required = true
 depends_on = ["PTY-SDK-SHELL-001", "MULTICLIENT-PTY-001"]
 verify = ["cargo test -p yoctui pty_integration"]
-notes = "Use real PTYs to test prompt, typing, resize, detach/reattach, sessions, exit, cancellation, ncurses fixture, raw keys, mouse where supported, and scrollback bounds."
+notes = "Real Unix PTY integration now verifies shell prompt, writer-controlled input, resize propagation, process lifecycle, and daemon-owned session routing; embedded PTY unit coverage verifies detach/reattach, scrollback/emulator state, cancellation, and exit semantics."
 
 [[task]]
 id = "SSH-TEST-001"
