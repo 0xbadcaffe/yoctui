@@ -166,6 +166,29 @@ pub struct SecurityMapperCommandSpec {
 }
 
 impl SecurityMapperCommandSpec {
+    pub fn from_paths(
+        id: SecuritySessionId,
+        executable: PathBuf,
+        arguments: Vec<String>,
+        report_roots: Vec<PathBuf>,
+    ) -> Result<Self, SecurityMapperAdapterError> {
+        let preview = SecurityOperationPreview {
+            id,
+            scope: yoctui_model::SecurityScope::Image {
+                target: "security".into(),
+                machine: "unknown".into(),
+                distro: "unknown".into(),
+            },
+            operation: SecurityOperation::PackageMap {
+                executable: executable.clone(),
+                arguments: arguments.clone(),
+            },
+            indexed_arguments: indexed_arguments(&executable, &arguments),
+            report_roots,
+        };
+        Self::from_preview(&preview)
+    }
+
     pub fn from_preview(
         preview: &SecurityOperationPreview,
     ) -> Result<Self, SecurityMapperAdapterError> {

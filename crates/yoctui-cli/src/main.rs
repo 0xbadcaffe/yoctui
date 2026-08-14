@@ -1157,6 +1157,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     let mut qa_supervisor = daemon_qa::DaemonQaSupervisor::default();
     let mut qa_report_supervisor = daemon_qa::DaemonQaReportSupervisor::default();
     let mut security_supervisor = daemon_security::DaemonSecuritySupervisor::default();
+    let mut security_mapper_supervisor = daemon_security::DaemonSecurityMapperSupervisor::default();
     write_persisted_state(
         &persist_paths,
         &DaemonPersistedState::capture(
@@ -1197,6 +1198,9 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         }
         while let Some(event) = security_supervisor.try_event() {
             publish_daemon_security_event(&mut daemon_journal, event)?;
+        }
+        while let Some(event) = security_mapper_supervisor.try_event() {
+            publish_daemon_security_mapper_event(&mut daemon_journal, event)?;
         }
         if termination_requested(termination) {
             break;
@@ -1415,6 +1419,14 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                             Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage, message: error, current_generation: daemon_journal.snapshot().generation },
                         },
                         DaemonCommand::CancelSecurityReportScan { generation } => match security_supervisor.cancel(generation) {
+                            Ok(()) => CommandOutcome::Accepted,
+                            Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound, message: error, current_generation: daemon_journal.snapshot().generation },
+                        },
+                        DaemonCommand::StartSecurityPackageMap { session_id, executable, arguments, report_roots } => match security_mapper_supervisor.start(session_id, executable, arguments, report_roots) {
+                            Ok(job_id) => { let event = daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary { id: job_id, kind: yoctui_protocol::daemon::JobKind::Security, label: format!("Security package map {session_id}"), lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting, progress_current: None, progress_total: None, exit_code: None }))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted },
+                            Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage, message: error, current_generation: daemon_journal.snapshot().generation },
+                        },
+                        DaemonCommand::CancelSecurityPackageMap { session_id } => match security_mapper_supervisor.cancel(session_id) {
                             Ok(()) => CommandOutcome::Accepted,
                             Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound, message: error, current_generation: daemon_journal.snapshot().generation },
                         },
@@ -2221,6 +2233,106 @@ fn publish_daemon_security_event(
             kind: JobKind::Security,
             label,
             lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+    };
+    journal.publish(mapped)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn publish_daemon_security_mapper_event(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    event: daemon_security::DaemonSecurityMapperEvent,
+) -> Result<()> {
+    use daemon_security::DaemonSecurityMapperEvent;
+    use yoctui_protocol::daemon::{
+        DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
+    };
+    let job_id = match &event {
+        DaemonSecurityMapperEvent::Started { job_id, .. }
+        | DaemonSecurityMapperEvent::Output { job_id, .. }
+        | DaemonSecurityMapperEvent::Completed { job_id, .. }
+        | DaemonSecurityMapperEvent::Failed { job_id, .. }
+        | DaemonSecurityMapperEvent::Cancelled { job_id, .. }
+        | DaemonSecurityMapperEvent::Lost { job_id, .. } => *job_id,
+    };
+    let label = journal
+        .snapshot()
+        .jobs
+        .iter()
+        .find(|job| job.id == job_id)
+        .map(|job| job.label.clone())
+        .unwrap_or_else(|| "Security package map".into());
+    let mapped = match event {
+        DaemonSecurityMapperEvent::Started { .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Security,
+            label,
+            lifecycle: LifecycleState::Running,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+        DaemonSecurityMapperEvent::Output {
+            stream,
+            line,
+            truncated,
+            ..
+        } => DaemonEvent::Log(LogRecord {
+            source: format!("security-map:{stream:?}"),
+            severity: if matches!(stream, yoctui_model::SecurityOutputStream::Stderr) {
+                LogSeverity::Warning
+            } else {
+                LogSeverity::Info
+            },
+            message: if truncated {
+                format!("{line} [truncated]")
+            } else {
+                line
+            },
+            unix_ms: unix_ms(),
+        }),
+        DaemonSecurityMapperEvent::Completed { exit_code, .. } => {
+            DaemonEvent::JobChanged(JobSummary {
+                id: job_id,
+                kind: JobKind::Security,
+                label,
+                lifecycle: LifecycleState::Exited,
+                progress_current: None,
+                progress_total: None,
+                exit_code,
+            })
+        }
+        DaemonSecurityMapperEvent::Failed { exit_code, .. } => {
+            DaemonEvent::JobChanged(JobSummary {
+                id: job_id,
+                kind: JobKind::Security,
+                label,
+                lifecycle: LifecycleState::Failed,
+                progress_current: None,
+                progress_total: None,
+                exit_code,
+            })
+        }
+        DaemonSecurityMapperEvent::Cancelled { exit_code, .. } => {
+            DaemonEvent::JobChanged(JobSummary {
+                id: job_id,
+                kind: JobKind::Security,
+                label,
+                lifecycle: LifecycleState::Exited,
+                progress_current: None,
+                progress_total: None,
+                exit_code,
+            })
+        }
+        DaemonSecurityMapperEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Security,
+            label: format!("{label}: {message}"),
+            lifecycle: LifecycleState::Lost,
             progress_current: None,
             progress_total: None,
             exit_code: None,

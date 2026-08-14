@@ -1906,3 +1906,6 @@ Security and SPDX report scans follow the same daemon boundary: requests carry
 only bounded generation/path identities, the daemon owns cancellation and
 parsing through `SecurityReportAdapter`, and clients receive typed report
 snapshots and terminal job state.
+Confirmed `cve-check-map-pkgs` operations use the same boundary with executable
+and input identity revalidation, daemon-owned process groups, bounded output,
+and explicit cancellation/lost states.

@@ -356,4 +356,6 @@ QA report imports now use a daemon-owned bounded worker with typed generation,
 path, cancellation, report snapshot, and terminal job events.
 Security/CVE/SPDX report scans now use a daemon-owned bounded worker with typed
 generation and path requests, cancellation, report snapshots, and terminal
-security job events; package mapping remains the next split gate.
+security job events. Confirmed cve-check-map-pkgs operations now cross a typed
+daemon boundary with revalidated executable/input identities, bounded output,
+cancellation, and terminal/lost security job state.

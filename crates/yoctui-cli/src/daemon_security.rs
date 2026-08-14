@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
 use tokio::sync::mpsc;
-use yoctui_bitbake::{SecurityReportAdapter, SecurityReportCancellation};
-use yoctui_model::SecurityReportRequest;
+use yoctui_bitbake::{
+    SecurityMapperCommandSpec, SecurityMapperJobRunner, SecurityMapperRunnerEvent,
+    SecurityReportAdapter, SecurityReportCancellation,
+};
+use yoctui_model::{SecurityOutputStream, SecurityReportRequest, SecuritySessionId};
 use yoctui_protocol::daemon::JobId;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -33,6 +36,146 @@ pub struct DaemonSecuritySupervisor {
     active: HashMap<u64, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonSecurityEvent>,
     rx: mpsc::UnboundedReceiver<DaemonSecurityEvent>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DaemonSecurityMapperEvent {
+    Started {
+        job_id: JobId,
+        session_id: u64,
+    },
+    Output {
+        job_id: JobId,
+        session_id: u64,
+        stream: SecurityOutputStream,
+        line: String,
+        truncated: bool,
+    },
+    Completed {
+        job_id: JobId,
+        session_id: u64,
+        exit_code: Option<i32>,
+    },
+    Failed {
+        job_id: JobId,
+        session_id: u64,
+        exit_code: Option<i32>,
+    },
+    Cancelled {
+        job_id: JobId,
+        session_id: u64,
+        exit_code: Option<i32>,
+    },
+    Lost {
+        job_id: JobId,
+        session_id: u64,
+        message: String,
+    },
+}
+
+pub struct DaemonSecurityMapperSupervisor {
+    next_job_id: u64,
+    active: HashMap<u64, mpsc::UnboundedSender<()>>,
+    tx: mpsc::UnboundedSender<DaemonSecurityMapperEvent>,
+    rx: mpsc::UnboundedReceiver<DaemonSecurityMapperEvent>,
+}
+
+impl Default for DaemonSecurityMapperSupervisor {
+    fn default() -> Self {
+        let (tx, rx) = mpsc::unbounded_channel();
+        Self {
+            next_job_id: 1,
+            active: HashMap::new(),
+            tx,
+            rx,
+        }
+    }
+}
+
+impl DaemonSecurityMapperSupervisor {
+    pub fn start(
+        &mut self,
+        session_id: u64,
+        executable: String,
+        arguments: Vec<String>,
+        report_roots: Vec<String>,
+    ) -> Result<JobId, String> {
+        if session_id == 0 || self.active.contains_key(&session_id) {
+            return Err("security package-map session is already active or invalid".into());
+        }
+        let session = SecuritySessionId(session_id);
+        let command = SecurityMapperCommandSpec::from_paths(
+            session,
+            executable.into(),
+            arguments,
+            report_roots.into_iter().map(Into::into).collect(),
+        )
+        .map_err(|error| error.to_string())?;
+        let job_id = JobId(self.next_job_id);
+        self.next_job_id = self.next_job_id.saturating_add(1);
+        let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
+        self.active.insert(session_id, cancel_tx);
+        let tx = self.tx.clone();
+        tokio::spawn(async move {
+            let mut runner = SecurityMapperJobRunner::new();
+            if let Err(error) = runner.start(command).await {
+                let _ = tx.send(DaemonSecurityMapperEvent::Lost {
+                    job_id,
+                    session_id,
+                    message: error.to_string(),
+                });
+                return;
+            }
+            loop {
+                tokio::select! {
+                    cancel = cancel_rx.recv() => { if cancel.is_some() { let _ = runner.cancel(session).await; } }
+                    event = runner.next_event() => {
+                        let mapped = match event {
+                            Ok(SecurityMapperRunnerEvent::Started { .. }) => DaemonSecurityMapperEvent::Started { job_id, session_id },
+                            Ok(SecurityMapperRunnerEvent::Output { stream, line, truncated, .. }) => DaemonSecurityMapperEvent::Output { job_id, session_id, stream, line, truncated },
+                            Ok(SecurityMapperRunnerEvent::Completed { exit_code, .. }) => DaemonSecurityMapperEvent::Completed { job_id, session_id, exit_code },
+                            Ok(SecurityMapperRunnerEvent::Failed { exit_code, .. }) | Ok(SecurityMapperRunnerEvent::TimedOut { exit_code, .. }) => DaemonSecurityMapperEvent::Failed { job_id, session_id, exit_code },
+                            Ok(SecurityMapperRunnerEvent::Cancelled { exit_code, .. }) => DaemonSecurityMapperEvent::Cancelled { job_id, session_id, exit_code },
+                            Ok(SecurityMapperRunnerEvent::CancellationRequested { .. }) => continue,
+                            Ok(SecurityMapperRunnerEvent::CancellationRejected { message, .. }) | Ok(SecurityMapperRunnerEvent::Lost { message, .. }) => DaemonSecurityMapperEvent::Lost { job_id, session_id, message },
+                            Err(error) => DaemonSecurityMapperEvent::Lost { job_id, session_id, message: error.to_string() },
+                        };
+                        let terminal = matches!(mapped, DaemonSecurityMapperEvent::Completed { .. } | DaemonSecurityMapperEvent::Failed { .. } | DaemonSecurityMapperEvent::Cancelled { .. } | DaemonSecurityMapperEvent::Lost { .. });
+                        if tx.send(mapped).is_err() || terminal { break; }
+                    }
+                }
+            }
+        });
+        Ok(job_id)
+    }
+
+    pub fn cancel(&mut self, session_id: u64) -> Result<(), String> {
+        self.active
+            .get(&session_id)
+            .ok_or_else(|| format!("unknown security package-map session {session_id}"))?
+            .send(())
+            .map_err(|_| "security package-map worker is no longer active".into())
+    }
+    pub fn try_event(&mut self) -> Option<DaemonSecurityMapperEvent> {
+        let event = self.rx.try_recv().ok()?;
+        if matches!(
+            event,
+            DaemonSecurityMapperEvent::Completed { .. }
+                | DaemonSecurityMapperEvent::Failed { .. }
+                | DaemonSecurityMapperEvent::Cancelled { .. }
+                | DaemonSecurityMapperEvent::Lost { .. }
+        ) {
+            let id = match &event {
+                DaemonSecurityMapperEvent::Completed { session_id, .. }
+                | DaemonSecurityMapperEvent::Failed { session_id, .. }
+                | DaemonSecurityMapperEvent::Cancelled { session_id, .. }
+                | DaemonSecurityMapperEvent::Lost { session_id, .. } => *session_id,
+                _ => 0,
+            };
+            self.active.remove(&id);
+        }
+        Some(event)
+    }
 }
 
 impl Default for DaemonSecuritySupervisor {
@@ -126,6 +269,20 @@ mod tests {
         assert!(
             DaemonSecuritySupervisor::default()
                 .start(0, vec!["/tmp/report.json".into()])
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn client_runtime_security_mapper_rejects_invalid_session() {
+        assert!(
+            DaemonSecurityMapperSupervisor::default()
+                .start(
+                    0,
+                    "/missing/cve-check-map-pkgs".into(),
+                    vec!["/tmp/report".into()],
+                    vec!["/tmp/report".into()],
+                )
                 .is_err()
         );
     }

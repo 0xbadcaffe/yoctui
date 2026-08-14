@@ -3453,12 +3453,12 @@ notes = "JUnit export reconstructs retained result identity and validated destin
 id = "CLIENT-RUNTIME-QA-SECURITY-001"
 milestone = "M11"
 title = "Move QA and security jobs into the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-TESTING-001"]
 verify = ["cargo test -p yoctui client_runtime_qa_security"]
-notes = "Parent gate split into QA/report and security mapper/report children."
+notes = "Parent gate complete: QA checks/report workers and security/SPDX report plus package-map workers are daemon-owned."
 
 [[task]]
 id = "CLIENT-RUNTIME-QA-REPORT-001"
@@ -3585,12 +3585,12 @@ notes = "Daemon builds exact bounded import candidates, runs QaReportAdapter wit
 id = "CLIENT-RUNTIME-SECURITY-REPORT-001"
 milestone = "M11"
 title = "Move security and SPDX jobs into the daemon"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QA-REPORT-001"]
 verify = ["cargo test -p yoctui client_runtime_security"]
-notes = "Parent gate split into report scanning and package-mapper children before implementation."
+notes = "Parent gate complete: security/SPDX report and package-mapper children are verified."
 
 [[task]]
 id = "CLIENT-RUNTIME-SECURITY-REPORT-WORKER-001"
@@ -3607,12 +3607,12 @@ notes = "Daemon owns bounded SecurityReportAdapter scans, cancellation, report s
 id = "CLIENT-RUNTIME-SECURITY-MAPPER-001"
 milestone = "M11"
 title = "Run security package mapping in the daemon"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-SECURITY-REPORT-WORKER-001"]
 verify = ["cargo test -p yoctui client_runtime_security_mapper"]
-notes = "Route confirmed cve-check-map-pkgs operations through daemon-owned typed process execution."
+notes = "Daemon reconstructs validated cve-check-map-pkgs commands, owns process-group output/cancellation, and publishes Security job terminal state."
 
 [[task]]
 id = "CLIENT-RUNTIME-MAINTENANCE-001"

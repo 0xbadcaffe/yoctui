@@ -250,6 +250,15 @@ pub enum DaemonCommand {
     CancelSecurityReportScan {
         generation: u64,
     },
+    StartSecurityPackageMap {
+        session_id: u64,
+        executable: String,
+        arguments: Vec<String>,
+        report_roots: Vec<String>,
+    },
+    CancelSecurityPackageMap {
+        session_id: u64,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,

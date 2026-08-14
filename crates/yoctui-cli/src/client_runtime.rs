@@ -286,6 +286,33 @@ fn daemon_command_for_effect(
                     .collect(),
             }
         }
+        Effect::Security(yoctui_model::SecurityEffect::StartPackageMap {
+            id,
+            executable,
+            arguments,
+        }) => {
+            let preview = app
+                .security
+                .sessions
+                .iter()
+                .find(|session| session.preview.id == *id)
+                .ok_or(ClientRuntimeError::MissingSecuritySession)?
+                .preview
+                .clone();
+            DaemonCommand::StartSecurityPackageMap {
+                session_id: id.0,
+                executable: executable.display().to_string(),
+                arguments: arguments.clone(),
+                report_roots: preview
+                    .report_roots
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect(),
+            }
+        }
+        Effect::Security(yoctui_model::SecurityEffect::CancelSession(id)) => {
+            DaemonCommand::CancelSecurityPackageMap { session_id: id.0 }
+        }
         Effect::Qa(yoctui_model::QaEffect::StartLayerCheck {
             session,
             layer,
@@ -571,6 +598,8 @@ pub enum ClientRuntimeError {
     MissingWicCapability,
     #[error("QA layer session is unavailable")]
     MissingQaLayerSession,
+    #[error("security session is unavailable")]
+    MissingSecuritySession,
 }
 
 #[cfg(test)]
