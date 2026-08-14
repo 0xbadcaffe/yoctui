@@ -286,3 +286,49 @@ fn ssh_reattach_keeps_local_daemon_state_after_client_disconnect() {
     ));
     drop(guard);
 }
+
+#[test]
+fn daemon_integration_validates_handshake_limits_and_reconnect_cursor() {
+    let binary = PathBuf::from(env!("CARGO_BIN_EXE_yoctui"));
+    let runtime = std::env::temp_dir().join(format!(
+        "yoctui-cli-daemon-integration-{}",
+        std::process::id()
+    ));
+    let _ = fs::remove_dir_all(&runtime);
+    fs::DirBuilder::new().mode(0o700).create(&runtime).unwrap();
+    let guard = DaemonGuard {
+        binary: binary.clone(),
+        runtime: runtime.clone(),
+    };
+    let start = Command::new(&binary)
+        .args(["daemon", "start"])
+        .env("XDG_RUNTIME_DIR", &runtime)
+        .env("XDG_STATE_HOME", runtime.join("state"))
+        .output()
+        .unwrap();
+    assert!(
+        start.status.success(),
+        "{}",
+        String::from_utf8_lossy(&start.stderr)
+    );
+
+    let (hello, attached) = attach_snapshot(&runtime, None);
+    let snapshot = match attached {
+        ServerMessage::Attached { snapshot, .. } => snapshot,
+        response => panic!("expected attached snapshot, got {response:?}"),
+    };
+    assert_eq!(hello.selected_version, ProtocolVersion::CURRENT);
+    assert!(hello.limits.maximum_frame_bytes > 0);
+    assert!(hello.limits.maximum_clients >= 2);
+    assert!(hello.limits.maximum_pty_sessions >= 1);
+
+    let (_, replayed) = attach_snapshot(
+        &runtime,
+        Some(yoctui_protocol::daemon::ResumeCursor {
+            daemon_instance_id: snapshot.daemon_instance_id,
+            last_sequence: snapshot.sequence,
+        }),
+    );
+    assert!(matches!(replayed, ServerMessage::Attached { .. }));
+    drop(guard);
+}

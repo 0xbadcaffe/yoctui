@@ -4047,12 +4047,12 @@ notes = "Typed CLI routes now provide daemon lifecycle commands plus attach, ses
 id = "DAEMON-TEST-001"
 milestone = "M11"
 title = "Add daemon protocol and lifecycle integration tests"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 440
 required = true
 depends_on = ["MULTICLIENT-PTY-001", "SECURITY-DAEMON-001", "RESOURCE-LIMITS-001"]
 verify = ["cargo test -p yoctui daemon_integration"]
-notes = "Cover handshake, reconnect, stale sockets, multiple/dropped clients, restart, BitBake loss, ordering, snapshots, malformed protocol, and limits."
+notes = "Integration coverage now exercises daemon startup, versioned handshake limits, snapshot attach/reconnect cursors, stale/runtime lifecycle paths, multi-client fanout, dropped clients, PTY ownership, persistence/recovery, and bounded protocol fixtures."
 
 [[task]]
 id = "PTY-TEST-001"

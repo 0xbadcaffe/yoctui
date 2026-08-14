@@ -2,17 +2,18 @@
 
 ## Task
 
-**ID:** DAEMON-TEST-001
-**Title:** Add daemon protocol and lifecycle integration tests
+**ID:** PTY-TEST-001
+**Title:** Add real PTY integration tests
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Cover handshake, reconnect, stale sockets, multiple/dropped clients, restart,
-BitBake loss, ordering, snapshots, malformed protocol, and limits.
+Use real PTYs to test prompt, typing, resize, detach/reattach, sessions, exit,
+cancellation, ncurses fixture, raw keys, mouse where supported, and scrollback
+bounds.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui daemon_integration
+cargo test -p yoctui pty_integration
 ```

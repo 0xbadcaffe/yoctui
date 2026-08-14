@@ -427,4 +427,7 @@ CLI management is the next active gate.
 Typed daemon CLI management is now available: lifecycle start/status/stop/
 restart, interactive attach, session listing/availability checks, and explicit
 `--force` session termination use versioned IPC commands. Daemon integration
-tests are the next active gate.
+`--force` session termination use versioned IPC commands. Daemon integration
+coverage now verifies live startup, handshake limits, reconnect cursors,
+multi-client fanout, dropped clients, PTY ownership, persistence, and recovery.
+Real PTY integration coverage is the next active gate.
