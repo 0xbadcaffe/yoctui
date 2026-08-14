@@ -12323,6 +12323,14 @@ mod tests {
     }
 
     #[test]
+    fn mouse_input_footer_keeps_keyboard_route_visible() {
+        let app = App::new(16, 4096);
+        let footer = footer_shortcuts(&app);
+        assert!(footer.contains("Tab focus"), "{footer}");
+        assert!(footer.contains("Ctrl+B prefix"), "{footer}");
+    }
+
+    #[test]
     fn animation_is_absent_from_determinate_and_terminal_rows() {
         let mut app = App::new(10, 1_000);
         app.tasks.insert(

@@ -3926,12 +3926,34 @@ notes = "Prefix split/close actions mutate the client-local PaneLayout, daemon P
 id = "MOUSE-001"
 milestone = "M11"
 title = "Make mouse input first-class"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 431
 required = true
 depends_on = ["CLIENT-ARCH-001"]
 verify = ["cargo test -p yoctui-ui mouse_input"]
-notes = "Support semantic clicks, row/tree selection, scrolling, dialog controls, scrollbars, terminal focus, and session tabs without requiring mouse for core use."
+notes = "Split into typed semantic coordinate routing and remaining widget-specific row/dialog/scrollbar/session interactions."
+
+[[task]]
+id = "MOUSE-MODEL-001"
+milestone = "M11"
+title = "Add typed semantic mouse routing"
+status = "DONE"
+priority = 431
+required = true
+depends_on = ["CLIENT-ARCH-001"]
+verify = ["cargo test -p yoctui-app mouse_routes_focus", "cargo test -p yoctui-ui mouse_input", "cargo clippy -p yoctui --tests --all-features -- -D warnings"]
+notes = "Crossterm mouse events map to typed focus and scroll actions with navigator/workspace/inspector hit regions, while keyboard routes remain available."
+
+[[task]]
+id = "MOUSE-RUNTIME-001"
+milestone = "M11"
+title = "Route widget and terminal mouse interactions"
+status = "NOT_STARTED"
+priority = 431
+required = true
+depends_on = ["MOUSE-MODEL-001", "PANE-SPLIT-001"]
+verify = ["cargo test -p yoctui-ui mouse_runtime", "cargo test -p yoctui --test mouse_runtime mouse"]
+notes = "Add row/tree clicks, dialog controls, scrollbar and drag semantics, terminal focus/session tabs, and server-relevant PTY mouse reports with explicit writer ownership."
 
 [[task]]
 id = "MOUSE-SPLIT-001"

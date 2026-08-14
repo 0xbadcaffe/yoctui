@@ -2022,6 +2022,41 @@ pub enum Input {
     End,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MouseKind {
+    Down,
+    ScrollUp,
+    ScrollDown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MouseInput {
+    pub kind: MouseKind,
+    pub column: u16,
+    pub row: u16,
+}
+
+pub fn mouse_action(mouse: MouseInput, terminal_width: u16) -> Option<Action> {
+    match mouse.kind {
+        MouseKind::ScrollUp if mouse.column < 24 => Some(Action::SelectNavigator { delta: -1 }),
+        MouseKind::ScrollDown if mouse.column < 24 => Some(Action::SelectNavigator { delta: 1 }),
+        MouseKind::ScrollUp | MouseKind::ScrollDown => Some(Action::ScrollLogs {
+            delta: if matches!(mouse.kind, MouseKind::ScrollUp) {
+                1
+            } else {
+                -1
+            },
+        }),
+        MouseKind::Down if mouse.column < 24 => Some(Action::Focus(FocusTarget::Navigator)),
+        MouseKind::Down
+            if terminal_width >= 130 && mouse.column >= terminal_width.saturating_sub(28) =>
+        {
+            Some(Action::Focus(FocusTarget::Inspector))
+        }
+        MouseKind::Down => Some(Action::Focus(FocusTarget::Workspace)),
+    }
+}
+
 pub fn popup_editor_action(editing: bool, key: Input) -> Option<Action> {
     let command = if editing {
         match key {
@@ -3454,6 +3489,43 @@ pub fn config_edit_confirmation_action(key: Input) -> Option<Action> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn mouse_routes_focus_and_scroll_semantically() {
+        assert_eq!(
+            mouse_action(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 3,
+                    row: 4
+                },
+                140
+            ),
+            Some(Action::Focus(FocusTarget::Navigator))
+        );
+        assert_eq!(
+            mouse_action(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 130,
+                    row: 4
+                },
+                140
+            ),
+            Some(Action::Focus(FocusTarget::Inspector))
+        );
+        assert_eq!(
+            mouse_action(
+                MouseInput {
+                    kind: MouseKind::ScrollDown,
+                    column: 3,
+                    row: 4
+                },
+                80
+            ),
+            Some(Action::SelectNavigator { delta: 1 })
+        );
+    }
 
     #[test]
     fn daemon_state_jobs_cross_app_boundary_without_replacing_presentation() {

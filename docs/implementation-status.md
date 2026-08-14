@@ -400,7 +400,8 @@ now shows daemon PTY sessions with focused borders and viewer labels. Prefix
 split and pane-close actions mutate only client-local layout; existing daemon
 session metadata remains authoritative and session termination still follows
 its separate confirmation path. The complete keyboard-prefix parent gate is
-now verified; mouse semantic routing is the next active gate.
+now verified; typed crossterm mouse focus/scroll routing is complete and widget
+row/dialog/scrollbar/terminal interaction is the next active gate.
 The interactive runtime attach/poll/detach path is verified for typed daemon
 effects and UI daemon-health rendering; the parent client-architecture gate is
 next.

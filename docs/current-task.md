@@ -2,18 +2,19 @@
 
 ## Task
 
-**ID:** MOUSE-001
-**Title:** Make mouse input first-class
+**ID:** MOUSE-RUNTIME-001
+**Title:** Route widget and terminal mouse interactions
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Support semantic clicks, row/tree selection, scrolling, dialog controls,
-scrollbars, terminal focus, and session tabs without requiring mouse for core
-use.
+Add row/tree clicks, dialog controls, scrollbar and drag semantics, terminal
+focus/session tabs, and server-relevant PTY mouse reports with explicit writer
+ownership.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui mouse_input
+cargo test -p yoctui-ui mouse_runtime
+cargo test -p yoctui --test mouse_runtime mouse
 ```
