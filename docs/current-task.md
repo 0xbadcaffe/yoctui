@@ -2,18 +2,17 @@
 
 ## Task
 
-**ID:** CLIENT-ARCH-001
-**Title:** Refactor Ratatui UI into attachable daemon client
+**ID:** MULTICLIENT-001
+**Title:** Support multiple daemon clients safely
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Client connects to daemon, requests/renders snapshots, sends typed actions,
-subscribes to events, and detaches without owning long-running execution.
+Two terminals may attach, both receive global updates, focus/layout remains
+client-local, and conflicting global actions serialize or reject clearly.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui client_arch
-cargo test -p yoctui-ui client_arch
+cargo test -p yoctui multiclient
 ```

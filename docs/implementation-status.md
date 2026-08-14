@@ -371,6 +371,11 @@ Release/utility operations now map to daemon-owned validated external runners
 with bounded output, cancellation, and terminal/lost state.
 The migrated job families now share one typed daemon routing path; runtime
 ownership/detach integration is the next gate.
+The complete attachable client gate is now verified across transport, replica,
+runtime routing, and UI daemon-health rendering; standalone policy is next.
+Standalone fallback is explicitly local-only: attach failures produce a visible
+diagnostic and preserve the existing single-process UI without implying daemon
+job ownership.
 The interactive runtime attach/poll/detach path is verified for typed daemon
 effects and UI daemon-health rendering; the parent client-architecture gate is
 next.

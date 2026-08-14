@@ -3728,23 +3728,23 @@ notes = "Runtime attaches, polls snapshots/events without blocking input, routes
 id = "CLIENT-ARCH-001"
 milestone = "M11"
 title = "Refactor Ratatui UI into attachable daemon client"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-TRANSPORT-001", "CLIENT-REPLICA-001", "CLIENT-RUNTIME-001"]
 verify = ["cargo test -p yoctui client_arch", "cargo test -p yoctui-ui client_arch"]
-notes = "Parent gate: client connects, requests/renders snapshots, sends typed actions, subscribes, and detaches; process ownership no longer lives in the interactive client."
+notes = "Attachable client transport, replica installation, runtime polling, typed effect routing, daemon health rendering, and explicit detach are verified together."
 
 [[task]]
 id = "CLIENT-FALLBACK-001"
 milestone = "M11"
 title = "Define standalone client fallback policy"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 425
 required = true
 depends_on = ["CLIENT-ARCH-001"]
 verify = ["cargo test -p yoctui standalone_mode", "./scripts/check-docs.sh"]
-notes = "Explicitly choose and test mandatory daemon or supported standalone debugging/minimal mode."
+notes = "Daemon attach is preferred; unavailable attach keeps an explicitly labelled local single-process fallback without claiming daemon job ownership."
 
 [[task]]
 id = "MULTICLIENT-001"

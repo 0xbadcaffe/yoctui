@@ -1922,3 +1922,8 @@ Release and utility commands reuse the daemon maintenance runner boundary with
 revalidated executable identity and shell-free argv.
 All migrated job families use this single daemon command boundary, leaving the
 interactive runtime responsible only for rendering and typed effect routing.
+
+Standalone policy: daemon attach is preferred, but a client may remain in
+single-process local mode when the daemon is unavailable. The UI reports that
+degraded mode explicitly; daemon-owned jobs are not claimed to survive through
+that local fallback.

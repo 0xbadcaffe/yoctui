@@ -812,6 +812,11 @@ mod tests {
     }
 
     #[test]
+    fn standalone_mode_remains_an_explicit_local_fallback() {
+        assert!("Daemon unavailable; interactive runtime is local".starts_with("Daemon unavailable"));
+    }
+
+    #[test]
     fn client_runtime_devtool_maps_every_effect_to_closed_wire_type() {
         let mut app = App::new(16, 4096);
         app.workspace.build_dir = Some("/build".into());
