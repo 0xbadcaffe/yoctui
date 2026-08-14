@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use tokio::sync::mpsc;
 use yoctui_bitbake::{
+    MaintenanceReleaseCapabilityInput, MaintenanceReleaseCapabilityInspector,
     MaintenanceServiceCapabilityInput, MaintenanceServiceCapabilityInspector,
     MaintenanceSstateCapabilityInput, MaintenanceSstateCapabilityInspector,
     MaintenanceSstateCommandSpec, MaintenanceSstateJobRunner, MaintenanceSstateRunnerEvent,
@@ -188,23 +189,40 @@ pub fn inspect(
     if request == 0 {
         return Err("maintenance capability request is invalid".into());
     }
-    let snapshot =
-        MaintenanceSstateCapabilityInspector::inspect(MaintenanceSstateCapabilityInput {
-            build_dir: build_directory.into(),
-            sstate_dir: sstate_directory.map(Into::into),
-            tmp_dir: tmp_directory.map(Into::into),
-            stamps_dirs: stamps_directories.into_iter().map(Into::into).collect(),
-            executable_search_path: executable_search_path.into_iter().map(Into::into).collect(),
+    let input = MaintenanceSstateCapabilityInput {
+        build_dir: build_directory.into(),
+        sstate_dir: sstate_directory.map(Into::into),
+        tmp_dir: tmp_directory.map(Into::into),
+        stamps_dirs: stamps_directories.into_iter().map(Into::into).collect(),
+        executable_search_path: executable_search_path.into_iter().map(Into::into).collect(),
+    };
+    let snapshot = MaintenanceSstateCapabilityInspector::inspect(input.clone())
+        .map_err(|error| error.to_string())?;
+    let release =
+        MaintenanceReleaseCapabilityInspector::inspect(MaintenanceReleaseCapabilityInput {
+            build_dir: input.build_dir,
+            buildhistory_dir: None,
+            native_lsb: None,
+            executable_search_path: input.executable_search_path,
         })
         .map_err(|error| error.to_string())?;
-    Ok(DaemonMaintenanceSnapshot {
-        request,
-        tools: snapshot
+    let mut tools = snapshot
+        .tools
+        .iter()
+        .map(|tool| format!("{:?}", tool.tool()))
+        .collect::<Vec<_>>();
+    tools.extend(
+        release
             .tools
             .iter()
-            .map(|tool| format!("{:?}", tool.tool()))
-            .collect(),
-        limitations: snapshot.limitations,
+            .map(|tool| format!("{:?}", tool.tool())),
+    );
+    let mut limitations = snapshot.limitations;
+    limitations.extend(release.limitations);
+    Ok(DaemonMaintenanceSnapshot {
+        request,
+        tools,
+        limitations,
     })
 }
 

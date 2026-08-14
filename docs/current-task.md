@@ -2,14 +2,14 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-MAINTENANCE-RELEASE-001
-**Title:** Move release and utility maintenance jobs into the daemon
+**ID:** CLIENT-RUNTIME-MAINTENANCE-RELEASE-RUNNER-001
+**Title:** Run release and utility maintenance jobs in the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Route typed signature cache, build-history, archive, and release operations
-through daemon-owned runners.
+Route typed release, signature cache, build-history, and archive runners
+through daemon ownership.
 
 ## Verification
 

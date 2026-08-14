@@ -3673,12 +3673,34 @@ notes = "Daemon owns typed PR/hash/signature service capability inspection and b
 id = "CLIENT-RUNTIME-MAINTENANCE-RELEASE-001"
 milestone = "M11"
 title = "Move release and utility maintenance jobs into the daemon"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-MAINTENANCE-SERVICE-CAPABILITY-001"]
 verify = ["cargo test -p yoctui client_runtime_maintenance_release"]
-notes = "Route typed signature cache, build-history, archive, and release operations through daemon-owned runners."
+notes = "Parent gate split into release capability and release runner children."
+
+[[task]]
+id = "CLIENT-RUNTIME-MAINTENANCE-RELEASE-CAPABILITY-001"
+milestone = "M11"
+title = "Inspect release and utility capability in the daemon"
+status = "DONE"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-MAINTENANCE-SERVICE-CAPABILITY-001"]
+verify = ["cargo test -p yoctui client_runtime_maintenance"]
+notes = "Daemon maintenance capability snapshots include release/build-history/signature/archive tool discovery."
+
+[[task]]
+id = "CLIENT-RUNTIME-MAINTENANCE-RELEASE-RUNNER-001"
+milestone = "M11"
+title = "Run release and utility maintenance jobs in the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-MAINTENANCE-RELEASE-CAPABILITY-001"]
+verify = ["cargo test -p yoctui client_runtime_maintenance_release"]
+notes = "Route typed release, signature cache, build-history, and archive runners through daemon ownership."
 
 [[task]]
 id = "CLIENT-RUNTIME-JOBS-001"

@@ -365,6 +365,8 @@ is the next maintenance split gate.
 Confirmed sstate readiness now reconstructs the validated capability/preview on
 the daemon and owns runner output, cancellation, and terminal state; service
 and release operations remain the next split gate.
+Release/build-history/signature/archive tool discovery is now included in the
+daemon maintenance capability snapshot; the release runner remains next.
 Service capability inspection now runs in the daemon with bounded PR/hash/
 signature metadata and process diagnostics; release and utility runners remain
 the next split gate.
