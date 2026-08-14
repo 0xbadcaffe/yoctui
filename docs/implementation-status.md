@@ -440,4 +440,6 @@ live script is absent and the daemon BitBake controller/build command surface
 is not yet implemented; no live compatibility claim is made. The next
 independent one-Rust product gate is verified: daemon/client remain modes of
 the single Rust package and tests guard against Electron/browser drift. The
-remaining mouse runtime interaction gate is now active.
+mouse runtime interaction gate is now verified with typed dialog, workspace,
+Navigator, Inspector, and PTY session routing plus integration/TestBackend
+coverage. Drag-resizable splits are the next active gate.

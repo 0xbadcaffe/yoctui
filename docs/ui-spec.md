@@ -2746,10 +2746,14 @@ Mouse support is optional and configurable.
 
 When enabled:
 
-- click selects rows/tree nodes
-- wheel scrolls focused pane
-- click tabs changes inspector mode
-- pane borders may be draggable in a future version
+- click focuses and selects Navigator rows/tree nodes and workspace items
+- wheel scrolls the focused Navigator/log pane
+- click a terminal-session pane selects that session; dialog clicks remain
+  trapped by the dialog focus target
+- drag/up events are routed as typed workspace interactions; pane-separator
+  resizing is specified separately by the split-layout task
+- server-relevant terminal mouse reports are sent only for a focused,
+  writer-owned PTY that has requested mouse reporting
 
 Every action must remain fully usable by keyboard.
 

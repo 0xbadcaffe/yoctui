@@ -12364,6 +12364,22 @@ mod tests {
     }
 
     #[test]
+    fn mouse_runtime_dashboard_keeps_terminal_pane_labels_visible() {
+        let mut app = App::new(16, 4096);
+        app.daemon
+            .pty_sessions
+            .push(yoctui_model::ClientDaemonPtySummary {
+                id: 3,
+                name: "devshell".into(),
+                lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                viewers: 2,
+            });
+        let rendered = rendered_text(&app, 120, 30);
+        assert!(rendered.contains("devshell"), "{rendered}");
+        assert!(rendered.contains("2 viewer(s)"), "{rendered}");
+    }
+
+    #[test]
     fn animation_is_absent_from_determinate_and_terminal_rows() {
         let mut app = App::new(10, 1_000);
         app.tasks.insert(

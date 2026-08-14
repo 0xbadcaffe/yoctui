@@ -2,19 +2,17 @@
 
 ## Task
 
-**ID:** MOUSE-RUNTIME-001
-**Title:** Route widget and terminal mouse interactions
+**ID:** MOUSE-SPLIT-001
+**Title:** Implement drag-resizable splits
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add row/tree clicks, dialog controls, scrollbar and drag semantics, terminal
-focus/session tabs, and server-relevant PTY mouse reports with explicit writer
-ownership.
+Drag separators with minimum dimensions and client-local persistence while
+preserving keyboard resizing and safe responsive modes.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui mouse_runtime
-cargo test -p yoctui --test mouse_runtime mouse
+cargo test -p yoctui-ui mouse_split
 ```

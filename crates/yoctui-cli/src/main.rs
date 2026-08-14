@@ -36,10 +36,10 @@ use yoctui_app::{
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
     key_action, logs_action, maintenance_dialog_action, maintenance_workspace_action,
-    model_action_from_backend_event, mouse_action, package_workspace_action, popup_editor_action,
-    qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action, qa_report_error_action,
-    qa_report_response_action, qa_task_capability_action, qa_workspace_action,
-    qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
+    model_action_from_backend_event, mouse_action_for_app, package_workspace_action,
+    popup_editor_action, qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action,
+    qa_report_error_action, qa_report_response_action, qa_task_capability_action,
+    qa_workspace_action, qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
     qemu_launch_confirmation_action, qemu_launch_dialog_action, recipe_editor_action,
     recover_daemon_model_metadata, sdk_actions_for_runner_event, sdk_build_confirmation_action,
     sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
@@ -8437,17 +8437,20 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             if let Event::Mouse(mouse) = terminal_event {
                 let kind = match mouse.kind {
                     crossterm::event::MouseEventKind::Down(_) => Some(MouseKind::Down),
+                    crossterm::event::MouseEventKind::Drag(_) => Some(MouseKind::Drag),
+                    crossterm::event::MouseEventKind::Up(_) => Some(MouseKind::Up),
                     crossterm::event::MouseEventKind::ScrollUp => Some(MouseKind::ScrollUp),
                     crossterm::event::MouseEventKind::ScrollDown => Some(MouseKind::ScrollDown),
                     _ => None,
                 };
                 if let Some(kind) = kind
-                    && let Some(action) = mouse_action(
+                    && let Some(action) = mouse_action_for_app(
                         MouseInput {
                             kind,
                             column: mouse.column,
                             row: mouse.row,
                         },
+                        &app,
                         terminal.size()?.width,
                     )
                 {

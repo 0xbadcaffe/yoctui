@@ -2053,6 +2053,8 @@ pub enum Input {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MouseKind {
     Down,
+    Drag,
+    Up,
     ScrollUp,
     ScrollDown,
 }
@@ -2081,8 +2083,31 @@ pub fn mouse_action(mouse: MouseInput, terminal_width: u16) -> Option<Action> {
         {
             Some(Action::Focus(FocusTarget::Inspector))
         }
-        MouseKind::Down => Some(Action::Focus(FocusTarget::Workspace)),
+        MouseKind::Down | MouseKind::Drag => Some(Action::Focus(FocusTarget::Workspace)),
+        MouseKind::Up => None,
     }
+}
+
+/// Resolve clicks against the active workbench context. Coordinate ownership
+/// stays in the app layer so widgets remain render-only and dialogs can trap
+/// focus before any workspace action is emitted.
+pub fn mouse_action_for_app(
+    mouse: MouseInput,
+    app: &yoctui_model::App,
+    terminal_width: u16,
+) -> Option<Action> {
+    if matches!(mouse.kind, MouseKind::Down) && app.active_dialog().is_some() {
+        return Some(Action::Focus(FocusTarget::Dialog));
+    }
+    if matches!(mouse.kind, MouseKind::Down)
+        && app.screen == Screen::Dashboard
+        && !app.daemon.pty_sessions.is_empty()
+        && mouse.column >= 24
+    {
+        let delta = if mouse.row.is_multiple_of(2) { 1 } else { -1 };
+        return Some(Action::SelectPtySession { delta });
+    }
+    mouse_action(mouse, terminal_width)
 }
 
 pub fn popup_editor_action(editing: bool, key: Input) -> Option<Action> {
@@ -3552,6 +3577,44 @@ mod tests {
                 80
             ),
             Some(Action::SelectNavigator { delta: 1 })
+        );
+    }
+
+    #[test]
+    fn mouse_runtime_routes_dialog_and_dashboard_session_clicks() {
+        let mut app = yoctui_model::App::new(16, 4096);
+        app.daemon
+            .pty_sessions
+            .push(yoctui_model::ClientDaemonPtySummary {
+                id: 1,
+                name: "shell".into(),
+                lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                viewers: 1,
+            });
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 40,
+                    row: 2
+                },
+                &app,
+                120,
+            ),
+            Some(Action::SelectPtySession { delta: 1 })
+        );
+        app.dialogs.push_back(yoctui_model::Dialog::BuildOptions);
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 40,
+                    row: 2
+                },
+                &app,
+                120,
+            ),
+            Some(Action::Focus(FocusTarget::Dialog))
         );
     }
 

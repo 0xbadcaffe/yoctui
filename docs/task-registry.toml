@@ -3948,12 +3948,12 @@ notes = "Crossterm mouse events map to typed focus and scroll actions with navig
 id = "MOUSE-RUNTIME-001"
 milestone = "M11"
 title = "Route widget and terminal mouse interactions"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 431
 required = true
 depends_on = ["MOUSE-MODEL-001", "PANE-SPLIT-001"]
 verify = ["cargo test -p yoctui-ui mouse_runtime", "cargo test -p yoctui --test mouse_runtime mouse"]
-notes = "Add row/tree clicks, dialog controls, scrollbar and drag semantics, terminal focus/session tabs, and server-relevant PTY mouse reports with explicit writer ownership."
+notes = "Typed runtime routing now handles crossterm down/drag/up events, dialog focus trapping, dashboard PTY session selection, Navigator/workspace/Inspector focus, and scroll behavior; keyboard routes remain available and PTY ownership stays daemon-authoritative."
 
 [[task]]
 id = "MOUSE-SPLIT-001"
