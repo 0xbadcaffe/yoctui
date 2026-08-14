@@ -1909,3 +1909,6 @@ snapshots and terminal job state.
 Confirmed `cve-check-map-pkgs` operations use the same boundary with executable
 and input identity revalidation, daemon-owned process groups, bounded output,
 and explicit cancellation/lost states.
+Maintenance capability requests now carry bounded build/sstate metadata to the
+daemon, which invokes the existing typed capability inspector and publishes a
+bounded tool/limitation snapshot without making the client the owner.

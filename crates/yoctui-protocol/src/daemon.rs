@@ -259,6 +259,14 @@ pub enum DaemonCommand {
     CancelSecurityPackageMap {
         session_id: u64,
     },
+    InspectMaintenanceCapability {
+        request: u64,
+        build_directory: String,
+        sstate_directory: Option<String>,
+        tmp_directory: Option<String>,
+        stamps_directories: Vec<String>,
+        executable_search_path: Vec<String>,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,
@@ -733,6 +741,7 @@ pub enum DaemonEvent {
     QaSnapshot(DaemonQaSnapshot),
     QaCapability(DaemonQaSnapshot),
     SecuritySnapshot(DaemonSecuritySnapshot),
+    MaintenanceSnapshot(DaemonMaintenanceSnapshot),
     #[serde(other)]
     Unknown,
 }
@@ -741,6 +750,13 @@ pub enum DaemonEvent {
 pub struct DaemonSecuritySnapshot {
     pub generation: u64,
     pub reports: Vec<String>,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonMaintenanceSnapshot {
+    pub request: u64,
+    pub tools: Vec<String>,
     pub limitations: Vec<String>,
 }
 
@@ -1049,6 +1065,7 @@ pub fn apply_sequenced_event(
         | DaemonEvent::QaSnapshot(_)
         | DaemonEvent::QaCapability(_)
         | DaemonEvent::SecuritySnapshot(_)
+        | DaemonEvent::MaintenanceSnapshot(_)
         | DaemonEvent::Unknown => {}
         DaemonEvent::ClientChanged(client) => {
             replace_by(&mut snapshot.clients, client.clone(), |item| item.id);

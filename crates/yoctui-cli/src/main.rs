@@ -102,6 +102,8 @@ mod client_transport;
 #[cfg(unix)]
 mod daemon_devtool;
 #[cfg(unix)]
+mod daemon_maintenance;
+#[cfg(unix)]
 mod daemon_qa;
 #[cfg(unix)]
 mod daemon_qemu;
@@ -1429,6 +1431,10 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                         DaemonCommand::CancelSecurityPackageMap { session_id } => match security_mapper_supervisor.cancel(session_id) {
                             Ok(()) => CommandOutcome::Accepted,
                             Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound, message: error, current_generation: daemon_journal.snapshot().generation },
+                        },
+                        DaemonCommand::InspectMaintenanceCapability { request, build_directory, sstate_directory, tmp_directory, stamps_directories, executable_search_path } => match daemon_maintenance::inspect(request, build_directory, sstate_directory, tmp_directory, stamps_directories, executable_search_path) {
+                            Ok(snapshot) => { let event = daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::MaintenanceSnapshot(snapshot))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted },
+                            Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage, message: error, current_generation: daemon_journal.snapshot().generation },
                         },
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,

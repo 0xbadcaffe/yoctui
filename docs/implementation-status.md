@@ -359,3 +359,6 @@ generation and path requests, cancellation, report snapshots, and terminal
 security job events. Confirmed cve-check-map-pkgs operations now cross a typed
 daemon boundary with revalidated executable/input identities, bounded output,
 cancellation, and terminal/lost security job state.
+Maintenance capability inspection now crosses the daemon boundary with typed
+build/sstate metadata and bounded tool/limitation snapshots; sstate execution
+is the next maintenance split gate.

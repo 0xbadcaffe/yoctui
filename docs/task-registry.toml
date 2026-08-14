@@ -3618,12 +3618,34 @@ notes = "Daemon reconstructs validated cve-check-map-pkgs commands, owns process
 id = "CLIENT-RUNTIME-MAINTENANCE-001"
 milestone = "M11"
 title = "Move maintenance jobs into the daemon"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-QA-SECURITY-001"]
 verify = ["cargo test -p yoctui client_runtime_maintenance"]
-notes = "Route typed maintenance, sstate, release and utility jobs through daemon ownership."
+notes = "Parent gate split into capability inspection and daemon-owned maintenance runner families."
+
+[[task]]
+id = "CLIENT-RUNTIME-MAINTENANCE-CAPABILITY-001"
+milestone = "M11"
+title = "Inspect maintenance capability in the daemon"
+status = "DONE"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-QA-SECURITY-001"]
+verify = ["cargo test -p yoctui client_runtime_maintenance"]
+notes = "Sstate capability inspection uses typed build metadata and publishes a bounded daemon maintenance snapshot."
+
+[[task]]
+id = "CLIENT-RUNTIME-MAINTENANCE-SSTATE-001"
+milestone = "M11"
+title = "Run sstate maintenance jobs in the daemon"
+status = "NOT_STARTED"
+priority = 424
+required = true
+depends_on = ["CLIENT-RUNTIME-MAINTENANCE-CAPABILITY-001"]
+verify = ["cargo test -p yoctui client_runtime_maintenance_sstate"]
+notes = "Route confirmed oe-check-sstate and sstate cleanup operations through daemon-owned runners."
 
 [[task]]
 id = "CLIENT-RUNTIME-JOBS-001"

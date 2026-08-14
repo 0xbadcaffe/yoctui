@@ -313,6 +313,28 @@ fn daemon_command_for_effect(
         Effect::Security(yoctui_model::SecurityEffect::CancelSession(id)) => {
             DaemonCommand::CancelSecurityPackageMap { session_id: id.0 }
         }
+        Effect::Maintenance(yoctui_model::MaintenanceEffect::InspectCapability { request }) => {
+            DaemonCommand::InspectMaintenanceCapability {
+                request: *request,
+                build_directory: build_directory()?,
+                sstate_directory: app.workspace.variables.get("SSTATE_DIR").cloned(),
+                tmp_directory: app.workspace.variables.get("TMPDIR").cloned(),
+                stamps_directories: app
+                    .workspace
+                    .variables
+                    .get("STAMPS_DIR")
+                    .or_else(|| app.workspace.variables.get("STAMP"))
+                    .into_iter()
+                    .cloned()
+                    .collect(),
+                executable_search_path: app
+                    .workspace
+                    .source_dir
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect(),
+            }
+        }
         Effect::Qa(yoctui_model::QaEffect::StartLayerCheck {
             session,
             layer,
