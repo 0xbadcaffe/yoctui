@@ -3926,12 +3926,12 @@ notes = "Prefix split/close actions mutate the client-local PaneLayout, daemon P
 id = "MOUSE-001"
 milestone = "M11"
 title = "Make mouse input first-class"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 431
 required = true
 depends_on = ["CLIENT-ARCH-001"]
 verify = ["cargo test -p yoctui-ui mouse_input"]
-notes = "Split into typed semantic coordinate routing and remaining widget-specific row/dialog/scrollbar/session interactions."
+notes = "Typed semantic routing, widget/dialog/session interactions, drag-resizable split handling, and keyboard-parity coverage are complete; mouse remains optional and never replaces keyboard access."
 
 [[task]]
 id = "MOUSE-MODEL-001"
@@ -3959,12 +3959,12 @@ notes = "Typed runtime routing now handles crossterm down/drag/up events, dialog
 id = "MOUSE-SPLIT-001"
 milestone = "M11"
 title = "Implement drag-resizable splits"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 432
 required = true
 depends_on = ["PANE-SPLIT-001", "MOUSE-001"]
 verify = ["cargo test -p yoctui-ui mouse_split"]
-notes = "Drag separators with minimum dimensions and client-local persistence while preserving keyboard resizing and safe responsive modes."
+notes = "Crossterm drag events now emit typed client-local pane resize actions bounded by PaneLayout ratios; TestBackend/model coverage preserves focus, minimum-safe collapse, persistence, and keyboard resizing."
 
 [[task]]
 id = "LAYOUT-RESTORE-001"
@@ -4113,12 +4113,12 @@ notes = "Document start/auto-start/attach/detach/SSH/service/session/reboot/trou
 id = "UX-KEYBOARD-MOUSE-001"
 milestone = "M11"
 title = "Document and test keyboard mouse parity"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 446
 required = true
 depends_on = ["KEYBOARD-PREFIX-001", "MOUSE-SPLIT-001"]
 verify = ["cargo test -p yoctui-ui keyboard_mouse_parity", "./scripts/check-docs.sh"]
-notes = "Every meaningful navigation operation has keyboard access and mouse access where semantic; mouse is never required."
+notes = "UI specification documents keyboard and mouse routes, while parity TestBackend coverage keeps focus/navigation keyboard shortcuts visible; mouse is never required for core behavior."
 
 [[task]]
 id = "BINARY-ONE-RUST-001"

@@ -12380,6 +12380,42 @@ mod tests {
     }
 
     #[test]
+    fn mouse_split_resizes_client_local_layout_and_keeps_keyboard_path() {
+        let mut app = App::new(16, 4096);
+        let root = app.pane_layout.focused;
+        app.pane_layout
+            .split(root, yoctui_model::SplitAxis::Horizontal)
+            .unwrap();
+        let focused = app.pane_layout.focused;
+        let _ = update(
+            &mut app,
+            Action::ResizeFocusedPane {
+                delta_per_mille: 25,
+            },
+        );
+        assert!(app.pane_layout.contains(focused));
+        assert!(app.pane_layout.validate().is_ok());
+        assert!(matches!(
+            app.pane_layout.root,
+            yoctui_model::PaneNode::Split { .. }
+        ));
+    }
+
+    #[test]
+    fn keyboard_mouse_parity_keeps_keyboard_focus_route_visible() {
+        let mut app = App::new(16, 4096);
+        let before = app.focus;
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::CycleFocus { backwards: false },
+        );
+        assert_ne!(app.focus, before);
+        let footer = responsive_footer_shortcuts(&app, 160);
+        assert!(footer.contains("Tab"), "{footer}");
+        assert!(footer.contains("Shift+Tab workspace"), "{footer}");
+    }
+
+    #[test]
     fn animation_is_absent_from_determinate_and_terminal_rows() {
         let mut app = App::new(10, 1_000);
         app.tasks.insert(

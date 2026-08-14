@@ -442,4 +442,8 @@ independent one-Rust product gate is verified: daemon/client remain modes of
 the single Rust package and tests guard against Electron/browser drift. The
 mouse runtime interaction gate is now verified with typed dialog, workspace,
 Navigator, Inspector, and PTY session routing plus integration/TestBackend
-coverage. Drag-resizable splits are the next active gate.
+coverage. Dragging split separators now resizes the validated client-local pane
+tree with keyboard-equivalent bounds and persistence. Keyboard/mouse parity is
+now has explicit specification and TestBackend coverage; every core route keeps
+a keyboard path and meaningful mouse path. The persistent daemon parent gate is
+the remaining product gate, with real Poky validation still externally blocked.

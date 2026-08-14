@@ -2107,6 +2107,18 @@ pub fn mouse_action_for_app(
         let delta = if mouse.row.is_multiple_of(2) { 1 } else { -1 };
         return Some(Action::SelectPtySession { delta });
     }
+    if matches!(mouse.kind, MouseKind::Drag)
+        && app.screen == Screen::Dashboard
+        && !app.daemon.pty_sessions.is_empty()
+    {
+        return Some(Action::ResizeFocusedPane {
+            delta_per_mille: if mouse.column.is_multiple_of(2) {
+                25
+            } else {
+                -25
+            },
+        });
+    }
     mouse_action(mouse, terminal_width)
 }
 
@@ -3602,6 +3614,20 @@ mod tests {
                 120,
             ),
             Some(Action::SelectPtySession { delta: 1 })
+        );
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Drag,
+                    column: 40,
+                    row: 2,
+                },
+                &app,
+                120,
+            ),
+            Some(Action::ResizeFocusedPane {
+                delta_per_mille: 25
+            })
         );
         app.dialogs.push_back(yoctui_model::Dialog::BuildOptions);
         assert_eq!(

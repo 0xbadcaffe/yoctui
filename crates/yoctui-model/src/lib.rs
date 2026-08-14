@@ -3370,6 +3370,9 @@ pub enum Action {
     SelectPtySession {
         delta: isize,
     },
+    ResizeFocusedPane {
+        delta_per_mille: i16,
+    },
     ActivateNavigator,
     CycleFocus {
         backwards: bool,
@@ -6186,6 +6189,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .saturating_add(delta as usize)
                     .min(count.saturating_sub(1))
             };
+        }
+        Action::ResizeFocusedPane { delta_per_mille } => {
+            let focused = app.pane_layout.focused;
+            let _ = app.pane_layout.resize(focused, delta_per_mille);
         }
         Action::ActivateNavigator => {
             app.screen = NAVIGATOR_SCREENS[app.navigator_selection];

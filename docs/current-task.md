@@ -2,17 +2,19 @@
 
 ## Task
 
-**ID:** MOUSE-SPLIT-001
-**Title:** Implement drag-resizable splits
+**ID:** DAEMON-001
+**Title:** Complete persistent Yoctui daemon session architecture
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Drag separators with minimum dimensions and client-local persistence while
-preserving keyboard resizing and safe responsive modes.
+Parent gate: daemon-owned BitBake/jobs/PTYs survive client and SSH disconnect,
+safely support clients/input ownership/keyboard/mouse, enforce limits/security,
+state honest reboot semantics, and pass real Poky acceptance.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui mouse_split
+./scripts/verify-completion.sh
+./scripts/live-daemon-poky.sh
 ```

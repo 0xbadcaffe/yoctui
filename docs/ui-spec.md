@@ -2750,8 +2750,9 @@ When enabled:
 - wheel scrolls the focused Navigator/log pane
 - click a terminal-session pane selects that session; dialog clicks remain
   trapped by the dialog focus target
-- drag/up events are routed as typed workspace interactions; pane-separator
-  resizing is specified separately by the split-layout task
+- drag/up events are routed as typed workspace interactions; dragging a split
+  separator adjusts the focused client-local pane ratio within the 10–90%
+  bounds and preserves the keyboard resize route
 - server-relevant terminal mouse reports are sent only for a focused,
   writer-owned PTY that has requested mouse reporting
 
