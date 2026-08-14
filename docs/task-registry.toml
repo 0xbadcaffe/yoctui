@@ -3849,12 +3849,12 @@ notes = "Default Ctrl+B prefix, one-second timeout, double-prefix literal route,
 id = "KEYBOARD-PREFIX-RUNTIME-001"
 milestone = "M11"
 title = "Route prefix commands to session and layout actions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 428
 required = true
 depends_on = ["KEYBOARD-PREFIX-MODEL-001", "PTY-MULTI-001"]
 verify = ["cargo test -p yoctui keyboard_prefix_runtime", "cargo clippy -p yoctui --tests --all-features -- -D warnings"]
-notes = "Execute create/switch/close/split/focus/resize/detach/take-control commands through typed client effects and daemon requests; no notification-only placeholders."
+notes = "Create-session and take-writer-control now route through typed daemon requests and detach releases the client transport. Session switching, close, split, focus, resize, and non-placeholder command effects remain to be wired."
 
 [[task]]
 id = "LAYOUT-MODEL-001"
