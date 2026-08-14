@@ -1888,3 +1888,12 @@ or model internals.
 Comparison requests resolve only retained authoritative generations. The daemon
 computes bounded transition DTOs and emits a typed comparison event; stale or
 missing generations fail closed.
+
+### Daemon-owned QA checks
+
+Layer QA checks cross the daemon boundary as a typed session request carrying
+the confirmed operation identity and bounded argv. The daemon reconstructs and
+revalidates the executable, layer, and report roots, then owns the existing
+process-group-aware runner. Output is bounded into daemon logs and job events;
+cancellation and terminal/lost states are published without relying on the
+attached client remaining alive.

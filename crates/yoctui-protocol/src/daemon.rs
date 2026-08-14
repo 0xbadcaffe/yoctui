@@ -222,6 +222,19 @@ pub enum DaemonCommand {
     InspectQaCapability {
         request: DaemonQaCapabilityRequest,
     },
+    StartQaLayerCheck {
+        session_id: u64,
+        operation_id: u64,
+        check_id: String,
+        layer_name: String,
+        layer_root: String,
+        executable: String,
+        arguments: Vec<String>,
+        report_roots: Vec<String>,
+    },
+    CancelQaLayerCheck {
+        session_id: u64,
+    },
     BitBakeLifecycle {
         operation: BitBakeOperation,
         confirmation: Option<ConfirmationLease>,

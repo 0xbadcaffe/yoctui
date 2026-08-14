@@ -252,6 +252,40 @@ fn daemon_command_for_effect(
                 .map(|path| path.display().to_string())
                 .collect(),
         },
+        Effect::Qa(yoctui_model::QaEffect::StartLayerCheck {
+            session,
+            layer,
+            executable,
+            arguments,
+        }) => {
+            let operation = app
+                .qa
+                .layer_sessions
+                .iter()
+                .find(|candidate| candidate.id == *session)
+                .ok_or(ClientRuntimeError::MissingQaLayerSession)?
+                .operation
+                .clone();
+            DaemonCommand::StartQaLayerCheck {
+                session_id: session.0,
+                operation_id: operation.id.0,
+                check_id: operation.check.0,
+                layer_name: layer.name.clone(),
+                layer_root: layer.root.display().to_string(),
+                executable: executable.path.display().to_string(),
+                arguments: arguments.clone(),
+                report_roots: operation
+                    .report_roots
+                    .iter()
+                    .map(|path| path.display().to_string())
+                    .collect(),
+            }
+        }
+        Effect::Qa(yoctui_model::QaEffect::CancelLayerCheck(session)) => {
+            DaemonCommand::CancelQaLayerCheck {
+                session_id: session.0,
+            }
+        }
         _ => return Ok(None),
     }))
 }
@@ -427,6 +461,8 @@ pub enum ClientRuntimeError {
     MissingQemuCapability,
     #[error("Wic capability is unavailable")]
     MissingWicCapability,
+    #[error("QA layer session is unavailable")]
+    MissingQaLayerSession,
 }
 
 #[cfg(test)]

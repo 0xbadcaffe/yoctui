@@ -1152,6 +1152,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     let mut qemu_supervisor = daemon_qemu::DaemonQemuSupervisor::default();
     let mut wic_supervisor = daemon_wic::DaemonWicSupervisor::default();
     let mut test_supervisor = daemon_test::DaemonTestSupervisor::default();
+    let mut qa_supervisor = daemon_qa::DaemonQaSupervisor::default();
     write_persisted_state(
         &persist_paths,
         &DaemonPersistedState::capture(
@@ -1183,6 +1184,9 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         }
         while let Some(event) = test_supervisor.try_event() {
             publish_daemon_test_event(&mut daemon_journal, event)?;
+        }
+        while let Some(event) = qa_supervisor.try_event() {
+            publish_daemon_qa_event(&mut daemon_journal, event)?;
         }
         if termination_requested(termination) {
             break;
@@ -1380,6 +1384,14 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                         DaemonCommand::ExportTestJunit { generation, result_identity, destination } => match test_supervisor.start_junit(generation, result_identity, destination) { Ok(job_id)=>{let event=daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary{id:job_id,kind:yoctui_protocol::daemon::JobKind::Testing,label:"JUnit export".into(),lifecycle:yoctui_protocol::daemon::LifecycleState::Connecting,progress_current:None,progress_total:None,exit_code:None}))?;connection.send(&ServerMessage::Event(event))?;CommandOutcome::Accepted},Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,message:error,current_generation:daemon_journal.snapshot().generation}},
                         DaemonCommand::InspectTestResultTool { path_directories } => { let capability = yoctui_bitbake::TestResultAdapter::new(path_directories.into_iter().map(std::path::PathBuf::from).collect()).capability(); let wire = match capability { yoctui_model::ResultToolCapability::NotInspected => yoctui_protocol::daemon::DaemonTestResultToolCapability::NotInspected, yoctui_model::ResultToolCapability::Missing => yoctui_protocol::daemon::DaemonTestResultToolCapability::Missing, yoctui_model::ResultToolCapability::Available(path) => yoctui_protocol::daemon::DaemonTestResultToolCapability::Available { executable: path.display().to_string() }, yoctui_model::ResultToolCapability::Failed(message) => yoctui_protocol::daemon::DaemonTestResultToolCapability::Failed { message } }; let event=daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::TestResultTool(wire))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted },
                         DaemonCommand::InspectQaCapability { request } => match daemon_qa::inspect(request.input) { Ok(snapshot) => { let event=daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::QaCapability(snapshot))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted }, Err(error)=>CommandOutcome::Rejected{code:yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,message:error,current_generation:daemon_journal.snapshot().generation} },
+                        DaemonCommand::StartQaLayerCheck { session_id, operation_id, check_id, layer_name, layer_root, executable, arguments, report_roots } => match qa_supervisor.start(session_id, operation_id, check_id, layer_name, layer_root, executable, arguments, report_roots) {
+                            Ok(job_id) => { let event = daemon_journal.publish(yoctui_protocol::daemon::DaemonEvent::JobChanged(yoctui_protocol::daemon::JobSummary { id: job_id, kind: yoctui_protocol::daemon::JobKind::Qa, label: format!("QA layer session {session_id}"), lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting, progress_current: None, progress_total: None, exit_code: None }))?; connection.send(&ServerMessage::Event(event))?; CommandOutcome::Accepted },
+                            Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage, message: error, current_generation: daemon_journal.snapshot().generation },
+                        },
+                        DaemonCommand::CancelQaLayerCheck { session_id } => match qa_supervisor.cancel(session_id) {
+                            Ok(()) => CommandOutcome::Accepted,
+                            Err(error) => CommandOutcome::Rejected { code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound, message: error, current_generation: daemon_journal.snapshot().generation },
+                        },
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
                             message: "daemon command is not implemented by this runtime".into(),
@@ -1927,6 +1939,100 @@ fn publish_daemon_test_event(
         DaemonTestEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
             kind: JobKind::Testing,
+            label: format!("{label}: {message}"),
+            lifecycle: LifecycleState::Lost,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+    };
+    journal.publish(mapped)?;
+    Ok(())
+}
+
+#[cfg(unix)]
+fn publish_daemon_qa_event(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    event: daemon_qa::DaemonQaEvent,
+) -> Result<()> {
+    use daemon_qa::DaemonQaEvent;
+    use yoctui_protocol::daemon::{
+        DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
+    };
+    let job_id = match &event {
+        DaemonQaEvent::Started { job_id, .. }
+        | DaemonQaEvent::Output { job_id, .. }
+        | DaemonQaEvent::Completed { job_id, .. }
+        | DaemonQaEvent::Failed { job_id, .. }
+        | DaemonQaEvent::Cancelled { job_id, .. }
+        | DaemonQaEvent::Lost { job_id, .. } => *job_id,
+    };
+    let label = journal
+        .snapshot()
+        .jobs
+        .iter()
+        .find(|job| job.id == job_id)
+        .map(|job| job.label.clone())
+        .unwrap_or_else(|| "QA layer check".into());
+    let mapped = match event {
+        DaemonQaEvent::Started { .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Qa,
+            label,
+            lifecycle: LifecycleState::Running,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
+        }),
+        DaemonQaEvent::Output {
+            stream,
+            line,
+            truncated,
+            ..
+        } => DaemonEvent::Log(LogRecord {
+            source: format!("qa:{stream:?}"),
+            severity: if matches!(stream, yoctui_model::QaOutputStream::Stderr) {
+                LogSeverity::Warning
+            } else {
+                LogSeverity::Info
+            },
+            message: if truncated {
+                format!("{line} [truncated]")
+            } else {
+                line
+            },
+            unix_ms: unix_ms(),
+        }),
+        DaemonQaEvent::Completed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Qa,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonQaEvent::Failed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Qa,
+            label,
+            lifecycle: LifecycleState::Failed,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonQaEvent::Cancelled { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Qa,
+            label,
+            lifecycle: LifecycleState::Exited,
+            progress_current: None,
+            progress_total: None,
+            exit_code,
+        }),
+        DaemonQaEvent::Lost { message, .. } => DaemonEvent::JobChanged(JobSummary {
+            id: job_id,
+            kind: JobKind::Qa,
             label: format!("{label}: {message}"),
             lifecycle: LifecycleState::Lost,
             progress_current: None,

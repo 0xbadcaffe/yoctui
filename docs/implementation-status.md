@@ -345,3 +345,7 @@ The daemon test cache now retains both bounded wire snapshots and authoritative
 import records by generation, enabling safe comparison worker reconstruction.
 Daemon test comparisons now resolve retained authoritative result generations,
 compute bounded typed transitions, and publish versioned comparison diff events.
+Layer QA checks now use a daemon-owned typed runner: confirmed executable/layer
+identities are revalidated at the daemon boundary, bounded output is published
+as daemon logs, and cancellation plus terminal/lost states survive client
+detach.

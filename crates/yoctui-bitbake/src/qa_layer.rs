@@ -16,7 +16,8 @@ use tokio::{
 use yoctui_model::{
     MAX_QA_LAYER_ARGUMENTS, MAX_QA_REPORT_PATHS, MAX_QA_SCOPES, MAX_QA_TEXT_BYTES, QaCheckId,
     QaConfiguredLayerCapability, QaExecutableIdentity, QaLayerCapabilitySnapshot, QaLayerIdentity,
-    QaLayerOperationPreview, QaLayerRunCapability, QaLayerSessionId, QaOutputStream,
+    QaLayerOperationId, QaLayerOperationPreview, QaLayerRunCapability, QaLayerSessionId,
+    QaOutputStream,
 };
 
 use crate::output_text;
@@ -293,6 +294,41 @@ pub struct QaLayerCommandSpec {
 }
 
 impl QaLayerCommandSpec {
+    /// Reconstruct a confirmed command at the daemon boundary.
+    ///
+    /// The wire request intentionally carries paths and bounded arguments rather
+    /// than a serialized filesystem identity.  The executable identity is
+    /// re-read on the daemon host immediately before validation, so replacement
+    /// or symlink attacks still fail the normal `from_preview` checks.
+    pub fn from_paths(
+        session: QaLayerSessionId,
+        operation: QaLayerOperationId,
+        check: QaCheckId,
+        layer: QaLayerIdentity,
+        executable: PathBuf,
+        arguments: Vec<String>,
+        report_roots: Vec<PathBuf>,
+    ) -> Result<Self, QaLayerAdapterError> {
+        if session.0 == 0 || operation.0 == 0 || !check.is_valid() || !layer.is_valid() {
+            return Err(QaLayerAdapterError::InvalidPreview(
+                "session, operation, check, or layer is invalid".into(),
+            ));
+        }
+        let executable = executable_identity(&executable)?;
+        let indexed_arguments = indexed_arguments(&executable.path, &arguments);
+        let preview = QaLayerOperationPreview {
+            id: operation,
+            check,
+            layer,
+            executable,
+            indexed_arguments,
+            arguments,
+            report_roots,
+            limitations: Vec::new(),
+        };
+        Self::from_preview(session, &preview)
+    }
+
     pub fn from_preview(
         session: QaLayerSessionId,
         preview: &QaLayerOperationPreview,

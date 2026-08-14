@@ -2,14 +2,14 @@
 
 ## Task
 
-**ID:** CLIENT-RUNTIME-QA-CHECK-RUNNER-001
-**Title:** Run managed QA checks in the daemon
+**ID:** CLIENT-RUNTIME-QA-TASK-RUNNER-001
+**Title:** Move QA task capability and checks into the daemon
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Daemon owns managed QA check process runners, output, cancellation and
-terminal state.
+Daemon routes QA capability and task checks through typed daemon commands so
+the interactive client does not own long-running QA execution.
 
 ## Verification
 
