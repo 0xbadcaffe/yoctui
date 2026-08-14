@@ -2522,6 +2522,7 @@ fn diagnostic_for_entry(entry: &LogEntry) -> DiagnosticInfo {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
     pub daemon: ClientDaemonView,
+    pub pty_selection: usize,
     pub screen: Screen,
     pub focus: FocusTarget,
     pub focus_return: Option<FocusTarget>,
@@ -2645,6 +2646,7 @@ impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
             daemon: ClientDaemonView::default(),
+            pty_selection: 0,
             screen: Screen::Dashboard,
             focus: FocusTarget::Workspace,
             focus_return: None,
@@ -3359,6 +3361,9 @@ pub enum Action {
     ActivateProjectProfileItem,
     Open(Screen),
     SelectNavigator {
+        delta: isize,
+    },
+    SelectPtySession {
         delta: isize,
     },
     ActivateNavigator,
@@ -6162,6 +6167,20 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.navigator_selection
                     .saturating_add(delta as usize)
                     .min(NAVIGATOR_SCREENS.len().saturating_sub(1))
+            };
+        }
+        Action::SelectPtySession { delta } => {
+            let count = app.daemon.pty_sessions.len();
+            app.pty_selection = if count == 0 {
+                0
+            } else if delta.is_negative() {
+                app.pty_selection
+                    .saturating_sub(delta.unsigned_abs())
+                    .min(count.saturating_sub(1))
+            } else {
+                app.pty_selection
+                    .saturating_add(delta as usize)
+                    .min(count.saturating_sub(1))
             };
         }
         Action::ActivateNavigator => {

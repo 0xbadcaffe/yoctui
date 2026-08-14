@@ -8256,6 +8256,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             {
                                 let _ = runtime.detach(&mut app);
                             }
+                            if command == PrefixCommand::NextSession {
+                                let _ = update(&mut app, Action::SelectPtySession { delta: 1 });
+                            } else if command == PrefixCommand::PreviousSession {
+                                let _ = update(&mut app, Action::SelectPtySession { delta: -1 });
+                            }
                             app.notification = Some(match command {
                                 PrefixCommand::CommandPalette => {
                                     let _ = update(&mut app, Action::OpenCommandPalette);
