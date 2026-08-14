@@ -2,18 +2,18 @@
 
 ## Task
 
-**ID:** LIVE-DAEMON-POKY-001
-**Title:** Validate daemon workflow on real Poky
+**ID:** BINARY-ONE-RUST-001
+**Title:** Preserve one Rust-native Yoctui product
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Using a fresh supported Poky clone, validate daemon/client build detach/reconnect,
-tasks/logs, shell detach/reattach, interactive tasks where available, cancel and
-restart workflows, and clean shutdown.
+Keep daemon/client as one installed Rust Yoctui package or documented
+same-workspace helpers; no Electron or browser runtime.
 
 ## Verification
 
 ```bash
-./scripts/live-daemon-poky.sh
+cargo test -p yoctui binary_product
+./scripts/check-docs.sh
 ```

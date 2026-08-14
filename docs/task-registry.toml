@@ -4091,12 +4091,12 @@ notes = "Acceptance fixture reloads persisted metadata after daemon restart, rec
 id = "LIVE-DAEMON-POKY-001"
 milestone = "M11"
 title = "Validate daemon workflow on real Poky"
-status = "NOT_STARTED"
+status = "BLOCKED"
 priority = 444
 required = true
 depends_on = ["DAEMON-UI-001", "DAEMON-CLI-001", "PTY-TEST-001", "SSH-TEST-001", "DAEMON-REBOOT-TEST-001", "BITBAKE-RESTART-001"]
 verify = ["./scripts/live-daemon-poky.sh"]
-notes = "Fresh supported Poky acceptance: daemon/client build detach/reconnect, tasks/logs, shell detach/reattach, available interactive tasks, cancel/restart, and clean shutdown; claim only proven behavior."
+notes = "BLOCKED 2026-08-14: required scripts/live-daemon-poky.sh is absent, and the current daemon command surface does not yet expose an authoritative BitBake build lifecycle for the requested live detach/reconnect acceptance. Reproduce with ./scripts/live-daemon-poky.sh (No such file or directory); do not claim live Poky compatibility until the script and controller are implemented."
 
 [[task]]
 id = "README-DAEMON-001"

@@ -435,4 +435,7 @@ scrollback, and terminal-emulator coverage in the PTY unit suite. SSH-style
 disconnect/reconnect testing is verified with a local controlled fixture. Daemon
 restart/recovery acceptance now reloads persisted metadata, reconnects clients,
 marks unrecoverable jobs/PTYs Lost, and exposes explicit host-reboot relaunch
-intent. Real Poky daemon validation is the next active gate.
+intent. Real Poky daemon validation is currently blocked because the required
+live script is absent and the daemon BitBake controller/build command surface
+is not yet implemented; no live compatibility claim is made. The next
+independent gate preserves the one-Rust product constraint.
