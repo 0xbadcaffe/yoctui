@@ -2,18 +2,18 @@
 
 ## Task
 
-**ID:** PANE-SPLIT-RUNTIME-001
-**Title:** Wire split-pane actions and session attachment
+**ID:** MOUSE-001
+**Title:** Make mouse input first-class
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Typed actions must split/close/focus/resize panes, attach existing PTYs, create
-shells, and preserve workbench navigation without notification-only
-placeholders.
+Support semantic clicks, row/tree selection, scrolling, dialog controls,
+scrollbars, terminal focus, and session tabs without requiring mouse for core
+use.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui --test pane_split_runtime pane_split
+cargo test -p yoctui-ui mouse_input
 ```

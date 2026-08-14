@@ -176,6 +176,7 @@ fn prefix_daemon_command(
         | PrefixCommand::PreviousSession
         | PrefixCommand::SplitHorizontal
         | PrefixCommand::SplitVertical
+        | PrefixCommand::ClosePane
         | PrefixCommand::Detach => return Ok(None),
     };
     Ok(Some(daemon_command))

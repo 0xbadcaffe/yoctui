@@ -161,7 +161,7 @@ Keyboard:
 - `Tab`: move focus to workspace
 - `Ctrl+B`: enter the configurable terminal-session prefix layer; the default
   second-key map is `c` create, `n`/`p` next/previous session, `%` horizontal
-  split, `"` vertical split, `d` detach, `:` command palette, `?` help, and
+  split, `"` vertical split, `x` close pane, `d` detach, `:` command palette, `?` help, and
   `o` take PTY writer control
 - the prefix waits at most one second, shows its pending state in the footer,
   and `Ctrl+B Ctrl+B` sends a literal prefix byte to the terminal

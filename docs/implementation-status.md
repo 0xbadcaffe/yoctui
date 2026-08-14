@@ -396,9 +396,11 @@ prefix commands.
 The client-local pane layout model is now typed and independent of daemon
 state, with stable IDs, split axes, bounded ratios, focus/close operations, and
 narrow-terminal collapse behavior covered by model tests. Split-pane rendering
-now shows daemon PTY sessions with focused borders and viewer labels; typed
-split/close/focus/resize actions and existing-session attachment remain the
-active runtime gate.
+now shows daemon PTY sessions with focused borders and viewer labels. Prefix
+split and pane-close actions mutate only client-local layout; existing daemon
+session metadata remains authoritative and session termination still follows
+its separate confirmation path. The complete keyboard-prefix parent gate is
+now verified; mouse semantic routing is the next active gate.
 The interactive runtime attach/poll/detach path is verified for typed daemon
 effects and UI daemon-health rendering; the parent client-architecture gate is
 next.
