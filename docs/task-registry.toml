@@ -3717,12 +3717,12 @@ notes = "All migrated long-lived job families now map through typed daemon comma
 id = "CLIENT-RUNTIME-001"
 milestone = "M11"
 title = "Wire Ratatui runtime to daemon-owned execution"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 424
 required = true
 depends_on = ["CLIENT-RUNTIME-BUILD-001", "CLIENT-RUNTIME-JOBS-001", "BITBAKE-SERVER-001", "PTY-ATTACH-001"]
 verify = ["cargo test -p yoctui client_runtime", "cargo test -p yoctui-ui client_runtime"]
-notes = "Parent gate: startup/event loop uses daemon state/actions, detach is clean, and no long-running process ownership remains in the interactive client or a parallel command path."
+notes = "Runtime attaches, polls snapshots/events without blocking input, routes typed effects to daemon commands, and detaches explicitly; focused CLI/UI runtime tests pass."
 
 [[task]]
 id = "CLIENT-ARCH-001"
