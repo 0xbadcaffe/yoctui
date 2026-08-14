@@ -132,7 +132,10 @@ impl DaemonListener {
                             actual,
                         });
                     }
-                    return Ok(DaemonConnection { stream });
+                    return Ok(DaemonConnection {
+                        stream,
+                        server_mode: true,
+                    });
                 }
                 Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
                     if Instant::now() >= deadline {
@@ -167,6 +170,7 @@ impl Drop for DaemonListener {
 #[derive(Debug)]
 pub struct DaemonConnection {
     stream: UnixStream,
+    server_mode: bool,
 }
 
 impl DaemonConnection {
@@ -174,7 +178,12 @@ impl DaemonConnection {
         let deadline = Instant::now() + timeout;
         loop {
             match UnixStream::connect(&paths.socket) {
-                Ok(stream) => return Ok(Self { stream }),
+                Ok(stream) => {
+                    return Ok(Self {
+                        stream,
+                        server_mode: false,
+                    });
+                }
                 Err(error)
                     if matches!(
                         error.kind(),
@@ -203,8 +212,16 @@ impl DaemonConnection {
 
     pub fn send<T: Serialize>(&mut self, message: &T) -> Result<(), IpcError> {
         let frame = encode_frame(message)?;
-        self.stream.write_all(&frame).map_err(map_timeout)?;
-        self.stream.flush().map_err(map_timeout)?;
+        match self.stream.write_all(&frame).map_err(map_timeout) {
+            Ok(()) => {}
+            Err(error) if self.server_mode && is_peer_disconnect(&error) => return Ok(()),
+            Err(error) => return Err(error),
+        }
+        match self.stream.flush().map_err(map_timeout) {
+            Ok(()) => {}
+            Err(error) if self.server_mode && is_peer_disconnect(&error) => return Ok(()),
+            Err(error) => return Err(error),
+        }
         Ok(())
     }
 
@@ -224,6 +241,19 @@ impl DaemonConnection {
 
     pub fn peer_uid(&self) -> Result<u32, IpcError> {
         peer_uid(&self.stream)
+    }
+}
+
+fn is_peer_disconnect(error: &IpcError) -> bool {
+    match error {
+        IpcError::Disconnected => true,
+        IpcError::Io(source) => matches!(
+            source.kind(),
+            io::ErrorKind::BrokenPipe
+                | io::ErrorKind::ConnectionReset
+                | io::ErrorKind::NotConnected
+        ),
+        _ => false,
     }
 }
 
@@ -423,6 +453,24 @@ mod tests {
         assert_eq!(client.join().unwrap(), effective_uid());
         drop(listener);
         assert!(!paths.socket.exists());
+        cleanup(&paths);
+    }
+
+    #[test]
+    fn server_send_ignores_peer_disconnect_without_poisoning_daemon() {
+        let paths = test_paths("peer-disconnect");
+        let listener = DaemonListener::bind(&paths).unwrap();
+        let client_paths = paths.clone();
+        let client = thread::spawn(move || {
+            let mut connection =
+                DaemonConnection::connect(&client_paths, Duration::from_secs(1)).unwrap();
+            connection.send(&ClientMessage::Pong { nonce: 1 }).unwrap();
+            connection
+        });
+        let mut server = listener.accept(Duration::from_secs(1)).unwrap();
+        server.receive::<ClientMessage>().unwrap();
+        drop(client.join().unwrap());
+        assert!(server.send(&ClientMessage::Pong { nonce: 7 }).is_ok());
         cleanup(&paths);
     }
 
