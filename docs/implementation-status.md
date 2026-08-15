@@ -440,17 +440,14 @@ and the `yoctui daemon build <target>` command; status reconnects show durable
 job lifecycle and exit codes after the initiating client detaches. The real
 Poky acceptance script clones a fresh workspace, initializes a private build
 directory, starts the daemon, submits a build, reconnects for status, and
-cleans up. After the host namespace restriction was temporarily disabled, the
-harness passed setup, detached submission, and repeated reconnect checks. Its
-real `core-image-minimal` build first reached task 2459/4090 before the host
-fell to 4 GB free at 100% filesystem use, so the disposable run was stopped
-rather than exhausting the filesystem. After space was recovered, a fresh run
-remained healthy through task 2779/4090 and showed that the former one-hour
-deadline was too short for this host; the default acceptance window is now
-four hours. The harness also prefers system host tools and clears inherited
-pyenv internal hook state after that state was shown to stall BitBake
-execution. Live acceptance remains blocked on a complete rerun and no
-compatibility claim is made. The next independent one-Rust product gate is verified: daemon/client remain modes of
+cleans up. With the host namespace prerequisite enabled, the final real Poky
+scarthgap `core-image-minimal` run passed setup, detached submission, repeated
+reconnect checks, and terminal daemon job reporting. All 4567 tasks succeeded,
+including kernel and image creation; 3648 tasks were reused from the shared
+cache. The harness prefers system host tools, clears inherited pyenv internal
+hook state, allows four hours, and reclaims disposable workdirs with Poky's
+standard `rm_work` class. Live daemon/Poky compatibility is verified by this
+run. The next independent one-Rust product gate is verified: daemon/client remain modes of
 the single Rust package and tests guard against Electron/browser drift. The
 mouse runtime interaction gate is now verified with typed dialog, workspace,
 Navigator, Inspector, and PTY session routing plus integration/TestBackend
@@ -458,11 +455,11 @@ coverage. Dragging split separators now resizes the validated client-local pane
 tree with keyboard-equivalent bounds and persistence. Keyboard/mouse parity is
 now has explicit specification and TestBackend coverage; every core route keeps
 a keyboard path and meaningful mouse path. The persistent daemon parent gate is
-the remaining product gate, with real Poky validation still externally blocked.
+complete, including real Poky validation.
 Daemon and attach documentation now covers direct/service lifecycle, client
 attach/detach, SSH reconnect, PTY/session management, security/resource limits,
-host reboot guarantees, troubleshooting, and the currently blocked live-Poky
-validation script. The parent daemon gate remains blocked by that live proof.
+host reboot guarantees, troubleshooting, and the verified live-Poky validation
+script. The parent daemon gate is complete.
 High-volume BitBake output now exercises byte-aware journal eviction: the
 daemon drops only the oldest bounded log records before rejecting a snapshot,
 preventing a long build from taking down the daemon when its frame limit is

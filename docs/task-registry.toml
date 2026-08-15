@@ -3029,7 +3029,7 @@ priority = 411
 required = true
 depends_on = ["BITBAKE-SERVER-001"]
 verify = ["cargo test -p yoctui-bitbake bitbake_socket"]
-notes = "A UI-independent Unix adapter now validates same-UID non-symlink server sockets, uses the supported workspace Tinfoil/process-server connection through the bounded bridge, correlates every command, reports typed versions/capabilities and server loss, and implements explicit start/connect/disconnect/stop lifecycles with timeouts. Real Unix-socket fixtures cover lifecycle, correlation, invalid endpoints, and loss; live Poky compatibility remains gated by LIVE-DAEMON-POKY-001."
+notes = "A UI-independent Unix adapter now validates same-UID non-symlink server sockets, uses the supported workspace Tinfoil/process-server connection through the bounded bridge, correlates every command, reports typed versions/capabilities and server loss, and implements explicit start/connect/disconnect/stop lifecycles with timeouts. Real Unix-socket fixtures cover lifecycle, correlation, invalid endpoints, and loss; live Poky compatibility was subsequently verified by LIVE-DAEMON-POKY-001."
 
 [[task]]
 id = "BITBAKE-CLI-CONTROL-001"
@@ -4091,12 +4091,12 @@ notes = "Acceptance fixture reloads persisted metadata after daemon restart, rec
 id = "LIVE-DAEMON-POKY-001"
 milestone = "M11"
 title = "Validate daemon workflow on real Poky"
-status = "BLOCKED"
+status = "DONE"
 priority = 444
 required = true
 depends_on = ["DAEMON-UI-001", "DAEMON-CLI-001", "PTY-TEST-001", "SSH-TEST-001", "DAEMON-REBOOT-TEST-001", "BITBAKE-RESTART-001"]
 verify = ["./scripts/live-daemon-poky.sh"]
-notes = "BLOCKED 2026-08-15: after temporarily allowing unprivileged user namespaces, the live harness passed clone, initialization, daemon start, detached build submission, and repeated reconnect checks. The harness excludes inherited pyenv hook state and now allows four hours. After earlier disk and timeout cutoffs, a fresh run remained healthy through task 4055/4090 before its retained disposable workdirs exhausted the filesystem during kernel compilation. The harness now enables Poky's standard rm_work class and has a 15 GB accumulated shared cache. Rerun ./scripts/live-daemon-poky.sh before marking this task DONE; no live compatibility claim is made."
+notes = "With the host namespace prerequisite enabled, the final real Poky scarthgap core-image-minimal harness passed fresh clone and initialization, daemon start, detached build submission, repeated reconnects against one daemon/job, and terminal exit-code reporting. All 4567 tasks succeeded, including kernel and image creation; 3648 were reused from the shared cache. System host tools, a four-hour deadline, and Poky's standard rm_work class keep the acceptance deterministic and bounded on this host."
 
 [[task]]
 id = "README-DAEMON-001"
@@ -4107,7 +4107,7 @@ priority = 445
 required = true
 depends_on = ["DAEMON-CLI-001"]
 verify = ["./scripts/check-docs.sh"]
-notes = "README documents lifecycle/auto-start, attach/detach, SSH reconnect, service/session commands, security/resource limits, host-reboot honesty, troubleshooting, and the unavailable live-Poky validation limitation."
+notes = "README documents lifecycle/auto-start, attach/detach, SSH reconnect, service/session commands, security/resource limits, host-reboot honesty, troubleshooting, and the live-Poky validation workflow."
 
 [[task]]
 id = "UX-KEYBOARD-MOUSE-001"
@@ -4135,9 +4135,9 @@ notes = "The daemon and interactive client remain subcommands/modes of the one R
 id = "DAEMON-001"
 milestone = "M11"
 title = "Complete persistent Yoctui daemon session architecture"
-status = "BLOCKED"
+status = "DONE"
 priority = 448
 required = true
 depends_on = ["README-DAEMON-001", "UX-KEYBOARD-MOUSE-001", "BINARY-ONE-RUST-001"]
 verify = ["./scripts/verify-completion.sh", "./scripts/live-daemon-poky.sh"]
-notes = "BLOCKED 2026-08-15: all component daemon/client/PTY/mouse tasks and the daemon-owned BitBake build path are implemented and verified. With the namespace restriction temporarily disabled, LIVE-DAEMON-POKY-001 passed setup and detached/reconnect behavior. Corrected real core-image-minimal attempts exposed and fixed pyenv host-tool inheritance and a short deadline. The latest healthy run reached task 4055/4090 before retained disposable workdirs exhausted the filesystem during kernel compilation; the harness now enables Poky's standard rm_work class and retains a 15 GB shared cache. Rerun the live gate; no unsupported compatibility claim is made."
+notes = "All daemon/client/PTY/mouse tasks and the daemon-owned BitBake path are implemented and verified. The final real Poky scarthgap core-image-minimal acceptance run completed all 4567 tasks through kernel and image creation while repeated clients reconnected to one durable daemon job and observed its successful terminal exit code. All required registry tasks are DONE."
