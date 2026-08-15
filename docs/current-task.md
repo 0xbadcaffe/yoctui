@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -24,6 +24,7 @@ With the host namespace prerequisite enabled, the final real Poky scarthgap
 `core-image-minimal` acceptance run passed fresh clone and initialization,
 daemon start, detached submission, repeated reconnects, and terminal job-state
 reporting. All 4567 tasks succeeded, including kernel and image creation; 3648
-were reused from the shared cache. The final completion gate exposed a
-parallel-test isolation collision in `daemon_persist`; the daemon parent remains
-in progress until that regression is fixed and the full gate passes.
+were reused from the shared cache. The completion-gate regression now gives
+every `daemon_persist` fixture a PID-plus-monotonic temporary identity; five
+consecutive parallel integration runs pass. This is the terminal handoff because
+every registry task is DONE.

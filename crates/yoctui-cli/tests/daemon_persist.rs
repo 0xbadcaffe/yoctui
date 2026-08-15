@@ -5,6 +5,7 @@ use std::{
     os::unix::fs::{DirBuilderExt, PermissionsExt},
     path::{Path, PathBuf},
     process::Command,
+    sync::atomic::{AtomicU64, Ordering},
     time::Duration,
 };
 use yoctui_protocol::{
@@ -24,6 +25,16 @@ use yoctui_protocol::{
 
 struct Cleanup(PathBuf);
 
+static NEXT_TEMP_ROOT_ID: AtomicU64 = AtomicU64::new(0);
+
+fn unique_temp_root(label: &str) -> PathBuf {
+    std::env::temp_dir().join(format!(
+        "{label}-{}-{}",
+        std::process::id(),
+        NEXT_TEMP_ROOT_ID.fetch_add(1, Ordering::Relaxed)
+    ))
+}
+
 impl Drop for Cleanup {
     fn drop(&mut self) {
         let _ = fs::remove_dir_all(&self.0);
@@ -40,10 +51,17 @@ fn run(binary: &Path, runtime: &Path, state: &Path, action: &str) -> std::proces
 }
 
 #[test]
+fn daemon_persist_fixtures_use_unique_temp_roots() {
+    let first = unique_temp_root("yoctui-cli-daemon-recovery");
+    let second = unique_temp_root("yoctui-cli-daemon-recovery");
+
+    assert_ne!(first, second);
+}
+
+#[test]
 fn daemon_persist_writes_safe_metadata_without_live_process_identity() {
     let binary = Path::new(env!("CARGO_BIN_EXE_yoctui"));
-    let root =
-        std::env::temp_dir().join(format!("yoctui-cli-daemon-persist-{}", std::process::id()));
+    let root = unique_temp_root("yoctui-cli-daemon-persist");
     let _ = fs::remove_dir_all(&root);
     let runtime = root.join("runtime");
     let state_root = root.join("state");
@@ -97,8 +115,7 @@ fn daemon_persist_writes_safe_metadata_without_live_process_identity() {
 #[test]
 fn daemon_recovery_restores_history_but_marks_live_work_lost() {
     let binary = Path::new(env!("CARGO_BIN_EXE_yoctui"));
-    let root =
-        std::env::temp_dir().join(format!("yoctui-cli-daemon-recovery-{}", std::process::id()));
+    let root = unique_temp_root("yoctui-cli-daemon-recovery");
     let _ = fs::remove_dir_all(&root);
     let runtime = root.join("runtime");
     let state_root = root.join("state");
