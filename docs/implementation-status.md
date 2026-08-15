@@ -11,11 +11,10 @@ Status values:
 
 ## Current phase
 
-The persistent daemon parent gate is `DONE`, but `BRIDGE-PROGRESS-001` is now
-`IN_PROGRESS` after a live Scarthgap build emitted fractional
-`ProcessProgress` and PID-only `TaskProgress` records. The former violated the
-integer wire schema and the latter could not reach task state, so bridge
-normalization and determinate per-task bars are the active user-priority work.
+The persistent daemon parent gate and `BRIDGE-PROGRESS-001` are `DONE`.
+Fractional Scarthgap `ProcessProgress` values now normalize to bounded wire
+integers, PID-only `TaskProgress` records reuse build-scoped task identities,
+and determinate task progress renders as a bar in both Dashboard and Tasks.
 Real Poky acceptance, collision-safe daemon fixtures, responsive PTY delivery,
 Configuration UI coverage, and global quit routing pass. The synchronized
 ten-second real-terminal probe passes ten consecutive runs. On 2026-08-15 the
@@ -80,7 +79,7 @@ See `docs/current-task.md`.
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
-| M1 BitBake cockpit | IN_PROGRESS | Live BitBake 2.19 emitted fractional process progress and PID-only task progress; safe normalization and determinate task bars are active |
+| M1 BitBake cockpit | DONE | Fractional process progress is safely normalized, PID-only task progress is correlated by worker identity, and determinate task bars are rendered |
 | M2 Persistent workbench | DONE | Persistent shell, responsive modes, focus, dialogs, palette, preferences, notifications, background jobs, and all specified workspaces pass their parent gates |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
@@ -98,10 +97,10 @@ See `docs/current-task.md`.
 | Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |
 | Command palette | DONE | Typed catalog, case-insensitive search, contextual availability, disabled explanations, inert invalid activation, focus restore, themes, and narrow rendering are covered |
 | Themes | DONE | Five complete semantic palettes cover shell, focus, selection, status, severity, progress, dialogs, notifications, and syntax; monochrome/no-color use terminal attributes |
-| Task animation | DONE | UI-tick fast/slow cadence, stable reduced-motion activity, honest unknown progress, and nonanimated determinate/terminal rows have reducer and TestBackend coverage |
+| Task animation | DONE | UI-tick fast/slow cadence, stable reduced-motion activity, honest unknown progress, and nonanimated determinate bars/terminal rows have reducer and TestBackend coverage |
 | Background-job model | DONE | Stable IDs, typed lifecycle/context/progress/result/error, bounded output/history, cancellation capability, and reducer coverage are implemented |
 | Background build execution | DONE | Confirmed builds allocate one job; typed events drive lifecycle/output; navigation persists; failure, cancellation rejection/acknowledgement, and backend loss are covered |
-| Live BitBake bridge | IN_PROGRESS | Workspace/build control remains live, but fractional process progress currently violates the integer wire schema and PID-only task progress needs build-scoped correlation |
+| Live BitBake bridge | DONE | Finite progress is bounded at the bridge boundary, PID-only task progress uses active-build worker identities, stale progress is ignored, and installed read-only inspection passes against BitBake 2.8.1 / Poky 5.0.19 |
 | Typed backend boundary | DONE | Typed workspace and metadata events normalize in the app into reducer actions; unknown events are safe, missing progress remains unknown, terminal lifecycle updates are singular, and the UI boundary rejects backend parsing |
 | Logs workspace | DONE | Protected-diagnostic retention, bounded bytes/entries, safe truncation, coalescing, pressure counters, follow/pause, both-axis scrolling, search, all filters, selected Inspector, source opening, and clipboard effects are covered |
 | Errors workspace | DONE | Stable structured diagnostics drive the full list and Inspector, exact retained-log and source navigation, related context, visible loss counters, and actionable success/warning/failure/cancellation/backend-loss outcomes |

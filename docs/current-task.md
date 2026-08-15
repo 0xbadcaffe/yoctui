@@ -4,7 +4,7 @@
 
 **ID:** BRIDGE-PROGRESS-001
 **Title:** Normalize live BitBake progress and render task bars
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -18,8 +18,9 @@ The 2026-08-15 live Scarthgap `core-image-minimal` build reproduced both gaps:
 unchanged and violated the protocol's `u64` parse-progress field, while
 `bb.build.TaskProgress` correctly carried only its worker PID and was reduced to
 an unrecognized-event warning because the bridge expected recipe/task strings.
-The live BitBake server and workers remain authoritative and are not to be
-terminated while this compatibility fix is developed.
+The original client and build had exited before the corrected binary was
+installed, so final live validation used read-only inspection of the same Poky
+build directory and did not claim that a build remained active.
 
 ## Relevant files
 
@@ -45,8 +46,8 @@ terminated while this compatibility fix is developed.
   available and preserve explicit animated/unknown behavior otherwise.
 - Mocked native-event tests cover fractional process progress, PID correlation,
   invalid progress, and completion cleanup.
-- Focused verification, baseline checks, and a non-disruptive live reconnect
-  against the running build pass.
+- Focused verification, baseline checks, and non-disruptive live bridge
+  inspection against the affected Poky build directory pass.
 - Registry and human-readable status return to `DONE`, and the change is
   committed as one coherent implementation task.
 
@@ -60,3 +61,9 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
 ```
+
+The installed binary connected to `/home/bspguy-dev/src/poky/build-yoctui`
+through BitBake 2.8.1 and reported the Scarthgap 5.0.19 workspace without a JSON
+protocol error or reconnect loop. Bridge coverage is 78%, all 39 bridge tests
+pass, both focused task-progress UI tests pass, and the workspace tests, Clippy,
+documentation, and roadmap checks pass.
