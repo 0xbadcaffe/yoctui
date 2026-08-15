@@ -15,8 +15,8 @@ Status values:
 terminal-native CPU, memory, disk, load, history, task-velocity, ETA, and
 high-resolution progress meters. The persistent daemon parent gate is `DONE`;
 the implementation and focused
-verification for `BRIDGE-PROGRESS-001` pass, but that task remains `BLOCKED` at
-the repository completion gate because host perf sampling is restricted.
+verification for `BRIDGE-PROGRESS-001` pass, and that task is `IN_PROGRESS`
+again now that the operator enabled the completion gate's real perf sample.
 Fractional Scarthgap `ProcessProgress` values now normalize to bounded wire
 integers, PID-only `TaskProgress` records reuse build-scoped task identities,
 and determinate task progress renders as a bar in both Dashboard and Tasks.
@@ -84,7 +84,7 @@ See `docs/current-task.md`.
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
-| M1 BitBake cockpit | BLOCKED | The telemetry cockpit and progress compatibility pass; the completion-gate record waits for a temporary host perf permission change |
+| M1 BitBake cockpit | IN_PROGRESS | The telemetry cockpit and progress compatibility pass; the resumed completion gate is collecting its final evidence |
 | M2 Persistent workbench | DONE | Persistent shell, responsive modes, focus, dialogs, palette, preferences, notifications, background jobs, and all specified workspaces pass their parent gates |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |

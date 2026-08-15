@@ -4,7 +4,7 @@
 
 **ID:** BRIDGE-PROGRESS-001
 **Title:** Normalize live BitBake progress and render task bars
-**Status:** BLOCKED
+**Status:** IN_PROGRESS
 
 ## Objective
 
@@ -19,12 +19,12 @@ binary connected to `/home/bspguy-dev/src/poky/build-yoctui` through BitBake
 or reconnect loop. All 39 bridge tests, workspace tests, Clippy, documentation,
 and roadmap checks pass.
 
-## Blocker
+## Resumed verification
 
-The repository completion gate is externally blocked at its final real-perf
-step because the host reports `kernel.perf_event_paranoid = 4`.
+The operator enabled the required temporary perf permission on 2026-08-15, so
+the repository completion gate is running again.
 
-## Follow-up verification
+## Verification
 
 ```bash
 sudo sysctl -w kernel.perf_event_paranoid=0
@@ -32,6 +32,6 @@ sudo sysctl -w kernel.perf_event_paranoid=0
 sudo sysctl -w kernel.perf_event_paranoid=4
 ```
 
-After the gate passes, change this task to `DONE`, update the implementation
-status, retain this final completed task as the terminal handoff, and commit the
-completion evidence.
+After the gate passes, restore `kernel.perf_event_paranoid=4`, change this task
+to `DONE`, update the implementation status, retain this final completed task
+as the terminal handoff, and commit the completion evidence.
