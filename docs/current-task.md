@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** DONE
+**Status:** IN_PROGRESS
 
 ## Objective
 
@@ -76,6 +76,14 @@ bounded attempts separated by 5 ms only for `ETXTBSY`; every other spawn error
 still fails immediately. The cancellation test passes 100 consecutive runs,
 the classifier has direct coverage, and all 181 `yoctui-bitbake` library tests
 pass.
+
+The following complete parallel gate exposed a remaining timing dependency in
+`bitbake_cli_control::tests::cli_control_cancels_the_owned_process_group`: even
+after the readiness handshake, the fixture shell can still be blocked waiting
+for its external `sleep` child long enough to miss the one-second graceful
+cancellation window. The parent is reopened to make that fixture directly
+signal-ready without weakening the production grace period or forced-kill
+coverage.
 
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
