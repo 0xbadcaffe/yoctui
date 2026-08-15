@@ -4174,3 +4174,14 @@ required = true
 depends_on = ["DAEMON-001", "BRIDGE-PROGRESS-001", "TELEMETRY-COCKPIT-001"]
 verify = ["cargo test -p yoctui daemon_attach_build", "cargo test -p yoctui-app daemon_attach_build", "cargo test -p yoctui-protocol daemon_build", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "Daemon builds now use the typed bridge and retain compact workspace/build/parse/task/terminal events for reducer-based fresh attach and incremental progress. Attached workspace authority avoids the local `/` fallback, and graceful stop refuses active jobs instead of orphaning them. Focused tests, workspace tests, Clippy, 39 bridge tests, docs, and roadmap checks pass. Installed release daemon a68edcb8ebf4694191776e2a2fde3256 was live-attached on Poky 5.0.19 with BB Running, core-image-minimal, and authoritative 94/4090 task progress; detach left it running."
+
+[[task]]
+id = "DAEMON-ATTACH-QUIT-001"
+milestone = "M1"
+title = "Restore global quit after daemon attach"
+status = "IN_PROGRESS"
+priority = 452
+required = true
+depends_on = ["DAEMON-ATTACH-BUILD-001"]
+verify = ["cargo test -p yoctui-app persistent_pane_focus_preserves_global_quit", "./scripts/test-terminal.sh", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "The completion gate exposed that daemon attach can restore Workspace focus while the CLI runtime dispatches global quit only for Navigator and Inspector. Route q and Ctrl+C through the existing typed focus action for all three persistent panes and verify real terminal restoration without stopping the daemon-owned build."

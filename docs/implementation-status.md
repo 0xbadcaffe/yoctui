@@ -11,6 +11,12 @@ Status values:
 
 ## Current phase
 
+`DAEMON-ATTACH-QUIT-001` is `IN_PROGRESS`: the completion gate reproduced a
+real terminal hang after daemon attach because Workspace focus bypassed the
+global `q`/`Ctrl+C` route. The UI specification already requires global quit
+from every persistent pane, so the focused repair will align runtime dispatch
+with the existing typed focus action while leaving the daemon build alive.
+
 `DAEMON-ATTACH-BUILD-001` is `DONE`: daemon-owned builds now use the typed
 bridge, compact workspace/build/parse/task/terminal events into bounded attach
 state, restore that state through the normal reducer, and continue applying
