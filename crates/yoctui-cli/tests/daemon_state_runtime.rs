@@ -5,6 +5,7 @@ use std::{
     os::unix::fs::DirBuilderExt,
     path::{Path, PathBuf},
     process::Command,
+    sync::atomic::{AtomicU64, Ordering},
     time::Duration,
 };
 use yoctui_protocol::{
@@ -18,6 +19,16 @@ use yoctui_protocol::{
 struct DaemonGuard {
     binary: PathBuf,
     runtime: PathBuf,
+}
+
+static NEXT_TEMP_ROOT_ID: AtomicU64 = AtomicU64::new(0);
+
+fn unique_temp_root(label: &str) -> PathBuf {
+    std::env::temp_dir().join(format!(
+        "{label}-{}-{}",
+        std::process::id(),
+        NEXT_TEMP_ROOT_ID.fetch_add(1, Ordering::Relaxed)
+    ))
 }
 
 impl Drop for DaemonGuard {
@@ -113,12 +124,17 @@ fn connect_and_attach(runtime: &Path, client_id: ClientId) -> DaemonConnection {
 }
 
 #[test]
+fn daemon_state_fixtures_use_unique_temp_roots() {
+    let first = unique_temp_root("yoctui-cli-daemon-ssh-reattach");
+    let second = unique_temp_root("yoctui-cli-daemon-ssh-reattach");
+
+    assert_ne!(first, second);
+}
+
+#[test]
 fn daemon_state_runtime_owns_snapshot_across_client_detach_and_reattach() {
     let binary = PathBuf::from(env!("CARGO_BIN_EXE_yoctui"));
-    let runtime = std::env::temp_dir().join(format!(
-        "yoctui-cli-daemon-state-runtime-{}",
-        std::process::id()
-    ));
+    let runtime = unique_temp_root("yoctui-cli-daemon-state-runtime");
     let _ = fs::remove_dir_all(&runtime);
     fs::DirBuilder::new().mode(0o700).create(&runtime).unwrap();
     let guard = DaemonGuard {
@@ -190,10 +206,7 @@ fn daemon_state_runtime_owns_snapshot_across_client_detach_and_reattach() {
 #[test]
 fn daemon_runtime_accepts_a_second_client_while_the_first_is_idle() {
     let binary = PathBuf::from(env!("CARGO_BIN_EXE_yoctui"));
-    let runtime = std::env::temp_dir().join(format!(
-        "yoctui-cli-daemon-multi-client-runtime-{}",
-        std::process::id()
-    ));
+    let runtime = unique_temp_root("yoctui-cli-daemon-multi-client-runtime");
     let _ = fs::remove_dir_all(&runtime);
     fs::DirBuilder::new().mode(0o700).create(&runtime).unwrap();
     let guard = DaemonGuard {
@@ -256,10 +269,7 @@ fn daemon_runtime_accepts_a_second_client_while_the_first_is_idle() {
 #[test]
 fn ssh_integration_reattach_keeps_local_daemon_state_after_client_disconnect() {
     let binary = PathBuf::from(env!("CARGO_BIN_EXE_yoctui"));
-    let runtime = std::env::temp_dir().join(format!(
-        "yoctui-cli-daemon-ssh-reattach-{}",
-        std::process::id()
-    ));
+    let runtime = unique_temp_root("yoctui-cli-daemon-ssh-reattach");
     let _ = fs::remove_dir_all(&runtime);
     fs::DirBuilder::new().mode(0o700).create(&runtime).unwrap();
     let guard = DaemonGuard {
@@ -295,10 +305,7 @@ fn ssh_reattach_keeps_local_daemon_state_after_client_disconnect() {
 #[test]
 fn daemon_integration_validates_handshake_limits_and_reconnect_cursor() {
     let binary = PathBuf::from(env!("CARGO_BIN_EXE_yoctui"));
-    let runtime = std::env::temp_dir().join(format!(
-        "yoctui-cli-daemon-integration-{}",
-        std::process::id()
-    ));
+    let runtime = unique_temp_root("yoctui-cli-daemon-integration");
     let _ = fs::remove_dir_all(&runtime);
     fs::DirBuilder::new().mode(0o700).create(&runtime).unwrap();
     let guard = DaemonGuard {

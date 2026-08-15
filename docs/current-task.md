@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -28,6 +28,7 @@ were reused from the shared cache. The completion-gate regression now gives
 every `daemon_persist` fixture a PID-plus-monotonic temporary identity; five
 consecutive parallel integration runs pass. Server IPC now separates short read
 slices from bounded multi-second snapshot writes; the real PTY integration
-passes ten consecutive runs. The next full gate exposed another PID-only
-parallel fixture collision between the two SSH reattach acceptance cases, so the
-parent remains in progress pending isolation and a clean full-gate pass.
+passes ten consecutive runs. Every daemon-state fixture now has a
+PID-plus-monotonic identity; all six cases, including both SSH acceptance names,
+pass ten consecutive parallel runs. This is the terminal handoff because every
+registry task is DONE.
