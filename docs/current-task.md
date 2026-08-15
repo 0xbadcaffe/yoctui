@@ -4,7 +4,7 @@
 
 **ID:** BRIDGE-PROGRESS-001
 **Title:** Normalize live BitBake progress and render task bars
-**Status:** DONE
+**Status:** BLOCKED
 
 ## Objective
 
@@ -62,8 +62,19 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
 
-The installed binary connected to `/home/bspguy-dev/src/poky/build-yoctui`
+The implementation and task-specific verification are complete. The installed
+binary connected to `/home/bspguy-dev/src/poky/build-yoctui`
 through BitBake 2.8.1 and reported the Scarthgap 5.0.19 workspace without a JSON
 protocol error or reconnect loop. Bridge coverage is 78%, all 39 bridge tests
 pass, both focused task-progress UI tests pass, and the workspace tests, Clippy,
 documentation, and roadmap checks pass.
+
+The repository completion gate is externally blocked at its final real-perf
+step because the host reports `kernel.perf_event_paranoid = 4`. After the
+operator temporarily enables userspace sampling, rerun and restore it:
+
+```bash
+sudo sysctl -w kernel.perf_event_paranoid=0
+./scripts/verify-completion.sh
+sudo sysctl -w kernel.perf_event_paranoid=4
+```

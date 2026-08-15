@@ -4146,9 +4146,9 @@ notes = "All required daemon and UI behavior is implemented and verified. Real P
 id = "BRIDGE-PROGRESS-001"
 milestone = "M1"
 title = "Normalize live BitBake progress and render task bars"
-status = "DONE"
+status = "BLOCKED"
 priority = 449
 required = true
 depends_on = ["DAEMON-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo test -p yoctui-ui task_progress", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Fractional, excessive, negative, non-finite, boolean, and malformed progress now normalizes safely at the bridge boundary. Active-build worker PIDs correlate native TaskProgress with authoritative TaskStarted identities; unmatched and stale progress is ignored. Dashboard and Tasks render determinate bars, 39 bridge tests pass at 78% coverage, workspace tests and Clippy pass, and the installed binary inspected BitBake 2.8.1 / Poky 5.0.19 without the prior JSON failure or reconnect loop."
+notes = "Implementation passes: fractional and invalid progress normalizes safely; active-build worker PIDs correlate native TaskProgress; stale progress is ignored; Dashboard and Tasks render determinate bars; 39 bridge tests pass; and the installed binary inspected BitBake 2.8.1 / Poky 5.0.19 without the prior failure. The final completion gate is externally blocked because kernel.perf_event_paranoid=4 prevents its required real perf sample. Temporarily set it to 0, rerun ./scripts/verify-completion.sh, then restore 4."
