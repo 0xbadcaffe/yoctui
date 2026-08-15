@@ -11,10 +11,11 @@ Status values:
 
 ## Current phase
 
-`DAEMON-UPGRADE-LIFECYCLE-001` is `IN_PROGRESS`: replacing the installed
-binary while the daemon owns a build makes Linux append ` (deleted)` to the
-old process image. Lifecycle status must accept only that exact suffix on the
-recorded path while retaining strict rejection of unrelated live PIDs.
+`DAEMON-UPGRADE-LIFECYCLE-001` is `DONE`: lifecycle validation now accepts
+Linux's exact ` (deleted)` process-image suffix only when its remaining path
+equals the private runtime record. Unrelated paths and repeated suffixes remain
+foreign. Focused lifecycle tests, the workspace, Clippy, docs, and roadmap
+checks pass.
 
 `DAEMON-ATTACH-QUIT-001` is `DONE`: Workspace now shares the typed global
 `q`/`Ctrl+C` route already used by Navigator and Inspector. The deterministic

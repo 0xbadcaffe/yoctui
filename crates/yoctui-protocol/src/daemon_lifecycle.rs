@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     fs,
     io::{self, Read, Write},
+    os::unix::ffi::OsStrExt,
     os::unix::fs::{MetadataExt, OpenOptionsExt, PermissionsExt},
     path::{Path, PathBuf},
 };
@@ -131,9 +132,20 @@ pub fn classify_runtime_record(
         return RuntimeRecordState::Stale;
     }
     match process_executable(record.pid) {
-        Some(executable) if executable == record.executable => RuntimeRecordState::Current,
+        Some(executable) if executable_matches_record(&executable, &record.executable) => {
+            RuntimeRecordState::Current
+        }
         _ => RuntimeRecordState::ForeignProcess,
     }
+}
+
+fn executable_matches_record(process: &Path, recorded: &Path) -> bool {
+    process == recorded
+        || process
+            .as_os_str()
+            .as_bytes()
+            .strip_suffix(b" (deleted)")
+            .is_some_and(|path| path == recorded.as_os_str().as_bytes())
 }
 
 pub fn read_boot_id() -> Result<String, io::Error> {
@@ -234,6 +246,24 @@ mod tests {
         remove_runtime_record(&paths, record.daemon_instance_id).unwrap();
         drop(listener);
         fs::remove_dir_all(paths.directory.parent().unwrap()).unwrap();
+    }
+
+    #[test]
+    fn daemon_lifecycle_accepts_only_exact_replaced_executable_identity() {
+        let recorded = Path::new("/opt/yoctui/bin/yoctui");
+        assert!(executable_matches_record(recorded, recorded));
+        assert!(executable_matches_record(
+            Path::new("/opt/yoctui/bin/yoctui (deleted)"),
+            recorded
+        ));
+        assert!(!executable_matches_record(
+            Path::new("/tmp/yoctui (deleted)"),
+            recorded
+        ));
+        assert!(!executable_matches_record(
+            Path::new("/opt/yoctui/bin/yoctui (deleted) (deleted)"),
+            recorded
+        ));
     }
 
     #[test]

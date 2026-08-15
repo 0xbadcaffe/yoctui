@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-UPGRADE-LIFECYCLE-001
 **Title:** Preserve daemon identity across executable replacement
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -32,6 +32,10 @@ the recorded executable; unrelated executable paths must remain foreign.
 - The installed client reports the still-running daemon and build.
 - Focused and baseline checks pass.
 - Registry/status/current-task documentation is updated and committed.
+
+All definition-of-done items and verification commands pass. This final
+completed task remains the terminal handoff because every registry task is
+`DONE`.
 
 ## Verification
 
