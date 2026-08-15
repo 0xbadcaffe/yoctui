@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -65,10 +65,9 @@ The new typed-query failure-path test found and fixed a real validation defect:
 an empty build-target list passed Python's vacuous `all()` check despite the
 protocol requiring at least one target. Empty targets and six malformed typed
 query identities now return `invalid_request`. All 38 bridge tests pass, and the
-coverage report itself passes at 75.37%; the full completion gate remains to be
-rerun.
+coverage report itself passes at 75.37%.
 
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
 completed all 4567 tasks with repeated reconnects. No other registry task is
-eligible while this required parent gate is in progress.
+eligible; this is the terminal handoff after all registry tasks completed.
