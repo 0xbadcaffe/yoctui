@@ -11,6 +11,14 @@ Status values:
 
 ## Current phase
 
+`DAEMON-ATTACH-BUILD-001` is `IN_PROGRESS`: a live daemon-owned Poky build was
+confirmed at task 102/4090 while the attached Dashboard incorrectly remained
+at `LoadingWorkspace` and `0/?`. The affected daemon and exact BitBake process
+groups were stopped. The defect is isolated to the daemon supervisor discarding
+typed backend events and the attached replica installing only generic job/log
+summaries; the active task adds bounded typed build snapshot/event replication,
+tests it, reinstalls the binary, and reruns the real build.
+
 `TELEMETRY-COCKPIT-001` is `DONE`: Dashboard and Tasks now provide
 terminal-native CPU, memory, disk, load, history, task-velocity, ETA, and
 high-resolution progress meters. The persistent daemon parent gate is `DONE`;

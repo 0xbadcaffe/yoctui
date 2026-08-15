@@ -2,39 +2,67 @@
 
 ## Task
 
-**ID:** BRIDGE-PROGRESS-001
-**Title:** Normalize live BitBake progress and render task bars
-**Status:** DONE
+**ID:** DAEMON-ATTACH-BUILD-001
+**Title:** Restore live build progress after daemon attach
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Keep live Poky builds connected when BitBake emits fractional process progress,
-correlate PID-only task-progress events with their authoritative task-start
-identity, and render determinate per-task progress bars without fabricating
-progress when BitBake reports an unknown or invalid value.
+Make daemon-owned builds publish and retain typed workspace, build, parse,
+runqueue, task, log, and terminal state so a newly attached client immediately
+renders the authoritative live build cockpit and continues updating it through
+the normal model reducer.
 
-The implementation and task-specific verification are complete. The installed
-binary connected to `/home/bspguy-dev/src/poky/build-yoctui` through BitBake
-2.8.1 and reported the Scarthgap 5.0.19 workspace without a JSON protocol error
-or reconnect loop. All 39 bridge tests, workspace tests, Clippy, documentation,
-and roadmap checks pass.
+The fix must preserve daemon ownership across detach, bounded protocol state,
+unknown-progress honesty, presentation state, and typed UI boundaries. It must
+cover fresh snapshot restoration, ordered incremental task progress, terminal
+outcomes, and failure/disconnect behavior before reinstalling Yoctui and
+rerunning `core-image-minimal` in the configured Poky build directory.
 
-## Final verification
+## Dependencies
 
-The operator enabled the required temporary perf permission on 2026-08-15. The
-complete gate passed: workspace tests, fuzzing, repeated stress tests,
-AddressSanitizer, LeakSanitizer, model and protocol coverage, dependency audit,
-39 bridge tests at 75.95% coverage, Valgrind, release smoke, and a fresh real
-perf-backed Flamegraph all succeeded.
+- `DAEMON-001` — DONE
+- `BRIDGE-PROGRESS-001` — DONE
+- `TELEMETRY-COCKPIT-001` — DONE
+
+## Relevant files
+
+- `crates/yoctui-protocol/src/daemon.rs`
+- `crates/yoctui-cli/src/daemon_bitbake.rs`
+- `crates/yoctui-cli/src/client_runtime.rs`
+- `crates/yoctui-cli/src/main.rs`
+- `crates/yoctui-app/src/lib.rs`
+- `crates/yoctui-model/src/lib.rs`
+- `docs/ui-spec.md`
+- `docs/architecture.md`
+- `docs/product-roadmap.md`
+- `docs/implementation-status.md`
+- `docs/task-registry.toml`
+
+## Definition of done
+
+- Daemon build workers publish every supported typed build lifecycle event.
+- The bounded daemon snapshot retains enough typed build state for fresh attach.
+- Attach installs build/task state without changing client presentation state.
+- Ordered incremental task totals, lifecycle, and percentages reach existing
+  Dashboard and Tasks progress meters.
+- Terminal success, failure, cancellation, and backend loss remain distinct.
+- Fake-backend and replica tests cover initial attach and incremental updates.
+- Focused and baseline checks pass.
+- The release binary is installed and a real daemon-owned Poky build is started;
+  status/attach evidence shows non-placeholder build progress.
+- Registry/status/current-task documentation is updated and committed.
 
 ## Verification
 
 ```bash
-sudo sysctl -w kernel.perf_event_paranoid=0
-./scripts/verify-completion.sh
-sudo sysctl -w kernel.perf_event_paranoid=4
+cargo test -p yoctui daemon_attach_build
+cargo test -p yoctui-app daemon_attach_build
+cargo test -p yoctui-protocol daemon_build
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/check-docs.sh
+./scripts/verify-roadmap.sh
 ```
-
-The final completed task remains this terminal handoff. The operator must
-restore `kernel.perf_event_paranoid=4` from an authenticated terminal; the
-agent could not supply the required sudo password.

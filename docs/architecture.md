@@ -1333,13 +1333,17 @@ and supports TERM-then-KILL cancellation. Typed success, nonzero, timeout, and
 cancellation outcomes prevent UI code from parsing process output or status.
 
 The daemon's build supervisor is a separate execution owner above these
-adapters. A validated `BuildRequest` is handed to a `ProcessBackend` worker
-with an absolute build directory; the worker owns the child process group,
-bounded stdout/stderr stream, cancellation, and terminal outcome. It emits
-typed start, log, completion, and failure events into the daemon journal, so
-clients can detach and later reconnect to the same job summary. The supervisor
-never accepts shell text and does not let a missing build directory terminate
-the daemon; the command is rejected with a typed protocol outcome instead.
+adapters. A validated `BuildRequest` is handed to a typed backend worker with
+an absolute build directory; the worker owns the child process group, bounded
+stream, cancellation, and terminal outcome. Every supported workspace, build,
+parse, runqueue, task, log, command-failure, disconnect, and terminal backend
+event is normalized into the daemon protocol and journal. The bounded snapshot
+retains the current typed build replica, so a newly attached client installs
+the same reducer-owned build/task state before consuming ordered incremental
+events. Generic job summaries remain lifecycle/index data and are not used as
+a substitute for build state. The supervisor never accepts shell text and does
+not let a missing build directory terminate the daemon; the command is rejected
+with a typed protocol outcome instead.
 
 Controlled restart is daemon orchestration above that controller. The pure
 model derives a bounded affected-work list from the authoritative primary build
@@ -1800,14 +1804,15 @@ detach waits for daemon acknowledgement, and reconnect creates a fresh secure
 connection while retaining client identity; it never owns jobs or PTYs.
 
 Replica installation converts protocol-owned snapshots into a protocol-free
-`ClientDaemonView` in `yoctui-model`. The view carries revision, daemon
-identity, BitBake lifecycle, bounded job/PTY summaries, client count, logs and
-recovery warnings. `yoctui-app` owns the mapping and applies only gap-checked
-protocol events before replacing the derived view. Ratatui renders this typed
-state and does not inspect wire messages. Screen, focus, Navigator selection,
-theme, dialogs, editor state, layout and other presentation fields are never
-part of replica replacement; disconnect changes connection status without
-discarding the last honest daemon snapshot.
+`ClientDaemonView` in `yoctui-model` and installs the snapshot's typed build
+replica through `yoctui-app`. The daemon view carries revision, daemon identity,
+BitBake lifecycle, bounded job/PTY summaries, client count, logs and recovery
+warnings. Ordered build events use the existing backend-event-to-action mapping
+and model reducer; Ratatui renders typed state and never inspects wire messages
+or raw BitBake text. Screen, focus, Navigator selection, theme, dialogs, editor
+state, layout and other presentation fields are never part of replica
+replacement; disconnect changes connection status without discarding the last
+honest daemon snapshot.
 
 The first interactive runtime slice attaches before terminal work begins,
 installs and nonblocking-polls the replica during every event-loop iteration,

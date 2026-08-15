@@ -4163,3 +4163,14 @@ required = true
 depends_on = ["DAEMON-001"]
 verify = ["cargo test -p yoctui-model host_telemetry", "cargo test -p yoctui telemetry", "cargo test -p yoctui-ui telemetry", "cargo test -p yoctui-ui task_progress", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "Typed host memory, load, CPU-count, and filesystem capacity samples now retain bounded reducer-owned CPU/memory history. Dashboard renders pressure-colored gauges, 60-second sparklines, core/load labels, and responsive compact fallback; Dashboard and Tasks show honest average velocity/ETA, compact A/W/F counters, and fractional-cell determinate bars. Focused tests, all 124 UI tests, workspace tests, Clippy, docs, and roadmap checks pass; the release binary is installed."
+
+[[task]]
+id = "DAEMON-ATTACH-BUILD-001"
+milestone = "M1"
+title = "Restore live build progress after daemon attach"
+status = "IN_PROGRESS"
+priority = 451
+required = true
+depends_on = ["DAEMON-001", "BRIDGE-PROGRESS-001", "TELEMETRY-COCKPIT-001"]
+verify = ["cargo test -p yoctui daemon_attach_build", "cargo test -p yoctui-app daemon_attach_build", "cargo test -p yoctui-protocol daemon_build", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "A live daemon build reached task 102/4090 while attach rendered LoadingWorkspace and 0/? because the supervisor discarded typed backend events and the replica installed only generic daemon summaries. Add bounded typed build snapshots/events, reducer-based attach restoration, fake-backend coverage, and a rerun against the configured Poky build."

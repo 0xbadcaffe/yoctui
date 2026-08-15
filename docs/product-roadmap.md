@@ -52,6 +52,8 @@ Exit criteria:
 - typed backend-to-model event contract enforced
 - fractional process progress and PID-only task progress normalize without
   disconnecting the typed stream, and determinate task progress renders as bars
+- daemon-owned builds restore and continuously update the same typed build and
+  task cockpit after clients detach and reattach
 
 ## M2 — Persistent Yocto workbench
 

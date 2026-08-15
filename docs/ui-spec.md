@@ -2674,6 +2674,15 @@ client-local layout. The status UI also exposes the daemon instance identity,
 connected client/session counts, recovery warnings, and confirmation-gated
 restart/stop actions when those commands are available.
 
+An attached daemon-owned BitBake build installs the same typed build, parse,
+runqueue, task, log, warning, error, and terminal state shown by a standalone
+build. A fresh attach reconstructs that state from the bounded daemon snapshot;
+ordered incremental build events then update it through the normal reducer.
+The Dashboard must never remain at `LoadingWorkspace`, `0/?`, or "Waiting for
+BitBake task events" merely because the client that submitted the build has
+detached. Unknown progress remains unknown, while authoritative task totals and
+per-task percentages render using the existing progress meters.
+
 SDK publication and native-tool confirmations submit their exact typed
 operation and selected SDK context to the daemon when attached. The client
 continues rendering the existing typed SDK session from daemon events; it does
