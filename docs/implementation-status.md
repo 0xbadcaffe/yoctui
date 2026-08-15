@@ -11,6 +11,11 @@ Status values:
 
 ## Current phase
 
+The persistent daemon parent gate is `IN_PROGRESS`. Real Poky acceptance passed,
+but the final workspace gate exposed that parallel `daemon_persist` cases share
+and destructively clean one process-ID-derived temporary root. The active work
+is to give every fixture a unique identity and rerun the complete gate.
+
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
 operators select or clone a source, initialize it safely, use an interactive
@@ -452,14 +457,15 @@ the single Rust package and tests guard against Electron/browser drift. The
 mouse runtime interaction gate is now verified with typed dialog, workspace,
 Navigator, Inspector, and PTY session routing plus integration/TestBackend
 coverage. Dragging split separators now resizes the validated client-local pane
-tree with keyboard-equivalent bounds and persistence. Keyboard/mouse parity is
-now has explicit specification and TestBackend coverage; every core route keeps
-a keyboard path and meaningful mouse path. The persistent daemon parent gate is
-complete, including real Poky validation.
+tree with keyboard-equivalent bounds and persistence. Keyboard/mouse parity now
+has explicit specification and TestBackend coverage; every core route keeps a
+keyboard path and meaningful mouse path. Real Poky validation passed, while the
+persistent daemon parent gate is reopened for parallel fixture isolation and a
+clean full-gate rerun.
 Daemon and attach documentation now covers direct/service lifecycle, client
 attach/detach, SSH reconnect, PTY/session management, security/resource limits,
 host reboot guarantees, troubleshooting, and the verified live-Poky validation
-script. The parent daemon gate is complete.
+script. The documentation portion of the parent daemon gate is complete.
 High-volume BitBake output now exercises byte-aware journal eviction: the
 daemon drops only the oldest bounded log records before rejecting a snapshot,
 preventing a long build from taking down the daemon when its frame limit is
