@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-ATTACH-QUIT-001
 **Title:** Restore global quit after daemon attach
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -32,6 +32,10 @@ detach only the UI, and leave the daemon-owned BitBake build running.
 - Exiting an attached client does not stop the active daemon build.
 - Focused and baseline checks pass.
 - Registry/status/current-task documentation is updated and committed.
+
+All definition-of-done items and verification commands pass. This final
+completed task remains the terminal handoff because every registry task is
+`DONE`.
 
 ## Verification
 

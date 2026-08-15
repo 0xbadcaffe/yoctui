@@ -6,6 +6,7 @@ terminal_test_root="$(mktemp -d)"
 capture="$terminal_test_root/capture"
 terminal_input="$terminal_test_root/input"
 terminal_config_dir="$terminal_test_root/config"
+terminal_runtime_dir="$terminal_test_root/runtime"
 runner_pid=""
 cleanup() {
   if [[ -n "$runner_pid" ]] && kill -0 "$runner_pid" 2>/dev/null; then
@@ -16,10 +17,11 @@ cleanup() {
 }
 trap cleanup EXIT
 
-mkdir "$terminal_config_dir"
+mkdir "$terminal_config_dir" "$terminal_runtime_dir"
 mkfifo "$terminal_input"
 exec 3<>"$terminal_input"
 XDG_CONFIG_HOME="$terminal_config_dir" \
+XDG_RUNTIME_DIR="$terminal_runtime_dir" \
   timeout --kill-after=2s 10s \
   script -qec 'target/debug/yoctui --backend bridge' /dev/null \
   <"$terminal_input" >"$capture" &

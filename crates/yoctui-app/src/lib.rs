@@ -2389,9 +2389,10 @@ pub fn key_action(key: Input) -> Option<Action> {
 
 pub fn focus_action(focus: FocusTarget, key: Input) -> Option<Action> {
     match (focus, key) {
-        (FocusTarget::Navigator | FocusTarget::Inspector, Input::Char('q') | Input::CtrlC) => {
-            Some(Action::Quit)
-        }
+        (
+            FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector,
+            Input::Char('q') | Input::CtrlC,
+        ) => Some(Action::Quit),
         (FocusTarget::Navigator, Input::Up | Input::Char('k')) => {
             Some(Action::SelectNavigator { delta: -1 })
         }
@@ -5582,6 +5583,14 @@ mod tests {
     fn persistent_pane_focus_preserves_global_quit() {
         assert_eq!(
             focus_action(FocusTarget::Navigator, Input::Char('q')),
+            Some(Action::Quit)
+        );
+        assert_eq!(
+            focus_action(FocusTarget::Workspace, Input::Char('q')),
+            Some(Action::Quit)
+        );
+        assert_eq!(
+            focus_action(FocusTarget::Workspace, Input::CtrlC),
             Some(Action::Quit)
         );
         assert_eq!(

@@ -9861,7 +9861,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if matches!(
                     app.focus,
-                    yoctui_model::FocusTarget::Navigator | yoctui_model::FocusTarget::Inspector
+                    yoctui_model::FocusTarget::Navigator
+                        | yoctui_model::FocusTarget::Workspace
+                        | yoctui_model::FocusTarget::Inspector
                 ) {
                     if let Some(action) = focus_action(app.focus, input) {
                         let effect = update(&mut app, action);
