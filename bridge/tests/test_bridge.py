@@ -84,6 +84,34 @@ class BridgeProtocolTests(unittest.TestCase):
         self.assertEqual(message["code"], "invalid_request")
         self.assertIn("force must be a boolean", message["message"])
 
+    def test_typed_queries_reject_missing_or_malformed_identities(self) -> None:
+        result = run_bridge(
+            b'{"protocol_version":1,"sequence":1,"message":{"type":"start_build","targets":[]}}',
+            b'{"protocol_version":1,"sequence":2,"message":{"type":"list_recipes","filter":7}}',
+            b'{"protocol_version":1,"sequence":3,"message":{"type":"get_variable","name":""}}',
+            b'{"protocol_version":1,"sequence":4,"message":{"type":"get_dependency_graph","recipe":null}}',
+            b'{"protocol_version":1,"sequence":5,"message":{"type":"get_dependencies"}}',
+            b'{"protocol_version":1,"sequence":6,"message":{"type":"get_recipe_sources","recipe":false}}',
+            b'{"protocol_version":1,"sequence":7,"message":{"type":"get_recipe_metadata","recipe":""}}',
+        )
+        messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
+        self.assertEqual(len(messages), 7)
+        self.assertTrue(
+            all(message["code"] == "invalid_request" for message in messages)
+        )
+        self.assertEqual(
+            [message["message"].split()[0] for message in messages],
+            [
+                "start_build",
+                "list_recipes",
+                "get_variable",
+                "get_dependency_graph",
+                "get_dependencies",
+                "get_recipe_sources",
+                "get_recipe_metadata",
+            ],
+        )
+
     def test_protocol_version_mismatch_is_rejected(self) -> None:
         result = run_bridge(
             b'{"protocol_version":999,"sequence":1,"message":{"type":"hello"}}'

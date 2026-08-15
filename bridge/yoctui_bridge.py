@@ -1707,8 +1707,10 @@ def handle(command, correlation_id, adapter):
         emit(workspace, correlation_id)
     elif kind == "start_build":
         targets = command.get("targets")
-        if not isinstance(targets, list) or not all(
-            isinstance(t, str) and t for t in targets
+        if (
+            not isinstance(targets, list)
+            or not targets
+            or not all(isinstance(t, str) and t for t in targets)
         ):
             error(
                 "invalid_request",

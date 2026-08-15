@@ -27,6 +27,11 @@ The full completion command otherwise exited 0, but pytest-cov printed that its
 exact 74.58% result misses the required 75% threshold while incorrectly
 returning status 0. Bridge failure-path coverage must be raised until the report
 itself passes; the faulty status is not accepted as completion evidence.
+Typed invalid-request coverage now checks empty build targets and malformed
+recipe, variable, dependency, source, metadata, and filter identities. It found
+and fixed the vacuous empty-target acceptance. All 38 bridge tests pass and the
+coverage report itself clears the threshold at 75.37%; the full gate remains to
+be rerun.
 
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
@@ -72,7 +77,7 @@ See `docs/current-task.md`.
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
 | M6 Maintenance | DONE | Typed Sstate, Services, Release, and optional integrations pass their atomic, cross-layer, and milestone parent gates |
-| M7 Hardening | IN_PROGRESS | All other stages pass, including fresh real perf-backed sampling; Python coverage reports 74.58% against the required 75% despite an erroneous zero exit status |
+| M7 Hardening | IN_PROGRESS | Fresh real perf-backed sampling and 75.37% Python coverage pass; typed invalid-request coverage fixed empty-target acceptance, with the complete gate pending |
 
 ## Reconciliation evidence
 
@@ -125,7 +130,7 @@ See `docs/current-task.md`.
 | Package data model | DONE | Exact identities, available-versus-unavailable fields, explicit bounded inventory/detail states, deterministic normalization, selection, stale correlation, search, dependency navigation, and typed event/effect mapping pass focused and baseline checks |
 | Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
 | Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
-| Hardening matrix | IN_PROGRESS | Fresh perf and synchronized cancellation checks pass; Python coverage must clear its real 75% threshold rather than relying on pytest-cov's erroneous success status |
+| Hardening matrix | IN_PROGRESS | Fresh perf, synchronized cancellation, and the honest Python coverage threshold pass; the complete integration rerun is pending |
 | Operator documentation | DONE | The concise landing page retains guarded setup paths and embeds a real-binary, fixture-labelled UI demo plus the real perf-backed Flamegraph; the complete operator/troubleshooting and compatibility evidence remain linked and visual artifacts are validated |
 
 ## Priority queue

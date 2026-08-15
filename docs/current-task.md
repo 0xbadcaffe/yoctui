@@ -61,6 +61,13 @@ combination incorrectly returns success after printing that failure. The task is
 reopened to add meaningful bridge failure-path coverage until the report itself
 passes, independent of the erroneous process status.
 
+The new typed-query failure-path test found and fixed a real validation defect:
+an empty build-target list passed Python's vacuous `all()` check despite the
+protocol requiring at least one target. Empty targets and six malformed typed
+query identities now return `invalid_request`. All 38 bridge tests pass, and the
+coverage report itself passes at 75.37%; the full completion gate remains to be
+rerun.
+
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
 completed all 4567 tasks with repeated reconnects. No other registry task is
