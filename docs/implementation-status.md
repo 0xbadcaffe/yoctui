@@ -11,10 +11,14 @@ Status values:
 
 ## Current phase
 
-The persistent daemon parent gate is `DONE`. Real Poky acceptance,
-collision-safe daemon fixtures, responsive PTY delivery, and Configuration UI
-coverage pass. Navigator/Inspector preserve global quit routing, and the
-synchronized ten-second real-terminal probe passes ten consecutive runs.
+The persistent daemon parent gate is `BLOCKED` only on fresh host profiling.
+Real Poky acceptance, collision-safe daemon fixtures, responsive PTY delivery,
+Configuration UI coverage, and global quit routing pass. The synchronized
+ten-second real-terminal probe passes ten consecutive runs, and the full gate
+passes through the optimized-profile stage. The required Flamegraph refresh is
+denied by this host's `kernel.perf_event_paranoid=4`; temporarily set it to `0`,
+run `./scripts/flamegraph.sh` and `./scripts/verify-completion.sh`, then restore
+the host value to `4`. No independent registry task remains eligible.
 
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
@@ -60,7 +64,7 @@ See `docs/current-task.md`.
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
 | M6 Maintenance | DONE | Typed Sstate, Services, Release, and optional integrations pass their atomic, cross-layer, and milestone parent gates |
-| M7 Hardening | DONE | Fuzz, stress/process-tree, ASan/LSan, property, terminal, Valgrind, deterministic profile, real perf-backed Flamegraph, CI, documentation, and completion integration pass |
+| M7 Hardening | BLOCKED | Fuzz, stress/process-tree, ASan/LSan, property, terminal, Valgrind, deterministic profile, CI, and documentation pass; a fresh required Flamegraph capture is blocked by host `kernel.perf_event_paranoid=4` |
 
 ## Reconciliation evidence
 
@@ -113,7 +117,7 @@ See `docs/current-task.md`.
 | Package data model | DONE | Exact identities, available-versus-unavailable fields, explicit bounded inventory/detail states, deterministic normalization, selection, stale correlation, search, dependency navigation, and typed event/effect mapping pass focused and baseline checks |
 | Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
 | Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
-| Hardening matrix | DONE | Every integrated gate passes. With explicitly authorized temporary host sampling permission, matching perf 7.0.12 and cargo-flamegraph 0.6.13 captured the real deterministic headless workload into a nonempty 34 KiB SVG; kernel-symbol restrictions remain an honest host limitation |
+| Hardening matrix | BLOCKED | Software checks pass through deterministic profiling and a prior authorized run produced the real 34 KiB SVG; the current completion run requires fresh perf sampling, which host `kernel.perf_event_paranoid=4` denies |
 | Operator documentation | DONE | The concise landing page retains guarded setup paths and embeds a real-binary, fixture-labelled UI demo plus the real perf-backed Flamegraph; the complete operator/troubleshooting and compatibility evidence remain linked and visual artifacts are validated |
 
 ## Priority queue

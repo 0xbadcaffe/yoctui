@@ -4135,9 +4135,9 @@ notes = "The daemon and interactive client remain subcommands/modes of the one R
 id = "DAEMON-001"
 milestone = "M11"
 title = "Complete persistent Yoctui daemon session architecture"
-status = "DONE"
+status = "BLOCKED"
 priority = 448
 required = true
 depends_on = ["README-DAEMON-001", "UX-KEYBOARD-MOUSE-001", "BINARY-ONE-RUST-001"]
 verify = ["./scripts/verify-completion.sh", "./scripts/live-daemon-poky.sh"]
-notes = "All required daemon and UI behavior is implemented and verified. Real Poky acceptance completed all 4567 tasks through image creation with repeated reconnects. Daemon fixtures use collision-safe identities, IPC keeps fair read slices and bounded writes, and PTY integration passes repeatedly. Configuration provenance remains visible at supported sizes. Navigator/Inspector preserve global q/Ctrl+C routing; the real terminal probe synchronizes on alternate-screen entry, enforces a ten-second deadline, passes ten consecutive runs, and its timeout path was observed terminating with status 124 instead of hanging. All required registry tasks are DONE."
+notes = "All required daemon and UI behavior is implemented. Real Poky acceptance completed all 4567 tasks through image creation with repeated reconnects. Daemon fixtures use collision-safe identities, IPC keeps fair read slices and bounded writes, PTY integration passes repeatedly, Configuration provenance remains visible, and Navigator/Inspector preserve global q/Ctrl+C routing. The synchronized bounded terminal probe passes ten consecutive runs. The full completion gate passes workspace, lint, terminal, fuzz, stress, sanitizer, coverage, dependency-policy, Python, Valgrind, and optimized-profile stages, then ./scripts/flamegraph.sh exits 2 because host kernel.perf_event_paranoid=4 denies perf record -e dummy:u. Temporarily run sudo sysctl -w kernel.perf_event_paranoid=0, rerun ./scripts/flamegraph.sh and ./scripts/verify-completion.sh, then restore kernel.perf_event_paranoid=4. No other incomplete task is independently eligible."
