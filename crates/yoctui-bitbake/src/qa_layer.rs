@@ -1,7 +1,7 @@
 use std::{
     collections::{BTreeSet, VecDeque},
     ffi::{OsStr, OsString},
-    fs,
+    fs, io,
     path::{Path, PathBuf},
     process::Stdio,
     time::Duration,
@@ -24,6 +24,34 @@ use crate::output_text;
 
 const QA_LAYER_EVENT_CHANNEL_CAPACITY: usize = 256;
 const QA_LAYER_OPERATION_TIMEOUT: Duration = Duration::from_secs(30 * 60);
+const QA_LAYER_SPAWN_ATTEMPTS: usize = 4;
+const QA_LAYER_SPAWN_RETRY_DELAY: Duration = Duration::from_millis(5);
+
+#[cfg(unix)]
+fn is_transient_qa_layer_spawn_error(error: &io::Error) -> bool {
+    error.raw_os_error() == Some(libc::ETXTBSY)
+}
+
+#[cfg(not(unix))]
+fn is_transient_qa_layer_spawn_error(_error: &io::Error) -> bool {
+    false
+}
+
+async fn spawn_qa_layer_process(process: &mut Command) -> io::Result<Child> {
+    for attempt in 1..=QA_LAYER_SPAWN_ATTEMPTS {
+        match process.spawn() {
+            Ok(child) => return Ok(child),
+            Err(error)
+                if attempt < QA_LAYER_SPAWN_ATTEMPTS
+                    && is_transient_qa_layer_spawn_error(&error) =>
+            {
+                tokio::time::sleep(QA_LAYER_SPAWN_RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    unreachable!("the bounded layer-QA process spawn loop always returns")
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QaConfiguredLayerInput {
@@ -605,8 +633,8 @@ impl QaLayerJobRunner {
             .stderr(Stdio::piped());
         #[cfg(unix)]
         process.process_group(0);
-        let mut child = process
-            .spawn()
+        let mut child = spawn_qa_layer_process(&mut process)
+            .await
             .map_err(|error| QaLayerAdapterError::Spawn(error.to_string()))?;
         #[cfg(unix)]
         {
@@ -1136,6 +1164,17 @@ mod tests {
         assert!(matches!(
             runner.next_event().await.unwrap(),
             QaLayerRunnerEvent::Cancelled { forced: true, .. }
+        ));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn qa_layer_spawn_retry_classifies_only_text_file_busy_as_transient() {
+        assert!(is_transient_qa_layer_spawn_error(
+            &io::Error::from_raw_os_error(libc::ETXTBSY,)
+        ));
+        assert!(!is_transient_qa_layer_spawn_error(
+            &io::Error::from_raw_os_error(libc::ENOENT),
         ));
     }
 

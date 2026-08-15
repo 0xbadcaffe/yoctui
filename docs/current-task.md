@@ -71,7 +71,11 @@ The next complete rerun cleared the Python threshold and reached the
 `yoctui-bitbake` suite, where
 `qa_layer_runner_rejects_duplicate_and_cancels_gracefully_or_forcibly` failed
 to spawn a rewritten fixture with `Text file busy (os error 26)`. The parent is
-reopened until fixture publication is race-free and the full gate passes.
+reopened. QA-layer execution now matches the other external runners with four
+bounded attempts separated by 5 ms only for `ETXTBSY`; every other spawn error
+still fails immediately. The cancellation test passes 100 consecutive runs,
+the classifier has direct coverage, and all 181 `yoctui-bitbake` library tests
+pass. The full completion gate remains to be rerun.
 
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
