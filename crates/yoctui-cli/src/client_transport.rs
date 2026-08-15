@@ -422,6 +422,7 @@ mod tests {
             pty_sessions: Vec::new(),
             clients: Vec::new(),
             recent_logs: Vec::new(),
+            build_events: Vec::new(),
             recovery_warnings: Vec::new(),
         }
     }

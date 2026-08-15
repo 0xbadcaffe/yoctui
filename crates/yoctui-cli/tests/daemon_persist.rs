@@ -166,6 +166,7 @@ fn daemon_recovery_restores_history_but_marks_live_work_lost() {
         }],
         clients: Vec::new(),
         recent_logs: Vec::new(),
+        build_events: Vec::new(),
         recovery_warnings: Vec::new(),
     };
     let persisted = DaemonPersistedState::capture(
@@ -274,6 +275,7 @@ fn reboot_recovery_exposes_only_typed_explicit_relaunch_intent() {
         }],
         clients: Vec::new(),
         recent_logs: Vec::new(),
+        build_events: Vec::new(),
         recovery_warnings: Vec::new(),
     };
     let persisted = DaemonPersistedState::capture(

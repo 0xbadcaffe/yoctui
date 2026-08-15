@@ -3985,6 +3985,9 @@ pub enum Action {
         error: BackgroundJobError,
         finished_at: SystemTime,
     },
+    BuildRequested {
+        target: Option<String>,
+    },
     BuildStarted,
     ParseProgress {
         current: Option<u64>,
@@ -10686,6 +10689,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 job.error = Some(error);
             },
         ),
+        Action::BuildRequested { target } => prepare_build(app, target),
         Action::BuildStarted => {
             app.build.status = BuildStatus::Running;
             app.build.started = Some(SystemTime::now());

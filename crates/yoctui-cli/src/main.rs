@@ -1097,7 +1097,7 @@ fn start_daemon() -> Result<()> {
     let mut child = command
         .spawn()
         .context("could not start the Yoctui daemon")?;
-    let deadline = Instant::now() + Duration::from_secs(5);
+    let deadline = Instant::now() + Duration::from_secs(15);
     loop {
         if let Some(status) = child.try_wait()? {
             anyhow::bail!("Yoctui daemon exited during startup with {status}");
@@ -1342,8 +1342,8 @@ fn daemon_is_available() -> Result<yoctui_protocol::daemon_lifecycle::DaemonRunt
             anyhow::bail!("Yoctui daemon PID belongs to another process")
         }
     }
-    let mut connection = DaemonConnection::connect(&paths, Duration::from_millis(250))?;
-    connection.set_timeout(Some(Duration::from_secs(1)))?;
+    let mut connection = DaemonConnection::connect(&paths, Duration::from_secs(2))?;
+    connection.set_timeout(Some(Duration::from_secs(10)))?;
     connection.send(&ClientMessage::Hello(ClientHello {
         minimum_version: ProtocolVersion::CURRENT,
         maximum_version: ProtocolVersion::CURRENT,
@@ -1369,22 +1369,26 @@ fn stop_daemon() -> Result<()> {
     let record = daemon_is_available()?;
     let paths = runtime_paths()?;
     let mut connection = DaemonConnection::connect(&paths, Duration::from_secs(1))?;
-    connection.set_timeout(Some(Duration::from_secs(2)))?;
+    connection.set_timeout(Some(Duration::from_secs(10)))?;
     connection.send(&ClientMessage::Command(CommandRequest {
         request_id: RequestId(1),
         expected_generation: None,
         command: DaemonCommand::PrepareShutdown,
     }))?;
     let response: ServerMessage = connection.receive()?;
-    if !matches!(response, ServerMessage::CommandResult(_)) {
-        anyhow::bail!("Yoctui daemon refused graceful shutdown: {response:?}");
+    match response {
+        ServerMessage::CommandResult(yoctui_protocol::daemon::CommandResult {
+            outcome: yoctui_protocol::daemon::CommandOutcome::Completed,
+            ..
+        }) => {}
+        response => anyhow::bail!("Yoctui daemon refused graceful shutdown: {response:?}"),
     }
-    let deadline = Instant::now() + Duration::from_secs(5);
+    let deadline = Instant::now() + Duration::from_secs(15);
     while paths.socket.exists() && Instant::now() < deadline {
         std::thread::sleep(Duration::from_millis(25));
     }
     if paths.socket.exists() {
-        anyhow::bail!("Yoctui daemon did not stop within 5 seconds");
+        anyhow::bail!("Yoctui daemon did not stop within 15 seconds");
     }
     println!(
         "Yoctui daemon stopped (instance {})",
@@ -1753,6 +1757,32 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                 Ok(ClientMessage::Command(request))
                     if matches!(request.command, DaemonCommand::PrepareShutdown) =>
                 {
+                    let active_jobs = daemon_journal
+                        .snapshot()
+                        .jobs
+                        .iter()
+                        .filter(|job| {
+                            matches!(
+                                job.lifecycle,
+                                yoctui_protocol::daemon::LifecycleState::Connecting
+                                    | yoctui_protocol::daemon::LifecycleState::Running
+                                    | yoctui_protocol::daemon::LifecycleState::Stopping
+                            )
+                        })
+                        .count();
+                    if active_jobs > 0 {
+                        connection.send(&ServerMessage::CommandResult(CommandResult {
+                            request_id: request.request_id,
+                            outcome: CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::LimitExceeded,
+                                message: format!(
+                                    "daemon has {active_jobs} active job(s); cancel them explicitly before shutdown"
+                                ),
+                                current_generation: daemon_journal.snapshot().generation,
+                            },
+                        }))?;
+                        continue;
+                    }
                     connection.send(&ServerMessage::CommandResult(CommandResult {
                         request_id: request.request_id,
                         outcome: CommandOutcome::Completed,
@@ -1788,17 +1818,31 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                                 }))?;
                                 continue;
                             };
+                            let build_targets = targets.clone();
                             match bitbake_supervisor.start(
                                 PathBuf::from(build_dir),
                                 BuildRequest { targets, task, force },
                             ) {
                                 Ok(job_id) => {
+                                    daemon_journal.publish(
+                                        yoctui_protocol::daemon::DaemonEvent::Build(
+                                            yoctui_protocol::daemon::DaemonBuildEvent::Reset {
+                                                targets: build_targets.clone(),
+                                            },
+                                        ),
+                                    )?;
+                                    let mut bitbake = daemon_journal.snapshot().bitbake.clone();
+                                    bitbake.lifecycle = yoctui_protocol::daemon::LifecycleState::Connecting;
+                                    bitbake.diagnostic = None;
+                                    daemon_journal.publish(
+                                        yoctui_protocol::daemon::DaemonEvent::BitBakeChanged(bitbake),
+                                    )?;
                                     let event = daemon_journal.publish(
                                         yoctui_protocol::daemon::DaemonEvent::JobChanged(
                                             yoctui_protocol::daemon::JobSummary {
                                                 id: job_id,
                                                 kind: yoctui_protocol::daemon::JobKind::BitBakeBuild,
-                                                label: "BitBake build starting".into(),
+                                                label: format!("BitBake build {}", build_targets.join(" ")),
                                                 lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting,
                                                 progress_current: None,
                                                 progress_total: None,
@@ -2175,13 +2219,132 @@ fn publish_daemon_bitbake_event(
     event: daemon_bitbake::DaemonBitBakeEvent,
 ) -> Result<()> {
     use daemon_bitbake::DaemonBitBakeEvent;
+    use yoctui_bitbake::BackendEvent;
     use yoctui_protocol::daemon::{
-        DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
+        DaemonBuildEvent, DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
     };
-    let (job_id, mapped) = match event {
-        DaemonBitBakeEvent::Started { job_id } => (
-            job_id,
-            DaemonEvent::JobChanged(JobSummary {
+    match event {
+        DaemonBitBakeEvent::Backend { job_id, event } => match *event {
+            BackendEvent::Log(entry) => {
+                journal.publish(DaemonEvent::Log(LogRecord {
+                    source: "bitbake".into(),
+                    severity: match entry.severity {
+                        yoctui_model::Severity::Trace => LogSeverity::Trace,
+                        yoctui_model::Severity::Info => LogSeverity::Info,
+                        yoctui_model::Severity::Warning => LogSeverity::Warning,
+                        yoctui_model::Severity::Error => LogSeverity::Error,
+                    },
+                    message: entry.message,
+                    unix_ms: unix_ms(),
+                }))?;
+            }
+            event => {
+                let lifecycle = match &event {
+                    BackendEvent::BuildStarted => Some(LifecycleState::Running),
+                    BackendEvent::BuildCompleted { .. }
+                    | BackendEvent::CommandFailed { .. }
+                    | BackendEvent::Disconnected => Some(LifecycleState::Disconnected),
+                    _ => None,
+                };
+                let (mapped, job_update) = daemon_build_event(event, job_id);
+                if let Some(lifecycle) = lifecycle {
+                    let mut bitbake = journal.snapshot().bitbake.clone();
+                    bitbake.lifecycle = lifecycle;
+                    bitbake.diagnostic = None;
+                    journal.publish(DaemonEvent::BitBakeChanged(bitbake))?;
+                }
+                if let Some(mapped) = mapped {
+                    journal.publish(DaemonEvent::Build(mapped))?;
+                }
+                if let Some(job) = job_update {
+                    journal.publish(DaemonEvent::JobChanged(job))?;
+                }
+            }
+        },
+        DaemonBitBakeEvent::Failed { job_id, message } => {
+            journal.publish(DaemonEvent::Build(DaemonBuildEvent::CommandFailed {
+                code: "daemon_backend".into(),
+                message: message.clone(),
+            }))?;
+            journal.publish(DaemonEvent::JobChanged(JobSummary {
+                id: job_id,
+                kind: JobKind::BitBakeBuild,
+                label: format!("BitBake build: {message}"),
+                lifecycle: LifecycleState::Failed,
+                progress_current: None,
+                progress_total: None,
+                exit_code: None,
+            }))?;
+        }
+    }
+    Ok(())
+}
+
+#[cfg(unix)]
+fn daemon_build_event(
+    event: yoctui_bitbake::BackendEvent,
+    job_id: yoctui_protocol::daemon::JobId,
+) -> (
+    Option<yoctui_protocol::daemon::DaemonBuildEvent>,
+    Option<yoctui_protocol::daemon::JobSummary>,
+) {
+    use yoctui_bitbake::BackendEvent;
+    use yoctui_protocol::daemon::{DaemonBuildEvent, JobKind, JobSummary, LifecycleState};
+    use yoctui_protocol::{LayerData, RecipeData, TaskStatsData, WorkspaceData};
+    let stats = |stats: yoctui_model::TaskStats| TaskStatsData {
+        completed: stats.completed,
+        total: stats.total,
+        active: stats.active,
+        failed: stats.failed,
+    };
+    let running_job = |progress: yoctui_model::TaskStats| JobSummary {
+        id: job_id,
+        kind: JobKind::BitBakeBuild,
+        label: "BitBake build".into(),
+        lifecycle: LifecycleState::Running,
+        progress_current: Some(progress.completed as u64),
+        progress_total: Some(progress.total as u64),
+        exit_code: None,
+    };
+    match event {
+        BackendEvent::Workspace(workspace) => (
+            Some(DaemonBuildEvent::Workspace {
+                data: WorkspaceData {
+                    build_dir: workspace.build_dir.map(|path| path.display().to_string()),
+                    source_dir: workspace.source_dir.map(|path| path.display().to_string()),
+                    variables: workspace.variables,
+                    variable_provenance: workspace.variable_provenance,
+                    variable_provenance_chain: workspace.variable_provenance_chain,
+                    bitbake_version: workspace.bitbake_version,
+                    release: workspace.release,
+                    layers: workspace
+                        .layers
+                        .into_iter()
+                        .map(|layer| LayerData {
+                            name: layer.name,
+                            path: layer.path.display().to_string(),
+                            priority: layer.priority,
+                        })
+                        .collect(),
+                    recipes: workspace
+                        .recipes
+                        .into_iter()
+                        .map(|recipe| RecipeData {
+                            name: recipe.name,
+                            version: recipe.version,
+                            layer: recipe.layer,
+                            preferred_version: recipe.preferred_version,
+                            file: recipe.file.map(|path| path.display().to_string()),
+                            append_count: recipe.append_count,
+                        })
+                        .collect(),
+                },
+            }),
+            None,
+        ),
+        BackendEvent::BuildStarted => (
+            Some(DaemonBuildEvent::Started),
+            Some(JobSummary {
                 id: job_id,
                 kind: JobKind::BitBakeBuild,
                 label: "BitBake build".into(),
@@ -2191,29 +2354,78 @@ fn publish_daemon_bitbake_event(
                 exit_code: None,
             }),
         ),
-        DaemonBitBakeEvent::Log { job_id, message } => (
-            job_id,
-            DaemonEvent::Log(LogRecord {
-                source: "bitbake".into(),
-                severity: LogSeverity::Info,
-                message,
-                unix_ms: unix_ms(),
-            }),
+        BackendEvent::ParseProgress { current, total } => (
+            Some(DaemonBuildEvent::ParseProgress { current, total }),
+            None,
         ),
-        DaemonBitBakeEvent::Completed {
-            job_id,
-            success,
-            exit_code,
+        BackendEvent::TaskQueued {
+            recipe,
+            task,
+            worker,
+            stats: task_stats,
+        } => {
+            let job = task_stats.map(running_job);
+            (
+                Some(DaemonBuildEvent::TaskQueued {
+                    recipe,
+                    task,
+                    worker,
+                    stats: task_stats.map(stats),
+                }),
+                job,
+            )
+        }
+        BackendEvent::TaskStarted {
+            recipe,
+            task,
+            pid,
+            worker,
+            log_path,
+            stats: task_stats,
+        } => {
+            let job = task_stats.map(running_job);
+            (
+                Some(DaemonBuildEvent::TaskStarted {
+                    recipe,
+                    task,
+                    pid,
+                    worker,
+                    log_path: log_path.map(|path| path.display().to_string()),
+                    stats: task_stats.map(stats),
+                }),
+                job,
+            )
+        }
+        BackendEvent::TaskProgress {
+            recipe,
+            task,
+            progress,
         } => (
-            job_id,
-            DaemonEvent::JobChanged(JobSummary {
+            Some(DaemonBuildEvent::TaskProgress {
+                recipe,
+                task,
+                progress,
+            }),
+            None,
+        ),
+        BackendEvent::TaskCompleted {
+            recipe,
+            task,
+            success,
+        } => (
+            Some(DaemonBuildEvent::TaskCompleted {
+                recipe,
+                task,
+                success,
+            }),
+            None,
+        ),
+        BackendEvent::BuildCompleted { success, exit_code } => (
+            Some(DaemonBuildEvent::Completed { success, exit_code }),
+            Some(JobSummary {
                 id: job_id,
                 kind: JobKind::BitBakeBuild,
-                label: if success {
-                    "BitBake build".into()
-                } else {
-                    format!("BitBake build failed (exit code {:?})", exit_code)
-                },
+                label: "BitBake build".into(),
                 lifecycle: if success {
                     LifecycleState::Exited
                 } else {
@@ -2224,22 +2436,32 @@ fn publish_daemon_bitbake_event(
                 exit_code,
             }),
         ),
-        DaemonBitBakeEvent::Failed { job_id, message } => (
-            job_id,
-            DaemonEvent::JobChanged(JobSummary {
+        BackendEvent::CommandFailed { code, message } => (
+            Some(DaemonBuildEvent::CommandFailed { code, message }),
+            Some(JobSummary {
                 id: job_id,
                 kind: JobKind::BitBakeBuild,
-                label: format!("BitBake build: {message}"),
+                label: "BitBake build failed".into(),
                 lifecycle: LifecycleState::Failed,
                 progress_current: None,
                 progress_total: None,
                 exit_code: None,
             }),
         ),
-    };
-    let _ = journal.publish(mapped)?;
-    let _ = job_id;
-    Ok(())
+        BackendEvent::Disconnected => (
+            Some(DaemonBuildEvent::Disconnected),
+            Some(JobSummary {
+                id: job_id,
+                kind: JobKind::BitBakeBuild,
+                label: "BitBake backend disconnected".into(),
+                lifecycle: LifecycleState::Lost,
+                progress_current: None,
+                progress_total: None,
+                exit_code: None,
+            }),
+        ),
+        _ => (None, None),
+    }
 }
 
 fn publish_daemon_devtool_event(
@@ -8294,8 +8516,8 @@ async fn refresh_workspace(
 async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Result<()> {
     let Config {
         backend: backend_kind,
-        build_dir,
-        build_dir_configured,
+        mut build_dir,
+        mut build_dir_configured,
         log_entries,
         log_bytes,
         refresh,
@@ -8338,6 +8560,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             None
         }
     };
+    let daemon_attached = daemon_runtime.is_some();
+    if daemon_attached && let Some(attached_build_dir) = app.workspace.build_dir.clone() {
+        build_dir = attached_build_dir;
+        build_dir_configured = true;
+    }
     if build_dir_configured && let Some(root) = project_profile_root(&build_dir) {
         let action = match load_project_profile(&root) {
             Ok(Some(profile)) => Action::ProjectProfileLoaded(profile),
@@ -8359,13 +8586,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     app.logs.wrap = session.log_wrap.unwrap_or(false);
     app.logs.follow = session.log_follow.unwrap_or(true);
     let session_build_dir = build_dir.clone();
-    let mut backend: Box<dyn BitBakeBackend> = if build_dir_configured {
+    let mut backend: Box<dyn BitBakeBackend> = if daemon_attached {
+        Box::new(ProcessBackend::new(build_dir.clone()))
+    } else if build_dir_configured {
         select_backend_with_timeout(backend_kind.clone(), build_dir, Some(cancellation_timeout))
             .await?
     } else {
         Box::new(ProcessBackend::new(PathBuf::from("/")))
     };
-    if build_dir_configured {
+    if build_dir_configured && !daemon_attached {
         match backend.inspect_workspace().await {
             Ok(workspace) => {
                 let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
@@ -8393,7 +8622,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 );
             }
         }
-    } else {
+    } else if !build_dir_configured {
         app.notification =
             Some("Configure and verify a BitBake environment in Settings before building.".into());
     }
@@ -16200,6 +16429,40 @@ esac"#,
             app.qa.inventory,
             yoctui_model::QaReportInventoryState::AvailableEmpty { .. }
         ));
+    }
+
+    #[test]
+    fn daemon_attach_build_maps_task_stats_into_protocol_and_job_progress() {
+        let (event, job) = daemon_build_event(
+            yoctui_bitbake::BackendEvent::TaskStarted {
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                pid: Some(42),
+                worker: Some("worker-1".into()),
+                log_path: None,
+                stats: Some(yoctui_model::TaskStats {
+                    completed: 102,
+                    total: 4090,
+                    active: 8,
+                    failed: 0,
+                }),
+            },
+            yoctui_protocol::daemon::JobId(7),
+        );
+        assert!(matches!(
+            event,
+            Some(yoctui_protocol::daemon::DaemonBuildEvent::TaskStarted {
+                stats: Some(yoctui_protocol::TaskStatsData {
+                    completed: 102,
+                    total: 4090,
+                    ..
+                }),
+                ..
+            })
+        ));
+        let job = job.unwrap();
+        assert_eq!(job.progress_current, Some(102));
+        assert_eq!(job.progress_total, Some(4090));
     }
 
     #[test]

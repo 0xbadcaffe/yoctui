@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-ATTACH-BUILD-001
 **Title:** Restore live build progress after daemon attach
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -18,6 +18,13 @@ unknown-progress honesty, presentation state, and typed UI boundaries. It must
 cover fresh snapshot restoration, ordered incremental task progress, terminal
 outcomes, and failure/disconnect behavior before reinstalling Yoctui and
 rerunning `core-image-minimal` in the configured Poky build directory.
+
+The optimized installed binary is running daemon instance
+`a68edcb8ebf4694191776e2a2fde3256`. A fresh release-client attach restored the
+typed bridge workspace as Poky 5.0.19, showed `BB Running`, target
+`core-image-minimal`, status `Parsing`, and authoritative task progress
+`94/4090`; detaching left the daemon-owned build running. The previous stale
+setup notice and unsafe `/` fallback are absent.
 
 ## Dependencies
 
@@ -52,6 +59,10 @@ rerunning `core-image-minimal` in the configured Poky build directory.
 - The release binary is installed and a real daemon-owned Poky build is started;
   status/attach evidence shows non-placeholder build progress.
 - Registry/status/current-task documentation is updated and committed.
+
+All definition-of-done items and verification commands pass. This final
+completed task remains the terminal handoff because every registry task is
+`DONE`.
 
 ## Verification
 

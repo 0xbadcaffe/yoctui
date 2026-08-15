@@ -11,13 +11,18 @@ Status values:
 
 ## Current phase
 
-`DAEMON-ATTACH-BUILD-001` is `IN_PROGRESS`: a live daemon-owned Poky build was
-confirmed at task 102/4090 while the attached Dashboard incorrectly remained
-at `LoadingWorkspace` and `0/?`. The affected daemon and exact BitBake process
-groups were stopped. The defect is isolated to the daemon supervisor discarding
-typed backend events and the attached replica installing only generic job/log
-summaries; the active task adds bounded typed build snapshot/event replication,
-tests it, reinstalls the binary, and reruns the real build.
+`DAEMON-ATTACH-BUILD-001` is `DONE`: daemon-owned builds now use the typed
+bridge, compact workspace/build/parse/task/terminal events into bounded attach
+state, restore that state through the normal reducer, and continue applying
+ordered incremental progress. Attached workspace authority now selects the
+Dashboard and connected environment without starting a competing local backend
+or falling back to `/`. Graceful daemon stop refuses active jobs instead of
+silently orphaning them. Focused snapshot/replica/mapping tests, the full
+workspace, Clippy, all 39 bridge tests, docs, and roadmap checks pass. The
+optimized installed binary is running daemon instance
+`a68edcb8ebf4694191776e2a2fde3256`; live release attach reported bridge, Poky
+5.0.19, `BB Running`, `core-image-minimal`, and authoritative `94/4090` task
+progress before the client detached and left the build running.
 
 `TELEMETRY-COCKPIT-001` is `DONE`: Dashboard and Tasks now provide
 terminal-native CPU, memory, disk, load, history, task-velocity, ETA, and

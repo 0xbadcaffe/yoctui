@@ -489,6 +489,7 @@ mod tests {
                 message: "retained".into(),
                 unix_ms: 1,
             }],
+            build_events: Vec::new(),
             recovery_warnings: Vec::new(),
         }
     }

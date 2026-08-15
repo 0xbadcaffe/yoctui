@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::VecDeque;
 use thiserror::Error;
 
+use crate::{TaskStatsData, WorkspaceData};
+
 pub const PROTOCOL_MAJOR: u16 = 1;
 pub const PROTOCOL_MINOR: u16 = 0;
 pub const MAX_FRAME_BYTES: usize = 4 * 1024 * 1024;
@@ -14,6 +16,7 @@ pub const MAX_DAEMON_PTY_SESSIONS: usize = 64;
 pub const MAX_TERMINAL_SCROLLBACK_LINES: usize = 100_000;
 pub const MAX_UTILITY_OUTPUT_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_PTY_OUTPUT_EVENT_BYTES: usize = 64 * 1024;
+pub const MAX_DAEMON_BUILD_EVENTS: usize = 2_048;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProtocolVersion {
@@ -749,7 +752,58 @@ pub struct DaemonSnapshot {
     pub pty_sessions: Vec<PtySessionSummary>,
     pub clients: Vec<ClientSummary>,
     pub recent_logs: Vec<LogRecord>,
+    #[serde(default)]
+    pub build_events: Vec<DaemonBuildEvent>,
     pub recovery_warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum DaemonBuildEvent {
+    Reset {
+        targets: Vec<String>,
+    },
+    Workspace {
+        data: WorkspaceData,
+    },
+    Started,
+    ParseProgress {
+        current: Option<u64>,
+        total: Option<u64>,
+    },
+    TaskQueued {
+        recipe: String,
+        task: String,
+        worker: Option<String>,
+        stats: Option<TaskStatsData>,
+    },
+    TaskStarted {
+        recipe: String,
+        task: String,
+        pid: Option<u32>,
+        worker: Option<String>,
+        log_path: Option<String>,
+        stats: Option<TaskStatsData>,
+    },
+    TaskProgress {
+        recipe: String,
+        task: String,
+        progress: Option<u8>,
+    },
+    TaskCompleted {
+        recipe: String,
+        task: String,
+        success: bool,
+    },
+    Completed {
+        success: bool,
+        exit_code: Option<i32>,
+    },
+    CommandFailed {
+        code: String,
+        message: String,
+    },
+    Disconnected,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -781,6 +835,7 @@ pub enum DaemonEvent {
         message: String,
     },
     Log(LogRecord),
+    Build(DaemonBuildEvent),
     TestResults(DaemonTestResultSnapshot),
     TestComparison(DaemonTestComparisonDiff),
     TestResultTool(DaemonTestResultToolCapability),
@@ -1154,10 +1209,69 @@ pub fn apply_sequenced_event(
             snapshot.recovery_warnings.push(message.clone());
         }
         DaemonEvent::Log(record) => snapshot.recent_logs.push(record.clone()),
+        DaemonEvent::Build(event) => apply_build_event(snapshot, event.clone()),
     }
     snapshot.sequence = sequenced.sequence;
     snapshot.generation = sequenced.generation;
     Ok(())
+}
+
+fn apply_build_event(snapshot: &mut DaemonSnapshot, event: DaemonBuildEvent) {
+    if matches!(event, DaemonBuildEvent::Reset { .. }) {
+        snapshot.build_events.clear();
+    }
+
+    match &event {
+        DaemonBuildEvent::Workspace { .. } => snapshot
+            .build_events
+            .retain(|item| !matches!(item, DaemonBuildEvent::Workspace { .. })),
+        DaemonBuildEvent::ParseProgress { .. } => snapshot
+            .build_events
+            .retain(|item| !matches!(item, DaemonBuildEvent::ParseProgress { .. })),
+        DaemonBuildEvent::TaskQueued { recipe, task, .. }
+        | DaemonBuildEvent::TaskStarted { recipe, task, .. } => snapshot.build_events.retain(
+            |item| {
+                !matches!(item,
+                    DaemonBuildEvent::TaskQueued { recipe: old_recipe, task: old_task, .. }
+                    | DaemonBuildEvent::TaskStarted { recipe: old_recipe, task: old_task, .. }
+                    | DaemonBuildEvent::TaskProgress { recipe: old_recipe, task: old_task, .. }
+                    if old_recipe == recipe && old_task == task)
+            },
+        ),
+        DaemonBuildEvent::TaskProgress { recipe, task, .. } => snapshot.build_events.retain(
+            |item| {
+                !matches!(item, DaemonBuildEvent::TaskProgress { recipe: old_recipe, task: old_task, .. } if old_recipe == recipe && old_task == task)
+            },
+        ),
+        DaemonBuildEvent::TaskCompleted { recipe, task, .. } => snapshot.build_events.retain(
+            |item| {
+                !matches!(item,
+                    DaemonBuildEvent::TaskQueued { recipe: old_recipe, task: old_task, .. }
+                    | DaemonBuildEvent::TaskStarted { recipe: old_recipe, task: old_task, .. }
+                    | DaemonBuildEvent::TaskProgress { recipe: old_recipe, task: old_task, .. }
+                    if old_recipe == recipe && old_task == task)
+            },
+        ),
+        _ => {}
+    }
+    snapshot.build_events.push(event);
+    while snapshot.build_events.len() > MAX_DAEMON_BUILD_EVENTS {
+        let removable = snapshot
+            .build_events
+            .iter()
+            .position(|item| matches!(item, DaemonBuildEvent::TaskCompleted { .. }));
+        let removable = removable.or_else(|| {
+            snapshot.build_events.iter().position(|item| {
+                !matches!(
+                    item,
+                    DaemonBuildEvent::Reset { .. }
+                        | DaemonBuildEvent::Workspace { .. }
+                        | DaemonBuildEvent::Started
+                )
+            })
+        });
+        snapshot.build_events.remove(removable.unwrap_or(0));
+    }
 }
 
 fn replace_by<T, K: PartialEq>(items: &mut Vec<T>, replacement: T, key: impl Fn(&T) -> K) {
@@ -1408,6 +1522,7 @@ mod tests {
             pty_sessions: Vec::new(),
             clients: Vec::new(),
             recent_logs: Vec::new(),
+            build_events: Vec::new(),
             recovery_warnings: Vec::new(),
         }
     }
@@ -1470,6 +1585,7 @@ mod tests {
                 last_seen_unix_ms: 2,
             }],
             recent_logs: Vec::new(),
+            build_events: Vec::new(),
             recovery_warnings: Vec::new(),
         };
         let message = ServerMessage::Attached {
@@ -1767,6 +1883,50 @@ mod tests {
             Err(DaemonSnapshotError::EventTooLarge { .. })
         ));
         assert_eq!(journal.snapshot().sequence, 0);
+    }
+
+    #[test]
+    fn daemon_build_snapshot_retains_typed_attach_progress() {
+        let mut journal =
+            DaemonSnapshotJournal::new(daemon_snapshot_fixture(), DaemonSnapshotLimits::default())
+                .unwrap();
+        journal
+            .publish(DaemonEvent::Build(DaemonBuildEvent::Reset {
+                targets: vec!["core-image-minimal".into()],
+            }))
+            .unwrap();
+        journal
+            .publish(DaemonEvent::Build(DaemonBuildEvent::TaskStarted {
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                pid: Some(42),
+                worker: Some("worker-1".into()),
+                log_path: Some("/build/temp/log.do_compile".into()),
+                stats: Some(TaskStatsData {
+                    completed: 102,
+                    total: 4090,
+                    active: 8,
+                    failed: 0,
+                }),
+            }))
+            .unwrap();
+        journal
+            .publish(DaemonEvent::Build(DaemonBuildEvent::TaskProgress {
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                progress: Some(77),
+            }))
+            .unwrap();
+        assert_eq!(journal.snapshot().build_events.len(), 3);
+        assert!(matches!(
+            journal.snapshot().build_events.last(),
+            Some(DaemonBuildEvent::TaskProgress {
+                progress: Some(77),
+                ..
+            })
+        ));
+        let encoded = encode_frame(&ServerMessage::Snapshot(journal.snapshot().clone())).unwrap();
+        assert!(encoded.len() < MAX_FRAME_BYTES);
     }
 
     #[test]

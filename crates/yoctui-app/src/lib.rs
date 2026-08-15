@@ -309,6 +309,7 @@ pub fn daemon_protocol_snapshot(
         pty_sessions,
         clients: Vec::<ClientSummary>::new(),
         recent_logs,
+        build_events: Vec::new(),
         recovery_warnings: state.session.recovery_warnings.clone(),
     }
 }
@@ -402,6 +403,7 @@ impl DaemonClientSnapshot {
         snapshot: yoctui_protocol::daemon::DaemonSnapshot,
     ) {
         self.replace(snapshot);
+        self.install_build_app(app);
         self.install_app(app);
     }
 
@@ -430,12 +432,43 @@ impl DaemonClientSnapshot {
         event: &yoctui_protocol::daemon::SequencedEvent,
     ) -> Result<(), DaemonClientSyncError> {
         self.apply_event(event)?;
+        match &event.event {
+            yoctui_protocol::daemon::DaemonEvent::Build(build_event) => {
+                apply_daemon_build_event(app, build_event.clone());
+                install_daemon_build_environment(app);
+            }
+            yoctui_protocol::daemon::DaemonEvent::Log(record) => {
+                let _ = yoctui_model::update(app, daemon_log_action(record));
+            }
+            _ => {}
+        }
         self.install_app(app);
         Ok(())
     }
 
     pub fn install_app(&self, app: &mut yoctui_model::App) {
         app.daemon = daemon_client_view(self.status, self.snapshot.as_ref(), self.telemetry);
+    }
+
+    fn install_build_app(&self, app: &mut yoctui_model::App) {
+        let Some(snapshot) = self.snapshot.as_ref() else {
+            return;
+        };
+        let mut build = yoctui_model::App::new(app.logs.max_entries, app.logs.max_bytes);
+        build.backend = "bridge".into();
+        for event in snapshot.build_events.iter().cloned() {
+            apply_daemon_build_event(&mut build, event);
+        }
+        for record in &snapshot.recent_logs {
+            let _ = yoctui_model::update(&mut build, daemon_log_action(record));
+        }
+        app.backend = build.backend;
+        app.workspace = build.workspace;
+        app.build = build.build;
+        app.tasks = build.tasks;
+        app.completed_tasks = build.completed_tasks;
+        app.logs = build.logs;
+        install_daemon_build_environment(app);
     }
 
     pub fn resume_cursor(&self) -> Option<yoctui_protocol::daemon::ResumeCursor> {
@@ -458,6 +491,169 @@ impl DaemonClientSnapshot {
         self.disconnect();
         self.install_app(app);
     }
+}
+
+fn daemon_log_action(record: &yoctui_protocol::daemon::LogRecord) -> yoctui_model::Action {
+    use std::time::{Duration, SystemTime};
+    let severity = match record.severity {
+        yoctui_protocol::daemon::LogSeverity::Trace => yoctui_model::Severity::Trace,
+        yoctui_protocol::daemon::LogSeverity::Info => yoctui_model::Severity::Info,
+        yoctui_protocol::daemon::LogSeverity::Warning => yoctui_model::Severity::Warning,
+        yoctui_protocol::daemon::LogSeverity::Error => yoctui_model::Severity::Error,
+    };
+    yoctui_model::Action::Log(yoctui_model::LogEntry {
+        id: 0,
+        severity,
+        message: record.message.clone(),
+        recipe: None,
+        task: None,
+        path: None,
+        timestamp: SystemTime::UNIX_EPOCH + Duration::from_millis(record.unix_ms),
+        build: None,
+        protected: matches!(
+            severity,
+            yoctui_model::Severity::Warning | yoctui_model::Severity::Error
+        ),
+        diagnostic: None,
+    })
+}
+
+fn apply_daemon_build_event(
+    app: &mut yoctui_model::App,
+    event: yoctui_protocol::daemon::DaemonBuildEvent,
+) {
+    use yoctui_protocol::daemon::DaemonBuildEvent;
+    let action = match event {
+        DaemonBuildEvent::Reset { targets } => yoctui_model::Action::BuildRequested {
+            target: targets.into_iter().next(),
+        },
+        event => match backend_event_from_daemon(event) {
+            Some(event) => match model_action_from_backend_event(event) {
+                Some(action) => action,
+                None => return,
+            },
+            None => return,
+        },
+    };
+    let _ = yoctui_model::update(app, action);
+}
+
+fn backend_event_from_daemon(
+    event: yoctui_protocol::daemon::DaemonBuildEvent,
+) -> Option<BackendEvent> {
+    use yoctui_protocol::daemon::DaemonBuildEvent;
+    Some(match event {
+        DaemonBuildEvent::Reset { .. } => return None,
+        DaemonBuildEvent::Workspace { data } => BackendEvent::Workspace(yoctui_model::Workspace {
+            build_dir: data.build_dir.map(Into::into),
+            source_dir: data.source_dir.map(Into::into),
+            variables: data.variables,
+            variable_provenance: data.variable_provenance,
+            variable_provenance_chain: data.variable_provenance_chain,
+            bitbake_version: data.bitbake_version,
+            release: data.release,
+            layers: data
+                .layers
+                .into_iter()
+                .map(|layer| yoctui_model::Layer {
+                    name: layer.name,
+                    path: layer.path.into(),
+                    priority: layer.priority,
+                })
+                .collect(),
+            recipes: data
+                .recipes
+                .into_iter()
+                .map(|recipe| yoctui_model::Recipe {
+                    name: recipe.name,
+                    version: recipe.version,
+                    layer: recipe.layer,
+                    preferred_version: recipe.preferred_version,
+                    file: recipe.file.map(Into::into),
+                    append_count: recipe.append_count,
+                })
+                .collect(),
+        }),
+        DaemonBuildEvent::Started => BackendEvent::BuildStarted,
+        DaemonBuildEvent::ParseProgress { current, total } => {
+            BackendEvent::ParseProgress { current, total }
+        }
+        DaemonBuildEvent::TaskQueued {
+            recipe,
+            task,
+            worker,
+            stats,
+        } => BackendEvent::TaskQueued {
+            recipe,
+            task,
+            worker,
+            stats: stats.map(daemon_task_stats),
+        },
+        DaemonBuildEvent::TaskStarted {
+            recipe,
+            task,
+            pid,
+            worker,
+            log_path,
+            stats,
+        } => BackendEvent::TaskStarted {
+            recipe,
+            task,
+            pid,
+            worker,
+            log_path: log_path.map(Into::into),
+            stats: stats.map(daemon_task_stats),
+        },
+        DaemonBuildEvent::TaskProgress {
+            recipe,
+            task,
+            progress,
+        } => BackendEvent::TaskProgress {
+            recipe,
+            task,
+            progress,
+        },
+        DaemonBuildEvent::TaskCompleted {
+            recipe,
+            task,
+            success,
+        } => BackendEvent::TaskCompleted {
+            recipe,
+            task,
+            success,
+        },
+        DaemonBuildEvent::Completed { success, exit_code } => {
+            BackendEvent::BuildCompleted { success, exit_code }
+        }
+        DaemonBuildEvent::CommandFailed { code, message } => {
+            BackendEvent::CommandFailed { code, message }
+        }
+        DaemonBuildEvent::Disconnected => BackendEvent::Disconnected,
+    })
+}
+
+fn daemon_task_stats(stats: yoctui_protocol::TaskStatsData) -> yoctui_model::TaskStats {
+    yoctui_model::TaskStats {
+        completed: stats.completed,
+        total: stats.total,
+        active: stats.active,
+        failed: stats.failed,
+    }
+}
+
+fn install_daemon_build_environment(app: &mut yoctui_model::App) {
+    let (Some(source_dir), Some(build_dir)) = (
+        app.workspace.source_dir.clone(),
+        app.workspace.build_dir.clone(),
+    ) else {
+        return;
+    };
+    app.build_environment =
+        yoctui_model::BuildEnvironmentState::Connected(yoctui_model::BuildEnvironmentProfile {
+            init_script: source_dir.join("oe-init-build-env"),
+            source_dir,
+            build_dir,
+        });
 }
 
 fn daemon_client_view(
@@ -7391,6 +7587,112 @@ mod tests {
                 Input::Tab
             ),
             None
+        );
+    }
+
+    #[test]
+    fn daemon_attach_build_restores_and_updates_typed_progress_without_replacing_presentation() {
+        use std::collections::HashMap;
+        use yoctui_protocol::daemon::{DaemonBuildEvent, DaemonEvent, SequencedEvent};
+        use yoctui_protocol::{TaskStatsData, WorkspaceData};
+
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([9; 16]),
+            123,
+            "boot-id".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut snapshot = daemon_protocol_snapshot(&state);
+        snapshot.build_events = vec![
+            DaemonBuildEvent::Reset {
+                targets: vec!["core-image-minimal".into()],
+            },
+            DaemonBuildEvent::Workspace {
+                data: WorkspaceData {
+                    build_dir: Some("/work/build".into()),
+                    source_dir: Some("/work/poky".into()),
+                    variables: HashMap::from([
+                        ("MACHINE".into(), "qemux86-64".into()),
+                        ("DISTRO".into(), "poky".into()),
+                    ]),
+                    variable_provenance: HashMap::new(),
+                    variable_provenance_chain: HashMap::new(),
+                    bitbake_version: Some("2.8.1".into()),
+                    release: Some("5.0.19".into()),
+                    layers: Vec::new(),
+                    recipes: Vec::new(),
+                },
+            },
+            DaemonBuildEvent::Started,
+            DaemonBuildEvent::TaskStarted {
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                pid: Some(42),
+                worker: Some("worker-1".into()),
+                log_path: None,
+                stats: Some(TaskStatsData {
+                    completed: 102,
+                    total: 4090,
+                    active: 8,
+                    failed: 0,
+                }),
+            },
+            DaemonBuildEvent::TaskProgress {
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                progress: Some(77),
+            },
+        ];
+        let mut app = yoctui_model::App::new(64, 64 * 1024);
+        app.screen = Screen::Recipes;
+        app.focus = FocusTarget::Inspector;
+        app.theme = yoctui_model::Theme::MatrixGreen;
+        app.dialogs
+            .push_back(yoctui_model::Dialog::QuitConfirmation);
+        let mut replica = DaemonClientSnapshot::default();
+        replica.replace_app(&mut app, snapshot);
+
+        assert_eq!(app.backend, "bridge");
+        assert!(matches!(
+            app.build_environment,
+            yoctui_model::BuildEnvironmentState::Connected(ref profile)
+                if profile.source_dir == std::path::Path::new("/work/poky")
+                    && profile.build_dir == std::path::Path::new("/work/build")
+        ));
+        assert_eq!(app.build.status, yoctui_model::BuildStatus::Running);
+        assert_eq!(app.build.target.as_deref(), Some("core-image-minimal"));
+        assert_eq!((app.build.completed, app.build.total), (102, Some(4090)));
+        assert_eq!(
+            app.tasks[&yoctui_model::TaskId("busybox:do_compile".into())].progress,
+            Some(77)
+        );
+        assert_eq!(app.workspace.release.as_deref(), Some("5.0.19"));
+        assert_eq!(app.screen, Screen::Recipes);
+        assert_eq!(app.focus, FocusTarget::Inspector);
+        assert_eq!(app.theme, yoctui_model::Theme::MatrixGreen);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(yoctui_model::Dialog::QuitConfirmation)
+        ));
+
+        replica
+            .apply_event_to_app(
+                &mut app,
+                &SequencedEvent {
+                    sequence: 1,
+                    generation: 1,
+                    event: DaemonEvent::Build(DaemonBuildEvent::TaskProgress {
+                        recipe: "busybox".into(),
+                        task: "do_compile".into(),
+                        progress: Some(88),
+                    }),
+                },
+            )
+            .unwrap();
+        assert_eq!(
+            app.tasks[&yoctui_model::TaskId("busybox:do_compile".into())].progress,
+            Some(88)
         );
     }
 
