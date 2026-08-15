@@ -15,8 +15,8 @@ Status values:
 terminal-native CPU, memory, disk, load, history, task-velocity, ETA, and
 high-resolution progress meters. The persistent daemon parent gate is `DONE`;
 the implementation and focused
-verification for `BRIDGE-PROGRESS-001` pass, and its terminal `DONE` state is
-under final completion-gate verification with real perf sampling enabled.
+verification for `BRIDGE-PROGRESS-001` pass. Its terminal `DONE` state now has
+complete-gate evidence including a fresh real perf-backed Flamegraph.
 Fractional Scarthgap `ProcessProgress` values now normalize to bounded wire
 integers, PID-only `TaskProgress` records reuse build-scoped task identities,
 and determinate task progress renders as a bar in both Dashboard and Tasks.
@@ -84,7 +84,7 @@ See `docs/current-task.md`.
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
-| M1 BitBake cockpit | DONE | The telemetry cockpit and progress compatibility pass; terminal completion evidence is under final gate verification |
+| M1 BitBake cockpit | DONE | The telemetry cockpit, progress compatibility, and full completion gate pass with fresh real perf evidence |
 | M2 Persistent workbench | DONE | Persistent shell, responsive modes, focus, dialogs, palette, preferences, notifications, background jobs, and all specified workspaces pass their parent gates |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |

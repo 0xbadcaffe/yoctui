@@ -4151,7 +4151,7 @@ priority = 449
 required = true
 depends_on = ["DAEMON-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo test -p yoctui-ui task_progress", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Implementation passes: fractional and invalid progress normalizes safely; active-build worker PIDs correlate native TaskProgress; stale progress is ignored; Dashboard and Tasks render determinate bars; 39 bridge tests pass; and the installed binary inspected BitBake 2.8.1 / Poky 5.0.19 without the prior failure. The final completion gate is externally blocked because kernel.perf_event_paranoid=4 prevents its required real perf sample. Temporarily set it to 0, rerun ./scripts/verify-completion.sh, then restore 4."
+notes = "Fractional and invalid progress normalizes safely; active-build worker PIDs correlate native TaskProgress; stale progress is ignored; and Dashboard and Tasks render determinate bars. The installed binary inspected BitBake 2.8.1 / Poky 5.0.19 without the prior failure. The complete gate passes workspace tests, fuzzing, repeated stress, ASan/LSan, coverage, audit, all 39 bridge tests at 75.95%, Valgrind, release smoke, and a fresh real perf-backed Flamegraph."
 
 [[task]]
 id = "TELEMETRY-COCKPIT-001"

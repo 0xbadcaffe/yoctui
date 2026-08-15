@@ -19,10 +19,13 @@ binary connected to `/home/bspguy-dev/src/poky/build-yoctui` through BitBake
 or reconnect loop. All 39 bridge tests, workspace tests, Clippy, documentation,
 and roadmap checks pass.
 
-## Resumed verification
+## Final verification
 
-The operator enabled the required temporary perf permission on 2026-08-15, so
-the repository completion gate is running again.
+The operator enabled the required temporary perf permission on 2026-08-15. The
+complete gate passed: workspace tests, fuzzing, repeated stress tests,
+AddressSanitizer, LeakSanitizer, model and protocol coverage, dependency audit,
+39 bridge tests at 75.95% coverage, Valgrind, release smoke, and a fresh real
+perf-backed Flamegraph all succeeded.
 
 ## Verification
 
@@ -32,6 +35,6 @@ sudo sysctl -w kernel.perf_event_paranoid=0
 sudo sysctl -w kernel.perf_event_paranoid=4
 ```
 
-After the gate passes, restore `kernel.perf_event_paranoid=4`, change this task
-to `DONE`, update the implementation status, retain this final completed task
-as the terminal handoff, and commit the completion evidence.
+The final completed task remains this terminal handoff. The operator must
+restore `kernel.perf_event_paranoid=4` from an authenticated terminal; the
+agent could not supply the required sudo password.
