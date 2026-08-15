@@ -479,5 +479,8 @@ Its reconnect/status probe is deliberately paced so high-volume task events do
 not compete with the daemon's bounded snapshot writer.
 The default live-build timeout is four hours because an uncached Poky image can
 spend substantial time compiling native prerequisites in a constrained CI host.
+The disposable live build enables Poky's standard `rm_work` class so completed
+recipe workdirs cannot crowd out the final kernel and image tasks; downloads,
+sstate, package data, and deploy artifacts remain available to the build.
 The default attach snapshot now retains 512 recent records, preserving a useful
 bounded history without repeatedly serializing the full high-volume log stream.

@@ -39,6 +39,10 @@ set -u
 if ! command -v lz4c >/dev/null 2>&1; then
   printf '\nHOSTTOOLS:remove = "lz4c"\n' >>"$build_dir/conf/local.conf"
 fi
+# The acceptance workspace is disposable and needs only the final image and
+# task evidence. Reclaim completed recipe workdirs so a clean Poky build does
+# not exhaust a constrained host before the kernel and image tasks run.
+printf '\nINHERIT += "rm_work"\n' >>"$build_dir/conf/local.conf"
 if [[ -n "${YOCTUI_LIVE_CACHE:-}" ]]; then
   cache_root="${YOCTUI_LIVE_CACHE}"
   mkdir -p "$cache_root/downloads" "$cache_root/sstate-cache"

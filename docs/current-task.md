@@ -30,4 +30,8 @@ remained healthy through task 2779 of 4090 but exposed that the former one-hour
 harness deadline was too short for an uncached build on this host. The default
 deadline is now four hours. Rerun the live acceptance before changing this
 status. The harness also excludes inherited pyenv shim state after that state
-was shown to stall BitBake host-tool execution.
+was shown to stall BitBake host-tool execution. A subsequent run remained
+healthy through task 4055 of 4090 before the disposable workspace exhausted
+the filesystem during kernel compilation. The harness now enables Poky's
+standard `rm_work` class to reclaim completed recipe workdirs; rerun with the
+accumulated shared cache before changing this status.
