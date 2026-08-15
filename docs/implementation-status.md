@@ -11,10 +11,10 @@ Status values:
 
 ## Current phase
 
-The persistent daemon parent gate is `IN_PROGRESS`. Real Poky acceptance and
-the collision-safe parallel persistence fixtures pass. The next full gate timed
-out while the real PTY runtime integration awaited its Running state; diagnosis
-and a clean full-gate rerun are active.
+The persistent daemon parent gate is `DONE`. Real Poky acceptance and the
+collision-safe parallel persistence fixtures pass. Server IPC now separates
+short read slices from bounded multi-second writes, and the real PTY runtime
+integration passes ten consecutive focused runs.
 
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
@@ -459,9 +459,8 @@ Navigator, Inspector, and PTY session routing plus integration/TestBackend
 coverage. Dragging split separators now resizes the validated client-local pane
 tree with keyboard-equivalent bounds and persistence. Keyboard/mouse parity now
 has explicit specification and TestBackend coverage; every core route keeps a
-keyboard path and meaningful mouse path. Real Poky validation and collision-safe
-parallel persistence fixtures pass; the parent is reopened for the real PTY
-runtime timeout exposed by the full gate.
+keyboard path and meaningful mouse path. Real Poky validation, collision-safe
+parallel persistence fixtures, and responsive real PTY event delivery pass.
 Daemon and attach documentation now covers direct/service lifecycle, client
 attach/detach, SSH reconnect, PTY/session management, security/resource limits,
 host reboot guarantees, troubleshooting, and the verified live-Poky validation
@@ -476,6 +475,9 @@ terminating the daemon while its BitBake worker continues.
 Lifecycle/status clients now allow bounded multi-megabyte snapshots several
 seconds to complete while BitBake is emitting logs; short probes remain
 bounded, but no longer report a healthy daemon as unavailable under load.
+The server uses independent deadlines: short per-client read slices keep PTY and
+job supervisor events responsive, while multi-second writes retain that large
+snapshot tolerance.
 The live acceptance script now preserves actionable cooker-log diagnostics
 when a real BitBake build fails before its temporary workspace is removed.
 Its reconnect/status probe is deliberately paced so high-volume task events do

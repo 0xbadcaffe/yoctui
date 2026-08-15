@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -26,6 +26,7 @@ daemon start, detached submission, repeated reconnects, and terminal job-state
 reporting. All 4567 tasks succeeded, including kernel and image creation; 3648
 were reused from the shared cache. The completion-gate regression now gives
 every `daemon_persist` fixture a PID-plus-monotonic temporary identity; five
-consecutive parallel integration runs pass. The next full gate exposed a timeout
-while the real PTY integration awaited its Running state, so the parent remains
-in progress pending diagnosis and a clean full-gate pass.
+consecutive parallel integration runs pass. Server IPC now separates short read
+slices from bounded multi-second snapshot writes; the real PTY integration
+passes ten consecutive runs. This is the terminal handoff because every registry
+task is DONE.

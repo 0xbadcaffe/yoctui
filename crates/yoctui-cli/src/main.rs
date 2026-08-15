@@ -1494,10 +1494,11 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         }
         match listener.accept(Duration::from_millis(1)) {
             Ok(connection) if clients.len() < MAX_DAEMON_CLIENTS => {
-                // Snapshot/event frames are bounded but may be several MiB
-                // while BitBake is emitting logs. A short timeout makes a
-                // healthy local client look disconnected under load.
-                connection.set_timeout(Some(Duration::from_secs(5)))?;
+                // Idle clients get short read slices so supervisor events and
+                // other clients remain responsive. Snapshot/event frames may
+                // be several MiB, so writes retain a larger bounded deadline.
+                connection.set_read_timeout(Some(Duration::from_millis(50)))?;
+                connection.set_write_timeout(Some(Duration::from_secs(5)))?;
                 clients.push((
                     connection,
                     false,

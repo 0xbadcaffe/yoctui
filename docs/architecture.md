@@ -1963,7 +1963,9 @@ that local fallback.
 The wire snapshot carries bounded attached-client identities while focus/layout
 remains client-local. The foreground daemon services each Unix socket in
 bounded read slices, so an idle attached client cannot block new handshakes or
-other clients. Each connection retains its negotiated/attached state and
+other clients. Read and write deadlines are independent: short read slices
+preserve daemon/supervisor fairness, while bounded multi-second writes allow
+large snapshots to reach a responsive local client. Each connection retains its negotiated/attached state and
 ordered journal cursor; daemon events are replayed from that cursor to every
 attached client, while command-created events advance the issuing client's
 cursor after their direct response. This keeps global daemon state and event
