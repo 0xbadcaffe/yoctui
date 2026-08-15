@@ -4,7 +4,7 @@
 
 **ID:** BRIDGE-PROGRESS-001
 **Title:** Normalize live BitBake progress and render task bars
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
