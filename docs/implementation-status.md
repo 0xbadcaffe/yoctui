@@ -11,10 +11,10 @@ Status values:
 
 ## Current phase
 
-`TELEMETRY-COCKPIT-001` is `IN_PROGRESS` as the new user-priority task: enrich
-the dashboard and live Tasks view with terminal-native CPU, memory, disk, load,
-history, task-velocity, ETA, and high-resolution progress meters. The
-persistent daemon parent gate is `DONE`; the implementation and focused
+`TELEMETRY-COCKPIT-001` is `DONE`: Dashboard and Tasks now provide
+terminal-native CPU, memory, disk, load, history, task-velocity, ETA, and
+high-resolution progress meters. The persistent daemon parent gate is `DONE`;
+the implementation and focused
 verification for `BRIDGE-PROGRESS-001` pass, but that task remains `BLOCKED` at
 the repository completion gate because host perf sampling is restricted.
 Fractional Scarthgap `ProcessProgress` values now normalize to bounded wire
@@ -84,7 +84,7 @@ See `docs/current-task.md`.
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
-| M1 BitBake cockpit | IN_PROGRESS | The telemetry cockpit is active; progress compatibility passes but its completion-gate record still waits for a temporary host perf permission change |
+| M1 BitBake cockpit | BLOCKED | The telemetry cockpit and progress compatibility pass; the completion-gate record waits for a temporary host perf permission change |
 | M2 Persistent workbench | DONE | Persistent shell, responsive modes, focus, dialogs, palette, preferences, notifications, background jobs, and all specified workspaces pass their parent gates |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
@@ -103,6 +103,7 @@ See `docs/current-task.md`.
 | Command palette | DONE | Typed catalog, case-insensitive search, contextual availability, disabled explanations, inert invalid activation, focus restore, themes, and narrow rendering are covered |
 | Themes | DONE | Five complete semantic palettes cover shell, focus, selection, status, severity, progress, dialogs, notifications, and syntax; monochrome/no-color use terminal attributes |
 | Task animation | DONE | UI-tick fast/slow cadence, stable reduced-motion activity, honest unknown progress, and nonanimated determinate bars/terminal rows have reducer and TestBackend coverage |
+| System telemetry | DONE | Typed CPU, memory, filesystem capacity, core-count, and load samples drive semantic gauges and 60-sample CPU/RAM sparklines; average task velocity, ETA, compact A/W/F counters, and fractional-cell task bars are responsive and tested |
 | Background-job model | DONE | Stable IDs, typed lifecycle/context/progress/result/error, bounded output/history, cancellation capability, and reducer coverage are implemented |
 | Background build execution | DONE | Confirmed builds allocate one job; typed events drive lifecycle/output; navigation persists; failure, cancellation rejection/acknowledgement, and backend loss are covered |
 | Live BitBake bridge | DONE | Finite progress is bounded at the bridge boundary, PID-only task progress uses active-build worker identities, stale progress is ignored, and installed read-only inspection passes against BitBake 2.8.1 / Poky 5.0.19 |

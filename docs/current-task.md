@@ -2,52 +2,36 @@
 
 ## Task
 
-**ID:** TELEMETRY-COCKPIT-001
-**Title:** Build a geeky live telemetry and progress cockpit
-**Status:** IN_PROGRESS
+**ID:** BRIDGE-PROGRESS-001
+**Title:** Normalize live BitBake progress and render task bars
+**Status:** BLOCKED
 
 ## Objective
 
-Turn live build monitoring into a dense, terminal-native cockpit while keeping
-every number authoritative and every layout safe. Add CPU, memory, disk, load,
-history, task-velocity, ETA, and higher-resolution task progress visuals.
+Keep live Poky builds connected when BitBake emits fractional process progress,
+correlate PID-only task-progress events with their authoritative task-start
+identity, and render determinate per-task progress bars without fabricating
+progress when BitBake reports an unknown or invalid value.
 
-## Relevant files
+The implementation and task-specific verification are complete. The installed
+binary connected to `/home/bspguy-dev/src/poky/build-yoctui` through BitBake
+2.8.1 and reported the Scarthgap 5.0.19 workspace without a JSON protocol error
+or reconnect loop. All 39 bridge tests, workspace tests, Clippy, documentation,
+and roadmap checks pass.
 
-- `crates/yoctui-model/src/lib.rs`
-- `crates/yoctui-cli/src/main.rs`
-- `crates/yoctui-ui/src/lib.rs`
-- `docs/ui-spec.md`
-- `docs/architecture.md`
-- `docs/product-roadmap.md`
-- `docs/implementation-status.md`
-- `docs/task-registry.toml`
+## Blocker
 
-## Definition of done
+The repository completion gate is externally blocked at its final real-perf
+step because the host reports `kernel.perf_event_paranoid = 4`.
 
-- Host telemetry carries optional total/available memory, filesystem capacity,
-  logical CPU count, and fixed-point 1/5/15-minute load averages.
-- CLI parsers reject malformed and inconsistent procfs values without panics or
-  fabricated zeroes and have normal plus failure-path tests.
-- Reducer-owned CPU and memory histories retain at most 60 valid samples.
-- Dashboard renders responsive semantic CPU, RAM, and disk gauges plus bounded
-  history sparklines and load labels when vertical space permits.
-- Dashboard and Tasks expose honest average completed-task velocity and ETA only
-  when elapsed time and authoritative totals support them.
-- Determinate task bars use bounded fractional-cell rendering; unknown progress
-  remains visibly unknown and animated according to motion settings.
-- Focused tests, baseline checks, documentation, and roadmap checks pass.
-- The implementation and final task-state updates are committed coherently.
-
-## Verification
+## Follow-up verification
 
 ```bash
-cargo test -p yoctui-model host_telemetry
-cargo test -p yoctui telemetry
-cargo test -p yoctui-ui telemetry
-cargo test -p yoctui-ui task_progress
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-./scripts/check-docs.sh
-./scripts/verify-roadmap.sh
+sudo sysctl -w kernel.perf_event_paranoid=0
+./scripts/verify-completion.sh
+sudo sysctl -w kernel.perf_event_paranoid=4
 ```
+
+After the gate passes, change this task to `DONE`, update the implementation
+status, retain this final completed task as the terminal handoff, and commit the
+completion evidence.
