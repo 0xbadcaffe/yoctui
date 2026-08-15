@@ -11,8 +11,7 @@ Status values:
 
 ## Current phase
 
-The persistent daemon parent gate is `IN_PROGRESS` after the final gate exposed
-a BitBake CLI-control cancellation race.
+The persistent daemon parent gate is `DONE`.
 Real Poky acceptance, collision-safe daemon fixtures, responsive PTY delivery,
 Configuration UI coverage, and global quit routing pass. The synchronized
 ten-second real-terminal probe passes ten consecutive runs. On 2026-08-15 the
@@ -22,7 +21,7 @@ suite, where `cli_control_cancels_the_owned_process_group` did not report its
 expected graceful cancellation under the parallel run. Its fixture now waits
 for an explicit post-trap readiness marker before cancellation; the focused
 test passes 100 consecutive runs and all 180 library tests pass. No independent
-registry task remains eligible while the complete gate is rerun.
+registry task remains incomplete.
 
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
@@ -68,7 +67,7 @@ See `docs/current-task.md`.
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
 | M6 Maintenance | DONE | Typed Sstate, Services, Release, and optional integrations pass their atomic, cross-layer, and milestone parent gates |
-| M7 Hardening | IN_PROGRESS | Fresh real perf-backed sampling passes; the BitBake CLI-control fixture now synchronizes trap readiness and passes 100 consecutive focused runs, with the complete gate pending |
+| M7 Hardening | DONE | Fuzz, stress/process-tree, ASan/LSan, property, terminal, Valgrind, deterministic profile, real perf-backed Flamegraph, CI, documentation, and completion integration pass |
 
 ## Reconciliation evidence
 
@@ -121,7 +120,7 @@ See `docs/current-task.md`.
 | Package data model | DONE | Exact identities, available-versus-unavailable fields, explicit bounded inventory/detail states, deterministic normalization, selection, stale correlation, search, dependency navigation, and typed event/effect mapping pass focused and baseline checks |
 | Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
 | Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
-| Hardening matrix | IN_PROGRESS | The authorized fresh perf run regenerated the real SVG; the graceful-cancellation fixture is synchronized and passes repeated and full-library checks, with the complete integration rerun pending |
+| Hardening matrix | DONE | Every integrated gate passes, the authorized fresh perf run regenerated the real SVG, and the synchronized graceful-cancellation fixture passes repeated and full-library checks |
 | Operator documentation | DONE | The concise landing page retains guarded setup paths and embeds a real-binary, fixture-labelled UI demo plus the real perf-backed Flamegraph; the complete operator/troubleshooting and compatibility evidence remain linked and visual artifacts are validated |
 
 ## Priority queue

@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -52,9 +52,9 @@ parallel run did not return the expected graceful `Cancelled` outcome. The task
 was reopened. The fixture now publishes readiness only after installing its TERM
 trap, so cancellation no longer races setup or a same-length sleep deadline.
 The focused test passes 100 consecutive runs and all 180 `yoctui-bitbake`
-library tests pass; the full completion gate remains to be rerun.
+library tests pass.
 
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
 completed all 4567 tasks with repeated reconnects. No other registry task is
-eligible while this required parent gate is in progress.
+eligible; this is the terminal handoff after all registry tasks completed.
