@@ -19,8 +19,10 @@ ten-second real-terminal probe passes ten consecutive runs. On 2026-08-15 the
 operator temporarily enabled userspace perf sampling and the required fresh
 Flamegraph capture passed. The resumed full gate reached the `yoctui-bitbake`
 suite, where `cli_control_cancels_the_owned_process_group` did not report its
-expected graceful cancellation under the parallel run. No independent registry
-task remains eligible while that race is investigated.
+expected graceful cancellation under the parallel run. Its fixture now waits
+for an explicit post-trap readiness marker before cancellation; the focused
+test passes 100 consecutive runs and all 180 library tests pass. No independent
+registry task remains eligible while the complete gate is rerun.
 
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
@@ -66,7 +68,7 @@ See `docs/current-task.md`.
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
 | M6 Maintenance | DONE | Typed Sstate, Services, Release, and optional integrations pass their atomic, cross-layer, and milestone parent gates |
-| M7 Hardening | IN_PROGRESS | Fresh real perf-backed sampling passes; the completion rerun exposed a BitBake CLI-control cancellation race that must be stabilized before the integration gate is complete |
+| M7 Hardening | IN_PROGRESS | Fresh real perf-backed sampling passes; the BitBake CLI-control fixture now synchronizes trap readiness and passes 100 consecutive focused runs, with the complete gate pending |
 
 ## Reconciliation evidence
 
@@ -119,7 +121,7 @@ See `docs/current-task.md`.
 | Package data model | DONE | Exact identities, available-versus-unavailable fields, explicit bounded inventory/detail states, deterministic normalization, selection, stale correlation, search, dependency navigation, and typed event/effect mapping pass focused and baseline checks |
 | Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
 | Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
-| Hardening matrix | IN_PROGRESS | The authorized fresh perf run regenerated the real SVG; the complete integration rerun exposed a graceful-cancellation race in the BitBake CLI-control test |
+| Hardening matrix | IN_PROGRESS | The authorized fresh perf run regenerated the real SVG; the graceful-cancellation fixture is synchronized and passes repeated and full-library checks, with the complete integration rerun pending |
 | Operator documentation | DONE | The concise landing page retains guarded setup paths and embeds a real-binary, fixture-labelled UI demo plus the real perf-backed Flamegraph; the complete operator/troubleshooting and compatibility evidence remain linked and visual artifacts are validated |
 
 ## Priority queue

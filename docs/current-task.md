@@ -49,7 +49,10 @@ The resumed complete gate reached the `yoctui-bitbake` library suite and exposed
 a cancellation race in
 `bitbake_cli_control::tests::cli_control_cancels_the_owned_process_group`: the
 parallel run did not return the expected graceful `Cancelled` outcome. The task
-is reopened until the race is diagnosed, covered, and the full gate passes.
+was reopened. The fixture now publishes readiness only after installing its TERM
+trap, so cancellation no longer races setup or a same-length sleep deadline.
+The focused test passes 100 consecutive runs and all 180 `yoctui-bitbake`
+library tests pass; the full completion gate remains to be rerun.
 
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
