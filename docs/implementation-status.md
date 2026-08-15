@@ -11,10 +11,10 @@ Status values:
 
 ## Current phase
 
-The persistent daemon parent gate is `IN_PROGRESS`. Real Poky acceptance,
+The persistent daemon parent gate is `DONE`. Real Poky acceptance,
 collision-safe daemon fixtures, responsive PTY delivery, and Configuration UI
-coverage pass. The next full gate hung in the terminal lifecycle probe because
-its early piped `q` was not observed and the script has no bounded deadline.
+coverage pass. Navigator/Inspector preserve global quit routing, and the
+synchronized ten-second real-terminal probe passes ten consecutive runs.
 
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
@@ -461,7 +461,7 @@ tree with keyboard-equivalent bounds and persistence. Keyboard/mouse parity now
 has explicit specification and TestBackend coverage; every core route keeps a
 keyboard path and meaningful mouse path. Real Poky validation, collision-safe
 daemon fixtures, responsive PTY delivery, and Configuration rendering pass; the
-parent is reopened for deterministic bounded terminal lifecycle coverage.
+the bounded terminal lifecycle probe passes repeatedly and cannot hang the gate.
 Daemon and attach documentation now covers direct/service lifecycle, client
 attach/detach, SSH reconnect, PTY/session management, security/resource limits,
 host reboot guarantees, troubleshooting, and the verified live-Poky validation

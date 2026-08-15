@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -35,5 +35,7 @@ found that Configuration action guidance displaced earlier provenance at
 100x25. Authoritative values, provenance, overrides, and operations now render
 first, followed by compact action state and exact reasons; all 121 UI tests pass.
 The next full gate then hung in `scripts/test-terminal.sh`: its piped `q` was not
-observed by the pseudo-terminal application and the script has no deadline. The
-parent remains in progress pending deterministic lifecycle coverage.
+observed by the pseudo-terminal application and the script had no deadline.
+Navigator/Inspector now preserve global `q`/Ctrl+C routing, and the synchronized
+bounded real-terminal probe passes ten consecutive runs. This is the terminal
+handoff because every registry task is DONE.

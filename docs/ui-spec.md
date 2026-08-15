@@ -2337,6 +2337,9 @@ Global example:
 ? Help  F5 Build  Ctrl+P Commands  / Search  Tab Focus  e Errors  l Logs  q Quit
 ```
 
+When no dialog or editor traps input, `q` and `Ctrl+C` retain their global quit
+meaning while Navigator, Workspace, or Inspector has focus.
+
 When terminal sessions are available, the footer also shows `Ctrl+B prefix`
 and the pending prefix map. Prefix commands are client-local navigation intent;
 PTY input remains daemon-authorized by the active writer lease.
