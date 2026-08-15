@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** DONE
+**Status:** IN_PROGRESS
 
 ## Objective
 
@@ -67,7 +67,13 @@ protocol requiring at least one target. Empty targets and six malformed typed
 query identities now return `invalid_request`. All 38 bridge tests pass, and the
 coverage report itself passes at 75.37%.
 
+The next complete rerun cleared the Python threshold and reached the
+`yoctui-bitbake` suite, where
+`qa_layer_runner_rejects_duplicate_and_cancels_gracefully_or_forcibly` failed
+to spawn a rewritten fixture with `Text file busy (os error 26)`. The parent is
+reopened until fixture publication is race-free and the full gate passes.
+
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
 completed all 4567 tasks with repeated reconnects. No other registry task is
-eligible; this is the terminal handoff after all registry tasks completed.
+eligible while this required parent gate is in progress.
