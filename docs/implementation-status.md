@@ -11,7 +11,8 @@ Status values:
 
 ## Current phase
 
-The persistent daemon parent gate is `DONE`.
+The persistent daemon parent gate is `IN_PROGRESS` for an honest Python coverage
+threshold pass.
 Real Poky acceptance, collision-safe daemon fixtures, responsive PTY delivery,
 Configuration UI coverage, and global quit routing pass. The synchronized
 ten-second real-terminal probe passes ten consecutive runs. On 2026-08-15 the
@@ -22,6 +23,10 @@ expected graceful cancellation under the parallel run. Its fixture now waits
 for an explicit post-trap readiness marker before cancellation; the focused
 test passes 100 consecutive runs and all 180 library tests pass. No independent
 registry task remains incomplete.
+The full completion command otherwise exited 0, but pytest-cov printed that its
+exact 74.58% result misses the required 75% threshold while incorrectly
+returning status 0. Bridge failure-path coverage must be raised until the report
+itself passes; the faulty status is not accepted as completion evidence.
 
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
@@ -67,7 +72,7 @@ See `docs/current-task.md`.
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
 | M6 Maintenance | DONE | Typed Sstate, Services, Release, and optional integrations pass their atomic, cross-layer, and milestone parent gates |
-| M7 Hardening | DONE | Fuzz, stress/process-tree, ASan/LSan, property, terminal, Valgrind, deterministic profile, real perf-backed Flamegraph, CI, documentation, and completion integration pass |
+| M7 Hardening | IN_PROGRESS | All other stages pass, including fresh real perf-backed sampling; Python coverage reports 74.58% against the required 75% despite an erroneous zero exit status |
 
 ## Reconciliation evidence
 
@@ -120,7 +125,7 @@ See `docs/current-task.md`.
 | Package data model | DONE | Exact identities, available-versus-unavailable fields, explicit bounded inventory/detail states, deterministic normalization, selection, stale correlation, search, dependency navigation, and typed event/effect mapping pass focused and baseline checks |
 | Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
 | Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
-| Hardening matrix | DONE | Every integrated gate passes, the authorized fresh perf run regenerated the real SVG, and the synchronized graceful-cancellation fixture passes repeated and full-library checks |
+| Hardening matrix | IN_PROGRESS | Fresh perf and synchronized cancellation checks pass; Python coverage must clear its real 75% threshold rather than relying on pytest-cov's erroneous success status |
 | Operator documentation | DONE | The concise landing page retains guarded setup paths and embeds a real-binary, fixture-labelled UI demo plus the real perf-backed Flamegraph; the complete operator/troubleshooting and compatibility evidence remain linked and visual artifacts are validated |
 
 ## Priority queue

@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** DONE
+**Status:** IN_PROGRESS
 
 ## Objective
 
@@ -54,7 +54,14 @@ trap, so cancellation no longer races setup or a same-length sleep deadline.
 The focused test passes 100 consecutive runs and all 180 `yoctui-bitbake`
 library tests pass.
 
+The subsequent full completion command exited 0, including the refreshed
+Flamegraph, but its Python coverage report explicitly said the required 75%
+threshold was not reached: exact coverage is 74.58%. The installed pytest-cov
+combination incorrectly returns success after printing that failure. The task is
+reopened to add meaningful bridge failure-path coverage until the report itself
+passes, independent of the erroneous process status.
+
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
 completed all 4567 tasks with repeated reconnects. No other registry task is
-eligible; this is the terminal handoff after all registry tasks completed.
+eligible while this required parent gate is in progress.
