@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** DONE
+**Status:** IN_PROGRESS
 
 ## Objective
 
@@ -30,5 +30,7 @@ consecutive parallel integration runs pass. Server IPC now separates short read
 slices from bounded multi-second snapshot writes; the real PTY integration
 passes ten consecutive runs. Every daemon-state fixture now has a
 PID-plus-monotonic identity; all six cases, including both SSH acceptance names,
-pass ten consecutive parallel runs. This is the terminal handoff because every
-registry task is DONE.
+pass ten consecutive parallel runs. The next full gate reached the UI suite and
+found that `configuration_renders_bridge_provenance` does not render its expected
+earlier provenance path at 100x25, so the parent remains in progress pending UI
+diagnosis and a clean full-gate pass.
