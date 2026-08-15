@@ -381,6 +381,21 @@ Required sections:
 
 The dashboard must be useful both when idle and during a build.
 
+On terminals with enough vertical space, Dashboard includes a dedicated
+terminal-native telemetry cockpit. It renders determinate CPU, memory, and
+build-filesystem gauges; bounded CPU and memory history sparklines; logical CPU
+count; 1/5/15-minute load averages; and exact used/total byte labels. Missing
+or unsupported metrics remain visibly unknown. Gauges clamp only for rendering
+and never manufacture samples. At the minimum supported size the cockpit
+collapses to compact labeled values so build and task state remain visible.
+
+Build progress surfaces average completed-task velocity and an ETA only when a
+start time and a nonzero authoritative total make those values meaningful.
+They are labeled as averages/estimates, use bounded finite arithmetic, and
+remain unknown otherwise. Determinate task bars use fractional Unicode blocks
+for sub-cell resolution while unknown tasks retain the existing honest
+activity animation.
+
 Idle actions:
 
 - start build

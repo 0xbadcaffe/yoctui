@@ -2,30 +2,20 @@
 
 ## Task
 
-**ID:** BRIDGE-PROGRESS-001
-**Title:** Normalize live BitBake progress and render task bars
-**Status:** BLOCKED
+**ID:** TELEMETRY-COCKPIT-001
+**Title:** Build a geeky live telemetry and progress cockpit
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Keep live Poky builds connected when BitBake emits fractional process progress,
-correlate PID-only task-progress events with their authoritative task-start
-identity, and render determinate per-task progress bars without fabricating
-progress when BitBake reports an unknown or invalid value.
-
-The 2026-08-15 live Scarthgap `core-image-minimal` build reproduced both gaps:
-`ProcessProgress.progress` emitted `77.92379445665797`, which crossed the bridge
-unchanged and violated the protocol's `u64` parse-progress field, while
-`bb.build.TaskProgress` correctly carried only its worker PID and was reduced to
-an unrecognized-event warning because the bridge expected recipe/task strings.
-The original client and build had exited before the corrected binary was
-installed, so final live validation used read-only inspection of the same Poky
-build directory and did not claim that a build remained active.
+Turn live build monitoring into a dense, terminal-native cockpit while keeping
+every number authoritative and every layout safe. Add CPU, memory, disk, load,
+history, task-velocity, ETA, and higher-resolution task progress visuals.
 
 ## Relevant files
 
-- `bridge/yoctui_bridge.py`
-- `bridge/tests/test_bridge.py`
+- `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-cli/src/main.rs`
 - `crates/yoctui-ui/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/architecture.md`
@@ -35,46 +25,29 @@ build directory and did not claim that a build remained active.
 
 ## Definition of done
 
-- Fractional finite process progress is bounded and converted to an integer at
-  the bridge boundary; negative, non-finite, boolean, and malformed values
-  remain unknown instead of violating the wire schema.
-- Task-start identities are retained by valid worker PID only for the active
-  build and PID-only task-progress events reuse that identity.
-- Stale or identity-less task progress is ignored safely rather than producing
-  warning floods or fabricated task identities.
-- Dashboard and Tasks views render determinate per-task bars when progress is
-  available and preserve explicit animated/unknown behavior otherwise.
-- Mocked native-event tests cover fractional process progress, PID correlation,
-  invalid progress, and completion cleanup.
-- Focused verification, baseline checks, and non-disruptive live bridge
-  inspection against the affected Poky build directory pass.
-- Registry and human-readable status return to `DONE`, and the change is
-  committed as one coherent implementation task.
+- Host telemetry carries optional total/available memory, filesystem capacity,
+  logical CPU count, and fixed-point 1/5/15-minute load averages.
+- CLI parsers reject malformed and inconsistent procfs values without panics or
+  fabricated zeroes and have normal plus failure-path tests.
+- Reducer-owned CPU and memory histories retain at most 60 valid samples.
+- Dashboard renders responsive semantic CPU, RAM, and disk gauges plus bounded
+  history sparklines and load labels when vertical space permits.
+- Dashboard and Tasks expose honest average completed-task velocity and ETA only
+  when elapsed time and authoritative totals support them.
+- Determinate task bars use bounded fractional-cell rendering; unknown progress
+  remains visibly unknown and animated according to motion settings.
+- Focused tests, baseline checks, documentation, and roadmap checks pass.
+- The implementation and final task-state updates are committed coherently.
 
 ## Verification
 
 ```bash
-python3 -m pytest bridge/tests
+cargo test -p yoctui-model host_telemetry
+cargo test -p yoctui telemetry
+cargo test -p yoctui-ui telemetry
 cargo test -p yoctui-ui task_progress
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
-```
-
-The implementation and task-specific verification are complete. The installed
-binary connected to `/home/bspguy-dev/src/poky/build-yoctui`
-through BitBake 2.8.1 and reported the Scarthgap 5.0.19 workspace without a JSON
-protocol error or reconnect loop. Bridge coverage is 78%, all 39 bridge tests
-pass, both focused task-progress UI tests pass, and the workspace tests, Clippy,
-documentation, and roadmap checks pass.
-
-The repository completion gate is externally blocked at its final real-perf
-step because the host reports `kernel.perf_event_paranoid = 4`. After the
-operator temporarily enables userspace sampling, rerun and restore it:
-
-```bash
-sudo sysctl -w kernel.perf_event_paranoid=0
-./scripts/verify-completion.sh
-sudo sysctl -w kernel.perf_event_paranoid=4
 ```

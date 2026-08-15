@@ -4152,3 +4152,14 @@ required = true
 depends_on = ["DAEMON-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo test -p yoctui-ui task_progress", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "Implementation passes: fractional and invalid progress normalizes safely; active-build worker PIDs correlate native TaskProgress; stale progress is ignored; Dashboard and Tasks render determinate bars; 39 bridge tests pass; and the installed binary inspected BitBake 2.8.1 / Poky 5.0.19 without the prior failure. The final completion gate is externally blocked because kernel.perf_event_paranoid=4 prevents its required real perf sample. Temporarily set it to 0, rerun ./scripts/verify-completion.sh, then restore 4."
+
+[[task]]
+id = "TELEMETRY-COCKPIT-001"
+milestone = "M1"
+title = "Build a geeky live telemetry and progress cockpit"
+status = "IN_PROGRESS"
+priority = 450
+required = true
+depends_on = ["DAEMON-001"]
+verify = ["cargo test -p yoctui-model host_telemetry", "cargo test -p yoctui telemetry", "cargo test -p yoctui-ui telemetry", "cargo test -p yoctui-ui task_progress", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Add typed host memory, load, CPU-count, and filesystem capacity samples; retain bounded reducer-owned CPU/memory history; render responsive semantic gauges and sparklines; show honest average task velocity and ETA; and upgrade determinate task bars without fabricating unknown data."

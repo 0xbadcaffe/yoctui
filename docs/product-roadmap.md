@@ -40,6 +40,8 @@ Capabilities:
 - structured errors
 - build history
 - CPU, memory, and disk telemetry
+- responsive CPU/memory/disk gauges, bounded history sparklines, load averages,
+  and honest average task velocity/ETA
 - terminal restoration
 - validated live BitBake compatibility
 

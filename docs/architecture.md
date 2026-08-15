@@ -224,6 +224,14 @@ BitBake jobs continue while scanning. Exact artifact and associated paths use
 the existing editor lifecycle, while selected-image builds reuse the normal
 confirmed `BuildRequest` and persistent BitBake job coordinator.
 
+Host telemetry follows the same typed boundary without invoking shell text.
+The CLI samples aggregate CPU counters, `/proc/meminfo`, `/proc/loadavg`, and
+the configured build filesystem into optional bounded numeric fields. The
+model reducer owns a fixed-size telemetry history and discards absent samples;
+the UI consumes only current typed values and history. Widgets may derive
+display ratios, average task velocity, and ETA from model state, but never read
+procfs, call filesystem APIs, or reinterpret raw operating-system text.
+
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore
 values, normalized varhistory operations (`op`, file, line, and detail), and
