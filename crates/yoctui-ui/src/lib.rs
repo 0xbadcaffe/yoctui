@@ -502,6 +502,17 @@ fn task_activity(app: &App, task_progress: Option<u8>) -> &'static str {
         % FAST.len()]
 }
 
+fn task_progress_bar(progress: u8) -> String {
+    const WIDTH: usize = 8;
+    let progress = progress.min(100);
+    let filled = usize::from(progress) * WIDTH / 100;
+    format!(
+        "{}{} {progress}%",
+        "█".repeat(filled),
+        "░".repeat(WIDTH - filled)
+    )
+}
+
 fn footer_shortcuts(app: &App) -> &'static str {
     if app.screen == Screen::Signatures {
         return "↑/↓ select | 1/2 sides | c compare | r refresh | e provider | Esc back/cancel";
@@ -2650,7 +2661,7 @@ fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
                     (TaskState::Active, None) => {
                         format!("progress unknown{}", task_activity(app, None))
                     }
-                    (_, Some(progress)) => format!("{progress}%"),
+                    (_, Some(progress)) => task_progress_bar(progress),
                     _ => "--".into(),
                 }),
             ],
@@ -13058,6 +13069,25 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(output.contains("busybox:do_compile 42%"));
+    }
+
+    #[test]
+    fn task_progress_renders_determinate_bar_in_tasks_workspace() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Tasks;
+        app.tasks.insert(
+            yoctui_model::TaskId("busybox:do_compile".into()),
+            yoctui_model::TaskInfo {
+                id: yoctui_model::TaskId("busybox:do_compile".into()),
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                state: yoctui_model::TaskState::Active,
+                progress: Some(42),
+                ..yoctui_model::TaskInfo::default()
+            },
+        );
+        let output = rendered_text(&app, 120, 30);
+        assert!(output.contains("███░░░░░ 42%"));
     }
     #[test]
     fn dashboard_renders_completed_and_failed_package_tasks() {

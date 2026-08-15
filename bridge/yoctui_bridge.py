@@ -3,6 +3,7 @@
 
 import importlib
 import json
+import math
 import os
 import re
 import selectors
@@ -544,6 +545,7 @@ class BitBakeAdapter:
         self.connection = None
         self.build_correlation_id = None
         self.build_active = False
+        self.task_identities_by_pid = {}
 
     def workspace(self):
         operation = self.optional_server_operation("inspect_workspace")
@@ -582,6 +584,7 @@ class BitBakeAdapter:
 
     def start_build(self, targets, task, force=False):
         connection = self.server()
+        self.task_identities_by_pid.clear()
         operation = getattr(connection, "start_build", None)
         if not callable(operation):
             raise ServerUnavailable(
@@ -622,6 +625,7 @@ class BitBakeAdapter:
             operation()
         self.connection = None
         self.build_active = False
+        self.task_identities_by_pid.clear()
 
     def optional_server_operation(self, name):
         if self.module is None:
@@ -841,10 +845,16 @@ class BitBakeAdapter:
             return []
         try:
             events = [
-                event for event in (normalize_event(item) for item in events) if event
+                event
+                for event in (
+                    normalize_event(item, self.task_identities_by_pid)
+                    for item in events
+                )
+                if event
             ]
             if any(event.get("type") == "build_completed" for event in events):
                 self.build_active = False
+                self.task_identities_by_pid.clear()
             return events
         except TypeError:
             return [
@@ -861,7 +871,13 @@ class BitBakeAdapter:
             return []
         if not isinstance(raw, list):
             return []
-        return [event for event in (normalize_event(item) for item in raw) if event]
+        return [
+            event
+            for event in (
+                normalize_event(item, self.task_identities_by_pid) for item in raw
+            )
+            if event
+        ]
 
 
 class EnvironmentAdapter(BitBakeAdapter):
@@ -1530,6 +1546,17 @@ def event_value(event, *names, default=None):
     return default
 
 
+def normalized_nonnegative_integer(value, maximum=None):
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if value < 0:
+        return None
+    normalized = int(value)
+    return min(normalized, maximum) if maximum is not None else normalized
+
+
 def normalized_task_stats(event):
     stats = event_value(event, "stats")
     if stats is None:
@@ -1554,7 +1581,7 @@ def task_recipe(event):
     return re.sub(r"_[0-9].*$", "", stem) or None
 
 
-def normalize_event(event):
+def normalize_event(event, task_identities_by_pid=None):
     kind = event_value(event, "type", "event_type")
     if not isinstance(kind, str) and event is not None:
         kind = type(event).__name__
@@ -1562,26 +1589,41 @@ def normalize_event(event):
     recipe = task_recipe(event)
     task = event_value(event, "task", "taskname")
     if normalized_kind in ("buildstarted", "build_started"):
+        if task_identities_by_pid is not None:
+            task_identities_by_pid.clear()
         return {"type": "build_started"}
     if normalized_kind in ("parsestarted", "parse_started"):
         return {
             "type": "parse_progress",
             "current": 0,
-            "total": event_value(event, "total"),
+            "total": normalized_nonnegative_integer(event_value(event, "total")),
         }
-    if normalized_kind in (
-        "parseprogress",
-        "parse_progress",
-        "processprogress",
-        "process_progress",
-    ):
+    if normalized_kind in ("parseprogress", "parse_progress"):
         return {
             "type": "parse_progress",
-            "current": event_value(event, "current", "progress"),
-            "total": event_value(event, "total"),
+            "current": normalized_nonnegative_integer(
+                event_value(event, "current", "progress")
+            ),
+            "total": normalized_nonnegative_integer(event_value(event, "total")),
         }
+    if normalized_kind in ("processstarted", "process_started"):
+        return {
+            "type": "parse_progress",
+            "current": 0,
+            "total": normalized_nonnegative_integer(event_value(event, "total")),
+        }
+    if normalized_kind in ("processprogress", "process_progress"):
+        return {
+            "type": "parse_progress",
+            "current": normalized_nonnegative_integer(
+                event_value(event, "progress"), 100
+            ),
+            "total": 100,
+        }
+    if normalized_kind in ("processfinished", "process_finished"):
+        return {"type": "parse_progress", "current": 100, "total": 100}
     if normalized_kind in ("parsecompleted", "parse_completed"):
-        total = event_value(event, "total")
+        total = normalized_nonnegative_integer(event_value(event, "total"))
         return {"type": "parse_progress", "current": total, "total": total}
     if normalized_kind in ("buildcompleted", "build_completed"):
         exit_code = event_value(event, "exit_code", "returncode")
@@ -1613,6 +1655,9 @@ def normalize_event(event):
         success = normalized_kind not in ("taskfailed", "taskfailedsilent") and bool(
             event_value(event, "success", default=True)
         )
+        pid = normalized_nonnegative_integer(event_value(event, "pid"))
+        if task_identities_by_pid is not None and pid is not None:
+            task_identities_by_pid.pop(pid, None)
         return {
             "type": "task_completed",
             "recipe": recipe,
@@ -1622,13 +1667,15 @@ def normalize_event(event):
     if normalized_kind in ("taskstarted", "task_started") and all(
         isinstance(value, str) for value in (recipe, task)
     ):
-        pid = event_value(event, "pid")
+        pid = normalized_nonnegative_integer(event_value(event, "pid"))
         worker = event_value(event, "worker")
+        if task_identities_by_pid is not None and pid is not None:
+            task_identities_by_pid[pid] = (recipe, task)
         return {
             "type": "task_started",
             "recipe": recipe,
             "task": task,
-            "pid": pid if isinstance(pid, int) and pid >= 0 else None,
+            "pid": pid,
             "worker": str(worker) if worker is not None else None,
             "log_path": event_value(event, "logfile"),
             "stats": normalized_task_stats(event),
@@ -1643,14 +1690,24 @@ def normalize_event(event):
             "worker": None,
             "stats": normalized_task_stats(event),
         }
-    if normalized_kind in ("taskprogress", "task_progress") and all(
-        isinstance(value, str) for value in (recipe, task)
-    ):
+    if normalized_kind in ("taskprogress", "task_progress"):
+        pid = normalized_nonnegative_integer(event_value(event, "pid"))
+        if not all(isinstance(value, str) for value in (recipe, task)):
+            identity = (
+                task_identities_by_pid.get(pid)
+                if task_identities_by_pid is not None and pid is not None
+                else None
+            )
+            if identity is None:
+                return None
+            recipe, task = identity
         return {
             "type": "task_progress",
             "recipe": recipe,
             "task": task,
-            "progress": event_value(event, "progress"),
+            "progress": normalized_nonnegative_integer(
+                event_value(event, "progress"), 100
+            ),
         }
     message = event_value(event, "message", "msg")
     diagnostic_levels = {

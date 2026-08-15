@@ -682,6 +682,83 @@ server = Server()
         self.assertTrue(messages[6]["success"])
         self.assertEqual(messages[7]["exit_code"], 1)
 
+    def test_live_progress_normalizes_fractions_and_correlates_worker_pid(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                """__version__ = "2.8.1"
+class ProcessStarted:
+ def __init__(self): self.total = 100
+class ProcessProgress:
+ def __init__(self, progress): self.progress = progress
+class TaskStarted:
+ def __init__(self): self.pn = "busybox"; self.task = "do_compile"; self.pid = 42
+class TaskProgress:
+ def __init__(self, pid, progress): self.pid = pid; self.progress = progress
+class TaskSucceeded:
+ def __init__(self): self.pn = "busybox"; self.task = "do_compile"; self.pid = 42
+class BuildCompleted:
+ def __init__(self): self._failures = 0; self._interrupted = 0
+ def getFailures(self): return self._failures
+class Connection:
+ def __init__(self):
+  self.events = [
+   ProcessStarted(), ProcessProgress(77.92379445665797),
+   ProcessProgress(180), ProcessProgress(-1), ProcessProgress(float("nan")),
+   ProcessProgress(True),
+   TaskProgress(99, 50), TaskStarted(), TaskProgress(42, 63.9),
+   TaskProgress(42, 150), TaskProgress(42, -1), TaskSucceeded(),
+   TaskProgress(42, 90), BuildCompleted()
+  ]
+ def start_build(self, targets, task): pass
+ def drain_events(self):
+  events, self.events = self.events, []
+  return events
+class Server:
+ def connect(self): return Connection()
+server = Server()
+""",
+                encoding="utf-8",
+            )
+            result = run_bridge(
+                b'{"protocol_version":1,"sequence":1,"message":{"type":"start_build","targets":["busybox"],"task":null}}',
+                environment={"PYTHONPATH": directory},
+            )
+        messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
+        self.assertEqual(
+            [message["type"] for message in messages],
+            [
+                "build_started",
+                "parse_progress",
+                "parse_progress",
+                "parse_progress",
+                "parse_progress",
+                "parse_progress",
+                "parse_progress",
+                "task_started",
+                "task_progress",
+                "task_progress",
+                "task_progress",
+                "task_completed",
+                "build_completed",
+            ],
+        )
+        self.assertEqual(
+            messages[1], {"type": "parse_progress", "current": 0, "total": 100}
+        )
+        self.assertEqual(messages[2]["current"], 77)
+        self.assertEqual(messages[2]["total"], 100)
+        self.assertEqual(messages[3]["current"], 100)
+        self.assertIsNone(messages[4]["current"])
+        self.assertIsNone(messages[5]["current"])
+        self.assertIsNone(messages[6]["current"])
+        self.assertEqual(messages[7]["pid"], 42)
+        self.assertEqual(messages[8]["recipe"], "busybox")
+        self.assertEqual(messages[8]["task"], "do_compile")
+        self.assertEqual(messages[8]["progress"], 63)
+        self.assertEqual(messages[9]["progress"], 100)
+        self.assertIsNone(messages[10]["progress"])
+        self.assertNotIn("unrecognized BitBake event", result.stdout.decode())
+
     def test_real_build_completion_shape_infers_success_from_failures(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             Path(directory, "bb.py").write_text(
