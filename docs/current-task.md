@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -83,7 +83,9 @@ after the readiness handshake, the fixture shell can still be blocked waiting
 for its external `sleep` child long enough to miss the one-second graceful
 cancellation window. The parent is reopened to make that fixture directly
 signal-ready without weakening the production grace period or forced-kill
-coverage.
+coverage. The fixture now stays in shell builtins after publishing readiness,
+so it handles TERM directly. The focused cancellation case passes 100
+consecutive runs and all 181 `yoctui-bitbake` library tests pass.
 
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
