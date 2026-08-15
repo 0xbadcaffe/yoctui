@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** DONE
+**Status:** IN_PROGRESS
 
 ## Objective
 
@@ -45,7 +45,13 @@ stages before host sampling policy blocked the required Flamegraph refresh. The
 operator temporarily enabled userspace sampling on 2026-08-15;
 `./scripts/flamegraph.sh` then captured real samples and regenerated the SVG.
 
+The resumed complete gate reached the `yoctui-bitbake` library suite and exposed
+a cancellation race in
+`bitbake_cli_control::tests::cli_control_cancels_the_owned_process_group`: the
+parallel run did not return the expected graceful `Cancelled` outcome. The task
+is reopened until the race is diagnosed, covered, and the full gate passes.
+
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
 completed all 4567 tasks with repeated reconnects. No other registry task is
-eligible; this is the terminal handoff after all registry tasks completed.
+eligible while this required parent gate is in progress.
