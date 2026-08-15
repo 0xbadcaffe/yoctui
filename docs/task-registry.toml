@@ -4141,3 +4141,14 @@ required = true
 depends_on = ["README-DAEMON-001", "UX-KEYBOARD-MOUSE-001", "BINARY-ONE-RUST-001"]
 verify = ["./scripts/verify-completion.sh", "./scripts/live-daemon-poky.sh"]
 notes = "All required daemon and UI behavior is implemented and verified. Real Poky acceptance completed all 4567 tasks through image creation with repeated reconnects. Fresh real perf sampling, all 38 bridge tests, honest 75.37% Python coverage, and bounded QA-layer ETXTBSY retries pass. The graceful CLI-cancellation fixture stays in shell builtins after publishing readiness so TERM is handled directly; the focused case passes 100 consecutive runs and all 181 yoctui-bitbake library tests pass."
+
+[[task]]
+id = "BRIDGE-PROGRESS-001"
+milestone = "M1"
+title = "Normalize live BitBake progress and render task bars"
+status = "IN_PROGRESS"
+priority = 449
+required = true
+depends_on = ["DAEMON-001"]
+verify = ["python3 -m pytest bridge/tests", "cargo test -p yoctui-ui task_progress", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "A live Scarthgap core-image-minimal build emitted fractional ProcessProgress that violated the u64 wire field and PID-only TaskProgress that the bridge could not correlate. Normalize values and identities at the bridge boundary and render determinate task bars without interrupting the active authoritative build."

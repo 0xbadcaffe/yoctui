@@ -11,7 +11,11 @@ Status values:
 
 ## Current phase
 
-The persistent daemon parent gate is `DONE`.
+The persistent daemon parent gate is `DONE`, but `BRIDGE-PROGRESS-001` is now
+`IN_PROGRESS` after a live Scarthgap build emitted fractional
+`ProcessProgress` and PID-only `TaskProgress` records. The former violated the
+integer wire schema and the latter could not reach task state, so bridge
+normalization and determinate per-task bars are the active user-priority work.
 Real Poky acceptance, collision-safe daemon fixtures, responsive PTY delivery,
 Configuration UI coverage, and global quit routing pass. The synchronized
 ten-second real-terminal probe passes ten consecutive runs. On 2026-08-15 the
@@ -76,7 +80,7 @@ See `docs/current-task.md`.
 | Milestone | Status | Notes |
 |---|---|---|
 | M0 Governance | DONE | Contracts, registry, active-task handoff, and repository reconciliation are in place |
-| M1 BitBake cockpit | DONE | Typed workspace discovery, builds, cancellation, events, history, telemetry, terminal restoration, and live BitBake 2.19.0 Tinfoil validation pass |
+| M1 BitBake cockpit | IN_PROGRESS | Live BitBake 2.19 emitted fractional process progress and PID-only task progress; safe normalization and determinate task bars are active |
 | M2 Persistent workbench | DONE | Persistent shell, responsive modes, focus, dialogs, palette, preferences, notifications, background jobs, and all specified workspaces pass their parent gates |
 | M3 Development workbench | DONE | Layers, Recipes, Configuration, Devtool, dependency why-built, signatures, and the typed package-data workspace are complete |
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
@@ -97,7 +101,7 @@ See `docs/current-task.md`.
 | Task animation | DONE | UI-tick fast/slow cadence, stable reduced-motion activity, honest unknown progress, and nonanimated determinate/terminal rows have reducer and TestBackend coverage |
 | Background-job model | DONE | Stable IDs, typed lifecycle/context/progress/result/error, bounded output/history, cancellation capability, and reducer coverage are implemented |
 | Background build execution | DONE | Confirmed builds allocate one job; typed events drive lifecycle/output; navigation persists; failure, cancellation rejection/acknowledgement, and backend loss are covered |
-| Live BitBake bridge | DONE | Tinfoil-backed workspace, variable, recipe, layer, parse/task/log events, normal completion, cancellation, and shutdown passed against BitBake 2.19.0 / Poky 6.0.99 snapshot on qemux86-64 |
+| Live BitBake bridge | IN_PROGRESS | Workspace/build control remains live, but fractional process progress currently violates the integer wire schema and PID-only task progress needs build-scoped correlation |
 | Typed backend boundary | DONE | Typed workspace and metadata events normalize in the app into reducer actions; unknown events are safe, missing progress remains unknown, terminal lifecycle updates are singular, and the UI boundary rejects backend parsing |
 | Logs workspace | DONE | Protected-diagnostic retention, bounded bytes/entries, safe truncation, coalescing, pressure counters, follow/pause, both-axis scrolling, search, all filters, selected Inspector, source opening, and clipboard effects are covered |
 | Errors workspace | DONE | Stable structured diagnostics drive the full list and Inspector, exact retained-log and source navigation, related context, visible loss counters, and actionable success/warning/failure/cancellation/backend-loss outcomes |
@@ -114,7 +118,7 @@ See `docs/current-task.md`.
 | Dependency graph model | DONE | Typed recipe/task identities and build/runtime/task edges normalize deterministically; reverse lookup, cycle-safe bounded shortest why-built paths, explicit partial/failure states, selection stability, and typed app event mapping pass focused and baseline tests |
 | Dependency graph acquisition | DONE | Additive typed protocol events use structured `generateDepTreeEvent`; legacy peers fall back honestly and the shell-free `bitbake -g` adapter bounds and validates task-dot output. Live BitBake 2.19.0 / Yocto 6.0.99 snapshot returned 962 nodes and 1,779 build/runtime/task edges |
 | Dependency workspace | DONE | Graph-only typed rows, explicit state rendering, reverse/outgoing Inspector context, bounded why-built paths, identity-stable navigation, authoritative recipe/provider/log actions, and responsive boundary tests are complete |
-| Tasks workspace | DONE | Live BitBake runqueue totals drive honest progress and aggregate waiting rows; typed active/completed/failure state, all specified filters, bounded selection, responsive tables, and contextual Inspector details are tested |
+| Tasks workspace | IN_PROGRESS | Existing typed task state and filters remain; determinate per-task bars are being added once live PID-only progress reaches the model |
 | Images workspace | DONE | Preserved recipe picker/build confirmation now coexists with bounded authoritative deploy scanning, typed artifacts/metadata, correlated cancellation, search/selection, responsive inspection, and exact build/editor actions. Live deployed-artifact compatibility is not claimed |
 | Image artifact model | DONE | Exact machine/image/path identities, typed available-versus-unavailable metadata, deterministic bounds, correlated lifecycle states, identity-stable selection/search, reducer effects, and app event normalization pass focused and baseline checks |
 | Image artifact adapter | DONE | Tinfoil/environment snapshots expose `DEPLOY_DIR_IMAGE`; the cancellable bounded adapter validates the machine/root, refuses symlinks and escapes, classifies deploy records, parses checksum associations, and reports partial data explicitly |

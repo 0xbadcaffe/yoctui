@@ -471,6 +471,12 @@ Rules:
 - reduced motion freezes unknown-progress activity to the stable word `active`
 - unknown progress is labeled `progress unknown` and never rendered as `0%`
 - determinate, completed, and failed rows never show indeterminate animation
+- determinate task rows render a bounded bar and integer percentage in both the
+  Dashboard task panel and Tasks workspace
+- fractional backend percentages are normalized before reaching UI state;
+  widgets never parse, round, or otherwise repair raw backend values
+- PID-only progress is shown only after the backend correlates it with an
+  authoritative task-start identity; unmatched progress remains absent
 
 Suggested frames:
 
@@ -588,6 +594,12 @@ Never discard:
 Ordinary informational logs may be evicted or coalesced when limits are reached.
 
 High-frequency progress events may be coalesced by task identity.
+
+Fractional, negative, non-finite, boolean, or otherwise malformed backend
+progress must never break the typed event stream. The normalization adapter
+converts finite non-negative percentages to bounded integers, preserves
+negative/invalid values as unknown, and ignores PID-only task events that
+cannot be correlated with an authoritative active task.
 
 Every dropped or coalesced event count must be observable.
 

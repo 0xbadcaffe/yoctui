@@ -393,6 +393,16 @@ the same task identity with PID, worker, and source-log details when BitBake
 provides them. Widgets render that typed state and never infer details from log
 text.
 
+BitBake progress is normalized entirely inside the Python bridge before it
+crosses the NDJSON boundary. Generic `ProcessProgress` values may be fractional;
+finite non-negative values are truncated and bounded to the protocol's integer
+percentage range, while negative, non-finite, boolean, and malformed values
+become unavailable. `bb.build.TaskProgress` intentionally carries only the
+worker PID, so the adapter retains a build-scoped PID-to-recipe/task map from
+authoritative `TaskStarted` events and clears entries on task/build completion.
+Unmatched PID progress is ignored without warning or invented identity. Rust
+and Ratatui continue to consume only the resulting typed optional percentage.
+
 ### `yoctui-app`
 
 Owns:

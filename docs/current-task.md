@@ -2,92 +2,61 @@
 
 ## Task
 
-**ID:** DAEMON-001
-**Title:** Complete persistent Yoctui daemon session architecture
-**Status:** DONE
+**ID:** BRIDGE-PROGRESS-001
+**Title:** Normalize live BitBake progress and render task bars
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Parent gate: daemon-owned BitBake/jobs/PTYs survive client and SSH disconnect,
-safely support clients/input ownership/keyboard/mouse, enforce limits/security,
-state honest reboot semantics, and pass real Poky acceptance.
+Keep live Poky builds connected when BitBake emits fractional process progress,
+correlate PID-only task-progress events with their authoritative task-start
+identity, and render determinate per-task progress bars without fabricating
+progress when BitBake reports an unknown or invalid value.
+
+The 2026-08-15 live Scarthgap `core-image-minimal` build reproduced both gaps:
+`ProcessProgress.progress` emitted `77.92379445665797`, which crossed the bridge
+unchanged and violated the protocol's `u64` parse-progress field, while
+`bb.build.TaskProgress` correctly carried only its worker PID and was reduced to
+an unrecognized-event warning because the bridge expected recipe/task strings.
+The live BitBake server and workers remain authoritative and are not to be
+terminated while this compatibility fix is developed.
+
+## Relevant files
+
+- `bridge/yoctui_bridge.py`
+- `bridge/tests/test_bridge.py`
+- `crates/yoctui-ui/src/lib.rs`
+- `docs/ui-spec.md`
+- `docs/architecture.md`
+- `docs/product-roadmap.md`
+- `docs/implementation-status.md`
+- `docs/task-registry.toml`
+
+## Definition of done
+
+- Fractional finite process progress is bounded and converted to an integer at
+  the bridge boundary; negative, non-finite, boolean, and malformed values
+  remain unknown instead of violating the wire schema.
+- Task-start identities are retained by valid worker PID only for the active
+  build and PID-only task-progress events reuse that identity.
+- Stale or identity-less task progress is ignored safely rather than producing
+  warning floods or fabricated task identities.
+- Dashboard and Tasks views render determinate per-task bars when progress is
+  available and preserve explicit animated/unknown behavior otherwise.
+- Mocked native-event tests cover fractional process progress, PID correlation,
+  invalid progress, and completion cleanup.
+- Focused verification, baseline checks, and a non-disruptive live reconnect
+  against the running build pass.
+- Registry and human-readable status return to `DONE`, and the change is
+  committed as one coherent implementation task.
 
 ## Verification
 
 ```bash
-./scripts/verify-completion.sh
-./scripts/live-daemon-poky.sh
+python3 -m pytest bridge/tests
+cargo test -p yoctui-ui task_progress
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+./scripts/check-docs.sh
+./scripts/verify-roadmap.sh
 ```
-
-The daemon-owned BitBake build path and live validation harness are complete.
-With the host namespace prerequisite enabled, the final real Poky scarthgap
-`core-image-minimal` acceptance run passed fresh clone and initialization,
-daemon start, detached submission, repeated reconnects, and terminal job-state
-reporting. All 4567 tasks succeeded, including kernel and image creation; 3648
-were reused from the shared cache. The completion-gate regression now gives
-every `daemon_persist` fixture a PID-plus-monotonic temporary identity; five
-consecutive parallel integration runs pass. Server IPC now separates short read
-slices from bounded multi-second snapshot writes; the real PTY integration
-passes ten consecutive runs. Every daemon-state fixture now has a
-PID-plus-monotonic identity; all six cases, including both SSH acceptance names,
-pass ten consecutive parallel runs. The next full gate reached the UI suite and
-found that Configuration action guidance displaced earlier provenance at
-100x25. Authoritative values, provenance, overrides, and operations now render
-first, followed by compact action state and exact reasons; all 121 UI tests pass.
-The next full gate then hung in `scripts/test-terminal.sh`: its piped `q` was not
-observed by the pseudo-terminal application and the script had no deadline.
-Navigator/Inspector now preserve global `q`/Ctrl+C routing, and the synchronized
-bounded real-terminal probe passes ten consecutive runs.
-
-The previous completion run passed the workspace, lint, terminal, fuzz, stress,
-sanitizer, coverage, dependency-policy, Python, Valgrind, and optimized-profile
-stages before host sampling policy blocked the required Flamegraph refresh. The
-operator temporarily enabled userspace sampling on 2026-08-15;
-`./scripts/flamegraph.sh` then captured real samples and regenerated the SVG.
-
-The resumed complete gate reached the `yoctui-bitbake` library suite and exposed
-a cancellation race in
-`bitbake_cli_control::tests::cli_control_cancels_the_owned_process_group`: the
-parallel run did not return the expected graceful `Cancelled` outcome. The task
-was reopened. The fixture now publishes readiness only after installing its TERM
-trap, so cancellation no longer races setup or a same-length sleep deadline.
-The focused test passes 100 consecutive runs and all 180 `yoctui-bitbake`
-library tests pass.
-
-The subsequent full completion command exited 0, including the refreshed
-Flamegraph, but its Python coverage report explicitly said the required 75%
-threshold was not reached: exact coverage is 74.58%. The installed pytest-cov
-combination incorrectly returns success after printing that failure. The task is
-reopened to add meaningful bridge failure-path coverage until the report itself
-passes, independent of the erroneous process status.
-
-The new typed-query failure-path test found and fixed a real validation defect:
-an empty build-target list passed Python's vacuous `all()` check despite the
-protocol requiring at least one target. Empty targets and six malformed typed
-query identities now return `invalid_request`. All 38 bridge tests pass, and the
-coverage report itself passes at 75.37%.
-
-The next complete rerun cleared the Python threshold and reached the
-`yoctui-bitbake` suite, where
-`qa_layer_runner_rejects_duplicate_and_cancels_gracefully_or_forcibly` failed
-to spawn a rewritten fixture with `Text file busy (os error 26)`. The parent is
-reopened. QA-layer execution now matches the other external runners with four
-bounded attempts separated by 5 ms only for `ETXTBSY`; every other spawn error
-still fails immediately. The cancellation test passes 100 consecutive runs,
-the classifier has direct coverage, and all 181 `yoctui-bitbake` library tests
-pass.
-
-The following complete parallel gate exposed a remaining timing dependency in
-`bitbake_cli_control::tests::cli_control_cancels_the_owned_process_group`: even
-after the readiness handshake, the fixture shell can still be blocked waiting
-for its external `sleep` child long enough to miss the one-second graceful
-cancellation window. The parent is reopened to make that fixture directly
-signal-ready without weakening the production grace period or forced-kill
-coverage. The fixture now stays in shell builtins after publishing readiness,
-so it handles TERM directly. The focused cancellation case passes 100
-consecutive runs and all 181 `yoctui-bitbake` library tests pass.
-
-After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
-new live acceptance result is required; the existing fresh Poky scarthgap run
-completed all 4567 tasks with repeated reconnects. No other registry task is
-eligible; this is the terminal handoff after all registry tasks completed.

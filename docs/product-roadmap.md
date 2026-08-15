@@ -48,6 +48,8 @@ Exit criteria:
 - real build smoke tests on supported versions
 - normal completion, failure, cancellation, and bridge loss tested
 - typed backend-to-model event contract enforced
+- fractional process progress and PID-only task progress normalize without
+  disconnecting the typed stream, and determinate task progress renders as bars
 
 ## M2 — Persistent Yocto workbench
 
