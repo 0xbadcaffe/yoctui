@@ -1,11 +1,11 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Table, Wrap},
+    widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Sparkline, Table, Wrap},
 };
 use std::{
     collections::HashMap,
-    time::{SystemTime, UNIX_EPOCH},
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use yoctui_model::{
     App, BackgroundJobKind, BackgroundJobOutputSource, BackgroundJobStatus, BuildEnvironmentState,
@@ -503,13 +503,57 @@ fn task_activity(app: &App, task_progress: Option<u8>) -> &'static str {
 }
 
 fn task_progress_bar(progress: u8) -> String {
-    const WIDTH: usize = 8;
+    const WIDTH: usize = 10;
+    const PARTIAL: [&str; 8] = ["", "▏", "▎", "▍", "▌", "▋", "▊", "▉"];
     let progress = progress.min(100);
-    let filled = usize::from(progress) * WIDTH / 100;
+    let eighths = usize::from(progress) * WIDTH * 8 / 100;
+    let filled = eighths / 8;
+    let partial = eighths % 8;
+    let occupied = filled + usize::from(partial > 0);
     format!(
-        "{}{} {progress}%",
+        "{}{}{} {progress}%",
         "█".repeat(filled),
-        "░".repeat(WIDTH - filled)
+        PARTIAL[partial],
+        "░".repeat(WIDTH.saturating_sub(occupied))
+    )
+}
+
+fn utilization_percent(total: Option<u64>, available: Option<u64>) -> Option<u8> {
+    let (total, available) = (total?, available?);
+    if total == 0 || available > total {
+        return None;
+    }
+    let used = total.saturating_sub(available);
+    u8::try_from((used.saturating_mul(100) / total).min(100)).ok()
+}
+
+fn fixed_milli(value: u32) -> String {
+    format!("{}.{:02}", value / 1_000, (value % 1_000) / 10)
+}
+
+fn build_pace(app: &App) -> String {
+    let Some(elapsed) = app.elapsed().filter(|elapsed| elapsed.as_secs() > 0) else {
+        return "avg --/m · ETA --".into();
+    };
+    let Ok(completed) = u64::try_from(app.build.completed) else {
+        return "avg --/m · ETA --".into();
+    };
+    if completed == 0 {
+        return "avg --/m · ETA --".into();
+    }
+    let seconds = elapsed.as_secs();
+    let rate_tenths = completed.saturating_mul(600) / seconds;
+    let eta = app.build.total.and_then(|total| {
+        let remaining = total.saturating_sub(app.build.completed);
+        u64::try_from(remaining)
+            .ok()
+            .map(|remaining| Duration::from_secs(remaining.saturating_mul(seconds) / completed))
+    });
+    format!(
+        "avg {}.{}/m · ETA {}",
+        rate_tenths / 10,
+        rate_tenths % 10,
+        eta.map(format_duration).unwrap_or_else(|| "--".into())
     )
 }
 
@@ -2410,6 +2454,143 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         footer,
     );
 }
+fn telemetry_meter_style(app: &App, percent: u8) -> Style {
+    let palette = ThemePalette::for_app(app);
+    if percent >= 90 {
+        palette.role(palette.error, Modifier::BOLD)
+    } else if percent >= 70 {
+        palette.role(palette.warning, Modifier::BOLD)
+    } else {
+        palette.role(palette.progress, Modifier::BOLD)
+    }
+}
+
+fn render_history(frame: &mut Frame, label: &str, samples: &[u64], area: Rect, style: Style) {
+    let columns = Layout::horizontal([Constraint::Length(9), Constraint::Min(1)]).split(area);
+    frame.render_widget(Paragraph::new(label).style(style), columns[0]);
+    frame.render_widget(
+        Sparkline::default().data(samples).max(100).style(style),
+        columns[1],
+    );
+}
+
+fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let block = Block::default()
+        .title("System telemetry · 60s history")
+        .borders(Borders::ALL)
+        .style(palette.base());
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    let rows = Layout::vertical([Constraint::Length(1); 6]).split(inner);
+
+    if let Some(cpu) = app.host_telemetry.cpu_utilization_percent {
+        let cores = app
+            .host_telemetry
+            .logical_cpu_count
+            .map_or_else(|| "? cores".into(), |count| format!("{count} cores"));
+        frame.render_widget(
+            Gauge::default()
+                .ratio(f64::from(cpu.min(100)) / 100.0)
+                .label(format!("CPU {cpu:>3}% · {cores}"))
+                .gauge_style(telemetry_meter_style(app, cpu)),
+            rows[0],
+        );
+    } else {
+        frame.render_widget(Paragraph::new("CPU  sampling…"), rows[0]);
+    }
+    let cpu_history = app
+        .host_cpu_history
+        .iter()
+        .copied()
+        .map(u64::from)
+        .collect::<Vec<_>>();
+    render_history(
+        frame,
+        "CPU trail",
+        &cpu_history,
+        rows[1],
+        palette.role(palette.progress, Modifier::BOLD),
+    );
+
+    let memory_percent = utilization_percent(
+        app.host_telemetry.memory_total_bytes,
+        app.host_telemetry.memory_available_bytes,
+    );
+    if let (Some(percent), Some(total), Some(available)) = (
+        memory_percent,
+        app.host_telemetry.memory_total_bytes,
+        app.host_telemetry.memory_available_bytes,
+    ) {
+        let used = total.saturating_sub(available);
+        frame.render_widget(
+            Gauge::default()
+                .ratio(f64::from(percent) / 100.0)
+                .label(format!(
+                    "RAM {percent:>3}% · {} / {}",
+                    format_bytes(used),
+                    format_bytes(total)
+                ))
+                .gauge_style(telemetry_meter_style(app, percent)),
+            rows[2],
+        );
+    } else {
+        frame.render_widget(Paragraph::new("RAM  unavailable"), rows[2]);
+    }
+    let memory_history = app
+        .host_memory_history
+        .iter()
+        .copied()
+        .map(u64::from)
+        .collect::<Vec<_>>();
+    render_history(
+        frame,
+        "RAM trail",
+        &memory_history,
+        rows[3],
+        palette.role(palette.accent, Modifier::BOLD),
+    );
+
+    let disk_percent = utilization_percent(
+        app.host_telemetry.disk_total_bytes,
+        app.host_telemetry.disk_available_bytes,
+    );
+    if let (Some(percent), Some(total), Some(available)) = (
+        disk_percent,
+        app.host_telemetry.disk_total_bytes,
+        app.host_telemetry.disk_available_bytes,
+    ) {
+        frame.render_widget(
+            Gauge::default()
+                .ratio(f64::from(percent) / 100.0)
+                .label(format!(
+                    "BUILD FS {percent:>3}% · {} free / {}",
+                    format_bytes(available),
+                    format_bytes(total)
+                ))
+                .gauge_style(telemetry_meter_style(app, percent)),
+            rows[4],
+        );
+    } else {
+        frame.render_widget(Paragraph::new("BUILD FS  unavailable"), rows[4]);
+    }
+    let load = app.host_telemetry.load_average_milli.map_or_else(
+        || "LOAD 1/5/15  -- / -- / --".into(),
+        |load| {
+            format!(
+                "LOAD 1/5/15  {} / {} / {}",
+                fixed_milli(load[0]),
+                fixed_milli(load[1]),
+                fixed_milli(load[2])
+            )
+        },
+    );
+    frame.render_widget(
+        Paragraph::new(load).style(palette.role(palette.info, Modifier::BOLD)),
+        rows[5],
+    );
+}
+
 fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
     let mut active = app.tasks.values().collect::<Vec<_>>();
     active.sort_by(|left, right| {
@@ -2451,11 +2632,20 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
         .host_telemetry
         .disk_available_bytes
         .map_or_else(|| "unavailable".into(), format_bytes);
-    let build_panels =
-        Layout::vertical([Constraint::Length(13), Constraint::Min(3)]).split(chunks[0]);
+    let show_cockpit = chunks[0].height >= 28;
+    let build_panels = if show_cockpit {
+        Layout::vertical([
+            Constraint::Length(13),
+            Constraint::Length(8),
+            Constraint::Min(3),
+        ])
+        .split(chunks[0])
+    } else {
+        Layout::vertical([Constraint::Length(13), Constraint::Min(3)]).split(chunks[0])
+    };
     frame.render_widget(
         Paragraph::new(format!(
-            "Target: {}\nBackend: {}\nStatus: {}\nExit code: {}\nParse progress: {}\nMachine: {}\nDistro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\nHost CPU: {}  Build disk free: {}",
+            "Target: {}\nBackend: {}\nStatus: {}\nExit code: {}\nParse progress: {}\nMachine: {}  Distro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\n{}\nHost CPU: {}  Build disk free: {}",
             app.build.target.as_deref().unwrap_or("none"),
             app.backend,
             app.build.status,
@@ -2477,12 +2667,19 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
             app.tasks.len(),
             app.build.warnings,
             app.build.errors,
+            build_pace(app),
             cpu_utilization,
             disk_available,
         ))
         .block(Block::default().title("Build").borders(Borders::ALL)),
         build_panels[0],
     );
+    let task_panel_index = if show_cockpit {
+        telemetry_cockpit(frame, app, build_panels[1]);
+        2
+    } else {
+        1
+    };
     let task_count = package_tasks.len();
     let start = app.task_progress_scroll.min(task_count.saturating_sub(1));
     let task_block = Block::default()
@@ -2492,8 +2689,8 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
             app.completed_tasks.len()
         ))
         .borders(Borders::ALL);
-    let task_area = task_block.inner(build_panels[1]);
-    frame.render_widget(task_block, build_panels[1]);
+    let task_area = task_block.inner(build_panels[task_panel_index]);
+    frame.render_widget(task_block, build_panels[task_panel_index]);
     if package_tasks.is_empty() {
         frame.render_widget(
             Paragraph::new("Waiting for BitBake task events."),
@@ -2599,8 +2796,9 @@ fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
                 .block(overall)
                 .ratio(completed as f64 / total as f64)
                 .label(format!(
-                    "{}%  {completed}/{total} | active {active} | waiting {waiting} | failed {failed}",
-                    completed.saturating_mul(100) / total
+                    "{}% {completed}/{total} · A{active} W{waiting} F{failed} · {}",
+                    completed.saturating_mul(100) / total,
+                    build_pace(app)
                 ))
                 .gauge_style(
                     ThemePalette::for_app(app)
@@ -2676,7 +2874,7 @@ fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
                 Constraint::Percentage(25),
                 Constraint::Length(10),
                 Constraint::Length(11),
-                Constraint::Min(16),
+                Constraint::Min(18),
             ],
         )
         .header(
@@ -12276,6 +12474,7 @@ mod tests {
         app.host_telemetry = yoctui_model::HostTelemetry {
             cpu_utilization_percent: Some(42),
             disk_available_bytes: Some(1_048_576),
+            ..yoctui_model::HostTelemetry::default()
         };
         let _ = yoctui_model::update(
             &mut app,
@@ -12899,6 +13098,38 @@ mod tests {
         assert!(output.contains("Disk 8.0 GiB"));
     }
     #[test]
+    fn dashboard_telemetry_cockpit_renders_gauges_history_and_load() {
+        let mut app = App::new(10, 1_000);
+        for cpu in [12, 38, 71, 42] {
+            let _ = yoctui_model::update(
+                &mut app,
+                yoctui_model::Action::HostTelemetryUpdated(yoctui_model::HostTelemetry {
+                    cpu_utilization_percent: Some(cpu),
+                    logical_cpu_count: Some(16),
+                    memory_total_bytes: Some(16 * 1024 * 1024 * 1024),
+                    memory_available_bytes: Some(4 * 1024 * 1024 * 1024),
+                    disk_total_bytes: Some(100 * 1024 * 1024 * 1024),
+                    disk_available_bytes: Some(40 * 1024 * 1024 * 1024),
+                    load_average_milli: Some([1_250, 2_500, 3_750]),
+                }),
+            );
+        }
+        let output = rendered_text(&app, 300, 40);
+        assert!(
+            output.contains("System telemetry · 60s history"),
+            "{output}"
+        );
+        assert!(output.contains("CPU  42% · 16 cores"), "{output}");
+        assert!(output.contains("CPU trail"), "{output}");
+        assert!(output.contains("RAM  75%"), "{output}");
+        assert!(output.contains("RAM trail"), "{output}");
+        assert!(output.contains("BUILD FS  60%"), "{output}");
+        assert!(
+            output.contains("LOAD 1/5/15  1.25 / 2.50 / 3.75"),
+            "{output}"
+        );
+    }
+    #[test]
     fn dashboard_renders_parse_progress() {
         let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
         let mut app = App::new(10, 1_000);
@@ -13087,7 +13318,18 @@ mod tests {
             },
         );
         let output = rendered_text(&app, 120, 30);
-        assert!(output.contains("███░░░░░ 42%"));
+        assert!(output.contains("████▏░░░░░ 42%"), "{output}");
+    }
+    #[test]
+    fn task_progress_renders_average_velocity_and_eta_when_authoritative() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Tasks;
+        app.build.started = Some(SystemTime::now() - Duration::from_secs(120));
+        app.build.completed = 20;
+        app.build.total = Some(40);
+        let output = rendered_text(&app, 180, 32);
+        assert!(output.contains("avg 10.0/m"), "{output}");
+        assert!(output.contains("ETA 00:02:00"), "{output}");
     }
     #[test]
     fn dashboard_renders_completed_and_failed_package_tasks() {
@@ -14445,9 +14687,8 @@ mod tests {
             success: false,
         });
         let output = rendered_text(&app, 180, 34);
-        assert!(output.contains("40%  2/5"), "{output}");
-        assert!(output.contains("active 1"), "{output}");
-        assert!(output.contains("waiting 2"), "{output}");
+        assert!(output.contains("40% 2/5"), "{output}");
+        assert!(output.contains("A1 W2 F1"), "{output}");
         assert!(output.contains("FAILED"), "{output}");
         assert!(output.contains("State All"), "{output}");
         assert!(output.contains("PID: 4242"), "{output}");

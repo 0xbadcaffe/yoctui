@@ -357,9 +357,24 @@ impl HostTelemetrySampler {
                     .unwrap_or(100)
             })
         });
+        let (memory_total_bytes, memory_available_bytes) = read_memory_info()
+            .map_or((None, None), |(total, available)| {
+                (Some(total), Some(available))
+            });
+        let (disk_available_bytes, disk_total_bytes) = disk_capacity_bytes(build_dir)
+            .map_or((None, None), |(available, total)| {
+                (Some(available), Some(total))
+            });
         HostTelemetry {
             cpu_utilization_percent,
-            disk_available_bytes: disk_available_bytes(build_dir),
+            logical_cpu_count: std::thread::available_parallelism()
+                .ok()
+                .and_then(|count| u16::try_from(count.get()).ok()),
+            memory_total_bytes,
+            memory_available_bytes,
+            disk_available_bytes,
+            disk_total_bytes,
+            load_average_milli: read_load_average(),
         }
     }
 }
@@ -385,8 +400,67 @@ fn parse_cpu_counters(line: &str) -> Option<CpuCounters> {
     Some(CpuCounters { total, idle })
 }
 
+fn read_memory_info() -> Option<(u64, u64)> {
+    parse_memory_info(&fs::read_to_string("/proc/meminfo").ok()?)
+}
+
+fn parse_memory_info(input: &str) -> Option<(u64, u64)> {
+    let mut total_kib = None;
+    let mut available_kib = None;
+    for line in input.lines() {
+        let mut fields = line.split_whitespace();
+        let Some(key) = fields.next() else {
+            continue;
+        };
+        match key {
+            "MemTotal:" => total_kib = parse_memory_kib(fields.next()?, fields.next()?),
+            "MemAvailable:" => available_kib = parse_memory_kib(fields.next()?, fields.next()?),
+            _ => continue,
+        }
+    }
+    let total = total_kib?.checked_mul(1024)?;
+    let available = available_kib?.checked_mul(1024)?;
+    (total > 0 && available <= total).then_some((total, available))
+}
+
+fn parse_memory_kib(value: &str, unit: &str) -> Option<u64> {
+    (unit == "kB").then(|| value.parse::<u64>().ok()).flatten()
+}
+
+fn read_load_average() -> Option<[u32; 3]> {
+    parse_load_average(&fs::read_to_string("/proc/loadavg").ok()?)
+}
+
+fn parse_load_average(input: &str) -> Option<[u32; 3]> {
+    let mut fields = input.split_whitespace();
+    Some([
+        parse_decimal_milli(fields.next()?)?,
+        parse_decimal_milli(fields.next()?)?,
+        parse_decimal_milli(fields.next()?)?,
+    ])
+}
+
+fn parse_decimal_milli(value: &str) -> Option<u32> {
+    let (whole, fraction) = value.split_once('.').unwrap_or((value, ""));
+    if whole.is_empty()
+        || fraction.is_empty()
+        || !whole.bytes().all(|byte| byte.is_ascii_digit())
+        || !fraction.bytes().all(|byte| byte.is_ascii_digit())
+    {
+        return None;
+    }
+    let whole = whole.parse::<u32>().ok()?.checked_mul(1_000)?;
+    let mut fractional = 0_u32;
+    let mut scale = 100_u32;
+    for digit in fraction.bytes().take(3) {
+        fractional = fractional.checked_add(u32::from(digit - b'0') * scale)?;
+        scale /= 10;
+    }
+    whole.checked_add(fractional)
+}
+
 #[cfg(unix)]
-fn disk_available_bytes(path: &Path) -> Option<u64> {
+fn disk_capacity_bytes(path: &Path) -> Option<(u64, u64)> {
     let path = CString::new(path.as_os_str().as_bytes()).ok()?;
     let mut stat = std::mem::MaybeUninit::<libc::statvfs>::uninit();
     // SAFETY: `path` is a NUL-terminated C string and `stat` is valid writable storage.
@@ -395,11 +469,13 @@ fn disk_available_bytes(path: &Path) -> Option<u64> {
     }
     // SAFETY: a successful `statvfs` call initializes `stat`.
     let stat = unsafe { stat.assume_init() };
-    Some(stat.f_bavail.saturating_mul(stat.f_frsize))
+    let available = stat.f_bavail.saturating_mul(stat.f_frsize);
+    let total = stat.f_blocks.saturating_mul(stat.f_frsize);
+    (total > 0 && available <= total).then_some((available, total))
 }
 
 #[cfg(not(unix))]
-fn disk_available_bytes(_path: &Path) -> Option<u64> {
+fn disk_capacity_bytes(_path: &Path) -> Option<(u64, u64)> {
     None
 }
 impl Drop for TerminalGuard {
@@ -11414,6 +11490,30 @@ mod tests {
             })
         );
         assert_eq!(parse_cpu_counters("intr 1 2 3"), None);
+    }
+
+    #[test]
+    fn telemetry_parsers_accept_linux_values_and_reject_inconsistent_samples() {
+        assert_eq!(
+            parse_memory_info(
+                "MemTotal:       16384 kB\nMemFree: 1024 kB\nMemAvailable: 4096 kB\n"
+            ),
+            Some((16 * 1024 * 1024, 4 * 1024 * 1024))
+        );
+        assert_eq!(
+            parse_memory_info("MemTotal: 10 kB\nMemAvailable: 11 kB\n"),
+            None
+        );
+        assert_eq!(
+            parse_memory_info("MemTotal: 10 MB\nMemAvailable: 5 MB\n"),
+            None
+        );
+        assert_eq!(
+            parse_load_average("1.25 0.50 12.345 2/100 123\n"),
+            Some([1_250, 500, 12_345])
+        );
+        assert_eq!(parse_load_average("nan 0.50 1.00"), None);
+        assert_eq!(parse_load_average("1.00 -0.5 1.00"), None);
     }
 
     #[test]

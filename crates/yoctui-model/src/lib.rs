@@ -708,7 +708,12 @@ pub enum ConfigCopyValue {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct HostTelemetry {
     pub cpu_utilization_percent: Option<u8>,
+    pub logical_cpu_count: Option<u16>,
+    pub memory_total_bytes: Option<u64>,
+    pub memory_available_bytes: Option<u64>,
     pub disk_available_bytes: Option<u64>,
+    pub disk_total_bytes: Option<u64>,
+    pub load_average_milli: Option<[u32; 3]>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Layer {
@@ -2546,6 +2551,8 @@ pub struct App {
     pub animation_frame: u64,
     pub workspace: Workspace,
     pub host_telemetry: HostTelemetry,
+    pub host_cpu_history: VecDeque<u8>,
+    pub host_memory_history: VecDeque<u8>,
     pub build: BuildState,
     pub background_jobs: BackgroundJobs,
     pub build_history: VecDeque<BuildRecord>,
@@ -2675,6 +2682,8 @@ impl App {
             animation_frame: 0,
             workspace: Workspace::default(),
             host_telemetry: HostTelemetry::default(),
+            host_cpu_history: VecDeque::new(),
+            host_memory_history: VecDeque::new(),
             build: BuildState::default(),
             background_jobs: BackgroundJobs::default(),
             build_history: VecDeque::new(),
@@ -13524,7 +13533,30 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::RecipeSourcesLoaded { recipe, paths } => {
             app.recipe_sources.insert(recipe, paths);
         }
-        Action::HostTelemetryUpdated(telemetry) => app.host_telemetry = telemetry,
+        Action::HostTelemetryUpdated(telemetry) => {
+            const HISTORY_LIMIT: usize = 60;
+            if let Some(cpu) = telemetry.cpu_utilization_percent {
+                app.host_cpu_history.push_back(cpu.min(100));
+                while app.host_cpu_history.len() > HISTORY_LIMIT {
+                    app.host_cpu_history.pop_front();
+                }
+            }
+            if let (Some(total), Some(available)) = (
+                telemetry.memory_total_bytes,
+                telemetry.memory_available_bytes,
+            ) && total > 0
+                && available <= total
+            {
+                let used = total.saturating_sub(available);
+                let percent = used.saturating_mul(100) / total;
+                app.host_memory_history
+                    .push_back(u8::try_from(percent.min(100)).unwrap_or(100));
+                while app.host_memory_history.len() > HISTORY_LIMIT {
+                    app.host_memory_history.pop_front();
+                }
+            }
+            app.host_telemetry = telemetry;
+        }
         Action::Failure(e) => {
             let message = e.to_string();
             insert_system_log(app, Severity::Error, message.clone());
@@ -16378,14 +16410,37 @@ mod tests {
         ));
     }
     #[test]
-    fn updates_host_telemetry() {
+    fn host_telemetry_updates_current_values_and_bounds_valid_history() {
         let mut app = App::new(10, 1_000);
-        let telemetry = HostTelemetry {
-            cpu_utilization_percent: Some(42),
-            disk_available_bytes: Some(8 * 1024 * 1024 * 1024),
-        };
-        let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry.clone()));
+        for sample in 0..75 {
+            let telemetry = HostTelemetry {
+                cpu_utilization_percent: Some(sample),
+                memory_total_bytes: Some(1_000),
+                memory_available_bytes: Some(750),
+                disk_available_bytes: Some(8 * 1024 * 1024 * 1024),
+                ..HostTelemetry::default()
+            };
+            let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry));
+        }
+        let telemetry = app.host_telemetry.clone();
         assert_eq!(app.host_telemetry, telemetry);
+        assert_eq!(app.host_cpu_history.len(), 60);
+        assert_eq!(app.host_cpu_history.front(), Some(&15));
+        assert_eq!(app.host_cpu_history.back(), Some(&74));
+        assert_eq!(app.host_memory_history.len(), 60);
+        assert!(app.host_memory_history.iter().all(|sample| *sample == 25));
+
+        let _ = update(
+            &mut app,
+            Action::HostTelemetryUpdated(HostTelemetry {
+                cpu_utilization_percent: None,
+                memory_total_bytes: Some(100),
+                memory_available_bytes: Some(101),
+                ..HostTelemetry::default()
+            }),
+        );
+        assert_eq!(app.host_cpu_history.len(), 60);
+        assert_eq!(app.host_memory_history.len(), 60);
     }
     #[test]
     fn settings_selection_and_changes_are_typed_and_persisted() {
