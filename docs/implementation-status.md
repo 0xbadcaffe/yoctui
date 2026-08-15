@@ -11,9 +11,10 @@ Status values:
 
 ## Current phase
 
-The persistent daemon parent gate is `DONE`. Real Poky acceptance passed, and
-parallel `daemon_persist` cases now use unique PID-plus-monotonic temporary
-roots; five consecutive focused integration runs pass without collisions.
+The persistent daemon parent gate is `IN_PROGRESS`. Real Poky acceptance and
+the collision-safe parallel persistence fixtures pass. The next full gate timed
+out while the real PTY runtime integration awaited its Running state; diagnosis
+and a clean full-gate rerun are active.
 
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
@@ -458,9 +459,9 @@ Navigator, Inspector, and PTY session routing plus integration/TestBackend
 coverage. Dragging split separators now resizes the validated client-local pane
 tree with keyboard-equivalent bounds and persistence. Keyboard/mouse parity now
 has explicit specification and TestBackend coverage; every core route keeps a
-keyboard path and meaningful mouse path. Real Poky validation passed, and the
-persistent daemon parent gate includes collision-safe parallel persistence
-fixtures.
+keyboard path and meaningful mouse path. Real Poky validation and collision-safe
+parallel persistence fixtures pass; the parent is reopened for the real PTY
+runtime timeout exposed by the full gate.
 Daemon and attach documentation now covers direct/service lifecycle, client
 attach/detach, SSH reconnect, PTY/session management, security/resource limits,
 host reboot guarantees, troubleshooting, and the verified live-Poky validation
