@@ -635,8 +635,7 @@ mod tests {
 
     #[tokio::test]
     async fn cli_control_cancels_the_owned_process_group() {
-        let (root, executable) =
-            fixture("trap 'exit 0' TERM; : > \"$READY\"; while :; do sleep 10; done");
+        let (root, executable) = fixture("trap 'exit 0' TERM; : > \"$READY\"; while :; do :; done");
         let ready = root.join("ready");
         let mut command = command(
             executable,
