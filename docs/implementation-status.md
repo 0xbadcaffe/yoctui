@@ -11,8 +11,7 @@ Status values:
 
 ## Current phase
 
-The persistent daemon parent gate is `IN_PROGRESS` after the final rerun exposed
-a QA-layer executable publication race.
+The persistent daemon parent gate is `DONE`.
 Real Poky acceptance, collision-safe daemon fixtures, responsive PTY delivery,
 Configuration UI coverage, and global quit routing pass. The synchronized
 ten-second real-terminal probe passes ten consecutive runs. On 2026-08-15 the
@@ -37,7 +36,7 @@ fixture. No independent registry task is eligible while fixture publication is
 made race-free. QA-layer execution now retries only `ETXTBSY` with four bounded
 attempts and a 5 ms delay. The cancellation test passes 100 consecutive runs,
 the classifier is covered, and all 181 BitBake library tests pass; the complete
-gate remains to be rerun.
+gate passes.
 
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
@@ -83,7 +82,7 @@ See `docs/current-task.md`.
 | M4 Images/SDK/QEMU/Wic | DONE | Images, SDK, QEMU, Wic creation, and protected device writing pass their cross-layer parent gates |
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
 | M6 Maintenance | DONE | Typed Sstate, Services, Release, and optional integrations pass their atomic, cross-layer, and milestone parent gates |
-| M7 Hardening | IN_PROGRESS | Honest 75.37% Python coverage passes; QA-layer retries only transient ETXTBSY and its cancellation test passes 100 consecutive runs, with the complete gate pending |
+| M7 Hardening | DONE | Fuzz, stress/process-tree, ASan/LSan, property, terminal, Valgrind, deterministic profile, real perf-backed Flamegraph, honest Python coverage, transient-spawn handling, CI, documentation, and completion integration pass |
 
 ## Reconciliation evidence
 
@@ -136,7 +135,7 @@ See `docs/current-task.md`.
 | Package data model | DONE | Exact identities, available-versus-unavailable fields, explicit bounded inventory/detail states, deterministic normalization, selection, stale correlation, search, dependency navigation, and typed event/effect mapping pass focused and baseline checks |
 | Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
 | Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
-| Hardening matrix | IN_PROGRESS | Fresh perf, synchronized CLI cancellation, honest Python coverage, and bounded QA-layer transient spawn handling pass; the complete integration rerun is pending |
+| Hardening matrix | DONE | Every integrated gate passes, including fresh perf, synchronized CLI cancellation, honest Python coverage, and bounded QA-layer transient spawn handling |
 | Operator documentation | DONE | The concise landing page retains guarded setup paths and embeds a real-binary, fixture-labelled UI demo plus the real perf-backed Flamegraph; the complete operator/troubleshooting and compatibility evidence remain linked and visual artifacts are validated |
 
 ## Priority queue

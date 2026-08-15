@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -75,9 +75,9 @@ reopened. QA-layer execution now matches the other external runners with four
 bounded attempts separated by 5 ms only for `ETXTBSY`; every other spawn error
 still fails immediately. The cancellation test passes 100 consecutive runs,
 the classifier has direct coverage, and all 181 `yoctui-bitbake` library tests
-pass. The full completion gate remains to be rerun.
+pass.
 
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
 completed all 4567 tasks with repeated reconnects. No other registry task is
-eligible while this required parent gate is in progress.
+eligible; this is the terminal handoff after all registry tasks completed.
