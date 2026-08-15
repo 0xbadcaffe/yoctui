@@ -11,10 +11,10 @@ Status values:
 
 ## Current phase
 
-The persistent daemon parent gate is `IN_PROGRESS`. Real Poky acceptance,
+The persistent daemon parent gate is `DONE`. Real Poky acceptance,
 collision-safe persistence/daemon-state fixtures, and responsive PTY delivery
-pass. The full gate now reaches the UI suite and exposes a missing earlier
-provenance path in the 100x25 Configuration rendering test; diagnosis is active.
+pass. Configuration detail now preserves authoritative provenance and operation
+visibility before compact action guidance; all 121 UI tests pass.
 
 Release-quality, utility-workbench, embedded-shell, and CI workflow tasks are
 complete. In-app build-environment onboarding is now in progress: it will let
@@ -460,8 +460,8 @@ coverage. Dragging split separators now resizes the validated client-local pane
 tree with keyboard-equivalent bounds and persistence. Keyboard/mouse parity now
 has explicit specification and TestBackend coverage; every core route keeps a
 keyboard path and meaningful mouse path. Real Poky validation, collision-safe
-parallel persistence/SSH fixtures, and responsive real PTY event delivery pass;
-the parent is reopened for Configuration provenance rendering verification.
+parallel persistence/SSH fixtures, responsive PTY delivery, and supported-size
+Configuration provenance rendering pass.
 Daemon and attach documentation now covers direct/service lifecycle, client
 attach/detach, SSH reconnect, PTY/session management, security/resource limits,
 host reboot guarantees, troubleshooting, and the verified live-Poky validation

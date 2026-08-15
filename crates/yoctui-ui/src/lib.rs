@@ -8796,7 +8796,7 @@ fn config_inspector(app: &App) -> String {
             .join("\n  ")
     };
     format!(
-        "Variable: {}\nScope: {}\nEffective value: {}\nUnexpanded value: {}\n{}\nProvenance: {}\nActive overrides: {}\nOperations:\n  {}",
+        "Variable: {}\nScope: {}\nEffective value: {}\nUnexpanded value: {}\nProvenance: {}\nActive overrides: {}\nOperations:\n  {}\n{}",
         detail.identity.name,
         detail
             .identity
@@ -8805,7 +8805,6 @@ fn config_inspector(app: &App) -> String {
             .map_or("global", |recipe| recipe),
         detail.effective_value.as_deref().unwrap_or("unavailable"),
         detail.unexpanded_value.as_deref().unwrap_or("unavailable"),
-        config_copy_status(app),
         detail.provenance.as_deref().unwrap_or("unavailable"),
         if detail.active_overrides.is_empty() {
             "none reported".into()
@@ -8813,10 +8812,12 @@ fn config_inspector(app: &App) -> String {
             detail.active_overrides.join(", ")
         },
         operations,
+        config_copy_status(app),
     )
 }
 
 fn config_copy_status(app: &App) -> String {
+    let mut copy_disabled_reasons = Vec::new();
     let copy = [
         ("C effective", ConfigCopyValue::Effective),
         ("U unexpanded", ConfigCopyValue::Unexpanded),
@@ -8824,7 +8825,10 @@ fn config_copy_status(app: &App) -> String {
     .into_iter()
     .map(|(label, value)| {
         selected_config_copy_value(app, value).map_or_else(
-            |reason| format!("{label}: disabled ({reason})"),
+            |reason| {
+                copy_disabled_reasons.push(format!("{label}: {reason}"));
+                format!("{label}: disabled")
+            },
             |_| format!("{label}: enabled"),
         )
     })
@@ -8852,7 +8856,12 @@ fn config_copy_status(app: &App) -> String {
     } else {
         "E edit: disabled"
     };
-    format!("{scope} | {edit}\n{compare}\n{source}\n{copy}")
+    let copy_disabled_reasons = if copy_disabled_reasons.is_empty() {
+        String::new()
+    } else {
+        format!("\n{}", copy_disabled_reasons.join("\n"))
+    };
+    format!("{copy} | {edit}\n{scope}\n{compare}\n{source}{copy_disabled_reasons}")
 }
 
 fn config(frame: &mut Frame, app: &App, area: Rect) {

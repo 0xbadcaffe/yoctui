@@ -1032,6 +1032,9 @@ values, provenance, active overrides, and every typed set/append/prepend/remove
 operation with its defining file, line, and value when supplied. Results and
 errors are keyed by variable name plus optional recipe scope. A scoped or stale
 response cannot complete or replace a selected global request.
+At supported dimensions, authoritative identity/value fields, provenance,
+overrides, and operations precede action-availability guidance so defining
+sources remain in the visible detail region.
 
 Wide mode may show the same selected detail in the persistent Inspector while
 the workspace keeps its table and detail region. Medium and narrow layouts
