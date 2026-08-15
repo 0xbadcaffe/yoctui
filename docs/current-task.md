@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -44,9 +44,8 @@ sanitizer, coverage, dependency-policy, Python, Valgrind, and optimized-profile
 stages before host sampling policy blocked the required Flamegraph refresh. The
 operator temporarily enabled userspace sampling on 2026-08-15;
 `./scripts/flamegraph.sh` then captured real samples and regenerated the SVG.
-The complete gate is now being rerun from the beginning.
 
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
 completed all 4567 tasks with repeated reconnects. No other registry task is
-eligible while this required parent gate is in progress.
+eligible; this is the terminal handoff after all registry tasks completed.
