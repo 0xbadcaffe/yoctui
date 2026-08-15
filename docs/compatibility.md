@@ -124,7 +124,7 @@ recipe, task, or external tool is supported.
 | Linux pseudo-terminal | Current baseline | Static/host observed | Alternate-screen and cursor hide/show restoration pass `./scripts/test-terminal.sh`. macOS, BSD, native Windows, and WSL terminal matrices are not recorded. |
 | Fuzzing | Current baseline | Static/host observed | Finite cargo-fuzz smoke covers protocol frames and retained logs. Finite fuzzing is not exhaustive. |
 | Valgrind | Current development host | Static/host observed | No definite, indirect, or possible lost bytes were reported; two Tokio signal descriptors are explicitly recognized. Still-reachable allocations are reported separately. |
-| Flamegraph | 2026-08-15 | Blocked | `cargo-flamegraph 0.6.13` and matching `perf 7.0.12` are installed, but the required fresh capture is blocked because `kernel.perf_event_paranoid=4` denies even a userspace dummy event. A prior authorized capture remains a historical artifact, not a pass for the current gate. |
+| Flamegraph | 2026-08-15 | Static/host observed | With explicitly authorized temporary `kernel.perf_event_paranoid=0`, `cargo-flamegraph 0.6.13` and matching `perf 7.0.12` captured real userspace samples and regenerated the deterministic headless SVG. Restricted kernel symbols remain a reported host limitation. |
 
 Reproduce the Flamegraph blocker with:
 

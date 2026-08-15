@@ -4,7 +4,7 @@
 
 **ID:** DAEMON-001
 **Title:** Complete persistent Yoctui daemon session architecture
-**Status:** BLOCKED
+**Status:** IN_PROGRESS
 
 ## Objective
 
@@ -39,21 +39,14 @@ observed by the pseudo-terminal application and the script had no deadline.
 Navigator/Inspector now preserve global `q`/Ctrl+C routing, and the synchronized
 bounded real-terminal probe passes ten consecutive runs.
 
-The final completion run passes the workspace, lint, terminal, fuzz, stress,
+The previous completion run passed the workspace, lint, terminal, fuzz, stress,
 sanitizer, coverage, dependency-policy, Python, Valgrind, and optimized-profile
-stages. It is blocked at the required fresh Flamegraph capture because this host
-has `kernel.perf_event_paranoid=4`; even `perf record -e dummy:u -- true` is
-denied, and `./scripts/flamegraph.sh` exits 2. Under the local security policy,
-temporarily enable userspace sampling and resume verification with:
-
-```bash
-sudo sysctl -w kernel.perf_event_paranoid=0
-./scripts/flamegraph.sh
-./scripts/verify-completion.sh
-sudo sysctl -w kernel.perf_event_paranoid=4
-```
+stages before host sampling policy blocked the required Flamegraph refresh. The
+operator temporarily enabled userspace sampling on 2026-08-15;
+`./scripts/flamegraph.sh` then captured real samples and regenerated the SVG.
+The complete gate is now being rerun from the beginning.
 
 After the completion gate passes, run `./scripts/live-daemon-poky.sh` only if a
 new live acceptance result is required; the existing fresh Poky scarthgap run
 completed all 4567 tasks with repeated reconnects. No other registry task is
-eligible while this required parent gate is blocked.
+eligible while this required parent gate is in progress.
