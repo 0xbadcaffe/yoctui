@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 source_poky="${YOCTUI_POKY_SOURCE:-/home/bspguy-dev/src/poky}"
 target="${YOCTUI_LIVE_POKY_TARGET:-core-image-minimal}"
-timeout_seconds="${YOCTUI_LIVE_BUILD_TIMEOUT:-3600}"
+timeout_seconds="${YOCTUI_LIVE_BUILD_TIMEOUT:-14400}"
 
 # Keep the live acceptance independent of interactive Python version managers.
 # BitBake snapshots host tools while initializing the build; inheriting pyenv's

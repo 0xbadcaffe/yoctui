@@ -4096,7 +4096,7 @@ priority = 444
 required = true
 depends_on = ["DAEMON-UI-001", "DAEMON-CLI-001", "PTY-TEST-001", "SSH-TEST-001", "DAEMON-REBOOT-TEST-001", "BITBAKE-RESTART-001"]
 verify = ["./scripts/live-daemon-poky.sh"]
-notes = "BLOCKED 2026-08-14: after temporarily allowing unprivileged user namespaces, the live harness passed clone, initialization, daemon start, detached build submission, and repeated reconnect checks. Inherited pyenv internal hook state was found to stall BitBake host tools, so the harness now prefers system host tools and clears that transient state. The corrected real core-image-minimal run reached task 2459/4090 before free space fell to 4 GB (100% filesystem use) and was stopped to avoid host filesystem exhaustion. Free sufficient build space and rerun ./scripts/live-daemon-poky.sh before marking this task DONE; no live compatibility claim is made."
+notes = "BLOCKED 2026-08-15: after temporarily allowing unprivileged user namespaces, the live harness passed clone, initialization, daemon start, detached build submission, and repeated reconnect checks. Inherited pyenv internal hook state was found to stall BitBake host tools, so the harness now prefers system host tools and clears that transient state. One corrected real core-image-minimal run reached task 2459/4090 before free space fell to 4 GB and was stopped safely. After space was recovered, a fresh run remained healthy through task 2779/4090 but exceeded the former one-hour harness deadline, so the default is now four hours. Rerun ./scripts/live-daemon-poky.sh before marking this task DONE; no live compatibility claim is made."
 
 [[task]]
 id = "README-DAEMON-001"
@@ -4140,4 +4140,4 @@ priority = 448
 required = true
 depends_on = ["README-DAEMON-001", "UX-KEYBOARD-MOUSE-001", "BINARY-ONE-RUST-001"]
 verify = ["./scripts/verify-completion.sh", "./scripts/live-daemon-poky.sh"]
-notes = "BLOCKED 2026-08-14: all component daemon/client/PTY/mouse tasks and the daemon-owned BitBake build path are implemented and verified. With the namespace restriction temporarily disabled, LIVE-DAEMON-POKY-001 passed setup and detached/reconnect behavior but its real core-image-minimal build was stopped at task 2459/4090 when the host reached 4 GB free and 100% filesystem use. Free sufficient build space and rerun the live gate; no unsupported compatibility claim is made."
+notes = "BLOCKED 2026-08-15: all component daemon/client/PTY/mouse tasks and the daemon-owned BitBake build path are implemented and verified. With the namespace restriction temporarily disabled, LIVE-DAEMON-POKY-001 passed setup and detached/reconnect behavior. Its first real core-image-minimal build was stopped safely at task 2459/4090 under disk pressure; after space was recovered, a fresh healthy run reached task 2779/4090 before exposing that the former one-hour deadline was too short. The default is now four hours. Rerun the live gate; no unsupported compatibility claim is made."

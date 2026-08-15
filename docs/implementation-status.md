@@ -442,12 +442,15 @@ Poky acceptance script clones a fresh workspace, initializes a private build
 directory, starts the daemon, submits a build, reconnects for status, and
 cleans up. After the host namespace restriction was temporarily disabled, the
 harness passed setup, detached submission, and repeated reconnect checks. Its
-real `core-image-minimal` build reached task 2459/4090 before the host fell to
-4 GB free at 100% filesystem use, so the disposable run was stopped rather
-than exhausting the filesystem. The harness now also prefers system host tools
-and clears inherited pyenv internal hook state after that state was shown to
-stall BitBake execution. Live acceptance remains blocked on sufficient build
-space and no compatibility claim is made. The next independent one-Rust product gate is verified: daemon/client remain modes of
+real `core-image-minimal` build first reached task 2459/4090 before the host
+fell to 4 GB free at 100% filesystem use, so the disposable run was stopped
+rather than exhausting the filesystem. After space was recovered, a fresh run
+remained healthy through task 2779/4090 and showed that the former one-hour
+deadline was too short for this host; the default acceptance window is now
+four hours. The harness also prefers system host tools and clears inherited
+pyenv internal hook state after that state was shown to stall BitBake
+execution. Live acceptance remains blocked on a complete rerun and no
+compatibility claim is made. The next independent one-Rust product gate is verified: daemon/client remain modes of
 the single Rust package and tests guard against Electron/browser drift. The
 mouse runtime interaction gate is now verified with typed dialog, workspace,
 Navigator, Inspector, and PTY session routing plus integration/TestBackend
@@ -474,7 +477,7 @@ The live acceptance script now preserves actionable cooker-log diagnostics
 when a real BitBake build fails before its temporary workspace is removed.
 Its reconnect/status probe is deliberately paced so high-volume task events do
 not compete with the daemon's bounded snapshot writer.
-The default live-build timeout is one hour because an uncached Poky image can
+The default live-build timeout is four hours because an uncached Poky image can
 spend substantial time compiling native prerequisites in a constrained CI host.
 The default attach snapshot now retains 512 recent records, preserving a useful
 bounded history without repeatedly serializing the full high-volume log stream.
