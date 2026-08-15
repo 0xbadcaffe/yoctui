@@ -2,46 +2,41 @@
 
 ## Task
 
-**ID:** DAEMON-ATTACH-QUIT-001
-**Title:** Restore global quit after daemon attach
-**Status:** DONE
+**ID:** DAEMON-UPGRADE-LIFECYCLE-001
+**Title:** Preserve daemon identity across executable replacement
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Restore the documented global `q` and `Ctrl+C` behavior when daemon attach
-retains Workspace focus. The client must exit cleanly, restore the terminal,
-detach only the UI, and leave the daemon-owned BitBake build running.
+Keep lifecycle status and attach available when a release install atomically
+replaces the on-disk Yoctui executable while the prior daemon image continues
+owning active work. Linux's exact ` (deleted)` process-image suffix may match
+the recorded executable; unrelated executable paths must remain foreign.
 
 ## Dependencies
 
-- `DAEMON-ATTACH-BUILD-001` — DONE
+- `DAEMON-ATTACH-QUIT-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-cli/src/main.rs`
-- `crates/yoctui-app/src/lib.rs`
-- `docs/ui-spec.md`
+- `crates/yoctui-protocol/src/daemon_lifecycle.rs`
+- `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Workspace, Navigator, and Inspector focus all preserve global `q`/`Ctrl+C`.
-- Dialogs and editors continue trapping their context-specific input.
-- The real terminal lifecycle probe observes alternate-screen restoration.
-- Exiting an attached client does not stop the active daemon build.
+- Exact recorded paths and their Linux ` (deleted)` process images classify as
+  the current daemon.
+- Other executable paths still classify as foreign processes.
+- The installed client reports the still-running daemon and build.
 - Focused and baseline checks pass.
 - Registry/status/current-task documentation is updated and committed.
-
-All definition-of-done items and verification commands pass. This final
-completed task remains the terminal handoff because every registry task is
-`DONE`.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app persistent_pane_focus_preserves_global_quit
-./scripts/test-terminal.sh
+cargo test -p yoctui-protocol daemon_lifecycle
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

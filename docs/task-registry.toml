@@ -4185,3 +4185,14 @@ required = true
 depends_on = ["DAEMON-ATTACH-BUILD-001"]
 verify = ["cargo test -p yoctui-app persistent_pane_focus_preserves_global_quit", "./scripts/test-terminal.sh", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "Workspace now joins Navigator and Inspector in the typed global q/Ctrl+C route. The lifecycle probe uses an isolated runtime directory so an unrelated active daemon cannot turn its simple quit into an active-build confirmation, while a separate real attached-PTY check verified q then Y restores the terminal and leaves daemon job 1 running. Focused, workspace, Clippy, 39 bridge, docs, and roadmap checks pass."
+
+[[task]]
+id = "DAEMON-UPGRADE-LIFECYCLE-001"
+milestone = "M11"
+title = "Preserve daemon identity across executable replacement"
+status = "IN_PROGRESS"
+priority = 453
+required = true
+depends_on = ["DAEMON-ATTACH-QUIT-001"]
+verify = ["cargo test -p yoctui-protocol daemon_lifecycle", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Installing a new Yoctui binary while a daemon-owned build runs makes Linux expose the old process image with the exact ` (deleted)` suffix. Accept that suffix only when the remaining path exactly matches the private runtime record; continue rejecting every other live-PID executable mismatch."

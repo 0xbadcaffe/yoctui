@@ -1533,7 +1533,10 @@ Foreground mode binds IPC, replaces only a provably stale prior runtime record,
 writes an atomic private `daemon.json` containing PID, random instance ID,
 boot ID, executable identity, and start time, and handles graceful protocol
 shutdown plus SIGTERM cleanup. Status validates boot identity, PID liveness,
-`/proc/<pid>/exe`, live socket handshake, and matching daemon instance. Stop
+`/proc/<pid>/exe`, live socket handshake, and matching daemon instance. An
+atomically replaced installed executable may leave the running Linux process
+image with the exact ` (deleted)` suffix; lifecycle identity accepts it only
+when the remaining path exactly equals the private runtime record. Stop
 uses a typed request and waits for socket cleanup; restart composes verified
 stop and start. Interactive automatic attach/optional auto-start will call
 these same lifecycle APIs when `CLIENT-ARCH-001` moves the client boundary;
