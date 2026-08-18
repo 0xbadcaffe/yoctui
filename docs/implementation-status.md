@@ -931,4 +931,7 @@ capability-aware reducer. Client startup and post-inventory capability probes
 were removed, so daemon-owned probe effects cannot spawn in a client.
 Unavailable actions retain exact reasons and produce no process/job effect.
 Focused app/CLI tests, all workspace tests, and warnings-denied Clippy pass.
-`COMPAT-WORKSPACE-001` is active as the aggregate workspace acceptance gate.
+`COMPAT-WORKSPACE-001` is complete: its closed catalog, pure model authority,
+wire/client lifecycle, runtime gating, daemon-probe suppression, and exact
+no-spawn rejection all pass aggregate app/model, workspace, bridge, roadmap,
+and Clippy gates. `COMPAT-UI-001` is active.

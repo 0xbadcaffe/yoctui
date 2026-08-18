@@ -2,43 +2,46 @@
 
 ## Task
 
-**ID:** COMPAT-WORKSPACE-001
-**Title:** Apply capabilities to all workspaces
+**ID:** COMPAT-UI-001
+**Title:** Expose capability state clearly in the UI
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Close the aggregate workspace acceptance gate by verifying that every
-Navigator destination and action consumes the centralized capability snapshot.
+Expose centralized capability state throughout the interface without hiding
+useful unavailable actions or cluttering normal workflows with version detail.
 
 ## Dependencies
 
-- `COMPAT-WORKSPACE-CATALOG-001` — DONE
-- `COMPAT-WORKSPACE-MODEL-001` — DONE
-- `COMPAT-WORKSPACE-APP-001` — DONE
+- `COMPAT-WORKSPACE-001` — DONE
+- `COMPAT-PROTOCOL-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-app/src/lib.rs`
-- `crates/yoctui-model/src/workspace_compatibility.rs`
+- `crates/yoctui-model/src/`
+- `crates/yoctui-app/src/`
+- `crates/yoctui-ui/src/`
+- `docs/ui-spec.md`
+- `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Every Navigator destination and every typed effect is present in the closed
-  workspace requirement inventory.
-- Model projection, snapshot replacement/invalidation, dialog revalidation,
-  and unavailable-effect rollback pass their focused tests.
-- App/CLI snapshot lifecycle, shared daemon/local enforcement, daemon-owned
-  probe suppression, and no-spawn routing pass their focused tests.
-- The parent gate is marked DONE only after its three children and aggregate
-  verification pass.
+- Useful unavailable actions remain visible but disabled.
+- Every disabled or limited action exposes the exact centralized reason and,
+  where useful, its required capability/tool or maintained alternative.
+- Normal workspace flow is not cluttered with release/version detail.
+- A bounded Environment/Compatibility inspector exposes detected identity,
+  capability summary, exact evidence/reasons, and selected implementations.
+- Dynamic snapshot changes update action state and reasons without panic or
+  stale launches; TestBackend and app tests cover responsive behavior.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app compatibility_workspace
-cargo test -p yoctui-model compatibility_workspace
+cargo test -p yoctui-ui compatibility
+cargo test -p yoctui-app compatibility_ui
+./scripts/test-tui-snapshots.sh
 ./scripts/verify-roadmap.sh
 ```
