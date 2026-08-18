@@ -745,3 +745,11 @@ typed daemon/protocol/model state, dynamic UI gating, and exact live evidence.
 `COMPAT-SPEC-001` is the active task. No release is newly claimed supported by
 this governance change; existing fixture and live evidence retain their stated
 scope.
+
+`COMPAT-SPEC-001` is complete. The normative contract now distinguishes each
+authoritative identity source from weak diagnostic hints, defines direct probe
+and fallback precedence, release/support/degradation policy, all five feature
+states, catalog alternatives, daemon ownership/cache invalidation, runtime UI
+revalidation, and exact deterministic versus live evidence requirements. No
+minimum supported series or latest supported stable is claimed before the two
+required M18 live gates. `COMPAT-ENV-ID-001` is active.

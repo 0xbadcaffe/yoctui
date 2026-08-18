@@ -5,6 +5,196 @@ environment for production BitBake control. This document records observed
 evidence, not compatibility inferred from version numbers. The authoritative
 metadata and build result always come from the selected BitBake environment.
 
+## Normative dynamic compatibility contract
+
+**Yoctui functionality is Yocto-feature-correlated.** The installed Yoctui
+binary defines the operations and adapters Yoctui knows about. The connected
+Yocto/OpenEmbedded/BitBake environment supplies the evidence that determines
+which operation and implementation is safe now. Binary support alone never
+makes a feature available.
+
+### Environment identity and authority
+
+An environment identity contains only detected authoritative values. Every
+field is independently optional and preserves `Unknown`; values are never
+synthesized merely to produce a friendly release label.
+
+| Identity field | Authoritative source |
+|---|---|
+| Canonical build directory and source roots | Selected initialized environment plus canonical filesystem identity |
+| BitBake version and executable | Imported `bb.__version__`, negotiated backend response, or bounded `bitbake --version` probe tied to the selected environment |
+| OE-Core/Poky release name and version | Authoritative metadata variables or release files from a configured OE-Core/Poky layer |
+| `DISTRO` and `MACHINE` | Effective BitBake datastore values for the selected build |
+| Configured layers and series compatibility | BitBake layer inventory and each configured layer's authoritative compatibility metadata |
+| Available tooling | Canonical executable identity discovered in the initialized environment, followed by command/option probes where required |
+| Backend and protocol version | Negotiated daemon/bridge handshake |
+
+Repository branch names, directory names, host distribution labels, arbitrary
+PATH entries, nearest Git tags, and numeric resemblance are weak heuristics and
+must not invent a Yocto release. They may be retained as diagnostic hints only,
+never as authoritative identity or capability evidence. A mixed-layer build is
+identified as the configured build it actually is; it is not forced into a
+single Poky release family.
+
+An exact environment fingerprint covers canonical workspace/build/source
+identity, BitBake executable identity and version, initialized environment
+identity, configured layer roots/revisions/series, and relevant configuration
+files. Capability snapshots and probe caches are scoped to that fingerprint.
+
+### Detection and evidence precedence
+
+Capability decisions use this order, strongest first:
+
+1. A safe direct positive or negative probe against the selected environment.
+2. A negotiated backend, protocol, API, metadata, or native-event capability.
+3. Authoritative configured metadata proving required task/class/variable support.
+4. A centralized release/version fallback rule when no practical direct probe exists.
+5. `Unknown` when evidence is absent, partial, stale, contradictory, or a probe fails.
+
+Direct detection is preferred because commands, options, tools, classes, and
+APIs can vary independently of a release label. A positive probe may override a
+conservative version fallback when the catalog marks that override safe. A
+negative authoritative probe overrides an optimistic fallback. Conflicting
+strong evidence yields `Unknown` with the conflict recorded; it is never
+resolved in favor of availability merely to keep an action enabled.
+
+Probes are non-mutating, shell-free argv processes or typed API negotiations.
+They have deadlines, bounded stdout/stderr, bounded result counts, process-group
+cancellation, and sanitized evidence. Allowed examples include executable
+identity, `--version`, `--help`, supported-subcommand/option inspection,
+read-only metadata variables, and protocol handshakes. A probe may not start a
+build, mutate metadata, create a workspace, contact a target, write an image,
+or otherwise exercise the consequential operation it is trying to authorize.
+
+### Release families and support policy
+
+Release families are evidence-policy groupings, not renderer logic and not a
+substitute for capability probes:
+
+- **Supported maintained family:** an official release series inside the
+  declared support window with current required live evidence.
+- **Supported older family:** the minimum claimed series, validated to preserve
+  baseline workflows and exercise at least one materially older adapter or argv.
+- **Current stable/latest tested family:** the newest official stable series
+  for which the repository has current required live evidence.
+- **Development/future family:** an official development snapshot or unknown
+  future version; positively probed behavior may run, but historical behavior
+  is not presumed.
+- **Unsupported family:** an environment outside policy or one lacking a safe
+  required baseline after probing; its diagnostic workspace may still open.
+- **Mixed/unknown family:** release correlation is absent or ambiguous; direct
+  probes alone decide individual behavior.
+
+The support window is evidence-driven and recorded in
+`compatibility-matrix.md`; it is not compiled into UI conditionals. At the
+start of M18, **no minimum supported release is claimed** because the required
+older-release live gate has not run. The **latest tested exact environment** is
+the Poky development snapshot and BitBake `2.19.0` observation recorded below,
+classified only as partially tested; it is not yet the latest *supported*
+release. `COMPAT-LIVE-OLDER-001` establishes the minimum and
+`COMPAT-LIVE-LATEST-001` establishes the latest supported stable only after
+both satisfy the machine-readable evidence policy.
+
+An unsupported release does not crash the application. Yoctui opens in
+diagnostic degraded mode, identifies what it can, enables safe positively
+verified operations, and disables the rest with exact reasons. An older
+supported release retains every safely functioning capability and uses a
+maintained fallback where one is cataloged. A future unknown release is not
+rejected by name/version; it exposes only positively detected behavior and
+leaves uncertain behavior `Unknown`.
+
+### Capability states
+
+Every catalog capability has exactly one runtime state plus bounded reason and
+evidence records:
+
+| State | Meaning and UI behavior |
+|---|---|
+| `Available` | Required behavior and preferred implementation are positively evidenced; the action may be enabled. |
+| `AvailableWithLimitations` | A safe implementation exists but has named constraints or uses a maintained fallback; the action is enabled with limitations explained before use. |
+| `Unavailable` | Current authoritative environment evidence shows a required tool, command, option, metadata feature, artifact, or configuration is absent; action is disabled with the exact remediable reason. |
+| `Unknown` | Detection has not completed or evidence is failed, stale, partial, or contradictory; consequential action is disabled until resolved. |
+| `Unsupported` | Yoctui intentionally has no safe maintained implementation for the evidenced behavior/environment; action is disabled with policy and requirement details. |
+
+`Unavailable` is environmental and can change after reconfiguration or
+reprobe. `Unsupported` is a Yoctui support decision. Neither may be rendered as
+an unexplained generic “Unsupported.” Useful unavailable actions remain visible
+for discoverability; features irrelevant to the current workspace may remain
+outside that workspace's normal action list.
+
+### Behavior catalog and implementation alternatives
+
+Capability IDs represent behavior, not versions. The authoritative typed
+catalog covers at least these families and is extended without renderer-local
+lists:
+
+- BitBake task forcing, environment dump, graph generation, variable lookup,
+  signatures/diffsigs/dumpsig, server socket, and native events
+- Devtool modify, finish, deploy-target, and upgrade
+- Recipetool create and appendfile
+- bitbake-layers show-layers and create-layer
+- package-data package lookup and path lookup
+- Wic create, runqemu, standard/extensible SDK population, menuconfig, and devshell
+- CVE checks, SPDX creation, yocto-check-layer, resulttool, and oe-selftest
+- buildhistory, locked signatures, and hashserv/prserv diagnostics
+
+Each catalog entry specifies required tools, commands, options, metadata/API
+support, direct probes, preferred implementation, optional fallback,
+known-but-non-authoritative release boundaries, and the exact default UI reason.
+For example, variable lookup may select a native server/API implementation,
+then a cataloged older command form, or become unavailable. The command builder
+receives the selected implementation, reconstructs validated typed argv, and
+rejects absent capability before spawn. It never independently compares a
+Yocto or BitBake version.
+
+### Snapshot ownership and runtime changes
+
+The persistent daemon owns identification, probing, fallback evaluation,
+caching, and the monotonically generated `CapabilitySnapshot`. Clients receive
+bounded typed identity, capability state, reason code/text, evidence, and
+generation over the negotiated protocol. Multiple clients attached to one
+daemon observe the same snapshot. Reconnect restores the current snapshot;
+clients neither probe nor infer support themselves.
+
+Changing workspace, build directory, BitBake executable/version, initialized
+environment, layer configuration/revisions/series, or daemon workspace
+invalidates the cache and begins a new generation. Capability state never leaks
+between projects. While a new snapshot is incomplete, affected features are
+`Unknown`. A client ignores stale generations and revalidates current selection,
+open dialogs, and pending actions. An invalidated dialog becomes
+non-confirmable or closes with the new reason before any effect is emitted.
+
+Single-process local mode follows the same typed model and probe/catalog code;
+it is explicitly degraded because no persistent daemon can preserve shared
+snapshot or job state. It must not introduce a second compatibility policy.
+
+### Compatibility evidence requirements
+
+Deterministic evidence must cover identity normalization, every capability
+state, catalog completeness, bounded probe success/failure/timeout/truncation,
+fallback precedence, old/new argv variants, rejection before spawn, dynamic UI
+snapshot replacement, stale generation rejection, and synthetic future
+versions. Fixtures must represent the oldest claimed generation, an
+intermediate generation, current stable, latest supported, and an unknown
+future generation once the support window is established.
+
+A release support claim additionally requires a current, non-fixture live
+record with exact official source, repository commit, Yocto series/release,
+BitBake version, Yoctui commit, host/build identity, distro, machine,
+backend/protocol, commands, observed capabilities, workflow outcomes,
+limitations, date, and expiry. Latest-supported evidence must cover environment
+detection, probes, workspace, a core build and task/log events, Recipes, Layers,
+Configuration, Devtool, representative utilities, and modern BitBake commands.
+Older-supported evidence must prove core workflows remain usable, newer absent
+features disable with exact reasons, and unsupported argv is never spawned.
+
+Fixture, parser, fake-process, mocked Tinfoil, static table, executable-presence,
+or successful compilation evidence cannot satisfy a live claim. Evidence that
+predates a relevant capability-contract change or exceeds its expiry is stale
+and fails the completion gate. The dedicated Environment/Compatibility Doctor
+report exposes the same identity and snapshot used by the UI so a live record
+can be audited against runtime behavior.
+
 ## Evidence levels
 
 | Level | Meaning |

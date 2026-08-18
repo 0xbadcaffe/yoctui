@@ -4548,18 +4548,18 @@ notes = "The stable F1-F10 navigation rail now renders on every screen at the ex
 id = "COMPAT-SPEC-001"
 milestone = "M18"
 title = "Specify Yocto-feature-correlated functionality"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 485
 required = true
 depends_on = ["UI-WIDE-RAIL-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-compatibility.sh --structure-only", "./scripts/verify-roadmap.sh"]
-notes = "Define authoritative environment identity, capability evidence, support policy, release families, degradation, alternatives, future/unknown behavior, and evidence requirements before implementation."
+notes = "The normative contract now defines authoritative identity and weak-heuristic exclusions, probe/evidence precedence, release families, the currently unclaimed minimum and partially tested latest exact environment, five availability states, behavior catalog scope, implementation alternatives, cache/daemon/protocol authority, older/future degradation, and fixture-versus-live evidence requirements. Documentation, structure, and roadmap gates pass."
 
 [[task]]
 id = "COMPAT-ENV-ID-001"
 milestone = "M18"
 title = "Add typed Yocto environment identity"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 486
 required = true
 depends_on = ["COMPAT-SPEC-001"]
