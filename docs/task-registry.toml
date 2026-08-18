@@ -4743,15 +4743,48 @@ verify = ["cargo test -p yoctui-bitbake compatibility_utilities", "cargo test -p
 notes = "A typed 19-family inventory covers every registered utility and derives Available, AvailableWithLimitations, Unavailable, IntentionallyUnsupported, or Unknown solely from the current capability snapshot, retaining exact capability reasons. Unprobed families remain Unknown and internal workers remain intentionally unsupported; host PATH is never evidence. UtilityCompatibilityAuthority binds the daemon generation, build directory, initialized tool identity, behavior capability, and selected implementation before producing shell-free argv. Complete-catalog, partial/unavailable reason, absent snapshot, stale generation, unknown tool, exact implementation, workspace check, and warnings-denied Clippy tests pass."
 
 [[task]]
-id = "COMPAT-WORKSPACE-001"
+id = "COMPAT-WORKSPACE-CATALOG-001"
 milestone = "M18"
-title = "Apply capabilities to all workspaces"
+title = "Catalog every workspace capability requirement"
 status = "IN_PROGRESS"
 priority = 503
 required = true
 depends_on = ["COMPAT-UTILITIES-001"]
+verify = ["cargo test -p yoctui-model compatibility_workspace_catalog", "./scripts/verify-roadmap.sh"]
+notes = "Inventory every Navigator destination and effect-producing action as local-only or as an exact centralized capability requirement; add missing behavior IDs and catalog probes rather than borrowing a similarly named capability."
+
+[[task]]
+id = "COMPAT-WORKSPACE-MODEL-001"
+milestone = "M18"
+title = "Project workspace availability and revalidate state"
+status = "NOT_STARTED"
+priority = 503
+required = true
+depends_on = ["COMPAT-WORKSPACE-CATALOG-001"]
+verify = ["cargo test -p yoctui-model compatibility_workspace_model", "./scripts/verify-roadmap.sh"]
+notes = "Derive workspace/action availability and exact reasons from one snapshot, preserve valid selections, close or revalidate invalid dialogs, ignore stale snapshots, and reject unavailable effects in pure model tests."
+
+[[task]]
+id = "COMPAT-WORKSPACE-APP-001"
+milestone = "M18"
+title = "Install and enforce workspace capability authority"
+status = "NOT_STARTED"
+priority = 503
+required = true
+depends_on = ["COMPAT-WORKSPACE-MODEL-001", "COMPAT-PROTOCOL-001"]
+verify = ["cargo test -p yoctui-app compatibility_workspace_app", "cargo test -p yoctui compatibility_workspace_app", "./scripts/verify-roadmap.sh"]
+notes = "Install the bounded daemon wire snapshot into client model state and make daemon/local effect routing consume the same typed authority without reconstructing support or spawning unavailable operations."
+
+[[task]]
+id = "COMPAT-WORKSPACE-001"
+milestone = "M18"
+title = "Apply capabilities to all workspaces"
+status = "NOT_STARTED"
+priority = 503
+required = true
+depends_on = ["COMPAT-WORKSPACE-CATALOG-001", "COMPAT-WORKSPACE-MODEL-001", "COMPAT-WORKSPACE-APP-001"]
 verify = ["cargo test -p yoctui-app compatibility_workspace", "cargo test -p yoctui-model compatibility_workspace", "./scripts/verify-roadmap.sh"]
-notes = "Audit every Navigator destination and action so one centralized snapshot controls availability, implementation selection, and rejection before effects."
+notes = "Parent gate: every Navigator destination and action uses one centralized snapshot for availability, implementation selection, runtime revalidation, and rejection before effects."
 
 [[task]]
 id = "COMPAT-UI-001"

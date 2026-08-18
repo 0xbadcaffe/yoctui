@@ -899,4 +899,10 @@ host PATH is never evidence. The generic utility command authority requires
 the exact generation, build directory, initialized tool, behavior capability,
 and selected implementation before shell-free argv construction. Catalog,
 partial/unavailable, absent/stale/unknown, implementation-selection, workspace
-check, and warnings-denied Clippy gates pass. `COMPAT-WORKSPACE-001` is active.
+check, and warnings-denied Clippy gates pass.
+
+The broad workspace gate has been split before implementation into three
+coherent children: complete behavior/catalog inventory, pure model projection
+and revalidation, and protocol/app/runtime authority enforcement. The original
+`COMPAT-WORKSPACE-001` remains the parent acceptance gate.
+`COMPAT-WORKSPACE-CATALOG-001` is active.

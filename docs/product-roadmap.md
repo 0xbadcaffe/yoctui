@@ -339,6 +339,8 @@ Capabilities:
 - independent bitbake-layers read, create, option, add, and remove capabilities
 - complete typed utility-family classification and exact command authority;
   host PATH never proves build-environment compatibility
+- complete workspace action inventory, pure availability/revalidation policy,
+  and shared client/runtime enforcement
 - dynamic workspace/UI gating and an Environment/Compatibility inspector
 - deterministic release-generation fixtures and current live multi-release evidence
 
