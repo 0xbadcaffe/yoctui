@@ -19,6 +19,7 @@ mod sdk;
 mod security;
 mod terminal_emulation;
 mod testing;
+mod utility_compatibility;
 mod utility_menu;
 mod wic;
 
@@ -50,6 +51,7 @@ use std::{
 pub use terminal_emulation::*;
 pub use testing::*;
 use thiserror::Error;
+pub use utility_compatibility::*;
 pub use utility_menu::*;
 pub use wic::*;
 

@@ -6,6 +6,14 @@ Common operations are typed workflows; expert operations use validated argv
 preview and never shell interpolation. `live` means compatibility evidence is
 required before a release claim; `fixture` means deterministic adapter tests.
 
+At runtime, the typed utility compatibility inventory projects each family as
+available, available with limitations, unavailable, intentionally unsupported,
+or unknown from the daemon-owned capability snapshot. An executable appearing
+on the host `PATH` is never compatibility evidence for the selected build. A
+preview requires the exact snapshot generation, build directory, initialized
+tool identity, behavior capability, and catalog-selected implementation.
+Families without a maintained probe remain explicitly unknown.
+
 | Utility / family | Classification | Safety and evidence policy |
 | --- | --- | --- |
 | `oe-init-build-env`, `oe-setup-builddir`, `oe-buildenv-internal` | informational/internal | Environment capabilities only; never arbitrary child jobs; live Poky required |

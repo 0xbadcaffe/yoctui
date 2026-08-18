@@ -223,7 +223,10 @@ use tokio::{
     io::{AsyncBufReadExt, AsyncRead, AsyncReadExt, AsyncWriteExt, BufReader},
     process::{Child, ChildStdin, Command as TokioCommand},
 };
-pub use utility::{UtilityCommandSpec, UtilityRisk, parse_utility_arguments};
+pub use utility::{
+    UtilityCommandSpec, UtilityCompatibilityAuthority, UtilityCompatibilityError, UtilityRisk,
+    parse_utility_arguments,
+};
 pub use wic::{
     WicAdapterError, WicCapabilityInspector, WicCreateCommandSpec, WicDeviceInspector,
     WicDeviceInventoryResponse, WicJobRunner, WicWriteCommandSpec,

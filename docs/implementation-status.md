@@ -891,4 +891,12 @@ identity, artifact evidence, and selected implementation before command
 creation; recursive host scanning is removed. Missing tool, missing generated
 data, unavailable command, valid empty result, and command failure remain
 distinct. Adapter, app, CLI, workspace, and Clippy gates pass.
-`COMPAT-UTILITIES-001` is active.
+`COMPAT-UTILITIES-001` is complete. A typed 19-family inventory covers every
+registered utility executable and derives all five required utility states
+from the daemon capability snapshot while retaining exact reasons. Unprobed
+families remain Unknown, internal workers are intentionally unsupported, and
+host PATH is never evidence. The generic utility command authority requires
+the exact generation, build directory, initialized tool, behavior capability,
+and selected implementation before shell-free argv construction. Catalog,
+partial/unavailable, absent/stale/unknown, implementation-selection, workspace
+check, and warnings-denied Clippy gates pass. `COMPAT-WORKSPACE-001` is active.

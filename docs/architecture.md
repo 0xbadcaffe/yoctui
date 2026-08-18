@@ -2289,6 +2289,19 @@ data, missing command, a successful empty query, nonzero exit, and malformed
 output remain separate typed outcomes; unavailable command state fails before
 spawn with the retained capability reason.
 
+The complete utility workbench is represented by a typed 19-family inventory,
+including all executables enforced by the utility coverage gate. Its pure
+projection converts only capability records into Available,
+AvailableWithLimitations, Unavailable, IntentionallyUnsupported, or Unknown
+and retains exact capability reasons. It never consults host `PATH`; families
+without maintained probes remain Unknown and internal workers are explicitly
+not user-launchable. `UtilityCompatibilityAuthority` is the common boundary
+for expert or less-specialized commands: it binds snapshot generation, build
+directory, initialized-environment tool identity, behavior capability, and
+the exact selected implementation before constructing a shell-free command.
+Specialized adapters may add stricter typed argument rules but cannot bypass
+this authority tuple.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.
