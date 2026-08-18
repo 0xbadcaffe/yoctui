@@ -195,6 +195,34 @@ and fails the completion gate. The dedicated Environment/Compatibility Doctor
 report exposes the same identity and snapshot used by the UI so a live record
 can be audited against runtime behavior.
 
+### Current centralized version fallback map
+
+The initial map contains one deliberately narrow unprobeable selector:
+`bitbake.tinfoil_adapter`. It may select an adapter family for the core Tinfoil
+workspace/recipe/layer/build/cancel/task/server/event capabilities only after
+direct backend probes are inconclusive.
+
+| Component range | Fallback implementation | Result |
+|---|---|---|
+| BitBake `>=1.46,<2.0` | `tinfoil.adapter.legacy` | Available with an explicit version-inference limitation |
+| BitBake `>=2.0,<2.19` | `tinfoil.adapter.modern` | Available with an explicit version-inference limitation |
+| Missing, malformed, `<1.46`, or `>=2.19` | none | Unknown; positive direct evidence is required |
+
+The official [BitBake release-manual index](https://docs.yoctoproject.org/bitbake/releases.html)
+correlates Yocto series with BitBake versions, including Dunfell `1.46`,
+Honister `1.52`, Kirkstone `2.0`, Scarthgap `2.8`, and Wrynose `2.18`.
+The official [Yocto 4.0 release notes](https://docs.yoctoproject.org/4.0.4/migration-guides/release-notes-4.0.html)
+record the Kirkstone BitBake `2.0` branch/revision boundary. These sources
+correlate versions; they do not themselves prove every Tinfoil operation. The
+fallback therefore stays limited and cannot create a release-support claim.
+
+Any direct positive or negative capability evidence overrides this table.
+Conflicting direct evidence, an undeclared catalog selector, and future or
+unrecognized versions resolve to Unknown. Renderers and command builders never
+parse or compare these versions. The existing Python bridge's broad major-only
+adapter selection is migration input for `COMPAT-BITBAKE-API-001`; it is not a
+second authoritative map.
+
 ## Evidence levels
 
 | Level | Meaning |

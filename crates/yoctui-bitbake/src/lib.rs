@@ -5,6 +5,7 @@ mod bitbake_restart;
 mod bitbake_socket;
 mod build_environment;
 mod compatibility_probe;
+mod compatibility_version;
 mod image;
 mod maintenance_optional;
 mod maintenance_release;
@@ -79,6 +80,9 @@ pub use build_environment::{
 pub use compatibility_probe::{
     CapabilityProbeContext, CapabilityProbeContextError, CapabilityProbeObservation,
     CapabilityProbeRunner, CapabilityProbeStatus,
+};
+pub use compatibility_version::{
+    CorrelatedVersion, VersionFallbackMap, VersionFallbackResolution, VersionParseError,
 };
 pub use image::{
     ImageArtifactAdapter, ImageArtifactAdapterError, ImageArtifactCancellation,

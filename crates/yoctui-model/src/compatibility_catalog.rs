@@ -328,6 +328,16 @@ fn definition(id: CapabilityId) -> Definition {
             None,
         )
     };
+    let backend_with_version_fallback = |label, name: &str, impl_id| {
+        let mut value = backend(label, name, impl_id);
+        value.6 = Some(FallbackImplementation {
+            implementation: implementation("tinfoil.version_correlated", Kind::BackendApi),
+            selector: FallbackSelector::VersionInferenceWhenUnprobeable {
+                map_key: "bitbake.tinfoil_adapter".into(),
+            },
+        });
+        value
+    };
     let task = |label, names: &[&str], impl_id| {
         let names = names
             .iter()
@@ -347,18 +357,26 @@ fn definition(id: CapabilityId) -> Definition {
     };
 
     match id {
-        Id::BitBakeWorkspaceInspection => backend(
+        Id::BitBakeWorkspaceInspection => backend_with_version_fallback(
             "BitBake workspace inspection",
             "workspace",
             "tinfoil.workspace",
         ),
         Id::BitBakeRecipeInventory => {
-            backend("BitBake recipe inventory", "recipes", "tinfoil.recipes")
+            backend_with_version_fallback("BitBake recipe inventory", "recipes", "tinfoil.recipes")
         }
-        Id::BitBakeLayerInventory => backend("BitBake layer inventory", "layers", "tinfoil.layers"),
-        Id::BitBakeBuild => backend("BitBake build control", "build", "tinfoil.build"),
-        Id::BitBakeCancellation => backend("BitBake cancellation", "cancel", "tinfoil.cancel"),
-        Id::BitBakeTaskList => backend("BitBake task inventory", "tasks", "tinfoil.tasks"),
+        Id::BitBakeLayerInventory => {
+            backend_with_version_fallback("BitBake layer inventory", "layers", "tinfoil.layers")
+        }
+        Id::BitBakeBuild => {
+            backend_with_version_fallback("BitBake build control", "build", "tinfoil.build")
+        }
+        Id::BitBakeCancellation => {
+            backend_with_version_fallback("BitBake cancellation", "cancel", "tinfoil.cancel")
+        }
+        Id::BitBakeTaskList => {
+            backend_with_version_fallback("BitBake task inventory", "tasks", "tinfoil.tasks")
+        }
         Id::BitBakeForceTask => tool_command(
             "BitBake force-task execution",
             Tool::BitBake,
@@ -432,12 +450,12 @@ fn definition(id: CapabilityId) -> Definition {
             &[],
             "bitbake_dumpsig.argv",
         ),
-        Id::BitBakeServerSocket => backend(
+        Id::BitBakeServerSocket => backend_with_version_fallback(
             "BitBake server socket",
             "server_socket",
             "bitbake.server_socket",
         ),
-        Id::BitBakeNativeEvents => backend(
+        Id::BitBakeNativeEvents => backend_with_version_fallback(
             "BitBake native events",
             "native_events",
             "tinfoil.native_events",

@@ -788,3 +788,11 @@ argv, deadlines, bounded streams, process groups, and timeout cleanup. Missing
 behavior is negative evidence; unsafe/stale, spawn/read, timeout, and truncation
 remain inconclusive. Five fake-process/context tests and Clippy pass.
 `COMPAT-VERSION-001` is active.
+
+`COMPAT-VERSION-001` is complete. One numeric parser and catalog-declared map
+now own all fallback version comparisons. Direct positive/negative evidence
+wins; conflict, malformed/missing, undeclared, pre-map, BitBake 2.19+, and 3.x
+remain Unknown. The only initial rule selects legacy Tinfoil for
+`1.46..<2.0` or modern Tinfoil for `2.0..<2.19`, always with limitations and
+official-source evidence, never as a release support claim. Five tests and
+Clippy pass. `COMPAT-UNKNOWN-001` is active.

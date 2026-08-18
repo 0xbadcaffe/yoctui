@@ -2116,6 +2116,16 @@ failure, timeout, or truncation yields inconclusive evidence. The context's
 exact identity comparison is the cache/invalidation hook used by the later
 daemon-owned cache; probe evidence cannot be reused across a mismatch.
 
+`VersionFallbackMap` is the only numeric-version comparison boundary. It parses
+bounded numeric components centrally and evaluates only a catalog-declared
+`VersionInferenceWhenUnprobeable` selector. Direct positive and negative
+observations take precedence; conflicts, malformed/missing versions, versions
+outside a documented half-open range, and undeclared capabilities produce
+Unknown. Inferred results are always AvailableWithLimitations and retain the
+selected implementation, range, official source URLs, and fallback evidence.
+The initial Tinfoil adapter map ends before BitBake 2.19, so an unprobed future
+version cannot silently inherit the 2.x implementation.
+
 Commands use this flow:
 
 ```text

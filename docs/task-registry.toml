@@ -4603,18 +4603,18 @@ notes = "Added environment-correlated CapabilityProbeContext and a typed runner 
 id = "COMPAT-VERSION-001"
 milestone = "M18"
 title = "Add release and version fallback mapping"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 490
 required = true
 depends_on = ["COMPAT-PROBE-001"]
 verify = ["cargo test -p yoctui-bitbake compatibility_version", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Centralize documented fallback inference only where direct probing is impossible; positive safe probes override inference and unknown future versions remain conservative."
+notes = "Added the sole numeric CorrelatedVersion parser and catalog-declared VersionFallbackMap. Direct positive/negative probes override inference; conflicts, malformed/missing, undeclared, pre-map, BitBake 2.19+, and 3.x resolve Unknown. The narrow Tinfoil adapter map covers 1.46..<2.0 legacy and 2.0..<2.19 modern with AvailableWithLimitations, exact evidence, and official Yocto/BitBake source URLs. Five boundary/precedence/future tests and bitbake Clippy pass."
 
 [[task]]
 id = "COMPAT-UNKNOWN-001"
 milestone = "M18"
 title = "Handle future Yocto releases conservatively"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 491
 required = true
 depends_on = ["COMPAT-VERSION-001"]
