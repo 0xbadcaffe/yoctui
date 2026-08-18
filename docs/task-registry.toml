@@ -4279,18 +4279,18 @@ notes = "The shell now uses a one-content-line bordered project/MACHINE/DISTRO a
 id = "UI-VISION-NAV-001"
 milestone = "M13"
 title = "Render the grouped IDE-style Navigator"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 461
 required = true
 depends_on = ["UI-VISION-SHELL-001"]
 verify = ["cargo test -p yoctui-model navigator", "cargo test -p yoctui-app navigator", "cargo test -p yoctui-ui workbench_navigator", "./scripts/verify-roadmap.sh"]
-notes = "Render stable screen destinations under non-selectable visual groups with amber hierarchy and full-row blue selection while retaining bounded typed navigation."
+notes = "Navigator now renders OVERVIEW, CONTENT, BUILD, VALIDATE, and TOOLS group rows with semantic amber hierarchy, indented destinations, full-width selection, and viewport tracking for the last destination. The model order matches the visual groups; focused model/UI tests, all 128 UI tests, and Clippy pass."
 
 [[task]]
 id = "UI-VISION-TASKS-001"
 milestone = "M13"
 title = "Implement the task log history cockpit"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 462
 required = true
 depends_on = ["UI-VISION-NAV-001"]

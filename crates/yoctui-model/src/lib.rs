@@ -180,14 +180,14 @@ const NAVIGATOR_SCREENS: [Screen; 18] = [
     Screen::Packages,
     Screen::Images,
     Screen::Sdk,
-    Screen::Testing,
-    Screen::Security,
-    Screen::Qa,
     Screen::Tasks,
     Screen::Logs,
     Screen::Errors,
     Screen::Configuration,
     Screen::Dependencies,
+    Screen::Testing,
+    Screen::Security,
+    Screen::Qa,
     Screen::Recipes,
     Screen::Maintenance,
     Screen::BuildEnvironment,
@@ -14080,6 +14080,33 @@ mod tests {
         assert_eq!(app.focus, FocusTarget::Inspector);
         let _ = update(&mut app, Action::CycleFocus { backwards: true });
         assert_eq!(app.focus, FocusTarget::Workspace);
+    }
+
+    #[test]
+    fn navigator_workbench_order_keeps_build_and_validation_groups_contiguous() {
+        assert_eq!(
+            NAVIGATOR_SCREENS,
+            [
+                Screen::Dashboard,
+                Screen::Layers,
+                Screen::Recipes,
+                Screen::Packages,
+                Screen::Images,
+                Screen::Sdk,
+                Screen::Tasks,
+                Screen::Logs,
+                Screen::Errors,
+                Screen::Configuration,
+                Screen::Dependencies,
+                Screen::Testing,
+                Screen::Security,
+                Screen::Qa,
+                Screen::Recipes,
+                Screen::Maintenance,
+                Screen::BuildEnvironment,
+                Screen::Settings,
+            ]
+        );
     }
     #[test]
     fn responsive_pane_focus_cycle_cannot_escape_modal_focus() {

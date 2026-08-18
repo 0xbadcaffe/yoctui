@@ -2140,50 +2140,105 @@ fn signature_detail_text(app: &App) -> String {
 }
 
 fn navigator(frame: &mut Frame, app: &App, area: Rect) {
-    let entries = [
-        ("Dashboard", Screen::Dashboard),
-        ("Layers", Screen::Layers),
-        ("Recipes", Screen::Recipes),
-        ("Packages", Screen::Packages),
-        ("Images", Screen::Images),
-        ("SDK", Screen::Sdk),
-        ("Testing", Screen::Testing),
-        ("Security", Screen::Security),
-        ("QA", Screen::Qa),
-        ("Tasks", Screen::Tasks),
-        ("Logs", Screen::Logs),
-        ("Errors", Screen::Errors),
-        ("Configuration", Screen::Configuration),
-        ("Dependencies", Screen::Dependencies),
-        ("Devtool", Screen::Recipes),
-        ("Maintenance", Screen::Maintenance),
-        ("Build environment", Screen::BuildEnvironment),
-        ("Settings", Screen::Settings),
+    const GROUPS: [(&str, &[(&str, Screen)]); 5] = [
+        ("OVERVIEW", &[("Dashboard", Screen::Dashboard)]),
+        (
+            "CONTENT",
+            &[
+                ("Layers", Screen::Layers),
+                ("Recipes", Screen::Recipes),
+                ("Packages", Screen::Packages),
+                ("Images", Screen::Images),
+                ("SDK", Screen::Sdk),
+            ],
+        ),
+        (
+            "BUILD",
+            &[
+                ("Tasks", Screen::Tasks),
+                ("Logs", Screen::Logs),
+                ("Errors", Screen::Errors),
+                ("Configuration", Screen::Configuration),
+                ("Dependencies", Screen::Dependencies),
+            ],
+        ),
+        (
+            "VALIDATE",
+            &[
+                ("Testing", Screen::Testing),
+                ("Security", Screen::Security),
+                ("QA", Screen::Qa),
+            ],
+        ),
+        (
+            "TOOLS",
+            &[
+                ("Devtool", Screen::Recipes),
+                ("Maintenance", Screen::Maintenance),
+                ("Build environment", Screen::BuildEnvironment),
+                ("Settings", Screen::Settings),
+            ],
+        ),
     ];
-    let text = entries
+    enum NavigatorRow<'a> {
+        Group(&'a str),
+        Destination { name: &'a str, index: usize },
+    }
+
+    let mut destination_index = 0;
+    let mut rows = Vec::new();
+    for (group, destinations) in GROUPS {
+        rows.push(NavigatorRow::Group(group));
+        rows.extend(destinations.iter().map(|(name, _)| {
+            let index = destination_index;
+            destination_index += 1;
+            NavigatorRow::Destination { name, index }
+        }));
+    }
+    debug_assert_eq!(destination_index, 18);
+
+    let block = pane_block(app, "Navigator", app.focus == FocusTarget::Navigator);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+    let selected_visual_row = rows
         .iter()
-        .enumerate()
-        .map(|(index, (name, _))| {
-            format!(
-                "{} {}",
-                if index == app.navigator_selection {
-                    "▶"
-                } else {
-                    " "
-                },
-                name
+        .position(|row| {
+            matches!(
+                row,
+                NavigatorRow::Destination { index, .. } if *index == app.navigator_selection
             )
         })
-        .collect::<Vec<_>>()
-        .join("\n");
-    frame.render_widget(
-        Paragraph::new(text).block(pane_block(
-            app,
-            "Navigator",
-            app.focus == FocusTarget::Navigator,
-        )),
-        area,
-    );
+        .unwrap_or(0);
+    let visible = usize::from(inner.height);
+    let start = selected_visual_row.saturating_sub(visible.saturating_sub(1));
+    let palette = ThemePalette::for_app(app);
+    let width = usize::from(inner.width);
+    let lines = rows
+        .iter()
+        .skip(start)
+        .take(visible)
+        .map(|row| match row {
+            NavigatorRow::Group(name) => Line::from(Span::styled(
+                format!("▾ {name:<width$}", width = width.saturating_sub(2)),
+                palette.role(palette.warning, Modifier::BOLD),
+            )),
+            NavigatorRow::Destination { name, index } => {
+                let selected = *index == app.navigator_selection;
+                Line::from(Span::styled(
+                    format!("  ▱ {name:<width$}", width = width.saturating_sub(4)),
+                    if selected {
+                        palette.selected()
+                    } else {
+                        palette.base()
+                    },
+                ))
+            }
+        })
+        .collect::<Vec<_>>();
+    frame.render_widget(Paragraph::new(Text::from(lines)), inner);
 }
 
 fn workspace(frame: &mut Frame, app: &App, area: Rect) {
@@ -10290,6 +10345,53 @@ mod tests {
             clock_text(UNIX_EPOCH + Duration::from_secs(90_061)),
             "01:01:01"
         );
+    }
+
+    #[test]
+    fn workbench_navigator_renders_grouped_hierarchy_and_full_row_selection() {
+        let mut app = App::new(32, 8192);
+        app.focus = FocusTarget::Navigator;
+        let mut terminal = Terminal::new(TestBackend::new(180, 40)).unwrap();
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        for expected in ["OVERVIEW", "CONTENT", "BUILD", "VALIDATE", "TOOLS"] {
+            assert!(output.contains(expected), "missing {expected}: {output}");
+        }
+        let palette = ThemePalette::for_app(&app);
+        assert!(
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .filter(|cell| cell.bg == palette.selection_background)
+                .count()
+                >= 18
+        );
+        assert!(
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .any(|cell| cell.fg == palette.warning)
+        );
+    }
+
+    #[test]
+    fn workbench_navigator_scrolls_the_last_destination_into_view() {
+        let mut app = App::new(32, 8192);
+        app.focus = FocusTarget::Navigator;
+        app.navigator_selection = 17;
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("TOOLS"), "{output}");
+        assert!(output.contains("Settings"), "{output}");
     }
 
     fn security_report_identity(

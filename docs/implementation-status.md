@@ -11,9 +11,15 @@ Status values:
 
 ## Current phase
 
-`UI-VISION-NAV-001` is `IN_PROGRESS`: the next slice renders the stable typed
-workspace destinations under IDE-style visual groups without making headings
-selectable or changing reducer navigation semantics.
+`UI-VISION-TASKS-001` is `IN_PROGRESS`: the next slice composes selected-task
+logs, retained job history, and structured task/system Inspector sections from
+existing typed model and daemon-replica state.
+
+`UI-VISION-NAV-001` is `DONE`: Navigator destinations now appear under
+`OVERVIEW`, `CONTENT`, `BUILD`, `VALIDATE`, and `TOOLS` headings with semantic
+amber hierarchy, full-row selection, and bounded scrolling that keeps the
+last destination visible at 80x24. The typed screen order matches the visual
+groups; focused model/UI tests, all 128 UI tests, and Clippy pass.
 
 `UI-VISION-SHELL-001` is `DONE`: the oversized telemetry banner is replaced by
 a one-content-line bordered project/MACHINE/DISTRO and daemon/BitBake header.

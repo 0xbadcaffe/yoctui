@@ -2,40 +2,39 @@
 
 ## Task
 
-**ID:** UI-VISION-NAV-001
-**Title:** Render the grouped IDE-style Navigator
+**ID:** UI-VISION-TASKS-001
+**Title:** Implement the task log history cockpit
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Render the stable screen destinations under non-selectable visual group rows
-with IDE-style hierarchy, semantic amber accents, and full-row selection while
-preserving the existing bounded keyboard and mouse navigation behavior.
+Compose the Tasks workspace from a dense live task table, selected-task log
+viewer, retained job history, and a structured task Inspector with real actions
+and daemon/BitBake/system status.
 
 ## Dependencies
 
-- `UI-VISION-SHELL-001` — DONE
+- `UI-VISION-NAV-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
 - `crates/yoctui-model/src/lib.rs`
-- `crates/yoctui-app/src/lib.rs`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Every stable destination appears once under its specified visual group.
-- Group headings are not selectable and do not alter backend state.
-- Selected destinations use full-row selection with accessible no-color fallback.
-- Existing keyboard and mouse navigation semantics remain bounded.
+- Wide Tasks shows the live table, selected-task typed log tail, and job history.
+- The Inspector is divided into metadata, recent log, actions, and system status.
+- Missing fields remain explicitly unavailable and no illustrative values appear.
+- Reduced-height rendering preserves the primary task table without panicking.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model navigator
-cargo test -p yoctui-app navigator
-cargo test -p yoctui-ui workbench_navigator
+cargo test -p yoctui-ui workbench_tasks
+cargo test -p yoctui-ui task_progress
+cargo test -p yoctui-model background_job
 ./scripts/verify-roadmap.sh
 ```
