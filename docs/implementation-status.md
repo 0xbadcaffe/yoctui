@@ -1028,4 +1028,8 @@ stale/conflicting response rejection, stable selection, immediate action and
 reason replacement, unsafe dialog close/focus restoration, local-dialog
 retention, invalidation, and denied-action rollback with no emitted launch.
 The exact task filters and workspace Clippy pass. `COMPAT-LIVE-LATEST-001` is
-active.
+paused after fresh Wrynose 6.0.2 / BitBake 2.18.0 validation found that the
+modeled modern `bitbake --getvar` argv is unsupported: this release exposes the
+separate `bitbake-getvar` utility. `COMPAT-BITBAKE-GETVAR-001` is active as an
+atomic prerequisite; live validation resumes after the exact command/probe
+authority is corrected.
