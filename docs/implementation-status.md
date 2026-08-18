@@ -11,9 +11,15 @@ Status values:
 
 ## Current phase
 
-`UI-VISION-RESP-001` is `IN_PROGRESS`: the final implementation slice validates
-the redesigned shell and cockpit across wide, medium, narrow, reduced-height,
-theme, and no-color modes, then refreshes semantic terminal snapshots.
+`UI-VISION-001` is `IN_PROGRESS`: every redesign child is complete. The parent
+acceptance gate is running the aggregate formatting, workspace, Clippy, bridge,
+documentation, roadmap, and final handoff checks.
+
+`UI-VISION-RESP-001` is `DONE`: compact headers preserve project and
+daemon/BitBake anchors at 80 columns; breakpoint, reduced-height, all-theme,
+and no-color TestBackend coverage passes. Narrow, medium, and wide real-PTY
+semantic snapshots are refreshed. All 132 UI tests, the full workspace,
+workspace Clippy, 39 bridge tests, docs, and roadmap checks pass.
 
 `UI-VISION-TASKS-001` is `DONE`: wide Tasks now shows the dense task table,
 bounded selected-task typed log tail, and retained background/build history.

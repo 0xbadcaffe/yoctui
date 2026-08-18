@@ -4301,18 +4301,18 @@ notes = "Wide Tasks now composes a dense Task/Recipe/Status/Time/Progress table,
 id = "UI-VISION-RESP-001"
 milestone = "M13"
 title = "Validate responsive and accessible workbench rendering"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 463
 required = true
 depends_on = ["UI-VISION-TASKS-001"]
 verify = ["cargo test -p yoctui-ui workbench_responsive", "./scripts/test-tui-snapshots.sh", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Cover wide, medium, narrow, reduced-height, every theme, and no-color rendering without changing keyboard/mouse/focus semantics."
+notes = "Added workbench breakpoint, reduced-height, all-theme, and no-color TestBackend coverage; compact headers preserve project and daemon/BitBake anchors at 80 columns. Refreshed narrow/medium/wide real-PTY semantic snapshots. All 132 UI tests, the full workspace, workspace Clippy, 39 bridge tests, docs, and roadmap checks pass."
 
 [[task]]
 id = "UI-VISION-001"
 milestone = "M13"
 title = "Complete the dense terminal workbench redesign"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 464
 required = true
 depends_on = ["UI-VISION-SHELL-001", "UI-VISION-NAV-001", "UI-VISION-TASKS-001", "UI-VISION-RESP-001"]

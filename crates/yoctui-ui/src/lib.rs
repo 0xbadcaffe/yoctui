@@ -707,10 +707,29 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect) {
         .get("DISTRO")
         .map_or("unknown", String::as_str);
     let project = app.build.target.as_deref().unwrap_or("not selected");
-    let columns =
-        Layout::horizontal([Constraint::Percentage(64), Constraint::Percentage(36)]).split(inner);
-    frame.render_widget(
-        Paragraph::new(Line::from(vec![
+    let compact = area.width < 100;
+    let medium = area.width < 130;
+    let columns = if compact {
+        Layout::horizontal([Constraint::Percentage(58), Constraint::Percentage(42)]).split(inner)
+    } else {
+        Layout::horizontal([Constraint::Percentage(64), Constraint::Percentage(36)]).split(inner)
+    };
+    let left = if compact {
+        Line::from(vec![
+            Span::styled("yoctui", palette.role(palette.progress, Modifier::BOLD)),
+            Span::styled(" • ", palette.role(palette.disabled, Modifier::DIM)),
+            Span::raw(project.to_owned()),
+        ])
+    } else if medium {
+        Line::from(vec![
+            Span::styled("yoctui", palette.role(palette.progress, Modifier::BOLD)),
+            Span::styled(" • ", palette.role(palette.disabled, Modifier::DIM)),
+            Span::raw(format!("Project: {project}")),
+            Span::styled(" • ", palette.role(palette.disabled, Modifier::DIM)),
+            Span::raw(format!("Machine: {machine}")),
+        ])
+    } else {
+        Line::from(vec![
             Span::styled("yoctui", palette.role(palette.progress, Modifier::BOLD)),
             Span::styled("  •  ", palette.role(palette.disabled, Modifier::DIM)),
             Span::raw(format!("Project: {project}")),
@@ -718,12 +737,18 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect) {
             Span::raw(format!("Machine: {machine}")),
             Span::styled("  •  ", palette.role(palette.disabled, Modifier::DIM)),
             Span::raw(format!("Distro: {distro}")),
-        ])),
-        columns[0],
-    );
+        ])
+    };
+    frame.render_widget(Paragraph::new(left), columns[0]);
+    let daemon_prefix = if compact { " D:" } else { "  Daemon: " };
+    let bitbake_prefix = if compact {
+        " • BB:"
+    } else {
+        "  •  BitBake: "
+    };
     frame.render_widget(
         Paragraph::new(Line::from(vec![
-            Span::raw("Daemon: "),
+            Span::raw(daemon_prefix),
             Span::styled(
                 daemon_status_label(app.daemon.status),
                 match app.daemon.status {
@@ -741,8 +766,10 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect) {
                     }
                 },
             ),
-            Span::styled("  •  ", palette.role(palette.disabled, Modifier::DIM)),
-            Span::raw("BitBake: "),
+            Span::styled(
+                bitbake_prefix,
+                palette.role(palette.disabled, Modifier::DIM),
+            ),
             Span::styled(
                 daemon_lifecycle_label(app.daemon.bitbake),
                 daemon_lifecycle_style(app, app.daemon.bitbake),
@@ -15292,6 +15319,83 @@ mod tests {
         assert!(output.contains("do_compile"), "{output}");
         assert!(output.contains("Log Viewer"), "{output}");
         assert!(!output.contains("Job History"), "{output}");
+    }
+
+    #[test]
+    fn workbench_responsive_preserves_task_priority_at_every_breakpoint() {
+        let mut app = App::new(16, 4_096);
+        app.screen = Screen::Tasks;
+        app.build.target = Some("core-image-minimal".into());
+        let task = yoctui_model::TaskInfo::active(
+            yoctui_model::TaskId("busybox:do_compile".into()),
+            "busybox".into(),
+            "do_compile".into(),
+        );
+        app.tasks.insert(task.id.clone(), task);
+
+        let wide = rendered_text(&app, 180, 44);
+        assert!(wide.contains("CONTENT"), "{wide}");
+        assert!(wide.contains("Job History"), "{wide}");
+        assert!(wide.contains("System Status"), "{wide}");
+
+        let medium = rendered_text(&app, 100, 30);
+        assert!(medium.contains("Navigator"), "{medium}");
+        assert!(medium.contains("Log Viewer"), "{medium}");
+        assert!(!medium.contains("System Status"), "{medium}");
+
+        let narrow = rendered_text(&app, 80, 24);
+        assert!(
+            narrow.contains("Panes: Navigator  [Workspace]  Inspector"),
+            "{narrow}"
+        );
+        assert!(narrow.contains("do_compile"), "{narrow}");
+
+        let too_small = rendered_text(&app, 79, 23);
+        assert!(too_small.contains("Yoctui needs at least 80x24"));
+    }
+
+    #[test]
+    fn workbench_responsive_keeps_semantics_in_every_theme_and_no_color() {
+        let mut app = App::new(16, 4_096);
+        app.screen = Screen::Tasks;
+        app.build.status = BuildStatus::Running;
+        let mut task = yoctui_model::TaskInfo::active(
+            yoctui_model::TaskId("bash:do_compile".into()),
+            "bash".into(),
+            "do_compile".into(),
+        );
+        task.progress = Some(50);
+        app.tasks.insert(task.id.clone(), task);
+        for theme in [
+            Theme::DarkPro,
+            Theme::WhiteClassic,
+            Theme::MatrixGreen,
+            Theme::VscodeDark,
+            Theme::VscodeLight,
+            Theme::AccessibleDark,
+            Theme::SoftLight,
+            Theme::HighContrast,
+        ] {
+            app.theme = theme;
+            app.color_enabled = true;
+            let output = rendered_text(&app, 160, 36);
+            assert!(output.contains("▶ Running"), "{theme:?}: {output}");
+            assert!(output.contains("50%"), "{theme:?}: {output}");
+            assert!(output.contains("BUILD"), "{theme:?}: {output}");
+        }
+
+        app.color_enabled = false;
+        app.focus = FocusTarget::Navigator;
+        let mut terminal = Terminal::new(TestBackend::new(160, 36)).unwrap();
+        terminal.draw(|frame| render(frame, &app)).unwrap();
+        assert!(
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .any(|cell| cell.modifier.contains(Modifier::REVERSED))
+        );
     }
 
     #[test]

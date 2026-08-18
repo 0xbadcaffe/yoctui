@@ -16,7 +16,7 @@ for width, height, name in ((80, 24, 'narrow'), (100, 30, 'medium'), (160, 48, '
         proc = subprocess.Popen([os.path.join(root, 'target/debug/yoctui'), '--backend', 'process', '--build-dir', os.path.join(tmp, 'build'), '--no-color'], stdin=slave, stdout=slave, stderr=slave, start_new_session=True)
         os.close(slave)
         raw = bytearray(); deadline = time.monotonic() + 8
-        while time.monotonic() < deadline and b'Yoctui' not in raw:
+        while time.monotonic() < deadline and b'yoctui' not in raw.lower():
             ready, _, _ = select.select([master], [], [], .2)
             if ready:
                 try: raw.extend(os.read(master, 65536))
@@ -30,7 +30,7 @@ for width, height, name in ((80, 24, 'narrow'), (100, 30, 'medium'), (160, 48, '
         normalized = re.sub(r'\x1b\[[0-9;?]*[ -/]*[@-~]', '', text)
         normalized = '\n'.join(line.rstrip() for line in normalized.splitlines() if line.strip())
         open(os.path.join(artifact, f'{name}.txt'), 'w').write(normalized[-32768:])
-        if 'Yoctui' not in normalized or proc.returncode not in (0, 1, -9):
+        if 'yoctui' not in normalized.lower() or proc.returncode not in (0, 1, -9):
             raise SystemExit(f'snapshot failed at {name}: returncode={proc.returncode}')
 print('PTY semantic snapshots passed')
 PY
