@@ -796,3 +796,10 @@ remain Unknown. The only initial rule selects legacy Tinfoil for
 `1.46..<2.0` or modern Tinfoil for `2.0..<2.19`, always with limitations and
 official-source evidence, never as a release support claim. Five tests and
 Clippy pass. `COMPAT-UNKNOWN-001` is active.
+
+`COMPAT-UNKNOWN-001` is complete. A centralized resolver now preserves an
+unfamiliar environment and emits all catalog records: positive-only direct
+evidence enables exactly that behavior, negative-only is Unavailable, conflict
+is Unknown, and absent/inconclusive behavior remains Unknown unless its bounded
+catalog fallback applies. Synthetic BitBake 99.0 tests cover every case and
+prove the closed historical map is not inherited. `COMPAT-OLD-001` is active.

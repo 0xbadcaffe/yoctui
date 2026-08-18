@@ -2126,6 +2126,15 @@ selected implementation, range, official source URLs, and fallback evidence.
 The initial Tinfoil adapter map ends before BitBake 2.19, so an unprobed future
 version cannot silently inherit the 2.x implementation.
 
+`CapabilityResolver` combines catalog entries, direct observations, and the
+fallback map into a complete normalized snapshot. Positive-only evidence
+enables the exact capability with its preferred implementation; negative-only
+evidence makes it Unavailable; mixed positive/negative evidence is Unknown.
+Absent or inconclusive evidence may use only a declared bounded fallback and
+otherwise stays Unknown. Snapshot resolution emits one record for every
+catalog ID while preserving the unfamiliar environment identity, so an unknown
+future release remains inspectable and is never rejected globally.
+
 Commands use this flow:
 
 ```text
