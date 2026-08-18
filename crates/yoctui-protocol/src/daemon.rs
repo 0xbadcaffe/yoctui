@@ -1,6 +1,9 @@
 //! Typed, bounded protocol for the persistent daemon and attachable clients.
 use serde::{Deserialize, Serialize};
-use std::collections::VecDeque;
+use std::{
+    collections::VecDeque,
+    path::{Component, Path},
+};
 use thiserror::Error;
 
 use crate::{TaskStatsData, WorkspaceData};
@@ -17,6 +20,12 @@ pub const MAX_TERMINAL_SCROLLBACK_LINES: usize = 100_000;
 pub const MAX_UTILITY_OUTPUT_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_PTY_OUTPUT_EVENT_BYTES: usize = 64 * 1024;
 pub const MAX_DAEMON_BUILD_EVENTS: usize = 2_048;
+pub const COMPATIBILITY_SCHEMA_VERSION: u16 = 1;
+pub const MAX_COMPATIBILITY_CAPABILITIES: usize = 512;
+pub const MAX_COMPATIBILITY_EVIDENCE: usize = 32;
+pub const MAX_COMPATIBILITY_ITEMS: usize = 256;
+pub const MAX_COMPATIBILITY_TEXT_BYTES: usize = 4_096;
+pub const MAX_COMPATIBILITY_ARGV: usize = 64;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProtocolVersion {
@@ -98,6 +107,474 @@ pub struct WorkspaceIdentity {
     pub canonical_source: String,
     pub canonical_build: String,
     pub identity_hash: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CompatibilityIdentityAuthority {
+    BackendHandshake,
+    BitBakeDatastore,
+    BitBakeVersionProbe,
+    ConfiguredLayerMetadata,
+    ExecutableProbe,
+    InitializedEnvironment,
+    ProtocolNegotiation,
+    ReleaseMetadata,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "state", rename_all = "snake_case")]
+pub enum CompatibilityDetected<T> {
+    Unknown,
+    Detected {
+        value: T,
+        authority: CompatibilityIdentityAuthority,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilityReleaseIdentity {
+    pub name: Option<String>,
+    pub version: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilityDistroIdentity {
+    pub name: String,
+    pub version: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilitySourceRootIdentity {
+    pub kind: String,
+    pub path: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilityLayerSeriesIdentity {
+    pub layer: String,
+    pub root: String,
+    pub compatible_series: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilityToolIdentity {
+    pub id: String,
+    pub executable: String,
+    pub version: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilityBackendIdentity {
+    pub name: String,
+    pub version: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilityProtocolIdentity {
+    pub name: String,
+    pub version: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilityEnvironmentIdentity {
+    pub build_directory: CompatibilityDetected<String>,
+    pub source_roots: CompatibilityDetected<Vec<CompatibilitySourceRootIdentity>>,
+    pub bitbake_version: CompatibilityDetected<String>,
+    pub oe_core: CompatibilityDetected<CompatibilityReleaseIdentity>,
+    pub poky: CompatibilityDetected<CompatibilityReleaseIdentity>,
+    pub distro: CompatibilityDetected<CompatibilityDistroIdentity>,
+    pub machine: CompatibilityDetected<String>,
+    pub layer_series: CompatibilityDetected<Vec<CompatibilityLayerSeriesIdentity>>,
+    pub available_tools: CompatibilityDetected<Vec<CompatibilityToolIdentity>>,
+    pub backend: CompatibilityDetected<CompatibilityBackendIdentity>,
+    pub protocol: CompatibilityDetected<CompatibilityProtocolIdentity>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilityReasonData {
+    pub code: String,
+    pub message: String,
+    pub requirement: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CompatibilityEvidenceKind {
+    DirectProbe,
+    BackendNegotiation,
+    ProtocolNegotiation,
+    Metadata,
+    ExecutableIdentity,
+    ReleaseVersionFallback,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CompatibilityEvidenceOutcome {
+    Positive,
+    Negative,
+    Inconclusive,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilityEvidenceData {
+    pub kind: CompatibilityEvidenceKind,
+    pub outcome: CompatibilityEvidenceOutcome,
+    pub subject: String,
+    pub detail: String,
+    pub argv: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "state", rename_all = "snake_case")]
+pub enum CompatibilityStateData {
+    Available,
+    AvailableWithLimitations {
+        reason: CompatibilityReasonData,
+        limitations: Vec<String>,
+    },
+    Unavailable {
+        reason: CompatibilityReasonData,
+    },
+    Unknown {
+        reason: CompatibilityReasonData,
+    },
+    Unsupported {
+        reason: CompatibilityReasonData,
+    },
+    #[serde(other)]
+    UnknownWireState,
+}
+
+impl CompatibilityStateData {
+    pub const fn is_enabled(&self) -> bool {
+        matches!(
+            self,
+            Self::Available | Self::AvailableWithLimitations { .. }
+        )
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilityImplementationData {
+    pub id: String,
+    pub kind: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilityCapabilityData {
+    pub id: String,
+    pub state: CompatibilityStateData,
+    pub evidence: Vec<CompatibilityEvidenceData>,
+    pub implementation: Option<CompatibilityImplementationData>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CompatibilitySnapshotData {
+    pub schema_version: u16,
+    pub generation: u64,
+    pub environment: CompatibilityEnvironmentIdentity,
+    pub capabilities: Vec<CompatibilityCapabilityData>,
+}
+
+impl CompatibilitySnapshotData {
+    pub fn validate(&self) -> Result<(), CompatibilityProtocolError> {
+        if self.schema_version != COMPATIBILITY_SCHEMA_VERSION {
+            return Err(CompatibilityProtocolError::UnsupportedSchema(
+                self.schema_version,
+            ));
+        }
+        if self.generation == 0 {
+            return Err(CompatibilityProtocolError::InvalidGeneration);
+        }
+        validate_environment(&self.environment)?;
+        if self.capabilities.len() > MAX_COMPATIBILITY_CAPABILITIES {
+            return Err(CompatibilityProtocolError::Oversized("capabilities"));
+        }
+        let mut ids = std::collections::BTreeSet::new();
+        for capability in &self.capabilities {
+            if !valid_id(&capability.id) {
+                return Err(CompatibilityProtocolError::InvalidText("capability id"));
+            }
+            if !ids.insert(&capability.id) {
+                return Err(CompatibilityProtocolError::DuplicateCapability(
+                    capability.id.clone(),
+                ));
+            }
+            validate_capability(capability)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum CompatibilityProtocolError {
+    #[error("unsupported compatibility schema version: {0}")]
+    UnsupportedSchema(u16),
+    #[error("compatibility generation must be non-zero")]
+    InvalidGeneration,
+    #[error("oversized compatibility field: {0}")]
+    Oversized(&'static str),
+    #[error("invalid compatibility text field: {0}")]
+    InvalidText(&'static str),
+    #[error("invalid compatibility path field: {0}")]
+    InvalidPath(&'static str),
+    #[error("duplicate compatibility capability: {0}")]
+    DuplicateCapability(String),
+    #[error("compatibility capability evidence does not support its state: {0}")]
+    EvidenceMismatch(String),
+    #[error("unknown compatibility identity authority cannot establish detected identity")]
+    UnknownIdentityAuthority,
+}
+
+fn validate_environment(
+    environment: &CompatibilityEnvironmentIdentity,
+) -> Result<(), CompatibilityProtocolError> {
+    validate_detected(&environment.build_directory, |path| {
+        valid_path(path, "build directory")
+    })?;
+    validate_detected(&environment.bitbake_version, |value| {
+        valid_text(value, "BitBake version")
+    })?;
+    validate_detected(&environment.machine, |value| {
+        valid_id(value)
+            .then_some(())
+            .ok_or(CompatibilityProtocolError::InvalidText("machine"))
+    })?;
+    for release in [&environment.oe_core, &environment.poky] {
+        validate_detected(release, |release| {
+            if release.name.is_none() && release.version.is_none() {
+                return Err(CompatibilityProtocolError::InvalidText("release"));
+            }
+            for value in [release.name.as_deref(), release.version.as_deref()]
+                .into_iter()
+                .flatten()
+            {
+                valid_text(value, "release")?;
+            }
+            Ok(())
+        })?;
+    }
+    validate_detected(&environment.distro, |distro| {
+        if !valid_id(&distro.name) {
+            return Err(CompatibilityProtocolError::InvalidText("distro"));
+        }
+        if let Some(version) = &distro.version {
+            valid_text(version, "distro version")?;
+        }
+        Ok(())
+    })?;
+    validate_detected(&environment.source_roots, |roots| {
+        valid_collection(roots, "source roots")?;
+        for root in roots {
+            valid_text(&root.kind, "source root kind")?;
+            valid_path(&root.path, "source root")?;
+        }
+        Ok(())
+    })?;
+    validate_detected(&environment.layer_series, |layers| {
+        valid_collection(layers, "layer series")?;
+        for layer in layers {
+            if !valid_id(&layer.layer) {
+                return Err(CompatibilityProtocolError::InvalidText("layer"));
+            }
+            valid_path(&layer.root, "layer root")?;
+            valid_collection(&layer.compatible_series, "compatible series")?;
+            if layer
+                .compatible_series
+                .iter()
+                .any(|series| !valid_id(series))
+            {
+                return Err(CompatibilityProtocolError::InvalidText("compatible series"));
+            }
+        }
+        Ok(())
+    })?;
+    validate_detected(&environment.available_tools, |tools| {
+        valid_collection(tools, "available tools")?;
+        for tool in tools {
+            if !valid_id(&tool.id) {
+                return Err(CompatibilityProtocolError::InvalidText("tool id"));
+            }
+            valid_path(&tool.executable, "tool executable")?;
+            if let Some(version) = &tool.version {
+                valid_text(version, "tool version")?;
+            }
+        }
+        Ok(())
+    })?;
+    validate_detected(&environment.backend, |backend| {
+        if !valid_id(&backend.name) {
+            return Err(CompatibilityProtocolError::InvalidText("backend"));
+        }
+        if let Some(version) = &backend.version {
+            valid_text(version, "backend version")?;
+        }
+        Ok(())
+    })?;
+    validate_detected(&environment.protocol, |protocol| {
+        if !valid_id(&protocol.name) {
+            return Err(CompatibilityProtocolError::InvalidText("protocol"));
+        }
+        valid_text(&protocol.version, "protocol version")
+    })?;
+    Ok(())
+}
+
+fn validate_detected<T>(
+    value: &CompatibilityDetected<T>,
+    validate: impl FnOnce(&T) -> Result<(), CompatibilityProtocolError>,
+) -> Result<(), CompatibilityProtocolError> {
+    match value {
+        CompatibilityDetected::Unknown => Ok(()),
+        CompatibilityDetected::Detected { value, authority } => {
+            if *authority == CompatibilityIdentityAuthority::Unknown {
+                return Err(CompatibilityProtocolError::UnknownIdentityAuthority);
+            }
+            validate(value)
+        }
+    }
+}
+
+fn validate_capability(
+    capability: &CompatibilityCapabilityData,
+) -> Result<(), CompatibilityProtocolError> {
+    if capability.evidence.len() > MAX_COMPATIBILITY_EVIDENCE {
+        return Err(CompatibilityProtocolError::Oversized("capability evidence"));
+    }
+    for evidence in &capability.evidence {
+        valid_text(&evidence.subject, "evidence subject")?;
+        valid_text(&evidence.detail, "evidence detail")?;
+        if evidence.argv.len() > MAX_COMPATIBILITY_ARGV {
+            return Err(CompatibilityProtocolError::Oversized("evidence argv"));
+        }
+        for argument in &evidence.argv {
+            valid_text(argument, "evidence argv")?;
+        }
+    }
+    if let Some(implementation) = &capability.implementation
+        && (!valid_id(&implementation.id) || !valid_id(&implementation.kind))
+    {
+        return Err(CompatibilityProtocolError::InvalidText("implementation"));
+    }
+    let has_positive = capability.evidence.iter().any(|evidence| {
+        evidence.outcome == CompatibilityEvidenceOutcome::Positive
+            && evidence.kind != CompatibilityEvidenceKind::Unknown
+    });
+    let has_negative = capability.evidence.iter().any(|evidence| {
+        evidence.outcome == CompatibilityEvidenceOutcome::Negative
+            && evidence.kind != CompatibilityEvidenceKind::Unknown
+    });
+    match &capability.state {
+        CompatibilityStateData::Available => {
+            if !has_positive || capability.implementation.is_none() {
+                return Err(CompatibilityProtocolError::EvidenceMismatch(
+                    capability.id.clone(),
+                ));
+            }
+        }
+        CompatibilityStateData::AvailableWithLimitations {
+            reason,
+            limitations,
+        } => {
+            validate_reason(reason)?;
+            valid_collection(limitations, "limitations")?;
+            for limitation in limitations {
+                valid_text(limitation, "limitation")?;
+            }
+            if !has_positive || capability.implementation.is_none() {
+                return Err(CompatibilityProtocolError::EvidenceMismatch(
+                    capability.id.clone(),
+                ));
+            }
+        }
+        CompatibilityStateData::Unavailable { reason } => {
+            validate_reason(reason)?;
+            if !has_negative || capability.implementation.is_some() {
+                return Err(CompatibilityProtocolError::EvidenceMismatch(
+                    capability.id.clone(),
+                ));
+            }
+        }
+        CompatibilityStateData::Unknown { reason }
+        | CompatibilityStateData::Unsupported { reason } => {
+            validate_reason(reason)?;
+            if capability.implementation.is_some() {
+                return Err(CompatibilityProtocolError::EvidenceMismatch(
+                    capability.id.clone(),
+                ));
+            }
+        }
+        CompatibilityStateData::UnknownWireState => {
+            if capability.implementation.is_some() {
+                return Err(CompatibilityProtocolError::EvidenceMismatch(
+                    capability.id.clone(),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+fn validate_reason(reason: &CompatibilityReasonData) -> Result<(), CompatibilityProtocolError> {
+    if !valid_id(&reason.code) {
+        return Err(CompatibilityProtocolError::InvalidText("reason code"));
+    }
+    valid_text(&reason.message, "reason message")?;
+    if let Some(requirement) = &reason.requirement {
+        valid_text(requirement, "reason requirement")?;
+    }
+    Ok(())
+}
+
+fn valid_collection<T>(
+    values: &[T],
+    field: &'static str,
+) -> Result<(), CompatibilityProtocolError> {
+    if values.is_empty() || values.len() > MAX_COMPATIBILITY_ITEMS {
+        return Err(CompatibilityProtocolError::Oversized(field));
+    }
+    Ok(())
+}
+
+fn valid_text(value: &str, field: &'static str) -> Result<(), CompatibilityProtocolError> {
+    if value.is_empty()
+        || value.len() > MAX_COMPATIBILITY_TEXT_BYTES
+        || value.trim() != value
+        || value.chars().any(char::is_control)
+    {
+        return Err(CompatibilityProtocolError::InvalidText(field));
+    }
+    Ok(())
+}
+
+fn valid_id(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value.bytes().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'.' | b'_' | b'-')
+        })
+}
+
+fn valid_path(value: &str, field: &'static str) -> Result<(), CompatibilityProtocolError> {
+    let path = Path::new(value);
+    if !path.is_absolute()
+        || path == Path::new("/")
+        || value.len() > MAX_COMPATIBILITY_TEXT_BYTES
+        || !path
+            .components()
+            .all(|component| matches!(component, Component::RootDir | Component::Normal(_)))
+    {
+        return Err(CompatibilityProtocolError::InvalidPath(field));
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -748,6 +1225,8 @@ pub struct DaemonSnapshot {
     pub workspace: Option<WorkspaceIdentity>,
     pub project_profile: ProjectProfileSummary,
     pub bitbake: BitBakeState,
+    #[serde(default)]
+    pub compatibility: Option<CompatibilitySnapshotData>,
     pub jobs: Vec<JobSummary>,
     pub pty_sessions: Vec<PtySessionSummary>,
     pub clients: Vec<ClientSummary>,
@@ -817,6 +1296,7 @@ pub struct SequencedEvent {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum DaemonEvent {
     BitBakeChanged(BitBakeState),
+    CompatibilityChanged(CompatibilitySnapshotData),
     JobChanged(JobSummary),
     JobRemoved {
         job_id: JobId,
@@ -1065,6 +1545,9 @@ impl DaemonSnapshotJournal {
         limits: DaemonSnapshotLimits,
     ) -> Result<Self, DaemonSnapshotError> {
         let limits = limits.validate()?;
+        if let Some(compatibility) = &snapshot.compatibility {
+            compatibility.validate()?;
+        }
         ensure_snapshot_bound(&snapshot, limits.snapshot_bytes)?;
         Ok(Self {
             snapshot,
@@ -1183,6 +1666,24 @@ pub fn apply_sequenced_event(
     }
     match &sequenced.event {
         DaemonEvent::BitBakeChanged(bitbake) => snapshot.bitbake = bitbake.clone(),
+        DaemonEvent::CompatibilityChanged(compatibility) => {
+            compatibility.validate()?;
+            if snapshot
+                .compatibility
+                .as_ref()
+                .is_some_and(|current| current.generation >= compatibility.generation)
+            {
+                return Err(DaemonSnapshotError::StaleCompatibilityGeneration {
+                    current: snapshot
+                        .compatibility
+                        .as_ref()
+                        .map(|current| current.generation)
+                        .unwrap_or(0),
+                    received: compatibility.generation,
+                });
+            }
+            snapshot.compatibility = Some(compatibility.clone());
+        }
         DaemonEvent::JobChanged(job) => replace_by(&mut snapshot.jobs, job.clone(), |item| item.id),
         DaemonEvent::JobRemoved { job_id } => snapshot.jobs.retain(|job| job.id != *job_id),
         DaemonEvent::PtyChanged(pty) => {
@@ -1299,6 +1800,8 @@ fn ensure_snapshot_bound(
 
 #[derive(Debug, Error)]
 pub enum DaemonSnapshotError {
+    #[error(transparent)]
+    Compatibility(#[from] CompatibilityProtocolError),
     #[error("invalid daemon snapshot limit for {0}")]
     InvalidLimit(&'static str),
     #[error("daemon snapshot is {actual} bytes, exceeding the {maximum}-byte limit")]
@@ -1318,6 +1821,8 @@ pub enum DaemonSnapshotError {
         expected_generation: u64,
         actual_generation: u64,
     },
+    #[error("stale compatibility generation: current {current}, received {received}")]
+    StaleCompatibilityGeneration { current: u64, received: u64 },
     #[error(transparent)]
     Json(#[from] serde_json::Error),
 }
@@ -1518,6 +2023,7 @@ mod tests {
                 capabilities: Vec::new(),
                 diagnostic: None,
             },
+            compatibility: None,
             jobs: Vec::new(),
             pty_sessions: Vec::new(),
             clients: Vec::new(),
@@ -1525,6 +2031,152 @@ mod tests {
             build_events: Vec::new(),
             recovery_warnings: Vec::new(),
         }
+    }
+
+    fn compatibility_environment_fixture() -> CompatibilityEnvironmentIdentity {
+        CompatibilityEnvironmentIdentity {
+            build_directory: CompatibilityDetected::Detected {
+                value: "/work/poky/build".into(),
+                authority: CompatibilityIdentityAuthority::InitializedEnvironment,
+            },
+            source_roots: CompatibilityDetected::Unknown,
+            bitbake_version: CompatibilityDetected::Detected {
+                value: "2.18.0".into(),
+                authority: CompatibilityIdentityAuthority::BitBakeVersionProbe,
+            },
+            oe_core: CompatibilityDetected::Unknown,
+            poky: CompatibilityDetected::Unknown,
+            distro: CompatibilityDetected::Unknown,
+            machine: CompatibilityDetected::Unknown,
+            layer_series: CompatibilityDetected::Unknown,
+            available_tools: CompatibilityDetected::Unknown,
+            backend: CompatibilityDetected::Unknown,
+            protocol: CompatibilityDetected::Detected {
+                value: CompatibilityProtocolIdentity {
+                    name: "yoctui-daemon".into(),
+                    version: "1.0".into(),
+                },
+                authority: CompatibilityIdentityAuthority::ProtocolNegotiation,
+            },
+        }
+    }
+
+    fn compatibility_snapshot_fixture(generation: u64) -> CompatibilitySnapshotData {
+        CompatibilitySnapshotData {
+            schema_version: COMPATIBILITY_SCHEMA_VERSION,
+            generation,
+            environment: compatibility_environment_fixture(),
+            capabilities: vec![CompatibilityCapabilityData {
+                id: "bitbake.getvar".into(),
+                state: CompatibilityStateData::Available,
+                evidence: vec![CompatibilityEvidenceData {
+                    kind: CompatibilityEvidenceKind::DirectProbe,
+                    outcome: CompatibilityEvidenceOutcome::Positive,
+                    subject: "bitbake --help".into(),
+                    detail: "getvar option present".into(),
+                    argv: vec!["bitbake".into(), "--help".into()],
+                }],
+                implementation: Some(CompatibilityImplementationData {
+                    id: "bitbake.getvar.native".into(),
+                    kind: "native".into(),
+                }),
+            }],
+        }
+    }
+
+    #[test]
+    fn compatibility_snapshot_round_trips_bounded_identity_state_and_evidence() {
+        let snapshot = compatibility_snapshot_fixture(7);
+        snapshot.validate().unwrap();
+
+        let encoded = serde_json::to_vec(&snapshot).unwrap();
+        let decoded: CompatibilitySnapshotData = serde_json::from_slice(&encoded).unwrap();
+
+        assert_eq!(decoded, snapshot);
+        assert!(decoded.capabilities[0].state.is_enabled());
+    }
+
+    #[test]
+    fn compatibility_validation_rejects_duplicate_oversized_and_unsupported_evidence() {
+        let mut duplicate = compatibility_snapshot_fixture(1);
+        duplicate
+            .capabilities
+            .push(duplicate.capabilities[0].clone());
+        assert!(matches!(
+            duplicate.validate(),
+            Err(CompatibilityProtocolError::DuplicateCapability(_))
+        ));
+
+        let mut oversized = compatibility_snapshot_fixture(1);
+        oversized.capabilities[0].evidence[0].argv =
+            vec!["argument".into(); MAX_COMPATIBILITY_ARGV + 1];
+        assert_eq!(
+            oversized.validate(),
+            Err(CompatibilityProtocolError::Oversized("evidence argv"))
+        );
+
+        let mut contradicted = compatibility_snapshot_fixture(1);
+        contradicted.capabilities[0].state = CompatibilityStateData::Unavailable {
+            reason: CompatibilityReasonData {
+                code: "command_missing".into(),
+                message: "The command is unavailable.".into(),
+                requirement: Some("bitbake --getvar".into()),
+            },
+        };
+        contradicted.capabilities[0].implementation = None;
+        assert!(matches!(
+            contradicted.validate(),
+            Err(CompatibilityProtocolError::EvidenceMismatch(_))
+        ));
+    }
+
+    #[test]
+    fn compatibility_unknown_wire_values_fail_closed() {
+        let state: CompatibilityStateData =
+            serde_json::from_str(r#"{"state":"available_in_a_future_protocol"}"#).unwrap();
+        assert_eq!(state, CompatibilityStateData::UnknownWireState);
+        assert!(!state.is_enabled());
+
+        let evidence_kind: CompatibilityEvidenceKind =
+            serde_json::from_str(r#""future_probe""#).unwrap();
+        let evidence_outcome: CompatibilityEvidenceOutcome =
+            serde_json::from_str(r#""future_outcome""#).unwrap();
+        assert_eq!(evidence_kind, CompatibilityEvidenceKind::Unknown);
+        assert_eq!(evidence_outcome, CompatibilityEvidenceOutcome::Unknown);
+    }
+
+    #[test]
+    fn compatibility_events_replace_newer_snapshots_and_reject_stale_generations() {
+        let mut initial = daemon_snapshot_fixture();
+        initial.compatibility = Some(compatibility_snapshot_fixture(1));
+        let mut journal = DaemonSnapshotJournal::new(initial, DaemonSnapshotLimits::default())
+            .expect("valid compatibility snapshot");
+
+        journal
+            .publish(DaemonEvent::CompatibilityChanged(
+                compatibility_snapshot_fixture(2),
+            ))
+            .unwrap();
+        assert_eq!(
+            journal
+                .snapshot()
+                .compatibility
+                .as_ref()
+                .unwrap()
+                .generation,
+            2
+        );
+
+        assert!(matches!(
+            journal.publish(DaemonEvent::CompatibilityChanged(
+                compatibility_snapshot_fixture(2)
+            )),
+            Err(DaemonSnapshotError::StaleCompatibilityGeneration {
+                current: 2,
+                received: 2
+            })
+        ));
+        assert_eq!(journal.snapshot().sequence, 1);
     }
 
     #[test]
@@ -1576,6 +2228,7 @@ mod tests {
                 capabilities: vec![BitBakeCapability::WorkspaceInspection],
                 diagnostic: None,
             },
+            compatibility: None,
             jobs: Vec::new(),
             pty_sessions: Vec::new(),
             clients: vec![ClientSummary {

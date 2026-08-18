@@ -2152,6 +2152,18 @@ change or explicit invalidation clears the snapshot and advances generation.
 Store and lookup reject stale generation, environment mismatch, another
 project's key, invalid key material, and generation overflow.
 
+The daemon protocol carries this state as independent bounded DTOs so the wire
+crate does not reverse the model dependency direction. Compatibility schema v1
+includes authoritative identity fields, stable string capability IDs, all five
+states, reason/evidence, selected implementation, and an inner generation. A
+full optional snapshot is part of attach/state snapshots and a typed
+`CompatibilityChanged` event replaces it only when the inner generation is
+newer. Protocol validation runs before journal mutation and rejects malformed,
+oversized, duplicate, contradictory, or stale data. Unknown future wire enum
+values fail closed; absence in an older persisted snapshot means Unknown, not
+Available. Model conversion remains the client boundary and cannot add release
+inference.
+
 Commands use this flow:
 
 ```text

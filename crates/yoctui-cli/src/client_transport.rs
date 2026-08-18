@@ -418,6 +418,7 @@ mod tests {
                 capabilities: Vec::new(),
                 diagnostic: None,
             },
+            compatibility: None,
             jobs: Vec::new(),
             pty_sessions: Vec::new(),
             clients: Vec::new(),

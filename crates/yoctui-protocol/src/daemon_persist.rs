@@ -480,6 +480,7 @@ mod tests {
                 capabilities: vec![BitBakeCapability::WorkspaceInspection],
                 diagnostic: None,
             },
+            compatibility: None,
             jobs: Vec::new(),
             pty_sessions: Vec::new(),
             clients: Vec::new(),

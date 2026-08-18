@@ -139,6 +139,7 @@ fn daemon_recovery_restores_history_but_marks_live_work_lost() {
             capabilities: Vec::new(),
             diagnostic: None,
         },
+        compatibility: None,
         jobs: vec![JobSummary {
             id: JobId(4),
             kind: JobKind::BitBakeBuild,
@@ -256,6 +257,7 @@ fn reboot_recovery_exposes_only_typed_explicit_relaunch_intent() {
             capabilities: Vec::new(),
             diagnostic: None,
         },
+        compatibility: None,
         jobs: Vec::new(),
         pty_sessions: vec![PtySessionSummary {
             id: PtySessionId(9),

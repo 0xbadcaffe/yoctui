@@ -2,45 +2,50 @@
 
 ## Task
 
-**ID:** COMPAT-PROTOCOL-001
-**Title:** Add capability snapshot to client and daemon protocol
+**ID:** COMPAT-DAEMON-001
+**Title:** Move compatibility state into daemon ownership
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Carry the exact environment identity and generated capability snapshot from
-daemon to clients as bounded, versioned, typed protocol data and update events.
+Make the persistent daemon the sole owner of the exact environment capability
+snapshot so every attached client observes the same generation and reconnects
+without independently inferring release support.
 
 ## Dependencies
 
-- `COMPAT-CAP-MODEL-001` — DONE
-- `COMPAT-ENV-ID-001` — DONE
+- `COMPAT-CACHE-001` — DONE
+- `COMPAT-PROTOCOL-001` — DONE
+- `COMPAT-VERSION-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-protocol/src/daemon.rs`
-- `crates/yoctui-protocol/src/lib.rs`
-- `crates/yoctui-model/src/compatibility.rs`
-- `docs/protocol.md`
+- `crates/yoctui-model/src/daemon_state.rs`
+- `crates/yoctui-app/src/lib.rs`
+- `crates/yoctui-cli/src/daemon.rs`
+- `crates/yoctui-cli/src/client_transport.rs`
+- `crates/yoctui-bitbake/src/compatibility_cache.rs`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Protocol DTOs carry bounded identity fields, stable capability IDs, five
-  states, reason code/text, evidence, selected implementation, and generation.
-- Snapshot and update messages are versioned and distinguish full replacement
-  from generation-correlated change.
-- Validation rejects oversized collections/text/argv, duplicate IDs, invalid
-  generation, and stale/malformed data before model conversion.
-- Unknown enum/message values remain forward compatible and fail closed.
-- Round-trip and bound tests pass.
+- Daemon state owns exactly one capability cache and normalized snapshot for
+  the selected build environment.
+- Environment/workspace changes invalidate and reprobe through a newer
+  generation; stale probe results cannot replace current state.
+- Attach and reconnect snapshots expose the daemon-owned compatibility state,
+  and all clients observe identical generations and update events.
+- Client/model replicas accept typed snapshots but never perform version or
+  release inference independently.
+- Tests cover initial attach, multi-client consistency, reconnect, invalidation,
+  stale reprobe rejection, and environment isolation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-protocol compatibility
-cargo fmt --all --check
+cargo test -p yoctui daemon_compatibility
+cargo test -p yoctui-model daemon_compatibility
 ./scripts/verify-roadmap.sh
 ```

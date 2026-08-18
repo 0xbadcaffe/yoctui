@@ -305,6 +305,7 @@ pub fn daemon_protocol_snapshot(
         workspace,
         project_profile,
         bitbake,
+        compatibility: None,
         jobs,
         pty_sessions,
         clients: Vec::<ClientSummary>::new(),

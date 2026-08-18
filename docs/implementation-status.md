@@ -819,3 +819,11 @@ digests. The cache holds one environment, reuses only an exact key, clears and
 advances generation on change/invalidation, and rejects stale, mismatched,
 oversized, and overflow state. Seven focused tests and Clippy pass.
 `COMPAT-PROTOCOL-001` is active.
+
+`COMPAT-PROTOCOL-001` is complete. Compatibility schema v1 now carries bounded
+authoritative environment identity, stable capability IDs, all five states,
+reasons, evidence, selected implementation, and a non-zero inner generation in
+attach snapshots and complete replacement events. Validation precedes journal
+mutation and rejects malformed, oversized, duplicate, contradictory, and stale
+data; unknown future wire values decode fail-closed. Four focused protocol
+tests and the full workspace compile pass. `COMPAT-DAEMON-001` is active.
