@@ -1004,4 +1004,10 @@ the validated attached daemon snapshot and emits exact human or bounded JSON
 identity/state/evidence diagnostics; unavailable and malformed authority fail
 closed, while release support remains honestly Unknown pending live matrix
 evidence. Focused CLI/protocol tests and workspace Clippy pass.
-`COMPAT-MATRIX-001` is active.
+`COMPAT-MATRIX-001` is complete. The exact development observation remains
+Partially tested, minimum/latest support are explicitly unclaimed, and all six
+policy labels are defined. Structure validation rejects ambiguous rows and
+requires non-fixture latest/older evidence before any support claim. The docs
+gate now validates bridge protocol lifecycle and Doctor JSON without bypassing
+daemon capability authority. Documentation and structure checks pass.
+`COMPAT-TEST-FIXTURES-001` is active.

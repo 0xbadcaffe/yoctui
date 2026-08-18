@@ -52,6 +52,54 @@ for task_id in sorted(required_ids):
 matrix = root / "docs/compatibility-matrix.md"
 if not matrix.is_file() or matrix.stat().st_size == 0:
     raise SystemExit("compatibility gate: docs/compatibility-matrix.md is missing or empty")
+matrix_text = matrix.read_text(encoding="utf-8")
+for heading in ("## Classification vocabulary", "## Current matrix", "## Support window", "## Evidence policy"):
+    if heading not in matrix_text:
+        raise SystemExit(f"compatibility gate: matrix lacks required section: {heading}")
+
+classifications = {
+    "Claimed supported", "Tested", "Partially tested", "Expected compatible",
+    "Unsupported", "Unknown",
+}
+for classification in classifications:
+    if f"| {classification} |" not in matrix_text:
+        raise SystemExit(f"compatibility gate: matrix lacks classification vocabulary: {classification}")
+
+current_matrix = matrix_text.split("## Current matrix", 1)[1].split("\n## ", 1)[0]
+matrix_rows: list[tuple[str, str, str, str]] = []
+for line in current_matrix.splitlines():
+    if not line.startswith("|"):
+        continue
+    cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+    if len(cells) != 4 or cells[0] == "Yocto/Poky identity" or set(cells[0]) <= {"-", ":"}:
+        continue
+    identity, bitbake, classification, evidence = cells
+    if classification not in classifications:
+        raise SystemExit(f"compatibility gate: ambiguous matrix classification: {classification}")
+    if not identity or not bitbake or not evidence:
+        raise SystemExit("compatibility gate: matrix row lacks identity, BitBake, or evidence scope")
+    if classification != "Unknown" and "compatibility" not in evidence.lower():
+        raise SystemExit(
+            f"compatibility gate: non-Unknown row lacks exact compatibility evidence link: {identity}"
+        )
+    matrix_rows.append((identity, bitbake, classification, evidence))
+if not matrix_rows:
+    raise SystemExit("compatibility gate: current matrix has no release rows")
+
+claimed = [row for row in matrix_rows if row[2] == "Claimed supported"]
+if claimed:
+    for kind in ("latest", "older"):
+        path = root / f"docs/compatibility-evidence/{kind}.toml"
+        try:
+            claim_evidence = tomllib.loads(path.read_text(encoding="utf-8"))
+        except (OSError, tomllib.TOMLDecodeError) as exc:
+            raise SystemExit(
+                f"compatibility gate: claimed support lacks parseable live {kind} evidence: {exc}"
+            )
+        if claim_evidence.get("evidence_level") != "live" or claim_evidence.get("fixture_only") is not False:
+            raise SystemExit(
+                f"compatibility gate: claimed support cannot use fixture-only {kind} evidence"
+            )
 
 if mode == "--structure-only":
     print("compatibility milestone structure is valid")

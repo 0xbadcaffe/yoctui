@@ -20,8 +20,20 @@ an isolated successful operation into a release support claim.
 
 | Yocto/Poky identity | BitBake | Classification | Evidence |
 |---|---|---|---|
-| Exact snapshot recorded in `docs/compatibility.md` | `2.19.0` | Partially tested | Live bridge/Tinfoil core smoke only; this predates the M18 release-support gate. |
+| Poky `6.0.99+snapshot-a4eb7bc2a750f76d9772eb88b7afb2b801bd1250` observed 2026-07-24 | `2.19.0` | Partially tested | Exact [live bridge/Tinfoil observation](compatibility.md#observed-live-yocto-combination): core smoke and selected focused workflows only; predates the M18 release-support gate and is not a support claim. |
 | Any other release | Unknown | Unknown | No M18 live compatibility evidence yet. |
+
+## Support window
+
+- Minimum supported release: **not claimed**; requires current
+  `COMPAT-LIVE-OLDER-001` non-fixture evidence.
+- Latest supported stable release: **not claimed**; requires current
+  `COMPAT-LIVE-LATEST-001` non-fixture evidence selected from authoritative
+  Yocto release documentation at validation time.
+- Latest exact live observation: the partially tested development snapshot in
+  the table above; it is neither a minimum nor a latest-stable claim.
+- Future/development and mixed identities: **Unknown** at release-policy level;
+  positively detected individual capabilities may still run.
 
 ## Evidence policy
 

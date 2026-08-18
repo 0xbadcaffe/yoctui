@@ -1441,23 +1441,12 @@ async fn doctor(build_dir: &Path, json: bool) -> Result<()> {
     }
     match select_backend(Backend::Bridge, build_dir.to_path_buf()).await {
         Ok(mut bridge) => {
-            let inspection = bridge.inspect_workspace().await;
             let shutdown = bridge.shutdown().await;
-            match inspection {
-                Ok(workspace) => println!(
-                    "bridge protocol: ok (workspace: {})",
-                    workspace
-                        .build_dir
-                        .as_deref()
-                        .unwrap_or(build_dir)
-                        .display()
-                ),
+            match shutdown {
+                Ok(()) => println!("bridge protocol: ok (bounded handshake and shutdown)"),
                 Err(error) => println!(
-                    "bridge protocol: failed ({error}) — check the active Python/BitBake environment"
+                    "bridge protocol: failed during shutdown ({error}) — check the active Python/BitBake environment"
                 ),
-            }
-            if let Err(error) = shutdown {
-                println!("bridge shutdown: failed ({error})");
             }
         }
         Err(error) => {

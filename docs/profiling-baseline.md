@@ -2,7 +2,13 @@
 
 Date: 2026-07-20
 
-The deterministic release bridge workload completed in **0.142 seconds** wall-clock time on the development host. The workload performs bridge startup, protocol negotiation, workspace inspection, typed metadata queries, and clean shutdown; it does not contact a live BitBake server.
+The former deterministic release bridge workload completed in **0.142 seconds** wall-clock time on the development host. That historical workload performed bridge startup, protocol negotiation, workspace inspection, typed metadata queries, and clean shutdown without contacting a live BitBake server. It predates daemon-owned compatibility authorization and is retained only as historical timing evidence.
+
+The current workload performs bridge startup, protocol negotiation, clean
+shutdown, and a read-only Doctor compatibility report. Workspace/API actions
+are intentionally absent unless a daemon supplies the exact environment
+capability snapshot, so current timings are not compared directly with the
+historical 0.142-second observation.
 
 Reproduce with:
 

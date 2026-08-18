@@ -4889,18 +4889,18 @@ notes = "Doctor attaches through the ordinary bounded daemon protocol and report
 id = "COMPAT-MATRIX-001"
 milestone = "M18"
 title = "Define supported Yocto release matrix"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 506
 required = true
 depends_on = ["COMPAT-SPEC-001", "COMPAT-OLD-001", "COMPAT-UNKNOWN-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-compatibility.sh --structure-only", "./scripts/verify-roadmap.sh"]
-notes = "Maintain claimed-supported, tested, partially-tested, expected-compatible, unsupported, and unknown classifications without promoting fixtures to live claims."
+notes = "The matrix defines all six exact policy classifications, records the exact 2026-07-24 Poky 6.0.99 development snapshot only as Partially tested, and explicitly leaves minimum/latest supported releases unclaimed pending current older/latest live gates. Structure verification parses current rows, rejects ambiguous labels/incomplete scope, and requires non-fixture latest+older evidence before any Claimed supported row. The docs gate now exercises a bounded bridge handshake/shutdown and Doctor JSON authority instead of bypassing daemon capability authorization for workspace inspection. Documentation, structure, and roadmap checks pass."
 
 [[task]]
 id = "COMPAT-TEST-FIXTURES-001"
 milestone = "M18"
 title = "Add release capability fixtures"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 507
 required = true
 depends_on = ["COMPAT-UNKNOWN-001", "COMPAT-OLD-001", "COMPAT-CATALOG-001"]

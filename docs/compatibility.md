@@ -323,7 +323,7 @@ device, service, network integration, or artifact layout is compatible.
 | Python Tinfoil bridge | BitBake major 1 selects the legacy adapter family; major 2 or later selects the modern family | Live observed only for BitBake 2.19.0 | Adapter-family selection localizes API differences. Recognizing a major version is not a compatibility claim for every release in that family. Malformed and pre-1 values fail with `unsupported_bitbake`. |
 | Environment-only bridge | Used when Python cannot import a versioned `bb` module | Fixture observed | Supports safe protocol and environment inspection. It is not a build-control adapter and cannot establish live compatibility. |
 | Direct process backend | Inherited `bitbake` executable | Fixture/static observed | Shell-free process execution, output bounds, exit, loss, timeout, and process-group cancellation pass fake-process and headless hardening tests. No live Yocto release is currently recorded for this backend. |
-| CLI/headless bridge smoke | Repository directory without Yocto | Static/host observed | `./scripts/test-cli.sh` and `./scripts/headless-workload.sh target/debug/yoctui bridge` validate startup, protocol inspection, session isolation, and shutdown only. They do not run live BitBake. |
+| CLI/headless bridge diagnostic | Repository directory without Yocto | Static/host observed | `./scripts/test-cli.sh` and `./scripts/headless-workload.sh target/debug/yoctui bridge` validate startup, bounded handshake/shutdown, isolated session state, and explicit absent daemon compatibility authority. They do not run a workspace API or live BitBake without a daemon snapshot. |
 
 ## Observed live Yocto combination
 

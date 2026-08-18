@@ -233,8 +233,8 @@ done
 
 cargo build -q -p yoctui
 headless_output="$(./scripts/headless-workload.sh target/debug/yoctui bridge)"
-if [[ "$headless_output" != *"headless inspection completed"* ]]; then
-  printf '%s\n' 'documentation check: isolated headless bridge inspection did not complete' >&2
+if [[ "$headless_output" != *"headless diagnostic completed"* ]]; then
+  printf '%s\n' 'documentation check: isolated headless bridge diagnostic did not complete' >&2
   exit 1
 fi
 
@@ -245,6 +245,17 @@ if [[ "$doctor_output" != *"bridge protocol: ok"* ]]; then
   printf '%s\n' 'documentation check: isolated doctor did not validate the bridge protocol' >&2
   exit 1
 fi
+doctor_json="$(XDG_CONFIG_HOME="$docs_config_dir" cargo run -q -p yoctui -- doctor --json)"
+python3 - "$doctor_json" <<'PY'
+import json
+import sys
+
+report = json.loads(sys.argv[1])
+if report.get("schema") != "yoctui.doctor.compatibility.v1":
+    raise SystemExit("documentation check: Doctor JSON schema is missing")
+if report.get("authority") not in {"current", "unavailable", "invalid"}:
+    raise SystemExit("documentation check: Doctor JSON authority is invalid")
+PY
 
 while IFS= read -r script
 do
