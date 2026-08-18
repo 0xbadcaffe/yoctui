@@ -65,6 +65,23 @@ cargo build --locked -p yoctui
 cargo build --locked --release -p yoctui
 ```
 
+When testing unreleased source after installing the same version from
+crates.io, refresh Cargo's executable explicitly; `yoctui --version` alone
+cannot distinguish two builds of version 0.1.0:
+
+```sh
+cargo install --path crates/yoctui-cli --locked --force
+type -a yoctui
+```
+
+For an exact local release-artifact check, install and compare that artifact:
+
+```sh
+cargo build --locked --release -p yoctui
+install -m 755 target/release/yoctui "$HOME/.cargo/bin/yoctui"
+cmp target/release/yoctui "$HOME/.cargo/bin/yoctui"
+```
+
 ## Quickstart: Poky build environment
 
 Start from a complete Poky checkout containing `oe-init-build-env`. Set

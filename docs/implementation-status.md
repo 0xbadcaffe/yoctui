@@ -18,12 +18,18 @@ CLI/app tests, formatting, Clippy, docs, and roadmap checks pass; a real
 controlling-PTY probe confirms that `Ctrl+P` opens and traps input in the
 command palette.
 
-`UI-STARTUP-LIVE-001` is `IN_PROGRESS`: the shell-resolved 0.1.0 executable
+`UI-STARTUP-DIAG-001` is `IN_PROGRESS`: bounded bridge diagnostics, repaired
+pane/global routing, and installed-binary live theme acceptance are complete.
+The parent is running the full workspace, Clippy, Python bridge, docs, and
+roadmap acceptance commands.
+
+`UI-STARTUP-LIVE-001` is `DONE`: the shell-resolved 0.1.0 executable
 was an older registry install despite sharing the source build's version. It
 has been replaced with the verified release binary and the operator session's
-bridge/color preferences restored. The live gate is being extended to verify
-the exact installed executable, reject pre-frame diagnostics, and persist an
-interactive command-palette theme change.
+bridge/color preferences restored. The controlling-PTY live gate rejects raw
+BitBake startup diagnostics and drives `Ctrl+P` → `Choose theme` →
+`WhiteClassic`, verifying persistence with 1,829 recipes. The installed and
+local release artifacts are byte-identical at SHA-256 `8fdf5201…d1e6982`.
 
 `UI-STARTUP-STDERR-001` is `DONE`: the Rust bridge now pipes and continuously
 drains stderr into a sanitized 16 KiB tail rather than inheriting the terminal.

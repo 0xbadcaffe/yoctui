@@ -4424,18 +4424,18 @@ notes = "The CLI now enters pane-focus handling only for a mapped focus action, 
 id = "UI-STARTUP-LIVE-001"
 milestone = "M15"
 title = "Validate installed startup and theme selection on live Poky"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 474
 required = true
 depends_on = ["UI-STARTUP-STDERR-001", "UI-FOCUS-ROUTING-001"]
 verify = ["YOCTUI_LIVE_BINARY=$HOME/.cargo/bin/yoctui ./scripts/test-live-workbench.sh $HOME/src/poky/build", "cargo build --release -p yoctui", "cmp target/release/yoctui $HOME/.cargo/bin/yoctui", "./scripts/verify-roadmap.sh"]
-notes = "Extend the live PTY gate to reject leaked pre-frame diagnostics and exercise command-palette theme selection plus persistence; document and verify the shell-resolved local release install."
+notes = "The controlling-PTY live gate now rejects leaked NOTE/WARNING/traceback output, drives Ctrl+P → Choose theme → WhiteClassic, and verifies private session persistence. It passes with 1,829 recipes through ~/.cargo/bin/yoctui; that installed release is byte-identical to target/release/yoctui at SHA-256 8fdf5201f986ad5d36ff551c9f271b57158affe7c57203153442badd8d1e6982. README documents same-version source reinstall and exact artifact comparison."
 
 [[task]]
 id = "UI-STARTUP-DIAG-001"
 milestone = "M15"
 title = "Complete clean installed startup diagnostics"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 475
 required = true
 depends_on = ["UI-STARTUP-STDERR-001", "UI-STARTUP-LIVE-001"]

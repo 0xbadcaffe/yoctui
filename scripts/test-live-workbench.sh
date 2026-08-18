@@ -32,8 +32,17 @@ source "$source_poky/oe-init-build-env" "$build_dir" >/dev/null
 set -u
 cd "$repo_root"
 
-cargo build -p yoctui >/dev/null
-binary="$repo_root/target/debug/yoctui"
+binary="${YOCTUI_LIVE_BINARY:-}"
+if [[ -z "$binary" ]]; then
+  cargo build -p yoctui >/dev/null
+  binary="$repo_root/target/debug/yoctui"
+else
+  binary="$(readlink -f "$binary")"
+  if [[ ! -x "$binary" ]]; then
+    printf 'live workbench: binary is not executable: %s\n' "$binary" >&2
+    exit 2
+  fi
+fi
 artifact_dir="${YOCTUI_LIVE_ARTIFACT_DIR:-$work_root/artifacts}"
 mkdir -p "$artifact_dir"
 
@@ -62,6 +71,7 @@ import os
 import pty
 import re
 import select
+import signal
 import struct
 import subprocess
 import sys
@@ -71,36 +81,100 @@ import time
 binary, build_dir, artifact = sys.argv[1:]
 master, slave = pty.openpty()
 fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 48, 160, 0, 0))
+
+
+def become_session_leader():
+    os.setsid()
+    fcntl.ioctl(0, termios.TIOCSCTTY, 0)
+
+
 process = subprocess.Popen(
     [binary, "--backend", "bridge", "--build-dir", build_dir],
     stdin=slave,
     stdout=slave,
     stderr=slave,
     env=os.environ.copy(),
-    start_new_session=True,
+    preexec_fn=become_session_leader,
 )
 os.close(slave)
 raw = bytearray()
-deadline = time.monotonic() + 45
-while time.monotonic() < deadline:
-    ready, _, _ = select.select([master], [], [], 0.25)
-    if ready:
-        try:
-            raw.extend(os.read(master, 65536))
-        except OSError:
-            break
-    if b"Focus Workspace" in raw and b"qemux86-64" in raw and b"OVERVIEW" in raw:
-        break
+
+
+def has_rendered_anchor(rendered, anchor):
+    return "".join(anchor.split()) in "".join(rendered.split())
+
+
+def collect_until(anchors, timeout):
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        ready, _, _ = select.select([master], [], [], 0.25)
+        if ready:
+            try:
+                raw.extend(os.read(master, 65536))
+            except OSError:
+                break
+        visible = re.sub(
+            r"\x1b\[[0-9;?]*[ -/]*[@-~]", "", raw.decode("utf-8", "replace")
+        )
+        if all(
+            has_rendered_anchor(visible, anchor.decode("utf-8", "replace"))
+            for anchor in anchors
+        ):
+            return
+    missing = [
+        anchor.decode("utf-8", "replace")
+        for anchor in anchors
+        if not has_rendered_anchor(visible, anchor.decode("utf-8", "replace"))
+    ]
+    try:
+        os.killpg(process.pid, signal.SIGKILL)
+    except ProcessLookupError:
+        pass
+    process.wait(timeout=2)
+    raise SystemExit(
+        f"live workbench: timed out waiting for PTY anchors: {missing}\n"
+        f"last rendered output:\n{visible[-4000:]}"
+    )
+
+
+def collect_for(duration):
+    deadline = time.monotonic() + duration
+    while time.monotonic() < deadline:
+        ready, _, _ = select.select([master], [], [], 0.1)
+        if ready:
+            try:
+                raw.extend(os.read(master, 65536))
+            except OSError:
+                return
+
+
+collect_until((b"Focus ", b"qemux86-64", b"OVERVIEW"), 45)
+os.write(master, b"\x10")
+collect_for(0.5)
+os.write(master, b"Choose theme\r")
+collect_for(0.5)
+os.write(master, b"\x1b[B\r")
+collect_for(0.5)
 
 os.write(master, b"q")
 try:
     process.wait(timeout=5)
 except subprocess.TimeoutExpired:
-    process.kill()
+    os.killpg(process.pid, signal.SIGKILL)
     process.wait(timeout=2)
 os.close(master)
 
 payload = bytes(raw)
+alternate_screen = payload.find(b"\x1b[?1049h")
+if alternate_screen < 0:
+    raise SystemExit("live workbench: terminal never entered the alternate screen")
+for marker in (b"NOTE:", b"WARNING:", b"Traceback (most recent call last)"):
+    if marker in payload:
+        raise SystemExit(
+            "live workbench: backend diagnostics leaked into the terminal: "
+            + marker.decode("ascii")
+        )
+
 sgr_codes = set(re.findall(rb"\x1b\[[0-9;]*m", payload))
 color_codes = {
     code
@@ -124,16 +198,32 @@ for anchor in (
     "OVERVIEW",
     "CONTENT",
     "BUILD",
-    "Focus Workspace",
-    "Tab Inspector",
-    "Shift+Tab Navigator",
 ):
-    if anchor not in normalized:
+    if not has_rendered_anchor(normalized, anchor):
         raise SystemExit(f"live workbench: missing PTY anchor: {anchor}")
+focus_routes = (
+    ("Focus Navigator", "Tab Workspace", "Shift+Tab Inspector"),
+    ("Focus Workspace", "Tab Inspector", "Shift+Tab Navigator"),
+    ("Focus Inspector", "Tab Navigator", "Shift+Tab Workspace"),
+)
+if not any(
+    all(has_rendered_anchor(normalized, anchor) for anchor in route)
+    for route in focus_routes
+):
+    raise SystemExit("live workbench: missing explicit pane-focus route")
 if "Daemon unavailable; interactive runtime is local" in normalized:
     raise SystemExit("live workbench: daemon fallback notice obscured the workbench")
 if process.returncode != 0:
     raise SystemExit(f"live workbench: TUI exited with {process.returncode}")
+
+session_path = os.path.join(os.environ["XDG_CONFIG_HOME"], "yoctui", "session.toml")
+try:
+    with open(session_path, encoding="utf-8") as session_file:
+        session = session_file.read()
+except OSError as error:
+    raise SystemExit(f"live workbench: theme session was not persisted: {error}") from error
+if 'theme = "white-classic"' not in session:
+    raise SystemExit(f"live workbench: WhiteClassic theme was not persisted: {session!r}")
 
 with open(artifact, "w", encoding="utf-8") as output:
     output.write(normalized[-65536:])
@@ -145,7 +235,7 @@ cp "$work_root/layers.txt" "$artifact_dir/layers.txt"
   printf 'build_dir=%s\n' "$build_dir"
   printf 'recipe_count=%s\n' "$recipe_count"
   printf '%s\n' 'recipes=core-image-minimal,busybox'
-  printf '%s\n' 'pty=colored-wide-workbench-passed'
+  printf '%s\n' 'pty=clean-colored-wide-workbench-and-theme-passed'
 } >"$artifact_dir/summary.txt"
 
-printf 'live workbench: metadata and colored PTY passed (%s recipes)\n' "$recipe_count"
+printf 'live workbench: metadata, clean colored PTY, and theme passed (%s recipes)\n' "$recipe_count"
