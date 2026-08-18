@@ -2466,19 +2466,20 @@ target through the dialog workflow.
 
 ## 24. Footer and keyboard shortcuts
 
-The footer is always visible in normal layouts. At the canonical wide size it
-is a two-row bordered command rail and uses this stable reference order:
+The footer is always visible in normal layouts. At every wide layout
+(`130` columns or wider) it uses this stable reference order:
 
 ```text
 F1 Help  F2 Tasks  F3 Jobs  F4 Terminal  F5 Logs  F6 Layer  F7 Recipe  F8 Image  F9 Search  F10 Menu
 ```
 
-The clock is right aligned. Each displayed key invokes the named action; the
-rail never advertises an unavailable route. `F10 Menu` opens the command
-palette/menu, from which `Choose theme` is directly visible. At constrained
-sizes the rail is a one-row command rail with highlighted key tokens followed
-by plain action labels and a right-aligned local clock. It uses the current
-context and may add the most important contextual actions that fit.
+At the canonical `160x48` Tasks size the footer retains its exact two-row
+bordered reference geometry. The clock is right aligned. Each displayed key
+invokes the named action; the rail never advertises an unavailable route.
+`F10 Menu` opens the command palette/menu, from which `Choose theme` is
+directly visible. At constrained sizes below 130 columns the rail uses the
+current context, highlighted key tokens, and a right-aligned local clock; it
+may add the most important contextual actions that fit.
 
 Global example:
 

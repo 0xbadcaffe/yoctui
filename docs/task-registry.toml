@@ -4530,3 +4530,15 @@ required = true
 depends_on = ["UI-LITERAL-HARNESS-001", "UI-LITERAL-SHELL-001", "UI-LITERAL-NAV-001", "UI-LITERAL-COCKPIT-001", "UI-LITERAL-UX-001", "UI-LITERAL-LIVE-001"]
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "Parent acceptance passes: the canonical 160x48 shell, strict 7,680-cell style golden, typed mixed Navigator, task/log/history cockpit, structured Inspector, F1-F10 routes, transactional theme preview, and live 1,829-recipe Poky workflow all pass. Formatting, the complete Rust workspace, Clippy with warnings denied, all 39 Python bridge tests, documentation, and roadmap validation pass. The independent FINAL-GATE-PERF-001 host-policy blocker remains explicit."
+
+# M17 — Responsive reference command rail
+[[task]]
+id = "UI-WIDE-RAIL-001"
+milestone = "M17"
+title = "Keep the reference F-key rail visible on wide screens"
+status = "IN_PROGRESS"
+priority = 484
+required = true
+depends_on = ["UI-LITERAL-001"]
+verify = ["cargo test -p yoctui-ui wide_reference_rail", "cargo test -p yoctui-ui literal_reference_cell_and_style_golden", "./scripts/test-tui-snapshots.sh", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "The installed binary is current, but rendering gates the reference rail on exactly 160 columns plus Tasks. Make global F1-F10 navigation stable on every screen at the existing 130-column wide breakpoint while retaining exact canonical geometry and compact contextual actions."

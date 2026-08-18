@@ -301,3 +301,22 @@ Exit criteria:
 - every displayed function key invokes its labeled action
 - theme and pane-focus behavior pass reducer, UI, and PTY interaction tests
 - the complete workspace and live Poky workbench gates pass
+
+## M17 — Responsive reference command rail
+
+Goal: keep the reference's global F1–F10 navigation visible throughout every
+wide workbench instead of tying it to one exact terminal width and screen.
+
+Capabilities:
+
+- stable F1–F10 rail on every screen at 130 columns or wider
+- exact canonical 160×48 Tasks footer geometry remains unchanged
+- contextual action footer remains available below the wide breakpoint
+- installed release and PTY regression validation
+
+Exit criteria:
+
+- 130-, 160-, 180-, and 200-column TestBackend scenes expose the global rail
+- Dashboard and Tasks both expose all ten function-key labels when wide
+- compact layouts retain contextual shortcuts without horizontal panics
+- the shell-resolved release binary matches the verified local artifact

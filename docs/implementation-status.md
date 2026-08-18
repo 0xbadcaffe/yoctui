@@ -11,6 +11,12 @@ Status values:
 
 ## Current phase
 
+`UI-WIDE-RAIL-001` is `IN_PROGRESS`: executable resolution and SHA-256 prove
+that `~/.cargo/bin/yoctui` already matches the current release artifact. The
+missing rail is a rendering defect: it is gated on exactly 160 columns and the
+Tasks screen. The active correction makes F1–F10 stable throughout every wide
+workbench while preserving canonical geometry and compact contextual actions.
+
 `UI-LITERAL-001` is `DONE`: the canonical 160x48 shell, strict 7,680-cell style
 golden, typed mixed Navigator, task/log/history cockpit, structured Inspector,
 F1–F10 routes, transactional theme preview, and live 1,829-recipe Poky workflow
