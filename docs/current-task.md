@@ -2,44 +2,50 @@
 
 ## Task
 
-**ID:** UI-STARTUP-DIAG-001
-**Title:** Complete clean installed startup diagnostics
-**Status:** IN_PROGRESS
+**ID:** FINAL-GATE-PERF-001
+**Title:** Rerun the terminal gate with perf sampling enabled
+**Status:** BLOCKED
 
 ## Objective
 
-Run parent acceptance for bounded non-obscuring bridge diagnostics, preserved
-global/workspace key routing, and the exact installed release's live Poky theme
-workflow.
+Complete the final host-level verification with real perf sampling enabled.
+All product, UI redesign, live-workbench recovery, and clean installed-startup
+verification passes; only the Flamegraph sampling policy blocks repository-wide
+completion.
 
 ## Dependencies
 
-- `UI-STARTUP-STDERR-001` — DONE
-- `UI-FOCUS-ROUTING-001` — DONE
-- `UI-STARTUP-LIVE-001` — DONE
+- `CRATESIO-COVERAGE-001` — DONE
+- `UI-VISION-001` — DONE
+- `UI-LIVE-RECOVERY-001` — DONE
+- `UI-LIVE-COLOR-AUTHORITY-001` — DONE
+- `UI-STARTUP-DIAG-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-bitbake/src/lib.rs`
-- `crates/yoctui-cli/src/main.rs`
-- `scripts/test-live-workbench.sh`
-- `README.md`
+- `/proc/sys/kernel/perf_event_paranoid`
+- `scripts/flamegraph.sh`
+- `scripts/verify-completion.sh`
+- `docs/implementation-status.md`
+- `docs/task-registry.toml`
 
 ## Definition of done
 
-- The full workspace and all-feature tests pass.
-- Workspace Clippy is warning-free.
-- Python bridge tests pass.
-- Documentation and roadmap checks pass.
-- The coherent live acceptance change is committed.
+- `perf record -- true` succeeds for the current user.
+- A fresh real headless-workload Flamegraph is generated.
+- The terminal completion gate passes without skipped required stages.
+
+## Blocker evidence
+
+- Current host value: `kernel.perf_event_paranoid=4`.
+- `scripts/flamegraph.sh` reports that perf sampling is unavailable.
+- The operator must temporarily grant `CAP_PERFMON` or lower the kernel policy.
+- After changing policy, rerun the verification commands below.
 
 ## Verification
 
 ```bash
-cargo fmt --all --check
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-python3 -m pytest bridge/tests
-./scripts/check-docs.sh
-./scripts/verify-roadmap.sh
+perf record -- true
+./scripts/flamegraph.sh
+./scripts/verify-completion.sh
 ```

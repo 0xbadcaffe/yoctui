@@ -4248,7 +4248,7 @@ title = "Rerun the terminal gate with perf sampling enabled"
 status = "BLOCKED"
 priority = 458
 required = true
-depends_on = ["CRATESIO-COVERAGE-001"]
+depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001"]
 verify = ["perf record -- true", "./scripts/flamegraph.sh", "./scripts/verify-completion.sh"]
 notes = "The clean completion gate passes roadmap, workspace tests, Clippy, terminal tests, fuzzing, stress, ASan/LSan, Rust coverage, audit/deny, all 39 Python bridge tests at 75.95% packaged-source coverage, and Valgrind with zero lost bytes. It stops at scripts/flamegraph.sh because this host currently has kernel.perf_event_paranoid=4. An operator must temporarily grant CAP_PERFMON or lower the policy, then rerun the listed commands; no product or release defect is implicated."
 
@@ -4435,9 +4435,9 @@ notes = "The controlling-PTY live gate now rejects leaked NOTE/WARNING/traceback
 id = "UI-STARTUP-DIAG-001"
 milestone = "M15"
 title = "Complete clean installed startup diagnostics"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 475
 required = true
 depends_on = ["UI-STARTUP-STDERR-001", "UI-STARTUP-LIVE-001"]
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
-notes = "Parent acceptance for clean startup diagnostics and live installed theme selection."
+notes = "Parent acceptance passes for bounded non-obscuring bridge stderr, pane/global key routing, and exact installed-binary live theme selection. Formatting, the full workspace, workspace Clippy, all 39 Python bridge tests, docs, roadmap, and the 1,829-recipe live Poky gate pass. The independent FINAL-GATE-PERF-001 host-policy blocker remains."

@@ -18,10 +18,11 @@ CLI/app tests, formatting, Clippy, docs, and roadmap checks pass; a real
 controlling-PTY probe confirms that `Ctrl+P` opens and traps input in the
 command palette.
 
-`UI-STARTUP-DIAG-001` is `IN_PROGRESS`: bounded bridge diagnostics, repaired
-pane/global routing, and installed-binary live theme acceptance are complete.
-The parent is running the full workspace, Clippy, Python bridge, docs, and
-roadmap acceptance commands.
+`UI-STARTUP-DIAG-001` is `DONE`: bridge stderr is bounded and non-obscuring,
+pane/global key routing no longer drops input, and the exact installed release
+passes live theme selection with 1,829 Poky recipes. Formatting, the complete
+workspace, workspace Clippy, all 39 Python bridge tests, docs, and roadmap pass.
+Only the independent host perf-policy blocker remains.
 
 `UI-STARTUP-LIVE-001` is `DONE`: the shell-resolved 0.1.0 executable
 was an older registry install despite sharing the source build's version. It
