@@ -224,7 +224,11 @@ fn rules() -> [VersionFallbackRule; 2] {
     const TINFOIL_CAPABILITIES: &[CapabilityId] = &[
         CapabilityId::BitBakeWorkspaceInspection,
         CapabilityId::BitBakeRecipeInventory,
+        CapabilityId::BitBakeRecipeDependencies,
+        CapabilityId::BitBakeRecipeSources,
+        CapabilityId::BitBakeRecipeMetadata,
         CapabilityId::BitBakeLayerInventory,
+        CapabilityId::BitBakeLayerRelationships,
         CapabilityId::BitBakeBuild,
         CapabilityId::BitBakeCancellation,
         CapabilityId::BitBakeTaskList,

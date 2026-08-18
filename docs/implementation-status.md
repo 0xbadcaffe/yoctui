@@ -763,7 +763,7 @@ wrong authority, unsafe paths/text, oversized or empty detected inventories,
 and conflicting duplicate tools/layers; six tests include partial, invalid,
 duplicate, and mixed-series environments. `COMPAT-CAP-MODEL-001` is active.
 
-`COMPAT-CAP-MODEL-001` is complete. The centralized model defines 44 stable
+`COMPAT-CAP-MODEL-001` is complete. The centralized model defines 48 stable
 behavior IDs with no release-number identity, all five required availability
 states, bounded typed reason/evidence records (including evidence polarity and
 shell-free argv), and a normalized non-zero-generation snapshot tied to an
@@ -847,3 +847,15 @@ environment/getvar alternatives, signature tools, and server control. Missing,
 disabled, stale, environment-mismatched, and implementation-mismatched state
 fails before spawn; tests prove old/new getvar forms never cross and an
 unavailable build creates no process. `COMPAT-BITBAKE-API-001` is active.
+
+`COMPAT-BITBAKE-API-001` is complete. The typed API authority validates exact
+environment/generation state, enabled behavior, selected implementation, and a
+coherent Tinfoil family. The additive bridge hello sends that bounded offer;
+the initialized bridge directly negotiates callable behavior and returns only
+the confirmed subset at the same generation. Backend operations reject stale,
+unoffered, command-fallback, mixed-family, or unnegotiated support before a
+command is sent. The Python bridge has no BitBake major-version switch, so
+synthetic future behavior can be positively enabled while absent older APIs
+degrade independently. Distinct IDs now cover recipe dependencies, sources,
+metadata, and layer relationships, bringing the catalog to 48 records.
+`COMPAT-DEVTOOL-001` is active.

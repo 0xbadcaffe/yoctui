@@ -21,6 +21,7 @@ pub struct BitBakeSocketAdapter {
     python: OsString,
     bridge_script: PathBuf,
     environment: BTreeMap<String, String>,
+    compatibility: Option<yoctui_model::DaemonCompatibilitySnapshot>,
     pending: Option<BridgeBackend>,
     connected: Option<BridgeBackend>,
     next_connection: u64,
@@ -41,10 +42,23 @@ impl BitBakeSocketAdapter {
             python: python.into(),
             bridge_script,
             environment,
+            compatibility: None,
             pending: None,
             connected: None,
             next_connection: 1,
         })
+    }
+
+    pub fn with_compatibility(
+        mut self,
+        compatibility: yoctui_model::DaemonCompatibilitySnapshot,
+    ) -> Result<Self, BitBakeServerAdapterError> {
+        self.compatibility = Some(
+            compatibility
+                .normalize()
+                .map_err(|error| BitBakeServerAdapterError::new(error.to_string()))?,
+        );
+        Ok(self)
     }
 
     pub fn has_connected_transport(&self) -> bool {
@@ -88,11 +102,19 @@ impl BitBakeSocketAdapter {
         context: &BitBakeServerContext,
     ) -> Result<BridgeBackend, BitBakeServerAdapterError> {
         let python = self.python.to_string_lossy();
-        BridgeBackend::spawn_with_environment(
+        let compatibility = self.compatibility.clone().ok_or_else(|| {
+            BitBakeServerAdapterError::new(
+                "BitBake socket adapter requires a daemon capability snapshot",
+            )
+        })?;
+        let generation = compatibility.snapshot.generation;
+        BridgeBackend::spawn_with_compatibility(
             &python,
             self.bridge_script.clone(),
             context.build_dir.clone(),
             self.environment.clone(),
+            compatibility,
+            generation,
         )
         .await
         .map_err(adapter_backend_error)
@@ -114,7 +136,9 @@ impl BitBakeSocketAdapter {
                 context.build_dir.display()
             )));
         }
-        let observation = self.observation(context, workspace.bitbake_version).await?;
+        let observation = self
+            .observation(context, workspace.bitbake_version, &backend)
+            .await?;
         Ok((backend, observation))
     }
 
@@ -122,6 +146,7 @@ impl BitBakeSocketAdapter {
         &self,
         context: &BitBakeServerContext,
         version: Option<String>,
+        backend: &BridgeBackend,
     ) -> Result<BitBakeServerObservation, BitBakeServerAdapterError> {
         let socket = Self::socket_path(context);
         let (endpoint, server_identity) = match tokio::fs::symlink_metadata(&socket).await {
@@ -159,19 +184,30 @@ impl BitBakeSocketAdapter {
             }
             Err(error) => return Err(BitBakeServerAdapterError::new(error.to_string())),
         };
+        let mut capabilities = vec![BitBakeServerCapability::CommandChannel];
+        if backend.supports_api(crate::BitBakeApiOperation::NativeEvents) {
+            capabilities.push(BitBakeServerCapability::EventStream);
+        }
+        if backend.supports_api(crate::BitBakeApiOperation::Workspace) {
+            capabilities.push(BitBakeServerCapability::Metadata);
+        }
+        if backend.supports_api(crate::BitBakeApiOperation::Build) {
+            capabilities.push(BitBakeServerCapability::BuildControl);
+        }
+        if backend.supports_api(crate::BitBakeApiOperation::Cancel) {
+            capabilities.push(BitBakeServerCapability::Cancellation);
+        }
+        if backend.supports_api(crate::BitBakeApiOperation::ServerSocket) {
+            capabilities.extend([
+                BitBakeServerCapability::ServerStop,
+                BitBakeServerCapability::ServerRestart,
+            ]);
+        }
         Ok(BitBakeServerObservation {
             endpoint,
             server_identity,
             version,
-            capabilities: vec![
-                BitBakeServerCapability::CommandChannel,
-                BitBakeServerCapability::EventStream,
-                BitBakeServerCapability::Metadata,
-                BitBakeServerCapability::BuildControl,
-                BitBakeServerCapability::Cancellation,
-                BitBakeServerCapability::ServerStop,
-                BitBakeServerCapability::ServerRestart,
-            ],
+            capabilities,
         })
     }
 
@@ -317,7 +353,13 @@ fn effective_uid() -> u32 {
 mod tests {
     use super::*;
     use crate::{BitBakeServerController, BitBakeServerLifecycle};
-    use std::{fs, os::unix::fs::PermissionsExt};
+    use std::{collections::BTreeMap, fs, os::unix::fs::PermissionsExt};
+    use yoctui_model::{
+        AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
+        CapabilityId, CapabilityImplementation, CapabilityImplementationKind, CapabilityRecord,
+        CapabilitySnapshot, CapabilityState, DaemonCompatibilitySnapshot, IdentityAuthority,
+        YoctoEnvironmentIdentity,
+    };
 
     fn fixture() -> (PathBuf, PathBuf, BitBakeServerContext) {
         let nonce = std::time::SystemTime::UNIX_EPOCH
@@ -346,7 +388,9 @@ for raw in sys.stdin:
     request = json.loads(raw)
     kind = request["message"]["type"]
     sequence += 1
-    if kind == "hello": message = {"type":"hello_ack","bitbake_version":"2.8.1"}
+    if kind == "hello":
+        compatibility = request["message"].get("compatibility")
+        message = {"type":"hello_ack","bitbake_version":"2.8.1","compatibility_generation":compatibility["generation"],"capabilities":[capability["id"] for capability in compatibility["capabilities"]]}
     elif kind == "inspect_workspace": message = {"type":"workspace","data":{"build_dir":os.getcwd(),"source_dir":os.path.dirname(os.getcwd()),"variables":{},"bitbake_version":"2.8.1","layers":[],"recipes":[]}}
     elif kind == "shutdown": message = {"type":"bridge_shutdown"}
     elif kind == "terminate_server": message = {"type":"server_terminated"}
@@ -372,10 +416,67 @@ for raw in sys.stdin:
         (root, script, context)
     }
 
+    fn test_adapter(script: PathBuf, context: &BitBakeServerContext) -> BitBakeSocketAdapter {
+        let capabilities = [
+            (
+                CapabilityId::BitBakeWorkspaceInspection,
+                "tinfoil.workspace",
+            ),
+            (CapabilityId::BitBakeBuild, "tinfoil.build"),
+            (CapabilityId::BitBakeCancellation, "tinfoil.cancel"),
+            (CapabilityId::BitBakeNativeEvents, "tinfoil.native_events"),
+            (CapabilityId::BitBakeServerSocket, "bitbake.server_socket"),
+        ];
+        let compatibility = DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation: 1,
+                environment: YoctoEnvironmentIdentity {
+                    build_directory: AuthoritativeValue::detected(
+                        context.build_dir.clone(),
+                        IdentityAuthority::InitializedEnvironment,
+                    ),
+                    ..YoctoEnvironmentIdentity::default()
+                },
+                capabilities: capabilities
+                    .iter()
+                    .map(|(id, _)| CapabilityRecord {
+                        id: *id,
+                        state: CapabilityState::Available,
+                        evidence: vec![CapabilityEvidence {
+                            kind: CapabilityEvidenceKind::BackendNegotiation,
+                            outcome: CapabilityEvidenceOutcome::Positive,
+                            subject: id.as_str().into(),
+                            detail: "The fake bridge explicitly exposes this operation.".into(),
+                            argv: Vec::new(),
+                        }],
+                    })
+                    .collect(),
+            },
+            implementations: capabilities
+                .iter()
+                .map(|(id, implementation)| {
+                    (
+                        *id,
+                        CapabilityImplementation {
+                            id: (*implementation).into(),
+                            kind: CapabilityImplementationKind::BackendApi,
+                        },
+                    )
+                })
+                .collect::<BTreeMap<_, _>>(),
+        }
+        .normalize()
+        .unwrap();
+        BitBakeSocketAdapter::new("python3", script, BTreeMap::new())
+            .unwrap()
+            .with_compatibility(compatibility)
+            .unwrap()
+    }
+
     #[tokio::test]
     async fn bitbake_socket_starts_connects_correlates_and_stops_supported_server() {
         let (root, script, context) = fixture();
-        let adapter = BitBakeSocketAdapter::new("python3", script, BTreeMap::new()).unwrap();
+        let adapter = test_adapter(script, &context);
         let mut controller =
             BitBakeServerController::new(adapter, context.clone(), Duration::from_secs(2)).unwrap();
         assert_eq!(
@@ -416,8 +517,7 @@ for raw in sys.stdin:
     async fn bitbake_socket_rejects_non_socket_and_reports_server_loss() {
         let (root, script, context) = fixture();
         fs::write(context.build_dir.join("bitbake.sock"), "not a socket").unwrap();
-        let adapter =
-            BitBakeSocketAdapter::new("python3", script.clone(), BTreeMap::new()).unwrap();
+        let adapter = test_adapter(script.clone(), &context);
         let mut controller =
             BitBakeServerController::new(adapter, context.clone(), Duration::from_secs(2)).unwrap();
         assert!(controller.detect().await.is_err());
@@ -428,7 +528,7 @@ for raw in sys.stdin:
             .unwrap()
             .replace("request.get(\"correlation_id\")", "\"unknown-correlation\"");
         fs::write(&script, body).unwrap();
-        let adapter = BitBakeSocketAdapter::new("python3", script, BTreeMap::new()).unwrap();
+        let adapter = test_adapter(script, &context);
         let mut controller =
             BitBakeServerController::new(adapter, context, Duration::from_secs(2)).unwrap();
         assert!(controller.start().await.is_err());

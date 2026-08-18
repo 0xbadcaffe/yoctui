@@ -375,9 +375,29 @@ fn definition(id: CapabilityId) -> Definition {
         Id::BitBakeRecipeInventory => {
             backend_with_version_fallback("BitBake recipe inventory", "recipes", "tinfoil.recipes")
         }
+        Id::BitBakeRecipeDependencies => backend_with_version_fallback(
+            "BitBake recipe dependencies",
+            "recipe_dependencies",
+            "tinfoil.dependencies",
+        ),
+        Id::BitBakeRecipeSources => backend_with_version_fallback(
+            "BitBake recipe source metadata",
+            "recipe_sources",
+            "tinfoil.recipe_sources",
+        ),
+        Id::BitBakeRecipeMetadata => backend_with_version_fallback(
+            "BitBake recipe metadata",
+            "recipe_metadata",
+            "tinfoil.recipe_metadata",
+        ),
         Id::BitBakeLayerInventory => {
             backend_with_version_fallback("BitBake layer inventory", "layers", "tinfoil.layers")
         }
+        Id::BitBakeLayerRelationships => backend_with_version_fallback(
+            "BitBake layer relationships",
+            "layer_relationships",
+            "tinfoil.layer_relationships",
+        ),
         Id::BitBakeBuild => {
             backend_with_version_fallback("BitBake build control", "build", "tinfoil.build")
         }

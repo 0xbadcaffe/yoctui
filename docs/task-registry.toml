@@ -4575,7 +4575,7 @@ priority = 487
 required = true
 depends_on = ["COMPAT-ENV-ID-001"]
 verify = ["cargo test -p yoctui-model compatibility::capability", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Added 44 stable behavior-oriented CapabilityId values, five distinct availability states, validated reason code/message/requirement, typed probe/negotiation/metadata/executable/fallback evidence with polarity and bounded argv, and a generation/environment-bound normalized CapabilitySnapshot. Snapshot lookup fails closed, duplicate IDs and evidence polarity errors are rejected, and five focused tests plus model Clippy pass. The later command audit split server status, start, and stop into distinct authorization capabilities."
+notes = "Added 48 stable behavior-oriented CapabilityId values, five distinct availability states, validated reason code/message/requirement, typed probe/negotiation/metadata/executable/fallback evidence with polarity and bounded argv, and a generation/environment-bound normalized CapabilitySnapshot. Snapshot lookup fails closed, duplicate IDs and evidence polarity errors are rejected, and five focused tests plus model Clippy pass. Later audits split server status/start/stop and recipe dependency/source/metadata/layer-relationship API behaviors into distinct authorization capabilities."
 
 [[task]]
 id = "COMPAT-CATALOG-001"
@@ -4586,7 +4586,7 @@ priority = 488
 required = true
 depends_on = ["COMPAT-CAP-MODEL-001"]
 verify = ["cargo test -p yoctui-model compatibility_catalog::catalog", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Added versioned CapabilityCatalog v1 with exactly one typed entry for all 44 behavior IDs. Entries centralize required tools, commands/subcommands/options, metadata/API/artifact requirements, safe typed probes, preferred implementation, explicit fallback selector, advisory release-boundary records, and exact default UI reason. Validation rejects missing/duplicate IDs, unsafe probes/requirements, and invalid fallback selectors; four focused tests and model Clippy pass."
+notes = "Added versioned CapabilityCatalog v1 with exactly one typed entry for all 48 behavior IDs. Entries centralize required tools, commands/subcommands/options, metadata/API/artifact requirements, safe typed probes, preferred implementation, explicit fallback selector, advisory release-boundary records, and exact default UI reason. Validation rejects missing/duplicate IDs, unsafe probes/requirements, and invalid fallback selectors; four focused tests and model Clippy pass."
 
 [[task]]
 id = "COMPAT-PROBE-001"
@@ -4630,7 +4630,7 @@ priority = 492
 required = true
 depends_on = ["COMPAT-VERSION-001"]
 verify = ["cargo test -p yoctui-model compatibility_older_release", "cargo test -p yoctui-bitbake compatibility_older_release", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Added typed Full/Degraded/Diagnostic operating modes and five-state availability summary without a release-name allowlist or global unsupported state. An older BitBake 1.52 synthetic snapshot preserves positive workspace behavior, enables the legacy Tinfoil fallback with limitations, disables absent Devtool upgrade, retains all 44 records, and remains Degraded; a no-action snapshot remains valid Diagnostic. Model/bitbake tests, docs, and Clippy pass; no minimum release is claimed before live evidence."
+notes = "Added typed Full/Degraded/Diagnostic operating modes and five-state availability summary without a release-name allowlist or global unsupported state. An older BitBake 1.52 synthetic snapshot preserves positive workspace behavior, enables the legacy Tinfoil fallback with limitations, disables absent Devtool upgrade, retains all 48 records, and remains Degraded; a no-action snapshot remains valid Diagnostic. Model/bitbake tests, docs, and Clippy pass; no minimum release is claimed before live evidence."
 
 [[task]]
 id = "COMPAT-CACHE-001"
@@ -4680,18 +4680,18 @@ notes = "Added the environment/generation-bound BitBakeCommandPlanner and a docu
 id = "COMPAT-BITBAKE-API-001"
 milestone = "M18"
 title = "Make BitBake backend and API behavior capability-aware"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 497
 required = true
 depends_on = ["COMPAT-DAEMON-001", "COMPAT-VERSION-001"]
 verify = ["cargo test -p yoctui-bitbake compatibility_api", "python3 -m pytest bridge/tests -k compatibility", "./scripts/verify-roadmap.sh"]
-notes = "Provide capability adapters for Tinfoil, socket/server, native events, metadata, dependency graphs, runqueue events, cancellation, reconnect, signatures, and variables."
+notes = "Added environment/generation-bound BitBakeApiAuthority and an additive typed bridge compatibility handshake carrying enabled capability/implementation pairs. The initialized bridge directly negotiates callable Tinfoil/server operations and echoes only a bounded subset at the same generation; Rust rejects stale, duplicate, unoffered, command-fallback, mixed-family, and unnegotiated behavior before sending a command. The bridge no longer selects legacy/modern behavior from BitBake's version. BridgeBackend gates workspace, recipes/layers, distinct dependency/source/metadata/relationship APIs, variables, graph, build/native events, cancellation, and server termination; BitBakeSocketAdapter requires authority and derives reported capabilities from negotiation. Three focused Rust tests, three focused Python tests, all 211 bitbake tests, all 41 bridge tests, protocol tests, workspace check, and warnings-denied Clippy pass."
 
 [[task]]
 id = "COMPAT-DEVTOOL-001"
 milestone = "M18"
 title = "Make Devtool workflows capability-aware"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 498
 required = true
 depends_on = ["COMPAT-BITBAKE-CMD-001"]

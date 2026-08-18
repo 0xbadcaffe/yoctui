@@ -62,7 +62,10 @@ pub struct Envelope<T> {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum Command {
-    Hello,
+    Hello {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        compatibility: Option<Box<BridgeCompatibilityData>>,
+    },
     InspectWorkspace,
     StartBuild {
         targets: Vec<String>,
@@ -94,6 +97,19 @@ pub enum Command {
     },
     GetLayerRelationships,
     Shutdown,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BridgeCapabilityData {
+    pub id: String,
+    pub implementation: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct BridgeCompatibilityData {
+    pub generation: u64,
+    pub build_directory: String,
+    pub capabilities: Vec<BridgeCapabilityData>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -236,6 +252,10 @@ pub struct WorkspaceData {
 pub enum Event {
     HelloAck {
         bitbake_version: Option<String>,
+        #[serde(default)]
+        compatibility_generation: Option<u64>,
+        #[serde(default)]
+        capabilities: Vec<String>,
     },
     Workspace {
         data: WorkspaceData,
@@ -378,7 +398,9 @@ mod tests {
             protocol_version: 1,
             sequence: 1,
             correlation_id: Some("x".into()),
-            message: Command::Hello,
+            message: Command::Hello {
+                compatibility: None,
+            },
         };
         assert_eq!(
             decode_line::<Command>(&encode_line(&e).unwrap(), None).unwrap(),
@@ -627,7 +649,9 @@ mod tests {
                     protocol_version: VERSION,
                     sequence,
                     correlation_id: Some(format!("stress-{sequence}")),
-                    message: Command::Hello,
+                    message: Command::Hello {
+                        compatibility: None,
+                    },
                 })
                 .unwrap(),
             );
@@ -644,7 +668,12 @@ mod tests {
                 decoded += 1;
                 assert_eq!(envelope.sequence, decoded);
                 assert_eq!(envelope.correlation_id, Some(format!("stress-{decoded}")));
-                assert_eq!(envelope.message, Command::Hello);
+                assert_eq!(
+                    envelope.message,
+                    Command::Hello {
+                        compatibility: None
+                    }
+                );
             }
             offset = end;
         }

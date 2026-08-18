@@ -239,10 +239,115 @@ fi
         self.assertEqual(message["type"], "hello_ack")
         self.assertEqual(message["bitbake_version"], "2.8.1")
 
-    def test_unsupported_bitbake_version_is_reported(self) -> None:
-        result = run_bridge(environment={"YOCTUI_BITBAKE_VERSION": "0.9"})
+    def test_compatibility_unknown_future_bitbake_version_is_not_rejected(self) -> None:
+        result = run_bridge(
+            b'{"protocol_version":1,"sequence":1,"message":{"type":"hello"}}',
+            environment={"YOCTUI_BITBAKE_VERSION": "99.0"},
+        )
         message = json.loads(result.stdout)["message"]
-        self.assertEqual(message["code"], "unsupported_bitbake")
+        self.assertEqual(message["type"], "hello_ack")
+        self.assertEqual(message["bitbake_version"], "99.0")
+
+    def test_compatibility_handshake_negotiates_only_direct_backend_behavior(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "bb.py").write_text(
+                '''__version__ = "99.0"
+class Connection:
+ native_event_stream = True
+ def inspect_workspace(self): return {"build_dir": %r, "variables": {}}
+ def start_build(self, targets, task, force=False): pass
+ def drain_events(self): return []
+class Server:
+ def connect(self): return Connection()
+server = Server()
+'''
+                % str(Path.cwd()),
+                encoding="utf-8",
+            )
+            hello = {
+                "protocol_version": 1,
+                "sequence": 1,
+                "message": {
+                    "type": "hello",
+                    "compatibility": {
+                        "generation": 7,
+                        "build_directory": str(Path.cwd()),
+                        "capabilities": [
+                            {
+                                "id": "bitbake.workspace_inspection",
+                                "implementation": "tinfoil.adapter.modern",
+                            },
+                            {
+                                "id": "bitbake.build",
+                                "implementation": "tinfoil.adapter.modern",
+                            },
+                            {
+                                "id": "bitbake.native_events",
+                                "implementation": "tinfoil.adapter.modern",
+                            },
+                        ],
+                    },
+                },
+            }
+            result = run_bridge(
+                json.dumps(hello).encode(), environment={"PYTHONPATH": directory}
+            )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "hello_ack")
+        self.assertEqual(message["compatibility_generation"], 7)
+        self.assertEqual(
+            message["capabilities"],
+            [
+                "bitbake.build",
+                "bitbake.native_events",
+                "bitbake.workspace_inspection",
+            ],
+        )
+
+    def test_compatibility_absent_api_is_rejected_before_backend_call(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            marker = Path(directory, "called")
+            Path(directory, "bb.py").write_text(
+                f'''__version__ = "2.18"
+class Connection:
+ def inspect_workspace(self): return {{"build_dir": {str(Path.cwd())!r}, "variables": {{}}}}
+class Server:
+ def connect(self): return Connection()
+server = Server()
+''',
+                encoding="utf-8",
+            )
+            hello = {
+                "protocol_version": 1,
+                "sequence": 1,
+                "message": {
+                    "type": "hello",
+                    "compatibility": {
+                        "generation": 9,
+                        "build_directory": str(Path.cwd()),
+                        "capabilities": [
+                            {
+                                "id": "bitbake.cancellation",
+                                "implementation": "tinfoil.cancel",
+                            }
+                        ],
+                    },
+                },
+            }
+            cancel = {
+                "protocol_version": 1,
+                "sequence": 2,
+                "message": {"type": "cancel_build"},
+            }
+            result = run_bridge(
+                json.dumps(hello).encode(),
+                json.dumps(cancel).encode(),
+                environment={"PYTHONPATH": directory, "MARKER": str(marker)},
+            )
+        messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
+        self.assertEqual(messages[0]["capabilities"], [])
+        self.assertEqual(messages[1]["code"], "compatibility_unavailable")
+        self.assertFalse(marker.exists())
 
     def test_mocked_bitbake_events_are_normalized(self) -> None:
         events = json.dumps(

@@ -2214,6 +2214,27 @@ independent safe option-help probe for every option they authorize. Tinfoil,
 socket, and native-event implementations remain backend/API capabilities and
 cannot silently authorize a similarly named CLI operation.
 
+`yoctui-bitbake::BitBakeApiAuthority` is the backend counterpart. It derives a
+bounded bridge offer from enabled API records only, enforces one coherent
+Tinfoil adapter family, and binds it to the exact snapshot generation and build
+directory. The additive bridge hello payload carries capability/implementation
+pairs; the initialized bridge directly negotiates callable behavior and echoes
+only that subset with the same generation. Rust rejects stale, duplicate,
+unoffered, command-fallback, or unnegotiated API behavior before sending an
+operation. `BridgeBackend` applies this check to workspace, recipe/layer,
+metadata/dependency, graph, build/event, cancellation, and server operations.
+`BitBakeSocketAdapter` requires the same authority and derives its reported
+server capabilities from the negotiated subset rather than a hardcoded list.
+
+The bridge has no release-major adapter switch. Direct operation negotiation
+is authoritative; the central bounded version map may select a maintained
+legacy or modern Tinfoil family only before the handshake when direct probing
+cannot identify the family. Dedicated capability IDs distinguish recipe
+dependencies, recipe sources, recipe metadata, and layer relationships so one
+working metadata call cannot authorize another. Unknown future versions are
+therefore accepted when behavior is positively negotiated and remain
+fail-closed otherwise.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.

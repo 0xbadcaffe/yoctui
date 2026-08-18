@@ -183,6 +183,36 @@ are audited separately by `COMPAT-BITBAKE-API-001`. Yocto utilities such as
 Devtool, Recipetool, bitbake-layers, pkgdata, Wic, and test tools are separate
 catalog families covered by their dedicated compatibility tasks.
 
+### BitBake backend/API audit
+
+`BitBakeApiAuthority` is the equivalent boundary for Tinfoil, process-server,
+socket, metadata, and native-event behavior. It validates the normalized daemon
+snapshot, expected generation, exact build directory, and one consistent
+selected Tinfoil family. The bridge handshake carries only enabled API
+capability IDs and their selected implementations. The bridge directly checks
+the initialized environment's callable operations and returns a bounded subset
+with the same generation; stale, duplicate, unoffered, or absent behavior is
+rejected before a backend command.
+
+| Backend operation | Required behavior capability |
+|---|---|
+| Workspace, recipes, layers | `bitbake.workspace_inspection`, `bitbake.recipe_inventory`, `bitbake.layer_inventory` |
+| Recipe dependencies, sources, metadata | distinct `bitbake.recipe_dependencies`, `bitbake.recipe_sources`, `bitbake.recipe_metadata` |
+| Layer relationships | `bitbake.layer_relationships` |
+| Effective variables and history | `bitbake.getvar`, `bitbake.variable_history` |
+| Native dependency graph | `bitbake.dependency_graph` |
+| Build/runqueue/task event flow | `bitbake.build` plus `bitbake.native_events` |
+| Cancellation | `bitbake.cancellation` |
+| Socket termination/restart transport | `bitbake.server_socket` |
+
+The Python bridge does not classify BitBake by major version. A synthetic
+future version may negotiate directly observed behavior, while an older
+environment receives only the operations selected by its central snapshot and
+confirmed by its connection. Command fallbacks such as `bitbake -e` and `-g`
+are not silently executed through the API path. Bridge startup without a
+daemon snapshot remains protocol-compatible for diagnostics, but Rust backend
+operations fail closed until authority is installed.
+
 ### Snapshot ownership and runtime changes
 
 The persistent daemon owns identification, probing, fallback evaluation,

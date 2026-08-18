@@ -2,52 +2,49 @@
 
 ## Task
 
-**ID:** COMPAT-BITBAKE-API-001
-**Title:** Make BitBake backend and API behavior capability-aware
+**ID:** COMPAT-DEVTOOL-001
+**Title:** Make Devtool workflows capability-aware
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Audit every BitBake backend integration and select Tinfoil, server/socket,
-native-event, metadata, graph, runqueue, cancellation, reconnect, signature,
-and variable behavior from the connected environment's centralized capability
-snapshot.
+Probe the connected environment's Devtool subcommands and options, then derive
+every Devtool action and exact argv implementation from the centralized daemon
+capability snapshot.
 
 ## Dependencies
 
-- `COMPAT-DAEMON-001` — DONE
-- `COMPAT-VERSION-001` — DONE
+- `COMPAT-BITBAKE-CMD-001` — DONE
 
 ## Relevant files
 
-- `bridge/yoctui_bridge.py`
-- `bridge/tests/`
-- `crates/yoctui-bitbake/bridge/yoctui_bridge.py`
-- `crates/yoctui-bitbake/src/bitbake_socket.rs`
-- `crates/yoctui-bitbake/src/server_controller.rs`
 - `crates/yoctui-bitbake/src/lib.rs`
+- `crates/yoctui-cli/src/daemon_devtool.rs`
+- `crates/yoctui-app/src/`
+- `crates/yoctui-model/src/devtool.rs`
+- `crates/yoctui-model/src/compatibility_catalog.rs`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Tinfoil, server/socket, native-event, metadata, dependency graph, task and
-  runqueue event, cancellation, shutdown/reconnect, signature, and variable
-  integrations are inventoried against stable capability IDs.
-- Backend selection consumes the current daemon snapshot and selected adapter;
-  no backend or bridge module performs local release-version policy.
-- Maintained API families use explicit typed adapters and safely bounded
-  alternatives; absent behavior remains unavailable or unknown with evidence.
-- Bridge handshakes negotiate API/event behavior directly where possible, and
-  stale or mismatched capability generations are rejected.
-- Tests cover materially different adapter snapshots, absent APIs/events,
-  reconnect/cancellation behavior, and no unsupported backend operation.
+- Modify, finish, deploy-target, and upgrade subcommands/options are derived
+  from the centralized capability catalog and direct initialized-environment
+  probes, never host PATH or release-local checks.
+- Every Devtool preview/run requires the current environment and generation,
+  enabled capability, and exact selected command implementation.
+- Missing subcommands/options retain exact unavailable reasons and reject
+  before process creation; one available subcommand cannot authorize another.
+- Daemon and local effect routing consume the same typed authority and do not
+  reconstruct availability independently.
+- Tests cover old/new command surfaces, missing subcommands/options, stale
+  snapshots, exact argv, and zero spawn for unavailable operations.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake compatibility_api
-python3 -m pytest bridge/tests -k compatibility
+cargo test -p yoctui-bitbake compatibility_devtool
+cargo test -p yoctui-app compatibility_devtool
 ./scripts/verify-roadmap.sh
 ```

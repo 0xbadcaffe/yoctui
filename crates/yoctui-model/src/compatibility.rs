@@ -217,8 +217,16 @@ pub enum CapabilityId {
     BitBakeWorkspaceInspection,
     #[serde(rename = "bitbake.recipe_inventory")]
     BitBakeRecipeInventory,
+    #[serde(rename = "bitbake.recipe_dependencies")]
+    BitBakeRecipeDependencies,
+    #[serde(rename = "bitbake.recipe_sources")]
+    BitBakeRecipeSources,
+    #[serde(rename = "bitbake.recipe_metadata")]
+    BitBakeRecipeMetadata,
     #[serde(rename = "bitbake.layer_inventory")]
     BitBakeLayerInventory,
+    #[serde(rename = "bitbake.layer_relationships")]
+    BitBakeLayerRelationships,
     #[serde(rename = "bitbake.build")]
     BitBakeBuild,
     #[serde(rename = "bitbake.cancellation")]
@@ -304,10 +312,14 @@ pub enum CapabilityId {
 }
 
 impl CapabilityId {
-    pub const ALL: [Self; 44] = [
+    pub const ALL: [Self; 48] = [
         Self::BitBakeWorkspaceInspection,
         Self::BitBakeRecipeInventory,
+        Self::BitBakeRecipeDependencies,
+        Self::BitBakeRecipeSources,
+        Self::BitBakeRecipeMetadata,
         Self::BitBakeLayerInventory,
+        Self::BitBakeLayerRelationships,
         Self::BitBakeBuild,
         Self::BitBakeCancellation,
         Self::BitBakeTaskList,
@@ -355,7 +367,11 @@ impl CapabilityId {
         match self {
             Self::BitBakeWorkspaceInspection => "bitbake.workspace_inspection",
             Self::BitBakeRecipeInventory => "bitbake.recipe_inventory",
+            Self::BitBakeRecipeDependencies => "bitbake.recipe_dependencies",
+            Self::BitBakeRecipeSources => "bitbake.recipe_sources",
+            Self::BitBakeRecipeMetadata => "bitbake.recipe_metadata",
             Self::BitBakeLayerInventory => "bitbake.layer_inventory",
+            Self::BitBakeLayerRelationships => "bitbake.layer_relationships",
             Self::BitBakeBuild => "bitbake.build",
             Self::BitBakeCancellation => "bitbake.cancellation",
             Self::BitBakeTaskList => "bitbake.task_list",

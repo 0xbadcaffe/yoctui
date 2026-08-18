@@ -4,6 +4,7 @@ mod bitbake_restart;
 #[cfg(unix)]
 mod bitbake_socket;
 mod build_environment;
+mod compatibility_api;
 mod compatibility_cache;
 mod compatibility_command;
 mod compatibility_probe;
@@ -79,6 +80,9 @@ pub use bitbake_socket::BitBakeSocketAdapter;
 pub use build_environment::{
     BuildEnvironmentAdapter, BuildEnvironmentAdapterError, BuildEnvironmentClonePreview,
     BuildEnvironmentResponse,
+};
+pub use compatibility_api::{
+    BitBakeApiAuthority, BitBakeApiCompatibilityError, BitBakeApiOperation,
 };
 pub use compatibility_cache::{
     CapabilityCacheError, CapabilityCacheSelection, CapabilityFingerprintMaterial,
@@ -289,6 +293,8 @@ pub enum BackendError {
     Bridge(String),
     #[error("signature: {0}")]
     Signature(#[from] SignatureAdapterError),
+    #[error("compatibility API: {0}")]
+    CompatibilityApi(#[from] BitBakeApiCompatibilityError),
     #[error("backend is not running")]
     NotRunning,
 }
@@ -1667,6 +1673,7 @@ pub struct BridgeBackend {
     last_sequence: u64,
     accepted_correlations: VecDeque<String>,
     signature_adapter: SignatureAdapter,
+    api_authority: Option<BitBakeApiAuthority>,
     stderr_tail: Arc<Mutex<BridgeStderrTail>>,
     stderr_task: Option<tokio::task::JoinHandle<()>>,
 }
@@ -1771,7 +1778,20 @@ impl BridgeBackend {
     ) -> Result<Self, BackendError> {
         let mut command = TokioCommand::new(python);
         command.arg("-c").arg(BUNDLED_BRIDGE_SOURCE);
-        Self::spawn_command(command, build_dir, environment).await
+        Self::spawn_command(command, build_dir, environment, None).await
+    }
+
+    pub async fn spawn_bundled_with_compatibility(
+        python: &str,
+        build_dir: PathBuf,
+        environment: BTreeMap<String, String>,
+        compatibility: yoctui_model::DaemonCompatibilitySnapshot,
+        expected_generation: u64,
+    ) -> Result<Self, BackendError> {
+        let mut command = TokioCommand::new(python);
+        command.arg("-c").arg(BUNDLED_BRIDGE_SOURCE);
+        let authority = BitBakeApiAuthority::new(compatibility, expected_generation, &build_dir)?;
+        Self::spawn_command(command, build_dir, environment, Some(authority)).await
     }
 
     pub async fn spawn(
@@ -1789,13 +1809,28 @@ impl BridgeBackend {
     ) -> Result<Self, BackendError> {
         let mut command = TokioCommand::new(python);
         command.arg(script);
-        Self::spawn_command(command, build_dir, environment).await
+        Self::spawn_command(command, build_dir, environment, None).await
+    }
+
+    pub async fn spawn_with_compatibility(
+        python: &str,
+        script: PathBuf,
+        build_dir: PathBuf,
+        environment: BTreeMap<String, String>,
+        compatibility: yoctui_model::DaemonCompatibilitySnapshot,
+        expected_generation: u64,
+    ) -> Result<Self, BackendError> {
+        let mut command = TokioCommand::new(python);
+        command.arg(script);
+        let authority = BitBakeApiAuthority::new(compatibility, expected_generation, &build_dir)?;
+        Self::spawn_command(command, build_dir, environment, Some(authority)).await
     }
 
     async fn spawn_command(
         mut command: TokioCommand,
         build_dir: PathBuf,
         environment: BTreeMap<String, String>,
+        api_authority: Option<BitBakeApiAuthority>,
     ) -> Result<Self, BackendError> {
         let mut child = command
             .current_dir(&build_dir)
@@ -1819,6 +1854,12 @@ impl BridgeBackend {
             .ok_or_else(|| BackendError::Bridge("bridge stderr unavailable".into()))?;
         let stderr_tail = Arc::new(Mutex::new(BridgeStderrTail::default()));
         let stderr_task = tokio::spawn(drain_bridge_stderr(stderr, Arc::clone(&stderr_tail)));
+        let signature_adapter = if let Some(authority) = api_authority.as_ref() {
+            SignatureAdapter::new(build_dir.clone())
+                .with_compatibility(authority.compatibility_snapshot().clone())?
+        } else {
+            SignatureAdapter::new(build_dir.clone())
+        };
         let mut backend = Self {
             child,
             stdin,
@@ -1826,7 +1867,8 @@ impl BridgeBackend {
             sequence: 0,
             last_sequence: 0,
             accepted_correlations: VecDeque::new(),
-            signature_adapter: SignatureAdapter::new(build_dir),
+            signature_adapter,
+            api_authority,
             stderr_tail,
             stderr_task: Some(stderr_task),
         };
@@ -1929,7 +1971,11 @@ impl BridgeBackend {
     }
 
     async fn handshake(&mut self) -> Result<(), BackendError> {
-        self.command(Command::Hello).await?;
+        let compatibility = self
+            .api_authority
+            .as_ref()
+            .map(|authority| Box::new(authority.bridge_handshake()));
+        self.command(Command::Hello { compatibility }).await?;
         let Some(line) = self.next_line().await? else {
             return Err(self.disconnected("bridge disconnected during protocol handshake"));
         };
@@ -1937,7 +1983,16 @@ impl BridgeBackend {
         self.validate_correlation(&envelope)?;
         self.last_sequence = envelope.sequence;
         match envelope.message {
-            Event::HelloAck { .. } => Ok(()),
+            Event::HelloAck {
+                compatibility_generation,
+                capabilities,
+                ..
+            } => {
+                if let Some(authority) = self.api_authority.as_mut() {
+                    authority.accept_negotiation(compatibility_generation, &capabilities)?;
+                }
+                Ok(())
+            }
             Event::ProtocolError { code, message } | Event::CommandFailed { code, message } => Err(
                 BackendError::Bridge(format!("handshake rejected: {code}: {message}")),
             ),
@@ -1945,6 +2000,24 @@ impl BridgeBackend {
                 "bridge sent an unexpected handshake event".into(),
             )),
         }
+    }
+
+    fn require_api(&self, operation: BitBakeApiOperation) -> Result<(), BackendError> {
+        self.api_authority
+            .as_ref()
+            .ok_or_else(|| {
+                BackendError::Bridge(
+                    "BitBake API operation requires a daemon capability snapshot".into(),
+                )
+            })?
+            .require(operation)
+            .map_err(Into::into)
+    }
+
+    pub fn supports_api(&self, operation: BitBakeApiOperation) -> bool {
+        self.api_authority
+            .as_ref()
+            .is_some_and(|authority| authority.require(operation).is_ok())
     }
 
     /// Ask the bridge to finish its protocol work before the drop fallback kills it.
@@ -1983,6 +2056,7 @@ impl BridgeBackend {
     /// Terminate the connected BitBake process server through Tinfoil's
     /// supported process-server connection, then wait for the bridge to exit.
     pub async fn terminate_server(&mut self) -> Result<(), BackendError> {
+        self.require_api(BitBakeApiOperation::ServerSocket)?;
         self.command(Command::TerminateServer).await?;
         let Some(line) = self.next_line().await? else {
             return Err(BackendError::Bridge(
@@ -2566,6 +2640,7 @@ fn parse_task_dependency_dot(
 #[async_trait]
 impl BitBakeBackend for BridgeBackend {
     async fn inspect_workspace(&mut self) -> Result<Workspace, BackendError> {
+        self.require_api(BitBakeApiOperation::Workspace)?;
         self.command(Command::InspectWorkspace).await?;
         loop {
             match self.next_event().await? {
@@ -2581,6 +2656,7 @@ impl BitBakeBackend for BridgeBackend {
         }
     }
     async fn list_recipes(&mut self, filter: Option<String>) -> Result<Vec<Recipe>, BackendError> {
+        self.require_api(BitBakeApiOperation::Recipes)?;
         self.command(Command::ListRecipes { filter }).await?;
         loop {
             match self.next_event().await? {
@@ -2596,6 +2672,7 @@ impl BitBakeBackend for BridgeBackend {
         }
     }
     async fn list_layers(&mut self) -> Result<Vec<Layer>, BackendError> {
+        self.require_api(BitBakeApiOperation::Layers)?;
         self.command(Command::ListLayers).await?;
         loop {
             match self.next_event().await? {
@@ -2615,6 +2692,7 @@ impl BitBakeBackend for BridgeBackend {
         name: String,
         recipe: Option<String>,
     ) -> Result<VariableValue, BackendError> {
+        self.require_api(BitBakeApiOperation::Variable)?;
         let requested_recipe = recipe.clone();
         self.command(Command::GetVariable {
             name: name.clone(),
@@ -2656,6 +2734,7 @@ impl BitBakeBackend for BridgeBackend {
         &mut self,
         recipe: String,
     ) -> Result<RecipeDependencies, BackendError> {
+        self.require_api(BitBakeApiOperation::Dependencies)?;
         self.command(Command::GetDependencies {
             recipe: recipe.clone(),
         })
@@ -2684,6 +2763,7 @@ impl BitBakeBackend for BridgeBackend {
         &mut self,
         recipe: String,
     ) -> Result<DependencyGraphResponse, BackendError> {
+        self.require_api(BitBakeApiOperation::DependencyGraph)?;
         self.command(Command::GetDependencyGraph {
             recipe: recipe.clone(),
         })
@@ -2750,6 +2830,7 @@ impl BitBakeBackend for BridgeBackend {
             .map_err(Into::into)
     }
     async fn get_recipe_sources(&mut self, recipe: String) -> Result<Vec<PathBuf>, BackendError> {
+        self.require_api(BitBakeApiOperation::RecipeSources)?;
         self.command(Command::GetRecipeSources {
             recipe: recipe.clone(),
         })
@@ -2777,6 +2858,7 @@ impl BitBakeBackend for BridgeBackend {
         &mut self,
         recipe: String,
     ) -> Result<RecipeMetadata, BackendError> {
+        self.require_api(BitBakeApiOperation::RecipeMetadata)?;
         self.command(Command::GetRecipeMetadata {
             recipe: recipe.clone(),
         })
@@ -2800,6 +2882,7 @@ impl BitBakeBackend for BridgeBackend {
         }
     }
     async fn get_layer_relationships(&mut self) -> Result<Vec<LayerRelationship>, BackendError> {
+        self.require_api(BitBakeApiOperation::LayerRelationships)?;
         self.command(Command::GetLayerRelationships).await?;
         loop {
             match self.next_event().await? {
@@ -2817,6 +2900,10 @@ impl BitBakeBackend for BridgeBackend {
         }
     }
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError> {
+        self.require_api(BitBakeApiOperation::Build)?;
+        if request.force {
+            self.require_api(BitBakeApiOperation::ForceTask)?;
+        }
         self.command(Command::StartBuild {
             targets: request.targets,
             task: request.task,
@@ -2825,6 +2912,7 @@ impl BitBakeBackend for BridgeBackend {
         .await
     }
     async fn cancel_build(&mut self) -> Result<(), BackendError> {
+        self.require_api(BitBakeApiOperation::Cancel)?;
         self.command(Command::CancelBuild).await
     }
     async fn next_event(&mut self) -> Result<BackendEvent, BackendError> {
@@ -4032,13 +4120,19 @@ printf '%s\n' '{"protocol_version":1,"sequence":2,"correlation_id":"2","message"
     }
 
     #[tokio::test]
-    async fn bridge_backend_negotiates_before_workspace_inspection() {
+    async fn bridge_backend_requires_compatibility_before_workspace_inspection() {
         let script = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("bridge/yoctui_bridge.py");
         let mut backend = BridgeBackend::spawn("python3", script, std::env::temp_dir())
             .await
             .unwrap();
-        let workspace = backend.inspect_workspace().await.unwrap();
-        assert_eq!(workspace.build_dir, Some(std::env::temp_dir()));
+        assert!(
+            backend
+                .inspect_workspace()
+                .await
+                .unwrap_err()
+                .to_string()
+                .contains("requires a daemon capability snapshot")
+        );
         backend.shutdown().await.unwrap();
     }
 
@@ -4053,19 +4147,17 @@ printf '%s\n' '{"protocol_version":1,"sequence":2,"correlation_id":"2","message"
     }
 
     #[tokio::test]
-    async fn bridge_backend_decodes_typed_workspace_queries() {
+    async fn bridge_backend_rejects_typed_queries_without_compatibility() {
         let mut backend = BridgeBackend::spawn_bundled("python3", std::env::temp_dir())
             .await
             .unwrap();
-        assert!(backend.list_recipes(None).await.unwrap().is_empty());
-        let _layers = backend.list_layers().await.unwrap();
         assert!(
             backend
-                .get_variable("PATH".into(), None)
+                .list_recipes(None)
                 .await
-                .unwrap()
-                .value
-                .is_some()
+                .unwrap_err()
+                .to_string()
+                .contains("requires a daemon capability snapshot")
         );
         backend.shutdown().await.unwrap();
     }
@@ -4076,7 +4168,7 @@ printf '%s\n' '{"protocol_version":1,"sequence":2,"correlation_id":"2","message"
         let mut backend = BridgeBackend::spawn_bundled("python3", std::env::temp_dir())
             .await
             .unwrap();
-        assert!(backend.list_recipes(None).await.unwrap().is_empty());
+        assert!(backend.list_recipes(None).await.is_err());
         backend.shutdown().await.unwrap();
     }
 }

@@ -538,14 +538,47 @@ class TinfoilConnection:
 
 
 class BitBakeAdapter:
-    def __init__(self, version, family, module=None):
+    def __init__(self, version, module=None):
         self.version = version
-        self.family = family
         self.module = module
         self.connection = None
         self.build_correlation_id = None
         self.build_active = False
         self.task_identities_by_pid = {}
+        self.compatibility_generation = None
+        self.negotiated_capabilities = set()
+
+    def negotiate(self, requested):
+        """Directly retain only API behavior exposed by this connection."""
+        connection = self.server()
+        operations = {
+            "bitbake.workspace_inspection": ("inspect_workspace",),
+            "bitbake.recipe_inventory": ("list_recipes",),
+            "bitbake.recipe_dependencies": ("get_dependencies",),
+            "bitbake.recipe_sources": ("get_recipe_sources",),
+            "bitbake.recipe_metadata": ("get_recipe_metadata",),
+            "bitbake.layer_inventory": ("list_layers",),
+            "bitbake.layer_relationships": ("get_layer_relationships",),
+            "bitbake.build": ("start_build",),
+            "bitbake.cancellation": ("cancel_build",),
+            "bitbake.task_list": ("get_recipe_metadata",),
+            "bitbake.dependency_graph": ("get_dependency_graph",),
+            "bitbake.getvar": ("get_variable",),
+            "bitbake.variable_history": ("get_variable",),
+            "bitbake.server_socket": ("terminate_server",),
+            "bitbake.native_events": ("drain_events",),
+        }
+        negotiated = set()
+        for capability in requested:
+            capability_id = capability["id"]
+            methods = operations.get(capability_id)
+            if methods and all(callable(getattr(connection, name, None)) for name in methods):
+                if capability_id != "bitbake.native_events" or bool(
+                    getattr(connection, "native_event_stream", False)
+                ):
+                    negotiated.add(capability_id)
+        self.negotiated_capabilities = negotiated
+        return sorted(negotiated)
 
     def workspace(self):
         operation = self.optional_server_operation("inspect_workspace")
@@ -881,11 +914,11 @@ class BitBakeAdapter:
 
 
 class EnvironmentAdapter(BitBakeAdapter):
-    def __init__(self):
-        super().__init__(None, "environment")
+    def __init__(self, version=None):
+        super().__init__(version)
 
 
-def select_adapter(version=None):
+def select_adapter(version=None, implementation=None):
     module = None
     if version is None:
         try:
@@ -894,15 +927,88 @@ def select_adapter(version=None):
             version = getattr(module, "__version__", None)
         except ImportError:
             version = bitbake_version()
-    if version is None:
-        return EnvironmentAdapter()
-    try:
-        major = int(version.split(".", 1)[0])
-    except (AttributeError, ValueError):
-        raise CompatibilityError(f"unrecognized BitBake version: {version!r}")
-    if major < 1:
-        raise CompatibilityError(f"unsupported BitBake version: {version}")
-    return BitBakeAdapter(version, "legacy" if major == 1 else "modern", module)
+    if implementation is None:
+        # Backward-compatible bridge clients have no daemon snapshot. Probe
+        # the initialized module shape directly; never choose by version.
+        return (
+            BitBakeAdapter(version, module)
+            if module is not None
+            else EnvironmentAdapter(version)
+        )
+    if not (
+        implementation.startswith("tinfoil.")
+        or implementation.startswith("bitbake.server_socket")
+    ):
+        raise CompatibilityError(
+            f"daemon selected an unsupported BitBake API implementation: {implementation!r}"
+        )
+    if module is None:
+        raise CompatibilityError(
+            "daemon selected a BitBake API implementation but the initialized environment does not expose the bb module"
+        )
+    return BitBakeAdapter(version, module)
+
+
+def configure_compatibility(command):
+    compatibility = command.get("compatibility")
+    if compatibility is None:
+        adapter = select_adapter()
+        return adapter, None, []
+    if not isinstance(compatibility, dict):
+        raise CompatibilityError("bridge compatibility payload must be an object")
+    generation = compatibility.get("generation")
+    build_directory = compatibility.get("build_directory")
+    capabilities = compatibility.get("capabilities")
+    if not isinstance(generation, int) or isinstance(generation, bool) or generation <= 0:
+        raise CompatibilityError("bridge compatibility generation must be positive")
+    if not isinstance(build_directory, str) or not os.path.isabs(build_directory):
+        raise CompatibilityError("bridge compatibility build directory must be absolute")
+    if os.path.realpath(build_directory) != os.path.realpath(os.getcwd()):
+        raise CompatibilityError("bridge compatibility belongs to another build directory")
+    if not isinstance(capabilities, list) or len(capabilities) > 64:
+        raise CompatibilityError("bridge compatibility capability list is invalid or oversized")
+    seen = set()
+    direct_implementations = {
+        "bitbake.workspace_inspection": "tinfoil.workspace",
+        "bitbake.recipe_inventory": "tinfoil.recipes",
+        "bitbake.recipe_dependencies": "tinfoil.dependencies",
+        "bitbake.recipe_sources": "tinfoil.recipe_sources",
+        "bitbake.recipe_metadata": "tinfoil.recipe_metadata",
+        "bitbake.layer_inventory": "tinfoil.layers",
+        "bitbake.layer_relationships": "tinfoil.layer_relationships",
+        "bitbake.build": "tinfoil.build",
+        "bitbake.cancellation": "tinfoil.cancel",
+        "bitbake.task_list": "tinfoil.tasks",
+        "bitbake.dependency_graph": "tinfoil.dependency_graph",
+        "bitbake.getvar": "tinfoil.getvar",
+        "bitbake.variable_history": "tinfoil.variable_history",
+        "bitbake.server_socket": "bitbake.server_socket",
+        "bitbake.native_events": "tinfoil.native_events",
+    }
+    for capability in capabilities:
+        if (
+            not isinstance(capability, dict)
+            or not isinstance(capability.get("id"), str)
+            or not isinstance(capability.get("implementation"), str)
+            or capability["id"] in seen
+        ):
+            raise CompatibilityError("bridge compatibility capability entry is invalid")
+        expected = direct_implementations.get(capability["id"])
+        if expected is None or not (
+            capability["implementation"] == expected
+            or capability["implementation"].startswith("tinfoil.adapter.")
+        ):
+            raise CompatibilityError(
+                f"bridge compatibility implementation does not authorize {capability['id']}"
+            )
+        seen.add(capability["id"])
+    implementation = next(
+        (item["implementation"] for item in capabilities if item["implementation"].startswith("tinfoil.adapter.")),
+        next((item["implementation"] for item in capabilities), None),
+    )
+    adapter = select_adapter(implementation=implementation)
+    adapter.compatibility_generation = generation
+    return adapter, generation, adapter.negotiate(capabilities) if capabilities else []
 
 
 def workspace_data(version):
@@ -1753,8 +1859,43 @@ def emit_adapter_events(adapter):
 
 def handle(command, correlation_id, adapter):
     kind = command.get("type") if isinstance(command, dict) else None
+    required_capabilities = {
+        "inspect_workspace": ("bitbake.workspace_inspection",),
+        "list_recipes": ("bitbake.recipe_inventory",),
+        "list_layers": ("bitbake.layer_inventory",),
+        "get_variable": ("bitbake.getvar",),
+        "get_dependencies": ("bitbake.recipe_dependencies",),
+        "get_dependency_graph": ("bitbake.dependency_graph",),
+        "get_recipe_sources": ("bitbake.recipe_sources",),
+        "get_recipe_metadata": ("bitbake.recipe_metadata",),
+        "get_layer_relationships": ("bitbake.layer_relationships",),
+        "start_build": ("bitbake.build", "bitbake.native_events"),
+        "cancel_build": ("bitbake.cancellation",),
+        "terminate_server": ("bitbake.server_socket",),
+    }
+    if adapter.compatibility_generation is not None:
+        missing = [
+            capability
+            for capability in required_capabilities.get(kind, ())
+            if capability not in adapter.negotiated_capabilities
+        ]
+        if missing:
+            error(
+                "compatibility_unavailable",
+                f"{kind} requires negotiated capability {missing[0]}",
+                correlation_id,
+            )
+            return True
     if kind == "hello":
-        emit({"type": "hello_ack", "bitbake_version": adapter.version}, correlation_id)
+        emit(
+            {
+                "type": "hello_ack",
+                "bitbake_version": adapter.version,
+                "compatibility_generation": adapter.compatibility_generation,
+                "capabilities": sorted(adapter.negotiated_capabilities),
+            },
+            correlation_id,
+        )
     elif kind == "inspect_workspace":
         try:
             workspace = adapter.workspace()
@@ -1985,11 +2126,7 @@ def handle(command, correlation_id, adapter):
 
 def main():
     isolate_protocol_output()
-    try:
-        adapter = select_adapter()
-    except CompatibilityError as exc:
-        error("unsupported_bitbake", str(exc))
-        return
+    adapter = select_adapter()
     selector = selectors.DefaultSelector()
     selector.register(sys.stdin.buffer, selectors.EVENT_READ)
     try:
@@ -2015,7 +2152,25 @@ def main():
                         data.get("correlation_id"),
                     )
                     continue
-                if not handle(data.get("message"), data.get("correlation_id"), adapter):
+                message = data.get("message")
+                if isinstance(message, dict) and message.get("type") == "hello":
+                    try:
+                        adapter.shutdown()
+                        adapter, generation, capabilities = configure_compatibility(message)
+                    except (CompatibilityError, ServerUnavailable) as exc:
+                        error("compatibility_negotiation_failed", str(exc), data.get("correlation_id"))
+                    else:
+                        emit(
+                            {
+                                "type": "hello_ack",
+                                "bitbake_version": adapter.version,
+                                "compatibility_generation": generation,
+                                "capabilities": capabilities,
+                            },
+                            data.get("correlation_id"),
+                        )
+                    continue
+                if not handle(message, data.get("correlation_id"), adapter):
                     return
             except (UnicodeDecodeError, json.JSONDecodeError, AttributeError) as exc:
                 error("malformed_command", str(exc))
