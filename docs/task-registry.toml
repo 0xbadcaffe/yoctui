@@ -4809,15 +4809,59 @@ verify = ["cargo test -p yoctui-ui compatibility_ui_inspector", "cargo test -p y
 notes = "Compatibility is a first-class client-local Navigator and command-palette destination. Its responsive workspace projects only typed compatibility presentation state: authoritative identity and generation/mode, exact five-state summary, stable filtered/searched capability rows, selected implementation, exact reason/requirement/limitations, and bounded typed evidence. Wide uses the persistent Inspector, medium the standard Inspector overlay, and narrow the shared pane switcher; opening or navigating it emits no environment effect. Typed modal key routing covers 1-5, search, selection, and Esc without leakage. Focused UI/app tests, every-theme/no-color/absent-authority responsive coverage, all-screen boundary rendering, canonical Tasks snapshots, roadmap validation, and warnings-denied Clippy pass."
 
 [[task]]
-id = "COMPAT-UI-ACTIONS-001"
+id = "COMPAT-UI-ACTION-CATALOG-001"
 milestone = "M18"
-title = "Apply capability state to visible workspace actions"
+title = "Catalog visible UI action capability requirements"
 status = "IN_PROGRESS"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-MODEL-001", "COMPAT-UI-INSPECTOR-001"]
+verify = ["cargo test -p yoctui-model compatibility_ui_action_catalog", "./scripts/verify-roadmap.sh"]
+notes = "Create one compiler-checked action-surface inventory for Navigator destinations, command-palette operations, contextual workspace actions, and dialogs. Each entry resolves centrally to client-local behavior or the existing typed workspace capability requirement and retains exact state/reason/implementation presentation."
+
+[[task]]
+id = "COMPAT-UI-NAV-ACTIONS-001"
+milestone = "M18"
+title = "Render capability state in global action surfaces"
+status = "NOT_STARTED"
+priority = 504
+required = true
+depends_on = ["COMPAT-UI-ACTION-CATALOG-001"]
+verify = ["cargo test -p yoctui-ui compatibility_ui_nav_actions", "cargo test -p yoctui-app compatibility_ui_nav_actions", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
+notes = "Project centralized state into useful Navigator destinations, command-palette entries, and contextual footers. Navigation remains inspectable; disabled operations cannot launch, exact reasons remain discoverable, and client-local actions remain usable."
+
+[[task]]
+id = "COMPAT-UI-WORKSPACE-ACTIONS-001"
+milestone = "M18"
+title = "Render capability state in workspace and Inspector actions"
+status = "NOT_STARTED"
+priority = 504
+required = true
+depends_on = ["COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-NAV-ACTIONS-001"]
+verify = ["cargo test -p yoctui-ui compatibility_ui_workspace_actions", "cargo test -p yoctui-app compatibility_ui_workspace_actions", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
+notes = "Render concise enabled/limited/disabled state for every useful environment-backed workspace table, action list, and Inspector operation from the shared projection, with exact reasons/alternatives and no widget-local cache or release policy."
+
+[[task]]
+id = "COMPAT-UI-DIALOG-ACTIONS-001"
+milestone = "M18"
+title = "Render and enforce capability state in dialogs"
+status = "NOT_STARTED"
+priority = 504
+required = true
+depends_on = ["COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-WORKSPACE-ACTIONS-001"]
+verify = ["cargo test -p yoctui-ui compatibility_ui_dialog_actions", "cargo test -p yoctui-app compatibility_ui_dialog_actions", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
+notes = "Every environment-backed dialog shows current centralized state and exact denial or limitation before confirmation. Snapshot replacement revalidates safely, disabled dialogs cannot emit effects, and local/cancellation dialogs remain usable."
+
+[[task]]
+id = "COMPAT-UI-ACTIONS-001"
+milestone = "M18"
+title = "Apply capability state to visible workspace actions"
+status = "NOT_STARTED"
+priority = 504
+required = true
+depends_on = ["COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-NAV-ACTIONS-001", "COMPAT-UI-WORKSPACE-ACTIONS-001", "COMPAT-UI-DIALOG-ACTIONS-001"]
 verify = ["cargo test -p yoctui-ui compatibility_ui_actions", "cargo test -p yoctui-app compatibility_ui_actions", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
-notes = "Make useful environment-backed actions in Navigator, command palette, workspace tables, Inspectors, dialogs, and footers visibly enabled/limited/disabled from one model projection. Exact reasons and maintained alternatives remain discoverable, while local actions remain usable."
+notes = "Parent gate: useful environment-backed actions in Navigator, command palette, workspace tables, Inspectors, dialogs, and footers are visibly enabled/limited/disabled from one model projection. Exact reasons and maintained alternatives remain discoverable, while local actions remain usable."
 
 [[task]]
 id = "COMPAT-UI-001"

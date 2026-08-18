@@ -956,4 +956,8 @@ rows, exact reasons and requirements, limitations, selected implementations,
 and bounded typed evidence. Wide, medium-overlay, narrow-pane, absent-authority,
 every-theme, no-color, long-content, replacement, and boundary-size coverage
 passes without changing the canonical Tasks golden or F1-F10 rail.
-`COMPAT-UI-ACTIONS-001` is active.
+The broad visible-action gate was split before implementation into a closed
+typed action-surface catalog, global Navigator/palette/footer rendering,
+workspace/Inspector rendering, and dialog rendering/enforcement. The original
+`COMPAT-UI-ACTIONS-001` remains the parent acceptance gate.
+`COMPAT-UI-ACTION-CATALOG-001` is active.
