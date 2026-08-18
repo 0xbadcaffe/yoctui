@@ -17,11 +17,13 @@ use tokio::{
     sync::Notify,
 };
 use yoctui_model::{
-    MAX_SIGNATURE_DIFFERENCES, MAX_SIGNATURE_RECORDS, SignatureComparisonRequest,
-    SignatureDifference, SignatureDifferenceCategory, SignatureIdentity, SignatureRecord,
-    SignatureTarget, SignatureValue, compare_signature_records, normalize_signature_differences,
-    normalize_signature_records,
+    DaemonCompatibilitySnapshot, MAX_SIGNATURE_DIFFERENCES, MAX_SIGNATURE_RECORDS,
+    SignatureComparisonRequest, SignatureDifference, SignatureDifferenceCategory,
+    SignatureIdentity, SignatureRecord, SignatureTarget, SignatureValue, compare_signature_records,
+    normalize_signature_differences, normalize_signature_records,
 };
+
+use crate::BitBakeCommandPlanner;
 
 const MAX_SIGNATURE_OUTPUT_BYTES: usize = 8 * 1024 * 1024;
 const MAX_SIGNATURE_VARIABLES: usize = 4096;
@@ -37,25 +39,6 @@ pub struct SignatureCommandSpec {
 }
 
 impl SignatureCommandSpec {
-    fn dump(executable: PathBuf, path: &Path) -> Self {
-        Self {
-            executable,
-            arguments: vec![path.as_os_str().to_owned()],
-        }
-    }
-
-    fn compare(executable: PathBuf, left: &Path, right: &Path) -> Self {
-        Self {
-            executable,
-            arguments: vec![
-                OsString::from("-c"),
-                OsString::from("never"),
-                left.as_os_str().to_owned(),
-                right.as_os_str().to_owned(),
-            ],
-        }
-    }
-
     pub fn executable(&self) -> &Path {
         &self.executable
     }
@@ -110,6 +93,8 @@ pub enum SignatureAdapterError {
     Malformed(String),
     #[error("signature I/O failed: {0}")]
     Io(String),
+    #[error(transparent)]
+    Authorization(#[from] crate::BitBakeCommandAuthorizationError),
 }
 
 #[derive(Debug, Clone, Default)]
@@ -156,6 +141,7 @@ pub struct SignatureAdapter {
     dumpsig_program: PathBuf,
     diffsigs_program: PathBuf,
     timeout: Duration,
+    compatibility: Option<DaemonCompatibilitySnapshot>,
 }
 
 impl SignatureAdapter {
@@ -177,12 +163,41 @@ impl SignatureAdapter {
             dumpsig_program,
             diffsigs_program,
             timeout: SIGNATURE_COMMAND_TIMEOUT,
+            compatibility: None,
         }
     }
 
     pub fn with_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = timeout;
         self
+    }
+
+    pub fn with_compatibility(
+        mut self,
+        compatibility: DaemonCompatibilitySnapshot,
+    ) -> Result<Self, SignatureAdapterError> {
+        self.compatibility = Some(
+            compatibility
+                .normalize()
+                .map_err(|error| SignatureAdapterError::InvalidRequest(error.to_string()))?,
+        );
+        Ok(self)
+    }
+
+    fn command_planner(
+        &self,
+        canonical_build_dir: &Path,
+    ) -> Result<BitBakeCommandPlanner<'_>, SignatureAdapterError> {
+        let compatibility = self.compatibility.as_ref().ok_or_else(|| {
+            SignatureAdapterError::InvalidRequest(
+                "signature commands require a daemon capability snapshot".into(),
+            )
+        })?;
+        Ok(BitBakeCommandPlanner::new(
+            compatibility,
+            compatibility.snapshot.generation,
+            canonical_build_dir,
+        )?)
     }
 
     pub async fn dump(
@@ -230,8 +245,14 @@ impl SignatureAdapter {
             }
             let path = validate_signature_path(&canonical_build_dir, &path).await?;
             let identity = identity_from_path(&target, path.clone())?;
+            let authorized = self
+                .command_planner(&canonical_build_dir)?
+                .signature_dump(&path)?;
             let output = run_signature_command(
-                SignatureCommandSpec::dump(self.dumpsig_program.clone(), &path),
+                SignatureCommandSpec {
+                    executable: self.dumpsig_program.clone(),
+                    arguments: authorized.arguments,
+                },
                 &self.build_dir,
                 self.timeout,
                 &cancellation,
@@ -291,22 +312,35 @@ impl SignatureAdapter {
         let left_path = validate_identity_path(&canonical_build_dir, &request.left).await?;
         let right_path = validate_identity_path(&canonical_build_dir, &request.right).await?;
 
+        let planner = self.command_planner(&canonical_build_dir)?;
+        let compare = planner.signature_compare(&left_path, &right_path)?;
+        let dump_left = planner.signature_dump(&left_path)?;
+        let dump_right = planner.signature_dump(&right_path)?;
         let diffsigs_output = run_signature_command(
-            SignatureCommandSpec::compare(self.diffsigs_program.clone(), &left_path, &right_path),
+            SignatureCommandSpec {
+                executable: self.diffsigs_program.clone(),
+                arguments: compare.arguments,
+            },
             &self.build_dir,
             self.timeout,
             &cancellation,
         )
         .await?;
         let left_output = run_signature_command(
-            SignatureCommandSpec::dump(self.dumpsig_program.clone(), &left_path),
+            SignatureCommandSpec {
+                executable: self.dumpsig_program.clone(),
+                arguments: dump_left.arguments,
+            },
             &self.build_dir,
             self.timeout,
             &cancellation,
         )
         .await?;
         let right_output = run_signature_command(
-            SignatureCommandSpec::dump(self.dumpsig_program.clone(), &right_path),
+            SignatureCommandSpec {
+                executable: self.dumpsig_program.clone(),
+                arguments: dump_right.arguments,
+            },
             &self.build_dir,
             self.timeout,
             &cancellation,
@@ -999,6 +1033,71 @@ mod tests {
         path
     }
 
+    fn test_compatibility(root: &Path) -> DaemonCompatibilitySnapshot {
+        use yoctui_model::{
+            AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind,
+            CapabilityEvidenceOutcome, CapabilityId, CapabilityImplementation,
+            CapabilityImplementationKind, CapabilityRecord, CapabilitySnapshot, CapabilityState,
+            IdentityAuthority, YoctoEnvironmentIdentity,
+        };
+        let capabilities = [
+            (
+                CapabilityId::BitBakeDumpSig,
+                crate::compatibility_command::BITBAKE_DUMPSIG_ARGV_IMPLEMENTATION,
+            ),
+            (
+                CapabilityId::BitBakeDiffSigs,
+                crate::compatibility_command::BITBAKE_DIFFSIGS_ARGV_IMPLEMENTATION,
+            ),
+        ];
+        DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation: 1,
+                environment: YoctoEnvironmentIdentity {
+                    build_directory: AuthoritativeValue::detected(
+                        root.to_owned(),
+                        IdentityAuthority::InitializedEnvironment,
+                    ),
+                    ..YoctoEnvironmentIdentity::default()
+                },
+                capabilities: capabilities
+                    .iter()
+                    .map(|(id, _)| CapabilityRecord {
+                        id: *id,
+                        state: CapabilityState::Available,
+                        evidence: vec![CapabilityEvidence {
+                            kind: CapabilityEvidenceKind::DirectProbe,
+                            outcome: CapabilityEvidenceOutcome::Positive,
+                            subject: format!("{} fixture probe", id.as_str()),
+                            detail: "The exact signature helper argv is supported.".into(),
+                            argv: Vec::new(),
+                        }],
+                    })
+                    .collect(),
+            },
+            implementations: capabilities
+                .into_iter()
+                .map(|(id, implementation)| {
+                    (
+                        id,
+                        CapabilityImplementation {
+                            id: implementation.into(),
+                            kind: CapabilityImplementationKind::Command,
+                        },
+                    )
+                })
+                .collect(),
+        }
+        .normalize()
+        .unwrap()
+    }
+
+    fn test_adapter(root: &Path, dump: PathBuf, diff: PathBuf) -> SignatureAdapter {
+        SignatureAdapter::with_programs(root.to_owned(), dump, diff)
+            .with_compatibility(test_compatibility(root))
+            .unwrap()
+    }
+
     #[test]
     fn signature_adapter_parser_keeps_typed_bounded_dump_data() {
         let identity = SignatureIdentity {
@@ -1050,7 +1149,7 @@ mod tests {
             ),
         );
         write_executable(&diff, "#!/bin/sh\nexit 0\n");
-        let response = SignatureAdapter::with_programs(directory.path().to_owned(), dump, diff)
+        let response = test_adapter(directory.path(), dump, diff)
             .dump(target())
             .await
             .unwrap();
@@ -1088,7 +1187,7 @@ mod tests {
             left: identity_from_path(&target(), left_path).unwrap(),
             right: identity_from_path(&target(), right_path).unwrap(),
         };
-        let response = SignatureAdapter::with_programs(directory.path().to_owned(), dump, diff)
+        let response = test_adapter(directory.path(), dump, diff)
             .compare(request.clone())
             .await
             .unwrap();
@@ -1119,8 +1218,8 @@ mod tests {
                 path: Some(outside),
             },
         };
-        let adapter = SignatureAdapter::with_programs(
-            directory.path().to_owned(),
+        let adapter = test_adapter(
+            directory.path(),
             directory.path().join("missing"),
             directory.path().join("missing"),
         );
@@ -1136,14 +1235,10 @@ mod tests {
         ));
         let failure = directory.path().join("failure");
         write_executable(&failure, "#!/bin/sh\nprintf 'bad input\\n' >&2\nexit 7\n");
-        let error = SignatureAdapter::with_programs(
-            directory.path().to_owned(),
-            failure,
-            directory.path().join("unused"),
-        )
-        .dump(target())
-        .await
-        .unwrap_err();
+        let error = test_adapter(directory.path(), failure, directory.path().join("unused"))
+            .dump(target())
+            .await
+            .unwrap_err();
         assert_eq!(
             error,
             SignatureAdapterError::NonZero {
@@ -1163,14 +1258,10 @@ mod tests {
             &oversized,
             "#!/bin/sh\nhead -c 9000000 /dev/zero | tr '\\0' x\n",
         );
-        let error = SignatureAdapter::with_programs(
-            directory.path().to_owned(),
-            oversized,
-            directory.path().join("unused"),
-        )
-        .dump(target())
-        .await
-        .unwrap_err();
+        let error = test_adapter(directory.path(), oversized, directory.path().join("unused"))
+            .dump(target())
+            .await
+            .unwrap_err();
         assert_eq!(
             error,
             SignatureAdapterError::OutputLimit(MAX_SIGNATURE_OUTPUT_BYTES)
@@ -1178,12 +1269,8 @@ mod tests {
 
         let sleeping = directory.path().join("sleeping");
         write_executable(&sleeping, "#!/bin/sh\nsleep 30\n");
-        let adapter = SignatureAdapter::with_programs(
-            directory.path().to_owned(),
-            sleeping,
-            directory.path().join("unused"),
-        )
-        .with_timeout(Duration::from_secs(60));
+        let adapter = test_adapter(directory.path(), sleeping, directory.path().join("unused"))
+            .with_timeout(Duration::from_secs(60));
         let cancellation = SignatureCancellation::default();
         let cancel_handle = cancellation.clone();
         let operation =
@@ -1206,8 +1293,7 @@ mod tests {
         let diff = directory.path().join("diff");
         write_executable(&dump, "#!/bin/sh\nprintf 'nonsense\\n'\n");
         write_executable(&diff, "#!/bin/sh\nexit 0\n");
-        let adapter =
-            SignatureAdapter::with_programs(directory.path().to_owned(), dump.clone(), diff);
+        let adapter = test_adapter(directory.path(), dump.clone(), diff);
         assert!(adapter.dump(target()).await.unwrap().records.is_empty());
 
         signature_path(directory.path(), "aaa");

@@ -243,6 +243,12 @@ pub enum CapabilityId {
     BitBakeDumpSig,
     #[serde(rename = "bitbake.server_socket")]
     BitBakeServerSocket,
+    #[serde(rename = "bitbake.server_status")]
+    BitBakeServerStatus,
+    #[serde(rename = "bitbake.server_start")]
+    BitBakeServerStart,
+    #[serde(rename = "bitbake.server_stop")]
+    BitBakeServerStop,
     #[serde(rename = "bitbake.native_events")]
     BitBakeNativeEvents,
     #[serde(rename = "devtool.modify")]
@@ -298,7 +304,7 @@ pub enum CapabilityId {
 }
 
 impl CapabilityId {
-    pub const ALL: [Self; 41] = [
+    pub const ALL: [Self; 44] = [
         Self::BitBakeWorkspaceInspection,
         Self::BitBakeRecipeInventory,
         Self::BitBakeLayerInventory,
@@ -314,6 +320,9 @@ impl CapabilityId {
         Self::BitBakeDiffSigs,
         Self::BitBakeDumpSig,
         Self::BitBakeServerSocket,
+        Self::BitBakeServerStatus,
+        Self::BitBakeServerStart,
+        Self::BitBakeServerStop,
         Self::BitBakeNativeEvents,
         Self::DevtoolModify,
         Self::DevtoolFinish,
@@ -359,6 +368,9 @@ impl CapabilityId {
             Self::BitBakeDiffSigs => "bitbake.diffsigs",
             Self::BitBakeDumpSig => "bitbake.dumpsig",
             Self::BitBakeServerSocket => "bitbake.server_socket",
+            Self::BitBakeServerStatus => "bitbake.server_status",
+            Self::BitBakeServerStart => "bitbake.server_start",
+            Self::BitBakeServerStop => "bitbake.server_stop",
             Self::BitBakeNativeEvents => "bitbake.native_events",
             Self::DevtoolModify => "devtool.modify",
             Self::DevtoolFinish => "devtool.finish",

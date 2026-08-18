@@ -5,6 +5,7 @@ mod bitbake_restart;
 mod bitbake_socket;
 mod build_environment;
 mod compatibility_cache;
+mod compatibility_command;
 mod compatibility_probe;
 mod compatibility_resolver;
 mod compatibility_version;
@@ -66,8 +67,8 @@ mod test_support {
 
 use async_trait::async_trait;
 pub use bitbake_cli_control::{
-    BitBakeCliCapabilities, BitBakeCliCommand, BitBakeCliControlError, BitBakeCliOperation,
-    BitBakeCliOutcome, BitBakeCliPreview, BitBakeCliRunner,
+    BitBakeCliCommand, BitBakeCliControlError, BitBakeCliOperation, BitBakeCliOutcome,
+    BitBakeCliPreview, BitBakeCliRunner,
 };
 pub use bitbake_restart::{
     BitBakeMetadataRefresher, BitBakeRestartCoordinator, BitBakeRestartError,
@@ -82,6 +83,10 @@ pub use build_environment::{
 pub use compatibility_cache::{
     CapabilityCacheError, CapabilityCacheSelection, CapabilityFingerprintMaterial,
     CapabilitySnapshotCache,
+};
+pub use compatibility_command::{
+    AuthorizedBitBakeCommand, BitBakeCommandAuthorizationError, BitBakeCommandPlanner,
+    BitBakeServerCommandOperation,
 };
 pub use compatibility_probe::{
     CapabilityProbeContext, CapabilityProbeContextError, CapabilityProbeObservation,
@@ -1326,6 +1331,7 @@ pub struct ProcessBackend {
     executable: PathBuf,
     arguments: Vec<OsString>,
     environment: Vec<(OsString, OsString)>,
+    compatibility: Option<yoctui_model::DaemonCompatibilitySnapshot>,
     child: Option<Child>,
     output: Option<tokio::sync::mpsc::Receiver<LogEntry>>,
     build_started_pending: bool,
@@ -1349,6 +1355,7 @@ impl ProcessBackend {
             executable,
             arguments,
             environment: Vec::new(),
+            compatibility: None,
             child: None,
             output: None,
             build_started_pending: false,
@@ -1367,6 +1374,33 @@ impl ProcessBackend {
             .map(|(key, value)| (OsString::from(key), OsString::from(value)))
             .collect();
         self
+    }
+    pub fn with_compatibility(
+        mut self,
+        compatibility: yoctui_model::DaemonCompatibilitySnapshot,
+    ) -> Result<Self, BackendError> {
+        let compatibility = compatibility
+            .normalize()
+            .map_err(|error| BackendError::Bridge(error.to_string()))?;
+        self.signature_adapter = self
+            .signature_adapter
+            .with_compatibility(compatibility.clone())?;
+        self.compatibility = Some(compatibility);
+        Ok(self)
+    }
+    fn command_planner(&self) -> Result<BitBakeCommandPlanner<'_>, BackendError> {
+        let compatibility = self.compatibility.as_ref().ok_or_else(|| {
+            BackendError::Bridge(
+                "BitBake command is unavailable until the daemon supplies an authoritative capability snapshot"
+                    .into(),
+            )
+        })?;
+        BitBakeCommandPlanner::new(
+            compatibility,
+            compatibility.snapshot.generation,
+            &self.build_dir,
+        )
+        .map_err(|error| BackendError::Bridge(error.to_string()))
     }
     async fn collect(&mut self) -> Result<(bool, Option<i32>), BackendError> {
         let child = self.child.as_mut().ok_or(BackendError::NotRunning)?;
@@ -1398,12 +1432,15 @@ impl ProcessBackend {
             Err(error) => return Err(error.into()),
         }
 
+        let authorized = self
+            .command_planner()?
+            .dependency_graph(&recipe)
+            .map_err(|error| BackendError::Bridge(error.to_string()))?;
         let mut command = TokioCommand::new(&self.executable);
         command.envs(self.environment.iter().map(|(key, value)| (key, value)));
         command
             .args(&self.arguments)
-            .arg("-g")
-            .arg(&recipe)
+            .args(&authorized.arguments)
             .current_dir(&self.build_dir)
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -1543,16 +1580,14 @@ impl BitBakeBackend for ProcessBackend {
         request
             .validate()
             .map_err(|e| BackendError::Bridge(e.to_string()))?;
+        let authorized = self
+            .command_planner()?
+            .build(&request)
+            .map_err(|error| BackendError::Bridge(error.to_string()))?;
         let mut cmd = TokioCommand::new(&self.executable);
         cmd.args(&self.arguments);
         cmd.envs(self.environment.iter().map(|(key, value)| (key, value)));
-        if request.force {
-            cmd.arg("-f");
-        }
-        if let Some(task) = request.task.as_ref() {
-            cmd.args(["-c", task]);
-        }
-        cmd.args(&request.targets)
+        cmd.args(&authorized.arguments)
             .current_dir(&self.build_dir)
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
@@ -2831,12 +2866,89 @@ mod tests {
         std::env::temp_dir().join(format!("yoctui-{name}-{}-{nonce}", std::process::id()))
     }
 
+    fn process_compatibility(
+        build_dir: &std::path::Path,
+    ) -> yoctui_model::DaemonCompatibilitySnapshot {
+        use yoctui_model::{
+            AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind,
+            CapabilityEvidenceOutcome, CapabilityId, CapabilityImplementation,
+            CapabilityImplementationKind, CapabilityRecord, CapabilitySnapshot, CapabilityState,
+            IdentityAuthority, YoctoEnvironmentIdentity,
+        };
+        let capabilities = [
+            (
+                CapabilityId::BitBakeBuild,
+                compatibility_command::BITBAKE_BUILD_ARGV_IMPLEMENTATION,
+            ),
+            (
+                CapabilityId::BitBakeForceTask,
+                compatibility_command::BITBAKE_FORCE_TASK_ARGV_IMPLEMENTATION,
+            ),
+            (
+                CapabilityId::BitBakeGraphGeneration,
+                compatibility_command::BITBAKE_GRAPH_ARGV_IMPLEMENTATION,
+            ),
+            (
+                CapabilityId::BitBakeDumpSig,
+                compatibility_command::BITBAKE_DUMPSIG_ARGV_IMPLEMENTATION,
+            ),
+            (
+                CapabilityId::BitBakeDiffSigs,
+                compatibility_command::BITBAKE_DIFFSIGS_ARGV_IMPLEMENTATION,
+            ),
+        ];
+        yoctui_model::DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation: 1,
+                environment: YoctoEnvironmentIdentity {
+                    build_directory: AuthoritativeValue::detected(
+                        build_dir.to_owned(),
+                        IdentityAuthority::InitializedEnvironment,
+                    ),
+                    ..YoctoEnvironmentIdentity::default()
+                },
+                capabilities: capabilities
+                    .iter()
+                    .map(|(id, _)| CapabilityRecord {
+                        id: *id,
+                        state: CapabilityState::Available,
+                        evidence: vec![CapabilityEvidence {
+                            kind: CapabilityEvidenceKind::DirectProbe,
+                            outcome: CapabilityEvidenceOutcome::Positive,
+                            subject: format!("{} fixture probe", id.as_str()),
+                            detail: "The fake BitBake command supports this exact test argv."
+                                .into(),
+                            argv: vec!["bitbake".into(), "--help".into()],
+                        }],
+                    })
+                    .collect(),
+            },
+            implementations: capabilities
+                .into_iter()
+                .map(|(id, implementation)| {
+                    (
+                        id,
+                        CapabilityImplementation {
+                            id: implementation.into(),
+                            kind: CapabilityImplementationKind::Command,
+                        },
+                    )
+                })
+                .collect(),
+        }
+        .normalize()
+        .unwrap()
+    }
+
     fn shell_backend(script: PathBuf) -> ProcessBackend {
+        let build_dir = std::env::temp_dir();
         ProcessBackend::with_command(
-            std::env::temp_dir(),
+            build_dir.clone(),
             PathBuf::from("/bin/sh"),
             vec![script.into_os_string()],
         )
+        .with_compatibility(process_compatibility(&build_dir))
+        .unwrap()
     }
 
     #[cfg(unix)]
@@ -3661,7 +3773,9 @@ printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' >
         let mut permissions = fs::metadata(&script).unwrap().permissions();
         permissions.set_mode(0o700);
         fs::set_permissions(&script, permissions).unwrap();
-        let mut backend = ProcessBackend::with_executable(root.clone(), script.clone());
+        let mut backend = ProcessBackend::with_executable(root.clone(), script.clone())
+            .with_compatibility(process_compatibility(&root))
+            .unwrap();
         let response = backend.get_dependency_graph("image".into()).await.unwrap();
         assert_eq!(response.graph.root, DependencyNodeId::recipe("image"));
         assert!(
@@ -3688,7 +3802,9 @@ printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' >
         assert!(error.to_string().contains("No such file"));
 
         let mut unavailable =
-            ProcessBackend::with_executable(root.clone(), root.join("missing-bitbake"));
+            ProcessBackend::with_executable(root.clone(), root.join("missing-bitbake"))
+                .with_compatibility(process_compatibility(&root))
+                .unwrap();
         let error = unavailable
             .get_dependency_graph("image".into())
             .await
@@ -3716,7 +3832,9 @@ printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' >
         let mut permissions = fs::metadata(&script).unwrap().permissions();
         permissions.set_mode(0o700);
         fs::set_permissions(&script, permissions).unwrap();
-        let mut backend = ProcessBackend::with_executable(root.clone(), script);
+        let mut backend = ProcessBackend::with_executable(root.clone(), script)
+            .with_compatibility(process_compatibility(&root))
+            .unwrap();
         let error = backend
             .get_dependency_graph("image".into())
             .await

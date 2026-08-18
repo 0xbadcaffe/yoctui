@@ -763,7 +763,7 @@ wrong authority, unsafe paths/text, oversized or empty detected inventories,
 and conflicting duplicate tools/layers; six tests include partial, invalid,
 duplicate, and mixed-series environments. `COMPAT-CAP-MODEL-001` is active.
 
-`COMPAT-CAP-MODEL-001` is complete. The centralized model defines 41 stable
+`COMPAT-CAP-MODEL-001` is complete. The centralized model defines 44 stable
 behavior IDs with no release-number identity, all five required availability
 states, bounded typed reason/evidence records (including evidence polarity and
 shell-free argv), and a normalized non-zero-generation snapshot tied to an
@@ -836,5 +836,14 @@ data, and is shared identically by attach/reconnect clients through the journal
 and complete replacement events; clients perform no inference. Five focused
 model/CLI/app tests and warnings-denied Clippy pass. When no authoritative
 initialized context is available the daemon keeps compatibility absent/Unknown
-instead of inspecting an unrelated host PATH. `COMPAT-BITBAKE-CMD-001` is
-active.
+instead of inspecting an unrelated host PATH. The command audit adds distinct
+server status, start, and stop capabilities so one verified option cannot
+authorize another operation. `COMPAT-BITBAKE-CMD-001` is
+complete. `BitBakeCommandPlanner` now validates the exact daemon generation and
+build environment, enabled behavior capability, and selected implementation
+before returning shell-free argv. `ProcessBackend`, `BitBakeCliControl`, and
+`SignatureAdapter` use it for build/task flags, graph generation,
+environment/getvar alternatives, signature tools, and server control. Missing,
+disabled, stale, environment-mismatched, and implementation-mismatched state
+fails before spawn; tests prove old/new getvar forms never cross and an
+unavailable build creates no process. `COMPAT-BITBAKE-API-001` is active.

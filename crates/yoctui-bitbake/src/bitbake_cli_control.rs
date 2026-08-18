@@ -12,6 +12,9 @@ use tokio::{
     process::{Child, Command},
     task::JoinHandle,
 };
+use yoctui_model::DaemonCompatibilitySnapshot;
+
+use crate::{BitBakeCommandPlanner, BitBakeServerCommandOperation};
 
 const DEFAULT_OUTPUT_LIMIT: usize = 64 * 1024;
 const MAX_OUTPUT_LIMIT: usize = 1024 * 1024;
@@ -23,41 +26,6 @@ pub enum BitBakeCliOperation {
     Status,
     StartServer,
     StopServer,
-}
-
-impl BitBakeCliOperation {
-    fn argument(self) -> &'static str {
-        match self {
-            Self::Status => "--status-only",
-            Self::StartServer => "--server-only",
-            Self::StopServer => "--kill-server",
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct BitBakeCliCapabilities {
-    pub status_only: bool,
-    pub server_only: bool,
-    pub kill_server: bool,
-}
-
-impl BitBakeCliCapabilities {
-    pub const fn supported_server_control() -> Self {
-        Self {
-            status_only: true,
-            server_only: true,
-            kill_server: true,
-        }
-    }
-
-    pub const fn supports(self, operation: BitBakeCliOperation) -> bool {
-        match operation {
-            BitBakeCliOperation::Status => self.status_only,
-            BitBakeCliOperation::StartServer => self.server_only,
-            BitBakeCliOperation::StopServer => self.kill_server,
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -80,14 +48,16 @@ impl BitBakeCliCommand {
         executable: PathBuf,
         build_dir: PathBuf,
         environment: BTreeMap<String, String>,
-        capabilities: BitBakeCliCapabilities,
+        compatibility: &DaemonCompatibilitySnapshot,
+        expected_generation: u64,
         operation: BitBakeCliOperation,
     ) -> Result<Self, BitBakeCliControlError> {
         Self::with_limits(
             executable,
             build_dir,
             environment,
-            capabilities,
+            compatibility,
+            expected_generation,
             operation,
             DEFAULT_TIMEOUT,
             DEFAULT_OUTPUT_LIMIT,
@@ -99,7 +69,8 @@ impl BitBakeCliCommand {
         executable: PathBuf,
         build_dir: PathBuf,
         environment: BTreeMap<String, String>,
-        capabilities: BitBakeCliCapabilities,
+        compatibility: &DaemonCompatibilitySnapshot,
+        expected_generation: u64,
         operation: BitBakeCliOperation,
         timeout: Duration,
         output_limit_per_stream: usize,
@@ -108,9 +79,13 @@ impl BitBakeCliCommand {
         if !build_dir.is_absolute() || !build_dir.is_dir() {
             return Err(BitBakeCliControlError::InvalidBuildDirectory(build_dir));
         }
-        if !capabilities.supports(operation) {
-            return Err(BitBakeCliControlError::Unsupported(operation));
-        }
+        let authorized =
+            BitBakeCommandPlanner::new(compatibility, expected_generation, &build_dir)?
+                .server_control(match operation {
+                    BitBakeCliOperation::Status => BitBakeServerCommandOperation::Status,
+                    BitBakeCliOperation::StartServer => BitBakeServerCommandOperation::Start,
+                    BitBakeCliOperation::StopServer => BitBakeServerCommandOperation::Stop,
+                })?;
         if timeout.is_zero() {
             return Err(BitBakeCliControlError::InvalidLimit(
                 "timeout must be greater than zero".into(),
@@ -125,7 +100,9 @@ impl BitBakeCliCommand {
         Ok(Self {
             preview: BitBakeCliPreview {
                 operation,
-                argv: vec![executable.into_os_string(), operation.argument().into()],
+                argv: std::iter::once(executable.into_os_string())
+                    .chain(authorized.arguments)
+                    .collect(),
                 cwd: build_dir,
                 timeout,
                 output_limit_per_stream,
@@ -174,8 +151,8 @@ pub enum BitBakeCliControlError {
     InvalidExecutable(PathBuf),
     #[error("invalid BitBake build directory: {0}")]
     InvalidBuildDirectory(PathBuf),
-    #[error("BitBake CLI operation is not supported: {0:?}")]
-    Unsupported(BitBakeCliOperation),
+    #[error(transparent)]
+    Authorization(#[from] crate::BitBakeCommandAuthorizationError),
     #[error("invalid BitBake CLI limit: {0}")]
     InvalidLimit(String),
     #[error("invalid captured environment: {0}")]
@@ -492,6 +469,72 @@ fn has_nul(value: &OsStr) -> bool {
 mod tests {
     use super::*;
     use std::{fs, os::unix::fs::PermissionsExt};
+    use yoctui_model::{
+        AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
+        CapabilityId, CapabilityImplementation, CapabilityImplementationKind, CapabilityRecord,
+        CapabilitySnapshot, CapabilityState, IdentityAuthority, YoctoEnvironmentIdentity,
+    };
+
+    fn operation_parts(operation: BitBakeCliOperation) -> (&'static str, &'static str) {
+        match operation {
+            BitBakeCliOperation::Status => (
+                crate::compatibility_command::BITBAKE_SERVER_STATUS_ARGV_IMPLEMENTATION,
+                "--status-only",
+            ),
+            BitBakeCliOperation::StartServer => (
+                crate::compatibility_command::BITBAKE_SERVER_START_ARGV_IMPLEMENTATION,
+                "--server-only",
+            ),
+            BitBakeCliOperation::StopServer => (
+                crate::compatibility_command::BITBAKE_SERVER_STOP_ARGV_IMPLEMENTATION,
+                "--kill-server",
+            ),
+        }
+    }
+
+    fn compatibility(
+        build_dir: &Path,
+        operation: BitBakeCliOperation,
+    ) -> DaemonCompatibilitySnapshot {
+        let (implementation, _) = operation_parts(operation);
+        let capability = match operation {
+            BitBakeCliOperation::Status => CapabilityId::BitBakeServerStatus,
+            BitBakeCliOperation::StartServer => CapabilityId::BitBakeServerStart,
+            BitBakeCliOperation::StopServer => CapabilityId::BitBakeServerStop,
+        };
+        DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation: 1,
+                environment: YoctoEnvironmentIdentity {
+                    build_directory: AuthoritativeValue::detected(
+                        build_dir.to_owned(),
+                        IdentityAuthority::InitializedEnvironment,
+                    ),
+                    ..YoctoEnvironmentIdentity::default()
+                },
+                capabilities: vec![CapabilityRecord {
+                    id: capability,
+                    state: CapabilityState::Available,
+                    evidence: vec![CapabilityEvidence {
+                        kind: CapabilityEvidenceKind::DirectProbe,
+                        outcome: CapabilityEvidenceOutcome::Positive,
+                        subject: "BitBake server option".into(),
+                        detail: "The exact server option was observed in help output.".into(),
+                        argv: vec!["bitbake".into(), "--help".into()],
+                    }],
+                }],
+            },
+            implementations: BTreeMap::from([(
+                capability,
+                CapabilityImplementation {
+                    id: implementation.into(),
+                    kind: CapabilityImplementationKind::Command,
+                },
+            )]),
+        }
+        .normalize()
+        .unwrap()
+    }
 
     fn fixture(body: &str) -> (PathBuf, PathBuf) {
         let nonce = std::time::SystemTime::UNIX_EPOCH
@@ -518,11 +561,13 @@ mod tests {
         timeout: Duration,
         output_limit: usize,
     ) -> BitBakeCliCommand {
+        let compatibility = compatibility(&build_dir, operation);
         BitBakeCliCommand::with_limits(
             executable,
             build_dir,
             BTreeMap::from([("MARKER".into(), "captured".into())]),
-            BitBakeCliCapabilities::supported_server_control(),
+            &compatibility,
+            compatibility.snapshot.generation,
             operation,
             timeout,
             output_limit,
@@ -549,7 +594,7 @@ mod tests {
                 command.preview().argv,
                 vec![
                     executable.clone().into_os_string(),
-                    OsString::from(operation.argument())
+                    OsString::from(operation_parts(operation).1)
                 ]
             );
             assert_eq!(command.preview().cwd, root);
@@ -571,21 +616,19 @@ mod tests {
     #[tokio::test]
     async fn cli_control_is_capability_aware_and_bounds_output_and_runtime() {
         let (root, executable) = fixture("printf '123456789'; printf 'abcdefghi' >&2; exit 7");
+        let status_only = compatibility(&root, BitBakeCliOperation::Status);
         let unsupported = BitBakeCliCommand::new(
             executable.clone(),
             root.clone(),
             BTreeMap::new(),
-            BitBakeCliCapabilities {
-                status_only: true,
-                server_only: false,
-                kill_server: false,
-            },
+            &status_only,
+            status_only.snapshot.generation,
             BitBakeCliOperation::StartServer,
         );
         assert!(matches!(
             unsupported,
-            Err(BitBakeCliControlError::Unsupported(
-                BitBakeCliOperation::StartServer
+            Err(BitBakeCliControlError::Authorization(
+                crate::BitBakeCommandAuthorizationError::CapabilityMissing { .. }
             ))
         ));
         let mut runner = BitBakeCliRunner::default();

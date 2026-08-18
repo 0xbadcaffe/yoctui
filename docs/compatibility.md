@@ -155,6 +155,34 @@ receives the selected implementation, reconstructs validated typed argv, and
 rejects absent capability before spawn. It never independently compares a
 Yocto or BitBake version.
 
+### BitBake command invocation audit
+
+`BitBakeCommandPlanner` is the only constructor for release-sensitive BitBake
+and BitBake-helper arguments. It requires the daemon snapshot's exact build
+directory and generation, an enabled behavior record, and the catalog-selected
+implementation ID before returning argv. Unknown, unavailable, unsupported,
+stale, missing, or mismatched state returns the snapshot reason before a child
+can be created.
+
+| Invocation | Capability evidence | Selected command implementation |
+|---|---|---|
+| Normal image/recipe/task build | `bitbake.build`; task/force additionally requires `bitbake.force_task` | `bitbake.build.argv`; optional verified `-c`/`-f` from `bitbake.force_task.argv` |
+| Dependency graph fallback | `bitbake.graph_generation` | `bitbake.graph.argv` emits `-g TARGET` |
+| Variable lookup | `bitbake.getvar` | `bitbake.getvar.argv` emits `--getvar NAME`, or maintained `bitbake.environment_lookup` emits old-compatible `-e` for caller-side lookup |
+| Environment dump | `bitbake.environment_dump` | `bitbake.environment_dump.argv` emits `-e` |
+| Server status/start/stop | distinct `bitbake.server_status`, `bitbake.server_start`, and `bitbake.server_stop` option probes | distinct status/start/stop implementations emit only `--status-only`, `--server-only`, or `--kill-server`; socket/API support alone cannot authorize these CLI options |
+| Signature dump | `bitbake.dumpsig` | `bitbake_dumpsig.argv` |
+| Signature comparison | `bitbake.diffsigs`, including a direct `-c` option probe | `bitbake_diffsigs.argv` emits the maintained `-c never LEFT RIGHT` form |
+
+The direct `ProcessBackend`, CLI server-control runner, and signature adapter
+consume these authorized plans and fail closed when no daemon snapshot is
+installed. Base command prefixes are retained only as previously validated
+executable/wrapper identity; release-sensitive options and operands come from
+the planner. Tinfoil/socket operations do not construct BitBake CLI argv and
+are audited separately by `COMPAT-BITBAKE-API-001`. Yocto utilities such as
+Devtool, Recipetool, bitbake-layers, pkgdata, Wic, and test tools are separate
+catalog families covered by their dedicated compatibility tasks.
+
 ### Snapshot ownership and runtime changes
 
 The persistent daemon owns identification, probing, fallback evaluation,

@@ -2196,6 +2196,24 @@ validated shell-free typed argv
 existing job/process infrastructure
 ```
 
+`yoctui-bitbake::BitBakeCommandPlanner` is the sole direct BitBake-command
+authorization boundary. It accepts the daemon-owned normalized snapshot, the
+expected generation, and the exact build directory. It checks the required
+behavior capability and selected implementation before producing `OsString`
+argv. Build/force-task, dependency graph, environment/getvar, signature, and
+server status/start/stop forms have distinct authorization records; one
+observed server option cannot authorize another operation. The maintained
+getvar fallback emits `bitbake -e` only when that implementation was selected,
+while a positively probed native implementation emits `--getvar`.
+
+`ProcessBackend`, `BitBakeCliControl`, and `SignatureAdapter` delegate their
+direct command construction to this planner. Missing, disabled, stale,
+environment-mismatched, or implementation-mismatched authority fails before
+`tokio::process::Command` is created. Catalog command requirements generate an
+independent safe option-help probe for every option they authorize. Tinfoil,
+socket, and native-event implementations remain backend/API capabilities and
+cannot silently authorize a similarly named CLI operation.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.

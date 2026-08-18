@@ -303,16 +303,26 @@ fn definition(id: CapabilityId) -> Definition {
     };
     let executable = |tool| CapabilityProbeSpec::Executable { tool };
     let tool_command = |label, tool, subcommand: Option<&str>, options: &[&str], impl_id| {
+        let mut probes = vec![
+            executable(tool),
+            CapabilityProbeSpec::CommandVersion { tool },
+            help(tool, subcommand),
+        ];
+        probes.extend(
+            options
+                .iter()
+                .map(|option| CapabilityProbeSpec::CommandOption {
+                    tool,
+                    subcommand: subcommand.map(str::to_owned),
+                    option: (*option).to_owned(),
+                }),
+        );
         (
             label,
             vec![tool],
             vec![command(tool, subcommand, options)],
             Vec::new(),
-            vec![
-                executable(tool),
-                CapabilityProbeSpec::CommandVersion { tool },
-                help(tool, subcommand),
-            ],
+            probes,
             implementation(impl_id, Kind::Command),
             None,
         )
@@ -440,7 +450,7 @@ fn definition(id: CapabilityId) -> Definition {
             "BitBake signature comparison",
             Tool::BitBakeDiffSigs,
             None,
-            &[],
+            &["-c"],
             "bitbake_diffsigs.argv",
         ),
         Id::BitBakeDumpSig => tool_command(
@@ -454,6 +464,27 @@ fn definition(id: CapabilityId) -> Definition {
             "BitBake server socket",
             "server_socket",
             "bitbake.server_socket",
+        ),
+        Id::BitBakeServerStatus => tool_command(
+            "BitBake server status command",
+            Tool::BitBake,
+            None,
+            &["--status-only"],
+            "bitbake.server.status.argv",
+        ),
+        Id::BitBakeServerStart => tool_command(
+            "BitBake server start command",
+            Tool::BitBake,
+            None,
+            &["--server-only"],
+            "bitbake.server.start.argv",
+        ),
+        Id::BitBakeServerStop => tool_command(
+            "BitBake server stop command",
+            Tool::BitBake,
+            None,
+            &["--kill-server"],
+            "bitbake.server.stop.argv",
         ),
         Id::BitBakeNativeEvents => backend_with_version_fallback(
             "BitBake native events",
