@@ -4,13 +4,15 @@
 
 **ID:** CRATESIO-PUBLISH-001
 **Title:** Publish and validate yoctui 0.1.0 on crates.io
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
 Publish the verified `yoctui` 0.1.0 package graph to crates.io, validate an
 installation from immutable registry artifacts, and retain exact release
 commit and tag evidence.
+
+This is the terminal handoff: every registered task is `DONE`.
 
 ## Dependencies
 
@@ -30,6 +32,14 @@ commit and tag evidence.
 - A clean `cargo install yoctui --version 0.1.0 --locked` succeeds from crates.io.
 - The installed binary's version, help, and embedded bridge smoke pass.
 - The exact release commit is tagged `v0.1.0` and release evidence is recorded.
+
+## Completion evidence
+
+- All six public 0.1.0 crates are available from crates.io.
+- A clean locked registry install reports `yoctui 0.1.0`.
+- Packaged help and embedded-bridge headless inspection pass.
+- Published package source commit:
+  `6c66b4777d05a7f45e105d0cb955eb3e5a322a7d` (`v0.1.0`).
 
 ## Verification
 

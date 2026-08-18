@@ -11,14 +11,13 @@ Status values:
 
 ## Current phase
 
-`CRATESIO-PACKAGE-001` is `DONE`: all six public 0.1.0 crates carry consistent
-MIT, repository, README, and Roy Cohen author metadata while support-only
-packages are explicitly private. The package verifier checks bounded archive
-contents, the bundled bridge, the isolated package dependency graph, and the
-packaged binary's version/help/bridge behavior. The complete crates.io
-multi-package dry run, workspace tests, Clippy, docs, and roadmap checks pass
-without uploading. `CRATESIO-PUBLISH-001` is active for the separately
-authorized immutable upload and registry-install validation.
+`CRATESIO-PUBLISH-001` is `DONE`: `yoctui-model`, `yoctui-protocol`,
+`yoctui-bitbake`, `yoctui-ui`, `yoctui-app`, and `yoctui` 0.1.0 are published
+on crates.io. A clean locked install from registry sources reports
+`yoctui 0.1.0`, exposes complete help, and completes a headless inspection
+through the embedded bridge. Published package VCS source commit
+`6c66b4777d05a7f45e105d0cb955eb3e5a322a7d` is the `v0.1.0` release tag.
+All registered roadmap tasks are complete.
 
 `DAEMON-UPGRADE-LIFECYCLE-001` is `DONE`: lifecycle validation now accepts
 Linux's exact ` (deleted)` process-image suffix only when its remaining path
