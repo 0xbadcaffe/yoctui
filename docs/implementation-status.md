@@ -857,5 +857,14 @@ unoffered, command-fallback, mixed-family, or unnegotiated support before a
 command is sent. The Python bridge has no BitBake major-version switch, so
 synthetic future behavior can be positively enabled while absent older APIs
 degrade independently. Distinct IDs now cover recipe dependencies, sources,
-metadata, and layer relationships, bringing the catalog to 48 records.
-`COMPAT-DEVTOOL-001` is active.
+metadata, and layer relationships. `COMPAT-DEVTOOL-001` is complete. The
+catalog now contains 53 independently probed behavior records, including
+Devtool status, edit-recipe, modify, update-recipe, finish, deploy-target,
+undeploy-target, reset, and upgrade. `DevtoolCommandPlanner` requires the
+exact initialized-environment executable, build directory, snapshot generation,
+enabled capability, and selected implementation before returning shell-free
+argv. Status inspection, PTY edit previews, local jobs, and daemon-owned jobs
+all use that boundary and fail closed with the retained probe reason when the
+snapshot is absent, stale, or unavailable. Focused bitbake/app/daemon tests,
+all 215 bitbake tests, and workspace check pass. `COMPAT-RECIPETOOL-001` is
+active.

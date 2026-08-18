@@ -518,6 +518,27 @@ fn definition(id: CapabilityId) -> Definition {
             &[],
             "devtool.modify.argv",
         ),
+        Id::DevtoolStatus => tool_command(
+            "Devtool status",
+            Tool::Devtool,
+            Some("status"),
+            &[],
+            "devtool.status.argv",
+        ),
+        Id::DevtoolEditRecipe => tool_command(
+            "Devtool edit-recipe",
+            Tool::Devtool,
+            Some("edit-recipe"),
+            &[],
+            "devtool.edit_recipe.argv",
+        ),
+        Id::DevtoolUpdateRecipe => tool_command(
+            "Devtool update-recipe",
+            Tool::Devtool,
+            Some("update-recipe"),
+            &[],
+            "devtool.update_recipe.argv",
+        ),
         Id::DevtoolFinish => tool_command(
             "Devtool finish",
             Tool::Devtool,
@@ -531,6 +552,20 @@ fn definition(id: CapabilityId) -> Definition {
             Some("deploy-target"),
             &[],
             "devtool.deploy_target.argv",
+        ),
+        Id::DevtoolUndeployTarget => tool_command(
+            "Devtool undeploy-target",
+            Tool::Devtool,
+            Some("undeploy-target"),
+            &[],
+            "devtool.undeploy_target.argv",
+        ),
+        Id::DevtoolReset => tool_command(
+            "Devtool reset",
+            Tool::Devtool,
+            Some("reset"),
+            &[],
+            "devtool.reset.argv",
         ),
         Id::DevtoolUpgrade => tool_command(
             "Devtool upgrade",

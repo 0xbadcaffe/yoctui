@@ -580,6 +580,9 @@ pub enum DevtoolOperation {
     Reset {
         recipe: String,
     },
+    Upgrade {
+        recipe: String,
+    },
 }
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum DevtoolOperationError {
@@ -598,7 +601,8 @@ impl DevtoolOperation {
             | Self::Finish { recipe, .. }
             | Self::DeployTarget { recipe, .. }
             | Self::UndeployTarget { recipe, .. }
-            | Self::Reset { recipe } => recipe,
+            | Self::Reset { recipe }
+            | Self::Upgrade { recipe } => recipe,
         }
     }
 
@@ -748,10 +752,11 @@ pub struct RecipeIdentity {
     pub name: String,
     pub file: PathBuf,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DevtoolCapability {
     Available,
     MissingExecutable,
+    Unavailable { reason: String },
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DevtoolWorkspace {
@@ -813,8 +818,12 @@ pub enum DevtoolAction {
 }
 impl DevtoolStatus {
     pub fn disabled_reason(&self, action: DevtoolAction) -> Option<String> {
-        if self.capability == DevtoolCapability::MissingExecutable {
-            return Some("Devtool executable is missing.".into());
+        match &self.capability {
+            DevtoolCapability::Available => {}
+            DevtoolCapability::MissingExecutable => {
+                return Some("Devtool executable is missing.".into());
+            }
+            DevtoolCapability::Unavailable { reason } => return Some(reason.clone()),
         }
         if let Some(error) = &self.error {
             return Some(format!("Devtool status is unavailable: {error:?}."));

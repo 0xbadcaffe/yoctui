@@ -835,6 +835,7 @@ pub enum DaemonDevtoolOperation {
     DeployTarget { recipe: String, target: String },
     UndeployTarget { recipe: String, target: String },
     Reset { recipe: String },
+    Upgrade { recipe: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

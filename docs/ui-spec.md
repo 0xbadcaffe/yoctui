@@ -957,7 +957,11 @@ executables, a missing workspace source directory, a non-Git source, failed
 commands, and malformed output are distinct states.
 
 The Inspector derives every Devtool action's enabled state and disabled reason
-from that typed status. A recipe outside the workspace may be modified but
+from the daemon-owned capability snapshot plus that typed status. Devtool
+status, edit-recipe, modify, update-recipe, finish, deploy-target,
+undeploy-target, reset, and upgrade are independently probed; one working
+subcommand never enables another. Missing or stale capability authority shows
+the retained exact reason and no Devtool process starts. A recipe outside the workspace may be modified but
 cannot be updated, finished, deployed, or reset. A missing workspace source
 may be reset but not edited or published. An existing source opens directly
 for editing with `d`; finish remains disabled until Git reports a commit and

@@ -8522,8 +8522,14 @@ fn recipe_workspace_state(app: &App, recipe: &Recipe) -> String {
     let Some(status) = app.devtool_statuses.get(&identity) else {
         return "not inspected; press t (or Enter)".into();
     };
-    if status.capability == DevtoolCapability::MissingExecutable {
-        return "Devtool executable missing; all actions disabled".into();
+    match &status.capability {
+        DevtoolCapability::Available => {}
+        DevtoolCapability::MissingExecutable => {
+            return "Devtool executable missing; all actions disabled".into();
+        }
+        DevtoolCapability::Unavailable { reason } => {
+            return format!("{reason}; all actions disabled");
+        }
     }
     if let Some(error) = &status.error {
         return match error {

@@ -314,7 +314,8 @@ event supplies paths; widgets must describe that as no path reported and must
 not extract filesystem locations from log text.
 
 Devtool workspace inspection is a typed external-tool adapter in
-`yoctui-bitbake`. It invokes `devtool status` in the active build directory,
+`yoctui-bitbake`. It invokes the capability-authorized `devtool status` form
+in the active build directory,
 normalizes membership and source paths, and then invokes Git porcelain-v2
 status only for an existing workspace source. Raw Devtool and Git records do
 not cross into the reducer or widgets. Missing executables, missing source
@@ -324,13 +325,26 @@ absolute provider path and owns the shared action-availability rules used by
 both reducer routing and UI explanations.
 
 Devtool execution requests use one model-owned `DevtoolOperation` enum for
-modify, update-recipe, finish, deploy-target, undeploy-target, and reset.
+modify, update-recipe, finish, deploy-target, undeploy-target, reset, and
+upgrade.
 Process-independent validation rejects ambiguous recipe/target tokens and
 relative finish destinations. `yoctui-bitbake` alone translates a validated
 operation to an executable plus `Vec<OsString>` argument vector; it never
 constructs a shell command, and path arguments retain their native OS
 representation. Process streaming and job lifecycle are separate layers built
 on this command specification.
+
+`DevtoolCommandPlanner` is the sole Devtool command-authorization boundary.
+The catalog gives status, edit-recipe, and every noninteractive subcommand a
+distinct behavior capability and direct initialized-environment help probe.
+The planner requires the current snapshot generation, exact build directory,
+the detected Devtool executable identity, an enabled capability record, and
+the exact selected implementation before it returns argv. One observed
+subcommand cannot authorize another. Missing or stale authority, absent
+subcommands, executable changes, and implementation mismatches retain their
+typed reason and fail before process construction. The daemon owns the same
+snapshot used by daemon jobs; local effects and interactive PTY previews use
+the same planner and remain unavailable when no current authority is present.
 
 `DevtoolJobRunner` is the asynchronous process boundary for that specification.
 It starts exactly one shell-free child in the active build directory, assigns
@@ -2234,6 +2248,14 @@ dependencies, recipe sources, recipe metadata, and layer relationships so one
 working metadata call cannot authorize another. Unknown future versions are
 therefore accepted when behavior is positively negotiated and remain
 fail-closed otherwise.
+
+Devtool follows the same authority flow without a release check. Independent
+catalog records and safe help probes cover status, edit-recipe, modify,
+update-recipe, finish, deploy-target, undeploy-target, reset, and upgrade.
+`DevtoolCommandPlanner` validates environment, generation, detected executable,
+state, and selected implementation before status inspection, PTY preview, or
+job spawn. An older environment can therefore retain modify while exposing an
+exact reason for an absent upgrade subcommand.
 
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets

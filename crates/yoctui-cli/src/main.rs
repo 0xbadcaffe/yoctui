@@ -1480,6 +1480,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     let _compatibility_coordinator =
         daemon_compatibility::DaemonCompatibilityCoordinator::default();
     let mut devtool_supervisor = daemon_devtool::DaemonDevtoolSupervisor::default();
+    devtool_supervisor.replace_compatibility(daemon_state.compatibility.clone())?;
     let mut bitbake_supervisor = daemon_bitbake::DaemonBitBakeSupervisor::default();
     let mut sdk_supervisor = daemon_sdk::DaemonSdkSupervisor::default();
     let mut qemu_supervisor = daemon_qemu::DaemonQemuSupervisor::default();
@@ -4203,6 +4204,7 @@ async fn begin_devtool_job(
     runner: &mut Option<DevtoolJobRunner>,
     build_dir: &Path,
     cancellation_timeout: Duration,
+    compatibility: Option<&yoctui_model::DaemonCompatibilitySnapshot>,
     operation: DevtoolOperation,
 ) -> bool {
     let Some(actions) = coordinator.queue(operation.clone(), SystemTime::now()) else {
@@ -4215,7 +4217,22 @@ async fn begin_devtool_job(
     for action in actions {
         let _ = update(app, action);
     }
-    let command = match DevtoolCommandSpec::from_operation(&operation) {
+    let Some(compatibility) = compatibility else {
+        for action in coordinator.start_failed(
+            "Devtool is unavailable until the current environment capability snapshot is installed."
+                .into(),
+            SystemTime::now(),
+        ) {
+            let _ = update(app, action);
+        }
+        return false;
+    };
+    let command = match DevtoolCommandSpec::from_operation(
+        &operation,
+        compatibility,
+        compatibility.snapshot.generation,
+        build_dir,
+    ) {
         Ok(command) => command,
         Err(error) => {
             for action in coordinator.start_failed(error.to_string(), SystemTime::now()) {
@@ -7837,17 +7854,22 @@ async fn inspect_selected_devtool(app: &mut App, build_dir: &Path) {
     if let Some(Effect::InspectDevtoolStatus(identity)) =
         update(app, Action::BeginSelectedRecipeDevtoolStatus)
     {
-        let status = DevtoolInspector::default()
-            .inspect(build_dir, identity)
-            .await;
+        let status = inspect_devtool_status(app, build_dir, identity).await;
         let _ = update(app, Action::DevtoolStatusLoaded(status));
     }
 }
 
+async fn inspect_devtool_status(
+    _app: &App,
+    build_dir: &Path,
+    identity: RecipeIdentity,
+) -> yoctui_model::DevtoolStatus {
+    let inspector = DevtoolInspector::default();
+    inspector.inspect(build_dir, identity).await
+}
+
 async fn complete_devtool_modify(app: &mut App, build_dir: &Path, identity: RecipeIdentity) {
-    let status = DevtoolInspector::default()
-        .inspect(build_dir, identity)
-        .await;
+    let status = inspect_devtool_status(app, build_dir, identity).await;
     apply_completed_devtool_modify_status(app, status).await;
 }
 
@@ -7885,9 +7907,7 @@ async fn apply_completed_devtool_modify_status(app: &mut App, status: yoctui_mod
 }
 
 async fn complete_devtool_update(app: &mut App, build_dir: &Path, identity: RecipeIdentity) {
-    let status = DevtoolInspector::default()
-        .inspect(build_dir, identity)
-        .await;
+    let status = inspect_devtool_status(app, build_dir, identity).await;
     apply_completed_devtool_update_status(app, status);
 }
 
@@ -7916,9 +7936,7 @@ fn apply_completed_devtool_update_status(app: &mut App, status: yoctui_model::De
 }
 
 async fn complete_devtool_finish(app: &mut App, build_dir: &Path, identity: RecipeIdentity) {
-    let status = DevtoolInspector::default()
-        .inspect(build_dir, identity)
-        .await;
+    let status = inspect_devtool_status(app, build_dir, identity).await;
     apply_completed_devtool_finish_status(app, status);
 }
 
@@ -7938,9 +7956,7 @@ fn apply_completed_devtool_finish_status(app: &mut App, status: yoctui_model::De
 }
 
 async fn complete_devtool_deploy(app: &mut App, build_dir: &Path, identity: RecipeIdentity) {
-    let status = DevtoolInspector::default()
-        .inspect(build_dir, identity)
-        .await;
+    let status = inspect_devtool_status(app, build_dir, identity).await;
     apply_completed_devtool_deploy_status(app, status);
 }
 
@@ -7962,9 +7978,7 @@ fn apply_completed_devtool_deploy_status(app: &mut App, status: yoctui_model::De
 }
 
 async fn complete_devtool_reset(app: &mut App, build_dir: &Path, identity: RecipeIdentity) {
-    let status = DevtoolInspector::default()
-        .inspect(build_dir, identity)
-        .await;
+    let status = inspect_devtool_status(app, build_dir, identity).await;
     apply_completed_devtool_reset_status(app, status);
 }
 
@@ -9844,6 +9858,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             &mut devtool_runner,
                             &session_build_dir,
                             cancellation_timeout,
+                            None,
                             DevtoolOperation::Modify { recipe },
                         )
                         .await
@@ -10022,6 +10037,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             &mut devtool_runner,
                             &session_build_dir,
                             cancellation_timeout,
+                            None,
                             operation,
                         )
                         .await
@@ -10052,6 +10068,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             &mut devtool_runner,
                             &session_build_dir,
                             cancellation_timeout,
+                            None,
                             DevtoolOperation::UpdateRecipe { recipe },
                         )
                         .await
@@ -10082,6 +10099,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             &mut devtool_runner,
                             &session_build_dir,
                             cancellation_timeout,
+                            None,
                             request.into(),
                         )
                         .await
@@ -10115,6 +10133,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             &mut devtool_runner,
                             &session_build_dir,
                             cancellation_timeout,
+                            None,
                             request.into(),
                         )
                         .await
@@ -11367,6 +11386,146 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
 mod tests {
     use super::*;
 
+    fn devtool_test_command(
+        executable: PathBuf,
+        operation: &DevtoolOperation,
+    ) -> DevtoolCommandSpec {
+        let (capability, implementation) = match operation {
+            DevtoolOperation::Modify { .. } => (
+                yoctui_model::CapabilityId::DevtoolModify,
+                yoctui_bitbake::DEVTOOL_MODIFY_IMPLEMENTATION,
+            ),
+            DevtoolOperation::UpdateRecipe { .. } => (
+                yoctui_model::CapabilityId::DevtoolUpdateRecipe,
+                yoctui_bitbake::DEVTOOL_UPDATE_RECIPE_IMPLEMENTATION,
+            ),
+            DevtoolOperation::Finish { .. } => (
+                yoctui_model::CapabilityId::DevtoolFinish,
+                yoctui_bitbake::DEVTOOL_FINISH_IMPLEMENTATION,
+            ),
+            DevtoolOperation::DeployTarget { .. } => (
+                yoctui_model::CapabilityId::DevtoolDeployTarget,
+                yoctui_bitbake::DEVTOOL_DEPLOY_TARGET_IMPLEMENTATION,
+            ),
+            DevtoolOperation::UndeployTarget { .. } => (
+                yoctui_model::CapabilityId::DevtoolUndeployTarget,
+                yoctui_bitbake::DEVTOOL_UNDEPLOY_TARGET_IMPLEMENTATION,
+            ),
+            DevtoolOperation::Reset { .. } => (
+                yoctui_model::CapabilityId::DevtoolReset,
+                yoctui_bitbake::DEVTOOL_RESET_IMPLEMENTATION,
+            ),
+            DevtoolOperation::Upgrade { .. } => (
+                yoctui_model::CapabilityId::DevtoolUpgrade,
+                yoctui_bitbake::DEVTOOL_UPGRADE_IMPLEMENTATION,
+            ),
+        };
+        let build_directory = std::env::temp_dir();
+        let compatibility = yoctui_model::DaemonCompatibilitySnapshot {
+            snapshot: yoctui_model::CapabilitySnapshot {
+                generation: 1,
+                environment: yoctui_model::YoctoEnvironmentIdentity {
+                    build_directory: yoctui_model::AuthoritativeValue::detected(
+                        build_directory.clone(),
+                        yoctui_model::IdentityAuthority::InitializedEnvironment,
+                    ),
+                    available_tools: yoctui_model::AuthoritativeValue::detected(
+                        vec![yoctui_model::ToolIdentity {
+                            id: "devtool".into(),
+                            executable: executable.clone(),
+                            version: None,
+                        }],
+                        yoctui_model::IdentityAuthority::ExecutableProbe,
+                    ),
+                    ..yoctui_model::YoctoEnvironmentIdentity::default()
+                },
+                capabilities: vec![yoctui_model::CapabilityRecord {
+                    id: capability,
+                    state: yoctui_model::CapabilityState::Available,
+                    evidence: vec![yoctui_model::CapabilityEvidence {
+                        kind: yoctui_model::CapabilityEvidenceKind::DirectProbe,
+                        outcome: yoctui_model::CapabilityEvidenceOutcome::Positive,
+                        subject: format!("{} test probe", capability.as_str()),
+                        detail: "Fixture exposes this exact Devtool subcommand.".into(),
+                        argv: vec![executable.display().to_string(), "--help".into()],
+                    }],
+                }],
+            },
+            implementations: std::collections::BTreeMap::from([(
+                capability,
+                yoctui_model::CapabilityImplementation {
+                    id: implementation.into(),
+                    kind: yoctui_model::CapabilityImplementationKind::Command,
+                },
+            )]),
+        }
+        .normalize()
+        .unwrap();
+        DevtoolCommandSpec::with_executable(
+            executable,
+            operation,
+            &compatibility,
+            compatibility.snapshot.generation,
+            &build_directory,
+        )
+        .unwrap()
+    }
+
+    fn signature_test_compatibility(
+        build_directory: &Path,
+    ) -> yoctui_model::DaemonCompatibilitySnapshot {
+        let capabilities = [
+            (
+                yoctui_model::CapabilityId::BitBakeDumpSig,
+                yoctui_bitbake::BITBAKE_DUMPSIG_ARGV_IMPLEMENTATION,
+            ),
+            (
+                yoctui_model::CapabilityId::BitBakeDiffSigs,
+                yoctui_bitbake::BITBAKE_DIFFSIGS_ARGV_IMPLEMENTATION,
+            ),
+        ];
+        yoctui_model::DaemonCompatibilitySnapshot {
+            snapshot: yoctui_model::CapabilitySnapshot {
+                generation: 1,
+                environment: yoctui_model::YoctoEnvironmentIdentity {
+                    build_directory: yoctui_model::AuthoritativeValue::detected(
+                        build_directory.to_owned(),
+                        yoctui_model::IdentityAuthority::InitializedEnvironment,
+                    ),
+                    ..yoctui_model::YoctoEnvironmentIdentity::default()
+                },
+                capabilities: capabilities
+                    .iter()
+                    .map(|(id, _)| yoctui_model::CapabilityRecord {
+                        id: *id,
+                        state: yoctui_model::CapabilityState::Available,
+                        evidence: vec![yoctui_model::CapabilityEvidence {
+                            kind: yoctui_model::CapabilityEvidenceKind::DirectProbe,
+                            outcome: yoctui_model::CapabilityEvidenceOutcome::Positive,
+                            subject: format!("{} test probe", id.as_str()),
+                            detail: "Fixture exposes the exact signature helper argv.".into(),
+                            argv: Vec::new(),
+                        }],
+                    })
+                    .collect(),
+            },
+            implementations: capabilities
+                .into_iter()
+                .map(|(id, implementation)| {
+                    (
+                        id,
+                        yoctui_model::CapabilityImplementation {
+                            id: implementation.into(),
+                            kind: yoctui_model::CapabilityImplementationKind::Command,
+                        },
+                    )
+                })
+                .collect(),
+        }
+        .normalize()
+        .unwrap()
+    }
+
     #[test]
     fn bundled_bridge_is_default_and_explicit_path_remains_an_override() {
         assert_eq!(bridge_path_override(None), None);
@@ -12544,7 +12703,7 @@ mod tests {
         let operation = DevtoolOperation::Reset {
             recipe: "busybox".into(),
         };
-        let command = DevtoolCommandSpec::with_executable(script.clone(), &operation).unwrap();
+        let command = devtool_test_command(script.clone(), &operation);
         let mut coordinator = DevtoolJobCoordinator::default();
         let mut app = App::new(10, 1_000);
         for action in coordinator
@@ -12752,7 +12911,7 @@ mod tests {
         let operation = DevtoolOperation::UpdateRecipe {
             recipe: identity.name.clone(),
         };
-        let command = DevtoolCommandSpec::with_executable("/bin/false".into(), &operation).unwrap();
+        let command = devtool_test_command("/bin/false".into(), &operation);
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Dashboard;
         app.devtool_statuses
@@ -12919,7 +13078,7 @@ mod tests {
             recipe: "busybox".into(),
             destination: PathBuf::from("/layers/meta-demo"),
         };
-        let command = DevtoolCommandSpec::with_executable("/bin/false".into(), &operation).unwrap();
+        let command = devtool_test_command("/bin/false".into(), &operation);
         let mut coordinator = DevtoolJobCoordinator::default();
         for action in coordinator
             .queue(operation, SystemTime::UNIX_EPOCH)
@@ -12973,7 +13132,7 @@ mod tests {
             recipe: identity.name.clone(),
             target: "qemuarm".into(),
         };
-        let command = DevtoolCommandSpec::with_executable("/bin/false".into(), &operation).unwrap();
+        let command = devtool_test_command("/bin/false".into(), &operation);
         let mut coordinator = DevtoolJobCoordinator::default();
         for action in coordinator
             .queue(operation, SystemTime::UNIX_EPOCH)
@@ -13068,7 +13227,7 @@ mod tests {
         let operation = DevtoolOperation::Reset {
             recipe: identity.name.clone(),
         };
-        let command = DevtoolCommandSpec::with_executable("/bin/false".into(), &operation).unwrap();
+        let command = devtool_test_command("/bin/false".into(), &operation);
         let mut coordinator = DevtoolJobCoordinator::default();
         for action in coordinator
             .queue(operation, SystemTime::UNIX_EPOCH)
@@ -13171,7 +13330,9 @@ mod tests {
         );
         write_tool(&diff, "exit 0");
         let adapter =
-            SignatureAdapter::with_programs(directory.clone(), dump.clone(), diff.clone());
+            SignatureAdapter::with_programs(directory.clone(), dump.clone(), diff.clone())
+                .with_compatibility(signature_test_compatibility(&directory))
+                .unwrap();
         let target = SignatureTarget {
             recipe: "busybox".into(),
             task: "do_compile".into(),

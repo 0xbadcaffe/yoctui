@@ -3,9 +3,10 @@ use std::{collections::HashMap, fs, path::PathBuf, time::Duration};
 use thiserror::Error;
 use tokio::sync::mpsc;
 use yoctui_bitbake::{
-    DevtoolCommandSpec, DevtoolJobRunner, DevtoolOutputStream, DevtoolRunnerEvent,
+    DevtoolCommandSpec, DevtoolCompatibilityError, DevtoolJobRunner, DevtoolOutputStream,
+    DevtoolRunnerEvent,
 };
-use yoctui_model::DevtoolOperation;
+use yoctui_model::{DaemonCompatibilitySnapshot, DevtoolOperation};
 use yoctui_protocol::daemon::{DaemonDevtoolOperation, JobId};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -41,6 +42,7 @@ pub enum DaemonDevtoolEvent {
 
 pub struct DaemonDevtoolSupervisor {
     executable: PathBuf,
+    compatibility: Option<DaemonCompatibilitySnapshot>,
     cancellation_timeout: Duration,
     next_job_id: u64,
     active: HashMap<JobId, mpsc::UnboundedSender<()>>,
@@ -53,6 +55,7 @@ impl Default for DaemonDevtoolSupervisor {
         let (events_tx, events_rx) = mpsc::unbounded_channel();
         Self {
             executable: PathBuf::from("devtool"),
+            compatibility: None,
             cancellation_timeout: Duration::from_secs(5),
             next_job_id: 1,
             active: HashMap::new(),
@@ -69,6 +72,16 @@ impl DaemonDevtoolSupervisor {
         self
     }
 
+    pub fn replace_compatibility(
+        &mut self,
+        compatibility: Option<DaemonCompatibilitySnapshot>,
+    ) -> Result<(), yoctui_model::DaemonStateError> {
+        self.compatibility = compatibility
+            .map(DaemonCompatibilitySnapshot::normalize)
+            .transpose()?;
+        Ok(())
+    }
+
     pub fn start(
         &mut self,
         operation: DaemonDevtoolOperation,
@@ -76,7 +89,17 @@ impl DaemonDevtoolSupervisor {
     ) -> Result<JobId, DaemonDevtoolError> {
         let build_directory = canonical_build_directory(build_directory)?;
         let operation = model_operation(operation)?;
-        let command = DevtoolCommandSpec::with_executable(self.executable.clone(), &operation)?;
+        let compatibility = self
+            .compatibility
+            .as_ref()
+            .ok_or(DaemonDevtoolError::CompatibilityUnavailable)?;
+        let command = DevtoolCommandSpec::with_executable(
+            self.executable.clone(),
+            &operation,
+            compatibility,
+            compatibility.snapshot.generation,
+            &build_directory,
+        )?;
         let job_id = JobId(self.next_job_id);
         self.next_job_id = self
             .next_job_id
@@ -206,6 +229,7 @@ fn model_operation(
             DevtoolOperation::UndeployTarget { recipe, target }
         }
         DaemonDevtoolOperation::Reset { recipe } => DevtoolOperation::Reset { recipe },
+        DaemonDevtoolOperation::Upgrade { recipe } => DevtoolOperation::Upgrade { recipe },
     };
     operation.validate()?;
     Ok(operation)
@@ -219,6 +243,10 @@ pub enum DaemonDevtoolError {
     JobSpaceExhausted,
     #[error("unknown daemon Devtool job {0:?}")]
     UnknownJob(JobId),
+    #[error("daemon Devtool operation requires the current capability snapshot")]
+    CompatibilityUnavailable,
+    #[error(transparent)]
+    Compatibility(#[from] DevtoolCompatibilityError),
     #[error(transparent)]
     Operation(#[from] yoctui_model::DevtoolOperationError),
 }
@@ -227,9 +255,61 @@ pub enum DaemonDevtoolError {
 mod tests {
     use super::*;
     use std::os::unix::fs::PermissionsExt;
+    use yoctui_model::{
+        AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
+        CapabilityId, CapabilityImplementation, CapabilityImplementationKind, CapabilityRecord,
+        CapabilitySnapshot, CapabilityState, IdentityAuthority, ToolIdentity,
+        YoctoEnvironmentIdentity,
+    };
+
+    fn compatibility(
+        build: &std::path::Path,
+        executable: &std::path::Path,
+    ) -> DaemonCompatibilitySnapshot {
+        DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation: 1,
+                environment: YoctoEnvironmentIdentity {
+                    build_directory: AuthoritativeValue::detected(
+                        build.to_owned(),
+                        IdentityAuthority::InitializedEnvironment,
+                    ),
+                    available_tools: AuthoritativeValue::detected(
+                        vec![ToolIdentity {
+                            id: "devtool".into(),
+                            executable: executable.to_owned(),
+                            version: None,
+                        }],
+                        IdentityAuthority::ExecutableProbe,
+                    ),
+                    ..YoctoEnvironmentIdentity::default()
+                },
+                capabilities: vec![CapabilityRecord {
+                    id: CapabilityId::DevtoolModify,
+                    state: CapabilityState::Available,
+                    evidence: vec![CapabilityEvidence {
+                        kind: CapabilityEvidenceKind::DirectProbe,
+                        outcome: CapabilityEvidenceOutcome::Positive,
+                        subject: "devtool modify --help".into(),
+                        detail: "Fixture exposes modify.".into(),
+                        argv: vec![executable.display().to_string(), "--help".into()],
+                    }],
+                }],
+            },
+            implementations: std::collections::BTreeMap::from([(
+                CapabilityId::DevtoolModify,
+                CapabilityImplementation {
+                    id: yoctui_bitbake::DEVTOOL_MODIFY_IMPLEMENTATION.into(),
+                    kind: CapabilityImplementationKind::Command,
+                },
+            )]),
+        }
+        .normalize()
+        .unwrap()
+    }
 
     #[tokio::test]
-    async fn client_runtime_devtool_runner_survives_client_scope_and_reports_terminal_event() {
+    async fn compatibility_devtool_daemon_runner_uses_owned_snapshot_and_survives_client_scope() {
         let root =
             std::env::temp_dir().join(format!("yoctui-daemon-devtool-{}", std::process::id()));
         fs::create_dir_all(&root).unwrap();
@@ -240,13 +320,18 @@ mod tests {
         )
         .unwrap();
         fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
-        let mut supervisor = DaemonDevtoolSupervisor::default().with_executable(executable);
+        let executable = executable.canonicalize().unwrap();
+        let build = root.canonicalize().unwrap();
+        let mut supervisor = DaemonDevtoolSupervisor::default().with_executable(executable.clone());
+        supervisor
+            .replace_compatibility(Some(compatibility(&build, &executable)))
+            .unwrap();
         let job = supervisor
             .start(
                 DaemonDevtoolOperation::Modify {
                     recipe: "busybox".into(),
                 },
-                root.clone(),
+                build,
             )
             .unwrap();
         let client_connection = String::from("detached-client");

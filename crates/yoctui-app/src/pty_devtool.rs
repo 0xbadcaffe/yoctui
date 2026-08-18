@@ -1,9 +1,10 @@
 use std::{fs, path::PathBuf};
 
 use thiserror::Error;
+use yoctui_bitbake::{DevtoolCommandPlanner, DevtoolCompatibilityError};
 use yoctui_model::{
-    DevtoolCapability, DevtoolStatus, DevtoolWorkspace, PtyCommandIdentity, PtySessionKind,
-    PtyWorkspaceContext, RecipeIdentity,
+    DaemonCompatibilitySnapshot, DevtoolCapability, DevtoolStatus, DevtoolWorkspace,
+    PtyCommandIdentity, PtySessionKind, PtyWorkspaceContext, RecipeIdentity,
 };
 
 use crate::{PtyContextAction, PtyContextAuthority, PtyContextError};
@@ -35,12 +36,14 @@ pub struct PtyDevtoolPreview {
 pub struct PtyDevtoolRouter {
     contexts: PtyContextAuthority,
     executable: PathBuf,
+    compatibility: DaemonCompatibilitySnapshot,
 }
 
 impl PtyDevtoolRouter {
     pub fn new(
         contexts: PtyContextAuthority,
         executable: PathBuf,
+        compatibility: DaemonCompatibilitySnapshot,
     ) -> Result<Self, PtyDevtoolError> {
         let executable =
             fs::canonicalize(&executable).map_err(|error| PtyDevtoolError::Executable {
@@ -56,6 +59,7 @@ impl PtyDevtoolRouter {
         Ok(Self {
             contexts,
             executable,
+            compatibility,
         })
     }
 
@@ -100,6 +104,13 @@ impl PtyDevtoolRouter {
             PtyDevtoolAction::EditRecipe => {
                 validate_recipe(&status.identity)?;
                 let launch = self.contexts.resolve(PtyContextAction::BuildDirectory)?;
+                let command = DevtoolCommandPlanner::new(
+                    &self.compatibility,
+                    self.compatibility.snapshot.generation,
+                    &launch.cwd,
+                    &self.executable,
+                )?
+                .edit_recipe(&status.identity.name)?;
                 Ok(PtyDevtoolPreview {
                     action,
                     recipe: status.identity.clone(),
@@ -107,8 +118,12 @@ impl PtyDevtoolRouter {
                     kind: PtySessionKind::InteractiveTool,
                     cwd: launch.cwd,
                     command: PtyCommandIdentity {
-                        executable: self.executable.clone(),
-                        arguments: vec!["edit-recipe".into(), status.identity.name.clone()],
+                        executable: command.executable().to_owned(),
+                        arguments: command
+                            .arguments()
+                            .iter()
+                            .map(|argument| argument.to_string_lossy().into_owned())
+                            .collect(),
                     },
                     environment_identity: launch.environment_identity,
                     environment: launch.environment,
@@ -181,6 +196,8 @@ pub enum PtyDevtoolError {
     InvalidRecipe,
     #[error("this Devtool action remains a managed noninteractive background job")]
     UseBackgroundJob,
+    #[error("Devtool compatibility: {0}")]
+    Compatibility(#[from] DevtoolCompatibilityError),
     #[error(transparent)]
     Context(#[from] PtyContextError),
 }
@@ -190,7 +207,62 @@ mod tests {
     use super::*;
     use crate::{PtyContextEntry, VerifiedPtyEnvironment};
     use std::{collections::BTreeMap, io::Write as _};
-    use yoctui_model::{DevtoolGitState, DevtoolStatusError};
+    use yoctui_model::{
+        AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
+        CapabilityId, CapabilityImplementation, CapabilityImplementationKind, CapabilityRecord,
+        CapabilitySnapshot, CapabilityState, DevtoolGitState, DevtoolStatusError,
+        IdentityAuthority, ToolIdentity, YoctoEnvironmentIdentity,
+    };
+
+    fn compatibility(
+        build: &std::path::Path,
+        executable: &std::path::Path,
+    ) -> DaemonCompatibilitySnapshot {
+        DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation: 1,
+                environment: YoctoEnvironmentIdentity {
+                    build_directory: AuthoritativeValue::detected(
+                        build.to_owned(),
+                        IdentityAuthority::InitializedEnvironment,
+                    ),
+                    available_tools: AuthoritativeValue::detected(
+                        vec![ToolIdentity {
+                            id: "devtool".into(),
+                            executable: executable.to_owned(),
+                            version: None,
+                        }],
+                        IdentityAuthority::ExecutableProbe,
+                    ),
+                    ..YoctoEnvironmentIdentity::default()
+                },
+                capabilities: vec![CapabilityRecord {
+                    id: CapabilityId::DevtoolEditRecipe,
+                    state: CapabilityState::Available,
+                    evidence: vec![CapabilityEvidence {
+                        kind: CapabilityEvidenceKind::DirectProbe,
+                        outcome: CapabilityEvidenceOutcome::Positive,
+                        subject: "devtool edit-recipe --help".into(),
+                        detail: "Fixture exposes edit-recipe.".into(),
+                        argv: vec![
+                            executable.display().to_string(),
+                            "edit-recipe".into(),
+                            "--help".into(),
+                        ],
+                    }],
+                }],
+            },
+            implementations: BTreeMap::from([(
+                CapabilityId::DevtoolEditRecipe,
+                CapabilityImplementation {
+                    id: yoctui_bitbake::DEVTOOL_EDIT_RECIPE_IMPLEMENTATION.into(),
+                    kind: CapabilityImplementationKind::Command,
+                },
+            )]),
+        }
+        .normalize()
+        .unwrap()
+    }
 
     fn fixture() -> (PathBuf, PtyDevtoolRouter, DevtoolStatus) {
         let nonce = std::time::SystemTime::UNIX_EPOCH
@@ -233,7 +305,14 @@ mod tests {
             Vec::new(),
         )
         .unwrap();
-        let router = PtyDevtoolRouter::new(contexts, executable).unwrap();
+        let executable = fs::canonicalize(executable).unwrap();
+        let build = fs::canonicalize(root.join("build")).unwrap();
+        let router = PtyDevtoolRouter::new(
+            contexts,
+            executable.clone(),
+            compatibility(&build, &executable),
+        )
+        .unwrap();
         let status = DevtoolStatus {
             identity: RecipeIdentity {
                 name: "busybox".into(),
@@ -257,7 +336,7 @@ mod tests {
     }
 
     #[test]
-    fn pty_devtool_previews_workspace_shell_and_exact_edit_recipe() {
+    fn compatibility_devtool_previews_workspace_shell_and_authorized_exact_edit_recipe() {
         let (root, router, status) = fixture();
         let workspace = router
             .preview(
@@ -279,6 +358,37 @@ mod tests {
         assert_eq!(edit.kind, PtySessionKind::InteractiveTool);
         assert_eq!(edit.command.arguments, vec!["edit-recipe", "busybox"]);
         assert_eq!(edit.cwd, fs::canonicalize(root.join("build")).unwrap());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn compatibility_devtool_rejects_unavailable_edit_recipe_with_probe_reason() {
+        let (root, mut router, status) = fixture();
+        let record = router
+            .compatibility
+            .snapshot
+            .capabilities
+            .iter_mut()
+            .find(|record| record.id == CapabilityId::DevtoolEditRecipe)
+            .unwrap();
+        record.state = CapabilityState::Unavailable {
+            reason: yoctui_model::CapabilityReason::new(
+                "devtool.subcommand_missing",
+                "Current Devtool does not expose the edit-recipe subcommand.",
+                Some("Required capability: devtool.edit_recipe".into()),
+            )
+            .unwrap(),
+        };
+        router
+            .compatibility
+            .implementations
+            .remove(&CapabilityId::DevtoolEditRecipe);
+        assert!(matches!(
+            router.preview(&status, PtyDevtoolAction::EditRecipe),
+            Err(PtyDevtoolError::Compatibility(
+                DevtoolCompatibilityError::Unavailable { reason, .. }
+            )) if reason.contains("does not expose the edit-recipe")
+        ));
         fs::remove_dir_all(root).unwrap();
     }
 

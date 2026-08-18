@@ -2071,6 +2071,7 @@ impl DevtoolJobCoordinator {
                 ("undeploy-target", Some(target.clone()), None)
             }
             DevtoolOperation::Reset { .. } => ("reset", None, None),
+            DevtoolOperation::Upgrade { .. } => ("upgrade", None, None),
         };
         self.active_job = Some(id);
         self.active_operation = Some(operation);

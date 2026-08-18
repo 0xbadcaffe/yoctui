@@ -7,6 +7,7 @@ mod build_environment;
 mod compatibility_api;
 mod compatibility_cache;
 mod compatibility_command;
+mod compatibility_devtool;
 mod compatibility_probe;
 mod compatibility_resolver;
 mod compatibility_version;
@@ -89,8 +90,16 @@ pub use compatibility_cache::{
     CapabilitySnapshotCache,
 };
 pub use compatibility_command::{
-    AuthorizedBitBakeCommand, BitBakeCommandAuthorizationError, BitBakeCommandPlanner,
+    AuthorizedBitBakeCommand, BITBAKE_DIFFSIGS_ARGV_IMPLEMENTATION,
+    BITBAKE_DUMPSIG_ARGV_IMPLEMENTATION, BitBakeCommandAuthorizationError, BitBakeCommandPlanner,
     BitBakeServerCommandOperation,
+};
+pub use compatibility_devtool::{
+    DEVTOOL_DEPLOY_TARGET_IMPLEMENTATION, DEVTOOL_EDIT_RECIPE_IMPLEMENTATION,
+    DEVTOOL_FINISH_IMPLEMENTATION, DEVTOOL_MODIFY_IMPLEMENTATION, DEVTOOL_RESET_IMPLEMENTATION,
+    DEVTOOL_STATUS_IMPLEMENTATION, DEVTOOL_UNDEPLOY_TARGET_IMPLEMENTATION,
+    DEVTOOL_UPDATE_RECIPE_IMPLEMENTATION, DEVTOOL_UPGRADE_IMPLEMENTATION, DevtoolCommandPlanner,
+    DevtoolCompatibilityError,
 };
 pub use compatibility_probe::{
     CapabilityProbeContext, CapabilityProbeContextError, CapabilityProbeObservation,
@@ -206,12 +215,12 @@ pub use wic::{
 };
 use yoctui_model::{
     BuildRequest, DependencyEdge, DependencyEdgeKind, DependencyGraph, DependencyNode,
-    DependencyNodeId, DevtoolCapability, DevtoolGitState, DevtoolOperation, DevtoolOperationError,
-    DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, ImageArtifactInventory,
-    ImageArtifactRequest, Layer, LogEntry, PackageDetail, PackageDetailRequest,
-    PackageInventoryRequest, PackageSummary, Recipe, RecipeBuildStatus, RecipeIdentity,
-    RecipeMetadata, RecipeWorkspaceStatus, Severity, SignatureComparisonRequest,
-    SignatureDifference, SignatureRecord, SignatureTarget, TaskStats, VariableOperation, Workspace,
+    DependencyNodeId, DevtoolCapability, DevtoolGitState, DevtoolOperation, DevtoolStatus,
+    DevtoolStatusError, DevtoolWorkspace, ImageArtifactInventory, ImageArtifactRequest, Layer,
+    LogEntry, PackageDetail, PackageDetailRequest, PackageInventoryRequest, PackageSummary, Recipe,
+    RecipeBuildStatus, RecipeIdentity, RecipeMetadata, RecipeWorkspaceStatus, Severity,
+    SignatureComparisonRequest, SignatureDifference, SignatureRecord, SignatureTarget, TaskStats,
+    VariableOperation, Workspace,
 };
 use yoctui_protocol::{
     Command, DependencyEdgeData, DependencyEdgeKindData, DependencyGraphData, DependencyNodeData,
@@ -301,7 +310,7 @@ pub enum BackendError {
 
 #[derive(Debug, Clone)]
 pub struct DevtoolInspector {
-    devtool_program: PathBuf,
+    devtool_program: Option<PathBuf>,
     git_program: PathBuf,
 }
 
@@ -309,44 +318,64 @@ pub struct DevtoolInspector {
 pub struct DevtoolCommandSpec {
     executable: PathBuf,
     arguments: Vec<OsString>,
+    capability_generation: u64,
+    capability: yoctui_model::CapabilityId,
+    build_directory: PathBuf,
 }
 impl DevtoolCommandSpec {
-    pub fn from_operation(operation: &DevtoolOperation) -> Result<Self, DevtoolOperationError> {
-        Self::with_executable(PathBuf::from("devtool"), operation)
+    pub fn from_operation(
+        operation: &DevtoolOperation,
+        compatibility: &yoctui_model::DaemonCompatibilitySnapshot,
+        expected_generation: u64,
+        build_directory: &Path,
+    ) -> Result<Self, DevtoolCompatibilityError> {
+        let executable = compatibility
+            .snapshot
+            .environment
+            .available_tools
+            .value()
+            .and_then(|tools| tools.iter().find(|tool| tool.id == "devtool"))
+            .map(|tool| tool.executable.clone())
+            .ok_or(DevtoolCompatibilityError::ToolIdentityUnknown)?;
+        Self::with_executable(
+            executable,
+            operation,
+            compatibility,
+            expected_generation,
+            build_directory,
+        )
     }
 
     pub fn with_executable(
         executable: PathBuf,
         operation: &DevtoolOperation,
-    ) -> Result<Self, DevtoolOperationError> {
-        operation.validate()?;
-        let recipe = OsString::from(operation.recipe());
-        let arguments = match operation {
-            DevtoolOperation::Modify { .. } => vec![OsString::from("modify"), recipe],
-            DevtoolOperation::UpdateRecipe { .. } => {
-                vec![OsString::from("update-recipe"), recipe]
-            }
-            DevtoolOperation::Finish { destination, .. } => vec![
-                OsString::from("finish"),
-                recipe,
-                destination.as_os_str().to_owned(),
-            ],
-            DevtoolOperation::DeployTarget { target, .. } => vec![
-                OsString::from("deploy-target"),
-                recipe,
-                OsString::from(target),
-            ],
-            DevtoolOperation::UndeployTarget { target, .. } => vec![
-                OsString::from("undeploy-target"),
-                recipe,
-                OsString::from(target),
-            ],
-            DevtoolOperation::Reset { .. } => vec![OsString::from("reset"), recipe],
-        };
-        Ok(Self {
+        compatibility: &yoctui_model::DaemonCompatibilitySnapshot,
+        expected_generation: u64,
+        build_directory: &Path,
+    ) -> Result<Self, DevtoolCompatibilityError> {
+        DevtoolCommandPlanner::new(
+            compatibility,
+            expected_generation,
+            build_directory,
+            &executable,
+        )?
+        .operation(operation)
+    }
+
+    pub(crate) fn from_authorized_parts(
+        executable: PathBuf,
+        arguments: Vec<OsString>,
+        capability_generation: u64,
+        capability: yoctui_model::CapabilityId,
+        build_directory: PathBuf,
+    ) -> Self {
+        Self {
             executable,
             arguments,
-        })
+            capability_generation,
+            capability,
+            build_directory,
+        }
     }
 
     pub fn executable(&self) -> &Path {
@@ -355,6 +384,14 @@ impl DevtoolCommandSpec {
 
     pub fn arguments(&self) -> &[OsString] {
         &self.arguments
+    }
+
+    pub fn capability_generation(&self) -> u64 {
+        self.capability_generation
+    }
+
+    pub fn capability(&self) -> yoctui_model::CapabilityId {
+        self.capability
     }
 }
 
@@ -471,6 +508,10 @@ pub enum DevtoolRunnerError {
     NotRunning,
     #[error("Devtool process control failed: {0}")]
     ProcessControl(String),
+    #[error(
+        "Devtool command authorization belongs to another capability generation or build directory"
+    )]
+    AuthorizationMismatch,
 }
 #[derive(Debug)]
 enum DevtoolPipeEvent {
@@ -599,6 +640,9 @@ impl DevtoolJobRunner {
                 "build directory does not exist: {}",
                 self.build_dir.display()
             )));
+        }
+        if command.capability_generation == 0 || command.build_directory != self.build_dir {
+            return Err(DevtoolRunnerError::AuthorizationMismatch);
         }
         let mut process = TokioCommand::new(&command.executable);
         process
@@ -828,7 +872,7 @@ impl Drop for DevtoolJobRunner {
 impl Default for DevtoolInspector {
     fn default() -> Self {
         Self {
-            devtool_program: "devtool".into(),
+            devtool_program: None,
             git_program: "git".into(),
         }
     }
@@ -837,12 +881,31 @@ impl Default for DevtoolInspector {
 impl DevtoolInspector {
     pub fn with_programs(devtool_program: PathBuf, git_program: PathBuf) -> Self {
         Self {
-            devtool_program,
+            devtool_program: Some(devtool_program),
             git_program,
         }
     }
 
-    pub async fn inspect(&self, build_dir: &Path, identity: RecipeIdentity) -> DevtoolStatus {
+    pub async fn inspect(&self, _build_dir: &Path, identity: RecipeIdentity) -> DevtoolStatus {
+        DevtoolStatus {
+            identity,
+            capability: DevtoolCapability::Unavailable {
+                reason: "Devtool status requires the current environment capability snapshot."
+                    .into(),
+            },
+            workspace: DevtoolWorkspace::NotMember,
+            git: DevtoolGitState::NotApplicable,
+            error: None,
+        }
+    }
+
+    pub async fn inspect_with_compatibility(
+        &self,
+        build_dir: &Path,
+        identity: RecipeIdentity,
+        compatibility: &yoctui_model::DaemonCompatibilitySnapshot,
+        expected_generation: u64,
+    ) -> DevtoolStatus {
         if !identity.file.is_absolute() {
             return DevtoolStatus {
                 identity,
@@ -853,8 +916,42 @@ impl DevtoolInspector {
             };
         }
 
-        let output = TokioCommand::new(&self.devtool_program)
-            .arg("status")
+        let executable = self.devtool_program.clone().or_else(|| {
+            compatibility
+                .snapshot
+                .environment
+                .available_tools
+                .value()
+                .and_then(|tools| tools.iter().find(|tool| tool.id == "devtool"))
+                .map(|tool| tool.executable.clone())
+        });
+        let command = executable
+            .ok_or(DevtoolCompatibilityError::ToolIdentityUnknown)
+            .and_then(|executable| {
+                DevtoolCommandPlanner::new(
+                    compatibility,
+                    expected_generation,
+                    build_dir,
+                    &executable,
+                )?
+                .status()
+            });
+        let command = match command {
+            Ok(command) => command,
+            Err(error) => {
+                return DevtoolStatus {
+                    identity,
+                    capability: DevtoolCapability::Unavailable {
+                        reason: error.to_string(),
+                    },
+                    workspace: DevtoolWorkspace::NotMember,
+                    git: DevtoolGitState::NotApplicable,
+                    error: None,
+                };
+            }
+        };
+        let output = TokioCommand::new(command.executable())
+            .args(command.arguments())
             .current_dir(build_dir)
             .output()
             .await;
@@ -3039,6 +3136,118 @@ mod tests {
         .unwrap()
     }
 
+    fn devtool_compatibility(
+        build_dir: &Path,
+        executable: &Path,
+    ) -> yoctui_model::DaemonCompatibilitySnapshot {
+        use yoctui_model::{
+            AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind,
+            CapabilityEvidenceOutcome, CapabilityId, CapabilityImplementation,
+            CapabilityImplementationKind, CapabilityRecord, CapabilitySnapshot, CapabilityState,
+            IdentityAuthority, ToolIdentity, YoctoEnvironmentIdentity,
+        };
+        let capabilities = [
+            (
+                CapabilityId::DevtoolStatus,
+                compatibility_devtool::DEVTOOL_STATUS_IMPLEMENTATION,
+            ),
+            (
+                CapabilityId::DevtoolModify,
+                compatibility_devtool::DEVTOOL_MODIFY_IMPLEMENTATION,
+            ),
+            (
+                CapabilityId::DevtoolUpdateRecipe,
+                compatibility_devtool::DEVTOOL_UPDATE_RECIPE_IMPLEMENTATION,
+            ),
+            (
+                CapabilityId::DevtoolFinish,
+                compatibility_devtool::DEVTOOL_FINISH_IMPLEMENTATION,
+            ),
+            (
+                CapabilityId::DevtoolDeployTarget,
+                compatibility_devtool::DEVTOOL_DEPLOY_TARGET_IMPLEMENTATION,
+            ),
+            (
+                CapabilityId::DevtoolUndeployTarget,
+                compatibility_devtool::DEVTOOL_UNDEPLOY_TARGET_IMPLEMENTATION,
+            ),
+            (
+                CapabilityId::DevtoolReset,
+                compatibility_devtool::DEVTOOL_RESET_IMPLEMENTATION,
+            ),
+            (
+                CapabilityId::DevtoolUpgrade,
+                compatibility_devtool::DEVTOOL_UPGRADE_IMPLEMENTATION,
+            ),
+        ];
+        yoctui_model::DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation: 1,
+                environment: YoctoEnvironmentIdentity {
+                    build_directory: AuthoritativeValue::detected(
+                        build_dir.to_owned(),
+                        IdentityAuthority::InitializedEnvironment,
+                    ),
+                    available_tools: AuthoritativeValue::detected(
+                        vec![ToolIdentity {
+                            id: "devtool".into(),
+                            executable: executable.to_owned(),
+                            version: None,
+                        }],
+                        IdentityAuthority::ExecutableProbe,
+                    ),
+                    ..YoctoEnvironmentIdentity::default()
+                },
+                capabilities: capabilities
+                    .iter()
+                    .map(|(id, _)| CapabilityRecord {
+                        id: *id,
+                        state: CapabilityState::Available,
+                        evidence: vec![CapabilityEvidence {
+                            kind: CapabilityEvidenceKind::DirectProbe,
+                            outcome: CapabilityEvidenceOutcome::Positive,
+                            subject: format!("{} test probe", id.as_str()),
+                            detail: "The fixture exposes this exact Devtool subcommand.".into(),
+                            argv: vec![executable.display().to_string(), "--help".into()],
+                        }],
+                    })
+                    .collect(),
+            },
+            implementations: capabilities
+                .into_iter()
+                .map(|(id, implementation)| {
+                    (
+                        id,
+                        CapabilityImplementation {
+                            id: implementation.into(),
+                            kind: CapabilityImplementationKind::Command,
+                        },
+                    )
+                })
+                .collect(),
+        }
+        .normalize()
+        .unwrap()
+    }
+
+    fn authorized_devtool_command(
+        mut executable: PathBuf,
+        operation: &DevtoolOperation,
+    ) -> Result<DevtoolCommandSpec, DevtoolCompatibilityError> {
+        if !executable.is_absolute() {
+            executable = Path::new("/test/bin").join(executable);
+        }
+        let build_dir = std::env::temp_dir();
+        let compatibility = devtool_compatibility(&build_dir, &executable);
+        DevtoolCommandSpec::with_executable(
+            executable,
+            operation,
+            &compatibility,
+            compatibility.snapshot.generation,
+            &build_dir,
+        )
+    }
+
     #[cfg(unix)]
     fn fake_devtool_command(name: &str, body: &str) -> (PathBuf, DevtoolCommandSpec) {
         let script = fixture_script(name);
@@ -3053,6 +3262,9 @@ mod tests {
                 OsString::from("modify"),
                 OsString::from("busybox"),
             ],
+            capability_generation: 1,
+            capability: yoctui_model::CapabilityId::DevtoolModify,
+            build_directory: std::env::temp_dir(),
         };
         (script, command)
     }
@@ -3086,8 +3298,9 @@ mod tests {
             name: "busybox".into(),
             file: "/layers/core/busybox_1.0.bb".into(),
         };
+        let compatibility = devtool_compatibility(&root, &devtool);
         let status = DevtoolInspector::with_programs(devtool, git)
-            .inspect(&root, identity.clone())
+            .inspect_with_compatibility(&root, identity.clone(), &compatibility, 1)
             .await;
         assert_eq!(status.identity, identity);
         assert_eq!(status.capability, DevtoolCapability::Available);
@@ -3155,8 +3368,8 @@ mod tests {
             ),
         ];
         for (operation, expected) in cases {
-            let command = DevtoolCommandSpec::from_operation(&operation).unwrap();
-            assert_eq!(command.executable(), Path::new("devtool"));
+            let command = authorized_devtool_command("devtool".into(), &operation).unwrap();
+            assert_eq!(command.executable(), Path::new("/test/bin/devtool"));
             assert_eq!(
                 command.arguments(),
                 expected.into_iter().map(OsString::from).collect::<Vec<_>>()
@@ -3166,35 +3379,38 @@ mod tests {
 
     #[test]
     fn devtool_job_spec_rejects_invalid_operations_before_process_construction() {
-        assert_eq!(
-            DevtoolCommandSpec::from_operation(&DevtoolOperation::Reset {
+        assert!(matches!(
+            authorized_devtool_command("devtool".into(), &DevtoolOperation::Reset {
                 recipe: "--help".into(),
             }),
-            Err(DevtoolOperationError::InvalidRecipe)
-        );
-        assert_eq!(
-            DevtoolCommandSpec::from_operation(&DevtoolOperation::DeployTarget {
+            Err(DevtoolCompatibilityError::InvalidRequest(message)) if message.contains("recipe")
+        ));
+        assert!(matches!(
+            authorized_devtool_command("devtool".into(), &DevtoolOperation::DeployTarget {
                 recipe: "busybox".into(),
                 target: "root@host\n--help".into(),
             }),
-            Err(DevtoolOperationError::InvalidTarget)
-        );
-        assert_eq!(
-            DevtoolCommandSpec::from_operation(&DevtoolOperation::Finish {
+            Err(DevtoolCompatibilityError::InvalidRequest(message)) if message.contains("target")
+        ));
+        assert!(matches!(
+            authorized_devtool_command("devtool".into(), &DevtoolOperation::Finish {
                 recipe: "busybox".into(),
                 destination: "meta-custom".into(),
             }),
-            Err(DevtoolOperationError::RelativeFinishDestination)
-        );
+            Err(DevtoolCompatibilityError::InvalidRequest(message)) if message.contains("absolute")
+        ));
     }
 
     #[test]
     fn devtool_publish_update_uses_exact_shell_free_arguments() {
-        let command = DevtoolCommandSpec::from_operation(&DevtoolOperation::UpdateRecipe {
-            recipe: "busybox".into(),
-        })
+        let command = authorized_devtool_command(
+            "devtool".into(),
+            &DevtoolOperation::UpdateRecipe {
+                recipe: "busybox".into(),
+            },
+        )
         .unwrap();
-        assert_eq!(command.executable(), Path::new("devtool"));
+        assert_eq!(command.executable(), Path::new("/test/bin/devtool"));
         assert_eq!(
             command.arguments(),
             [OsString::from("update-recipe"), OsString::from("busybox")]
@@ -3203,12 +3419,15 @@ mod tests {
 
     #[test]
     fn devtool_publish_finish_uses_exact_shell_free_arguments() {
-        let command = DevtoolCommandSpec::from_operation(&DevtoolOperation::Finish {
-            recipe: "busybox".into(),
-            destination: "/layers/meta-demo".into(),
-        })
+        let command = authorized_devtool_command(
+            "devtool".into(),
+            &DevtoolOperation::Finish {
+                recipe: "busybox".into(),
+                destination: "/layers/meta-demo".into(),
+            },
+        )
         .unwrap();
-        assert_eq!(command.executable(), Path::new("devtool"));
+        assert_eq!(command.executable(), Path::new("/test/bin/devtool"));
         assert_eq!(
             command.arguments(),
             [
@@ -3226,10 +3445,13 @@ mod tests {
 
         let mut bytes = b"/layers/meta-".to_vec();
         bytes.push(0xfe);
-        let command = DevtoolCommandSpec::from_operation(&DevtoolOperation::Finish {
-            recipe: "busybox".into(),
-            destination: PathBuf::from(OsString::from_vec(bytes.clone())),
-        })
+        let command = authorized_devtool_command(
+            "devtool".into(),
+            &DevtoolOperation::Finish {
+                recipe: "busybox".into(),
+                destination: PathBuf::from(OsString::from_vec(bytes.clone())),
+            },
+        )
         .unwrap();
         assert_eq!(command.arguments()[2], OsString::from_vec(bytes));
     }
@@ -3240,8 +3462,8 @@ mod tests {
             recipe: "busybox".into(),
             target: "root@192.0.2.1:/opt/demo".into(),
         };
-        let command = DevtoolCommandSpec::from_operation(&operation).unwrap();
-        assert_eq!(command.executable(), Path::new("devtool"));
+        let command = authorized_devtool_command("devtool".into(), &operation).unwrap();
+        assert_eq!(command.executable(), Path::new("/test/bin/devtool"));
         assert_eq!(
             command.arguments(),
             [
@@ -3250,22 +3472,25 @@ mod tests {
                 OsString::from("root@192.0.2.1:/opt/demo"),
             ]
         );
-        assert_eq!(
-            DevtoolCommandSpec::from_operation(&DevtoolOperation::DeployTarget {
+        assert!(matches!(
+            authorized_devtool_command("devtool".into(), &DevtoolOperation::DeployTarget {
                 recipe: "busybox".into(),
                 target: "--help".into(),
             }),
-            Err(DevtoolOperationError::InvalidTarget)
-        );
+            Err(DevtoolCompatibilityError::InvalidRequest(message)) if message.contains("target")
+        ));
     }
 
     #[test]
     fn devtool_target_reset_uses_exact_shell_free_arguments() {
-        let command = DevtoolCommandSpec::from_operation(&DevtoolOperation::Reset {
-            recipe: "busybox".into(),
-        })
+        let command = authorized_devtool_command(
+            "devtool".into(),
+            &DevtoolOperation::Reset {
+                recipe: "busybox".into(),
+            },
+        )
         .unwrap();
-        assert_eq!(command.executable(), Path::new("devtool"));
+        assert_eq!(command.executable(), Path::new("/test/bin/devtool"));
         assert_eq!(
             command.arguments(),
             [OsString::from("reset"), OsString::from("busybox")]
@@ -3280,10 +3505,13 @@ mod tests {
         let mut bytes = b"/layers/meta-".to_vec();
         bytes.push(0xff);
         let destination = PathBuf::from(OsString::from_vec(bytes.clone()));
-        let command = DevtoolCommandSpec::from_operation(&DevtoolOperation::Finish {
-            recipe: "busybox".into(),
-            destination,
-        })
+        let command = authorized_devtool_command(
+            "devtool".into(),
+            &DevtoolOperation::Finish {
+                recipe: "busybox".into(),
+                destination,
+            },
+        )
         .unwrap();
         assert_eq!(command.arguments()[2], OsString::from_vec(bytes));
     }
@@ -3354,6 +3582,9 @@ mod tests {
             &DevtoolOperation::Reset {
                 recipe: "busybox".into(),
             },
+            &devtool_compatibility(&std::env::temp_dir(), &missing),
+            1,
+            &std::env::temp_dir(),
         )
         .unwrap();
         let mut runner = DevtoolJobRunner::new(std::env::temp_dir());
@@ -3369,6 +3600,9 @@ mod tests {
             &DevtoolOperation::Reset {
                 recipe: "busybox".into(),
             },
+            &devtool_compatibility(&std::env::temp_dir(), &non_executable),
+            1,
+            &std::env::temp_dir(),
         )
         .unwrap();
         assert!(matches!(
@@ -3446,12 +3680,12 @@ mod tests {
             name: "busybox".into(),
             file: "/layers/core/busybox_1.0.bb".into(),
         };
-        let missing = DevtoolInspector::with_programs(
-            root.join("does-not-exist"),
-            root.join("does-not-exist-either"),
-        )
-        .inspect(&root, identity.clone())
-        .await;
+        let missing_devtool = root.join("does-not-exist");
+        let compatibility = devtool_compatibility(&root, &missing_devtool);
+        let missing =
+            DevtoolInspector::with_programs(missing_devtool, root.join("does-not-exist-either"))
+                .inspect_with_compatibility(&root, identity.clone(), &compatibility, 1)
+                .await;
         assert_eq!(missing.capability, DevtoolCapability::MissingExecutable);
 
         let devtool = root.join("devtool");
@@ -3467,8 +3701,9 @@ mod tests {
         let mut permissions = fs::metadata(&devtool).unwrap().permissions();
         permissions.set_mode(0o700);
         fs::set_permissions(&devtool, permissions).unwrap();
+        let compatibility = devtool_compatibility(&root, &devtool);
         let status = DevtoolInspector::with_programs(devtool, root.join("git"))
-            .inspect(&root, identity)
+            .inspect_with_compatibility(&root, identity, &compatibility, 1)
             .await;
         assert_eq!(
             status.workspace,

@@ -2,14 +2,14 @@
 
 ## Task
 
-**ID:** COMPAT-DEVTOOL-001
-**Title:** Make Devtool workflows capability-aware
+**ID:** COMPAT-RECIPETOOL-001
+**Title:** Make Recipetool workflows capability-aware
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Probe the connected environment's Devtool subcommands and options, then derive
-every Devtool action and exact argv implementation from the centralized daemon
+Probe the connected environment's Recipetool subcommands and options, then
+derive every Recipetool action and exact argv implementation from the centralized daemon
 capability snapshot.
 
 ## Dependencies
@@ -19,9 +19,9 @@ capability snapshot.
 ## Relevant files
 
 - `crates/yoctui-bitbake/src/lib.rs`
-- `crates/yoctui-cli/src/daemon_devtool.rs`
+- `crates/yoctui-cli/src/`
 - `crates/yoctui-app/src/`
-- `crates/yoctui-model/src/devtool.rs`
+- `crates/yoctui-model/src/`
 - `crates/yoctui-model/src/compatibility_catalog.rs`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
@@ -29,10 +29,10 @@ capability snapshot.
 
 ## Definition of done
 
-- Modify, finish, deploy-target, and upgrade subcommands/options are derived
-  from the centralized capability catalog and direct initialized-environment
-  probes, never host PATH or release-local checks.
-- Every Devtool preview/run requires the current environment and generation,
+- Create and appendfile subcommands/options are derived from the centralized
+  capability catalog and direct initialized-environment probes, never host
+  PATH or release-local checks.
+- Every Recipetool preview/run requires the current environment and generation,
   enabled capability, and exact selected command implementation.
 - Missing subcommands/options retain exact unavailable reasons and reject
   before process creation; one available subcommand cannot authorize another.
@@ -44,7 +44,7 @@ capability snapshot.
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake compatibility_devtool
-cargo test -p yoctui-app compatibility_devtool
+cargo test -p yoctui-bitbake compatibility_recipetool
+cargo test -p yoctui-app compatibility_recipetool
 ./scripts/verify-roadmap.sh
 ```

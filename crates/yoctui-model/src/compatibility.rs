@@ -261,10 +261,20 @@ pub enum CapabilityId {
     BitBakeNativeEvents,
     #[serde(rename = "devtool.modify")]
     DevtoolModify,
+    #[serde(rename = "devtool.status")]
+    DevtoolStatus,
+    #[serde(rename = "devtool.edit_recipe")]
+    DevtoolEditRecipe,
+    #[serde(rename = "devtool.update_recipe")]
+    DevtoolUpdateRecipe,
     #[serde(rename = "devtool.finish")]
     DevtoolFinish,
     #[serde(rename = "devtool.deploy_target")]
     DevtoolDeployTarget,
+    #[serde(rename = "devtool.undeploy_target")]
+    DevtoolUndeployTarget,
+    #[serde(rename = "devtool.reset")]
+    DevtoolReset,
     #[serde(rename = "devtool.upgrade")]
     DevtoolUpgrade,
     #[serde(rename = "recipetool.create")]
@@ -312,7 +322,7 @@ pub enum CapabilityId {
 }
 
 impl CapabilityId {
-    pub const ALL: [Self; 48] = [
+    pub const ALL: [Self; 53] = [
         Self::BitBakeWorkspaceInspection,
         Self::BitBakeRecipeInventory,
         Self::BitBakeRecipeDependencies,
@@ -337,8 +347,13 @@ impl CapabilityId {
         Self::BitBakeServerStop,
         Self::BitBakeNativeEvents,
         Self::DevtoolModify,
+        Self::DevtoolStatus,
+        Self::DevtoolEditRecipe,
+        Self::DevtoolUpdateRecipe,
         Self::DevtoolFinish,
         Self::DevtoolDeployTarget,
+        Self::DevtoolUndeployTarget,
+        Self::DevtoolReset,
         Self::DevtoolUpgrade,
         Self::RecipetoolCreate,
         Self::RecipetoolAppendFile,
@@ -389,8 +404,13 @@ impl CapabilityId {
             Self::BitBakeServerStop => "bitbake.server_stop",
             Self::BitBakeNativeEvents => "bitbake.native_events",
             Self::DevtoolModify => "devtool.modify",
+            Self::DevtoolStatus => "devtool.status",
+            Self::DevtoolEditRecipe => "devtool.edit_recipe",
+            Self::DevtoolUpdateRecipe => "devtool.update_recipe",
             Self::DevtoolFinish => "devtool.finish",
             Self::DevtoolDeployTarget => "devtool.deploy_target",
+            Self::DevtoolUndeployTarget => "devtool.undeploy_target",
+            Self::DevtoolReset => "devtool.reset",
             Self::DevtoolUpgrade => "devtool.upgrade",
             Self::RecipetoolCreate => "recipetool.create",
             Self::RecipetoolAppendFile => "recipetool.appendfile",
