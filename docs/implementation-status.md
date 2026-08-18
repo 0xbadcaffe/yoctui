@@ -11,9 +11,12 @@ Status values:
 
 ## Current phase
 
-`UI-VISION-001` is `IN_PROGRESS`: every redesign child is complete. The parent
-acceptance gate is running the aggregate formatting, workspace, Clippy, bridge,
-documentation, roadmap, and final handoff checks.
+`UI-VISION-001` is `DONE`: the approved one-line shell, grouped Navigator,
+task/log/history cockpit, structured Inspector, and contextual command rail
+ship together and render only typed state. Formatting, all workspace tests,
+workspace Clippy, all 39 bridge tests, documentation, roadmap validation, and
+real PTY snapshots pass. The independent host perf-policy blocker remains
+explicit and does not invalidate the redesign acceptance.
 
 `UI-VISION-RESP-001` is `DONE`: compact headers preserve project and
 daemon/BitBake anchors at 80 columns; breakpoint, reduced-height, all-theme,
