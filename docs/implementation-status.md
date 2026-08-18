@@ -906,7 +906,7 @@ coherent children: complete behavior/catalog inventory, pure model projection
 and revalidation, and protocol/app/runtime authority enforcement. The original
 `COMPAT-WORKSPACE-001` remains the parent acceptance gate.
 `COMPAT-WORKSPACE-CATALOG-001` is complete. The compiler-checked inventory
-maps every Screen, 24 logical destinations, and every Effect/nested operation
+maps every Screen, 25 logical destinations, and every Effect/nested operation
 to local behavior, daemon probing, or exact all-of/any-of requirements. The
 catalog now has 76 behavior records: distinct SDK publish/native, test-family,
 QA-task, buildhistory comparison, sstate, PR-service management, build-compare,
@@ -948,4 +948,12 @@ invalidation. Disconnected, synchronizing, absent-current, and stale authority
 remain explicitly unavailable, and reusable action presentation consumes the
 same workspace projection without a second cache. Focused model/app tests,
 workspace check, and warnings-denied Clippy pass.
-`COMPAT-UI-INSPECTOR-001` is active.
+`COMPAT-UI-INSPECTOR-001` is complete. Compatibility is now a first-class,
+client-local Navigator and command-palette destination. Its responsive view
+renders only the typed daemon-authority projection: authoritative identity,
+generation/mode, all five state counts, stable filtered/searched capability
+rows, exact reasons and requirements, limitations, selected implementations,
+and bounded typed evidence. Wide, medium-overlay, narrow-pane, absent-authority,
+every-theme, no-color, long-content, replacement, and boundary-size coverage
+passes without changing the canonical Tasks golden or F1-F10 rail.
+`COMPAT-UI-ACTIONS-001` is active.

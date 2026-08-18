@@ -2,24 +2,26 @@
 
 ## Task
 
-**ID:** COMPAT-UI-INSPECTOR-001
-**Title:** Render the Environment and Compatibility inspector
+**ID:** COMPAT-UI-ACTIONS-001
+**Title:** Apply capability state to visible workspace actions
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add the specified first-class Compatibility destination and responsive
-Environment/Compatibility workspace using only the typed presentation model.
+Make useful environment-backed actions in every existing UI surface visibly
+derive their state and exact reason from the centralized typed compatibility
+projection, while preserving client-local and owned-process actions.
 
 ## Dependencies
 
 - `COMPAT-UI-MODEL-001` — DONE
+- `COMPAT-UI-INSPECTOR-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-model/src/compatibility_ui.rs`
+- `crates/yoctui-model/src/workspace_compatibility.rs`
 - `crates/yoctui-app/src/lib.rs`
-- `crates/yoctui-cli/src/main.rs`
 - `crates/yoctui-ui/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/architecture.md`
@@ -28,23 +30,24 @@ Environment/Compatibility workspace using only the typed presentation model.
 
 ## Definition of done
 
-- Compatibility is reachable from Navigator and command palette without
-  emitting an environment effect or probe.
-- Wide layout renders authoritative identity/summary, the filtered capability
-  table, and exact selected details/evidence in the persistent Inspector.
-- Medium uses the standard Inspector overlay; narrow uses the shared pane
-  switcher; below 80x24 retains the resize message.
-- Keys `1`-`5`, `/`, `Esc`, arrows, and `j`/`k` follow the UI specification and
-  do not leak through search/focus routing.
-- Absent/current/limited/unavailable/unknown/unsupported states, long content,
-  every theme, no-color, and snapshot replacement render without panic.
-- The global wide F1-F10 rail and canonical Tasks golden remain unchanged.
+- Useful environment-backed actions remain discoverable and show Available,
+  Limited, Unavailable, Unknown, or Unsupported from one model projection.
+- Navigator, command palette, workspace tables, Inspectors, dialogs, and
+  contextual footers expose concise state and the exact reason where relevant.
+- Disabled actions can be inspected but cannot confirm or emit an effect;
+  limited actions explain the selected fallback or limitation.
+- Client-local navigation/settings/help/copy/open actions and cancellation of
+  already-owned processes remain usable without current capability authority.
+- Snapshot replacement updates visible action state without widget-local caches,
+  stale reasons, invalid command launches, selection loss, or panics.
+- Renderers contain no release/version policy and unexplained `Unsupported`
+  labels are absent.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui compatibility_ui_inspector
-cargo test -p yoctui-app compatibility_ui_inspector
+cargo test -p yoctui-ui compatibility_ui_actions
+cargo test -p yoctui-app compatibility_ui_actions
 ./scripts/test-tui-snapshots.sh
 ./scripts/verify-roadmap.sh
 ```

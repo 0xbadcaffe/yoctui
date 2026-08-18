@@ -4801,18 +4801,18 @@ notes = "CompatibilityUiState is the bounded client-local filter/search/selectio
 id = "COMPAT-UI-INSPECTOR-001"
 milestone = "M18"
 title = "Render the Environment and Compatibility inspector"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-MODEL-001"]
 verify = ["cargo test -p yoctui-ui compatibility_ui_inspector", "cargo test -p yoctui-app compatibility_ui_inspector", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
-notes = "Add the specified Navigator/command-palette destination and responsive Environment/Compatibility workspace with bounded identity, summary, filtered capability table, exact selected reason/evidence, and implementation details."
+notes = "Compatibility is a first-class client-local Navigator and command-palette destination. Its responsive workspace projects only typed compatibility presentation state: authoritative identity and generation/mode, exact five-state summary, stable filtered/searched capability rows, selected implementation, exact reason/requirement/limitations, and bounded typed evidence. Wide uses the persistent Inspector, medium the standard Inspector overlay, and narrow the shared pane switcher; opening or navigating it emits no environment effect. Typed modal key routing covers 1-5, search, selection, and Esc without leakage. Focused UI/app tests, every-theme/no-color/absent-authority responsive coverage, all-screen boundary rendering, canonical Tasks snapshots, roadmap validation, and warnings-denied Clippy pass."
 
 [[task]]
 id = "COMPAT-UI-ACTIONS-001"
 milestone = "M18"
 title = "Apply capability state to visible workspace actions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-MODEL-001", "COMPAT-UI-INSPECTOR-001"]

@@ -105,6 +105,7 @@ pub enum Screen {
     Errors,
     Help,
     BuildEnvironment,
+    Compatibility,
     Settings,
 }
 /// The one active target in Yoctui's persistent workbench shell.
@@ -171,6 +172,7 @@ pub enum CommandId {
     OpenLogs,
     OpenErrors,
     OpenConfiguration,
+    OpenCompatibility,
     OpenSettings,
     ChooseTheme,
     OpenHelp,
@@ -188,7 +190,7 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-const NAVIGATOR_SCREENS: [Screen; 18] = [
+const NAVIGATOR_SCREENS: [Screen; 19] = [
     Screen::Dashboard,
     Screen::Layers,
     Screen::Recipes,
@@ -206,6 +208,7 @@ const NAVIGATOR_SCREENS: [Screen; 18] = [
     Screen::Recipes,
     Screen::Maintenance,
     Screen::BuildEnvironment,
+    Screen::Compatibility,
     Screen::Settings,
 ];
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -3361,6 +3364,13 @@ impl App {
                 disabled_reason: None,
             },
             PaletteCommand {
+                id: CommandId::OpenCompatibility,
+                label: "Open Compatibility",
+                description: "Inspect connected environment identity and capability evidence",
+                shortcut: "none",
+                disabled_reason: None,
+            },
+            PaletteCommand {
                 id: CommandId::OpenSettings,
                 label: "Open Settings",
                 description: "Edit persistent visual and log preferences",
@@ -4616,6 +4626,7 @@ fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenLogs => Action::Open(Screen::Logs),
         CommandId::OpenErrors => Action::Open(Screen::Errors),
         CommandId::OpenConfiguration => Action::Open(Screen::Configuration),
+        CommandId::OpenCompatibility => Action::Open(Screen::Compatibility),
         CommandId::OpenSettings => Action::Open(Screen::Settings),
         CommandId::ChooseTheme => Action::OpenThemePicker,
         CommandId::OpenHelp => Action::Open(Screen::Help),
@@ -14229,6 +14240,7 @@ mod tests {
                 Screen::Recipes,
                 Screen::Maintenance,
                 Screen::BuildEnvironment,
+                Screen::Compatibility,
                 Screen::Settings,
             ]
         );

@@ -3115,6 +3115,44 @@ pub fn settings_action(key: Input) -> Option<Action> {
     }
 }
 
+pub fn compatibility_ui_inspector_action(searching: bool, key: Input) -> Option<Action> {
+    if searching {
+        return match key {
+            Input::Up | Input::Char('k') => {
+                Some(Action::SelectCompatibilityCapability { delta: -1 })
+            }
+            Input::Down | Input::Char('j') => {
+                Some(Action::SelectCompatibilityCapability { delta: 1 })
+            }
+            Input::Char(character) => Some(Action::AppendCompatibilityQuery(character)),
+            Input::Backspace => Some(Action::BackspaceCompatibilityQuery),
+            Input::Enter | Input::Esc => Some(Action::FinishCompatibilitySearch),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectCompatibilityCapability { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectCompatibilityCapability { delta: 1 }),
+        Input::Char('1') => Some(Action::SetCompatibilityFilter(
+            yoctui_model::CompatibilityUiFilter::All,
+        )),
+        Input::Char('2') => Some(Action::SetCompatibilityFilter(
+            yoctui_model::CompatibilityUiFilter::Available,
+        )),
+        Input::Char('3') => Some(Action::SetCompatibilityFilter(
+            yoctui_model::CompatibilityUiFilter::Limited,
+        )),
+        Input::Char('4') => Some(Action::SetCompatibilityFilter(
+            yoctui_model::CompatibilityUiFilter::Unavailable,
+        )),
+        Input::Char('5') => Some(Action::SetCompatibilityFilter(
+            yoctui_model::CompatibilityUiFilter::Attention,
+        )),
+        Input::Char('/') => Some(Action::BeginCompatibilitySearch),
+        _ => None,
+    }
+}
+
 pub fn build_environment_action(key: Input) -> Option<Action> {
     match key {
         Input::Char('e') => Some(Action::OpenBuildEnvironmentEditor),
@@ -4709,6 +4747,43 @@ mod tests {
             yoctui_model::CompatibilityUiFilter::Unavailable
         );
         assert_eq!(app.compatibility_ui.query, "upgrade");
+    }
+
+    #[test]
+    fn compatibility_ui_inspector_keys_are_typed_modal_and_do_not_leak() {
+        assert_eq!(
+            compatibility_ui_inspector_action(false, Input::Char('1')),
+            Some(Action::SetCompatibilityFilter(
+                yoctui_model::CompatibilityUiFilter::All
+            ))
+        );
+        assert_eq!(
+            compatibility_ui_inspector_action(false, Input::Char('5')),
+            Some(Action::SetCompatibilityFilter(
+                yoctui_model::CompatibilityUiFilter::Attention
+            ))
+        );
+        assert_eq!(
+            compatibility_ui_inspector_action(false, Input::Char('/')),
+            Some(Action::BeginCompatibilitySearch)
+        );
+        assert_eq!(
+            compatibility_ui_inspector_action(true, Input::Char('x')),
+            Some(Action::AppendCompatibilityQuery('x'))
+        );
+        assert_eq!(
+            compatibility_ui_inspector_action(true, Input::Backspace),
+            Some(Action::BackspaceCompatibilityQuery)
+        );
+        assert_eq!(
+            compatibility_ui_inspector_action(true, Input::Esc),
+            Some(Action::FinishCompatibilitySearch)
+        );
+        assert_eq!(compatibility_ui_inspector_action(false, Input::Tab), None);
+        assert_eq!(
+            compatibility_ui_inspector_action(false, Input::Char('q')),
+            None
+        );
     }
 
     #[test]

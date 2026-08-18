@@ -30,12 +30,13 @@ pub enum WorkspaceDestination {
     ProjectProfiles,
     TerminalSessions,
     BuildEnvironment,
+    Compatibility,
     Settings,
     Help,
 }
 
 impl WorkspaceDestination {
-    pub const ALL: [Self; 24] = [
+    pub const ALL: [Self; 25] = [
         Self::Dashboard,
         Self::Recipes,
         Self::Layers,
@@ -58,6 +59,7 @@ impl WorkspaceDestination {
         Self::ProjectProfiles,
         Self::TerminalSessions,
         Self::BuildEnvironment,
+        Self::Compatibility,
         Self::Settings,
         Self::Help,
     ];
@@ -473,6 +475,7 @@ pub const fn workspace_screen_destination(screen: Screen) -> WorkspaceDestinatio
         Screen::Errors => WorkspaceDestination::Errors,
         Screen::Help => WorkspaceDestination::Help,
         Screen::BuildEnvironment => WorkspaceDestination::BuildEnvironment,
+        Screen::Compatibility => WorkspaceDestination::Compatibility,
         Screen::Settings => WorkspaceDestination::Settings,
     }
 }
@@ -491,6 +494,7 @@ pub fn workspace_destination_requirement(
         | WorkspaceDestination::Errors
         | WorkspaceDestination::ProjectProfiles
         | WorkspaceDestination::BuildEnvironment
+        | WorkspaceDestination::Compatibility
         | WorkspaceDestination::Settings
         | WorkspaceDestination::Help => WorkspaceEffectRequirement::ClientLocal,
         WorkspaceDestination::Recipes => {
@@ -1159,7 +1163,7 @@ mod tests {
 
     #[test]
     fn compatibility_workspace_catalog_covers_every_screen_and_named_destination() {
-        assert_eq!(WorkspaceDestination::ALL.len(), 24);
+        assert_eq!(WorkspaceDestination::ALL.len(), 25);
         for screen in [
             Screen::Dashboard,
             Screen::Tasks,
@@ -1182,6 +1186,7 @@ mod tests {
             Screen::Errors,
             Screen::Help,
             Screen::BuildEnvironment,
+            Screen::Compatibility,
             Screen::Settings,
         ] {
             let _ = workspace_screen_destination(screen);
@@ -1190,6 +1195,7 @@ mod tests {
         assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::QemuWic));
         assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::ProjectProfiles));
         assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::TerminalSessions));
+        assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::Compatibility));
         for destination in WorkspaceDestination::ALL {
             let _ = workspace_destination_requirement(destination);
         }

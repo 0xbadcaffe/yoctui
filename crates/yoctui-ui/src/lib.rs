@@ -9,32 +9,33 @@ use std::{
 };
 use yoctui_model::{
     App, BackgroundJobKind, BackgroundJobOutputSource, BackgroundJobStatus, BuildEnvironmentState,
-    BuildStatus, ConfigCopyValue, DependencyEdgeKind, DependencyGraph, DependencyGraphState,
-    DependencyNodeId, DependencyPathResult, DevtoolAction, DevtoolCapability, DevtoolGitState,
-    DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog, FocusTarget, GitFileState,
-    ImageArtifactField, ImageArtifactInventoryState, LayerBrowser, LayerBrowserEntry,
-    LayerInspectorMode, MaintenanceCapability, MaintenanceCapabilitySnapshot, MaintenanceDialog,
-    MaintenanceIntegrationDiagnostics, MaintenanceIntegrationsSnapshot, MaintenanceOperation,
-    MaintenanceOperationPreview, MaintenanceServiceDiagnostics, MaintenanceSessionStatus,
-    MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView,
-    PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PaneNode,
-    PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus,
-    QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
-    QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView, QemuCapability,
-    QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode,
-    QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen,
-    SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog,
-    SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation, SdkPublishDraft,
-    SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
-    SecurityInventoryState, SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope,
-    SecuritySessionStatus, SecurityView, Severity, SignatureComparisonState,
-    SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskRow,
-    TaskState, TestComparisonCategory, TestComparisonState, TestExecutableCapability,
-    TestJunitExportState, TestLaunchDialog, TestLaunchField, TestLaunchPreview,
-    TestResultInventoryState, TestWorkspaceView, Theme, VariableIdentity, WicCapability,
-    WicCompression, WicCreateDialog, WicCreateField, WicCreatePreview, WicDevice,
-    WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart, WicOperation,
-    WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
+    BuildStatus, CompatibilityUiAuthorityStatus, CompatibilityUiCapabilityRow,
+    CompatibilityUiCapabilityState, CompatibilityUiFilter, ConfigCopyValue, DependencyEdgeKind,
+    DependencyGraph, DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction,
+    DevtoolCapability, DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace,
+    Dialog, FocusTarget, GitFileState, ImageArtifactField, ImageArtifactInventoryState,
+    LayerBrowser, LayerBrowserEntry, LayerInspectorMode, MaintenanceCapability,
+    MaintenanceCapabilitySnapshot, MaintenanceDialog, MaintenanceIntegrationDiagnostics,
+    MaintenanceIntegrationsSnapshot, MaintenanceOperation, MaintenanceOperationPreview,
+    MaintenanceServiceDiagnostics, MaintenanceSessionStatus, MaintenanceTool,
+    MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView, PackageDetailState,
+    PackageField, PackageIdentity, PackageInventoryState, PaneNode, PreviewKind, QaCapability,
+    QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus, QaLayerCapability,
+    QaLayerRunCapability, QaOutputStream, QaReportFailureKind, QaReportInventoryState,
+    QaSessionStatus, QaStatusFilter, QaView, QemuCapability, QemuDisplayMode, QemuLaunchDialog,
+    QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe,
+    RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, SdkArtifactInventoryState,
+    SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog, SdkNativeField, SdkNativeMode,
+    SdkNativePreview, SdkOperation, SdkPublishDraft, SdkPublishPreview, SdkSessionId,
+    SdkToolCapability, SecurityCapability, SecurityDialog, SecurityInventoryState,
+    SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope, SecuritySessionStatus,
+    SecurityView, Severity, SignatureComparisonState, SignatureDifferenceCategory,
+    SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskRow, TaskState, TestComparisonCategory,
+    TestComparisonState, TestExecutableCapability, TestJunitExportState, TestLaunchDialog,
+    TestLaunchField, TestLaunchPreview, TestResultInventoryState, TestWorkspaceView, Theme,
+    VariableIdentity, WicCapability, WicCompression, WicCreateDialog, WicCreateField,
+    WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart,
+    WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
     config_comparison, config_edit_disabled_reason, config_source_disabled_reason, format_duration,
     selected_config_copy_value,
 };
@@ -649,6 +650,9 @@ fn footer_shortcuts(app: &App) -> String {
                 "[ ] view | r refresh | Enter inspect | x cancel | o open evidence | S signatures | detection/inspection only"
             }
         },
+        Screen::Compatibility => {
+            "↑/↓ or j/k select | 1 All | 2 Available | 3 Limited | 4 Unavailable | 5 Attention | / search | Tab focus"
+        }
         Screen::Logs => {
             "↑/↓ select | ←/→ horizontal | f follow | w wrap | s severity | R/T/B filters | / search | n/N match | o source | C copy"
         }
@@ -2303,6 +2307,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
                 ("Devtool", Screen::Recipes),
                 ("Maintenance", Screen::Maintenance),
                 ("Build environment", Screen::BuildEnvironment),
+                ("Compatibility", Screen::Compatibility),
                 ("Settings", Screen::Settings),
             ],
         ),
@@ -2322,7 +2327,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
             NavigatorRow::Destination { name, index }
         }));
     }
-    debug_assert_eq!(destination_index, 18);
+    debug_assert_eq!(destination_index, 19);
 
     let block = pane_block(app, "Navigator", app.focus == FocusTarget::Navigator);
     let inner = block.inner(area);
@@ -2561,6 +2566,7 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
         Screen::Configuration => config(frame, app, area),
         Screen::Bbmask => bbmask(frame, app, area),
         Screen::Maintenance => maintenance_workspace(frame, app, area),
+        Screen::Compatibility => compatibility_workspace(frame, app, area),
         Screen::Help => help(frame, area),
         Screen::Settings => settings_workspace(frame, app, area),
         Screen::BuildEnvironment => build_environment_workspace(frame, app, area),
@@ -2798,6 +2804,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
         Screen::Security => security_inspector_text(app),
         Screen::Qa => qa_inspector_text(app),
         Screen::Maintenance => maintenance_inspector_text(app),
+        Screen::Compatibility => compatibility_inspector_text(app),
         _ => format!(
             "Target: {}\nStatus: {:?}\n\nSelect an item in the workspace to inspect its details.",
             app.build.target.as_deref().unwrap_or("not selected"),
@@ -7683,6 +7690,290 @@ fn wic_inspector_text(app: &App) -> String {
     )
 }
 
+fn compatibility_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let projection = app
+        .compatibility_ui
+        .project(&app.workspace_compatibility, app.daemon.status);
+    let sections = Layout::vertical([Constraint::Length(11), Constraint::Min(5)]).split(area);
+    let identity_title = match &projection.authority {
+        CompatibilityUiAuthorityStatus::Current { generation, mode } => {
+            format!("Environment / Compatibility · generation {generation} · {mode:?}")
+        }
+        CompatibilityUiAuthorityStatus::Unavailable { .. } => {
+            "Environment / Compatibility · snapshot unavailable".into()
+        }
+    };
+    let identity = compatibility_identity_text(&projection);
+    frame.render_widget(
+        Paragraph::new(identity)
+            .block(pane_block(
+                app,
+                &identity_title,
+                app.focus == FocusTarget::Workspace,
+            ))
+            .wrap(Wrap { trim: false }),
+        sections[0],
+    );
+
+    let palette = ThemePalette::for_app(app);
+    let rows = projection.rows.iter().map(|row| {
+        let implementation = row
+            .implementation
+            .as_ref()
+            .map_or("--", |implementation| implementation.id.as_str());
+        let style = if projection.selected == Some(row.id) {
+            selected_style(app, true)
+        } else {
+            compatibility_state_style(app, row.state)
+        };
+        Row::new([
+            Cell::from(row.id.as_str()),
+            Cell::from(compatibility_state_label(row.state)),
+            Cell::from(implementation),
+        ])
+        .style(style)
+    });
+    let search = if app.compatibility_ui.searching {
+        format!("search: {}_", app.compatibility_ui.query)
+    } else if app.compatibility_ui.query.is_empty() {
+        "search: --".into()
+    } else {
+        format!("search: {}", app.compatibility_ui.query)
+    };
+    let table_title = format!(
+        "Capabilities · {} · {} · {}/{} visible",
+        compatibility_filter_label(app.compatibility_ui.filter),
+        search,
+        projection.rows.len(),
+        projection.total_capabilities,
+    );
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Percentage(42),
+                Constraint::Length(12),
+                Constraint::Min(12),
+            ],
+        )
+        .header(
+            Row::new(["Capability", "State", "Implementation"])
+                .style(palette.role(palette.info, Modifier::BOLD)),
+        )
+        .block(pane_block(
+            app,
+            &table_title,
+            app.focus == FocusTarget::Workspace,
+        )),
+        sections[1],
+    );
+}
+
+fn compatibility_identity_text(projection: &yoctui_model::CompatibilityUiProjection) -> String {
+    let summary = &projection.summary;
+    let status = match &projection.authority {
+        CompatibilityUiAuthorityStatus::Current { generation, mode } => {
+            format!("Snapshot {generation} · {mode:?}")
+        }
+        CompatibilityUiAuthorityStatus::Unavailable { reason } => {
+            format!("Snapshot unavailable · {reason}")
+        }
+    };
+    let Some(environment) = projection.environment.as_ref() else {
+        return format!(
+            "{status}\nAvailable {} · Limited {} · Unavailable {} · Unknown {} · Unsupported {}\nBuild unknown\nSource roots unknown\nOE-Core unknown · Poky unknown · BitBake unknown\nDISTRO unknown · MACHINE unknown\nLayer series unknown\nBackend unknown · Protocol unknown",
+            summary.available,
+            summary.limited,
+            summary.unavailable,
+            summary.unknown,
+            summary.unsupported,
+        );
+    };
+    let release = |value: &yoctui_model::AuthoritativeValue<yoctui_model::ReleaseIdentity>| {
+        value.value().map_or_else(
+            || "unknown".into(),
+            |release| match (&release.name, &release.version) {
+                (Some(name), Some(version)) => format!("{name} {version}"),
+                (Some(name), None) => name.clone(),
+                (None, Some(version)) => version.clone(),
+                (None, None) => "unknown".into(),
+            },
+        )
+    };
+    let source_roots = environment.source_roots.value().map_or_else(
+        || "unknown".into(),
+        |roots| {
+            roots
+                .iter()
+                .map(|root| format!("{:?}:{}", root.kind, root.path.display()))
+                .collect::<Vec<_>>()
+                .join(", ")
+        },
+    );
+    let layer_series = environment.layer_series.value().map_or_else(
+        || "unknown".into(),
+        |layers| {
+            layers
+                .iter()
+                .map(|layer| format!("{}:[{}]", layer.layer, layer.compatible_series.join(",")))
+                .collect::<Vec<_>>()
+                .join(", ")
+        },
+    );
+    let distro = environment.distro.value().map_or_else(
+        || "unknown".into(),
+        |distro| {
+            distro.version.as_ref().map_or_else(
+                || distro.name.clone(),
+                |version| format!("{} {version}", distro.name),
+            )
+        },
+    );
+    let backend = environment.backend.value().map_or_else(
+        || "unknown".into(),
+        |backend| {
+            backend.version.as_ref().map_or_else(
+                || backend.name.clone(),
+                |version| format!("{} {version}", backend.name),
+            )
+        },
+    );
+    let protocol = environment.protocol.value().map_or_else(
+        || "unknown".into(),
+        |protocol| format!("{} {}", protocol.name, protocol.version),
+    );
+    format!(
+        "{status}\nAvailable {} · Limited {} · Unavailable {} · Unknown {} · Unsupported {}\nBuild {}\nSource roots {source_roots}\nOE-Core {} · Poky {} · BitBake {}\nDISTRO {distro} · MACHINE {}\nLayer series {layer_series}\nBackend {backend} · Protocol {protocol}",
+        summary.available,
+        summary.limited,
+        summary.unavailable,
+        summary.unknown,
+        summary.unsupported,
+        environment
+            .build_directory
+            .value()
+            .map_or_else(|| "unknown".into(), |path| path.display().to_string()),
+        release(&environment.oe_core),
+        release(&environment.poky),
+        environment
+            .bitbake_version
+            .value()
+            .map_or("unknown", String::as_str),
+        environment
+            .machine
+            .value()
+            .map_or("unknown", String::as_str),
+    )
+}
+
+fn compatibility_filter_label(filter: CompatibilityUiFilter) -> &'static str {
+    match filter {
+        CompatibilityUiFilter::All => "1 All",
+        CompatibilityUiFilter::Available => "2 Available",
+        CompatibilityUiFilter::Limited => "3 Limited",
+        CompatibilityUiFilter::Unavailable => "4 Unavailable",
+        CompatibilityUiFilter::Attention => "5 Attention",
+    }
+}
+
+fn compatibility_state_label(state: CompatibilityUiCapabilityState) -> &'static str {
+    match state {
+        CompatibilityUiCapabilityState::Available => "Available",
+        CompatibilityUiCapabilityState::Limited => "Limited",
+        CompatibilityUiCapabilityState::Unavailable => "Unavailable",
+        CompatibilityUiCapabilityState::Unknown => "Unknown",
+        CompatibilityUiCapabilityState::Unsupported => "Unsupported",
+    }
+}
+
+fn compatibility_state_style(app: &App, state: CompatibilityUiCapabilityState) -> Style {
+    let palette = ThemePalette::for_app(app);
+    match state {
+        CompatibilityUiCapabilityState::Available => palette.role(palette.success, Modifier::BOLD),
+        CompatibilityUiCapabilityState::Limited => palette.role(palette.warning, Modifier::BOLD),
+        CompatibilityUiCapabilityState::Unavailable => palette.role(palette.error, Modifier::BOLD),
+        CompatibilityUiCapabilityState::Unknown => palette.role(palette.info, Modifier::ITALIC),
+        CompatibilityUiCapabilityState::Unsupported => {
+            palette.role(palette.disabled, Modifier::DIM)
+        }
+    }
+}
+
+fn compatibility_inspector_text(app: &App) -> String {
+    let projection = app
+        .compatibility_ui
+        .project(&app.workspace_compatibility, app.daemon.status);
+    let CompatibilityUiAuthorityStatus::Current { generation, mode } = projection.authority else {
+        let CompatibilityUiAuthorityStatus::Unavailable { reason } = projection.authority else {
+            unreachable!()
+        };
+        return format!(
+            "Capability snapshot\nState: unavailable\nReason: {reason}\n\nNo probe is run by this client. Reconnect or wait for daemon synchronization."
+        );
+    };
+    let Some(row) = projection.selected_row() else {
+        return format!(
+            "Capability snapshot\nGeneration: {generation}\nMode: {mode:?}\n\nNo capability matches the current filter/search."
+        );
+    };
+    compatibility_capability_detail(generation, mode, row)
+}
+
+fn compatibility_capability_detail(
+    generation: u64,
+    mode: yoctui_model::EnvironmentOperatingMode,
+    row: &CompatibilityUiCapabilityRow,
+) -> String {
+    let mut lines = vec![
+        format!("Capability: {}", row.id.as_str()),
+        format!("State: {}", compatibility_state_label(row.state)),
+        format!("Snapshot: {generation} · {mode:?}"),
+    ];
+    if let Some(reason) = row.reason.as_ref() {
+        lines.extend([
+            format!("Reason code: {}", reason.code.as_str()),
+            format!("Reason: {}", reason.message),
+            format!(
+                "Requirement: {}",
+                reason.requirement.as_deref().unwrap_or("not specified")
+            ),
+        ]);
+    }
+    if !row.limitations.is_empty() {
+        lines.push(String::new());
+        lines.push("Limitations".into());
+        lines.extend(row.limitations.iter().map(|value| format!("• {value}")));
+    }
+    lines.push(String::new());
+    lines.push(format!(
+        "Implementation: {}",
+        row.implementation.as_ref().map_or_else(
+            || "none selected".into(),
+            |implementation| format!("{} ({:?})", implementation.id, implementation.kind),
+        )
+    ));
+    lines.push(String::new());
+    lines.push(format!("Evidence ({})", row.evidence.len()));
+    if row.evidence.is_empty() {
+        lines.push("No evidence records retained.".into());
+    } else {
+        for (index, evidence) in row.evidence.iter().enumerate() {
+            lines.push(format!(
+                "{}. {:?} / {:?} · {}",
+                index + 1,
+                evidence.kind,
+                evidence.outcome,
+                evidence.subject
+            ));
+            lines.push(format!("   {}", evidence.detail));
+            if !evidence.argv.is_empty() {
+                lines.push(format!("   argv: {}", evidence.argv.join(" ")));
+            }
+        }
+    }
+    lines.join("\n")
+}
+
 fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let rows = vec![
         ("Theme", format!("{:?}", app.theme)),
@@ -11371,6 +11662,278 @@ mod tests {
             .collect()
     }
 
+    fn compatibility_ui_inspector_app() -> App {
+        let reason = |code: &str, message: &str, requirement: Option<&str>| {
+            yoctui_model::CapabilityReason::new(code, message, requirement.map(str::to_owned))
+                .unwrap()
+        };
+        let evidence = |outcome, subject: &str| yoctui_model::CapabilityEvidence {
+            kind: yoctui_model::CapabilityEvidenceKind::DirectProbe,
+            outcome,
+            subject: subject.into(),
+            detail: format!("Authoritative {subject} compatibility evidence."),
+            argv: vec![subject.into(), "--help".into()],
+        };
+        let authority = yoctui_model::DaemonCompatibilitySnapshot {
+            snapshot: yoctui_model::CapabilitySnapshot {
+                generation: 7,
+                environment: yoctui_model::YoctoEnvironmentIdentity {
+                    build_directory: yoctui_model::AuthoritativeValue::detected(
+                        "/work/poky/build".into(),
+                        yoctui_model::IdentityAuthority::InitializedEnvironment,
+                    ),
+                    source_roots: yoctui_model::AuthoritativeValue::detected(
+                        vec![yoctui_model::SourceRootIdentity {
+                            kind: yoctui_model::SourceRootKind::Poky,
+                            path: "/work/poky".into(),
+                        }],
+                        yoctui_model::IdentityAuthority::ConfiguredLayerMetadata,
+                    ),
+                    bitbake_version: yoctui_model::AuthoritativeValue::detected(
+                        "2.18.0".into(),
+                        yoctui_model::IdentityAuthority::BitBakeVersionProbe,
+                    ),
+                    oe_core: yoctui_model::AuthoritativeValue::detected(
+                        yoctui_model::ReleaseIdentity {
+                            name: Some("OE-Core".into()),
+                            version: Some("5.3".into()),
+                        },
+                        yoctui_model::IdentityAuthority::ReleaseMetadata,
+                    ),
+                    poky: yoctui_model::AuthoritativeValue::detected(
+                        yoctui_model::ReleaseIdentity {
+                            name: Some("wrynose".into()),
+                            version: Some("6.0".into()),
+                        },
+                        yoctui_model::IdentityAuthority::ReleaseMetadata,
+                    ),
+                    distro: yoctui_model::AuthoritativeValue::detected(
+                        yoctui_model::DistroIdentity {
+                            name: "poky".into(),
+                            version: Some("6.0".into()),
+                        },
+                        yoctui_model::IdentityAuthority::BitBakeDatastore,
+                    ),
+                    machine: yoctui_model::AuthoritativeValue::detected(
+                        "qemux86-64".into(),
+                        yoctui_model::IdentityAuthority::BitBakeDatastore,
+                    ),
+                    layer_series: yoctui_model::AuthoritativeValue::detected(
+                        vec![yoctui_model::LayerSeriesIdentity {
+                            layer: "core".into(),
+                            root: "/work/poky/meta".into(),
+                            compatible_series: vec!["wrynose".into()],
+                        }],
+                        yoctui_model::IdentityAuthority::ConfiguredLayerMetadata,
+                    ),
+                    backend: yoctui_model::AuthoritativeValue::detected(
+                        yoctui_model::BackendIdentity {
+                            name: "tinfoil".into(),
+                            version: Some("2.18".into()),
+                        },
+                        yoctui_model::IdentityAuthority::BackendHandshake,
+                    ),
+                    protocol: yoctui_model::AuthoritativeValue::detected(
+                        yoctui_model::ProtocolIdentity {
+                            name: "yoctui-daemon".into(),
+                            version: "1".into(),
+                        },
+                        yoctui_model::IdentityAuthority::ProtocolNegotiation,
+                    ),
+                    ..yoctui_model::YoctoEnvironmentIdentity::default()
+                },
+                capabilities: vec![
+                    yoctui_model::CapabilityRecord {
+                        id: yoctui_model::CapabilityId::BitBakeBuild,
+                        state: yoctui_model::CapabilityState::Available,
+                        evidence: vec![evidence(
+                            yoctui_model::CapabilityEvidenceOutcome::Positive,
+                            "bitbake",
+                        )],
+                    },
+                    yoctui_model::CapabilityRecord {
+                        id: yoctui_model::CapabilityId::BitBakeGetVar,
+                        state: yoctui_model::CapabilityState::AvailableWithLimitations {
+                            reason: reason(
+                                "compatibility.fallback",
+                                "Native getvar is absent; environment dump fallback selected.",
+                                Some("bitbake -e"),
+                            ),
+                            limitations: vec!["Complete environment dump is parsed.".into()],
+                        },
+                        evidence: vec![evidence(
+                            yoctui_model::CapabilityEvidenceOutcome::Positive,
+                            "bitbake -e",
+                        )],
+                    },
+                    yoctui_model::CapabilityRecord {
+                        id: yoctui_model::CapabilityId::DevtoolUpgrade,
+                        state: yoctui_model::CapabilityState::Unavailable {
+                            reason: reason(
+                                "probe.subcommand_absent",
+                                "Current Devtool does not expose the upgrade subcommand.",
+                                Some("devtool upgrade"),
+                            ),
+                        },
+                        evidence: vec![evidence(
+                            yoctui_model::CapabilityEvidenceOutcome::Negative,
+                            "devtool",
+                        )],
+                    },
+                    yoctui_model::CapabilityRecord {
+                        id: yoctui_model::CapabilityId::ResultTool,
+                        state: yoctui_model::CapabilityState::Unknown {
+                            reason: reason(
+                                "probe.timed_out",
+                                "The resulttool probe timed out.",
+                                Some("resulttool --help"),
+                            ),
+                        },
+                        evidence: vec![evidence(
+                            yoctui_model::CapabilityEvidenceOutcome::Inconclusive,
+                            "resulttool",
+                        )],
+                    },
+                    yoctui_model::CapabilityRecord {
+                        id: yoctui_model::CapabilityId::GitArchive,
+                        state: yoctui_model::CapabilityState::Unsupported {
+                            reason: reason(
+                                "yoctui.not_implemented",
+                                "Yoctui does not maintain this environment adapter.",
+                                None,
+                            ),
+                        },
+                        evidence: Vec::new(),
+                    },
+                ],
+            },
+            implementations: std::collections::BTreeMap::from([
+                (
+                    yoctui_model::CapabilityId::BitBakeBuild,
+                    yoctui_model::CapabilityImplementation {
+                        id: "bitbake.build.command".into(),
+                        kind: yoctui_model::CapabilityImplementationKind::Command,
+                    },
+                ),
+                (
+                    yoctui_model::CapabilityId::BitBakeGetVar,
+                    yoctui_model::CapabilityImplementation {
+                        id: "bitbake.getvar.environment-fallback".into(),
+                        kind: yoctui_model::CapabilityImplementationKind::Command,
+                    },
+                ),
+            ]),
+        }
+        .normalize()
+        .unwrap();
+        let mut app = App::new(32, 8192);
+        app.screen = Screen::Compatibility;
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
+        app
+    }
+
+    #[test]
+    fn compatibility_ui_inspector_renders_identity_all_states_and_exact_evidence() {
+        let app = compatibility_ui_inspector_app();
+        let all = rendered_text(&app, 180, 44);
+        for expected in [
+            "Environment / Compatibility",
+            "generation 7",
+            "Degraded",
+            "/work/poky/build",
+            "wrynose 6.0",
+            "2.18.0",
+            "Available 1",
+            "Limited 1",
+            "Unavailable 1",
+            "Unknown 1",
+            "Unsupported 1",
+            "bitbake.build",
+            "bitbake.getvar",
+            "devtool.upgrade",
+            "resulttool",
+            "git_archive",
+            "F10 Menu",
+        ] {
+            assert!(all.contains(expected), "missing {expected}: {all}");
+        }
+
+        let mut unavailable = app.clone();
+        let _ = update(
+            &mut unavailable,
+            Action::SetCompatibilityFilter(CompatibilityUiFilter::Unavailable),
+        );
+        unavailable.focus = FocusTarget::Inspector;
+        let details = rendered_text(&unavailable, 180, 44);
+        for expected in [
+            "Capability: devtool.upgrade",
+            "State: Unavailable",
+            "probe.subcommand_absent",
+            "Current Devtool does not expose the upgrade subcommand.",
+            "Requirement: devtool upgrade",
+            "DirectProbe / Negative",
+            "argv: devtool --help",
+        ] {
+            assert!(details.contains(expected), "missing {expected}: {details}");
+        }
+    }
+
+    #[test]
+    fn compatibility_ui_inspector_responsive_absent_themes_and_no_color_are_safe() {
+        let app = compatibility_ui_inspector_app();
+        for (width, focus) in [
+            (180, FocusTarget::Workspace),
+            (100, FocusTarget::Inspector),
+            (80, FocusTarget::Inspector),
+        ] {
+            let mut responsive = app.clone();
+            responsive.focus = focus;
+            let output = rendered_text(&responsive, width, 30);
+            assert!(
+                output.contains("Compatibility") || output.contains("Capability:"),
+                "{width}: {output}"
+            );
+        }
+        assert!(rendered_text(&app, 79, 23).contains("needs at least 80x24"));
+
+        for theme in [
+            Theme::DarkPro,
+            Theme::WhiteClassic,
+            Theme::MatrixGreen,
+            Theme::HighContrast,
+        ] {
+            let mut themed = app.clone();
+            themed.theme = theme;
+            themed.color_enabled = false;
+            let output = rendered_text(&themed, 130, 30);
+            assert!(output.contains("Available"), "{theme:?}: {output}");
+        }
+
+        let mut absent = App::new(32, 8192);
+        absent.screen = Screen::Compatibility;
+        absent.daemon.status = yoctui_model::ClientReplicaStatus::Stale;
+        let output = rendered_text(&absent, 180, 34);
+        assert!(output.contains("snapshot unavailable"), "{output}");
+        assert!(output.contains("stale"), "{output}");
+        assert!(
+            output.contains("No probe is run by this client"),
+            "{output}"
+        );
+    }
+
+    #[test]
+    fn compatibility_ui_inspector_is_discoverable_without_changing_tasks_golden() {
+        let mut app = App::new(32, 8192);
+        let navigator = rendered_text(&app, 180, 40);
+        assert!(navigator.contains("Compatibility"), "{navigator}");
+        app.command_palette_open = true;
+        app.command_palette_query = "compatibility".into();
+        let palette = rendered_text(&app, 120, 30);
+        assert!(palette.contains("Open Compatibility"), "{palette}");
+        assert!(palette.contains("environment identity"), "{palette}");
+    }
+
     #[test]
     fn client_replica_status_renders_without_replacing_local_presentation() {
         let mut app = App::new(32, 8192);
@@ -11550,7 +12113,7 @@ mod tests {
     fn workbench_navigator_scrolls_the_last_destination_into_view() {
         let mut app = App::new(32, 8192);
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 17;
+        app.navigator_selection = 18;
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains("TOOLS"), "{output}");
         assert!(output.contains("Settings"), "{output}");
@@ -14192,6 +14755,8 @@ mod tests {
             Screen::Logs,
             Screen::Errors,
             Screen::Help,
+            Screen::BuildEnvironment,
+            Screen::Compatibility,
             Screen::Settings,
         ];
         for screen in screens {

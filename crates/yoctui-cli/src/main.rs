@@ -28,11 +28,12 @@ use std::{
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
     BuildJobCoordinator, DevtoolJobCoordinator, Input, MouseInput, MouseKind, PrefixCommand,
-    PrefixEvent, PrefixState, build_environment_action, compatibility_workspace_action,
-    config_compare_dialog_action, config_edit_confirmation_action, config_scope_picker_action,
-    config_source_picker_action, config_workspace_action, daemon_job_state_from_app,
-    daemon_protocol_snapshot, dependency_workspace_action, devtool_deploy_confirmation_action,
-    devtool_deploy_dialog_action, devtool_finish_confirmation_action, devtool_finish_picker_action,
+    PrefixEvent, PrefixState, build_environment_action, compatibility_ui_inspector_action,
+    compatibility_workspace_action, config_compare_dialog_action, config_edit_confirmation_action,
+    config_scope_picker_action, config_source_picker_action, config_workspace_action,
+    daemon_job_state_from_app, daemon_protocol_snapshot, dependency_workspace_action,
+    devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
+    devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
     key_action, logs_action, maintenance_dialog_action, maintenance_workspace_action,
@@ -11123,6 +11124,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                 );
                             }
                         }
+                    }
+                } else if app.screen == yoctui_model::Screen::Compatibility {
+                    if let Some(action) =
+                        compatibility_ui_inspector_action(app.compatibility_ui.searching, input)
+                    {
+                        let _ = compatibility_workspace_action(&mut app, action);
                     }
                 } else if app.screen == yoctui_model::Screen::Configuration
                     && matches!(

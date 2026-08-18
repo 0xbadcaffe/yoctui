@@ -2303,7 +2303,7 @@ Specialized adapters may add stricter typed argument rules but cannot bypass
 this authority tuple.
 
 Workspace correlation is exhaustive and centralized. The closed
-`WorkspaceDestination` inventory covers the 24 product destinations (including
+`WorkspaceDestination` inventory covers the 25 product destinations (including
 Devtool, QEMU/Wic, project profiles, and terminal sessions that do not each
 have a distinct legacy `Screen`). Every `Screen` maps explicitly to one of
 them. Every `Effect`, including nested SDK, testing, security, QA, maintenance,
@@ -2340,6 +2340,17 @@ dialogs and valid selections remain. `update_with_workspace_authority` wraps
 the pure reducer for enforced clients. If reducer preparation would emit an
 unavailable effect, it restores the pre-action model and retains only the
 denial notice, preventing partially queued or visually confirmed work.
+
+`CompatibilityUiState` is the bounded client-local presentation projection of
+that same authority. It owns only filter, search, and stable selected-ID state;
+identity, generation/mode, five-state totals, capability rows, exact reasons,
+selected implementations, and typed evidence are recomputed from the current
+daemon snapshot. `Screen::Compatibility` and its command-palette route are
+therefore client-local and cannot emit a probe. The UI renders the projection
+as a wide identity/table/Inspector workspace, the standard medium Inspector
+overlay, or the shared narrow pane switcher. Snapshot replacement reconciles
+selection by stable capability ID, while absent or disconnected authority
+remains an explicit diagnostic state rather than inferred support.
 
 `yoctui-app::compatibility_model_snapshot` is the sole wire-to-model conversion
 boundary. It validates protocol bounds before resolving stable capability IDs,
