@@ -83,6 +83,43 @@ use one row per record, and decorative blank space is avoided. Adjacent panels
 share a visually continuous grid. Focus remains visible through the focused
 border and selection treatment; color is never the only status signal.
 
+### Literal reference acceptance
+
+The approved terminal reference is an acceptance target, not merely visual
+inspiration. At the canonical `160x48` terminal size the default `dark-pro`
+Tasks workspace uses this exact application-controlled cell geometry:
+
+| Region | Rectangle |
+| --- | --- |
+| Header | `x=0, y=0, width=160, height=2` |
+| Navigator | `x=0, y=2, width=26, height=44` |
+| Tasks table | `x=26, y=2, width=89, height=17` |
+| Log Viewer | `x=26, y=19, width=89, height=18` |
+| Job History | `x=26, y=37, width=89, height=9` |
+| Task Inspector | `x=115, y=2, width=45, height=16` |
+| Recent Log | `x=115, y=18, width=45, height=15` |
+| Actions | `x=115, y=33, width=45, height=7` |
+| System Status | `x=115, y=40, width=45, height=6` |
+| Command rail | `x=0, y=46, width=160, height=2` |
+
+The machine acceptance artifact serializes every Ratatui cell's symbol,
+foreground, background, underline color, and modifiers. The reference fixture
+uses a fixed clock and typed model values; dynamic fields are not masked. A
+golden update is an intentional UI change and requires a reviewed cell diff
+plus a matching update to this specification. Normal verification never
+automatically accepts new goldens.
+
+The canonical scene shows `core-image-minimal`, `qemux86-64`, `poky`, a
+connected daemon, and an active `bash:do_compile` task at 72 percent. Because
+that task is active, the header says `BitBake: Running`; the contradictory
+`Idle` label in the illustrative raster is deliberately corrected. Test-only
+fixture values never enter production state. Live rendering uses the same
+geometry with authoritative BitBake values.
+
+The code-owned acceptance level is the terminal cell buffer. A raster capture
+is supporting human evidence only because terminal font, glyph rasterization,
+DPI, and compositor behavior are outside Yoctui's control.
+
 No renderer may copy illustrative values from a design reference. Every value
 comes from typed model state; missing values read `unavailable`, `unknown`, or
 `--` according to the field contract.
@@ -134,22 +171,29 @@ Priority order:
 
 ## 4. Navigator
 
-The left pane is the primary workspace navigator. Destinations are presented
-as an IDE-style grouped tree while retaining one bounded linear keyboard
-selection. Group labels are not selectable and do not create backend state.
+The left pane is the primary workspace navigator. In wide layouts it is a
+single mixed project tree, matching an IDE project explorer rather than a list
+of abstract workspace destinations. Its required top-level order is:
 
-Required visual groups and order:
+- `Layers`: configured layer inventory from typed workspace metadata
+- `Recipes`: useful typed recipe shortcuts, including the active recipe and
+  common image/recipe entries when available
+- `Images`: typed image targets and discovered artifacts
+- `Tasks`: Build, Test, QA, Devtool, Wic, SDK, Security, and Utility
+- `Targets`: active machine and other typed targets when available
 
-- `OVERVIEW`: Dashboard
-- `CONTENT`: Layers, Recipes, Packages, Images, SDK
-- `BUILD`: Tasks, Logs, Errors, Configuration, Dependencies
-- `VALIDATE`: Testing, Security, QA
-- `TOOLS`: Devtool, Maintenance, Build environment, Settings
+Top-level rows use an expanded/collapsed tree glyph and amber semantic accent.
+Children are indented and use folder or disclosure glyphs when Unicode/icons
+are enabled. The selected child uses the complete available row width. A
+bounded footer inside the Navigator reports selected layer, selected recipe or
+job identity, and process/build identity only when those typed values exist.
 
-Group rows use an expanded-tree glyph and amber semantic accent. Destination
-rows are indented, use a folder or destination glyph when Unicode/icons are
-enabled, and retain readable text markers otherwise. The selected destination
-uses the full available row width.
+The tree is a navigation projection over existing typed model state. It does
+not parse BitBake output, fabricate reference entries in production, or replace
+the complete destination catalog. Entries that do not fit in the visible tree
+remain reachable through `F10 Menu`, the command palette, or their documented
+global shortcut. At medium and narrow widths the tree may compact to category
+rows while preserving access to every destination.
 
 Required entries:
 
@@ -189,6 +233,8 @@ Keyboard:
 - `j` / `Down`: next entry
 - `k` / `Up`: previous entry
 - `Enter`: activate entry
+- `Left`: collapse the current branch or move to its parent
+- `Right`: expand the current branch or activate its selected child
 - single-letter global shortcuts may jump directly to common workspaces
 - `Tab`: move focus to workspace
 - `Ctrl+B`: enter the configurable terminal-session prefix layer; the default
@@ -2420,13 +2466,19 @@ target through the dialog workflow.
 
 ## 24. Footer and keyboard shortcuts
 
-The footer is always visible in normal layouts. It is rendered as a one-row
-command rail with highlighted key tokens followed by plain action labels and a
-right-aligned local clock. It uses the current context, not a decorative fixed
-menu. Function-key labels are shown only where that function key is genuinely
-mapped; ordinary chords remain visible where they are the real route.
+The footer is always visible in normal layouts. At the canonical wide size it
+is a two-row bordered command rail and uses this stable reference order:
 
-It shows context-sensitive shortcuts, not a fixed oversized list.
+```text
+F1 Help  F2 Tasks  F3 Jobs  F4 Terminal  F5 Logs  F6 Layer  F7 Recipe  F8 Image  F9 Search  F10 Menu
+```
+
+The clock is right aligned. Each displayed key invokes the named action; the
+rail never advertises an unavailable route. `F10 Menu` opens the command
+palette/menu, from which `Choose theme` is directly visible. At constrained
+sizes the rail is a one-row command rail with highlighted key tokens followed
+by plain action labels and a right-aligned local clock. It uses the current
+context and may add the most important contextual actions that fit.
 
 Global example:
 

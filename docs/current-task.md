@@ -2,50 +2,41 @@
 
 ## Task
 
-**ID:** FINAL-GATE-PERF-001
-**Title:** Rerun the terminal gate with perf sampling enabled
-**Status:** BLOCKED
+**ID:** UI-LITERAL-HARNESS-001
+**Title:** Add strict cell and style visual acceptance
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Complete the final host-level verification with real perf sampling enabled.
-All product, UI redesign, live-workbench recovery, and clean installed-startup
-verification passes; only the Flamegraph sampling policy blocks repository-wide
-completion.
+Make the approved `160x48` Tasks workbench deterministic and compare every
+application-controlled terminal cell, including symbol, colors, and modifiers.
 
 ## Dependencies
 
-- `CRATESIO-COVERAGE-001` — DONE
-- `UI-VISION-001` — DONE
-- `UI-LIVE-RECOVERY-001` — DONE
-- `UI-LIVE-COLOR-AUTHORITY-001` — DONE
-- `UI-STARTUP-DIAG-001` — DONE
+- `UI-LITERAL-SPEC-001` — DONE
 
 ## Relevant files
 
-- `/proc/sys/kernel/perf_event_paranoid`
-- `scripts/flamegraph.sh`
-- `scripts/verify-completion.sh`
+- `crates/yoctui-ui/src/lib.rs`
+- `crates/yoctui-ui/tests/golden/`
+- `scripts/test-tui-snapshots.sh`
+- `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- `perf record -- true` succeeds for the current user.
-- A fresh real headless-workload Flamegraph is generated.
-- The terminal completion gate passes without skipped required stages.
-
-## Blocker evidence
-
-- Current host value: `kernel.perf_event_paranoid=4`.
-- `scripts/flamegraph.sh` reports that perf sampling is unavailable.
-- The operator must temporarily grant `CAP_PERFMON` or lower the kernel policy.
-- After changing policy, rerun the verification commands below.
+- A typed deterministic fixture renders the complete reference scene.
+- Rendering accepts an injected clock for deterministic elapsed values.
+- The canonical artifact records symbols, colors, and modifiers for all cells.
+- A mismatch identifies the first changed coordinate and expected/actual cell.
+- Golden updates are explicit and never automatic during normal verification.
 
 ## Verification
 
 ```bash
-perf record -- true
-./scripts/flamegraph.sh
-./scripts/verify-completion.sh
+cargo test -p yoctui-ui literal_reference
+cargo fmt --all --check
+./scripts/check-docs.sh
+./scripts/verify-roadmap.sh
 ```

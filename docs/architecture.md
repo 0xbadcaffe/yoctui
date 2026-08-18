@@ -1930,9 +1930,18 @@ Inherited shell and external editor transitions must temporarily restore termina
 - protocol: framing, compatibility, malformed and oversized input
 - bitbake: fake process, fake bridge, mocked BitBake modules, cancellation
 - app: effect and input mapping tests
-- UI: `TestBackend` semantic snapshots and responsive dimensions
+- UI: `TestBackend` semantic assertions, responsive dimensions, and one strict
+  canonical `160x48` cell/style golden for the approved Tasks workbench
 - CLI: integration tests and pseudo-terminal tests
 - live: supported Yocto smoke matrix
+
+The strict UI golden is serialized from the final Ratatui `Buffer`, so it
+compares symbols, colors, and modifiers without depending on a particular
+terminal emulator or font renderer. Its fixture is assembled exclusively from
+typed `yoctui-model` state and an injected clock. Production widgets share the
+same rendering path and cannot branch on fixture identity. The existing PTY
+checks remain integration evidence for terminal ownership and escape delivery;
+they do not replace the deterministic visual gate.
 
 ## Compatibility claims
 

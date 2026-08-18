@@ -4441,3 +4441,92 @@ required = true
 depends_on = ["UI-STARTUP-STDERR-001", "UI-STARTUP-LIVE-001"]
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
 notes = "Parent acceptance passes for bounded non-obscuring bridge stderr, pane/global key routing, and exact installed-binary live theme selection. Formatting, the full workspace, workspace Clippy, all 39 Python bridge tests, docs, roadmap, and the 1,829-recipe live Poky gate pass. The independent FINAL-GATE-PERF-001 host-policy blocker remains."
+
+# M16 — Literal reference workbench
+[[task]]
+id = "UI-LITERAL-SPEC-001"
+milestone = "M16"
+title = "Specify literal reference acceptance"
+status = "DONE"
+priority = 476
+required = true
+depends_on = ["UI-STARTUP-DIAG-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "The approved image is now a literal 160x48 application-cell contract with exact region geometry, mixed typed Navigator categories, stable F-key rail, reviewed golden policy, and an explicit Running correction for the active reference task."
+
+[[task]]
+id = "UI-LITERAL-HARNESS-001"
+milestone = "M16"
+title = "Add strict cell and style visual acceptance"
+status = "IN_PROGRESS"
+priority = 477
+required = true
+depends_on = ["UI-LITERAL-SPEC-001"]
+verify = ["cargo test -p yoctui-ui literal_reference", "cargo fmt --all --check", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Add a typed deterministic reference fixture, injected render clock, canonical buffer serializer, reviewed golden, and useful first-cell mismatch diagnostics."
+
+[[task]]
+id = "UI-LITERAL-SHELL-001"
+milestone = "M16"
+title = "Match the reference workbench shell"
+status = "NOT_STARTED"
+priority = 478
+required = true
+depends_on = ["UI-LITERAL-HARNESS-001"]
+verify = ["cargo test -p yoctui-ui literal_shell", "cargo test -p yoctui-ui workbench_shell", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Implement the canonical 160x48 header/body/footer geometry, compact borders, palette roles, and stable F-key command rail."
+
+[[task]]
+id = "UI-LITERAL-NAV-001"
+milestone = "M16"
+title = "Implement the mixed typed project Navigator"
+status = "NOT_STARTED"
+priority = 479
+required = true
+depends_on = ["UI-LITERAL-SHELL-001"]
+verify = ["cargo test -p yoctui-model navigator", "cargo test -p yoctui-app navigator", "cargo test -p yoctui-ui literal_navigator", "./scripts/verify-roadmap.sh"]
+notes = "Project typed layers, recipes, images, task families, and targets into the reference tree without production fixture data."
+
+[[task]]
+id = "UI-LITERAL-COCKPIT-001"
+milestone = "M16"
+title = "Match the reference Tasks cockpit and Inspector"
+status = "NOT_STARTED"
+priority = 480
+required = true
+depends_on = ["UI-LITERAL-NAV-001"]
+verify = ["cargo test -p yoctui-ui literal_cockpit", "cargo test -p yoctui-ui workbench_tasks", "cargo test -p yoctui-model background_job", "./scripts/verify-roadmap.sh"]
+notes = "Match task/log/history and metadata/log/action/system panel proportions while retaining typed authoritative content."
+
+[[task]]
+id = "UI-LITERAL-UX-001"
+milestone = "M16"
+title = "Make reference focus and theme controls operational"
+status = "NOT_STARTED"
+priority = 481
+required = true
+depends_on = ["UI-LITERAL-COCKPIT-001"]
+verify = ["cargo test -p yoctui-model theme", "cargo test -p yoctui-app focus", "cargo test -p yoctui-ui literal_ux", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
+notes = "Wire every displayed F-key, preserve predictable Tab focus, and verify immediate theme preview, acceptance, cancellation, and persistence."
+
+[[task]]
+id = "UI-LITERAL-LIVE-001"
+milestone = "M16"
+title = "Validate literal workbench with live Poky"
+status = "NOT_STARTED"
+priority = 482
+required = true
+depends_on = ["UI-LITERAL-UX-001"]
+verify = ["./scripts/test-live-workbench.sh $HOME/src/poky/build", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
+notes = "Validate real layer/recipe discovery, reference shell anchors, F10 theme selection, clean terminal startup, and responsive rendering against the local Poky build."
+
+[[task]]
+id = "UI-LITERAL-001"
+milestone = "M16"
+title = "Complete literal reference workbench"
+status = "NOT_STARTED"
+priority = 483
+required = true
+depends_on = ["UI-LITERAL-HARNESS-001", "UI-LITERAL-SHELL-001", "UI-LITERAL-NAV-001", "UI-LITERAL-COCKPIT-001", "UI-LITERAL-UX-001", "UI-LITERAL-LIVE-001"]
+verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Parent acceptance for the literal reference workbench."

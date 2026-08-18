@@ -11,6 +11,17 @@ Status values:
 
 ## Current phase
 
+`UI-LITERAL-HARNESS-001` is `IN_PROGRESS`: the approved image is now a literal
+`160x48` terminal-cell contract rather than loose visual guidance. The new M16
+queue supersedes the earlier grouped-destination interpretation and is active
+ahead of the unrelated host perf-policy blocker.
+
+`UI-LITERAL-SPEC-001` is `DONE`: the authoritative UI and architecture
+documents now define exact canonical region geometry, the mixed typed project
+tree, stable F-key rail, deterministic cell/style comparison, and the one
+intentional semantic correction from BitBake Idle to Running for an active
+task.
+
 `UI-FOCUS-ROUTING-001` is `DONE`: pane focus now consumes only mapped focus
 actions, and non-dialog notifications consume only `Enter`/`Esc`. `Ctrl+P`,
 help, build, and screen-specific keys continue through normal routing. Focused

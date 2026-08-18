@@ -278,3 +278,26 @@ Exit criteria:
 - bridge startup failures retain a bounded diagnostic tail
 - `Ctrl+P` → `Choose theme` changes and persists the theme in a real PTY
 - the shell-resolved executable matches the locally verified release binary
+
+## M16 — Literal reference workbench
+
+Goal: replace the earlier broad interpretation of the approved concept with a
+measurable terminal-cell contract whose core visual composition matches the
+reference while all values remain typed and authoritative.
+
+Capabilities:
+
+- strict default-theme `160x48` cell/style golden
+- reference-proportioned header, mixed project Navigator, Tasks cockpit,
+  Inspector stack, and stable F-key command rail
+- intuitive pane focus and a directly usable persistent theme picker
+- responsive degradation without panics or hidden destinations
+- live Poky validation using the same rendering path as the deterministic gate
+
+Exit criteria:
+
+- every application-controlled cell in the canonical scene matches the reviewed golden
+- the reference fixture cannot leak illustrative values into production
+- every displayed function key invokes its labeled action
+- theme and pane-focus behavior pass reducer, UI, and PTY interaction tests
+- the complete workspace and live Poky workbench gates pass
