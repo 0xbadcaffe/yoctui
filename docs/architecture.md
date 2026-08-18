@@ -85,6 +85,11 @@ BitBake diagnostics go to standard error. The environment-only and mocked
 connection paths are test/diagnostic fallbacks and are not live compatibility
 evidence.
 
+The canonical bridge source lives inside the `yoctui-bitbake` package and is
+compiled into the Rust binary for source-tree-independent installation. The
+CLI starts that bundled source by default; `YOCTUI_BRIDGE_PATH` remains an
+explicit development and diagnostic override.
+
 ### Backend event normalization boundary
 
 `yoctui-protocol` owns typed wire payloads, including the complete workspace

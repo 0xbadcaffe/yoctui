@@ -1613,7 +1613,23 @@ pub struct BridgeBackend {
     accepted_correlations: VecDeque<String>,
     signature_adapter: SignatureAdapter,
 }
+const BUNDLED_BRIDGE_SOURCE: &str = include_str!("../bridge/yoctui_bridge.py");
+
 impl BridgeBackend {
+    pub async fn spawn_bundled(python: &str, build_dir: PathBuf) -> Result<Self, BackendError> {
+        Self::spawn_bundled_with_environment(python, build_dir, BTreeMap::new()).await
+    }
+
+    pub async fn spawn_bundled_with_environment(
+        python: &str,
+        build_dir: PathBuf,
+        environment: BTreeMap<String, String>,
+    ) -> Result<Self, BackendError> {
+        let mut command = TokioCommand::new(python);
+        command.arg("-c").arg(BUNDLED_BRIDGE_SOURCE);
+        Self::spawn_command(command, build_dir, environment).await
+    }
+
     pub async fn spawn(
         python: &str,
         script: PathBuf,
@@ -1627,8 +1643,17 @@ impl BridgeBackend {
         build_dir: PathBuf,
         environment: BTreeMap<String, String>,
     ) -> Result<Self, BackendError> {
-        let mut child = TokioCommand::new(python)
-            .arg(script)
+        let mut command = TokioCommand::new(python);
+        command.arg(script);
+        Self::spawn_command(command, build_dir, environment).await
+    }
+
+    async fn spawn_command(
+        mut command: TokioCommand,
+        build_dir: PathBuf,
+        environment: BTreeMap<String, String>,
+    ) -> Result<Self, BackendError> {
+        let mut child = command
             .current_dir(&build_dir)
             .envs(environment)
             .stdin(Stdio::piped())
@@ -3676,8 +3701,7 @@ printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' >
 
     #[tokio::test]
     async fn bridge_backend_negotiates_before_workspace_inspection() {
-        let script =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../bridge/yoctui_bridge.py");
+        let script = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("bridge/yoctui_bridge.py");
         let mut backend = BridgeBackend::spawn("python3", script, std::env::temp_dir())
             .await
             .unwrap();
@@ -3688,8 +3712,7 @@ printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' >
 
     #[tokio::test]
     async fn bridge_backend_waits_for_shutdown_acknowledgement() {
-        let script =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../bridge/yoctui_bridge.py");
+        let script = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("bridge/yoctui_bridge.py");
         let mut backend = BridgeBackend::spawn("python3", script, std::env::temp_dir())
             .await
             .unwrap();
@@ -3699,9 +3722,7 @@ printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' >
 
     #[tokio::test]
     async fn bridge_backend_decodes_typed_workspace_queries() {
-        let script =
-            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../bridge/yoctui_bridge.py");
-        let mut backend = BridgeBackend::spawn("python3", script, std::env::temp_dir())
+        let mut backend = BridgeBackend::spawn_bundled("python3", std::env::temp_dir())
             .await
             .unwrap();
         assert!(backend.list_recipes(None).await.unwrap().is_empty());
@@ -3714,6 +3735,16 @@ printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' >
                 .value
                 .is_some()
         );
+        backend.shutdown().await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn bundled_bridge_starts_without_a_source_checkout_path() {
+        assert!(BUNDLED_BRIDGE_SOURCE.contains("class BitBakeAdapter"));
+        let mut backend = BridgeBackend::spawn_bundled("python3", std::env::temp_dir())
+            .await
+            .unwrap();
+        assert!(backend.list_recipes(None).await.unwrap().is_empty());
         backend.shutdown().await.unwrap();
     }
 }

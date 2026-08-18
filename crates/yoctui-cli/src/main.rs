@@ -3723,24 +3723,30 @@ async fn select_backend_with_environment(
             Ok(Box::new(backend))
         }
         Backend::Bridge => {
-            let script = env::var_os("YOCTUI_BRIDGE_PATH")
-                .map(PathBuf::from)
-                .unwrap_or_else(|| {
-                    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                        .join("../..")
-                        .join("bridge/yoctui_bridge.py")
-                });
             let python = env::var("PYTHON").unwrap_or_else(|_| "python3".into());
-            let bridge = if let Some(environment) = environment {
-                BridgeBackend::spawn_with_environment(&python, script, build_dir, environment).await
-            } else {
-                BridgeBackend::spawn(&python, script, build_dir).await
-            };
+            let bridge = spawn_configured_bridge(&python, build_dir, environment).await;
             bridge
                 .map(|backend| Box::new(backend) as Box<dyn BitBakeBackend>)
                 .context("could not start the BitBake bridge; source oe-init-build-env or use --backend process")
         }
     }
+}
+
+async fn spawn_configured_bridge(
+    python: &str,
+    build_dir: PathBuf,
+    environment: Option<BTreeMap<String, String>>,
+) -> Result<BridgeBackend, yoctui_bitbake::BackendError> {
+    let environment = environment.unwrap_or_default();
+    if let Some(script) = bridge_path_override(env::var_os("YOCTUI_BRIDGE_PATH")) {
+        BridgeBackend::spawn_with_environment(python, script, build_dir, environment).await
+    } else {
+        BridgeBackend::spawn_bundled_with_environment(python, build_dir, environment).await
+    }
+}
+
+fn bridge_path_override(value: Option<std::ffi::OsString>) -> Option<PathBuf> {
+    value.map(PathBuf::from)
 }
 
 async fn begin_build(
@@ -11315,6 +11321,15 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bundled_bridge_is_default_and_explicit_path_remains_an_override() {
+        assert_eq!(bridge_path_override(None), None);
+        assert_eq!(
+            bridge_path_override(Some("/opt/yoctui/bridge.py".into())),
+            Some(PathBuf::from("/opt/yoctui/bridge.py"))
+        );
+    }
 
     #[test]
     fn daemon_cli_commands_are_typed_and_destructive_session_kill_is_explicit() {

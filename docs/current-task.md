@@ -2,43 +2,45 @@
 
 ## Task
 
-**ID:** CRATESIO-BRIDGE-001
-**Title:** Bundle the BitBake bridge for installed binaries
+**ID:** CRATESIO-PACKAGE-001
+**Title:** Prepare the crates.io package graph and release metadata
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Make the default bridge backend self-contained in a compiled Yoctui binary so
-`cargo install yoctui` does not depend on the source checkout. Preserve the
-explicit `YOCTUI_BRIDGE_PATH` override for development and diagnostics.
+Prepare a bounded, accurately described crates.io release graph for `yoctui`
+0.1.0 and its required internal crates. Keep test-only support crates private,
+document registry installation, and verify package contents before any
+irreversible upload.
 
 ## Dependencies
 
-- `DAEMON-UPGRADE-LIFECYCLE-001` — DONE
+- `CRATESIO-BRIDGE-001` — DONE
 
 ## Relevant files
 
-- `bridge/yoctui_bridge.py`
-- `crates/yoctui-bitbake/src/lib.rs`
-- `crates/yoctui-cli/src/main.rs`
-- `crates/yoctui-cli/src/daemon_bitbake.rs`
-- `docs/architecture.md`
+- `Cargo.toml`
+- `crates/*/Cargo.toml`
+- `README.md`
+- `LICENSE`
+- `scripts/verify-cratesio-package.sh`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- The production bridge source is compiled into the Rust package boundary.
-- Default standalone and daemon bridge startup work without a checkout path.
-- `YOCTUI_BRIDGE_PATH` continues to select an explicit external bridge.
-- Focused and baseline checks pass.
-- Registry/status/current-task documentation is updated and committed.
+- Every public crate has accurate crates.io metadata and bounded contents.
+- Internal path dependencies specify the exact 0.1 series needed for publish.
+- Test-only and non-product support packages cannot be published accidentally.
+- The README documents `cargo install yoctui --locked` as the primary install.
+- Package archives and the binary help/version/embedded-bridge smoke pass.
+- Baseline checks pass and documentation is committed.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake bundled_bridge
-cargo test -p yoctui bundled_bridge
+./scripts/verify-cratesio-package.sh
+cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/check-docs.sh

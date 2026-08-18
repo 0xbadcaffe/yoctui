@@ -1,7 +1,7 @@
 use std::{collections::HashMap, path::PathBuf};
 
 use tokio::sync::mpsc;
-use yoctui_bitbake::{BackendEvent, BitBakeBackend, BridgeBackend};
+use yoctui_bitbake::{BackendEvent, BitBakeBackend};
 use yoctui_model::BuildRequest;
 use yoctui_protocol::daemon::JobId;
 
@@ -48,15 +48,8 @@ impl DaemonBitBakeSupervisor {
         self.active.insert(job_id, cancel_tx);
         let tx = self.tx.clone();
         tokio::spawn(async move {
-            let script = std::env::var_os("YOCTUI_BRIDGE_PATH")
-                .map(PathBuf::from)
-                .unwrap_or_else(|| {
-                    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                        .join("../..")
-                        .join("bridge/yoctui_bridge.py")
-                });
             let python = std::env::var("PYTHON").unwrap_or_else(|_| "python3".into());
-            let mut backend = match BridgeBackend::spawn(&python, script, build_dir).await {
+            let mut backend = match crate::spawn_configured_bridge(&python, build_dir, None).await {
                 Ok(backend) => backend,
                 Err(error) => {
                     let _ = tx.send(DaemonBitBakeEvent::Failed {

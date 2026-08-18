@@ -11,11 +11,12 @@ Status values:
 
 ## Current phase
 
-`CRATESIO-BRIDGE-001` is `IN_PROGRESS`: the first crates.io release requires
-the default Python bridge to work after `cargo install yoctui`, without a
-repository-relative source path. Package metadata and dependency-ordered
-publication follow as separate tasks; crates.io publication remains an
-explicit irreversible boundary.
+`CRATESIO-BRIDGE-001` is `DONE`: the canonical Python bridge now ships inside
+`yoctui-bitbake` and is compiled into the Rust binary. Standalone and daemon
+startup use it without a source checkout; `YOCTUI_BRIDGE_PATH` remains an
+explicit override. `CRATESIO-PACKAGE-001` is now active to add release
+metadata, package-content validation, and isolated installation evidence.
+crates.io publication remains a separate irreversible boundary.
 
 `DAEMON-UPGRADE-LIFECYCLE-001` is `DONE`: lifecycle validation now accepts
 Linux's exact ` (deleted)` process-image suffix only when its remaining path

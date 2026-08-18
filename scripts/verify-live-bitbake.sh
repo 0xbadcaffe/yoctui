@@ -58,7 +58,7 @@ printf 'live BitBake smoke: build=%s target=%s task=%s cancel-target=%s\n' \
   "$build_dir" "$target" "$task" "$cancel_target"
 
 exec python3 "$repo_root/scripts/live_bitbake_smoke.py" \
-  --bridge "$repo_root/bridge/yoctui_bridge.py" \
+  --bridge "$repo_root/crates/yoctui-bitbake/bridge/yoctui_bridge.py" \
   --build-dir "$build_dir" \
   --target "$target" \
   --task "$task" \

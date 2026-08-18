@@ -4201,18 +4201,18 @@ notes = "Lifecycle validation accepts Linux's exact ` (deleted)` suffix only whe
 id = "CRATESIO-BRIDGE-001"
 milestone = "M12"
 title = "Bundle the BitBake bridge for installed binaries"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 454
 required = true
 depends_on = ["DAEMON-UPGRADE-LIFECYCLE-001"]
 verify = ["cargo test -p yoctui-bitbake bundled_bridge", "cargo test -p yoctui bundled_bridge", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "A crates.io-installed binary must start its default Python bridge without any repository-relative runtime path; explicit YOCTUI_BRIDGE_PATH overrides remain supported."
+notes = "The canonical Python bridge now ships inside yoctui-bitbake and is compiled into the Rust binary. Standalone and daemon startup use the bundled source by default while YOCTUI_BRIDGE_PATH remains an explicit override. Focused bundled/external startup, all 39 Python bridge tests, workspace tests, Clippy, docs, and roadmap checks pass, and cargo package includes the bridge source."
 
 [[task]]
 id = "CRATESIO-PACKAGE-001"
 milestone = "M12"
 title = "Prepare the crates.io package graph and release metadata"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 455
 required = true
 depends_on = ["CRATESIO-BRIDGE-001"]
