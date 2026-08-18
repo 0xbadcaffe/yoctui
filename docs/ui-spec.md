@@ -2586,6 +2586,15 @@ toggle or an implicit cycle.
 
 Theme changes apply immediately and persist.
 
+Interactive startup reserves the terminal exclusively for the workbench.
+Backend and BitBake standard-error diagnostics must never write directly into
+the alternate screen. The backend drains them into a bounded diagnostic tail;
+routine startup notes and compatibility warnings remain non-obscuring, while
+an actual bridge startup or disconnect failure includes the redacted bounded
+tail in the normal typed error/notification path. A live PTY acceptance check
+must prove that no pre-frame diagnostics leak into the terminal and that
+`Ctrl+P` → `Choose theme` opens the named picker and persists a changed theme.
+
 ### Preferences
 
 The Settings workspace is a typed row editor. `Up`/`Down` (or `j`/`k`) selects

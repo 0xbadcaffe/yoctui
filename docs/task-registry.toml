@@ -4385,3 +4385,48 @@ required = true
 depends_on = ["UI-LIVE-RECOVERY-001"]
 verify = ["NO_COLOR=1 ./scripts/test-live-workbench.sh $HOME/src/poky/build", "cargo test -p yoctui-ui theme", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "Yoctui now makes its resolved color mode authoritative at the Crossterm backend, preventing ambient NO_COLOR from contradicting Color=true while preserving --no-color's attribute-only widget palette. The live 1,829-recipe colored PTY gate passes with NO_COLOR=1 inherited; focused theme/startup tests, isolated PTY snapshots, Clippy, formatting, and roadmap checks pass."
+
+# M15 — Clean installed startup diagnostics
+[[task]]
+id = "UI-STARTUP-DIAG-SPEC-001"
+milestone = "M15"
+title = "Specify clean installed startup diagnostics"
+status = "DONE"
+priority = 471
+required = true
+depends_on = ["UI-LIVE-COLOR-AUTHORITY-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Specified terminal-exclusive startup, bounded bridge stderr retention, actionable failure diagnostics, installed-binary identity checks, and live theme-picker persistence acceptance."
+
+[[task]]
+id = "UI-STARTUP-STDERR-001"
+milestone = "M15"
+title = "Keep bridge diagnostics out of the alternate screen"
+status = "IN_PROGRESS"
+priority = 472
+required = true
+depends_on = ["UI-STARTUP-DIAG-SPEC-001"]
+verify = ["cargo test -p yoctui-bitbake bridge_stderr", "cargo fmt --all --check", "cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Capture and drain a bounded bridge stderr tail without inheriting the terminal, and attach useful context to genuine startup failures."
+
+[[task]]
+id = "UI-STARTUP-LIVE-001"
+milestone = "M15"
+title = "Validate installed startup and theme selection on live Poky"
+status = "NOT_STARTED"
+priority = 473
+required = true
+depends_on = ["UI-STARTUP-STDERR-001"]
+verify = ["./scripts/test-live-workbench.sh $HOME/src/poky/build", "cargo build --release -p yoctui", "cmp target/release/yoctui $HOME/.cargo/bin/yoctui", "./scripts/verify-roadmap.sh"]
+notes = "Extend the live PTY gate to reject leaked pre-frame diagnostics and exercise command-palette theme selection plus persistence; document and verify the shell-resolved local release install."
+
+[[task]]
+id = "UI-STARTUP-DIAG-001"
+milestone = "M15"
+title = "Complete clean installed startup diagnostics"
+status = "NOT_STARTED"
+priority = 474
+required = true
+depends_on = ["UI-STARTUP-STDERR-001", "UI-STARTUP-LIVE-001"]
+verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
+notes = "Parent acceptance for clean startup diagnostics and live installed theme selection."

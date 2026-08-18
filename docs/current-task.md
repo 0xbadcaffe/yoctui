@@ -2,48 +2,38 @@
 
 ## Task
 
-**ID:** FINAL-GATE-PERF-001
-**Title:** Rerun the terminal gate with perf sampling enabled
-**Status:** BLOCKED
+**ID:** UI-STARTUP-STDERR-001
+**Title:** Keep bridge diagnostics out of the alternate screen
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Complete the final host-level verification with real perf sampling enabled.
-All product, UI redesign, and live-workbench recovery verification passes; only
-the Flamegraph sampling policy blocks repository-wide completion.
+Continuously drain bridge standard error into a bounded diagnostic tail so
+BitBake startup notes, warnings, and shutdown traces cannot overwrite the TUI,
+while preserving useful context for a genuine bridge startup failure.
 
 ## Dependencies
 
-- `CRATESIO-COVERAGE-001` — DONE
-- `UI-VISION-001` — DONE
-- `UI-LIVE-RECOVERY-001` — DONE
-- `UI-LIVE-COLOR-AUTHORITY-001` — DONE
+- `UI-STARTUP-DIAG-SPEC-001` — DONE
 
 ## Relevant files
 
-- `/proc/sys/kernel/perf_event_paranoid`
-- `scripts/flamegraph.sh`
-- `scripts/verify-completion.sh`
-- `docs/implementation-status.md`
-- `docs/task-registry.toml`
+- `crates/yoctui-bitbake/src/lib.rs`
+- `docs/architecture.md`
+- `docs/ui-spec.md`
 
 ## Definition of done
 
-- `perf record -- true` succeeds for the current user.
-- A fresh real headless-workload Flamegraph is generated.
-- The terminal completion gate passes without skipped required stages.
-
-## Blocker evidence
-
-- Current host value: `kernel.perf_event_paranoid=4`.
-- `scripts/flamegraph.sh` reports that perf sampling is unavailable.
-- The operator must temporarily grant `CAP_PERFMON` or lower the kernel policy.
-- After changing policy, rerun the verification commands below.
+- Bridge stderr is piped and continuously drained under a fixed byte bound.
+- Ordinary stderr output never reaches the inherited terminal.
+- A failed bridge handshake includes the bounded diagnostic context.
+- Focused tests cover normal stderr, failure diagnostics, and truncation.
 
 ## Verification
 
 ```bash
-perf record -- true
-./scripts/flamegraph.sh
-./scripts/verify-completion.sh
+cargo test -p yoctui-bitbake bridge_stderr
+cargo fmt --all --check
+cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings
+./scripts/verify-roadmap.sh
 ```

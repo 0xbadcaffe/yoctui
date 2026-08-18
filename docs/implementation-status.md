@@ -11,6 +11,15 @@ Status values:
 
 ## Current phase
 
+`UI-STARTUP-STDERR-001` is `IN_PROGRESS`: the shell-resolved 0.1.0 executable
+was an older registry install despite sharing the source build's version. It
+has been replaced with the verified release binary and the operator session's
+bridge/color preferences restored. Live Poky now reaches the workbench in
+about 2.7 seconds. The remaining visible startup corruption is reproduced:
+the Rust bridge inherits stderr, so BitBake notes, warnings, and a shutdown
+trace can write outside Ratatui. M15 captures that stream under a fixed bound,
+retains it for real failures, and adds installed-binary/theme PTY acceptance.
+
 `UI-LIVE-COLOR-AUTHORITY-001` is `DONE`: Yoctui's resolved color mode now
 controls Crossterm, so ambient `NO_COLOR` cannot contradict Color=true while
 explicit `--no-color` still selects the attribute-only widget palette. The

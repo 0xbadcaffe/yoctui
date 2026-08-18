@@ -85,6 +85,13 @@ BitBake diagnostics go to standard error. The environment-only and mocked
 connection paths are test/diagnostic fallbacks and are not live compatibility
 evidence.
 
+The Rust bridge owner pipes and continuously drains that standard error into a
+bounded in-memory tail; it never inherits the interactive terminal descriptor.
+Normal BitBake notes and host-compatibility warnings therefore cannot corrupt
+the alternate screen. If protocol startup or a live bridge connection fails,
+the adapter attaches the redacted tail to the typed backend error. Capture is
+bounded independently of line length and cannot block the NDJSON protocol.
+
 The canonical bridge source lives inside the `yoctui-bitbake` package and is
 compiled into the Rust binary for source-tree-independent installation. The
 CLI starts that bundled source by default; `YOCTUI_BRIDGE_PATH` remains an

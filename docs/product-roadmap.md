@@ -259,3 +259,22 @@ Exit criteria:
 - selecting a theme visibly changes the complete colored shell
 - the footer names current, next, and previous focus destinations
 - live and deterministic recovery verification passes
+
+## M15 — Clean installed startup diagnostics
+
+Goal: make the executable selected by the user's shell start the real Poky
+workbench without terminal contamination and keep theme selection verifiable.
+
+Capabilities:
+
+- bounded bridge stderr capture outside the alternate screen
+- actionable bridge failures with retained diagnostic context
+- live installed-binary startup and theme-picker acceptance
+- explicit local-development reinstall guidance for a published version
+
+Exit criteria:
+
+- BitBake startup notes and warnings never appear outside Ratatui panels
+- bridge startup failures retain a bounded diagnostic tail
+- `Ctrl+P` → `Choose theme` changes and persists the theme in a real PTY
+- the shell-resolved executable matches the locally verified release binary
