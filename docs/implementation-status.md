@@ -11,6 +11,15 @@ Status values:
 
 ## Current phase
 
+`FINAL-GATE-PERF-001` is `BLOCKED` only on host policy: the clean terminal gate
+passes roadmap, workspace tests, Clippy, terminal tests, fuzzing, stress,
+ASan/LSan, Rust coverage, audit/deny, all 39 Python bridge tests at 75.95%
+packaged-source coverage, and Valgrind with zero lost bytes. This host currently
+has `kernel.perf_event_paranoid=4`, so `scripts/flamegraph.sh` cannot sample.
+An operator must temporarily grant `CAP_PERFMON` or lower that policy and rerun
+the Flamegraph and completion commands. The published 0.1.0 release is not
+affected.
+
 `CRATESIO-COVERAGE-001` is `DONE`: Python coverage now measures the canonical
 bridge bundled in `yoctui-bitbake`, while Ruff and mypy inspect both the
 packaged source and external tests. Ruff, formatting, mypy, all 39 bridge
@@ -22,7 +31,6 @@ on crates.io. A clean locked install from registry sources reports
 `yoctui 0.1.0`, exposes complete help, and completes a headless inspection
 through the embedded bridge. Published package VCS source commit
 `6c66b4777d05a7f45e105d0cb955eb3e5a322a7d` is the `v0.1.0` release tag.
-All registered roadmap tasks are complete.
 
 `DAEMON-UPGRADE-LIFECYCLE-001` is `DONE`: lifecycle validation now accepts
 Linux's exact ` (deleted)` process-image suffix only when its remaining path
