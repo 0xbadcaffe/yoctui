@@ -4581,18 +4581,18 @@ notes = "Added 41 stable behavior-oriented CapabilityId values, five distinct av
 id = "COMPAT-CATALOG-001"
 milestone = "M18"
 title = "Create versioned capability catalog"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 488
 required = true
 depends_on = ["COMPAT-CAP-MODEL-001"]
-verify = ["cargo test -p yoctui-model compatibility::catalog", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Create one typed, testable catalog of feature requirements, probes, preferred/fallback implementations, release boundaries, and UI reasons."
+verify = ["cargo test -p yoctui-model compatibility_catalog::catalog", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Added versioned CapabilityCatalog v1 with exactly one typed entry for all 41 behavior IDs. Entries centralize required tools, commands/subcommands/options, metadata/API/artifact requirements, safe typed probes, preferred implementation, explicit fallback selector, advisory release-boundary records, and exact default UI reason. Validation rejects missing/duplicate IDs, unsafe probes/requirements, and invalid fallback selectors; four focused tests and model Clippy pass."
 
 [[task]]
 id = "COMPAT-PROBE-001"
 milestone = "M18"
 title = "Implement safe capability probing"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 489
 required = true
 depends_on = ["COMPAT-CATALOG-001"]

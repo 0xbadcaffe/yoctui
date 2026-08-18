@@ -771,3 +771,11 @@ exact environment. Available/limited and unavailable states require positive
 and negative evidence respectively; absent and uncertain records fail closed.
 Five focused model tests and warnings-denied Clippy pass.
 `COMPAT-CATALOG-001` is active.
+
+`COMPAT-CATALOG-001` is complete. Versioned catalog v1 contains exactly one
+typed entry for every behavior ID, including tool/command/option,
+metadata/API/artifact, safe probe, preferred implementation, explicit fallback
+selector, advisory release-boundary field, and exact default reason. Catalog
+validation rejects incomplete, duplicate, unsafe, and selector-less data; four
+focused tests and warnings-denied model Clippy pass. `COMPAT-PROBE-001` is
+active.

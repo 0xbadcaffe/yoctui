@@ -2092,6 +2092,17 @@ records to one normalized environment and non-zero generation. Available and
 limited records require positive evidence, unavailable records require negative
 evidence, and absent/Unknown/Unsupported records fail closed for action checks.
 
+`CapabilityCatalog::builtin()` is the single versioned inventory that maps
+those IDs to typed tool, command/subcommand/option, metadata/API/artifact,
+non-mutating probe, implementation, fallback selector, advisory release
+boundary, and default UI-reason records. Catalog probes can request only typed
+executable/help/option, metadata, backend/protocol, artifact, or configuration
+observations; they cannot embed an arbitrary shell command. Every fallback has
+an explicit positive-probe, other-capability, or unprobeable-version-map
+selector. Catalog validation requires exactly one valid entry per behavior ID.
+Renderers and workspace menus consume evaluated snapshots and never duplicate
+this inventory.
+
 Commands use this flow:
 
 ```text
