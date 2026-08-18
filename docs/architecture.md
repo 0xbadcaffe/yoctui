@@ -1245,6 +1245,16 @@ explicit overrides for automation and diagnostics; an omitted build directory
 creates an unconfigured session instead of treating the current directory as
 a build.
 
+Backend and accessibility CLI overrides are process-local inputs, not session
+preferences. Backend resolution uses CLI, environment, then `config.toml`, and
+otherwise selects the bridge; legacy `session.toml` backend values are ignored.
+An explicit `--no-color` locks color off for that process without rewriting the
+stored interactive preference. PTY and snapshot harnesses provide private XDG
+config, state, and runtime roots so test flags cannot cross the CLI/session
+boundary. If daemon attachment is unavailable, the client records disconnected
+health in typed shell state and starts the selected local backend; expected
+absence does not enqueue a modal-style notification.
+
 ## Persistent daemon and attachable client architecture
 
 Yoctui remains one Rust-native terminal product. The installed package may

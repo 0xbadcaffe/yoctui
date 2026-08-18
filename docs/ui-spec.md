@@ -218,6 +218,8 @@ Rules:
 
 - `Tab`: next focus target
 - `Shift+Tab`: previous focus target
+- the command rail names the active pane and the destination of both focus
+  chords; a generic `Tab Focus` label is insufficient
 - arrow keys affect only the focused region
 - `Esc`: close dialog, cancel transient mode, or return focus outward
 - dialogs trap focus until closed
@@ -2564,6 +2566,12 @@ Theme can be changed through:
 - command palette
 - CLI/configuration
 
+The command palette exposes a dedicated `Choose theme` command that opens the
+same focus-trapped picker as the Settings Theme row. Choosing or previewing a
+named theme enables color unless this launch has the explicit `--no-color`
+override. When that override is active, the picker remains usable and names
+the override instead of pretending that palette changes are visually active.
+
 In the Settings workspace, activating the Theme row opens a focus-trapped theme
 submenu. Up/Down selects a named theme and applies it immediately; Enter keeps
 the selection and Esc closes the submenu. Theme selection is never a blind
@@ -2590,6 +2598,13 @@ hard CLI overrides such as `--no-color` remain authoritative. A failed save
 keeps the previewed value, marks Settings as unsaved, and shows a notice.
 Pressing `r` retries the atomic save without changing the previewed value.
 
+CLI flags are launch-scoped. `--no-color` must not overwrite the stored color
+preference on exit, and `--backend` must not become an implicit backend for a
+later launch. A durable backend default belongs in `config.toml`; absent a CLI,
+environment, or configuration-file choice, startup uses the metadata-capable
+bridge. Test and snapshot processes must use private XDG config, state, and
+runtime directories and may never rewrite the operator's real session.
+
 Persist:
 
 - theme
@@ -2602,7 +2617,6 @@ Persist:
 - recent targets
 - recent build directories
 - editor
-- backend
 - mouse preference
 - compact layout preference
 
@@ -2797,6 +2811,13 @@ users to understand backend names such as `bridge`. A verified profile can be
 replaced from this workspace; replacing it clears the active connection and
 returns build controls to the disabled state until the new source is initialized
 and verified.
+
+When an explicit build directory is available and no daemon can be attached,
+the interactive client continues locally with the selected bridge and loads
+typed workspace, layer, and recipe metadata. Expected daemon absence is shown
+as disconnected status in persistent chrome, not as a centered notice that
+obscures the workbench. Metadata failure remains an actionable diagnostic and
+must not be disguised as successful empty inventories.
 
 ### Theme rendering contract
 

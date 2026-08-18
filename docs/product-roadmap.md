@@ -237,3 +237,25 @@ Exit criteria:
 - all displayed values come from typed model or daemon replica state
 - keyboard, mouse, focus, theme, and responsive contracts remain intact
 - deterministic TestBackend and PTY snapshot checks pass
+
+## M14 — Live workspace usability recovery
+
+Goal: make the first real Poky launch reliably show the approved workbench and
+metadata without hidden state from tests or prior diagnostic invocations.
+
+Capabilities:
+
+- launch-scoped backend and no-color overrides
+- isolated PTY/snapshot configuration and runtime state
+- metadata-capable local bridge fallback when the daemon is absent
+- non-obscuring daemon-disconnected status
+- directly discoverable theme selection and explicit pane-focus routing
+- live Poky metadata and PTY visual acceptance
+
+Exit criteria:
+
+- a normal launch against `~/src/poky/build` shows workspace, layers, and recipes
+- snapshot tests cannot alter the operator's session file
+- selecting a theme visibly changes the complete colored shell
+- the footer names current, next, and previous focus destinations
+- live and deterministic recovery verification passes

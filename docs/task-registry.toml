@@ -4318,3 +4318,59 @@ required = true
 depends_on = ["UI-VISION-SHELL-001", "UI-VISION-NAV-001", "UI-VISION-TASKS-001", "UI-VISION-RESP-001"]
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
 notes = "Parent acceptance passes: the approved one-line shell, grouped Navigator, task/log/history cockpit, structured Inspector, and command rail render only typed state and retain responsive/accessibility behavior. Formatting, all workspace tests, workspace Clippy, 39 bridge tests, docs, roadmap, and real PTY snapshots pass. The unrelated FINAL-GATE-PERF-001 host policy blocker remains explicit."
+
+# M14 — Live workspace usability recovery
+[[task]]
+id = "UI-LIVE-RECOVERY-SPEC-001"
+milestone = "M14"
+title = "Specify live workspace usability recovery"
+status = "DONE"
+priority = 465
+required = true
+depends_on = ["UI-VISION-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Specified launch-scoped overrides, private test XDG state, bridge-first local metadata, non-obscuring daemon status, discoverable theme selection, explicit focus routing, and live Poky acceptance."
+
+[[task]]
+id = "UI-LIVE-STARTUP-001"
+milestone = "M14"
+title = "Restore safe metadata-capable interactive startup"
+status = "IN_PROGRESS"
+priority = 466
+required = true
+depends_on = ["UI-LIVE-RECOVERY-SPEC-001"]
+verify = ["cargo test -p yoctui -- startup_session", "./scripts/test-tui-snapshots.sh", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Ignore legacy session backend state, preserve stored color across --no-color launches, isolate snapshot XDG roots, and keep expected daemon absence in persistent status while local bridge metadata loads."
+
+[[task]]
+id = "UI-LIVE-DISCOVERY-001"
+milestone = "M14"
+title = "Make theme and pane focus directly discoverable"
+status = "NOT_STARTED"
+priority = 467
+required = true
+depends_on = ["UI-LIVE-STARTUP-001"]
+verify = ["cargo test -p yoctui-model theme", "cargo test -p yoctui-ui focus", "cargo test -p yoctui-app focus", "./scripts/verify-roadmap.sh"]
+notes = "Add a command-palette theme route, preserve --no-color authority, and name active/next/previous panes in the contextual command rail."
+
+[[task]]
+id = "UI-LIVE-POKY-001"
+milestone = "M14"
+title = "Validate the recovered workbench against live Poky"
+status = "NOT_STARTED"
+priority = 468
+required = true
+depends_on = ["UI-LIVE-DISCOVERY-001"]
+verify = ["./scripts/test-live-workbench.sh $HOME/src/poky/build", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
+notes = "Require typed live workspace, layer, and recipe evidence plus a colored PTY semantic snapshot at the approved wide layout."
+
+[[task]]
+id = "UI-LIVE-RECOVERY-001"
+milestone = "M14"
+title = "Complete live workspace usability recovery"
+status = "NOT_STARTED"
+priority = 469
+required = true
+depends_on = ["UI-LIVE-STARTUP-001", "UI-LIVE-DISCOVERY-001", "UI-LIVE-POKY-001"]
+verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
+notes = "Parent acceptance for safe startup, metadata discovery, theme/focus discoverability, and live Poky rendering."

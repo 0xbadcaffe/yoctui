@@ -2,48 +2,42 @@
 
 ## Task
 
-**ID:** FINAL-GATE-PERF-001
-**Title:** Rerun the terminal gate with perf sampling enabled
-**Status:** BLOCKED
+**ID:** UI-LIVE-STARTUP-001
+**Title:** Restore safe metadata-capable interactive startup
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Complete the final host-level verification with real perf sampling enabled.
-All product and UI redesign verification passes; only the Flamegraph sampling
-policy blocks repository-wide completion.
+Prevent launch/test overrides from poisoning later sessions and make a normal
+explicit Poky build-directory launch load typed metadata through the bridge
+without an obscuring daemon-unavailable notice.
 
 ## Dependencies
 
-- `CRATESIO-COVERAGE-001` — DONE
-- `UI-VISION-001` — DONE
+- `UI-LIVE-RECOVERY-SPEC-001` — DONE
 
 ## Relevant files
 
-- `/proc/sys/kernel/perf_event_paranoid`
-- `scripts/flamegraph.sh`
-- `scripts/verify-completion.sh`
-- `docs/implementation-status.md`
+- `crates/yoctui-cli/src/main.rs`
+- `scripts/test-tui-snapshots.sh`
+- `docs/ui-spec.md`
+- `docs/architecture.md`
 - `docs/task-registry.toml`
 - `docs/implementation-status.md`
-- `docs/task-registry.toml`
 
 ## Definition of done
 
-- `perf record -- true` succeeds for the current user.
-- A fresh real headless-workload Flamegraph is generated.
-- The terminal completion gate passes without skipped required stages.
-
-## Blocker evidence
-
-- Current host value: `kernel.perf_event_paranoid=4`.
-- `scripts/flamegraph.sh` reports that perf sampling is unavailable.
-- The operator must temporarily grant `CAP_PERFMON` or lower the kernel policy.
-- After changing policy, rerun the verification commands below.
+- Legacy session backend state does not override the default bridge.
+- `--no-color` does not rewrite the stored interactive color preference.
+- Snapshot subprocesses use private XDG config/state/runtime roots.
+- Missing daemon status does not obscure the local interactive workbench.
+- Focused tests and the roadmap gate pass.
 
 ## Verification
 
 ```bash
-perf record -- true
-./scripts/flamegraph.sh
-./scripts/verify-completion.sh
+cargo test -p yoctui -- startup_session
+./scripts/test-tui-snapshots.sh
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
 ```

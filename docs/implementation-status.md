@@ -11,6 +11,18 @@ Status values:
 
 ## Current phase
 
+`UI-LIVE-STARTUP-001` is `IN_PROGRESS`: live diagnosis against
+`~/src/poky/build` proved that the bridge detects Poky 5.0.19, qemux86-64,
+three configured layers, and more than 1,800 recipes. The failed interactive
+launch came from a PTY snapshot process writing `backend = process` and
+`color_enabled = false` into the operator session. M14 now repairs that state
+boundary before adding direct theme/focus affordances and a live visual gate.
+
+`UI-LIVE-RECOVERY-SPEC-001` is `DONE`: startup overrides are launch-scoped,
+test XDG roots are private, expected daemon absence stays in persistent status,
+the local bridge remains metadata-capable, and theme/focus controls have
+explicit discoverability and live-Poky acceptance contracts.
+
 `UI-VISION-001` is `DONE`: the approved one-line shell, grouped Navigator,
 task/log/history cockpit, structured Inspector, and contextual command rail
 ship together and render only typed state. Formatting, all workspace tests,
