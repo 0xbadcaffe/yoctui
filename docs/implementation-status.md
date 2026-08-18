@@ -132,7 +132,7 @@ See `docs/current-task.md`.
 
 | Capability | Status | Evidence and remaining work |
 |---|---|---|
-| Persistent application shell | DONE | Header, Navigator, Workspace, Inspector, and Footer remain visible during builds (`fc1b1ae`, `4db7369`); breakpoint TestBackend coverage is in `88b4aa7` |
+| Persistent application shell | DONE | Header, Navigator, Workspace, Inspector, and Footer remain visible during builds (`8769017`, `b3e7452`); breakpoint TestBackend coverage is in `733a593` |
 | Responsive layouts | DONE | Wide three-pane mode, medium Inspector overlay, narrow visible pane switcher, too-small messaging, resize preservation, and all-screen boundary tests are complete |
 | Focus routing | DONE | Bidirectional pane cycling, modal input trapping, nested-modal return targets, exact pane restoration, quit cancellation, and responsive focus rendering are covered |
 | Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |

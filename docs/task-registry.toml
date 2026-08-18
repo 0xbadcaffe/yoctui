@@ -47,7 +47,7 @@ priority = 10
 required = true
 depends_on = ["GOV-001"]
 verify = ["cargo test -p yoctui-ui persistent_shell_degrades_across_supported_terminal_widths"]
-notes = "Persistent five-region shell and non-blocking build navigation implemented by fc1b1ae and 4db7369; TestBackend breakpoint coverage added by 88b4aa7."
+notes = "Persistent five-region shell and non-blocking build navigation implemented by 8769017 and b3e7452; TestBackend breakpoint coverage added by 733a593."
 
 [[task]]
 id = "UI-RESP-001"
