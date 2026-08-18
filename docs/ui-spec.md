@@ -2559,6 +2559,12 @@ themes and deterministic TestBackend coverage.
 These modes must not depend on the terminal's default foreground/background
 pair to distinguish focus, selection, severity, or progress.
 
+The resolved Yoctui color preference is authoritative at the terminal backend:
+when color is enabled, the backend emits the selected semantic palette even if
+the parent process exports `NO_COLOR`; when color is disabled in Settings or by
+`--no-color`, widgets emit the attribute-only contract. This prevents the
+Settings value and visible result from disagreeing.
+
 ### Theme switching
 
 Theme can be changed through:

@@ -11,6 +11,12 @@ Status values:
 
 ## Current phase
 
+`UI-LIVE-COLOR-AUTHORITY-001` is `IN_PROGRESS`: the live PTY exposed that
+Crossterm independently suppresses palette sequences when the parent agent
+exports `NO_COLOR`, even while Yoctui Settings says Color is enabled. The
+terminal backend will now follow Yoctui's resolved setting so the visible
+result cannot disagree with the picker; `--no-color` remains authoritative.
+
 `UI-LIVE-RECOVERY-001` is `DONE`: normal startup is session-safe and
 metadata-capable, expected daemon absence no longer obscures the workbench,
 theme selection and pane focus are explicit, and the real colored Poky gate

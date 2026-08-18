@@ -2,47 +2,40 @@
 
 ## Task
 
-**ID:** FINAL-GATE-PERF-001
-**Title:** Rerun the terminal gate with perf sampling enabled
-**Status:** BLOCKED
+**ID:** UI-LIVE-COLOR-AUTHORITY-001
+**Title:** Keep terminal color output consistent with Yoctui settings
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Complete the final host-level verification with real perf sampling enabled.
-All product, UI redesign, and live-workbench recovery verification passes; only
-the Flamegraph sampling policy blocks repository-wide completion.
+Ensure an enabled Yoctui color preference produces the selected terminal
+palette even when the parent environment exports `NO_COLOR`, while preserving
+the explicit `--no-color` attribute-only mode.
 
 ## Dependencies
 
-- `CRATESIO-COVERAGE-001` — DONE
-- `UI-VISION-001` — DONE
 - `UI-LIVE-RECOVERY-001` — DONE
 
 ## Relevant files
 
-- `/proc/sys/kernel/perf_event_paranoid`
-- `scripts/flamegraph.sh`
-- `scripts/verify-completion.sh`
-- `docs/implementation-status.md`
+- `crates/yoctui-cli/src/main.rs`
+- `scripts/test-live-workbench.sh`
+- `docs/ui-spec.md`
 - `docs/task-registry.toml`
+- `docs/implementation-status.md`
 
 ## Definition of done
 
-- `perf record -- true` succeeds for the current user.
-- A fresh real headless-workload Flamegraph is generated.
-- The terminal completion gate passes without skipped required stages.
-
-## Blocker evidence
-
-- Current host value: `kernel.perf_event_paranoid=4`.
-- `scripts/flamegraph.sh` reports that perf sampling is unavailable.
-- The operator must temporarily grant `CAP_PERFMON` or lower the kernel policy.
-- After changing policy, rerun the verification commands below.
+- The terminal backend follows Yoctui's resolved color mode.
+- `NO_COLOR=1` cannot silently contradict Color=true in Settings.
+- `--no-color` still renders the tested attribute-only palette.
+- The live colored PTY gate passes with `NO_COLOR=1` inherited.
 
 ## Verification
 
 ```bash
-perf record -- true
-./scripts/flamegraph.sh
-./scripts/verify-completion.sh
+NO_COLOR=1 ./scripts/test-live-workbench.sh "$HOME/src/poky/build"
+cargo test -p yoctui-ui theme
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
 ```

@@ -4374,3 +4374,14 @@ required = true
 depends_on = ["UI-LIVE-STARTUP-001", "UI-LIVE-DISCOVERY-001", "UI-LIVE-POKY-001"]
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
 notes = "Parent acceptance passes for launch-scoped session safety, bridge metadata discovery, non-obscuring daemon fallback, named theme selection, explicit pane focus, and the live colored Poky workbench. Formatting, the full workspace, Clippy, all 39 bridge tests, docs, roadmap, isolated PTY snapshots, and the 1,829-recipe live gate pass."
+
+[[task]]
+id = "UI-LIVE-COLOR-AUTHORITY-001"
+milestone = "M14"
+title = "Keep terminal color output consistent with Yoctui settings"
+status = "IN_PROGRESS"
+priority = 470
+required = true
+depends_on = ["UI-LIVE-RECOVERY-001"]
+verify = ["NO_COLOR=1 ./scripts/test-live-workbench.sh $HOME/src/poky/build", "cargo test -p yoctui-ui theme", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Make the resolved Yoctui color setting authoritative over Crossterm's ambient NO_COLOR suppression so the picker and visible palette cannot disagree; --no-color and Settings remain the supported attribute-only controls."
