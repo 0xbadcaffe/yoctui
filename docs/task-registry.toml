@@ -4713,18 +4713,18 @@ notes = "Added a 54th behavior capability for the independently probed create --
 id = "COMPAT-LAYERS-001"
 milestone = "M18"
 title = "Make bitbake-layers workflows capability-aware"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 500
 required = true
 depends_on = ["COMPAT-BITBAKE-CMD-001", "COMPAT-BITBAKE-API-001"]
 verify = ["cargo test -p yoctui-bitbake compatibility_layers", "cargo test -p yoctui-app compatibility_layers", "./scripts/verify-roadmap.sh"]
-notes = "Probe subcommands and option variants, distinguish mutation support, and route Layer actions only through compatible implementations."
+notes = "Expanded the catalog to 57 records with independent create-and-add option, add-layer, and remove-layer behaviors beside show-layers/create-layer and the existing negotiated inventory/relationship APIs. Closed typed operations and BitBakeLayersCommandPlanner bind exact environment, generation, initialized executable, capability, and selected implementation before shell-free argv. Read-only, create-only, create-and-add, add, and remove support degrade independently; unavailable mutations retain the probe reason and never spawn. Utility menu entries carry exact capability IDs and app availability projects API and command records from one snapshot. Four bitbake and one app test cover modern/older surfaces, exact argv, stale/environment/executable/cross-command rejection, missing options/subcommands, and zero spawn; workspace check, model tests, and Clippy pass."
 
 [[task]]
 id = "COMPAT-PKGDATA-001"
 milestone = "M18"
 title = "Make oe-pkgdata-util capability-aware"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 501
 required = true
 depends_on = ["COMPAT-BITBAKE-CMD-001"]

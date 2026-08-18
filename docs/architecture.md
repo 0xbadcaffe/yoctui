@@ -2268,6 +2268,17 @@ the exact missing-option reason. Utility-menu entries carry capability IDs,
 and app availability projects those centralized records rather than host PATH
 or release checks. No Recipetool process path exists outside this authority.
 
+Layer compatibility separates negotiated BitBake inventory and relationship
+APIs from direct bitbake-layers commands. `BitBakeLayersOperation` contains
+only show, create, create-and-add, add, and remove forms with normalized bounded
+absolute paths. `BitBakeLayersCommandPlanner` maps each form to a distinct
+capability and selected implementation after validating the exact initialized
+tool, build directory, and generation. The `create-layer --add-layer` option is
+probed independently, so create-only releases do not gain mutation implicitly.
+Utility-menu and app availability include both API and command records from the
+same snapshot; absent mutation commands never disable safe read-only layer
+inspection.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.

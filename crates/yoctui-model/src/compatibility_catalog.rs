@@ -609,6 +609,27 @@ fn definition(id: CapabilityId) -> Definition {
             &[],
             "bitbake_layers.create_layer.argv",
         ),
+        Id::BitBakeLayersCreateAndAddLayer => tool_command(
+            "bitbake-layers create and add layer",
+            Tool::BitBakeLayers,
+            Some("create-layer"),
+            &["--add-layer"],
+            "bitbake_layers.create_and_add_layer.argv",
+        ),
+        Id::BitBakeLayersAddLayer => tool_command(
+            "bitbake-layers add-layer",
+            Tool::BitBakeLayers,
+            Some("add-layer"),
+            &[],
+            "bitbake_layers.add_layer.argv",
+        ),
+        Id::BitBakeLayersRemoveLayer => tool_command(
+            "bitbake-layers remove-layer",
+            Tool::BitBakeLayers,
+            Some("remove-layer"),
+            &[],
+            "bitbake_layers.remove_layer.argv",
+        ),
         Id::PkgDataLookupPackage => tool_command(
             "package-data package lookup",
             Tool::OePkgdataUtil,

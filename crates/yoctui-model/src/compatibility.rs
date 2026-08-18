@@ -287,6 +287,12 @@ pub enum CapabilityId {
     BitBakeLayersShowLayers,
     #[serde(rename = "bitbake_layers.create_layer")]
     BitBakeLayersCreateLayer,
+    #[serde(rename = "bitbake_layers.create_and_add_layer")]
+    BitBakeLayersCreateAndAddLayer,
+    #[serde(rename = "bitbake_layers.add_layer")]
+    BitBakeLayersAddLayer,
+    #[serde(rename = "bitbake_layers.remove_layer")]
+    BitBakeLayersRemoveLayer,
     #[serde(rename = "pkgdata.lookup_pkg")]
     PkgDataLookupPackage,
     #[serde(rename = "pkgdata.find_path")]
@@ -324,7 +330,7 @@ pub enum CapabilityId {
 }
 
 impl CapabilityId {
-    pub const ALL: [Self; 54] = [
+    pub const ALL: [Self; 57] = [
         Self::BitBakeWorkspaceInspection,
         Self::BitBakeRecipeInventory,
         Self::BitBakeRecipeDependencies,
@@ -362,6 +368,9 @@ impl CapabilityId {
         Self::RecipetoolAppendFile,
         Self::BitBakeLayersShowLayers,
         Self::BitBakeLayersCreateLayer,
+        Self::BitBakeLayersCreateAndAddLayer,
+        Self::BitBakeLayersAddLayer,
+        Self::BitBakeLayersRemoveLayer,
         Self::PkgDataLookupPackage,
         Self::PkgDataFindPath,
         Self::WicCreate,
@@ -420,6 +429,9 @@ impl CapabilityId {
             Self::RecipetoolAppendFile => "recipetool.appendfile",
             Self::BitBakeLayersShowLayers => "bitbake_layers.show_layers",
             Self::BitBakeLayersCreateLayer => "bitbake_layers.create_layer",
+            Self::BitBakeLayersCreateAndAddLayer => "bitbake_layers.create_and_add_layer",
+            Self::BitBakeLayersAddLayer => "bitbake_layers.add_layer",
+            Self::BitBakeLayersRemoveLayer => "bitbake_layers.remove_layer",
             Self::PkgDataLookupPackage => "pkgdata.lookup_pkg",
             Self::PkgDataFindPath => "pkgdata.find_path",
             Self::WicCreate => "wic.create",

@@ -336,6 +336,7 @@ Capabilities:
 - compatible BitBake/API/utility implementations selected before typed argv
 - independently probed Devtool and Recipetool subcommands/options with exact
   unavailable reasons and no cross-command authorization
+- independent bitbake-layers read, create, option, add, and remove capabilities
 - dynamic workspace/UI gating and an Environment/Compatibility inspector
 - deterministic release-generation fixtures and current live multi-release evidence
 

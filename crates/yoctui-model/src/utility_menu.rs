@@ -85,7 +85,21 @@ pub fn utility_menu_catalog() -> Vec<UtilityMenuEntry> {
         (
             UtilityMenuKind::BitBakeLayers,
             "add-layer",
-            None,
+            Some(CapabilityId::BitBakeLayersAddLayer),
+            true,
+            false,
+        ),
+        (
+            UtilityMenuKind::BitBakeLayers,
+            "create-layer",
+            Some(CapabilityId::BitBakeLayersCreateLayer),
+            true,
+            false,
+        ),
+        (
+            UtilityMenuKind::BitBakeLayers,
+            "remove-layer",
+            Some(CapabilityId::BitBakeLayersRemoveLayer),
             true,
             false,
         ),

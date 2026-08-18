@@ -84,6 +84,51 @@ pub fn compatibility_recipetool_actions(
     .collect()
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LayerActionAvailability {
+    pub capability: yoctui_model::CapabilityId,
+    pub available: bool,
+    pub reason: Option<String>,
+}
+
+pub fn compatibility_layer_actions(
+    compatibility: Option<&yoctui_model::DaemonCompatibilitySnapshot>,
+) -> Vec<LayerActionAvailability> {
+    [
+        yoctui_model::CapabilityId::BitBakeLayerInventory,
+        yoctui_model::CapabilityId::BitBakeLayerRelationships,
+        yoctui_model::CapabilityId::BitBakeLayersShowLayers,
+        yoctui_model::CapabilityId::BitBakeLayersCreateLayer,
+        yoctui_model::CapabilityId::BitBakeLayersCreateAndAddLayer,
+        yoctui_model::CapabilityId::BitBakeLayersAddLayer,
+        yoctui_model::CapabilityId::BitBakeLayersRemoveLayer,
+    ]
+    .into_iter()
+    .map(|capability| {
+        let state = compatibility
+            .and_then(|snapshot| snapshot.snapshot.capability(capability))
+            .map(|record| &record.state);
+        let available = state.is_some_and(yoctui_model::CapabilityState::is_enabled);
+        let reason = (!available).then(|| {
+            state
+                .and_then(yoctui_model::CapabilityState::reason)
+                .map(|reason| reason.message.clone())
+                .unwrap_or_else(|| {
+                    format!(
+                        "{} requires the current environment capability snapshot.",
+                        capability.as_str()
+                    )
+                })
+        });
+        LayerActionAvailability {
+            capability,
+            available,
+            reason,
+        }
+    })
+    .collect()
+}
+
 pub fn daemon_job_state_from_app(app: &yoctui_model::App) -> yoctui_model::DaemonJobState {
     yoctui_model::DaemonJobState::capture(app)
 }
@@ -8272,6 +8317,93 @@ mod tests {
             compatibility_recipetool_actions(None)
                 .iter()
                 .all(|action| !action.available && action.reason.is_some())
+        );
+    }
+
+    #[test]
+    fn compatibility_layers_actions_use_independent_api_and_command_records() {
+        let evidence = |id: yoctui_model::CapabilityId,
+                        outcome: yoctui_model::CapabilityEvidenceOutcome| {
+            yoctui_model::CapabilityEvidence {
+                kind: yoctui_model::CapabilityEvidenceKind::DirectProbe,
+                outcome,
+                subject: format!("{} fixture probe", id.as_str()),
+                detail: "The fixture reports this exact Layers behavior.".into(),
+                argv: vec![
+                    "/work/poky/bitbake/bin/bitbake-layers".into(),
+                    "--help".into(),
+                ],
+            }
+        };
+        let available = yoctui_model::CapabilityId::BitBakeLayersShowLayers;
+        let unavailable = yoctui_model::CapabilityId::BitBakeLayersRemoveLayer;
+        let snapshot = yoctui_model::DaemonCompatibilitySnapshot {
+            snapshot: yoctui_model::CapabilitySnapshot {
+                generation: 4,
+                environment: yoctui_model::YoctoEnvironmentIdentity::default(),
+                capabilities: vec![
+                    yoctui_model::CapabilityRecord {
+                        id: available,
+                        state: yoctui_model::CapabilityState::Available,
+                        evidence: vec![evidence(
+                            available,
+                            yoctui_model::CapabilityEvidenceOutcome::Positive,
+                        )],
+                    },
+                    yoctui_model::CapabilityRecord {
+                        id: unavailable,
+                        state: yoctui_model::CapabilityState::Unavailable {
+                            reason: yoctui_model::CapabilityReason::new(
+                                "bitbake_layers.subcommand_missing",
+                                "Current bitbake-layers does not expose remove-layer.",
+                                Some("Required capability: bitbake_layers.remove_layer".into()),
+                            )
+                            .unwrap(),
+                        },
+                        evidence: vec![evidence(
+                            unavailable,
+                            yoctui_model::CapabilityEvidenceOutcome::Negative,
+                        )],
+                    },
+                ],
+            },
+            implementations: std::collections::BTreeMap::from([(
+                available,
+                yoctui_model::CapabilityImplementation {
+                    id: yoctui_bitbake::BITBAKE_LAYERS_SHOW_IMPLEMENTATION.into(),
+                    kind: yoctui_model::CapabilityImplementationKind::Command,
+                },
+            )]),
+        }
+        .normalize()
+        .unwrap();
+        let actions = compatibility_layer_actions(Some(&snapshot));
+        assert!(
+            actions
+                .iter()
+                .find(|action| action.capability == available)
+                .unwrap()
+                .available
+        );
+        assert!(
+            actions
+                .iter()
+                .find(|action| action.capability == unavailable)
+                .unwrap()
+                .reason
+                .as_deref()
+                .is_some_and(|reason| reason.contains("does not expose remove-layer"))
+        );
+        assert!(
+            actions
+                .iter()
+                .find(|action| {
+                    action.capability == yoctui_model::CapabilityId::BitBakeLayerInventory
+                })
+                .unwrap()
+                .reason
+                .as_deref()
+                .is_some_and(|reason| reason.contains("current environment capability snapshot"))
         );
     }
 }

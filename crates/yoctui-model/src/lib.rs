@@ -1,4 +1,5 @@
 //! Domain model and pure state transitions. BitBake remains authoritative.
+mod bitbake_layers;
 mod bitbake_restart;
 mod compatibility;
 mod compatibility_catalog;
@@ -21,6 +22,7 @@ mod testing;
 mod utility_menu;
 mod wic;
 
+pub use bitbake_layers::*;
 pub use bitbake_restart::*;
 pub use compatibility::*;
 pub use compatibility_catalog::*;

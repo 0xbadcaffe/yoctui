@@ -8,6 +8,7 @@ mod compatibility_api;
 mod compatibility_cache;
 mod compatibility_command;
 mod compatibility_devtool;
+mod compatibility_layers;
 mod compatibility_probe;
 mod compatibility_recipetool;
 mod compatibility_resolver;
@@ -101,6 +102,12 @@ pub use compatibility_devtool::{
     DEVTOOL_STATUS_IMPLEMENTATION, DEVTOOL_UNDEPLOY_TARGET_IMPLEMENTATION,
     DEVTOOL_UPDATE_RECIPE_IMPLEMENTATION, DEVTOOL_UPGRADE_IMPLEMENTATION, DevtoolCommandPlanner,
     DevtoolCompatibilityError,
+};
+pub use compatibility_layers::{
+    BITBAKE_LAYERS_ADD_IMPLEMENTATION, BITBAKE_LAYERS_CREATE_ADD_IMPLEMENTATION,
+    BITBAKE_LAYERS_CREATE_IMPLEMENTATION, BITBAKE_LAYERS_REMOVE_IMPLEMENTATION,
+    BITBAKE_LAYERS_SHOW_IMPLEMENTATION, BitBakeLayersCommandPlanner, BitBakeLayersCommandSpec,
+    BitBakeLayersCompatibilityError,
 };
 pub use compatibility_probe::{
     CapabilityProbeContext, CapabilityProbeContextError, CapabilityProbeObservation,

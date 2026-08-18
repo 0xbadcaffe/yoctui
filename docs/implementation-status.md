@@ -874,4 +874,13 @@ initialized executable, complete required capability set, and selected
 implementations before returning argv. The utility menu carries these IDs and
 app availability changes directly with the snapshot and exact reason. Focused
 old/new, exact argv, stale, cross-subcommand, unavailable, and zero-spawn tests
-pass with workspace check and Clippy. `COMPAT-LAYERS-001` is active.
+pass with workspace check and Clippy. `COMPAT-LAYERS-001` is complete. The
+57-record catalog distinguishes
+show-layers, create-layer, create-layer with `--add-layer`, add-layer, and
+remove-layer, while inventory and relationships retain separate negotiated API
+records. Closed operations and `BitBakeLayersCommandPlanner` require exact
+environment/generation/tool/implementation authority. Utility and app action
+availability comes from that same snapshot; older command surfaces preserve
+read-only/create behavior while absent mutations remain disabled with exact
+reasons and zero spawn. Focused tests, workspace check, model validation, and
+Clippy pass. `COMPAT-PKGDATA-001` is active.

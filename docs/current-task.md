@@ -2,20 +2,19 @@
 
 ## Task
 
-**ID:** COMPAT-LAYERS-001
-**Title:** Make bitbake-layers workflows capability-aware
+**ID:** COMPAT-PKGDATA-001
+**Title:** Make oe-pkgdata-util capability-aware
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Probe the connected environment's bitbake-layers subcommands and options, then
-derive every Layers action and exact argv implementation from the centralized
-daemon capability snapshot.
+Probe the connected environment's oe-pkgdata-util commands and generated
+pkgdata, then derive every package-data action and exact argv implementation
+from the centralized daemon capability snapshot.
 
 ## Dependencies
 
 - `COMPAT-BITBAKE-CMD-001` — DONE
-- `COMPAT-BITBAKE-API-001` — DONE
 
 ## Relevant files
 
@@ -30,13 +29,12 @@ daemon capability snapshot.
 
 ## Definition of done
 
-- Show-layers, create-layer, add-layer, remove-layer, and every existing Layers
-  action are derived from centralized direct initialized-environment probes,
-  never host PATH or release-local checks.
-- Every bitbake-layers preview/run requires the current environment and generation,
+- Tool availability, individual commands, and generated pkgdata are detected
+  independently, never inferred from host PATH or a release-local check.
+- Every oe-pkgdata-util preview/run requires the current environment and generation,
   enabled capability, and exact selected command implementation.
-- Missing subcommands/options retain exact unavailable reasons and reject
-  before process creation; one available subcommand cannot authorize another.
+- Tool unavailable, command unavailable, pkgdata not generated, and a valid
+  query with no result remain distinct typed outcomes.
 - Daemon and local effect routing consume the same typed authority and do not
   reconstruct availability independently.
 - Tests cover old/new command surfaces, missing subcommands/options, stale
@@ -45,7 +43,7 @@ daemon capability snapshot.
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake compatibility_layers
-cargo test -p yoctui-app compatibility_layers
+cargo test -p yoctui-bitbake compatibility_pkgdata
+cargo test -p yoctui-app compatibility_pkgdata
 ./scripts/verify-roadmap.sh
 ```
