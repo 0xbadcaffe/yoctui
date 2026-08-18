@@ -28,8 +28,8 @@ use yoctui_model::{
     SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
     SecurityInventoryState, SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope,
     SecuritySessionStatus, SecurityView, Severity, SignatureComparisonState,
-    SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskFilterField,
-    TaskRow, TaskState, TestComparisonCategory, TestComparisonState, TestExecutableCapability,
+    SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskRow,
+    TaskState, TestComparisonCategory, TestComparisonState, TestExecutableCapability,
     TestJunitExportState, TestLaunchDialog, TestLaunchField, TestLaunchPreview,
     TestResultInventoryState, TestWorkspaceView, Theme, VariableIdentity, WicCapability,
     WicCompression, WicCreateDialog, WicCreateField, WicCreatePreview, WicDevice,
@@ -1769,12 +1769,21 @@ fn responsive_shell(frame: &mut Frame, app: &App, area: Rect, terminal_width: u1
         return;
     }
     if terminal_width >= 130 {
-        let panes = Layout::horizontal([
-            Constraint::Length(22),
-            Constraint::Percentage(43),
-            Constraint::Min(28),
-        ])
-        .split(area);
+        let panes = if app.screen == Screen::Tasks {
+            Layout::horizontal([
+                Constraint::Length(22),
+                Constraint::Percentage(56),
+                Constraint::Min(32),
+            ])
+            .split(area)
+        } else {
+            Layout::horizontal([
+                Constraint::Length(22),
+                Constraint::Percentage(43),
+                Constraint::Min(28),
+            ])
+            .split(area)
+        };
         navigator(frame, app, panes[0]);
         workspace(frame, app, panes[1]);
         inspector(frame, app, panes[2]);
@@ -2274,7 +2283,152 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
     }
 }
 
+fn task_metadata_text(row: Option<&TaskRow>) -> String {
+    match row {
+        None => "No task selected.\nTask details appear as typed BitBake events arrive.".into(),
+        Some(TaskRow::WaitingSummary(count)) => format!(
+            "Tasks       {count} queued\nRecipe      unavailable\nTask        unavailable\nStatus      pending\nTiming      unavailable\n\nOnly the aggregate queue count is authoritative."
+        ),
+        Some(TaskRow::Task(task)) => format!(
+            "Task        {}\nRecipe      {}\nStatus      {}\nProgress    {}\nWorker      {}\nPID         {}\nStarted     {}\nElapsed     {}\nLog file    {}",
+            task.task,
+            task.recipe,
+            task_state_label(task.state),
+            task.progress
+                .map_or_else(|| "unknown".into(), |value| format!("{value}%")),
+            task.worker.as_deref().unwrap_or("unavailable"),
+            task.pid
+                .map_or_else(|| "unavailable".into(), |pid| pid.to_string()),
+            task.started
+                .map_or_else(|| "unavailable".into(), clock_text),
+            task.elapsed_at(SystemTime::now())
+                .map_or_else(|| "unavailable".into(), format_duration),
+            task.log_path
+                .as_ref()
+                .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+        ),
+    }
+}
+
+fn task_actions_text(app: &App) -> Text<'static> {
+    let palette = ThemePalette::for_app(app);
+    let cancel_style = if matches!(
+        app.build.status,
+        BuildStatus::Running | BuildStatus::Parsing | BuildStatus::Cancelling
+    ) {
+        palette.role(palette.foreground, Modifier::BOLD)
+    } else {
+        palette.role(palette.disabled, Modifier::DIM)
+    };
+    Text::from(vec![
+        Line::from(vec![
+            Span::styled("Cancel build       ", cancel_style),
+            Span::styled("c", palette.role(palette.warning, Modifier::BOLD)),
+        ]),
+        Line::from(vec![
+            Span::raw("Open Logs         "),
+            Span::styled("l", palette.role(palette.warning, Modifier::BOLD)),
+        ]),
+        Line::from(vec![
+            Span::raw("Build History     "),
+            Span::styled("h", palette.role(palette.warning, Modifier::BOLD)),
+        ]),
+        Line::from(vec![
+            Span::raw("Build options     "),
+            Span::styled("F5", palette.role(palette.warning, Modifier::BOLD)),
+        ]),
+    ])
+}
+
+fn system_status_text(app: &App) -> String {
+    let uptime = app.daemon.telemetry.as_ref().map_or_else(
+        || "unavailable".into(),
+        |telemetry| format_duration(Duration::from_secs(telemetry.uptime_seconds)),
+    );
+    let queue = app.daemon.telemetry.as_ref().map_or_else(
+        || "unavailable".into(),
+        |telemetry| telemetry.queue_depth.to_string(),
+    );
+    let cpu = app
+        .host_telemetry
+        .cpu_utilization_percent
+        .map_or_else(|| "unavailable".into(), |value| format!("{value}%"));
+    let disk = app
+        .host_telemetry
+        .disk_available_bytes
+        .map_or_else(|| "unavailable".into(), format_bytes);
+    format!(
+        "Yoctui Daemon    {}  up {}\nBitBake Server    {}\nActive Jobs       {}\nTerminal Sessions {}\nConnected Clients {}\nQueue / CPU       {queue} / {cpu}\nBuild disk free   {disk}",
+        daemon_status_label(app.daemon.status),
+        uptime,
+        daemon_lifecycle_label(app.daemon.bitbake),
+        app.daemon.jobs.len(),
+        app.daemon.pty_sessions.len(),
+        app.daemon.connected_clients,
+    )
+}
+
+fn tasks_inspector(frame: &mut Frame, app: &App, area: Rect) {
+    let selected = app.selected_task_row();
+    let focused = app.focus == FocusTarget::Inspector;
+    if area.height < 32 {
+        let sections =
+            Layout::vertical([Constraint::Percentage(58), Constraint::Percentage(42)]).split(area);
+        frame.render_widget(
+            Paragraph::new(task_metadata_text(selected.as_ref()))
+                .block(pane_block(app, "Inspector: Task", focused))
+                .wrap(Wrap { trim: false }),
+            sections[0],
+        );
+        frame.render_widget(
+            Paragraph::new(system_status_text(app))
+                .block(pane_block(app, "System Status", focused))
+                .wrap(Wrap { trim: false }),
+            sections[1],
+        );
+        return;
+    }
+
+    let sections = Layout::vertical([
+        Constraint::Length(12),
+        Constraint::Min(5),
+        Constraint::Length(6),
+        Constraint::Length(9),
+    ])
+    .split(area);
+    frame.render_widget(
+        Paragraph::new(task_metadata_text(selected.as_ref()))
+            .block(pane_block(app, "Inspector: Task", focused))
+            .wrap(Wrap { trim: false }),
+        sections[0],
+    );
+    frame.render_widget(
+        Paragraph::new(Text::from(matching_task_logs(
+            app,
+            selected.as_ref(),
+            usize::from(sections[1].height.saturating_sub(2)),
+        )))
+        .block(pane_block(app, "Recent Log (tail)", focused))
+        .wrap(Wrap { trim: false }),
+        sections[1],
+    );
+    frame.render_widget(
+        Paragraph::new(task_actions_text(app)).block(pane_block(app, "Actions", focused)),
+        sections[2],
+    );
+    frame.render_widget(
+        Paragraph::new(system_status_text(app))
+            .block(pane_block(app, "System Status", focused))
+            .wrap(Wrap { trim: false }),
+        sections[3],
+    );
+}
+
 fn inspector(frame: &mut Frame, app: &App, area: Rect) {
+    if app.screen == Screen::Tasks {
+        tasks_inspector(frame, app, area);
+        return;
+    }
     let details = match app.screen {
         Screen::Recipes => app.workspace.recipes.get(app.recipe_selection).map_or_else(
             || "No recipe selected.".into(),
@@ -2341,60 +2495,6 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect) {
                 || "No retained warnings or errors.".into(),
                 |entry| diagnostic_detail(app, entry),
             ),
-        Screen::Tasks => app.selected_task_row().map_or_else(
-            || "No task selected.\n\nTask details appear as typed BitBake events arrive.".into(),
-            |row| match row {
-                TaskRow::WaitingSummary(count) => format!(
-                    "Waiting tasks: {count}\n\nBitBake reported the overall task total, but individual queued-task metadata is not available yet."
-                ),
-                TaskRow::Task(task) => {
-                    let now = SystemTime::now();
-                    let elapsed = task
-                        .elapsed_at(now)
-                        .map(format_duration)
-                        .unwrap_or_else(|| "unavailable".into());
-                    let dependencies = if task.dependencies.is_empty() {
-                        "unavailable".into()
-                    } else {
-                        task.dependencies
-                            .iter()
-                            .map(|dependency| dependency.0.as_str())
-                            .collect::<Vec<_>>()
-                            .join(", ")
-                    };
-                    let live_log = app
-                        .logs
-                        .entries
-                        .iter()
-                        .rev()
-                        .find(|entry| {
-                            entry.recipe.as_deref() == Some(task.recipe.as_str())
-                                && entry.task.as_deref() == Some(task.task.as_str())
-                        })
-                        .map_or("unavailable", |entry| entry.message.as_str());
-                    format!(
-                        "Recipe: {}\nTask: {}\nState: {:?}\nProgress: {}\nWorker: {}\nPID: {}\nStarted: {}\nElapsed: {}\nDependencies: {}\nSource log: {}\nCancellation: {}\n\nLive log:\n{}",
-                        task.recipe,
-                        task.task,
-                        task.state,
-                        task.progress
-                            .map_or_else(|| "unknown".into(), |value| format!("{value}%")),
-                        task.worker.as_deref().unwrap_or("unavailable"),
-                        task.pid.map_or_else(|| "unavailable".into(), |pid| pid.to_string()),
-                        task.started
-                            .map(timestamp_text)
-                            .unwrap_or_else(|| "unavailable".into()),
-                        elapsed,
-                        dependencies,
-                        task.log_path
-                            .as_ref()
-                            .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
-                        task.cancellation.as_deref().unwrap_or("none"),
-                        live_log,
-                    )
-                }
-            },
-        ),
         Screen::Dependencies => dependency_inspector(app),
         Screen::Signatures => signature_detail_text(app),
         Screen::Packages => package_inspector_text(app),
@@ -2903,8 +3003,89 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
     )
 }
 
-fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
-    let rows = app.visible_task_rows();
+fn task_state_label(state: TaskState) -> &'static str {
+    match state {
+        TaskState::Waiting => "⌛ Pending",
+        TaskState::Active => "▶ Running",
+        TaskState::Completed => "✓ Succeeded",
+        TaskState::Failed => "✕ Failed",
+        TaskState::Cancelled => "■ Cancelled",
+        TaskState::Lost => "? Lost",
+    }
+}
+
+fn task_state_style(app: &App, state: TaskState) -> Style {
+    let palette = ThemePalette::for_app(app);
+    match state {
+        TaskState::Active => palette.role(palette.progress, Modifier::BOLD),
+        TaskState::Completed => palette.role(palette.success, Modifier::BOLD),
+        TaskState::Waiting | TaskState::Cancelled => palette.role(palette.warning, Modifier::BOLD),
+        TaskState::Failed | TaskState::Lost => {
+            palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED)
+        }
+    }
+}
+
+fn matching_task_logs(app: &App, row: Option<&TaskRow>, limit: usize) -> Vec<Line<'static>> {
+    let Some(TaskRow::Task(task)) = row else {
+        return vec![Line::from("No task-specific log is available.")];
+    };
+    let entries = app
+        .logs
+        .entries
+        .iter()
+        .filter(|entry| {
+            entry.recipe.as_deref() == Some(task.recipe.as_str())
+                && entry.task.as_deref() == Some(task.task.as_str())
+        })
+        .rev()
+        .take(limit)
+        .collect::<Vec<_>>();
+    if entries.is_empty() {
+        return vec![Line::from(
+            "Waiting for typed log entries for the selected task.",
+        )];
+    }
+    entries
+        .into_iter()
+        .rev()
+        .map(|entry| {
+            let marker = match entry.severity {
+                Severity::Trace => "·",
+                Severity::Info => "│",
+                Severity::Warning => "!",
+                Severity::Error => "✕",
+            };
+            Line::from(vec![
+                Span::styled(format!("{marker} "), severity_style(app, entry.severity)),
+                Span::styled(entry.message.clone(), severity_style(app, entry.severity)),
+            ])
+        })
+        .collect()
+}
+
+fn task_filter_summary(app: &App) -> String {
+    let duration = app
+        .task_filters
+        .minimum_duration
+        .map_or_else(|| "all".into(), |value| format!("≥{}s", value.as_secs()));
+    let mut filters = vec![format!("{:?}", app.task_filters.state)];
+    if !app.task_filters.recipe.is_empty() {
+        filters.push(format!("recipe={}", app.task_filters.recipe));
+    }
+    if !app.task_filters.task.is_empty() {
+        filters.push(format!("task={}", app.task_filters.task));
+    }
+    if !app.task_filters.worker.is_empty() {
+        filters.push(format!("worker={}", app.task_filters.worker));
+    }
+    if duration != "all" {
+        filters.push(format!("duration={duration}"));
+    }
+    filters.join(" · ")
+}
+
+fn render_task_table(frame: &mut Frame, app: &App, area: Rect, rows: &[TaskRow]) {
     let waiting = app.waiting_task_count();
     let active = app
         .tasks
@@ -2916,88 +3097,56 @@ fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
         .iter()
         .filter(|task| !task.success)
         .count();
-    let chunks = Layout::vertical([
-        Constraint::Length(3),
-        Constraint::Length(3),
-        Constraint::Min(3),
-    ])
-    .split(area);
-    let overall = Block::default()
-        .title("Overall build progress")
-        .borders(Borders::ALL);
-    if let Some(total) = app.build.total.filter(|total| *total > 0) {
-        let completed = app.build.completed.min(total);
-        frame.render_widget(
-            Gauge::default()
-                .block(overall)
-                .ratio(completed as f64 / total as f64)
-                .label(format!(
-                    "{}% {completed}/{total} · A{active} W{waiting} F{failed} · {}",
-                    completed.saturating_mul(100) / total,
-                    build_pace(app)
-                ))
-                .gauge_style(
-                    ThemePalette::for_app(app)
-                        .role(ThemePalette::for_app(app).progress, Modifier::BOLD),
-                ),
-            chunks[0],
-        );
-    } else {
-        frame.render_widget(
-            Paragraph::new(format!(
-                "progress unknown | {} complete | {active} active | waiting unknown | {failed} failed",
-                app.build.completed
-            ))
-            .block(overall),
-            chunks[0],
-        );
-    }
-    let duration = app
-        .task_filters
-        .minimum_duration
-        .map_or_else(|| "all".into(), |value| format!("≥{}s", value.as_secs()));
-    let active_field = match app.task_filter_field {
-        TaskFilterField::Recipe => "recipe",
-        TaskFilterField::Task => "task",
-        TaskFilterField::Worker => "worker",
-    };
-    frame.render_widget(
-        Paragraph::new(format!(
-            "State {:?} | recipe '{}' | task '{}' | worker '{}' | duration {duration}\n{} field: {active_field}  F next field  / edit  f state  d duration",
-            app.task_filters.state,
-            app.task_filters.recipe,
-            app.task_filters.task,
-            app.task_filters.worker,
-            if app.task_filter_editing { "Editing" } else { "Filter" },
-        ))
-        .block(Block::default().title("Filters").borders(Borders::ALL)),
-        chunks[1],
+    let progress = app.build.total.filter(|total| *total > 0).map_or_else(
+        || format!("{} / ?", app.build.completed),
+        |total| {
+            let completed = app.build.completed.min(total);
+            format!(
+                "{}% {completed}/{total}",
+                completed.saturating_mul(100) / total
+            )
+        },
+    );
+    let target = app.build.target.as_deref().unwrap_or("not selected");
+    let title = format!(
+        "Tasks: {target} · {progress} · A{active} W{waiting} F{failed} · {} · {}",
+        build_pace(app),
+        task_filter_summary(app)
     );
     let table_rows = rows.iter().enumerate().map(|(index, row)| {
         let values = match row {
             TaskRow::WaitingSummary(count) => vec![
-                Cell::from("(queue)"),
-                Cell::from(format!("{count} tasks")),
+                Cell::from(format!("{count} queued tasks")),
+                Cell::from("unavailable"),
+                Cell::from(Span::styled(
+                    task_state_label(TaskState::Waiting),
+                    task_state_style(app, TaskState::Waiting),
+                )),
                 Cell::from("--"),
-                Cell::from("WAITING"),
-                Cell::from("queued metadata unavailable"),
+                Cell::from("metadata unavailable"),
             ],
             TaskRow::Task(task) => vec![
-                Cell::from(task.recipe.clone()),
                 Cell::from(task.task.clone()),
+                Cell::from(task.recipe.clone()),
+                Cell::from(Span::styled(
+                    task_state_label(task.state),
+                    task_state_style(app, task.state),
+                )),
                 Cell::from(
                     task.elapsed_at(SystemTime::now())
                         .map(format_duration)
                         .unwrap_or_else(|| "--".into()),
                 ),
-                Cell::from(format!("{:?}", task.state).to_uppercase()),
-                Cell::from(match (task.state, task.progress) {
-                    (TaskState::Active, None) => {
-                        format!("progress unknown{}", task_activity(app, None))
-                    }
-                    (_, Some(progress)) => task_progress_bar(progress),
-                    _ => "--".into(),
-                }),
+                Cell::from(Span::styled(
+                    match (task.state, task.progress) {
+                        (TaskState::Active, None) => {
+                            format!("progress unknown{}", task_activity(app, None))
+                        }
+                        (_, Some(progress)) => task_progress_bar(progress),
+                        _ => "--".into(),
+                    },
+                    task_state_style(app, task.state),
+                )),
             ],
         };
         Row::new(values).style(selected_style(app, index == app.task_progress_scroll))
@@ -3008,23 +3157,146 @@ fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
             [
                 Constraint::Percentage(25),
                 Constraint::Percentage(25),
-                Constraint::Length(10),
-                Constraint::Length(11),
+                Constraint::Length(13),
+                Constraint::Length(9),
                 Constraint::Min(18),
             ],
         )
         .header(
-            Row::new(["Recipe", "Task", "Elapsed", "State", "Progress"])
+            Row::new(["Task", "Recipe", "Status", "Time", "Progress"])
                 .style(Style::default().add_modifier(Modifier::BOLD)),
         )
         .block(
             Block::default()
-                .title(format!("Live Tasks ({} visible)", rows.len()))
+                .title(title)
                 .borders(Borders::ALL)
                 .style(ThemePalette::for_app(app).base()),
         ),
-        chunks[2],
+        area,
     );
+}
+
+fn render_task_log(frame: &mut Frame, app: &App, area: Rect, selected: Option<&TaskRow>) {
+    let title = match selected {
+        Some(TaskRow::Task(task)) => format!("Log Viewer — {} ({})", task.task, task.recipe),
+        Some(TaskRow::WaitingSummary(_)) => "Log Viewer — queued tasks".into(),
+        None => "Log Viewer — no task selected".into(),
+    };
+    let limit = usize::from(area.height.saturating_sub(2)).max(1);
+    frame.render_widget(
+        Paragraph::new(Text::from(matching_task_logs(app, selected, limit)))
+            .block(Block::default().title(title).borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn background_job_style(app: &App, status: BackgroundJobStatus) -> Style {
+    let palette = ThemePalette::for_app(app);
+    match status {
+        BackgroundJobStatus::Succeeded => palette.role(palette.success, Modifier::BOLD),
+        BackgroundJobStatus::Failed | BackgroundJobStatus::Lost => {
+            palette.role(palette.error, Modifier::BOLD)
+        }
+        BackgroundJobStatus::Cancelled | BackgroundJobStatus::Cancelling => {
+            palette.role(palette.warning, Modifier::BOLD)
+        }
+        BackgroundJobStatus::Queued
+        | BackgroundJobStatus::Starting
+        | BackgroundJobStatus::Running => palette.role(palette.progress, Modifier::BOLD),
+    }
+}
+
+fn render_job_history(frame: &mut Frame, app: &App, area: Rect) {
+    let now = SystemTime::now();
+    let mut rows = app
+        .background_jobs
+        .jobs
+        .iter()
+        .rev()
+        .map(|job| {
+            let elapsed = job
+                .started_at
+                .and_then(|started| job.finished_at.unwrap_or(now).duration_since(started).ok());
+            Row::new(vec![
+                Cell::from(job.id.0.to_string()),
+                Cell::from(job.title.clone()),
+                Cell::from(format!("{:?}", job.kind)),
+                Cell::from(Span::styled(
+                    background_status_label(job.status),
+                    background_job_style(app, job.status),
+                )),
+                Cell::from(job.started_at.map_or_else(|| "--".into(), clock_text)),
+                Cell::from(job.finished_at.map_or_else(|| "--".into(), clock_text)),
+                Cell::from(elapsed.map_or_else(|| "--".into(), format_duration)),
+            ])
+        })
+        .collect::<Vec<_>>();
+    rows.extend(app.build_history.iter().rev().map(|record| {
+        let state = if record.success {
+            "succeeded"
+        } else {
+            "failed"
+        };
+        let style = if record.success {
+            ThemePalette::for_app(app).role(ThemePalette::for_app(app).success, Modifier::BOLD)
+        } else {
+            ThemePalette::for_app(app).role(ThemePalette::for_app(app).error, Modifier::BOLD)
+        };
+        Row::new(vec![
+            Cell::from("--"),
+            Cell::from(record.target.clone().unwrap_or_else(|| "unknown".into())),
+            Cell::from("Build"),
+            Cell::from(Span::styled(state, style)),
+            Cell::from("--"),
+            Cell::from("--"),
+            Cell::from(record.elapsed.map_or_else(|| "--".into(), format_duration)),
+        ])
+    }));
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Length(5),
+                Constraint::Percentage(28),
+                Constraint::Length(12),
+                Constraint::Length(12),
+                Constraint::Length(9),
+                Constraint::Length(9),
+                Constraint::Min(8),
+            ],
+        )
+        .header(
+            Row::new([
+                "ID", "Name", "Type", "Status", "Started", "Finished", "Elapsed",
+            ])
+            .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(Block::default().title("Job History").borders(Borders::ALL)),
+        area,
+    );
+}
+
+fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let rows = app.visible_task_rows();
+    let selected = rows.get(app.task_progress_scroll);
+    if area.height >= 27 {
+        let panels = Layout::vertical([
+            Constraint::Percentage(45),
+            Constraint::Percentage(30),
+            Constraint::Min(6),
+        ])
+        .split(area);
+        render_task_table(frame, app, panels[0], &rows);
+        render_task_log(frame, app, panels[1], selected);
+        render_job_history(frame, app, panels[2]);
+    } else if area.height >= 18 {
+        let panels = Layout::vertical([Constraint::Percentage(62), Constraint::Min(6)]).split(area);
+        render_task_table(frame, app, panels[0], &rows);
+        render_task_log(frame, app, panels[1], selected);
+    } else {
+        render_task_table(frame, app, area, &rows);
+    }
 }
 
 fn qemu_popup_rect(area: Rect, preferred_width: u16, preferred_height: u16) -> Rect {
@@ -14915,9 +15187,9 @@ mod tests {
         let output = rendered_text(&app, 180, 34);
         assert!(output.contains("40% 2/5"), "{output}");
         assert!(output.contains("A1 W2 F1"), "{output}");
-        assert!(output.contains("FAILED"), "{output}");
-        assert!(output.contains("State All"), "{output}");
-        assert!(output.contains("PID: 4242"), "{output}");
+        assert!(output.contains("✕ Failed"), "{output}");
+        assert!(output.contains("· All"), "{output}");
+        assert!(output.contains("PID         4242"), "{output}");
         assert!(output.contains("log.do_compile"), "{output}");
     }
 
@@ -14935,6 +15207,91 @@ mod tests {
         assert!(output.contains("progress unknown"), "{output}");
         assert!(!output.contains("0%"), "{output}");
         let _ = rendered_text(&app, 50, 16);
+    }
+
+    #[test]
+    fn workbench_tasks_renders_table_log_history_and_structured_inspector() {
+        let mut app = App::new(32, 8_192);
+        app.screen = Screen::Tasks;
+        app.build.target = Some("core-image-minimal".into());
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Running;
+        let mut task = yoctui_model::TaskInfo::active(
+            yoctui_model::TaskId("busybox:do_compile".into()),
+            "busybox".into(),
+            "do_compile".into(),
+        );
+        task.progress = Some(72);
+        task.worker = Some("worker-3".into());
+        task.log_path = Some("/build/tmp/work/busybox/temp/log.do_compile".into());
+        app.tasks.insert(task.id.clone(), task);
+        app.logs.insert(yoctui_model::LogEntry {
+            id: 0,
+            severity: Severity::Info,
+            message: "CC builtins/execute_cmd.o".into(),
+            recipe: Some("busybox".into()),
+            task: Some("do_compile".into()),
+            path: Some("/build/tmp/work/busybox/temp/log.do_compile".into()),
+            timestamp: UNIX_EPOCH + Duration::from_secs(3_600),
+            build: Some("core-image-minimal".into()),
+            protected: false,
+            diagnostic: None,
+        });
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(yoctui_model::BackgroundJobSpec {
+                id: yoctui_model::BackgroundJobId(857),
+                kind: BackgroundJobKind::Build,
+                title: "core-image-minimal".into(),
+                context: yoctui_model::BackgroundJobContext::default(),
+                cancellation_supported: true,
+                queued_at: UNIX_EPOCH + Duration::from_secs(3_500),
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::StartBackgroundJob {
+                id: yoctui_model::BackgroundJobId(857),
+                started_at: UNIX_EPOCH + Duration::from_secs(3_550),
+            },
+        );
+
+        let output = rendered_text(&app, 180, 44);
+        for expected in [
+            "Tasks: core-image-minimal",
+            "do_compile",
+            "busybox",
+            "▶ Running",
+            "72%",
+            "Log Viewer — do_compile (busybox)",
+            "CC builtins/execute_cmd.o",
+            "Job History",
+            "857",
+            "Inspector: Task",
+            "Recent Log (tail)",
+            "Actions",
+            "System Status",
+            "Daemon: Connected",
+        ] {
+            assert!(output.contains(expected), "missing {expected}: {output}");
+        }
+    }
+
+    #[test]
+    fn workbench_tasks_reduced_height_prioritizes_the_task_table() {
+        let mut app = App::new(16, 4_096);
+        app.screen = Screen::Tasks;
+        let task = yoctui_model::TaskInfo::active(
+            yoctui_model::TaskId("bash:do_compile".into()),
+            "bash".into(),
+            "do_compile".into(),
+        );
+        app.tasks.insert(task.id.clone(), task);
+        let output = rendered_text(&app, 130, 24);
+        assert!(output.contains("Tasks: not selected"), "{output}");
+        assert!(output.contains("do_compile"), "{output}");
+        assert!(output.contains("Log Viewer"), "{output}");
+        assert!(!output.contains("Job History"), "{output}");
     }
 
     #[test]

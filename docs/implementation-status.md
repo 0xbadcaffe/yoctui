@@ -11,9 +11,16 @@ Status values:
 
 ## Current phase
 
-`UI-VISION-TASKS-001` is `IN_PROGRESS`: the next slice composes selected-task
-logs, retained job history, and structured task/system Inspector sections from
-existing typed model and daemon-replica state.
+`UI-VISION-RESP-001` is `IN_PROGRESS`: the final implementation slice validates
+the redesigned shell and cockpit across wide, medium, narrow, reduced-height,
+theme, and no-color modes, then refreshes semantic terminal snapshots.
+
+`UI-VISION-TASKS-001` is `DONE`: wide Tasks now shows the dense task table,
+bounded selected-task typed log tail, and retained background/build history.
+Its Inspector is divided into task metadata, recent log, actual shortcuts, and
+daemon/BitBake/system status. Reduced height drops history first while keeping
+the primary table and log. Focused tests, all 130 UI tests, model job tests,
+and Clippy pass.
 
 `UI-VISION-NAV-001` is `DONE`: Navigator destinations now appear under
 `OVERVIEW`, `CONTENT`, `BUILD`, `VALIDATE`, and `TOOLS` headings with semantic

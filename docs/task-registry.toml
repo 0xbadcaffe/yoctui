@@ -4290,18 +4290,18 @@ notes = "Navigator now renders OVERVIEW, CONTENT, BUILD, VALIDATE, and TOOLS gro
 id = "UI-VISION-TASKS-001"
 milestone = "M13"
 title = "Implement the task log history cockpit"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 462
 required = true
 depends_on = ["UI-VISION-NAV-001"]
 verify = ["cargo test -p yoctui-ui workbench_tasks", "cargo test -p yoctui-ui task_progress", "cargo test -p yoctui-model background_job", "./scripts/verify-roadmap.sh"]
-notes = "Compose the live task table, selected-task log viewer, retained job history, and structured task Inspector from existing typed state."
+notes = "Wide Tasks now composes a dense Task/Recipe/Status/Time/Progress table, bounded selected-task typed log tail, and retained background/build job history. The Inspector is split into task metadata, recent log, actual actions, and daemon/BitBake/system status, with reduced-height collapse. Focused tests, all 130 UI tests, model job tests, and Clippy pass."
 
 [[task]]
 id = "UI-VISION-RESP-001"
 milestone = "M13"
 title = "Validate responsive and accessible workbench rendering"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 463
 required = true
 depends_on = ["UI-VISION-TASKS-001"]
