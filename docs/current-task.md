@@ -2,15 +2,14 @@
 
 ## Task
 
-**ID:** COMPAT-UI-WORKSPACE-ACTIONS-001
-**Title:** Render capability state in workspace and Inspector actions
+**ID:** COMPAT-UI-DIALOG-ACTIONS-001
+**Title:** Render and enforce capability state in dialogs
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Render concise centralized compatibility state for every useful
-environment-backed action in workspace tables/action lists and persistent
-Inspectors, with exact reasons and maintained alternatives discoverable.
+Render the current centralized capability state inside every environment-backed
+dialog and ensure confirmation remains correlated to that same authority.
 
 ## Dependencies
 
@@ -18,12 +17,11 @@ Inspectors, with exact reasons and maintained alternatives discoverable.
 - `COMPAT-UI-INSPECTOR-001` — DONE
 - `COMPAT-UI-ACTION-CATALOG-001` — DONE
 - `COMPAT-UI-NAV-ACTIONS-001` — DONE
+- `COMPAT-UI-WORKSPACE-ACTIONS-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/compatibility_ui.rs`
-- `crates/yoctui-model/src/compatibility_ui.rs`
-- `crates/yoctui-model/src/workspace_compatibility.rs`
 - `crates/yoctui-model/src/lib.rs`
 - `crates/yoctui-app/src/lib.rs`
 - `crates/yoctui-ui/src/lib.rs`
@@ -34,24 +32,24 @@ Inspectors, with exact reasons and maintained alternatives discoverable.
 
 ## Definition of done
 
-- Every useful environment-backed action row or action-list entry derives its
-  five-state presentation from the typed action-surface requirement.
-- Disabled entries remain visible/selectable for inspection, show an exact
-  reason, and cannot emit an effect; limited entries show their selected
-  fallback/limitation and remain usable.
-- Persistent Inspectors expose full reasons, requirements, and maintained
-  implementation alternatives without release-version clutter.
-- Client-local copy/open/navigation actions and cancellation of already-owned
-  work remain available when environment authority is absent.
-- Snapshot replacement updates visible state/reasons without widget caches,
-  stale selections, invalid launches, or panics at supported terminal sizes.
-- Exhaustive focused tests cover all workspace families and all five states.
+- Every environment-backed dialog shows Available, Limited, Unavailable,
+  Unknown, or Unsupported from `workspace_dialog_requirement`.
+- Limited dialogs remain confirmable and show exact limitations plus the
+  selected implementation before confirmation.
+- Unavailable/Unknown/Unsupported dialogs show the exact reason and cannot emit
+  a confirm effect; their confirmation control is visibly disabled.
+- Snapshot replacement revalidates the open dialog, safely closes an invalid
+  launch dialog with restored focus/reason, and ignores stale generations.
+- Client-local editors, copy/open dialogs, quit, and owned-process cancellation
+  remain usable without environment authority.
+- Every dialog family and all five states render safely at responsive bounds;
+  renderers contain no release/version policy or widget-local cache.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui compatibility_ui_workspace_actions
-cargo test -p yoctui-app compatibility_ui_workspace_actions
+cargo test -p yoctui-ui compatibility_ui_dialog_actions
+cargo test -p yoctui-app compatibility_ui_dialog_actions
 ./scripts/test-tui-snapshots.sh
 ./scripts/verify-roadmap.sh
 ```

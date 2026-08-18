@@ -4834,18 +4834,18 @@ notes = "Navigator destinations render concise Available/Limited/Unavailable/Unk
 id = "COMPAT-UI-WORKSPACE-ACTIONS-001"
 milestone = "M18"
 title = "Render capability state in workspace and Inspector actions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-NAV-ACTIONS-001"]
 verify = ["cargo test -p yoctui-ui compatibility_ui_workspace_actions", "cargo test -p yoctui-app compatibility_ui_workspace_actions", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
-notes = "Render concise enabled/limited/disabled state for every useful environment-backed workspace table, action list, and Inspector operation from the shared projection, with exact reasons/alternatives and no widget-local cache or release policy."
+notes = "A stable contextual action inventory covers all 25 workspace destinations, including per-operation BitBake, Devtool, layer, pkgdata, image/QEMU/Wic, SDK, testing, security, QA, maintenance, and terminal capabilities plus explicit client-local/open/cancel behavior. Persistent Inspectors and the selected Navigator destination render concise five-state action rows, exact reasons, and selected implementations from the current snapshot; Tasks annotates its existing action list when authority is present while preserving the canonical literal golden. Snapshot invalidation replaces limited fallback text with Unknown immediately, gated runtime actions remain no-spawn, and local/owned actions stay enabled. Focused model/UI/app tests, all 287 model, 121 app, and 147 UI tests, PTY snapshots, roadmap validation, and warnings-denied workspace Clippy pass."
 
 [[task]]
 id = "COMPAT-UI-DIALOG-ACTIONS-001"
 milestone = "M18"
 title = "Render and enforce capability state in dialogs"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-WORKSPACE-ACTIONS-001"]

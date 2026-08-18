@@ -976,4 +976,12 @@ command compatibility, keep navigation discoverable, and reject unavailable
 operations before dialog preparation. Live replacement/invalidation updates
 both surfaces without a local cache. Focused tests, full model/app/UI suites,
 literal golden, PTY snapshots, and workspace Clippy pass.
-`COMPAT-UI-WORKSPACE-ACTIONS-001` is active.
+`COMPAT-UI-WORKSPACE-ACTIONS-001` is complete. A stable contextual action
+inventory covers all 25 destinations and each useful environment-backed
+operation, with explicit local/open/cancel entries. Inspectors render exact
+five-state rows, reasons, and selected implementations from the live authority;
+the Tasks action list gains state without changing the canonical literal
+golden. Invalidation removes stale fallback text immediately, runtime denials
+remain no-spawn, and local/owned operations remain usable. Focused and full
+model/app/UI suites, PTY snapshots, and workspace Clippy pass.
+`COMPAT-UI-DIALOG-ACTIONS-001` is active.

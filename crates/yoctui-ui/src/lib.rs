@@ -632,7 +632,57 @@ fn compatibility_destination_detail(app: &App, destination: WorkspaceDestination
             ),
         ]);
     }
+    let actions = compatibility_workspace_actions_text(app, destination);
+    if !actions.is_empty() {
+        lines.extend([String::new(), "Actions / Compatibility".into(), actions]);
+    }
     lines.join("\n")
+}
+
+fn compatibility_workspace_actions_text(app: &App, destination: WorkspaceDestination) -> String {
+    yoctui_model::compatibility_ui_workspace_action_presentations(
+        &app.workspace_compatibility,
+        destination,
+    )
+    .into_iter()
+    .flat_map(|action| {
+        let availability = action.availability;
+        let state = if availability.state == WorkspaceAvailabilityState::Available
+            && availability.implementations.is_empty()
+        {
+            "Local"
+        } else {
+            compatibility_workspace_state_label(availability.state)
+        };
+        let marker = match availability.state {
+            WorkspaceAvailabilityState::Available => "✓",
+            WorkspaceAvailabilityState::AvailableWithLimitations => "~",
+            WorkspaceAvailabilityState::Unavailable => "×",
+            WorkspaceAvailabilityState::Unknown => "?",
+            WorkspaceAvailabilityState::Unsupported => "!",
+        };
+        let mut lines = vec![format!(
+            "{marker} {} [{}] — {state}",
+            action.label, action.shortcut
+        )];
+        if let Some(reason) = availability.exact_reason() {
+            lines.push(format!("  Reason: {reason}"));
+        }
+        if !availability.implementations.is_empty() {
+            lines.push(format!(
+                "  Implementation: {}",
+                availability
+                    .implementations
+                    .iter()
+                    .map(|(_, implementation)| implementation.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+        lines
+    })
+    .collect::<Vec<_>>()
+    .join("\n")
 }
 
 fn with_compatibility_footer(
@@ -2789,10 +2839,30 @@ fn task_actions_text(app: &App) -> Text<'static> {
     } else {
         palette.role(palette.disabled, Modifier::DIM)
     };
+    let compatibility = if app.workspace_compatibility.authority().is_some() {
+        yoctui_model::compatibility_ui_workspace_action_presentations(
+            &app.workspace_compatibility,
+            WorkspaceDestination::Tasks,
+        )
+    } else {
+        Vec::new()
+    };
+    let state = |id: &str| {
+        compatibility
+            .iter()
+            .find(|action| action.id == id)
+            .map_or_else(String::new, |action| {
+                format!(
+                    " [{}]",
+                    compatibility_workspace_state_label(action.availability.state)
+                )
+            })
+    };
     Text::from(vec![
         Line::from(vec![
             Span::styled("Cancel build       ", cancel_style),
             Span::styled("c", palette.role(palette.warning, Modifier::BOLD)),
+            Span::raw(state("tasks.cancel")),
         ]),
         Line::from(vec![
             Span::raw("Open Logs         "),
@@ -2805,6 +2875,7 @@ fn task_actions_text(app: &App) -> Text<'static> {
         Line::from(vec![
             Span::raw("Build options     "),
             Span::styled("B", palette.role(palette.warning, Modifier::BOLD)),
+            Span::raw(state("tasks.build")),
         ]),
     ])
 }
@@ -2920,7 +2991,7 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
         );
         return;
     }
-    let details = match app.screen {
+    let mut details = match app.screen {
         Screen::Recipes => app.workspace.recipes.get(app.recipe_selection).map_or_else(
             || "No recipe selected.".into(),
             |recipe| recipe_inspector(app, recipe),
@@ -3002,6 +3073,12 @@ fn inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
             app.build.status
         ),
     };
+    let destination = yoctui_model::workspace_screen_destination(app.screen);
+    let actions = compatibility_workspace_actions_text(app, destination);
+    if !actions.is_empty() {
+        details.push_str("\n\nActions / Compatibility\n");
+        details.push_str(&actions);
+    }
     frame.render_widget(
         Paragraph::new(details)
             .block(pane_block(
@@ -12214,6 +12291,74 @@ mod tests {
             "{discoverable}"
         );
         assert!(!discoverable.contains("Cannot run:"), "{discoverable}");
+    }
+
+    #[test]
+    fn compatibility_ui_workspace_actions_render_exact_states_reasons_and_local_paths() {
+        let mut app = compatibility_ui_inspector_app();
+        app.screen = Screen::Configuration;
+        app.focus = FocusTarget::Inspector;
+        let configuration = rendered_text(&app, 180, 50);
+        for expected in [
+            "Actions / Compatibility",
+            "Refresh effective variables [r]",
+            "Limited",
+            "Native getvar is absent; environment dump fallback selected.",
+            "bitbake.getvar.environment-fallback",
+            "Inspect/copy/source [Enter/C/U/o]",
+            "Local",
+        ] {
+            assert!(
+                configuration.contains(expected),
+                "missing {expected}: {configuration}"
+            );
+        }
+
+        app.focus = FocusTarget::Navigator;
+        app.navigator_selection = 14;
+        let devtool = rendered_text(&app, 180, 58);
+        for expected in [
+            "Destination: Devtool",
+            "Upgrade recipe [U]",
+            "Unavailable",
+            "Current Devtool does not expose the upgrade subcommand.",
+        ] {
+            assert!(devtool.contains(expected), "missing {expected}: {devtool}");
+        }
+    }
+
+    #[test]
+    fn compatibility_ui_workspace_actions_replace_without_stale_widget_state() {
+        let mut app = compatibility_ui_inspector_app();
+        app.screen = Screen::Configuration;
+        app.focus = FocusTarget::Inspector;
+        let limited = rendered_text(&app, 180, 46);
+        assert!(limited.contains("Limited"), "{limited}");
+        assert!(limited.contains("environment-fallback"), "{limited}");
+
+        yoctui_model::invalidate_workspace_compatibility(&mut app);
+        let unknown = rendered_text(&app, 180, 46);
+        assert!(
+            unknown.contains("Refresh effective variables [r] — Unknown"),
+            "{unknown}"
+        );
+        assert!(
+            unknown.contains("requires the current environment capability"),
+            "{unknown}"
+        );
+        assert!(!unknown.contains("environment-fallback"), "{unknown}");
+
+        app.screen = Screen::Images;
+        let images = rendered_text(&app, 180, 60);
+        assert!(images.contains("Launch QEMU [Q] — Unknown"), "{images}");
+        assert!(
+            images.contains("Write selected local device [D] — Local"),
+            "{images}"
+        );
+        assert!(
+            images.contains("Cancel owned image operation [x/c] — Local"),
+            "{images}"
+        );
     }
 
     #[test]

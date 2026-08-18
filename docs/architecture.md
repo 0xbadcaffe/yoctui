@@ -2370,6 +2370,16 @@ state; operational commands become inert before dialog preparation, while
 navigation commands remain reachable. Snapshot replacement is read on every
 projection, so neither palette nor Navigator retains stale compatibility data.
 
+Contextual workspace actions are a stable model inventory keyed by user-facing
+operation rather than release. All 25 destination variants map to exact
+single/all-of/any-of requirements or explicit client-local behavior, covering
+BitBake, Devtool, layers, pkgdata, images/QEMU/Wic, SDK, testing, security, QA,
+maintenance, and terminal workflows. Inspectors project this inventory from
+the current authority on every render, retaining exact reasons and selected
+implementations. Runtime authorization still uses the same underlying effect
+map, so displayed denial and no-spawn enforcement cannot select different
+capability policy.
+
 `yoctui-app::compatibility_model_snapshot` is the sole wire-to-model conversion
 boundary. It validates protocol bounds before resolving stable capability IDs,
 wire enums, reasons, evidence, identity authorities, and selected
