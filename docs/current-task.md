@@ -2,45 +2,46 @@
 
 ## Task
 
-**ID:** UI-LITERAL-001
-**Title:** Complete literal reference workbench
-**Status:** IN_PROGRESS
+**ID:** FINAL-GATE-PERF-001
+**Title:** Rerun the terminal gate with perf sampling enabled
+**Status:** BLOCKED
 
 ## Objective
 
-Close the literal reference-workbench milestone after every atomic visual,
-interaction, and live-Poky acceptance task has passed.
+Complete the final host-level verification with real perf sampling enabled.
+All product, literal-workbench, and preceding terminal-gate stages pass; only
+the Flamegraph sampling policy blocks repository completion.
 
 ## Dependencies
 
-- `UI-LITERAL-HARNESS-001` — DONE
-- `UI-LITERAL-SHELL-001` — DONE
-- `UI-LITERAL-NAV-001` — DONE
-- `UI-LITERAL-COCKPIT-001` — DONE
-- `UI-LITERAL-UX-001` — DONE
-- `UI-LITERAL-LIVE-001` — DONE
+- `CRATESIO-COVERAGE-001` — DONE
+- `UI-STARTUP-DIAG-001` — DONE
 
 ## Relevant files
 
-- `docs/current-task.md`
-- `docs/ui-spec.md`
+- `/proc/sys/kernel/perf_event_paranoid`
+- `scripts/flamegraph.sh`
+- `scripts/verify-completion.sh`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Every M16 child task is `DONE` with its required evidence.
-- The strict terminal-cell golden and live Poky gate remain passing.
-- Workspace tests, Clippy, Python bridge tests, docs, and roadmap checks pass.
-- The milestone state and human-readable handoff are current.
+- `perf record -- true` succeeds for the current user.
+- A fresh real headless-workload Flamegraph is generated.
+- The terminal completion gate passes without skipped required stages.
+
+## Blocker evidence
+
+- Current host value: `kernel.perf_event_paranoid=4`.
+- `scripts/flamegraph.sh` reports that perf sampling is unavailable.
+- The operator must temporarily grant `CAP_PERFMON` or lower the kernel policy.
+- After changing policy, rerun the verification commands below.
 
 ## Verification
 
 ```bash
-cargo fmt --all --check
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-python3 -m pytest bridge/tests
-./scripts/check-docs.sh
-./scripts/verify-roadmap.sh
+perf record -- true
+./scripts/flamegraph.sh
+./scripts/verify-completion.sh
 ```

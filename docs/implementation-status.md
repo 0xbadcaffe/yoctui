@@ -11,10 +11,12 @@ Status values:
 
 ## Current phase
 
-`UI-LITERAL-001` is `IN_PROGRESS`: every atomic reference-workbench task is
-complete. The parent acceptance now reruns formatting, the complete Rust
-workspace, Clippy, Python bridge tests, documentation checks, and roadmap
-validation before closing M16.
+`UI-LITERAL-001` is `DONE`: the canonical 160x48 shell, strict 7,680-cell style
+golden, typed mixed Navigator, task/log/history cockpit, structured Inspector,
+F1–F10 routes, transactional theme preview, and live 1,829-recipe Poky workflow
+all pass. Formatting, the complete Rust workspace, Clippy with warnings denied,
+all 39 Python bridge tests, documentation, and roadmap validation pass. The
+independent `FINAL-GATE-PERF-001` host-policy blocker remains explicit.
 
 `UI-LITERAL-LIVE-001` is `DONE`: the release client passes the controlling-PTY
 gate against `~/src/poky/build` with 1,829 recipes. F2 enters the canonical
