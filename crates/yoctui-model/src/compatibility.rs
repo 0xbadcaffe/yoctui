@@ -527,6 +527,10 @@ impl CapabilityId {
             Self::GitArchive => "git_archive",
         }
     }
+
+    pub fn from_stable_name(value: &str) -> Option<Self> {
+        Self::ALL.into_iter().find(|id| id.as_str() == value)
+    }
 }
 
 impl std::fmt::Display for CapabilityId {

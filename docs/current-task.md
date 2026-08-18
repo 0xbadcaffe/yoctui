@@ -2,48 +2,43 @@
 
 ## Task
 
-**ID:** COMPAT-WORKSPACE-APP-001
-**Title:** Install and enforce workspace capability authority
+**ID:** COMPAT-WORKSPACE-001
+**Title:** Apply capabilities to all workspaces
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Install the bounded daemon wire snapshot into client model state and make all
-interactive daemon/local effect routing consume the same typed authority.
+Close the aggregate workspace acceptance gate by verifying that every
+Navigator destination and action consumes the centralized capability snapshot.
 
 ## Dependencies
 
+- `COMPAT-WORKSPACE-CATALOG-001` — DONE
 - `COMPAT-WORKSPACE-MODEL-001` — DONE
-- `COMPAT-PROTOCOL-001` — DONE
+- `COMPAT-WORKSPACE-APP-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-app/src/lib.rs`
-- `crates/yoctui-cli/src/main.rs`
 - `crates/yoctui-model/src/workspace_compatibility.rs`
-- `crates/yoctui-protocol/src/daemon.rs`
-- `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Valid bounded wire snapshots convert once into normalized model authority;
-  unknown wire values fail closed and cannot invent support.
-- Attach/reconnect/update install the same snapshot into `App`; disconnect or
-  absent authority invalidates it without changing presentation state.
-- Interactive action routing uses the capability-aware reducer boundary for
-  both daemon and local execution paths.
-- Daemon-owned probe effects are not independently executed by clients.
-- Unavailable/unknown/unsupported/stale actions produce no process/job effect
-  and retain exact model reasons.
-- Tests cover attach, update, disconnect, malformed/unknown data, local effect,
-  unavailable effect, and no-spawn routing.
+- Every Navigator destination and every typed effect is present in the closed
+  workspace requirement inventory.
+- Model projection, snapshot replacement/invalidation, dialog revalidation,
+  and unavailable-effect rollback pass their focused tests.
+- App/CLI snapshot lifecycle, shared daemon/local enforcement, daemon-owned
+  probe suppression, and no-spawn routing pass their focused tests.
+- The parent gate is marked DONE only after its three children and aggregate
+  verification pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app compatibility_workspace_app
-cargo test -p yoctui compatibility_workspace_app
+cargo test -p yoctui-app compatibility_workspace
+cargo test -p yoctui-model compatibility_workspace
 ./scripts/verify-roadmap.sh
 ```

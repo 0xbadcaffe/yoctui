@@ -28,11 +28,11 @@ use std::{
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
     BuildJobCoordinator, DevtoolJobCoordinator, Input, MouseInput, MouseKind, PrefixCommand,
-    PrefixEvent, PrefixState, build_environment_action, config_compare_dialog_action,
-    config_edit_confirmation_action, config_scope_picker_action, config_source_picker_action,
-    config_workspace_action, daemon_job_state_from_app, daemon_protocol_snapshot,
-    dependency_workspace_action, devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
-    devtool_finish_confirmation_action, devtool_finish_picker_action,
+    PrefixEvent, PrefixState, build_environment_action, compatibility_workspace_action,
+    config_compare_dialog_action, config_edit_confirmation_action, config_scope_picker_action,
+    config_source_picker_action, config_workspace_action, daemon_job_state_from_app,
+    daemon_protocol_snapshot, dependency_workspace_action, devtool_deploy_confirmation_action,
+    devtool_deploy_dialog_action, devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
     key_action, logs_action, maintenance_dialog_action, maintenance_workspace_action,
@@ -5133,7 +5133,7 @@ impl TestCliCoordinator {
                     for action in
                         test_actions_for_runner_event(operation.id, event, SystemTime::now())
                     {
-                        if let Some(effect) = update(app, action) {
+                        if let Some(effect) = compatibility_workspace_action(app, action) {
                             followups.push(effect);
                         }
                     }
@@ -5186,7 +5186,7 @@ impl TestCliCoordinator {
                     message: error.to_string(),
                 },
             };
-            if let Some(effect) = update(app, action) {
+            if let Some(effect) = compatibility_workspace_action(app, action) {
                 followups.push(effect);
             }
         }
@@ -5215,7 +5215,7 @@ impl TestCliCoordinator {
                 operation.comparison.clone(),
                 Vec::new(),
             ) {
-                if let Some(effect) = update(app, action) {
+                if let Some(effect) = compatibility_workspace_action(app, action) {
                     followups.push(effect);
                 }
             }
@@ -5555,7 +5555,7 @@ impl SecurityCliCoordinator {
                 | SecurityMapperRunnerEvent::Lost { .. }
         );
         for action in security_actions_for_mapper_event(event, SystemTime::now()) {
-            if let Some(effect) = update(app, action) {
+            if let Some(effect) = compatibility_workspace_action(app, action) {
                 followups.push(effect);
             }
         }
@@ -6145,7 +6145,7 @@ impl QaCliCoordinator {
             }
             event => qa_layer_runner_action(event, SystemTime::now()),
         };
-        let followup = action.and_then(|action| update(app, action));
+        let followup = action.and_then(|action| compatibility_workspace_action(app, action));
         if terminal {
             self.layer = None;
         }
@@ -6647,7 +6647,7 @@ async fn route_independent_maintenance_effect(
             true
         }
         Effect::Maintenance(yoctui_model::MaintenanceEffect::Navigate(screen)) => {
-            if let Some(next) = update(app, Action::Open(screen)) {
+            if let Some(next) = compatibility_workspace_action(app, Action::Open(screen)) {
                 let _ = coordinator.handle_effect(app, next).await;
             }
             true
@@ -6717,7 +6717,7 @@ fn sdk_refresh_after_build_event(
         BackendEvent::BuildCompleted { success: true, .. } => {
             let request = pending_sdk_build.take()?;
             sdk_build_is_populate(&request)
-                .then(|| update(app, Action::RefreshSdkArtifactInventory))
+                .then(|| compatibility_workspace_action(app, Action::RefreshSdkArtifactInventory))
                 .flatten()
         }
         BackendEvent::BuildCompleted { success: false, .. }
@@ -7603,6 +7603,7 @@ async fn poll_wic_capability_operation(
     }
 }
 
+#[cfg(test)]
 fn execute_qemu_capability_effect(
     app: &mut App,
     inspector: &QemuCapabilityInspector,
@@ -7680,9 +7681,9 @@ fn begin_image_artifact_operation(
 async fn poll_image_artifact_operation(
     app: &mut App,
     operation: &mut Option<ImageArtifactBackgroundOperation>,
-    qemu_inspector: &QemuCapabilityInspector,
-    wic_inspector: &WicCapabilityInspector,
-    wic_operation: &mut Option<WicCapabilityBackgroundOperation>,
+    _qemu_inspector: &QemuCapabilityInspector,
+    _wic_inspector: &WicCapabilityInspector,
+    _wic_operation: &mut Option<WicCapabilityBackgroundOperation>,
 ) {
     if !operation
         .as_ref()
@@ -7720,11 +7721,6 @@ async fn poll_image_artifact_operation(
                 message: format!("image artifact inventory failed: {message}"),
             }),
         );
-    } else if let Some(effect) = update(app, Action::InspectQemuCapability) {
-        execute_qemu_capability_effect(app, qemu_inspector, effect);
-        if let Some(effect) = update(app, Action::InspectWicCapability) {
-            begin_wic_capability_operation(app, wic_inspector, wic_operation, effect);
-        }
     }
 }
 
@@ -7852,7 +7848,7 @@ async fn open_yocto_shell(guard: &TerminalGuard, app: &mut App) {
 
 async fn inspect_selected_devtool(app: &mut App, build_dir: &Path) {
     if let Some(Effect::InspectDevtoolStatus(identity)) =
-        update(app, Action::BeginSelectedRecipeDevtoolStatus)
+        compatibility_workspace_action(app, Action::BeginSelectedRecipeDevtoolStatus)
     {
         let status = inspect_devtool_status(app, build_dir, identity).await;
         let _ = update(app, Action::DevtoolStatusLoaded(status));
@@ -8043,7 +8039,9 @@ async fn load_config_variable(
 }
 
 async fn inspect_selected_config_variable(app: &mut App, backend: &mut dyn BitBakeBackend) {
-    if let Some(Effect::GetVariable(identity)) = update(app, Action::BeginSelectedConfigDetail) {
+    if let Some(Effect::GetVariable(identity)) =
+        compatibility_workspace_action(app, Action::BeginSelectedConfigDetail)
+    {
         load_config_variable(app, backend, identity).await;
     }
 }
@@ -8074,7 +8072,8 @@ async fn load_dependency_graph(app: &mut App, backend: &mut dyn BitBakeBackend, 
 }
 
 fn config_copy_effect(app: &mut App, input: Input) -> Option<Effect> {
-    config_workspace_action(false, input).and_then(|action| update(app, action))
+    config_workspace_action(false, input)
+        .and_then(|action| compatibility_workspace_action(app, action))
 }
 
 fn recipe_editor_files(root: &Path) -> Result<Vec<PathBuf>> {
@@ -8111,7 +8110,7 @@ async fn open_workspace_editor(app: &mut App, recipe: String, root: PathBuf) {
     let files = tokio::task::spawn_blocking(move || recipe_editor_files(&root_for_scan)).await;
     match files {
         Ok(Ok(files)) => {
-            if let Some(Effect::LoadRecipeEditorFile(path)) = update(
+            if let Some(Effect::LoadRecipeEditorFile(path)) = compatibility_workspace_action(
                 app,
                 Action::OpenRecipeEditor {
                     recipe,
@@ -8206,7 +8205,7 @@ async fn load_layer_browser_directory(
     let scan = directory.clone();
     match tokio::task::spawn_blocking(move || scan_layer_directory(&scan)).await {
         Ok(Ok(entries)) => {
-            if let Some(Effect::LoadLayerBrowserPreview(path)) = update(
+            if let Some(Effect::LoadLayerBrowserPreview(path)) = compatibility_workspace_action(
                 app,
                 Action::LoadLayerBrowserDirectory {
                     layer,
@@ -8491,7 +8490,7 @@ async fn execute_config_edit_write(
     let identity = request.identity.clone();
     match write_config_assignment(build_dir, request).await {
         Ok(()) => {
-            if let Some(Effect::GetVariable(identity)) = update(
+            if let Some(Effect::GetVariable(identity)) = compatibility_workspace_action(
                 app,
                 Action::ConfigEditWriteSucceeded {
                     identity: identity.clone(),
@@ -8736,13 +8735,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             .map_err(anyhow::Error::msg)?;
     if app.screen == Screen::Packages
         && let Some(effect @ Effect::GetPackageInventory(_)) =
-            update(&mut app, Action::BeginPackageInventory)
+            compatibility_workspace_action(&mut app, Action::BeginPackageInventory)
     {
         begin_package_operation(&mut app, &package_adapter, &mut package_operation, effect);
     }
     if app.screen == Screen::Images
         && let Some(effect @ Effect::GetImageArtifacts(_)) =
-            update(&mut app, Action::BeginImageArtifactInventory)
+            compatibility_workspace_action(&mut app, Action::BeginImageArtifactInventory)
     {
         begin_image_artifact_operation(
             &mut app,
@@ -8751,21 +8750,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             effect,
         );
     }
-    if sdk_tool_adapter.is_some() {
-        begin_sdk_capability_operation(
-            &mut app,
-            sdk_tool_adapter.as_ref(),
-            &mut sdk_capability_operation,
-            Effect::InspectSdkTools,
-        );
-    }
     if app.screen == Screen::Testing
-        && let Some(effect) = update(&mut app, Action::InspectTestCapability)
+        && let Some(effect) =
+            compatibility_workspace_action(&mut app, Action::InspectTestCapability)
     {
         let _ = test_coordinator.handle_effect(&mut app, effect).await;
     }
     if app.screen == Screen::Security
-        && let Some(effect) = update(
+        && let Some(effect) = compatibility_workspace_action(
             &mut app,
             Action::Security(SecurityAction::InspectCapability),
         )
@@ -8773,12 +8765,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         let _ = security_coordinator.handle_effect(&mut app, effect).await;
     }
     if app.screen == Screen::Qa
-        && let Some(effect) = update(&mut app, Action::Qa(QaAction::InspectCapability))
+        && let Some(effect) =
+            compatibility_workspace_action(&mut app, Action::Qa(QaAction::InspectCapability))
     {
         let _ = qa_coordinator.handle_effect(&mut app, effect).await;
     }
     if app.screen == Screen::Maintenance
-        && let Some(effect) = update(
+        && let Some(effect) = compatibility_workspace_action(
             &mut app,
             Action::Maintenance(yoctui_model::MaintenanceAction::InspectCapability),
         )
@@ -8804,6 +8797,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             app.notification = Some(format!("Daemon connection lost: {error}"));
             daemon_runtime = None;
             app.daemon.status = yoctui_model::ClientReplicaStatus::Disconnected;
+            yoctui_model::invalidate_workspace_compatibility(&mut app);
         }
         poll_signature_operation(&mut app, &mut signature_operation).await;
         poll_package_operation(&mut app, &mut package_operation).await;
@@ -8867,7 +8861,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         if editor.editing
                 ) {
                     for character in text.chars().filter(|character| !character.is_control()) {
-                        let _ = update(
+                        let _ = compatibility_workspace_action(
                             &mut app,
                             Action::EditActivePopup(yoctui_model::PopupEditorCommand::Insert(
                                 character,
@@ -8882,7 +8876,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         if editor.editing
                 ) {
                     for character in text.chars().filter(|character| !character.is_control()) {
-                        let _ = update(
+                        let _ = compatibility_workspace_action(
                             &mut app,
                             Action::EditActivePopup(yoctui_model::PopupEditorCommand::Insert(
                                 character,
@@ -8906,7 +8900,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         )
                 ) {
                     for character in text.chars().filter(|character| !character.is_control()) {
-                        let _ = update(
+                        let _ = compatibility_workspace_action(
                             &mut app,
                             Action::EditActivePopup(yoctui_model::PopupEditorCommand::Insert(
                                 character,
@@ -8956,7 +8950,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 };
                 if let Some(action) = popup_action {
                     for character in text.chars().filter(|character| !character.is_control()) {
-                        let _ = update(&mut app, action(character));
+                        let _ = compatibility_workspace_action(&mut app, action(character));
                     }
                 } else if app.screen == Screen::BuildEnvironment
                     && app
@@ -8965,7 +8959,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         .is_some_and(|draft| draft.editing)
                 {
                     for character in text.chars() {
-                        let _ = update(&mut app, Action::AppendBuildEnvironmentField(character));
+                        let _ = compatibility_workspace_action(
+                            &mut app,
+                            Action::AppendBuildEnvironmentField(character),
+                        );
                     }
                 }
                 continue;
@@ -8990,7 +8987,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         terminal.size()?.width,
                     )
                 {
-                    let _ = update(&mut app, action);
+                    let _ = compatibility_workspace_action(&mut app, action);
                 }
                 continue;
             }
@@ -9028,9 +9025,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                 let _ = runtime.detach(&mut app);
                             }
                             if command == PrefixCommand::NextSession {
-                                let _ = update(&mut app, Action::SelectPtySession { delta: 1 });
+                                let _ = compatibility_workspace_action(
+                                    &mut app,
+                                    Action::SelectPtySession { delta: 1 },
+                                );
                             } else if command == PrefixCommand::PreviousSession {
-                                let _ = update(&mut app, Action::SelectPtySession { delta: -1 });
+                                let _ = compatibility_workspace_action(
+                                    &mut app,
+                                    Action::SelectPtySession { delta: -1 },
+                                );
                             }
                             if command == PrefixCommand::SplitHorizontal
                                 || command == PrefixCommand::SplitVertical
@@ -9059,11 +9062,17 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             }
                             app.notification = Some(match command {
                                 PrefixCommand::CommandPalette => {
-                                    let _ = update(&mut app, Action::OpenCommandPalette);
+                                    let _ = compatibility_workspace_action(
+                                        &mut app,
+                                        Action::OpenCommandPalette,
+                                    );
                                     "Command palette opened".into()
                                 }
                                 PrefixCommand::Help => {
-                                    let _ = update(&mut app, Action::Open(Screen::Help));
+                                    let _ = compatibility_workspace_action(
+                                        &mut app,
+                                        Action::Open(Screen::Help),
+                                    );
                                     "Help opened".into()
                                 }
                                 PrefixCommand::CreateSession => {
@@ -9088,14 +9097,28 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
                 if app.command_palette_open {
                     let effect = match input {
-                        Input::Up => update(&mut app, Action::SelectCommandPalette { delta: -1 }),
-                        Input::Down => update(&mut app, Action::SelectCommandPalette { delta: 1 }),
-                        Input::Enter => update(&mut app, Action::ActivateCommandPalette),
-                        Input::Esc => update(&mut app, Action::CloseCommandPalette),
-                        Input::Backspace => update(&mut app, Action::BackspaceCommandPaletteQuery),
-                        Input::Char(character) => {
-                            update(&mut app, Action::AppendCommandPaletteQuery(character))
+                        Input::Up => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectCommandPalette { delta: -1 },
+                        ),
+                        Input::Down => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectCommandPalette { delta: 1 },
+                        ),
+                        Input::Enter => {
+                            compatibility_workspace_action(&mut app, Action::ActivateCommandPalette)
                         }
+                        Input::Esc => {
+                            compatibility_workspace_action(&mut app, Action::CloseCommandPalette)
+                        }
+                        Input::Backspace => compatibility_workspace_action(
+                            &mut app,
+                            Action::BackspaceCommandPaletteQuery,
+                        ),
+                        Input::Char(character) => compatibility_workspace_action(
+                            &mut app,
+                            Action::AppendCommandPaletteQuery(character),
+                        ),
                         _ => None,
                     };
                     if let Some(effect @ Effect::GetImageArtifacts(_)) = effect {
@@ -9168,7 +9191,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         input => popup_editor_action(editor.editing, input),
                     };
                     if let Some(Effect::CopyToClipboard(content)) =
-                        action.and_then(|action| update(&mut app, action))
+                        action.and_then(|action| compatibility_workspace_action(&mut app, action))
                     {
                         copy_to_clipboard(&mut app, content).await;
                     }
@@ -9182,7 +9205,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         _ => None,
                     };
                     if let Some(action) = action
-                        && let Some(Effect::CloneBuildEnvironment(plan)) = update(&mut app, action)
+                        && let Some(Effect::CloneBuildEnvironment(plan)) =
+                            compatibility_workspace_action(&mut app, action)
                     {
                         match BuildEnvironmentAdapter::default()
                             .clone_poky(plan.request.clone())
@@ -9194,8 +9218,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                     build_dir: plan.build_dir,
                                     init_script: plan.request.destination.join("oe-init-build-env"),
                                 };
-                                let _ =
-                                    update(&mut app, Action::ConfigureBuildEnvironment(profile));
+                                let _ = compatibility_workspace_action(
+                                    &mut app,
+                                    Action::ConfigureBuildEnvironment(profile),
+                                );
                                 app.notification = Some(
                                     "Poky cloned. Press V to initialize and verify BitBake.".into(),
                                 );
@@ -9216,7 +9242,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         input => popup_editor_action(editor.editing, input),
                     };
                     if let Some(Effect::CopyToClipboard(content)) =
-                        action.and_then(|action| update(&mut app, action))
+                        action.and_then(|action| compatibility_workspace_action(&mut app, action))
                     {
                         copy_to_clipboard(&mut app, content).await;
                     }
@@ -9229,7 +9255,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         _ => None,
                     };
                     if let Some(action) = action
-                        && let Some(Effect::PersistSettings) = update(&mut app, action)
+                        && let Some(Effect::PersistSettings) =
+                            compatibility_workspace_action(&mut app, action)
                     {
                         let result = persist_settings(
                             session_path.as_deref(),
@@ -9241,11 +9268,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             Ok(()) => Action::SettingsPersisted,
                             Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
                         };
-                        let _ = update(&mut app, persistence_action);
+                        let _ = compatibility_workspace_action(&mut app, persistence_action);
                     }
                 } else if let Some(Dialog::Maintenance(dialog)) = app.active_dialog().cloned() {
                     let effect = maintenance_dialog_action(&dialog, input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect) = effect {
                         if let Effect::CopyToClipboard(content) = effect {
                             copy_to_clipboard(&mut app, content).await;
@@ -9262,7 +9289,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if let Some(Dialog::Security(dialog)) = app.active_dialog().cloned() {
                     let effect = security_dialog_action(&dialog, input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect) = effect {
                         if let Effect::CopyToClipboard(content) = effect {
                             copy_to_clipboard(&mut app, content).await;
@@ -9295,10 +9322,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                     if pending_security_build == Some(id) =>
                                 {
                                     if let Some(action) = build_jobs.request_cancellation() {
-                                        let _ = update(&mut app, action);
+                                        let _ = compatibility_workspace_action(&mut app, action);
                                     }
                                     if let Err(error) = backend.cancel_build().await {
-                                        let _ = update(
+                                        let _ = compatibility_workspace_action(
                                             &mut app,
                                             Action::Security(SecurityAction::RejectCancellation {
                                                 id,
@@ -9309,12 +9336,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                             error.to_string(),
                                             SystemTime::now(),
                                         ) {
-                                            let _ = update(&mut app, action);
+                                            let _ =
+                                                compatibility_workspace_action(&mut app, action);
                                         }
                                     }
                                 }
                                 Effect::Security(SecurityEffect::CancelSession(id)) => {
-                                    let _ = update(
+                                    let _ = compatibility_workspace_action(
                                         &mut app,
                                         Action::Security(SecurityAction::RejectCancellation {
                                             id,
@@ -9329,7 +9357,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if let Some(Dialog::Qa(dialog)) = app.active_dialog().cloned() {
                     let effect = qa_dialog_action(&dialog, input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect) = effect {
                         if let Effect::CopyToClipboard(content) = effect {
                             copy_to_clipboard(&mut app, content).await;
@@ -9362,10 +9390,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                     if pending_qa_build == Some(session) =>
                                 {
                                     if let Some(action) = build_jobs.request_cancellation() {
-                                        let _ = update(&mut app, action);
+                                        let _ = compatibility_workspace_action(&mut app, action);
                                     }
                                     if let Err(error) = backend.cancel_build().await {
-                                        let _ = update(
+                                        let _ = compatibility_workspace_action(
                                             &mut app,
                                             Action::Qa(QaAction::RejectCancellation {
                                                 session,
@@ -9376,12 +9404,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                             error.to_string(),
                                             SystemTime::now(),
                                         ) {
-                                            let _ = update(&mut app, action);
+                                            let _ =
+                                                compatibility_workspace_action(&mut app, action);
                                         }
                                     }
                                 }
                                 Effect::Qa(QaEffect::CancelBuild { session, .. }) => {
-                                    let _ = update(
+                                    let _ = compatibility_workspace_action(
                                         &mut app,
                                         Action::Qa(QaAction::RejectCancellation {
                                             session,
@@ -9396,7 +9425,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::SdkBuildConfirmation(_))) {
                     let effect = sdk_build_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(Effect::Start(request)) = effect {
                         let tracked = sdk_build_is_populate(&request);
                         if begin_runtime_build(
@@ -9423,16 +9452,16 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         input => popup_editor_action(editor.editing, input),
                     };
                     if let Some(Effect::CopyToClipboard(content)) =
-                        action.and_then(|action| update(&mut app, action))
+                        action.and_then(|action| compatibility_workspace_action(&mut app, action))
                     {
                         copy_to_clipboard(&mut app, content).await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::SdkPublish(_))) {
                     let _ = sdk_publish_dialog_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                 } else if matches!(app.active_dialog(), Some(Dialog::SdkPublishConfirmation(_))) {
                     let effect = sdk_publish_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect @ Effect::StartSdkSession { .. }) = effect {
                         if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
                             continue;
@@ -9461,17 +9490,17 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         input => popup_editor_action(editor.editing, input),
                     };
                     if let Some(Effect::CopyToClipboard(content)) =
-                        action.and_then(|action| update(&mut app, action))
+                        action.and_then(|action| compatibility_workspace_action(&mut app, action))
                     {
                         copy_to_clipboard(&mut app, content).await;
                     }
                 } else if let Some(Dialog::SdkNative(dialog)) = app.active_dialog() {
                     let editing = dialog.editing;
                     let _ = sdk_native_dialog_action(editing, input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                 } else if matches!(app.active_dialog(), Some(Dialog::SdkNativeConfirmation(_))) {
                     let effect = sdk_native_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect @ Effect::StartSdkSession { .. }) = effect {
                         if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
                             continue;
@@ -9494,7 +9523,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::SdkCancellationConfirmation(_))
                 ) {
                     let effect = sdk_cancellation_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect @ Effect::CancelSdkSession(_)) = effect {
                         if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
                             continue;
@@ -9515,17 +9544,17 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         input => popup_editor_action(editor.editing, input),
                     };
                     if let Some(Effect::CopyToClipboard(content)) =
-                        action.and_then(|action| update(&mut app, action))
+                        action.and_then(|action| compatibility_workspace_action(&mut app, action))
                     {
                         copy_to_clipboard(&mut app, content).await;
                     }
                 } else if let Some(Dialog::TestLaunch(dialog)) = app.active_dialog() {
                     let editing = dialog.editing;
                     let _ = test_launch_dialog_action(editing, input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                 } else if matches!(app.active_dialog(), Some(Dialog::TestLaunchConfirmation(_))) {
                     let effect = test_launch_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     match effect {
                         Some(effect @ Effect::StartTestSession { .. }) => {
                             if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect)
@@ -9558,17 +9587,17 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::TestCancellationConfirmation(_))
                 ) {
                     let effect = test_cancellation_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect @ Effect::CancelTestSession(id)) = effect
                         && submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_none()
                         && !test_coordinator.handle_effect(&mut app, effect).await
                         && pending_test_build == Some(id)
                     {
                         if let Some(action) = build_jobs.request_cancellation() {
-                            let _ = update(&mut app, action);
+                            let _ = compatibility_workspace_action(&mut app, action);
                         }
                         if let Err(error) = backend.cancel_build().await {
-                            let _ = update(
+                            let _ = compatibility_workspace_action(
                                 &mut app,
                                 Action::RejectTestSessionCancellation {
                                     id,
@@ -9578,7 +9607,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             for action in
                                 build_jobs.cancellation_failed(error.to_string(), SystemTime::now())
                             {
-                                let _ = update(&mut app, action);
+                                let _ = compatibility_workspace_action(&mut app, action);
                             }
                         }
                     }
@@ -9592,7 +9621,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         }
                         input => popup_editor_action(editor.editing, input),
                     };
-                    if let Some(effect) = action.and_then(|action| update(&mut app, action)) {
+                    if let Some(effect) =
+                        action.and_then(|action| compatibility_workspace_action(&mut app, action))
+                    {
                         match effect {
                             Effect::CopyToClipboard(content) => {
                                 copy_to_clipboard(&mut app, content).await;
@@ -9604,7 +9635,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::TestResultImport(_))) {
                     let effect = test_result_import_dialog_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect) = effect {
                         let _ = test_coordinator.handle_effect(&mut app, effect).await;
                     }
@@ -9619,19 +9650,19 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         input => popup_editor_action(editor.editing, input),
                     };
                     if let Some(Effect::CopyToClipboard(content)) =
-                        action.and_then(|action| update(&mut app, action))
+                        action.and_then(|action| compatibility_workspace_action(&mut app, action))
                     {
                         copy_to_clipboard(&mut app, content).await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::TestComparison(_))) {
                     let _ = test_comparison_dialog_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                 } else if matches!(
                     app.active_dialog(),
                     Some(Dialog::TestComparisonConfirmation(_))
                 ) {
                     let effect = test_comparison_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect) = effect {
                         let _ = test_coordinator.handle_effect(&mut app, effect).await;
                     }
@@ -9678,7 +9709,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             _ => None,
                         }
                     };
-                    if let Some(effect) = action.and_then(|action| update(&mut app, action)) {
+                    if let Some(effect) =
+                        action.and_then(|action| compatibility_workspace_action(&mut app, action))
+                    {
                         match effect {
                             Effect::CopyToClipboard(content) => {
                                 copy_to_clipboard(&mut app, content).await;
@@ -9689,8 +9722,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         }
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::TestJunitExport(_))) {
-                    let effect =
-                        test_junit_dialog_action(input).and_then(|action| update(&mut app, action));
+                    let effect = test_junit_dialog_action(input)
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect) = effect {
                         let _ = test_coordinator.handle_effect(&mut app, effect).await;
                     }
@@ -9699,7 +9732,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::TestJunitExportConfirmation(_))
                 ) {
                     let effect = test_junit_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect) = effect {
                         let _ = test_coordinator.handle_effect(&mut app, effect).await;
                     }
@@ -9714,7 +9747,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         input => popup_editor_action(editor.editing, input),
                     };
                     if let Some(Effect::CopyToClipboard(content)) =
-                        action.and_then(|action| update(&mut app, action))
+                        action.and_then(|action| compatibility_workspace_action(&mut app, action))
                     {
                         copy_to_clipboard(&mut app, content).await;
                     }
@@ -9723,10 +9756,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         |dialog| matches!(dialog, Dialog::WicCreate(state) if state.editing),
                     );
                     let _ = wic_create_dialog_action(editing, input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                 } else if matches!(app.active_dialog(), Some(Dialog::WicCreateConfirmation(_))) {
                     let effect = wic_create_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect @ Effect::StartWicSession { .. }) = effect {
                         if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
                             continue;
@@ -9746,14 +9779,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         .await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::WicDevicePicker(_))) {
-                    let _ =
-                        wic_device_picker_action(input).and_then(|action| update(&mut app, action));
+                    let _ = wic_device_picker_action(input)
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                 } else if matches!(app.active_dialog(), Some(Dialog::WicWritePhrase(_))) {
-                    let _ =
-                        wic_write_phrase_action(input).and_then(|action| update(&mut app, action));
+                    let _ = wic_write_phrase_action(input)
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                 } else if matches!(app.active_dialog(), Some(Dialog::WicWriteConfirmation(_))) {
                     let effect = wic_write_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(Effect::StartWicSession { id, operation }) = effect {
                         begin_wic_job(
                             &mut app,
@@ -9773,7 +9806,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 {
                     let effect =
                         wic_cancellation_confirmation_action(id, incomplete_device_warning, input)
-                            .and_then(|action| update(&mut app, action));
+                            .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect @ Effect::CancelWicSession(_)) = effect {
                         if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
                             continue;
@@ -9788,10 +9821,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         |dialog| matches!(dialog, Dialog::QemuLaunch(state) if state.editing),
                     );
                     let _ = qemu_launch_dialog_action(editing, input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                 } else if matches!(app.active_dialog(), Some(Dialog::QemuLaunchConfirmation(_))) {
                     let effect = qemu_launch_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect @ Effect::StartQemuSession { .. }) = effect {
                         if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
                             continue;
@@ -9814,7 +9847,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::QemuCancellationConfirmation(_))
                 ) {
                     let effect = qemu_cancellation_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect @ Effect::CancelQemuSession(_)) = effect {
                         if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
                             continue;
@@ -9829,7 +9862,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         |dialog| matches!(dialog, Dialog::RecipeEditor(editor) if editor.editing),
                     );
                     let effect = recipe_editor_action(editing, input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     match effect {
                         Some(Effect::LoadRecipeEditorFile(path)) => {
                             load_recipe_editor_file(&mut app, path).await;
@@ -9844,7 +9877,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::DevtoolModifyConfirmation(_))
                 ) {
                     let effect = devtool_modify_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(Effect::DevtoolModify(identity)) = effect {
                         if submit_daemon_effect(
                             &mut daemon_runtime,
@@ -9875,7 +9908,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     && app.notification.is_none()
                 {
                     let effect = signature_workspace_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     match effect {
                         Some(
                             effect @ (Effect::GetSignatureDump(_) | Effect::CompareSignatures(_)),
@@ -9901,14 +9934,17 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         }
                         _ => {
                             if matches!(input, Input::Char('q') | Input::CtrlC) {
-                                let _ = update(&mut app, Action::Quit);
+                                let _ = compatibility_workspace_action(&mut app, Action::Quit);
                             } else if input == Input::Char('?') {
-                                let _ = update(&mut app, Action::Open(Screen::Help));
+                                let _ = compatibility_workspace_action(
+                                    &mut app,
+                                    Action::Open(Screen::Help),
+                                );
                             }
                         }
                     }
                 } else if let Some(action) = pane_focus_route(app.focus, input) {
-                    let effect = update(&mut app, action);
+                    let effect = compatibility_workspace_action(&mut app, action);
                     if let Some(
                         effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
                     ) = effect
@@ -9954,8 +9990,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
                     let _ = match input {
-                        Input::Char('Y') => update(&mut app, Action::ConfirmQuit),
-                        Input::Esc => update(&mut app, Action::CancelQuit),
+                        Input::Char('Y') => {
+                            compatibility_workspace_action(&mut app, Action::ConfirmQuit)
+                        }
+                        Input::Esc => compatibility_workspace_action(&mut app, Action::CancelQuit),
                         _ => None,
                     };
                 } else if app.layer_browser.is_some()
@@ -9963,33 +10001,57 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     && app.focus != yoctui_model::FocusTarget::Dialog
                 {
                     let effect = match input {
-                        Input::Tab => update(&mut app, Action::CycleFocus { backwards: false }),
-                        Input::BackTab => update(&mut app, Action::CycleFocus { backwards: true }),
-                        Input::Up => {
-                            update(&mut app, Action::SelectLayerBrowserEntry { delta: -1 })
+                        Input::Tab => compatibility_workspace_action(
+                            &mut app,
+                            Action::CycleFocus { backwards: false },
+                        ),
+                        Input::BackTab => compatibility_workspace_action(
+                            &mut app,
+                            Action::CycleFocus { backwards: true },
+                        ),
+                        Input::Up => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectLayerBrowserEntry { delta: -1 },
+                        ),
+                        Input::Down => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectLayerBrowserEntry { delta: 1 },
+                        ),
+                        Input::Enter => {
+                            compatibility_workspace_action(&mut app, Action::LayerBrowserEnter)
                         }
-                        Input::Down => {
-                            update(&mut app, Action::SelectLayerBrowserEntry { delta: 1 })
-                        }
-                        Input::Enter => update(&mut app, Action::LayerBrowserEnter),
                         Input::Right | Input::Char('l') => {
-                            update(&mut app, Action::LayerBrowserExpand)
+                            compatibility_workspace_action(&mut app, Action::LayerBrowserExpand)
                         }
-                        Input::Esc => update(&mut app, Action::CloseLayerBrowser),
-                        Input::Left | Input::Char('h') => update(&mut app, Action::LayerBrowserUp),
-                        Input::Char('r') => update(&mut app, Action::RefreshLayerBrowser),
-                        Input::Char('e') => update(&mut app, Action::EditSelectedLayerBrowserFile),
-                        Input::Char('.') => update(&mut app, Action::ToggleLayerBrowserHidden),
-                        Input::Char('/') => update(&mut app, Action::BeginMetadataSearch),
-                        Input::Char('g') => update(
+                        Input::Esc => {
+                            compatibility_workspace_action(&mut app, Action::CloseLayerBrowser)
+                        }
+                        Input::Left | Input::Char('h') => {
+                            compatibility_workspace_action(&mut app, Action::LayerBrowserUp)
+                        }
+                        Input::Char('r') => {
+                            compatibility_workspace_action(&mut app, Action::RefreshLayerBrowser)
+                        }
+                        Input::Char('e') => compatibility_workspace_action(
+                            &mut app,
+                            Action::EditSelectedLayerBrowserFile,
+                        ),
+                        Input::Char('.') => compatibility_workspace_action(
+                            &mut app,
+                            Action::ToggleLayerBrowserHidden,
+                        ),
+                        Input::Char('/') => {
+                            compatibility_workspace_action(&mut app, Action::BeginMetadataSearch)
+                        }
+                        Input::Char('g') => compatibility_workspace_action(
                             &mut app,
                             Action::SetLayerInspectorMode(LayerInspectorMode::Git),
                         ),
-                        Input::Char('m') => update(
+                        Input::Char('m') => compatibility_workspace_action(
                             &mut app,
                             Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
                         ),
-                        Input::Char('d') => update(
+                        Input::Char('d') => compatibility_workspace_action(
                             &mut app,
                             Action::SetLayerInspectorMode(LayerInspectorMode::Dependencies),
                         ),
@@ -10005,14 +10067,16 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             load_layer_browser_preview(&mut app, path).await
                         }
                         Some(Effect::OpenLayerBrowserEditor { layer, root, file }) => {
-                            if let Some(Effect::LoadRecipeEditorFile(path)) = update(
-                                &mut app,
-                                Action::OpenRecipeEditor {
-                                    recipe: format!("Layer: {layer}"),
-                                    root,
-                                    files: vec![file],
-                                },
-                            ) {
+                            if let Some(Effect::LoadRecipeEditorFile(path)) =
+                                compatibility_workspace_action(
+                                    &mut app,
+                                    Action::OpenRecipeEditor {
+                                        recipe: format!("Layer: {layer}"),
+                                        root,
+                                        files: vec![file],
+                                    },
+                                )
+                            {
                                 load_recipe_editor_file(&mut app, path).await;
                             }
                         }
@@ -10023,7 +10087,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::DevtoolResetConfirmation(_))
                 ) {
                     let effect = devtool_reset_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(Effect::DevtoolReset(plan)) = effect {
                         if submit_daemon_effect(
                             &mut daemon_runtime,
@@ -10054,7 +10118,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::DevtoolUpdateConfirmation(_))
                 ) {
                     let effect = devtool_update_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(Effect::DevtoolUpdateRecipe(identity)) = effect {
                         if submit_daemon_effect(
                             &mut daemon_runtime,
@@ -10085,7 +10149,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     Some(Dialog::DevtoolFinishConfirmation(_))
                 ) {
                     let effect = devtool_finish_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(Effect::DevtoolFinish(plan)) = effect {
                         if submit_daemon_effect(
                             &mut daemon_runtime,
@@ -10113,13 +10177,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::DevtoolFinishPicker(_))) {
                     let _ = devtool_finish_picker_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                 } else if matches!(
                     app.active_dialog(),
                     Some(Dialog::DevtoolDeployConfirmation(_))
                 ) {
                     let effect = devtool_deploy_confirmation_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(Effect::DevtoolDeploy(plan)) = effect {
                         if submit_daemon_effect(
                             &mut daemon_runtime,
@@ -10147,11 +10211,15 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::DevtoolDeploy(_))) {
                     let _ = devtool_deploy_dialog_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                 } else if matches!(app.active_dialog(), Some(Dialog::BbmaskConfirmation(_))) {
                     let effect = match input {
-                        Input::Enter => update(&mut app, Action::ConfirmBbmaskWrite),
-                        Input::Esc => update(&mut app, Action::CancelBbmaskWrite),
+                        Input::Enter => {
+                            compatibility_workspace_action(&mut app, Action::ConfirmBbmaskWrite)
+                        }
+                        Input::Esc => {
+                            compatibility_workspace_action(&mut app, Action::CancelBbmaskWrite)
+                        }
                         _ => None,
                     };
                     if let Some(Effect::WriteBbmask(value)) = effect {
@@ -10178,7 +10246,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         input => popup_editor_action(editor.editing, input),
                     };
                     if let Some(Effect::CopyToClipboard(content)) =
-                        action.and_then(|action| update(&mut app, action))
+                        action.and_then(|action| compatibility_workspace_action(&mut app, action))
                     {
                         copy_to_clipboard(&mut app, content).await;
                     }
@@ -10191,18 +10259,28 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     } else {
                         Action::DismissBuildCompletion
                     };
-                    let _ = update(&mut app, action);
+                    let _ = compatibility_workspace_action(&mut app, action);
                 } else if matches!(app.active_dialog(), Some(Dialog::ImagePicker(_))) {
                     let _ = match input {
-                        Input::Up => update(&mut app, Action::SelectImage { delta: -1 }),
-                        Input::Down => update(&mut app, Action::SelectImage { delta: 1 }),
-                        Input::Enter => update(&mut app, Action::ConfirmImagePicker),
-                        Input::Esc => update(&mut app, Action::CancelImagePicker),
+                        Input::Up => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectImage { delta: -1 },
+                        ),
+                        Input::Down => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectImage { delta: 1 },
+                        ),
+                        Input::Enter => {
+                            compatibility_workspace_action(&mut app, Action::ConfirmImagePicker)
+                        }
+                        Input::Esc => {
+                            compatibility_workspace_action(&mut app, Action::CancelImagePicker)
+                        }
                         _ => None,
                     };
                 } else if matches!(app.active_dialog(), Some(Dialog::SignatureTaskPicker(_))) {
                     let effect = signature_task_picker_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(effect @ Effect::GetSignatureDump(_)) = effect {
                         begin_signature_operation(
                             &mut app,
@@ -10213,18 +10291,41 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskPicker(_))) {
                     let _ = match input {
-                        Input::Up => update(&mut app, Action::SelectRecipeTask { delta: -1 }),
-                        Input::Down => update(&mut app, Action::SelectRecipeTask { delta: 1 }),
-                        Input::Enter => update(&mut app, Action::PreviewSelectedRecipeTask),
-                        Input::Esc => update(&mut app, Action::CancelRecipeTaskPicker),
+                        Input::Up => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectRecipeTask { delta: -1 },
+                        ),
+                        Input::Down => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectRecipeTask { delta: 1 },
+                        ),
+                        Input::Enter => compatibility_workspace_action(
+                            &mut app,
+                            Action::PreviewSelectedRecipeTask,
+                        ),
+                        Input::Esc => {
+                            compatibility_workspace_action(&mut app, Action::CancelRecipeTaskPicker)
+                        }
                         _ => None,
                     };
                 } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskLogPicker(_))) {
                     let effect = match input {
-                        Input::Up => update(&mut app, Action::SelectRecipeTaskLog { delta: -1 }),
-                        Input::Down => update(&mut app, Action::SelectRecipeTaskLog { delta: 1 }),
-                        Input::Enter => update(&mut app, Action::OpenSelectedRecipeTaskLog),
-                        Input::Esc => update(&mut app, Action::CancelRecipeTaskLogPicker),
+                        Input::Up => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectRecipeTaskLog { delta: -1 },
+                        ),
+                        Input::Down => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectRecipeTaskLog { delta: 1 },
+                        ),
+                        Input::Enter => compatibility_workspace_action(
+                            &mut app,
+                            Action::OpenSelectedRecipeTaskLog,
+                        ),
+                        Input::Esc => compatibility_workspace_action(
+                            &mut app,
+                            Action::CancelRecipeTaskLogPicker,
+                        ),
                         _ => None,
                     };
                     if let Some(Effect::OpenInEditor(path)) = effect {
@@ -10232,10 +10333,22 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::RecipePatchPicker(_))) {
                     let effect = match input {
-                        Input::Up => update(&mut app, Action::SelectRecipePatch { delta: -1 }),
-                        Input::Down => update(&mut app, Action::SelectRecipePatch { delta: 1 }),
-                        Input::Enter => update(&mut app, Action::OpenSelectedRecipePatch),
-                        Input::Esc => update(&mut app, Action::CancelRecipePatchPicker),
+                        Input::Up => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectRecipePatch { delta: -1 },
+                        ),
+                        Input::Down => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectRecipePatch { delta: 1 },
+                        ),
+                        Input::Enter => compatibility_workspace_action(
+                            &mut app,
+                            Action::OpenSelectedRecipePatch,
+                        ),
+                        Input::Esc => compatibility_workspace_action(
+                            &mut app,
+                            Action::CancelRecipePatchPicker,
+                        ),
                         _ => None,
                     };
                     if let Some(Effect::OpenInEditor(path)) = effect {
@@ -10243,19 +10356,19 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::ConfigSourcePicker(_))) {
                     let effect = config_source_picker_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(Effect::OpenInEditor(path)) = effect {
                         open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::ConfigScopePicker(_))) {
                     let effect = config_scope_picker_action(input)
-                        .and_then(|action| update(&mut app, action));
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                     if let Some(Effect::GetVariable(identity)) = effect {
                         load_config_variable(&mut app, backend.as_mut(), identity).await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::ConfigComparison(_))) {
                     if let Some(action) = config_compare_dialog_action(input) {
-                        let _ = update(&mut app, action);
+                        let _ = compatibility_workspace_action(&mut app, action);
                     }
                 } else if let Some(Dialog::ConfigEdit { editor, .. }) = app.active_dialog().cloned()
                 {
@@ -10267,14 +10380,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         input => popup_editor_action(editor.editing, input),
                     };
                     if let Some(Effect::CopyToClipboard(content)) =
-                        action.and_then(|action| update(&mut app, action))
+                        action.and_then(|action| compatibility_workspace_action(&mut app, action))
                     {
                         copy_to_clipboard(&mut app, content).await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::ConfigEditConfirmation(_))) {
                     if let Some(action) = config_edit_confirmation_action(input)
                         && let Some(Effect::WriteConfigAssignment(request)) =
-                            update(&mut app, action)
+                            compatibility_workspace_action(&mut app, action)
                     {
                         execute_config_edit_write(
                             backend.as_mut(),
@@ -10286,8 +10399,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::RecipeTaskConfirmation(_))) {
                     let effect = match input {
-                        Input::Enter => update(&mut app, Action::ConfirmRecipeTask),
-                        Input::Esc => update(&mut app, Action::CancelRecipeTask),
+                        Input::Enter => {
+                            compatibility_workspace_action(&mut app, Action::ConfirmRecipeTask)
+                        }
+                        Input::Esc => {
+                            compatibility_workspace_action(&mut app, Action::CancelRecipeTask)
+                        }
                         _ => None,
                     };
                     if let Some(Effect::Start(request)) = effect {
@@ -10302,16 +10419,24 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
                     let effect = match input {
-                        Input::Char('b') => update(&mut app, Action::BeginBuildTargetTask(None)),
-                        Input::Char('c') => {
-                            update(&mut app, Action::BeginBuildTargetTask(Some("clean".into())))
-                        }
-                        Input::Char('m') => update(
+                        Input::Char('b') => compatibility_workspace_action(
+                            &mut app,
+                            Action::BeginBuildTargetTask(None),
+                        ),
+                        Input::Char('c') => compatibility_workspace_action(
+                            &mut app,
+                            Action::BeginBuildTargetTask(Some("clean".into())),
+                        ),
+                        Input::Char('m') => compatibility_workspace_action(
                             &mut app,
                             Action::BeginBuildTargetTask(Some("menuconfig".into())),
                         ),
-                        Input::Char('e') => update(&mut app, Action::BeginBuildTargetEdit),
-                        Input::Esc => update(&mut app, Action::CloseBuildOptions),
+                        Input::Char('e') => {
+                            compatibility_workspace_action(&mut app, Action::BeginBuildTargetEdit)
+                        }
+                        Input::Esc => {
+                            compatibility_workspace_action(&mut app, Action::CloseBuildOptions)
+                        }
                         _ => None,
                     };
                     if let Some(Effect::Start(request)) = effect {
@@ -10334,7 +10459,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         }
                         input => popup_editor_action(editor.editing, input),
                     };
-                    let effect = action.and_then(|action| update(&mut app, action));
+                    let effect =
+                        action.and_then(|action| compatibility_workspace_action(&mut app, action));
                     match effect {
                         Some(Effect::Start(request)) => {
                             begin_runtime_build(
@@ -10356,13 +10482,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     app.screen == Screen::Settings && app.settings_dirty,
                     input,
                 ) {
-                    let _ = update(&mut app, action);
+                    let _ = compatibility_workspace_action(&mut app, action);
                 } else if app.screen == Screen::Packages
                     && package_workspace_action(app.package_searching, input).is_some()
                 {
                     let action = package_workspace_action(app.package_searching, input)
                         .expect("Packages action was checked");
-                    match update(&mut app, action) {
+                    match compatibility_workspace_action(&mut app, action) {
                         Some(
                             effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
                         ) => begin_package_operation(
@@ -10392,7 +10518,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 {
                     let action = images_workspace_action(app.image_artifact_searching, input)
                         .expect("Images action was checked");
-                    match update(&mut app, action) {
+                    match compatibility_workspace_action(&mut app, action) {
                         Some(effect @ Effect::GetImageArtifacts(_)) => {
                             begin_image_artifact_operation(
                                 &mut app,
@@ -10427,7 +10553,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 {
                     let action = sdk_workspace_action(app.sdk_artifact_searching, input)
                         .expect("SDK action was checked");
-                    match update(&mut app, action) {
+                    match compatibility_workspace_action(&mut app, action) {
                         Some(effect @ Effect::GetSdkArtifacts(_)) => begin_sdk_artifact_operation(
                             &mut app,
                             sdk_artifact_adapter.as_ref(),
@@ -10460,7 +10586,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 {
                     let action =
                         testing_screen_action(&app, input).expect("Testing action was checked");
-                    match update(&mut app, action) {
+                    match compatibility_workspace_action(&mut app, action) {
                         Some(effect @ Effect::ImportTestResults(_))
                         | Some(effect @ Effect::CompareTestResults(_)) => {
                             if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect)
@@ -10496,7 +10622,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         input,
                     )
                     .expect("Security action was checked");
-                    if let Some(effect) = update(&mut app, action) {
+                    if let Some(effect) = compatibility_workspace_action(&mut app, action) {
                         let _ = route_independent_security_effect(
                             &guard,
                             &mut app,
@@ -10513,7 +10639,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let action =
                         qa_workspace_action(app.qa.view, app.qa.drilled, app.qa.searching, input)
                             .expect("QA action was checked");
-                    if let Some(effect) = update(&mut app, action) {
+                    if let Some(effect) = compatibility_workspace_action(&mut app, action) {
                         let _ = route_independent_qa_effect(
                             &guard,
                             &mut app,
@@ -10537,7 +10663,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         input,
                     )
                     .expect("Maintenance action was checked");
-                    if let Some(effect) = update(&mut app, action) {
+                    if let Some(effect) = compatibility_workspace_action(&mut app, action) {
                         let _ = route_independent_maintenance_effect(
                             &guard,
                             &mut app,
@@ -10563,7 +10689,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         _ => None,
                     };
                     if let Some(action) = action {
-                        let _ = update(&mut app, action);
+                        let _ = compatibility_workspace_action(&mut app, action);
                     }
                 } else if app.screen == Screen::BuildEnvironment
                     && build_environment_action(input).is_some()
@@ -10573,12 +10699,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if let Some(Effect::VerifyBuildEnvironment {
                         profile,
                         generation,
-                    }) = update(&mut app, action)
+                    }) = compatibility_workspace_action(&mut app, action)
                     {
                         match BuildEnvironmentAdapter::default().initialize(profile).await {
                             Ok(response) => {
                                 let profile = response.profile.clone();
-                                let _ = update(
+                                let _ = compatibility_workspace_action(
                                     &mut app,
                                     Action::BuildEnvironmentVerified { generation },
                                 );
@@ -10594,7 +10720,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                     Ok(mut connected) => {
                                         match connected.inspect_workspace().await {
                                             Ok(workspace) => {
-                                                let _ = update(
+                                                let _ = compatibility_workspace_action(
                                                     &mut app,
                                                     Action::WorkspaceLoaded(workspace),
                                                 );
@@ -10614,7 +10740,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                 }
                             }
                             Err(error) => {
-                                let _ = update(
+                                let _ = compatibility_workspace_action(
                                     &mut app,
                                     Action::BuildEnvironmentVerificationFailed {
                                         generation,
@@ -10626,11 +10752,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if app.screen == Screen::Settings && settings_action(input).is_some() {
                     if app.settings_selection == 0 && matches!(input, Input::Enter | Input::Right) {
-                        let _ = update(&mut app, Action::OpenThemePicker);
+                        let _ = compatibility_workspace_action(&mut app, Action::OpenThemePicker);
                         continue;
                     }
                     let action = settings_action(input).expect("settings action was checked");
-                    match update(&mut app, action) {
+                    match compatibility_workspace_action(&mut app, action) {
                         Some(Effect::PersistSettings) => {
                             let result = persist_settings(
                                 session_path.as_deref(),
@@ -10642,7 +10768,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                 Ok(()) => Action::SettingsPersisted,
                                 Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
                             };
-                            let _ = update(&mut app, persistence_action);
+                            let _ = compatibility_workspace_action(&mut app, persistence_action);
                         }
                         Some(Effect::VerifyBuildEnvironment {
                             profile,
@@ -10650,7 +10776,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         }) => match BuildEnvironmentAdapter::default().initialize(profile).await {
                             Ok(response) => {
                                 let profile = response.profile.clone();
-                                let _ = update(
+                                let _ = compatibility_workspace_action(
                                     &mut app,
                                     Action::BuildEnvironmentVerified { generation },
                                 );
@@ -10666,7 +10792,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                     Ok(mut connected) => {
                                         match connected.inspect_workspace().await {
                                             Ok(workspace) => {
-                                                let _ = update(
+                                                let _ = compatibility_workspace_action(
                                                     &mut app,
                                                     Action::WorkspaceLoaded(workspace),
                                                 );
@@ -10686,7 +10812,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                 }
                             }
                             Err(error) => {
-                                let _ = update(
+                                let _ = compatibility_workspace_action(
                                     &mut app,
                                     Action::BuildEnvironmentVerificationFailed {
                                         generation,
@@ -10702,13 +10828,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 {
                     let action = tasks_action(app.task_filter_editing, input)
                         .expect("Tasks action was checked");
-                    let _ = update(&mut app, action);
+                    let _ = compatibility_workspace_action(&mut app, action);
                 } else if app.screen == Screen::Logs
                     && logs_action(app.logs.searching, input).is_some()
                 {
                     let action =
                         logs_action(app.logs.searching, input).expect("Logs action was checked");
-                    match update(&mut app, action) {
+                    match compatibility_workspace_action(&mut app, action) {
                         Some(Effect::OpenInEditor(path)) => {
                             open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                         }
@@ -10719,7 +10845,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                 } else if app.screen == Screen::Errors && errors_action(input).is_some() {
                     let action = errors_action(input).expect("Errors action was checked");
-                    if let Some(Effect::OpenInEditor(path)) = update(&mut app, action) {
+                    if let Some(Effect::OpenInEditor(path)) =
+                        compatibility_workspace_action(&mut app, action)
+                    {
                         open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                     }
                 } else if app.screen == Screen::Dependencies
@@ -10727,7 +10855,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 {
                     let action =
                         dependency_workspace_action(input).expect("Dependency action was checked");
-                    match update(&mut app, action) {
+                    match compatibility_workspace_action(&mut app, action) {
                         Some(Effect::GetDependencies(recipe)) => {
                             load_dependency_graph(&mut app, backend.as_mut(), recipe).await;
                         }
@@ -10739,13 +10867,22 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 } else if app.metadata_searching {
                     match input {
                         Input::Char(character) => {
-                            let _ = update(&mut app, Action::AppendMetadataQuery(character));
+                            let _ = compatibility_workspace_action(
+                                &mut app,
+                                Action::AppendMetadataQuery(character),
+                            );
                         }
                         Input::Enter | Input::Esc => {
-                            let _ = update(&mut app, Action::FinishMetadataSearch);
+                            let _ = compatibility_workspace_action(
+                                &mut app,
+                                Action::FinishMetadataSearch,
+                            );
                         }
                         Input::Backspace => {
-                            let _ = update(&mut app, Action::BackspaceMetadataQuery);
+                            let _ = compatibility_workspace_action(
+                                &mut app,
+                                Action::BackspaceMetadataQuery,
+                            );
                         }
                         _ => {}
                     }
@@ -10760,55 +10897,86 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         .filter(|name| name.contains("image"))
                         .map(str::to_owned)
                         .collect();
-                    let _ = update(&mut app, Action::OpenImagePicker(images));
+                    let _ =
+                        compatibility_workspace_action(&mut app, Action::OpenImagePicker(images));
                 } else if input == Input::Char('B') {
-                    let _ = update(&mut app, Action::OpenBuildOptions);
+                    let _ = compatibility_workspace_action(&mut app, Action::OpenBuildOptions);
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeBuild);
+                    let _ =
+                        compatibility_workspace_action(&mut app, Action::BeginSelectedRecipeBuild);
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('f') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeForceTask);
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeForceTask,
+                    );
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('v') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeDevshell);
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeDevshell,
+                    );
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('K') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeDiffconfig);
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeDiffconfig,
+                    );
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('z') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeDiffsigs);
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeDiffsigs,
+                    );
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('Z') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeSignatures);
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeSignatures,
+                    );
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('V') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeCveCheck);
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeCveCheck,
+                    );
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('X') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeSpdx);
+                    let _ =
+                        compatibility_workspace_action(&mut app, Action::BeginSelectedRecipeSpdx);
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('e') {
                     if let Some(Effect::OpenInEditor(path)) =
-                        update(&mut app, Action::OpenSelectedRecipeProvider)
+                        compatibility_workspace_action(&mut app, Action::OpenSelectedRecipeProvider)
                     {
                         open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                     }
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('o') {
                     if let Some(Effect::OpenInEditor(path)) =
-                        update(&mut app, Action::BeginSelectedRecipeTaskLog)
+                        compatibility_workspace_action(&mut app, Action::BeginSelectedRecipeTaskLog)
                     {
                         open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                     }
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('p') {
-                    if let Some(Effect::OpenInEditor(path)) =
-                        update(&mut app, Action::BeginSelectedRecipePatchReview)
-                    {
+                    if let Some(Effect::OpenInEditor(path)) = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipePatchReview,
+                    ) {
                         open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                     }
                 } else if app.screen == yoctui_model::Screen::Dashboard
                     && matches!(input, Input::Up | Input::Down)
                 {
                     let delta = if input == Input::Up { -1 } else { 1 };
-                    let _ = update(&mut app, Action::ScrollBuildTasks { delta });
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::ScrollBuildTasks { delta },
+                    );
                 } else if app.screen == yoctui_model::Screen::BuildHistory
                     && matches!(input, Input::Up | Input::Down)
                 {
                     let delta = if input == Input::Up { -1 } else { 1 };
-                    let _ = update(&mut app, Action::SelectBuildHistory { delta });
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::SelectBuildHistory { delta },
+                    );
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('d') {
-                    let root = match update(&mut app, Action::BeginSelectedRecipeDevtoolModify) {
+                    let root = match compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeDevtoolModify,
+                    ) {
                         Some(Effect::OpenWorkspaceEditor { label, root }) => Some((label, root)),
                         _ => None,
                     };
@@ -10818,29 +10986,46 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('t') {
                     inspect_selected_devtool(&mut app, &session_build_dir).await;
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('D') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolReset);
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeDevtoolReset,
+                    );
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('u') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolUpdateRecipe);
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeDevtoolUpdateRecipe,
+                    );
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('F') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolFinish);
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeDevtoolFinish,
+                    );
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('P') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolDeploy);
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeDevtoolDeploy,
+                    );
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('g') {
-                    if let Some(Effect::GetDependencies(recipe)) =
-                        update(&mut app, Action::BeginSelectedRecipeDependencies)
-                    {
+                    if let Some(Effect::GetDependencies(recipe)) = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeDependencies,
+                    ) {
                         load_dependency_graph(&mut app, backend.as_mut(), recipe).await;
                     }
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Enter {
-                    if let Some(Effect::GetRecipeMetadata(recipe)) =
-                        update(&mut app, Action::BeginSelectedRecipeMetadata)
-                    {
+                    if let Some(Effect::GetRecipeMetadata(recipe)) = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeMetadata,
+                    ) {
                         match backend.get_recipe_metadata(recipe.clone()).await {
                             Ok(metadata) => {
-                                let _ = update(&mut app, Action::RecipeMetadataLoaded(metadata));
+                                let _ = compatibility_workspace_action(
+                                    &mut app,
+                                    Action::RecipeMetadataLoaded(metadata),
+                                );
                             }
                             Err(error) => {
-                                let _ = update(
+                                let _ = compatibility_workspace_action(
                                     &mut app,
                                     Action::RecipeMetadataFailed {
                                         recipe,
@@ -10852,52 +11037,65 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     }
                     inspect_selected_devtool(&mut app, &session_build_dir).await;
                 } else if input == Input::Char('b') {
-                    let _ = update(&mut app, Action::BeginCurrentImageBuild);
+                    let _ =
+                        compatibility_workspace_action(&mut app, Action::BeginCurrentImageBuild);
                 } else if app.screen == yoctui_model::Screen::Recipes
                     && matches!(input, Input::Up | Input::Down)
                 {
                     let delta = if input == Input::Up { -1 } else { 1 };
-                    let _ = update(&mut app, Action::SelectRecipe { delta });
+                    let _ =
+                        compatibility_workspace_action(&mut app, Action::SelectRecipe { delta });
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('C') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeClean);
+                    let _ =
+                        compatibility_workspace_action(&mut app, Action::BeginSelectedRecipeClean);
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('M') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeMenuConfig);
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeMenuConfig,
+                    );
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('S') {
-                    let _ = update(&mut app, Action::BeginSelectedRecipeCleanState);
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::BeginSelectedRecipeCleanState,
+                    );
                 } else if app.screen == yoctui_model::Screen::Layers
                     && matches!(input, Input::Up | Input::Down)
                 {
                     let delta = if input == Input::Up { -1 } else { 1 };
-                    let _ = update(&mut app, Action::SelectLayer { delta });
+                    let _ = compatibility_workspace_action(&mut app, Action::SelectLayer { delta });
                 } else if app.screen == yoctui_model::Screen::Layers && input == Input::Enter {
                     if let Some(Effect::LoadLayerBrowserDirectory {
                         layer,
                         root,
                         directory,
-                    }) = update(&mut app, Action::BeginSelectedLayerBrowser)
+                    }) =
+                        compatibility_workspace_action(&mut app, Action::BeginSelectedLayerBrowser)
                     {
                         load_layer_browser_directory(&mut app, layer, root, directory).await;
                     }
                 } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('o') {
                     if let Some(Effect::OpenInEditor(path)) =
-                        update(&mut app, Action::OpenSelectedLayer)
+                        compatibility_workspace_action(&mut app, Action::OpenSelectedLayer)
                     {
                         open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                     }
                 } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('e') {
                     if let Some(Effect::OpenWorkspaceEditor { label, root }) =
-                        update(&mut app, Action::BeginSelectedLayerWorkspaceEditor)
+                        compatibility_workspace_action(
+                            &mut app,
+                            Action::BeginSelectedLayerWorkspaceEditor,
+                        )
                     {
                         open_workspace_editor(&mut app, label, root).await;
                     }
                 } else if app.screen == yoctui_model::Screen::Layers && input == Input::Char('R') {
                     if matches!(
-                        update(&mut app, Action::BeginLayerRelationships),
+                        compatibility_workspace_action(&mut app, Action::BeginLayerRelationships),
                         Some(Effect::GetLayerRelationships)
                     ) {
                         match backend.get_layer_relationships().await {
                             Ok(layers) => {
-                                let _ = update(
+                                let _ = compatibility_workspace_action(
                                     &mut app,
                                     Action::LayerRelationshipsLoaded(LayerRelationships {
                                         layers: layers
@@ -10915,7 +11113,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                 );
                             }
                             Err(error) => {
-                                let _ = update(
+                                let _ = compatibility_workspace_action(
                                     &mut app,
                                     Action::Failure(AppError::new(
                                         "Layers",
@@ -10933,7 +11131,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     )
                 {
                     if let Some(action) = config_workspace_action(false, input) {
-                        let _ = update(&mut app, action);
+                        let _ = compatibility_workspace_action(&mut app, action);
                     }
                 } else if app.screen == yoctui_model::Screen::Configuration && input == Input::Enter
                 {
@@ -10945,7 +11143,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     )
                 {
                     if let Some(action) = config_workspace_action(false, input) {
-                        let _ = update(&mut app, action);
+                        let _ = compatibility_workspace_action(&mut app, action);
                     }
                 } else if app.screen == yoctui_model::Screen::Configuration
                     && matches!(input, Input::Char('C') | Input::Char('U'))
@@ -10959,12 +11157,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     && input == Input::Char('o')
                 {
                     if let Some(Effect::OpenInEditor(path)) =
-                        update(&mut app, Action::OpenSelectedConfigSource)
+                        compatibility_workspace_action(&mut app, Action::OpenSelectedConfigSource)
                     {
                         open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                     }
                 } else if app.screen == yoctui_model::Screen::Bbmask && input == Input::Char('e') {
-                    let _ = update(&mut app, Action::BeginBbmaskEdit);
+                    let _ = compatibility_workspace_action(&mut app, Action::BeginBbmaskEdit);
                 } else if matches!(
                     app.screen,
                     yoctui_model::Screen::Recipes
@@ -10972,17 +11170,22 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         | yoctui_model::Screen::Configuration
                 ) && input == Input::Char('/')
                 {
-                    let _ = update(&mut app, Action::BeginMetadataSearch);
+                    let _ = compatibility_workspace_action(&mut app, Action::BeginMetadataSearch);
                 } else if app.logs.searching {
                     match input {
                         Input::Char(character) => {
-                            let _ = update(&mut app, Action::AppendLogQuery(character));
+                            let _ = compatibility_workspace_action(
+                                &mut app,
+                                Action::AppendLogQuery(character),
+                            );
                         }
                         Input::Enter | Input::Esc => {
-                            let _ = update(&mut app, Action::FinishLogSearch);
+                            let _ =
+                                compatibility_workspace_action(&mut app, Action::FinishLogSearch);
                         }
                         Input::Backspace => {
-                            let _ = update(&mut app, Action::BackspaceLogQuery);
+                            let _ =
+                                compatibility_workspace_action(&mut app, Action::BackspaceLogQuery);
                         }
                         _ => {}
                     }
@@ -10990,7 +11193,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if matches!(action, Action::Cancel) {
                         if devtool_jobs.active_job_id().is_some() {
                             if let Some(job_action) = devtool_jobs.request_cancellation() {
-                                let _ = update(&mut app, job_action);
+                                let _ = compatibility_workspace_action(&mut app, job_action);
                             }
                             let cancellation = if let Some(runner) = devtool_runner.as_mut() {
                                 runner.cancel().await.map(|_| ())
@@ -11001,10 +11204,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                 for action in devtool_jobs
                                     .cancellation_failed(error.to_string(), SystemTime::now())
                                 {
-                                    let _ = update(&mut app, action);
+                                    let _ = compatibility_workspace_action(&mut app, action);
                                 }
                             }
-                        } else if let Some(effect @ Effect::Cancel) = update(&mut app, action) {
+                        } else if let Some(effect @ Effect::Cancel) =
+                            compatibility_workspace_action(&mut app, action)
+                        {
                             #[cfg(unix)]
                             if let Some(runtime) = daemon_runtime.as_mut() {
                                 match runtime.route_effect(&app, &effect) {
@@ -11019,18 +11224,18 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                 }
                             }
                             if let Some(job_action) = build_jobs.request_cancellation() {
-                                let _ = update(&mut app, job_action);
+                                let _ = compatibility_workspace_action(&mut app, job_action);
                             }
                             if let Err(error) = backend.cancel_build().await {
                                 for action in build_jobs
                                     .cancellation_failed(error.to_string(), SystemTime::now())
                                 {
-                                    let _ = update(&mut app, action);
+                                    let _ = compatibility_workspace_action(&mut app, action);
                                 }
                             }
                         }
                     } else {
-                        if let Some(effect) = update(&mut app, action)
+                        if let Some(effect) = compatibility_workspace_action(&mut app, action)
                             && !route_independent_security_effect(
                                 &guard,
                                 &mut app,
@@ -11132,18 +11337,18 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 if let Some(id) = pending_test_build
                     && let Some(action) = test_build_action_for_event(&app, id, &event)
                 {
-                    let _ = update(&mut app, action);
+                    let _ = compatibility_workspace_action(&mut app, action);
                 }
                 let security_followup = pending_security_build
                     .and_then(|id| security_build_action_for_event(&app, id, &event))
-                    .and_then(|action| update(&mut app, action));
+                    .and_then(|action| compatibility_workspace_action(&mut app, action));
                 let qa_followup = pending_qa_build
                     .and_then(|id| qa_build_action_for_event(&app, id, &event))
-                    .and_then(|action| update(&mut app, action));
+                    .and_then(|action| compatibility_workspace_action(&mut app, action));
                 let sdk_refresh =
                     sdk_refresh_after_build_event(&mut app, &mut pending_sdk_build, &event);
                 for action in build_jobs.actions_for_backend_event(event, SystemTime::now()) {
-                    let _ = update(&mut app, action);
+                    let _ = compatibility_workspace_action(&mut app, action);
                 }
                 if test_terminal {
                     pending_test_build = None;
@@ -11202,7 +11407,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 }
                 pending_sdk_build = None;
                 for action in build_jobs.backend_lost(error.to_string(), SystemTime::now()) {
-                    let _ = update(&mut app, action);
+                    let _ = compatibility_workspace_action(&mut app, action);
                 }
             }
             Err(_) => {}
@@ -11389,6 +11594,45 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn compatibility_workspace_app_cli_routes_local_effect_and_blocks_environment_spawn() {
+        let mut app = App::new(16, 4096);
+        assert_eq!(
+            compatibility_workspace_action(
+                &mut app,
+                Action::ChangeSelectedSetting { backwards: false },
+            ),
+            Some(Effect::PersistSettings)
+        );
+
+        let inventory_before = app.package_inventory.clone();
+        let effect = compatibility_workspace_action(&mut app, Action::BeginPackageInventory);
+        assert!(
+            effect.is_none(),
+            "an unavailable action must not be routed to a process or job"
+        );
+        assert_eq!(app.package_inventory, inventory_before);
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("requires the current environment capability snapshot")
+        );
+    }
+
+    #[test]
+    fn compatibility_workspace_app_cli_never_routes_daemon_owned_probe_effects() {
+        let mut app = App::new(16, 4096);
+        let effect = compatibility_workspace_action(&mut app, Action::InspectTestCapability);
+        assert!(effect.is_none());
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("Environment probing is daemon-owned")
+        );
+    }
 
     fn devtool_test_command(
         executable: PathBuf,

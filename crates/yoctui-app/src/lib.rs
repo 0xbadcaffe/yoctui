@@ -683,6 +683,280 @@ fn compatibility_detected<T, U>(
     }
 }
 
+pub fn compatibility_model_snapshot(
+    wire: &yoctui_protocol::daemon::CompatibilitySnapshotData,
+) -> Result<yoctui_model::DaemonCompatibilitySnapshot, String> {
+    use yoctui_protocol::daemon::{
+        CompatibilityEvidenceKind as WireEvidenceKind,
+        CompatibilityEvidenceOutcome as WireEvidenceOutcome, CompatibilityStateData,
+    };
+
+    wire.validate().map_err(|error| error.to_string())?;
+    let environment = compatibility_environment_model(&wire.environment)?;
+    let mut capabilities = Vec::with_capacity(wire.capabilities.len());
+    let mut implementations = std::collections::BTreeMap::new();
+    for capability in &wire.capabilities {
+        let id = yoctui_model::CapabilityId::from_stable_name(&capability.id)
+            .ok_or_else(|| format!("unknown capability ID: {}", capability.id))?;
+        let state = match &capability.state {
+            CompatibilityStateData::Available => yoctui_model::CapabilityState::Available,
+            CompatibilityStateData::AvailableWithLimitations {
+                reason,
+                limitations,
+            } => yoctui_model::CapabilityState::AvailableWithLimitations {
+                reason: compatibility_reason_model(reason)?,
+                limitations: limitations.clone(),
+            },
+            CompatibilityStateData::Unavailable { reason } => {
+                yoctui_model::CapabilityState::Unavailable {
+                    reason: compatibility_reason_model(reason)?,
+                }
+            }
+            CompatibilityStateData::Unknown { reason } => yoctui_model::CapabilityState::Unknown {
+                reason: compatibility_reason_model(reason)?,
+            },
+            CompatibilityStateData::Unsupported { reason } => {
+                yoctui_model::CapabilityState::Unsupported {
+                    reason: compatibility_reason_model(reason)?,
+                }
+            }
+            CompatibilityStateData::UnknownWireState => {
+                return Err(format!(
+                    "unknown wire state for capability {}",
+                    capability.id
+                ));
+            }
+        };
+        let evidence = capability
+            .evidence
+            .iter()
+            .map(|evidence| {
+                Ok(yoctui_model::CapabilityEvidence {
+                    kind: match evidence.kind {
+                        WireEvidenceKind::DirectProbe => {
+                            yoctui_model::CapabilityEvidenceKind::DirectProbe
+                        }
+                        WireEvidenceKind::BackendNegotiation => {
+                            yoctui_model::CapabilityEvidenceKind::BackendNegotiation
+                        }
+                        WireEvidenceKind::ProtocolNegotiation => {
+                            yoctui_model::CapabilityEvidenceKind::ProtocolNegotiation
+                        }
+                        WireEvidenceKind::Metadata => {
+                            yoctui_model::CapabilityEvidenceKind::Metadata
+                        }
+                        WireEvidenceKind::ExecutableIdentity => {
+                            yoctui_model::CapabilityEvidenceKind::ExecutableIdentity
+                        }
+                        WireEvidenceKind::ReleaseVersionFallback => {
+                            yoctui_model::CapabilityEvidenceKind::ReleaseVersionFallback
+                        }
+                        WireEvidenceKind::Unknown => {
+                            return Err("unknown compatibility evidence kind".to_owned());
+                        }
+                    },
+                    outcome: match evidence.outcome {
+                        WireEvidenceOutcome::Positive => {
+                            yoctui_model::CapabilityEvidenceOutcome::Positive
+                        }
+                        WireEvidenceOutcome::Negative => {
+                            yoctui_model::CapabilityEvidenceOutcome::Negative
+                        }
+                        WireEvidenceOutcome::Inconclusive => {
+                            yoctui_model::CapabilityEvidenceOutcome::Inconclusive
+                        }
+                        WireEvidenceOutcome::Unknown => {
+                            return Err("unknown compatibility evidence outcome".to_owned());
+                        }
+                    },
+                    subject: evidence.subject.clone(),
+                    detail: evidence.detail.clone(),
+                    argv: evidence.argv.clone(),
+                })
+            })
+            .collect::<Result<Vec<_>, String>>()?;
+        if let Some(implementation) = &capability.implementation {
+            let kind = match implementation.kind.as_str() {
+                "backend_api" => yoctui_model::CapabilityImplementationKind::BackendApi,
+                "command" => yoctui_model::CapabilityImplementationKind::Command,
+                "metadata_task" => yoctui_model::CapabilityImplementationKind::MetadataTask,
+                "process_adapter" => yoctui_model::CapabilityImplementationKind::ProcessAdapter,
+                "protocol" => yoctui_model::CapabilityImplementationKind::Protocol,
+                value => return Err(format!("unknown capability implementation kind: {value}")),
+            };
+            implementations.insert(
+                id,
+                yoctui_model::CapabilityImplementation {
+                    id: implementation.id.clone(),
+                    kind,
+                },
+            );
+        }
+        capabilities.push(yoctui_model::CapabilityRecord {
+            id,
+            state,
+            evidence,
+        });
+    }
+    yoctui_model::DaemonCompatibilitySnapshot {
+        snapshot: yoctui_model::CapabilitySnapshot {
+            generation: wire.generation,
+            environment,
+            capabilities,
+        },
+        implementations,
+    }
+    .normalize()
+    .map_err(|error| error.to_string())
+}
+
+/// Applies a user-originated action through the single workspace capability
+/// authority installed from the daemon snapshot. Local-only actions continue
+/// to work without an environment snapshot; environment effects fail closed.
+pub fn compatibility_workspace_action(
+    app: &mut yoctui_model::App,
+    action: yoctui_model::Action,
+) -> Option<yoctui_model::Effect> {
+    yoctui_model::update_with_workspace_authority(app, action)
+}
+
+fn compatibility_reason_model(
+    reason: &yoctui_protocol::daemon::CompatibilityReasonData,
+) -> Result<yoctui_model::CapabilityReason, String> {
+    yoctui_model::CapabilityReason::new(
+        reason.code.clone(),
+        reason.message.clone(),
+        reason.requirement.clone(),
+    )
+    .map_err(|error| error.to_string())
+}
+
+fn compatibility_environment_model(
+    wire: &yoctui_protocol::daemon::CompatibilityEnvironmentIdentity,
+) -> Result<yoctui_model::YoctoEnvironmentIdentity, String> {
+    Ok(yoctui_model::YoctoEnvironmentIdentity {
+        build_directory: compatibility_detected_model(&wire.build_directory, |value| {
+            Ok(value.into())
+        })?,
+        source_roots: compatibility_detected_model(&wire.source_roots, |roots| {
+            roots
+                .iter()
+                .map(|root| {
+                    Ok(yoctui_model::SourceRootIdentity {
+                        kind: match root.kind.as_str() {
+                            "core_base" => yoctui_model::SourceRootKind::CoreBase,
+                            "openembedded_core" => yoctui_model::SourceRootKind::OpenEmbeddedCore,
+                            "poky" => yoctui_model::SourceRootKind::Poky,
+                            "layer" => yoctui_model::SourceRootKind::Layer,
+                            other => yoctui_model::SourceRootKind::Other(other.into()),
+                        },
+                        path: root.path.clone().into(),
+                    })
+                })
+                .collect()
+        })?,
+        bitbake_version: compatibility_detected_model(&wire.bitbake_version, |value| {
+            Ok(value.clone())
+        })?,
+        oe_core: compatibility_detected_model(&wire.oe_core, |release| {
+            Ok(yoctui_model::ReleaseIdentity {
+                name: release.name.clone(),
+                version: release.version.clone(),
+            })
+        })?,
+        poky: compatibility_detected_model(&wire.poky, |release| {
+            Ok(yoctui_model::ReleaseIdentity {
+                name: release.name.clone(),
+                version: release.version.clone(),
+            })
+        })?,
+        distro: compatibility_detected_model(&wire.distro, |distro| {
+            Ok(yoctui_model::DistroIdentity {
+                name: distro.name.clone(),
+                version: distro.version.clone(),
+            })
+        })?,
+        machine: compatibility_detected_model(&wire.machine, |value| Ok(value.clone()))?,
+        layer_series: compatibility_detected_model(&wire.layer_series, |layers| {
+            Ok(layers
+                .iter()
+                .map(|layer| yoctui_model::LayerSeriesIdentity {
+                    layer: layer.layer.clone(),
+                    root: layer.root.clone().into(),
+                    compatible_series: layer.compatible_series.clone(),
+                })
+                .collect())
+        })?,
+        available_tools: compatibility_detected_model(&wire.available_tools, |tools| {
+            Ok(tools
+                .iter()
+                .map(|tool| yoctui_model::ToolIdentity {
+                    id: tool.id.clone(),
+                    executable: tool.executable.clone().into(),
+                    version: tool.version.clone(),
+                })
+                .collect())
+        })?,
+        backend: compatibility_detected_model(&wire.backend, |backend| {
+            Ok(yoctui_model::BackendIdentity {
+                name: backend.name.clone(),
+                version: backend.version.clone(),
+            })
+        })?,
+        protocol: compatibility_detected_model(&wire.protocol, |protocol| {
+            Ok(yoctui_model::ProtocolIdentity {
+                name: protocol.name.clone(),
+                version: protocol.version.clone(),
+            })
+        })?,
+    })
+}
+
+fn compatibility_detected_model<T, U>(
+    wire: &yoctui_protocol::daemon::CompatibilityDetected<T>,
+    map: impl FnOnce(&T) -> Result<U, String>,
+) -> Result<yoctui_model::AuthoritativeValue<U>, String> {
+    use yoctui_protocol::daemon::{CompatibilityDetected, CompatibilityIdentityAuthority};
+    match wire {
+        CompatibilityDetected::Unknown => Ok(yoctui_model::AuthoritativeValue::Unknown),
+        CompatibilityDetected::Detected { value, authority } => {
+            let authority = match authority {
+                CompatibilityIdentityAuthority::BackendHandshake => {
+                    yoctui_model::IdentityAuthority::BackendHandshake
+                }
+                CompatibilityIdentityAuthority::BitBakeDatastore => {
+                    yoctui_model::IdentityAuthority::BitBakeDatastore
+                }
+                CompatibilityIdentityAuthority::BitBakeVersionProbe => {
+                    yoctui_model::IdentityAuthority::BitBakeVersionProbe
+                }
+                CompatibilityIdentityAuthority::ConfiguredLayerMetadata => {
+                    yoctui_model::IdentityAuthority::ConfiguredLayerMetadata
+                }
+                CompatibilityIdentityAuthority::ExecutableProbe => {
+                    yoctui_model::IdentityAuthority::ExecutableProbe
+                }
+                CompatibilityIdentityAuthority::InitializedEnvironment => {
+                    yoctui_model::IdentityAuthority::InitializedEnvironment
+                }
+                CompatibilityIdentityAuthority::ProtocolNegotiation => {
+                    yoctui_model::IdentityAuthority::ProtocolNegotiation
+                }
+                CompatibilityIdentityAuthority::ReleaseMetadata => {
+                    yoctui_model::IdentityAuthority::ReleaseMetadata
+                }
+                CompatibilityIdentityAuthority::Unknown => {
+                    return Err("unknown compatibility identity authority".into());
+                }
+            };
+            Ok(yoctui_model::AuthoritativeValue::detected(
+                map(value)?,
+                authority,
+            ))
+        }
+    }
+}
+
 fn stable_workspace_hash(source: &str, build: &str) -> String {
     let mut hash = 0xcbf29ce484222325_u64;
     for byte in source.bytes().chain([0]).chain(build.bytes()) {
@@ -817,6 +1091,35 @@ impl DaemonClientSnapshot {
 
     pub fn install_app(&self, app: &mut yoctui_model::App) {
         app.daemon = daemon_client_view(self.status, self.snapshot.as_ref(), self.telemetry);
+        let wire = (self.status == yoctui_model::ClientReplicaStatus::Current)
+            .then(|| {
+                self.snapshot
+                    .as_ref()
+                    .and_then(|snapshot| snapshot.compatibility.as_ref())
+            })
+            .flatten();
+        match wire {
+            Some(wire) => match compatibility_model_snapshot(wire) {
+                Ok(authority) => {
+                    if let Err(error) =
+                        yoctui_model::install_workspace_compatibility(app, authority)
+                    {
+                        app.notification = Some(format!(
+                            "Compatibility authority update was rejected: {error}"
+                        ));
+                    }
+                }
+                Err(error) => {
+                    yoctui_model::invalidate_workspace_compatibility(app);
+                    app.notification = Some(format!(
+                        "Compatibility authority could not be decoded and was invalidated: {error}"
+                    ));
+                }
+            },
+            None => {
+                yoctui_model::invalidate_workspace_compatibility(app);
+            }
+        }
     }
 
     fn install_build_app(&self, app: &mut yoctui_model::App) {
@@ -4141,6 +4444,195 @@ pub fn config_edit_confirmation_action(key: Input) -> Option<Action> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn compatibility_workspace_authority(
+        generation: u64,
+    ) -> yoctui_model::DaemonCompatibilitySnapshot {
+        let environment = yoctui_model::YoctoEnvironmentIdentity {
+            build_directory: yoctui_model::AuthoritativeValue::detected(
+                "/work/poky/build".into(),
+                yoctui_model::IdentityAuthority::InitializedEnvironment,
+            ),
+            bitbake_version: yoctui_model::AuthoritativeValue::detected(
+                "2.18.0".into(),
+                yoctui_model::IdentityAuthority::BitBakeVersionProbe,
+            ),
+            ..yoctui_model::YoctoEnvironmentIdentity::default()
+        };
+        let available = |id| yoctui_model::CapabilityRecord {
+            id,
+            state: yoctui_model::CapabilityState::Available,
+            evidence: vec![yoctui_model::CapabilityEvidence {
+                kind: yoctui_model::CapabilityEvidenceKind::DirectProbe,
+                outcome: yoctui_model::CapabilityEvidenceOutcome::Positive,
+                subject: id.as_str().into(),
+                detail: "Verified by the compatibility workspace app fixture.".into(),
+                argv: Vec::new(),
+            }],
+        };
+        yoctui_model::DaemonCompatibilitySnapshot {
+            snapshot: yoctui_model::CapabilitySnapshot {
+                generation,
+                environment,
+                capabilities: vec![
+                    available(yoctui_model::CapabilityId::BitBakeBuild),
+                    available(yoctui_model::CapabilityId::PkgDataGenerated),
+                    available(yoctui_model::CapabilityId::PkgDataListPackages),
+                ],
+            },
+            implementations: std::collections::BTreeMap::from([
+                (
+                    yoctui_model::CapabilityId::BitBakeBuild,
+                    yoctui_model::CapabilityImplementation {
+                        id: "bitbake.build.command".into(),
+                        kind: yoctui_model::CapabilityImplementationKind::Command,
+                    },
+                ),
+                (
+                    yoctui_model::CapabilityId::PkgDataGenerated,
+                    yoctui_model::CapabilityImplementation {
+                        id: "pkgdata.generated.metadata".into(),
+                        kind: yoctui_model::CapabilityImplementationKind::MetadataTask,
+                    },
+                ),
+                (
+                    yoctui_model::CapabilityId::PkgDataListPackages,
+                    yoctui_model::CapabilityImplementation {
+                        id: "pkgdata.list-packages.command".into(),
+                        kind: yoctui_model::CapabilityImplementationKind::Command,
+                    },
+                ),
+            ]),
+        }
+    }
+
+    fn compatibility_workspace_daemon_snapshot(
+        authority: &yoctui_model::DaemonCompatibilitySnapshot,
+    ) -> yoctui_protocol::daemon::DaemonSnapshot {
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([0x18; 16]),
+            123,
+            "compatibility-workspace".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut snapshot = daemon_protocol_snapshot(&state);
+        snapshot.compatibility = Some(daemon_compatibility_protocol(authority));
+        snapshot
+    }
+
+    #[test]
+    fn compatibility_workspace_app_converts_installs_updates_and_invalidates_authority() {
+        let first = compatibility_workspace_authority(1).normalize().unwrap();
+        let wire = daemon_compatibility_protocol(&first);
+        assert_eq!(compatibility_model_snapshot(&wire).unwrap(), first);
+
+        let mut app = yoctui_model::App::new(16, 4096);
+        app.screen = Screen::Layers;
+        app.focus = FocusTarget::Inspector;
+        let mut client = DaemonClientSnapshot::default();
+        let snapshot = compatibility_workspace_daemon_snapshot(&first);
+        let next_sequence = snapshot.sequence + 1;
+        let next_generation = snapshot.generation + 1;
+        client.replace_app(&mut app, snapshot);
+        assert_eq!(
+            app.workspace_compatibility
+                .authority()
+                .unwrap()
+                .snapshot
+                .generation,
+            1
+        );
+        assert_eq!(app.screen, Screen::Layers);
+        assert_eq!(app.focus, FocusTarget::Inspector);
+
+        let second = compatibility_workspace_authority(2).normalize().unwrap();
+        client
+            .apply_event_to_app(
+                &mut app,
+                &yoctui_protocol::daemon::SequencedEvent {
+                    sequence: next_sequence,
+                    generation: next_generation,
+                    event: yoctui_protocol::daemon::DaemonEvent::CompatibilityChanged(Box::new(
+                        daemon_compatibility_protocol(&second),
+                    )),
+                },
+            )
+            .unwrap();
+        assert_eq!(
+            app.workspace_compatibility
+                .authority()
+                .unwrap()
+                .snapshot
+                .generation,
+            2
+        );
+        assert_eq!(app.screen, Screen::Layers);
+
+        client.disconnect_app(&mut app);
+        assert!(app.workspace_compatibility.authority().is_none());
+        assert_eq!(app.screen, Screen::Layers);
+        assert_eq!(app.focus, FocusTarget::Inspector);
+    }
+
+    #[test]
+    fn compatibility_workspace_app_rejects_unknown_wire_data_and_retains_newer_authority() {
+        let first = compatibility_workspace_authority(1).normalize().unwrap();
+        let mut unknown = daemon_compatibility_protocol(&first);
+        unknown.capabilities[0].id = "future.unregistered.capability".into();
+        assert!(compatibility_model_snapshot(&unknown).is_err());
+
+        let mut app = yoctui_model::App::new(16, 4096);
+        let mut client = DaemonClientSnapshot::default();
+        let mut malformed_snapshot = compatibility_workspace_daemon_snapshot(&first);
+        malformed_snapshot.compatibility = Some(unknown);
+        client.replace_app(&mut app, malformed_snapshot);
+        assert!(app.workspace_compatibility.authority().is_none());
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("unknown capability ID")
+        );
+
+        let second = compatibility_workspace_authority(2).normalize().unwrap();
+        client.replace_app(&mut app, compatibility_workspace_daemon_snapshot(&second));
+        client.replace_app(&mut app, compatibility_workspace_daemon_snapshot(&first));
+        assert_eq!(
+            app.workspace_compatibility
+                .authority()
+                .unwrap()
+                .snapshot
+                .generation,
+            2
+        );
+        assert!(app.notification.as_deref().unwrap().contains("stale"));
+    }
+
+    #[test]
+    fn compatibility_workspace_app_routes_local_effects_and_denies_unavailable_effects() {
+        let mut app = yoctui_model::App::new(16, 4096);
+        assert_eq!(
+            compatibility_workspace_action(
+                &mut app,
+                yoctui_model::Action::ChangeSelectedSetting { backwards: false },
+            ),
+            Some(yoctui_model::Effect::PersistSettings)
+        );
+
+        let before = app.package_inventory.clone();
+        assert_eq!(
+            compatibility_workspace_action(&mut app, yoctui_model::Action::BeginPackageInventory,),
+            None
+        );
+        assert_eq!(app.package_inventory, before);
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("requires the current environment capability snapshot")
+        );
+    }
 
     #[test]
     fn mouse_routes_focus_and_scroll_semantically() {

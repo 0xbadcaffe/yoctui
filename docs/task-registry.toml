@@ -4768,18 +4768,18 @@ notes = "WorkspaceCompatibilityState owns one normalized authority and projects 
 id = "COMPAT-WORKSPACE-APP-001"
 milestone = "M18"
 title = "Install and enforce workspace capability authority"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 503
 required = true
 depends_on = ["COMPAT-WORKSPACE-MODEL-001", "COMPAT-PROTOCOL-001"]
 verify = ["cargo test -p yoctui-app compatibility_workspace_app", "cargo test -p yoctui compatibility_workspace_app", "./scripts/verify-roadmap.sh"]
-notes = "Install the bounded daemon wire snapshot into client model state and make daemon/local effect routing consume the same typed authority without reconstructing support or spawning unavailable operations."
+notes = "The app validates and converts the bounded daemon wire snapshot once into normalized model authority; unknown wire values invalidate it, stale updates retain newer authority, and attach/update/reconnect/disconnect preserve presentation while installing or invalidating support. Every interactive keyboard, mouse, paste, palette, dialog, workspace, and follow-up effect route uses update_with_workspace_authority in daemon and local execution paths. Client startup and post-inventory probes were removed; daemon-owned probe effects never reach a coordinator. Unavailable actions roll back preparation, retain exact reasons, and produce no process/job effect. Focused lifecycle, malformed/unknown, stale, local, unavailable, probe/no-spawn tests, full workspace tests, and warnings-denied Clippy pass."
 
 [[task]]
 id = "COMPAT-WORKSPACE-001"
 milestone = "M18"
 title = "Apply capabilities to all workspaces"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 503
 required = true
 depends_on = ["COMPAT-WORKSPACE-CATALOG-001", "COMPAT-WORKSPACE-MODEL-001", "COMPAT-WORKSPACE-APP-001"]

@@ -2341,6 +2341,27 @@ the pure reducer for enforced clients. If reducer preparation would emit an
 unavailable effect, it restores the pre-action model and retains only the
 denial notice, preventing partially queued or visually confirmed work.
 
+`yoctui-app::compatibility_model_snapshot` is the sole wire-to-model conversion
+boundary. It validates protocol bounds before resolving stable capability IDs,
+wire enums, reasons, evidence, identity authorities, and selected
+implementations, then normalizes the complete model snapshot. Attach,
+reconnect, and replacement events install that authority monotonically;
+disconnect, synchronization loss, absent data, or malformed/unknown data
+invalidates it without replacing screen, focus, theme, or selection state.
+A stale compatibility replacement is reported but cannot erase a newer valid
+authority.
+
+`yoctui-app::compatibility_workspace_action` is the interactive runtime
+boundary in both daemon-attached and local fallback paths. Keyboard, mouse,
+paste, command-palette, dialog, workspace, and effect-follow-up actions all use
+it before any process/job router. Client-local effects remain usable without a
+snapshot. Environment effects require the exact current capability state and
+selected implementation, while unavailable preparation is rolled back with
+the model's exact reason. Daemon-probe effects cannot leave this boundary;
+startup and post-inventory client probing are prohibited. The local fallback
+therefore does not infer compatibility from host PATH when daemon authority is
+absent.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.

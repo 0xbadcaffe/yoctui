@@ -922,4 +922,13 @@ dialog is classified, capability loss closes only unsafe environment dialogs
 with restored focus/reason, and selections/local cancellation remain valid.
 The capability-aware reducer boundary rolls back preparation and emits no
 unavailable effect. Six focused tests, workspace check, and model Clippy pass.
-`COMPAT-WORKSPACE-APP-001` is active.
+`COMPAT-WORKSPACE-APP-001` is complete. Valid daemon wire snapshots convert
+once into normalized model authority; malformed or unknown wire data fails
+closed, stale replacements cannot displace newer authority, and disconnect or
+absent data invalidates support without replacing presentation. Every
+interactive daemon/local action and effect-follow-up route now crosses the same
+capability-aware reducer. Client startup and post-inventory capability probes
+were removed, so daemon-owned probe effects cannot spawn in a client.
+Unavailable actions retain exact reasons and produce no process/job effect.
+Focused app/CLI tests, all workspace tests, and warnings-denied Clippy pass.
+`COMPAT-WORKSPACE-001` is active as the aggregate workspace acceptance gate.
