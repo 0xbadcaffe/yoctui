@@ -4,13 +4,15 @@
 
 **ID:** CRATESIO-COVERAGE-001
 **Title:** Realign Python quality checks with the bundled bridge
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
 Point Python lint, formatting, type, and coverage checks at the canonical
 bridge source bundled in `yoctui-bitbake`, while retaining the external bridge
 tests, so the terminal completion gate measures the shipped implementation.
+
+This is the terminal handoff: every registered task is `DONE`.
 
 ## Dependencies
 
@@ -32,6 +34,12 @@ tests, so the terminal completion gate measures the shipped implementation.
 - Mypy checks the canonical bridge and its external tests.
 - Pytest coverage measures the canonical bridge and clears 75%.
 - The terminal completion gate passes.
+
+## Completion evidence
+
+- Ruff, formatting, and mypy pass for packaged source and external tests.
+- All 39 bridge tests pass.
+- Packaged-source coverage is 75.95% against a 75% minimum.
 
 ## Verification
 

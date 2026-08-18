@@ -4234,9 +4234,9 @@ notes = "Published yoctui-model, yoctui-protocol, yoctui-bitbake, yoctui-ui, yoc
 id = "CRATESIO-COVERAGE-001"
 milestone = "M12"
 title = "Realign Python quality checks with the bundled bridge"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 457
 required = true
 depends_on = ["CRATESIO-PUBLISH-001"]
 verify = ["$HOME/.local/bin/ruff check crates/yoctui-bitbake/bridge bridge/tests", "$HOME/.local/bin/ruff format --check crates/yoctui-bitbake/bridge bridge/tests", "$HOME/.local/bin/mypy crates/yoctui-bitbake/bridge bridge/tests", "$HOME/.local/bin/pytest bridge/tests --cov=crates/yoctui-bitbake/bridge --cov-report=term-missing --cov-fail-under=75", "./scripts/verify-completion.sh"]
-notes = "The post-release completion gate found that Python lint, type, and coverage commands still target the old top-level bridge source path after the canonical bridge moved into yoctui-bitbake. Point quality tooling at the packaged source while retaining the external test location."
+notes = "Python coverage now measures crates/yoctui-bitbake/bridge while Ruff and mypy inspect both that packaged source and bridge/tests. Ruff, formatting, mypy, all 39 bridge tests, and packaged-source coverage pass at 75.95%."

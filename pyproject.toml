@@ -1,5 +1,5 @@
 [tool.coverage.run]
-source = ["bridge"]
+source = ["crates/yoctui-bitbake/bridge"]
 parallel = true
 patch = ["subprocess"]
 

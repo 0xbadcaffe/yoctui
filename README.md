@@ -5,7 +5,7 @@
 [![Rust](https://img.shields.io/badge/Rust-stable-f74c00?logo=rust)](https://www.rust-lang.org/)
 [![Ratatui](https://img.shields.io/badge/UI-Ratatui-7aa2f7)](https://ratatui.rs/)
 [![Yocto](https://img.shields.io/badge/Yocto-BitBake-8cc265)](https://www.yoctoproject.org/)
-[![Roadmap](https://img.shields.io/badge/roadmap-final%20gate-orange)](docs/implementation-status.md)
+[![Roadmap](https://img.shields.io/badge/roadmap-complete-brightgreen)](docs/implementation-status.md)
 
 Yoctui is a Rust/Ratatui workbench for Yocto and BitBake. Browse layers and
 recipes, edit metadata, run builds and Devtool, inspect dependencies, follow

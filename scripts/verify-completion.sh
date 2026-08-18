@@ -43,10 +43,13 @@ cargo llvm-cov -p yoctui-protocol --all-features --fail-under-lines 80
 cargo audit
 cargo deny check
 
-"$python_tools/ruff" check bridge
-"$python_tools/ruff" format --check bridge
-"$python_tools/mypy" bridge
-"$python_tools/pytest" bridge/tests --cov=bridge --cov-report=term-missing --cov-fail-under=75
+bridge_source="crates/yoctui-bitbake/bridge"
+bridge_tests="bridge/tests"
+"$python_tools/ruff" check "$bridge_source" "$bridge_tests"
+"$python_tools/ruff" format --check "$bridge_source" "$bridge_tests"
+"$python_tools/mypy" "$bridge_source" "$bridge_tests"
+"$python_tools/pytest" "$bridge_tests" \
+  --cov="$bridge_source" --cov-report=term-missing --cov-fail-under=75
 
 ./scripts/valgrind.sh
 ./scripts/profile-workload.sh
