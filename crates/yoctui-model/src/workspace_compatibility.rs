@@ -1420,7 +1420,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_workspace_model_snapshot_install_is_monotonic_and_conflict_safe() {
+    fn compatibility_dynamic_model_snapshot_install_is_monotonic_and_conflict_safe() {
         let current = authority(
             4,
             vec![(
@@ -1465,7 +1465,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_workspace_model_snapshot_change_revalidates_dialog_and_effect() {
+    fn compatibility_dynamic_model_snapshot_change_revalidates_dialog_and_effect() {
         let mut app = App::new(10, 1_000);
         app.navigator_selection = 3;
         app.dialogs.push_front(Dialog::BuildOptions);
@@ -1506,6 +1506,29 @@ mod tests {
         assert_eq!(app.navigator_selection, 3);
         let denied = authorize_workspace_effect(&app, &start).unwrap_err();
         assert!(denied.reason().contains("cannot build"));
+        assert!(matches!(
+            install_workspace_compatibility(
+                &mut app,
+                authority(
+                    1,
+                    vec![(
+                        CapabilityId::BitBakeBuild,
+                        CapabilityState::Available,
+                        Some("tinfoil.build"),
+                    )],
+                ),
+            ),
+            Err(WorkspaceCompatibilityError::StaleGeneration {
+                current: 2,
+                received: 1,
+            })
+        ));
+        assert!(
+            authorize_workspace_effect(&app, &start)
+                .unwrap_err()
+                .reason()
+                .contains("cannot build")
+        );
         assert!(
             authorize_workspace_effect(&app, &Effect::CopyToClipboard("still local".into()))
                 .is_ok()
@@ -1513,7 +1536,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_workspace_model_invalidation_closes_environment_dialog_but_keeps_local_one() {
+    fn compatibility_dynamic_model_invalidation_closes_environment_dialog_but_keeps_local_one() {
         let mut app = App::new(10, 1_000);
         install_workspace_compatibility(
             &mut app,
@@ -1542,7 +1565,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_workspace_model_unavailable_effect_is_not_emitted_or_partially_applied() {
+    fn compatibility_dynamic_model_unavailable_effect_is_not_emitted_or_partially_applied() {
         let mut app = App::new(10, 1_000);
         let request = BuildRequest {
             targets: vec!["core-image-minimal".into()],

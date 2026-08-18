@@ -4578,7 +4578,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_workspace_app_converts_installs_updates_and_invalidates_authority() {
+    fn compatibility_dynamic_app_converts_installs_updates_and_invalidates_authority() {
         let first = compatibility_workspace_authority(1).normalize().unwrap();
         let wire = daemon_compatibility_protocol(&first);
         assert_eq!(compatibility_model_snapshot(&wire).unwrap(), first);
@@ -4632,7 +4632,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_workspace_app_rejects_unknown_wire_data_and_retains_newer_authority() {
+    fn compatibility_dynamic_app_rejects_unknown_wire_data_and_retains_newer_authority() {
         let first = compatibility_workspace_authority(1).normalize().unwrap();
         let mut unknown = daemon_compatibility_protocol(&first);
         unknown.capabilities[0].id = "future.unregistered.capability".into();
@@ -4865,7 +4865,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_ui_workspace_actions_follow_installed_authority_and_runtime_gate() {
+    fn compatibility_dynamic_app_actions_follow_installed_authority_and_runtime_gate() {
         let mut app = yoctui_model::App::new(16, 4096);
         yoctui_model::install_workspace_compatibility(
             &mut app,
@@ -4942,7 +4942,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_ui_dialog_actions_reject_confirm_and_revalidate_snapshot_changes() {
+    fn compatibility_dynamic_app_dialogs_reject_confirm_and_revalidate_snapshot_changes() {
         let request = yoctui_model::BuildRequest {
             targets: vec!["core-image-minimal".into()],
             task: None,
@@ -5016,7 +5016,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_ui_actions_parent_gate_enforces_one_runtime_authority() {
+    fn compatibility_dynamic_app_parent_gate_enforces_one_runtime_authority() {
         let mut app = yoctui_model::App::new(16, 4096);
         app.workspace.build_dir = Some("/work/poky/build".into());
         yoctui_model::install_workspace_compatibility(

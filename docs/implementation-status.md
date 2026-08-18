@@ -1021,4 +1021,11 @@ selected implementation IDs without using release labels as availability.
 Ten focused tests inspect exact typed argv for BitBake native/fallback forms,
 Devtool, Recipetool, bitbake-layers, and pkgdata; absent options and subcommands
 fail before process construction and no external command is executed. The
-workspace all-feature command gate passes. `COMPAT-TEST-UI-001` is active.
+workspace all-feature command gate passes. `COMPAT-TEST-UI-001` is complete.
+Dedicated dynamic suites run five model,
+five app, and four TestBackend cases covering monotonic live replacement,
+stale/conflicting response rejection, stable selection, immediate action and
+reason replacement, unsafe dialog close/focus restoration, local-dialog
+retention, invalidation, and denied-action rollback with no emitted launch.
+The exact task filters and workspace Clippy pass. `COMPAT-LIVE-LATEST-001` is
+active.

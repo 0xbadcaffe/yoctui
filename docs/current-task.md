@@ -2,47 +2,48 @@
 
 ## Task
 
-**ID:** COMPAT-TEST-UI-001
-**Title:** Test dynamic feature loading and unloading
+**ID:** COMPAT-LIVE-LATEST-001
+**Title:** Validate latest supported Yocto stable release
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Use typed compatibility snapshots to prove that live capability replacement
-updates model, app, and rendered UI behavior safely without stale actions or
-invalid process launches.
+Produce current, non-fixture compatibility evidence from a fresh official
+Poky checkout at the latest stable release selected from authoritative Yocto
+release documentation.
 
 ## Dependencies
 
-- `COMPAT-TEST-FIXTURES-001` — DONE
-- `COMPAT-UI-001` — DONE
+- `COMPAT-DOCTOR-001` — DONE
+- `COMPAT-TEST-CMDS-001` — DONE
+- `COMPAT-TEST-UI-001` — DONE
+- `COMPAT-MATRIX-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/compatibility_ui.rs`
-- `crates/yoctui-model/src/workspace_compatibility.rs`
-- `crates/yoctui-app/src/lib.rs`
-- `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-bitbake/src/compatibility_fixtures.rs`
+- `docs/compatibility.md`
+- `docs/compatibility-matrix.md`
+- `artifacts/release-quality/compatibility/`
+- `scripts/verify-live-compatibility.sh`
+- existing live Yocto/BitBake scripts
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Replacing a capability snapshot while running enables and disables actions
-  immediately from the centralized projection.
-- Existing selections remain valid or reconcile safely and open dialogs close
-  or revalidate when their authority disappears.
-- Stale snapshot responses are ignored and disabled reasons update from the
-  newest accepted generation.
-- Model, app, and TestBackend tests cover replacement, invalidation, no panic,
-  and no invalid command launch.
+- The selected release is the latest official stable release according to
+  current authoritative Yocto documentation.
+- A fresh official Poky checkout records exact release, Git commit, and
+  BitBake version evidence.
+- Live validation covers environment identity/probing, workspace discovery,
+  one core build action with task/log events, Recipes, Layers, Configuration,
+  Devtool capabilities, utility capabilities, and relevant modern commands.
+- Evidence is bounded, machine-readable, non-fixture, current under repository
+  policy, and independently accepted by the live compatibility verifier.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model compatibility_dynamic
-cargo test -p yoctui-app compatibility_dynamic
-cargo test -p yoctui-ui compatibility_dynamic
+./scripts/verify-live-compatibility.sh latest
 ./scripts/verify-roadmap.sh
 ```

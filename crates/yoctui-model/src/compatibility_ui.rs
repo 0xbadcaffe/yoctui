@@ -1282,7 +1282,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_ui_model_filter_search_and_selection_reconcile_by_stable_id() {
+    fn compatibility_dynamic_model_filter_search_and_selection_reconcile_by_stable_id() {
         let first = authority(1);
         let compatibility = state_with(first.clone());
         let mut state = CompatibilityUiState::default();

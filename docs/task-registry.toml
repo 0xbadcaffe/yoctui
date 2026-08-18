@@ -4922,18 +4922,18 @@ notes = "Shared fixture command authorities add explicit direct command-surface 
 id = "COMPAT-TEST-UI-001"
 milestone = "M18"
 title = "Test dynamic feature loading and unloading"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 509
 required = true
 depends_on = ["COMPAT-TEST-FIXTURES-001", "COMPAT-UI-001"]
 verify = ["cargo test -p yoctui-model compatibility_dynamic", "cargo test -p yoctui-app compatibility_dynamic", "cargo test -p yoctui-ui compatibility_dynamic", "./scripts/verify-roadmap.sh"]
-notes = "Hot snapshot changes must safely revalidate actions/selections/dialogs, ignore stale generations, update reasons, avoid panic, and prevent invalid launches."
+notes = "Dedicated compatibility_dynamic suites now select five model, five app, and four TestBackend tests. They prove monotonic replacement, stale/conflicting rejection, stable selection, immediate enable/disable and reason replacement, environment-dialog close/focus restoration, local-dialog retention, authority invalidation, no partial model mutation, and no effect/process launch from denied actions."
 
 [[task]]
 id = "COMPAT-LIVE-LATEST-001"
 milestone = "M18"
 title = "Validate latest supported Yocto stable release"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 510
 required = true
 depends_on = ["COMPAT-DOCTOR-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-MATRIX-001"]

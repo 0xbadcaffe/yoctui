@@ -12406,7 +12406,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_ui_workspace_actions_replace_without_stale_widget_state() {
+    fn compatibility_dynamic_ui_workspace_actions_replace_without_stale_widget_state() {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Inspector;
@@ -12440,7 +12440,78 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_ui_dialog_actions_render_all_states_and_exact_authority() {
+    fn compatibility_dynamic_ui_replaces_action_state_reason_and_preserves_selection() {
+        let mut app = compatibility_ui_inspector_app();
+        app.screen = Screen::Configuration;
+        app.focus = FocusTarget::Navigator;
+        app.navigator_selection = 14;
+        let unavailable = rendered_text(&app, 180, 56);
+        assert!(unavailable.contains("Upgrade recipe [U]"), "{unavailable}");
+        assert!(
+            unavailable.contains("Current Devtool does not expose the upgrade subcommand."),
+            "{unavailable}"
+        );
+
+        let mut authority = app.workspace_compatibility.authority().unwrap().clone();
+        authority.snapshot.generation = 8;
+        let record = authority
+            .snapshot
+            .capabilities
+            .iter_mut()
+            .find(|record| record.id == yoctui_model::CapabilityId::DevtoolUpgrade)
+            .unwrap();
+        record.state = yoctui_model::CapabilityState::Available;
+        record.evidence[0].outcome = yoctui_model::CapabilityEvidenceOutcome::Positive;
+        authority.implementations.insert(
+            yoctui_model::CapabilityId::DevtoolUpgrade,
+            yoctui_model::CapabilityImplementation {
+                id: "devtool.upgrade.argv".into(),
+                kind: yoctui_model::CapabilityImplementationKind::Command,
+            },
+        );
+        yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
+        assert_eq!(app.navigator_selection, 14);
+        let available = rendered_text(&app, 180, 56);
+        assert!(available.contains("Upgrade recipe [U]"), "{available}");
+        assert!(available.contains("Available"), "{available}");
+        assert!(available.contains("devtool.upgrade.argv"), "{available}");
+        assert!(
+            !available.contains("Current Devtool does not expose the upgrade subcommand."),
+            "{available}"
+        );
+
+        let mut replacement = app.workspace_compatibility.authority().unwrap().clone();
+        replacement.snapshot.generation = 9;
+        let record = replacement
+            .snapshot
+            .capabilities
+            .iter_mut()
+            .find(|record| record.id == yoctui_model::CapabilityId::DevtoolUpgrade)
+            .unwrap();
+        record.state = yoctui_model::CapabilityState::Unavailable {
+            reason: yoctui_model::CapabilityReason::new(
+                "probe.subcommand_removed",
+                "The reconnected Devtool omits upgrade.",
+                Some("Required command: devtool upgrade".into()),
+            )
+            .unwrap(),
+        };
+        record.evidence[0].outcome = yoctui_model::CapabilityEvidenceOutcome::Negative;
+        replacement
+            .implementations
+            .remove(&yoctui_model::CapabilityId::DevtoolUpgrade);
+        yoctui_model::install_workspace_compatibility(&mut app, replacement).unwrap();
+        assert_eq!(app.navigator_selection, 14);
+        let replaced = rendered_text(&app, 180, 56);
+        assert!(
+            replaced.contains("The reconnected Devtool omits upgrade."),
+            "{replaced}"
+        );
+        assert!(!replaced.contains("devtool.upgrade.argv"), "{replaced}");
+    }
+
+    #[test]
+    fn compatibility_dynamic_ui_dialog_actions_render_all_states_and_exact_authority() {
         let reason = |code: &str, message: &str| {
             yoctui_model::CapabilityReason::new(code, message, Some("bitbake <target>".into()))
                 .unwrap()
@@ -12541,7 +12612,7 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_ui_actions_parent_gate_uses_one_projection_across_surfaces() {
+    fn compatibility_dynamic_ui_parent_gate_uses_one_projection_across_surfaces() {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Navigator;
