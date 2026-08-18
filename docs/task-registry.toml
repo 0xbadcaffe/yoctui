@@ -4491,18 +4491,18 @@ notes = "The canonical Tasks Navigator now projects typed layers, recipes, image
 id = "UI-LITERAL-COCKPIT-001"
 milestone = "M16"
 title = "Match the reference Tasks cockpit and Inspector"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 480
 required = true
 depends_on = ["UI-LITERAL-NAV-001"]
 verify = ["cargo test -p yoctui-ui literal_cockpit", "cargo test -p yoctui-ui workbench_tasks", "cargo test -p yoctui-model background_job", "./scripts/verify-roadmap.sh"]
-notes = "Match task/log/history and metadata/log/action/system panel proportions while retaining typed authoritative content."
+notes = "Canonical Tasks now uses exact 17/18/9 center tiers and 16/15/7/6 Inspector sections. Typed task rows are ordered by observed start time, use compact status symbols/bars, retain wrapped authoritative metadata, and the deterministic fixture exercises four real background-job lifecycle records. All 241 model and 138 UI tests, focused cockpit/history checks, the strict golden, formatting, and roadmap validation pass."
 
 [[task]]
 id = "UI-LITERAL-UX-001"
 milestone = "M16"
 title = "Make reference focus and theme controls operational"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 481
 required = true
 depends_on = ["UI-LITERAL-COCKPIT-001"]

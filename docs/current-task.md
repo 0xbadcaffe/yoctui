@@ -2,22 +2,26 @@
 
 ## Task
 
-**ID:** UI-LITERAL-COCKPIT-001
-**Title:** Match the reference Tasks cockpit and Inspector
+**ID:** UI-LITERAL-UX-001
+**Title:** Make reference focus and theme controls operational
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Match the reference's task table, selected-task log, job history, metadata,
-recent log, actions, and system-status composition at `160x48`.
+Ensure every displayed canonical F-key invokes its named typed action, pane
+focus is predictable, and the theme picker visibly previews and persists.
 
 ## Dependencies
 
-- `UI-LITERAL-NAV-001` — DONE
+- `UI-LITERAL-COCKPIT-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
+- `crates/yoctui-app/src/lib.rs`
+- `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui/src/main.rs`
+- `scripts/test-tui-snapshots.sh`
 - `crates/yoctui-ui/tests/golden/literal-reference-160x48.cells`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
@@ -25,18 +29,20 @@ recent log, actions, and system-status composition at `160x48`.
 
 ## Definition of done
 
-- Canonical center tiers are exactly 17, 18, and 9 rows.
-- Canonical Inspector sections are exactly 16, 15, 7, and 6 rows.
-- Task rows use compact reference labels and status symbols.
-- Selected task metadata and log path remain authoritative and readable.
-- Job history uses retained typed jobs/build records without illustrative data.
+- F1 through F10 map to Help, Tasks, Jobs, Terminal, Logs, Layer, Recipe,
+  Image, Search, and Menu respectively.
+- Tab and Shift+Tab cycle Navigator, Workspace, and Inspector predictably.
+- F10 exposes Choose theme without requiring a hidden chord.
+- Theme preview is immediate; Enter persists and Esc restores the prior theme.
+- PTY snapshots retain the canonical rail without terminal contamination.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui literal_cockpit
-cargo test -p yoctui-ui workbench_tasks
-cargo test -p yoctui-model background_job
+cargo test -p yoctui-model theme
+cargo test -p yoctui-app focus
+cargo test -p yoctui-ui literal_ux
+./scripts/test-tui-snapshots.sh
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

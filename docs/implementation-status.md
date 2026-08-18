@@ -11,9 +11,15 @@ Status values:
 
 ## Current phase
 
-`UI-LITERAL-COCKPIT-001` is `IN_PROGRESS`: the mixed typed project Navigator is
-complete. The active task now locks the task table, log/history tiers, and four
-Inspector sections to the reference's canonical proportions and labels.
+`UI-LITERAL-UX-001` is `IN_PROGRESS`: canonical task/log/history and Inspector
+geometry now matches the reference. The active task wires the displayed F-key
+rail to real typed actions and verifies pane focus plus theme preview/apply/
+cancel behavior through reducer, UI, and PTY tests.
+
+`UI-LITERAL-COCKPIT-001` is `DONE`: center tiers are exactly 17/18/9 rows and
+Inspector sections 16/15/7/6 rows. Typed tasks render in observed chronology,
+the selected log and metadata remain authoritative, and retained typed jobs
+populate history. All 241 model and 138 UI tests pass.
 
 `UI-LITERAL-NAV-001` is `DONE`: canonical Tasks renders live layers, recipes,
 images, task families, and MACHINE as the reference tree, with a typed

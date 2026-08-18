@@ -2670,13 +2670,23 @@ fn tasks_inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
         return;
     }
 
-    let sections = Layout::vertical([
-        Constraint::Length(12),
-        Constraint::Min(5),
-        Constraint::Length(6),
-        Constraint::Length(9),
-    ])
-    .split(area);
+    let sections = if area.width == 45 && area.height == 44 {
+        Layout::vertical([
+            Constraint::Length(16),
+            Constraint::Length(15),
+            Constraint::Length(7),
+            Constraint::Length(6),
+        ])
+        .split(area)
+    } else {
+        Layout::vertical([
+            Constraint::Length(12),
+            Constraint::Min(5),
+            Constraint::Length(6),
+            Constraint::Length(9),
+        ])
+        .split(area)
+    };
     frame.render_widget(
         Paragraph::new(task_metadata_text(selected.as_ref(), now))
             .block(pane_block(app, "Inspector: Task", focused))
@@ -3389,11 +3399,15 @@ fn render_task_table(frame: &mut Frame, app: &App, area: Rect, rows: &[TaskRow],
         },
     );
     let target = app.build.target.as_deref().unwrap_or("not selected");
-    let title = format!(
-        "Tasks: {target} · {progress} · A{active} W{waiting} F{failed} · {} · {}",
-        build_pace_at(app, now),
-        task_filter_summary(app)
-    );
+    let title = if area.width == 89 && area.height == 17 {
+        "Tasks: Build".into()
+    } else {
+        format!(
+            "Tasks: {target} · {progress} · A{active} W{waiting} F{failed} · {} · {}",
+            build_pace_at(app, now),
+            task_filter_summary(app)
+        )
+    };
     let table_rows = rows.iter().enumerate().map(|(index, row)| {
         let values = match row {
             TaskRow::WaitingSummary(count) => vec![
@@ -3560,7 +3574,17 @@ fn render_job_history(frame: &mut Frame, app: &App, area: Rect, now: SystemTime)
 fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let rows = app.visible_task_rows();
     let selected = rows.get(app.task_progress_scroll);
-    if area.height >= 27 {
+    if area.width == 89 && area.height == 44 {
+        let panels = Layout::vertical([
+            Constraint::Length(17),
+            Constraint::Length(18),
+            Constraint::Length(9),
+        ])
+        .split(area);
+        render_task_table(frame, app, panels[0], &rows, now);
+        render_task_log(frame, app, panels[1], selected);
+        render_job_history(frame, app, panels[2], now);
+    } else if area.height >= 27 {
         let panels = Layout::vertical([
             Constraint::Percentage(45),
             Constraint::Percentage(30),
@@ -11046,6 +11070,7 @@ mod tests {
             ..Default::default()
         };
         app.tasks.insert(active.id.clone(), active);
+        app.task_progress_scroll = 4;
         for message in [
             "NOTE: Executing Tasks",
             "NOTE: Started: do_compile",
@@ -11069,6 +11094,62 @@ mod tests {
                     diagnostic: None,
                 }),
             );
+        }
+        for (id, title, started_ago, finished_ago, succeeded) in [
+            (854, "virtual/kernel", 1_269, 1_215, true),
+            (855, "core-image-minimal", 1_194, 1_086, false),
+            (856, "busybox", 1_005, 988, true),
+            (857, "core-image-minimal", 977, 682, true),
+        ] {
+            let job_id = yoctui_model::BackgroundJobId(id);
+            let _ = update(
+                &mut app,
+                Action::QueueBackgroundJob(yoctui_model::BackgroundJobSpec {
+                    id: job_id,
+                    kind: yoctui_model::BackgroundJobKind::Build,
+                    title: title.into(),
+                    context: yoctui_model::BackgroundJobContext {
+                        target: Some(title.into()),
+                        ..Default::default()
+                    },
+                    cancellation_supported: true,
+                    queued_at: literal_now() - Duration::from_secs(started_ago + 1),
+                }),
+            );
+            let _ = update(
+                &mut app,
+                Action::StartBackgroundJob {
+                    id: job_id,
+                    started_at: literal_now() - Duration::from_secs(started_ago),
+                },
+            );
+            let _ = update(&mut app, Action::RunBackgroundJob { id: job_id });
+            let finished_at = literal_now() - Duration::from_secs(finished_ago);
+            let _ = if succeeded {
+                update(
+                    &mut app,
+                    Action::SucceedBackgroundJob {
+                        id: job_id,
+                        result: yoctui_model::BackgroundJobResult {
+                            summary: "completed".into(),
+                            artifacts: Vec::new(),
+                        },
+                        finished_at,
+                    },
+                )
+            } else {
+                update(
+                    &mut app,
+                    Action::FailBackgroundJob {
+                        id: job_id,
+                        error: yoctui_model::BackgroundJobError {
+                            summary: "build failed".into(),
+                            detail: None,
+                        },
+                        finished_at,
+                    },
+                )
+            };
         }
         app
     }
@@ -11190,6 +11271,52 @@ mod tests {
         );
         assert!(navigator.contains("L: poky"), "{navigator}");
         assert!(navigator.contains("R: 858"), "{navigator}");
+    }
+
+    #[test]
+    fn literal_cockpit_uses_reference_tiers_and_typed_history() {
+        let app = literal_reference_app();
+        let mut terminal = Terminal::new(TestBackend::new(LITERAL_WIDTH, LITERAL_HEIGHT)).unwrap();
+        terminal
+            .draw(|frame| render_at(frame, &app, literal_now()))
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        let row = |y| {
+            (0..LITERAL_WIDTH)
+                .map(|x| buffer[(x, y)].symbol())
+                .collect::<String>()
+        };
+
+        assert!(row(2).contains("Tasks: Build"), "{}", row(2));
+        assert_eq!(buffer[(26, 18)].symbol(), "└");
+        assert!(row(19).contains("Log Viewer"), "{}", row(19));
+        assert_eq!(buffer[(26, 36)].symbol(), "└");
+        assert!(row(37).contains("Job History"), "{}", row(37));
+        assert_eq!(buffer[(26, 45)].symbol(), "└");
+
+        assert!(row(2).contains("Inspector: Task"), "{}", row(2));
+        assert_eq!(buffer[(115, 17)].symbol(), "└");
+        assert!(row(18).contains("Recent Log (tail)"), "{}", row(18));
+        assert_eq!(buffer[(115, 32)].symbol(), "└");
+        assert!(row(33).contains("Actions"), "{}", row(33));
+        assert_eq!(buffer[(115, 39)].symbol(), "└");
+        assert!(row(40).contains("System Status"), "{}", row(40));
+        assert_eq!(buffer[(115, 45)].symbol(), "└");
+
+        let screen = (0..LITERAL_HEIGHT).map(row).collect::<String>();
+        for expected in [
+            "do_fetch",
+            "do_compile",
+            "72%",
+            "857",
+            "core-image-minimal",
+            "busybox",
+            "failed",
+            "/home/user/yocto/build/tmp/work",
+            "le.85873",
+        ] {
+            assert!(screen.contains(expected), "missing {expected}: {screen}");
+        }
     }
 
     fn rendered_text(app: &App, width: u16, height: u16) -> String {

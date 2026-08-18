@@ -2869,12 +2869,16 @@ impl App {
                 return std::cmp::Ordering::Greater;
             };
             (
+                left.started.is_none(),
+                left.started,
                 task_state_order(left.state),
                 left.recipe.as_str(),
                 left.task.as_str(),
                 left.id.0.as_str(),
             )
                 .cmp(&(
+                    right.started.is_none(),
+                    right.started,
                     task_state_order(right.state),
                     right.recipe.as_str(),
                     right.task.as_str(),
