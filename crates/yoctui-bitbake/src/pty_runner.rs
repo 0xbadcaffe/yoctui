@@ -272,8 +272,17 @@ impl PtyRunner {
                 .expect("checked above")
                 .apply(PtySessionAction::BeginTermination)?;
         }
-        // SAFETY: group is the positive session leader PID created for this runner.
-        if unsafe { libc::kill(-group, libc::SIGTERM) } != 0 {
+        let child_pid = self
+            .child
+            .as_ref()
+            .and_then(Child::id)
+            .ok_or(PtyRunnerError::NotRunning)? as libc::pid_t;
+        // SAFETY: child_pid is the owned child and group is its positive session
+        // leader PID. Signaling both makes the owner's graceful trap reliable
+        // while retaining process-group cleanup for descendants.
+        if unsafe { libc::kill(child_pid, libc::SIGTERM) } != 0
+            || unsafe { libc::kill(-group, libc::SIGTERM) } != 0
+        {
             return Err(PtyRunnerError::ProcessControl(
                 io::Error::last_os_error().to_string(),
             ));
