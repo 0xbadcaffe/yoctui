@@ -4658,18 +4658,18 @@ notes = "Compatibility schema v1 carries bounded authoritative identity, stable 
 id = "COMPAT-DAEMON-001"
 milestone = "M18"
 title = "Move compatibility state into daemon ownership"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 495
 required = true
 depends_on = ["COMPAT-CACHE-001", "COMPAT-PROTOCOL-001", "COMPAT-VERSION-001"]
 verify = ["cargo test -p yoctui daemon_compatibility", "cargo test -p yoctui-model daemon_compatibility", "./scripts/verify-roadmap.sh"]
-notes = "The daemon probes and owns one versioned snapshot per selected environment; every client receives the same snapshot and never infers release support independently."
+notes = "DaemonCompatibilityCoordinator owns one exact-key cache, typed catalog probing/resolution, selected implementations, invalidation, and stale-ticket rejection. Normalized daemon-global state maps once to bounded wire snapshots/events; attach/reconnect clients receive the identical generation and never infer support. Five focused model/CLI/app tests and warnings-denied Clippy pass; missing authoritative initialized context remains absent/Unknown instead of falling back to host PATH."
 
 [[task]]
 id = "COMPAT-BITBAKE-CMD-001"
 milestone = "M18"
 title = "Make BitBake command construction capability-aware"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 496
 required = true
 depends_on = ["COMPAT-DAEMON-001", "COMPAT-VERSION-001"]

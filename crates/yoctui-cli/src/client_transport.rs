@@ -29,7 +29,7 @@ pub struct ClientAttachResult {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClientServerEvent {
-    Snapshot(DaemonSnapshot),
+    Snapshot(Box<DaemonSnapshot>),
     Event(SequencedEvent),
     CommandResult(yoctui_protocol::daemon::CommandResult),
     ResyncRequired {
@@ -165,7 +165,7 @@ impl DaemonClientTransport {
             return match self.receive_message()? {
                 ServerMessage::Snapshot(snapshot) => {
                     validate_snapshot_instance(&self.hello, &snapshot)?;
-                    Ok(ClientServerEvent::Snapshot(snapshot))
+                    Ok(ClientServerEvent::Snapshot(Box::new(snapshot)))
                 }
                 ServerMessage::Event(event) => Ok(ClientServerEvent::Event(event)),
                 ServerMessage::CommandResult(result) => {

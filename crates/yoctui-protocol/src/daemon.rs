@@ -65,6 +65,7 @@ pub enum Capability {
     PtyWriterLease,
     PaneAttachments,
     TerminalMouse,
+    EnvironmentCompatibility,
     GracefulShutdown,
     #[serde(other)]
     Unknown,
@@ -1296,7 +1297,7 @@ pub struct SequencedEvent {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum DaemonEvent {
     BitBakeChanged(BitBakeState),
-    CompatibilityChanged(CompatibilitySnapshotData),
+    CompatibilityChanged(Box<CompatibilitySnapshotData>),
     JobChanged(JobSummary),
     JobRemoved {
         job_id: JobId,
@@ -1682,7 +1683,7 @@ pub fn apply_sequenced_event(
                     received: compatibility.generation,
                 });
             }
-            snapshot.compatibility = Some(compatibility.clone());
+            snapshot.compatibility = Some((**compatibility).clone());
         }
         DaemonEvent::JobChanged(job) => replace_by(&mut snapshot.jobs, job.clone(), |item| item.id),
         DaemonEvent::JobRemoved { job_id } => snapshot.jobs.retain(|job| job.id != *job_id),
@@ -2153,9 +2154,9 @@ mod tests {
             .expect("valid compatibility snapshot");
 
         journal
-            .publish(DaemonEvent::CompatibilityChanged(
+            .publish(DaemonEvent::CompatibilityChanged(Box::new(
                 compatibility_snapshot_fixture(2),
-            ))
+            )))
             .unwrap();
         assert_eq!(
             journal
@@ -2168,9 +2169,9 @@ mod tests {
         );
 
         assert!(matches!(
-            journal.publish(DaemonEvent::CompatibilityChanged(
+            journal.publish(DaemonEvent::CompatibilityChanged(Box::new(
                 compatibility_snapshot_fixture(2)
-            )),
+            ))),
             Err(DaemonSnapshotError::StaleCompatibilityGeneration {
                 current: 2,
                 received: 2

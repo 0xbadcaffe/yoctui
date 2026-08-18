@@ -56,7 +56,7 @@ impl InteractiveDaemonRuntime {
             return Ok(false);
         };
         match event {
-            ClientServerEvent::Snapshot(snapshot) => self.replica.replace_app(app, snapshot),
+            ClientServerEvent::Snapshot(snapshot) => self.replica.replace_app(app, *snapshot),
             ClientServerEvent::Event(event) => self.replica.apply_event_to_app(app, &event)?,
             ClientServerEvent::ResyncRequired { reason, .. } => {
                 self.replica.begin_synchronization();

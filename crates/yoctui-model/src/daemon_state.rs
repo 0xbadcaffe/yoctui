@@ -1,13 +1,14 @@
 use crate::{
-    App, BackgroundJobs, BuildEnvironmentState, BuildRecord, BuildState, CompletedTask,
-    FocusTarget, ImageArtifactInventoryState, LogState, MaintenanceState, PackageDetailState,
-    PackageIdentity, PackageInventoryState, ProjectProfileState, QaState, QemuCapability,
-    QemuSession, Screen, SdkArtifactInventoryState, SdkSession, SdkToolCapability, SecurityState,
+    App, BackgroundJobs, BuildEnvironmentState, BuildRecord, BuildState, CapabilityId,
+    CapabilityImplementation, CapabilitySnapshot, CompletedTask, FocusTarget,
+    ImageArtifactInventoryState, LogState, MaintenanceState, PackageDetailState, PackageIdentity,
+    PackageInventoryState, ProjectProfileState, QaState, QemuCapability, QemuSession, Screen,
+    SdkArtifactInventoryState, SdkSession, SdkToolCapability, SecurityState,
     SignatureComparisonState, SignatureDumpState, TaskId, TaskInfo, TestCapability,
     TestComparisonState, TestJunitExportState, TestResultInventoryState, TestSession, Theme,
     WicCapability, WicDeviceInventoryState, WicOutputInventoryState, WicSession, Workspace,
 };
-use std::collections::{HashMap, VecDeque};
+use std::collections::{BTreeMap, HashMap, VecDeque};
 use thiserror::Error;
 
 pub const DEFAULT_DAEMON_LOG_LIMIT: usize = 10_000;
@@ -89,6 +90,34 @@ pub struct DaemonBitBakeState {
     pub diagnostic: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DaemonCompatibilitySnapshot {
+    pub snapshot: CapabilitySnapshot,
+    pub implementations: BTreeMap<CapabilityId, CapabilityImplementation>,
+}
+
+impl DaemonCompatibilitySnapshot {
+    pub fn normalize(mut self) -> Result<Self, DaemonStateError> {
+        self.snapshot = self.snapshot.normalize()?;
+        for capability in &self.snapshot.capabilities {
+            let implementation = self.implementations.get(&capability.id);
+            if capability.state.is_enabled() != implementation.is_some() {
+                return Err(DaemonStateError::CompatibilityImplementationMismatch(
+                    capability.id,
+                ));
+            }
+        }
+        if self
+            .implementations
+            .keys()
+            .any(|id| self.snapshot.capability(*id).is_none())
+        {
+            return Err(DaemonStateError::CompatibilityUnknownImplementation);
+        }
+        Ok(self)
+    }
+}
+
 impl Default for DaemonBitBakeState {
     fn default() -> Self {
         Self {
@@ -149,6 +178,7 @@ pub struct DaemonGlobalState {
     pub build_environment: BuildEnvironmentState,
     pub project_profile: ProjectProfileState,
     pub bitbake: DaemonBitBakeState,
+    pub compatibility: Option<DaemonCompatibilitySnapshot>,
     pub session: DaemonSessionMetadata,
     pub recent_logs: VecDeque<String>,
     pub recent_errors: VecDeque<String>,
@@ -175,6 +205,7 @@ impl DaemonGlobalState {
             build_environment: BuildEnvironmentState::Unconfigured,
             project_profile: ProjectProfileState::NotLoaded,
             bitbake: DaemonBitBakeState::default(),
+            compatibility: None,
             session: DaemonSessionMetadata {
                 started_unix_ms,
                 boot_id,
@@ -207,6 +238,8 @@ pub enum DaemonStateAction {
     ReplaceBuildEnvironment(BuildEnvironmentState),
     ReplaceProjectProfile(ProjectProfileState),
     ReplaceBitBake(DaemonBitBakeState),
+    ReplaceCompatibility(Box<DaemonCompatibilitySnapshot>),
+    InvalidateCompatibility,
     ReplaceJobs(Box<DaemonJobState>),
     ReplaceRecovery {
         state: DaemonRecoveryState,
@@ -221,6 +254,23 @@ pub fn update_daemon_state(
     state: &mut DaemonGlobalState,
     action: DaemonStateAction,
 ) -> Result<DaemonRevision, DaemonStateError> {
+    if let DaemonStateAction::ReplaceCompatibility(compatibility) = &action {
+        let normalized = (**compatibility).clone().normalize()?;
+        if state
+            .compatibility
+            .as_ref()
+            .is_some_and(|current| current.snapshot.generation >= normalized.snapshot.generation)
+        {
+            return Err(DaemonStateError::StaleCompatibilityGeneration {
+                current: state
+                    .compatibility
+                    .as_ref()
+                    .map(|current| current.snapshot.generation)
+                    .unwrap_or(0),
+                received: normalized.snapshot.generation,
+            });
+        }
+    }
     state.mutate(|state| match action {
         DaemonStateAction::ReplaceWorkspace(workspace) => state.workspace = workspace,
         DaemonStateAction::ReplaceBuildEnvironment(environment) => {
@@ -228,6 +278,14 @@ pub fn update_daemon_state(
         }
         DaemonStateAction::ReplaceProjectProfile(profile) => state.project_profile = profile,
         DaemonStateAction::ReplaceBitBake(bitbake) => state.bitbake = bitbake,
+        DaemonStateAction::ReplaceCompatibility(compatibility) => {
+            state.compatibility = Some(
+                (*compatibility)
+                    .normalize()
+                    .expect("compatibility was validated before daemon mutation"),
+            );
+        }
+        DaemonStateAction::InvalidateCompatibility => state.compatibility = None,
         DaemonStateAction::ReplaceJobs(jobs) => state.jobs = Some(*jobs),
         DaemonStateAction::ReplaceRecovery {
             state: recovery,
@@ -501,6 +559,14 @@ pub enum DaemonStateError {
     },
     #[error("daemon state revision exhausted")]
     RevisionExhausted,
+    #[error(transparent)]
+    InvalidCompatibility(#[from] crate::CapabilityModelError),
+    #[error("capability implementation does not match enabled state for {0}")]
+    CompatibilityImplementationMismatch(CapabilityId),
+    #[error("capability implementation references an absent snapshot capability")]
+    CompatibilityUnknownImplementation,
+    #[error("stale daemon compatibility generation: current {current}, received {received}")]
+    StaleCompatibilityGeneration { current: u64, received: u64 },
 }
 
 fn trim_front<T>(items: &mut VecDeque<T>, limit: usize) {
@@ -512,6 +578,40 @@ fn trim_front<T>(items: &mut VecDeque<T>, limit: usize) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn daemon_compatibility_snapshot(generation: u64) -> DaemonCompatibilitySnapshot {
+        let environment = crate::YoctoEnvironmentIdentity {
+            build_directory: crate::AuthoritativeValue::detected(
+                "/work/poky/build".into(),
+                crate::IdentityAuthority::InitializedEnvironment,
+            ),
+            ..crate::YoctoEnvironmentIdentity::default()
+        };
+        DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation,
+                environment,
+                capabilities: vec![crate::CapabilityRecord {
+                    id: CapabilityId::BitBakeBuild,
+                    state: crate::CapabilityState::Available,
+                    evidence: vec![crate::CapabilityEvidence {
+                        kind: crate::CapabilityEvidenceKind::DirectProbe,
+                        outcome: crate::CapabilityEvidenceOutcome::Positive,
+                        subject: "bitbake executable".into(),
+                        detail: "The initialized environment exposes BitBake.".into(),
+                        argv: Vec::new(),
+                    }],
+                }],
+            },
+            implementations: BTreeMap::from([(
+                CapabilityId::BitBakeBuild,
+                CapabilityImplementation {
+                    id: "bitbake.build.command".into(),
+                    kind: crate::CapabilityImplementationKind::Command,
+                },
+            )]),
+        }
+    }
 
     #[test]
     fn daemon_state_partition_keeps_global_authority_and_client_presentation_distinct() {
@@ -587,6 +687,69 @@ mod tests {
             generation: 0,
         };
         assert_eq!(revision.advance(), Err(DaemonStateError::RevisionExhausted));
+    }
+
+    #[test]
+    fn daemon_compatibility_owns_one_snapshot_and_rejects_stale_reprobes() {
+        let mut daemon = DaemonGlobalState::new(
+            DaemonModelInstanceId([9; 16]),
+            10,
+            "boot-a".into(),
+            DaemonStateLimits::default(),
+        )
+        .unwrap();
+        update_daemon_state(
+            &mut daemon,
+            DaemonStateAction::ReplaceCompatibility(Box::new(daemon_compatibility_snapshot(2))),
+        )
+        .unwrap();
+        assert_eq!(
+            daemon.compatibility.as_ref().unwrap().snapshot.generation,
+            2
+        );
+
+        assert_eq!(
+            update_daemon_state(
+                &mut daemon,
+                DaemonStateAction::ReplaceCompatibility(Box::new(daemon_compatibility_snapshot(1))),
+            ),
+            Err(DaemonStateError::StaleCompatibilityGeneration {
+                current: 2,
+                received: 1,
+            })
+        );
+        assert_eq!(daemon.revision.sequence, 1);
+
+        update_daemon_state(&mut daemon, DaemonStateAction::InvalidateCompatibility).unwrap();
+        assert!(daemon.compatibility.is_none());
+    }
+
+    #[test]
+    fn daemon_compatibility_requires_exact_implementation_for_enabled_records() {
+        let mut missing = daemon_compatibility_snapshot(1);
+        missing.implementations.clear();
+        assert_eq!(
+            missing.normalize(),
+            Err(DaemonStateError::CompatibilityImplementationMismatch(
+                CapabilityId::BitBakeBuild
+            ))
+        );
+
+        let mut disabled = daemon_compatibility_snapshot(1);
+        disabled.snapshot.capabilities[0].state = crate::CapabilityState::Unknown {
+            reason: crate::CapabilityReason::new(
+                "probe.unknown",
+                "The capability probe did not return conclusive evidence.",
+                None,
+            )
+            .unwrap(),
+        };
+        assert_eq!(
+            disabled.normalize(),
+            Err(DaemonStateError::CompatibilityImplementationMismatch(
+                CapabilityId::BitBakeBuild
+            ))
+        );
     }
 
     #[test]

@@ -103,6 +103,9 @@ mod client_transport;
 #[cfg(unix)]
 mod daemon_bitbake;
 #[cfg(unix)]
+#[cfg_attr(not(test), allow(dead_code))]
+mod daemon_compatibility;
+#[cfg(unix)]
 mod daemon_devtool;
 #[cfg(unix)]
 mod daemon_maintenance;
@@ -1474,6 +1477,8 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         .unwrap_or(snapshot);
     let daemon_journal = DaemonSnapshotJournal::new(snapshot, DaemonSnapshotLimits::default())?;
     let mut daemon_journal = daemon_journal;
+    let _compatibility_coordinator =
+        daemon_compatibility::DaemonCompatibilityCoordinator::default();
     let mut devtool_supervisor = daemon_devtool::DaemonDevtoolSupervisor::default();
     let mut bitbake_supervisor = daemon_bitbake::DaemonBitBakeSupervisor::default();
     let mut sdk_supervisor = daemon_sdk::DaemonSdkSupervisor::default();
@@ -1656,6 +1661,7 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
                             Capability::PtyWriterLease,
                             Capability::PaneAttachments,
                             Capability::TerminalMouse,
+                            Capability::EnvironmentCompatibility,
                             Capability::GracefulShutdown,
                         ],
                         limits: ProtocolLimits {

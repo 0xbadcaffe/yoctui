@@ -2,50 +2,49 @@
 
 ## Task
 
-**ID:** COMPAT-DAEMON-001
-**Title:** Move compatibility state into daemon ownership
+**ID:** COMPAT-BITBAKE-CMD-001
+**Title:** Make BitBake command construction capability-aware
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Make the persistent daemon the sole owner of the exact environment capability
-snapshot so every attached client observes the same generation and reconnects
-without independently inferring release support.
+Audit every BitBake process invocation and require the connected environment's
+central capability snapshot to select a supported typed argv implementation or
+reject the action before spawn.
 
 ## Dependencies
 
-- `COMPAT-CACHE-001` — DONE
-- `COMPAT-PROTOCOL-001` — DONE
+- `COMPAT-DAEMON-001` — DONE
 - `COMPAT-VERSION-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/daemon_state.rs`
-- `crates/yoctui-app/src/lib.rs`
-- `crates/yoctui-cli/src/daemon.rs`
-- `crates/yoctui-cli/src/client_transport.rs`
-- `crates/yoctui-bitbake/src/compatibility_cache.rs`
+- `crates/yoctui-bitbake/src/bitbake_cli_control.rs`
+- `crates/yoctui-bitbake/src/lib.rs`
+- `crates/yoctui-bitbake/src/server_controller.rs`
+- `crates/yoctui-bitbake/src/signature.rs`
+- `crates/yoctui-model/src/compatibility_catalog.rs`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Daemon state owns exactly one capability cache and normalized snapshot for
-  the selected build environment.
-- Environment/workspace changes invalidate and reprobe through a newer
-  generation; stale probe results cannot replace current state.
-- Attach and reconnect snapshots expose the daemon-owned compatibility state,
-  and all clients observe identical generations and update events.
-- Client/model replicas accept typed snapshots but never perform version or
-  release inference independently.
-- Tests cover initial attach, multi-client consistency, reconnect, invalidation,
-  stale reprobe rejection, and environment isolation.
+- Every BitBake invocation and option emitted by Yoctui is inventoried and
+  associated with a stable `CapabilityId` and catalog implementation.
+- Command construction accepts the current normalized snapshot and selected
+  implementation; it never compares release/version values locally.
+- Preferred and maintained fallback implementations emit exact shell-free argv
+  appropriate to their positive evidence.
+- Unknown, unavailable, unsupported, stale, or implementation-mismatched
+  capabilities reject before process creation with the snapshot reason.
+- Tests prove old/new variants, fallback selection, unsupported-option absence,
+  stale snapshot rejection, and zero spawn attempts for unavailable actions.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui daemon_compatibility
-cargo test -p yoctui-model daemon_compatibility
+cargo test -p yoctui-bitbake compatibility_command
+cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

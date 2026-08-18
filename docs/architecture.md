@@ -2164,6 +2164,22 @@ values fail closed; absence in an older persisted snapshot means Unknown, not
 Available. Model conversion remains the client boundary and cannot add release
 inference.
 
+`DaemonCompatibilityCoordinator` is the single runtime probe/cache/resolution
+owner. Selecting an exact `CapabilityCacheKey` either returns the cached model
+snapshot or a generation-correlated probe ticket. It evaluates the typed
+catalog through `CapabilityProbeRunner`, resolves centrally, and accepts a
+result only while both key and generation still match. Environment changes or
+explicit invalidation clear selected implementations as well as the snapshot.
+`DaemonGlobalState` stores the normalized snapshot plus the exact selected
+implementation for each enabled record; disabled records cannot retain an
+implementation. `daemon_protocol_snapshot` is the sole model-to-wire mapper.
+Attach/reconnect reuses the journal snapshot for every client, while a resolved
+reprobe is published as one complete replacement event. The daemon advertises
+this transport through the negotiated `EnvironmentCompatibility` protocol
+capability. A daemon without authoritative initialized-environment context
+retains no snapshot rather than deriving support from its host PATH or a
+persisted version.
+
 Commands use this flow:
 
 ```text

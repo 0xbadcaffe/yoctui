@@ -827,3 +827,14 @@ attach snapshots and complete replacement events. Validation precedes journal
 mutation and rejects malformed, oversized, duplicate, contradictory, and stale
 data; unknown future wire values decode fail-closed. Four focused protocol
 tests and the full workspace compile pass. `COMPAT-DAEMON-001` is active.
+
+`COMPAT-DAEMON-001` is complete. `DaemonCompatibilityCoordinator` now owns the
+one exact-key cache, typed catalog probing, centralized resolution, selected
+implementations, generation tickets, invalidation, and stale-result rejection.
+Normalized compatibility state is daemon-global, maps once into validated wire
+data, and is shared identically by attach/reconnect clients through the journal
+and complete replacement events; clients perform no inference. Five focused
+model/CLI/app tests and warnings-denied Clippy pass. When no authoritative
+initialized context is available the daemon keeps compatibility absent/Unknown
+instead of inspecting an unrelated host PATH. `COMPAT-BITBAKE-CMD-001` is
+active.
