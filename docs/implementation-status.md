@@ -984,4 +984,12 @@ the Tasks action list gains state without changing the canonical literal
 golden. Invalidation removes stale fallback text immediately, runtime denials
 remain no-spawn, and local/owned operations remain usable. Focused and full
 model/app/UI suites, PTY snapshots, and workspace Clippy pass.
-`COMPAT-UI-DIALOG-ACTIONS-001` is active.
+`COMPAT-UI-DIALOG-ACTIONS-001` is complete. Every environment-backed dialog
+uses the centralized dialog requirement and a compact two-line compatibility
+rail to show its five-state result, exact reason, limitation, selected
+implementation, and confirmation availability without obscuring responsive
+dialog content. Limited actions remain confirmable, denied confirmations emit
+no effect, and newer snapshot invalidation closes unsafe dialogs with restored
+focus and the exact reason. Local dialogs and owned cancellation remain usable.
+Focused tests, full model/app/UI suites, PTY snapshots, and workspace Clippy
+pass. `COMPAT-UI-ACTIONS-001` is active as the aggregate visible-action gate.

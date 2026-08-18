@@ -255,7 +255,7 @@ fn capability_requirement_availability(
                 .map(|capability| WorkspaceCapabilityIssue {
                     capability: Some(capability),
                     reason: format!(
-                        "{} requires the current environment capability snapshot.",
+                        "No current environment capability snapshot: {}.",
                         capability.as_str()
                     ),
                 })

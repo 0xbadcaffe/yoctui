@@ -618,6 +618,12 @@ fn compatibility_destination_detail(app: &App, destination: WorkspaceDestination
     if let Some(reason) = availability.exact_reason() {
         lines.extend([String::new(), format!("Reason: {reason}")]);
     }
+    lines.extend(
+        availability
+            .limitations
+            .iter()
+            .map(|limitation| format!("Limitation: {limitation}")),
+    );
     if !availability.implementations.is_empty() {
         lines.extend([
             String::new(),
@@ -668,6 +674,12 @@ fn compatibility_workspace_actions_text(app: &App, destination: WorkspaceDestina
         if let Some(reason) = availability.exact_reason() {
             lines.push(format!("  Reason: {reason}"));
         }
+        lines.extend(
+            availability
+                .limitations
+                .iter()
+                .map(|limitation| format!("  Limitation: {limitation}")),
+        );
         if !availability.implementations.is_empty() {
             lines.push(format!(
                 "  Implementation: {}",
@@ -1088,6 +1100,7 @@ fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     workbench_header(frame, app, chunks[0]);
     responsive_shell(frame, app, chunks[1], area.width, now);
     workbench_footer(frame, app, chunks[2], now);
+    let screen_area = area;
     if app.command_palette_open {
         command_palette(frame, app, area);
     } else if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() {
@@ -1842,6 +1855,64 @@ fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             popup,
         );
     }
+    if !app.command_palette_open
+        && let Some(dialog) = app.active_dialog()
+    {
+        dialog_compatibility_overlay(frame, app, dialog, screen_area);
+    }
+}
+
+fn dialog_compatibility_overlay(frame: &mut Frame, app: &App, dialog: &Dialog, area: Rect) {
+    let availability = yoctui_model::compatibility_ui_dialog_action_availability(
+        &app.workspace_compatibility,
+        dialog,
+    );
+    let local = availability.state == WorkspaceAvailabilityState::Available
+        && availability.implementations.is_empty();
+    if local {
+        return;
+    }
+    let state = if local {
+        "Local"
+    } else {
+        compatibility_workspace_state_label(availability.state)
+    };
+    let mut state_line = format!(
+        "Dialog compatibility · State: {state} · Confirmation {}",
+        if availability.enabled {
+            "available"
+        } else {
+            "disabled"
+        }
+    );
+    if !availability.implementations.is_empty() {
+        state_line.push_str(&format!(
+            " · Implementation: {}",
+            availability
+                .implementations
+                .iter()
+                .map(|(_, implementation)| implementation.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        ));
+    }
+    let mut detail = Vec::new();
+    if let Some(reason) = availability.exact_reason() {
+        detail.push(reason.to_owned());
+    }
+    detail.extend(
+        availability
+            .limitations
+            .iter()
+            .map(|limitation| format!("Limitation: {limitation}")),
+    );
+    let popup = Rect::new(area.x, area.y, area.width, 2);
+    clear_popup(frame, app, popup);
+    frame.render_widget(
+        Paragraph::new(format!("{state_line}\n{}", detail.join(" · ")))
+            .style(compatibility_workspace_state_style(app, availability.state)),
+        popup,
+    );
 }
 
 fn theme_picker(frame: &mut Frame, app: &App, selection: usize, area: Rect) {
@@ -2033,6 +2104,12 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
             lines.push(Line::styled(
                 format!("Reason: {reason}"),
                 palette.role(palette.warning, Modifier::BOLD),
+            ));
+        }
+        for limitation in &command.compatibility_limitations {
+            lines.push(Line::styled(
+                format!("Limitation: {limitation}"),
+                palette.role(palette.warning, Modifier::ITALIC),
             ));
         }
         if !command.implementations.is_empty() {
@@ -7009,6 +7086,7 @@ fn wic_create_confirmation(frame: &mut Frame, app: &App, preview: &WicCreatePrev
     let source_line_count = preview.kickstart.source.lines().count();
     let source_limit = if popup.height <= 22 { 2 } else { 6 };
     let mut lines = vec![
+        Line::from("Confirm managed Wic creation"),
         Line::from(format!(
             "Machine: {} | Image: {}",
             preview.request.machine, preview.request.image
@@ -12269,7 +12347,7 @@ mod tests {
         assert!(navigator.contains("? Layers"), "{navigator}");
         assert!(navigator.contains("Compatibility: Unknown"), "{navigator}");
         assert!(
-            navigator.contains("requires the current environment capability"),
+            navigator.contains("No current environment capability snapshot"),
             "{navigator}"
         );
 
@@ -12280,7 +12358,7 @@ mod tests {
         assert!(palette.contains("Compatibility: Unknown"), "{palette}");
         assert!(palette.contains("Cannot run:"), "{palette}");
         assert!(
-            palette.contains("requires the current environment capability"),
+            palette.contains("No current environment capability snapshot"),
             "{palette}"
         );
 
@@ -12343,7 +12421,7 @@ mod tests {
             "{unknown}"
         );
         assert!(
-            unknown.contains("requires the current environment capability"),
+            unknown.contains("No current environment capability snapshot"),
             "{unknown}"
         );
         assert!(!unknown.contains("environment-fallback"), "{unknown}");
@@ -12359,6 +12437,107 @@ mod tests {
             images.contains("Cancel owned image operation [x/c] — Local"),
             "{images}"
         );
+    }
+
+    #[test]
+    fn compatibility_ui_dialog_actions_render_all_states_and_exact_authority() {
+        let reason = |code: &str, message: &str| {
+            yoctui_model::CapabilityReason::new(code, message, Some("bitbake <target>".into()))
+                .unwrap()
+        };
+        let cases = [
+            (
+                yoctui_model::CapabilityState::Available,
+                yoctui_model::CapabilityEvidenceOutcome::Positive,
+                true,
+                "State: Available · Confirmation available",
+            ),
+            (
+                yoctui_model::CapabilityState::AvailableWithLimitations {
+                    reason: reason(
+                        "compatibility.fallback",
+                        "Build uses the maintained command fallback.",
+                    ),
+                    limitations: vec!["Native event progress is unavailable.".into()],
+                },
+                yoctui_model::CapabilityEvidenceOutcome::Positive,
+                true,
+                "State: Limited · Confirmation available",
+            ),
+            (
+                yoctui_model::CapabilityState::Unavailable {
+                    reason: reason("probe.command_absent", "BitBake build is unavailable."),
+                },
+                yoctui_model::CapabilityEvidenceOutcome::Negative,
+                false,
+                "State: Unavailable · Confirmation disabled",
+            ),
+            (
+                yoctui_model::CapabilityState::Unknown {
+                    reason: reason("probe.timed_out", "BitBake build probe timed out."),
+                },
+                yoctui_model::CapabilityEvidenceOutcome::Inconclusive,
+                false,
+                "State: Unknown · Confirmation disabled",
+            ),
+            (
+                yoctui_model::CapabilityState::Unsupported {
+                    reason: reason(
+                        "yoctui.not_implemented",
+                        "No maintained build adapter exists.",
+                    ),
+                },
+                yoctui_model::CapabilityEvidenceOutcome::Inconclusive,
+                false,
+                "State: Unsupported · Confirmation disabled",
+            ),
+        ];
+        for (state, outcome, keep_implementation, expected) in cases {
+            let mut app = compatibility_ui_inspector_app();
+            let mut authority = app.workspace_compatibility.authority().unwrap().clone();
+            authority.snapshot.generation = 8;
+            let record = authority
+                .snapshot
+                .capabilities
+                .iter_mut()
+                .find(|record| record.id == yoctui_model::CapabilityId::BitBakeBuild)
+                .unwrap();
+            record.state = state;
+            record.evidence[0].outcome = outcome;
+            if matches!(
+                record.state,
+                yoctui_model::CapabilityState::Unsupported { .. }
+            ) {
+                record.evidence.clear();
+            }
+            if !keep_implementation {
+                authority
+                    .implementations
+                    .remove(&yoctui_model::CapabilityId::BitBakeBuild);
+            }
+            yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
+            app.dialogs.push_front(Dialog::BuildOptions);
+            app.focus = FocusTarget::Dialog;
+            let output = rendered_text(&app, 120, 30);
+            assert!(output.contains("Dialog compatibility"), "{output}");
+            assert!(output.contains(expected), "missing {expected}: {output}");
+            if expected.contains("Limited") {
+                assert!(
+                    output.contains("Limitation: Native event progress is unavailable."),
+                    "{output}"
+                );
+            }
+            if keep_implementation {
+                assert!(output.contains("bitbake.build.command"), "{output}");
+            }
+        }
+
+        let mut local = App::new(32, 8192);
+        local.dialogs.push_front(Dialog::QuitConfirmation);
+        local.focus = FocusTarget::Dialog;
+        let output = rendered_text(&local, 80, 24);
+        assert!(output.contains("Confirm quit"), "{output}");
+        assert!(!output.contains("Confirmation disabled"), "{output}");
     }
 
     #[test]

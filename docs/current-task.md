@@ -2,22 +2,21 @@
 
 ## Task
 
-**ID:** COMPAT-UI-DIALOG-ACTIONS-001
-**Title:** Render and enforce capability state in dialogs
+**ID:** COMPAT-UI-ACTIONS-001
+**Title:** Apply capability state to visible workspace actions
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Render the current centralized capability state inside every environment-backed
-dialog and ensure confirmation remains correlated to that same authority.
+Close the aggregate visible-action gate across Navigator, command palette,
+workspace tables, Inspectors, dialogs, and footers.
 
 ## Dependencies
 
-- `COMPAT-UI-MODEL-001` — DONE
-- `COMPAT-UI-INSPECTOR-001` — DONE
 - `COMPAT-UI-ACTION-CATALOG-001` — DONE
 - `COMPAT-UI-NAV-ACTIONS-001` — DONE
 - `COMPAT-UI-WORKSPACE-ACTIONS-001` — DONE
+- `COMPAT-UI-DIALOG-ACTIONS-001` — DONE
 
 ## Relevant files
 
@@ -32,24 +31,22 @@ dialog and ensure confirmation remains correlated to that same authority.
 
 ## Definition of done
 
-- Every environment-backed dialog shows Available, Limited, Unavailable,
-  Unknown, or Unsupported from `workspace_dialog_requirement`.
-- Limited dialogs remain confirmable and show exact limitations plus the
-  selected implementation before confirmation.
-- Unavailable/Unknown/Unsupported dialogs show the exact reason and cannot emit
-  a confirm effect; their confirmation control is visibly disabled.
-- Snapshot replacement revalidates the open dialog, safely closes an invalid
-  launch dialog with restored focus/reason, and ignores stale generations.
-- Client-local editors, copy/open dialogs, quit, and owned-process cancellation
-  remain usable without environment authority.
-- Every dialog family and all five states render safely at responsive bounds;
-  renderers contain no release/version policy or widget-local cache.
+- Every useful environment-backed action in Navigator, command palette,
+  workspace, Inspector, dialog, and footer surfaces uses one typed projection.
+- All five states, exact reasons, limitations, and selected maintained
+  alternatives remain visible and consistent across those surfaces.
+- Disabled operations cannot prepare dialogs or emit effects; limited actions
+  remain usable through their selected implementation.
+- Client-local navigation, inspection, editors, copy/open, settings, help,
+  quit, and owned-process cancellation remain usable without authority.
+- Live replacement/invalidation updates every surface without stale widget
+  state, local release checks, or a second capability cache.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui compatibility_ui_dialog_actions
-cargo test -p yoctui-app compatibility_ui_dialog_actions
+cargo test -p yoctui-ui compatibility_ui_actions
+cargo test -p yoctui-app compatibility_ui_actions
 ./scripts/test-tui-snapshots.sh
 ./scripts/verify-roadmap.sh
 ```

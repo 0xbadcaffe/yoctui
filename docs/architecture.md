@@ -2380,6 +2380,17 @@ implementations. Runtime authorization still uses the same underlying effect
 map, so displayed denial and no-spawn enforcement cannot select different
 capability policy.
 
+Environment-backed dialogs consume the same exhaustive dialog requirement at
+both presentation and reducer boundaries. A compact compatibility rail is
+derived on every render from current authority and carries the five-state
+result, exact reason, limitations, selected implementation, and whether
+confirmation is currently allowed. It owns no cache or release policy.
+Confirmation passes through the same capability-aware reducer before any
+effect can escape; a newer snapshot that invalidates an open operation closes
+that dialog, restores the prior pane focus, and retains the exact reason.
+Client-local dialogs and cancellation of already-owned work bypass environment
+requirements intentionally.
+
 `yoctui-app::compatibility_model_snapshot` is the sole wire-to-model conversion
 boundary. It validates protocol bounds before resolving stable capability IDs,
 wire enums, reasons, evidence, identity authorities, and selected

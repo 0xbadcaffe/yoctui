@@ -3218,3 +3218,12 @@ name a required capability/tool or maintained alternative, but must not add
 release-number policy or generic unexplained `Unsupported` labels. A live
 snapshot replacement updates every visible action from one model projection;
 widgets never retain a second capability cache.
+
+While an environment-backed dialog is open, a compact two-line compatibility
+rail replaces the normal header without reducing or covering the dialog body.
+It states Available, Limited, Unavailable, Unknown, or Unsupported, whether
+confirmation is available, the exact reason or limitation, and the selected
+implementation when one exists. Client-local dialogs do not add this rail.
+The rail is presentation only: confirmation is independently revalidated by
+the model, and capability loss closes an unsafe dialog with restored focus and
+an exact notification.

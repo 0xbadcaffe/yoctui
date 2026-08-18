@@ -4845,18 +4845,18 @@ notes = "A stable contextual action inventory covers all 25 workspace destinatio
 id = "COMPAT-UI-DIALOG-ACTIONS-001"
 milestone = "M18"
 title = "Render and enforce capability state in dialogs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-WORKSPACE-ACTIONS-001"]
 verify = ["cargo test -p yoctui-ui compatibility_ui_dialog_actions", "cargo test -p yoctui-app compatibility_ui_dialog_actions", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
-notes = "Every environment-backed dialog shows current centralized state and exact denial or limitation before confirmation. Snapshot replacement revalidates safely, disabled dialogs cannot emit effects, and local/cancellation dialogs remain usable."
+notes = "Every environment-backed dialog is projected from workspace_dialog_requirement and renders a compact two-line compatibility rail with Available/Limited/Unavailable/Unknown/Unsupported state, exact reason, limitations, selected implementation, and visible confirmation availability. Limited dialogs remain confirmable; denied dialogs are rejected before effect emission. Newer snapshot replacement closes an invalid environment dialog, restores its prior pane focus, and retains the exact denial, while stale snapshots are ignored and client-local/open/copy/quit/owned-cancellation dialogs remain usable without authority. Focused dialog UI/app tests, all 287 model, 122 app, and 148 UI tests, PTY snapshots, and warnings-denied workspace Clippy pass."
 
 [[task]]
 id = "COMPAT-UI-ACTIONS-001"
 milestone = "M18"
 title = "Apply capability state to visible workspace actions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-NAV-ACTIONS-001", "COMPAT-UI-WORKSPACE-ACTIONS-001", "COMPAT-UI-DIALOG-ACTIONS-001"]

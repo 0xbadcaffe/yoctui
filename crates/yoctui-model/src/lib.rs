@@ -186,6 +186,7 @@ pub struct PaletteCommand {
     pub disabled_reason: Option<String>,
     pub compatibility_state: WorkspaceAvailabilityState,
     pub compatibility_reason: Option<String>,
+    pub compatibility_limitations: Vec<String>,
     pub implementations: Vec<(CapabilityId, String)>,
 }
 impl PaletteCommand {
@@ -3323,6 +3324,7 @@ impl App {
                     disabled_reason,
                     compatibility_state: compatibility.state,
                     compatibility_reason,
+                    compatibility_limitations: compatibility.limitations,
                     implementations: compatibility.implementations,
                 }
             };

@@ -328,6 +328,7 @@ pub struct CompatibilityUiActionAvailability {
     pub state: WorkspaceAvailabilityState,
     pub enabled: bool,
     pub reasons: Vec<String>,
+    pub limitations: Vec<String>,
     pub implementations: Vec<(CapabilityId, String)>,
 }
 
@@ -385,6 +386,7 @@ impl From<WorkspaceAvailability> for CompatibilityUiActionAvailability {
                 .into_iter()
                 .map(|issue| issue.reason)
                 .collect(),
+            limitations: Vec::new(),
             implementations: availability.implementations,
         }
     }
@@ -396,6 +398,19 @@ impl CompatibilityUiActionAvailability {
         definition: &CompatibilityUiActionDefinition,
     ) -> Self {
         let mut presentation: Self = compatibility.availability(&definition.requirement).into();
+        if let Some(authority) = compatibility.authority() {
+            presentation.limitations = presentation
+                .implementations
+                .iter()
+                .filter_map(|(id, _)| authority.snapshot.capability(*id))
+                .flat_map(|record| match &record.state {
+                    CapabilityState::AvailableWithLimitations { limitations, .. } => {
+                        limitations.clone()
+                    }
+                    _ => Vec::new(),
+                })
+                .collect();
+        }
         if definition.activation == CompatibilityUiActionActivation::Inspectable {
             presentation.enabled = true;
         }
