@@ -2,38 +2,38 @@
 
 ## Task
 
-**ID:** UI-STARTUP-STDERR-001
-**Title:** Keep bridge diagnostics out of the alternate screen
+**ID:** UI-STARTUP-LIVE-001
+**Title:** Validate installed startup and theme selection on live Poky
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Continuously drain bridge standard error into a bounded diagnostic tail so
-BitBake startup notes, warnings, and shutdown traces cannot overwrite the TUI,
-while preserving useful context for a genuine bridge startup failure.
+Exercise the real Poky workbench through the shell-installed release binary,
+reject diagnostics outside the terminal frame, and prove that command-palette
+theme selection changes and persists the operator preference.
 
 ## Dependencies
 
-- `UI-STARTUP-DIAG-SPEC-001` — DONE
+- `UI-STARTUP-STDERR-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-bitbake/src/lib.rs`
-- `docs/architecture.md`
-- `docs/ui-spec.md`
+- `scripts/test-live-workbench.sh`
+- `README.md`
+- `~/.cargo/bin/yoctui`
 
 ## Definition of done
 
-- Bridge stderr is piped and continuously drained under a fixed byte bound.
-- Ordinary stderr output never reaches the inherited terminal.
-- A failed bridge handshake includes the bounded diagnostic context.
-- Focused tests cover normal stderr, failure diagnostics, and truncation.
+- The live PTY contains no BitBake startup output before alternate-screen entry.
+- `Ctrl+P` → `Choose theme` opens the picker and persists a changed theme.
+- The locally built release binary is installed at the shell-resolved path.
+- Development documentation explains how to refresh a same-version install.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake bridge_stderr
-cargo fmt --all --check
-cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings
+./scripts/test-live-workbench.sh $HOME/src/poky/build
+cargo build --release -p yoctui
+cmp target/release/yoctui $HOME/.cargo/bin/yoctui
 ./scripts/verify-roadmap.sh
 ```

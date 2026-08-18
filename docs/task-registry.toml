@@ -4402,18 +4402,18 @@ notes = "Specified terminal-exclusive startup, bounded bridge stderr retention, 
 id = "UI-STARTUP-STDERR-001"
 milestone = "M15"
 title = "Keep bridge diagnostics out of the alternate screen"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 472
 required = true
 depends_on = ["UI-STARTUP-DIAG-SPEC-001"]
 verify = ["cargo test -p yoctui-bitbake bridge_stderr", "cargo fmt --all --check", "cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
-notes = "Capture and drain a bounded bridge stderr tail without inheriting the terminal, and attach useful context to genuine startup failures."
+notes = "The Rust bridge now pipes and continuously drains stderr into a 16 KiB tail instead of inheriting the terminal. Startup and query disconnects retain sanitized context; capture handles oversized and sensitive output. All 185 yoctui-bitbake tests and focused Clippy pass."
 
 [[task]]
 id = "UI-STARTUP-LIVE-001"
 milestone = "M15"
 title = "Validate installed startup and theme selection on live Poky"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 473
 required = true
 depends_on = ["UI-STARTUP-STDERR-001"]

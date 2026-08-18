@@ -155,6 +155,7 @@ use std::{
     ffi::OsString,
     path::{Path, PathBuf},
     process::Stdio,
+    sync::{Arc, Mutex},
     time::{Duration, SystemTime},
 };
 pub use test_results::{
@@ -193,6 +194,7 @@ use yoctui_protocol::{
 };
 
 const MAX_PROCESS_LINE_BYTES: usize = 1024 * 1024;
+const MAX_BRIDGE_STDERR_BYTES: usize = 16 * 1024;
 const MAX_DEPENDENCY_GRAPH_FILE_BYTES: u64 = 8 * 1024 * 1024;
 const MAX_DEPENDENCY_NODES: usize = 2_000;
 const MAX_DEPENDENCY_EDGES: usize = 4_000;
@@ -1612,7 +1614,96 @@ pub struct BridgeBackend {
     last_sequence: u64,
     accepted_correlations: VecDeque<String>,
     signature_adapter: SignatureAdapter,
+    stderr_tail: Arc<Mutex<BridgeStderrTail>>,
+    stderr_task: Option<tokio::task::JoinHandle<()>>,
 }
+
+#[derive(Default)]
+struct BridgeStderrTail {
+    bytes: VecDeque<u8>,
+    truncated: bool,
+}
+
+impl BridgeStderrTail {
+    fn push(&mut self, bytes: &[u8]) {
+        if bytes.len() >= MAX_BRIDGE_STDERR_BYTES {
+            self.bytes.clear();
+            self.bytes.extend(
+                bytes[bytes.len().saturating_sub(MAX_BRIDGE_STDERR_BYTES)..]
+                    .iter()
+                    .copied(),
+            );
+            self.truncated = true;
+            return;
+        }
+        let overflow = self
+            .bytes
+            .len()
+            .saturating_add(bytes.len())
+            .saturating_sub(MAX_BRIDGE_STDERR_BYTES);
+        if overflow > 0 {
+            self.bytes.drain(..overflow);
+            self.truncated = true;
+        }
+        self.bytes.extend(bytes.iter().copied());
+    }
+
+    fn diagnostic(&self) -> Option<String> {
+        if self.bytes.is_empty() {
+            return None;
+        }
+        let bytes = self.bytes.iter().copied().collect::<Vec<_>>();
+        let text = String::from_utf8_lossy(&bytes);
+        let mut output = String::new();
+        if self.truncated {
+            output.push_str("[earlier bridge stderr truncated]\n");
+        }
+        for line in text.lines() {
+            let normalized = line.to_ascii_lowercase();
+            if [
+                "password",
+                "passwd",
+                "secret",
+                "token",
+                "credential",
+                "api_key",
+            ]
+            .iter()
+            .any(|word| normalized.contains(word))
+            {
+                output.push_str("[redacted sensitive diagnostic]");
+            } else {
+                output.extend(line.chars().map(|character| {
+                    if character.is_control() && character != '\t' {
+                        '�'
+                    } else {
+                        character
+                    }
+                }));
+            }
+            output.push('\n');
+        }
+        let output = output.trim().to_owned();
+        (!output.is_empty()).then_some(output)
+    }
+}
+
+async fn drain_bridge_stderr<R>(mut stderr: R, tail: Arc<Mutex<BridgeStderrTail>>)
+where
+    R: AsyncRead + Unpin,
+{
+    let mut buffer = [0_u8; 4096];
+    loop {
+        let count = match stderr.read(&mut buffer).await {
+            Ok(0) | Err(_) => return,
+            Ok(count) => count,
+        };
+        if let Ok(mut tail) = tail.lock() {
+            tail.push(&buffer[..count]);
+        }
+    }
+}
+
 const BUNDLED_BRIDGE_SOURCE: &str = include_str!("../bridge/yoctui_bridge.py");
 
 impl BridgeBackend {
@@ -1658,7 +1749,7 @@ impl BridgeBackend {
             .envs(environment)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::inherit())
+            .stderr(Stdio::piped())
             .kill_on_drop(true)
             .spawn()?;
         let stdin = child
@@ -1669,6 +1760,12 @@ impl BridgeBackend {
             .stdout
             .take()
             .ok_or_else(|| BackendError::Bridge("bridge stdout unavailable".into()))?;
+        let stderr = child
+            .stderr
+            .take()
+            .ok_or_else(|| BackendError::Bridge("bridge stderr unavailable".into()))?;
+        let stderr_tail = Arc::new(Mutex::new(BridgeStderrTail::default()));
+        let stderr_task = tokio::spawn(drain_bridge_stderr(stderr, Arc::clone(&stderr_tail)));
         let mut backend = Self {
             child,
             stdin,
@@ -1677,9 +1774,49 @@ impl BridgeBackend {
             last_sequence: 0,
             accepted_correlations: VecDeque::new(),
             signature_adapter: SignatureAdapter::new(build_dir),
+            stderr_tail,
+            stderr_task: Some(stderr_task),
         };
-        backend.handshake().await?;
+        if let Err(error) = backend.handshake().await {
+            backend.stop_failed_startup().await;
+            return Err(backend.with_stderr_context(error));
+        }
         Ok(backend)
+    }
+
+    fn stderr_diagnostic(&self) -> Option<String> {
+        self.stderr_tail.lock().ok()?.diagnostic()
+    }
+
+    fn with_stderr_context(&self, error: BackendError) -> BackendError {
+        let Some(diagnostic) = self.stderr_diagnostic() else {
+            return error;
+        };
+        BackendError::Bridge(format!("{error}; bridge stderr: {diagnostic}"))
+    }
+
+    fn disconnected(&self, context: &str) -> BackendError {
+        self.with_stderr_context(BackendError::Bridge(context.into()))
+    }
+
+    async fn finish_stderr_capture(&mut self) {
+        let Some(mut task) = self.stderr_task.take() else {
+            return;
+        };
+        if tokio::time::timeout(Duration::from_secs(1), &mut task)
+            .await
+            .is_err()
+        {
+            task.abort();
+        }
+    }
+
+    async fn stop_failed_startup(&mut self) {
+        if self.child.try_wait().ok().flatten().is_none() {
+            let _ = self.child.start_kill();
+            let _ = self.child.wait().await;
+        }
+        self.finish_stderr_capture().await;
     }
     async fn command(&mut self, message: Command) -> Result<(), BackendError> {
         self.sequence += 1;
@@ -1741,9 +1878,7 @@ impl BridgeBackend {
     async fn handshake(&mut self) -> Result<(), BackendError> {
         self.command(Command::Hello).await?;
         let Some(line) = self.next_line().await? else {
-            return Err(BackendError::Bridge(
-                "bridge disconnected during protocol handshake".into(),
-            ));
+            return Err(self.disconnected("bridge disconnected during protocol handshake"));
         };
         let envelope: Envelope<Event> = decode_line(&line, Some(self.last_sequence))?;
         self.validate_correlation(&envelope)?;
@@ -1788,6 +1923,7 @@ impl BridgeBackend {
             .map_err(|_| {
                 BackendError::Bridge("bridge did not exit after shutdown acknowledgement".into())
             })??;
+        self.finish_stderr_capture().await;
         Ok(())
     }
 
@@ -1823,6 +1959,7 @@ impl BridgeBackend {
                     "bridge did not exit after server termination acknowledgement".into(),
                 )
             })??;
+        self.finish_stderr_capture().await;
         Ok(())
     }
     fn event(event: Event) -> Result<BackendEvent, BackendError> {
@@ -2384,9 +2521,7 @@ impl BitBakeBackend for BridgeBackend {
                     return Err(BackendError::Bridge(format!("{code}: {message}")));
                 }
                 BackendEvent::Disconnected => {
-                    return Err(BackendError::Bridge(
-                        "bridge disconnected during inspection".into(),
-                    ));
+                    return Err(self.disconnected("bridge disconnected during inspection"));
                 }
                 _ => {}
             }
@@ -2401,9 +2536,7 @@ impl BitBakeBackend for BridgeBackend {
                     return Err(BackendError::Bridge(format!("{code}: {message}")));
                 }
                 BackendEvent::Disconnected => {
-                    return Err(BackendError::Bridge(
-                        "bridge disconnected while listing recipes".into(),
-                    ));
+                    return Err(self.disconnected("bridge disconnected while listing recipes"));
                 }
                 _ => {}
             }
@@ -2418,9 +2551,7 @@ impl BitBakeBackend for BridgeBackend {
                     return Err(BackendError::Bridge(format!("{code}: {message}")));
                 }
                 BackendEvent::Disconnected => {
-                    return Err(BackendError::Bridge(
-                        "bridge disconnected while listing layers".into(),
-                    ));
+                    return Err(self.disconnected("bridge disconnected while listing layers"));
                 }
                 _ => {}
             }
@@ -2462,9 +2593,7 @@ impl BitBakeBackend for BridgeBackend {
                     return Err(BackendError::Bridge(format!("{code}: {message}")));
                 }
                 BackendEvent::Disconnected => {
-                    return Err(BackendError::Bridge(
-                        "bridge disconnected while reading a variable".into(),
-                    ));
+                    return Err(self.disconnected("bridge disconnected while reading a variable"));
                 }
                 _ => {}
             }
@@ -2490,9 +2619,9 @@ impl BitBakeBackend for BridgeBackend {
                     return Err(BackendError::Bridge(format!("{code}: {message}")));
                 }
                 BackendEvent::Disconnected => {
-                    return Err(BackendError::Bridge(
-                        "bridge disconnected while reading recipe dependencies".into(),
-                    ));
+                    return Err(
+                        self.disconnected("bridge disconnected while reading recipe dependencies")
+                    );
                 }
                 _ => continue,
             }
@@ -2535,9 +2664,9 @@ impl BitBakeBackend for BridgeBackend {
                     return Err(BackendError::Bridge(format!("{code}: {message}")));
                 }
                 BackendEvent::Disconnected => {
-                    return Err(BackendError::Bridge(
-                        "bridge disconnected while reading the dependency graph".into(),
-                    ));
+                    return Err(
+                        self.disconnected("bridge disconnected while reading the dependency graph")
+                    );
                 }
                 _ => continue,
             }
@@ -2583,9 +2712,9 @@ impl BitBakeBackend for BridgeBackend {
                     return Err(BackendError::Bridge(format!("{code}: {message}")));
                 }
                 BackendEvent::Disconnected => {
-                    return Err(BackendError::Bridge(
-                        "bridge disconnected while reading recipe source paths".into(),
-                    ));
+                    return Err(
+                        self.disconnected("bridge disconnected while reading recipe source paths")
+                    );
                 }
                 _ => continue,
             }
@@ -2609,9 +2738,9 @@ impl BitBakeBackend for BridgeBackend {
                     return Err(BackendError::Bridge(format!("{code}: {message}")));
                 }
                 BackendEvent::Disconnected => {
-                    return Err(BackendError::Bridge(
-                        "bridge disconnected while reading recipe metadata".into(),
-                    ));
+                    return Err(
+                        self.disconnected("bridge disconnected while reading recipe metadata")
+                    );
                 }
                 _ => continue,
             }
@@ -2626,9 +2755,9 @@ impl BitBakeBackend for BridgeBackend {
                     return Err(BackendError::Bridge(format!("{code}: {message}")));
                 }
                 BackendEvent::Disconnected => {
-                    return Err(BackendError::Bridge(
-                        "bridge disconnected while reading layer relationships".into(),
-                    ));
+                    return Err(
+                        self.disconnected("bridge disconnected while reading layer relationships")
+                    );
                 }
                 _ => continue,
             }
@@ -2662,6 +2791,9 @@ impl BitBakeBackend for BridgeBackend {
 impl Drop for BridgeBackend {
     fn drop(&mut self) {
         let _ = self.child.start_kill();
+        if let Some(task) = self.stderr_task.take() {
+            task.abort();
+        }
     }
 }
 #[cfg(test)]
@@ -3696,6 +3828,70 @@ printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' >
                 break;
             }
         }
+        fs::remove_file(script).unwrap();
+    }
+
+    #[test]
+    fn bridge_stderr_tail_is_bounded_and_redacts_sensitive_lines() {
+        let mut tail = BridgeStderrTail::default();
+        tail.push(&vec![b'x'; MAX_BRIDGE_STDERR_BYTES + 20]);
+        tail.push(b"\nAPI_TOKEN=do-not-display\nlast diagnostic\n");
+        let diagnostic = tail.diagnostic().unwrap();
+        assert!(tail.bytes.len() <= MAX_BRIDGE_STDERR_BYTES);
+        assert!(diagnostic.starts_with("[earlier bridge stderr truncated]"));
+        assert!(diagnostic.contains("[redacted sensitive diagnostic]"));
+        assert!(diagnostic.contains("last diagnostic"));
+        assert!(!diagnostic.contains("do-not-display"));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn bridge_stderr_is_captured_without_affecting_protocol() {
+        let script = fixture_script("bridge-stderr-protocol");
+        fs::write(
+            &script,
+            r#"#!/bin/sh
+read -r _request
+printf '%s\n' 'NOTE: bridge startup diagnostic' >&2
+printf '%s\n' '{"protocol_version":1,"sequence":1,"correlation_id":"1","message":{"type":"hello_ack","bitbake_version":"test"}}'
+read -r _request
+printf '%s\n' '{"protocol_version":1,"sequence":2,"correlation_id":"2","message":{"type":"bridge_shutdown"}}'
+"#,
+        )
+        .unwrap();
+        let mut backend = BridgeBackend::spawn("/bin/sh", script.clone(), std::env::temp_dir())
+            .await
+            .unwrap();
+        for _ in 0..20 {
+            if backend.stderr_diagnostic().is_some() {
+                break;
+            }
+            tokio::task::yield_now().await;
+        }
+        assert_eq!(
+            backend.stderr_diagnostic().as_deref(),
+            Some("NOTE: bridge startup diagnostic")
+        );
+        backend.shutdown().await.unwrap();
+        fs::remove_file(script).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn bridge_stderr_is_attached_to_failed_handshake() {
+        let script = fixture_script("bridge-stderr-failure");
+        fs::write(
+            &script,
+            "#!/bin/sh\nprintf '%s\\n' 'fatal bridge fixture marker' >&2\nexit 17\n",
+        )
+        .unwrap();
+        let error =
+            match BridgeBackend::spawn("/bin/sh", script.clone(), std::env::temp_dir()).await {
+                Ok(_) => panic!("bridge startup unexpectedly succeeded"),
+                Err(error) => error,
+            };
+        assert!(error.to_string().contains("fatal bridge fixture marker"));
+        assert!(error.to_string().contains("bridge stderr:"));
         fs::remove_file(script).unwrap();
     }
 
