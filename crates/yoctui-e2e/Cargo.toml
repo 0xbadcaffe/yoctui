@@ -3,7 +3,7 @@ name = "yoctui-e2e"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+publish = false
 
 [dependencies]
 libc.workspace = true
-

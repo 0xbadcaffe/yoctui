@@ -3,6 +3,12 @@ name = "yoctui-protocol"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+description = "Typed bridge and daemon protocols for Yoctui"
+publish = ["crates-io"]
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true

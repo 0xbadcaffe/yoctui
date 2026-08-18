@@ -3,6 +3,12 @@ name = "yoctui-bitbake"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+description = "BitBake, process, and Yocto tool adapters for Yoctui"
+publish = ["crates-io"]
 [features]
 test-fixtures = []
 [dependencies]

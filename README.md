@@ -5,7 +5,7 @@
 [![Rust](https://img.shields.io/badge/Rust-stable-f74c00?logo=rust)](https://www.rust-lang.org/)
 [![Ratatui](https://img.shields.io/badge/UI-Ratatui-7aa2f7)](https://ratatui.rs/)
 [![Yocto](https://img.shields.io/badge/Yocto-BitBake-8cc265)](https://www.yoctoproject.org/)
-[![Roadmap](https://img.shields.io/badge/roadmap-155%2F155-brightgreen)](docs/implementation-status.md)
+[![Roadmap](https://img.shields.io/badge/roadmap-crates.io%20release-orange)](docs/implementation-status.md)
 
 Yoctui is a Rust/Ratatui workbench for Yocto and BitBake. Browse layers and
 recipes, edit metadata, run builds and Devtool, inspect dependencies, follow
@@ -34,8 +34,18 @@ never inferred from this recording._
 
 ## Install
 
-Use a UTF-8 Linux terminal with Git, Python 3, and stable Rust/Cargo. Your
-Poky release also requires its documented host packages.
+Use a UTF-8 Linux terminal with Python 3 and stable Rust/Cargo. Your Poky
+release also requires its documented host packages.
+
+Install the published release from crates.io:
+
+```sh
+cargo install yoctui --locked
+yoctui --version
+yoctui --help
+```
+
+To build directly from the repository instead:
 
 ```sh
 export YOCTUI_DIR="$HOME/projects/yoctui"
@@ -149,12 +159,10 @@ references fail closed with a diagnostic.
 Shortcuts always appear in the footer. Destructive operations show an exact
 preview and require confirmation.
 
-## Daemon service preview
+## Daemon and persistent sessions
 
-Persistent daemon mode is being introduced milestone by milestone. Lifecycle
-and optional systemd user-service management are available now; the Ratatui
-client remains in standalone mode until the registered attach/parity task is
-complete.
+Yoctui can run a persistent per-user daemon that owns BitBake jobs and terminal
+sessions while interactive clients attach, detach, and reconnect.
 
 ```sh
 yoctui daemon start

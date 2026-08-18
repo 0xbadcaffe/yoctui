@@ -161,7 +161,7 @@ Use task-specific commands from `docs/current-task.md` in addition to the baseli
 Commit author:
 
 ```text
-Roy Cohen <misteroy@gmail.com>
+Roy Cohen <roy@0xbadcaffe.dev>
 ```
 
 Use small, descriptive commits.

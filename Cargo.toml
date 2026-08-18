@@ -11,7 +11,10 @@ resolver = "2"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
-authors = ["Roy Cohen <misteroy@gmail.com>"]
+authors = ["Roy Cohen <roy@0xbadcaffe.dev>"]
+repository = "https://github.com/0xbadcaffe/yoctui"
+homepage = "https://github.com/0xbadcaffe/yoctui"
+readme = "README.md"
 
 [workspace.dependencies]
 anyhow = "1.0"

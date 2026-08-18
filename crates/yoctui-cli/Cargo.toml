@@ -3,6 +3,14 @@ name = "yoctui"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+authors.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+description = "Terminal workbench for Yocto and BitBake development"
+keywords = ["yocto", "bitbake", "tui", "terminal", "embedded"]
+categories = ["command-line-utilities", "development-tools"]
+publish = ["crates-io"]
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true

@@ -4212,18 +4212,18 @@ notes = "The canonical Python bridge now ships inside yoctui-bitbake and is comp
 id = "CRATESIO-PACKAGE-001"
 milestone = "M12"
 title = "Prepare the crates.io package graph and release metadata"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 455
 required = true
 depends_on = ["CRATESIO-BRIDGE-001"]
 verify = ["./scripts/verify-cratesio-package.sh", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Add accurate package metadata, public support-crate boundaries, private-package exclusions, cargo-install documentation, package-content checks, and isolated release smoke coverage for version 0.1.0."
+notes = "All six public 0.1.0 crates have inherited MIT, repository, README, and Roy Cohen <roy@0xbadcaffe.dev> author metadata; support-only packages are publish=false. The package verifier validates bounded archives, the bundled bridge, an isolated locally patched dependency graph, and packaged version/help/bridge smoke behavior. The complete crates.io multi-package dry run, workspace tests, Clippy, docs, and roadmap checks pass without uploading."
 
 [[task]]
 id = "CRATESIO-PUBLISH-001"
 milestone = "M12"
 title = "Publish and validate yoctui 0.1.0 on crates.io"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 456
 required = true
 depends_on = ["CRATESIO-PACKAGE-001"]

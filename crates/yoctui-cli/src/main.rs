@@ -129,7 +129,7 @@ mod pty_workflow_tests;
 
 use maintenance_cli::MaintenanceCliCoordinator;
 #[derive(Parser, Debug)]
-#[command(about = "A Ratatui frontend and control client for BitBake")]
+#[command(version, about = "A Ratatui frontend and control client for BitBake")]
 struct Cli {
     #[arg(long, value_enum)]
     backend: Option<Backend>,

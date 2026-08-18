@@ -1,6 +1,7 @@
 /target/
 /bridge/__pycache__/
 /bridge/tests/__pycache__/
+/crates/yoctui-bitbake/bridge/__pycache__/
 /artifacts/valgrind/*.xml
 /artifacts/valgrind/*.txt
 /artifacts/flamegraph/*.svg
