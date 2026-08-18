@@ -4911,18 +4911,18 @@ notes = "A reusable test-fixtures catalog provides five explicitly unclaimed pol
 id = "COMPAT-TEST-CMDS-001"
 milestone = "M18"
 title = "Test version-correlated command generation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 508
 required = true
 depends_on = ["COMPAT-TEST-FIXTURES-001", "COMPAT-BITBAKE-CMD-001", "COMPAT-DEVTOOL-001", "COMPAT-RECIPETOOL-001", "COMPAT-LAYERS-001", "COMPAT-PKGDATA-001"]
 verify = ["cargo test --workspace --all-features compatibility_command", "./scripts/verify-roadmap.sh"]
-notes = "Every varying command must emit old/new compatible argv, never emit an unsupported option, and reject unavailable actions before spawn."
+notes = "Shared fixture command authorities add explicit direct command-surface evidence without deriving availability from release labels. Ten focused tests inspect typed argv for BitBake native/getvar fallback, Devtool upgrade, Recipetool outfile, bitbake-layers create-and-add, and pkgdata operations; absent capabilities fail before process construction. The workspace all-feature compatibility_command gate passes without executing external tools."
 
 [[task]]
 id = "COMPAT-TEST-UI-001"
 milestone = "M18"
 title = "Test dynamic feature loading and unloading"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 509
 required = true
 depends_on = ["COMPAT-TEST-FIXTURES-001", "COMPAT-UI-001"]

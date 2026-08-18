@@ -2441,6 +2441,14 @@ policy roles are explicitly fixture-only candidates rather than release
 claims. Command and dynamic-UI tests may consume these resolved snapshots, but
 production code and release-support evidence cannot.
 
+Command tests derive one normalized command authority from each shared release
+fixture. That authority adds explicit positive or negative command-surface
+evidence and selected implementation IDs; it never derives command availability
+from the fixture version label. BitBake, Devtool, Recipetool, bitbake-layers,
+and pkgdata planners consume the same authority shape and expose typed argv for
+inspection. Legacy fallbacks and absent newer options are therefore tested at
+the authorization boundary without executing an external tool.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.

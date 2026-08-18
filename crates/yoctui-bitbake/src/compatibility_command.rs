@@ -330,6 +330,7 @@ pub enum BitBakeCommandAuthorizationError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{CompatibilityFixtureRole, release_capability_fixtures};
     use std::{collections::BTreeMap, path::PathBuf};
     use yoctui_model::{
         AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
@@ -391,6 +392,54 @@ mod tests {
             Path::new("/work/build"),
         )
         .unwrap()
+    }
+
+    fn fixture_authority(
+        role: CompatibilityFixtureRole,
+        generation: u64,
+    ) -> DaemonCompatibilitySnapshot {
+        release_capability_fixtures()
+            .into_iter()
+            .find(|fixture| fixture.role == role)
+            .unwrap()
+            .command_authority(generation)
+    }
+
+    fn fixture_planner(authority: &DaemonCompatibilitySnapshot) -> BitBakeCommandPlanner<'_> {
+        BitBakeCommandPlanner::new(
+            authority,
+            authority.snapshot.generation,
+            authority
+                .snapshot
+                .environment
+                .build_directory
+                .value()
+                .unwrap(),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn compatibility_command_shared_fixtures_select_exact_bitbake_fallback_and_native_argv() {
+        let old = fixture_authority(CompatibilityFixtureRole::OldestPolicyCandidate, 31);
+        let old_command = fixture_planner(&old)
+            .get_variable("MACHINE", Some("busybox"))
+            .unwrap();
+        assert_eq!(old_command.arguments, ["-e", "busybox"]);
+        assert_eq!(
+            old_command.implementation,
+            BITBAKE_GETVAR_ENVIRONMENT_IMPLEMENTATION
+        );
+
+        let modern = fixture_authority(CompatibilityFixtureRole::LatestSupportCandidate, 32);
+        let modern_command = fixture_planner(&modern)
+            .get_variable("MACHINE", Some("busybox"))
+            .unwrap();
+        assert_eq!(modern_command.arguments, ["--getvar", "MACHINE", "busybox"]);
+        assert_eq!(
+            modern_command.implementation,
+            BITBAKE_GETVAR_ARGV_IMPLEMENTATION
+        );
     }
 
     #[test]

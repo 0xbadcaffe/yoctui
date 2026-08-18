@@ -1015,4 +1015,10 @@ policy roles carry typed identities, direct observations, and exact expected
 states/implementations through the production catalog and resolver. Complete
 snapshots prove legacy/modern boundaries, direct override, closed future
 fallback, and positive-only future enablement. Focused workspace tests and
-Clippy pass. `COMPAT-TEST-CMDS-001` is active.
+Clippy pass. `COMPAT-TEST-CMDS-001` is complete. One command authority derived
+from each shared fixture carries explicit direct command-surface evidence and
+selected implementation IDs without using release labels as availability.
+Ten focused tests inspect exact typed argv for BitBake native/fallback forms,
+Devtool, Recipetool, bitbake-layers, and pkgdata; absent options and subcommands
+fail before process construction and no external command is executed. The
+workspace all-feature command gate passes. `COMPAT-TEST-UI-001` is active.
