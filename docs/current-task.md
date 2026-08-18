@@ -2,47 +2,42 @@
 
 ## Task
 
-**ID:** UI-LITERAL-UX-001
-**Title:** Make reference focus and theme controls operational
+**ID:** UI-LITERAL-LIVE-001
+**Title:** Validate literal workbench with live Poky
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Ensure every displayed canonical F-key invokes its named typed action, pane
-focus is predictable, and the theme picker visibly previews and persists.
+Validate that the release client renders the literal workbench with real Poky
+layers and recipes, clean terminal ownership, and operational F2/F10 routes.
 
 ## Dependencies
 
-- `UI-LITERAL-COCKPIT-001` — DONE
+- `UI-LITERAL-UX-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-app/src/lib.rs`
-- `crates/yoctui-model/src/lib.rs`
-- `crates/yoctui/src/main.rs`
-- `scripts/test-tui-snapshots.sh`
-- `crates/yoctui-ui/tests/golden/literal-reference-160x48.cells`
+- `scripts/test-live-workbench.sh`
+- `crates/yoctui-cli/src/main.rs`
+- `README.md`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- F1 through F10 map to Help, Tasks, Jobs, Terminal, Logs, Layer, Recipe,
-  Image, Search, and Menu respectively.
-- Tab and Shift+Tab cycle Navigator, Workspace, and Inspector predictably.
-- F10 exposes Choose theme without requiring a hidden chord.
-- Theme preview is immediate; Enter persists and Esc restores the prior theme.
-- PTY snapshots retain the canonical rail without terminal contamination.
+- Live metadata includes Poky MACHINE, DISTRO, configured layers, and recipes.
+- F2 enters the canonical Tasks shell and exposes the mixed project Navigator.
+- F10 opens a menu containing Choose theme; applying a theme persists.
+- No bridge stderr or startup notice corrupts the alternate screen.
+- Workspace tests, Clippy, Python bridge tests, and roadmap checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model theme
-cargo test -p yoctui-app focus
-cargo test -p yoctui-ui literal_ux
-./scripts/test-tui-snapshots.sh
-cargo fmt --all --check
+./scripts/test-live-workbench.sh $HOME/src/poky/build
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
 ```

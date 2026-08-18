@@ -2233,7 +2233,16 @@ pub enum Input {
     CtrlV,
     CtrlB,
     CtrlP,
+    F1,
+    F2,
+    F3,
+    F4,
     F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
     Tab,
     BackTab,
     CtrlS,
@@ -2377,7 +2386,15 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('?') => Some(Action::Open(Screen::Help)),
         Input::Char('q') | Input::CtrlC => Some(Action::Quit),
         Input::CtrlP => Some(Action::OpenCommandPalette),
-        Input::F5 => Some(Action::OpenBuildOptions),
+        Input::F1 => Some(Action::Open(Screen::Help)),
+        Input::F2 => Some(Action::Open(Screen::Tasks)),
+        Input::F3 => Some(Action::Open(Screen::BuildHistory)),
+        Input::F4 => Some(Action::Open(Screen::Dashboard)),
+        Input::F5 => Some(Action::Open(Screen::Logs)),
+        Input::F6 => Some(Action::Open(Screen::Layers)),
+        Input::F7 => Some(Action::Open(Screen::Recipes)),
+        Input::F8 => Some(Action::Open(Screen::Images)),
+        Input::F9 | Input::F10 => Some(Action::OpenCommandPalette),
         Input::Tab => Some(Action::CycleFocus { backwards: false }),
         Input::BackTab => Some(Action::CycleFocus { backwards: true }),
         Input::Char('Y') => Some(Action::ConfirmQuit),
@@ -5389,7 +5406,7 @@ mod tests {
             key_action(Input::Tab),
             Some(Action::CycleFocus { backwards: false })
         );
-        assert_eq!(key_action(Input::F5), Some(Action::OpenBuildOptions));
+        assert_eq!(key_action(Input::F5), Some(Action::Open(Screen::Logs)));
         assert_eq!(
             key_action(Input::Char('x')),
             Some(Action::Open(Screen::Bbmask))
@@ -5594,6 +5611,24 @@ mod tests {
             None,
             "unmapped global input must continue to the shared key route"
         );
+    }
+
+    #[test]
+    fn focus_reference_function_key_rail_maps_every_named_route() {
+        for (input, expected) in [
+            (Input::F1, Action::Open(Screen::Help)),
+            (Input::F2, Action::Open(Screen::Tasks)),
+            (Input::F3, Action::Open(Screen::BuildHistory)),
+            (Input::F4, Action::Open(Screen::Dashboard)),
+            (Input::F5, Action::Open(Screen::Logs)),
+            (Input::F6, Action::Open(Screen::Layers)),
+            (Input::F7, Action::Open(Screen::Recipes)),
+            (Input::F8, Action::Open(Screen::Images)),
+            (Input::F9, Action::OpenCommandPalette),
+            (Input::F10, Action::OpenCommandPalette),
+        ] {
+            assert_eq!(key_action(input), Some(expected));
+        }
     }
 
     #[test]

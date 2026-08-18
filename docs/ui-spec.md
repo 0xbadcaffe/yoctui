@@ -56,7 +56,7 @@ The normal application layout is a dense, IDE-like operations workbench:
 │   Testing        │                                     │                                  │
 │   Security / QA  │                                     │                                  │
 ├──────────────────┴─────────────────────────────────────┴──────────────────────────────────┤
-│ F1 Help  F2 Tasks  F3 Jobs  F4 Terminal  F5 Build  F9 Search  F10 Menu       19:28:27   │
+│ F1 Help  F2 Tasks  F3 Jobs  F4 Terminal  F5 Logs  F9 Search  F10 Menu        19:28:27   │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -271,7 +271,7 @@ Rules:
 - pane focus consumes only keys mapped to focus or pane navigation; every
   unmatched key continues through the active workspace and global shortcut
   routes instead of being discarded
-- global actions such as `Ctrl+P`, `?`, `F5`, `q`, and `Ctrl+C` remain
+- global actions such as `Ctrl+P`, `F1`, `F10`, `q`, and `Ctrl+C` remain
   reachable from Navigator, Workspace, and Inspector focus
 - a non-dialog notification consumes only its documented `Enter` activation
   and `Esc` dismissal keys; unrelated input continues through normal routing
@@ -507,7 +507,7 @@ Running actions:
 
 ## 10. Build dialog
 
-`F5` or `B` opens the image build-options dialog. A lower-case `b` remains a
+`B` opens the image build-options dialog. A lower-case `b` remains a
 contextual selected-target action, including the selected-recipe build in
 Recipes.
 
@@ -2483,7 +2483,7 @@ context and may add the most important contextual actions that fit.
 Global example:
 
 ```text
-? Help  F5 Build  Ctrl+P Commands  / Search  Tab Focus  e Errors  l Logs  q Quit
+? Help  B Build  Ctrl+P Commands  / Search  Tab Focus  e Errors  l Logs  q Quit
 ```
 
 When no dialog or editor traps input, `q` and `Ctrl+C` retain their global quit
@@ -2640,10 +2640,11 @@ the override instead of pretending that palette changes are visually active.
 
 In the Settings workspace, activating the Theme row opens a focus-trapped theme
 submenu. Up/Down selects a named theme and applies it immediately; Enter keeps
-the selection and Esc closes the submenu. Theme selection is never a blind
+and persists the selection, while Esc restores the theme, color mode, and dirty
+state that existed when the picker opened. Theme selection is never a blind
 toggle or an implicit cycle.
 
-Theme changes apply immediately and persist.
+Theme previews apply immediately; accepted changes persist.
 
 Interactive startup reserves the terminal exclusively for the workbench.
 Backend and BitBake standard-error diagnostics must never write directly into

@@ -11,10 +11,16 @@ Status values:
 
 ## Current phase
 
-`UI-LITERAL-UX-001` is `IN_PROGRESS`: canonical task/log/history and Inspector
-geometry now matches the reference. The active task wires the displayed F-key
-rail to real typed actions and verifies pane focus plus theme preview/apply/
-cancel behavior through reducer, UI, and PTY tests.
+`UI-LITERAL-LIVE-001` is `IN_PROGRESS`: every canonical F-key is now real and
+theme preview is transactional. The active gate builds the release client and
+validates the same reference workbench against the local 1,829-recipe Poky
+workspace, including F2 entry and F10 theme selection.
+
+`UI-LITERAL-UX-001` is `DONE`: F1–F10 decode distinctly and invoke their named
+typed routes; B remains the build-options key. Tab focus remains shared, F10
+opens the menu containing Choose theme, Enter persists a preview, and Esc
+restores the original theme/color state. All 139 UI tests and wide PTY capture
+pass.
 
 `UI-LITERAL-COCKPIT-001` is `DONE`: center tiers are exactly 17/18/9 rows and
 Inspector sections 16/15/7/6 rows. Typed tasks render in observed chronology,

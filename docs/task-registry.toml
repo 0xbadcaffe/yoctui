@@ -4502,18 +4502,18 @@ notes = "Canonical Tasks now uses exact 17/18/9 center tiers and 16/15/7/6 Inspe
 id = "UI-LITERAL-UX-001"
 milestone = "M16"
 title = "Make reference focus and theme controls operational"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 481
 required = true
 depends_on = ["UI-LITERAL-COCKPIT-001"]
 verify = ["cargo test -p yoctui-model theme", "cargo test -p yoctui-app focus", "cargo test -p yoctui-ui literal_ux", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
-notes = "Wire every displayed F-key, preserve predictable Tab focus, and verify immediate theme preview, acceptance, cancellation, and persistence."
+notes = "Crossterm and app routing now decode F1-F10 distinctly and map the canonical rail to Help, Tasks, Jobs, terminal Dashboard, Logs, Layers, Recipes, Images, Search, and Menu. F5 no longer falsely advertises build; B retains build options. Theme preview is immediate and transactional: Enter persists, Esc restores original theme/color/dirty state. Focused model/app/CLI/UI tests, all 139 UI tests, and the wide F2 PTY snapshot pass."
 
 [[task]]
 id = "UI-LITERAL-LIVE-001"
 milestone = "M16"
 title = "Validate literal workbench with live Poky"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 482
 required = true
 depends_on = ["UI-LITERAL-UX-001"]

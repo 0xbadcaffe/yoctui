@@ -11331,7 +11331,16 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlS),
         KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlB),
         KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlP),
+        KeyCode::F(1) => Some(Input::F1),
+        KeyCode::F(2) => Some(Input::F2),
+        KeyCode::F(3) => Some(Input::F3),
+        KeyCode::F(4) => Some(Input::F4),
         KeyCode::F(5) => Some(Input::F5),
+        KeyCode::F(6) => Some(Input::F6),
+        KeyCode::F(7) => Some(Input::F7),
+        KeyCode::F(8) => Some(Input::F8),
+        KeyCode::F(9) => Some(Input::F9),
+        KeyCode::F(10) => Some(Input::F10),
         KeyCode::Tab => Some(Input::Tab),
         KeyCode::BackTab => Some(Input::BackTab),
         KeyCode::Char(character) => Some(Input::Char(character)),
@@ -12084,6 +12093,28 @@ mod tests {
             input_from_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE)),
             Some(Input::Esc)
         );
+    }
+
+    #[test]
+    fn reference_function_keys_decode_without_aliasing() {
+        let expected = [
+            Input::F1,
+            Input::F2,
+            Input::F3,
+            Input::F4,
+            Input::F5,
+            Input::F6,
+            Input::F7,
+            Input::F8,
+            Input::F9,
+            Input::F10,
+        ];
+        for (number, expected) in (1..=10).zip(expected) {
+            assert_eq!(
+                input_from_key(KeyEvent::new(KeyCode::F(number), KeyModifiers::NONE)),
+                Some(expected)
+            );
+        }
     }
 
     #[test]

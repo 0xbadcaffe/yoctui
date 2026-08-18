@@ -30,6 +30,16 @@ for width, height, name in ((80, 24, 'narrow'), (100, 30, 'medium'), (160, 48, '
             if ready:
                 try: raw.extend(os.read(master, 65536))
                 except OSError: break
+        if name == 'wide':
+            # xterm-compatible F2: enter the canonical Tasks workbench before
+            # capturing the literal-reference integration anchors.
+            os.write(master, b'\x1bOQ')
+            task_deadline = time.monotonic() + 2
+            while time.monotonic() < task_deadline:
+                ready, _, _ = select.select([master], [], [], .2)
+                if ready:
+                    try: raw.extend(os.read(master, 65536))
+                    except OSError: break
         os.write(master, b'q\r')
         try: proc.wait(timeout=3)
         except subprocess.TimeoutExpired:
@@ -41,5 +51,9 @@ for width, height, name in ((80, 24, 'narrow'), (100, 30, 'medium'), (160, 48, '
         open(os.path.join(artifact, f'{name}.txt'), 'w').write(normalized[-32768:])
         if 'yoctui' not in normalized.lower() or proc.returncode not in (0, 1, -9):
             raise SystemExit(f'snapshot failed at {name}: returncode={proc.returncode}')
+        if name == 'wide':
+            for anchor in ('Tasks: Build', 'F1 Help', 'F10 Menu'):
+                if anchor not in normalized:
+                    raise SystemExit(f'wide reference snapshot missing {anchor!r}')
 print('PTY semantic snapshots passed')
 PY

@@ -590,7 +590,7 @@ fn footer_shortcuts(app: &App) -> String {
     }
     let shortcuts = match app.screen {
         Screen::Dashboard => {
-            "F5 build | Ctrl+P commands | Ctrl+B prefix | Tab focus | ↑/↓ package progress | i image | ! shell | c cancel | r recipes | y layers | ? help | q quit"
+            "B build | Ctrl+P commands | Ctrl+B prefix | Tab focus | ↑/↓ package progress | i image | ! shell | c cancel | r recipes | y layers | ? help | q quit"
         }
         Screen::Tasks => {
             "↑/↓ select | f state | F field | / edit filter | d duration | c cancel | Tab focus"
@@ -1625,7 +1625,7 @@ fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         build_environment_clone_review(frame, app, plan, area);
     } else if let Some(Dialog::BuildEnvironmentEditor(editor)) = app.active_dialog() {
         build_environment_editor(frame, app, editor, area);
-    } else if let Some(Dialog::ThemePicker { selection }) = app.active_dialog() {
+    } else if let Some(Dialog::ThemePicker { selection, .. }) = app.active_dialog() {
         theme_picker(frame, app, *selection, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildOptions)) {
         let machine = app
@@ -1705,7 +1705,7 @@ fn theme_picker(frame: &mut Frame, app: &App, selection: usize, area: Rect) {
                     })
                     .borders(Borders::ALL),
             )
-            .footer(Row::new(["↑/↓ select  Enter apply  Esc close"])),
+            .footer(Row::new(["↑/↓ select  Enter apply  Esc restore"])),
         popup,
     );
 }
@@ -2616,7 +2616,7 @@ fn task_actions_text(app: &App) -> Text<'static> {
         ]),
         Line::from(vec![
             Span::raw("Build options     "),
-            Span::styled("F5", palette.role(palette.warning, Modifier::BOLD)),
+            Span::styled("B", palette.role(palette.warning, Modifier::BOLD)),
         ]),
     ])
 }
@@ -11319,6 +11319,37 @@ mod tests {
         }
     }
 
+    #[test]
+    fn literal_ux_exposes_theme_choice_and_immediate_preview() {
+        let mut app = literal_reference_app();
+        app.command_palette_open = true;
+        app.command_palette_query = "theme".into();
+        let palette = rendered_text(&app, LITERAL_WIDTH, LITERAL_HEIGHT);
+        assert!(palette.contains("Choose theme"), "{palette}");
+
+        app.command_palette_open = false;
+        let _ = update(&mut app, Action::OpenThemePicker);
+        let _ = update(&mut app, Action::SelectTheme { delta: 1 });
+        assert_eq!(app.theme, Theme::WhiteClassic);
+        let mut terminal = Terminal::new(TestBackend::new(LITERAL_WIDTH, LITERAL_HEIGHT)).unwrap();
+        terminal
+            .draw(|frame| render_at(frame, &app, literal_now()))
+            .unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Theme — applies immediately"), "{output}");
+        assert!(output.contains("Esc restore"), "{output}");
+        assert_eq!(
+            ThemePalette::for_app(&app).background,
+            Color::Rgb(248, 248, 248)
+        );
+    }
+
     fn rendered_text(app: &App, width: u16, height: u16) -> String {
         let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
         terminal.draw(|frame| render(frame, app)).unwrap();
@@ -11414,7 +11445,7 @@ mod tests {
             "Distro: poky",
             "Daemon: Connected",
             "BitBake: Running",
-            "F5 build",
+            "B build",
             "Ctrl+P commands",
         ] {
             assert!(output.contains(expected), "missing {expected}: {output}");
@@ -11951,7 +11982,12 @@ mod tests {
     #[test]
     fn theme_picker_renders_named_choices_and_immediate_apply_hint() {
         let mut app = App::new(10, 1_000);
-        app.dialogs.push_back(Dialog::ThemePicker { selection: 1 });
+        app.dialogs.push_back(Dialog::ThemePicker {
+            selection: 1,
+            original_theme: Theme::DarkPro,
+            original_color_enabled: true,
+            original_settings_dirty: false,
+        });
         let output = rendered_text(&app, 100, 30);
         assert!(output.contains("Theme — applies immediately"));
         assert!(output.contains("WhiteClassic"));

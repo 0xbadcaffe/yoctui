@@ -1187,6 +1187,9 @@ pub enum Dialog {
     BuildEnvironmentEditor(PopupEditor),
     ThemePicker {
         selection: usize,
+        original_theme: Theme,
+        original_color_enabled: bool,
+        original_settings_dirty: bool,
     },
     BuildOptions,
     BuildCompletion,
@@ -6705,10 +6708,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .iter()
                 .position(|theme| *theme == app.theme)
                 .unwrap_or(0);
-            open_dialog(app, Dialog::ThemePicker { selection });
+            open_dialog(
+                app,
+                Dialog::ThemePicker {
+                    selection,
+                    original_theme: app.theme,
+                    original_color_enabled: app.color_enabled,
+                    original_settings_dirty: app.settings_dirty,
+                },
+            );
         }
         Action::SelectTheme { delta } => {
-            if let Some(Dialog::ThemePicker { selection }) = app.active_dialog_mut() {
+            if let Some(Dialog::ThemePicker { selection, .. }) = app.active_dialog_mut() {
                 *selection = if delta.is_negative() {
                     selection.saturating_sub(delta.unsigned_abs())
                 } else {
@@ -6724,7 +6735,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::ApplySelectedTheme => {
-            if let Some(Dialog::ThemePicker { selection }) = app.active_dialog().cloned() {
+            if let Some(Dialog::ThemePicker { selection, .. }) = app.active_dialog().cloned() {
                 app.theme = THEMES[selection.min(THEMES.len() - 1)];
                 if !app.color_forced_off {
                     app.color_enabled = true;
@@ -6735,7 +6746,16 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CloseThemePicker => {
-            if matches!(app.active_dialog(), Some(Dialog::ThemePicker { .. })) {
+            if let Some(Dialog::ThemePicker {
+                original_theme,
+                original_color_enabled,
+                original_settings_dirty,
+                ..
+            }) = app.active_dialog().cloned()
+            {
+                app.theme = original_theme;
+                app.color_enabled = original_color_enabled;
+                app.settings_dirty = original_settings_dirty;
                 close_dialog(app);
             }
         }
@@ -16478,13 +16498,17 @@ mod tests {
     }
 
     #[test]
-    fn theme_picker_keeps_scrolled_theme_when_closed_with_escape() {
+    fn theme_picker_restores_original_theme_when_closed_with_escape() {
         let mut app = App::new(10, 1_000);
+        app.color_enabled = false;
         let _ = update(&mut app, Action::OpenThemePicker);
         let _ = update(&mut app, Action::SelectTheme { delta: 2 });
         assert_eq!(app.theme, Theme::MatrixGreen);
+        assert!(app.color_enabled);
         let _ = update(&mut app, Action::CloseThemePicker);
-        assert_eq!(app.theme, Theme::MatrixGreen);
+        assert_eq!(app.theme, Theme::DarkPro);
+        assert!(!app.color_enabled);
+        assert!(!app.settings_dirty);
         assert!(app.active_dialog().is_none());
     }
     #[test]
