@@ -2,24 +2,26 @@
 
 ## Task
 
-**ID:** COMPAT-UI-ACTION-CATALOG-001
-**Title:** Catalog visible UI action capability requirements
+**ID:** COMPAT-UI-NAV-ACTIONS-001
+**Title:** Render capability state in global action surfaces
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Create one compiler-checked inventory that maps every visible UI action surface
-to client-local behavior or an existing typed workspace capability requirement.
+Project centralized compatibility state into Navigator destinations,
+command-palette operations, and contextual footers without preventing users
+from navigating to inspect unavailable functionality.
 
 ## Dependencies
 
 - `COMPAT-UI-MODEL-001` — DONE
 - `COMPAT-UI-INSPECTOR-001` — DONE
+- `COMPAT-UI-ACTION-CATALOG-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/compatibility_ui.rs`
-- `crates/yoctui-model/src/workspace_compatibility.rs`
+- `crates/yoctui-model/src/lib.rs`
 - `crates/yoctui-app/src/lib.rs`
 - `crates/yoctui-ui/src/lib.rs`
 - `docs/ui-spec.md`
@@ -29,21 +31,24 @@ to client-local behavior or an existing typed workspace capability requirement.
 
 ## Definition of done
 
-- A closed typed inventory covers Navigator destinations, command-palette
-  operations, contextual workspace actions, and every dialog variant.
-- Each action maps centrally to `ClientLocal` or the existing exact all-of,
-  any-of, single-capability, or owned-process requirement.
-- Projection preserves Available, AvailableWithLimitations, Unavailable,
-  Unknown, Unsupported, exact reasons, and selected implementations.
-- Missing authority fails environment-backed actions closed while client-local
-  actions and cancellation of already-owned processes remain enabled.
-- Exhaustive tests fail when a new destination, command, action, or dialog is
-  added without a compatibility classification.
-- The inventory contains no release/version comparisons or renderer policy.
+- Navigator destinations remain selectable and show concise five-state
+  compatibility status from the centralized destination projection.
+- Command-palette entries derive enabled/disabled/limited state from the typed
+  command definition plus ordinary selection prerequisites.
+- Disabled operations remain selectable for exact reason inspection but cannot
+  activate; navigation commands remain usable for discoverability.
+- Limited operations show the selected fallback/limitation without release
+  number clutter; local commands are unaffected by missing authority.
+- Contextual footers show only relevant capability status and exact reasons are
+  available in the persistent Inspector/palette detail.
+- Live snapshot replacement updates all global surfaces with no stale cache,
+  invalid launch, selection loss, shortcut leakage, or panic.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model compatibility_ui_action_catalog
+cargo test -p yoctui-ui compatibility_ui_nav_actions
+cargo test -p yoctui-app compatibility_ui_nav_actions
+./scripts/test-tui-snapshots.sh
 ./scripts/verify-roadmap.sh
 ```

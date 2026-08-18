@@ -2352,6 +2352,15 @@ overlay, or the shared narrow pane switcher. Snapshot replacement reconciles
 selection by stable capability ID, while absent or disconnected authority
 remains an explicit diagnostic state rather than inferred support.
 
+Visible action presentation also reuses this authority boundary. A closed
+action-surface classifier maps every `Screen`, `CommandId`, typed contextual
+`Effect`, and `Dialog` to the existing exhaustive workspace requirement.
+Activation is explicitly client-local, inspectable, or capability-gated:
+Navigator routes remain reachable so unavailable behavior can be explained,
+while environment operations fail closed before preparation. Presentation
+retains the five-state result, exact reasons, and catalog-selected
+implementations; renderers do not own another feature table or version policy.
+
 `yoctui-app::compatibility_model_snapshot` is the sole wire-to-model conversion
 boundary. It validates protocol bounds before resolving stable capability IDs,
 wire enums, reasons, evidence, identity authorities, and selected

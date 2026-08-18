@@ -960,4 +960,12 @@ The broad visible-action gate was split before implementation into a closed
 typed action-surface catalog, global Navigator/palette/footer rendering,
 workspace/Inspector rendering, and dialog rendering/enforcement. The original
 `COMPAT-UI-ACTIONS-001` remains the parent acceptance gate.
-`COMPAT-UI-ACTION-CATALOG-001` is active.
+`COMPAT-UI-ACTION-CATALOG-001` is complete. One typed classifier maps every
+destination, command-palette command, contextual typed effect, and dialog to
+the existing exhaustive requirement model. Client-local, inspectable, and
+capability-gated activation are distinct: navigation stays reachable under
+missing authority, operations fail closed, and local/owned cancellation stays
+usable. All five states, exact reasons, and selected implementations survive
+projection without a renderer cache or version policy. Focused exhaustive,
+absent, limited-fallback, effect, and dialog tests plus model Clippy pass.
+`COMPAT-UI-NAV-ACTIONS-001` is active.

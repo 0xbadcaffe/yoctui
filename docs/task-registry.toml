@@ -4812,18 +4812,18 @@ notes = "Compatibility is a first-class client-local Navigator and command-palet
 id = "COMPAT-UI-ACTION-CATALOG-001"
 milestone = "M18"
 title = "Catalog visible UI action capability requirements"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-MODEL-001", "COMPAT-UI-INSPECTOR-001"]
 verify = ["cargo test -p yoctui-model compatibility_ui_action_catalog", "./scripts/verify-roadmap.sh"]
-notes = "Create one compiler-checked action-surface inventory for Navigator destinations, command-palette operations, contextual workspace actions, and dialogs. Each entry resolves centrally to client-local behavior or the existing typed workspace capability requirement and retains exact state/reason/implementation presentation."
+notes = "One typed action-surface catalog resolves every Screen destination, every CommandId, every typed contextual Effect, and every Dialog through the existing exhaustive workspace requirement maps. Activation policy distinguishes client-local, inspectable navigation, and capability-gated operations; missing authority keeps navigation reachable while blocking launches, and local/owned-cancellation behavior remains available. Projection preserves all five states, exact reasons, and selected implementations without a second cache or version policy. Three focused exhaustive/absent/limited/effect/dialog tests, roadmap validation, and warnings-denied model Clippy pass."
 
 [[task]]
 id = "COMPAT-UI-NAV-ACTIONS-001"
 milestone = "M18"
 title = "Render capability state in global action surfaces"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-ACTION-CATALOG-001"]

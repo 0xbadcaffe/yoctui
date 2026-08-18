@@ -1,8 +1,10 @@
 use crate::{
     CapabilityAvailabilitySummary, CapabilityEvidence, CapabilityId, CapabilityImplementation,
-    CapabilityReason, CapabilityState, ClientReplicaStatus, DaemonCompatibilitySnapshot,
-    EnvironmentOperatingMode, WorkspaceAvailability, WorkspaceAvailabilityState,
-    WorkspaceCompatibilityState, WorkspaceEffectRequirement, YoctoEnvironmentIdentity,
+    CapabilityReason, CapabilityState, ClientReplicaStatus, CommandId, DaemonCompatibilitySnapshot,
+    Dialog, Effect, EnvironmentOperatingMode, Screen, WorkspaceAvailability,
+    WorkspaceAvailabilityState, WorkspaceCompatibilityState, WorkspaceEffectRequirement,
+    YoctoEnvironmentIdentity, workspace_destination_requirement, workspace_dialog_requirement,
+    workspace_effect_requirement, workspace_screen_destination,
 };
 
 pub const MAX_COMPATIBILITY_UI_QUERY_BYTES: usize = 256;
@@ -329,6 +331,50 @@ pub struct CompatibilityUiActionAvailability {
     pub implementations: Vec<(CapabilityId, String)>,
 }
 
+/// Whether a visible UI surface performs only local work, remains reachable so
+/// unavailable environment behavior can be inspected, or must be rejected
+/// before it can prepare an environment-backed effect.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompatibilityUiActionActivation {
+    ClientLocal,
+    Inspectable,
+    CapabilityGated,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CompatibilityUiActionDefinition {
+    pub activation: CompatibilityUiActionActivation,
+    pub requirement: WorkspaceEffectRequirement,
+}
+
+impl CompatibilityUiActionDefinition {
+    fn local() -> Self {
+        Self {
+            activation: CompatibilityUiActionActivation::ClientLocal,
+            requirement: WorkspaceEffectRequirement::ClientLocal,
+        }
+    }
+
+    fn inspectable(requirement: WorkspaceEffectRequirement) -> Self {
+        Self {
+            activation: CompatibilityUiActionActivation::Inspectable,
+            requirement,
+        }
+    }
+
+    fn gated(requirement: WorkspaceEffectRequirement) -> Self {
+        let activation = if requirement == WorkspaceEffectRequirement::ClientLocal {
+            CompatibilityUiActionActivation::ClientLocal
+        } else {
+            CompatibilityUiActionActivation::CapabilityGated
+        };
+        Self {
+            activation,
+            requirement,
+        }
+    }
+}
+
 impl From<WorkspaceAvailability> for CompatibilityUiActionAvailability {
     fn from(availability: WorkspaceAvailability) -> Self {
         Self {
@@ -342,6 +388,126 @@ impl From<WorkspaceAvailability> for CompatibilityUiActionAvailability {
             implementations: availability.implementations,
         }
     }
+}
+
+impl CompatibilityUiActionAvailability {
+    fn for_definition(
+        compatibility: &WorkspaceCompatibilityState,
+        definition: &CompatibilityUiActionDefinition,
+    ) -> Self {
+        let mut presentation: Self = compatibility.availability(&definition.requirement).into();
+        if definition.activation == CompatibilityUiActionActivation::Inspectable {
+            presentation.enabled = true;
+        }
+        presentation
+    }
+
+    pub fn exact_reason(&self) -> Option<String> {
+        (!self.reasons.is_empty()).then(|| self.reasons.join(" "))
+    }
+}
+
+/// Every Navigator destination stays reachable. Its environment summary is
+/// still projected so normal rendering can disclose degraded support.
+pub fn compatibility_ui_destination_action_definition(
+    screen: Screen,
+) -> CompatibilityUiActionDefinition {
+    CompatibilityUiActionDefinition::inspectable(workspace_destination_requirement(
+        workspace_screen_destination(screen),
+    ))
+}
+
+/// Closed command-palette classification. Adding a `CommandId` requires an
+/// explicit choice here before the model compiles.
+pub fn compatibility_ui_command_action_definition(
+    command: CommandId,
+) -> CompatibilityUiActionDefinition {
+    use CapabilityId as Id;
+    match command {
+        CommandId::BuildImage | CommandId::SelectImage | CommandId::BuildSelectedRecipe => {
+            CompatibilityUiActionDefinition::gated(WorkspaceEffectRequirement::one(
+                Id::BitBakeBuild,
+            ))
+        }
+        CommandId::EditBbmask
+        | CommandId::ChooseTheme
+        | CommandId::OpenDashboard
+        | CommandId::OpenLogs
+        | CommandId::OpenErrors
+        | CommandId::OpenCompatibility
+        | CommandId::OpenSettings
+        | CommandId::OpenHelp => CompatibilityUiActionDefinition::local(),
+        CommandId::OpenLayers => compatibility_ui_destination_action_definition(Screen::Layers),
+        CommandId::OpenRecipes => compatibility_ui_destination_action_definition(Screen::Recipes),
+        CommandId::OpenImages => compatibility_ui_destination_action_definition(Screen::Images),
+        CommandId::OpenTasks => compatibility_ui_destination_action_definition(Screen::Tasks),
+        CommandId::OpenConfiguration => {
+            compatibility_ui_destination_action_definition(Screen::Configuration)
+        }
+    }
+}
+
+/// Contextual workspace operations are represented by their typed effect. The
+/// exhaustive effect classifier remains the sole behavior-to-capability map.
+pub fn compatibility_ui_effect_action_definition(
+    effect: &Effect,
+) -> CompatibilityUiActionDefinition {
+    CompatibilityUiActionDefinition::gated(workspace_effect_requirement(effect))
+}
+
+/// Dialog confirmation uses the same exhaustive dialog classifier as runtime
+/// revalidation, preventing rendering and launch authorization from diverging.
+pub fn compatibility_ui_dialog_action_definition(
+    dialog: &Dialog,
+) -> CompatibilityUiActionDefinition {
+    CompatibilityUiActionDefinition::gated(workspace_dialog_requirement(dialog))
+}
+
+pub fn compatibility_ui_action_definition_availability(
+    compatibility: &WorkspaceCompatibilityState,
+    definition: &CompatibilityUiActionDefinition,
+) -> CompatibilityUiActionAvailability {
+    CompatibilityUiActionAvailability::for_definition(compatibility, definition)
+}
+
+pub fn compatibility_ui_destination_action_availability(
+    compatibility: &WorkspaceCompatibilityState,
+    screen: Screen,
+) -> CompatibilityUiActionAvailability {
+    compatibility_ui_action_definition_availability(
+        compatibility,
+        &compatibility_ui_destination_action_definition(screen),
+    )
+}
+
+pub fn compatibility_ui_command_action_availability(
+    compatibility: &WorkspaceCompatibilityState,
+    command: CommandId,
+) -> CompatibilityUiActionAvailability {
+    compatibility_ui_action_definition_availability(
+        compatibility,
+        &compatibility_ui_command_action_definition(command),
+    )
+}
+
+pub fn compatibility_ui_effect_action_availability(
+    compatibility: &WorkspaceCompatibilityState,
+    effect: &Effect,
+) -> CompatibilityUiActionAvailability {
+    compatibility_ui_action_definition_availability(
+        compatibility,
+        &compatibility_ui_effect_action_definition(effect),
+    )
+}
+
+pub fn compatibility_ui_dialog_action_availability(
+    compatibility: &WorkspaceCompatibilityState,
+    dialog: &Dialog,
+) -> CompatibilityUiActionAvailability {
+    compatibility_ui_action_definition_availability(
+        compatibility,
+        &compatibility_ui_dialog_action_definition(dialog),
+    )
 }
 
 pub fn compatibility_ui_action_availability(
@@ -631,5 +797,145 @@ mod tests {
             denied.reasons,
             ["Current Devtool does not expose the upgrade subcommand."]
         );
+    }
+
+    #[test]
+    fn compatibility_ui_action_catalog_classifies_every_destination_and_command() {
+        let screens = [
+            Screen::Dashboard,
+            Screen::Tasks,
+            Screen::BuildHistory,
+            Screen::Dependencies,
+            Screen::Signatures,
+            Screen::LayerRelationships,
+            Screen::Recipes,
+            Screen::Packages,
+            Screen::Images,
+            Screen::Sdk,
+            Screen::Testing,
+            Screen::Security,
+            Screen::Qa,
+            Screen::Layers,
+            Screen::Configuration,
+            Screen::Bbmask,
+            Screen::Maintenance,
+            Screen::Logs,
+            Screen::Errors,
+            Screen::Help,
+            Screen::BuildEnvironment,
+            Screen::Compatibility,
+            Screen::Settings,
+        ];
+        for screen in screens {
+            assert_eq!(
+                compatibility_ui_destination_action_definition(screen).activation,
+                CompatibilityUiActionActivation::Inspectable
+            );
+        }
+
+        let commands = [
+            CommandId::BuildImage,
+            CommandId::SelectImage,
+            CommandId::BuildSelectedRecipe,
+            CommandId::EditBbmask,
+            CommandId::OpenDashboard,
+            CommandId::OpenLayers,
+            CommandId::OpenRecipes,
+            CommandId::OpenImages,
+            CommandId::OpenTasks,
+            CommandId::OpenLogs,
+            CommandId::OpenErrors,
+            CommandId::OpenConfiguration,
+            CommandId::OpenCompatibility,
+            CommandId::OpenSettings,
+            CommandId::ChooseTheme,
+            CommandId::OpenHelp,
+        ];
+        for command in commands {
+            let _ = compatibility_ui_command_action_definition(command);
+        }
+        assert_eq!(
+            compatibility_ui_command_action_definition(CommandId::BuildImage).activation,
+            CompatibilityUiActionActivation::CapabilityGated
+        );
+        assert_eq!(
+            compatibility_ui_command_action_definition(CommandId::OpenLayers).activation,
+            CompatibilityUiActionActivation::Inspectable
+        );
+        assert_eq!(
+            compatibility_ui_command_action_definition(CommandId::ChooseTheme).activation,
+            CompatibilityUiActionActivation::ClientLocal
+        );
+    }
+
+    #[test]
+    fn compatibility_ui_action_catalog_preserves_inspection_gating_and_exact_fallback() {
+        let absent = WorkspaceCompatibilityState::default();
+        let layers = compatibility_ui_destination_action_availability(&absent, Screen::Layers);
+        assert!(layers.enabled);
+        assert_eq!(layers.state, WorkspaceAvailabilityState::Unknown);
+        assert!(
+            layers
+                .exact_reason()
+                .unwrap()
+                .contains("current environment capability snapshot")
+        );
+
+        let build = compatibility_ui_command_action_availability(&absent, CommandId::BuildImage);
+        assert!(!build.enabled);
+        assert_eq!(build.state, WorkspaceAvailabilityState::Unknown);
+
+        let local = compatibility_ui_command_action_availability(&absent, CommandId::ChooseTheme);
+        assert!(local.enabled);
+        assert_eq!(local.state, WorkspaceAvailabilityState::Available);
+        assert!(local.exact_reason().is_none());
+
+        let current = state_with(authority(7));
+        let configuration =
+            compatibility_ui_destination_action_availability(&current, Screen::Configuration);
+        assert!(configuration.enabled);
+        assert_eq!(
+            configuration.state,
+            WorkspaceAvailabilityState::AvailableWithLimitations
+        );
+        assert_eq!(
+            configuration.implementations,
+            [(
+                CapabilityId::BitBakeGetVar,
+                "bitbake.getvar.environment-fallback".into()
+            )]
+        );
+        assert_eq!(
+            configuration.exact_reason().as_deref(),
+            Some("Native getvar is absent; the environment dump fallback is selected.")
+        );
+    }
+
+    #[test]
+    fn compatibility_ui_action_catalog_reuses_effect_and_dialog_authority() {
+        let absent = WorkspaceCompatibilityState::default();
+        let build = Effect::Start(crate::BuildRequest {
+            targets: vec!["core-image-minimal".into()],
+            task: None,
+            force: false,
+        });
+        let build_action = compatibility_ui_effect_action_availability(&absent, &build);
+        assert!(!build_action.enabled);
+        assert_eq!(build_action.state, WorkspaceAvailabilityState::Unknown);
+
+        let local_effect = Effect::CopyToClipboard("value".into());
+        let local_action = compatibility_ui_effect_action_availability(&absent, &local_effect);
+        assert!(local_action.enabled);
+        assert_eq!(local_action.state, WorkspaceAvailabilityState::Available);
+
+        let gated_dialog =
+            compatibility_ui_dialog_action_availability(&absent, &Dialog::BuildOptions);
+        assert!(!gated_dialog.enabled);
+        assert_eq!(gated_dialog.state, WorkspaceAvailabilityState::Unknown);
+
+        let local_dialog =
+            compatibility_ui_dialog_action_availability(&absent, &Dialog::QuitConfirmation);
+        assert!(local_dialog.enabled);
+        assert_eq!(local_dialog.state, WorkspaceAvailabilityState::Available);
     }
 }

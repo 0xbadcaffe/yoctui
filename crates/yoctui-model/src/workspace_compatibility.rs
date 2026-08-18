@@ -186,21 +186,21 @@ pub struct WorkspaceRevalidation {
 }
 
 impl WorkspaceEffectRequirement {
-    fn one(id: CapabilityId) -> Self {
+    pub(crate) fn one(id: CapabilityId) -> Self {
         Self::Capabilities {
             all: vec![id],
             any: Vec::new(),
         }
     }
 
-    fn all(ids: &[CapabilityId]) -> Self {
+    pub(crate) fn all(ids: &[CapabilityId]) -> Self {
         Self::Capabilities {
             all: ids.to_vec(),
             any: Vec::new(),
         }
     }
 
-    fn all_and_any(all: &[CapabilityId], any: &[CapabilityId]) -> Self {
+    pub(crate) fn all_and_any(all: &[CapabilityId], any: &[CapabilityId]) -> Self {
         Self::Capabilities {
             all: all.to_vec(),
             any: any.to_vec(),
