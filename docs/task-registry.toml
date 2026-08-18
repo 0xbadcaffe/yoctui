@@ -4724,18 +4724,18 @@ notes = "Expanded the catalog to 57 records with independent create-and-add opti
 id = "COMPAT-PKGDATA-001"
 milestone = "M18"
 title = "Make oe-pkgdata-util capability-aware"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 501
 required = true
 depends_on = ["COMPAT-BITBAKE-CMD-001"]
 verify = ["cargo test -p yoctui-bitbake compatibility_pkgdata", "cargo test -p yoctui-app compatibility_pkgdata", "./scripts/verify-roadmap.sh"]
-notes = "Detect tool, command, and generated pkgdata independently and preserve distinct unavailable, missing-command, not-generated, and no-result outcomes."
+notes = "Expanded the catalog to 62 records: generated pkgdata plus list-pkgs/-r, package-info/-e, list-pkg-files/-r, and read-value/-n are independently probed beside lookup-pkg/find-path. PackageDataAdapter now requires a normalized generation/environment snapshot, exact initialized oe-pkgdata-util identity, positive generated-artifact evidence, and the exact selected implementation before each shell-free command. Recursive host tool scanning was removed. Missing tool, absent generated data, missing command, valid empty inventory, nonzero query, stale snapshot, and malformed data remain distinct. Four focused bitbake tests, one app availability test, the full seven-test package adapter set, CLI workspace test, workspace check, and warnings-denied Clippy pass; unavailable commands create no process."
 
 [[task]]
 id = "COMPAT-UTILITIES-001"
 milestone = "M18"
 title = "Correlate every Yocto utility to environment capabilities"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 502
 required = true
 depends_on = ["COMPAT-BITBAKE-CMD-001", "COMPAT-BITBAKE-API-001", "COMPAT-DEVTOOL-001", "COMPAT-RECIPETOOL-001", "COMPAT-LAYERS-001", "COMPAT-PKGDATA-001"]

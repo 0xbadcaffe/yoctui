@@ -297,6 +297,16 @@ pub enum CapabilityId {
     PkgDataLookupPackage,
     #[serde(rename = "pkgdata.find_path")]
     PkgDataFindPath,
+    #[serde(rename = "pkgdata.generated")]
+    PkgDataGenerated,
+    #[serde(rename = "pkgdata.list_packages")]
+    PkgDataListPackages,
+    #[serde(rename = "pkgdata.package_info")]
+    PkgDataPackageInfo,
+    #[serde(rename = "pkgdata.list_package_files")]
+    PkgDataListPackageFiles,
+    #[serde(rename = "pkgdata.read_value")]
+    PkgDataReadValue,
     #[serde(rename = "wic.create")]
     WicCreate,
     #[serde(rename = "runqemu")]
@@ -330,7 +340,7 @@ pub enum CapabilityId {
 }
 
 impl CapabilityId {
-    pub const ALL: [Self; 57] = [
+    pub const ALL: [Self; 62] = [
         Self::BitBakeWorkspaceInspection,
         Self::BitBakeRecipeInventory,
         Self::BitBakeRecipeDependencies,
@@ -373,6 +383,11 @@ impl CapabilityId {
         Self::BitBakeLayersRemoveLayer,
         Self::PkgDataLookupPackage,
         Self::PkgDataFindPath,
+        Self::PkgDataGenerated,
+        Self::PkgDataListPackages,
+        Self::PkgDataPackageInfo,
+        Self::PkgDataListPackageFiles,
+        Self::PkgDataReadValue,
         Self::WicCreate,
         Self::RunQemu,
         Self::SdkPopulate,
@@ -434,6 +449,11 @@ impl CapabilityId {
             Self::BitBakeLayersRemoveLayer => "bitbake_layers.remove_layer",
             Self::PkgDataLookupPackage => "pkgdata.lookup_pkg",
             Self::PkgDataFindPath => "pkgdata.find_path",
+            Self::PkgDataGenerated => "pkgdata.generated",
+            Self::PkgDataListPackages => "pkgdata.list_packages",
+            Self::PkgDataPackageInfo => "pkgdata.package_info",
+            Self::PkgDataListPackageFiles => "pkgdata.list_package_files",
+            Self::PkgDataReadValue => "pkgdata.read_value",
             Self::WicCreate => "wic.create",
             Self::RunQemu => "runqemu",
             Self::SdkPopulate => "sdk.populate",

@@ -1278,6 +1278,12 @@ that a target must complete `do_package`; it is not presented as an empty
 package set. Partial results render their bounded limitations. Raw
 `oe-pkgdata-util` text is never displayed or parsed by a widget.
 
+Tool availability, generated pkgdata, and each required command/option are
+independent capability records. A missing tool, unsupported command, pkgdata
+not yet generated, and a successful query with no rows have distinct messages.
+Package actions remain disabled with the exact capability reason until the
+current environment snapshot positively authorizes their complete argv.
+
 The package list shows:
 
 - package name

@@ -644,6 +644,47 @@ fn definition(id: CapabilityId) -> Definition {
             &[],
             "pkgdata.find_path.argv",
         ),
+        Id::PkgDataGenerated => (
+            "generated package data",
+            Vec::new(),
+            Vec::new(),
+            vec![MetadataRequirement::Artifact {
+                kind: "pkgdata".into(),
+            }],
+            vec![CapabilityProbeSpec::Artifact {
+                kind: "pkgdata".into(),
+            }],
+            implementation("pkgdata.generated", Kind::ProcessAdapter),
+            None,
+        ),
+        Id::PkgDataListPackages => tool_command(
+            "package-data package inventory",
+            Tool::OePkgdataUtil,
+            Some("list-pkgs"),
+            &["-r"],
+            "pkgdata.list_packages.argv",
+        ),
+        Id::PkgDataPackageInfo => tool_command(
+            "package-data package information",
+            Tool::OePkgdataUtil,
+            Some("package-info"),
+            &["-e"],
+            "pkgdata.package_info.argv",
+        ),
+        Id::PkgDataListPackageFiles => tool_command(
+            "package-data file inventory",
+            Tool::OePkgdataUtil,
+            Some("list-pkg-files"),
+            &["-r"],
+            "pkgdata.list_package_files.argv",
+        ),
+        Id::PkgDataReadValue => tool_command(
+            "package-data value query",
+            Tool::OePkgdataUtil,
+            Some("read-value"),
+            &["-n"],
+            "pkgdata.read_value.argv",
+        ),
         Id::WicCreate => tool_command(
             "Wic image creation",
             Tool::Wic,

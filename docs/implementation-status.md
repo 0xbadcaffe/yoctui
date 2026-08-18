@@ -883,4 +883,12 @@ environment/generation/tool/implementation authority. Utility and app action
 availability comes from that same snapshot; older command surfaces preserve
 read-only/create behavior while absent mutations remain disabled with exact
 reasons and zero spawn. Focused tests, workspace check, model validation, and
-Clippy pass. `COMPAT-PKGDATA-001` is active.
+Clippy pass. `COMPAT-PKGDATA-001` is complete. The 62-record catalog
+independently covers generated pkgdata and the exact list-pkgs, package-info,
+list-pkg-files, and read-value command/options beside lookup-pkg/find-path.
+`PackageDataAdapter` requires snapshot generation/environment, initialized tool
+identity, artifact evidence, and selected implementation before command
+creation; recursive host scanning is removed. Missing tool, missing generated
+data, unavailable command, valid empty result, and command failure remain
+distinct. Adapter, app, CLI, workspace, and Clippy gates pass.
+`COMPAT-UTILITIES-001` is active.

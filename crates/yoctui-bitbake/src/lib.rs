@@ -152,7 +152,9 @@ pub use maintenance_sstate::{
     parse_cleanup_preview,
 };
 pub use package::{
-    PackageDataAdapter, PackageDataAdapterError, PackageDataCancellation, PackageDataCommandSpec,
+    PKGDATA_LIST_PACKAGE_FILES_IMPLEMENTATION, PKGDATA_LIST_PACKAGES_IMPLEMENTATION,
+    PKGDATA_PACKAGE_INFO_IMPLEMENTATION, PKGDATA_READ_VALUE_IMPLEMENTATION, PackageDataAdapter,
+    PackageDataAdapterError, PackageDataCancellation, PackageDataCommandSpec,
     PackageDetailResponse, PackageInventoryResponse,
 };
 #[cfg(unix)]

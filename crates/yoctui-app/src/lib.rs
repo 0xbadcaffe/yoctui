@@ -129,6 +129,43 @@ pub fn compatibility_layer_actions(
     .collect()
 }
 
+pub fn compatibility_pkgdata_actions(
+    compatibility: Option<&yoctui_model::DaemonCompatibilitySnapshot>,
+) -> Vec<LayerActionAvailability> {
+    [
+        yoctui_model::CapabilityId::PkgDataGenerated,
+        yoctui_model::CapabilityId::PkgDataListPackages,
+        yoctui_model::CapabilityId::PkgDataPackageInfo,
+        yoctui_model::CapabilityId::PkgDataListPackageFiles,
+        yoctui_model::CapabilityId::PkgDataReadValue,
+        yoctui_model::CapabilityId::PkgDataLookupPackage,
+        yoctui_model::CapabilityId::PkgDataFindPath,
+    ]
+    .into_iter()
+    .map(|capability| {
+        let state = compatibility
+            .and_then(|snapshot| snapshot.snapshot.capability(capability))
+            .map(|record| &record.state);
+        let available = state.is_some_and(yoctui_model::CapabilityState::is_enabled);
+        LayerActionAvailability {
+            capability,
+            available,
+            reason: (!available).then(|| {
+                state
+                    .and_then(yoctui_model::CapabilityState::reason)
+                    .map(|reason| reason.message.clone())
+                    .unwrap_or_else(|| {
+                        format!(
+                            "{} requires the current environment capability snapshot.",
+                            capability.as_str()
+                        )
+                    })
+            }),
+        }
+    })
+    .collect()
+}
+
 pub fn daemon_job_state_from_app(app: &yoctui_model::App) -> yoctui_model::DaemonJobState {
     yoctui_model::DaemonJobState::capture(app)
 }
@@ -8400,6 +8437,82 @@ mod tests {
                 .find(|action| {
                     action.capability == yoctui_model::CapabilityId::BitBakeLayerInventory
                 })
+                .unwrap()
+                .reason
+                .as_deref()
+                .is_some_and(|reason| reason.contains("current environment capability snapshot"))
+        );
+    }
+
+    #[test]
+    fn compatibility_pkgdata_actions_distinguish_artifact_command_and_unknown_state() {
+        let generated = yoctui_model::CapabilityId::PkgDataGenerated;
+        let command = yoctui_model::CapabilityId::PkgDataListPackages;
+        let snapshot = yoctui_model::DaemonCompatibilitySnapshot {
+            snapshot: yoctui_model::CapabilitySnapshot {
+                generation: 5,
+                environment: yoctui_model::YoctoEnvironmentIdentity::default(),
+                capabilities: vec![
+                    yoctui_model::CapabilityRecord {
+                        id: generated,
+                        state: yoctui_model::CapabilityState::Unavailable {
+                            reason: yoctui_model::CapabilityReason::new(
+                                "pkgdata.not_generated",
+                                "Generated pkgdata is absent; build through do_package first.",
+                                Some("Required artifact: tmp/pkgdata".into()),
+                            )
+                            .unwrap(),
+                        },
+                        evidence: vec![yoctui_model::CapabilityEvidence {
+                            kind: yoctui_model::CapabilityEvidenceKind::Metadata,
+                            outcome: yoctui_model::CapabilityEvidenceOutcome::Negative,
+                            subject: "pkgdata artifact".into(),
+                            detail: "No generated pkgdata directory was observed.".into(),
+                            argv: Vec::new(),
+                        }],
+                    },
+                    yoctui_model::CapabilityRecord {
+                        id: command,
+                        state: yoctui_model::CapabilityState::Available,
+                        evidence: vec![yoctui_model::CapabilityEvidence {
+                            kind: yoctui_model::CapabilityEvidenceKind::DirectProbe,
+                            outcome: yoctui_model::CapabilityEvidenceOutcome::Positive,
+                            subject: "oe-pkgdata-util list-pkgs --help".into(),
+                            detail: "The command is available.".into(),
+                            argv: vec!["/work/scripts/oe-pkgdata-util".into(), "--help".into()],
+                        }],
+                    },
+                ],
+            },
+            implementations: std::collections::BTreeMap::from([(
+                command,
+                yoctui_model::CapabilityImplementation {
+                    id: yoctui_bitbake::PKGDATA_LIST_PACKAGES_IMPLEMENTATION.into(),
+                    kind: yoctui_model::CapabilityImplementationKind::Command,
+                },
+            )]),
+        }
+        .normalize()
+        .unwrap();
+        let actions = compatibility_pkgdata_actions(Some(&snapshot));
+        assert!(
+            !actions
+                .iter()
+                .find(|action| action.capability == generated)
+                .unwrap()
+                .available
+        );
+        assert!(
+            actions
+                .iter()
+                .find(|action| action.capability == command)
+                .unwrap()
+                .available
+        );
+        assert!(
+            actions
+                .iter()
+                .find(|action| action.capability == yoctui_model::CapabilityId::PkgDataFindPath)
                 .unwrap()
                 .reason
                 .as_deref()

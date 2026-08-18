@@ -2279,6 +2279,16 @@ Utility-menu and app availability include both API and command records from the
 same snapshot; absent mutation commands never disable safe read-only layer
 inspection.
 
+Package-data compatibility separates the initialized `oe-pkgdata-util`
+identity, generated `tmp/pkgdata` artifact, and each command/required option.
+`PackageDataAdapter` accepts only a normalized environment/generation snapshot
+and checks the selected implementation before constructing list-pkgs,
+package-info, list-pkg-files, or read-value argv. It no longer recursively
+searches nearby host paths for a plausible tool. Missing tool, absent generated
+data, missing command, a successful empty query, nonzero exit, and malformed
+output remain separate typed outcomes; unavailable command state fails before
+spawn with the retained capability reason.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.
