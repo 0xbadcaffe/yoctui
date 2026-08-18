@@ -2103,6 +2103,19 @@ selector. Catalog validation requires exactly one valid entry per behavior ID.
 Renderers and workspace menus consume evaluated snapshots and never duplicate
 this inventory.
 
+`yoctui-bitbake::CapabilityProbeRunner` evaluates only those typed probe
+specifications. A `CapabilityProbeContext` is accepted only when its canonical
+build directory and tool identities match the normalized environment identity;
+it carries bounded initialized-process environment plus typed metadata,
+backend/protocol, artifact, and configuration observations. External probes
+are limited to executable identity, `--version`, and help/subcommand/option
+inspection using exact argv, cleared-and-reconstructed environment, bounded
+stdout/stderr, deadline, owned process group, and forced timeout cleanup.
+Missing behavior yields negative evidence; unsafe/stale identity, spawn/read
+failure, timeout, or truncation yields inconclusive evidence. The context's
+exact identity comparison is the cache/invalidation hook used by the later
+daemon-owned cache; probe evidence cannot be reused across a mismatch.
+
 Commands use this flow:
 
 ```text

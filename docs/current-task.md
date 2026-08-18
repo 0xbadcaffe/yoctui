@@ -2,46 +2,45 @@
 
 ## Task
 
-**ID:** COMPAT-PROBE-001
-**Title:** Implement safe capability probing
+**ID:** COMPAT-VERSION-001
+**Title:** Add release and version fallback mapping
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Evaluate catalog probes against the selected initialized build environment
-without mutation, producing bounded typed evidence and explicit partial or
-unknown outcomes.
+Add one documented, testable fallback map for the capabilities that cannot be
+probed directly, without allowing release comparisons to leak into UI,
+workspace, or command code.
 
 ## Dependencies
 
-- `COMPAT-CATALOG-001` — DONE
+- `COMPAT-PROBE-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-bitbake/src/compatibility_probe.rs`
+- `crates/yoctui-bitbake/src/compatibility_version.rs`
 - `crates/yoctui-bitbake/src/lib.rs`
 - `crates/yoctui-model/src/compatibility_catalog.rs`
+- `docs/compatibility.md`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Executable, `--version`, help/subcommand/option, metadata, backend/protocol,
-  artifact, and configuration probes are typed and non-mutating.
-- External probes use exact shell-free argv, a deadline, process-group
-  cancellation, and bounded stdout/stderr.
-- Probe failure, timeout, truncation, missing input, and partial completion
-  produce explicit inconclusive/negative evidence rather than availability.
-- Results are correlated to an exact environment identity and expose cache
-  inputs/invalidation hooks without sharing state across environments.
-- Fake-process tests cover success, missing command/option/tool, non-zero,
-  timeout, oversized output, unsafe executable, and environment mismatch.
+- Versions are parsed and compared centrally with explicit component identity.
+- Fallback rules map only catalog-declared unprobeable behavior to typed state,
+  implementation, reason, and fallback evidence.
+- Direct positive/negative evidence has precedence over fallback inference.
+- Unknown/malformed/future versions default conservatively and never inherit
+  historical behavior implicitly.
+- Rules and authoritative sources are documented and covered by boundary,
+  precedence, malformed, and future-version tests.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake compatibility_probe
-cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings
+cargo test -p yoctui-bitbake compatibility_version
+cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

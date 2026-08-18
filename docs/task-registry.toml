@@ -4592,18 +4592,18 @@ notes = "Added versioned CapabilityCatalog v1 with exactly one typed entry for a
 id = "COMPAT-PROBE-001"
 milestone = "M18"
 title = "Implement safe capability probing"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 489
 required = true
 depends_on = ["COMPAT-CATALOG-001"]
 verify = ["cargo test -p yoctui-bitbake compatibility_probe", "cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
-notes = "Use non-mutating shell-free probes with deadlines, bounded output, explicit partial/unknown failures, caching hooks, and environment correlation."
+notes = "Added environment-correlated CapabilityProbeContext and a typed runner for executable, --version, help/subcommand/option, metadata task/variable, backend/protocol, artifact, and configuration probes. External probes clear/rebuild env, use exact shell-free argv, deadlines, 64 KiB bounded streams, owned process groups, and forced timeout cleanup. Missing behavior is negative; stale/unsafe/spawn/read/timeout/truncation is inconclusive. Five fake-process/context tests and warnings-denied bitbake Clippy pass."
 
 [[task]]
 id = "COMPAT-VERSION-001"
 milestone = "M18"
 title = "Add release and version fallback mapping"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 490
 required = true
 depends_on = ["COMPAT-PROBE-001"]

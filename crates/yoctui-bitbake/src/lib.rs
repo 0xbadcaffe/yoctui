@@ -4,6 +4,7 @@ mod bitbake_restart;
 #[cfg(unix)]
 mod bitbake_socket;
 mod build_environment;
+mod compatibility_probe;
 mod image;
 mod maintenance_optional;
 mod maintenance_release;
@@ -74,6 +75,10 @@ pub use bitbake_socket::BitBakeSocketAdapter;
 pub use build_environment::{
     BuildEnvironmentAdapter, BuildEnvironmentAdapterError, BuildEnvironmentClonePreview,
     BuildEnvironmentResponse,
+};
+pub use compatibility_probe::{
+    CapabilityProbeContext, CapabilityProbeContextError, CapabilityProbeObservation,
+    CapabilityProbeRunner, CapabilityProbeStatus,
 };
 pub use image::{
     ImageArtifactAdapter, ImageArtifactAdapterError, ImageArtifactCancellation,

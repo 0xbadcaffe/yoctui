@@ -779,3 +779,12 @@ selector, advisory release-boundary field, and exact default reason. Catalog
 validation rejects incomplete, duplicate, unsafe, and selector-less data; four
 focused tests and warnings-denied model Clippy pass. `COMPAT-PROBE-001` is
 active.
+
+`COMPAT-PROBE-001` is complete. The bitbake crate now evaluates typed,
+non-mutating executable/version/help/option and metadata/backend/protocol/
+artifact/configuration probes only in a context that exactly matches the
+normalized environment. External probes use reconstructed environment, exact
+argv, deadlines, bounded streams, process groups, and timeout cleanup. Missing
+behavior is negative evidence; unsafe/stale, spawn/read, timeout, and truncation
+remain inconclusive. Five fake-process/context tests and Clippy pass.
+`COMPAT-VERSION-001` is active.

@@ -67,6 +67,9 @@ pub enum CapabilityProbeSpec {
     Executable {
         tool: CapabilityToolId,
     },
+    CommandVersion {
+        tool: CapabilityToolId,
+    },
     CommandHelp {
         tool: CapabilityToolId,
         subcommand: Option<String>,
@@ -305,7 +308,11 @@ fn definition(id: CapabilityId) -> Definition {
             vec![tool],
             vec![command(tool, subcommand, options)],
             Vec::new(),
-            vec![executable(tool), help(tool, subcommand)],
+            vec![
+                executable(tool),
+                CapabilityProbeSpec::CommandVersion { tool },
+                help(tool, subcommand),
+            ],
             implementation(impl_id, Kind::Command),
             None,
         )
@@ -616,7 +623,9 @@ fn valid_metadata(requirement: &MetadataRequirement) -> bool {
 
 fn valid_probe(probe: &CapabilityProbeSpec, tools: &[CapabilityToolId]) -> bool {
     match probe {
-        CapabilityProbeSpec::Executable { tool } => tools.contains(tool),
+        CapabilityProbeSpec::Executable { tool } | CapabilityProbeSpec::CommandVersion { tool } => {
+            tools.contains(tool)
+        }
         CapabilityProbeSpec::CommandHelp { tool, subcommand } => {
             tools.contains(tool) && subcommand.as_deref().is_none_or(valid_token)
         }
