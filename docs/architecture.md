@@ -2423,6 +2423,16 @@ invalid selection while retaining local filter/query intent. Reusable visible
 action presentation is a lossless mapping of `WorkspaceAvailability`, so UI
 widgets cannot reinterpret release or tool support.
 
+Doctor is another read-only client of that authority, not a probe owner. It
+uses the ordinary bounded Hello/Attach snapshot path with the environment-
+compatibility protocol capability, validates schema and unknown wire values,
+then derives a human or JSON report. The report preserves the typed environment
+identity, all capability records/evidence, exact state counts and reasons, and
+negative executable evidence. Missing, disconnected, and malformed authority
+remain distinct fail-closed diagnostics. Existing local environment/bridge
+health checks are separate from the compatibility section and cannot enable a
+feature or create a release-support claim.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.

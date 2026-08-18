@@ -4878,18 +4878,18 @@ notes = "Parent gate complete: the bounded typed UI projection, first-class resp
 id = "COMPAT-DOCTOR-001"
 milestone = "M18"
 title = "Add compatibility report to Doctor diagnostics"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 505
 required = true
 depends_on = ["COMPAT-UI-001", "COMPAT-DAEMON-001"]
 verify = ["cargo test -p yoctui doctor_compatibility", "cargo test -p yoctui-protocol compatibility", "./scripts/verify-roadmap.sh"]
-notes = "Report detected identity, protocol/backend, capability summary, missing tools, limited/unsupported/unknown features, support classification, and bounded machine-readable output."
+notes = "Doctor attaches through the ordinary bounded daemon protocol and reports only the validated daemon-owned compatibility snapshot. Human and yoctui.doctor.compatibility.v1 JSON output include authoritative build/Yocto/OE-Core/Poky/BitBake/DISTRO/MACHINE/tool/backend/protocol identity, runtime mode, all five counts, negative executable evidence, exact limited/unavailable/unsupported/unknown records, selected implementations, and the bounded raw typed capabilities/evidence. Release support stays explicitly Unknown until live matrix evidence is authority; disconnected, absent, malformed, and unknown-wire authority fail closed without PATH/version inference. Existing local environment/bridge health checks remain separate. Two focused CLI tests, four protocol compatibility tests, roadmap validation, and warnings-denied workspace Clippy pass."
 
 [[task]]
 id = "COMPAT-MATRIX-001"
 milestone = "M18"
 title = "Define supported Yocto release matrix"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 506
 required = true
 depends_on = ["COMPAT-SPEC-001", "COMPAT-OLD-001", "COMPAT-UNKNOWN-001"]

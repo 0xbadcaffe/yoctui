@@ -2,45 +2,45 @@
 
 ## Task
 
-**ID:** COMPAT-DOCTOR-001
-**Title:** Add compatibility report to Doctor diagnostics
+**ID:** COMPAT-MATRIX-001
+**Title:** Define supported Yocto release matrix
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Extend `yoctui doctor` with a bounded human-readable and machine-readable
-report of the daemon-owned connected-environment compatibility authority.
+Complete the release-policy matrix without promoting fixture, parser, or
+partial live observations into support claims.
 
 ## Dependencies
 
-- `COMPAT-UI-001` — DONE
-- `COMPAT-DAEMON-001` — DONE
+- `COMPAT-SPEC-001` — DONE
+- `COMPAT-OLD-001` — DONE
+- `COMPAT-UNKNOWN-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-cli/src/main.rs`
-- `crates/yoctui-protocol/src/lib.rs`
-- `crates/yoctui-protocol/src/daemon_ipc.rs`
-- `docs/architecture.md`
+- `docs/compatibility-matrix.md`
+- `docs/compatibility.md`
+- `scripts/verify-compatibility.sh`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Doctor reports authoritative Yocto/OE-Core/Poky identity, BitBake,
-  backend/protocol, build directory, and support classification.
-- It summarizes all five capability states and lists missing tools, limited,
-  unsupported, and unknown features with exact reasons.
-- A bounded structured output mode serializes the same typed authority without
-  independent probing, inference, unbounded collections, or raw process text.
-- Disconnected, missing, malformed, and stale daemon authority fail closed and
-  remain diagnostically distinct.
-- Existing environment and bridge diagnostics remain available.
+- The matrix distinguishes Claimed supported, Tested, Partially tested,
+  Expected compatible, Unsupported, and Unknown.
+- Every non-Unknown classification cites exact current evidence and scope;
+  fixture-only or mocked tests never establish a live support claim.
+- Minimum supported and latest supported releases remain unclaimed until their
+  required live gates produce current policy-compliant evidence.
+- Future/development and older environments retain capability-first behavior
+  independently of matrix labels.
+- Structure verification rejects ambiguous labels or unsupported claims.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui doctor_compatibility
-cargo test -p yoctui-protocol compatibility
+./scripts/check-docs.sh
+./scripts/verify-compatibility.sh --structure-only
 ./scripts/verify-roadmap.sh
 ```

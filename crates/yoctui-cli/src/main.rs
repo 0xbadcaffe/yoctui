@@ -247,7 +247,11 @@ enum Command {
     Config {
         name: String,
     },
-    Doctor,
+    Doctor {
+        /// Emit the bounded daemon-owned compatibility report as JSON.
+        #[arg(long)]
+        json: bool,
+    },
     /// Attach the interactive client to the persistent daemon.
     Attach,
     /// List daemon-owned terminal sessions.
@@ -783,8 +787,8 @@ async fn main() -> Result<()> {
         .with_writer(std::io::stderr)
         .init();
     let build_dir = config.build_dir.clone();
-    if matches!(cli.command, Some(Command::Doctor)) {
-        return doctor(&build_dir).await;
+    if let Some(Command::Doctor { json }) = &cli.command {
+        return doctor(&build_dir, *json).await;
     }
     match &cli.command {
         Some(Command::Inspect) => {
@@ -798,7 +802,10 @@ async fn main() -> Result<()> {
         Some(Command::Config { name }) => {
             return print_variable(config.backend.clone(), build_dir, name).await;
         }
-        Some(Command::Doctor) | Some(Command::Build { .. }) | Some(Command::Attach) | None => {}
+        Some(Command::Doctor { .. })
+        | Some(Command::Build { .. })
+        | Some(Command::Attach)
+        | None => {}
         Some(Command::Sessions | Command::Session { .. }) => unreachable!(),
         Some(Command::Daemon { .. }) => unreachable!("daemon command handled before config"),
     }
@@ -963,7 +970,413 @@ async fn print_variable(backend: Backend, build_dir: PathBuf, name: &str) -> Res
     }
     Ok(())
 }
-async fn doctor(build_dir: &Path) -> Result<()> {
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum DoctorCompatibilityAuthority {
+    Current,
+    Unavailable,
+    Invalid,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum DoctorCompatibilityMode {
+    Full,
+    Degraded,
+    Diagnostic,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+enum DoctorReleaseSupport {
+    Unknown,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+struct DoctorCompatibilitySummary {
+    available: usize,
+    limited: usize,
+    unavailable: usize,
+    unknown: usize,
+    unsupported: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+struct DoctorCapabilityIssue {
+    id: String,
+    state: String,
+    reason_code: String,
+    reason: String,
+    requirement: Option<String>,
+    limitations: Vec<String>,
+    implementation: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+struct DoctorMissingTool {
+    tool: String,
+    reason: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+struct DoctorCompatibilityReport {
+    schema: &'static str,
+    authority: DoctorCompatibilityAuthority,
+    authority_reason: Option<String>,
+    release_support: DoctorReleaseSupport,
+    release_support_reason: String,
+    operating_mode: Option<DoctorCompatibilityMode>,
+    schema_version: Option<u16>,
+    generation: Option<u64>,
+    environment: Option<yoctui_protocol::daemon::CompatibilityEnvironmentIdentity>,
+    summary: DoctorCompatibilitySummary,
+    missing_tools: Vec<DoctorMissingTool>,
+    limited_features: Vec<DoctorCapabilityIssue>,
+    unavailable_features: Vec<DoctorCapabilityIssue>,
+    unsupported_features: Vec<DoctorCapabilityIssue>,
+    unknown_features: Vec<DoctorCapabilityIssue>,
+    capabilities: Vec<yoctui_protocol::daemon::CompatibilityCapabilityData>,
+}
+
+fn doctor_compatibility_report(
+    snapshot: Option<&yoctui_protocol::daemon::CompatibilitySnapshotData>,
+    unavailable_reason: Option<&str>,
+) -> DoctorCompatibilityReport {
+    use yoctui_protocol::daemon::{
+        CompatibilityEvidenceKind, CompatibilityEvidenceOutcome, CompatibilityStateData,
+    };
+
+    let unavailable = |authority, reason: String| DoctorCompatibilityReport {
+        schema: "yoctui.doctor.compatibility.v1",
+        authority,
+        authority_reason: Some(reason),
+        release_support: DoctorReleaseSupport::Unknown,
+        release_support_reason:
+            "No current live-release support classification is present in daemon authority.".into(),
+        operating_mode: None,
+        schema_version: None,
+        generation: None,
+        environment: None,
+        summary: DoctorCompatibilitySummary::default(),
+        missing_tools: Vec::new(),
+        limited_features: Vec::new(),
+        unavailable_features: Vec::new(),
+        unsupported_features: Vec::new(),
+        unknown_features: Vec::new(),
+        capabilities: Vec::new(),
+    };
+    let Some(snapshot) = snapshot else {
+        return unavailable(
+            DoctorCompatibilityAuthority::Unavailable,
+            unavailable_reason
+                .unwrap_or("Daemon snapshot has no compatibility authority.")
+                .to_owned(),
+        );
+    };
+    if let Err(error) = snapshot.validate() {
+        return unavailable(
+            DoctorCompatibilityAuthority::Invalid,
+            format!("Daemon compatibility authority failed validation: {error}"),
+        );
+    }
+    if snapshot.capabilities.iter().any(|capability| {
+        matches!(capability.state, CompatibilityStateData::UnknownWireState)
+            || capability.evidence.iter().any(|evidence| {
+                evidence.kind == CompatibilityEvidenceKind::Unknown
+                    || evidence.outcome == CompatibilityEvidenceOutcome::Unknown
+            })
+    }) {
+        return unavailable(
+            DoctorCompatibilityAuthority::Invalid,
+            "Daemon compatibility authority contains unknown protocol values.".into(),
+        );
+    }
+
+    let mut summary = DoctorCompatibilitySummary::default();
+    let mut missing_tools = BTreeMap::<String, String>::new();
+    let mut limited_features = Vec::new();
+    let mut unavailable_features = Vec::new();
+    let mut unsupported_features = Vec::new();
+    let mut unknown_features = Vec::new();
+    for capability in &snapshot.capabilities {
+        for evidence in &capability.evidence {
+            if evidence.kind == CompatibilityEvidenceKind::ExecutableIdentity
+                && evidence.outcome == CompatibilityEvidenceOutcome::Negative
+            {
+                missing_tools
+                    .entry(evidence.subject.clone())
+                    .or_insert_with(|| evidence.detail.clone());
+            }
+        }
+        let (state, reason, limitations, destination) = match &capability.state {
+            CompatibilityStateData::Available => {
+                summary.available += 1;
+                continue;
+            }
+            CompatibilityStateData::AvailableWithLimitations {
+                reason,
+                limitations,
+            } => {
+                summary.limited += 1;
+                (
+                    "limited",
+                    reason,
+                    limitations.clone(),
+                    &mut limited_features,
+                )
+            }
+            CompatibilityStateData::Unavailable { reason } => {
+                summary.unavailable += 1;
+                ("unavailable", reason, Vec::new(), &mut unavailable_features)
+            }
+            CompatibilityStateData::Unknown { reason } => {
+                summary.unknown += 1;
+                ("unknown", reason, Vec::new(), &mut unknown_features)
+            }
+            CompatibilityStateData::Unsupported { reason } => {
+                summary.unsupported += 1;
+                ("unsupported", reason, Vec::new(), &mut unsupported_features)
+            }
+            CompatibilityStateData::UnknownWireState => unreachable!("rejected above"),
+        };
+        destination.push(DoctorCapabilityIssue {
+            id: capability.id.clone(),
+            state: state.into(),
+            reason_code: reason.code.clone(),
+            reason: reason.message.clone(),
+            requirement: reason.requirement.clone(),
+            limitations,
+            implementation: capability
+                .implementation
+                .as_ref()
+                .map(|implementation| implementation.id.clone()),
+        });
+    }
+    let operating_mode = if summary.unavailable == 0
+        && summary.unknown == 0
+        && summary.unsupported == 0
+        && summary.limited == 0
+    {
+        DoctorCompatibilityMode::Full
+    } else if summary.available + summary.limited > 0 {
+        DoctorCompatibilityMode::Degraded
+    } else {
+        DoctorCompatibilityMode::Diagnostic
+    };
+    DoctorCompatibilityReport {
+        schema: "yoctui.doctor.compatibility.v1",
+        authority: DoctorCompatibilityAuthority::Current,
+        authority_reason: None,
+        release_support: DoctorReleaseSupport::Unknown,
+        release_support_reason:
+            "Runtime capability evidence is current; no live release-support claim is encoded yet."
+                .into(),
+        operating_mode: Some(operating_mode),
+        schema_version: Some(snapshot.schema_version),
+        generation: Some(snapshot.generation),
+        environment: Some(snapshot.environment.clone()),
+        summary,
+        missing_tools: missing_tools
+            .into_iter()
+            .map(|(tool, reason)| DoctorMissingTool { tool, reason })
+            .collect(),
+        limited_features,
+        unavailable_features,
+        unsupported_features,
+        unknown_features,
+        capabilities: snapshot.capabilities.clone(),
+    }
+}
+
+fn doctor_detected<T>(
+    detected: &yoctui_protocol::daemon::CompatibilityDetected<T>,
+    render: impl FnOnce(&T) -> String,
+) -> String {
+    match detected {
+        yoctui_protocol::daemon::CompatibilityDetected::Unknown => "unknown".into(),
+        yoctui_protocol::daemon::CompatibilityDetected::Detected { value, authority } => {
+            format!("{} [{authority:?}]", render(value))
+        }
+    }
+}
+
+fn render_doctor_compatibility(report: &DoctorCompatibilityReport) -> String {
+    let mut lines = vec![
+        "compatibility report:".into(),
+        format!("  authority: {:?}", report.authority),
+    ];
+    if let Some(reason) = &report.authority_reason {
+        lines.push(format!("  authority reason: {reason}"));
+    }
+    lines.push(format!(
+        "  release support: {:?} ({})",
+        report.release_support, report.release_support_reason
+    ));
+    let Some(environment) = &report.environment else {
+        return lines.join("\n");
+    };
+    lines.extend([
+        format!("  snapshot generation: {}", report.generation.unwrap_or(0)),
+        format!("  operating mode: {:?}", report.operating_mode),
+        format!(
+            "  build directory: {}",
+            doctor_detected(&environment.build_directory, Clone::clone)
+        ),
+        format!(
+            "  BitBake: {}",
+            doctor_detected(&environment.bitbake_version, Clone::clone)
+        ),
+        format!(
+            "  OE-Core: {}",
+            doctor_detected(&environment.oe_core, |release| format!(
+                "{} {}",
+                release.name.as_deref().unwrap_or("unknown"),
+                release.version.as_deref().unwrap_or("unknown")
+            ))
+        ),
+        format!(
+            "  Poky: {}",
+            doctor_detected(&environment.poky, |release| format!(
+                "{} {}",
+                release.name.as_deref().unwrap_or("unknown"),
+                release.version.as_deref().unwrap_or("unknown")
+            ))
+        ),
+        format!(
+            "  DISTRO: {}",
+            doctor_detected(&environment.distro, |distro| format!(
+                "{} {}",
+                distro.name,
+                distro.version.as_deref().unwrap_or("unknown")
+            ))
+        ),
+        format!(
+            "  MACHINE: {}",
+            doctor_detected(&environment.machine, Clone::clone)
+        ),
+        format!(
+            "  backend: {}",
+            doctor_detected(&environment.backend, |backend| format!(
+                "{} {}",
+                backend.name,
+                backend.version.as_deref().unwrap_or("unknown")
+            ))
+        ),
+        format!(
+            "  protocol: {}",
+            doctor_detected(&environment.protocol, |protocol| format!(
+                "{} {}",
+                protocol.name, protocol.version
+            ))
+        ),
+        format!(
+            "  capabilities: available={} limited={} unavailable={} unknown={} unsupported={}",
+            report.summary.available,
+            report.summary.limited,
+            report.summary.unavailable,
+            report.summary.unknown,
+            report.summary.unsupported
+        ),
+    ]);
+    if let yoctui_protocol::daemon::CompatibilityDetected::Detected { value, authority } =
+        &environment.source_roots
+    {
+        for root in value {
+            lines.push(format!(
+                "  source root: {}={} [{authority:?}]",
+                root.kind, root.path
+            ));
+        }
+    }
+    if let yoctui_protocol::daemon::CompatibilityDetected::Detected { value, authority } =
+        &environment.layer_series
+    {
+        for layer in value {
+            lines.push(format!(
+                "  layer series: {}={} ({}) [{authority:?}]",
+                layer.layer,
+                layer.root,
+                layer.compatible_series.join(", ")
+            ));
+        }
+    }
+    if let yoctui_protocol::daemon::CompatibilityDetected::Detected { value, authority } =
+        &environment.available_tools
+    {
+        for tool in value {
+            lines.push(format!(
+                "  available tool: {}={} {} [{authority:?}]",
+                tool.id,
+                tool.executable,
+                tool.version.as_deref().unwrap_or("unknown")
+            ));
+        }
+    }
+    for missing in &report.missing_tools {
+        lines.push(format!(
+            "  missing tool: {} — {}",
+            missing.tool, missing.reason
+        ));
+    }
+    for (label, issues) in [
+        ("limited", &report.limited_features),
+        ("unavailable", &report.unavailable_features),
+        ("unsupported", &report.unsupported_features),
+        ("unknown", &report.unknown_features),
+    ] {
+        for issue in issues {
+            let implementation = issue
+                .implementation
+                .as_deref()
+                .map_or(String::new(), |value| format!("; implementation={value}"));
+            let limitations = if issue.limitations.is_empty() {
+                String::new()
+            } else {
+                format!("; limitations={}", issue.limitations.join(" | "))
+            };
+            lines.push(format!(
+                "  {label}: {} — {} [{}]{}{}",
+                issue.id, issue.reason, issue.reason_code, limitations, implementation
+            ));
+        }
+    }
+    lines.join("\n")
+}
+
+#[cfg(unix)]
+fn daemon_doctor_compatibility_report() -> DoctorCompatibilityReport {
+    use yoctui_protocol::daemon::{ClientMessage, ServerMessage};
+    match daemon_connection_with_snapshot() {
+        Ok((mut connection, snapshot)) => {
+            let report = doctor_compatibility_report(
+                snapshot.compatibility.as_ref(),
+                Some("Daemon snapshot has no compatibility authority."),
+            );
+            let _ = connection.send(&ClientMessage::Detach);
+            let _ = connection.receive::<ServerMessage>();
+            report
+        }
+        Err(error) => doctor_compatibility_report(
+            None,
+            Some(&format!("Yoctui daemon is unavailable: {error}")),
+        ),
+    }
+}
+
+#[cfg(not(unix))]
+fn daemon_doctor_compatibility_report() -> DoctorCompatibilityReport {
+    doctor_compatibility_report(
+        None,
+        Some("Daemon compatibility authority requires supported local IPC."),
+    )
+}
+
+async fn doctor(build_dir: &Path, json: bool) -> Result<()> {
+    let compatibility = daemon_doctor_compatibility_report();
+    if json {
+        println!("{}", serde_json::to_string_pretty(&compatibility)?);
+        return Ok(());
+    }
     let initialized = std::env::var_os("BUILDDIR").is_some();
     let python = env::var("PYTHON").unwrap_or_else(|_| "python3".into());
     let bitbake = tokio::process::Command::new("bitbake")
@@ -1051,6 +1464,7 @@ async fn doctor(build_dir: &Path) -> Result<()> {
             println!("bridge startup: failed ({error}) — check YOCTUI_BRIDGE_PATH and PYTHON")
         }
     }
+    println!("{}", render_doctor_compatibility(&compatibility));
     Ok(())
 }
 
@@ -1227,6 +1641,7 @@ fn daemon_connection_with_snapshot() -> Result<(
             Capability::StateSnapshots,
             Capability::IncrementalEvents,
             Capability::PtySessions,
+            Capability::EnvironmentCompatibility,
         ],
     }))?;
     let ServerMessage::Hello(_) = connection.receive()? else {
@@ -11601,6 +12016,270 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn doctor_compatibility_fixture() -> yoctui_protocol::daemon::CompatibilitySnapshotData {
+        use yoctui_protocol::daemon::{
+            COMPATIBILITY_SCHEMA_VERSION, CompatibilityBackendIdentity,
+            CompatibilityCapabilityData, CompatibilityDetected, CompatibilityDistroIdentity,
+            CompatibilityEnvironmentIdentity, CompatibilityEvidenceData, CompatibilityEvidenceKind,
+            CompatibilityEvidenceOutcome, CompatibilityIdentityAuthority,
+            CompatibilityImplementationData, CompatibilityProtocolIdentity,
+            CompatibilityReasonData, CompatibilityReleaseIdentity, CompatibilityStateData,
+            CompatibilityToolIdentity,
+        };
+        let evidence = |kind, outcome, subject: &str, detail: &str| CompatibilityEvidenceData {
+            kind,
+            outcome,
+            subject: subject.into(),
+            detail: detail.into(),
+            argv: vec![subject.into(), "--help".into()],
+        };
+        let reason = |code: &str, message: &str, requirement: &str| CompatibilityReasonData {
+            code: code.into(),
+            message: message.into(),
+            requirement: Some(requirement.into()),
+        };
+        yoctui_protocol::daemon::CompatibilitySnapshotData {
+            schema_version: COMPATIBILITY_SCHEMA_VERSION,
+            generation: 12,
+            environment: CompatibilityEnvironmentIdentity {
+                build_directory: CompatibilityDetected::Detected {
+                    value: "/work/poky/build".into(),
+                    authority: CompatibilityIdentityAuthority::InitializedEnvironment,
+                },
+                source_roots: CompatibilityDetected::Unknown,
+                bitbake_version: CompatibilityDetected::Detected {
+                    value: "2.18.0".into(),
+                    authority: CompatibilityIdentityAuthority::BitBakeVersionProbe,
+                },
+                oe_core: CompatibilityDetected::Detected {
+                    value: CompatibilityReleaseIdentity {
+                        name: Some("OE-Core".into()),
+                        version: Some("5.2".into()),
+                    },
+                    authority: CompatibilityIdentityAuthority::ReleaseMetadata,
+                },
+                poky: CompatibilityDetected::Detected {
+                    value: CompatibilityReleaseIdentity {
+                        name: Some("wrynose".into()),
+                        version: Some("6.0".into()),
+                    },
+                    authority: CompatibilityIdentityAuthority::ReleaseMetadata,
+                },
+                distro: CompatibilityDetected::Detected {
+                    value: CompatibilityDistroIdentity {
+                        name: "poky".into(),
+                        version: Some("6.0".into()),
+                    },
+                    authority: CompatibilityIdentityAuthority::BitBakeDatastore,
+                },
+                machine: CompatibilityDetected::Detected {
+                    value: "qemux86-64".into(),
+                    authority: CompatibilityIdentityAuthority::BitBakeDatastore,
+                },
+                layer_series: CompatibilityDetected::Unknown,
+                available_tools: CompatibilityDetected::Detected {
+                    value: vec![CompatibilityToolIdentity {
+                        id: "bitbake".into(),
+                        executable: "/work/poky/bitbake/bin/bitbake".into(),
+                        version: Some("2.18.0".into()),
+                    }],
+                    authority: CompatibilityIdentityAuthority::ExecutableProbe,
+                },
+                backend: CompatibilityDetected::Detected {
+                    value: CompatibilityBackendIdentity {
+                        name: "tinfoil".into(),
+                        version: Some("2.18".into()),
+                    },
+                    authority: CompatibilityIdentityAuthority::BackendHandshake,
+                },
+                protocol: CompatibilityDetected::Detected {
+                    value: CompatibilityProtocolIdentity {
+                        name: "yoctui-daemon".into(),
+                        version: "1.0".into(),
+                    },
+                    authority: CompatibilityIdentityAuthority::ProtocolNegotiation,
+                },
+            },
+            capabilities: vec![
+                CompatibilityCapabilityData {
+                    id: "bitbake.build".into(),
+                    state: CompatibilityStateData::Available,
+                    evidence: vec![evidence(
+                        CompatibilityEvidenceKind::DirectProbe,
+                        CompatibilityEvidenceOutcome::Positive,
+                        "bitbake",
+                        "Build command is available.",
+                    )],
+                    implementation: Some(CompatibilityImplementationData {
+                        id: "bitbake.build.command".into(),
+                        kind: "command".into(),
+                    }),
+                },
+                CompatibilityCapabilityData {
+                    id: "bitbake.getvar".into(),
+                    state: CompatibilityStateData::AvailableWithLimitations {
+                        reason: reason(
+                            "compatibility.fallback",
+                            "Environment dump fallback selected.",
+                            "bitbake -e",
+                        ),
+                        limitations: vec!["Native getvar is absent.".into()],
+                    },
+                    evidence: vec![evidence(
+                        CompatibilityEvidenceKind::DirectProbe,
+                        CompatibilityEvidenceOutcome::Positive,
+                        "bitbake",
+                        "Environment dump is available.",
+                    )],
+                    implementation: Some(CompatibilityImplementationData {
+                        id: "bitbake.getvar.environment_fallback".into(),
+                        kind: "command".into(),
+                    }),
+                },
+                CompatibilityCapabilityData {
+                    id: "devtool.upgrade".into(),
+                    state: CompatibilityStateData::Unavailable {
+                        reason: reason(
+                            "probe.executable_absent",
+                            "Devtool is absent from the initialized environment.",
+                            "devtool upgrade",
+                        ),
+                    },
+                    evidence: vec![evidence(
+                        CompatibilityEvidenceKind::ExecutableIdentity,
+                        CompatibilityEvidenceOutcome::Negative,
+                        "devtool",
+                        "devtool is absent from the initialized environment",
+                    )],
+                    implementation: None,
+                },
+                CompatibilityCapabilityData {
+                    id: "resulttool".into(),
+                    state: CompatibilityStateData::Unknown {
+                        reason: reason(
+                            "probe.timed_out",
+                            "The resulttool probe timed out.",
+                            "resulttool --help",
+                        ),
+                    },
+                    evidence: vec![evidence(
+                        CompatibilityEvidenceKind::DirectProbe,
+                        CompatibilityEvidenceOutcome::Inconclusive,
+                        "resulttool",
+                        "Read-only probe timed out.",
+                    )],
+                    implementation: None,
+                },
+                CompatibilityCapabilityData {
+                    id: "git_archive".into(),
+                    state: CompatibilityStateData::Unsupported {
+                        reason: reason(
+                            "yoctui.not_implemented",
+                            "No maintained adapter exists.",
+                            "oe-git-archive",
+                        ),
+                    },
+                    evidence: Vec::new(),
+                    implementation: None,
+                },
+            ],
+        }
+    }
+
+    #[test]
+    fn doctor_compatibility_reports_bounded_authority_and_exact_degradation() {
+        let snapshot = doctor_compatibility_fixture();
+        snapshot.validate().unwrap();
+        let report = doctor_compatibility_report(Some(&snapshot), None);
+        assert_eq!(report.authority, DoctorCompatibilityAuthority::Current);
+        assert_eq!(
+            report.operating_mode,
+            Some(DoctorCompatibilityMode::Degraded)
+        );
+        assert_eq!(
+            report.summary,
+            DoctorCompatibilitySummary {
+                available: 1,
+                limited: 1,
+                unavailable: 1,
+                unknown: 1,
+                unsupported: 1,
+            }
+        );
+        assert_eq!(report.missing_tools[0].tool, "devtool");
+        assert_eq!(report.limited_features[0].id, "bitbake.getvar");
+        assert_eq!(
+            report.limited_features[0].implementation.as_deref(),
+            Some("bitbake.getvar.environment_fallback")
+        );
+        assert_eq!(report.unsupported_features[0].id, "git_archive");
+        let human = render_doctor_compatibility(&report);
+        for expected in [
+            "snapshot generation: 12",
+            "BitBake: 2.18.0",
+            "Poky: wrynose 6.0",
+            "DISTRO: poky 6.0",
+            "MACHINE: qemux86-64",
+            "backend: tinfoil 2.18",
+            "protocol: yoctui-daemon 1.0",
+            "missing tool: devtool",
+            "limited: bitbake.getvar",
+            "unsupported: git_archive",
+            "unknown: resulttool",
+        ] {
+            assert!(human.contains(expected), "missing {expected}: {human}");
+        }
+
+        let json = serde_json::to_value(&report).unwrap();
+        assert_eq!(json["schema"], "yoctui.doctor.compatibility.v1");
+        assert_eq!(json["authority"], "current");
+        assert_eq!(json["summary"]["limited"], 1);
+        assert_eq!(json["capabilities"].as_array().unwrap().len(), 5);
+    }
+
+    #[test]
+    fn doctor_compatibility_fails_closed_for_absent_and_malformed_authority() {
+        let absent = doctor_compatibility_report(None, Some("daemon is disconnected"));
+        assert_eq!(absent.authority, DoctorCompatibilityAuthority::Unavailable);
+        assert_eq!(
+            absent.authority_reason.as_deref(),
+            Some("daemon is disconnected")
+        );
+        assert!(absent.capabilities.is_empty());
+
+        let mut malformed = doctor_compatibility_fixture();
+        malformed
+            .capabilities
+            .push(malformed.capabilities[0].clone());
+        let invalid = doctor_compatibility_report(Some(&malformed), None);
+        assert_eq!(invalid.authority, DoctorCompatibilityAuthority::Invalid);
+        assert!(
+            invalid
+                .authority_reason
+                .as_deref()
+                .unwrap()
+                .contains("duplicate")
+        );
+        assert!(invalid.capabilities.is_empty());
+
+        let mut unknown_wire = doctor_compatibility_fixture();
+        unknown_wire.capabilities[0].state =
+            yoctui_protocol::daemon::CompatibilityStateData::UnknownWireState;
+        unknown_wire.capabilities[0].implementation = None;
+        let invalid = doctor_compatibility_report(Some(&unknown_wire), None);
+        assert_eq!(invalid.authority, DoctorCompatibilityAuthority::Invalid);
+        assert!(
+            invalid
+                .authority_reason
+                .as_deref()
+                .unwrap()
+                .contains("unknown protocol values")
+        );
+
+        let cli = Cli::try_parse_from(["yoctui", "doctor", "--json"]).unwrap();
+        assert!(matches!(cli.command, Some(Command::Doctor { json: true })));
+    }
 
     #[test]
     fn compatibility_workspace_app_cli_routes_local_effect_and_blocks_environment_spawn() {

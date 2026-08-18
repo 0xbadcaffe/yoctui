@@ -193,6 +193,20 @@ yoctui session attach <id>
 yoctui session kill <id> --force
 ```
 
+With the daemon running for the selected workspace, Doctor reports the same
+validated compatibility authority used by attached clients. Human output keeps
+the existing environment/bridge checks; `--json` emits only the bounded typed
+compatibility report for automation:
+
+```sh
+yoctui --build-dir "$BUILDDIR" doctor
+yoctui --build-dir "$BUILDDIR" doctor --json
+```
+
+If the daemon is disconnected, its snapshot is absent, or protocol values are
+invalid, Doctor reports that state explicitly and does not infer support from
+the host PATH or the requested release name.
+
 On a host with a systemd user manager, install the no-root user unit and enable
 automatic startup:
 

@@ -261,6 +261,19 @@ and fails the completion gate. The dedicated Environment/Compatibility Doctor
 report exposes the same identity and snapshot used by the UI so a live record
 can be audited against runtime behavior.
 
+Run `yoctui --build-dir "$BUILDDIR" doctor` for the human report or append
+`--json` for schema `yoctui.doctor.compatibility.v1`. The compatibility section
+comes only from the daemon's validated attached snapshot and includes detected
+build/release/BitBake/backend/protocol identity, operating mode, all five state
+counts, negative executable evidence, and exact limited, unavailable,
+unsupported, and unknown feature records. The JSON form also retains the
+bounded typed capability records and evidence. A disconnected daemon, absent
+snapshot, invalid protocol value, or malformed snapshot is reported as
+Unavailable or Invalid; Doctor does not run an independent compatibility probe
+or turn fixture/version identity into a release-support claim. Until current
+live matrix evidence is correlated into authority, release support is honestly
+reported as Unknown even when individual capabilities are positively verified.
+
 ### Current centralized version fallback map
 
 The initial map contains one deliberately narrow unprobeable selector:
