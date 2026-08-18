@@ -1037,5 +1037,9 @@ explicit capability-backed fallback. Direct BitBake, server-control, and
 signature consumers reject configured/authorized executable disagreement.
 Focused old, modern, absent-tool, stale-generation, and exact-executable tests,
 the full all-feature workspace suite, Clippy, bridge tests, and roadmap gate
-pass. `COMPAT-LIVE-LATEST-001` has resumed against the fresh official Wrynose
-composition.
+pass. Fresh production-daemon validation then exposed that the compatibility
+coordinator was constructed but never selected, probed, or published the
+initialized environment. `COMPAT-DAEMON-RUNTIME-001` is active as an atomic
+prerequisite to install the authoritative startup snapshot in daemon state,
+journal transport, command supervisors, and Doctor. `COMPAT-LIVE-LATEST-001`
+resumes after that runtime authority is verified.
