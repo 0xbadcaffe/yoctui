@@ -2,49 +2,45 @@
 
 ## Task
 
-**ID:** COMPAT-UI-001
-**Title:** Expose capability state clearly in the UI
+**ID:** COMPAT-DOCTOR-001
+**Title:** Add compatibility report to Doctor diagnostics
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Close the complete capability-aware UI acceptance gate, including the typed
-projection, dedicated inspector, and every visible action surface.
+Extend `yoctui doctor` with a bounded human-readable and machine-readable
+report of the daemon-owned connected-environment compatibility authority.
 
 ## Dependencies
 
-- `COMPAT-UI-MODEL-001` — DONE
-- `COMPAT-UI-INSPECTOR-001` — DONE
-- `COMPAT-UI-ACTIONS-001` — DONE
+- `COMPAT-UI-001` — DONE
+- `COMPAT-DAEMON-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/compatibility_ui.rs`
-- `crates/yoctui-model/src/lib.rs`
-- `crates/yoctui-app/src/lib.rs`
-- `crates/yoctui-ui/src/lib.rs`
-- `docs/ui-spec.md`
+- `crates/yoctui-cli/src/main.rs`
+- `crates/yoctui-protocol/src/lib.rs`
+- `crates/yoctui-protocol/src/daemon_ipc.rs`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Useful unavailable actions remain discoverable and visibly disabled with an
-  exact authoritative reason or maintained alternative.
-- Available, Limited, Unavailable, Unknown, and Unsupported are distinct in
-  the responsive Environment/Compatibility workspace and action surfaces.
-- Normal workflows avoid release-number clutter and consume only the one
-  daemon-owned authority projection.
-- Snapshot replacement, invalidation, responsive bounds, themes, and no-color
-  mode remain safe without stale widget state or invalid launches.
-- The aggregate UI/app compatibility suites and PTY snapshots pass.
+- Doctor reports authoritative Yocto/OE-Core/Poky identity, BitBake,
+  backend/protocol, build directory, and support classification.
+- It summarizes all five capability states and lists missing tools, limited,
+  unsupported, and unknown features with exact reasons.
+- A bounded structured output mode serializes the same typed authority without
+  independent probing, inference, unbounded collections, or raw process text.
+- Disconnected, missing, malformed, and stale daemon authority fail closed and
+  remain diagnostically distinct.
+- Existing environment and bridge diagnostics remain available.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui compatibility
-cargo test -p yoctui-app compatibility_ui
-./scripts/test-tui-snapshots.sh
+cargo test -p yoctui doctor_compatibility
+cargo test -p yoctui-protocol compatibility
 ./scripts/verify-roadmap.sh
 ```

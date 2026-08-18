@@ -4867,18 +4867,18 @@ notes = "Parent gate complete: aggregate UI/app acceptance proves Navigator, com
 id = "COMPAT-UI-001"
 milestone = "M18"
 title = "Expose capability state clearly in the UI"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-MODEL-001", "COMPAT-UI-INSPECTOR-001", "COMPAT-UI-ACTIONS-001"]
 verify = ["cargo test -p yoctui-ui compatibility", "cargo test -p yoctui-app compatibility_ui", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
-notes = "Parent gate: useful unavailable actions stay visible and disabled with exact reasons/alternatives, normal workflows avoid version clutter, and the responsive bounded Environment/Compatibility inspector exposes the one daemon-owned authority."
+notes = "Parent gate complete: the bounded typed UI projection, first-class responsive Environment/Compatibility workspace, Navigator/palette/workspace/Inspector/footer/dialog availability, exact reasons/limitations/maintained alternatives, local action preservation, and live snapshot revalidation all consume one daemon-owned authority without release clutter or widget caches. Nine aggregate UI and six app compatibility tests, PTY snapshots, roadmap validation, and warnings-denied workspace Clippy pass."
 
 [[task]]
 id = "COMPAT-DOCTOR-001"
 milestone = "M18"
 title = "Add compatibility report to Doctor diagnostics"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 505
 required = true
 depends_on = ["COMPAT-UI-001", "COMPAT-DAEMON-001"]

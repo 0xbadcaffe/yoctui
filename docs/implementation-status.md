@@ -996,4 +996,7 @@ pass. `COMPAT-UI-ACTIONS-001` is complete. Aggregate UI/app acceptance proves
 all action surfaces consume the same live projection, agree on fallback
 implementations, fail closed after invalidation, and retain local behavior.
 Focused aggregate tests, PTY snapshots, roadmap validation, and workspace
-Clippy pass. `COMPAT-UI-001` is active as the complete UI parent gate.
+Clippy pass. `COMPAT-UI-001` is complete: the typed projection, responsive
+Compatibility workspace, all visible action surfaces, exact explanations,
+live replacement, and local action behavior pass nine aggregate UI and six app
+tests plus PTY snapshots. `COMPAT-DOCTOR-001` is active.
