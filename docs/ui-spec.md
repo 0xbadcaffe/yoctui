@@ -222,6 +222,11 @@ Rules:
   pane and the destination of both focus chords; a generic `Tab Focus` label
   is insufficient
 - arrow keys affect only the focused region
+- pane focus consumes only keys mapped to focus or pane navigation; every
+  unmatched key continues through the active workspace and global shortcut
+  routes instead of being discarded
+- global actions such as `Ctrl+P`, `?`, `F5`, `q`, and `Ctrl+C` remain
+  reachable from Navigator, Workspace, and Inspector focus
 - `Esc`: close dialog, cancel transient mode, or return focus outward
 - dialogs trap focus until closed
 - opening a dialog or command palette remembers the active pane; transitions

@@ -11,7 +11,13 @@ Status values:
 
 ## Current phase
 
-`UI-STARTUP-LIVE-001` is `IN_PROGRESS`: the shell-resolved 0.1.0 executable
+`UI-FOCUS-ROUTING-001` is `IN_PROGRESS`: the live installed-binary PTY exposed
+that the CLI enters its pane-focus branch for every key and silently drops
+unmatched input. This makes `q` and `Tab` work while `Ctrl+P`, help, and many
+workspace actions appear dead. The routing fix will consume only actual focus
+actions and pass all unmatched input through normal workspace/global handling.
+
+`UI-STARTUP-LIVE-001` is `NOT_STARTED`: the shell-resolved 0.1.0 executable
 was an older registry install despite sharing the source build's version. It
 has been replaced with the verified release binary and the operator session's
 bridge/color preferences restored. The live gate is being extended to verify
