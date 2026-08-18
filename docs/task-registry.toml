@@ -4823,18 +4823,18 @@ notes = "One typed action-surface catalog resolves every Screen destination, eve
 id = "COMPAT-UI-NAV-ACTIONS-001"
 milestone = "M18"
 title = "Render capability state in global action surfaces"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-ACTION-CATALOG-001"]
 verify = ["cargo test -p yoctui-ui compatibility_ui_nav_actions", "cargo test -p yoctui-app compatibility_ui_nav_actions", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
-notes = "Project centralized state into useful Navigator destinations, command-palette entries, and contextual footers. Navigation remains inspectable; disabled operations cannot launch, exact reasons remain discoverable, and client-local actions remain usable."
+notes = "Navigator destinations render concise Available/Limited/Unavailable/Unknown/Unsupported markers from the centralized destination requirement; navigation remains reachable and the focused Navigator Inspector/footer exposes the exact reason and selected implementation. Command-palette rows combine ordinary local prerequisites with typed command compatibility, preserve inspectable navigation, block gated operations before dialog preparation, and show exact reasons/fallbacks. Snapshot invalidation unloads actions immediately while local commands remain usable. Focused UI/app tests, all 285 model, 120 app, and 145 UI tests, canonical literal golden, PTY snapshots, roadmap validation, and warnings-denied workspace Clippy pass."
 
 [[task]]
 id = "COMPAT-UI-WORKSPACE-ACTIONS-001"
 milestone = "M18"
 title = "Render capability state in workspace and Inspector actions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-NAV-ACTIONS-001"]

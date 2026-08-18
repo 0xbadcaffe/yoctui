@@ -412,9 +412,13 @@ impl CompatibilityUiActionAvailability {
 pub fn compatibility_ui_destination_action_definition(
     screen: Screen,
 ) -> CompatibilityUiActionDefinition {
-    CompatibilityUiActionDefinition::inspectable(workspace_destination_requirement(
-        workspace_screen_destination(screen),
-    ))
+    compatibility_ui_workspace_destination_action_definition(workspace_screen_destination(screen))
+}
+
+pub fn compatibility_ui_workspace_destination_action_definition(
+    destination: crate::WorkspaceDestination,
+) -> CompatibilityUiActionDefinition {
+    CompatibilityUiActionDefinition::inspectable(workspace_destination_requirement(destination))
 }
 
 /// Closed command-palette classification. Adding a `CommandId` requires an
@@ -477,6 +481,16 @@ pub fn compatibility_ui_destination_action_availability(
     compatibility_ui_action_definition_availability(
         compatibility,
         &compatibility_ui_destination_action_definition(screen),
+    )
+}
+
+pub fn compatibility_ui_workspace_destination_action_availability(
+    compatibility: &WorkspaceCompatibilityState,
+    destination: crate::WorkspaceDestination,
+) -> CompatibilityUiActionAvailability {
+    compatibility_ui_action_definition_availability(
+        compatibility,
+        &compatibility_ui_workspace_destination_action_definition(destination),
     )
 }
 

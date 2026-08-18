@@ -183,7 +183,10 @@ pub struct PaletteCommand {
     pub label: &'static str,
     pub description: &'static str,
     pub shortcut: &'static str,
-    pub disabled_reason: Option<&'static str>,
+    pub disabled_reason: Option<String>,
+    pub compatibility_state: WorkspaceAvailabilityState,
+    pub compatibility_reason: Option<String>,
+    pub implementations: Vec<(CapabilityId, String)>,
 }
 impl PaletteCommand {
     pub fn enabled(&self) -> bool {
@@ -210,6 +213,27 @@ const NAVIGATOR_SCREENS: [Screen; 19] = [
     Screen::BuildEnvironment,
     Screen::Compatibility,
     Screen::Settings,
+];
+const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 19] = [
+    WorkspaceDestination::Dashboard,
+    WorkspaceDestination::Layers,
+    WorkspaceDestination::Recipes,
+    WorkspaceDestination::Packages,
+    WorkspaceDestination::Images,
+    WorkspaceDestination::Sdk,
+    WorkspaceDestination::Tasks,
+    WorkspaceDestination::Logs,
+    WorkspaceDestination::Errors,
+    WorkspaceDestination::Configuration,
+    WorkspaceDestination::Dependencies,
+    WorkspaceDestination::Testing,
+    WorkspaceDestination::Security,
+    WorkspaceDestination::Qa,
+    WorkspaceDestination::Devtool,
+    WorkspaceDestination::Maintenance,
+    WorkspaceDestination::BuildEnvironment,
+    WorkspaceDestination::Compatibility,
+    WorkspaceDestination::Settings,
 ];
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BuildStatus {
@@ -2839,6 +2863,12 @@ impl App {
             .copied()
             .unwrap_or(Screen::Dashboard)
     }
+    pub fn navigator_compatibility_destination(&self) -> WorkspaceDestination {
+        NAVIGATOR_COMPATIBILITY_DESTINATIONS
+            .get(self.navigator_selection)
+            .copied()
+            .unwrap_or(WorkspaceDestination::Dashboard)
+    }
     pub fn waiting_task_count(&self) -> usize {
         if matches!(
             self.build.status,
@@ -3273,124 +3303,147 @@ impl App {
         let workspace_missing = self.workspace.build_dir.is_none();
         let recipe_missing = self.screen != Screen::Recipes
             || self.workspace.recipes.get(self.recipe_selection).is_none();
+        let command =
+            |id, label, description, shortcut, local_disabled_reason: Option<&'static str>| {
+                let compatibility =
+                    compatibility_ui_command_action_availability(&self.workspace_compatibility, id);
+                let compatibility_reason = compatibility.exact_reason();
+                let disabled_reason = local_disabled_reason.map(str::to_owned).or_else(|| {
+                    (!compatibility.enabled).then(|| {
+                        compatibility_reason.clone().unwrap_or_else(|| {
+                            "The connected environment does not enable this operation.".into()
+                        })
+                    })
+                });
+                PaletteCommand {
+                    id,
+                    label,
+                    description,
+                    shortcut,
+                    disabled_reason,
+                    compatibility_state: compatibility.state,
+                    compatibility_reason,
+                    implementations: compatibility.implementations,
+                }
+            };
         vec![
-            PaletteCommand {
-                id: CommandId::BuildImage,
-                label: "Build image",
-                description: "Open image build options for the active machine",
-                shortcut: "F5",
-                disabled_reason: workspace_missing.then_some("Load a Yocto workspace first"),
-            },
-            PaletteCommand {
-                id: CommandId::SelectImage,
-                label: "Select image",
-                description: "Choose an image recipe discovered in active layers",
-                shortcut: "i",
-                disabled_reason: (!self
+            command(
+                CommandId::BuildImage,
+                "Build image",
+                "Open image build options for the active machine",
+                "F5",
+                workspace_missing.then_some("Load a Yocto workspace first"),
+            ),
+            command(
+                CommandId::SelectImage,
+                "Select image",
+                "Choose an image recipe discovered in active layers",
+                "i",
+                (!self
                     .workspace
                     .recipes
                     .iter()
                     .any(|recipe| recipe.name.contains("image")))
                 .then_some("No image recipes are available"),
-            },
-            PaletteCommand {
-                id: CommandId::BuildSelectedRecipe,
-                label: "Build selected recipe",
-                description: "Confirm and build the selected recipe",
-                shortcut: "b",
-                disabled_reason: recipe_missing.then_some("Open Recipes and select a recipe"),
-            },
-            PaletteCommand {
-                id: CommandId::EditBbmask,
-                label: "Edit BBMASK",
-                description: "Preview and save the effective BBMASK value",
-                shortcut: "x then e",
-                disabled_reason: workspace_missing.then_some("Load a Yocto workspace first"),
-            },
-            PaletteCommand {
-                id: CommandId::OpenDashboard,
-                label: "Open Dashboard",
-                description: "Show build status, task progress, and recent output",
-                shortcut: "Esc",
-                disabled_reason: None,
-            },
-            PaletteCommand {
-                id: CommandId::OpenLayers,
-                label: "Open Layers",
-                description: "Browse active layer metadata and files",
-                shortcut: "y",
-                disabled_reason: None,
-            },
-            PaletteCommand {
-                id: CommandId::OpenRecipes,
-                label: "Open Recipes",
-                description: "Browse recipes and typed recipe actions",
-                shortcut: "r",
-                disabled_reason: None,
-            },
-            PaletteCommand {
-                id: CommandId::OpenImages,
-                label: "Open Images",
-                description: "Browse image recipes and artifacts",
-                shortcut: "i",
-                disabled_reason: None,
-            },
-            PaletteCommand {
-                id: CommandId::OpenTasks,
-                label: "Open Tasks",
-                description: "Inspect active and completed BitBake tasks",
-                shortcut: "t",
-                disabled_reason: None,
-            },
-            PaletteCommand {
-                id: CommandId::OpenLogs,
-                label: "Open Logs",
-                description: "Inspect retained structured build logs",
-                shortcut: "l",
-                disabled_reason: None,
-            },
-            PaletteCommand {
-                id: CommandId::OpenErrors,
-                label: "Open Errors",
-                description: "Inspect retained warnings and errors",
-                shortcut: "e",
-                disabled_reason: None,
-            },
-            PaletteCommand {
-                id: CommandId::OpenConfiguration,
-                label: "Open Configuration",
-                description: "Inspect effective BitBake variables and provenance",
-                shortcut: "v",
-                disabled_reason: None,
-            },
-            PaletteCommand {
-                id: CommandId::OpenCompatibility,
-                label: "Open Compatibility",
-                description: "Inspect connected environment identity and capability evidence",
-                shortcut: "none",
-                disabled_reason: None,
-            },
-            PaletteCommand {
-                id: CommandId::OpenSettings,
-                label: "Open Settings",
-                description: "Edit persistent visual and log preferences",
-                shortcut: "none",
-                disabled_reason: None,
-            },
-            PaletteCommand {
-                id: CommandId::ChooseTheme,
-                label: "Choose theme",
-                description: "Preview and apply a named workbench palette",
-                shortcut: "Ctrl+P theme",
-                disabled_reason: None,
-            },
-            PaletteCommand {
-                id: CommandId::OpenHelp,
-                label: "Open Help",
-                description: "Show all global and contextual shortcuts",
-                shortcut: "?",
-                disabled_reason: None,
-            },
+            ),
+            command(
+                CommandId::BuildSelectedRecipe,
+                "Build selected recipe",
+                "Confirm and build the selected recipe",
+                "b",
+                recipe_missing.then_some("Open Recipes and select a recipe"),
+            ),
+            command(
+                CommandId::EditBbmask,
+                "Edit BBMASK",
+                "Preview and save the effective BBMASK value",
+                "x then e",
+                workspace_missing.then_some("Load a Yocto workspace first"),
+            ),
+            command(
+                CommandId::OpenDashboard,
+                "Open Dashboard",
+                "Show build status, task progress, and recent output",
+                "Esc",
+                None,
+            ),
+            command(
+                CommandId::OpenLayers,
+                "Open Layers",
+                "Browse active layer metadata and files",
+                "y",
+                None,
+            ),
+            command(
+                CommandId::OpenRecipes,
+                "Open Recipes",
+                "Browse recipes and typed recipe actions",
+                "r",
+                None,
+            ),
+            command(
+                CommandId::OpenImages,
+                "Open Images",
+                "Browse image recipes and artifacts",
+                "i",
+                None,
+            ),
+            command(
+                CommandId::OpenTasks,
+                "Open Tasks",
+                "Inspect active and completed BitBake tasks",
+                "t",
+                None,
+            ),
+            command(
+                CommandId::OpenLogs,
+                "Open Logs",
+                "Inspect retained structured build logs",
+                "l",
+                None,
+            ),
+            command(
+                CommandId::OpenErrors,
+                "Open Errors",
+                "Inspect retained warnings and errors",
+                "e",
+                None,
+            ),
+            command(
+                CommandId::OpenConfiguration,
+                "Open Configuration",
+                "Inspect effective BitBake variables and provenance",
+                "v",
+                None,
+            ),
+            command(
+                CommandId::OpenCompatibility,
+                "Open Compatibility",
+                "Inspect connected environment identity and capability evidence",
+                "none",
+                None,
+            ),
+            command(
+                CommandId::OpenSettings,
+                "Open Settings",
+                "Edit persistent visual and log preferences",
+                "none",
+                None,
+            ),
+            command(
+                CommandId::ChooseTheme,
+                "Choose theme",
+                "Preview and apply a named workbench palette",
+                "Ctrl+P theme",
+                None,
+            ),
+            command(
+                CommandId::OpenHelp,
+                "Open Help",
+                "Show all global and contextual shortcuts",
+                "?",
+                None,
+            ),
         ]
     }
     pub fn filtered_command_palette_commands(&self) -> Vec<PaletteCommand> {
@@ -14292,6 +14345,9 @@ mod tests {
         let _ = update(&mut app, Action::OpenCommandPalette);
         assert_eq!(app.focus, FocusTarget::CommandPalette);
         assert_eq!(app.focus_return, Some(FocusTarget::Navigator));
+        for character in "Choose theme".chars() {
+            let _ = update(&mut app, Action::AppendCommandPaletteQuery(character));
+        }
 
         let original_screen = app.screen;
         let original_selection = app.navigator_selection;
@@ -14303,10 +14359,13 @@ mod tests {
         assert_eq!(app.focus, FocusTarget::CommandPalette);
 
         let _ = update(&mut app, Action::ActivateCommandPalette);
-        assert!(matches!(app.active_dialog(), Some(Dialog::BuildOptions)));
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::ThemePicker { .. })
+        ));
         assert_eq!(app.focus, FocusTarget::Dialog);
         assert_eq!(app.focus_return, Some(FocusTarget::Navigator));
-        let _ = update(&mut app, Action::CloseBuildOptions);
+        let _ = update(&mut app, Action::CloseThemePicker);
         assert_eq!(app.focus, FocusTarget::Navigator);
     }
     #[test]

@@ -2361,6 +2361,15 @@ while environment operations fail closed before preparation. Presentation
 retains the five-state result, exact reasons, and catalog-selected
 implementations; renderers do not own another feature table or version policy.
 
+Global surfaces consume that classifier directly. Navigator rows attach the
+destination summary but use inspectable activation, so a missing feature never
+removes its explanatory workspace. The focused Navigator Inspector and footer
+show the exact centralized reason and selected implementation. Command-palette
+rows combine ordinary local selection prerequisites with command capability
+state; operational commands become inert before dialog preparation, while
+navigation commands remain reachable. Snapshot replacement is read on every
+projection, so neither palette nor Navigator retains stale compatibility data.
+
 `yoctui-app::compatibility_model_snapshot` is the sole wire-to-model conversion
 boundary. It validates protocol bounds before resolving stable capability IDs,
 wire enums, reasons, evidence, identity authorities, and selected

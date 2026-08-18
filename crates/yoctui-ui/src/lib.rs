@@ -36,7 +36,9 @@ use yoctui_model::{
     VariableIdentity, WicCapability, WicCompression, WicCreateDialog, WicCreateField,
     WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart,
     WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
-    config_comparison, config_edit_disabled_reason, config_source_disabled_reason, format_duration,
+    WorkspaceAvailabilityState, WorkspaceDestination,
+    compatibility_ui_workspace_destination_action_availability, config_comparison,
+    config_edit_disabled_reason, config_source_disabled_reason, format_duration,
     selected_config_copy_value,
 };
 
@@ -569,26 +571,127 @@ fn with_focus_shortcuts(app: &App, shortcuts: &str) -> String {
     )
 }
 
+fn workspace_destination_label(destination: WorkspaceDestination) -> &'static str {
+    match destination {
+        WorkspaceDestination::Dashboard => "Dashboard",
+        WorkspaceDestination::Recipes => "Recipes",
+        WorkspaceDestination::Layers => "Layers",
+        WorkspaceDestination::Configuration => "Configuration",
+        WorkspaceDestination::Tasks => "Tasks",
+        WorkspaceDestination::BuildHistory => "Build History",
+        WorkspaceDestination::Logs => "Logs",
+        WorkspaceDestination::Errors => "Errors",
+        WorkspaceDestination::Dependencies => "Dependencies",
+        WorkspaceDestination::Signatures => "Signatures",
+        WorkspaceDestination::Packages => "Packages",
+        WorkspaceDestination::Images => "Images",
+        WorkspaceDestination::Sdk => "SDK",
+        WorkspaceDestination::Testing => "Testing",
+        WorkspaceDestination::Security => "Security",
+        WorkspaceDestination::Qa => "QA",
+        WorkspaceDestination::Devtool => "Devtool",
+        WorkspaceDestination::QemuWic => "QEMU / Wic",
+        WorkspaceDestination::Maintenance => "Maintenance",
+        WorkspaceDestination::ProjectProfiles => "Project Profiles",
+        WorkspaceDestination::TerminalSessions => "Terminal Sessions",
+        WorkspaceDestination::BuildEnvironment => "Build Environment",
+        WorkspaceDestination::Compatibility => "Compatibility",
+        WorkspaceDestination::Settings => "Settings",
+        WorkspaceDestination::Help => "Help",
+    }
+}
+
+fn compatibility_destination_detail(app: &App, destination: WorkspaceDestination) -> String {
+    let availability = compatibility_ui_workspace_destination_action_availability(
+        &app.workspace_compatibility,
+        destination,
+    );
+    let mut lines = vec![
+        format!("Destination: {}", workspace_destination_label(destination)),
+        format!(
+            "Compatibility: {}",
+            compatibility_workspace_state_label(availability.state)
+        ),
+        String::new(),
+        "Navigation remains available so this environment state can be inspected.".into(),
+    ];
+    if let Some(reason) = availability.exact_reason() {
+        lines.extend([String::new(), format!("Reason: {reason}")]);
+    }
+    if !availability.implementations.is_empty() {
+        lines.extend([
+            String::new(),
+            format!(
+                "Implementation: {}",
+                availability
+                    .implementations
+                    .iter()
+                    .map(|(_, implementation)| implementation.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ),
+        ]);
+    }
+    lines.join("\n")
+}
+
+fn with_compatibility_footer(
+    app: &App,
+    destination: WorkspaceDestination,
+    shortcuts: String,
+) -> String {
+    let availability = compatibility_ui_workspace_destination_action_availability(
+        &app.workspace_compatibility,
+        destination,
+    );
+    if availability.state == WorkspaceAvailabilityState::Available {
+        return shortcuts;
+    }
+    let reason = availability.exact_reason().unwrap_or_else(|| {
+        "The connected environment did not provide an exact compatibility reason.".into()
+    });
+    format!(
+        "{shortcuts} | {}: {reason}",
+        compatibility_workspace_state_label(availability.state)
+    )
+}
+
 fn footer_shortcuts(app: &App) -> String {
     if app.screen == Screen::Signatures {
-        return with_focus_shortcuts(
+        return with_compatibility_footer(
             app,
-            "↑/↓ select | 1/2 sides | c compare | r refresh | e provider | Esc back/cancel",
+            WorkspaceDestination::Signatures,
+            with_focus_shortcuts(
+                app,
+                "↑/↓ select | 1/2 sides | c compare | r refresh | e provider | Esc back/cancel",
+            ),
         );
     }
     if app.focus == FocusTarget::Navigator {
-        return with_focus_shortcuts(
+        return with_compatibility_footer(
             app,
-            "j/k or ↑/↓ select | Enter open | Ctrl+B prefix | q quit",
+            app.navigator_compatibility_destination(),
+            with_focus_shortcuts(
+                app,
+                "j/k or ↑/↓ select | Enter open | Ctrl+B prefix | q quit",
+            ),
         );
     }
     if app.focus == FocusTarget::Inspector {
-        return with_focus_shortcuts(app, "↑/↓ scroll inspector | / search | q quit");
+        return with_compatibility_footer(
+            app,
+            yoctui_model::workspace_screen_destination(app.screen),
+            with_focus_shortcuts(app, "↑/↓ scroll inspector | / search | q quit"),
+        );
     }
     if app.layer_browser.is_some() {
-        return with_focus_shortcuts(
+        return with_compatibility_footer(
             app,
-            "↑/↓ select | →/l expand | ←/h collapse | Enter open/toggle | e editor | r refresh | . hidden | / search | g Git | m metadata | d deps",
+            WorkspaceDestination::Layers,
+            with_focus_shortcuts(
+                app,
+                "↑/↓ select | →/l expand | ←/h collapse | Enter open/toggle | e editor | r refresh | . hidden | / search | g Git | m metadata | d deps",
+            ),
         );
     }
     let shortcuts = match app.screen {
@@ -667,7 +770,11 @@ fn footer_shortcuts(app: &App) -> String {
             "↑/↓ select | e edit profile | i initialize | V verify | Tab focus | q quit"
         }
     };
-    with_focus_shortcuts(app, shortcuts)
+    with_compatibility_footer(
+        app,
+        yoctui_model::workspace_screen_destination(app.screen),
+        with_focus_shortcuts(app, shortcuts),
+    )
 }
 
 fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
@@ -1818,7 +1925,13 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
                     } else {
                         " "
                     };
-                    let suffix = if disabled { " (unavailable)" } else { "" };
+                    let state = compatibility_workspace_state_label(command.compatibility_state);
+                    let suffix =
+                        if command.compatibility_state == WorkspaceAvailabilityState::Available {
+                            if disabled { "Unavailable" } else { "" }
+                        } else {
+                            state
+                        };
                     let style = if index == app.command_palette_selection {
                         selected_style(app, true)
                     } else if disabled {
@@ -1827,7 +1940,17 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
                         Style::default()
                     };
                     Line::styled(
-                        format!("{marker} {}  [{}]{suffix}", command.label, command.shortcut),
+                        format!(
+                            "{marker} {}  [{}]{}{}",
+                            command.label,
+                            command.shortcut,
+                            if suffix.is_empty() { "" } else { " (" },
+                            if suffix.is_empty() {
+                                String::new()
+                            } else {
+                                format!("{suffix})")
+                            }
+                        ),
                         style,
                     )
                 }),
@@ -1839,11 +1962,39 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
             command.description,
             palette.role(palette.info, Modifier::ITALIC),
         ));
-        if let Some(reason) = command.disabled_reason {
+        if command.compatibility_state != WorkspaceAvailabilityState::Available {
             lines.push(Line::styled(
-                format!("Unavailable: {reason}."),
+                format!(
+                    "Compatibility: {}",
+                    compatibility_workspace_state_label(command.compatibility_state)
+                ),
+                compatibility_workspace_state_style(app, command.compatibility_state),
+            ));
+        }
+        if let Some(reason) = command.disabled_reason.as_deref() {
+            lines.push(Line::styled(
+                format!("Cannot run: {reason}"),
                 palette.role(palette.warning, Modifier::BOLD),
             ));
+        }
+        if let Some(reason) = command.compatibility_reason.as_deref()
+            && command.disabled_reason.as_deref() != Some(reason)
+        {
+            lines.push(Line::styled(
+                format!("Reason: {reason}"),
+                palette.role(palette.warning, Modifier::BOLD),
+            ));
+        }
+        if !command.implementations.is_empty() {
+            lines.push(Line::from(format!(
+                "Implementation: {}",
+                command
+                    .implementations
+                    .iter()
+                    .map(|(_, implementation)| implementation.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            )));
         }
     }
     lines.push(Line::from(""));
@@ -2314,17 +2465,30 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
     ];
     enum NavigatorRow<'a> {
         Group(&'a str),
-        Destination { name: &'a str, index: usize },
+        Destination {
+            name: &'a str,
+            destination: WorkspaceDestination,
+            index: usize,
+        },
     }
 
     let mut destination_index = 0;
     let mut rows = Vec::new();
     for (group, destinations) in GROUPS {
         rows.push(NavigatorRow::Group(group));
-        rows.extend(destinations.iter().map(|(name, _)| {
+        rows.extend(destinations.iter().map(|(name, screen)| {
             let index = destination_index;
             destination_index += 1;
-            NavigatorRow::Destination { name, index }
+            let destination = if *name == "Devtool" {
+                WorkspaceDestination::Devtool
+            } else {
+                yoctui_model::workspace_screen_destination(*screen)
+            };
+            NavigatorRow::Destination {
+                name,
+                destination,
+                index,
+            }
         }));
     }
     debug_assert_eq!(destination_index, 19);
@@ -2357,14 +2521,29 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
                 format!("▾ {name:<width$}", width = width.saturating_sub(2)),
                 palette.role(palette.warning, Modifier::BOLD),
             )),
-            NavigatorRow::Destination { name, index } => {
+            NavigatorRow::Destination {
+                name,
+                destination,
+                index,
+            } => {
                 let selected = *index == app.navigator_selection;
+                let availability = compatibility_ui_workspace_destination_action_availability(
+                    &app.workspace_compatibility,
+                    *destination,
+                );
+                let marker = match availability.state {
+                    WorkspaceAvailabilityState::Available => "▱",
+                    WorkspaceAvailabilityState::AvailableWithLimitations => "~",
+                    WorkspaceAvailabilityState::Unavailable => "×",
+                    WorkspaceAvailabilityState::Unknown => "?",
+                    WorkspaceAvailabilityState::Unsupported => "!",
+                };
                 Line::from(Span::styled(
-                    format!("  ▱ {name:<width$}", width = width.saturating_sub(4)),
+                    format!("  {marker} {name:<width$}", width = width.saturating_sub(4)),
                     if selected {
                         palette.selected()
                     } else {
-                        palette.base()
+                        compatibility_workspace_state_style(app, availability.state)
                     },
                 ))
             }
@@ -2727,6 +2906,18 @@ fn tasks_inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
 fn inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     if app.screen == Screen::Tasks {
         tasks_inspector(frame, app, area, now);
+        return;
+    }
+    if app.focus == FocusTarget::Navigator {
+        frame.render_widget(
+            Paragraph::new(compatibility_destination_detail(
+                app,
+                app.navigator_compatibility_destination(),
+            ))
+            .block(pane_block(app, "Inspector: Navigator", false))
+            .wrap(Wrap { trim: false }),
+            area,
+        );
         return;
     }
     let details = match app.screen {
@@ -7899,6 +8090,29 @@ fn compatibility_state_style(app: &App, state: CompatibilityUiCapabilityState) -
     }
 }
 
+fn compatibility_workspace_state_label(state: WorkspaceAvailabilityState) -> &'static str {
+    match state {
+        WorkspaceAvailabilityState::Available => "Available",
+        WorkspaceAvailabilityState::AvailableWithLimitations => "Limited",
+        WorkspaceAvailabilityState::Unavailable => "Unavailable",
+        WorkspaceAvailabilityState::Unknown => "Unknown",
+        WorkspaceAvailabilityState::Unsupported => "Unsupported",
+    }
+}
+
+fn compatibility_workspace_state_style(app: &App, state: WorkspaceAvailabilityState) -> Style {
+    let palette = ThemePalette::for_app(app);
+    match state {
+        WorkspaceAvailabilityState::Available => palette.role(palette.success, Modifier::BOLD),
+        WorkspaceAvailabilityState::AvailableWithLimitations => {
+            palette.role(palette.warning, Modifier::BOLD)
+        }
+        WorkspaceAvailabilityState::Unavailable => palette.role(palette.error, Modifier::BOLD),
+        WorkspaceAvailabilityState::Unknown => palette.role(palette.info, Modifier::ITALIC),
+        WorkspaceAvailabilityState::Unsupported => palette.role(palette.disabled, Modifier::DIM),
+    }
+}
+
 fn compatibility_inspector_text(app: &App) -> String {
     let projection = app
         .compatibility_ui
@@ -11935,6 +12149,74 @@ mod tests {
     }
 
     #[test]
+    fn compatibility_ui_nav_actions_render_state_reason_and_fallback_from_one_snapshot() {
+        let mut app = compatibility_ui_inspector_app();
+        app.screen = Screen::Configuration;
+        app.focus = FocusTarget::Navigator;
+        app.navigator_selection = 9;
+        let navigator = rendered_text(&app, 180, 42);
+        for expected in [
+            "~ Configuration",
+            "Inspector: Navigator",
+            "Destination: Configuration",
+            "Compatibility: Limited",
+            "Native getvar is absent; environment dump fallback selected.",
+            "bitbake.getvar.environment-fallback",
+        ] {
+            assert!(
+                navigator.contains(expected),
+                "missing {expected}: {navigator}"
+            );
+        }
+
+        app.focus = FocusTarget::CommandPalette;
+        app.command_palette_open = true;
+        app.command_palette_query = "Open Configuration".into();
+        let palette = rendered_text(&app, 120, 30);
+        for expected in [
+            "Open Configuration",
+            "Compatibility: Limited",
+            "Reason: Native getvar is absent",
+            "Implementation: bitbake.getvar.environment-fallback",
+        ] {
+            assert!(palette.contains(expected), "missing {expected}: {palette}");
+        }
+    }
+
+    #[test]
+    fn compatibility_ui_nav_actions_keep_navigation_local_and_gate_operations() {
+        let mut app = App::new(32, 8192);
+        app.focus = FocusTarget::Navigator;
+        app.navigator_selection = 1;
+        let navigator = rendered_text(&app, 180, 36);
+        assert!(navigator.contains("? Layers"), "{navigator}");
+        assert!(navigator.contains("Compatibility: Unknown"), "{navigator}");
+        assert!(
+            navigator.contains("requires the current environment capability"),
+            "{navigator}"
+        );
+
+        app.focus = FocusTarget::CommandPalette;
+        app.command_palette_open = true;
+        app.command_palette_query = "Build image".into();
+        let palette = rendered_text(&app, 120, 30);
+        assert!(palette.contains("Compatibility: Unknown"), "{palette}");
+        assert!(palette.contains("Cannot run:"), "{palette}");
+        assert!(
+            palette.contains("requires the current environment capability"),
+            "{palette}"
+        );
+
+        app.command_palette_query = "Open Layers".into();
+        let discoverable = rendered_text(&app, 120, 30);
+        assert!(
+            discoverable.contains("Compatibility: Unknown"),
+            "{discoverable}"
+        );
+        assert!(!discoverable.contains("Cannot run:"), "{discoverable}");
+    }
+
+    #[test]
     fn client_replica_status_renders_without_replacing_local_presentation() {
         let mut app = App::new(32, 8192);
         app.screen = Screen::Layers;
@@ -14929,7 +15211,7 @@ mod tests {
         let output = rendered_text(&app, 100, 25);
         assert!(output.contains("Search: build_"));
         assert!(output.contains("Build image"));
-        assert!(output.contains("unavailable"));
+        assert!(output.contains("Cannot run:"));
         assert!(output.contains("Load a Yocto workspace first"));
         assert!(output.contains("Type to search"));
 

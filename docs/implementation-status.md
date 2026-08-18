@@ -968,4 +968,12 @@ missing authority, operations fail closed, and local/owned cancellation stays
 usable. All five states, exact reasons, and selected implementations survive
 projection without a renderer cache or version policy. Focused exhaustive,
 absent, limited-fallback, effect, and dialog tests plus model Clippy pass.
-`COMPAT-UI-NAV-ACTIONS-001` is active.
+`COMPAT-UI-NAV-ACTIONS-001` is complete. Navigator rows now carry concise
+five-state markers from centralized destination requirements while remaining
+selectable; focused Navigator Inspector/footer text gives the exact reason and
+selected fallback. Command-palette rows merge local prerequisites with typed
+command compatibility, keep navigation discoverable, and reject unavailable
+operations before dialog preparation. Live replacement/invalidation updates
+both surfaces without a local cache. Focused tests, full model/app/UI suites,
+literal golden, PTY snapshots, and workspace Clippy pass.
+`COMPAT-UI-WORKSPACE-ACTIONS-001` is active.

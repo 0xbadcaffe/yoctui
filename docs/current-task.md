@@ -2,25 +2,28 @@
 
 ## Task
 
-**ID:** COMPAT-UI-NAV-ACTIONS-001
-**Title:** Render capability state in global action surfaces
+**ID:** COMPAT-UI-WORKSPACE-ACTIONS-001
+**Title:** Render capability state in workspace and Inspector actions
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Project centralized compatibility state into Navigator destinations,
-command-palette operations, and contextual footers without preventing users
-from navigating to inspect unavailable functionality.
+Render concise centralized compatibility state for every useful
+environment-backed action in workspace tables/action lists and persistent
+Inspectors, with exact reasons and maintained alternatives discoverable.
 
 ## Dependencies
 
 - `COMPAT-UI-MODEL-001` — DONE
 - `COMPAT-UI-INSPECTOR-001` — DONE
 - `COMPAT-UI-ACTION-CATALOG-001` — DONE
+- `COMPAT-UI-NAV-ACTIONS-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/compatibility_ui.rs`
+- `crates/yoctui-model/src/compatibility_ui.rs`
+- `crates/yoctui-model/src/workspace_compatibility.rs`
 - `crates/yoctui-model/src/lib.rs`
 - `crates/yoctui-app/src/lib.rs`
 - `crates/yoctui-ui/src/lib.rs`
@@ -31,24 +34,24 @@ from navigating to inspect unavailable functionality.
 
 ## Definition of done
 
-- Navigator destinations remain selectable and show concise five-state
-  compatibility status from the centralized destination projection.
-- Command-palette entries derive enabled/disabled/limited state from the typed
-  command definition plus ordinary selection prerequisites.
-- Disabled operations remain selectable for exact reason inspection but cannot
-  activate; navigation commands remain usable for discoverability.
-- Limited operations show the selected fallback/limitation without release
-  number clutter; local commands are unaffected by missing authority.
-- Contextual footers show only relevant capability status and exact reasons are
-  available in the persistent Inspector/palette detail.
-- Live snapshot replacement updates all global surfaces with no stale cache,
-  invalid launch, selection loss, shortcut leakage, or panic.
+- Every useful environment-backed action row or action-list entry derives its
+  five-state presentation from the typed action-surface requirement.
+- Disabled entries remain visible/selectable for inspection, show an exact
+  reason, and cannot emit an effect; limited entries show their selected
+  fallback/limitation and remain usable.
+- Persistent Inspectors expose full reasons, requirements, and maintained
+  implementation alternatives without release-version clutter.
+- Client-local copy/open/navigation actions and cancellation of already-owned
+  work remain available when environment authority is absent.
+- Snapshot replacement updates visible state/reasons without widget caches,
+  stale selections, invalid launches, or panics at supported terminal sizes.
+- Exhaustive focused tests cover all workspace families and all five states.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui compatibility_ui_nav_actions
-cargo test -p yoctui-app compatibility_ui_nav_actions
+cargo test -p yoctui-ui compatibility_ui_workspace_actions
+cargo test -p yoctui-app compatibility_ui_workspace_actions
 ./scripts/test-tui-snapshots.sh
 ./scripts/verify-roadmap.sh
 ```
