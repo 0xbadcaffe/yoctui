@@ -11,10 +11,14 @@ Status values:
 
 ## Current phase
 
-`UI-LITERAL-NAV-001` is `IN_PROGRESS`: the shell now matches the reference
-geometry and palette. The active task replaces the generic grouped destination
-list with a mixed project tree projected from typed layers, recipes, images,
-task families, and the active target.
+`UI-LITERAL-COCKPIT-001` is `IN_PROGRESS`: the mixed typed project Navigator is
+complete. The active task now locks the task table, log/history tiers, and four
+Inspector sections to the reference's canonical proportions and labels.
+
+`UI-LITERAL-NAV-001` is `DONE`: canonical Tasks renders live layers, recipes,
+images, task families, and MACHINE as the reference tree, with a typed
+layer/job/PID footer and full-row selection. Compact layouts retain the complete
+destination catalog. Model, app, and all 137 UI tests pass.
 
 `UI-LITERAL-SHELL-001` is `DONE`: the canonical Tasks scene has exact
 26/89/45 body columns, shared-edge header/footer framing, the stable F1–F10

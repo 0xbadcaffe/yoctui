@@ -2799,6 +2799,12 @@ impl App {
             .started
             .and_then(|s| SystemTime::now().duration_since(s).ok())
     }
+    pub fn navigator_screen(&self) -> Screen {
+        NAVIGATOR_SCREENS
+            .get(self.navigator_selection)
+            .copied()
+            .unwrap_or(Screen::Dashboard)
+    }
     pub fn waiting_task_count(&self) -> usize {
         if matches!(
             self.build.status,
@@ -14102,6 +14108,15 @@ mod tests {
         assert_eq!(app.focus, FocusTarget::Inspector);
         let _ = update(&mut app, Action::CycleFocus { backwards: true });
         assert_eq!(app.focus, FocusTarget::Workspace);
+    }
+
+    #[test]
+    fn navigator_screen_projects_the_bounded_selection() {
+        let mut app = App::new(10, 1_000);
+        app.navigator_selection = 1;
+        assert_eq!(app.navigator_screen(), Screen::Layers);
+        app.navigator_selection = usize::MAX;
+        assert_eq!(app.navigator_screen(), Screen::Dashboard);
     }
 
     #[test]

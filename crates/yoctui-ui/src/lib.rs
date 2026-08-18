@@ -2260,6 +2260,10 @@ fn signature_detail_text(app: &App) -> String {
 }
 
 fn navigator(frame: &mut Frame, app: &App, area: Rect) {
+    if area.width == 26 && app.screen == Screen::Tasks {
+        literal_project_navigator(frame, app, area);
+        return;
+    }
     const GROUPS: [(&str, &[(&str, Screen)]); 5] = [
         ("OVERVIEW", &[("Dashboard", Screen::Dashboard)]),
         (
@@ -2359,6 +2363,172 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
         })
         .collect::<Vec<_>>();
     frame.render_widget(Paragraph::new(Text::from(lines)), inner);
+}
+
+fn project_tree_child(
+    label: &str,
+    marker: &str,
+    width: usize,
+    selected: bool,
+    palette: ThemePalette,
+) -> Line<'static> {
+    let content_width = width.saturating_sub(4);
+    let label = label.chars().take(content_width).collect::<String>();
+    let row = format!("  {marker} {label:<content_width$}");
+    if selected {
+        Line::styled(row, palette.selected())
+    } else {
+        Line::from(vec![
+            Span::styled(
+                format!("  {marker} "),
+                palette.role(palette.warning, Modifier::BOLD),
+            ),
+            Span::raw(format!("{label:<content_width$}")),
+        ])
+    }
+}
+
+fn project_tree_group(label: &str, width: usize, palette: ThemePalette) -> Line<'static> {
+    Line::styled(
+        format!("▾ {label:<width$}", width = width.saturating_sub(2)),
+        palette.role(palette.warning, Modifier::BOLD),
+    )
+}
+
+fn literal_project_navigator(frame: &mut Frame, app: &App, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let block = pane_block(app, "Navigator", app.focus == FocusTarget::Navigator);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+    let sections = Layout::vertical([Constraint::Min(1), Constraint::Length(1)]).split(inner);
+    let width = usize::from(sections[0].width);
+    let selected_screen = app.navigator_screen();
+    let mut lines = Vec::new();
+
+    lines.push(project_tree_group("Layers", width, palette));
+    if app.workspace.layers.is_empty() {
+        lines.push(project_tree_child(
+            "discovering…",
+            "▱",
+            width,
+            selected_screen == Screen::Layers,
+            palette,
+        ));
+    } else {
+        for (index, layer) in app.workspace.layers.iter().take(7).enumerate() {
+            lines.push(project_tree_child(
+                &layer.name,
+                "▱",
+                width,
+                selected_screen == Screen::Layers && index == app.layer_selection,
+                palette,
+            ));
+        }
+    }
+
+    lines.push(project_tree_group("Recipes", width, palette));
+    if app.workspace.recipes.is_empty() {
+        lines.push(project_tree_child(
+            "discovering…",
+            "▸",
+            width,
+            selected_screen == Screen::Recipes,
+            palette,
+        ));
+    } else {
+        for (index, recipe) in app.workspace.recipes.iter().take(3).enumerate() {
+            lines.push(project_tree_child(
+                &recipe.name,
+                "▸",
+                width,
+                selected_screen == Screen::Recipes && index == app.recipe_selection,
+                palette,
+            ));
+        }
+    }
+
+    lines.push(project_tree_group("Images", width, palette));
+    if app.available_images.is_empty() {
+        lines.push(project_tree_child(
+            "none discovered",
+            "▱",
+            width,
+            selected_screen == Screen::Images,
+            palette,
+        ));
+    } else {
+        for image in app.available_images.iter().take(2) {
+            lines.push(project_tree_child(
+                image,
+                "▱",
+                width,
+                selected_screen == Screen::Images
+                    && app.build.target.as_deref() == Some(image.as_str()),
+                palette,
+            ));
+        }
+    }
+
+    lines.push(project_tree_group("Tasks", width, palette));
+    for (label, screen) in [
+        ("Build", Screen::Tasks),
+        ("Test", Screen::Testing),
+        ("QA", Screen::Qa),
+        ("Devtool", Screen::Recipes),
+        ("Wic", Screen::Images),
+        ("SDK", Screen::Sdk),
+        ("Security", Screen::Security),
+        ("Utility", Screen::Maintenance),
+    ] {
+        lines.push(project_tree_child(
+            label,
+            "▱",
+            width,
+            selected_screen == screen,
+            palette,
+        ));
+    }
+
+    lines.push(project_tree_group("Targets", width, palette));
+    let machine = app
+        .workspace
+        .variables
+        .get("MACHINE")
+        .map_or("unknown", String::as_str);
+    lines.push(project_tree_child(machine, "▱", width, false, palette));
+    frame.render_widget(
+        Paragraph::new(lines).wrap(Wrap { trim: false }),
+        sections[0],
+    );
+
+    let layer = app
+        .workspace
+        .layers
+        .get(app.layer_selection)
+        .map_or("--", |layer| layer.name.as_str());
+    let job = app
+        .daemon
+        .jobs
+        .last()
+        .map_or_else(|| "--".into(), |job| job.id.to_string());
+    let pid = app.selected_task_row().and_then(|row| match row {
+        TaskRow::Task(task) => task.pid,
+        TaskRow::WaitingSummary(_) => None,
+    });
+    frame.render_widget(
+        Paragraph::new(Line::from(vec![
+            Span::styled("L:", palette.role(palette.warning, Modifier::BOLD)),
+            Span::raw(format!(" {layer}  ")),
+            Span::styled("R:", palette.role(palette.success, Modifier::BOLD)),
+            Span::raw(format!(" {job}  ")),
+            Span::styled("P:", palette.role(palette.info, Modifier::BOLD)),
+            Span::raw(pid.map_or_else(|| "--".into(), |pid| pid.to_string())),
+        ])),
+        sections[1],
+    );
 }
 
 fn workspace(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
@@ -10979,6 +11149,49 @@ mod tests {
         assert_eq!(palette.error, Color::Rgb(244, 67, 54));
     }
 
+    #[test]
+    fn literal_navigator_projects_typed_project_state_and_full_row_selection() {
+        let app = literal_reference_app();
+        let mut terminal = Terminal::new(TestBackend::new(LITERAL_WIDTH, LITERAL_HEIGHT)).unwrap();
+        terminal
+            .draw(|frame| render_at(frame, &app, literal_now()))
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        let navigator = (0..LITERAL_HEIGHT)
+            .flat_map(|y| (0..26).map(move |x| buffer[(x, y)].symbol()))
+            .collect::<String>();
+        for expected in [
+            "Layers",
+            "poky",
+            "meta-yocto-bsp",
+            "Recipes",
+            "busybox",
+            "Images",
+            "core-image-minimal",
+            "Tasks",
+            "Devtool",
+            "Targets",
+            "qemux86-64",
+        ] {
+            assert!(
+                navigator.contains(expected),
+                "missing {expected}: {navigator}"
+            );
+        }
+        let palette = ThemePalette::for_app(&app);
+        let selected_row = (0..LITERAL_HEIGHT).find(|y| {
+            (0..26).any(|x| buffer[(x, *y)].symbol() == "p")
+                && (0..26).any(|x| buffer[(x, *y)].bg == palette.selection_background)
+        });
+        let selected_row = selected_row.expect("typed poky row must be selected");
+        assert!(
+            (1..25).all(|x| buffer[(x, selected_row)].bg == palette.selection_background),
+            "selection must fill the Navigator content row"
+        );
+        assert!(navigator.contains("L: poky"), "{navigator}");
+        assert!(navigator.contains("R: 858"), "{navigator}");
+    }
+
     fn rendered_text(app: &App, width: u16, height: u16) -> String {
         let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
         terminal.draw(|frame| render(frame, app)).unwrap();
@@ -15871,7 +16084,7 @@ mod tests {
             let output = rendered_text(&app, 160, 36);
             assert!(output.contains("▶ Running"), "{theme:?}: {output}");
             assert!(output.contains("50%"), "{theme:?}: {output}");
-            assert!(output.contains("BUILD"), "{theme:?}: {output}");
+            assert!(output.contains("▾ Tasks"), "{theme:?}: {output}");
         }
 
         app.color_enabled = false;

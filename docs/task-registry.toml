@@ -4480,18 +4480,18 @@ notes = "The canonical Tasks shell now uses a shared-edge two-row header, 44-row
 id = "UI-LITERAL-NAV-001"
 milestone = "M16"
 title = "Implement the mixed typed project Navigator"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 479
 required = true
 depends_on = ["UI-LITERAL-SHELL-001"]
 verify = ["cargo test -p yoctui-model navigator", "cargo test -p yoctui-app navigator", "cargo test -p yoctui-ui literal_navigator", "./scripts/verify-roadmap.sh"]
-notes = "Project typed layers, recipes, images, task families, and targets into the reference tree without production fixture data."
+notes = "The canonical Tasks Navigator now projects typed layers, recipes, image targets, task-family destinations, and MACHINE into the reference mixed tree. Its selected typed child fills the row, the bounded footer reports real layer/job/PID state, compact layouts retain the complete legacy destination catalog, and keyboard activation still uses typed screens. Model, app, all 137 UI tests, the visual golden, formatting, and roadmap checks pass."
 
 [[task]]
 id = "UI-LITERAL-COCKPIT-001"
 milestone = "M16"
 title = "Match the reference Tasks cockpit and Inspector"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 480
 required = true
 depends_on = ["UI-LITERAL-NAV-001"]

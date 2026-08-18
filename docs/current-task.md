@@ -2,24 +2,22 @@
 
 ## Task
 
-**ID:** UI-LITERAL-NAV-001
-**Title:** Implement the mixed typed project Navigator
+**ID:** UI-LITERAL-COCKPIT-001
+**Title:** Match the reference Tasks cockpit and Inspector
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Replace the abstract grouped destination list in the canonical workbench with
-the reference's mixed Layers, Recipes, Images, Tasks, and Targets project tree.
+Match the reference's task table, selected-task log, job history, metadata,
+recent log, actions, and system-status composition at `160x48`.
 
 ## Dependencies
 
-- `UI-LITERAL-SHELL-001` — DONE
+- `UI-LITERAL-NAV-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-model/src/lib.rs`
-- `crates/yoctui-app/src/lib.rs`
 - `crates/yoctui-ui/tests/golden/literal-reference-160x48.cells`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
@@ -27,18 +25,18 @@ the reference's mixed Layers, Recipes, Images, Tasks, and Targets project tree.
 
 ## Definition of done
 
-- Wide canonical rendering shows Layers, Recipes, Images, Tasks, and Targets.
-- Layer, recipe, image, and target children come only from typed model state.
-- Task-family children activate their real workspace destinations.
-- Selection remains bounded, visible, and uses a full-width blue row.
-- Medium and narrow layouts preserve access to the complete destination set.
+- Canonical center tiers are exactly 17, 18, and 9 rows.
+- Canonical Inspector sections are exactly 16, 15, 7, and 6 rows.
+- Task rows use compact reference labels and status symbols.
+- Selected task metadata and log path remain authoritative and readable.
+- Job history uses retained typed jobs/build records without illustrative data.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model navigator
-cargo test -p yoctui-app navigator
-cargo test -p yoctui-ui literal_navigator
+cargo test -p yoctui-ui literal_cockpit
+cargo test -p yoctui-ui workbench_tasks
+cargo test -p yoctui-model background_job
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```
