@@ -33,33 +33,30 @@ BitBake remains authoritative. Yoctui presents, controls, and organizes BitBake 
 
 ## 2. Persistent application shell
 
-The normal application layout is:
+The normal application layout is a dense, IDE-like operations workbench:
 
 ```text
 ┌──────────────────────────────────────────────────────────────────────────────────────────┐
-│ Yoctui | Build #12 | MACHINE qemux86-64 | DISTRO poky | Target core-image-minimal       │
-│ Status RUNNING | Tasks 2148/4821 | Active 12 | W 3 | E 0 | SState 86% | CPU 82% | 28m  │
+│ yoctui · Project: core-image-minimal · Machine: qemux86-64 · Distro: poky  Daemon: Connected · BitBake: Running │
 ├──────────────────┬─────────────────────────────────────┬──────────────────────────────────┤
 │ Navigator        │ Workspace                           │ Inspector                        │
 │                  │                                     │                                  │
-│ Dashboard        │ Context-specific list/tree/table    │ Preview/details/live output      │
-│ Layers           │                                     │                                  │
-│ Recipes          │                                     │                                  │
-│ Tasks            │                                     │                                  │
-│ Logs             │                                     │                                  │
-│ Errors           │                                     │                                  │
-│ Configuration    │                                     │                                  │
-│ Packages         │                                     │                                  │
-│ Images           │                                     │                                  │
-│ SDK              │                                     │                                  │
-│ Testing          │                                     │                                  │
-│ Security         │                                     │                                  │
-│ QA               │                                     │                                  │
-│ Devtool          │                                     │                                  │
-│ QEMU / Wic       │                                     │                                  │
-│ Maintenance      │                                     │                                  │
+│ ▾ OVERVIEW       │ Context-specific list/tree/table    │ Preview/details/live output      │
+│   Dashboard      │ with compact titled subpanels       │ and context actions              │
+│ ▾ CONTENT        │                                     │                                  │
+│   Layers         │                                     │                                  │
+│   Recipes        │                                     │                                  │
+│   Packages       │                                     │                                  │
+│   Images         │                                     │                                  │
+│ ▾ BUILD          │                                     │                                  │
+│   Tasks          │                                     │                                  │
+│   Logs           │                                     │                                  │
+│   Errors         │                                     │                                  │
+│ ▾ VALIDATE       │                                     │                                  │
+│   Testing        │                                     │                                  │
+│   Security / QA  │                                     │                                  │
 ├──────────────────┴─────────────────────────────────────┴──────────────────────────────────┤
-│ ? Help  F5 Build  / Search  Tab Focus  Ctrl+P Commands  e Errors  l Logs  q Quit         │
+│ F1 Help  F2 Tasks  F3 Jobs  F4 Terminal  F5 Build  F9 Search  F10 Menu       19:28:27   │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -73,11 +70,31 @@ The shell contains five persistent regions:
 
 Dialogs and notifications are drawn above this shell.
 
+### Workbench visual language
+
+The reference visual direction is a compact professional terminal IDE. The
+default `dark-pro` rendering must use near-black panel surfaces, thin subdued
+borders, a saturated blue full-row selection, lime success/progress, amber
+Navigator group and folder accents, cyan links/information, and red failure.
+Other themes map the same semantic roles through their own palettes.
+
+The shell is deliberately dense: panel titles consume one border row, tables
+use one row per record, and decorative blank space is avoided. Adjacent panels
+share a visually continuous grid. Focus remains visible through the focused
+border and selection treatment; color is never the only status signal.
+
+No renderer may copy illustrative values from a design reference. Every value
+comes from typed model state; missing values read `unavailable`, `unknown`, or
+`--` according to the field contract.
+
 ---
 
 ## 3. Header
 
-The header is always visible unless the terminal is too small.
+The header is always visible unless the terminal is too small. In normal
+layouts it is one bordered row: project context is left aligned and daemon /
+BitBake health is right aligned. A compact overflow marker may represent
+lower-priority actions.
 
 It shows compact live build and environment state:
 
@@ -117,7 +134,22 @@ Priority order:
 
 ## 4. Navigator
 
-The left pane is the primary workspace navigator.
+The left pane is the primary workspace navigator. Destinations are presented
+as an IDE-style grouped tree while retaining one bounded linear keyboard
+selection. Group labels are not selectable and do not create backend state.
+
+Required visual groups and order:
+
+- `OVERVIEW`: Dashboard
+- `CONTENT`: Layers, Recipes, Packages, Images, SDK
+- `BUILD`: Tasks, Logs, Errors, Configuration, Dependencies
+- `VALIDATE`: Testing, Security, QA
+- `TOOLS`: Devtool, Maintenance, Build environment, Settings
+
+Group rows use an expanded-tree glyph and amber semantic accent. Destination
+rows are indented, use a folder or destination glyph when Unicode/icons are
+enabled, and retain readable text markers otherwise. The selected destination
+uses the full available row width.
 
 Required entries:
 
@@ -455,6 +487,30 @@ Requirements:
 ## 11. Live Tasks workspace
 
 The Tasks workspace is the main live build monitor.
+
+At wide widths it is a three-tier cockpit matching the persistent workbench:
+
+1. `Tasks: <target>` table with Task, Recipe, Status, Time, and Progress.
+2. `Log Viewer — <selected task>` showing bounded matching typed log entries.
+3. `Job History` showing retained background jobs/build records with identity,
+   name, type, status, timestamps when available, and elapsed time.
+
+The table is the primary region and receives at least 40% of available height.
+The log viewer and history remain visible when height permits. At reduced
+height they collapse in that order to preserve task selection and controls.
+Overall build progress and active filters move into the table title/status
+rows instead of consuming large standalone cards.
+
+The wide Tasks Inspector is subdivided into titled sections:
+
+- selected task metadata
+- recent matching log tail
+- available typed actions and their actual shortcuts
+- daemon/BitBake/job/session/system status
+
+These sections render only authoritative state. Actions that are unavailable
+remain absent or explicitly disabled; labels never imply an unimplemented
+command.
 
 Example:
 
@@ -2354,7 +2410,11 @@ target through the dialog workflow.
 
 ## 24. Footer and keyboard shortcuts
 
-The footer is always visible in normal layouts.
+The footer is always visible in normal layouts. It is rendered as a one-row
+command rail with highlighted key tokens followed by plain action labels and a
+right-aligned local clock. It uses the current context, not a decorative fixed
+menu. Function-key labels are shown only where that function key is genuinely
+mapped; ordinary chords remain visible where they are the real route.
 
 It shows context-sensitive shortcuts, not a fixed oversized list.
 
@@ -2752,6 +2812,9 @@ attribute-only override.
 ### Wide terminal
 
 At widths of 130 columns and above, use navigator + workspace + inspector.
+The preferred proportions are approximately 16% / 56% / 28%, with a 22-column
+minimum Navigator and a 32-column minimum Inspector. Tasks uses the complete
+three-tier cockpit when both width and height permit.
 
 ### Medium terminal
 

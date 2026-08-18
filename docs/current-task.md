@@ -2,45 +2,39 @@
 
 ## Task
 
-**ID:** FINAL-GATE-PERF-001
-**Title:** Rerun the terminal gate with perf sampling enabled
-**Status:** BLOCKED
+**ID:** UI-VISION-SHELL-001
+**Title:** Implement compact workbench shell chrome
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Complete the final host-level verification with real perf sampling enabled.
-All preceding terminal-gate stages pass; only the Flamegraph sampling policy
-blocks completion.
+Replace the oversized telemetry header and prose footer with the compact
+one-line project/status header, dense panel chrome, and contextual command rail
+defined by the approved workbench visual specification.
 
 ## Dependencies
 
-- `CRATESIO-COVERAGE-001` — DONE
+- `UI-VISION-SPEC-001` — DONE
 
 ## Relevant files
 
-- `/proc/sys/kernel/perf_event_paranoid`
-- `scripts/flamegraph.sh`
-- `scripts/verify-completion.sh`
+- `crates/yoctui-ui/src/lib.rs`
+- `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- `perf record -- true` succeeds for the current user.
-- A fresh real headless-workload Flamegraph is generated.
-- The terminal completion gate passes without skipped required stages.
-
-## Blocker evidence
-
-- Current host value: `kernel.perf_event_paranoid=4`.
-- `scripts/flamegraph.sh` reports that perf sampling is unavailable.
-- The operator must temporarily grant `CAP_PERFMON` or lower the kernel policy.
-- After changing policy, rerun the verification commands below.
+- Header occupies one bordered row and prioritizes project plus daemon/BitBake state.
+- Footer renders a compact contextual key/action rail with a right-aligned clock.
+- Focus, themes, no-color mode, and all supported terminal widths remain safe.
+- Deterministic workbench shell tests pass.
 
 ## Verification
 
 ```bash
-perf record -- true
-./scripts/flamegraph.sh
-./scripts/verify-completion.sh
+cargo test -p yoctui-ui workbench_shell
+cargo test -p yoctui-ui theme
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
 ```

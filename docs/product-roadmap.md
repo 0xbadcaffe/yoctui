@@ -216,3 +216,24 @@ Exit criteria:
 - every public package passes packaging and isolated build checks
 - `yoctui` 0.1.0 is published under the intended crates.io account
 - a clean registry installation runs the published binary successfully
+
+## M13 — Dense terminal workbench redesign
+
+Goal: make the persistent Ratatui client match the approved compact IDE-style
+Yocto operations workbench while preserving typed behavior and accessibility.
+
+Capabilities:
+
+- one-line project and daemon/BitBake status header
+- grouped IDE-style Navigator with full-row selection
+- compact panel chrome and contextual command rail
+- three-tier Tasks cockpit with live log and retained job history
+- structured task Inspector with context actions and system status
+- wide, medium, narrow, no-color, and reduced-height regression coverage
+
+Exit criteria:
+
+- the default dark workbench preserves the approved blue/lime/amber visual hierarchy
+- all displayed values come from typed model or daemon replica state
+- keyboard, mouse, focus, theme, and responsive contracts remain intact
+- deterministic TestBackend and PTY snapshot checks pass

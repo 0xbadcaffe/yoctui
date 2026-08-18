@@ -11,6 +11,17 @@ Status values:
 
 ## Current phase
 
+`UI-VISION-SHELL-001` is `IN_PROGRESS`: the approved UI direction is now
+specified as a dense terminal IDE workbench. Implementation is split into
+compact shell chrome, grouped Navigator, Tasks cockpit, and responsive /
+accessibility verification. The design retains the existing typed model,
+daemon-client boundary, focus behavior, and honest unavailable states.
+
+`UI-VISION-SPEC-001` is `DONE`: `docs/ui-spec.md`, architecture, roadmap, and
+the task registry now capture the approved reference's dark panel grid,
+blue selection, lime progress, amber hierarchy, one-line operational header,
+context command rail, and task/log/history composition.
+
 `FINAL-GATE-PERF-001` is `BLOCKED` only on host policy: the clean terminal gate
 passes roadmap, workspace tests, Clippy, terminal tests, fuzzing, stress,
 ASan/LSan, Rust coverage, audit/deny, all 39 Python bridge tests at 75.95%

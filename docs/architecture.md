@@ -441,6 +441,14 @@ Owns:
 
 Widgets must be deterministic from model state.
 
+The workbench shell is a UI-only projection over existing typed state. Grouped
+Navigator headings, dense panel composition, task-log selection, job-history
+tables, and Inspector sections do not own or synthesize Yocto data. Navigation
+groups map to the model's stable screen order, task/log rows consume reducer
+state, and daemon health consumes the client replica. Responsive composition
+may hide or reorder projections but never migrates authoritative state into
+widgets.
+
 ### CLI binary
 
 Owns:
