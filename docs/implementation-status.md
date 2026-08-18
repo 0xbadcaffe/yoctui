@@ -11,11 +11,11 @@ Status values:
 
 ## Current phase
 
-`UI-LIVE-COLOR-AUTHORITY-001` is `IN_PROGRESS`: the live PTY exposed that
-Crossterm independently suppresses palette sequences when the parent agent
-exports `NO_COLOR`, even while Yoctui Settings says Color is enabled. The
-terminal backend will now follow Yoctui's resolved setting so the visible
-result cannot disagree with the picker; `--no-color` remains authoritative.
+`UI-LIVE-COLOR-AUTHORITY-001` is `DONE`: Yoctui's resolved color mode now
+controls Crossterm, so ambient `NO_COLOR` cannot contradict Color=true while
+explicit `--no-color` still selects the attribute-only widget palette. The
+live 1,829-recipe colored PTY gate passes with `NO_COLOR=1` inherited; focused
+theme/startup tests, isolated snapshots, Clippy, formatting, and roadmap pass.
 
 `UI-LIVE-RECOVERY-001` is `DONE`: normal startup is session-safe and
 metadata-capable, expected daemon absence no longer obscures the workbench,

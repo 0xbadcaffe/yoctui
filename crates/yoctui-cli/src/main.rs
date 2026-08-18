@@ -8545,6 +8545,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         session_path,
         ..
     } = config;
+    // Yoctui resolves color itself (including --no-color and the persisted
+    // Settings value), so Crossterm must not silently apply a second ambient
+    // NO_COLOR policy that contradicts the visible setting.
+    crossterm::style::force_color_output(true);
     let guard = TerminalGuard::enter()?;
     let mut terminal = Terminal::new(ratatui::backend::CrosstermBackend::new(io::stdout()))?;
     let mut app = if build_dir_configured {

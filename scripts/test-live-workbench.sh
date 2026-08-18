@@ -26,7 +26,6 @@ export XDG_STATE_HOME="$work_root/state"
 export XDG_RUNTIME_DIR="$work_root/runtime"
 mkdir -m 700 "$XDG_CONFIG_HOME" "$XDG_STATE_HOME" "$XDG_RUNTIME_DIR"
 unset YOCTUI_BACKEND
-unset NO_COLOR
 
 set +u
 source "$source_poky/oe-init-build-env" "$build_dir" >/dev/null
@@ -35,7 +34,7 @@ cd "$repo_root"
 
 cargo build -p yoctui >/dev/null
 binary="$repo_root/target/debug/yoctui"
-artifact_dir="${YOCTUI_LIVE_ARTIFACT_DIR:-$repo_root/artifacts/release-quality/live-workbench}"
+artifact_dir="${YOCTUI_LIVE_ARTIFACT_DIR:-$work_root/artifacts}"
 mkdir -p "$artifact_dir"
 
 "$binary" --backend bridge --build-dir "$build_dir" inspect >"$work_root/inspect.txt"

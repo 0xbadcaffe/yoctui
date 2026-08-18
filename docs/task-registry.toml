@@ -4379,9 +4379,9 @@ notes = "Parent acceptance passes for launch-scoped session safety, bridge metad
 id = "UI-LIVE-COLOR-AUTHORITY-001"
 milestone = "M14"
 title = "Keep terminal color output consistent with Yoctui settings"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 470
 required = true
 depends_on = ["UI-LIVE-RECOVERY-001"]
 verify = ["NO_COLOR=1 ./scripts/test-live-workbench.sh $HOME/src/poky/build", "cargo test -p yoctui-ui theme", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Make the resolved Yoctui color setting authoritative over Crossterm's ambient NO_COLOR suppression so the picker and visible palette cannot disagree; --no-color and Settings remain the supported attribute-only controls."
+notes = "Yoctui now makes its resolved color mode authoritative at the Crossterm backend, preventing ambient NO_COLOR from contradicting Color=true while preserving --no-color's attribute-only widget palette. The live 1,829-recipe colored PTY gate passes with NO_COLOR=1 inherited; focused theme/startup tests, isolated PTY snapshots, Clippy, formatting, and roadmap checks pass."

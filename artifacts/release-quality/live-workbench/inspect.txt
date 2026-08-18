@@ -1,14 +1,14 @@
 build directory: /home/bspguy-dev/src/poky/build
 BitBake version: 2.8.1
 Yocto/OpenEmbedded release: 5.0.19
-WKS_FILE=qemux86-directdisk.wks
-MACHINE=qemux86-64
-BB_NUMBER_THREADS=8
-BBLAYERS=   /home/bspguy-dev/src/poky/meta   /home/bspguy-dev/src/poky/meta-poky   /home/bspguy-dev/src/poky/meta-yocto-bsp   
-DL_DIR=/home/bspguy-dev/src/poky/build/downloads
-SSTATE_DIR=/home/bspguy-dev/src/poky/build/sstate-cache
-DISTRO=poky
 TMPDIR=/home/bspguy-dev/src/poky/build/tmp
-PACKAGE_CLASSES=package_rpm
 DEPLOY_DIR_IMAGE=/home/bspguy-dev/src/poky/build/tmp/deploy/images/qemux86-64
 PARALLEL_MAKE=-j 8
+MACHINE=qemux86-64
+DISTRO=poky
+BBLAYERS=   /home/bspguy-dev/src/poky/meta   /home/bspguy-dev/src/poky/meta-poky   /home/bspguy-dev/src/poky/meta-yocto-bsp   
+DL_DIR=/home/bspguy-dev/src/poky/build/downloads
+BB_NUMBER_THREADS=8
+WKS_FILE=qemux86-directdisk.wks
+SSTATE_DIR=/home/bspguy-dev/src/poky/build/sstate-cache
+PACKAGE_CLASSES=package_rpm
