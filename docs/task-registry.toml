@@ -4469,18 +4469,18 @@ notes = "A typed deterministic 160x48 fixture now renders through an injected cl
 id = "UI-LITERAL-SHELL-001"
 milestone = "M16"
 title = "Match the reference workbench shell"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 478
 required = true
 depends_on = ["UI-LITERAL-HARNESS-001"]
 verify = ["cargo test -p yoctui-ui literal_shell", "cargo test -p yoctui-ui workbench_shell", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Implement the canonical 160x48 header/body/footer geometry, compact borders, palette roles, and stable F-key command rail."
+notes = "The canonical Tasks shell now uses a shared-edge two-row header, 44-row body, and bordered two-row footer; its body is exactly 26/89/45 columns. DarkPro now matches the near-black, blue, amber, lime, cyan, and red reference hierarchy, and the canonical rail shows F1 through F10 while other workspaces retain contextual actions. All 136 UI tests, focused shell/golden checks, formatting, and roadmap validation pass."
 
 [[task]]
 id = "UI-LITERAL-NAV-001"
 milestone = "M16"
 title = "Implement the mixed typed project Navigator"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 479
 required = true
 depends_on = ["UI-LITERAL-SHELL-001"]

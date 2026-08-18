@@ -39,6 +39,8 @@ use yoctui_model::{
     selected_config_copy_value,
 };
 
+const LITERAL_REFERENCE_WIDTH: u16 = 160;
+
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
     let query = query.to_lowercase();
     query.is_empty()
@@ -94,18 +96,18 @@ impl ThemePalette {
         }
         match app.theme {
             Theme::DarkPro => Self::packrat([
-                (28, 28, 28),
-                (36, 36, 36),
-                (68, 68, 68),
-                (0, 95, 95),
-                (212, 212, 212),
-                (154, 154, 154),
-                (90, 90, 90),
-                (95, 215, 215),
-                (135, 215, 0),
-                (215, 175, 0),
-                (215, 95, 95),
-                (175, 135, 215),
+                (4, 12, 17),
+                (8, 18, 24),
+                (41, 55, 63),
+                (13, 57, 132),
+                (218, 222, 224),
+                (155, 166, 172),
+                (83, 96, 104),
+                (42, 178, 218),
+                (139, 211, 0),
+                (226, 170, 0),
+                (244, 67, 54),
+                (176, 126, 214),
             ]),
             Theme::WhiteClassic => Self::packrat([
                 (248, 248, 248),
@@ -733,7 +735,7 @@ fn daemon_lifecycle_style(app: &App, lifecycle: yoctui_model::ClientDaemonLifecy
 fn workbench_header(frame: &mut Frame, app: &App, area: Rect) {
     let palette = ThemePalette::for_app(app);
     let block = Block::default()
-        .borders(Borders::ALL)
+        .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT)
         .style(palette.base())
         .border_style(Style::default().fg(palette.border));
     let inner = block.inner(area);
@@ -863,8 +865,26 @@ fn shortcut_rail<'a>(app: &App, shortcuts: &'a str) -> Line<'a> {
 
 fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let palette = ThemePalette::for_app(app);
-    let columns = Layout::horizontal([Constraint::Min(20), Constraint::Length(10)]).split(area);
-    let shortcuts = responsive_footer_shortcuts(app, area.width);
+    let canonical = area.width == LITERAL_REFERENCE_WIDTH && app.screen == Screen::Tasks;
+    let block = Block::default()
+        .borders(if canonical {
+            Borders::LEFT | Borders::RIGHT | Borders::BOTTOM
+        } else {
+            Borders::BOTTOM
+        })
+        .style(palette.base())
+        .border_style(Style::default().fg(palette.border));
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+    let columns = Layout::horizontal([Constraint::Min(20), Constraint::Length(10)]).split(inner);
+    let shortcuts = if canonical {
+        "F1 Help | F2 Tasks | F3 Jobs | F4 Terminal | F5 Logs | F6 Layer | F7 Recipe | F8 Image | F9 Search | F10 Menu".into()
+    } else {
+        responsive_footer_shortcuts(app, area.width)
+    };
     frame.render_widget(
         Paragraph::new(shortcut_rail(app, &shortcuts)).style(palette.base()),
         columns[0],
@@ -897,9 +917,9 @@ fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         return;
     }
     let chunks = Layout::vertical([
-        Constraint::Length(3),
+        Constraint::Length(2),
         Constraint::Min(1),
-        Constraint::Length(1),
+        Constraint::Length(2),
     ])
     .split(area);
     workbench_header(frame, app, chunks[0]);
@@ -1853,7 +1873,14 @@ fn responsive_shell(
         return;
     }
     if terminal_width >= 130 {
-        let panes = if app.screen == Screen::Tasks {
+        let panes = if app.screen == Screen::Tasks && terminal_width == 160 {
+            Layout::horizontal([
+                Constraint::Length(26),
+                Constraint::Length(89),
+                Constraint::Length(45),
+            ])
+            .split(area)
+        } else if app.screen == Screen::Tasks {
             Layout::horizontal([
                 Constraint::Length(22),
                 Constraint::Percentage(56),
@@ -10593,7 +10620,7 @@ mod tests {
     use std::{fs, path::PathBuf};
     use yoctui_model::{Action, BuildRequest, update};
 
-    const LITERAL_WIDTH: u16 = 160;
+    const LITERAL_WIDTH: u16 = LITERAL_REFERENCE_WIDTH;
     const LITERAL_HEIGHT: u16 = 48;
     const LITERAL_GOLDEN_PATH: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -10899,6 +10926,57 @@ mod tests {
             "/tests/golden/literal-reference-160x48.cells"
         )));
         assert_literal_cells(&expected, &actual);
+    }
+
+    #[test]
+    fn literal_shell_uses_reference_geometry_palette_and_command_rail() {
+        let app = literal_reference_app();
+        let mut terminal = Terminal::new(TestBackend::new(LITERAL_WIDTH, LITERAL_HEIGHT)).unwrap();
+        terminal
+            .draw(|frame| render_at(frame, &app, literal_now()))
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        let symbol = |x, y| buffer[(x, y)].symbol();
+
+        assert_eq!(symbol(0, 0), "┌");
+        assert_eq!(symbol(159, 0), "┐");
+        assert_eq!(symbol(0, 2), "┌");
+        assert_eq!(symbol(25, 2), "┐");
+        assert_eq!(symbol(26, 2), "┌");
+        assert_eq!(symbol(114, 2), "┐");
+        assert_eq!(symbol(115, 2), "┌");
+        assert_eq!(symbol(159, 2), "┐");
+        assert_eq!(symbol(0, 47), "└");
+        assert_eq!(symbol(159, 47), "┘");
+
+        let row = |y| {
+            (0..LITERAL_WIDTH)
+                .map(|x| buffer[(x, y)].symbol())
+                .collect::<String>()
+        };
+        let rail = row(46);
+        for label in [
+            "F1 Help",
+            "F2 Tasks",
+            "F3 Jobs",
+            "F4 Terminal",
+            "F5 Logs",
+            "F6 Layer",
+            "F7 Recipe",
+            "F8 Image",
+            "F9 Search",
+            "F10 Menu",
+        ] {
+            assert!(rail.contains(label), "missing {label}: {rail}");
+        }
+
+        let palette = ThemePalette::for_app(&app);
+        assert_eq!(palette.background, Color::Rgb(4, 12, 17));
+        assert_eq!(palette.selection_background, Color::Rgb(13, 57, 132));
+        assert_eq!(palette.warning, Color::Rgb(226, 170, 0));
+        assert_eq!(palette.progress, Color::Rgb(139, 211, 0));
+        assert_eq!(palette.info, Color::Rgb(42, 178, 218));
+        assert_eq!(palette.error, Color::Rgb(244, 67, 54));
     }
 
     fn rendered_text(app: &App, width: u16, height: u16) -> String {
@@ -14648,19 +14726,19 @@ mod tests {
         let preview = source_preview("SUMMARY = \"demo\" # explanation", "demo.bb", &app);
         assert_eq!(
             preview.lines[0].spans[0].style.fg,
-            Some(Color::Rgb(215, 175, 0))
+            Some(Color::Rgb(226, 170, 0))
         );
         assert_eq!(
             preview.lines[0].spans[1].style.fg,
-            Some(Color::Rgb(175, 135, 215))
+            Some(Color::Rgb(176, 126, 214))
         );
         assert_eq!(
             preview.lines[0].spans[2].style.fg,
-            Some(Color::Rgb(135, 215, 0))
+            Some(Color::Rgb(139, 211, 0))
         );
         assert_eq!(
             preview.lines[0].spans[3].style.fg,
-            Some(Color::Rgb(154, 154, 154))
+            Some(Color::Rgb(155, 166, 172))
         );
     }
     #[test]

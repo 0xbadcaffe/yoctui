@@ -11,9 +11,15 @@ Status values:
 
 ## Current phase
 
-`UI-LITERAL-SHELL-001` is `IN_PROGRESS`: the deterministic reference gate is
-now enforcing all 7,680 canonical cells. The active task changes the global
-header/body/footer geometry and stable F-key rail to the approved proportions.
+`UI-LITERAL-NAV-001` is `IN_PROGRESS`: the shell now matches the reference
+geometry and palette. The active task replaces the generic grouped destination
+list with a mixed project tree projected from typed layers, recipes, images,
+task families, and the active target.
+
+`UI-LITERAL-SHELL-001` is `DONE`: the canonical Tasks scene has exact
+26/89/45 body columns, shared-edge header/footer framing, the stable F1–F10
+rail, and the approved near-black/blue/amber/lime/cyan/red DarkPro hierarchy.
+All 136 UI tests and the strict visual golden pass.
 
 `UI-LITERAL-HARNESS-001` is `DONE`: the typed reference scene renders through
 an injected clock into a compact symbol/style golden. Normal tests compare all
