@@ -4856,18 +4856,18 @@ notes = "Every environment-backed dialog is projected from workspace_dialog_requ
 id = "COMPAT-UI-ACTIONS-001"
 milestone = "M18"
 title = "Apply capability state to visible workspace actions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-NAV-ACTIONS-001", "COMPAT-UI-WORKSPACE-ACTIONS-001", "COMPAT-UI-DIALOG-ACTIONS-001"]
 verify = ["cargo test -p yoctui-ui compatibility_ui_actions", "cargo test -p yoctui-app compatibility_ui_actions", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
-notes = "Parent gate: useful environment-backed actions in Navigator, command palette, workspace tables, Inspectors, dialogs, and footers are visibly enabled/limited/disabled from one model projection. Exact reasons and maintained alternatives remain discoverable, while local actions remain usable."
+notes = "Parent gate complete: aggregate UI/app acceptance proves Navigator, command palette, workspace/Inspector, footer, and dialog surfaces read one live typed projection; exact limited fallback implementations agree across surfaces, invalidation removes stale authority, denied palette/dialog actions emit no effect, and local actions remain usable. Focused aggregate tests, PTY snapshots, roadmap validation, and warnings-denied workspace Clippy pass."
 
 [[task]]
 id = "COMPAT-UI-001"
 milestone = "M18"
 title = "Expose capability state clearly in the UI"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-MODEL-001", "COMPAT-UI-INSPECTOR-001", "COMPAT-UI-ACTIONS-001"]

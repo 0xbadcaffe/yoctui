@@ -12541,6 +12541,68 @@ mod tests {
     }
 
     #[test]
+    fn compatibility_ui_actions_parent_gate_uses_one_projection_across_surfaces() {
+        let mut app = compatibility_ui_inspector_app();
+        app.screen = Screen::Configuration;
+        app.focus = FocusTarget::Navigator;
+        app.navigator_selection = 9;
+        let navigator = rendered_text(&app, 180, 42);
+        assert!(navigator.contains("Compatibility: Limited"), "{navigator}");
+        assert!(
+            navigator.contains("bitbake.getvar.environment-fallback"),
+            "{navigator}"
+        );
+
+        app.command_palette_open = true;
+        app.focus = FocusTarget::CommandPalette;
+        app.command_palette_query = "Open Configuration".into();
+        let palette = rendered_text(&app, 140, 32);
+        assert!(palette.contains("Compatibility: Limited"), "{palette}");
+        assert!(
+            palette.contains("bitbake.getvar.environment-fallback"),
+            "{palette}"
+        );
+
+        app.command_palette_open = false;
+        app.focus = FocusTarget::Inspector;
+        let workspace = rendered_text(&app, 180, 50);
+        assert!(
+            workspace.contains("Refresh effective variables [r] — Limited"),
+            "{workspace}"
+        );
+        assert!(
+            workspace.contains("bitbake.getvar.environment-fallback"),
+            "{workspace}"
+        );
+
+        app.dialogs.push_front(Dialog::BuildOptions);
+        app.focus = FocusTarget::Dialog;
+        let dialog = rendered_text(&app, 160, 36);
+        assert!(
+            dialog.contains("State: Available · Confirmation available"),
+            "{dialog}"
+        );
+        assert!(dialog.contains("bitbake.build.command"), "{dialog}");
+
+        yoctui_model::invalidate_workspace_compatibility(&mut app);
+        app.dialogs.push_front(Dialog::BuildOptions);
+        app.focus = FocusTarget::Dialog;
+        let invalidated = rendered_text(&app, 160, 36);
+        assert!(
+            invalidated.contains("State: Unknown · Confirmation disabled"),
+            "{invalidated}"
+        );
+        assert!(
+            invalidated.contains("No current environment capability snapshot"),
+            "{invalidated}"
+        );
+        assert!(
+            !invalidated.contains("bitbake.build.command"),
+            "{invalidated}"
+        );
+    }
+
+    #[test]
     fn client_replica_status_renders_without_replacing_local_presentation() {
         let mut app = App::new(32, 8192);
         app.screen = Screen::Layers;

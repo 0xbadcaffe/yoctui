@@ -992,4 +992,8 @@ dialog content. Limited actions remain confirmable, denied confirmations emit
 no effect, and newer snapshot invalidation closes unsafe dialogs with restored
 focus and the exact reason. Local dialogs and owned cancellation remain usable.
 Focused tests, full model/app/UI suites, PTY snapshots, and workspace Clippy
-pass. `COMPAT-UI-ACTIONS-001` is active as the aggregate visible-action gate.
+pass. `COMPAT-UI-ACTIONS-001` is complete. Aggregate UI/app acceptance proves
+all action surfaces consume the same live projection, agree on fallback
+implementations, fail closed after invalidation, and retain local behavior.
+Focused aggregate tests, PTY snapshots, roadmap validation, and workspace
+Clippy pass. `COMPAT-UI-001` is active as the complete UI parent gate.

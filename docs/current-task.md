@@ -2,21 +2,20 @@
 
 ## Task
 
-**ID:** COMPAT-UI-ACTIONS-001
-**Title:** Apply capability state to visible workspace actions
+**ID:** COMPAT-UI-001
+**Title:** Expose capability state clearly in the UI
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Close the aggregate visible-action gate across Navigator, command palette,
-workspace tables, Inspectors, dialogs, and footers.
+Close the complete capability-aware UI acceptance gate, including the typed
+projection, dedicated inspector, and every visible action surface.
 
 ## Dependencies
 
-- `COMPAT-UI-ACTION-CATALOG-001` — DONE
-- `COMPAT-UI-NAV-ACTIONS-001` — DONE
-- `COMPAT-UI-WORKSPACE-ACTIONS-001` — DONE
-- `COMPAT-UI-DIALOG-ACTIONS-001` — DONE
+- `COMPAT-UI-MODEL-001` — DONE
+- `COMPAT-UI-INSPECTOR-001` — DONE
+- `COMPAT-UI-ACTIONS-001` — DONE
 
 ## Relevant files
 
@@ -31,22 +30,21 @@ workspace tables, Inspectors, dialogs, and footers.
 
 ## Definition of done
 
-- Every useful environment-backed action in Navigator, command palette,
-  workspace, Inspector, dialog, and footer surfaces uses one typed projection.
-- All five states, exact reasons, limitations, and selected maintained
-  alternatives remain visible and consistent across those surfaces.
-- Disabled operations cannot prepare dialogs or emit effects; limited actions
-  remain usable through their selected implementation.
-- Client-local navigation, inspection, editors, copy/open, settings, help,
-  quit, and owned-process cancellation remain usable without authority.
-- Live replacement/invalidation updates every surface without stale widget
-  state, local release checks, or a second capability cache.
+- Useful unavailable actions remain discoverable and visibly disabled with an
+  exact authoritative reason or maintained alternative.
+- Available, Limited, Unavailable, Unknown, and Unsupported are distinct in
+  the responsive Environment/Compatibility workspace and action surfaces.
+- Normal workflows avoid release-number clutter and consume only the one
+  daemon-owned authority projection.
+- Snapshot replacement, invalidation, responsive bounds, themes, and no-color
+  mode remain safe without stale widget state or invalid launches.
+- The aggregate UI/app compatibility suites and PTY snapshots pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui compatibility_ui_actions
-cargo test -p yoctui-app compatibility_ui_actions
+cargo test -p yoctui-ui compatibility
+cargo test -p yoctui-app compatibility_ui
 ./scripts/test-tui-snapshots.sh
 ./scripts/verify-roadmap.sh
 ```
