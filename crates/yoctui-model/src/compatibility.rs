@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::BTreeMap,
+    collections::{BTreeMap, BTreeSet},
     path::{Component, Path, PathBuf},
 };
 use thiserror::Error;
@@ -11,6 +11,10 @@ pub const MAX_ENVIRONMENT_SOURCE_ROOTS: usize = 256;
 pub const MAX_ENVIRONMENT_LAYER_SERIES: usize = 256;
 pub const MAX_ENVIRONMENT_TOOLS: usize = 256;
 pub const MAX_LAYER_COMPATIBLE_SERIES: usize = 64;
+pub const MAX_CAPABILITY_RECORDS: usize = 512;
+pub const MAX_CAPABILITY_EVIDENCE: usize = 32;
+pub const MAX_CAPABILITY_LIMITATIONS: usize = 32;
+pub const MAX_CAPABILITY_EVIDENCE_ARGUMENTS: usize = 64;
 
 /// Authoritative origins accepted by the environment identity model.
 ///
@@ -207,6 +211,465 @@ impl YoctoEnvironmentIdentity {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub enum CapabilityId {
+    #[serde(rename = "bitbake.workspace_inspection")]
+    BitBakeWorkspaceInspection,
+    #[serde(rename = "bitbake.recipe_inventory")]
+    BitBakeRecipeInventory,
+    #[serde(rename = "bitbake.layer_inventory")]
+    BitBakeLayerInventory,
+    #[serde(rename = "bitbake.build")]
+    BitBakeBuild,
+    #[serde(rename = "bitbake.cancellation")]
+    BitBakeCancellation,
+    #[serde(rename = "bitbake.task_list")]
+    BitBakeTaskList,
+    #[serde(rename = "bitbake.force_task")]
+    BitBakeForceTask,
+    #[serde(rename = "bitbake.environment_dump")]
+    BitBakeEnvironmentDump,
+    #[serde(rename = "bitbake.graph_generation")]
+    BitBakeGraphGeneration,
+    #[serde(rename = "bitbake.dependency_graph")]
+    BitBakeDependencyGraph,
+    #[serde(rename = "bitbake.getvar")]
+    BitBakeGetVar,
+    #[serde(rename = "bitbake.variable_history")]
+    BitBakeVariableHistory,
+    #[serde(rename = "bitbake.diffsigs")]
+    BitBakeDiffSigs,
+    #[serde(rename = "bitbake.dumpsig")]
+    BitBakeDumpSig,
+    #[serde(rename = "bitbake.server_socket")]
+    BitBakeServerSocket,
+    #[serde(rename = "bitbake.native_events")]
+    BitBakeNativeEvents,
+    #[serde(rename = "devtool.modify")]
+    DevtoolModify,
+    #[serde(rename = "devtool.finish")]
+    DevtoolFinish,
+    #[serde(rename = "devtool.deploy_target")]
+    DevtoolDeployTarget,
+    #[serde(rename = "devtool.upgrade")]
+    DevtoolUpgrade,
+    #[serde(rename = "recipetool.create")]
+    RecipetoolCreate,
+    #[serde(rename = "recipetool.appendfile")]
+    RecipetoolAppendFile,
+    #[serde(rename = "bitbake_layers.show_layers")]
+    BitBakeLayersShowLayers,
+    #[serde(rename = "bitbake_layers.create_layer")]
+    BitBakeLayersCreateLayer,
+    #[serde(rename = "pkgdata.lookup_pkg")]
+    PkgDataLookupPackage,
+    #[serde(rename = "pkgdata.find_path")]
+    PkgDataFindPath,
+    #[serde(rename = "wic.create")]
+    WicCreate,
+    #[serde(rename = "runqemu")]
+    RunQemu,
+    #[serde(rename = "sdk.populate")]
+    SdkPopulate,
+    #[serde(rename = "sdk.extensible")]
+    SdkExtensible,
+    #[serde(rename = "cve.check")]
+    CveCheck,
+    #[serde(rename = "spdx.create")]
+    SpdxCreate,
+    #[serde(rename = "yocto_check_layer")]
+    YoctoCheckLayer,
+    #[serde(rename = "resulttool")]
+    ResultTool,
+    #[serde(rename = "oe_selftest")]
+    OeSelftest,
+    #[serde(rename = "menuconfig")]
+    MenuConfig,
+    #[serde(rename = "devshell")]
+    DevShell,
+    #[serde(rename = "buildhistory")]
+    BuildHistory,
+    #[serde(rename = "locked_signatures")]
+    LockedSignatures,
+    #[serde(rename = "hashserv.diagnostics")]
+    HashservDiagnostics,
+    #[serde(rename = "prserv.diagnostics")]
+    PrservDiagnostics,
+}
+
+impl CapabilityId {
+    pub const ALL: [Self; 41] = [
+        Self::BitBakeWorkspaceInspection,
+        Self::BitBakeRecipeInventory,
+        Self::BitBakeLayerInventory,
+        Self::BitBakeBuild,
+        Self::BitBakeCancellation,
+        Self::BitBakeTaskList,
+        Self::BitBakeForceTask,
+        Self::BitBakeEnvironmentDump,
+        Self::BitBakeGraphGeneration,
+        Self::BitBakeDependencyGraph,
+        Self::BitBakeGetVar,
+        Self::BitBakeVariableHistory,
+        Self::BitBakeDiffSigs,
+        Self::BitBakeDumpSig,
+        Self::BitBakeServerSocket,
+        Self::BitBakeNativeEvents,
+        Self::DevtoolModify,
+        Self::DevtoolFinish,
+        Self::DevtoolDeployTarget,
+        Self::DevtoolUpgrade,
+        Self::RecipetoolCreate,
+        Self::RecipetoolAppendFile,
+        Self::BitBakeLayersShowLayers,
+        Self::BitBakeLayersCreateLayer,
+        Self::PkgDataLookupPackage,
+        Self::PkgDataFindPath,
+        Self::WicCreate,
+        Self::RunQemu,
+        Self::SdkPopulate,
+        Self::SdkExtensible,
+        Self::CveCheck,
+        Self::SpdxCreate,
+        Self::YoctoCheckLayer,
+        Self::ResultTool,
+        Self::OeSelftest,
+        Self::MenuConfig,
+        Self::DevShell,
+        Self::BuildHistory,
+        Self::LockedSignatures,
+        Self::HashservDiagnostics,
+        Self::PrservDiagnostics,
+    ];
+
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::BitBakeWorkspaceInspection => "bitbake.workspace_inspection",
+            Self::BitBakeRecipeInventory => "bitbake.recipe_inventory",
+            Self::BitBakeLayerInventory => "bitbake.layer_inventory",
+            Self::BitBakeBuild => "bitbake.build",
+            Self::BitBakeCancellation => "bitbake.cancellation",
+            Self::BitBakeTaskList => "bitbake.task_list",
+            Self::BitBakeForceTask => "bitbake.force_task",
+            Self::BitBakeEnvironmentDump => "bitbake.environment_dump",
+            Self::BitBakeGraphGeneration => "bitbake.graph_generation",
+            Self::BitBakeDependencyGraph => "bitbake.dependency_graph",
+            Self::BitBakeGetVar => "bitbake.getvar",
+            Self::BitBakeVariableHistory => "bitbake.variable_history",
+            Self::BitBakeDiffSigs => "bitbake.diffsigs",
+            Self::BitBakeDumpSig => "bitbake.dumpsig",
+            Self::BitBakeServerSocket => "bitbake.server_socket",
+            Self::BitBakeNativeEvents => "bitbake.native_events",
+            Self::DevtoolModify => "devtool.modify",
+            Self::DevtoolFinish => "devtool.finish",
+            Self::DevtoolDeployTarget => "devtool.deploy_target",
+            Self::DevtoolUpgrade => "devtool.upgrade",
+            Self::RecipetoolCreate => "recipetool.create",
+            Self::RecipetoolAppendFile => "recipetool.appendfile",
+            Self::BitBakeLayersShowLayers => "bitbake_layers.show_layers",
+            Self::BitBakeLayersCreateLayer => "bitbake_layers.create_layer",
+            Self::PkgDataLookupPackage => "pkgdata.lookup_pkg",
+            Self::PkgDataFindPath => "pkgdata.find_path",
+            Self::WicCreate => "wic.create",
+            Self::RunQemu => "runqemu",
+            Self::SdkPopulate => "sdk.populate",
+            Self::SdkExtensible => "sdk.extensible",
+            Self::CveCheck => "cve.check",
+            Self::SpdxCreate => "spdx.create",
+            Self::YoctoCheckLayer => "yocto_check_layer",
+            Self::ResultTool => "resulttool",
+            Self::OeSelftest => "oe_selftest",
+            Self::MenuConfig => "menuconfig",
+            Self::DevShell => "devshell",
+            Self::BuildHistory => "buildhistory",
+            Self::LockedSignatures => "locked_signatures",
+            Self::HashservDiagnostics => "hashserv.diagnostics",
+            Self::PrservDiagnostics => "prserv.diagnostics",
+        }
+    }
+}
+
+impl std::fmt::Display for CapabilityId {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(self.as_str())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+pub struct CapabilityReasonCode(String);
+
+impl CapabilityReasonCode {
+    pub fn new(value: impl Into<String>) -> Result<Self, CapabilityModelError> {
+        let value = value.into();
+        if !valid_reason_code(&value) {
+            return Err(CapabilityModelError::InvalidReasonCode(value));
+        }
+        Ok(Self(value))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CapabilityReason {
+    pub code: CapabilityReasonCode,
+    pub message: String,
+    pub requirement: Option<String>,
+}
+
+impl CapabilityReason {
+    pub fn new(
+        code: impl Into<String>,
+        message: impl Into<String>,
+        requirement: Option<String>,
+    ) -> Result<Self, CapabilityModelError> {
+        let reason = Self {
+            code: CapabilityReasonCode::new(code)?,
+            message: message.into(),
+            requirement,
+        };
+        reason.validate()?;
+        Ok(reason)
+    }
+
+    fn validate(&self) -> Result<(), CapabilityModelError> {
+        if !valid_reason_code(self.code.as_str())
+            || !valid_text(&self.message)
+            || self
+                .requirement
+                .as_deref()
+                .is_some_and(|value| !valid_text(value))
+        {
+            return Err(CapabilityModelError::InvalidReason);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CapabilityEvidenceKind {
+    DirectProbe,
+    BackendNegotiation,
+    ProtocolNegotiation,
+    Metadata,
+    ExecutableIdentity,
+    ReleaseVersionFallback,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CapabilityEvidenceOutcome {
+    Positive,
+    Negative,
+    Inconclusive,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CapabilityEvidence {
+    pub kind: CapabilityEvidenceKind,
+    pub outcome: CapabilityEvidenceOutcome,
+    pub subject: String,
+    pub detail: String,
+    #[serde(default)]
+    pub argv: Vec<String>,
+}
+
+impl CapabilityEvidence {
+    fn validate(&self) -> Result<(), CapabilityModelError> {
+        if !valid_text(&self.subject)
+            || !valid_text(&self.detail)
+            || self.argv.len() > MAX_CAPABILITY_EVIDENCE_ARGUMENTS
+            || self.argv.iter().any(|argument| !valid_text(argument))
+        {
+            return Err(CapabilityModelError::InvalidEvidence);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "state", rename_all = "snake_case")]
+pub enum CapabilityState {
+    Available,
+    AvailableWithLimitations {
+        reason: CapabilityReason,
+        limitations: Vec<String>,
+    },
+    Unavailable {
+        reason: CapabilityReason,
+    },
+    Unknown {
+        reason: CapabilityReason,
+    },
+    Unsupported {
+        reason: CapabilityReason,
+    },
+}
+
+impl CapabilityState {
+    pub const fn is_enabled(&self) -> bool {
+        matches!(
+            self,
+            Self::Available | Self::AvailableWithLimitations { .. }
+        )
+    }
+
+    pub const fn reason(&self) -> Option<&CapabilityReason> {
+        match self {
+            Self::Available => None,
+            Self::AvailableWithLimitations { reason, .. }
+            | Self::Unavailable { reason }
+            | Self::Unknown { reason }
+            | Self::Unsupported { reason } => Some(reason),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CapabilityRecord {
+    pub id: CapabilityId,
+    pub state: CapabilityState,
+    pub evidence: Vec<CapabilityEvidence>,
+}
+
+impl CapabilityRecord {
+    fn normalize(&mut self) -> Result<(), CapabilityModelError> {
+        if self.evidence.len() > MAX_CAPABILITY_EVIDENCE {
+            return Err(CapabilityModelError::TooMuchEvidence {
+                id: self.id,
+                count: self.evidence.len(),
+            });
+        }
+        if self
+            .evidence
+            .iter()
+            .any(|evidence| evidence.validate().is_err())
+        {
+            return Err(CapabilityModelError::InvalidEvidence);
+        }
+        match &mut self.state {
+            CapabilityState::Available => {
+                require_evidence(self.id, &self.evidence, CapabilityEvidenceOutcome::Positive)?
+            }
+            CapabilityState::AvailableWithLimitations {
+                reason,
+                limitations,
+            } => {
+                reason.validate()?;
+                if limitations.is_empty()
+                    || limitations.len() > MAX_CAPABILITY_LIMITATIONS
+                    || limitations.iter().any(|limitation| !valid_text(limitation))
+                {
+                    return Err(CapabilityModelError::InvalidLimitations(self.id));
+                }
+                limitations.sort();
+                limitations.dedup();
+                require_evidence(self.id, &self.evidence, CapabilityEvidenceOutcome::Positive)?;
+            }
+            CapabilityState::Unavailable { reason } => {
+                reason.validate()?;
+                require_evidence(self.id, &self.evidence, CapabilityEvidenceOutcome::Negative)?;
+            }
+            CapabilityState::Unknown { reason } | CapabilityState::Unsupported { reason } => {
+                reason.validate()?;
+            }
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CapabilitySnapshot {
+    pub generation: u64,
+    pub environment: YoctoEnvironmentIdentity,
+    pub capabilities: Vec<CapabilityRecord>,
+}
+
+impl CapabilitySnapshot {
+    pub fn normalize(mut self) -> Result<Self, CapabilityModelError> {
+        if self.generation == 0 {
+            return Err(CapabilityModelError::InvalidGeneration);
+        }
+        self.environment = self.environment.normalize()?;
+        if self.capabilities.len() > MAX_CAPABILITY_RECORDS {
+            return Err(CapabilityModelError::TooManyCapabilities(
+                self.capabilities.len(),
+            ));
+        }
+        let mut seen = BTreeSet::new();
+        for capability in &mut self.capabilities {
+            if !seen.insert(capability.id) {
+                return Err(CapabilityModelError::DuplicateCapability(capability.id));
+            }
+            capability.normalize()?;
+        }
+        self.capabilities.sort_by_key(|capability| capability.id);
+        Ok(self)
+    }
+
+    pub fn capability(&self, id: CapabilityId) -> Option<&CapabilityRecord> {
+        self.capabilities
+            .binary_search_by_key(&id, |capability| capability.id)
+            .ok()
+            .map(|index| &self.capabilities[index])
+    }
+
+    pub fn allows(&self, id: CapabilityId) -> bool {
+        self.capability(id)
+            .is_some_and(|capability| capability.state.is_enabled())
+    }
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum CapabilityModelError {
+    #[error(transparent)]
+    InvalidEnvironment(#[from] EnvironmentIdentityError),
+    #[error("capability snapshot generation must be non-zero")]
+    InvalidGeneration,
+    #[error("too many capabilities in snapshot: {0}")]
+    TooManyCapabilities(usize),
+    #[error("duplicate capability in snapshot: {0}")]
+    DuplicateCapability(CapabilityId),
+    #[error("invalid capability reason code: {0}")]
+    InvalidReasonCode(String),
+    #[error("invalid capability reason")]
+    InvalidReason,
+    #[error("invalid capability evidence")]
+    InvalidEvidence,
+    #[error("too much evidence for capability {id}: {count}")]
+    TooMuchEvidence { id: CapabilityId, count: usize },
+    #[error("capability {id} lacks required {outcome:?} evidence")]
+    MissingEvidence {
+        id: CapabilityId,
+        outcome: CapabilityEvidenceOutcome,
+    },
+    #[error("invalid limitations for capability {0}")]
+    InvalidLimitations(CapabilityId),
+}
+
+fn require_evidence(
+    id: CapabilityId,
+    evidence: &[CapabilityEvidence],
+    outcome: CapabilityEvidenceOutcome,
+) -> Result<(), CapabilityModelError> {
+    if evidence.iter().any(|item| item.outcome == outcome) {
+        Ok(())
+    } else {
+        Err(CapabilityModelError::MissingEvidence { id, outcome })
+    }
+}
+
+fn valid_reason_code(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value.bytes().all(|byte| {
+            byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'_' || byte == b'.'
+        })
+}
+
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum EnvironmentIdentityError {
     #[error("invalid authoritative environment identity field: {0}")]
@@ -394,6 +857,257 @@ fn valid_absolute_path(path: &Path) -> bool {
         && path
             .components()
             .all(|component| matches!(component, Component::RootDir | Component::Normal(_)))
+}
+
+#[cfg(test)]
+mod capability {
+    use super::*;
+
+    fn environment() -> YoctoEnvironmentIdentity {
+        YoctoEnvironmentIdentity {
+            build_directory: AuthoritativeValue::detected(
+                "/work/build".into(),
+                IdentityAuthority::InitializedEnvironment,
+            ),
+            bitbake_version: AuthoritativeValue::detected(
+                "2.8.1".into(),
+                IdentityAuthority::BitBakeVersionProbe,
+            ),
+            ..YoctoEnvironmentIdentity::default()
+        }
+    }
+
+    fn reason(code: &str) -> CapabilityReason {
+        CapabilityReason::new(code, "Exact environment-correlated reason", None).unwrap()
+    }
+
+    fn evidence(outcome: CapabilityEvidenceOutcome) -> CapabilityEvidence {
+        CapabilityEvidence {
+            kind: CapabilityEvidenceKind::DirectProbe,
+            outcome,
+            subject: "devtool --help".into(),
+            detail: "Bounded help probe inspected the upgrade subcommand".into(),
+            argv: vec!["/work/bin/devtool".into(), "--help".into()],
+        }
+    }
+
+    fn record(id: CapabilityId, state: CapabilityState) -> CapabilityRecord {
+        let outcome = match state {
+            CapabilityState::Available | CapabilityState::AvailableWithLimitations { .. } => {
+                CapabilityEvidenceOutcome::Positive
+            }
+            CapabilityState::Unavailable { .. } => CapabilityEvidenceOutcome::Negative,
+            CapabilityState::Unknown { .. } | CapabilityState::Unsupported { .. } => {
+                CapabilityEvidenceOutcome::Inconclusive
+            }
+        };
+        CapabilityRecord {
+            id,
+            state,
+            evidence: vec![evidence(outcome)],
+        }
+    }
+
+    #[test]
+    fn capability_snapshot_normalizes_all_states_and_supports_fail_closed_lookup() {
+        let snapshot = CapabilitySnapshot {
+            generation: 7,
+            environment: environment(),
+            capabilities: vec![
+                record(
+                    CapabilityId::DevtoolUpgrade,
+                    CapabilityState::Unavailable {
+                        reason: reason("command.missing"),
+                    },
+                ),
+                record(CapabilityId::BitBakeGetVar, CapabilityState::Available),
+                record(
+                    CapabilityId::SpdxCreate,
+                    CapabilityState::AvailableWithLimitations {
+                        reason: reason("fallback.legacy_spdx"),
+                        limitations: vec![
+                            "Legacy SPDX task does not emit the newest schema".into(),
+                        ],
+                    },
+                ),
+                record(
+                    CapabilityId::ResultTool,
+                    CapabilityState::Unknown {
+                        reason: reason("probe.not_run"),
+                    },
+                ),
+                record(
+                    CapabilityId::RecipetoolAppendFile,
+                    CapabilityState::Unsupported {
+                        reason: reason("yoctui.no_safe_implementation"),
+                    },
+                ),
+            ],
+        }
+        .normalize()
+        .unwrap();
+
+        assert_eq!(snapshot.generation, 7);
+        assert!(snapshot.allows(CapabilityId::BitBakeGetVar));
+        assert!(snapshot.allows(CapabilityId::SpdxCreate));
+        assert!(!snapshot.allows(CapabilityId::DevtoolUpgrade));
+        assert!(!snapshot.allows(CapabilityId::ResultTool));
+        assert!(!snapshot.allows(CapabilityId::RecipetoolAppendFile));
+        assert!(!snapshot.allows(CapabilityId::RunQemu));
+        assert_eq!(
+            snapshot
+                .capability(CapabilityId::DevtoolUpgrade)
+                .unwrap()
+                .state
+                .reason()
+                .unwrap()
+                .code
+                .as_str(),
+            "command.missing"
+        );
+        assert!(
+            snapshot
+                .capabilities
+                .windows(2)
+                .all(|pair| pair[0].id < pair[1].id)
+        );
+    }
+
+    #[test]
+    fn capability_inventory_is_unique_behavior_oriented_and_complete() {
+        let ids = CapabilityId::ALL
+            .into_iter()
+            .map(CapabilityId::as_str)
+            .collect::<BTreeSet<_>>();
+        assert_eq!(ids.len(), CapabilityId::ALL.len());
+        assert!(ids.contains("bitbake.force_task"));
+        assert!(ids.contains("devtool.upgrade"));
+        assert!(ids.contains("recipetool.appendfile"));
+        assert!(ids.contains("pkgdata.find_path"));
+        assert!(ids.contains("hashserv.diagnostics"));
+        assert!(ids.iter().all(|id| !id.chars().any(char::is_whitespace)));
+        assert!(
+            ids.iter()
+                .all(|id| !id.chars().any(|ch| ch.is_ascii_digit()))
+        );
+    }
+
+    #[test]
+    fn capability_snapshot_rejects_duplicates_and_wrong_evidence_polarity() {
+        let duplicate = record(CapabilityId::WicCreate, CapabilityState::Available);
+        let error = CapabilitySnapshot {
+            generation: 1,
+            environment: environment(),
+            capabilities: vec![duplicate.clone(), duplicate],
+        }
+        .normalize()
+        .unwrap_err();
+        assert_eq!(
+            error,
+            CapabilityModelError::DuplicateCapability(CapabilityId::WicCreate)
+        );
+
+        let error = CapabilitySnapshot {
+            generation: 1,
+            environment: environment(),
+            capabilities: vec![CapabilityRecord {
+                id: CapabilityId::DevtoolUpgrade,
+                state: CapabilityState::Unavailable {
+                    reason: reason("command.missing"),
+                },
+                evidence: vec![evidence(CapabilityEvidenceOutcome::Positive)],
+            }],
+        }
+        .normalize()
+        .unwrap_err();
+        assert_eq!(
+            error,
+            CapabilityModelError::MissingEvidence {
+                id: CapabilityId::DevtoolUpgrade,
+                outcome: CapabilityEvidenceOutcome::Negative,
+            }
+        );
+    }
+
+    #[test]
+    fn capability_snapshot_rejects_invalid_generation_reason_evidence_and_limitations() {
+        let error = CapabilitySnapshot {
+            generation: 0,
+            environment: environment(),
+            capabilities: Vec::new(),
+        }
+        .normalize()
+        .unwrap_err();
+        assert_eq!(error, CapabilityModelError::InvalidGeneration);
+
+        assert!(CapabilityReasonCode::new("Command Missing").is_err());
+        assert!(CapabilityReason::new("command.missing", "bad\nreason", None).is_err());
+
+        let mut bad_evidence = evidence(CapabilityEvidenceOutcome::Positive);
+        bad_evidence.argv = vec!["x".repeat(MAX_ENVIRONMENT_IDENTITY_TEXT_BYTES + 1)];
+        let error = CapabilitySnapshot {
+            generation: 1,
+            environment: environment(),
+            capabilities: vec![CapabilityRecord {
+                id: CapabilityId::BitBakeBuild,
+                state: CapabilityState::Available,
+                evidence: vec![bad_evidence],
+            }],
+        }
+        .normalize()
+        .unwrap_err();
+        assert_eq!(error, CapabilityModelError::InvalidEvidence);
+
+        let error = CapabilitySnapshot {
+            generation: 1,
+            environment: environment(),
+            capabilities: vec![record(
+                CapabilityId::SpdxCreate,
+                CapabilityState::AvailableWithLimitations {
+                    reason: reason("fallback.legacy_spdx"),
+                    limitations: Vec::new(),
+                },
+            )],
+        }
+        .normalize()
+        .unwrap_err();
+        assert_eq!(
+            error,
+            CapabilityModelError::InvalidLimitations(CapabilityId::SpdxCreate)
+        );
+    }
+
+    #[test]
+    fn capability_snapshot_keeps_exact_environment_association() {
+        let first = CapabilitySnapshot {
+            generation: 1,
+            environment: environment(),
+            capabilities: Vec::new(),
+        }
+        .normalize()
+        .unwrap();
+        let mut other_environment = environment();
+        other_environment.build_directory = AuthoritativeValue::detected(
+            "/other/build".into(),
+            IdentityAuthority::InitializedEnvironment,
+        );
+        let second = CapabilitySnapshot {
+            generation: 2,
+            environment: other_environment,
+            capabilities: Vec::new(),
+        }
+        .normalize()
+        .unwrap();
+        assert_ne!(first.environment, second.environment);
+        assert_eq!(
+            first.environment.build_directory.value(),
+            Some(&PathBuf::from("/work/build"))
+        );
+        assert_eq!(
+            second.environment.build_directory.value(),
+            Some(&PathBuf::from("/other/build"))
+        );
+    }
 }
 
 #[cfg(test)]

@@ -2,43 +2,44 @@
 
 ## Task
 
-**ID:** COMPAT-CAP-MODEL-001
-**Title:** Create centralized typed capability model
+**ID:** COMPAT-CATALOG-001
+**Title:** Create versioned capability catalog
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Create the pure, bounded, behavior-oriented capability domain model that will
-become the single availability source for catalog evaluation, daemon state,
-protocol snapshots, actions, and rendering.
+Create one authoritative typed and testable catalog that maps every initial
+Yoctui behavior capability to its requirements, safe probes, preferred and
+fallback implementations, known release boundaries, and UI reason.
 
 ## Dependencies
 
-- `COMPAT-ENV-ID-001` — DONE
+- `COMPAT-CAP-MODEL-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/compatibility.rs`
-- `crates/yoctui-model/src/lib.rs`
+- `docs/compatibility.md`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Stable typed capability IDs represent behavior, not release versions.
-- States are Available, AvailableWithLimitations, Unavailable, Unknown, and
-  Unsupported with bounded reason codes/text and typed evidence.
-- A normalized snapshot is tied to an exact environment identity and monotonic
-  generation, rejects duplicates/invalid evidence, and supports lookup.
-- The required initial capability inventory is centralized outside renderers.
-- Tests cover all states, reason/evidence bounds, duplicates, ordering,
-  environment association, and unknown-safe action decisions.
+- The catalog is versioned, immutable, data-driven, and contains exactly one
+  entry for every `CapabilityId`.
+- Entries type required tools, commands/subcommands/options, metadata/API
+  requirements, direct probes, preferred/fallback implementations, advisory
+  release boundaries, and exact default unavailable reason.
+- Catalog validation rejects duplicate/missing IDs, invalid requirements,
+  unsafe probes, and a fallback without an explicit selector/evidence rule.
+- Rendering code has no capability inventory or release table.
+- Focused catalog completeness and validation tests pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model compatibility::capability
+cargo test -p yoctui-model compatibility::catalog
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

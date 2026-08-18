@@ -762,3 +762,12 @@ initialized-environment tools, backend, and protocol. Normalization rejects
 wrong authority, unsafe paths/text, oversized or empty detected inventories,
 and conflicting duplicate tools/layers; six tests include partial, invalid,
 duplicate, and mixed-series environments. `COMPAT-CAP-MODEL-001` is active.
+
+`COMPAT-CAP-MODEL-001` is complete. The centralized model defines 41 stable
+behavior IDs with no release-number identity, all five required availability
+states, bounded typed reason/evidence records (including evidence polarity and
+shell-free argv), and a normalized non-zero-generation snapshot tied to an
+exact environment. Available/limited and unavailable states require positive
+and negative evidence respectively; absent and uncertain records fail closed.
+Five focused model tests and warnings-denied Clippy pass.
+`COMPAT-CATALOG-001` is active.

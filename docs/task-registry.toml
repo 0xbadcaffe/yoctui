@@ -4570,18 +4570,18 @@ notes = "Added the pure serializable YoctoEnvironmentIdentity boundary with inde
 id = "COMPAT-CAP-MODEL-001"
 milestone = "M18"
 title = "Create centralized typed capability model"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 487
 required = true
 depends_on = ["COMPAT-ENV-ID-001"]
 verify = ["cargo test -p yoctui-model compatibility::capability", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Add bounded behavior-oriented capability IDs and Available, AvailableWithLimitations, Unavailable, Unknown, and Unsupported states with typed reasons and evidence."
+notes = "Added 41 stable behavior-oriented CapabilityId values, five distinct availability states, validated reason code/message/requirement, typed probe/negotiation/metadata/executable/fallback evidence with polarity and bounded argv, and a generation/environment-bound normalized CapabilitySnapshot. Snapshot lookup fails closed, duplicate IDs and evidence polarity errors are rejected, and five focused tests plus model Clippy pass."
 
 [[task]]
 id = "COMPAT-CATALOG-001"
 milestone = "M18"
 title = "Create versioned capability catalog"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 488
 required = true
 depends_on = ["COMPAT-CAP-MODEL-001"]

@@ -2081,6 +2081,17 @@ legacy `Workspace` release/version fields remain transport inputs during M18
 and must be mapped through this boundary before they can influence capability
 state.
 
+The same module owns the central behavior vocabulary. `CapabilityId` is a
+closed initial inventory with stable wire names such as `bitbake.getvar` and
+`devtool.upgrade`; it contains no release numbers. `CapabilityState` preserves
+Available, AvailableWithLimitations, Unavailable, Unknown, and Unsupported as
+distinct states. Non-available states carry a validated reason code/message,
+and records retain typed positive, negative, or inconclusive evidence with its
+source and bounded argv. A normalized `CapabilitySnapshot` binds unique sorted
+records to one normalized environment and non-zero generation. Available and
+limited records require positive evidence, unavailable records require negative
+evidence, and absent/Unknown/Unsupported records fail closed for action checks.
+
 Commands use this flow:
 
 ```text
