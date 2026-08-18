@@ -15,6 +15,7 @@ require() {
 
 # Product completeness comes first. Quality checks cannot substitute for missing features.
 ./scripts/verify-product-complete.sh
+./scripts/verify-compatibility.sh
 
 require cargo llvm-cov --version
 require cargo audit --version

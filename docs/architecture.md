@@ -2025,6 +2025,69 @@ Standalone policy: daemon attach is preferred, but a client may remain in
 single-process local mode when the daemon is unavailable. The UI reports that
 degraded mode explicitly; daemon-owned jobs are not claimed to survive through
 that local fallback.
+
+## Yocto-feature-correlated capability architecture
+
+The installed Yoctui version defines the workflows Yoctui knows how to
+perform. The selected build environment defines which of those workflows are
+currently available. This is the product invariant named **Yoctui
+functionality is Yocto-feature-correlated**.
+
+Release policy is centralized and must not appear as ad hoc version checks in
+renderers, workspaces, or command launchers. The required data flow is:
+
+```text
+connected build environment
+        ↓
+authoritative environment identification
+        ↓
+bounded, non-mutating capability probes
+        ↓
+central release/version fallback map (only when probing is impossible)
+        ↓
+typed CapabilitySnapshot with generation, reasons, and evidence
+        ↓
+daemon-owned workspace state
+        ↓
+bounded typed client protocol
+        ↓
+model/action availability and implementation selection
+        ↓
+workspace rendering
+```
+
+The daemon is the sole runtime owner of environment identity and capability
+state. Clients may render and enforce the snapshot, but must not infer support
+independently. Snapshot cache keys include the exact selected workspace, build
+directory, BitBake identity, initialized environment, and layer configuration.
+A change to any key invalidates the snapshot and advances its generation;
+clients ignore stale updates.
+
+Capabilities describe behavior rather than release labels. Every entry has a
+stable typed ID, availability state, exact reason code, bounded human reason,
+and evidence. Direct positive probes override conservative fallback inference
+where safe. An unknown future release is not rejected merely because its label
+is unfamiliar, but uncertain historical behavior is never assumed.
+
+Commands use this flow:
+
+```text
+typed user action
+      ↓
+required CapabilityId
+      ↓
+state and evidence from the current snapshot
+      ↓
+catalog-selected preferred or fallback implementation
+      ↓
+validated shell-free typed argv
+      ↓
+existing job/process infrastructure
+```
+
+Unavailable actions are rejected before process construction. Backend adapters
+remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
+consume only typed state and never parse probe output or apply version policy.
 The wire snapshot carries bounded attached-client identities while focus/layout
 remains client-local. The foreground daemon services each Unix socket in
 bounded read slices, so an idle attached client cannot block new handshakes or

@@ -3110,3 +3110,31 @@ and terminal state remain visible while the client detaches or reconnects.
 
 Test-result comparisons submitted while attached use daemon-retained result
 generations and report stale-generation failures explicitly.
+
+## Environment-correlated feature availability
+
+The UI is generated from the daemon-owned capability snapshot for the selected
+build environment. The installed Yoctui binary knowing a workflow does not make
+that workflow available.
+
+Useful unavailable actions remain visible and disabled for discoverability.
+Their Inspector/help text states the exact detected reason, for example:
+
+```text
+Devtool upgrade
+Unavailable
+Current Devtool does not expose the upgrade subcommand.
+```
+
+Available-with-limitations actions explain the selected fallback or missing
+portion before confirmation. Unknown probe results are visibly distinct from
+known unsupported behavior. Ordinary workspaces avoid release-number clutter;
+a dedicated Environment/Compatibility inspector shows authoritative identity,
+snapshot generation, support classification, evidence, missing tools, limited
+features, unsupported features, and unknown probes.
+
+Capability updates may arrive while the UI is running. The model revalidates
+the current selection and any open dialog against the new generation. A dialog
+whose action is no longer safe closes or becomes non-confirmable with the new
+reason. Stale generations are ignored, and no capability transition may launch
+an invalid command or panic at any terminal size.

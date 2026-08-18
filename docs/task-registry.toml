@@ -4542,3 +4542,345 @@ required = true
 depends_on = ["UI-LITERAL-001"]
 verify = ["cargo test -p yoctui-ui wide_reference_rail", "cargo test -p yoctui-ui literal_reference_cell_and_style_golden", "./scripts/test-tui-snapshots.sh", "YOCTUI_LIVE_BINARY=$HOME/.cargo/bin/yoctui ./scripts/test-live-workbench.sh $HOME/src/poky/build", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "The stable F1-F10 navigation rail now renders on every screen at the existing 130-column wide breakpoint; compact layouts retain contextual actions and the exact canonical 160x48 golden is unchanged. Dashboard and Tasks pass all-label checks at 130, 160, 180, and 200 columns. All 140 UI tests, the full workspace, Clippy with warnings denied, 39 bridge tests, PTY snapshots, docs, and roadmap pass. The installed release is byte-identical to target/release/yoctui at SHA-256 c55c2d7339f4cf8ce0498c0bc6c9f20a44993375fa5a45bb86d066d04fbe4924 and passes the live 1,829-recipe Poky gate."
+
+# M18 — Yocto release capability compatibility
+[[task]]
+id = "COMPAT-SPEC-001"
+milestone = "M18"
+title = "Specify Yocto-feature-correlated functionality"
+status = "IN_PROGRESS"
+priority = 485
+required = true
+depends_on = ["UI-WIDE-RAIL-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-compatibility.sh --structure-only", "./scripts/verify-roadmap.sh"]
+notes = "Define authoritative environment identity, capability evidence, support policy, release families, degradation, alternatives, future/unknown behavior, and evidence requirements before implementation."
+
+[[task]]
+id = "COMPAT-ENV-ID-001"
+milestone = "M18"
+title = "Add typed Yocto environment identity"
+status = "NOT_STARTED"
+priority = 486
+required = true
+depends_on = ["COMPAT-SPEC-001"]
+verify = ["cargo test -p yoctui-model compatibility::environment_identity", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Represent only authoritative BitBake, OE-Core/Poky, distro, machine, layer-series, build/source/tooling, and backend/protocol observations; Unknown remains explicit."
+
+[[task]]
+id = "COMPAT-CAP-MODEL-001"
+milestone = "M18"
+title = "Create centralized typed capability model"
+status = "NOT_STARTED"
+priority = 487
+required = true
+depends_on = ["COMPAT-ENV-ID-001"]
+verify = ["cargo test -p yoctui-model compatibility::capability", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Add bounded behavior-oriented capability IDs and Available, AvailableWithLimitations, Unavailable, Unknown, and Unsupported states with typed reasons and evidence."
+
+[[task]]
+id = "COMPAT-CATALOG-001"
+milestone = "M18"
+title = "Create versioned capability catalog"
+status = "NOT_STARTED"
+priority = 488
+required = true
+depends_on = ["COMPAT-CAP-MODEL-001"]
+verify = ["cargo test -p yoctui-model compatibility::catalog", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Create one typed, testable catalog of feature requirements, probes, preferred/fallback implementations, release boundaries, and UI reasons."
+
+[[task]]
+id = "COMPAT-PROBE-001"
+milestone = "M18"
+title = "Implement safe capability probing"
+status = "NOT_STARTED"
+priority = 489
+required = true
+depends_on = ["COMPAT-CATALOG-001"]
+verify = ["cargo test -p yoctui-bitbake compatibility_probe", "cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Use non-mutating shell-free probes with deadlines, bounded output, explicit partial/unknown failures, caching hooks, and environment correlation."
+
+[[task]]
+id = "COMPAT-VERSION-001"
+milestone = "M18"
+title = "Add release and version fallback mapping"
+status = "NOT_STARTED"
+priority = 490
+required = true
+depends_on = ["COMPAT-PROBE-001"]
+verify = ["cargo test -p yoctui-bitbake compatibility_version", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Centralize documented fallback inference only where direct probing is impossible; positive safe probes override inference and unknown future versions remain conservative."
+
+[[task]]
+id = "COMPAT-UNKNOWN-001"
+milestone = "M18"
+title = "Handle future Yocto releases conservatively"
+status = "NOT_STARTED"
+priority = 491
+required = true
+depends_on = ["COMPAT-VERSION-001"]
+verify = ["cargo test -p yoctui-bitbake compatibility_future_unknown", "cargo test -p yoctui-model compatibility_future_unknown", "./scripts/verify-roadmap.sh"]
+notes = "Unknown release labels never reject an environment; only positively evidenced capabilities enable, while uncertain behavior stays Unknown or Unavailable."
+
+[[task]]
+id = "COMPAT-OLD-001"
+milestone = "M18"
+title = "Define older-release degradation policy"
+status = "NOT_STARTED"
+priority = 492
+required = true
+depends_on = ["COMPAT-VERSION-001"]
+verify = ["cargo test -p yoctui-model compatibility_older_release", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Preserve safe older-release workflows, select maintained fallbacks, disable only incompatible actions with reasons, and never fail the whole application for one absent workflow."
+
+[[task]]
+id = "COMPAT-CACHE-001"
+milestone = "M18"
+title = "Cache and invalidate capability snapshots safely"
+status = "NOT_STARTED"
+priority = 493
+required = true
+depends_on = ["COMPAT-PROBE-001", "COMPAT-ENV-ID-001"]
+verify = ["cargo test -p yoctui-model compatibility_cache", "cargo test -p yoctui-bitbake compatibility_cache", "./scripts/verify-roadmap.sh"]
+notes = "Bind snapshots to exact workspace/build/BitBake/layer/environment identities and invalidate on every relevant environment or daemon-workspace transition."
+
+[[task]]
+id = "COMPAT-PROTOCOL-001"
+milestone = "M18"
+title = "Add capability snapshot to client and daemon protocol"
+status = "NOT_STARTED"
+priority = 494
+required = true
+depends_on = ["COMPAT-CAP-MODEL-001", "COMPAT-ENV-ID-001"]
+verify = ["cargo test -p yoctui-protocol compatibility", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Add bounded environment identity, capability state/reason/evidence, generation, and update messages with stale-update protection."
+
+[[task]]
+id = "COMPAT-DAEMON-001"
+milestone = "M18"
+title = "Move compatibility state into daemon ownership"
+status = "NOT_STARTED"
+priority = 495
+required = true
+depends_on = ["COMPAT-CACHE-001", "COMPAT-PROTOCOL-001", "COMPAT-VERSION-001"]
+verify = ["cargo test -p yoctui daemon_compatibility", "cargo test -p yoctui-model daemon_compatibility", "./scripts/verify-roadmap.sh"]
+notes = "The daemon probes and owns one versioned snapshot per selected environment; every client receives the same snapshot and never infers release support independently."
+
+[[task]]
+id = "COMPAT-BITBAKE-CMD-001"
+milestone = "M18"
+title = "Make BitBake command construction capability-aware"
+status = "NOT_STARTED"
+priority = 496
+required = true
+depends_on = ["COMPAT-DAEMON-001", "COMPAT-VERSION-001"]
+verify = ["cargo test -p yoctui-bitbake compatibility_command", "cargo clippy -p yoctui-bitbake --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Audit every BitBake invocation, select only capability-authorized argv or maintained fallbacks, and reject unsupported actions before process spawn."
+
+[[task]]
+id = "COMPAT-BITBAKE-API-001"
+milestone = "M18"
+title = "Make BitBake backend and API behavior capability-aware"
+status = "NOT_STARTED"
+priority = 497
+required = true
+depends_on = ["COMPAT-DAEMON-001", "COMPAT-VERSION-001"]
+verify = ["cargo test -p yoctui-bitbake compatibility_api", "python3 -m pytest bridge/tests -k compatibility", "./scripts/verify-roadmap.sh"]
+notes = "Provide capability adapters for Tinfoil, socket/server, native events, metadata, dependency graphs, runqueue events, cancellation, reconnect, signatures, and variables."
+
+[[task]]
+id = "COMPAT-DEVTOOL-001"
+milestone = "M18"
+title = "Make Devtool workflows capability-aware"
+status = "NOT_STARTED"
+priority = 498
+required = true
+depends_on = ["COMPAT-BITBAKE-CMD-001"]
+verify = ["cargo test -p yoctui-bitbake compatibility_devtool", "cargo test -p yoctui-app compatibility_devtool", "./scripts/verify-roadmap.sh"]
+notes = "Probe Devtool subcommands/options and derive every Devtool action, implementation, and exact unavailable reason from the shared snapshot."
+
+[[task]]
+id = "COMPAT-RECIPETOOL-001"
+milestone = "M18"
+title = "Make Recipetool workflows capability-aware"
+status = "NOT_STARTED"
+priority = 499
+required = true
+depends_on = ["COMPAT-BITBAKE-CMD-001"]
+verify = ["cargo test -p yoctui-bitbake compatibility_recipetool", "cargo test -p yoctui-app compatibility_recipetool", "./scripts/verify-roadmap.sh"]
+notes = "Probe Recipetool subcommands/options and gate typed workflow actions through the shared snapshot."
+
+[[task]]
+id = "COMPAT-LAYERS-001"
+milestone = "M18"
+title = "Make bitbake-layers workflows capability-aware"
+status = "NOT_STARTED"
+priority = 500
+required = true
+depends_on = ["COMPAT-BITBAKE-CMD-001", "COMPAT-BITBAKE-API-001"]
+verify = ["cargo test -p yoctui-bitbake compatibility_layers", "cargo test -p yoctui-app compatibility_layers", "./scripts/verify-roadmap.sh"]
+notes = "Probe subcommands and option variants, distinguish mutation support, and route Layer actions only through compatible implementations."
+
+[[task]]
+id = "COMPAT-PKGDATA-001"
+milestone = "M18"
+title = "Make oe-pkgdata-util capability-aware"
+status = "NOT_STARTED"
+priority = 501
+required = true
+depends_on = ["COMPAT-BITBAKE-CMD-001"]
+verify = ["cargo test -p yoctui-bitbake compatibility_pkgdata", "cargo test -p yoctui-app compatibility_pkgdata", "./scripts/verify-roadmap.sh"]
+notes = "Detect tool, command, and generated pkgdata independently and preserve distinct unavailable, missing-command, not-generated, and no-result outcomes."
+
+[[task]]
+id = "COMPAT-UTILITIES-001"
+milestone = "M18"
+title = "Correlate every Yocto utility to environment capabilities"
+status = "NOT_STARTED"
+priority = 502
+required = true
+depends_on = ["COMPAT-BITBAKE-CMD-001", "COMPAT-BITBAKE-API-001", "COMPAT-DEVTOOL-001", "COMPAT-RECIPETOOL-001", "COMPAT-LAYERS-001", "COMPAT-PKGDATA-001"]
+verify = ["cargo test -p yoctui-bitbake compatibility_utilities", "cargo test -p yoctui-model compatibility_utilities", "./scripts/verify-roadmap.sh"]
+notes = "Audit the complete utility workbench; host PATH alone never proves compatibility with the selected build environment."
+
+[[task]]
+id = "COMPAT-WORKSPACE-001"
+milestone = "M18"
+title = "Apply capabilities to all workspaces"
+status = "NOT_STARTED"
+priority = 503
+required = true
+depends_on = ["COMPAT-UTILITIES-001"]
+verify = ["cargo test -p yoctui-app compatibility_workspace", "cargo test -p yoctui-model compatibility_workspace", "./scripts/verify-roadmap.sh"]
+notes = "Audit every Navigator destination and action so one centralized snapshot controls availability, implementation selection, and rejection before effects."
+
+[[task]]
+id = "COMPAT-UI-001"
+milestone = "M18"
+title = "Expose capability state clearly in the UI"
+status = "NOT_STARTED"
+priority = 504
+required = true
+depends_on = ["COMPAT-WORKSPACE-001", "COMPAT-PROTOCOL-001"]
+verify = ["cargo test -p yoctui-ui compatibility", "cargo test -p yoctui-app compatibility_ui", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
+notes = "Keep useful unavailable actions visible but disabled, show exact reasons and maintained alternatives, and add a bounded Environment/Compatibility inspector without normal-workflow version clutter."
+
+[[task]]
+id = "COMPAT-DOCTOR-001"
+milestone = "M18"
+title = "Add compatibility report to Doctor diagnostics"
+status = "NOT_STARTED"
+priority = 505
+required = true
+depends_on = ["COMPAT-UI-001", "COMPAT-DAEMON-001"]
+verify = ["cargo test -p yoctui doctor_compatibility", "cargo test -p yoctui-protocol compatibility", "./scripts/verify-roadmap.sh"]
+notes = "Report detected identity, protocol/backend, capability summary, missing tools, limited/unsupported/unknown features, support classification, and bounded machine-readable output."
+
+[[task]]
+id = "COMPAT-MATRIX-001"
+milestone = "M18"
+title = "Define supported Yocto release matrix"
+status = "NOT_STARTED"
+priority = 506
+required = true
+depends_on = ["COMPAT-SPEC-001", "COMPAT-OLD-001", "COMPAT-UNKNOWN-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-compatibility.sh --structure-only", "./scripts/verify-roadmap.sh"]
+notes = "Maintain claimed-supported, tested, partially-tested, expected-compatible, unsupported, and unknown classifications without promoting fixtures to live claims."
+
+[[task]]
+id = "COMPAT-TEST-FIXTURES-001"
+milestone = "M18"
+title = "Add release capability fixtures"
+status = "NOT_STARTED"
+priority = 507
+required = true
+depends_on = ["COMPAT-UNKNOWN-001", "COMPAT-OLD-001", "COMPAT-CATALOG-001"]
+verify = ["cargo test --workspace --all-features compatibility_fixture", "./scripts/verify-roadmap.sh"]
+notes = "Add deterministic oldest, intermediate, current stable, latest supported, and synthetic future/unknown environments with exact capability differences."
+
+[[task]]
+id = "COMPAT-TEST-CMDS-001"
+milestone = "M18"
+title = "Test version-correlated command generation"
+status = "NOT_STARTED"
+priority = 508
+required = true
+depends_on = ["COMPAT-TEST-FIXTURES-001", "COMPAT-BITBAKE-CMD-001", "COMPAT-DEVTOOL-001", "COMPAT-RECIPETOOL-001", "COMPAT-LAYERS-001", "COMPAT-PKGDATA-001"]
+verify = ["cargo test --workspace --all-features compatibility_command", "./scripts/verify-roadmap.sh"]
+notes = "Every varying command must emit old/new compatible argv, never emit an unsupported option, and reject unavailable actions before spawn."
+
+[[task]]
+id = "COMPAT-TEST-UI-001"
+milestone = "M18"
+title = "Test dynamic feature loading and unloading"
+status = "NOT_STARTED"
+priority = 509
+required = true
+depends_on = ["COMPAT-TEST-FIXTURES-001", "COMPAT-UI-001"]
+verify = ["cargo test -p yoctui-model compatibility_dynamic", "cargo test -p yoctui-app compatibility_dynamic", "cargo test -p yoctui-ui compatibility_dynamic", "./scripts/verify-roadmap.sh"]
+notes = "Hot snapshot changes must safely revalidate actions/selections/dialogs, ignore stale generations, update reasons, avoid panic, and prevent invalid launches."
+
+[[task]]
+id = "COMPAT-LIVE-LATEST-001"
+milestone = "M18"
+title = "Validate latest supported Yocto stable release"
+status = "NOT_STARTED"
+priority = 510
+required = true
+depends_on = ["COMPAT-DOCTOR-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-MATRIX-001"]
+verify = ["./scripts/verify-live-compatibility.sh latest", "./scripts/verify-roadmap.sh"]
+notes = "Fresh official Poky evidence must record exact release/commit/BitBake and validate identity, probes, workspace, build/events, Recipes, Layers, Configuration, Devtool, utilities, and modern commands."
+
+[[task]]
+id = "COMPAT-LIVE-OLDER-001"
+milestone = "M18"
+title = "Validate an older supported Yocto release"
+status = "NOT_STARTED"
+priority = 511
+required = true
+depends_on = ["COMPAT-DOCTOR-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-MATRIX-001"]
+verify = ["./scripts/verify-live-compatibility.sh older", "./scripts/verify-roadmap.sh"]
+notes = "Use a materially different official older release and prove startup, identity, preserved core workflows, disabled newer features/reasons, and absence of unsupported argv."
+
+[[task]]
+id = "COMPAT-LIVE-MATRIX-001"
+milestone = "M18"
+title = "Add multi-release live compatibility validation"
+status = "NOT_STARTED"
+priority = 512
+required = true
+depends_on = ["COMPAT-LIVE-LATEST-001", "COMPAT-LIVE-OLDER-001"]
+verify = ["./scripts/test-compatibility-matrix.sh", "./scripts/verify-live-compatibility.sh --evidence-only", "./scripts/verify-roadmap.sh"]
+notes = "Provide opt-in/scheduled official representative maintained-release validation selected from current authoritative Yocto documentation."
+
+[[task]]
+id = "COMPAT-CI-001"
+milestone = "M18"
+title = "Integrate compatibility tests into CI"
+status = "NOT_STARTED"
+priority = 513
+required = true
+depends_on = ["COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-LIVE-MATRIX-001"]
+verify = ["./scripts/check-ci.sh", "./scripts/test-release-compatibility.sh", "./scripts/verify-roadmap.sh"]
+notes = "Fast CI runs deterministic capability/probe/argv/UI/future tests; scheduled or opt-in CI runs fresh Poky clones and uploads diagnostics on failure."
+
+[[task]]
+id = "COMPAT-DOC-001"
+milestone = "M18"
+title = "Document dynamic release correlation"
+status = "NOT_STARTED"
+priority = 514
+required = true
+depends_on = ["COMPAT-DOCTOR-001", "COMPAT-MATRIX-001", "COMPAT-LIVE-MATRIX-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-compatibility.sh --structure-only", "./scripts/verify-roadmap.sh"]
+notes = "Explain that one Yoctui binary follows connected-environment capabilities, including older/newer examples, fallbacks, unavailable Devtool, unknown future releases, diagnostics, and policy."
+
+[[task]]
+id = "COMPAT-001"
+milestone = "M18"
+title = "Complete Yocto release correlated functionality"
+status = "NOT_STARTED"
+priority = 515
+required = true
+depends_on = ["COMPAT-SPEC-001", "COMPAT-ENV-ID-001", "COMPAT-CAP-MODEL-001", "COMPAT-CATALOG-001", "COMPAT-PROBE-001", "COMPAT-VERSION-001", "COMPAT-BITBAKE-CMD-001", "COMPAT-BITBAKE-API-001", "COMPAT-DEVTOOL-001", "COMPAT-RECIPETOOL-001", "COMPAT-LAYERS-001", "COMPAT-PKGDATA-001", "COMPAT-UTILITIES-001", "COMPAT-WORKSPACE-001", "COMPAT-UI-001", "COMPAT-DOCTOR-001", "COMPAT-CACHE-001", "COMPAT-DAEMON-001", "COMPAT-PROTOCOL-001", "COMPAT-UNKNOWN-001", "COMPAT-OLD-001", "COMPAT-MATRIX-001", "COMPAT-TEST-FIXTURES-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-LIVE-LATEST-001", "COMPAT-LIVE-OLDER-001", "COMPAT-LIVE-MATRIX-001", "COMPAT-CI-001", "COMPAT-DOC-001"]
+verify = ["./scripts/verify-compatibility.sh", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
+notes = "Parent gate requires one binary to adapt dynamically through a centralized daemon-owned typed capability snapshot, safe fallbacks, exact UI reasons, deterministic tests, and current live latest-plus-older evidence."

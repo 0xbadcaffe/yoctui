@@ -2,46 +2,42 @@
 
 ## Task
 
-**ID:** FINAL-GATE-PERF-001
-**Title:** Rerun the terminal gate with perf sampling enabled
-**Status:** BLOCKED
+**ID:** COMPAT-SPEC-001
+**Title:** Specify Yocto-feature-correlated functionality
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Complete the final host-level verification with real perf sampling enabled.
-All product, responsive-command-rail, and preceding terminal-gate stages pass;
-only the Flamegraph sampling policy blocks repository completion.
+Define the complete compatibility contract for dynamically enabling,
+disabling, adapting, or replacing functionality according to authoritative
+evidence from the connected Yocto/OpenEmbedded/BitBake environment.
 
 ## Dependencies
 
-- `CRATESIO-COVERAGE-001` — DONE
-- `UI-STARTUP-DIAG-001` — DONE
+- `UI-WIDE-RAIL-001` — DONE
 
 ## Relevant files
 
-- `/proc/sys/kernel/perf_event_paranoid`
-- `scripts/flamegraph.sh`
-- `scripts/verify-completion.sh`
+- `docs/compatibility.md`
+- `docs/compatibility-matrix.md`
+- `docs/ui-spec.md`
+- `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- `perf record -- true` succeeds for the current user.
-- A fresh real headless-workload Flamegraph is generated.
-- The terminal completion gate passes without skipped required stages.
-
-## Blocker evidence
-
-- Current host value: `kernel.perf_event_paranoid=4`.
-- `scripts/flamegraph.sh` reports that perf sampling is unavailable.
-- The operator must temporarily grant `CAP_PERFMON` or lower the kernel policy.
-- After changing policy, rerun the verification commands below.
+- Authoritative environment identity and explicit Unknown semantics are defined.
+- Capability detection versus fallback inference and precedence are defined.
+- Supported/minimum/latest/future/unsupported/degraded release policy is defined.
+- Availability states, version-specific alternatives, and evidence rules are defined.
+- UI, daemon, protocol, cache, and command authority boundaries are unambiguous.
+- Documentation and registry verification pass.
 
 ## Verification
 
 ```bash
-perf record -- true
-./scripts/flamegraph.sh
-./scripts/verify-completion.sh
+./scripts/check-docs.sh
+./scripts/verify-compatibility.sh --structure-only
+./scripts/verify-roadmap.sh
 ```

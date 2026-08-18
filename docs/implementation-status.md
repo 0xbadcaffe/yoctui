@@ -726,3 +726,22 @@ recipe workdirs cannot crowd out the final kernel and image tasks; downloads,
 sstate, package data, and deploy artifacts remain available to the build.
 The default attach snapshot now retains 512 recent records, preserving a useful
 bounded history without repeatedly serializing the full high-volume log stream.
+
+## M18 — Yocto release capability compatibility
+
+Status: in progress.
+
+M18 is now required. The initial audit found authoritative workspace identity
+split between bridge/protocol/model fields, generic daemon transport and
+BitBake-server capability enums, and independent utility-specific capability
+types. It found no centralized environment identity, behavior catalog,
+generation-correlated snapshot, or shared daemon-owned availability source.
+The current Python bridge also selects broad legacy/modern adapter families
+from the BitBake major version, while several utility inspectors treat a host
+executable as the primary availability signal. M18 replaces these disconnected
+assumptions with direct probes, conservative centralized fallback inference,
+typed daemon/protocol/model state, dynamic UI gating, and exact live evidence.
+
+`COMPAT-SPEC-001` is the active task. No release is newly claimed supported by
+this governance change; existing fixture and live evidence retain their stated
+scope.

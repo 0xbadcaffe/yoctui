@@ -320,3 +320,29 @@ Exit criteria:
 - Dashboard and Tasks both expose all ten function-key labels when wide
 - compact layouts retain contextual shortcuts without horizontal panics
 - the shell-resolved release binary matches the verified local artifact
+
+## M18 — Yocto release capability compatibility
+
+Goal: make Yoctui functionality follow the authoritative capabilities of the
+connected Yocto/OpenEmbedded/BitBake environment instead of assumptions made
+from the installed Yoctui binary.
+
+Capabilities:
+
+- authoritative typed environment identity with explicit unknown fields
+- one behavior-oriented capability catalog and snapshot with evidence/reasons
+- safe direct probes plus centralized conservative version fallbacks
+- daemon-owned, generation-correlated capability state shared by every client
+- compatible BitBake/API/utility implementations selected before typed argv
+- dynamic workspace/UI gating and an Environment/Compatibility inspector
+- deterministic release-generation fixtures and current live multi-release evidence
+
+Exit criteria:
+
+- direct capability evidence is preferred over release-number assumptions
+- renderers and workspaces contain no scattered release/version policy
+- older supported environments preserve safe workflows and explain unavailable ones
+- unknown future releases expose only positively evidenced functionality
+- latest supported stable and a materially older release have current live evidence
+- fixture-only tests cannot satisfy a live compatibility claim
+- `./scripts/verify-compatibility.sh` independently enforces the milestone
