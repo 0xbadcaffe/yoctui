@@ -86,6 +86,12 @@ impl BitBakeCliCommand {
                     BitBakeCliOperation::StartServer => BitBakeServerCommandOperation::Start,
                     BitBakeCliOperation::StopServer => BitBakeServerCommandOperation::Stop,
                 })?;
+        if executable != authorized.executable {
+            return Err(BitBakeCliControlError::ExecutableMismatch {
+                configured: executable,
+                authorized: authorized.executable,
+            });
+        }
         if timeout.is_zero() {
             return Err(BitBakeCliControlError::InvalidLimit(
                 "timeout must be greater than zero".into(),
@@ -100,7 +106,7 @@ impl BitBakeCliCommand {
         Ok(Self {
             preview: BitBakeCliPreview {
                 operation,
-                argv: std::iter::once(executable.into_os_string())
+                argv: std::iter::once(authorized.executable.into_os_string())
                     .chain(authorized.arguments)
                     .collect(),
                 cwd: build_dir,
@@ -149,6 +155,13 @@ pub enum BitBakeCliOutcome {
 pub enum BitBakeCliControlError {
     #[error("invalid BitBake executable: {0}")]
     InvalidExecutable(PathBuf),
+    #[error(
+        "configured BitBake executable {configured} does not match capability-authorized executable {authorized}"
+    )]
+    ExecutableMismatch {
+        configured: PathBuf,
+        authorized: PathBuf,
+    },
     #[error("invalid BitBake build directory: {0}")]
     InvalidBuildDirectory(PathBuf),
     #[error(transparent)]
@@ -494,6 +507,7 @@ mod tests {
 
     fn compatibility(
         build_dir: &Path,
+        executable: &Path,
         operation: BitBakeCliOperation,
     ) -> DaemonCompatibilitySnapshot {
         let (implementation, _) = operation_parts(operation);
@@ -509,6 +523,14 @@ mod tests {
                     build_directory: AuthoritativeValue::detected(
                         build_dir.to_owned(),
                         IdentityAuthority::InitializedEnvironment,
+                    ),
+                    available_tools: AuthoritativeValue::detected(
+                        vec![yoctui_model::ToolIdentity {
+                            id: "bitbake".into(),
+                            executable: executable.to_owned(),
+                            version: None,
+                        }],
+                        IdentityAuthority::ExecutableProbe,
                     ),
                     ..YoctoEnvironmentIdentity::default()
                 },
@@ -561,7 +583,7 @@ mod tests {
         timeout: Duration,
         output_limit: usize,
     ) -> BitBakeCliCommand {
-        let compatibility = compatibility(&build_dir, operation);
+        let compatibility = compatibility(&build_dir, &executable, operation);
         BitBakeCliCommand::with_limits(
             executable,
             build_dir,
@@ -616,7 +638,7 @@ mod tests {
     #[tokio::test]
     async fn cli_control_is_capability_aware_and_bounds_output_and_runtime() {
         let (root, executable) = fixture("printf '123456789'; printf 'abcdefghi' >&2; exit 7");
-        let status_only = compatibility(&root, BitBakeCliOperation::Status);
+        let status_only = compatibility(&root, &executable, BitBakeCliOperation::Status);
         let unsupported = BitBakeCliCommand::new(
             executable.clone(),
             root.clone(),

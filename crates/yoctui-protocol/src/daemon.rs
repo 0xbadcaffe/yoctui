@@ -2122,7 +2122,7 @@ mod tests {
             reason: CompatibilityReasonData {
                 code: "command_missing".into(),
                 message: "The command is unavailable.".into(),
-                requirement: Some("bitbake --getvar".into()),
+                requirement: Some("bitbake-getvar --value".into()),
             },
         };
         contradicted.capabilities[0].implementation = None;

@@ -1,13 +1,16 @@
-use std::{ffi::OsString, path::Path};
+use std::{
+    ffi::OsString,
+    path::{Path, PathBuf},
+};
 
 use thiserror::Error;
-use yoctui_model::{BuildRequest, CapabilityId, DaemonCompatibilitySnapshot};
+use yoctui_model::{BuildRequest, CapabilityId, CapabilityToolId, DaemonCompatibilitySnapshot};
 
 pub const BITBAKE_BUILD_ARGV_IMPLEMENTATION: &str = "bitbake.build.argv";
 pub const BITBAKE_FORCE_TASK_ARGV_IMPLEMENTATION: &str = "bitbake.force_task.argv";
 pub const BITBAKE_GRAPH_ARGV_IMPLEMENTATION: &str = "bitbake.graph.argv";
 pub const BITBAKE_ENVIRONMENT_ARGV_IMPLEMENTATION: &str = "bitbake.environment_dump.argv";
-pub const BITBAKE_GETVAR_ARGV_IMPLEMENTATION: &str = "bitbake.getvar.argv";
+pub const BITBAKE_GETVAR_UTILITY_IMPLEMENTATION: &str = "bitbake_getvar.argv";
 pub const BITBAKE_GETVAR_ENVIRONMENT_IMPLEMENTATION: &str = "bitbake.environment_lookup";
 pub const BITBAKE_DUMPSIG_ARGV_IMPLEMENTATION: &str = "bitbake_dumpsig.argv";
 pub const BITBAKE_DIFFSIGS_ARGV_IMPLEMENTATION: &str = "bitbake_diffsigs.argv";
@@ -26,6 +29,7 @@ pub enum BitBakeServerCommandOperation {
 pub struct AuthorizedBitBakeCommand {
     pub capability: CapabilityId,
     pub implementation: String,
+    pub executable: PathBuf,
     pub arguments: Vec<OsString>,
     pub generation: u64,
 }
@@ -88,11 +92,12 @@ impl<'a> BitBakeCommandPlanner<'a> {
             arguments.extend([OsString::from("-c"), task.into()]);
         }
         arguments.extend(request.targets.iter().map(OsString::from));
-        Ok(self.command(
+        self.command(
             CapabilityId::BitBakeBuild,
             BITBAKE_BUILD_ARGV_IMPLEMENTATION,
+            CapabilityToolId::BitBake,
             arguments,
-        ))
+        )
     }
 
     pub fn dependency_graph(
@@ -108,11 +113,12 @@ impl<'a> BitBakeCommandPlanner<'a> {
             CapabilityId::BitBakeGraphGeneration,
             BITBAKE_GRAPH_ARGV_IMPLEMENTATION,
         )?;
-        Ok(self.command(
+        self.command(
             CapabilityId::BitBakeGraphGeneration,
             BITBAKE_GRAPH_ARGV_IMPLEMENTATION,
+            CapabilityToolId::BitBake,
             vec!["-g".into(), target.into()],
-        ))
+        )
     }
 
     pub fn environment_dump(
@@ -128,11 +134,12 @@ impl<'a> BitBakeCommandPlanner<'a> {
             validate_value(recipe, "recipe")?;
             arguments.push(recipe.into());
         }
-        Ok(self.command(
+        self.command(
             CapabilityId::BitBakeEnvironmentDump,
             BITBAKE_ENVIRONMENT_ARGV_IMPLEMENTATION,
+            CapabilityToolId::BitBake,
             arguments,
-        ))
+        )
     }
 
     pub fn get_variable(
@@ -147,24 +154,25 @@ impl<'a> BitBakeCommandPlanner<'a> {
         let implementation = self.require_one(
             CapabilityId::BitBakeGetVar,
             &[
-                BITBAKE_GETVAR_ARGV_IMPLEMENTATION,
+                BITBAKE_GETVAR_UTILITY_IMPLEMENTATION,
                 BITBAKE_GETVAR_ENVIRONMENT_IMPLEMENTATION,
             ],
         )?;
-        let arguments = if implementation == BITBAKE_GETVAR_ARGV_IMPLEMENTATION {
-            let mut arguments = vec![OsString::from("--getvar"), name.into()];
+        let (tool, arguments) = if implementation == BITBAKE_GETVAR_UTILITY_IMPLEMENTATION {
+            let mut arguments = vec![OsString::from("--value")];
             if let Some(recipe) = recipe {
-                arguments.push(recipe.into());
+                arguments.extend([OsString::from("--recipe"), recipe.into()]);
             }
-            arguments
+            arguments.push(name.into());
+            (CapabilityToolId::BitBakeGetVar, arguments)
         } else {
             let mut arguments = vec![OsString::from("-e")];
             if let Some(recipe) = recipe {
                 arguments.push(recipe.into());
             }
-            arguments
+            (CapabilityToolId::BitBake, arguments)
         };
-        Ok(self.command(CapabilityId::BitBakeGetVar, implementation, arguments))
+        self.command(CapabilityId::BitBakeGetVar, implementation, tool, arguments)
     }
 
     pub fn signature_dump(
@@ -175,11 +183,12 @@ impl<'a> BitBakeCommandPlanner<'a> {
             CapabilityId::BitBakeDumpSig,
             BITBAKE_DUMPSIG_ARGV_IMPLEMENTATION,
         )?;
-        Ok(self.command(
+        self.command(
             CapabilityId::BitBakeDumpSig,
             BITBAKE_DUMPSIG_ARGV_IMPLEMENTATION,
+            CapabilityToolId::BitBakeDumpSig,
             vec![path.as_os_str().to_owned()],
-        ))
+        )
     }
 
     pub fn signature_compare(
@@ -191,16 +200,17 @@ impl<'a> BitBakeCommandPlanner<'a> {
             CapabilityId::BitBakeDiffSigs,
             BITBAKE_DIFFSIGS_ARGV_IMPLEMENTATION,
         )?;
-        Ok(self.command(
+        self.command(
             CapabilityId::BitBakeDiffSigs,
             BITBAKE_DIFFSIGS_ARGV_IMPLEMENTATION,
+            CapabilityToolId::BitBakeDiffSigs,
             vec![
                 "-c".into(),
                 "never".into(),
                 left.as_os_str().to_owned(),
                 right.as_os_str().to_owned(),
             ],
-        ))
+        )
     }
 
     pub fn server_control(
@@ -225,7 +235,12 @@ impl<'a> BitBakeCommandPlanner<'a> {
             ),
         };
         self.require(capability, implementation)?;
-        Ok(self.command(capability, implementation, vec![argument.into()]))
+        self.command(
+            capability,
+            implementation,
+            CapabilityToolId::BitBake,
+            vec![argument.into()],
+        )
     }
 
     fn require(
@@ -277,14 +292,29 @@ impl<'a> BitBakeCommandPlanner<'a> {
         &self,
         capability: CapabilityId,
         implementation: &str,
+        tool: CapabilityToolId,
         arguments: Vec<OsString>,
-    ) -> AuthorizedBitBakeCommand {
-        AuthorizedBitBakeCommand {
+    ) -> Result<AuthorizedBitBakeCommand, BitBakeCommandAuthorizationError> {
+        let executable = self
+            .authority
+            .snapshot
+            .environment
+            .available_tools
+            .value()
+            .and_then(|tools| {
+                tools
+                    .iter()
+                    .find(|identity| identity.id == tool.executable_name())
+            })
+            .map(|identity| identity.executable.clone())
+            .ok_or(BitBakeCommandAuthorizationError::ToolIdentityUnknown { tool })?;
+        Ok(AuthorizedBitBakeCommand {
             capability,
             implementation: implementation.into(),
+            executable,
             arguments,
             generation: self.expected_generation,
-        }
+        })
     }
 }
 
@@ -325,6 +355,8 @@ pub enum BitBakeCommandAuthorizationError {
     },
     #[error("invalid BitBake command request: {0}")]
     InvalidRequest(String),
+    #[error("initialized environment does not identify required command tool: {tool:?}")]
+    ToolIdentityUnknown { tool: CapabilityToolId },
 }
 
 #[cfg(test)]
@@ -335,7 +367,8 @@ mod tests {
     use yoctui_model::{
         AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
         CapabilityImplementation, CapabilityImplementationKind, CapabilityReason, CapabilityRecord,
-        CapabilitySnapshot, CapabilityState, IdentityAuthority, YoctoEnvironmentIdentity,
+        CapabilitySnapshot, CapabilityState, IdentityAuthority, ToolIdentity,
+        YoctoEnvironmentIdentity,
     };
 
     fn authority(
@@ -346,6 +379,22 @@ mod tests {
             build_directory: AuthoritativeValue::detected(
                 PathBuf::from("/work/build"),
                 IdentityAuthority::InitializedEnvironment,
+            ),
+            available_tools: AuthoritativeValue::detected(
+                [
+                    ("bitbake", "bitbake"),
+                    ("bitbake-getvar", "bitbake-getvar"),
+                    ("bitbake-diffsigs", "bitbake-diffsigs"),
+                    ("bitbake-dumpsig", "bitbake-dumpsig"),
+                ]
+                .into_iter()
+                .map(|(id, executable)| ToolIdentity {
+                    id: id.into(),
+                    executable: format!("/work/bin/{executable}").into(),
+                    version: None,
+                })
+                .collect(),
+                IdentityAuthority::ExecutableProbe,
             ),
             ..YoctoEnvironmentIdentity::default()
         };
@@ -420,12 +469,16 @@ mod tests {
     }
 
     #[test]
-    fn compatibility_command_shared_fixtures_select_exact_bitbake_fallback_and_native_argv() {
+    fn compatibility_command_getvar_shared_fixtures_select_fallback_and_utility_argv() {
         let old = fixture_authority(CompatibilityFixtureRole::OldestPolicyCandidate, 31);
         let old_command = fixture_planner(&old)
             .get_variable("MACHINE", Some("busybox"))
             .unwrap();
         assert_eq!(old_command.arguments, ["-e", "busybox"]);
+        assert_eq!(
+            old_command.executable,
+            Path::new("/fixtures/oldest-policy-candidate/bin/bitbake")
+        );
         assert_eq!(
             old_command.implementation,
             BITBAKE_GETVAR_ENVIRONMENT_IMPLEMENTATION
@@ -435,15 +488,28 @@ mod tests {
         let modern_command = fixture_planner(&modern)
             .get_variable("MACHINE", Some("busybox"))
             .unwrap();
-        assert_eq!(modern_command.arguments, ["--getvar", "MACHINE", "busybox"]);
+        assert_eq!(
+            modern_command.arguments,
+            ["--value", "--recipe", "busybox", "MACHINE"]
+        );
         assert_eq!(
             modern_command.implementation,
-            BITBAKE_GETVAR_ARGV_IMPLEMENTATION
+            BITBAKE_GETVAR_UTILITY_IMPLEMENTATION
+        );
+        assert_eq!(
+            modern_command.executable,
+            Path::new("/fixtures/latest-support-candidate/bin/bitbake-getvar")
+        );
+        assert!(
+            !modern_command
+                .arguments
+                .iter()
+                .any(|argument| argument == "--getvar")
         );
     }
 
     #[test]
-    fn compatibility_command_generates_old_and_new_getvar_argv_without_cross_version_options() {
+    fn compatibility_command_getvar_generates_old_and_new_argv_without_unsupported_option() {
         let old = authority(
             1,
             &[(
@@ -461,14 +527,35 @@ mod tests {
             2,
             &[(
                 CapabilityId::BitBakeGetVar,
-                BITBAKE_GETVAR_ARGV_IMPLEMENTATION,
+                BITBAKE_GETVAR_UTILITY_IMPLEMENTATION,
             )],
         );
         let new = planner(&new)
             .get_variable("MACHINE", Some("busybox"))
             .unwrap();
-        assert_eq!(new.arguments, ["--getvar", "MACHINE", "busybox"]);
+        assert_eq!(new.arguments, ["--value", "--recipe", "busybox", "MACHINE"]);
         assert!(!new.arguments.iter().any(|argument| argument == "-e"));
+        assert!(!new.arguments.iter().any(|argument| argument == "--getvar"));
+
+        let mut missing_tool = authority(
+            3,
+            &[(
+                CapabilityId::BitBakeGetVar,
+                BITBAKE_GETVAR_UTILITY_IMPLEMENTATION,
+            )],
+        );
+        missing_tool.snapshot.environment.available_tools = AuthoritativeValue::Unknown;
+        let missing_tool = missing_tool.normalize().unwrap();
+        assert!(matches!(
+            planner(&missing_tool).get_variable("MACHINE", None),
+            Err(BitBakeCommandAuthorizationError::ToolIdentityUnknown {
+                tool: CapabilityToolId::BitBakeGetVar
+            })
+        ));
+        assert!(matches!(
+            BitBakeCommandPlanner::new(&missing_tool, 2, Path::new("/work/build")),
+            Err(BitBakeCommandAuthorizationError::StaleGeneration { .. })
+        ));
     }
 
     #[test]

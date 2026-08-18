@@ -1027,9 +1027,15 @@ five app, and four TestBackend cases covering monotonic live replacement,
 stale/conflicting response rejection, stable selection, immediate action and
 reason replacement, unsafe dialog close/focus restoration, local-dialog
 retention, invalidation, and denied-action rollback with no emitted launch.
-The exact task filters and workspace Clippy pass. `COMPAT-LIVE-LATEST-001` is
-paused after fresh Wrynose 6.0.2 / BitBake 2.18.0 validation found that the
-modeled modern `bitbake --getvar` argv is unsupported: this release exposes the
-separate `bitbake-getvar` utility. `COMPAT-BITBAKE-GETVAR-001` is active as an
-atomic prerequisite; live validation resumes after the exact command/probe
-authority is corrected.
+The exact task filters and workspace Clippy pass. `COMPAT-BITBAKE-GETVAR-001`
+is complete after fresh Wrynose 6.0.2 / BitBake 2.18.0 validation proved that
+`bitbake --getvar` is unsupported and this release exposes the separate
+`bitbake-getvar` utility. That utility is now a typed initialized-environment
+identity with direct help/`--value`/`--recipe` probes; its exact executable and
+argv are selected together, while `bitbake -e` remains available only as an
+explicit capability-backed fallback. Direct BitBake, server-control, and
+signature consumers reject configured/authorized executable disagreement.
+Focused old, modern, absent-tool, stale-generation, and exact-executable tests,
+the full all-feature workspace suite, Clippy, bridge tests, and roadmap gate
+pass. `COMPAT-LIVE-LATEST-001` has resumed against the fresh official Wrynose
+composition.

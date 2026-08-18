@@ -4933,18 +4933,18 @@ notes = "Dedicated compatibility_dynamic suites now select five model, five app,
 id = "COMPAT-BITBAKE-GETVAR-001"
 milestone = "M18"
 title = "Use the release-supported BitBake variable-query command"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 510
 required = true
 depends_on = ["COMPAT-BITBAKE-CMD-001", "COMPAT-PROBE-001", "COMPAT-TEST-CMDS-001"]
 verify = ["cargo test --workspace --all-features compatibility_command_getvar", "cargo test --workspace --all-features compatibility_probe", "./scripts/verify-roadmap.sh"]
-notes = "Live Yocto 6.0.2 / BitBake 2.18.0 evidence proves that bitbake --getvar is unsupported and the release provides the separate bitbake-getvar utility. Add typed tool/probe authority, emit the exact utility argv when selected, retain the environment-dump fallback, and prohibit --getvar."
+notes = "Live Yocto 6.0.2 / BitBake 2.18.0 evidence proves that bitbake --getvar is unsupported and the release provides the separate bitbake-getvar utility. The catalog now identifies and safely probes that exact initialized-environment tool and its --value/--recipe options, the resolver selects the maintained bitbake -e fallback only through positive environment-dump capability authority, and every direct command consumer binds both executable and argv to one snapshot. Focused old/modern/absent/stale/executable tests and the full workspace baseline pass."
 
 [[task]]
 id = "COMPAT-LIVE-LATEST-001"
 milestone = "M18"
 title = "Validate latest supported Yocto stable release"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 511
 required = true
 depends_on = ["COMPAT-DOCTOR-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-MATRIX-001", "COMPAT-BITBAKE-GETVAR-001"]

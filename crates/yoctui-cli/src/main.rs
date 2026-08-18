@@ -12292,7 +12292,7 @@ mod tests {
             app.notification
                 .as_deref()
                 .unwrap()
-                .contains("requires the current environment capability snapshot")
+                .contains("No current environment capability snapshot")
         );
     }
 
@@ -12414,6 +12414,17 @@ mod tests {
                     build_directory: yoctui_model::AuthoritativeValue::detected(
                         build_directory.to_owned(),
                         yoctui_model::IdentityAuthority::InitializedEnvironment,
+                    ),
+                    available_tools: yoctui_model::AuthoritativeValue::detected(
+                        ["bitbake-dumpsig", "bitbake-diffsigs"]
+                            .into_iter()
+                            .map(|name| yoctui_model::ToolIdentity {
+                                id: name.into(),
+                                executable: build_directory.join(name),
+                                version: None,
+                            })
+                            .collect(),
+                        yoctui_model::IdentityAuthority::ExecutableProbe,
                     ),
                     ..yoctui_model::YoctoEnvironmentIdentity::default()
                 },

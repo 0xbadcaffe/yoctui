@@ -1,9 +1,10 @@
 use std::collections::BTreeMap;
 
 use yoctui_model::{
-    CapabilityCatalog, CapabilityCatalogEntry, CapabilityEvidence, CapabilityId,
-    CapabilityImplementation, CapabilityReason, CapabilityRecord, CapabilitySnapshot,
-    CapabilityState, YoctoEnvironmentIdentity,
+    CapabilityCatalog, CapabilityCatalogEntry, CapabilityEvidence, CapabilityEvidenceKind,
+    CapabilityEvidenceOutcome, CapabilityId, CapabilityImplementation, CapabilityReason,
+    CapabilityRecord, CapabilitySnapshot, CapabilityState, FallbackSelector,
+    YoctoEnvironmentIdentity,
 };
 
 use crate::{
@@ -165,6 +166,52 @@ impl CapabilityResolver {
                 implementations.insert(entry.id, implementation);
             }
             records.push(resolved.record);
+        }
+        for entry in &catalog.entries {
+            if implementations.contains_key(&entry.id) {
+                continue;
+            }
+            let Some(fallback) = entry.fallback.as_ref() else {
+                continue;
+            };
+            let FallbackSelector::AvailableCapability { id: required } = &fallback.selector else {
+                continue;
+            };
+            let required_available = records
+                .iter()
+                .find(|record| record.id == *required)
+                .is_some_and(|record| record.state.is_enabled())
+                && implementations.contains_key(required);
+            if !required_available {
+                continue;
+            }
+            let record = records
+                .iter_mut()
+                .find(|record| record.id == entry.id)
+                .expect("catalog resolution must produce every capability record");
+            record.state = CapabilityState::AvailableWithLimitations {
+                reason: reason(
+                    "fallback.available_capability",
+                    "The preferred implementation is unavailable; a maintained capability-backed fallback was selected.",
+                    Some(required.as_str()),
+                ),
+                limitations: vec![format!(
+                    "Uses {} through implementation {}.",
+                    required.as_str(),
+                    fallback.implementation.id
+                )],
+            };
+            record.evidence.push(CapabilityEvidence {
+                kind: CapabilityEvidenceKind::DirectProbe,
+                outcome: CapabilityEvidenceOutcome::Positive,
+                subject: required.as_str().into(),
+                detail: format!(
+                    "Positive capability authority selected maintained fallback {}",
+                    fallback.implementation.id
+                ),
+                argv: Vec::new(),
+            });
+            implementations.insert(entry.id, fallback.implementation.clone());
         }
         let snapshot = CapabilitySnapshot {
             generation,
@@ -403,5 +450,61 @@ mod tests {
             resolved.snapshot.capabilities.len(),
             CapabilityId::ALL.len()
         );
+    }
+
+    #[test]
+    fn compatibility_command_getvar_prefers_direct_utility_and_uses_environment_capability_fallback()
+     {
+        let catalog = CapabilityCatalog::builtin();
+        let positive_getvar = BTreeMap::from([(
+            CapabilityId::BitBakeGetVar,
+            vec![observation(
+                CapabilityProbeStatus::Positive,
+                "bitbake-getvar help and required options",
+            )],
+        )]);
+        let direct = CapabilityResolver::default()
+            .resolve_snapshot(3, future_environment(), &catalog, &positive_getvar)
+            .unwrap();
+        assert_eq!(
+            direct
+                .implementations
+                .get(&CapabilityId::BitBakeGetVar)
+                .unwrap()
+                .id,
+            "bitbake_getvar.argv"
+        );
+        assert_eq!(
+            direct
+                .snapshot
+                .capability(CapabilityId::BitBakeGetVar)
+                .unwrap()
+                .state,
+            CapabilityState::Available
+        );
+
+        let environment_only = BTreeMap::from([(
+            CapabilityId::BitBakeEnvironmentDump,
+            vec![observation(CapabilityProbeStatus::Positive, "bitbake -e")],
+        )]);
+        let fallback = CapabilityResolver::default()
+            .resolve_snapshot(4, future_environment(), &catalog, &environment_only)
+            .unwrap();
+        assert_eq!(
+            fallback
+                .implementations
+                .get(&CapabilityId::BitBakeGetVar)
+                .unwrap()
+                .id,
+            "bitbake.environment_lookup"
+        );
+        assert!(matches!(
+            fallback
+                .snapshot
+                .capability(CapabilityId::BitBakeGetVar)
+                .unwrap()
+                .state,
+            CapabilityState::AvailableWithLimitations { .. }
+        ));
     }
 }

@@ -168,7 +168,7 @@ can be created.
 |---|---|---|
 | Normal image/recipe/task build | `bitbake.build`; task/force additionally requires `bitbake.force_task` | `bitbake.build.argv`; optional verified `-c`/`-f` from `bitbake.force_task.argv` |
 | Dependency graph fallback | `bitbake.graph_generation` | `bitbake.graph.argv` emits `-g TARGET` |
-| Variable lookup | `bitbake.getvar` | `bitbake.getvar.argv` emits `--getvar NAME`, or maintained `bitbake.environment_lookup` emits old-compatible `-e` for caller-side lookup |
+| Variable lookup | `bitbake.getvar`; direct executable/help/`--value`/`--recipe` probes for the initialized environment | `bitbake_getvar.argv` runs the separately detected `bitbake-getvar --value [--recipe RECIPE] NAME`, or maintained `bitbake.environment_lookup` runs detected `bitbake -e [RECIPE]` for caller-side lookup; no implementation emits the unsupported `bitbake --getvar` form |
 | Environment dump | `bitbake.environment_dump` | `bitbake.environment_dump.argv` emits `-e` |
 | Server status/start/stop | distinct `bitbake.server_status`, `bitbake.server_start`, and `bitbake.server_stop` option probes | distinct status/start/stop implementations emit only `--status-only`, `--server-only`, or `--kill-server`; socket/API support alone cannot authorize these CLI options |
 | Signature dump | `bitbake.dumpsig` | `bitbake_dumpsig.argv` |
@@ -182,6 +182,16 @@ the planner. Tinfoil/socket operations do not construct BitBake CLI argv and
 are audited separately by `COMPAT-BITBAKE-API-001`. Yocto utilities such as
 Devtool, Recipetool, bitbake-layers, pkgdata, Wic, and test tools are separate
 catalog families covered by their dedicated compatibility tasks.
+
+The variable-query distinction was verified directly against the official
+Wrynose 6.0.2 component composition at OE-Core commit
+`5d1aa5c806c061a2994f4decb59016610f093213` and BitBake commit
+`acfe02fa38b5da9e6a36c6cedcf91d4fcbefbfbd` (BitBake 2.18.0):
+`bitbake --help` exposes no `--getvar`, while initialized-environment
+`bitbake-getvar --help` exposes `--value` and `--recipe`, and
+`bitbake-getvar MACHINE` returns the configured value. This focused evidence
+corrects the command authority; it does not by itself satisfy the separate
+latest-release live compatibility gate.
 
 ### BitBake backend/API audit
 

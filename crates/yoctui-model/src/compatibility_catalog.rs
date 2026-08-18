@@ -16,6 +16,7 @@ pub enum CapabilityToolId {
     BitBakeSelftest,
     BitBakeDiffSigs,
     BitBakeDumpSig,
+    BitBakeGetVar,
     BitBakeLayers,
     Devtool,
     BuildCompare,
@@ -42,6 +43,7 @@ impl CapabilityToolId {
             Self::BitBakeSelftest => "bitbake-selftest",
             Self::BitBakeDiffSigs => "bitbake-diffsigs",
             Self::BitBakeDumpSig => "bitbake-dumpsig",
+            Self::BitBakeGetVar => "bitbake-getvar",
             Self::BitBakeLayers => "bitbake-layers",
             Self::Devtool => "devtool",
             Self::BuildCompare => "build-compare",
@@ -460,16 +462,33 @@ fn definition(id: CapabilityId) -> Definition {
             });
             value
         }
-        Id::BitBakeGetVar => {
-            let mut value = backend("BitBake variable lookup", "getvar", "tinfoil.getvar");
-            value.6 = Some(FallbackImplementation {
+        Id::BitBakeGetVar => (
+            "BitBake variable lookup",
+            vec![Tool::BitBakeGetVar],
+            vec![command(Tool::BitBakeGetVar, None, &["--value", "--recipe"])],
+            Vec::new(),
+            vec![
+                executable(Tool::BitBakeGetVar),
+                help(Tool::BitBakeGetVar, None),
+                CapabilityProbeSpec::CommandOption {
+                    tool: Tool::BitBakeGetVar,
+                    subcommand: None,
+                    option: "--value".into(),
+                },
+                CapabilityProbeSpec::CommandOption {
+                    tool: Tool::BitBakeGetVar,
+                    subcommand: None,
+                    option: "--recipe".into(),
+                },
+            ],
+            implementation("bitbake_getvar.argv", Kind::Command),
+            Some(FallbackImplementation {
                 implementation: implementation("bitbake.environment_lookup", Kind::Command),
                 selector: FallbackSelector::AvailableCapability {
                     id: Id::BitBakeEnvironmentDump,
                 },
-            });
-            value
-        }
+            }),
+        ),
         Id::BitBakeVariableHistory => {
             let mut value = backend(
                 "BitBake variable history",
@@ -1000,6 +1019,13 @@ mod catalog {
             })
         ));
         let getvar = catalog.entry(CapabilityId::BitBakeGetVar).unwrap();
+        assert_eq!(getvar.required_tools, vec![CapabilityToolId::BitBakeGetVar]);
+        assert_eq!(getvar.required_commands.len(), 1);
+        assert_eq!(
+            getvar.required_commands[0].options,
+            vec!["--value", "--recipe"]
+        );
+        assert_eq!(getvar.preferred.id, "bitbake_getvar.argv");
         assert!(matches!(
             getvar.fallback.as_ref().map(|fallback| &fallback.selector),
             Some(FallbackSelector::AvailableCapability {

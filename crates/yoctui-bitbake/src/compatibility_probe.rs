@@ -621,18 +621,26 @@ mod tests {
 
     impl Fixture {
         fn new(body: &str) -> Self {
+            Self::new_tool(CapabilityToolId::Devtool, body)
+        }
+
+        fn new_tool(tool_id: CapabilityToolId, body: &str) -> Self {
             let root = env::temp_dir().join(format!(
                 "yoctui-compat-probe-{}-{}",
                 std::process::id(),
                 NEXT.fetch_add(1, Ordering::Relaxed)
             ));
             fs::create_dir(&root).unwrap();
-            let tool = root.join("devtool");
+            let tool = root.join(tool_id.executable_name());
             write_executable(&tool, body);
             Self { root, tool }
         }
 
         fn context(&self) -> CapabilityProbeContext {
+            self.context_for(CapabilityToolId::Devtool)
+        }
+
+        fn context_for(&self, tool_id: CapabilityToolId) -> CapabilityProbeContext {
             let identity = YoctoEnvironmentIdentity {
                 build_directory: AuthoritativeValue::detected(
                     self.root.clone(),
@@ -640,7 +648,7 @@ mod tests {
                 ),
                 available_tools: AuthoritativeValue::detected(
                     vec![ToolIdentity {
-                        id: "devtool".into(),
+                        id: tool_id.executable_name().into(),
                         executable: self.tool.clone(),
                         version: None,
                     }],
@@ -651,7 +659,7 @@ mod tests {
             CapabilityProbeContext::new(
                 identity,
                 self.root.clone(),
-                BTreeMap::from([(CapabilityToolId::Devtool, self.tool.clone())]),
+                BTreeMap::from([(tool_id, self.tool.clone())]),
                 BTreeMap::from([("PATH".into(), "/usr/bin:/bin".into())]),
                 BTreeSet::from(["create_spdx".into()]),
                 BTreeSet::from(["MACHINE".into()]),
@@ -740,6 +748,58 @@ mod tests {
             )
             .await;
         assert_eq!(option.status, CapabilityProbeStatus::Negative);
+    }
+
+    #[tokio::test]
+    async fn compatibility_probe_bitbake_getvar_uses_exact_initialized_tool_and_options() {
+        let fixture = Fixture::new_tool(
+            CapabilityToolId::BitBakeGetVar,
+            "#!/bin/sh\nprintf '%s\\n' \"$@\" >> probe.argv\necho 'usage: bitbake-getvar [--value] [-r RECIPE] variable'\necho '  -r, --recipe RECIPE'\n",
+        );
+        let context = fixture.context_for(CapabilityToolId::BitBakeGetVar);
+        let runner = CapabilityProbeRunner::default();
+        for probe in [
+            CapabilityProbeSpec::Executable {
+                tool: CapabilityToolId::BitBakeGetVar,
+            },
+            CapabilityProbeSpec::CommandHelp {
+                tool: CapabilityToolId::BitBakeGetVar,
+                subcommand: None,
+            },
+            CapabilityProbeSpec::CommandOption {
+                tool: CapabilityToolId::BitBakeGetVar,
+                subcommand: None,
+                option: "--value".into(),
+            },
+            CapabilityProbeSpec::CommandOption {
+                tool: CapabilityToolId::BitBakeGetVar,
+                subcommand: None,
+                option: "--recipe".into(),
+            },
+        ] {
+            assert_eq!(
+                runner.probe(&context, &probe).await.status,
+                CapabilityProbeStatus::Positive
+            );
+        }
+        assert_eq!(
+            fs::read_to_string(fixture.root.join("probe.argv")).unwrap(),
+            "--help\n--help\n--help\n"
+        );
+
+        let missing_context = Fixture::new("#!/bin/sh\necho ok\n").context();
+        assert_eq!(
+            runner
+                .probe(
+                    &missing_context,
+                    &CapabilityProbeSpec::Executable {
+                        tool: CapabilityToolId::BitBakeGetVar
+                    }
+                )
+                .await
+                .status,
+            CapabilityProbeStatus::Negative
+        );
     }
 
     #[tokio::test]

@@ -95,7 +95,8 @@ pub use compatibility_cache::{
 };
 pub use compatibility_command::{
     AuthorizedBitBakeCommand, BITBAKE_DIFFSIGS_ARGV_IMPLEMENTATION,
-    BITBAKE_DUMPSIG_ARGV_IMPLEMENTATION, BitBakeCommandAuthorizationError, BitBakeCommandPlanner,
+    BITBAKE_DUMPSIG_ARGV_IMPLEMENTATION, BITBAKE_GETVAR_ENVIRONMENT_IMPLEMENTATION,
+    BITBAKE_GETVAR_UTILITY_IMPLEMENTATION, BitBakeCommandAuthorizationError, BitBakeCommandPlanner,
     BitBakeServerCommandOperation,
 };
 pub use compatibility_devtool::{
@@ -1564,7 +1565,14 @@ impl ProcessBackend {
             .command_planner()?
             .dependency_graph(&recipe)
             .map_err(|error| BackendError::Bridge(error.to_string()))?;
-        let mut command = TokioCommand::new(&self.executable);
+        if authorized.executable != self.executable {
+            return Err(BackendError::Bridge(format!(
+                "configured BitBake executable {} does not match capability-authorized executable {}",
+                self.executable.display(),
+                authorized.executable.display()
+            )));
+        }
+        let mut command = TokioCommand::new(&authorized.executable);
         command.envs(self.environment.iter().map(|(key, value)| (key, value)));
         command
             .args(&self.arguments)
@@ -1712,7 +1720,14 @@ impl BitBakeBackend for ProcessBackend {
             .command_planner()?
             .build(&request)
             .map_err(|error| BackendError::Bridge(error.to_string()))?;
-        let mut cmd = TokioCommand::new(&self.executable);
+        if authorized.executable != self.executable {
+            return Err(BackendError::Bridge(format!(
+                "configured BitBake executable {} does not match capability-authorized executable {}",
+                self.executable.display(),
+                authorized.executable.display()
+            )));
+        }
+        let mut cmd = TokioCommand::new(&authorized.executable);
         cmd.args(&self.arguments);
         cmd.envs(self.environment.iter().map(|(key, value)| (key, value)));
         cmd.args(&authorized.arguments)
@@ -3078,12 +3093,13 @@ mod tests {
 
     fn process_compatibility(
         build_dir: &std::path::Path,
+        executable: &std::path::Path,
     ) -> yoctui_model::DaemonCompatibilitySnapshot {
         use yoctui_model::{
             AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind,
             CapabilityEvidenceOutcome, CapabilityId, CapabilityImplementation,
             CapabilityImplementationKind, CapabilityRecord, CapabilitySnapshot, CapabilityState,
-            IdentityAuthority, YoctoEnvironmentIdentity,
+            IdentityAuthority, ToolIdentity, YoctoEnvironmentIdentity,
         };
         let capabilities = [
             (
@@ -3114,6 +3130,14 @@ mod tests {
                     build_directory: AuthoritativeValue::detected(
                         build_dir.to_owned(),
                         IdentityAuthority::InitializedEnvironment,
+                    ),
+                    available_tools: AuthoritativeValue::detected(
+                        vec![ToolIdentity {
+                            id: "bitbake".into(),
+                            executable: executable.to_owned(),
+                            version: None,
+                        }],
+                        IdentityAuthority::ExecutableProbe,
                     ),
                     ..YoctoEnvironmentIdentity::default()
                 },
@@ -3157,7 +3181,7 @@ mod tests {
             PathBuf::from("/bin/sh"),
             vec![script.into_os_string()],
         )
-        .with_compatibility(process_compatibility(&build_dir))
+        .with_compatibility(process_compatibility(&build_dir, Path::new("/bin/sh")))
         .unwrap()
     }
 
@@ -4122,7 +4146,7 @@ printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' >
         permissions.set_mode(0o700);
         fs::set_permissions(&script, permissions).unwrap();
         let mut backend = ProcessBackend::with_executable(root.clone(), script.clone())
-            .with_compatibility(process_compatibility(&root))
+            .with_compatibility(process_compatibility(&root, &script))
             .unwrap();
         let response = backend.get_dependency_graph("image".into()).await.unwrap();
         assert_eq!(response.graph.root, DependencyNodeId::recipe("image"));
@@ -4149,10 +4173,10 @@ printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' >
             .unwrap_err();
         assert!(error.to_string().contains("No such file"));
 
-        let mut unavailable =
-            ProcessBackend::with_executable(root.clone(), root.join("missing-bitbake"))
-                .with_compatibility(process_compatibility(&root))
-                .unwrap();
+        let missing = root.join("missing-bitbake");
+        let mut unavailable = ProcessBackend::with_executable(root.clone(), missing.clone())
+            .with_compatibility(process_compatibility(&root, &missing))
+            .unwrap();
         let error = unavailable
             .get_dependency_graph("image".into())
             .await
@@ -4180,8 +4204,8 @@ printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' >
         let mut permissions = fs::metadata(&script).unwrap().permissions();
         permissions.set_mode(0o700);
         fs::set_permissions(&script, permissions).unwrap();
-        let mut backend = ProcessBackend::with_executable(root.clone(), script)
-            .with_compatibility(process_compatibility(&root))
+        let mut backend = ProcessBackend::with_executable(root.clone(), script.clone())
+            .with_compatibility(process_compatibility(&root, &script))
             .unwrap();
         let error = backend
             .get_dependency_graph("image".into())

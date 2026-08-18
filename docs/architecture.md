@@ -2218,7 +2218,11 @@ argv. Build/force-task, dependency graph, environment/getvar, signature, and
 server status/start/stop forms have distinct authorization records; one
 observed server option cannot authorize another operation. The maintained
 getvar fallback emits `bitbake -e` only when that implementation was selected,
-while a positively probed native implementation emits `--getvar`.
+while a positively probed command implementation runs the exact initialized
+`bitbake-getvar` executable with `--value` and optional `--recipe`. The catalog
+does not model `bitbake --getvar`: Wrynose 6.0.2 / BitBake 2.18.0 proves that
+form is unsupported even though the release provides variable lookup through
+the separate utility.
 
 `ProcessBackend`, `BitBakeCliControl`, and `SignatureAdapter` delegate their
 direct command construction to this planner. Missing, disabled, stale,

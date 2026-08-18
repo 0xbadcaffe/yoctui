@@ -250,7 +250,8 @@ impl SignatureAdapter {
                 .signature_dump(&path)?;
             let output = run_signature_command(
                 SignatureCommandSpec {
-                    executable: self.dumpsig_program.clone(),
+                    executable: self
+                        .authorized_signature_executable(&authorized, &self.dumpsig_program)?,
                     arguments: authorized.arguments,
                 },
                 &self.build_dir,
@@ -318,7 +319,8 @@ impl SignatureAdapter {
         let dump_right = planner.signature_dump(&right_path)?;
         let diffsigs_output = run_signature_command(
             SignatureCommandSpec {
-                executable: self.diffsigs_program.clone(),
+                executable: self
+                    .authorized_signature_executable(&compare, &self.diffsigs_program)?,
                 arguments: compare.arguments,
             },
             &self.build_dir,
@@ -328,7 +330,8 @@ impl SignatureAdapter {
         .await?;
         let left_output = run_signature_command(
             SignatureCommandSpec {
-                executable: self.dumpsig_program.clone(),
+                executable: self
+                    .authorized_signature_executable(&dump_left, &self.dumpsig_program)?,
                 arguments: dump_left.arguments,
             },
             &self.build_dir,
@@ -338,7 +341,8 @@ impl SignatureAdapter {
         .await?;
         let right_output = run_signature_command(
             SignatureCommandSpec {
-                executable: self.dumpsig_program.clone(),
+                executable: self
+                    .authorized_signature_executable(&dump_right, &self.dumpsig_program)?,
                 arguments: dump_right.arguments,
             },
             &self.build_dir,
@@ -377,6 +381,21 @@ impl SignatureAdapter {
             differences,
             limitations,
         })
+    }
+
+    fn authorized_signature_executable(
+        &self,
+        command: &crate::AuthorizedBitBakeCommand,
+        configured: &Path,
+    ) -> Result<PathBuf, SignatureAdapterError> {
+        if command.executable != configured {
+            return Err(SignatureAdapterError::InvalidRequest(format!(
+                "configured signature executable {} does not match capability-authorized executable {}",
+                configured.display(),
+                command.executable.display()
+            )));
+        }
+        Ok(command.executable.clone())
     }
 }
 
@@ -1033,12 +1052,12 @@ mod tests {
         path
     }
 
-    fn test_compatibility(root: &Path) -> DaemonCompatibilitySnapshot {
+    fn test_compatibility(root: &Path, dump: &Path, diff: &Path) -> DaemonCompatibilitySnapshot {
         use yoctui_model::{
             AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind,
             CapabilityEvidenceOutcome, CapabilityId, CapabilityImplementation,
             CapabilityImplementationKind, CapabilityRecord, CapabilitySnapshot, CapabilityState,
-            IdentityAuthority, YoctoEnvironmentIdentity,
+            IdentityAuthority, ToolIdentity, YoctoEnvironmentIdentity,
         };
         let capabilities = [
             (
@@ -1057,6 +1076,21 @@ mod tests {
                     build_directory: AuthoritativeValue::detected(
                         root.to_owned(),
                         IdentityAuthority::InitializedEnvironment,
+                    ),
+                    available_tools: AuthoritativeValue::detected(
+                        vec![
+                            ToolIdentity {
+                                id: "bitbake-dumpsig".into(),
+                                executable: dump.to_owned(),
+                                version: None,
+                            },
+                            ToolIdentity {
+                                id: "bitbake-diffsigs".into(),
+                                executable: diff.to_owned(),
+                                version: None,
+                            },
+                        ],
+                        IdentityAuthority::ExecutableProbe,
                     ),
                     ..YoctoEnvironmentIdentity::default()
                 },
@@ -1093,8 +1127,9 @@ mod tests {
     }
 
     fn test_adapter(root: &Path, dump: PathBuf, diff: PathBuf) -> SignatureAdapter {
+        let compatibility = test_compatibility(root, &dump, &diff);
         SignatureAdapter::with_programs(root.to_owned(), dump, diff)
-            .with_compatibility(test_compatibility(root))
+            .with_compatibility(compatibility)
             .unwrap()
     }
 

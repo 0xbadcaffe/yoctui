@@ -176,7 +176,7 @@ impl ReleaseCapabilityFixture {
         set(
             CapabilityId::BitBakeGetVar,
             Some(if modern {
-                "bitbake.getvar.argv"
+                "bitbake_getvar.argv"
             } else {
                 "bitbake.environment_lookup"
             }),
@@ -480,6 +480,9 @@ fn fixture_environment(
         available_tools: AuthoritativeValue::detected(
             [
                 ("bitbake", "bitbake"),
+                ("bitbake-getvar", "bitbake-getvar"),
+                ("bitbake-diffsigs", "bitbake-diffsigs"),
+                ("bitbake-dumpsig", "bitbake-dumpsig"),
                 ("devtool", "devtool"),
                 ("recipetool", "recipetool"),
                 ("bitbake-layers", "bitbake-layers"),
@@ -681,7 +684,7 @@ mod tests {
         );
         assert_eq!(
             modern.implementations[&CapabilityId::BitBakeGetVar].id,
-            "bitbake.getvar.argv"
+            "bitbake_getvar.argv"
         );
         for id in [
             CapabilityId::DevtoolUpgrade,

@@ -2,46 +2,49 @@
 
 ## Task
 
-**ID:** COMPAT-BITBAKE-GETVAR-001
-**Title:** Use the release-supported BitBake variable-query command
+**ID:** COMPAT-LIVE-LATEST-001
+**Title:** Validate latest supported Yocto stable release
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Correct the live-discovered BitBake variable-query command boundary: BitBake
-2.18 provides `bitbake-getvar`; it does not support `bitbake --getvar`.
+Produce current, non-fixture compatibility evidence from a fresh official
+Poky composition at the latest stable release selected from authoritative
+Yocto release documentation.
 
 ## Dependencies
 
-- `COMPAT-BITBAKE-CMD-001` — DONE
-- `COMPAT-PROBE-001` — DONE
+- `COMPAT-DOCTOR-001` — DONE
 - `COMPAT-TEST-CMDS-001` — DONE
+- `COMPAT-TEST-UI-001` — DONE
+- `COMPAT-MATRIX-001` — DONE
+- `COMPAT-BITBAKE-GETVAR-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/compatibility_catalog.rs`
-- `crates/yoctui-bitbake/src/compatibility_probe.rs`
-- `crates/yoctui-bitbake/src/compatibility_command.rs`
-- `crates/yoctui-bitbake/src/compatibility_fixtures.rs`
-- `docs/architecture.md`
 - `docs/compatibility.md`
+- `docs/compatibility-matrix.md`
+- `artifacts/release-quality/compatibility/`
+- `scripts/verify-live-compatibility.sh`
+- existing live Yocto/BitBake scripts
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- `bitbake-getvar` is a typed initialized-environment tool identity with a safe
-  direct help/options probe.
-- The command planner emits exact `bitbake-getvar` argv when that implementation
-  is authorized and retains the maintained `bitbake -e` fallback.
-- No command path emits unsupported `bitbake --getvar`.
-- Old, modern, absent-tool, stale-generation, and exact-executable tests pass;
-  live Wrynose 6.0.2 evidence confirms the utility form.
+- The selected release is the latest official stable release according to
+  current authoritative Yocto documentation.
+- A fresh official Poky composition records exact release, component Git
+  commits, and BitBake version evidence.
+- Live validation covers environment identity/probing, workspace discovery,
+  one core build action with task/log events, Recipes, Layers, Configuration,
+  Devtool capabilities, utility capabilities, and relevant modern commands.
+- Evidence is bounded, machine-readable, non-fixture, current under repository
+  policy, and independently accepted by the live compatibility verifier.
 
 ## Verification
 
 ```bash
-cargo test --workspace --all-features compatibility_command_getvar
-cargo test --workspace --all-features compatibility_probe
+./scripts/verify-live-compatibility.sh latest
 ./scripts/verify-roadmap.sh
 ```
