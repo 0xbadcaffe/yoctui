@@ -4787,15 +4787,48 @@ verify = ["cargo test -p yoctui-app compatibility_workspace", "cargo test -p yoc
 notes = "Parent gate complete. The closed catalog covers every Screen, logical destination, and Effect; pure model projection/revalidation and bounded wire installation are centralized; and every interactive daemon/local action plus effect follow-up crosses the same capability-aware reducer before process/job routing. Daemon-owned probes cannot execute in clients, and unavailable work rolls back with exact reasons. Aggregate app/model tests, roadmap validation, all workspace tests, 41 bridge tests, and warnings-denied Clippy pass."
 
 [[task]]
-id = "COMPAT-UI-001"
+id = "COMPAT-UI-MODEL-001"
 milestone = "M18"
-title = "Expose capability state clearly in the UI"
+title = "Project typed compatibility presentation state"
 status = "IN_PROGRESS"
 priority = 504
 required = true
 depends_on = ["COMPAT-WORKSPACE-001", "COMPAT-PROTOCOL-001"]
+verify = ["cargo test -p yoctui-model compatibility_ui_model", "cargo test -p yoctui-app compatibility_ui_model", "./scripts/verify-roadmap.sh"]
+notes = "Create the pure bounded identity, summary, capability-row, filter/search/selection, and action-availability presentation model consumed by UI widgets. It must preserve all five capability states, exact reasons/evidence/implementations, and absent/stale authority without release inference."
+
+[[task]]
+id = "COMPAT-UI-INSPECTOR-001"
+milestone = "M18"
+title = "Render the Environment and Compatibility inspector"
+status = "NOT_STARTED"
+priority = 504
+required = true
+depends_on = ["COMPAT-UI-MODEL-001"]
+verify = ["cargo test -p yoctui-ui compatibility_ui_inspector", "cargo test -p yoctui-app compatibility_ui_inspector", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
+notes = "Add the specified Navigator/command-palette destination and responsive Environment/Compatibility workspace with bounded identity, summary, filtered capability table, exact selected reason/evidence, and implementation details."
+
+[[task]]
+id = "COMPAT-UI-ACTIONS-001"
+milestone = "M18"
+title = "Apply capability state to visible workspace actions"
+status = "NOT_STARTED"
+priority = 504
+required = true
+depends_on = ["COMPAT-UI-MODEL-001", "COMPAT-UI-INSPECTOR-001"]
+verify = ["cargo test -p yoctui-ui compatibility_ui_actions", "cargo test -p yoctui-app compatibility_ui_actions", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
+notes = "Make useful environment-backed actions in Navigator, command palette, workspace tables, Inspectors, dialogs, and footers visibly enabled/limited/disabled from one model projection. Exact reasons and maintained alternatives remain discoverable, while local actions remain usable."
+
+[[task]]
+id = "COMPAT-UI-001"
+milestone = "M18"
+title = "Expose capability state clearly in the UI"
+status = "NOT_STARTED"
+priority = 504
+required = true
+depends_on = ["COMPAT-UI-MODEL-001", "COMPAT-UI-INSPECTOR-001", "COMPAT-UI-ACTIONS-001"]
 verify = ["cargo test -p yoctui-ui compatibility", "cargo test -p yoctui-app compatibility_ui", "./scripts/test-tui-snapshots.sh", "./scripts/verify-roadmap.sh"]
-notes = "Keep useful unavailable actions visible but disabled, show exact reasons and maintained alternatives, and add a bounded Environment/Compatibility inspector without normal-workflow version clutter."
+notes = "Parent gate: useful unavailable actions stay visible and disabled with exact reasons/alternatives, normal workflows avoid version clutter, and the responsive bounded Environment/Compatibility inspector exposes the one daemon-owned authority."
 
 [[task]]
 id = "COMPAT-DOCTOR-001"

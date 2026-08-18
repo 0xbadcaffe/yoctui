@@ -2,14 +2,14 @@
 
 ## Task
 
-**ID:** COMPAT-UI-001
-**Title:** Expose capability state clearly in the UI
+**ID:** COMPAT-UI-MODEL-001
+**Title:** Project typed compatibility presentation state
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Expose centralized capability state throughout the interface without hiding
-useful unavailable actions or cluttering normal workflows with version detail.
+Create the pure bounded model projection that every compatibility-aware widget
+and action surface consumes.
 
 ## Dependencies
 
@@ -18,9 +18,9 @@ useful unavailable actions or cluttering normal workflows with version detail.
 
 ## Relevant files
 
-- `crates/yoctui-model/src/`
-- `crates/yoctui-app/src/`
-- `crates/yoctui-ui/src/`
+- `crates/yoctui-model/src/compatibility_ui.rs`
+- `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-app/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
@@ -28,20 +28,21 @@ useful unavailable actions or cluttering normal workflows with version detail.
 
 ## Definition of done
 
-- Useful unavailable actions remain visible but disabled.
-- Every disabled or limited action exposes the exact centralized reason and,
-  where useful, its required capability/tool or maintained alternative.
-- Normal workspace flow is not cluttered with release/version detail.
-- A bounded Environment/Compatibility inspector exposes detected identity,
-  capability summary, exact evidence/reasons, and selected implementations.
-- Dynamic snapshot changes update action state and reasons without panic or
-  stale launches; TestBackend and app tests cover responsive behavior.
+- One pure typed projection exposes normalized environment identity, snapshot
+  generation, operating mode, and exact counts for all five states.
+- Capability rows retain stable ID, state, exact reason/requirement,
+  limitations, selected implementation, and bounded evidence.
+- Absent authority is explicit Unknown and never derives support from host or
+  release values.
+- Typed filter, search, selection, and selected-detail state remains valid as
+  snapshots load, unload, or change generation.
+- Reusable visible-action presentation maps centralized workspace availability
+  to enabled, limited, unavailable, unsupported, or unknown with exact reasons.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui compatibility
-cargo test -p yoctui-app compatibility_ui
-./scripts/test-tui-snapshots.sh
+cargo test -p yoctui-model compatibility_ui_model
+cargo test -p yoctui-app compatibility_ui_model
 ./scripts/verify-roadmap.sh
 ```

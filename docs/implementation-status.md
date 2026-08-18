@@ -934,4 +934,7 @@ Focused app/CLI tests, all workspace tests, and warnings-denied Clippy pass.
 `COMPAT-WORKSPACE-001` is complete: its closed catalog, pure model authority,
 wire/client lifecycle, runtime gating, daemon-probe suppression, and exact
 no-spawn rejection all pass aggregate app/model, workspace, bridge, roadmap,
-and Clippy gates. `COMPAT-UI-001` is active.
+and Clippy gates. The broad UI gate is split before implementation into typed
+presentation state, the responsive Environment/Compatibility inspector, and
+cross-workspace visible action gating. `COMPAT-UI-001` remains the parent
+acceptance gate. `COMPAT-UI-MODEL-001` is active.

@@ -344,6 +344,11 @@ Capabilities:
 - dynamic workspace/UI gating and an Environment/Compatibility inspector
 - deterministic release-generation fixtures and current live multi-release evidence
 
+The UI delivery is dependency-ordered: first one typed presentation projection,
+then the responsive Environment/Compatibility workspace, then visible action
+gating across every existing workspace and dialog. The parent UI gate closes
+only after all three pass their focused and terminal-snapshot checks.
+
 Exit criteria:
 
 - direct capability evidence is preferred over release-number assumptions

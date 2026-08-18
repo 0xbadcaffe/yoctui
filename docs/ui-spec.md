@@ -214,6 +214,7 @@ Required entries:
 - Dependencies
 - QEMU / Wic
 - Maintenance
+- Compatibility
 - Settings
 
 The currently active workspace is highlighted.
@@ -3155,3 +3156,65 @@ Selections that remain valid do not move. Client-local dialogs and
 cancellation of an already-owned process remain usable so a capability update
 cannot strand work. If confirmation and a capability update race, the model
 rolls back confirmation preparation and emits no effect.
+
+### Environment/Compatibility workspace
+
+`Compatibility` is a first-class destination under the Navigator's environment
+and maintenance area and is also searchable from `F10 Menu` / `Ctrl+P`. It is a
+client-local view of the current daemon authority: opening it never runs a
+probe, command, or version inference. If no current authority exists, the
+workspace remains usable and shows `Snapshot: unavailable` plus the exact
+daemon/synchronization reason.
+
+The wide workspace contains a compact identity/summary band, a capability
+table, and the persistent Inspector. The identity band shows only authoritative
+detected values: build directory, source roots, OE-Core/Poky release identity,
+BitBake version, DISTRO, MACHINE, layer series, backend/protocol, snapshot
+generation, and Full/Degraded/Diagnostic mode. Unknown fields read `unknown`;
+they are never reconstructed from neighboring values. The summary always
+shows exact Available, Limited, Unavailable, Unknown, and Unsupported counts.
+
+The capability table has `Capability`, `State`, and `Implementation` columns.
+Rows are sorted by stable capability ID and use explicit text as well as color.
+The default filter is `All`; `1` selects All, `2` Available, `3` Limited, `4`
+Unavailable, and `5` Attention (Unknown plus Unsupported). `/` edits a bounded
+case-insensitive search over capability ID, reason, requirement, and selected
+implementation; `Esc` ends search before performing normal navigation.
+`Up`/`Down` or `j`/`k` changes the selected visible row without escaping the
+table. Selection remains on the same capability ID across filter, resize, and
+newer snapshot generations when that ID is retained; otherwise it moves to the
+nearest valid row.
+
+The Inspector shows the selected stable capability ID, state, exact reason and
+requirement, every limitation, selected preferred/fallback implementation, and
+bounded typed evidence (kind, outcome, subject, detail, and argv when present).
+Available rows without a limitation do not invent a reason. Unknown,
+Unavailable, and Unsupported remain visually and textually distinct. Long
+paths, reasons, requirements, evidence, and argv wrap or truncate within their
+panel and never widen the terminal.
+
+Medium layout uses the standard Inspector overlay. Narrow layout uses the
+shared visible-pane switcher, keeping identity/summary, table, and Inspector
+reachable. The below-`80x24` resize contract remains unchanged. The global
+wide F1–F10 rail remains visible; the contextual compact footer is
+`↑↓ Select  1-5 Filter  / Search  Tab Focus`.
+
+### Visible action availability
+
+Every useful environment-backed action remains present in its normal
+Navigator, command-palette, workspace, Inspector, dialog, or footer location.
+The shared presentation state renders it as Available, Available with
+limitations, Unavailable, Unknown, or Unsupported from the centralized
+workspace requirement only. Disabled entries cannot be selected as
+confirmable operations, but focus/selection may land on them so the exact
+reason is discoverable. Limited entries remain usable and explain the selected
+fallback or limitation before confirmation. Client-local navigation, settings,
+help, copy/open operations, and cancellation of already-owned processes remain
+usable without compatibility authority.
+
+Action surfaces show concise state during normal work and place the full exact
+reason in the Inspector, command-palette description, or dialog body. They may
+name a required capability/tool or maintained alternative, but must not add
+release-number policy or generic unexplained `Unsupported` labels. A live
+snapshot replacement updates every visible action from one model projection;
+widgets never retain a second capability cache.
