@@ -11,9 +11,12 @@ Status values:
 
 ## Current phase
 
-`UI-LIVE-RECOVERY-001` is `IN_PROGRESS`: every child recovery task is verified;
-the parent acceptance now consolidates the full formatting, workspace, Clippy,
-bridge, documentation, and roadmap evidence.
+`UI-LIVE-RECOVERY-001` is `DONE`: normal startup is session-safe and
+metadata-capable, expected daemon absence no longer obscures the workbench,
+theme selection and pane focus are explicit, and the real colored Poky gate
+passes with 1,829 recipes. Formatting, the full workspace, Clippy, all 39
+bridge tests, docs, roadmap, and isolated PTY snapshots pass. The only
+remaining registry task is the independent host perf-policy blocker.
 
 `UI-LIVE-POKY-001` is `DONE`: the private-XDG live gate passed against
 `~/src/poky/build` with Poky 5.0.19, qemux86-64, DISTRO poky,

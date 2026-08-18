@@ -2,43 +2,47 @@
 
 ## Task
 
-**ID:** UI-LIVE-RECOVERY-001
-**Title:** Complete live workspace usability recovery
-**Status:** IN_PROGRESS
+**ID:** FINAL-GATE-PERF-001
+**Title:** Rerun the terminal gate with perf sampling enabled
+**Status:** BLOCKED
 
 ## Objective
 
-Consolidate final acceptance for safe startup, live metadata discovery, visual
-theme behavior, explicit focus routing, and the real Poky colored workbench.
+Complete the final host-level verification with real perf sampling enabled.
+All product, UI redesign, and live-workbench recovery verification passes; only
+the Flamegraph sampling policy blocks repository-wide completion.
 
 ## Dependencies
 
-- `UI-LIVE-STARTUP-001` — DONE
-- `UI-LIVE-DISCOVERY-001` — DONE
-- `UI-LIVE-POKY-001` — DONE
+- `CRATESIO-COVERAGE-001` — DONE
+- `UI-VISION-001` — DONE
+- `UI-LIVE-RECOVERY-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-cli/src/main.rs`
-- `crates/yoctui-model/src/lib.rs`
-- `crates/yoctui-ui/src/lib.rs`
-- `scripts/test-tui-snapshots.sh`
-- `scripts/test-live-workbench.sh`
-- `docs/task-registry.toml`
+- `/proc/sys/kernel/perf_event_paranoid`
+- `scripts/flamegraph.sh`
+- `scripts/verify-completion.sh`
 - `docs/implementation-status.md`
+- `docs/task-registry.toml`
 
 ## Definition of done
 
-- Every M14 child task is DONE.
-- Formatting, workspace tests, Clippy, bridge tests, and roadmap checks pass.
-- The terminal handoff returns to the independent host perf-policy blocker.
+- `perf record -- true` succeeds for the current user.
+- A fresh real headless-workload Flamegraph is generated.
+- The terminal completion gate passes without skipped required stages.
+
+## Blocker evidence
+
+- Current host value: `kernel.perf_event_paranoid=4`.
+- `scripts/flamegraph.sh` reports that perf sampling is unavailable.
+- The operator must temporarily grant `CAP_PERFMON` or lower the kernel policy.
+- After changing policy, rerun the verification commands below.
 
 ## Verification
 
 ```bash
-cargo fmt --all --check
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-python3 -m pytest bridge/tests
-./scripts/verify-roadmap.sh
+perf record -- true
+./scripts/flamegraph.sh
+./scripts/verify-completion.sh
 ```
