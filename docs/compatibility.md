@@ -103,6 +103,14 @@ maintained fallback where one is cataloged. A future unknown release is not
 rejected by name/version; it exposes only positively detected behavior and
 leaves uncertain behavior `Unknown`.
 
+Snapshots expose an operating mode derived from their mixed states, never from
+a release-name allowlist. `Full` means every recorded behavior is directly
+available. `Degraded` means at least one available/limited behavior remains
+while another is limited, unavailable, unknown, or unsupported. `Diagnostic`
+means no action capability is currently enabled, but identity, compatibility,
+Doctor, settings, and safe navigation remain usable. No mode terminates the
+application merely because one workflow is absent.
+
 ### Capability states
 
 Every catalog capability has exactly one runtime state plus bounded reason and

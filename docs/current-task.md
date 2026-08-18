@@ -2,44 +2,46 @@
 
 ## Task
 
-**ID:** COMPAT-OLD-001
-**Title:** Define older-release degradation policy
+**ID:** COMPAT-CACHE-001
+**Title:** Cache and invalidate capability snapshots safely
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Encode and test the policy that an older supported environment preserves every
-safe capability, uses only maintained catalog fallbacks, and disables isolated
-newer behavior without taking down the application.
+Associate cached capability state with one exact build-environment fingerprint
+and invalidate it on every relevant workspace, BitBake, environment, layer, or
+daemon-workspace change without leaking state between projects.
 
 ## Dependencies
 
-- `COMPAT-VERSION-001` — DONE
+- `COMPAT-PROBE-001` — DONE
+- `COMPAT-ENV-ID-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-bitbake/src/compatibility_resolver.rs`
 - `crates/yoctui-model/src/compatibility.rs`
-- `docs/compatibility.md`
-- `docs/compatibility-matrix.md`
+- `crates/yoctui-bitbake/src/compatibility_cache.rs`
+- `crates/yoctui-bitbake/src/lib.rs`
+- `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Older environments produce a complete mixed-state snapshot, not a global
-  unsupported/failure state.
-- Positive core behavior stays enabled; maintained fallbacks are limited and
-  explained; absent newer behavior is disabled with exact reasons.
-- Unsupported and Unknown stay distinct from environmental Unavailable.
-- No minimum supported release is claimed before live older-release evidence.
-- Deterministic tests cover preserved core, fallback, newer unavailable,
-  unsupported, and whole-application continuity.
+- A deterministic fingerprint includes exact workspace/build/source,
+  BitBake/tool, layer-series/configuration, initialized environment, and
+  backend/protocol identity.
+- Cache lookup requires an exact fingerprint and returns no cross-project data.
+- Relevant identity/configuration/reconnect changes invalidate and advance the
+  snapshot generation; unchanged identity may reuse bounded probe results.
+- Stale generations and overflow fail closed.
+- Tests cover each invalidation dimension, reuse, project isolation, and
+  generation behavior.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model compatibility_older_release
-./scripts/check-docs.sh
+cargo test -p yoctui-model compatibility_cache
+cargo test -p yoctui-bitbake compatibility_cache
 ./scripts/verify-roadmap.sh
 ```

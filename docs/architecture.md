@@ -2135,6 +2135,13 @@ otherwise stays Unknown. Snapshot resolution emits one record for every
 catalog ID while preserving the unfamiliar environment identity, so an unknown
 future release remains inspectable and is never rejected globally.
 
+The model derives `Full`, `Degraded`, or `Diagnostic` operating mode by counting
+the five states in a snapshot. Limited capabilities remain enabled; individual
+Unavailable, Unknown, or Unsupported records remain disabled and distinct.
+Even a snapshot with no enabled action is a valid Diagnostic state, not an
+application startup failure. This is the shared older-release degradation
+primitive; support classification remains an evidence-policy concern.
+
 Commands use this flow:
 
 ```text

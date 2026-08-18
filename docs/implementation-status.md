@@ -803,3 +803,11 @@ evidence enables exactly that behavior, negative-only is Unavailable, conflict
 is Unknown, and absent/inconclusive behavior remains Unknown unless its bounded
 catalog fallback applies. Synthetic BitBake 99.0 tests cover every case and
 prove the closed historical map is not inherited. `COMPAT-OLD-001` is active.
+
+`COMPAT-OLD-001` is complete. Snapshots now derive Full, Degraded, or
+Diagnostic mode from the five capability states, without release-name allowlist
+or global failure. A synthetic BitBake 1.52 environment preserves positively
+probed workspace behavior, selects the limited legacy Tinfoil fallback,
+disables absent Devtool upgrade, and retains a complete snapshot. A no-action
+snapshot remains valid Diagnostic. No minimum release is claimed before live
+evidence. `COMPAT-CACHE-001` is active.

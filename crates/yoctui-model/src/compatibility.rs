@@ -621,6 +621,52 @@ impl CapabilitySnapshot {
         self.capability(id)
             .is_some_and(|capability| capability.state.is_enabled())
     }
+
+    pub fn availability_summary(&self) -> CapabilityAvailabilitySummary {
+        let mut summary = CapabilityAvailabilitySummary::default();
+        for capability in &self.capabilities {
+            match capability.state {
+                CapabilityState::Available => summary.available += 1,
+                CapabilityState::AvailableWithLimitations { .. } => summary.limited += 1,
+                CapabilityState::Unavailable { .. } => summary.unavailable += 1,
+                CapabilityState::Unknown { .. } => summary.unknown += 1,
+                CapabilityState::Unsupported { .. } => summary.unsupported += 1,
+            }
+        }
+        summary
+    }
+
+    pub fn operating_mode(&self) -> EnvironmentOperatingMode {
+        let summary = self.availability_summary();
+        if summary.unavailable == 0
+            && summary.unknown == 0
+            && summary.unsupported == 0
+            && summary.limited == 0
+        {
+            EnvironmentOperatingMode::Full
+        } else if summary.available + summary.limited > 0 {
+            EnvironmentOperatingMode::Degraded
+        } else {
+            EnvironmentOperatingMode::Diagnostic
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct CapabilityAvailabilitySummary {
+    pub available: usize,
+    pub limited: usize,
+    pub unavailable: usize,
+    pub unknown: usize,
+    pub unsupported: usize,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EnvironmentOperatingMode {
+    Full,
+    Degraded,
+    Diagnostic,
 }
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
@@ -1106,6 +1152,81 @@ mod capability {
         assert_eq!(
             second.environment.build_directory.value(),
             Some(&PathBuf::from("/other/build"))
+        );
+    }
+
+    #[test]
+    fn compatibility_older_release_preserves_mixed_state_without_global_failure() {
+        let snapshot = CapabilitySnapshot {
+            generation: 8,
+            environment: environment(),
+            capabilities: vec![
+                record(
+                    CapabilityId::BitBakeWorkspaceInspection,
+                    CapabilityState::Available,
+                ),
+                record(
+                    CapabilityId::BitBakeNativeEvents,
+                    CapabilityState::AvailableWithLimitations {
+                        reason: reason("fallback.version_inference"),
+                        limitations: vec!["Legacy Tinfoil adapter is selected".into()],
+                    },
+                ),
+                record(
+                    CapabilityId::DevtoolUpgrade,
+                    CapabilityState::Unavailable {
+                        reason: reason("command.missing"),
+                    },
+                ),
+                record(
+                    CapabilityId::ResultTool,
+                    CapabilityState::Unknown {
+                        reason: reason("probe.not_run"),
+                    },
+                ),
+                record(
+                    CapabilityId::SpdxCreate,
+                    CapabilityState::Unsupported {
+                        reason: reason("yoctui.no_safe_implementation"),
+                    },
+                ),
+            ],
+        }
+        .normalize()
+        .unwrap();
+        assert_eq!(
+            snapshot.operating_mode(),
+            EnvironmentOperatingMode::Degraded
+        );
+        assert_eq!(
+            snapshot.availability_summary(),
+            CapabilityAvailabilitySummary {
+                available: 1,
+                limited: 1,
+                unavailable: 1,
+                unknown: 1,
+                unsupported: 1,
+            }
+        );
+        assert!(snapshot.allows(CapabilityId::BitBakeWorkspaceInspection));
+        assert!(snapshot.allows(CapabilityId::BitBakeNativeEvents));
+        assert!(!snapshot.allows(CapabilityId::DevtoolUpgrade));
+
+        let diagnostic = CapabilitySnapshot {
+            generation: 9,
+            environment: environment(),
+            capabilities: vec![record(
+                CapabilityId::BitBakeBuild,
+                CapabilityState::Unknown {
+                    reason: reason("probe.not_run"),
+                },
+            )],
+        }
+        .normalize()
+        .unwrap();
+        assert_eq!(
+            diagnostic.operating_mode(),
+            EnvironmentOperatingMode::Diagnostic
         );
     }
 }

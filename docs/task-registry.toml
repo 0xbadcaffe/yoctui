@@ -4625,18 +4625,18 @@ notes = "Added CapabilityResolver and complete snapshot resolution that preserve
 id = "COMPAT-OLD-001"
 milestone = "M18"
 title = "Define older-release degradation policy"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 492
 required = true
 depends_on = ["COMPAT-VERSION-001"]
-verify = ["cargo test -p yoctui-model compatibility_older_release", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Preserve safe older-release workflows, select maintained fallbacks, disable only incompatible actions with reasons, and never fail the whole application for one absent workflow."
+verify = ["cargo test -p yoctui-model compatibility_older_release", "cargo test -p yoctui-bitbake compatibility_older_release", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Added typed Full/Degraded/Diagnostic operating modes and five-state availability summary without a release-name allowlist or global unsupported state. An older BitBake 1.52 synthetic snapshot preserves positive workspace behavior, enables the legacy Tinfoil fallback with limitations, disables absent Devtool upgrade, retains all 41 records, and remains Degraded; a no-action snapshot remains valid Diagnostic. Model/bitbake tests, docs, and Clippy pass; no minimum release is claimed before live evidence."
 
 [[task]]
 id = "COMPAT-CACHE-001"
 milestone = "M18"
 title = "Cache and invalidate capability snapshots safely"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 493
 required = true
 depends_on = ["COMPAT-PROBE-001", "COMPAT-ENV-ID-001"]
