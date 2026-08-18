@@ -11,12 +11,17 @@ Status values:
 
 ## Current phase
 
-`UI-LIVE-STARTUP-001` is `IN_PROGRESS`: live diagnosis against
-`~/src/poky/build` proved that the bridge detects Poky 5.0.19, qemux86-64,
-three configured layers, and more than 1,800 recipes. The failed interactive
-launch came from a PTY snapshot process writing `backend = process` and
-`color_enabled = false` into the operator session. M14 now repairs that state
-boundary before adding direct theme/focus affordances and a live visual gate.
+`UI-LIVE-DISCOVERY-001` is `IN_PROGRESS`: the startup state boundary is fixed;
+the next task adds a direct command-palette theme route and names the active,
+next, and previous pane in the command rail.
+
+`UI-LIVE-STARTUP-001` is `DONE`: legacy session backend state no longer
+overrides the bridge default, `--no-color` no longer overwrites stored color,
+snapshot subprocesses use private XDG roots, and expected daemon absence does
+not obscure the local workbench. Focused tests and PTY snapshots pass, with a
+before/after digest proving the operator session remained unchanged. The
+previously corrupted local preference was restored to dark-pro with color and
+the bridge enabled.
 
 `UI-LIVE-RECOVERY-SPEC-001` is `DONE`: startup overrides are launch-scoped,
 test XDG roots are private, expected daemon absence stays in persistent status,

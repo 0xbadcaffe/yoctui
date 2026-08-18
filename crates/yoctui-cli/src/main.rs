@@ -192,6 +192,7 @@ struct Config {
     editor: Option<String>,
     log_level: String,
     color: bool,
+    color_forced_off: bool,
     theme: Theme,
     animation_speed: AnimationSpeed,
     reduced_motion: bool,
@@ -654,12 +655,19 @@ fn write_session(path: Option<&Path>, session: &Session) -> Result<()> {
         .with_context(|| format!("could not replace session file {}", path.display()))
 }
 
-fn persist_settings(path: Option<&Path>, session: &mut Session, app: &App) -> Result<()> {
+fn persist_settings(
+    path: Option<&Path>,
+    session: &mut Session,
+    app: &App,
+    persist_color: bool,
+) -> Result<()> {
     let mut updated = session.clone();
     updated.theme = Some(app.theme);
     updated.animation_speed = Some(app.animation_speed);
     updated.reduced_motion = Some(app.reduced_motion);
-    updated.color_enabled = Some(app.color_enabled);
+    if persist_color {
+        updated.color_enabled = Some(app.color_enabled);
+    }
     updated.log_wrap = Some(app.logs.wrap);
     updated.log_follow = Some(app.logs.follow);
     updated.pane_layout = Some(app.pane_layout.clone());
@@ -694,7 +702,6 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
         .clone()
         .or(environment_backend)
         .or(file.backend)
-        .or(session.last_backend.clone())
         .unwrap_or(Backend::Bridge);
     let configured_build_dir = cli
         .build_dir
@@ -739,6 +746,7 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
             .or_else(|| env::var("YOCTUI_LOG_LEVEL").ok())
             .unwrap_or_else(|| "info".into()),
         color: !cli.no_color && session.color_enabled.or(file.color).unwrap_or(true),
+        color_forced_off: cli.no_color,
         theme: session.theme.or(file.theme).unwrap_or_default(),
         animation_speed: session
             .animation_speed
@@ -8529,6 +8537,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         refresh,
         cancellation_timeout,
         color,
+        color_forced_off,
         theme,
         animation_speed,
         reduced_motion,
@@ -8560,9 +8569,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     ) {
         Ok(runtime) => Some(runtime),
         Err(error) => {
-            app.notification = Some(format!(
-                "Daemon unavailable; interactive runtime is local: {error}"
-            ));
+            tracing::debug!(%error, "daemon unavailable; continuing with local runtime");
             None
         }
     };
@@ -9199,7 +9206,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if let Some(action) = action
                         && let Some(Effect::PersistSettings) = update(&mut app, action)
                     {
-                        let result = persist_settings(session_path.as_deref(), &mut session, &app);
+                        let result = persist_settings(
+                            session_path.as_deref(),
+                            &mut session,
+                            &app,
+                            !color_forced_off,
+                        );
                         let persistence_action = match result {
                             Ok(()) => Action::SettingsPersisted,
                             Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
@@ -10597,8 +10609,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let action = settings_action(input).expect("settings action was checked");
                     match update(&mut app, action) {
                         Some(Effect::PersistSettings) => {
-                            let result =
-                                persist_settings(session_path.as_deref(), &mut session, &app);
+                            let result = persist_settings(
+                                session_path.as_deref(),
+                                &mut session,
+                                &app,
+                                !color_forced_off,
+                            );
                             let persistence_action = match result {
                                 Ok(()) => Action::SettingsPersisted,
                                 Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
@@ -11263,8 +11279,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     session.theme = Some(app.theme);
     session.animation_speed = Some(app.animation_speed);
     session.reduced_motion = Some(app.reduced_motion);
-    session.color_enabled = Some(app.color_enabled);
-    session.last_backend = Some(backend_kind);
+    if !color_forced_off {
+        session.color_enabled = Some(app.color_enabled);
+    }
     session.pane_layout = Some(app.pane_layout.clone());
     session.recent_build_dirs = std::iter::once(session_build_dir)
         .chain(session.recent_build_dirs)
@@ -11556,6 +11573,50 @@ mod tests {
     }
 
     #[test]
+    fn startup_session_legacy_backend_does_not_override_bridge_default() {
+        let directory = std::env::temp_dir().join(format!(
+            "yoctui-startup-session-backend-{}",
+            std::process::id()
+        ));
+        fs::create_dir_all(&directory).unwrap();
+        let config_path = directory.join("config.toml");
+        fs::write(&config_path, "").unwrap();
+        let cli =
+            Cli::try_parse_from(["yoctui", "--config", config_path.to_str().unwrap()]).unwrap();
+        let session = Session {
+            last_backend: Some(Backend::Process),
+            ..Session::default()
+        };
+
+        let resolved = resolve_config(&cli, &session).unwrap();
+        assert_eq!(resolved.backend, Backend::Bridge);
+
+        fs::remove_file(config_path).unwrap();
+        fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
+    fn startup_session_no_color_override_preserves_stored_preference() {
+        let directory = std::env::temp_dir().join(format!(
+            "yoctui-startup-session-color-{}",
+            std::process::id()
+        ));
+        let path = directory.join("session.toml");
+        let mut session = Session {
+            color_enabled: Some(true),
+            ..Session::default()
+        };
+        let mut app = App::new(8, 1024);
+        app.color_enabled = false;
+
+        persist_settings(Some(&path), &mut session, &app, false).unwrap();
+
+        assert_eq!(read_session(Some(&path)).unwrap().color_enabled, Some(true));
+        fs::remove_file(path).unwrap();
+        fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
     fn session_round_trip_preserves_preferences() {
         let directory = std::env::temp_dir().join(format!("yoctui-session-{}", std::process::id()));
         let path = directory.join("session.toml");
@@ -11635,6 +11696,7 @@ mod tests {
         assert_eq!(resolved.animation_speed, AnimationSpeed::Slow);
         assert!(resolved.reduced_motion);
         assert!(!resolved.color);
+        assert!(resolved.color_forced_off);
 
         fs::remove_file(config_path).unwrap();
         fs::remove_dir(directory).unwrap();
@@ -11658,7 +11720,7 @@ mod tests {
         app.logs.wrap = true;
         app.logs.follow = false;
 
-        persist_settings(Some(&path), &mut session, &app).unwrap();
+        persist_settings(Some(&path), &mut session, &app, true).unwrap();
         let saved = read_session(Some(&path)).unwrap();
         assert_eq!(saved.last_target.as_deref(), Some("core-image-minimal"));
         assert_eq!(saved.recent_build_dirs, [PathBuf::from("/build")]);
@@ -11685,7 +11747,7 @@ mod tests {
         app.pane_layout
             .split(root, yoctui_model::SplitAxis::Vertical)
             .unwrap();
-        persist_settings(Some(&path), &mut session, &app).unwrap();
+        persist_settings(Some(&path), &mut session, &app, true).unwrap();
         let restored = read_session(Some(&path)).unwrap().pane_layout.unwrap();
         assert_eq!(restored, app.pane_layout);
         fs::remove_file(path).unwrap();
@@ -11705,7 +11767,7 @@ mod tests {
         let mut app = App::new(10, 1_000);
         app.theme = Theme::WhiteClassic;
 
-        assert!(persist_settings(Some(&path), &mut session, &app).is_err());
+        assert!(persist_settings(Some(&path), &mut session, &app, true).is_err());
         assert_eq!(session.theme, Some(Theme::DarkPro));
 
         fs::remove_file(directory).unwrap();

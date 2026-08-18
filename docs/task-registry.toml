@@ -4335,18 +4335,18 @@ notes = "Specified launch-scoped overrides, private test XDG state, bridge-first
 id = "UI-LIVE-STARTUP-001"
 milestone = "M14"
 title = "Restore safe metadata-capable interactive startup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 466
 required = true
 depends_on = ["UI-LIVE-RECOVERY-SPEC-001"]
 verify = ["cargo test -p yoctui -- startup_session", "./scripts/test-tui-snapshots.sh", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Ignore legacy session backend state, preserve stored color across --no-color launches, isolate snapshot XDG roots, and keep expected daemon absence in persistent status while local bridge metadata loads."
+notes = "Legacy session backend state is ignored in favor of the bridge default, --no-color preserves the stored color preference, snapshot subprocesses have private XDG roots, and expected daemon absence remains non-obscuring persistent status. Focused tests and PTY snapshots pass, and a before/after digest proved the operator session was unchanged."
 
 [[task]]
 id = "UI-LIVE-DISCOVERY-001"
 milestone = "M14"
 title = "Make theme and pane focus directly discoverable"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 467
 required = true
 depends_on = ["UI-LIVE-STARTUP-001"]
