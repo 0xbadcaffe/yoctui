@@ -11,6 +11,12 @@ Status values:
 
 ## Current phase
 
+`CRATESIO-BRIDGE-001` is `IN_PROGRESS`: the first crates.io release requires
+the default Python bridge to work after `cargo install yoctui`, without a
+repository-relative source path. Package metadata and dependency-ordered
+publication follow as separate tasks; crates.io publication remains an
+explicit irreversible boundary.
+
 `DAEMON-UPGRADE-LIFECYCLE-001` is `DONE`: lifecycle validation now accepts
 Linux's exact ` (deleted)` process-image suffix only when its remaining path
 equals the private runtime record. Unrelated paths and repeated suffixes remain
@@ -117,6 +123,7 @@ See `docs/current-task.md`.
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
 | M6 Maintenance | DONE | Typed Sstate, Services, Release, and optional integrations pass their atomic, cross-layer, and milestone parent gates |
 | M7 Hardening | DONE | Fuzz, stress/process-tree, ASan/LSan, property, terminal, Valgrind, deterministic profile, real perf-backed Flamegraph, honest Python coverage, transient-spawn handling, deterministic cancellation, CI, documentation, and completion integration pass |
+| M12 crates.io distribution | IN_PROGRESS | Bundle the bridge, prepare the public package graph, then publish and clean-install `yoctui` 0.1.0 |
 
 ## Reconciliation evidence
 

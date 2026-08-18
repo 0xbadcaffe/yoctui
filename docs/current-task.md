@@ -2,46 +2,43 @@
 
 ## Task
 
-**ID:** DAEMON-UPGRADE-LIFECYCLE-001
-**Title:** Preserve daemon identity across executable replacement
-**Status:** DONE
+**ID:** CRATESIO-BRIDGE-001
+**Title:** Bundle the BitBake bridge for installed binaries
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Keep lifecycle status and attach available when a release install atomically
-replaces the on-disk Yoctui executable while the prior daemon image continues
-owning active work. Linux's exact ` (deleted)` process-image suffix may match
-the recorded executable; unrelated executable paths must remain foreign.
+Make the default bridge backend self-contained in a compiled Yoctui binary so
+`cargo install yoctui` does not depend on the source checkout. Preserve the
+explicit `YOCTUI_BRIDGE_PATH` override for development and diagnostics.
 
 ## Dependencies
 
-- `DAEMON-ATTACH-QUIT-001` — DONE
+- `DAEMON-UPGRADE-LIFECYCLE-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-protocol/src/daemon_lifecycle.rs`
+- `bridge/yoctui_bridge.py`
+- `crates/yoctui-bitbake/src/lib.rs`
+- `crates/yoctui-cli/src/main.rs`
+- `crates/yoctui-cli/src/daemon_bitbake.rs`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Exact recorded paths and their Linux ` (deleted)` process images classify as
-  the current daemon.
-- Other executable paths still classify as foreign processes.
-- The installed client reports the still-running daemon and build.
+- The production bridge source is compiled into the Rust package boundary.
+- Default standalone and daemon bridge startup work without a checkout path.
+- `YOCTUI_BRIDGE_PATH` continues to select an explicit external bridge.
 - Focused and baseline checks pass.
 - Registry/status/current-task documentation is updated and committed.
-
-All definition-of-done items and verification commands pass. This final
-completed task remains the terminal handoff because every registry task is
-`DONE`.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-protocol daemon_lifecycle
-cargo fmt --all --check
+cargo test -p yoctui-bitbake bundled_bridge
+cargo test -p yoctui bundled_bridge
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/check-docs.sh

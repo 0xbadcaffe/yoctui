@@ -4196,3 +4196,36 @@ required = true
 depends_on = ["DAEMON-ATTACH-QUIT-001"]
 verify = ["cargo test -p yoctui-protocol daemon_lifecycle", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "Lifecycle validation accepts Linux's exact ` (deleted)` suffix only when the remaining process-image path equals the private runtime record, preserving status/attach across an atomic release install while rejecting unrelated paths and repeated suffixes. Focused lifecycle tests, the workspace, Clippy, docs, and roadmap checks pass."
+
+[[task]]
+id = "CRATESIO-BRIDGE-001"
+milestone = "M12"
+title = "Bundle the BitBake bridge for installed binaries"
+status = "IN_PROGRESS"
+priority = 454
+required = true
+depends_on = ["DAEMON-UPGRADE-LIFECYCLE-001"]
+verify = ["cargo test -p yoctui-bitbake bundled_bridge", "cargo test -p yoctui bundled_bridge", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "A crates.io-installed binary must start its default Python bridge without any repository-relative runtime path; explicit YOCTUI_BRIDGE_PATH overrides remain supported."
+
+[[task]]
+id = "CRATESIO-PACKAGE-001"
+milestone = "M12"
+title = "Prepare the crates.io package graph and release metadata"
+status = "NOT_STARTED"
+priority = 455
+required = true
+depends_on = ["CRATESIO-BRIDGE-001"]
+verify = ["./scripts/verify-cratesio-package.sh", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Add accurate package metadata, public support-crate boundaries, private-package exclusions, cargo-install documentation, package-content checks, and isolated release smoke coverage for version 0.1.0."
+
+[[task]]
+id = "CRATESIO-PUBLISH-001"
+milestone = "M12"
+title = "Publish and validate yoctui 0.1.0 on crates.io"
+status = "NOT_STARTED"
+priority = 456
+required = true
+depends_on = ["CRATESIO-PACKAGE-001"]
+verify = ["cargo install yoctui --version 0.1.0 --locked", "yoctui --help", "./scripts/verify-roadmap.sh"]
+notes = "Publish support crates in dependency order, publish yoctui 0.1.0 after registry propagation, verify the immutable registry artifacts, and retain the exact release commit/tag evidence."

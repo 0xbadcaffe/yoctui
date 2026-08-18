@@ -198,3 +198,21 @@ Exit criteria:
 - startup never treats the current directory as an implicit build
 - clone, initialize, cancel, shell, and verification outcomes remain distinct
 - no build or metadata action starts before a typed connection succeeds
+
+## M12 — crates.io distribution
+
+Goal: ship the first installable public release as `yoctui` 0.1.0.
+
+Capabilities:
+
+- self-contained bridge behavior after `cargo install yoctui`
+- complete crates.io metadata and bounded package contents
+- publishable internal dependency crates with private test/support crates excluded
+- dependency-ordered, reproducible publication and clean-install smoke validation
+
+Exit criteria:
+
+- the packaged binary does not depend on repository-relative runtime files
+- every public package passes packaging and isolated build checks
+- `yoctui` 0.1.0 is published under the intended crates.io account
+- a clean registry installation runs the published binary successfully
