@@ -35,6 +35,22 @@ an isolated successful operation into a release support claim.
 - Future/development and mixed identities: **Unknown** at release-policy level;
   positively detected individual capabilities may still run.
 
+## Deterministic fixture roles
+
+The test-only fixture catalog has five policy roles: oldest-policy candidate,
+intermediate representative, current-stable candidate, latest-support
+candidate, and future/unknown. Candidate names are deliberately not official
+release selections. Every record carries `fixture_only = true` and
+`evidence_level = deterministic_fixture_only`; current-stable and latest
+official identities remain Unknown until the live tasks select them from
+authoritative Yocto documentation.
+
+Fixtures exercise the BitBake `1.46` legacy fallback boundary, an intermediate
+`2.8` modern fallback, the documented `2.18` upper mapped generation, the exact
+partially tested `2.19.0` development observation, and synthetic `99.0.0`
+future behavior. These values test resolver boundaries and direct-probe
+precedence only. They do not add a matrix classification or release claim.
+
 ## Evidence policy
 
 The final compatibility gate requires two machine-readable live records under

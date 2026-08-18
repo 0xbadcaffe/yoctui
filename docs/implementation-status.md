@@ -1010,4 +1010,9 @@ policy labels are defined. Structure validation rejects ambiguous rows and
 requires non-fixture latest/older evidence before any support claim. The docs
 gate now validates bridge protocol lifecycle and Doctor JSON without bypassing
 daemon capability authority. Documentation and structure checks pass.
-`COMPAT-TEST-FIXTURES-001` is active.
+`COMPAT-TEST-FIXTURES-001` is complete. Five reusable, explicitly fixture-only
+policy roles carry typed identities, direct observations, and exact expected
+states/implementations through the production catalog and resolver. Complete
+snapshots prove legacy/modern boundaries, direct override, closed future
+fallback, and positive-only future enablement. Focused workspace tests and
+Clippy pass. `COMPAT-TEST-CMDS-001` is active.

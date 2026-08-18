@@ -8,6 +8,8 @@ mod compatibility_api;
 mod compatibility_cache;
 mod compatibility_command;
 mod compatibility_devtool;
+#[cfg(any(test, feature = "test-fixtures"))]
+mod compatibility_fixtures;
 mod compatibility_layers;
 mod compatibility_probe;
 mod compatibility_recipetool;
@@ -102,6 +104,11 @@ pub use compatibility_devtool::{
     DEVTOOL_STATUS_IMPLEMENTATION, DEVTOOL_UNDEPLOY_TARGET_IMPLEMENTATION,
     DEVTOOL_UPDATE_RECIPE_IMPLEMENTATION, DEVTOOL_UPGRADE_IMPLEMENTATION, DevtoolCommandPlanner,
     DevtoolCompatibilityError,
+};
+#[cfg(any(test, feature = "test-fixtures"))]
+pub use compatibility_fixtures::{
+    CompatibilityFixtureRole, FixtureCapabilityExpectation, FixtureCapabilityState,
+    ReleaseCapabilityFixture, fixture_implementation, fixture_state, release_capability_fixtures,
 };
 pub use compatibility_layers::{
     BITBAKE_LAYERS_ADD_IMPLEMENTATION, BITBAKE_LAYERS_CREATE_ADD_IMPLEMENTATION,

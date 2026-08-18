@@ -2,46 +2,49 @@
 
 ## Task
 
-**ID:** COMPAT-TEST-FIXTURES-001
-**Title:** Add release capability fixtures
+**ID:** COMPAT-TEST-CMDS-001
+**Title:** Test version-correlated command generation
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add deterministic capability fixtures for representative Yocto/BitBake
-generations without converting fixture coverage into release support claims.
+Use the shared generation fixtures to prove every version-varying command
+emits only compatible argv and is rejected before spawn when unavailable.
 
 ## Dependencies
 
-- `COMPAT-OLD-001` — DONE
-- `COMPAT-UNKNOWN-001` — DONE
-- `COMPAT-CATALOG-001` — DONE
+- `COMPAT-TEST-FIXTURES-001` — DONE
+- `COMPAT-BITBAKE-CMD-001` — DONE
+- `COMPAT-DEVTOOL-001` — DONE
+- `COMPAT-RECIPETOOL-001` — DONE
+- `COMPAT-LAYERS-001` — DONE
+- `COMPAT-PKGDATA-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/compatibility.rs`
-- `crates/yoctui-bitbake/src/compatibility_resolver.rs`
-- `crates/yoctui-bitbake/src/compatibility_version.rs`
-- `crates/yoctui-bitbake/tests/`
+- `crates/yoctui-bitbake/src/compatibility_fixtures.rs`
+- `crates/yoctui-bitbake/src/compatibility_command.rs`
+- `crates/yoctui-bitbake/src/compatibility_devtool.rs`
+- `crates/yoctui-bitbake/src/compatibility_recipetool.rs`
+- `crates/yoctui-bitbake/src/compatibility_layers.rs`
+- `crates/yoctui-bitbake/src/package.rs`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Fixtures cover the policy's oldest representative generation, one
-  intermediate generation, current stable representative, latest-known
-  representative, and a synthetic future/unknown generation.
-- Each fixture carries exact authoritative identity, direct observations, and
-  expected capability/implementation differences.
-- Future/unknown behavior enables only positive direct probes; conservative
-  fallback behavior remains exact for older/intermediate fixtures.
-- Fixtures are deterministic, bounded, centralized, and reusable by command
-  and UI tests; labels explicitly deny live/support evidence status.
-- Exact fixture differences are asserted and catalog completeness is retained.
+- Old fixtures generate only old-compatible argv and new fixtures generate
+  only positively evidenced modern argv.
+- No planner emits an option or subcommand absent from its fixture authority.
+- Maintained fallback implementation IDs select exact alternate argv forms;
+  unknown/unavailable capabilities are rejected before process construction.
+- BitBake, Devtool, Recipetool, bitbake-layers, and pkgdata version-varying
+  command families are covered from the same shared snapshots.
+- Command tests inspect typed argv directly and do not spawn external tools.
 
 ## Verification
 
 ```bash
-cargo test --workspace --all-features compatibility_fixture
+cargo test --workspace --all-features compatibility_command
 ./scripts/verify-roadmap.sh
 ```

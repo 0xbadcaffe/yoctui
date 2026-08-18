@@ -274,6 +274,16 @@ or turn fixture/version identity into a release-support claim. Until current
 live matrix evidence is correlated into authority, release support is honestly
 reported as Unknown even when individual capabilities are positively verified.
 
+The reusable deterministic fixture catalog resolves the complete capability
+inventory for five explicit policy roles. It covers legacy and modern fallback
+boundaries, direct-probe overrides at the latest known boundary, and a
+synthetic future generation where only positive direct observations enable a
+feature. Every fixture has an exact build/source/tool/backend/protocol identity
+with independently Unknown release fields where no authoritative release was
+selected. Its `fixture_only` and `deterministic_fixture_only` labels are part of
+the test contract, so current-stable/latest candidate slots cannot be mistaken
+for live support evidence.
+
 ### Current centralized version fallback map
 
 The initial map contains one deliberately narrow unprobeable selector:

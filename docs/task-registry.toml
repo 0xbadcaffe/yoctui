@@ -4900,18 +4900,18 @@ notes = "The matrix defines all six exact policy classifications, records the ex
 id = "COMPAT-TEST-FIXTURES-001"
 milestone = "M18"
 title = "Add release capability fixtures"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 507
 required = true
 depends_on = ["COMPAT-UNKNOWN-001", "COMPAT-OLD-001", "COMPAT-CATALOG-001"]
 verify = ["cargo test --workspace --all-features compatibility_fixture", "./scripts/verify-roadmap.sh"]
-notes = "Add deterministic oldest, intermediate, current stable, latest supported, and synthetic future/unknown environments with exact capability differences."
+notes = "A reusable test-fixtures catalog provides five explicitly unclaimed policy roles: oldest candidate, intermediate, current-stable candidate, latest-support candidate, and synthetic future/unknown. Each has typed authoritative build/source/BitBake/DISTRO/MACHINE/layer/tool/backend/protocol identity, fixture-only evidence labels, direct observations, and exact state/implementation expectations. Production catalog+resolver output remains complete for every CapabilityId; tests prove legacy/modern boundaries, direct override, closed 2.19/future fallback, and positive-only future enablement. Three focused workspace fixture tests, roadmap validation, and warnings-denied workspace Clippy pass."
 
 [[task]]
 id = "COMPAT-TEST-CMDS-001"
 milestone = "M18"
 title = "Test version-correlated command generation"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 508
 required = true
 depends_on = ["COMPAT-TEST-FIXTURES-001", "COMPAT-BITBAKE-CMD-001", "COMPAT-DEVTOOL-001", "COMPAT-RECIPETOOL-001", "COMPAT-LAYERS-001", "COMPAT-PKGDATA-001"]

@@ -2433,6 +2433,14 @@ remain distinct fail-closed diagnostics. Existing local environment/bridge
 health checks are separate from the compatibility section and cannot enable a
 feature or create a release-support claim.
 
+Multi-generation test data lives behind the BitBake crate's `test-fixtures`
+feature. Each fixture contains a typed environment, direct observations, and
+exact expected states/implementations, then passes through the production
+catalog and resolver to produce a complete normalized snapshot. The five
+policy roles are explicitly fixture-only candidates rather than release
+claims. Command and dynamic-UI tests may consume these resolved snapshots, but
+production code and release-support evidence cannot.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.
