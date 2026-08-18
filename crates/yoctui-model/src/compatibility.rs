@@ -279,6 +279,8 @@ pub enum CapabilityId {
     DevtoolUpgrade,
     #[serde(rename = "recipetool.create")]
     RecipetoolCreate,
+    #[serde(rename = "recipetool.create_outfile")]
+    RecipetoolCreateOutfile,
     #[serde(rename = "recipetool.appendfile")]
     RecipetoolAppendFile,
     #[serde(rename = "bitbake_layers.show_layers")]
@@ -322,7 +324,7 @@ pub enum CapabilityId {
 }
 
 impl CapabilityId {
-    pub const ALL: [Self; 53] = [
+    pub const ALL: [Self; 54] = [
         Self::BitBakeWorkspaceInspection,
         Self::BitBakeRecipeInventory,
         Self::BitBakeRecipeDependencies,
@@ -356,6 +358,7 @@ impl CapabilityId {
         Self::DevtoolReset,
         Self::DevtoolUpgrade,
         Self::RecipetoolCreate,
+        Self::RecipetoolCreateOutfile,
         Self::RecipetoolAppendFile,
         Self::BitBakeLayersShowLayers,
         Self::BitBakeLayersCreateLayer,
@@ -413,6 +416,7 @@ impl CapabilityId {
             Self::DevtoolReset => "devtool.reset",
             Self::DevtoolUpgrade => "devtool.upgrade",
             Self::RecipetoolCreate => "recipetool.create",
+            Self::RecipetoolCreateOutfile => "recipetool.create_outfile",
             Self::RecipetoolAppendFile => "recipetool.appendfile",
             Self::BitBakeLayersShowLayers => "bitbake_layers.show_layers",
             Self::BitBakeLayersCreateLayer => "bitbake_layers.create_layer",

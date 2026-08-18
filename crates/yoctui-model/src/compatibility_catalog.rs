@@ -581,6 +581,13 @@ fn definition(id: CapabilityId) -> Definition {
             &[],
             "recipetool.create.argv",
         ),
+        Id::RecipetoolCreateOutfile => tool_command(
+            "Recipetool create with explicit output",
+            Tool::Recipetool,
+            Some("create"),
+            &["--outfile"],
+            "recipetool.create.outfile.argv",
+        ),
         Id::RecipetoolAppendFile => tool_command(
             "Recipetool appendfile",
             Tool::Recipetool,

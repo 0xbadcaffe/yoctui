@@ -2257,6 +2257,17 @@ state, and selected implementation before status inspection, PTY preview, or
 job spawn. An older environment can therefore retain modify while exposing an
 exact reason for an absent upgrade subcommand.
 
+Recipetool uses a separate closed `RecipetoolOperation` model and
+`RecipetoolCommandPlanner`. Create requires both the independently probed
+`recipetool.create` behavior and its `--outfile` option capability; appendfile
+requires only its own subcommand capability. The planner binds the exact
+initialized executable, build directory, snapshot generation, and selected
+implementation for every required behavior before producing native argv.
+Thus an older environment may retain appendfile while create is disabled with
+the exact missing-option reason. Utility-menu entries carry capability IDs,
+and app availability projects those centralized records rather than host PATH
+or release checks. No Recipetool process path exists outside this authority.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.

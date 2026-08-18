@@ -867,4 +867,11 @@ argv. Status inspection, PTY edit previews, local jobs, and daemon-owned jobs
 all use that boundary and fail closed with the retained probe reason when the
 snapshot is absent, stale, or unavailable. Focused bitbake/app/daemon tests,
 all 215 bitbake tests, and workspace check pass. `COMPAT-RECIPETOOL-001` is
-active.
+complete. A distinct 54th record probes `create --outfile` independently from
+the create subcommand. Closed typed create/appendfile operations and
+`RecipetoolCommandPlanner` require the exact environment, generation,
+initialized executable, complete required capability set, and selected
+implementations before returning argv. The utility menu carries these IDs and
+app availability changes directly with the snapshot and exact reason. Focused
+old/new, exact argv, stale, cross-subcommand, unavailable, and zero-spawn tests
+pass with workspace check and Clippy. `COMPAT-LAYERS-001` is active.

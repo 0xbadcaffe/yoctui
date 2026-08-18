@@ -334,6 +334,8 @@ Capabilities:
 - safe direct probes plus centralized conservative version fallbacks
 - daemon-owned, generation-correlated capability state shared by every client
 - compatible BitBake/API/utility implementations selected before typed argv
+- independently probed Devtool and Recipetool subcommands/options with exact
+  unavailable reasons and no cross-command authorization
 - dynamic workspace/UI gating and an Environment/Compatibility inspector
 - deterministic release-generation fixtures and current live multi-release evidence
 

@@ -4702,18 +4702,18 @@ notes = "Expanded the catalog to 53 behavior IDs so status, edit-recipe, modify,
 id = "COMPAT-RECIPETOOL-001"
 milestone = "M18"
 title = "Make Recipetool workflows capability-aware"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 499
 required = true
 depends_on = ["COMPAT-BITBAKE-CMD-001"]
 verify = ["cargo test -p yoctui-bitbake compatibility_recipetool", "cargo test -p yoctui-app compatibility_recipetool", "./scripts/verify-roadmap.sh"]
-notes = "Probe Recipetool subcommands/options and gate typed workflow actions through the shared snapshot."
+notes = "Added a 54th behavior capability for the independently probed create --outfile option, closed typed create/appendfile operations, and RecipetoolCommandPlanner. The planner binds the initialized-environment executable, build directory, generation, every required subcommand/option capability, and exact selected implementation before returning shell-free native argv. Create cannot run when only its subcommand but not --outfile is observed; appendfile remains independently available. The utility menu now carries capability IDs and includes appendfile, while app availability loads/unloads both actions with exact retained reasons. Four bitbake tests and one app test cover modern/older surfaces, exact argv, stale/environment/executable/cross-subcommand rejection, absent authority, and zero spawn; workspace check, model catalog/menu tests, and warnings-denied Clippy pass."
 
 [[task]]
 id = "COMPAT-LAYERS-001"
 milestone = "M18"
 title = "Make bitbake-layers workflows capability-aware"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 500
 required = true
 depends_on = ["COMPAT-BITBAKE-CMD-001", "COMPAT-BITBAKE-API-001"]

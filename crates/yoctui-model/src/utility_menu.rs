@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::CapabilityId;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UtilityMenuKind {
     Devtool,
@@ -14,6 +16,7 @@ pub enum UtilityMenuKind {
 pub struct UtilityMenuEntry {
     pub kind: UtilityMenuKind,
     pub operation: String,
+    pub capability: Option<CapabilityId>,
     pub typed_fields: Vec<String>,
     pub destructive: bool,
     pub network: bool,
@@ -44,23 +47,75 @@ impl ExpertArguments {
 
 pub fn utility_menu_catalog() -> Vec<UtilityMenuEntry> {
     vec![
-        (UtilityMenuKind::Devtool, "status", false, false),
-        (UtilityMenuKind::Devtool, "modify", true, false),
-        (UtilityMenuKind::Recipetool, "create", true, false),
-        (UtilityMenuKind::BitBakeLayers, "show-layers", false, false),
-        (UtilityMenuKind::BitBakeLayers, "add-layer", true, false),
-        (UtilityMenuKind::Pkgdata, "lookup-pkg", false, false),
-        (UtilityMenuKind::Core, "bitbake-target", true, false),
-        (UtilityMenuKind::Advanced, "expert-argv", false, false),
+        (
+            UtilityMenuKind::Devtool,
+            "status",
+            Some(CapabilityId::DevtoolStatus),
+            false,
+            false,
+        ),
+        (
+            UtilityMenuKind::Devtool,
+            "modify",
+            Some(CapabilityId::DevtoolModify),
+            true,
+            false,
+        ),
+        (
+            UtilityMenuKind::Recipetool,
+            "create",
+            Some(CapabilityId::RecipetoolCreateOutfile),
+            true,
+            false,
+        ),
+        (
+            UtilityMenuKind::Recipetool,
+            "appendfile",
+            Some(CapabilityId::RecipetoolAppendFile),
+            true,
+            false,
+        ),
+        (
+            UtilityMenuKind::BitBakeLayers,
+            "show-layers",
+            Some(CapabilityId::BitBakeLayersShowLayers),
+            false,
+            false,
+        ),
+        (
+            UtilityMenuKind::BitBakeLayers,
+            "add-layer",
+            None,
+            true,
+            false,
+        ),
+        (
+            UtilityMenuKind::Pkgdata,
+            "lookup-pkg",
+            Some(CapabilityId::PkgDataLookupPackage),
+            false,
+            false,
+        ),
+        (
+            UtilityMenuKind::Core,
+            "bitbake-target",
+            Some(CapabilityId::BitBakeBuild),
+            true,
+            false,
+        ),
+        (UtilityMenuKind::Advanced, "expert-argv", None, false, false),
     ]
     .into_iter()
-    .map(|(kind, operation, destructive, network)| UtilityMenuEntry {
-        kind,
-        operation: operation.into(),
-        typed_fields: Vec::new(),
-        destructive,
-        network,
-    })
+    .map(
+        |(kind, operation, capability, destructive, network)| UtilityMenuEntry {
+            kind,
+            operation: operation.into(),
+            capability,
+            typed_fields: Vec::new(),
+            destructive,
+            network,
+        },
+    )
     .collect()
 }
 

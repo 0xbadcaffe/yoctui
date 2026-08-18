@@ -9,6 +9,7 @@ mod compatibility_cache;
 mod compatibility_command;
 mod compatibility_devtool;
 mod compatibility_probe;
+mod compatibility_recipetool;
 mod compatibility_resolver;
 mod compatibility_version;
 mod image;
@@ -104,6 +105,11 @@ pub use compatibility_devtool::{
 pub use compatibility_probe::{
     CapabilityProbeContext, CapabilityProbeContextError, CapabilityProbeObservation,
     CapabilityProbeRunner, CapabilityProbeStatus,
+};
+pub use compatibility_recipetool::{
+    RECIPETOOL_APPEND_FILE_IMPLEMENTATION, RECIPETOOL_CREATE_IMPLEMENTATION,
+    RECIPETOOL_CREATE_OUTFILE_IMPLEMENTATION, RecipetoolCommandPlanner, RecipetoolCommandSpec,
+    RecipetoolCompatibilityError,
 };
 pub use compatibility_resolver::{
     CapabilityResolver, ResolvedCapability, ResolvedCapabilitySnapshot,

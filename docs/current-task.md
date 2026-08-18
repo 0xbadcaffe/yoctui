@@ -2,19 +2,20 @@
 
 ## Task
 
-**ID:** COMPAT-RECIPETOOL-001
-**Title:** Make Recipetool workflows capability-aware
+**ID:** COMPAT-LAYERS-001
+**Title:** Make bitbake-layers workflows capability-aware
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Probe the connected environment's Recipetool subcommands and options, then
-derive every Recipetool action and exact argv implementation from the centralized daemon
-capability snapshot.
+Probe the connected environment's bitbake-layers subcommands and options, then
+derive every Layers action and exact argv implementation from the centralized
+daemon capability snapshot.
 
 ## Dependencies
 
 - `COMPAT-BITBAKE-CMD-001` — DONE
+- `COMPAT-BITBAKE-API-001` — DONE
 
 ## Relevant files
 
@@ -29,10 +30,10 @@ capability snapshot.
 
 ## Definition of done
 
-- Create and appendfile subcommands/options are derived from the centralized
-  capability catalog and direct initialized-environment probes, never host
-  PATH or release-local checks.
-- Every Recipetool preview/run requires the current environment and generation,
+- Show-layers, create-layer, add-layer, remove-layer, and every existing Layers
+  action are derived from centralized direct initialized-environment probes,
+  never host PATH or release-local checks.
+- Every bitbake-layers preview/run requires the current environment and generation,
   enabled capability, and exact selected command implementation.
 - Missing subcommands/options retain exact unavailable reasons and reject
   before process creation; one available subcommand cannot authorize another.
@@ -44,7 +45,7 @@ capability snapshot.
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake compatibility_recipetool
-cargo test -p yoctui-app compatibility_recipetool
+cargo test -p yoctui-bitbake compatibility_layers
+cargo test -p yoctui-app compatibility_layers
 ./scripts/verify-roadmap.sh
 ```

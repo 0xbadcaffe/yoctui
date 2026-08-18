@@ -11,7 +11,7 @@ required before a release claim; `fixture` means deterministic adapter tests.
 | `oe-init-build-env`, `oe-setup-builddir`, `oe-buildenv-internal` | informational/internal | Environment capabilities only; never arbitrary child jobs; live Poky required |
 | `bitbake` targets, tasks, `-f`, `-g`, env | typed workflow | Typed target/task forms, preview, cancellation, bounded job output; live bridge evidence |
 | `devtool` | typed workflow + expert argv | Recipe/workspace forms for common lifecycle; exact identity, confirmation, fixture coverage and version-aware live evidence |
-| `recipetool` | typed workflow + expert argv | Source/layer destination forms; protect existing files and refresh inventory |
+| `recipetool` | typed capability-gated create/appendfile workflow + expert argv | Source/layer destination forms; require probed subcommand/options, protect existing files, and refresh inventory |
 | `bitbake-layers` | typed workflow + expert argv | Read-only queries inspectable; mutations previewed and confirmed |
 | `oe-pkgdata-util` | typed workflow + expert argv | Packages navigation; explicit unavailable state when pkgdata is absent |
 | `bitbake-getvar`, `bitbake-dumpsig`, `bitbake-diffsigs`, `dumpsig`, `diffsigs`, `whatchanged` | typed workflow | Exact variable/signature identity and bounded reports |
