@@ -4559,18 +4559,18 @@ notes = "The normative contract now defines authoritative identity and weak-heur
 id = "COMPAT-ENV-ID-001"
 milestone = "M18"
 title = "Add typed Yocto environment identity"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 486
 required = true
 depends_on = ["COMPAT-SPEC-001"]
 verify = ["cargo test -p yoctui-model compatibility::environment_identity", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Represent only authoritative BitBake, OE-Core/Poky, distro, machine, layer-series, build/source/tooling, and backend/protocol observations; Unknown remains explicit."
+notes = "Added the pure serializable YoctoEnvironmentIdentity boundary with independently Unknown/Detected authoritative fields for build/source roots, BitBake, OE-Core/Poky, distro, machine, configured layer series, available tooling, backend, and protocol. Bounded normalization rejects wrong authority, weak-heuristic substitution, unsafe paths/text, empty detected inventories, and conflicting duplicates while preserving partial and mixed-series environments. Six focused tests and model Clippy pass."
 
 [[task]]
 id = "COMPAT-CAP-MODEL-001"
 milestone = "M18"
 title = "Create centralized typed capability model"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 487
 required = true
 depends_on = ["COMPAT-ENV-ID-001"]

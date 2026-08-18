@@ -753,3 +753,12 @@ states, catalog alternatives, daemon ownership/cache invalidation, runtime UI
 revalidation, and exact deterministic versus live evidence requirements. No
 minimum supported series or latest supported stable is claimed before the two
 required M18 live gates. `COMPAT-ENV-ID-001` is active.
+
+`COMPAT-ENV-ID-001` is complete. The model now has a pure, serializable,
+bounded `YoctoEnvironmentIdentity` whose fields independently retain Unknown or
+an authoritative detected value/source. It covers BitBake, OE-Core/Poky,
+DISTRO/MACHINE, configured layer series, canonical build/source roots,
+initialized-environment tools, backend, and protocol. Normalization rejects
+wrong authority, unsafe paths/text, oversized or empty detected inventories,
+and conflicting duplicate tools/layers; six tests include partial, invalid,
+duplicate, and mixed-series environments. `COMPAT-CAP-MODEL-001` is active.

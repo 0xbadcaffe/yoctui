@@ -2,19 +2,19 @@
 
 ## Task
 
-**ID:** COMPAT-ENV-ID-001
-**Title:** Add typed Yocto environment identity
+**ID:** COMPAT-CAP-MODEL-001
+**Title:** Create centralized typed capability model
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add a pure typed model containing only authoritative detected identity for the
-selected Yocto/OpenEmbedded/BitBake environment, with every unavailable value
-represented explicitly as Unknown.
+Create the pure, bounded, behavior-oriented capability domain model that will
+become the single availability source for catalog evaluation, daemon state,
+protocol snapshots, actions, and rendering.
 
 ## Dependencies
 
-- `COMPAT-SPEC-001` — DONE
+- `COMPAT-ENV-ID-001` — DONE
 
 ## Relevant files
 
@@ -26,19 +26,19 @@ represented explicitly as Unknown.
 
 ## Definition of done
 
-- Typed fields cover BitBake, OE-Core/Poky, distro, machine, layer-series,
-  canonical build/source roots, environment tooling, and backend/protocol.
-- Unknown is explicit per field; weak heuristics cannot construct authority.
-- Identity normalization is bounded, deterministic, and tested for invalid,
-  duplicate, mixed-layer, and partial environments.
-- Serialization remains suitable for the later bounded protocol task without
-  importing protocol or backend types into the model.
-- Focused tests and required documentation/roadmap checks pass.
+- Stable typed capability IDs represent behavior, not release versions.
+- States are Available, AvailableWithLimitations, Unavailable, Unknown, and
+  Unsupported with bounded reason codes/text and typed evidence.
+- A normalized snapshot is tied to an exact environment identity and monotonic
+  generation, rejects duplicates/invalid evidence, and supports lookup.
+- The required initial capability inventory is centralized outside renderers.
+- Tests cover all states, reason/evidence bounds, duplicates, ordering,
+  environment association, and unknown-safe action decisions.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model compatibility::environment_identity
+cargo test -p yoctui-model compatibility::capability
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

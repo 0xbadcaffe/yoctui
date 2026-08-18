@@ -2069,6 +2069,18 @@ and evidence. Direct positive probes override conservative fallback inference
 where safe. An unknown future release is not rejected merely because its label
 is unfamiliar, but uncertain historical behavior is never assumed.
 
+`yoctui-model::YoctoEnvironmentIdentity` is the pure identity boundary. Each
+field is an `AuthoritativeValue<T>` and is independently `Unknown` or
+`Detected { value, authority }`; the authority enum intentionally has no weak
+heuristic variant. Bounded nested types represent OE-Core/Poky release identity,
+distro, configured layer series, source roots, initialized-environment tools,
+backend, and protocol. Normalization rejects wrong authorities, unsafe paths,
+invalid text, oversized inventories, and conflicting duplicate tool/layer
+identities while preserving mixed compatible-series observations. Existing
+legacy `Workspace` release/version fields remain transport inputs during M18
+and must be mapped through this boundary before they can influence capability
+state.
+
 Commands use this flow:
 
 ```text
