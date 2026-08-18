@@ -514,7 +514,16 @@ fn fixed_milli(value: u32) -> String {
 }
 
 fn build_pace(app: &App) -> String {
-    let Some(elapsed) = app.elapsed().filter(|elapsed| elapsed.as_secs() > 0) else {
+    build_pace_at(app, SystemTime::now())
+}
+
+fn build_pace_at(app: &App, now: SystemTime) -> String {
+    let Some(elapsed) = app
+        .build
+        .started
+        .and_then(|started| now.duration_since(started).ok())
+        .filter(|elapsed| elapsed.as_secs() > 0)
+    else {
         return "avg --/m · ETA --".into();
     };
     let Ok(completed) = u64::try_from(app.build.completed) else {
@@ -852,7 +861,7 @@ fn shortcut_rail<'a>(app: &App, shortcuts: &'a str) -> Line<'a> {
     Line::from(spans)
 }
 
-fn workbench_footer(frame: &mut Frame, app: &App, area: Rect) {
+fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let palette = ThemePalette::for_app(app);
     let columns = Layout::horizontal([Constraint::Min(20), Constraint::Length(10)]).split(area);
     let shortcuts = responsive_footer_shortcuts(app, area.width);
@@ -861,7 +870,7 @@ fn workbench_footer(frame: &mut Frame, app: &App, area: Rect) {
         columns[0],
     );
     frame.render_widget(
-        Paragraph::new(clock_text(SystemTime::now()))
+        Paragraph::new(clock_text(now))
             .alignment(Alignment::Right)
             .style(palette.role(palette.foreground, Modifier::DIM)),
         columns[1],
@@ -869,6 +878,10 @@ fn workbench_footer(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 pub fn render(frame: &mut Frame, app: &App) {
+    render_at(frame, app, SystemTime::now());
+}
+
+fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     let area = frame.area();
     let palette = ThemePalette::for_app(app);
     frame.render_widget(Block::default().style(palette.base()), area);
@@ -890,8 +903,8 @@ pub fn render(frame: &mut Frame, app: &App) {
     ])
     .split(area);
     workbench_header(frame, app, chunks[0]);
-    responsive_shell(frame, app, chunks[1], area.width);
-    workbench_footer(frame, app, chunks[2]);
+    responsive_shell(frame, app, chunks[1], area.width, now);
+    workbench_footer(frame, app, chunks[2], now);
     if app.command_palette_open {
         command_palette(frame, app, area);
     } else if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() {
@@ -1824,7 +1837,13 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
-fn responsive_shell(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {
+fn responsive_shell(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    terminal_width: u16,
+    now: SystemTime,
+) {
     if app.screen == Screen::Dashboard && !app.daemon.pty_sessions.is_empty() {
         terminal_session_panes(frame, app, area);
         return;
@@ -1850,24 +1869,24 @@ fn responsive_shell(frame: &mut Frame, app: &App, area: Rect, terminal_width: u1
             .split(area)
         };
         navigator(frame, app, panes[0]);
-        workspace(frame, app, panes[1]);
-        inspector(frame, app, panes[2]);
+        workspace(frame, app, panes[1], now);
+        inspector(frame, app, panes[2], now);
     } else if terminal_width >= 100 {
         let panes = Layout::horizontal([Constraint::Length(22), Constraint::Min(40)]).split(area);
         navigator(frame, app, panes[0]);
-        workspace(frame, app, panes[1]);
+        workspace(frame, app, panes[1], now);
         if app.focus == FocusTarget::Inspector {
             frame.render_widget(Clear, panes[1]);
-            inspector(frame, app, panes[1]);
+            inspector(frame, app, panes[1], now);
         }
     } else {
         let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(area);
         pane_switcher(frame, app, rows[0]);
         match app.focus {
             FocusTarget::Navigator => navigator(frame, app, rows[1]),
-            FocusTarget::Inspector => inspector(frame, app, rows[1]),
+            FocusTarget::Inspector => inspector(frame, app, rows[1], now),
             FocusTarget::Workspace | FocusTarget::Dialog | FocusTarget::CommandPalette => {
-                workspace(frame, app, rows[1]);
+                workspace(frame, app, rows[1], now);
             }
         }
     }
@@ -2315,10 +2334,10 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(Paragraph::new(Text::from(lines)), inner);
 }
 
-fn workspace(frame: &mut Frame, app: &App, area: Rect) {
+fn workspace(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     match app.screen {
         Screen::Dashboard => dashboard(frame, app, area),
-        Screen::Tasks => tasks_workspace(frame, app, area),
+        Screen::Tasks => tasks_workspace(frame, app, area, now),
         Screen::BuildHistory => build_history(frame, app, area),
         Screen::Dependencies => dependencies(frame, app, area),
         Screen::Signatures => signature_records(frame, app, area),
@@ -2348,7 +2367,7 @@ fn workspace(frame: &mut Frame, app: &App, area: Rect) {
     }
 }
 
-fn task_metadata_text(row: Option<&TaskRow>) -> String {
+fn task_metadata_text(row: Option<&TaskRow>, now: SystemTime) -> String {
     match row {
         None => "No task selected.\nTask details appear as typed BitBake events arrive.".into(),
         Some(TaskRow::WaitingSummary(count)) => format!(
@@ -2366,7 +2385,7 @@ fn task_metadata_text(row: Option<&TaskRow>) -> String {
                 .map_or_else(|| "unavailable".into(), |pid| pid.to_string()),
             task.started
                 .map_or_else(|| "unavailable".into(), clock_text),
-            task.elapsed_at(SystemTime::now())
+            task.elapsed_at(now)
                 .map_or_else(|| "unavailable".into(), format_duration),
             task.log_path
                 .as_ref()
@@ -2433,14 +2452,14 @@ fn system_status_text(app: &App) -> String {
     )
 }
 
-fn tasks_inspector(frame: &mut Frame, app: &App, area: Rect) {
+fn tasks_inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let selected = app.selected_task_row();
     let focused = app.focus == FocusTarget::Inspector;
     if area.height < 32 {
         let sections =
             Layout::vertical([Constraint::Percentage(58), Constraint::Percentage(42)]).split(area);
         frame.render_widget(
-            Paragraph::new(task_metadata_text(selected.as_ref()))
+            Paragraph::new(task_metadata_text(selected.as_ref(), now))
                 .block(pane_block(app, "Inspector: Task", focused))
                 .wrap(Wrap { trim: false }),
             sections[0],
@@ -2462,7 +2481,7 @@ fn tasks_inspector(frame: &mut Frame, app: &App, area: Rect) {
     ])
     .split(area);
     frame.render_widget(
-        Paragraph::new(task_metadata_text(selected.as_ref()))
+        Paragraph::new(task_metadata_text(selected.as_ref(), now))
             .block(pane_block(app, "Inspector: Task", focused))
             .wrap(Wrap { trim: false }),
         sections[0],
@@ -2489,9 +2508,9 @@ fn tasks_inspector(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
-fn inspector(frame: &mut Frame, app: &App, area: Rect) {
+fn inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     if app.screen == Screen::Tasks {
-        tasks_inspector(frame, app, area);
+        tasks_inspector(frame, app, area, now);
         return;
     }
     let details = match app.screen {
@@ -3150,7 +3169,7 @@ fn task_filter_summary(app: &App) -> String {
     filters.join(" · ")
 }
 
-fn render_task_table(frame: &mut Frame, app: &App, area: Rect, rows: &[TaskRow]) {
+fn render_task_table(frame: &mut Frame, app: &App, area: Rect, rows: &[TaskRow], now: SystemTime) {
     let waiting = app.waiting_task_count();
     let active = app
         .tasks
@@ -3175,7 +3194,7 @@ fn render_task_table(frame: &mut Frame, app: &App, area: Rect, rows: &[TaskRow])
     let target = app.build.target.as_deref().unwrap_or("not selected");
     let title = format!(
         "Tasks: {target} · {progress} · A{active} W{waiting} F{failed} · {} · {}",
-        build_pace(app),
+        build_pace_at(app, now),
         task_filter_summary(app)
     );
     let table_rows = rows.iter().enumerate().map(|(index, row)| {
@@ -3198,7 +3217,7 @@ fn render_task_table(frame: &mut Frame, app: &App, area: Rect, rows: &[TaskRow])
                     task_state_style(app, task.state),
                 )),
                 Cell::from(
-                    task.elapsed_at(SystemTime::now())
+                    task.elapsed_at(now)
                         .map(format_duration)
                         .unwrap_or_else(|| "--".into()),
                 ),
@@ -3272,8 +3291,7 @@ fn background_job_style(app: &App, status: BackgroundJobStatus) -> Style {
     }
 }
 
-fn render_job_history(frame: &mut Frame, app: &App, area: Rect) {
-    let now = SystemTime::now();
+fn render_job_history(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let mut rows = app
         .background_jobs
         .jobs
@@ -3342,7 +3360,7 @@ fn render_job_history(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
-fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
+fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let rows = app.visible_task_rows();
     let selected = rows.get(app.task_progress_scroll);
     if area.height >= 27 {
@@ -3352,15 +3370,15 @@ fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect) {
             Constraint::Min(6),
         ])
         .split(area);
-        render_task_table(frame, app, panels[0], &rows);
+        render_task_table(frame, app, panels[0], &rows, now);
         render_task_log(frame, app, panels[1], selected);
-        render_job_history(frame, app, panels[2]);
+        render_job_history(frame, app, panels[2], now);
     } else if area.height >= 18 {
         let panels = Layout::vertical([Constraint::Percentage(62), Constraint::Min(6)]).split(area);
-        render_task_table(frame, app, panels[0], &rows);
+        render_task_table(frame, app, panels[0], &rows, now);
         render_task_log(frame, app, panels[1], selected);
     } else {
-        render_task_table(frame, app, area, &rows);
+        render_task_table(frame, app, area, &rows, now);
     }
 }
 
@@ -10572,8 +10590,316 @@ fn help(frame: &mut Frame, area: Rect) {
 mod tests {
     use super::*;
     use ratatui::{Terminal, backend::TestBackend};
-    use std::path::PathBuf;
+    use std::{fs, path::PathBuf};
     use yoctui_model::{Action, BuildRequest, update};
+
+    const LITERAL_WIDTH: u16 = 160;
+    const LITERAL_HEIGHT: u16 = 48;
+    const LITERAL_GOLDEN_PATH: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/golden/literal-reference-160x48.cells"
+    );
+
+    fn literal_now() -> SystemTime {
+        UNIX_EPOCH + Duration::from_secs(70_107)
+    }
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    struct LiteralCell {
+        symbol: String,
+        style: String,
+    }
+
+    fn literal_style(cell: &ratatui::buffer::Cell) -> String {
+        format!(
+            "fg={:?};bg={:?};ul={:?};mod={:?}",
+            cell.fg, cell.bg, cell.underline_color, cell.modifier
+        )
+    }
+
+    fn literal_cells(terminal: &Terminal<TestBackend>) -> Vec<LiteralCell> {
+        terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| LiteralCell {
+                symbol: cell.symbol().into(),
+                style: literal_style(cell),
+            })
+            .collect()
+    }
+
+    fn serialize_literal_golden(cells: &[LiteralCell]) -> String {
+        let mut output =
+            format!("YOCTUI_CELL_GOLDEN_V1 {LITERAL_WIDTH} {LITERAL_HEIGHT}\nSYMBOLS\n");
+        for row in cells.chunks(usize::from(LITERAL_WIDTH)) {
+            output.push_str("S|");
+            for cell in row {
+                output.push_str(&format!("{}:{}", cell.symbol.len(), cell.symbol));
+            }
+            output.push('\n');
+        }
+        output.push_str("STYLES\n");
+        let mut start = 0;
+        while start < cells.len() {
+            let style = &cells[start].style;
+            let mut end = start + 1;
+            while end < cells.len() && cells[end].style == *style {
+                end += 1;
+            }
+            output.push_str(&format!("T|{}|{style}\n", end - start));
+            start = end;
+        }
+        output
+    }
+
+    fn parse_literal_symbols(line: &str) -> Vec<String> {
+        let bytes = line
+            .strip_prefix("S|")
+            .expect("literal symbol row must start with S|")
+            .as_bytes();
+        let mut symbols = Vec::with_capacity(usize::from(LITERAL_WIDTH));
+        let mut cursor = 0;
+        while cursor < bytes.len() {
+            let colon = bytes[cursor..]
+                .iter()
+                .position(|byte| *byte == b':')
+                .map(|offset| cursor + offset)
+                .expect("literal symbol length must end with colon");
+            let length = std::str::from_utf8(&bytes[cursor..colon])
+                .expect("literal symbol length must be UTF-8")
+                .parse::<usize>()
+                .expect("literal symbol length must be numeric");
+            cursor = colon + 1;
+            let end = cursor + length;
+            symbols.push(
+                std::str::from_utf8(&bytes[cursor..end])
+                    .expect("literal symbol must be UTF-8")
+                    .into(),
+            );
+            cursor = end;
+        }
+        symbols
+    }
+
+    fn parse_literal_golden(golden: &str) -> Vec<LiteralCell> {
+        let mut lines = golden.lines();
+        assert_eq!(
+            lines.next(),
+            Some("YOCTUI_CELL_GOLDEN_V1 160 48"),
+            "literal golden header changed"
+        );
+        assert_eq!(lines.next(), Some("SYMBOLS"));
+        let mut symbols = Vec::with_capacity(usize::from(LITERAL_WIDTH * LITERAL_HEIGHT));
+        for _ in 0..LITERAL_HEIGHT {
+            symbols.extend(parse_literal_symbols(
+                lines
+                    .next()
+                    .expect("literal golden is missing a symbol row"),
+            ));
+        }
+        assert_eq!(lines.next(), Some("STYLES"));
+        let mut styles = Vec::with_capacity(symbols.len());
+        for line in lines.filter(|line| !line.is_empty()) {
+            let value = line
+                .strip_prefix("T|")
+                .expect("literal style run must start with T|");
+            let (count, style) = value
+                .split_once('|')
+                .expect("literal style run must contain a count");
+            styles.extend(std::iter::repeat_n(
+                style.to_owned(),
+                count
+                    .parse::<usize>()
+                    .expect("literal style count must be numeric"),
+            ));
+        }
+        assert_eq!(symbols.len(), usize::from(LITERAL_WIDTH * LITERAL_HEIGHT));
+        assert_eq!(styles.len(), symbols.len());
+        symbols
+            .into_iter()
+            .zip(styles)
+            .map(|(symbol, style)| LiteralCell { symbol, style })
+            .collect()
+    }
+
+    fn assert_literal_cells(expected: &[LiteralCell], actual: &[LiteralCell]) {
+        assert_eq!(expected.len(), actual.len());
+        if let Some((index, (expected, actual))) = expected
+            .iter()
+            .zip(actual)
+            .enumerate()
+            .find(|(_, (expected, actual))| expected != actual)
+        {
+            let x = index % usize::from(LITERAL_WIDTH);
+            let y = index / usize::from(LITERAL_WIDTH);
+            panic!(
+                "literal reference mismatch at ({x},{y})\nexpected: {expected:?}\n  actual: {actual:?}\nRun scripts/update-literal-ui-golden.sh only after reviewing the intentional UI change."
+            );
+        }
+    }
+
+    fn literal_reference_app() -> App {
+        let mut app = App::new(512, 1024 * 1024);
+        app.screen = Screen::Tasks;
+        app.focus = FocusTarget::Navigator;
+        app.navigator_selection = 1;
+        app.backend = "bridge".into();
+        app.workspace.build_dir = Some("/home/user/yocto/build".into());
+        app.workspace.source_dir = Some("/home/user/yocto".into());
+        app.workspace.release = Some("scarthgap".into());
+        app.workspace.bitbake_version = Some("2.8.0".into());
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace
+            .variables
+            .insert("DISTRO".into(), "poky".into());
+        app.workspace.layers = [
+            "poky",
+            "meta",
+            "meta-poky",
+            "meta-yocto-bsp",
+            "meta-oe",
+            "meta-python",
+            "meta-networking",
+        ]
+        .into_iter()
+        .enumerate()
+        .map(|(index, name)| yoctui_model::Layer {
+            name: name.into(),
+            path: format!("/home/user/yocto/{name}").into(),
+            priority: Some(index as i32 + 5),
+        })
+        .collect();
+        app.workspace.recipes = ["busybox", "bash", "core-image-minimal"]
+            .into_iter()
+            .map(|name| yoctui_model::Recipe {
+                name: name.into(),
+                version: (name == "bash").then(|| "5.2.21".into()),
+                layer: Some("poky".into()),
+                ..Default::default()
+            })
+            .collect();
+        app.available_images = vec![
+            "core-image-minimal".into(),
+            "core-image-full-cmdline".into(),
+        ];
+        app.build.status = BuildStatus::Running;
+        app.build.target = Some("core-image-minimal".into());
+        app.build.started = Some(literal_now() - Duration::from_secs(978));
+        app.build.completed = 4;
+        app.build.total = Some(10);
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Running;
+        app.daemon.connected_clients = 1;
+        app.daemon.telemetry = Some(yoctui_model::ClientDaemonTelemetry {
+            uptime_seconds: 8_100,
+            active_jobs: 1,
+            pty_sessions: 1,
+            queue_depth: 0,
+            memory_bytes: Some(32 * 1024 * 1024),
+            recovery: yoctui_model::DaemonRecoveryState::Recovered,
+        });
+        app.daemon.jobs.push(yoctui_model::ClientDaemonJobSummary {
+            id: 858,
+            label: "core-image-minimal".into(),
+            lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+        });
+        app.daemon
+            .pty_sessions
+            .push(yoctui_model::ClientDaemonPtySummary {
+                id: 1,
+                name: "terminal".into(),
+                lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                viewers: 1,
+            });
+        app.host_telemetry.cpu_utilization_percent = Some(24);
+        app.host_telemetry.disk_available_bytes = Some(23 * 1024 * 1024 * 1024);
+
+        for (index, task_name) in ["do_fetch", "do_unpack", "do_patch", "do_configure"]
+            .into_iter()
+            .enumerate()
+        {
+            app.completed_tasks.push_back(yoctui_model::CompletedTask {
+                task: yoctui_model::TaskInfo {
+                    id: yoctui_model::TaskId(format!("bash:{task_name}")),
+                    recipe: "bash_5.2.21-2".into(),
+                    task: task_name.into(),
+                    progress: Some(100),
+                    state: yoctui_model::TaskState::Completed,
+                    started: Some(literal_now() - Duration::from_secs(600 - index as u64)),
+                    finished: Some(literal_now() - Duration::from_secs(599 - index as u64)),
+                    ..Default::default()
+                },
+                success: true,
+            });
+        }
+        let active = yoctui_model::TaskInfo {
+            id: yoctui_model::TaskId("bash:do_compile".into()),
+            recipe: "bash_5.2.21-2".into(),
+            task: "do_compile".into(),
+            progress: Some(72),
+            state: yoctui_model::TaskState::Active,
+            worker: Some("worker-1".into()),
+            pid: Some(35_421),
+            started: Some(literal_now() - Duration::from_secs(590)),
+            log_path: Some("/home/user/yocto/build/tmp/work/qemux86-64-poky-linux/bash/5.2.21-r2/temp/log.do_compile.85873".into()),
+            ..Default::default()
+        };
+        app.tasks.insert(active.id.clone(), active);
+        for message in [
+            "NOTE: Executing Tasks",
+            "NOTE: Started: do_compile",
+            "|  CC     builtins/histfile.o",
+            "|  CC     builtins/jobs.o",
+            "|  CC     execute_cmd.o",
+            "[ 72%] Linking bash",
+        ] {
+            let _ = update(
+                &mut app,
+                Action::Log(yoctui_model::LogEntry {
+                    id: 0,
+                    severity: yoctui_model::Severity::Info,
+                    message: message.into(),
+                    recipe: Some("bash_5.2.21-2".into()),
+                    task: Some("do_compile".into()),
+                    path: None,
+                    timestamp: literal_now(),
+                    build: Some("core-image-minimal".into()),
+                    protected: false,
+                    diagnostic: None,
+                }),
+            );
+        }
+        app
+    }
+
+    #[test]
+    fn literal_reference_cell_and_style_golden() {
+        let app = literal_reference_app();
+        let mut terminal = Terminal::new(TestBackend::new(LITERAL_WIDTH, LITERAL_HEIGHT)).unwrap();
+        terminal
+            .draw(|frame| render_at(frame, &app, literal_now()))
+            .unwrap();
+        let actual = literal_cells(&terminal);
+        if std::env::var_os("YOCTUI_UPDATE_LITERAL_GOLDEN").is_some() {
+            fs::create_dir_all(
+                PathBuf::from(LITERAL_GOLDEN_PATH)
+                    .parent()
+                    .expect("golden parent"),
+            )
+            .unwrap();
+            fs::write(LITERAL_GOLDEN_PATH, serialize_literal_golden(&actual)).unwrap();
+            return;
+        }
+        let expected = parse_literal_golden(include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/golden/literal-reference-160x48.cells"
+        )));
+        assert_literal_cells(&expected, &actual);
+    }
 
     fn rendered_text(app: &App, width: u16, height: u16) -> String {
         let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();

@@ -2,41 +2,41 @@
 
 ## Task
 
-**ID:** UI-LITERAL-HARNESS-001
-**Title:** Add strict cell and style visual acceptance
+**ID:** UI-LITERAL-SHELL-001
+**Title:** Match the reference workbench shell
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Make the approved `160x48` Tasks workbench deterministic and compare every
-application-controlled terminal cell, including symbol, colors, and modifiers.
+Match the approved header, pane boundaries, compact borders, palette hierarchy,
+and stable F-key command rail at the canonical `160x48` size.
 
 ## Dependencies
 
-- `UI-LITERAL-SPEC-001` — DONE
+- `UI-LITERAL-HARNESS-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-ui/tests/golden/`
-- `scripts/test-tui-snapshots.sh`
+- `crates/yoctui-ui/tests/golden/literal-reference-160x48.cells`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- A typed deterministic fixture renders the complete reference scene.
-- Rendering accepts an injected clock for deterministic elapsed values.
-- The canonical artifact records symbols, colors, and modifiers for all cells.
-- A mismatch identifies the first changed coordinate and expected/actual cell.
-- Golden updates are explicit and never automatic during normal verification.
+- Canonical header/body/footer rectangles match the specified coordinates.
+- Tasks uses 26/89/45-column body panes at 160 columns.
+- The default palette preserves near-black surfaces, blue selection, amber
+  navigation, lime progress/success, cyan information, and red failure.
+- The two-row footer shows the stable F1 through F10 reference command rail.
+- Existing medium, narrow, and too-small rendering remains safe.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui literal_reference
+cargo test -p yoctui-ui literal_shell
+cargo test -p yoctui-ui workbench_shell
 cargo fmt --all --check
-./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
 ```

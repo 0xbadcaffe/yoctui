@@ -11,10 +11,14 @@ Status values:
 
 ## Current phase
 
-`UI-LITERAL-HARNESS-001` is `IN_PROGRESS`: the approved image is now a literal
-`160x48` terminal-cell contract rather than loose visual guidance. The new M16
-queue supersedes the earlier grouped-destination interpretation and is active
-ahead of the unrelated host perf-policy blocker.
+`UI-LITERAL-SHELL-001` is `IN_PROGRESS`: the deterministic reference gate is
+now enforcing all 7,680 canonical cells. The active task changes the global
+header/body/footer geometry and stable F-key rail to the approved proportions.
+
+`UI-LITERAL-HARNESS-001` is `DONE`: the typed reference scene renders through
+an injected clock into a compact symbol/style golden. Normal tests compare all
+cells and identify the first changed coordinate; only the explicit update
+script rewrites the artifact for review.
 
 `UI-LITERAL-SPEC-001` is `DONE`: the authoritative UI and architecture
 documents now define exact canonical region geometry, the mixed typed project

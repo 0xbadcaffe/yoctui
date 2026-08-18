@@ -4458,18 +4458,18 @@ notes = "The approved image is now a literal 160x48 application-cell contract wi
 id = "UI-LITERAL-HARNESS-001"
 milestone = "M16"
 title = "Add strict cell and style visual acceptance"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 477
 required = true
 depends_on = ["UI-LITERAL-SPEC-001"]
 verify = ["cargo test -p yoctui-ui literal_reference", "cargo fmt --all --check", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Add a typed deterministic reference fixture, injected render clock, canonical buffer serializer, reviewed golden, and useful first-cell mismatch diagnostics."
+notes = "A typed deterministic 160x48 fixture now renders through an injected clock into a 7,680-cell golden. The compact artifact records every symbol plus run-length encoded foreground/background/underline/modifier style, reports the first mismatched coordinate, and updates only through the explicit reviewed script. Focused tests, formatting, docs, and roadmap checks pass."
 
 [[task]]
 id = "UI-LITERAL-SHELL-001"
 milestone = "M16"
 title = "Match the reference workbench shell"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 478
 required = true
 depends_on = ["UI-LITERAL-HARNESS-001"]
