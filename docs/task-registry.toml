@@ -4513,18 +4513,18 @@ notes = "Crossterm and app routing now decode F1-F10 distinctly and map the cano
 id = "UI-LITERAL-LIVE-001"
 milestone = "M16"
 title = "Validate literal workbench with live Poky"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 482
 required = true
 depends_on = ["UI-LITERAL-UX-001"]
 verify = ["./scripts/test-live-workbench.sh $HOME/src/poky/build", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
-notes = "Validate real layer/recipe discovery, reference shell anchors, F10 theme selection, clean terminal startup, and responsive rendering against the local Poky build."
+notes = "The release client passes the controlling-PTY gate against ~/src/poky/build with 1,829 recipes: F2 enters the canonical Tasks cockpit with live project categories, F10 opens the menu and reaches Choose theme, WhiteClassic persists, bridge diagnostics do not corrupt the alternate screen, and terminal restoration is clean. Formatting, the complete Rust workspace, Clippy with warnings denied, all 39 Python bridge tests, docs, and roadmap checks pass."
 
 [[task]]
 id = "UI-LITERAL-001"
 milestone = "M16"
 title = "Complete literal reference workbench"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 483
 required = true
 depends_on = ["UI-LITERAL-HARNESS-001", "UI-LITERAL-SHELL-001", "UI-LITERAL-NAV-001", "UI-LITERAL-COCKPIT-001", "UI-LITERAL-UX-001", "UI-LITERAL-LIVE-001"]

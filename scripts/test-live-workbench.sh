@@ -34,8 +34,8 @@ cd "$repo_root"
 
 binary="${YOCTUI_LIVE_BINARY:-}"
 if [[ -z "$binary" ]]; then
-  cargo build -p yoctui >/dev/null
-  binary="$repo_root/target/debug/yoctui"
+  cargo build --release -p yoctui >/dev/null
+  binary="$repo_root/target/release/yoctui"
 else
   binary="$(readlink -f "$binary")"
   if [[ ! -x "$binary" ]]; then
@@ -149,8 +149,12 @@ def collect_for(duration):
 
 
 collect_until((b"Focus ", b"qemux86-64", b"OVERVIEW"), 45)
-os.write(master, b"\x10")
-collect_for(0.5)
+# Enter the literal reference cockpit through the displayed F2 route.
+os.write(master, b"\x1bOQ")
+collect_until((b"Tasks: Build", b"Layers", b"Recipes", b"F10 Menu"), 5)
+# Open the displayed F10 menu, then use its named theme command.
+os.write(master, b"\x1b[21~")
+collect_until((b"Command palette", b"Choose theme"), 5)
 os.write(master, b"Choose theme\r")
 collect_for(0.5)
 os.write(master, b"\x1b[B\r")
@@ -195,9 +199,13 @@ for anchor in (
     "yoctui",
     "qemux86-64",
     "poky",
-    "OVERVIEW",
-    "CONTENT",
-    "BUILD",
+    "Tasks: Build",
+    "Layers",
+    "Recipes",
+    "Images",
+    "Targets",
+    "F1 Help",
+    "F10 Menu",
 ):
     if not has_rendered_anchor(normalized, anchor):
         raise SystemExit(f"live workbench: missing PTY anchor: {anchor}")
@@ -235,7 +243,7 @@ cp "$work_root/layers.txt" "$artifact_dir/layers.txt"
   printf 'build_dir=%s\n' "$build_dir"
   printf 'recipe_count=%s\n' "$recipe_count"
   printf '%s\n' 'recipes=core-image-minimal,busybox'
-  printf '%s\n' 'pty=clean-colored-wide-workbench-and-theme-passed'
+  printf '%s\n' 'pty=clean-colored-literal-workbench-f2-f10-theme-passed'
 } >"$artifact_dir/summary.txt"
 
-printf 'live workbench: metadata, clean colored PTY, and theme passed (%s recipes)\n' "$recipe_count"
+printf 'live workbench: literal F2/F10 workbench, metadata, clean colored PTY, and theme passed (%s recipes)\n' "$recipe_count"

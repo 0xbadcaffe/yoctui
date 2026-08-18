@@ -11,10 +11,17 @@ Status values:
 
 ## Current phase
 
-`UI-LITERAL-LIVE-001` is `IN_PROGRESS`: every canonical F-key is now real and
-theme preview is transactional. The active gate builds the release client and
-validates the same reference workbench against the local 1,829-recipe Poky
-workspace, including F2 entry and F10 theme selection.
+`UI-LITERAL-001` is `IN_PROGRESS`: every atomic reference-workbench task is
+complete. The parent acceptance now reruns formatting, the complete Rust
+workspace, Clippy, Python bridge tests, documentation checks, and roadmap
+validation before closing M16.
+
+`UI-LITERAL-LIVE-001` is `DONE`: the release client passes the controlling-PTY
+gate against `~/src/poky/build` with 1,829 recipes. F2 enters the canonical
+Tasks cockpit with live project categories, F10 reaches Choose theme,
+WhiteClassic persists, bridge diagnostics do not corrupt the alternate screen,
+and terminal restoration is clean. Formatting, the complete workspace, Clippy,
+all 39 bridge tests, docs, and roadmap checks pass.
 
 `UI-LITERAL-UX-001` is `DONE`: F1–F10 decode distinctly and invoke their named
 typed routes; B remains the build-options key. Tab focus remains shared, F10
