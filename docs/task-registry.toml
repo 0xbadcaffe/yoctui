@@ -4357,18 +4357,18 @@ notes = "The command palette now opens the shared named theme picker, theme choi
 id = "UI-LIVE-POKY-001"
 milestone = "M14"
 title = "Validate the recovered workbench against live Poky"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 468
 required = true
 depends_on = ["UI-LIVE-DISCOVERY-001"]
 verify = ["./scripts/test-live-workbench.sh $HOME/src/poky/build", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
-notes = "Require typed live workspace, layer, and recipe evidence plus a colored PTY semantic snapshot at the approved wide layout."
+notes = "The new private-XDG live gate passed against /home/bspguy-dev/src/poky/build: Poky 5.0.19, qemux86-64, DISTRO poky, core/yocto/yoctobsp layers, and 1,829 recipes including core-image-minimal and busybox. Its colored 160x48 PTY contains grouped workbench and explicit focus anchors without the old daemon fallback notice. Workspace tests, Clippy, and all 39 bridge tests pass."
 
 [[task]]
 id = "UI-LIVE-RECOVERY-001"
 milestone = "M14"
 title = "Complete live workspace usability recovery"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 469
 required = true
 depends_on = ["UI-LIVE-STARTUP-001", "UI-LIVE-DISCOVERY-001", "UI-LIVE-POKY-001"]

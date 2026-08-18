@@ -2,40 +2,41 @@
 
 ## Task
 
-**ID:** UI-LIVE-POKY-001
-**Title:** Validate the recovered workbench against live Poky
+**ID:** UI-LIVE-RECOVERY-001
+**Title:** Complete live workspace usability recovery
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add and pass a repeatable live-Poky gate that verifies typed workspace, layer,
-and recipe discovery plus the colored wide workbench's essential visual anchors.
+Consolidate final acceptance for safe startup, live metadata discovery, visual
+theme behavior, explicit focus routing, and the real Poky colored workbench.
 
 ## Dependencies
 
+- `UI-LIVE-STARTUP-001` — DONE
 - `UI-LIVE-DISCOVERY-001` — DONE
+- `UI-LIVE-POKY-001` — DONE
 
 ## Relevant files
 
-- `scripts/test-live-workbench.sh`
 - `crates/yoctui-cli/src/main.rs`
-- `artifacts/release-quality/`
+- `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-ui/src/lib.rs`
+- `scripts/test-tui-snapshots.sh`
+- `scripts/test-live-workbench.sh`
 - `docs/task-registry.toml`
 - `docs/implementation-status.md`
 
 ## Definition of done
 
-- Live bridge inspection reports Poky MACHINE, DISTRO, and release.
-- Live layer discovery includes the configured Poky layers.
-- Live recipe discovery includes `core-image-minimal` and `busybox`.
-- A private-XDG colored wide PTY snapshot contains workbench, metadata, and
-  focus-route anchors without a centered daemon-unavailable notice.
-- Workspace tests, Clippy, bridge tests, and roadmap checks pass.
+- Every M14 child task is DONE.
+- Formatting, workspace tests, Clippy, bridge tests, and roadmap checks pass.
+- The terminal handoff returns to the independent host perf-policy blocker.
 
 ## Verification
 
 ```bash
-./scripts/test-live-workbench.sh "$HOME/src/poky/build"
+cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 python3 -m pytest bridge/tests

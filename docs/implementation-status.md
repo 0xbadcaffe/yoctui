@@ -11,9 +11,16 @@ Status values:
 
 ## Current phase
 
-`UI-LIVE-POKY-001` is `IN_PROGRESS`: the corrected startup and discoverability
-behavior now needs one repeatable live-Poky metadata and colored PTY visual
-acceptance gate.
+`UI-LIVE-RECOVERY-001` is `IN_PROGRESS`: every child recovery task is verified;
+the parent acceptance now consolidates the full formatting, workspace, Clippy,
+bridge, documentation, and roadmap evidence.
+
+`UI-LIVE-POKY-001` is `DONE`: the private-XDG live gate passed against
+`~/src/poky/build` with Poky 5.0.19, qemux86-64, DISTRO poky,
+core/yocto/yoctobsp, and 1,829 recipes including core-image-minimal and busybox.
+The colored 160x48 PTY contains grouped workbench and explicit focus anchors
+without the old daemon fallback notice. Workspace tests, Clippy, and all 39
+bridge tests pass.
 
 `UI-LIVE-DISCOVERY-001` is `DONE`: `Choose theme` in the command palette opens
 the shared named picker, selecting a theme enables color unless `--no-color`
