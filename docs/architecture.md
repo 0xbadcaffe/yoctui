@@ -2324,6 +2324,23 @@ catalog entries. Their executable/help, metadata task, or configuration probes
 and selected implementations are centralized; a nearby capability is never
 borrowed merely because its name or release history looks similar.
 
+`WorkspaceCompatibilityState` is the client model's sole workspace authority.
+It installs only normalized snapshots with monotonically increasing
+generations; an identical generation is idempotent, while stale or
+equal-generation conflicting data is rejected. Pure projection preserves the
+five capability states, every failing all-of requirement, every failed any-of
+alternative, exact reason text, and the catalog-selected implementation for
+each enabled requirement. Missing authority or records are Unknown and fail
+closed. Daemon-probe effects are intentionally unsupported in the client.
+
+Every dialog variant also has a centralized requirement. Snapshot replacement
+or invalidation closes an environment-backed dialog that can no longer launch
+safely, restores its prior focus, and reports the exact reason; client-local
+dialogs and valid selections remain. `update_with_workspace_authority` wraps
+the pure reducer for enforced clients. If reducer preparation would emit an
+unavailable effect, it restores the pre-action model and retains only the
+denial notice, preventing partially queued or visually confirmed work.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.

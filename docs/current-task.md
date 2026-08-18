@@ -2,50 +2,48 @@
 
 ## Task
 
-**ID:** COMPAT-WORKSPACE-MODEL-001
-**Title:** Project workspace availability and revalidate state
+**ID:** COMPAT-WORKSPACE-APP-001
+**Title:** Install and enforce workspace capability authority
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Derive every workspace/action availability result and exact reason from one
-current capability snapshot, and safely revalidate model state when that
-snapshot changes.
+Install the bounded daemon wire snapshot into client model state and make all
+interactive daemon/local effect routing consume the same typed authority.
 
 ## Dependencies
 
-- `COMPAT-WORKSPACE-CATALOG-001` — DONE
+- `COMPAT-WORKSPACE-MODEL-001` — DONE
+- `COMPAT-PROTOCOL-001` — DONE
 
 ## Relevant files
 
+- `crates/yoctui-app/src/lib.rs`
+- `crates/yoctui-cli/src/main.rs`
 - `crates/yoctui-model/src/workspace_compatibility.rs`
-- `crates/yoctui-model/src/daemon_state.rs`
-- `crates/yoctui-model/src/lib.rs`
-- `docs/ui-spec.md`
+- `crates/yoctui-protocol/src/daemon.rs`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Pure projection returns available, limited, unavailable, unsupported, or
-  unknown plus exact capability reasons for destination and effect policies.
-- All-of requirements name every missing capability; any-of requirements
-  explain why no alternative is usable.
-- Absent authority fails closed for environment-backed actions while local
-  presentation and cancellation remain usable.
-- Newer snapshots replace current authority; stale/equal conflicting updates
-  are ignored or rejected.
-- Snapshot changes preserve valid selections and close or revalidate dialogs
-  whose launch capability is no longer enabled.
-- The model rejects an unavailable effect before emission and reports its
-  exact reason without applying release/version policy.
-- Tests cover full, partial, absent, unsupported, stale, changing, and dialog
-  revalidation states without panics.
+- Valid bounded wire snapshots convert once into normalized model authority;
+  unknown wire values fail closed and cannot invent support.
+- Attach/reconnect/update install the same snapshot into `App`; disconnect or
+  absent authority invalidates it without changing presentation state.
+- Interactive action routing uses the capability-aware reducer boundary for
+  both daemon and local execution paths.
+- Daemon-owned probe effects are not independently executed by clients.
+- Unavailable/unknown/unsupported/stale actions produce no process/job effect
+  and retain exact model reasons.
+- Tests cover attach, update, disconnect, malformed/unknown data, local effect,
+  unavailable effect, and no-spawn routing.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model compatibility_workspace_model
+cargo test -p yoctui-app compatibility_workspace_app
+cargo test -p yoctui compatibility_workspace_app
 ./scripts/verify-roadmap.sh
 ```

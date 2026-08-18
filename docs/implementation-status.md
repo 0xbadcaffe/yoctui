@@ -913,4 +913,13 @@ QA-task, buildhistory comparison, sstate, PR-service management, build-compare,
 and Git-archive capabilities replace implicit workspace-local assumptions.
 Typed test builds retain their family; local cancellation remains safe after
 capability unloading. Focused model/catalog/utility tests, workspace check, and
-warnings-denied model Clippy pass. `COMPAT-WORKSPACE-MODEL-001` is active.
+warnings-denied model Clippy pass.
+
+`COMPAT-WORKSPACE-MODEL-001` is complete. One pure authority projects all five
+states, exact all-of/any-of failures, and selected implementations. Snapshot
+replacement is monotonic and conflict-safe; invalidation fails closed. Every
+dialog is classified, capability loss closes only unsafe environment dialogs
+with restored focus/reason, and selections/local cancellation remain valid.
+The capability-aware reducer boundary rolls back preparation and emits no
+unavailable effect. Six focused tests, workspace check, and model Clippy pass.
+`COMPAT-WORKSPACE-APP-001` is active.

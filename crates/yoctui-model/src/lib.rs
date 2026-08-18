@@ -1245,6 +1245,7 @@ pub enum Dialog {
     SdkCancellationConfirmation(SdkSessionId),
     TestLaunch(TestLaunchDialog),
     TestLaunchTomlEditor {
+        family: TestFamily,
         editor: PopupEditor,
         validation_error: Option<String>,
     },
@@ -2554,6 +2555,7 @@ fn diagnostic_for_entry(entry: &LogEntry) -> DiagnosticInfo {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
     pub daemon: ClientDaemonView,
+    pub workspace_compatibility: WorkspaceCompatibilityState,
     pub pty_selection: usize,
     pub pane_layout: PaneLayout,
     pub screen: Screen,
@@ -2682,6 +2684,7 @@ impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
             daemon: ClientDaemonView::default(),
+            workspace_compatibility: WorkspaceCompatibilityState::default(),
             pty_selection: 0,
             pane_layout: PaneLayout::new(PaneId(1)).expect("valid root pane"),
             screen: Screen::Dashboard,
@@ -6505,6 +6508,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 | Some(Dialog::TestLaunchTomlEditor {
                     editor,
                     validation_error,
+                    ..
                 })
                 | Some(Dialog::TestResultImportTomlEditor {
                     editor,
@@ -7898,6 +7902,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             open_dialog(
                 app,
                 Dialog::TestLaunchTomlEditor {
+                    family: draft.family,
                     editor,
                     validation_error: None,
                 },

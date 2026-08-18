@@ -3148,3 +3148,10 @@ the current selection and any open dialog against the new generation. A dialog
 whose action is no longer safe closes or becomes non-confirmable with the new
 reason. Stale generations are ignored, and no capability transition may launch
 an invalid command or panic at any terminal size.
+
+When capability loss closes a launch dialog, focus returns to the pane that
+opened it and a bounded notification preserves the exact capability reason.
+Selections that remain valid do not move. Client-local dialogs and
+cancellation of an already-owned process remain usable so a capability update
+cannot strand work. If confirmation and a capability update race, the model
+rolls back confirmation preparation and emits no effect.

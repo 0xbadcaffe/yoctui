@@ -4757,18 +4757,18 @@ notes = "An exhaustive compiler-checked model maps all 22 Screen variants, 24 lo
 id = "COMPAT-WORKSPACE-MODEL-001"
 milestone = "M18"
 title = "Project workspace availability and revalidate state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 503
 required = true
 depends_on = ["COMPAT-WORKSPACE-CATALOG-001"]
 verify = ["cargo test -p yoctui-model compatibility_workspace_model", "./scripts/verify-roadmap.sh"]
-notes = "Derive workspace/action availability and exact reasons from one snapshot, preserve valid selections, close or revalidate invalid dialogs, ignore stale snapshots, and reject unavailable effects in pure model tests."
+notes = "WorkspaceCompatibilityState owns one normalized authority and projects Available, AvailableWithLimitations, Unavailable, Unsupported, or Unknown with exact per-capability issues and selected implementations. All-of reports every failure; any-of selects one positively enabled implementation or explains every failed alternative. Snapshot installation is monotonic, treats identical generations as idempotent, rejects stale/equal-conflicting data, and invalidation fails closed. Every dialog variant is classified; environment-backed dialogs close with a reason on capability loss while local dialogs, selections, and owned-process cancellation remain. update_with_workspace_authority rolls back preparation mutations and emits no unavailable effect. Six focused absent/full/limited/unsupported/stale/changing/dialog/rollback tests, workspace check, and model Clippy pass."
 
 [[task]]
 id = "COMPAT-WORKSPACE-APP-001"
 milestone = "M18"
 title = "Install and enforce workspace capability authority"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 503
 required = true
 depends_on = ["COMPAT-WORKSPACE-MODEL-001", "COMPAT-PROTOCOL-001"]

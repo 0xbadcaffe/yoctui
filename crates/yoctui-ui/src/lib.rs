@@ -985,6 +985,7 @@ fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     } else if let Some(Dialog::TestLaunchTomlEditor {
         editor,
         validation_error,
+        ..
     }) = app.active_dialog()
     {
         toml_popup_editor(
@@ -13007,6 +13008,7 @@ mod tests {
         let mut editor = yoctui_model::PopupEditor::new("family = \"OE selftest\"\nmachine = \"qemux86-64\"\ndistro = \"poky\"\nimage = \"core-image-minimal\"\nscope = \"all\"\nselector = \"\"\nparallelism = 1\nverbose = false\nskip_network = false\n".into());
         editor.select_toml_value("scope").unwrap();
         app.dialogs.push_front(Dialog::TestLaunchTomlEditor {
+            family: yoctui_model::TestFamily::OeSelftest,
             editor,
             validation_error: Some("typed launch validation".into()),
         });

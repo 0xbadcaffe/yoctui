@@ -1,7 +1,10 @@
 use crate::{
-    BuildRequest, CapabilityId, Effect, MaintenanceEffect, MaintenanceOperation, QaEffect, Screen,
-    SdkOperation, SecurityEffect, TestFamily, TestOperation, WicOperation,
+    App, BuildRequest, CapabilityId, CapabilityState, DaemonCompatibilitySnapshot, Dialog, Effect,
+    MaintenanceDialog, MaintenanceEffect, MaintenanceOperation, QaDialog, QaEffect, Screen,
+    SdkOperation, SecurityDialog, SecurityEffect, SecurityOperation, TestFamily, TestLaunchPreview,
+    TestOperation, WicOperation,
 };
+use thiserror::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum WorkspaceDestination {
@@ -76,6 +79,110 @@ pub enum WorkspaceEffectRequirement {
     },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WorkspaceAvailabilityState {
+    Available,
+    AvailableWithLimitations,
+    Unavailable,
+    Unsupported,
+    Unknown,
+}
+
+impl WorkspaceAvailabilityState {
+    pub const fn is_enabled(self) -> bool {
+        matches!(self, Self::Available | Self::AvailableWithLimitations)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkspaceCapabilityIssue {
+    pub capability: Option<CapabilityId>,
+    pub reason: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkspaceAvailability {
+    pub state: WorkspaceAvailabilityState,
+    pub issues: Vec<WorkspaceCapabilityIssue>,
+    pub implementations: Vec<(CapabilityId, String)>,
+}
+
+impl WorkspaceAvailability {
+    pub const fn is_enabled(&self) -> bool {
+        self.state.is_enabled()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct WorkspaceCompatibilityState {
+    authority: Option<DaemonCompatibilitySnapshot>,
+}
+
+impl WorkspaceCompatibilityState {
+    pub const fn authority(&self) -> Option<&DaemonCompatibilitySnapshot> {
+        self.authority.as_ref()
+    }
+
+    pub fn availability(&self, requirement: &WorkspaceEffectRequirement) -> WorkspaceAvailability {
+        workspace_requirement_availability(self.authority(), requirement)
+    }
+
+    pub fn install(
+        &mut self,
+        authority: DaemonCompatibilitySnapshot,
+    ) -> Result<WorkspaceSnapshotInstall, WorkspaceCompatibilityError> {
+        let authority = authority
+            .normalize()
+            .map_err(|error| WorkspaceCompatibilityError::InvalidSnapshot(error.to_string()))?;
+        if let Some(current) = self.authority.as_ref() {
+            if authority.snapshot.generation < current.snapshot.generation {
+                return Err(WorkspaceCompatibilityError::StaleGeneration {
+                    current: current.snapshot.generation,
+                    received: authority.snapshot.generation,
+                });
+            }
+            if authority.snapshot.generation == current.snapshot.generation {
+                if &authority == current {
+                    return Ok(WorkspaceSnapshotInstall::Unchanged);
+                }
+                return Err(WorkspaceCompatibilityError::ConflictingGeneration(
+                    authority.snapshot.generation,
+                ));
+            }
+        }
+        self.authority = Some(authority);
+        Ok(WorkspaceSnapshotInstall::Replaced)
+    }
+
+    pub fn invalidate(&mut self) {
+        self.authority = None;
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WorkspaceSnapshotInstall {
+    Replaced,
+    Unchanged,
+    Invalidated,
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum WorkspaceCompatibilityError {
+    #[error("invalid workspace capability snapshot: {0}")]
+    InvalidSnapshot(String),
+    #[error("stale workspace capability snapshot: current {current}, received {received}")]
+    StaleGeneration { current: u64, received: u64 },
+    #[error("workspace capability generation {0} conflicts with installed authority")]
+    ConflictingGeneration(u64),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkspaceRevalidation {
+    pub install: WorkspaceSnapshotInstall,
+    pub closed_dialog: bool,
+    pub reason: Option<String>,
+}
+
 impl WorkspaceEffectRequirement {
     fn one(id: CapabilityId) -> Self {
         Self::Capabilities {
@@ -103,6 +210,242 @@ impl WorkspaceEffectRequirement {
             capabilities: ids.to_vec(),
         }
     }
+}
+
+pub fn workspace_requirement_availability(
+    authority: Option<&DaemonCompatibilitySnapshot>,
+    requirement: &WorkspaceEffectRequirement,
+) -> WorkspaceAvailability {
+    match requirement {
+        WorkspaceEffectRequirement::ClientLocal => WorkspaceAvailability {
+            state: WorkspaceAvailabilityState::Available,
+            issues: Vec::new(),
+            implementations: Vec::new(),
+        },
+        WorkspaceEffectRequirement::DaemonProbe { capabilities } => WorkspaceAvailability {
+            state: WorkspaceAvailabilityState::Unsupported,
+            issues: vec![WorkspaceCapabilityIssue {
+                capability: None,
+                reason: format!(
+                    "Environment probing is daemon-owned; request a correlated reprobe for: {}.",
+                    capability_names(capabilities)
+                ),
+            }],
+            implementations: Vec::new(),
+        },
+        WorkspaceEffectRequirement::Capabilities { all, any } => {
+            capability_requirement_availability(authority, all, any)
+        }
+    }
+}
+
+fn capability_requirement_availability(
+    authority: Option<&DaemonCompatibilitySnapshot>,
+    all: &[CapabilityId],
+    any: &[CapabilityId],
+) -> WorkspaceAvailability {
+    let Some(authority) = authority else {
+        let capabilities = all.iter().chain(any).copied().collect::<Vec<_>>();
+        return WorkspaceAvailability {
+            state: WorkspaceAvailabilityState::Unknown,
+            issues: capabilities
+                .into_iter()
+                .map(|capability| WorkspaceCapabilityIssue {
+                    capability: Some(capability),
+                    reason: format!(
+                        "{} requires the current environment capability snapshot.",
+                        capability.as_str()
+                    ),
+                })
+                .collect(),
+            implementations: Vec::new(),
+        };
+    };
+
+    let all_results = all
+        .iter()
+        .map(|id| capability_result(authority, *id))
+        .collect::<Vec<_>>();
+    let any_results = any
+        .iter()
+        .map(|id| capability_result(authority, *id))
+        .collect::<Vec<_>>();
+    let all_satisfied = all_results.iter().all(CapabilityResult::is_enabled);
+    let selected_any = any_results.iter().find(|result| result.is_enabled());
+    let any_satisfied = any.is_empty() || selected_any.is_some();
+
+    if all_satisfied && any_satisfied {
+        let selected = all_results.iter().chain(selected_any).collect::<Vec<_>>();
+        let limited = selected.iter().any(|result| result.limited);
+        let issues = selected
+            .iter()
+            .filter_map(|result| {
+                result
+                    .reason
+                    .as_ref()
+                    .map(|reason| WorkspaceCapabilityIssue {
+                        capability: Some(result.id),
+                        reason: reason.clone(),
+                    })
+            })
+            .collect();
+        let implementations = selected
+            .iter()
+            .filter_map(|result| {
+                result
+                    .implementation
+                    .as_ref()
+                    .map(|implementation| (result.id, implementation.clone()))
+            })
+            .collect();
+        return WorkspaceAvailability {
+            state: if limited {
+                WorkspaceAvailabilityState::AvailableWithLimitations
+            } else {
+                WorkspaceAvailabilityState::Available
+            },
+            issues,
+            implementations,
+        };
+    }
+
+    let failures = all_results
+        .into_iter()
+        .filter(|result| !result.is_enabled())
+        .chain(
+            (!any_satisfied)
+                .then_some(any_results)
+                .into_iter()
+                .flatten(),
+        )
+        .collect::<Vec<_>>();
+    let state = if failures
+        .iter()
+        .any(|result| result.state == WorkspaceAvailabilityState::Unknown)
+    {
+        WorkspaceAvailabilityState::Unknown
+    } else if !failures.is_empty()
+        && failures
+            .iter()
+            .all(|result| result.state == WorkspaceAvailabilityState::Unsupported)
+    {
+        WorkspaceAvailabilityState::Unsupported
+    } else {
+        WorkspaceAvailabilityState::Unavailable
+    };
+    WorkspaceAvailability {
+        state,
+        issues: failures
+            .into_iter()
+            .map(|result| WorkspaceCapabilityIssue {
+                capability: Some(result.id),
+                reason: result
+                    .reason
+                    .unwrap_or_else(|| format!("{} is not enabled.", result.id.as_str())),
+            })
+            .collect(),
+        implementations: Vec::new(),
+    }
+}
+
+struct CapabilityResult {
+    id: CapabilityId,
+    state: WorkspaceAvailabilityState,
+    limited: bool,
+    reason: Option<String>,
+    implementation: Option<String>,
+}
+
+impl CapabilityResult {
+    fn is_enabled(&self) -> bool {
+        self.state.is_enabled() && self.implementation.is_some()
+    }
+}
+
+fn capability_result(
+    authority: &DaemonCompatibilitySnapshot,
+    id: CapabilityId,
+) -> CapabilityResult {
+    let Some(record) = authority.snapshot.capability(id) else {
+        return CapabilityResult {
+            id,
+            state: WorkspaceAvailabilityState::Unknown,
+            limited: false,
+            reason: Some(format!("{} has no capability evidence.", id.as_str())),
+            implementation: None,
+        };
+    };
+    let implementation = authority
+        .implementations
+        .get(&id)
+        .map(|implementation| implementation.id.clone());
+    match &record.state {
+        CapabilityState::Available if implementation.is_some() => CapabilityResult {
+            id,
+            state: WorkspaceAvailabilityState::Available,
+            limited: false,
+            reason: None,
+            implementation,
+        },
+        CapabilityState::Available => CapabilityResult {
+            id,
+            state: WorkspaceAvailabilityState::Unknown,
+            limited: false,
+            reason: Some(format!(
+                "{} is enabled but has no selected implementation.",
+                id.as_str()
+            )),
+            implementation: None,
+        },
+        CapabilityState::AvailableWithLimitations { reason, .. } if implementation.is_some() => {
+            CapabilityResult {
+                id,
+                state: WorkspaceAvailabilityState::AvailableWithLimitations,
+                limited: true,
+                reason: Some(reason.message.clone()),
+                implementation,
+            }
+        }
+        CapabilityState::AvailableWithLimitations { .. } => CapabilityResult {
+            id,
+            state: WorkspaceAvailabilityState::Unknown,
+            limited: false,
+            reason: Some(format!(
+                "{} is limited but has no selected implementation.",
+                id.as_str()
+            )),
+            implementation: None,
+        },
+        CapabilityState::Unavailable { reason } => CapabilityResult {
+            id,
+            state: WorkspaceAvailabilityState::Unavailable,
+            limited: false,
+            reason: Some(reason.message.clone()),
+            implementation: None,
+        },
+        CapabilityState::Unknown { reason } => CapabilityResult {
+            id,
+            state: WorkspaceAvailabilityState::Unknown,
+            limited: false,
+            reason: Some(reason.message.clone()),
+            implementation: None,
+        },
+        CapabilityState::Unsupported { reason } => CapabilityResult {
+            id,
+            state: WorkspaceAvailabilityState::Unsupported,
+            limited: false,
+            reason: Some(reason.message.clone()),
+            implementation: None,
+        },
+    }
+}
+
+fn capability_names(capabilities: &[CapabilityId]) -> String {
+    capabilities
+        .iter()
+        .map(|capability| capability.as_str())
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 /// Screen rendering is always locally reachable so unavailable workflows can
@@ -472,10 +815,344 @@ fn maintenance_effect_requirement(effect: &MaintenanceEffect) -> WorkspaceEffect
     }
 }
 
+pub fn workspace_dialog_requirement(dialog: &Dialog) -> WorkspaceEffectRequirement {
+    use CapabilityId as Id;
+    match dialog {
+        Dialog::BuildEnvironmentCloneEditor(_)
+        | Dialog::BuildEnvironmentCloneReview(_)
+        | Dialog::BuildEnvironmentEditor(_)
+        | Dialog::ThemePicker { .. }
+        | Dialog::BuildCompletion
+        | Dialog::WicDevicePicker(_)
+        | Dialog::WicWritePhrase(_)
+        | Dialog::WicWriteConfirmation(_)
+        | Dialog::WicCancellationConfirmation { .. }
+        | Dialog::SdkCancellationConfirmation(_)
+        | Dialog::TestCancellationConfirmation(_)
+        | Dialog::TestResultImport(_)
+        | Dialog::TestResultImportTomlEditor { .. }
+        | Dialog::TestJunitExport(_)
+        | Dialog::TestJunitTomlEditor { .. }
+        | Dialog::TestJunitExportConfirmation(_)
+        | Dialog::RecipeTaskPicker(_)
+        | Dialog::RecipeTaskLogPicker(_)
+        | Dialog::RecipePatchPicker(_)
+        | Dialog::ConfigSourcePicker(_)
+        | Dialog::ConfigScopePicker(_)
+        | Dialog::ConfigComparison(_)
+        | Dialog::ConfigEdit { .. }
+        | Dialog::ConfigEditConfirmation(_)
+        | Dialog::BbmaskEdit(_)
+        | Dialog::BbmaskConfirmation(_)
+        | Dialog::RecipeEditor(_)
+        | Dialog::QuitConfirmation => WorkspaceEffectRequirement::ClientLocal,
+        Dialog::BuildOptions | Dialog::BuildTarget { .. } => {
+            WorkspaceEffectRequirement::one(Id::BitBakeBuild)
+        }
+        Dialog::ImagePicker(_) => WorkspaceEffectRequirement::one(Id::BitBakeBuild),
+        Dialog::QemuLaunch(_) | Dialog::QemuLaunchConfirmation(_) => {
+            WorkspaceEffectRequirement::one(Id::RunQemu)
+        }
+        Dialog::QemuCancellationConfirmation(_) => WorkspaceEffectRequirement::ClientLocal,
+        Dialog::WicCreate(_)
+        | Dialog::WicCreateTomlEditor { .. }
+        | Dialog::WicCreateConfirmation(_) => WorkspaceEffectRequirement::one(Id::WicCreate),
+        Dialog::SdkBuildConfirmation(preview) => build_request_requirement(&preview.request),
+        Dialog::SdkPublish(_)
+        | Dialog::SdkPublishTomlEditor(_)
+        | Dialog::SdkPublishConfirmation(_) => WorkspaceEffectRequirement::one(Id::SdkPublish),
+        Dialog::SdkNative(_)
+        | Dialog::SdkNativeTomlEditor(_)
+        | Dialog::SdkNativeConfirmation(_) => WorkspaceEffectRequirement::one(Id::SdkNativeTools),
+        Dialog::TestLaunch(dialog) => test_family_requirement(
+            dialog.draft.family,
+            !matches!(
+                dialog.draft.family,
+                TestFamily::OeSelftest | TestFamily::BitbakeSelftest
+            ),
+        ),
+        Dialog::TestLaunchTomlEditor { family, .. } => test_family_requirement(
+            *family,
+            !matches!(
+                *family,
+                TestFamily::OeSelftest | TestFamily::BitbakeSelftest
+            ),
+        ),
+        Dialog::TestLaunchConfirmation(preview) => match preview {
+            TestLaunchPreview::Selftest(request) => test_family_requirement(request.family, false),
+            TestLaunchPreview::Build { family, .. } => test_family_requirement(*family, true),
+        },
+        Dialog::TestComparison(_) | Dialog::TestComparisonTomlEditor { .. } => {
+            WorkspaceEffectRequirement::one(Id::ResultTool)
+        }
+        Dialog::TestComparisonConfirmation(_) => WorkspaceEffectRequirement::one(Id::ResultTool),
+        Dialog::Security(dialog) => security_dialog_requirement(dialog),
+        Dialog::Qa(dialog) => qa_dialog_requirement(dialog),
+        Dialog::Maintenance(dialog) => maintenance_dialog_requirement(dialog),
+        Dialog::RecipeTaskConfirmation(request) => build_request_requirement(request),
+        Dialog::SignatureTaskPicker(_) => WorkspaceEffectRequirement::one(Id::BitBakeDumpSig),
+        Dialog::DevtoolModifyConfirmation(_) => WorkspaceEffectRequirement::one(Id::DevtoolModify),
+        Dialog::DevtoolResetConfirmation(_) => WorkspaceEffectRequirement::one(Id::DevtoolReset),
+        Dialog::DevtoolUpdateConfirmation(_) => {
+            WorkspaceEffectRequirement::one(Id::DevtoolUpdateRecipe)
+        }
+        Dialog::DevtoolFinishPicker(_) | Dialog::DevtoolFinishConfirmation(_) => {
+            WorkspaceEffectRequirement::one(Id::DevtoolFinish)
+        }
+        Dialog::DevtoolDeploy(_) | Dialog::DevtoolDeployConfirmation(_) => {
+            WorkspaceEffectRequirement::one(Id::DevtoolDeployTarget)
+        }
+    }
+}
+
+fn security_dialog_requirement(dialog: &SecurityDialog) -> WorkspaceEffectRequirement {
+    use CapabilityId as Id;
+    match dialog {
+        SecurityDialog::Operation(preview) => match &preview.operation {
+            SecurityOperation::CveCheck(request) | SecurityOperation::SbomBuild(request) => {
+                build_request_requirement(request)
+            }
+            SecurityOperation::PackageMap { .. } => {
+                WorkspaceEffectRequirement::all(&[Id::PkgDataGenerated, Id::PkgDataLookupPackage])
+            }
+        },
+        SecurityDialog::Import { .. } | SecurityDialog::Cancellation(_) => {
+            WorkspaceEffectRequirement::ClientLocal
+        }
+    }
+}
+
+fn qa_dialog_requirement(dialog: &QaDialog) -> WorkspaceEffectRequirement {
+    use CapabilityId as Id;
+    match dialog {
+        QaDialog::Operation(_) => WorkspaceEffectRequirement::all(&[Id::BitBakeBuild, Id::QaTask]),
+        QaDialog::LayerOperation(_) => WorkspaceEffectRequirement::one(Id::YoctoCheckLayer),
+        QaDialog::Import { .. }
+        | QaDialog::Cancellation { .. }
+        | QaDialog::LayerCancellation(_) => WorkspaceEffectRequirement::ClientLocal,
+    }
+}
+
+fn maintenance_dialog_requirement(dialog: &MaintenanceDialog) -> WorkspaceEffectRequirement {
+    use CapabilityId as Id;
+    match dialog {
+        MaintenanceDialog::ReadinessToml { .. } | MaintenanceDialog::ReadinessForm(_) => {
+            WorkspaceEffectRequirement::one(Id::SstateReadiness)
+        }
+        MaintenanceDialog::CleanupToml { .. } | MaintenanceDialog::CleanupForm(_) => {
+            WorkspaceEffectRequirement::one(Id::SstateCleanup)
+        }
+        MaintenanceDialog::PrServiceToml { .. } | MaintenanceDialog::PrServiceForm(_) => {
+            WorkspaceEffectRequirement::one(Id::PrservManagement)
+        }
+        MaintenanceDialog::LockedCacheToml { .. } | MaintenanceDialog::LockedCacheForm(_) => {
+            WorkspaceEffectRequirement::one(Id::LockedSignatures)
+        }
+        MaintenanceDialog::BuildHistoryToml { .. } | MaintenanceDialog::BuildHistoryForm(_) => {
+            WorkspaceEffectRequirement::one(Id::BuildHistoryCompare)
+        }
+        MaintenanceDialog::GitArchiveToml { .. } | MaintenanceDialog::GitArchiveForm(_) => {
+            WorkspaceEffectRequirement::one(Id::GitArchive)
+        }
+        MaintenanceDialog::Confirm(preview)
+        | MaintenanceDialog::CleanupPhrase { preview, .. }
+        | MaintenanceDialog::ConfirmNetworkPush(preview) => match &preview.operation {
+            MaintenanceOperation::SstateReadiness(_) => {
+                WorkspaceEffectRequirement::one(Id::SstateReadiness)
+            }
+            MaintenanceOperation::SstateCleanup(_) => {
+                WorkspaceEffectRequirement::one(Id::SstateCleanup)
+            }
+            MaintenanceOperation::PrService(_) => {
+                WorkspaceEffectRequirement::one(Id::PrservManagement)
+            }
+            MaintenanceOperation::LockedSignatureCache(_) => {
+                WorkspaceEffectRequirement::one(Id::LockedSignatures)
+            }
+            MaintenanceOperation::BuildHistoryComparison(_) => {
+                WorkspaceEffectRequirement::one(Id::BuildHistoryCompare)
+            }
+            MaintenanceOperation::BuildCompare(_) => {
+                WorkspaceEffectRequirement::one(Id::BuildCompare)
+            }
+            MaintenanceOperation::GitArchive(_) => WorkspaceEffectRequirement::one(Id::GitArchive),
+        },
+        MaintenanceDialog::ConfirmCancellation(_) => WorkspaceEffectRequirement::ClientLocal,
+    }
+}
+
+pub fn authorize_workspace_effect(
+    app: &App,
+    effect: &Effect,
+) -> Result<WorkspaceAvailability, WorkspaceEffectDenied> {
+    let availability = app
+        .workspace_compatibility
+        .availability(&workspace_effect_requirement(effect));
+    if availability.is_enabled() {
+        Ok(availability)
+    } else {
+        Err(WorkspaceEffectDenied { availability })
+    }
+}
+
+/// Capability-aware reducer boundary. If an action attempts to emit an
+/// unavailable environment effect, preparation mutations are rolled back and
+/// only the exact denial notice is retained.
+pub fn update_with_workspace_authority(app: &mut App, action: crate::Action) -> Option<Effect> {
+    let before = app.clone();
+    let effect = crate::update(app, action)?;
+    match authorize_workspace_effect(app, &effect) {
+        Ok(_) => Some(effect),
+        Err(error) => {
+            *app = before;
+            app.notification = Some(error.reason());
+            None
+        }
+    }
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+#[error("workspace effect is unavailable")]
+pub struct WorkspaceEffectDenied {
+    pub availability: WorkspaceAvailability,
+}
+
+impl WorkspaceEffectDenied {
+    pub fn reason(&self) -> String {
+        self.availability
+            .issues
+            .iter()
+            .map(|issue| issue.reason.as_str())
+            .collect::<Vec<_>>()
+            .join(" ")
+    }
+}
+
+pub fn install_workspace_compatibility(
+    app: &mut App,
+    authority: DaemonCompatibilitySnapshot,
+) -> Result<WorkspaceRevalidation, WorkspaceCompatibilityError> {
+    let install = app.workspace_compatibility.install(authority)?;
+    if install == WorkspaceSnapshotInstall::Unchanged {
+        return Ok(WorkspaceRevalidation {
+            install,
+            closed_dialog: false,
+            reason: None,
+        });
+    }
+    Ok(revalidate_workspace_dialog(app, install))
+}
+
+pub fn invalidate_workspace_compatibility(app: &mut App) -> WorkspaceRevalidation {
+    app.workspace_compatibility.invalidate();
+    revalidate_workspace_dialog(app, WorkspaceSnapshotInstall::Invalidated)
+}
+
+fn revalidate_workspace_dialog(
+    app: &mut App,
+    install: WorkspaceSnapshotInstall,
+) -> WorkspaceRevalidation {
+    let unavailable = app.active_dialog().and_then(|dialog| {
+        let availability = app
+            .workspace_compatibility
+            .availability(&workspace_dialog_requirement(dialog));
+        (!availability.is_enabled()).then_some(availability)
+    });
+    let reason = unavailable.as_ref().map(|availability| {
+        availability
+            .issues
+            .iter()
+            .map(|issue| issue.reason.as_str())
+            .collect::<Vec<_>>()
+            .join(" ")
+    });
+    if unavailable.is_some() {
+        crate::close_dialog(app);
+        app.notification = reason
+            .as_ref()
+            .map(|reason| format!("Action closed after environment capability update: {reason}"));
+        crate::synchronize_focus(app);
+    }
+    WorkspaceRevalidation {
+        install,
+        closed_dialog: unavailable.is_some(),
+        reason,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{BuildRequest, Effect, VariableIdentity};
+    use crate::{
+        BuildRequest, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
+        CapabilityImplementation, CapabilityImplementationKind, CapabilityReason, CapabilityRecord,
+        CapabilitySnapshot, CapabilityState, DaemonCompatibilitySnapshot, Effect, VariableIdentity,
+        YoctoEnvironmentIdentity,
+    };
+    use std::collections::BTreeMap;
+
+    fn reason(message: &str) -> CapabilityReason {
+        CapabilityReason::new("test.workspace", message, None).unwrap()
+    }
+
+    fn authority(
+        generation: u64,
+        records: Vec<(CapabilityId, CapabilityState, Option<&str>)>,
+    ) -> DaemonCompatibilitySnapshot {
+        let mut capabilities = records
+            .iter()
+            .map(|(id, state, _)| CapabilityRecord {
+                id: *id,
+                state: state.clone(),
+                evidence: match state {
+                    CapabilityState::Available
+                    | CapabilityState::AvailableWithLimitations { .. } => {
+                        vec![CapabilityEvidence {
+                            kind: CapabilityEvidenceKind::DirectProbe,
+                            outcome: CapabilityEvidenceOutcome::Positive,
+                            subject: id.as_str().into(),
+                            detail: "positive workspace fixture evidence".into(),
+                            argv: vec!["fixture".into()],
+                        }]
+                    }
+                    CapabilityState::Unavailable { .. } => vec![CapabilityEvidence {
+                        kind: CapabilityEvidenceKind::DirectProbe,
+                        outcome: CapabilityEvidenceOutcome::Negative,
+                        subject: id.as_str().into(),
+                        detail: "negative workspace fixture evidence".into(),
+                        argv: vec!["fixture".into()],
+                    }],
+                    CapabilityState::Unknown { .. } | CapabilityState::Unsupported { .. } => {
+                        Vec::new()
+                    }
+                },
+            })
+            .collect::<Vec<_>>();
+        capabilities.sort_by_key(|record| record.id);
+        DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation,
+                environment: YoctoEnvironmentIdentity::default(),
+                capabilities,
+            },
+            implementations: records
+                .into_iter()
+                .filter_map(|(id, _, implementation)| {
+                    implementation.map(|implementation| {
+                        (
+                            id,
+                            CapabilityImplementation {
+                                id: implementation.into(),
+                                kind: CapabilityImplementationKind::Command,
+                            },
+                        )
+                    })
+                })
+                .collect::<BTreeMap<_, _>>(),
+        }
+        .normalize()
+        .unwrap()
+    }
 
     #[test]
     fn compatibility_workspace_catalog_covers_every_screen_and_named_destination() {
@@ -605,6 +1282,282 @@ mod tests {
                 .unwrap()
                 .required_tools,
             [crate::CapabilityToolId::BitBakeSelftest]
+        );
+    }
+
+    #[test]
+    fn compatibility_workspace_model_projects_full_limited_all_and_any_requirements() {
+        let authority = authority(
+            1,
+            vec![
+                (
+                    CapabilityId::BitBakeBuild,
+                    CapabilityState::Available,
+                    Some("tinfoil.build"),
+                ),
+                (
+                    CapabilityId::SdkExtensible,
+                    CapabilityState::AvailableWithLimitations {
+                        reason: reason("legacy extensible SDK task is selected"),
+                        limitations: vec!["legacy task adapter".into()],
+                    },
+                    Some("bitbake.populate_sdk_ext"),
+                ),
+                (
+                    CapabilityId::RunQemu,
+                    CapabilityState::Unavailable {
+                        reason: reason("runqemu was not detected"),
+                    },
+                    None,
+                ),
+                (
+                    CapabilityId::WicCreate,
+                    CapabilityState::Available,
+                    Some("wic.create.argv"),
+                ),
+            ],
+        );
+        let limited = workspace_requirement_availability(
+            Some(&authority),
+            &WorkspaceEffectRequirement::all(&[
+                CapabilityId::BitBakeBuild,
+                CapabilityId::SdkExtensible,
+            ]),
+        );
+        assert_eq!(
+            limited.state,
+            WorkspaceAvailabilityState::AvailableWithLimitations
+        );
+        assert!(limited.issues[0].reason.contains("legacy extensible"));
+        assert_eq!(limited.implementations.len(), 2);
+
+        let alternative = workspace_requirement_availability(
+            Some(&authority),
+            &WorkspaceEffectRequirement::all_and_any(
+                &[],
+                &[CapabilityId::RunQemu, CapabilityId::WicCreate],
+            ),
+        );
+        assert_eq!(alternative.state, WorkspaceAvailabilityState::Available);
+        assert_eq!(
+            alternative.implementations,
+            vec![(CapabilityId::WicCreate, "wic.create.argv".into())]
+        );
+    }
+
+    #[test]
+    fn compatibility_workspace_model_absent_unknown_unsupported_and_missing_all_fail_closed() {
+        let absent = workspace_requirement_availability(
+            None,
+            &WorkspaceEffectRequirement::all(&[
+                CapabilityId::BitBakeBuild,
+                CapabilityId::SdkPopulate,
+            ]),
+        );
+        assert_eq!(absent.state, WorkspaceAvailabilityState::Unknown);
+        assert_eq!(absent.issues.len(), 2);
+
+        let authority = authority(
+            2,
+            vec![
+                (
+                    CapabilityId::BitBakeBuild,
+                    CapabilityState::Unavailable {
+                        reason: reason("build API was rejected"),
+                    },
+                    None,
+                ),
+                (
+                    CapabilityId::SdkPopulate,
+                    CapabilityState::Unsupported {
+                        reason: reason("standard SDK workflow is intentionally unsupported"),
+                    },
+                    None,
+                ),
+                (
+                    CapabilityId::RunQemu,
+                    CapabilityState::Unknown {
+                        reason: reason("runqemu probe timed out"),
+                    },
+                    None,
+                ),
+            ],
+        );
+        let all = workspace_requirement_availability(
+            Some(&authority),
+            &WorkspaceEffectRequirement::all(&[
+                CapabilityId::BitBakeBuild,
+                CapabilityId::SdkPopulate,
+            ]),
+        );
+        assert_eq!(all.state, WorkspaceAvailabilityState::Unavailable);
+        assert_eq!(all.issues.len(), 2);
+        assert!(
+            all.issues
+                .iter()
+                .any(|issue| issue.reason.contains("build API"))
+        );
+        let unknown = workspace_requirement_availability(
+            Some(&authority),
+            &WorkspaceEffectRequirement::one(CapabilityId::RunQemu),
+        );
+        assert_eq!(unknown.state, WorkspaceAvailabilityState::Unknown);
+        assert!(unknown.issues[0].reason.contains("timed out"));
+        let unsupported = workspace_requirement_availability(
+            Some(&authority),
+            &WorkspaceEffectRequirement::one(CapabilityId::SdkPopulate),
+        );
+        assert_eq!(unsupported.state, WorkspaceAvailabilityState::Unsupported);
+    }
+
+    #[test]
+    fn compatibility_workspace_model_snapshot_install_is_monotonic_and_conflict_safe() {
+        let current = authority(
+            4,
+            vec![(
+                CapabilityId::BitBakeBuild,
+                CapabilityState::Available,
+                Some("tinfoil.build"),
+            )],
+        );
+        let mut state = WorkspaceCompatibilityState::default();
+        assert_eq!(
+            state.install(current.clone()).unwrap(),
+            WorkspaceSnapshotInstall::Replaced
+        );
+        assert_eq!(
+            state.install(current).unwrap(),
+            WorkspaceSnapshotInstall::Unchanged
+        );
+        assert!(matches!(
+            state.install(authority(
+                3,
+                vec![(
+                    CapabilityId::BitBakeBuild,
+                    CapabilityState::Available,
+                    Some("tinfoil.build")
+                )]
+            )),
+            Err(WorkspaceCompatibilityError::StaleGeneration { .. })
+        ));
+        assert!(matches!(
+            state.install(authority(
+                4,
+                vec![(
+                    CapabilityId::BitBakeBuild,
+                    CapabilityState::Unavailable {
+                        reason: reason("same generation conflict")
+                    },
+                    None
+                )]
+            )),
+            Err(WorkspaceCompatibilityError::ConflictingGeneration(4))
+        ));
+    }
+
+    #[test]
+    fn compatibility_workspace_model_snapshot_change_revalidates_dialog_and_effect() {
+        let mut app = App::new(10, 1_000);
+        app.navigator_selection = 3;
+        app.dialogs.push_front(Dialog::BuildOptions);
+        app.focus = crate::FocusTarget::Dialog;
+        app.focus_return = Some(crate::FocusTarget::Inspector);
+        let available = authority(
+            1,
+            vec![(
+                CapabilityId::BitBakeBuild,
+                CapabilityState::Available,
+                Some("tinfoil.build"),
+            )],
+        );
+        let retained = install_workspace_compatibility(&mut app, available).unwrap();
+        assert!(!retained.closed_dialog);
+        assert!(matches!(app.active_dialog(), Some(Dialog::BuildOptions)));
+        let start = Effect::Start(BuildRequest {
+            targets: vec!["core-image-minimal".into()],
+            task: None,
+            force: false,
+        });
+        assert!(authorize_workspace_effect(&app, &start).is_ok());
+
+        let unavailable = authority(
+            2,
+            vec![(
+                CapabilityId::BitBakeBuild,
+                CapabilityState::Unavailable {
+                    reason: reason("connected backend cannot build"),
+                },
+                None,
+            )],
+        );
+        let revalidated = install_workspace_compatibility(&mut app, unavailable).unwrap();
+        assert!(revalidated.closed_dialog);
+        assert!(app.active_dialog().is_none());
+        assert_eq!(app.focus, crate::FocusTarget::Inspector);
+        assert_eq!(app.navigator_selection, 3);
+        let denied = authorize_workspace_effect(&app, &start).unwrap_err();
+        assert!(denied.reason().contains("cannot build"));
+        assert!(
+            authorize_workspace_effect(&app, &Effect::CopyToClipboard("still local".into()))
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn compatibility_workspace_model_invalidation_closes_environment_dialog_but_keeps_local_one() {
+        let mut app = App::new(10, 1_000);
+        install_workspace_compatibility(
+            &mut app,
+            authority(
+                1,
+                vec![(
+                    CapabilityId::BitBakeBuild,
+                    CapabilityState::Available,
+                    Some("tinfoil.build"),
+                )],
+            ),
+        )
+        .unwrap();
+        app.dialogs.push_front(Dialog::BuildOptions);
+        let invalidated = invalidate_workspace_compatibility(&mut app);
+        assert_eq!(invalidated.install, WorkspaceSnapshotInstall::Invalidated);
+        assert!(invalidated.closed_dialog);
+
+        app.dialogs.push_front(Dialog::QuitConfirmation);
+        let local = invalidate_workspace_compatibility(&mut app);
+        assert!(!local.closed_dialog);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::QuitConfirmation)
+        ));
+    }
+
+    #[test]
+    fn compatibility_workspace_model_unavailable_effect_is_not_emitted_or_partially_applied() {
+        let mut app = App::new(10, 1_000);
+        let request = BuildRequest {
+            targets: vec!["core-image-minimal".into()],
+            task: None,
+            force: false,
+        };
+        app.dialogs
+            .push_front(Dialog::RecipeTaskConfirmation(request));
+        app.focus = crate::FocusTarget::Dialog;
+        let before_build = app.build.clone();
+
+        assert!(
+            update_with_workspace_authority(&mut app, crate::Action::ConfirmRecipeTask).is_none()
+        );
+        assert_eq!(app.build, before_build);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::RecipeTaskConfirmation(_))
+        ));
+        assert!(
+            app.notification
+                .as_deref()
+                .unwrap()
+                .contains("current environment capability snapshot")
         );
     }
 }
