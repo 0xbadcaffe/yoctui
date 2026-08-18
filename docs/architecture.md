@@ -2142,6 +2142,16 @@ Even a snapshot with no enabled action is a valid Diagnostic state, not an
 application startup failure. This is the shared older-release degradation
 primitive; support classification remains an evidence-policy concern.
 
+`CapabilityCacheKey` is structural rather than a release-label shortcut. It
+contains the normalized environment (including build/source, BitBake/tools,
+layers, backend, and protocol), exact workspace and daemon-workspace identity,
+plus SHA-256 digests of the bounded initialized environment, layer
+configuration, and build configuration. `CapabilitySnapshotCache` retains at
+most one active key/snapshot. Exact-key reuse preserves its generation; any key
+change or explicit invalidation clears the snapshot and advances generation.
+Store and lookup reject stale generation, environment mismatch, another
+project's key, invalid key material, and generation overflow.
+
 Commands use this flow:
 
 ```text

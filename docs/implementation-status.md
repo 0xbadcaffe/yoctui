@@ -811,3 +811,11 @@ probed workspace behavior, selects the limited legacy Tinfoil fallback,
 disables absent Devtool upgrade, and retains a complete snapshot. A no-action
 snapshot remains valid Diagnostic. No minimum release is claimed before live
 evidence. `COMPAT-CACHE-001` is active.
+
+`COMPAT-CACHE-001` is complete. Exact keys include normalized build/source,
+BitBake/tool, layer/backend/protocol identity, workspace and daemon-workspace
+identity, and bounded SHA-256 initialized-environment/layer/build configuration
+digests. The cache holds one environment, reuses only an exact key, clears and
+advances generation on change/invalidation, and rejects stale, mismatched,
+oversized, and overflow state. Seven focused tests and Clippy pass.
+`COMPAT-PROTOCOL-001` is active.
