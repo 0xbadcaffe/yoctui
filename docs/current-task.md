@@ -2,50 +2,43 @@
 
 ## Task
 
-**ID:** CRATESIO-PUBLISH-001
-**Title:** Publish and validate yoctui 0.1.0 on crates.io
-**Status:** DONE
+**ID:** CRATESIO-COVERAGE-001
+**Title:** Realign Python quality checks with the bundled bridge
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Publish the verified `yoctui` 0.1.0 package graph to crates.io, validate an
-installation from immutable registry artifacts, and retain exact release
-commit and tag evidence.
-
-This is the terminal handoff: every registered task is `DONE`.
+Point Python lint, formatting, type, and coverage checks at the canonical
+bridge source bundled in `yoctui-bitbake`, while retaining the external bridge
+tests, so the terminal completion gate measures the shipped implementation.
 
 ## Dependencies
 
-- `CRATESIO-PACKAGE-001` — DONE
+- `CRATESIO-PUBLISH-001` — DONE
 
 ## Relevant files
 
-- crates.io package records
-- Git release commit and `v0.1.0` tag
+- `pyproject.toml`
+- `scripts/verify-completion.sh`
+- `crates/yoctui-bitbake/bridge/yoctui_bridge.py`
+- `bridge/tests/`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Required support crates are published in dependency order.
-- `yoctui` 0.1.0 is published after dependency propagation.
-- A clean `cargo install yoctui --version 0.1.0 --locked` succeeds from crates.io.
-- The installed binary's version, help, and embedded bridge smoke pass.
-- The exact release commit is tagged `v0.1.0` and release evidence is recorded.
-
-## Completion evidence
-
-- All six public 0.1.0 crates are available from crates.io.
-- A clean locked registry install reports `yoctui 0.1.0`.
-- Packaged help and embedded-bridge headless inspection pass.
-- Published package source commit:
-  `6c66b4777d05a7f45e105d0cb955eb3e5a322a7d` (`v0.1.0`).
+- Ruff checks the canonical bridge and its external tests.
+- Ruff formatting checks the canonical bridge and its external tests.
+- Mypy checks the canonical bridge and its external tests.
+- Pytest coverage measures the canonical bridge and clears 75%.
+- The terminal completion gate passes.
 
 ## Verification
 
 ```bash
-cargo install yoctui --version 0.1.0 --locked
-yoctui --version
-yoctui --help
-./scripts/verify-roadmap.sh
+$HOME/.local/bin/ruff check crates/yoctui-bitbake/bridge bridge/tests
+$HOME/.local/bin/ruff format --check crates/yoctui-bitbake/bridge bridge/tests
+$HOME/.local/bin/mypy crates/yoctui-bitbake/bridge bridge/tests
+$HOME/.local/bin/pytest bridge/tests --cov=crates/yoctui-bitbake/bridge --cov-report=term-missing --cov-fail-under=75
+./scripts/verify-completion.sh
 ```

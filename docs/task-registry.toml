@@ -4229,3 +4229,14 @@ required = true
 depends_on = ["CRATESIO-PACKAGE-001"]
 verify = ["cargo install yoctui --version 0.1.0 --locked", "yoctui --help", "./scripts/verify-roadmap.sh"]
 notes = "Published yoctui-model, yoctui-protocol, yoctui-bitbake, yoctui-ui, yoctui-app, and yoctui 0.1.0 to crates.io in dependency order. A clean locked install from registry sources produced yoctui 0.1.0, complete help output, and a successful embedded-bridge headless inspection. Published package VCS source commit 6c66b4777d05a7f45e105d0cb955eb3e5a322a7d is tagged v0.1.0."
+
+[[task]]
+id = "CRATESIO-COVERAGE-001"
+milestone = "M12"
+title = "Realign Python quality checks with the bundled bridge"
+status = "IN_PROGRESS"
+priority = 457
+required = true
+depends_on = ["CRATESIO-PUBLISH-001"]
+verify = ["$HOME/.local/bin/ruff check crates/yoctui-bitbake/bridge bridge/tests", "$HOME/.local/bin/ruff format --check crates/yoctui-bitbake/bridge bridge/tests", "$HOME/.local/bin/mypy crates/yoctui-bitbake/bridge bridge/tests", "$HOME/.local/bin/pytest bridge/tests --cov=crates/yoctui-bitbake/bridge --cov-report=term-missing --cov-fail-under=75", "./scripts/verify-completion.sh"]
+notes = "The post-release completion gate found that Python lint, type, and coverage commands still target the old top-level bridge source path after the canonical bridge moved into yoctui-bitbake. Point quality tooling at the packaged source while retaining the external test location."

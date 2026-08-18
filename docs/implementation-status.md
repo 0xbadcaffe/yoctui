@@ -11,13 +11,17 @@ Status values:
 
 ## Current phase
 
+`CRATESIO-COVERAGE-001` is active: the post-release terminal gate found that
+Python quality commands still target the old top-level bridge path after the
+canonical source moved into `yoctui-bitbake`. All 39 tests pass, but coverage
+reports 0% until lint, type, and coverage targets follow the packaged source.
+
 `CRATESIO-PUBLISH-001` is `DONE`: `yoctui-model`, `yoctui-protocol`,
 `yoctui-bitbake`, `yoctui-ui`, `yoctui-app`, and `yoctui` 0.1.0 are published
 on crates.io. A clean locked install from registry sources reports
 `yoctui 0.1.0`, exposes complete help, and completes a headless inspection
 through the embedded bridge. Published package VCS source commit
 `6c66b4777d05a7f45e105d0cb955eb3e5a322a7d` is the `v0.1.0` release tag.
-All registered roadmap tasks are complete.
 
 `DAEMON-UPGRADE-LIFECYCLE-001` is `DONE`: lifecycle validation now accepts
 Linux's exact ` (deleted)` process-image suffix only when its remaining path
