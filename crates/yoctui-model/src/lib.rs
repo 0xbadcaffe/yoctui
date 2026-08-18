@@ -3,6 +3,7 @@ mod bitbake_layers;
 mod bitbake_restart;
 mod compatibility;
 mod compatibility_catalog;
+mod compatibility_ui;
 mod daemon_state;
 mod embedded_shell;
 mod image;
@@ -28,6 +29,7 @@ pub use bitbake_layers::*;
 pub use bitbake_restart::*;
 pub use compatibility::*;
 pub use compatibility_catalog::*;
+pub use compatibility_ui::*;
 pub use daemon_state::*;
 pub use embedded_shell::*;
 pub use image::*;
@@ -2556,6 +2558,7 @@ fn diagnostic_for_entry(entry: &LogEntry) -> DiagnosticInfo {
 pub struct App {
     pub daemon: ClientDaemonView,
     pub workspace_compatibility: WorkspaceCompatibilityState,
+    pub compatibility_ui: CompatibilityUiState,
     pub pty_selection: usize,
     pub pane_layout: PaneLayout,
     pub screen: Screen,
@@ -2685,6 +2688,7 @@ impl App {
         Self {
             daemon: ClientDaemonView::default(),
             workspace_compatibility: WorkspaceCompatibilityState::default(),
+            compatibility_ui: CompatibilityUiState::default(),
             pty_selection: 0,
             pane_layout: PaneLayout::new(PaneId(1)).expect("valid root pane"),
             screen: Screen::Dashboard,
@@ -3451,6 +3455,14 @@ pub enum Action {
     RetrySettingsPersistence,
     SettingsPersisted,
     SettingsPersistenceFailed(String),
+    SetCompatibilityFilter(CompatibilityUiFilter),
+    SelectCompatibilityCapability {
+        delta: isize,
+    },
+    BeginCompatibilitySearch,
+    AppendCompatibilityQuery(char),
+    BackspaceCompatibilityQuery,
+    FinishCompatibilitySearch,
     EditActivePopup(PopupEditorCommand),
     ConfigureBuildEnvironment(BuildEnvironmentProfile),
     OpenBuildEnvironmentCloneEditor,
@@ -6490,6 +6502,27 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 "Settings changed in memory but could not be saved: {message}"
             ));
         }
+        Action::SetCompatibilityFilter(filter) => {
+            app.compatibility_ui
+                .set_filter(filter, app.workspace_compatibility.authority());
+        }
+        Action::SelectCompatibilityCapability { delta } => {
+            app.compatibility_ui
+                .select(delta, app.workspace_compatibility.authority());
+        }
+        Action::BeginCompatibilitySearch => app.compatibility_ui.begin_search(),
+        Action::AppendCompatibilityQuery(character) if app.compatibility_ui.searching => {
+            let _ = app
+                .compatibility_ui
+                .append_query(character, app.workspace_compatibility.authority());
+        }
+        Action::AppendCompatibilityQuery(_) => {}
+        Action::BackspaceCompatibilityQuery if app.compatibility_ui.searching => {
+            app.compatibility_ui
+                .backspace_query(app.workspace_compatibility.authority());
+        }
+        Action::BackspaceCompatibilityQuery => {}
+        Action::FinishCompatibilitySearch => app.compatibility_ui.finish_search(),
         Action::EditActivePopup(command) => {
             let (editor, validation_error) = match app.active_dialog_mut() {
                 Some(

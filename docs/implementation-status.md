@@ -938,3 +938,14 @@ and Clippy gates. The broad UI gate is split before implementation into typed
 presentation state, the responsive Environment/Compatibility inspector, and
 cross-workspace visible action gating. `COMPAT-UI-001` remains the parent
 acceptance gate. `COMPAT-UI-MODEL-001` is active.
+
+`COMPAT-UI-MODEL-001` is complete. One bounded client-local state projects the
+current daemon authority into authoritative identity, generation/mode, exact
+five-state counts, stable sorted capability rows, reasons/requirements,
+limitations, selected implementations, and typed evidence. Filters, bounded
+search, and selection reconcile by stable capability ID across replacement and
+invalidation. Disconnected, synchronizing, absent-current, and stale authority
+remain explicitly unavailable, and reusable action presentation consumes the
+same workspace projection without a second cache. Focused model/app tests,
+workspace check, and warnings-denied Clippy pass.
+`COMPAT-UI-INSPECTOR-001` is active.

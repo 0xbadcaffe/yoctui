@@ -1033,6 +1033,8 @@ pub fn install_workspace_compatibility(
     authority: DaemonCompatibilitySnapshot,
 ) -> Result<WorkspaceRevalidation, WorkspaceCompatibilityError> {
     let install = app.workspace_compatibility.install(authority)?;
+    app.compatibility_ui
+        .reconcile(app.workspace_compatibility.authority());
     if install == WorkspaceSnapshotInstall::Unchanged {
         return Ok(WorkspaceRevalidation {
             install,
@@ -1045,6 +1047,7 @@ pub fn install_workspace_compatibility(
 
 pub fn invalidate_workspace_compatibility(app: &mut App) -> WorkspaceRevalidation {
     app.workspace_compatibility.invalidate();
+    app.compatibility_ui.reconcile(None);
     revalidate_workspace_dialog(app, WorkspaceSnapshotInstall::Invalidated)
 }
 

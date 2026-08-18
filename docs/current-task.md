@@ -2,25 +2,25 @@
 
 ## Task
 
-**ID:** COMPAT-UI-MODEL-001
-**Title:** Project typed compatibility presentation state
+**ID:** COMPAT-UI-INSPECTOR-001
+**Title:** Render the Environment and Compatibility inspector
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Create the pure bounded model projection that every compatibility-aware widget
-and action surface consumes.
+Add the specified first-class Compatibility destination and responsive
+Environment/Compatibility workspace using only the typed presentation model.
 
 ## Dependencies
 
-- `COMPAT-WORKSPACE-001` — DONE
-- `COMPAT-PROTOCOL-001` — DONE
+- `COMPAT-UI-MODEL-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/compatibility_ui.rs`
 - `crates/yoctui-model/src/lib.rs`
 - `crates/yoctui-app/src/lib.rs`
+- `crates/yoctui-cli/src/main.rs`
+- `crates/yoctui-ui/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
@@ -28,21 +28,23 @@ and action surface consumes.
 
 ## Definition of done
 
-- One pure typed projection exposes normalized environment identity, snapshot
-  generation, operating mode, and exact counts for all five states.
-- Capability rows retain stable ID, state, exact reason/requirement,
-  limitations, selected implementation, and bounded evidence.
-- Absent authority is explicit Unknown and never derives support from host or
-  release values.
-- Typed filter, search, selection, and selected-detail state remains valid as
-  snapshots load, unload, or change generation.
-- Reusable visible-action presentation maps centralized workspace availability
-  to enabled, limited, unavailable, unsupported, or unknown with exact reasons.
+- Compatibility is reachable from Navigator and command palette without
+  emitting an environment effect or probe.
+- Wide layout renders authoritative identity/summary, the filtered capability
+  table, and exact selected details/evidence in the persistent Inspector.
+- Medium uses the standard Inspector overlay; narrow uses the shared pane
+  switcher; below 80x24 retains the resize message.
+- Keys `1`-`5`, `/`, `Esc`, arrows, and `j`/`k` follow the UI specification and
+  do not leak through search/focus routing.
+- Absent/current/limited/unavailable/unknown/unsupported states, long content,
+  every theme, no-color, and snapshot replacement render without panic.
+- The global wide F1-F10 rail and canonical Tasks golden remain unchanged.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model compatibility_ui_model
-cargo test -p yoctui-app compatibility_ui_model
+cargo test -p yoctui-ui compatibility_ui_inspector
+cargo test -p yoctui-app compatibility_ui_inspector
+./scripts/test-tui-snapshots.sh
 ./scripts/verify-roadmap.sh
 ```

@@ -4790,18 +4790,18 @@ notes = "Parent gate complete. The closed catalog covers every Screen, logical d
 id = "COMPAT-UI-MODEL-001"
 milestone = "M18"
 title = "Project typed compatibility presentation state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 504
 required = true
 depends_on = ["COMPAT-WORKSPACE-001", "COMPAT-PROTOCOL-001"]
 verify = ["cargo test -p yoctui-model compatibility_ui_model", "cargo test -p yoctui-app compatibility_ui_model", "./scripts/verify-roadmap.sh"]
-notes = "Create the pure bounded identity, summary, capability-row, filter/search/selection, and action-availability presentation model consumed by UI widgets. It must preserve all five capability states, exact reasons/evidence/implementations, and absent/stale authority without release inference."
+notes = "CompatibilityUiState is the bounded client-local filter/search/selection state and projects only the current WorkspaceCompatibilityState plus daemon replica status. The projection preserves authoritative identity, generation, Full/Degraded/Diagnostic mode, exact five-state counts, stable capability IDs, reasons/requirements, limitations, selected implementations, and typed evidence. Absent/disconnected/synchronizing/stale authority remains explicitly unavailable. Selection reconciles by stable ID across generation changes and falls back safely across filters/search/invalidation. Reusable action presentation maps the centralized workspace availability without inference or a second cache. Five model tests, one bounded-wire app lifecycle test, workspace check, and warnings-denied Clippy pass."
 
 [[task]]
 id = "COMPAT-UI-INSPECTOR-001"
 milestone = "M18"
 title = "Render the Environment and Compatibility inspector"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 504
 required = true
 depends_on = ["COMPAT-UI-MODEL-001"]

@@ -2362,6 +2362,17 @@ startup and post-inventory client probing are prohibited. The local fallback
 therefore does not infer compatibility from host PATH when daemon authority is
 absent.
 
+`CompatibilityUiState` owns only client-local presentation intent: one bounded
+query, typed filter, search mode, and stable selected capability ID. It is not
+a capability cache. Its pure projection reads `WorkspaceCompatibilityState`
+and daemon replica status on demand, preserving the normalized authoritative
+identity, snapshot generation, operating mode, five-state counts, reasons,
+requirements, limitations, selected implementations, and evidence. Snapshot
+replacement reconciles selection by stable ID; invalidation clears only an
+invalid selection while retaining local filter/query intent. Reusable visible
+action presentation is a lossless mapping of `WorkspaceAvailability`, so UI
+widgets cannot reinterpret release or tool support.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.
