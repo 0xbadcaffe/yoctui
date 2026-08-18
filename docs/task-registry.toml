@@ -4346,18 +4346,18 @@ notes = "Legacy session backend state is ignored in favor of the bridge default,
 id = "UI-LIVE-DISCOVERY-001"
 milestone = "M14"
 title = "Make theme and pane focus directly discoverable"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 467
 required = true
 depends_on = ["UI-LIVE-STARTUP-001"]
 verify = ["cargo test -p yoctui-model theme", "cargo test -p yoctui-ui focus", "cargo test -p yoctui-app focus", "./scripts/verify-roadmap.sh"]
-notes = "Add a command-palette theme route, preserve --no-color authority, and name active/next/previous panes in the contextual command rail."
+notes = "The command palette now opens the shared named theme picker, theme choice enables color unless --no-color locks it, Settings explains that lock, and wide/medium command rails name active, next, and previous panes while narrow layouts retain the visible pane switcher. Model, app, all 134 UI tests, and PTY snapshots pass."
 
 [[task]]
 id = "UI-LIVE-POKY-001"
 milestone = "M14"
 title = "Validate the recovered workbench against live Poky"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 468
 required = true
 depends_on = ["UI-LIVE-DISCOVERY-001"]

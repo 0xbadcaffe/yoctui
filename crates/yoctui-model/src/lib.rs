@@ -158,6 +158,7 @@ pub enum CommandId {
     OpenErrors,
     OpenConfiguration,
     OpenSettings,
+    ChooseTheme,
     OpenHelp,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -2543,6 +2544,7 @@ pub struct App {
     pub build_environment_draft: Option<BuildEnvironmentDraft>,
     pub available_images: Vec<String>,
     pub color_enabled: bool,
+    pub color_forced_off: bool,
     pub theme: Theme,
     pub animation_speed: AnimationSpeed,
     pub reduced_motion: bool,
@@ -2674,6 +2676,7 @@ impl App {
             build_environment_draft: None,
             available_images: Vec::new(),
             color_enabled: true,
+            color_forced_off: false,
             theme: Theme::DarkPro,
             animation_speed: AnimationSpeed::Fast,
             reduced_motion: false,
@@ -3321,6 +3324,13 @@ impl App {
                 label: "Open Settings",
                 description: "Edit persistent visual and log preferences",
                 shortcut: "none",
+                disabled_reason: None,
+            },
+            PaletteCommand {
+                id: CommandId::ChooseTheme,
+                label: "Choose theme",
+                description: "Preview and apply a named workbench palette",
+                shortcut: "Ctrl+P theme",
                 disabled_reason: None,
             },
             PaletteCommand {
@@ -4558,6 +4568,7 @@ fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenErrors => Action::Open(Screen::Errors),
         CommandId::OpenConfiguration => Action::Open(Screen::Configuration),
         CommandId::OpenSettings => Action::Open(Screen::Settings),
+        CommandId::ChooseTheme => Action::OpenThemePicker,
         CommandId::OpenHelp => Action::Open(Screen::Help),
     }
 }
@@ -6400,6 +6411,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     }
                 }
                 Setting::ReducedMotion => app.reduced_motion = !app.reduced_motion,
+                Setting::Color if app.color_forced_off => {
+                    app.notification =
+                        Some("Color is disabled by --no-color for this launch".into());
+                    return None;
+                }
                 Setting::Color => app.color_enabled = !app.color_enabled,
                 Setting::LogWrap => {
                     app.logs.wrap = !app.logs.wrap;
@@ -6691,12 +6707,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                         .min(THEMES.len() - 1)
                 };
                 app.theme = THEMES[*selection];
+                if !app.color_forced_off {
+                    app.color_enabled = true;
+                }
                 app.settings_dirty = true;
             }
         }
         Action::ApplySelectedTheme => {
             if let Some(Dialog::ThemePicker { selection }) = app.active_dialog().cloned() {
                 app.theme = THEMES[selection.min(THEMES.len() - 1)];
+                if !app.color_forced_off {
+                    app.color_enabled = true;
+                }
                 app.settings_dirty = true;
                 close_dialog(app);
                 return Some(Effect::PersistSettings);
@@ -14222,6 +14244,23 @@ mod tests {
         assert_eq!(app.focus, FocusTarget::Workspace);
     }
     #[test]
+    fn theme_command_palette_entry_opens_named_picker() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Inspector;
+        let _ = update(&mut app, Action::OpenCommandPalette);
+        for character in "Choose theme".chars() {
+            let _ = update(&mut app, Action::AppendCommandPaletteQuery(character));
+        }
+
+        assert_eq!(update(&mut app, Action::ActivateCommandPalette), None);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::ThemePicker { .. })
+        ));
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        assert_eq!(app.focus_return, Some(FocusTarget::Inspector));
+    }
+    #[test]
     fn focus_async_dialog_waits_behind_palette_then_restores() {
         let mut app = App::new(10, 1_000);
         app.focus = FocusTarget::Inspector;
@@ -16381,6 +16420,7 @@ mod tests {
     #[test]
     fn theme_picker_applies_named_selection_immediately_and_persists_on_accept() {
         let mut app = App::new(10, 1_000);
+        app.color_enabled = false;
         assert_eq!(update(&mut app, Action::OpenThemePicker), None);
         assert!(matches!(
             app.active_dialog(),
@@ -16388,12 +16428,34 @@ mod tests {
         ));
         let _ = update(&mut app, Action::SelectTheme { delta: 1 });
         assert_eq!(app.theme, Theme::WhiteClassic);
+        assert!(app.color_enabled);
         assert!(app.settings_dirty);
         assert!(matches!(
             update(&mut app, Action::ApplySelectedTheme),
             Some(Effect::PersistSettings)
         ));
         assert!(app.active_dialog().is_none());
+    }
+
+    #[test]
+    fn theme_picker_respects_no_color_launch_override() {
+        let mut app = App::new(10, 1_000);
+        app.color_enabled = false;
+        app.color_forced_off = true;
+        let _ = update(&mut app, Action::OpenThemePicker);
+        let _ = update(&mut app, Action::SelectTheme { delta: 1 });
+        assert_eq!(app.theme, Theme::WhiteClassic);
+        assert!(!app.color_enabled);
+
+        app.settings_selection = 3;
+        assert_eq!(
+            update(&mut app, Action::ChangeSelectedSetting { backwards: false }),
+            None
+        );
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Color is disabled by --no-color for this launch")
+        );
     }
 
     #[test]

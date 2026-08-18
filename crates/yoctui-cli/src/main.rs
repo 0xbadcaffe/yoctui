@@ -8554,6 +8554,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     };
     app.backend = backend_kind.to_string();
     app.color_enabled = color;
+    app.color_forced_off = color_forced_off;
     app.theme = theme;
     app.animation_speed = animation_speed;
     app.reduced_motion = reduced_motion;

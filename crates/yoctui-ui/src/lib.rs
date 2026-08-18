@@ -539,20 +539,45 @@ fn build_pace(app: &App) -> String {
     )
 }
 
-fn footer_shortcuts(app: &App) -> &'static str {
+fn pane_focus_shortcuts(focus: FocusTarget) -> Option<&'static str> {
+    match focus {
+        FocusTarget::Navigator => Some("Focus Navigator | Tab Workspace | Shift+Tab Inspector"),
+        FocusTarget::Workspace => Some("Focus Workspace | Tab Inspector | Shift+Tab Navigator"),
+        FocusTarget::Inspector => Some("Focus Inspector | Tab Navigator | Shift+Tab Workspace"),
+        FocusTarget::Dialog | FocusTarget::CommandPalette => None,
+    }
+}
+
+fn with_focus_shortcuts(app: &App, shortcuts: &str) -> String {
+    pane_focus_shortcuts(app.focus).map_or_else(
+        || shortcuts.to_owned(),
+        |focus| format!("{focus} | {shortcuts}"),
+    )
+}
+
+fn footer_shortcuts(app: &App) -> String {
     if app.screen == Screen::Signatures {
-        return "↑/↓ select | 1/2 sides | c compare | r refresh | e provider | Esc back/cancel";
+        return with_focus_shortcuts(
+            app,
+            "↑/↓ select | 1/2 sides | c compare | r refresh | e provider | Esc back/cancel",
+        );
     }
     if app.focus == FocusTarget::Navigator {
-        return "j/k or ↑/↓ select | Enter open | Ctrl+B prefix | Tab workspace | Shift+Tab inspector | q quit";
+        return with_focus_shortcuts(
+            app,
+            "j/k or ↑/↓ select | Enter open | Ctrl+B prefix | q quit",
+        );
     }
     if app.focus == FocusTarget::Inspector {
-        return "Tab navigator | Shift+Tab workspace | ↑/↓ scroll inspector | / search | q quit";
+        return with_focus_shortcuts(app, "↑/↓ scroll inspector | / search | q quit");
     }
     if app.layer_browser.is_some() {
-        return "↑/↓ select | →/l expand | ←/h collapse | Enter open/toggle | e editor | r refresh | . hidden | / search | g Git | m metadata | d deps";
+        return with_focus_shortcuts(
+            app,
+            "↑/↓ select | →/l expand | ←/h collapse | Enter open/toggle | e editor | r refresh | . hidden | / search | g Git | m metadata | d deps",
+        );
     }
-    match app.screen {
+    let shortcuts = match app.screen {
         Screen::Dashboard => {
             "F5 build | Ctrl+P commands | Ctrl+B prefix | Tab focus | ↑/↓ package progress | i image | ! shell | c cancel | r recipes | y layers | ? help | q quit"
         }
@@ -624,22 +649,34 @@ fn footer_shortcuts(app: &App) -> &'static str {
         Screen::BuildEnvironment => {
             "↑/↓ select | e edit profile | i initialize | V verify | Tab focus | q quit"
         }
-    }
+    };
+    with_focus_shortcuts(app, shortcuts)
 }
 
-fn responsive_footer_shortcuts(app: &App, width: u16) -> &'static str {
+fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
     if app.screen == Screen::Images && width <= 129 {
-        "R refresh | ↑↓ select | Q QEMU | W Wic | D write | x cancel | O open"
+        "R refresh | ↑↓ select | Q QEMU | W Wic | D write | x cancel | O open".into()
     } else if app.screen == Screen::Sdk && width <= 90 {
-        "↑↓ i:image s/E:SDK t/T:test R:scan P:publish n:native o:open c:cancel"
+        "↑↓ i:image s/E:SDK t/T:test R:scan P:publish n:native o:open c:cancel".into()
     } else if app.screen == Screen::Testing && width <= 90 {
         "Tab:view ↑↓ Enter r:run i:image /:find I/R:results c:compare J:JUnit o/l:open x:cancel"
+            .into()
     } else if app.screen == Screen::Security && width <= 90 {
         "Tab:view ↑↓ s:scope i:image /:find f:status V:check M:map X:SBOM I/R:data Enter o/e/v:open c:cancel"
+            .into()
     } else if app.screen == Screen::Qa && width <= 90 {
-        "Tab:view ↑↓ s:scope /:find f:status r:run I/R:data Enter o/e/l:open c:cancel"
+        "Tab:view ↑↓ s:scope /:find f:status r:run I/R:data Enter o/e/l:open c:cancel".into()
     } else {
-        footer_shortcuts(app)
+        let shortcuts = footer_shortcuts(app);
+        if width < 100 && pane_focus_shortcuts(app.focus).is_some() {
+            shortcuts
+                .split(" | ")
+                .skip(3)
+                .collect::<Vec<_>>()
+                .join(" | ")
+        } else {
+            shortcuts
+        }
     }
 }
 
@@ -818,12 +855,9 @@ fn shortcut_rail<'a>(app: &App, shortcuts: &'a str) -> Line<'a> {
 fn workbench_footer(frame: &mut Frame, app: &App, area: Rect) {
     let palette = ThemePalette::for_app(app);
     let columns = Layout::horizontal([Constraint::Min(20), Constraint::Length(10)]).split(area);
+    let shortcuts = responsive_footer_shortcuts(app, area.width);
     frame.render_widget(
-        Paragraph::new(shortcut_rail(
-            app,
-            responsive_footer_shortcuts(app, area.width),
-        ))
-        .style(palette.base()),
+        Paragraph::new(shortcut_rail(app, &shortcuts)).style(palette.base()),
         columns[0],
     );
     frame.render_widget(
@@ -1631,7 +1665,11 @@ fn theme_picker(frame: &mut Frame, app: &App, selection: usize, area: Rect) {
         Table::new(rows, [Constraint::Min(1)])
             .block(
                 Block::default()
-                    .title("Theme — applies immediately")
+                    .title(if app.color_forced_off {
+                        "Theme — preview locked by --no-color"
+                    } else {
+                        "Theme — applies immediately"
+                    })
                     .borders(Borders::ALL),
             )
             .footer(Row::new(["↑/↓ select  Enter apply  Esc close"])),
@@ -7408,7 +7446,14 @@ fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
         ("Theme", format!("{:?}", app.theme)),
         ("Animation speed", format!("{:?}", app.animation_speed)),
         ("Reduced motion", app.reduced_motion.to_string()),
-        ("Color", app.color_enabled.to_string()),
+        (
+            "Color",
+            if app.color_forced_off {
+                "false (--no-color)".into()
+            } else {
+                app.color_enabled.to_string()
+            },
+        ),
         ("Log wrap", app.logs.wrap.to_string()),
         ("Log follow", app.logs.follow.to_string()),
     ];
@@ -13156,7 +13201,7 @@ mod tests {
         assert_ne!(app.focus, before);
         let footer = responsive_footer_shortcuts(&app, 160);
         assert!(footer.contains("Tab"), "{footer}");
-        assert!(footer.contains("Shift+Tab workspace"), "{footer}");
+        assert!(footer.contains("Shift+Tab Workspace"), "{footer}");
     }
 
     #[test]
@@ -13241,7 +13286,7 @@ mod tests {
         let medium = rendered_text(&app, 129, 24);
         assert!(medium.contains("Navigator"));
         assert!(medium.contains("Build"));
-        assert!(!medium.contains("Inspector"));
+        assert!(!medium.contains("┌Inspector"));
 
         app.focus = FocusTarget::Inspector;
         let medium_inspector = rendered_text(&app, 100, 24);
@@ -13516,6 +13561,47 @@ mod tests {
             assert!(output.contains("Open Settings"));
             assert!(output.contains("persistent visual"));
             assert!(output.contains("[none]"));
+        }
+    }
+    #[test]
+    fn theme_command_palette_and_no_color_override_are_explicit() {
+        let mut app = App::new(10, 1_000);
+        app.command_palette_open = true;
+        app.command_palette_query = "Choose theme".into();
+        let palette = rendered_text(&app, 100, 25);
+        assert!(palette.contains("Choose theme"), "{palette}");
+        assert!(palette.contains("named workbench palette"), "{palette}");
+
+        app.command_palette_open = false;
+        app.color_enabled = false;
+        app.color_forced_off = true;
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::OpenThemePicker);
+        let picker = rendered_text(&app, 100, 25);
+        assert!(picker.contains("locked by --no-color"), "{picker}");
+    }
+
+    #[test]
+    fn focus_command_rail_names_current_next_and_previous_panes() {
+        let mut app = App::new(10, 1_000);
+        for (focus, expected) in [
+            (
+                FocusTarget::Navigator,
+                ["Focus Navigator", "Tab Workspace", "Shift+Tab Inspector"],
+            ),
+            (
+                FocusTarget::Workspace,
+                ["Focus Workspace", "Tab Inspector", "Shift+Tab Navigator"],
+            ),
+            (
+                FocusTarget::Inspector,
+                ["Focus Inspector", "Tab Navigator", "Shift+Tab Workspace"],
+            ),
+        ] {
+            app.focus = focus;
+            let footer = footer_shortcuts(&app);
+            for label in expected {
+                assert!(footer.contains(label), "{footer}");
+            }
         }
     }
     #[test]

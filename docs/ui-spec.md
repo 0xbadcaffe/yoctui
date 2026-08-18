@@ -218,8 +218,9 @@ Rules:
 
 - `Tab`: next focus target
 - `Shift+Tab`: previous focus target
-- the command rail names the active pane and the destination of both focus
-  chords; a generic `Tab Focus` label is insufficient
+- where the pane switcher is not visible, the command rail names the active
+  pane and the destination of both focus chords; a generic `Tab Focus` label
+  is insufficient
 - arrow keys affect only the focused region
 - `Esc`: close dialog, cancel transient mode, or return focus outward
 - dialogs trap focus until closed

@@ -11,9 +11,16 @@ Status values:
 
 ## Current phase
 
-`UI-LIVE-DISCOVERY-001` is `IN_PROGRESS`: the startup state boundary is fixed;
-the next task adds a direct command-palette theme route and names the active,
-next, and previous pane in the command rail.
+`UI-LIVE-POKY-001` is `IN_PROGRESS`: the corrected startup and discoverability
+behavior now needs one repeatable live-Poky metadata and colored PTY visual
+acceptance gate.
+
+`UI-LIVE-DISCOVERY-001` is `DONE`: `Choose theme` in the command palette opens
+the shared named picker, selecting a theme enables color unless `--no-color`
+locks it, and Settings explains that lock. Wide and medium command rails name
+the active, next, and previous pane; narrow layouts retain their explicit pane
+switcher so contextual actions remain visible. Model, app, all 134 UI tests,
+and PTY snapshots pass.
 
 `UI-LIVE-STARTUP-001` is `DONE`: legacy session backend state no longer
 overrides the bridge default, `--no-color` no longer overwrites stored color,
