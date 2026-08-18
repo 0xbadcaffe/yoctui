@@ -11,11 +11,14 @@ Status values:
 
 ## Current phase
 
-`UI-VISION-SHELL-001` is `IN_PROGRESS`: the approved UI direction is now
-specified as a dense terminal IDE workbench. Implementation is split into
-compact shell chrome, grouped Navigator, Tasks cockpit, and responsive /
-accessibility verification. The design retains the existing typed model,
-daemon-client boundary, focus behavior, and honest unavailable states.
+`UI-VISION-NAV-001` is `IN_PROGRESS`: the next slice renders the stable typed
+workspace destinations under IDE-style visual groups without making headings
+selectable or changing reducer navigation semantics.
+
+`UI-VISION-SHELL-001` is `DONE`: the oversized telemetry banner is replaced by
+a one-content-line bordered project/MACHINE/DISTRO and daemon/BitBake header.
+The footer is now a semantic contextual key rail with a fixed-width clock;
+medium-width hints remain readable. All 126 UI tests and UI Clippy pass.
 
 `UI-VISION-SPEC-001` is `DONE`: `docs/ui-spec.md`, architecture, roadmap, and
 the task registry now capture the approved reference's dark panel grid,

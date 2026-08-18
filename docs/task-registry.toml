@@ -4268,18 +4268,18 @@ notes = "The approved visual direction is now an authoritative compact IDE-style
 id = "UI-VISION-SHELL-001"
 milestone = "M13"
 title = "Implement compact workbench shell chrome"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 460
 required = true
 depends_on = ["UI-VISION-SPEC-001"]
 verify = ["cargo test -p yoctui-ui workbench_shell", "cargo test -p yoctui-ui theme", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Replace the oversized telemetry header and prose footer with the one-line project/status header, dense panel chrome, and contextual command rail."
+notes = "The shell now uses a one-content-line bordered project/MACHINE/DISTRO and daemon/BitBake header plus a semantic contextual key rail and fixed-width clock. Medium Images hints remain visible, all 126 UI tests pass, and Clippy is warning-free."
 
 [[task]]
 id = "UI-VISION-NAV-001"
 milestone = "M13"
 title = "Render the grouped IDE-style Navigator"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 461
 required = true
 depends_on = ["UI-VISION-SHELL-001"]

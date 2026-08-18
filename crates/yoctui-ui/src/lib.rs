@@ -361,24 +361,6 @@ fn clear_popup(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
-fn active_yocto(app: &App) -> String {
-    let release = app
-        .workspace
-        .release
-        .as_deref()
-        .unwrap_or("unknown release");
-    let location = app
-        .workspace
-        .source_dir
-        .as_deref()
-        .or(app.workspace.build_dir.as_deref())
-        .map_or_else(
-            || "workspace unavailable".into(),
-            |path| path.display().to_string(),
-        );
-    format!("{release} @ {location}")
-}
-
 fn source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
     let bitbake_source = ["bb", "bbappend", "inc", "conf", "wks", "wks.in"]
         .iter()
@@ -646,8 +628,8 @@ fn footer_shortcuts(app: &App) -> &'static str {
 }
 
 fn responsive_footer_shortcuts(app: &App, width: u16) -> &'static str {
-    if app.screen == Screen::Images && width <= 90 {
-        "↑↓ R refresh Q QEMU W create Wic D write x cancel [/] output O open output o artifact w Wic"
+    if app.screen == Screen::Images && width <= 129 {
+        "R refresh | ↑↓ select | Q QEMU | W Wic | D write | x cancel | O open"
     } else if app.screen == Screen::Sdk && width <= 90 {
         "↑↓ i:image s/E:SDK t/T:test R:scan P:publish n:native o:open c:cancel"
     } else if app.screen == Screen::Testing && width <= 90 {
@@ -659,6 +641,170 @@ fn responsive_footer_shortcuts(app: &App, width: u16) -> &'static str {
     } else {
         footer_shortcuts(app)
     }
+}
+
+fn daemon_status_label(status: yoctui_model::ClientReplicaStatus) -> &'static str {
+    match status {
+        yoctui_model::ClientReplicaStatus::Disconnected => "Disconnected",
+        yoctui_model::ClientReplicaStatus::Synchronizing => "Syncing",
+        yoctui_model::ClientReplicaStatus::Current => "Connected",
+        yoctui_model::ClientReplicaStatus::Stale => "Stale",
+    }
+}
+
+fn daemon_lifecycle_label(lifecycle: yoctui_model::ClientDaemonLifecycle) -> &'static str {
+    match lifecycle {
+        yoctui_model::ClientDaemonLifecycle::Disconnected => "Disconnected",
+        yoctui_model::ClientDaemonLifecycle::Connecting => "Connecting",
+        yoctui_model::ClientDaemonLifecycle::Running => "Running",
+        yoctui_model::ClientDaemonLifecycle::Stopping => "Stopping",
+        yoctui_model::ClientDaemonLifecycle::Exited => "Exited",
+        yoctui_model::ClientDaemonLifecycle::Failed => "Failed",
+        yoctui_model::ClientDaemonLifecycle::Lost => "Lost",
+    }
+}
+
+fn daemon_lifecycle_style(app: &App, lifecycle: yoctui_model::ClientDaemonLifecycle) -> Style {
+    let palette = ThemePalette::for_app(app);
+    match lifecycle {
+        yoctui_model::ClientDaemonLifecycle::Running => {
+            palette.role(palette.success, Modifier::BOLD)
+        }
+        yoctui_model::ClientDaemonLifecycle::Connecting
+        | yoctui_model::ClientDaemonLifecycle::Stopping => {
+            palette.role(palette.warning, Modifier::BOLD)
+        }
+        yoctui_model::ClientDaemonLifecycle::Failed | yoctui_model::ClientDaemonLifecycle::Lost => {
+            palette.role(palette.error, Modifier::BOLD)
+        }
+        yoctui_model::ClientDaemonLifecycle::Disconnected
+        | yoctui_model::ClientDaemonLifecycle::Exited => {
+            palette.role(palette.disabled, Modifier::DIM)
+        }
+    }
+}
+
+fn workbench_header(frame: &mut Frame, app: &App, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .style(palette.base())
+        .border_style(Style::default().fg(palette.border));
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+
+    let machine = app
+        .workspace
+        .variables
+        .get("MACHINE")
+        .map_or("unknown", String::as_str);
+    let distro = app
+        .workspace
+        .variables
+        .get("DISTRO")
+        .map_or("unknown", String::as_str);
+    let project = app.build.target.as_deref().unwrap_or("not selected");
+    let columns =
+        Layout::horizontal([Constraint::Percentage(64), Constraint::Percentage(36)]).split(inner);
+    frame.render_widget(
+        Paragraph::new(Line::from(vec![
+            Span::styled("yoctui", palette.role(palette.progress, Modifier::BOLD)),
+            Span::styled("  •  ", palette.role(palette.disabled, Modifier::DIM)),
+            Span::raw(format!("Project: {project}")),
+            Span::styled("  •  ", palette.role(palette.disabled, Modifier::DIM)),
+            Span::raw(format!("Machine: {machine}")),
+            Span::styled("  •  ", palette.role(palette.disabled, Modifier::DIM)),
+            Span::raw(format!("Distro: {distro}")),
+        ])),
+        columns[0],
+    );
+    frame.render_widget(
+        Paragraph::new(Line::from(vec![
+            Span::raw("Daemon: "),
+            Span::styled(
+                daemon_status_label(app.daemon.status),
+                match app.daemon.status {
+                    yoctui_model::ClientReplicaStatus::Current => {
+                        palette.role(palette.success, Modifier::BOLD)
+                    }
+                    yoctui_model::ClientReplicaStatus::Synchronizing => {
+                        palette.role(palette.warning, Modifier::BOLD)
+                    }
+                    yoctui_model::ClientReplicaStatus::Stale => {
+                        palette.role(palette.error, Modifier::BOLD)
+                    }
+                    yoctui_model::ClientReplicaStatus::Disconnected => {
+                        palette.role(palette.disabled, Modifier::DIM)
+                    }
+                },
+            ),
+            Span::styled("  •  ", palette.role(palette.disabled, Modifier::DIM)),
+            Span::raw("BitBake: "),
+            Span::styled(
+                daemon_lifecycle_label(app.daemon.bitbake),
+                daemon_lifecycle_style(app, app.daemon.bitbake),
+            ),
+        ]))
+        .alignment(Alignment::Right),
+        columns[1],
+    );
+}
+
+fn clock_text(now: SystemTime) -> String {
+    let seconds = now
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |duration| duration.as_secs())
+        % 86_400;
+    format!(
+        "{:02}:{:02}:{:02}",
+        seconds / 3_600,
+        seconds / 60 % 60,
+        seconds % 60
+    )
+}
+
+fn shortcut_rail<'a>(app: &App, shortcuts: &'a str) -> Line<'a> {
+    let palette = ThemePalette::for_app(app);
+    let mut spans = Vec::new();
+    for (index, item) in shortcuts.split(" | ").enumerate() {
+        if index > 0 {
+            spans.push(Span::styled(
+                "   ",
+                palette.role(palette.disabled, Modifier::DIM),
+            ));
+        }
+        let (key, action) = item.split_once(' ').unwrap_or((item, ""));
+        spans.push(Span::styled(
+            key,
+            palette.role(palette.warning, Modifier::BOLD),
+        ));
+        if !action.is_empty() {
+            spans.push(Span::raw(format!(" {action}")));
+        }
+    }
+    Line::from(spans)
+}
+
+fn workbench_footer(frame: &mut Frame, app: &App, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let columns = Layout::horizontal([Constraint::Min(20), Constraint::Length(10)]).split(area);
+    frame.render_widget(
+        Paragraph::new(shortcut_rail(
+            app,
+            responsive_footer_shortcuts(app, area.width),
+        ))
+        .style(palette.base()),
+        columns[0],
+    );
+    frame.render_widget(
+        Paragraph::new(clock_text(SystemTime::now()))
+            .alignment(Alignment::Right)
+            .style(palette.role(palette.foreground, Modifier::DIM)),
+        columns[1],
+    );
 }
 
 pub fn render(frame: &mut Frame, app: &App) {
@@ -677,79 +823,14 @@ pub fn render(frame: &mut Frame, app: &App) {
         return;
     }
     let chunks = Layout::vertical([
-        Constraint::Length(5),
+        Constraint::Length(3),
         Constraint::Min(1),
         Constraint::Length(1),
     ])
     .split(area);
-    let elapsed = app
-        .elapsed()
-        .map(format_duration)
-        .unwrap_or_else(|| "--:--:--".into());
-    let machine = app
-        .workspace
-        .variables
-        .get("MACHINE")
-        .map_or("unknown", String::as_str);
-    let distro = app
-        .workspace
-        .variables
-        .get("DISTRO")
-        .map_or("unknown", String::as_str);
-    let disk = app.host_telemetry.disk_available_bytes.map_or_else(
-        || "Disk --".into(),
-        |bytes| format!("Disk {}", format_bytes(bytes)),
-    );
-    let daemon_health = app.daemon.telemetry.as_ref().map_or_else(
-        || "Telemetry --".to_owned(),
-        |telemetry| {
-            format!(
-                "Up {}s | Queue {} | Mem {} | Recovery {:?}",
-                telemetry.uptime_seconds,
-                telemetry.queue_depth,
-                telemetry
-                    .memory_bytes
-                    .map_or_else(|| "--".into(), format_bytes),
-                telemetry.recovery,
-            )
-        },
-    );
-    frame.render_widget(
-        Paragraph::new(format!(
-            " Yoctui | {:?} | Yocto: {} | Target {} | MACHINE {} | DISTRO {}\n Daemon {:?} | BB {:?} | Jobs {} | PTYs {} | Status {:?} | Tasks {}/{} | Active {} | W {} | E {} | {} | CPU {} | {}\n {}",
-            app.backend,
-            active_yocto(app),
-            app.build.target.as_deref().unwrap_or("not selected"),
-            machine,
-            distro,
-            app.daemon.status,
-            app.daemon.bitbake,
-            app.daemon.jobs.len(),
-            app.daemon.pty_sessions.len(),
-            app.build.status,
-            app.build.completed,
-            app.build.total.map_or_else(|| "?".into(), |total| total.to_string()),
-            app.tasks.len(),
-            app.build.warnings,
-            app.build.errors,
-            elapsed,
-            app.host_telemetry.cpu_utilization_percent.map_or_else(|| "CPU --".into(), |cpu| format!("CPU {cpu}%")),
-            disk,
-            daemon_health,
-        ))
-        .block(
-            Block::default()
-                .style(palette.base())
-                .borders(Borders::ALL)
-                .border_style(build_status_style(app)),
-        ),
-        chunks[0],
-    );
+    workbench_header(frame, app, chunks[0]);
     responsive_shell(frame, app, chunks[1], area.width);
-    frame.render_widget(
-        Paragraph::new(responsive_footer_shortcuts(app, area.width)).style(palette.focus()),
-        chunks[2],
-    );
+    workbench_footer(frame, app, chunks[2]);
     if app.command_palette_open {
         command_palette(frame, app, area);
     } else if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() {
@@ -10130,10 +10211,8 @@ mod tests {
                 viewers: 1,
             });
         let output = rendered_text(&app, 160, 40);
-        assert!(output.contains("Daemon Current"), "{output}");
-        assert!(output.contains("BB Running"), "{output}");
-        assert!(output.contains("Jobs 1"), "{output}");
-        assert!(output.contains("PTYs 1"), "{output}");
+        assert!(output.contains("Daemon: Connected"), "{output}");
+        assert!(output.contains("BitBake: Running"), "{output}");
         assert!(output.contains("Layers"), "{output}");
     }
 
@@ -10145,13 +10224,16 @@ mod tests {
         for screen in [Screen::Dashboard, Screen::Tasks, Screen::Recipes] {
             app.screen = screen;
             let output = rendered_text(&app, 160, 40);
-            assert!(output.contains("Daemon Current"), "{screen:?}: {output}");
-            assert!(output.contains("BB Connecting"), "{screen:?}: {output}");
+            assert!(output.contains("Daemon: Connected"), "{screen:?}: {output}");
+            assert!(
+                output.contains("BitBake: Connecting"),
+                "{screen:?}: {output}"
+            );
         }
     }
 
     #[test]
-    fn daemon_status_renders_telemetry_and_recovery() {
+    fn workbench_shell_keeps_daemon_health_compact() {
         let mut app = App::new(32, 8192);
         app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
         app.daemon.telemetry = Some(yoctui_model::ClientDaemonTelemetry {
@@ -10163,9 +10245,51 @@ mod tests {
             recovery: yoctui_model::DaemonRecoveryState::Recovered,
         });
         let output = rendered_text(&app, 160, 40);
-        assert!(output.contains("Up 17s"), "{output}");
-        assert!(output.contains("Queue 3"), "{output}");
-        assert!(output.contains("Recovery Recovered"), "{output}");
+        assert!(output.contains("Daemon: Connected"), "{output}");
+        assert!(output.contains("BitBake: Disconnected"), "{output}");
+        assert!(!output.contains("Telemetry --"), "{output}");
+    }
+
+    #[test]
+    fn workbench_shell_renders_project_context_and_contextual_command_rail() {
+        let mut app = App::new(32, 8192);
+        app.build.target = Some("core-image-minimal".into());
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace
+            .variables
+            .insert("DISTRO".into(), "poky".into());
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Running;
+
+        let output = rendered_text(&app, 180, 36);
+        for expected in [
+            "yoctui",
+            "Project: core-image-minimal",
+            "Machine: qemux86-64",
+            "Distro: poky",
+            "Daemon: Connected",
+            "BitBake: Running",
+            "F5 build",
+            "Ctrl+P commands",
+        ] {
+            assert!(output.contains(expected), "missing {expected}: {output}");
+        }
+        assert!(!output.contains("Telemetry --"), "{output}");
+    }
+
+    #[test]
+    fn workbench_shell_clock_is_a_fixed_width_terminal_clock() {
+        assert_eq!(clock_text(UNIX_EPOCH), "00:00:00");
+        assert_eq!(
+            clock_text(UNIX_EPOCH + Duration::from_secs(3_661)),
+            "01:01:01"
+        );
+        assert_eq!(
+            clock_text(UNIX_EPOCH + Duration::from_secs(90_061)),
+            "01:01:01"
+        );
     }
 
     fn security_report_identity(
@@ -10666,7 +10790,7 @@ mod tests {
                 .buffer()
                 .content
                 .iter()
-                .any(|cell| cell.fg == Color::Rgb(0, 220, 255))
+                .any(|cell| cell.fg == Color::Rgb(50, 255, 100))
         );
 
         app.screen = Screen::Logs;
@@ -13063,7 +13187,7 @@ mod tests {
         assert!(output.contains("Backend: bridge"));
         assert!(output.contains("Tasks: 3/7"));
         assert!(output.contains("Warnings: 2  Errors: 1"));
-        assert!(output.contains("Yocto: kirkstone @ /src/poky"));
+        assert!(output.contains("Release: kirkstone"));
     }
     #[test]
     fn bbmask_footer_shows_its_edit_shortcut() {
@@ -13095,7 +13219,7 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(output.contains("Host CPU: 42%"));
-        assert!(output.contains("Disk 8.0 GiB"));
+        assert!(output.contains("Build disk free: 8.0 GiB"));
     }
     #[test]
     fn dashboard_telemetry_cockpit_renders_gauges_history_and_load() {
