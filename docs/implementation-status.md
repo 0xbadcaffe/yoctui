@@ -905,4 +905,12 @@ The broad workspace gate has been split before implementation into three
 coherent children: complete behavior/catalog inventory, pure model projection
 and revalidation, and protocol/app/runtime authority enforcement. The original
 `COMPAT-WORKSPACE-001` remains the parent acceptance gate.
-`COMPAT-WORKSPACE-CATALOG-001` is active.
+`COMPAT-WORKSPACE-CATALOG-001` is complete. The compiler-checked inventory
+maps every Screen, 24 logical destinations, and every Effect/nested operation
+to local behavior, daemon probing, or exact all-of/any-of requirements. The
+catalog now has 76 behavior records: distinct SDK publish/native, test-family,
+QA-task, buildhistory comparison, sstate, PR-service management, build-compare,
+and Git-archive capabilities replace implicit workspace-local assumptions.
+Typed test builds retain their family; local cancellation remains safe after
+capability unloading. Focused model/catalog/utility tests, workspace check, and
+warnings-denied model Clippy pass. `COMPAT-WORKSPACE-MODEL-001` is active.

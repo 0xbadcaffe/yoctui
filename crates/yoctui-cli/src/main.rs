@@ -9534,7 +9534,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                 let _ = test_coordinator.handle_effect(&mut app, effect).await;
                             }
                         }
-                        Some(Effect::StartTestBuildSession { id, request }) => {
+                        Some(Effect::StartTestBuildSession {
+                            id,
+                            family: _,
+                            request,
+                        }) => {
                             if begin_test_build(
                                 &mut backend,
                                 &mut app,
@@ -15409,8 +15413,11 @@ esac"#,
             app.build.target = Some("core-image-minimal".into());
             let _ = update(&mut app, Action::BeginSelectedTestLaunch);
             let _ = update(&mut app, Action::PreviewTestLaunch);
-            let Some(Effect::StartTestBuildSession { id, request }) =
-                update(&mut app, Action::ConfirmTestLaunch)
+            let Some(Effect::StartTestBuildSession {
+                id,
+                family: _,
+                request,
+            }) = update(&mut app, Action::ConfirmTestLaunch)
             else {
                 panic!("expected managed Testing build");
             };

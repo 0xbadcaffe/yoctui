@@ -116,8 +116,8 @@ pub const UTILITY_COMPATIBILITY_CATALOG: &[UtilityCompatibilityDefinition] = &[
     ),
     definition(
         "native-tools",
-        &["oe-find-native-sysroot", "oe-run-native"],
-        &[],
+        &["oe-find-native-sysroot", "oe-run-native", "oe-publish-sdk"],
+        &[CapabilityId::SdkNativeTools, CapabilityId::SdkPublish],
     ),
     definition("kas", &["kas"], &[]),
     definition(
@@ -129,7 +129,14 @@ pub const UTILITY_COMPATIBILITY_CATALOG: &[UtilityCompatibilityDefinition] = &[
             "testsdk",
             "ptest",
         ],
-        &[CapabilityId::OeSelftest],
+        &[
+            CapabilityId::OeSelftest,
+            CapabilityId::BitBakeSelftest,
+            CapabilityId::TestImage,
+            CapabilityId::TestSdk,
+            CapabilityId::TestSdkExtensible,
+            CapabilityId::Ptest,
+        ],
     ),
     definition("resulttool", &["resulttool"], &[CapabilityId::ResultTool]),
     definition(
@@ -150,17 +157,22 @@ pub const UTILITY_COMPATIBILITY_CATALOG: &[UtilityCompatibilityDefinition] = &[
     definition(
         "sstate",
         &["sstate-cache-management.sh", "cleanup-workdir"],
-        &[],
+        &[CapabilityId::SstateReadiness, CapabilityId::SstateCleanup],
     ),
     definition(
         "buildhistory",
         &["buildhistory-diff", "build-compare"],
-        &[CapabilityId::BuildHistory, CapabilityId::LockedSignatures],
+        &[
+            CapabilityId::BuildHistory,
+            CapabilityId::BuildHistoryCompare,
+            CapabilityId::BuildCompare,
+            CapabilityId::LockedSignatures,
+        ],
     ),
     definition(
         "release",
         &["oe-git-archive", "create-pull-request", "send-pull-request"],
-        &[],
+        &[CapabilityId::GitArchive],
     ),
     definition("services", &["toaster", "pybootchartgui"], &[]),
     unsupported(

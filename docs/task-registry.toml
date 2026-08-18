@@ -4746,18 +4746,18 @@ notes = "A typed 19-family inventory covers every registered utility and derives
 id = "COMPAT-WORKSPACE-CATALOG-001"
 milestone = "M18"
 title = "Catalog every workspace capability requirement"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 503
 required = true
 depends_on = ["COMPAT-UTILITIES-001"]
 verify = ["cargo test -p yoctui-model compatibility_workspace_catalog", "./scripts/verify-roadmap.sh"]
-notes = "Inventory every Navigator destination and effect-producing action as local-only or as an exact centralized capability requirement; add missing behavior IDs and catalog probes rather than borrowing a similarly named capability."
+notes = "An exhaustive compiler-checked model maps all 22 Screen variants, 24 logical destinations, and every top-level/nested Effect variant to client-local behavior, daemon-owned probing, or exact all-of/any-of capability requirements. Fourteen previously implicit behaviors add distinct catalog IDs for SDK publication/native tools, BitBake and task test families, QA task execution, buildhistory comparison, sstate readiness/cleanup, PR service management, build comparison, and Git archive; each has typed tool/metadata, safe probe, and implementation policy. StartTestBuildSession now retains its typed TestFamily so authorization cannot borrow another test capability. Existing local-process cancellation stays available after capability removal. Focused workspace-catalog, utility, catalog-validation, workspace-check, and model Clippy gates pass."
 
 [[task]]
 id = "COMPAT-WORKSPACE-MODEL-001"
 milestone = "M18"
 title = "Project workspace availability and revalidate state"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 503
 required = true
 depends_on = ["COMPAT-WORKSPACE-CATALOG-001"]

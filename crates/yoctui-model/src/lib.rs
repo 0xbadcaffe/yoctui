@@ -22,6 +22,7 @@ mod testing;
 mod utility_compatibility;
 mod utility_menu;
 mod wic;
+mod workspace_compatibility;
 
 pub use bitbake_layers::*;
 pub use bitbake_restart::*;
@@ -54,6 +55,7 @@ use thiserror::Error;
 pub use utility_compatibility::*;
 pub use utility_menu::*;
 pub use wic::*;
+pub use workspace_compatibility::*;
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum AppError {
@@ -5513,7 +5515,11 @@ fn queue_test_session(app: &mut App, operation: TestOperation) -> Option<Effect>
     });
     match operation {
         TestOperation::Selftest(_) => Some(Effect::StartTestSession { id, operation }),
-        TestOperation::Build { request, .. } => Some(Effect::StartTestBuildSession { id, request }),
+        TestOperation::Build { family, request } => Some(Effect::StartTestBuildSession {
+            id,
+            family,
+            request,
+        }),
     }
 }
 
@@ -13719,6 +13725,7 @@ pub enum Effect {
     },
     StartTestBuildSession {
         id: TestSessionId,
+        family: TestFamily,
         request: BuildRequest,
     },
     CancelTestSession(TestSessionId),
@@ -20056,8 +20063,11 @@ mod tests {
         let _ = update(&mut app, Action::SelectTestFamily { delta: 2 });
         let _ = update(&mut app, Action::BeginSelectedTestLaunch);
         let _ = update(&mut app, Action::PreviewTestLaunch);
-        let Some(Effect::StartTestBuildSession { id, request }) =
-            update(&mut app, Action::ConfirmTestLaunch)
+        let Some(Effect::StartTestBuildSession {
+            id,
+            family: _,
+            request,
+        }) = update(&mut app, Action::ConfirmTestLaunch)
         else {
             panic!("test build effect");
         };

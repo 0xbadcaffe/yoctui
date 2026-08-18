@@ -12,15 +12,24 @@ pub const MAX_CATALOG_BOUNDARIES: usize = 16;
 #[serde(rename_all = "snake_case")]
 pub enum CapabilityToolId {
     BitBake,
+    BitBakePrserv,
+    BitBakeSelftest,
     BitBakeDiffSigs,
     BitBakeDumpSig,
     BitBakeLayers,
     Devtool,
+    BuildCompare,
+    BuildHistoryDiff,
+    OeCheckSstate,
+    OeFindNativeSysroot,
+    OeGitArchive,
     OePkgdataUtil,
+    OePublishSdk,
     OeSelftest,
     Recipetool,
     Resulttool,
     Runqemu,
+    SstateCacheManagement,
     Wic,
     YoctoCheckLayer,
 }
@@ -29,15 +38,24 @@ impl CapabilityToolId {
     pub const fn executable_name(self) -> &'static str {
         match self {
             Self::BitBake => "bitbake",
+            Self::BitBakePrserv => "bitbake-prserv",
+            Self::BitBakeSelftest => "bitbake-selftest",
             Self::BitBakeDiffSigs => "bitbake-diffsigs",
             Self::BitBakeDumpSig => "bitbake-dumpsig",
             Self::BitBakeLayers => "bitbake-layers",
             Self::Devtool => "devtool",
+            Self::BuildCompare => "build-compare",
+            Self::BuildHistoryDiff => "buildhistory-diff",
+            Self::OeCheckSstate => "oe-check-sstate",
+            Self::OeFindNativeSysroot => "oe-find-native-sysroot",
+            Self::OeGitArchive => "oe-git-archive",
             Self::OePkgdataUtil => "oe-pkgdata-util",
+            Self::OePublishSdk => "oe-publish-sdk",
             Self::OeSelftest => "oe-selftest",
             Self::Recipetool => "recipetool",
             Self::Resulttool => "resulttool",
             Self::Runqemu => "runqemu",
+            Self::SstateCacheManagement => "sstate-cache-management.sh",
             Self::Wic => "wic",
             Self::YoctoCheckLayer => "yocto-check-layer",
         }
@@ -703,6 +721,20 @@ fn definition(id: CapabilityId) -> Definition {
             &["populate_sdk_ext"],
             "bitbake.populate_sdk_ext",
         ),
+        Id::SdkPublish => tool_command(
+            "SDK publication",
+            Tool::OePublishSdk,
+            None,
+            &[],
+            "oe_publish_sdk.argv",
+        ),
+        Id::SdkNativeTools => tool_command(
+            "native SDK tool execution",
+            Tool::OeFindNativeSysroot,
+            None,
+            &[],
+            "oe_find_native_sysroot.argv",
+        ),
         Id::CveCheck => task("CVE checking", &["cve_check"], "bitbake.cve_check"),
         Id::SpdxCreate => task(
             "SPDX creation",
@@ -730,12 +762,59 @@ fn definition(id: CapabilityId) -> Definition {
             &[],
             "oe_selftest.argv",
         ),
+        Id::BitBakeSelftest => tool_command(
+            "BitBake selftest",
+            Tool::BitBakeSelftest,
+            None,
+            &[],
+            "bitbake_selftest.argv",
+        ),
+        Id::TestImage => task("runtime image testing", &["testimage"], "bitbake.testimage"),
+        Id::TestSdk => task("standard SDK testing", &["testsdk"], "bitbake.testsdk"),
+        Id::TestSdkExtensible => task(
+            "extensible SDK testing",
+            &["testsdkext"],
+            "bitbake.testsdkext",
+        ),
+        Id::Ptest => (
+            "installed ptest execution",
+            vec![Tool::BitBake],
+            Vec::new(),
+            vec![MetadataRequirement::Configuration {
+                name: "ptest_enabled".into(),
+            }],
+            vec![CapabilityProbeSpec::Configuration {
+                name: "ptest_enabled".into(),
+            }],
+            implementation("bitbake.ptest", Kind::MetadataTask),
+            None,
+        ),
+        Id::QaTask => (
+            "configured QA task execution",
+            vec![Tool::BitBake],
+            Vec::new(),
+            vec![MetadataRequirement::Configuration {
+                name: "qa_tasks".into(),
+            }],
+            vec![CapabilityProbeSpec::Configuration {
+                name: "qa_tasks".into(),
+            }],
+            implementation("bitbake.qa_task", Kind::MetadataTask),
+            None,
+        ),
         Id::MenuConfig => task("menuconfig", &["menuconfig"], "bitbake.menuconfig"),
         Id::DevShell => task("development shell", &["devshell"], "bitbake.devshell"),
         Id::BuildHistory => task(
             "build history",
             &["buildhistory_get_image_installed"],
             "bitbake.buildhistory",
+        ),
+        Id::BuildHistoryCompare => tool_command(
+            "build history comparison",
+            Tool::BuildHistoryDiff,
+            None,
+            &[],
+            "buildhistory_diff.argv",
         ),
         Id::LockedSignatures => task(
             "locked signatures",
@@ -770,6 +849,41 @@ fn definition(id: CapabilityId) -> Definition {
             });
             value
         }
+        Id::SstateReadiness => tool_command(
+            "shared-state readiness inspection",
+            Tool::OeCheckSstate,
+            None,
+            &[],
+            "oe_check_sstate.argv",
+        ),
+        Id::SstateCleanup => tool_command(
+            "shared-state cache cleanup",
+            Tool::SstateCacheManagement,
+            None,
+            &[],
+            "sstate_cache_management.argv",
+        ),
+        Id::PrservManagement => tool_command(
+            "PR service management",
+            Tool::BitBakePrserv,
+            None,
+            &[],
+            "bitbake_prserv.argv",
+        ),
+        Id::BuildCompare => tool_command(
+            "build output comparison",
+            Tool::BuildCompare,
+            None,
+            &[],
+            "build_compare.argv",
+        ),
+        Id::GitArchive => tool_command(
+            "OpenEmbedded Git archive",
+            Tool::OeGitArchive,
+            None,
+            &[],
+            "oe_git_archive.argv",
+        ),
     }
 }
 

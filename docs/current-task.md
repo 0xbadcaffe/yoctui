@@ -2,44 +2,50 @@
 
 ## Task
 
-**ID:** COMPAT-WORKSPACE-CATALOG-001
-**Title:** Catalog every workspace capability requirement
+**ID:** COMPAT-WORKSPACE-MODEL-001
+**Title:** Project workspace availability and revalidate state
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Inventory every Navigator destination and effect-producing action as local-only
-or as an exact centralized behavior capability requirement.
+Derive every workspace/action availability result and exact reason from one
+current capability snapshot, and safely revalidate model state when that
+snapshot changes.
 
 ## Dependencies
 
-- `COMPAT-UTILITIES-001` — DONE
+- `COMPAT-WORKSPACE-CATALOG-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/compatibility.rs`
-- `crates/yoctui-model/src/compatibility_catalog.rs`
-- `crates/yoctui-model/src/lib.rs`
 - `crates/yoctui-model/src/workspace_compatibility.rs`
+- `crates/yoctui-model/src/daemon_state.rs`
+- `crates/yoctui-model/src/lib.rs`
+- `docs/ui-spec.md`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Every Navigator destination and every `Effect` variant is exhaustively
-  classified as client-local or assigned exact capability requirements.
-- Missing behavior capabilities are added to the centralized vocabulary and
-  versioned catalog rather than borrowing similarly named capabilities.
-- Requirements support all-of and any-of alternatives without release checks.
-- Catalog validation remains complete and every external behavior has typed
-  tool/command/option/metadata/probe/implementation policy.
-- Tests fail when a destination/effect is omitted and cover representative
-  local, single-capability, all-of, and alternative requirements.
+- Pure projection returns available, limited, unavailable, unsupported, or
+  unknown plus exact capability reasons for destination and effect policies.
+- All-of requirements name every missing capability; any-of requirements
+  explain why no alternative is usable.
+- Absent authority fails closed for environment-backed actions while local
+  presentation and cancellation remain usable.
+- Newer snapshots replace current authority; stale/equal conflicting updates
+  are ignored or rejected.
+- Snapshot changes preserve valid selections and close or revalidate dialogs
+  whose launch capability is no longer enabled.
+- The model rejects an unavailable effect before emission and reports its
+  exact reason without applying release/version policy.
+- Tests cover full, partial, absent, unsupported, stale, changing, and dialog
+  revalidation states without panics.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model compatibility_workspace_catalog
+cargo test -p yoctui-model compatibility_workspace_model
 ./scripts/verify-roadmap.sh
 ```

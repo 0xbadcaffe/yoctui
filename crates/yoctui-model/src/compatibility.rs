@@ -315,6 +315,10 @@ pub enum CapabilityId {
     SdkPopulate,
     #[serde(rename = "sdk.extensible")]
     SdkExtensible,
+    #[serde(rename = "sdk.publish")]
+    SdkPublish,
+    #[serde(rename = "sdk.native_tools")]
+    SdkNativeTools,
     #[serde(rename = "cve.check")]
     CveCheck,
     #[serde(rename = "spdx.create")]
@@ -325,22 +329,46 @@ pub enum CapabilityId {
     ResultTool,
     #[serde(rename = "oe_selftest")]
     OeSelftest,
+    #[serde(rename = "bitbake_selftest")]
+    BitBakeSelftest,
+    #[serde(rename = "testimage")]
+    TestImage,
+    #[serde(rename = "testsdk")]
+    TestSdk,
+    #[serde(rename = "testsdk_extensible")]
+    TestSdkExtensible,
+    #[serde(rename = "ptest")]
+    Ptest,
+    #[serde(rename = "qa.task")]
+    QaTask,
     #[serde(rename = "menuconfig")]
     MenuConfig,
     #[serde(rename = "devshell")]
     DevShell,
     #[serde(rename = "buildhistory")]
     BuildHistory,
+    #[serde(rename = "buildhistory.compare")]
+    BuildHistoryCompare,
     #[serde(rename = "locked_signatures")]
     LockedSignatures,
     #[serde(rename = "hashserv.diagnostics")]
     HashservDiagnostics,
     #[serde(rename = "prserv.diagnostics")]
     PrservDiagnostics,
+    #[serde(rename = "sstate.readiness")]
+    SstateReadiness,
+    #[serde(rename = "sstate.cleanup")]
+    SstateCleanup,
+    #[serde(rename = "prserv.management")]
+    PrservManagement,
+    #[serde(rename = "build_compare")]
+    BuildCompare,
+    #[serde(rename = "git_archive")]
+    GitArchive,
 }
 
 impl CapabilityId {
-    pub const ALL: [Self; 62] = [
+    pub const ALL: [Self; 76] = [
         Self::BitBakeWorkspaceInspection,
         Self::BitBakeRecipeInventory,
         Self::BitBakeRecipeDependencies,
@@ -392,17 +420,31 @@ impl CapabilityId {
         Self::RunQemu,
         Self::SdkPopulate,
         Self::SdkExtensible,
+        Self::SdkPublish,
+        Self::SdkNativeTools,
         Self::CveCheck,
         Self::SpdxCreate,
         Self::YoctoCheckLayer,
         Self::ResultTool,
         Self::OeSelftest,
+        Self::BitBakeSelftest,
+        Self::TestImage,
+        Self::TestSdk,
+        Self::TestSdkExtensible,
+        Self::Ptest,
+        Self::QaTask,
         Self::MenuConfig,
         Self::DevShell,
         Self::BuildHistory,
+        Self::BuildHistoryCompare,
         Self::LockedSignatures,
         Self::HashservDiagnostics,
         Self::PrservDiagnostics,
+        Self::SstateReadiness,
+        Self::SstateCleanup,
+        Self::PrservManagement,
+        Self::BuildCompare,
+        Self::GitArchive,
     ];
 
     pub const fn as_str(self) -> &'static str {
@@ -458,17 +500,31 @@ impl CapabilityId {
             Self::RunQemu => "runqemu",
             Self::SdkPopulate => "sdk.populate",
             Self::SdkExtensible => "sdk.extensible",
+            Self::SdkPublish => "sdk.publish",
+            Self::SdkNativeTools => "sdk.native_tools",
             Self::CveCheck => "cve.check",
             Self::SpdxCreate => "spdx.create",
             Self::YoctoCheckLayer => "yocto_check_layer",
             Self::ResultTool => "resulttool",
             Self::OeSelftest => "oe_selftest",
+            Self::BitBakeSelftest => "bitbake_selftest",
+            Self::TestImage => "testimage",
+            Self::TestSdk => "testsdk",
+            Self::TestSdkExtensible => "testsdk_extensible",
+            Self::Ptest => "ptest",
+            Self::QaTask => "qa.task",
             Self::MenuConfig => "menuconfig",
             Self::DevShell => "devshell",
             Self::BuildHistory => "buildhistory",
+            Self::BuildHistoryCompare => "buildhistory.compare",
             Self::LockedSignatures => "locked_signatures",
             Self::HashservDiagnostics => "hashserv.diagnostics",
             Self::PrservDiagnostics => "prserv.diagnostics",
+            Self::SstateReadiness => "sstate.readiness",
+            Self::SstateCleanup => "sstate.cleanup",
+            Self::PrservManagement => "prserv.management",
+            Self::BuildCompare => "build_compare",
+            Self::GitArchive => "git_archive",
         }
     }
 }

@@ -2302,6 +2302,28 @@ the exact selected implementation before constructing a shell-free command.
 Specialized adapters may add stricter typed argument rules but cannot bypass
 this authority tuple.
 
+Workspace correlation is exhaustive and centralized. The closed
+`WorkspaceDestination` inventory covers the 24 product destinations (including
+Devtool, QEMU/Wic, project profiles, and terminal sessions that do not each
+have a distinct legacy `Screen`). Every `Screen` maps explicitly to one of
+them. Every `Effect`, including nested SDK, testing, security, QA, maintenance,
+and Wic operations, maps without a wildcard to client-local behavior,
+daemon-owned safe probing, or exact all-of/any-of capability requirements.
+Environment-backed probes are not ordinary client actions. Build requests
+correlate known typed tasks centrally; forced execution additionally requires
+force-task support. Test build effects retain `TestFamily`, preventing one
+available test implementation from authorizing another. Local cancellation of
+an already-owned utility process remains possible if a snapshot unloads its
+launch capability.
+
+The workspace audit expanded the behavior vocabulary from 62 to 76 records.
+SDK publication/native tools, BitBake selftest, individual test task families,
+QA task execution, buildhistory comparison, shared-state readiness/cleanup, PR
+service management, build comparison, and Git archive now have distinct typed
+catalog entries. Their executable/help, metadata task, or configuration probes
+and selected implementations are centralized; a nearby capability is never
+borrowed merely because its name or release history looks similar.
+
 Unavailable actions are rejected before process construction. Backend adapters
 remain responsible for BitBake/Tinfoil/socket/event differences; UI widgets
 consume only typed state and never parse probe output or apply version policy.
