@@ -4413,18 +4413,18 @@ notes = "The Rust bridge now pipes and continuously drains stderr into a 16 KiB 
 id = "UI-FOCUS-ROUTING-001"
 milestone = "M15"
 title = "Preserve global and workspace keys under pane focus"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 473
 required = true
 depends_on = ["UI-STARTUP-STDERR-001"]
 verify = ["cargo test -p yoctui focus_routing", "cargo test -p yoctui-app focus", "cargo fmt --all --check", "cargo clippy -p yoctui --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
-notes = "The live PTY reproduced that the CLI's unconditional pane-focus branch silently drops unmatched keys, including Ctrl+P and screen-specific actions. Route only mapped focus actions through that branch and let unmatched input continue."
+notes = "The CLI now enters pane-focus handling only for a mapped focus action, and non-dialog notifications consume only Enter/Esc. Ctrl+P, help, build, and screen-specific keys continue through normal routing. Focused CLI/app tests, formatting, Clippy, docs, and roadmap checks pass; a controlling-PTY probe confirmed Ctrl+P traps subsequent q input in the palette."
 
 [[task]]
 id = "UI-STARTUP-LIVE-001"
 milestone = "M15"
 title = "Validate installed startup and theme selection on live Poky"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 474
 required = true
 depends_on = ["UI-STARTUP-STDERR-001", "UI-FOCUS-ROUTING-001"]

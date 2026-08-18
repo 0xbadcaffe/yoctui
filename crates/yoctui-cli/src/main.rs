@@ -9882,57 +9882,50 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             }
                         }
                     }
-                } else if matches!(
-                    app.focus,
-                    yoctui_model::FocusTarget::Navigator
-                        | yoctui_model::FocusTarget::Workspace
-                        | yoctui_model::FocusTarget::Inspector
-                ) {
-                    if let Some(action) = focus_action(app.focus, input) {
-                        let effect = update(&mut app, action);
-                        if let Some(
-                            effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
-                        ) = effect
-                        {
-                            begin_package_operation(
-                                &mut app,
-                                &package_adapter,
-                                &mut package_operation,
-                                effect,
-                            );
-                        } else if let Some(effect @ Effect::GetImageArtifacts(_)) = effect {
-                            begin_image_artifact_operation(
-                                &mut app,
-                                image_artifact_adapter.as_ref(),
-                                &mut image_artifact_operation,
-                                effect,
-                            );
-                        } else if let Some(effect @ Effect::InspectSdkTools) = effect {
-                            begin_sdk_capability_operation(
-                                &mut app,
-                                sdk_tool_adapter.as_ref(),
-                                &mut sdk_capability_operation,
-                                effect,
-                            );
-                        } else if let Some(effect @ Effect::Security(_)) = effect {
-                            let _ = route_independent_security_effect(
-                                &guard,
-                                &mut app,
-                                &mut security_coordinator,
-                                effect,
-                                editor.as_deref(),
-                            )
-                            .await;
-                        } else if let Some(effect @ Effect::Maintenance(_)) = effect {
-                            let _ = route_independent_maintenance_effect(
-                                &guard,
-                                &mut app,
-                                &mut maintenance_coordinator,
-                                effect,
-                                editor.as_deref(),
-                            )
-                            .await;
-                        }
+                } else if let Some(action) = pane_focus_route(app.focus, input) {
+                    let effect = update(&mut app, action);
+                    if let Some(
+                        effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
+                    ) = effect
+                    {
+                        begin_package_operation(
+                            &mut app,
+                            &package_adapter,
+                            &mut package_operation,
+                            effect,
+                        );
+                    } else if let Some(effect @ Effect::GetImageArtifacts(_)) = effect {
+                        begin_image_artifact_operation(
+                            &mut app,
+                            image_artifact_adapter.as_ref(),
+                            &mut image_artifact_operation,
+                            effect,
+                        );
+                    } else if let Some(effect @ Effect::InspectSdkTools) = effect {
+                        begin_sdk_capability_operation(
+                            &mut app,
+                            sdk_tool_adapter.as_ref(),
+                            &mut sdk_capability_operation,
+                            effect,
+                        );
+                    } else if let Some(effect @ Effect::Security(_)) = effect {
+                        let _ = route_independent_security_effect(
+                            &guard,
+                            &mut app,
+                            &mut security_coordinator,
+                            effect,
+                            editor.as_deref(),
+                        )
+                        .await;
+                    } else if let Some(effect @ Effect::Maintenance(_)) = effect {
+                        let _ = route_independent_maintenance_effect(
+                            &guard,
+                            &mut app,
+                            &mut maintenance_coordinator,
+                            effect,
+                            editor.as_deref(),
+                        )
+                        .await;
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
                     let _ = match input {
@@ -10329,16 +10322,12 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         }
                         _ => {}
                     }
-                } else if app.notification.is_some()
-                    && !(app.screen == Screen::Settings
-                        && app.settings_dirty
-                        && input == Input::Char('r'))
-                {
-                    if input == Input::Enter {
-                        let _ = update(&mut app, Action::ActivateNotification);
-                    } else if input == Input::Esc {
-                        let _ = update(&mut app, Action::DismissNotification);
-                    }
+                } else if let Some(action) = notification_input_action(
+                    app.notification.is_some(),
+                    app.screen == Screen::Settings && app.settings_dirty,
+                    input,
+                ) {
+                    let _ = update(&mut app, action);
                 } else if app.screen == Screen::Packages
                     && package_workspace_action(app.package_searching, input).is_some()
                 {
@@ -11316,6 +11305,25 @@ fn termination_requested(receiver: &mut tokio::sync::mpsc::Receiver<()>) -> bool
     receiver.try_recv().is_ok()
 }
 
+fn pane_focus_route(focus: yoctui_model::FocusTarget, input: Input) -> Option<Action> {
+    focus_action(focus, input)
+}
+
+fn notification_input_action(
+    visible: bool,
+    settings_retry_available: bool,
+    input: Input,
+) -> Option<Action> {
+    if !visible || (settings_retry_available && input == Input::Char('r')) {
+        return None;
+    }
+    match input {
+        Input::Enter => Some(Action::ActivateNotification),
+        Input::Esc => Some(Action::DismissNotification),
+        _ => None,
+    }
+}
+
 fn input_from_key(key: KeyEvent) -> Option<Input> {
     match key.code {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlC),
@@ -12112,6 +12120,50 @@ mod tests {
             input_from_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)),
             Some(Input::Enter)
         );
+    }
+
+    #[test]
+    fn focus_routing_passes_unmatched_global_and_workspace_keys_onward() {
+        use yoctui_model::FocusTarget;
+
+        for focus in [
+            FocusTarget::Navigator,
+            FocusTarget::Workspace,
+            FocusTarget::Inspector,
+        ] {
+            for input in [Input::CtrlP, Input::Char('?'), Input::F5, Input::Char('r')] {
+                assert!(pane_focus_route(focus, input).is_none());
+            }
+            assert!(matches!(
+                pane_focus_route(focus, Input::Tab),
+                Some(Action::CycleFocus { backwards: false })
+            ));
+            assert!(matches!(
+                pane_focus_route(focus, Input::Char('q')),
+                Some(Action::Quit)
+            ));
+        }
+        assert!(matches!(
+            pane_focus_route(FocusTarget::Navigator, Input::Down),
+            Some(Action::SelectNavigator { delta: 1 })
+        ));
+        assert!(pane_focus_route(FocusTarget::Workspace, Input::Down).is_none());
+    }
+
+    #[test]
+    fn focus_routing_notifications_consume_only_their_documented_keys() {
+        assert!(matches!(
+            notification_input_action(true, false, Input::Enter),
+            Some(Action::ActivateNotification)
+        ));
+        assert!(matches!(
+            notification_input_action(true, false, Input::Esc),
+            Some(Action::DismissNotification)
+        ));
+        for input in [Input::CtrlP, Input::Char('?'), Input::F5, Input::Char('r')] {
+            assert!(notification_input_action(true, false, input).is_none());
+        }
+        assert!(notification_input_action(true, true, Input::Char('r')).is_none());
     }
 
     #[cfg(unix)]

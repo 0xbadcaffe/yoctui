@@ -227,6 +227,8 @@ Rules:
   routes instead of being discarded
 - global actions such as `Ctrl+P`, `?`, `F5`, `q`, and `Ctrl+C` remain
   reachable from Navigator, Workspace, and Inspector focus
+- a non-dialog notification consumes only its documented `Enter` activation
+  and `Esc` dismissal keys; unrelated input continues through normal routing
 - `Esc`: close dialog, cancel transient mode, or return focus outward
 - dialogs trap focus until closed
 - opening a dialog or command palette remembers the active pane; transitions

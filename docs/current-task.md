@@ -2,38 +2,39 @@
 
 ## Task
 
-**ID:** UI-FOCUS-ROUTING-001
-**Title:** Preserve global and workspace keys under pane focus
+**ID:** UI-STARTUP-LIVE-001
+**Title:** Validate installed startup and theme selection on live Poky
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Make the CLI consume only keys that actually map to pane focus, allowing every
-unmatched key to continue to the active workspace and global shortcut routes.
+Exercise the real Poky workbench through the shell-installed release binary,
+reject diagnostics outside the terminal frame, and prove that command-palette
+theme selection changes and persists the operator preference.
 
 ## Dependencies
 
 - `UI-STARTUP-STDERR-001` — DONE
+- `UI-FOCUS-ROUTING-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-cli/src/main.rs`
-- `crates/yoctui-app/src/lib.rs`
-- `docs/ui-spec.md`
+- `scripts/test-live-workbench.sh`
+- `README.md`
+- `~/.cargo/bin/yoctui`
 
 ## Definition of done
 
-- `Ctrl+P`, help, build, and workspace keys are not swallowed by pane focus.
-- Navigator, Workspace, and Inspector retain their mapped focus behavior.
-- A CLI routing regression test covers matched and unmatched focus input.
-- Focused tests, formatting, Clippy, docs, and roadmap checks pass.
+- The live PTY contains no BitBake startup output before alternate-screen entry.
+- `Ctrl+P` → `Choose theme` opens the picker and persists a changed theme.
+- The locally built release binary is installed at the shell-resolved path.
+- Development documentation explains how to refresh a same-version install.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui focus_routing
-cargo test -p yoctui-app focus
-cargo fmt --all --check
-cargo clippy -p yoctui --all-targets --all-features -- -D warnings
+YOCTUI_LIVE_BINARY=$HOME/.cargo/bin/yoctui ./scripts/test-live-workbench.sh $HOME/src/poky/build
+cargo build --release -p yoctui
+cmp target/release/yoctui $HOME/.cargo/bin/yoctui
 ./scripts/verify-roadmap.sh
 ```
