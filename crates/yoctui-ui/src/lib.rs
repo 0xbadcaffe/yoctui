@@ -40,6 +40,8 @@ use yoctui_model::{
 };
 
 const LITERAL_REFERENCE_WIDTH: u16 = 160;
+const WIDE_WORKBENCH_MIN_WIDTH: u16 = 130;
+const REFERENCE_COMMAND_RAIL: &str = "F1 Help | F2 Tasks | F3 Jobs | F4 Terminal | F5 Logs | F6 Layer | F7 Recipe | F8 Image | F9 Search | F10 Menu";
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
     let query = query.to_lowercase();
@@ -865,9 +867,9 @@ fn shortcut_rail<'a>(app: &App, shortcuts: &'a str) -> Line<'a> {
 
 fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let palette = ThemePalette::for_app(app);
-    let canonical = area.width == LITERAL_REFERENCE_WIDTH && app.screen == Screen::Tasks;
+    let literal_geometry = area.width == LITERAL_REFERENCE_WIDTH && app.screen == Screen::Tasks;
     let block = Block::default()
-        .borders(if canonical {
+        .borders(if literal_geometry {
             Borders::LEFT | Borders::RIGHT | Borders::BOTTOM
         } else {
             Borders::BOTTOM
@@ -880,8 +882,8 @@ fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
         return;
     }
     let columns = Layout::horizontal([Constraint::Min(20), Constraint::Length(10)]).split(inner);
-    let shortcuts = if canonical {
-        "F1 Help | F2 Tasks | F3 Jobs | F4 Terminal | F5 Logs | F6 Layer | F7 Recipe | F8 Image | F9 Search | F10 Menu".into()
+    let shortcuts = if area.width >= WIDE_WORKBENCH_MIN_WIDTH {
+        REFERENCE_COMMAND_RAIL.into()
     } else {
         responsive_footer_shortcuts(app, area.width)
     };
@@ -1872,7 +1874,7 @@ fn responsive_shell(
         signatures_workspace(frame, app, area, terminal_width);
         return;
     }
-    if terminal_width >= 130 {
+    if terminal_width >= WIDE_WORKBENCH_MIN_WIDTH {
         let panes = if app.screen == Screen::Tasks && terminal_width == 160 {
             Layout::horizontal([
                 Constraint::Length(26),
@@ -11425,7 +11427,7 @@ mod tests {
     }
 
     #[test]
-    fn workbench_shell_renders_project_context_and_contextual_command_rail() {
+    fn workbench_shell_renders_project_context_and_reference_command_rail() {
         let mut app = App::new(32, 8192);
         app.build.target = Some("core-image-minimal".into());
         app.workspace
@@ -11445,12 +11447,46 @@ mod tests {
             "Distro: poky",
             "Daemon: Connected",
             "BitBake: Running",
-            "B build",
-            "Ctrl+P commands",
+            "F1 Help",
+            "F2 Tasks",
+            "F10 Menu",
         ] {
             assert!(output.contains(expected), "missing {expected}: {output}");
         }
         assert!(!output.contains("Telemetry --"), "{output}");
+    }
+
+    #[test]
+    fn wide_reference_rail_is_stable_across_screens_and_widths() {
+        let labels = [
+            "F1 Help",
+            "F2 Tasks",
+            "F3 Jobs",
+            "F4 Terminal",
+            "F5 Logs",
+            "F6 Layer",
+            "F7 Recipe",
+            "F8 Image",
+            "F9 Search",
+            "F10 Menu",
+        ];
+        for screen in [Screen::Dashboard, Screen::Tasks] {
+            for width in [130, 160, 180, 200] {
+                let mut app = App::new(32, 8192);
+                app.screen = screen;
+                let output = rendered_text(&app, width, 36);
+                for label in labels {
+                    assert!(
+                        output.contains(label),
+                        "missing {label} on {screen:?} at {width} columns: {output}"
+                    );
+                }
+            }
+        }
+
+        let compact = rendered_text(&App::new(32, 8192), 129, 36);
+        assert!(compact.contains("B build"), "{compact}");
+        assert!(!compact.contains("F10 Menu"), "{compact}");
     }
 
     #[test]
@@ -12265,7 +12301,11 @@ mod tests {
             let output = rendered_text(&app, width, 32);
             assert!(output.contains("core-image-minimal"), "{output}");
             assert!(output.contains("wic"), "{output}");
-            assert!(output.contains("refresh"), "{output}");
+            if width >= WIDE_WORKBENCH_MIN_WIDTH {
+                assert!(output.contains("F10 Menu"), "{output}");
+            } else {
+                assert!(output.contains("refresh"), "{output}");
+            }
         }
         let wide = rendered_text(&app, 180, 40);
         assert!(wide.contains("Deploy directory"), "{wide}");
@@ -14458,7 +14498,7 @@ mod tests {
     }
     #[test]
     fn bbmask_footer_shows_its_edit_shortcut() {
-        let mut terminal = Terminal::new(TestBackend::new(300, 40)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Bbmask;
         terminal.draw(|frame| render(frame, &app)).unwrap();
@@ -15593,8 +15633,9 @@ mod tests {
             output.contains("artifacts: none") && output.contains("reported."),
             "{output}"
         );
-        assert!(output.contains("V CVE"), "{output}");
-        assert!(output.contains("X SPDX"), "{output}");
+        let contextual_footer = footer_shortcuts(&app);
+        assert!(contextual_footer.contains("V CVE"), "{contextual_footer}");
+        assert!(contextual_footer.contains("X SPDX"), "{contextual_footer}");
 
         app.recipe_metadata.get_mut("busybox").unwrap().tasks = Some(vec![]);
         let output = rendered_text(&app, 200, 40);
@@ -16464,7 +16505,12 @@ mod tests {
         assert!(wide.contains("[value] CC: gcc"), "{wide}");
         assert!(wide.contains("one malformed artifact"), "{wide}");
         assert!(wide.contains("recursive detail unavailable"), "{wide}");
-        assert!(wide.contains("1/2 sides"), "{wide}");
+        assert!(wide.contains("F10 Menu"), "{wide}");
+        let contextual_footer = rendered_text(&app, 120, 34);
+        assert!(
+            contextual_footer.contains("1/2 sides"),
+            "{contextual_footer}"
+        );
 
         let narrow = rendered_text(&app, 90, 30);
         assert!(narrow.contains("Signatures"), "{narrow}");
@@ -16561,7 +16607,12 @@ mod tests {
         assert!(wide.contains("libc6"), "{wide}");
         assert!(wide.contains("Image membership: unavailable"), "{wide}");
         assert!(wide.contains("image membership unavailable"), "{wide}");
-        assert!(wide.contains("Enter detail"), "{wide}");
+        assert!(wide.contains("F10 Menu"), "{wide}");
+        let contextual_footer = rendered_text(&app, 120, 30);
+        assert!(
+            contextual_footer.contains("Enter detail"),
+            "{contextual_footer}"
+        );
 
         for (width, height) in [(120, 30), (90, 28)] {
             let output = rendered_text(&app, width, height);
@@ -17151,9 +17202,13 @@ mod tests {
             ),
         ] {
             app.maintenance.view = view;
-            let output = rendered_text(&app, 180, 70);
+            let output = rendered_text(&app, 120, 70);
             assert!(output.contains(expected), "{view:?}: {output}");
-            assert!(output.contains(action), "{view:?}: {output}");
+            let contextual_footer = footer_shortcuts(&app);
+            assert!(
+                contextual_footer.contains(action),
+                "{view:?}: {contextual_footer}"
+            );
             assert!(output.contains("Partial capability"), "{output}");
         }
 

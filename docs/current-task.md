@@ -2,42 +2,46 @@
 
 ## Task
 
-**ID:** UI-WIDE-RAIL-001
-**Title:** Keep the reference F-key rail visible on wide screens
-**Status:** IN_PROGRESS
+**ID:** FINAL-GATE-PERF-001
+**Title:** Rerun the terminal gate with perf sampling enabled
+**Status:** BLOCKED
 
 ## Objective
 
-Make the stable reference F1–F10 navigation rail visible on every wide
-workbench screen instead of only at exactly 160 columns on Tasks.
+Complete the final host-level verification with real perf sampling enabled.
+All product, responsive-command-rail, and preceding terminal-gate stages pass;
+only the Flamegraph sampling policy blocks repository completion.
 
 ## Dependencies
 
-- `UI-LITERAL-001` — DONE
+- `CRATESIO-COVERAGE-001` — DONE
+- `UI-STARTUP-DIAG-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-ui/src/lib.rs`
-- `artifacts/release-quality/snapshots/`
-- `docs/ui-spec.md`
+- `/proc/sys/kernel/perf_event_paranoid`
+- `scripts/flamegraph.sh`
+- `scripts/verify-completion.sh`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Dashboard and Tasks show every F1–F10 label at widths 130, 160, 180, and 200.
-- The exact canonical 160×48 cell/style golden remains unchanged.
-- Widths below 130 retain contextual shortcuts and remain narrow-safe.
-- Real PTY snapshots and the installed release artifact are refreshed and verified.
+- `perf record -- true` succeeds for the current user.
+- A fresh real headless-workload Flamegraph is generated.
+- The terminal completion gate passes without skipped required stages.
+
+## Blocker evidence
+
+- Current host value: `kernel.perf_event_paranoid=4`.
+- `scripts/flamegraph.sh` reports that perf sampling is unavailable.
+- The operator must temporarily grant `CAP_PERFMON` or lower the kernel policy.
+- After changing policy, rerun the verification commands below.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui wide_reference_rail
-cargo test -p yoctui-ui literal_reference_cell_and_style_golden
-./scripts/test-tui-snapshots.sh
-cargo fmt --all --check
-cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
-./scripts/check-docs.sh
-./scripts/verify-roadmap.sh
+perf record -- true
+./scripts/flamegraph.sh
+./scripts/verify-completion.sh
 ```

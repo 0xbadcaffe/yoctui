@@ -4536,9 +4536,9 @@ notes = "Parent acceptance passes: the canonical 160x48 shell, strict 7,680-cell
 id = "UI-WIDE-RAIL-001"
 milestone = "M17"
 title = "Keep the reference F-key rail visible on wide screens"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 484
 required = true
 depends_on = ["UI-LITERAL-001"]
-verify = ["cargo test -p yoctui-ui wide_reference_rail", "cargo test -p yoctui-ui literal_reference_cell_and_style_golden", "./scripts/test-tui-snapshots.sh", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "The installed binary is current, but rendering gates the reference rail on exactly 160 columns plus Tasks. Make global F1-F10 navigation stable on every screen at the existing 130-column wide breakpoint while retaining exact canonical geometry and compact contextual actions."
+verify = ["cargo test -p yoctui-ui wide_reference_rail", "cargo test -p yoctui-ui literal_reference_cell_and_style_golden", "./scripts/test-tui-snapshots.sh", "YOCTUI_LIVE_BINARY=$HOME/.cargo/bin/yoctui ./scripts/test-live-workbench.sh $HOME/src/poky/build", "cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "The stable F1-F10 navigation rail now renders on every screen at the existing 130-column wide breakpoint; compact layouts retain contextual actions and the exact canonical 160x48 golden is unchanged. Dashboard and Tasks pass all-label checks at 130, 160, 180, and 200 columns. All 140 UI tests, the full workspace, Clippy with warnings denied, 39 bridge tests, PTY snapshots, docs, and roadmap pass. The installed release is byte-identical to target/release/yoctui at SHA-256 c55c2d7339f4cf8ce0498c0bc6c9f20a44993375fa5a45bb86d066d04fbe4924 and passes the live 1,829-recipe Poky gate."

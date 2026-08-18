@@ -148,7 +148,7 @@ def collect_for(duration):
                 return
 
 
-collect_until((b"Focus ", b"qemux86-64", b"OVERVIEW"), 45)
+collect_until((b"F1 Help", b"F10 Menu", b"qemux86-64", b"OVERVIEW"), 45)
 # Enter the literal reference cockpit through the displayed F2 route.
 os.write(master, b"\x1bOQ")
 collect_until((b"Tasks: Build", b"Layers", b"Recipes", b"F10 Menu"), 5)
@@ -205,20 +205,18 @@ for anchor in (
     "Images",
     "Targets",
     "F1 Help",
+    "F2 Tasks",
+    "F3 Jobs",
+    "F4 Terminal",
+    "F5 Logs",
+    "F6 Layer",
+    "F7 Recipe",
+    "F8 Image",
+    "F9 Search",
     "F10 Menu",
 ):
     if not has_rendered_anchor(normalized, anchor):
         raise SystemExit(f"live workbench: missing PTY anchor: {anchor}")
-focus_routes = (
-    ("Focus Navigator", "Tab Workspace", "Shift+Tab Inspector"),
-    ("Focus Workspace", "Tab Inspector", "Shift+Tab Navigator"),
-    ("Focus Inspector", "Tab Navigator", "Shift+Tab Workspace"),
-)
-if not any(
-    all(has_rendered_anchor(normalized, anchor) for anchor in route)
-    for route in focus_routes
-):
-    raise SystemExit("live workbench: missing explicit pane-focus route")
 if "Daemon unavailable; interactive runtime is local" in normalized:
     raise SystemExit("live workbench: daemon fallback notice obscured the workbench")
 if process.returncode != 0:

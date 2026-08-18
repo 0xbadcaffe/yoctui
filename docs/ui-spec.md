@@ -264,9 +264,10 @@ Rules:
 
 - `Tab`: next focus target
 - `Shift+Tab`: previous focus target
-- where the pane switcher is not visible, the command rail names the active
-  pane and the destination of both focus chords; a generic `Tab Focus` label
-  is insufficient
+- compact contextual rails name the active pane and the destination of both
+  focus chords; the wide stable F1–F10 rail instead relies on the focused
+  border/selection treatment and exposes the complete focus map through
+  `F1 Help` and `F10 Menu`
 - arrow keys affect only the focused region
 - pane focus consumes only keys mapped to focus or pane navigation; every
   unmatched key continues through the active workspace and global shortcut
