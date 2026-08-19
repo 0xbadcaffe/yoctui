@@ -75,34 +75,52 @@ fn timestamp_text(timestamp: SystemTime) -> String {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct ThemePalette {
-    foreground: Color,
-    background: Color,
-    border: Color,
-    focused_border: Color,
-    selection_foreground: Color,
-    selection_background: Color,
-    disabled: Color,
-    info: Color,
-    success: Color,
-    warning: Color,
-    error: Color,
-    progress: Color,
-    accent: Color,
-    syntax_keyword: Color,
-    syntax_name: Color,
-    syntax_operator: Color,
-    syntax_value: Color,
-    syntax_comment: Color,
-    attribute_only: bool,
+pub struct SemanticTheme {
+    pub background: Color,
+    pub primary_foreground: Color,
+    pub secondary_foreground: Color,
+    pub focused_border: Color,
+    pub inactive_border: Color,
+    pub selection_foreground: Color,
+    pub selection_background: Color,
+    pub success: Color,
+    pub warning: Color,
+    pub error: Color,
+    pub running: Color,
+    pub pending: Color,
+    pub accent: Color,
+    pub muted: Color,
+    pub progress: Color,
+    pub graph_cpu: Color,
+    pub graph_memory: Color,
+    pub graph_disk_read: Color,
+    pub graph_disk_write: Color,
+    pub graph_network_rx: Color,
+    pub graph_network_tx: Color,
+    pub disabled: Color,
+    pub informational: Color,
+    pub heading: Color,
+    pub table_header: Color,
+    pub syntax_keyword: Color,
+    pub syntax_name: Color,
+    pub syntax_operator: Color,
+    pub syntax_value: Color,
+    pub syntax_comment: Color,
+    pub attribute_only: bool,
 }
 
-impl ThemePalette {
+type ThemePalette = SemanticTheme;
+
+impl SemanticTheme {
     fn for_app(app: &App) -> Self {
-        if !app.color_enabled {
+        Self::for_theme(app.theme, app.color_enabled)
+    }
+
+    pub fn for_theme(theme: Theme, color_enabled: bool) -> Self {
+        if !color_enabled {
             return Self::monochrome();
         }
-        match app.theme {
+        match theme {
             Theme::DarkPro => Self::packrat([
                 (4, 12, 17),
                 (8, 18, 24),
@@ -236,19 +254,31 @@ impl ThemePalette {
         ] = colors;
         let rgb = |(r, g, b)| Color::Rgb(r, g, b);
         Self {
-            foreground: rgb(fg),
             background: rgb(bg),
-            border: rgb(border),
+            primary_foreground: rgb(fg),
+            secondary_foreground: rgb(fg2),
             focused_border: rgb(cyan),
+            inactive_border: rgb(border),
             selection_foreground: rgb(fg),
             selection_background: rgb(selected),
-            disabled: rgb(fg3),
-            info: rgb(cyan),
             success: rgb(green),
             warning: rgb(yellow),
             error: rgb(red),
-            progress: rgb(green),
+            running: rgb(green),
+            pending: rgb(yellow),
             accent: rgb(magenta),
+            muted: rgb(fg2),
+            progress: rgb(green),
+            graph_cpu: rgb(cyan),
+            graph_memory: rgb(magenta),
+            graph_disk_read: rgb(cyan),
+            graph_disk_write: rgb(magenta),
+            graph_network_rx: rgb(green),
+            graph_network_tx: rgb(yellow),
+            disabled: rgb(fg3),
+            informational: rgb(cyan),
+            heading: rgb(fg),
+            table_header: rgb(fg),
             syntax_keyword: rgb(cyan),
             syntax_name: rgb(yellow),
             syntax_operator: rgb(magenta),
@@ -260,19 +290,31 @@ impl ThemePalette {
 
     fn monochrome() -> Self {
         Self {
-            foreground: Color::Reset,
             background: Color::Reset,
-            border: Color::Reset,
+            primary_foreground: Color::Reset,
+            secondary_foreground: Color::Reset,
             focused_border: Color::Reset,
+            inactive_border: Color::Reset,
             selection_foreground: Color::Reset,
             selection_background: Color::Reset,
-            disabled: Color::Reset,
-            info: Color::Reset,
             success: Color::Reset,
             warning: Color::Reset,
             error: Color::Reset,
-            progress: Color::Reset,
+            running: Color::Reset,
+            pending: Color::Reset,
             accent: Color::Reset,
+            muted: Color::Reset,
+            progress: Color::Reset,
+            graph_cpu: Color::Reset,
+            graph_memory: Color::Reset,
+            graph_disk_read: Color::Reset,
+            graph_disk_write: Color::Reset,
+            graph_network_rx: Color::Reset,
+            graph_network_tx: Color::Reset,
+            disabled: Color::Reset,
+            informational: Color::Reset,
+            heading: Color::Reset,
+            table_header: Color::Reset,
             syntax_keyword: Color::Reset,
             syntax_name: Color::Reset,
             syntax_operator: Color::Reset,
@@ -283,7 +325,9 @@ impl ThemePalette {
     }
 
     fn base(self) -> Style {
-        Style::default().fg(self.foreground).bg(self.background)
+        Style::default()
+            .fg(self.primary_foreground)
+            .bg(self.background)
     }
 
     fn focus(self) -> Style {
@@ -338,7 +382,7 @@ fn severity_style(app: &App, severity: Severity) -> Style {
     let palette = ThemePalette::for_app(app);
     match severity {
         Severity::Trace => palette.role(palette.disabled, Modifier::DIM),
-        Severity::Info => palette.role(palette.info, Modifier::ITALIC),
+        Severity::Info => palette.role(palette.informational, Modifier::ITALIC),
         Severity::Warning => palette.role(palette.warning, Modifier::BOLD),
         Severity::Error => palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED),
     }
@@ -355,7 +399,7 @@ fn build_status_style(app: &App) -> Style {
         yoctui_model::BuildStatus::LoadingWorkspace
         | yoctui_model::BuildStatus::Parsing
         | yoctui_model::BuildStatus::Running
-        | yoctui_model::BuildStatus::Cancelling => palette.role(palette.progress, Modifier::BOLD),
+        | yoctui_model::BuildStatus::Cancelling => palette.role(palette.running, Modifier::BOLD),
         yoctui_model::BuildStatus::Idle => palette.role(palette.disabled, Modifier::DIM),
     }
 }
@@ -915,7 +959,7 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect) {
     let block = Block::default()
         .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT)
         .style(palette.base())
-        .border_style(Style::default().fg(palette.border));
+        .border_style(Style::default().fg(palette.inactive_border));
     let inner = block.inner(area);
     frame.render_widget(block, area);
     if inner.is_empty() {
@@ -1051,7 +1095,7 @@ fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
             Borders::BOTTOM
         })
         .style(palette.base())
-        .border_style(Style::default().fg(palette.border));
+        .border_style(Style::default().fg(palette.inactive_border));
     let inner = block.inner(area);
     frame.render_widget(block, area);
     if inner.is_empty() {
@@ -1070,7 +1114,7 @@ fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     frame.render_widget(
         Paragraph::new(clock_text(now))
             .alignment(Alignment::Right)
-            .style(palette.role(palette.foreground, Modifier::DIM)),
+            .style(palette.role(palette.primary_foreground, Modifier::DIM)),
         columns[1],
     );
 }
@@ -1852,7 +1896,7 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!("{notification}\n\nPress Enter to dismiss."))
-                .style(palette.role(palette.info, Modifier::BOLD))
+                .style(palette.role(palette.informational, Modifier::BOLD))
                 .block(
                     Block::default()
                         .title("Notice")
@@ -2089,7 +2133,7 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     if let Some(command) = commands.get(app.command_palette_selection) {
         lines.push(Line::styled(
             command.description,
-            palette.role(palette.info, Modifier::ITALIC),
+            palette.role(palette.informational, Modifier::ITALIC),
         ));
         if command.compatibility_state != WorkspaceAvailabilityState::Available {
             lines.push(Line::styled(
@@ -2317,7 +2361,7 @@ fn pane_styles(app: &App) -> PaneStyles {
     let palette = ThemePalette::for_app(app);
     PaneStyles {
         base: palette.base(),
-        border: Style::default().fg(palette.border),
+        border: Style::default().fg(palette.inactive_border),
         focused_border: palette.focus(),
         selected: palette.selected(),
         inactive_selected: if palette.attribute_only {
@@ -2325,8 +2369,8 @@ fn pane_styles(app: &App) -> PaneStyles {
         } else {
             Style::default().fg(palette.selection_foreground)
         },
-        table_header: palette.role(palette.foreground, Modifier::BOLD),
-        muted: palette.role(palette.disabled, Modifier::DIM),
+        table_header: palette.role(palette.table_header, Modifier::BOLD),
+        muted: palette.role(palette.muted, Modifier::DIM),
     }
 }
 
@@ -2862,7 +2906,7 @@ fn literal_project_navigator(
             Span::raw(format!(" {layer}  ")),
             Span::styled("R:", palette.role(palette.success, Modifier::BOLD)),
             Span::raw(format!(" {job}  ")),
-            Span::styled("P:", palette.role(palette.info, Modifier::BOLD)),
+            Span::styled("P:", palette.role(palette.informational, Modifier::BOLD)),
             Span::raw(pid.map_or_else(|| "--".into(), |pid| pid.to_string())),
         ])),
         sections[1],
@@ -2942,7 +2986,7 @@ fn task_actions_text(app: &App) -> Text<'static> {
         app.build.status,
         BuildStatus::Running | BuildStatus::Parsing | BuildStatus::Cancelling
     ) {
-        palette.role(palette.foreground, Modifier::BOLD)
+        palette.role(palette.heading, Modifier::BOLD)
     } else {
         palette.role(palette.disabled, Modifier::DIM)
     };
@@ -3513,7 +3557,7 @@ fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
         },
     );
     frame.render_widget(
-        Paragraph::new(load).style(palette.role(palette.info, Modifier::BOLD)),
+        Paragraph::new(load).style(palette.role(palette.informational, Modifier::BOLD)),
         rows[5],
     );
 }
@@ -3708,9 +3752,10 @@ fn task_state_label(state: TaskState) -> &'static str {
 fn task_state_style(app: &App, state: TaskState) -> Style {
     let palette = ThemePalette::for_app(app);
     match state {
-        TaskState::Active => palette.role(palette.progress, Modifier::BOLD),
+        TaskState::Active => palette.role(palette.running, Modifier::BOLD),
         TaskState::Completed => palette.role(palette.success, Modifier::BOLD),
-        TaskState::Waiting | TaskState::Cancelled => palette.role(palette.warning, Modifier::BOLD),
+        TaskState::Waiting => palette.role(palette.pending, Modifier::BOLD),
+        TaskState::Cancelled => palette.role(palette.warning, Modifier::BOLD),
         TaskState::Failed | TaskState::Lost => {
             palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED)
         }
@@ -3938,9 +3983,10 @@ fn background_job_style(app: &App, status: BackgroundJobStatus) -> Style {
         BackgroundJobStatus::Cancelled | BackgroundJobStatus::Cancelling => {
             palette.role(palette.warning, Modifier::BOLD)
         }
-        BackgroundJobStatus::Queued
-        | BackgroundJobStatus::Starting
-        | BackgroundJobStatus::Running => palette.role(palette.progress, Modifier::BOLD),
+        BackgroundJobStatus::Queued => palette.role(palette.pending, Modifier::BOLD),
+        BackgroundJobStatus::Starting | BackgroundJobStatus::Running => {
+            palette.role(palette.running, Modifier::BOLD)
+        }
     }
 }
 
@@ -4162,7 +4208,7 @@ fn qa_check_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'stati
         QaCapability::Inspecting => {
             lines.push(Line::styled(
                 "Inspecting recipe and kernel QA capability…",
-                palette.info,
+                palette.informational,
             ));
             return;
         }
@@ -4224,7 +4270,7 @@ fn qa_layer_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'stati
         QaLayerCapability::Inspecting => {
             lines.push(Line::styled(
                 "Inspecting configured layer-QA capability…",
-                palette.info,
+                palette.informational,
             ));
             return;
         }
@@ -4330,7 +4376,7 @@ fn qa_inventory_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'s
                 request.generation,
                 request.paths.len()
             ),
-            palette.info,
+            palette.informational,
         )),
         QaReportInventoryState::AvailableEmpty { request } => lines.push(Line::from(format!(
             "Report generation {} available-empty: no reports or findings.",
@@ -5300,7 +5346,7 @@ fn security_session_status_label(status: SecuritySessionStatus) -> &'static str 
 }
 
 fn security_info_style(palette: &ThemePalette) -> Style {
-    palette.role(palette.info, Modifier::ITALIC)
+    palette.role(palette.informational, Modifier::ITALIC)
 }
 
 fn security_warning_style(palette: &ThemePalette) -> Style {
@@ -5664,7 +5710,7 @@ fn testing_comparison_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<L
 }
 
 fn testing_info_style(palette: &ThemePalette) -> Style {
-    palette.role(palette.info, Modifier::ITALIC)
+    palette.role(palette.informational, Modifier::ITALIC)
 }
 
 fn testing_warning_style(palette: &ThemePalette) -> Style {
@@ -8196,7 +8242,7 @@ fn compatibility_workspace(frame: &mut Frame, app: &App, area: Rect) {
         )
         .header(
             Row::new(["Capability", "State", "Implementation"])
-                .style(palette.role(palette.info, Modifier::BOLD)),
+                .style(palette.role(palette.informational, Modifier::BOLD)),
         )
         .block(pane_block(
             app,
@@ -8330,7 +8376,9 @@ fn compatibility_state_style(app: &App, state: CompatibilityUiCapabilityState) -
         CompatibilityUiCapabilityState::Available => palette.role(palette.success, Modifier::BOLD),
         CompatibilityUiCapabilityState::Limited => palette.role(palette.warning, Modifier::BOLD),
         CompatibilityUiCapabilityState::Unavailable => palette.role(palette.error, Modifier::BOLD),
-        CompatibilityUiCapabilityState::Unknown => palette.role(palette.info, Modifier::ITALIC),
+        CompatibilityUiCapabilityState::Unknown => {
+            palette.role(palette.informational, Modifier::ITALIC)
+        }
         CompatibilityUiCapabilityState::Unsupported => {
             palette.role(palette.disabled, Modifier::DIM)
         }
@@ -8355,7 +8403,9 @@ fn compatibility_workspace_state_style(app: &App, state: WorkspaceAvailabilitySt
             palette.role(palette.warning, Modifier::BOLD)
         }
         WorkspaceAvailabilityState::Unavailable => palette.role(palette.error, Modifier::BOLD),
-        WorkspaceAvailabilityState::Unknown => palette.role(palette.info, Modifier::ITALIC),
+        WorkspaceAvailabilityState::Unknown => {
+            palette.role(palette.informational, Modifier::ITALIC)
+        }
         WorkspaceAvailabilityState::Unsupported => palette.role(palette.disabled, Modifier::DIM),
     }
 }
@@ -10661,7 +10711,7 @@ fn maintenance_workspace(frame: &mut Frame, app: &App, area: Rect) {
         )),
         MaintenanceCapability::Loading(request) => lines.push(Line::styled(
             format!("Inspecting capability (request {request})…"),
-            palette.role(palette.info, Modifier::BOLD),
+            palette.role(palette.informational, Modifier::BOLD),
         )),
         MaintenanceCapability::Available { snapshot, .. } => {
             maintenance_capability_lines(app, snapshot, &mut lines, palette)
@@ -11235,7 +11285,9 @@ fn service_state_style(app: &App, state: yoctui_model::ServiceState) -> Style {
         yoctui_model::ServiceState::Reachable => palette.role(palette.success, Modifier::BOLD),
         yoctui_model::ServiceState::Unreachable => palette.role(palette.error, Modifier::BOLD),
         yoctui_model::ServiceState::Partial => palette.role(palette.warning, Modifier::BOLD),
-        yoctui_model::ServiceState::Configured => palette.role(palette.info, Modifier::BOLD),
+        yoctui_model::ServiceState::Configured => {
+            palette.role(palette.informational, Modifier::BOLD)
+        }
         yoctui_model::ServiceState::Disabled | yoctui_model::ServiceState::Unavailable => {
             palette.role(palette.disabled, Modifier::DIM)
         }
@@ -11267,7 +11319,9 @@ fn maintenance_session_style(app: &App, status: MaintenanceSessionStatus) -> Sty
         MaintenanceSessionStatus::Cancelled => palette.role(palette.warning, Modifier::BOLD),
         MaintenanceSessionStatus::Queued
         | MaintenanceSessionStatus::Running
-        | MaintenanceSessionStatus::Cancelling => palette.role(palette.info, Modifier::BOLD),
+        | MaintenanceSessionStatus::Cancelling => {
+            palette.role(palette.informational, Modifier::BOLD)
+        }
     }
 }
 
@@ -11318,7 +11372,7 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
             if draft.validation.is_some() {
                 palette.role(palette.error, Modifier::BOLD)
             } else {
-                palette.role(palette.info, Modifier::BOLD)
+                palette.role(palette.informational, Modifier::BOLD)
             },
         ),
         MaintenanceDialog::CleanupForm(draft) => (
@@ -11366,7 +11420,7 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
             } else if draft.operation == yoctui_model::PrServiceOperation::Import {
                 palette.role(palette.warning, Modifier::BOLD)
             } else {
-                palette.role(palette.info, Modifier::BOLD)
+                palette.role(palette.informational, Modifier::BOLD)
             },
         ),
         MaintenanceDialog::LockedCacheForm(draft) => (
@@ -11420,7 +11474,7 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
                 if draft.validation.is_some() {
                     palette.error
                 } else {
-                    palette.info
+                    palette.informational
                 },
                 Modifier::BOLD,
             ),
@@ -11465,7 +11519,7 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
                 } else if !draft.push_remote.is_empty() {
                     palette.warning
                 } else {
-                    palette.info
+                    palette.informational
                 },
                 Modifier::BOLD,
             ),
@@ -11492,7 +11546,7 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
             if preview.operation.destructive() {
                 palette.role(palette.warning, Modifier::BOLD)
             } else {
-                palette.role(palette.info, Modifier::BOLD)
+                palette.role(palette.informational, Modifier::BOLD)
             },
         ),
         MaintenanceDialog::CleanupPhrase { preview, input } => (
@@ -11987,7 +12041,7 @@ mod tests {
         assert_eq!(palette.selection_background, Color::Rgb(13, 57, 132));
         assert_eq!(palette.warning, Color::Rgb(226, 170, 0));
         assert_eq!(palette.progress, Color::Rgb(139, 211, 0));
-        assert_eq!(palette.info, Color::Rgb(42, 178, 218));
+        assert_eq!(palette.informational, Color::Rgb(42, 178, 218));
         assert_eq!(palette.error, Color::Rgb(244, 67, 54));
     }
 
@@ -13333,11 +13387,15 @@ mod tests {
     }
 
     #[test]
-    fn theme_palettes_define_distinct_semantic_roles() {
+    fn semantic_theme_exposes_complete_role_catalog_for_every_theme() {
         for theme in [
             Theme::DarkPro,
             Theme::WhiteClassic,
             Theme::MatrixGreen,
+            Theme::VscodeDark,
+            Theme::VscodeLight,
+            Theme::AccessibleDark,
+            Theme::SoftLight,
             Theme::HighContrast,
             Theme::Monochrome,
         ] {
@@ -13360,23 +13418,57 @@ mod tests {
                 assert!(palette.selected().add_modifier.contains(Modifier::REVERSED));
             } else {
                 assert!(!palette.attribute_only);
-                assert_ne!(palette.focused_border, palette.border);
+                assert_ne!(palette.focused_border, palette.inactive_border);
                 assert_ne!(palette.selection_background, palette.background);
                 assert_ne!(palette.error, palette.success);
-                assert_ne!(palette.warning, palette.info);
+                assert_ne!(palette.warning, palette.informational);
+                assert_eq!(palette.running, palette.progress);
+                assert_eq!(palette.pending, palette.warning);
+                assert_eq!(palette.graph_cpu, palette.graph_disk_read);
+                assert_eq!(palette.graph_memory, palette.graph_disk_write);
+                assert_eq!(palette.graph_network_rx, palette.success);
+                assert_eq!(palette.graph_network_tx, palette.warning);
             }
         }
     }
 
     #[test]
-    fn theme_no_color_uses_attributes_for_focus_selection_and_severity() {
+    fn semantic_theme_no_color_resets_colors_and_preserves_attributes() {
         let mut app = App::new(10, 1_000);
         app.theme = Theme::WhiteClassic;
         app.color_enabled = false;
         let palette = ThemePalette::for_app(&app);
 
         assert!(palette.attribute_only);
-        assert_eq!(palette.foreground, Color::Reset);
+        for color in [
+            palette.background,
+            palette.primary_foreground,
+            palette.secondary_foreground,
+            palette.focused_border,
+            palette.inactive_border,
+            palette.selection_foreground,
+            palette.selection_background,
+            palette.success,
+            palette.warning,
+            palette.error,
+            palette.running,
+            palette.pending,
+            palette.accent,
+            palette.muted,
+            palette.progress,
+            palette.graph_cpu,
+            palette.graph_memory,
+            palette.graph_disk_read,
+            palette.graph_disk_write,
+            palette.graph_network_rx,
+            palette.graph_network_tx,
+            palette.disabled,
+            palette.informational,
+            palette.heading,
+            palette.table_header,
+        ] {
+            assert_eq!(color, Color::Reset);
+        }
         assert!(palette.focus().add_modifier.contains(Modifier::BOLD));
         assert!(
             selected_style(&app, true)
@@ -13413,7 +13505,10 @@ mod tests {
             ThemePalette::for_app(&app).background,
             Color::Rgb(248, 248, 248)
         );
-        assert_eq!(ThemePalette::for_app(&app).info, Color::Rgb(0, 107, 107));
+        assert_eq!(
+            ThemePalette::for_app(&app).informational,
+            Color::Rgb(0, 107, 107)
+        );
     }
 
     #[test]

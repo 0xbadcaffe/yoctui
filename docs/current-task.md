@@ -2,23 +2,25 @@
 
 ## Task
 
-**ID:** FOUNDATION-UI-003
-**Title:** Unify visual theme semantics
+**ID:** NAV-UI-001
+**Title:** Redesign Navigator presentation
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Extend the semantic theme model used by the shared primitives and workspaces
-without hardcoding widget-specific colors or breaking any existing theme.
+Refine the Navigator into a polished, deterministic workspace rail with
+terminal-safe hierarchy, authoritative contextual rows, bounded scrolling,
+and complete keyboard and mouse selection.
 
 ## Dependencies
 
-- `FOUNDATION-UI-002` — DONE
+- `FOUNDATION-UI-003` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-ui/src/primitives.rs`
+- `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-app/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -26,17 +28,18 @@ without hardcoding widget-specific colors or breaking any existing theme.
 
 ## Definition of done
 
-- Every requested visual meaning maps through one semantic theme role.
-- No workspace renderer hardcodes a role color.
-- Every existing theme remains valid and visually distinct.
-- High contrast and no-color preserve status, focus, and selection meaning.
-- Semantic theme tests and the reviewed literal golden pass.
+- Workspace destinations remain visually grouped and deterministically ordered.
+- Active selection, focus, badges, and optional contextual entries use only
+  authoritative typed state.
+- Workspace navigation remains distinct from workspace-owned content trees.
+- Keyboard and mouse selection share typed action routing.
+- Scrolling is bounded and stable at all supported widths.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui semantic_theme
-cargo test -p yoctui-model theme
+cargo test -p yoctui-ui next_generation_navigator
+cargo test -p yoctui-app next_generation_navigator
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

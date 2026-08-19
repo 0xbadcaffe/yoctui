@@ -469,6 +469,13 @@ and width-prioritized column selection. Callers resolve semantic styles and
 typed content before invoking these primitives. The primitives accept no
 backend/protocol type, retain no cache or selection, and emit no action.
 
+`yoctui_ui::SemanticTheme` is the single rendering color boundary. It resolves
+each typed theme and the no-color override into named surface, text, border,
+selection, lifecycle, emphasis, graph, and source-preview roles. Renderers and
+shared primitives consume those roles; literal terminal colors do not belong
+in production workspace widgets. No-color resolves every color to the terminal
+default and preserves meaning through text markers and attributes.
+
 The workbench shell is a UI-only projection over existing typed state. Grouped
 Navigator headings, dense panel composition, task-log selection, job-history
 tables, and Inspector sections do not own or synthesize Yocto data. Navigation

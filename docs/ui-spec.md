@@ -2853,23 +2853,37 @@ Themes must preserve semantic distinctions. Errors cannot become indistinguishab
 
 ### Semantic roles
 
-Rendering uses one complete palette per built-in theme. Widgets select a role,
-not a terminal color:
+Rendering uses the public `SemanticTheme` catalog. Every built-in theme and
+the no-color override resolves the complete catalog before a widget renders.
+Widgets select a role, never a terminal color:
 
-- foreground and background
-- inactive and focused borders
-- selected foreground and background
-- disabled or subdued text
-- informational accent
-- success, warning, and error
-- determinate and indeterminate progress
-- general text accent
-- source keyword, name, operator, value, and comment
+- surface and text: `background`, `primary_foreground`,
+  `secondary_foreground`, `heading`, and `table_header`
+- structure and interaction: `focused_border`, `inactive_border`,
+  `selection_foreground`, and `selection_background`
+- lifecycle: `success`, `warning`, `error`, `running`, `pending`, and
+  `disabled`
+- emphasis: `accent`, `muted`, `informational`, and `progress`
+- bounded graphs: `graph_cpu`, `graph_memory`, `graph_disk_read`,
+  `graph_disk_write`, `graph_network_rx`, and `graph_network_tx`
+- source preview: `syntax_keyword`, `syntax_name`, `syntax_operator`,
+  `syntax_value`, and `syntax_comment`
+
+`running` identifies executing work, `pending` identifies queued or waiting
+work, and `progress` colors a determinate progress value. A renderer may use
+the same resolved color for related roles, but it must request the semantic
+role matching the content. `informational` is also the path/link role. Graph
+roles belong only to honestly measured bounded series; an unavailable metric
+does not receive a decorative graph color.
 
 The persistent shell, workspaces, Inspector, Footer, dialogs, notifications,
 tables, gauges, logs, build status, and source preview use these roles. A
 theme must provide every role. Adding a role requires updating all built-in
 themes and deterministic TestBackend coverage.
+
+Workspace renderers receive only resolved semantic styles. Hardcoded colors
+are limited to construction of the built-in theme catalogs and test fixtures;
+they are forbidden in production widget rendering.
 
 `monochrome` and `--no-color` use terminal attributes instead of color:
 

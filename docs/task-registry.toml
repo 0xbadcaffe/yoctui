@@ -5101,18 +5101,18 @@ notes = "Added the public render-only yoctui-ui primitives module for pane shell
 id = "FOUNDATION-UI-003"
 milestone = "M19"
 title = "Unify visual theme semantics"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 524
 required = true
 depends_on = ["FOUNDATION-UI-002"]
 verify = ["cargo test -p yoctui-ui semantic_theme", "cargo test -p yoctui-model theme"]
-notes = "Extend semantic roles for every requested workbench meaning while preserving all themes, high contrast, and no-color behavior."
+notes = "Added the public SemanticTheme catalog covering surface/text, borders, selection, lifecycle, emphasis, bounded graph, path/information, heading/table, and source-preview meanings. All nine named/compatibility themes resolve the complete catalog; no-color resets every role and retains focus, selection, and severity attributes. Existing renderers now use named roles without production hardcoded colors, and focused tests plus the unchanged literal cell/style golden pass."
 
 [[task]]
 id = "NAV-UI-001"
 milestone = "M19"
 title = "Redesign Navigator presentation"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 525
 required = true
 depends_on = ["FOUNDATION-UI-003"]

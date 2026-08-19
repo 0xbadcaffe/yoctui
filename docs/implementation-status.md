@@ -11,9 +11,18 @@ Status values:
 
 ## Current phase
 
-`FOUNDATION-UI-003` is `IN_PROGRESS`. It will extend the existing Packrat
-palette mapping into the complete semantic role set used by the new shared
-primitives and workspaces.
+`NAV-UI-001` is `IN_PROGRESS`. It will refine the existing grouped Navigator
+into a deterministic, bounded workspace rail with authoritative contextual
+rows and complete keyboard/mouse parity, without duplicating workspace-owned
+content trees.
+
+`FOUNDATION-UI-003` is `DONE`: the public `SemanticTheme` catalog now resolves
+surface/text, borders, selection, lifecycle, emphasis, bounded graphs,
+informational paths, headings/tables, and source-preview meanings for all nine
+named/compatibility themes. Production renderers use the named roles without
+hardcoded colors; no-color resets every color while retaining focus,
+selection, and severity attributes. Focused UI/model tests, the unchanged
+160x48 cell/style golden, formatting, and warnings-denied UI Clippy pass.
 
 `FOUNDATION-UI-002` is `DONE`: `yoctui-ui::primitives` now provides render-only
 pane shells, section headers, focused/inactive selection, separators,
