@@ -11,8 +11,17 @@ Status values:
 
 ## Current phase
 
-`LOG-UI-002` is `IN_PROGRESS`. It will factor a compact, reusable activity
-indicator for following, paused, filtered, searching, and eviction states.
+`JOB-UI-001` is `IN_PROGRESS`. It will redesign retained Job History around a
+stable responsive table, exact lifecycle distinctions, active visibility, and
+selection-driven typed job detail.
+
+`LOG-UI-002` is `DONE`: one width-aware textual projection now drives both the
+Logs activity row and embedded Tasks Log Viewer. Follow and pause are always
+named; Filtered, Search, and Evicted appear only when active. Wide labels add
+the exact query, warning/error eviction loss, and coalescing, while compact
+labels retain every required state word without relying on color or animation.
+Focused TestBackend coverage and all 163 UI tests pass; the reviewed canonical
+golden now records the embedded `▶ Follow` state.
 
 `LOG-UI-001` is `DONE`: Logs now uses dedicated activity and Viewer sections.
 The Viewer title carries exact selected recipe/task context, follow state, and

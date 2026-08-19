@@ -5167,18 +5167,18 @@ notes = "The Logs workspace now has dedicated activity and Viewer sections, exac
 id = "LOG-UI-002"
 milestone = "M19"
 title = "Add compact log activity indicator"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 530
 required = true
 depends_on = ["LOG-UI-001"]
 verify = ["cargo test -p yoctui-ui next_generation_log_activity"]
-notes = "Expose following, paused, filtered, searching, and eviction state compactly and textually."
+notes = "Added one reusable width-aware textual log activity projection. It always distinguishes Following/Follow from Paused and conditionally exposes Filtered, Search, and Evicted states; wide labels add the exact query, evicted warning/error counts, and coalescing, while compact labels preserve every required state word. The Logs activity panel and embedded Tasks Log Viewer consume the same projection. Focused TestBackend coverage, all 163 UI tests, and the intentionally reviewed 160x48 golden pass."
 
 [[task]]
 id = "JOB-UI-001"
 milestone = "M19"
 title = "Redesign Job History"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 531
 required = true
 depends_on = ["FOUNDATION-UI-003"]

@@ -1071,6 +1071,14 @@ Viewer title is:
 Log Viewer — <recipe:task|recipe|task|global|no selection> · <following|paused> · V <current/total> · H <offset/max|wrapped>
 ```
 
+The same state also has one compact projection used by the activity row and
+embedded task Log Viewer. It always begins with `▶ Following`/`▶ Follow` or
+`Ⅱ Paused`, then conditionally appends `◆ Filtered`, `/ Search`, and
+`! Evicted <count>`. At 96 columns of available label space it may include the
+query, evicted warning/error counts, and coalesced count; compact labels retain
+the state words and omit those lower-priority details. No inactive label is
+shown, and no indicator depends on color or animation.
+
 Vertical position is clamped to the filtered retained result set. Horizontal
 position is a bounded character offset against the longest visible retained
 message and becomes `wrapped` when wrapping disables horizontal movement. An

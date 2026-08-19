@@ -2,22 +2,24 @@
 
 ## Task
 
-**ID:** LOG-UI-002
-**Title:** Add compact log activity indicator
+**ID:** JOB-UI-001
+**Title:** Redesign Job History
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Provide one compact textual activity projection that consistently exposes the
-live log mode without requiring the full Logs status panel.
+Make retained background work readable as a stable responsive table with exact
+typed lifecycle distinctions and selection-driven detail.
 
 ## Dependencies
 
-- `LOG-UI-001` — DONE
+- `FOUNDATION-UI-003` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
+- `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-app/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -25,17 +27,19 @@ live log mode without requiring the full Logs status panel.
 
 ## Definition of done
 
-- Following and paused are textually distinct.
-- Active filters and search are visible without expanding the status panel.
-- Any retention eviction is visible and includes warning/error loss where room
-  permits.
-- The compact form remains readable in embedded and narrow contexts.
-- No state relies only on color or animation.
+- The table has stable status, operation type, target/context, start, finish,
+  and elapsed columns with responsive hiding.
+- Active jobs remain pinned or otherwise unmistakably visible.
+- Failed, cancelled, and lost remain exact distinct terminal states.
+- Selection opens or drives authoritative job detail.
+- Empty history and unavailable timestamps remain explicit.
+- Keyboard and existing mouse selection behavior remain typed.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_log_activity
+cargo test -p yoctui-ui next_generation_job_history
+cargo test -p yoctui-model background_job
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

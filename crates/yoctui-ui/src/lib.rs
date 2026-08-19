@@ -4227,13 +4227,15 @@ fn render_task_table(
 }
 
 fn render_task_log(frame: &mut Frame, app: &App, area: Rect, selected: Option<&TaskRowRef<'_>>) {
-    let title = match selected {
+    let context = match selected {
         Some(TaskRowRef::Task { task, .. }) => {
             format!("Log Viewer — {} ({})", task.task, task.recipe)
         }
         Some(TaskRowRef::WaitingSummary(_)) => "Log Viewer — waiting tasks".into(),
         None => "Log Viewer — no task selected".into(),
     };
+    let activity = compact_log_activity(app, area.width.saturating_sub(24));
+    let title = format!("{context} · {activity}");
     let limit = usize::from(area.height.saturating_sub(2)).max(1);
     frame.render_widget(
         Paragraph::new(Text::from(matching_task_logs_ref(app, selected, limit)))
@@ -9277,6 +9279,48 @@ fn log_severity_label(severity: Severity) -> &'static str {
     }
 }
 
+fn compact_log_activity(app: &App, width: u16) -> String {
+    let detailed = width >= 96;
+    let mut segments = vec![if app.logs.follow {
+        if detailed {
+            "▶ Following"
+        } else {
+            "▶ Follow"
+        }
+        .to_owned()
+    } else {
+        "Ⅱ Paused".to_owned()
+    }];
+    if app.logs.filter.is_some()
+        || app.logs.recipe_filter.is_some()
+        || app.logs.task_filter.is_some()
+        || app.logs.build_filter.is_some()
+    {
+        segments.push("◆ Filtered".into());
+    }
+    if app.logs.searching || !app.logs.query.is_empty() {
+        segments.push(if detailed && !app.logs.query.is_empty() {
+            format!("/ Search {}", app.logs.query)
+        } else {
+            "/ Search".into()
+        });
+    }
+    if app.logs.dropped > 0 {
+        segments.push(if detailed {
+            format!(
+                "! Evicted {} [W {} E {}]",
+                app.logs.dropped, app.logs.dropped_warnings, app.logs.dropped_errors
+            )
+        } else {
+            format!("! Evicted {}", app.logs.dropped)
+        });
+    }
+    if detailed && app.logs.coalesced > 0 {
+        segments.push(format!("↺ {} coalesced", app.logs.coalesced));
+    }
+    segments.join(" · ")
+}
+
 fn case_insensitive_ranges(value: &str, query: &str) -> Vec<(usize, usize)> {
     if query.is_empty() {
         return Vec::new();
@@ -9372,11 +9416,7 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
     let visible = &all_visible[start..end];
     let mode = format!(
         "{}  ·  wrap {}  ·  severity {}",
-        if app.logs.follow {
-            "▶ Following"
-        } else {
-            "Ⅱ Paused"
-        },
+        compact_log_activity(app, 40),
         if app.logs.wrap { "on" } else { "off" },
         app.logs
             .filter
@@ -18702,6 +18742,69 @@ mod tests {
             filtered_empty.contains("No log entries match the active filters or search."),
             "{filtered_empty}"
         );
+    }
+
+    #[test]
+    fn next_generation_log_activity_is_compact_complete_and_embedded() {
+        let mut app = App::new(20, 4_000);
+        assert_eq!(compact_log_activity(&app, 100), "▶ Following");
+
+        app.logs.follow = false;
+        app.logs.paused_len = Some(0);
+        app.logs.filter = Some(Severity::Warning);
+        app.logs.recipe_filter = Some("busybox".into());
+        app.logs.query = "compile".into();
+        app.logs.searching = true;
+        app.logs.dropped = 4;
+        app.logs.dropped_warnings = 1;
+        app.logs.dropped_errors = 2;
+        app.logs.coalesced = 7;
+
+        let wide = compact_log_activity(&app, 100);
+        for expected in [
+            "Ⅱ Paused",
+            "◆ Filtered",
+            "/ Search compile",
+            "! Evicted 4 [W 1 E 2]",
+            "↺ 7 coalesced",
+        ] {
+            assert!(wide.contains(expected), "missing {expected}: {wide}");
+        }
+        let compact = compact_log_activity(&app, 40);
+        for expected in ["Ⅱ Paused", "◆ Filtered", "/ Search", "! Evicted 4"] {
+            assert!(compact.contains(expected), "missing {expected}: {compact}");
+        }
+        assert!(!compact.contains("[W 1 E 2]"), "{compact}");
+        assert!(!compact.contains("compile"), "{compact}");
+        assert!(!compact.contains("coalesced"), "{compact}");
+
+        app.screen = Screen::Tasks;
+        let task = yoctui_model::TaskInfo::active(
+            yoctui_model::TaskId("busybox:do_compile".into()),
+            "busybox".into(),
+            "do_compile".into(),
+        );
+        let row = TaskRowRef::Task {
+            task: &task,
+            state: TaskState::Active,
+        };
+        let mut terminal = Terminal::new(TestBackend::new(100, 8)).unwrap();
+        terminal
+            .draw(|frame| render_task_log(frame, &app, frame.area(), Some(&row)))
+            .unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(
+            output.contains("Log Viewer — do_compile (busybox)"),
+            "{output}"
+        );
+        assert!(output.contains("Ⅱ Paused"), "{output}");
+        assert!(output.contains("◆ Filtered"), "{output}");
     }
 
     #[test]
