@@ -485,6 +485,14 @@ identities are absent. The waiting filter includes both pending meanings, but
 the renderer receives and labels them distinctly. Terminal completion,
 cancellation, and lost-backend paths retain their exact states.
 
+`yoctui_model::LogState` owns the bounded visible-result projection used by
+the Log Viewer. Its vertical and horizontal position methods clamp selection
+and character offsets against the filtered retained entries. The UI adds
+context labels and case-insensitive hit spans only after receiving normalized
+typed `LogEntry` messages; ANSI stripping remains in the BitBake/process
+adapter. Full-entry copy and source-log opening continue through existing typed
+model actions and effects.
+
 `yoctui_ui::SemanticTheme` is the single rendering color boundary. It resolves
 each typed theme and the no-color override into named surface, text, border,
 selection, lifecycle, emphasis, graph, and source-preview roles. Renderers and

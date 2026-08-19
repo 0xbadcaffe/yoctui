@@ -2602,9 +2602,26 @@ impl LogState {
     pub fn selected(&self) -> Option<&LogEntry> {
         self.filtered().nth(self.selection)
     }
-    pub fn match_position(&self) -> Option<(usize, usize)> {
-        let count = self.filtered().count();
+    pub fn visible_count(&self) -> usize {
+        self.filtered().count()
+    }
+    pub fn vertical_position(&self) -> Option<(usize, usize)> {
+        let count = self.visible_count();
         (count > 0).then(|| (self.selection.min(count - 1) + 1, count))
+    }
+    pub fn maximum_horizontal_offset(&self) -> usize {
+        self.filtered()
+            .map(|entry| entry.message.chars().count())
+            .max()
+            .unwrap_or(0)
+            .saturating_sub(1)
+    }
+    pub fn horizontal_position(&self) -> (usize, usize) {
+        let maximum = self.maximum_horizontal_offset();
+        (self.horizontal_offset.min(maximum), maximum)
+    }
+    pub fn match_position(&self) -> Option<(usize, usize)> {
+        self.vertical_position()
     }
     fn is_important(&self, entry: &LogEntry) -> bool {
         entry.protected || matches!(entry.severity, Severity::Warning | Severity::Error)
@@ -11486,13 +11503,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .horizontal_offset
                     .saturating_sub(delta.unsigned_abs())
             } else {
-                let maximum = app
-                    .logs
-                    .filtered()
-                    .map(|entry| entry.message.chars().count())
-                    .max()
-                    .unwrap_or(0)
-                    .saturating_sub(1);
+                let maximum = app.logs.maximum_horizontal_offset();
                 app.logs
                     .horizontal_offset
                     .saturating_add(delta as usize)
@@ -17348,6 +17359,21 @@ mod tests {
             app.logs.selected().map(|entry| entry.message.as_str()),
             Some("second")
         );
+    }
+    #[test]
+    fn log_state_reports_bounded_vertical_and_horizontal_positions() {
+        let mut logs = LogState::new(10, 1_000);
+        logs.insert(log("short"));
+        logs.insert(log("a much longer retained line"));
+        logs.selection = usize::MAX;
+        logs.horizontal_offset = usize::MAX;
+
+        assert_eq!(logs.vertical_position(), Some((2, 2)));
+        assert_eq!(logs.horizontal_position(), (26, 26));
+
+        logs.query = "missing".into();
+        assert_eq!(logs.vertical_position(), None);
+        assert_eq!(logs.horizontal_position(), (0, 0));
     }
     #[test]
     fn cycles_log_severity_filter() {

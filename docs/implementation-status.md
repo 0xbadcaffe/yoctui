@@ -11,9 +11,18 @@ Status values:
 
 ## Current phase
 
-`LOG-UI-001` is `IN_PROGRESS`. It will redesign the retained live Log Viewer
-around typed task/recipe context, bounded two-axis position, normalized search
-hits, warning/error emphasis, and only available full/source-log actions.
+`LOG-UI-002` is `IN_PROGRESS`. It will factor a compact, reusable activity
+indicator for following, paused, filtered, searching, and eviction states.
+
+`LOG-UI-001` is `DONE`: Logs now uses dedicated activity and Viewer sections.
+The Viewer title carries exact selected recipe/task context, follow state, and
+clamped vertical/horizontal positions. Trace/info/warning/error rows carry text
+markers and semantic styles; normalized case-insensitive search hits receive
+accent emphasis, including attribute-only no-color treatment. Retained-empty
+and filter-empty states differ. Existing typed full-entry copy is visible for
+any selection, while source-log open appears only for an authoritative path.
+ANSI normalization remains in the backend adapter. Focused projections and
+TestBackend tests plus all 293 model and 162 UI tests pass.
 
 `TASKS-UI-003` is `DONE`: identified `TaskQueued` events now remain `Queued`
 without a false start time or PID, while total-derived unidentified work stays

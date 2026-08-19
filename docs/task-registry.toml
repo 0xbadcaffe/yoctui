@@ -5156,18 +5156,18 @@ notes = "TaskState now preserves an identified Queued event separately from aggr
 id = "LOG-UI-001"
 milestone = "M19"
 title = "Redesign live Log Viewer"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 529
 required = true
 depends_on = ["FOUNDATION-UI-003"]
 verify = ["cargo test -p yoctui-ui next_generation_log_viewer", "cargo test -p yoctui-model log_state"]
-notes = "Add contextual section chrome, bounded scroll position, warning/error emphasis, search hits, two-axis indicators, and honest full/source-log actions over normalized retained text."
+notes = "The Logs workspace now has dedicated activity and Viewer sections, exact selected recipe/task context, clamped vertical and horizontal position labels, text-marked semantic severities, Unicode-safe case-insensitive search-hit spans, and distinct retained-empty/filter-empty states. Existing typed C full-entry copy is always shown for a selection; o source-log open appears only for an authoritative path. Rendering continues to consume adapter-normalized bounded LogEntry text. Focused model/UI tests and full model/UI suites pass."
 
 [[task]]
 id = "LOG-UI-002"
 milestone = "M19"
 title = "Add compact log activity indicator"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 530
 required = true
 depends_on = ["LOG-UI-001"]

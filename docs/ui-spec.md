@@ -1061,7 +1061,35 @@ Required features:
 - copy selected line/details
 - bounded retention and eviction counters
 
-The selected log entry appears in the inspector with full multiline content and metadata.
+The workspace is split into a five-line `Log activity` section and a primary
+`Log Viewer` section. The activity section keeps follow/pause and wrap state,
+active severity/recipe/task/build filters, visible search query/result
+position, retention pressure, and currently enabled actions visible. The
+Viewer title is:
+
+```text
+Log Viewer — <recipe:task|recipe|task|global|no selection> · <following|paused> · V <current/total> · H <offset/max|wrapped>
+```
+
+Vertical position is clamped to the filtered retained result set. Horizontal
+position is a bounded character offset against the longest visible retained
+message and becomes `wrapped` when wrapping disables horizontal movement. An
+empty retained stream and a non-empty stream with no filter/search matches are
+different explicit empty states. The log stream has no separate loading state:
+backend connection/reconnect state remains in System Status, and typed error
+records render as errors rather than a fabricated workspace-loading failure.
+
+Every severity has a text marker (`· Trace`, `i Info`, `! Warning`, `✕ Error`)
+as well as semantic styling. Incremental search highlights every visible
+case-insensitive match with the semantic accent role; no-color uses bold and
+underline attributes. Rendering consumes only the adapter-normalized retained
+message. It never parses ANSI or raw BitBake output.
+
+The selected log entry appears in the Inspector with full multiline content
+and metadata. `C Copy full entry` copies that complete structured retained
+entry through the existing typed clipboard effect. `o Open source log` is
+listed only when the selected entry contains an authoritative source path; the
+action remains typed and is omitted otherwise.
 
 Controls:
 

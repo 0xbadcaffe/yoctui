@@ -1,7 +1,9 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
 pub mod primitives;
 
-use primitives::{PaneShell, PaneStyles, ResponsiveColumn, responsive_columns};
+use primitives::{
+    PaneShell, PaneStyles, ResponsiveColumn, StateKind, StateView, responsive_columns,
+};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Sparkline, Table, Wrap},
@@ -9265,17 +9267,101 @@ fn format_bytes(bytes: u64) -> String {
         format!("{value:.1} {}", UNITS[unit])
     }
 }
+
+fn log_severity_label(severity: Severity) -> &'static str {
+    match severity {
+        Severity::Trace => "· Trace",
+        Severity::Info => "i Info",
+        Severity::Warning => "! Warning",
+        Severity::Error => "✕ Error",
+    }
+}
+
+fn case_insensitive_ranges(value: &str, query: &str) -> Vec<(usize, usize)> {
+    if query.is_empty() {
+        return Vec::new();
+    }
+    let folded_query = query.to_lowercase();
+    if folded_query.is_empty() {
+        return Vec::new();
+    }
+    let mut folded = String::new();
+    let mut units = Vec::new();
+    let mut characters = value.char_indices().peekable();
+    while let Some((original_start, character)) = characters.next() {
+        let original_end = characters.peek().map_or(value.len(), |(index, _)| *index);
+        let folded_start = folded.len();
+        folded.extend(character.to_lowercase());
+        units.push((folded_start, folded.len(), original_start, original_end));
+    }
+
+    let mut ranges = Vec::<(usize, usize)>::new();
+    let mut cursor = 0;
+    while cursor <= folded.len() {
+        let Some(relative) = folded[cursor..].find(&folded_query) else {
+            break;
+        };
+        let folded_start = cursor + relative;
+        let folded_end = folded_start + folded_query.len();
+        let original_start = units
+            .iter()
+            .find(|(_, end, _, _)| *end > folded_start)
+            .map(|(_, _, start, _)| *start);
+        let original_end = units
+            .iter()
+            .rev()
+            .find(|(start, _, _, _)| *start < folded_end)
+            .map(|(_, _, _, end)| *end);
+        if let (Some(start), Some(end)) = (original_start, original_end) {
+            if let Some((_, previous_end)) = ranges.last_mut().filter(|(_, end)| *end >= start) {
+                *previous_end = (*previous_end).max(end);
+            } else {
+                ranges.push((start, end));
+            }
+        }
+        cursor = folded_end.max(folded_start.saturating_add(1));
+    }
+    ranges
+}
+
+fn log_search_spans(app: &App, message: &str) -> Vec<Span<'static>> {
+    let ranges = case_insensitive_ranges(message, &app.logs.query);
+    if ranges.is_empty() {
+        return vec![Span::raw(message.to_owned())];
+    }
+    let palette = ThemePalette::for_app(app);
+    let highlight = palette.role(palette.accent, Modifier::BOLD | Modifier::UNDERLINED);
+    let mut spans = Vec::with_capacity(ranges.len().saturating_mul(2).saturating_add(1));
+    let mut cursor = 0;
+    for (start, end) in ranges {
+        if cursor < start {
+            spans.push(Span::raw(message[cursor..start].to_owned()));
+        }
+        spans.push(Span::styled(message[start..end].to_owned(), highlight));
+        cursor = end;
+    }
+    if cursor < message.len() {
+        spans.push(Span::raw(message[cursor..].to_owned()));
+    }
+    spans
+}
+
+fn selected_log_context(app: &App) -> String {
+    app.logs.selected().map_or_else(
+        || "no selection".into(),
+        |entry| match (entry.recipe.as_deref(), entry.task.as_deref()) {
+            (Some(recipe), Some(task)) => format!("{recipe}:{task}"),
+            (Some(recipe), None) => recipe.into(),
+            (None, Some(task)) => task.into(),
+            (None, None) => "global".into(),
+        },
+    )
+}
+
 fn logs(frame: &mut Frame, app: &App, area: Rect) {
-    let chunks = Layout::vertical([Constraint::Length(6), Constraint::Min(3)]).split(area);
+    let chunks = Layout::vertical([Constraint::Length(7), Constraint::Min(3)]).split(area);
     let log_area = chunks[1];
-    let all_visible = app
-        .logs
-        .filtered()
-        .filter(|l| {
-            app.screen != Screen::Errors
-                || matches!(l.severity, Severity::Warning | Severity::Error)
-        })
-        .collect::<Vec<_>>();
+    let all_visible = app.logs.filtered().collect::<Vec<_>>();
     let height = log_area.height.saturating_sub(3) as usize;
     let selection = app.logs.selection.min(all_visible.len().saturating_sub(1));
     let end = selection
@@ -9285,29 +9371,22 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
     let start = end.saturating_sub(height);
     let visible = &all_visible[start..end];
     let mode = format!(
-        "{} | {} | {}",
+        "{}  ·  wrap {}  ·  severity {}",
         if app.logs.follow {
-            "following"
+            "▶ Following"
         } else {
-            "paused"
+            "Ⅱ Paused"
         },
-        if app.logs.wrap {
-            "wrapped"
-        } else {
-            "unwrapped"
-        },
+        if app.logs.wrap { "on" } else { "off" },
         app.logs
             .filter
             .map_or_else(|| "all".into(), |severity| format!("{severity:?}"))
-            + &format!(
-                " | recipe: {} | task: {}",
-                app.logs.recipe_filter.as_deref().unwrap_or("all"),
-                app.logs.task_filter.as_deref().unwrap_or("all")
-            )
-            + &format!(
-                " | build: {}",
-                app.logs.build_filter.as_deref().unwrap_or("all")
-            )
+    );
+    let filters = format!(
+        "Filters  R recipe: {}  ·  T task: {}  ·  B build: {}",
+        app.logs.recipe_filter.as_deref().unwrap_or("all"),
+        app.logs.task_filter.as_deref().unwrap_or("all"),
+        app.logs.build_filter.as_deref().unwrap_or("all")
     );
     let pressure = if app.logs.dropped > 0 || app.logs.coalesced > 0 {
         format!(
@@ -9334,16 +9413,75 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
     };
     let search = app
         .logs
-        .match_position()
+        .vertical_position()
         .map_or(search.clone(), |(current, count)| {
-            format!("{search} | selected {current}/{count}")
+            format!("{search} · result {current}/{count}")
         });
+    let actions = app.logs.selected().map_or_else(
+        || "Actions  unavailable — no selected entry".into(),
+        |entry| {
+            let mut value = "Actions  C Copy full entry".to_owned();
+            if entry.path.is_some() {
+                value.push_str("  ·  o Open source log");
+            }
+            value
+        },
+    );
     frame.render_widget(
-        Paragraph::new(format!("{mode}\n{pressure}\n{search}"))
-            .block(Block::default().title("Log status").borders(Borders::ALL))
-            .wrap(Wrap { trim: false }),
+        Paragraph::new(format!(
+            "{mode}\n{actions}\n{filters}\n{search}\n{pressure}"
+        ))
+        .block(pane_block(
+            app,
+            "Log activity",
+            app.focus == FocusTarget::Workspace,
+        ))
+        .wrap(Wrap { trim: false }),
         chunks[0],
     );
+    let vertical = app.logs.vertical_position().map_or_else(
+        || "0/0".into(),
+        |(current, total)| format!("{current}/{total}"),
+    );
+    let (horizontal_offset, horizontal_maximum) = app.logs.horizontal_position();
+    let horizontal = if app.logs.wrap {
+        "wrapped".into()
+    } else {
+        format!("{horizontal_offset}/{horizontal_maximum}")
+    };
+    let title = format!(
+        "Log Viewer — {} · {} · V {vertical} · H {horizontal}",
+        selected_log_context(app),
+        if app.logs.follow {
+            "following"
+        } else {
+            "paused"
+        },
+    );
+    let block = pane_block(app, &title, app.focus == FocusTarget::Workspace);
+    if all_visible.is_empty() {
+        let inner = block.inner(log_area);
+        frame.render_widget(block, log_area);
+        let state = StateView {
+            kind: StateKind::Empty,
+            summary: if app.logs.entries.is_empty() {
+                "No retained log entries.".into()
+            } else {
+                "No log entries match the active filters or search.".into()
+            },
+            detail: Some("Adjust filters or resume follow as needed.".into()),
+            action: None,
+        };
+        let palette = ThemePalette::for_app(app);
+        frame.render_widget(
+            state.paragraph(
+                palette.role(palette.muted, Modifier::BOLD),
+                palette.role(palette.secondary_foreground, Modifier::DIM),
+            ),
+            inner,
+        );
+        return;
+    }
     if app.logs.wrap {
         let mut lines = Vec::new();
         for (offset, log) in visible.iter().enumerate() {
@@ -9351,9 +9489,9 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
             for (line_index, message) in log.message.lines().enumerate() {
                 let prefix = if line_index == 0 {
                     format!(
-                        "{} {:?} {} ",
+                        "{} {} {} ",
                         if selected { "▶" } else { " " },
-                        log.severity,
+                        log_severity_label(log.severity),
                         log.recipe.as_deref().unwrap_or("")
                     )
                 } else {
@@ -9364,30 +9502,30 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
                 } else {
                     severity_style(app, log.severity)
                 };
-                lines.push(Line::styled(format!("{prefix}{message}"), style));
+                let mut spans = vec![Span::raw(prefix)];
+                spans.extend(log_search_spans(app, message));
+                lines.push(Line::from(spans).style(style));
             }
         }
         let text = Text::from(lines);
         frame.render_widget(
-            Paragraph::new(text)
-                .block(Block::default().title("Logs").borders(Borders::ALL))
-                .wrap(Wrap { trim: false }),
+            Paragraph::new(text).block(block).wrap(Wrap { trim: false }),
             log_area,
         );
         return;
     }
     let rows = visible.iter().enumerate().map(|(offset, l)| {
         let selected = start + offset == selection;
+        let message = l
+            .message
+            .chars()
+            .skip(horizontal_offset)
+            .collect::<String>();
         Row::new(vec![
-            Cell::from(format!("{:?}", l.severity)),
+            Cell::from(log_severity_label(l.severity)),
             Cell::from(l.recipe.as_deref().unwrap_or("")),
             Cell::from(l.task.as_deref().unwrap_or("")),
-            Cell::from(
-                l.message
-                    .chars()
-                    .skip(app.logs.horizontal_offset)
-                    .collect::<String>(),
-            ),
+            Cell::from(Line::from(log_search_spans(app, &message))),
         ])
         .style(if selected {
             selected_log_style(app, l.severity)
@@ -9399,7 +9537,7 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         Table::new(
             rows,
             [
-                Constraint::Length(9),
+                Constraint::Length(11),
                 Constraint::Length(16),
                 Constraint::Length(18),
                 Constraint::Min(10),
@@ -9409,7 +9547,7 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
             Row::new(["Level", "Recipe", "Task", "Message"])
                 .style(Style::default().add_modifier(Modifier::BOLD)),
         )
-        .block(Block::default().title("Logs").borders(Borders::ALL)),
+        .block(block),
         log_area,
     )
 }
@@ -18465,6 +18603,105 @@ mod tests {
         assert!(output.contains("search: needle_"), "{output}");
         assert!(output.contains("build: core-image-minimal"), "{output}");
         let _ = rendered_text(&app, 50, 16);
+    }
+
+    #[test]
+    fn next_generation_log_viewer_exposes_context_positions_hits_and_real_actions() {
+        let mut app = App::new(20, 4_000);
+        app.screen = Screen::Logs;
+        app.logs.insert(yoctui_model::LogEntry {
+            id: 0,
+            severity: Severity::Warning,
+            message: "first needle warning".into(),
+            recipe: Some("busybox".into()),
+            task: Some("do_patch".into()),
+            path: None,
+            timestamp: SystemTime::UNIX_EPOCH,
+            build: Some("core-image-minimal".into()),
+            protected: true,
+            diagnostic: None,
+        });
+        app.logs.insert(yoctui_model::LogEntry {
+            id: 0,
+            severity: Severity::Error,
+            message: "xx compile NEEDLE context".into(),
+            recipe: Some("busybox".into()),
+            task: Some("do_compile".into()),
+            path: Some("/tmp/log.do_compile".into()),
+            timestamp: SystemTime::UNIX_EPOCH,
+            build: Some("core-image-minimal".into()),
+            protected: true,
+            diagnostic: None,
+        });
+        app.logs.query = "needle".into();
+        app.logs.follow = false;
+        app.logs.paused_len = Some(app.logs.entries.len());
+        app.logs.selection = 1;
+        app.logs.horizontal_offset = 2;
+
+        let output = rendered_text(&app, 180, 30);
+        for expected in [
+            "Log Viewer — busybox:do_compile · paused · V 2/2 · H 2/",
+            "Ⅱ Paused",
+            "! Warning",
+            "✕ Error",
+            "C Copy full entry",
+            "o Open source log",
+            "search: needle · result 2/2",
+        ] {
+            assert!(output.contains(expected), "missing {expected}: {output}");
+        }
+
+        let spans = log_search_spans(&app, "prefix NeEdLe suffix");
+        assert_eq!(
+            spans
+                .iter()
+                .map(|span| span.content.as_ref())
+                .collect::<String>(),
+            "prefix NeEdLe suffix"
+        );
+        assert_eq!(spans.len(), 3);
+        assert_eq!(
+            spans[1].style.fg,
+            Some(ThemePalette::for_app(&app).accent),
+            "the exact normalized search hit uses the semantic accent role"
+        );
+        app.color_enabled = false;
+        let spans = log_search_spans(&app, "prefix needle suffix");
+        assert!(
+            spans[1]
+                .style
+                .add_modifier
+                .contains(Modifier::BOLD | Modifier::UNDERLINED)
+        );
+
+        app.logs.entries.back_mut().unwrap().path = None;
+        let no_source = rendered_text(&app, 180, 30);
+        assert!(!no_source.contains("o Open source log"), "{no_source}");
+        assert!(no_source.contains("C Copy full entry"), "{no_source}");
+
+        let mut empty = App::new(20, 4_000);
+        empty.screen = Screen::Logs;
+        let output = rendered_text(&empty, 100, 24);
+        assert!(output.contains("No retained log entries."), "{output}");
+        empty.logs.insert(yoctui_model::LogEntry {
+            id: 0,
+            severity: Severity::Info,
+            message: "ordinary output".into(),
+            recipe: None,
+            task: None,
+            path: None,
+            timestamp: SystemTime::UNIX_EPOCH,
+            build: None,
+            protected: false,
+            diagnostic: None,
+        });
+        empty.logs.query = "absent".into();
+        let filtered_empty = rendered_text(&empty, 100, 24);
+        assert!(
+            filtered_empty.contains("No log entries match the active filters or search."),
+            "{filtered_empty}"
+        );
     }
 
     #[test]
