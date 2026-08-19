@@ -11,15 +11,11 @@ Status values:
 
 ## Current phase
 
-`FINAL-GATE-PERF-001` is the third `DONE` terminal candidate. The first two
-clean candidates exposed obsolete backend-dependent release-profile and
-Valgrind workloads after compatibility, full Rust workspace, and all 43 Python
-tests passed. Both now use bounded deterministic production workbench runs. The
-release profile passes 6,000 frames with checksum `95f340a128cd6012`;
-Memcheck passes 128 frames with zero definite, indirect, or possible bytes
-lost, 544 bytes still reachable, and no open descriptors. The complete gate
-must pass before the host's original `kernel.perf_event_paranoid=4` policy is
-restored.
+`FINAL-GATE-PERF-001` is the fourth `DONE` terminal candidate. Release
+profiling and Memcheck use bounded deterministic production workbench runs, and
+the bridge protocol smoke check now uses the unconfigured Doctor route and
+passes without daemon authority. The complete gate must pass before the host's
+original `kernel.perf_event_paranoid=4` policy is restored.
 
 `PERF-FLAMEGRAPH-QUALITY-001` is `DONE`: the replacement 160x48 benchmark
 drives 6,000 deterministic production reducer/Ratatui frames without a daemon

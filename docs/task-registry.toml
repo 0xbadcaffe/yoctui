@@ -4261,7 +4261,7 @@ priority = 458
 required = true
 depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001", "PERF-FLAMEGRAPH-QUALITY-001"]
 verify = ["perf record -- true", "./scripts/flamegraph.sh", "./scripts/verify-completion.sh"]
-notes = "The first two clean candidates exposed obsolete backend-dependent release-profile and Valgrind workloads after compatibility, full Rust workspace, and 43 Python tests passed. Both now use the deterministic production workbench. The release profile passes 6,000 frames with checksum 95f340a128cd6012; Memcheck passes 128 frames with zero definite, indirect, or possible bytes lost, 544 bytes still reachable, and no open descriptors. This third terminal candidate must pass the complete gate before kernel.perf_event_paranoid=4 is restored."
+notes = "The first three clean candidates exposed obsolete backend-dependent release-profile and Valgrind workloads plus a documentation smoke check misidentifying the repository root as a BitBake build directory. Release profiling and Memcheck now use bounded deterministic production workbench runs, while the bridge protocol smoke check uses the unconfigured Doctor route and passes without daemon authority. This fourth terminal candidate must pass the complete gate before kernel.perf_event_paranoid=4 is restored."
 
 # M13 — Dense terminal workbench redesign
 [[task]]

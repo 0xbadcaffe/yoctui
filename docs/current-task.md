@@ -12,9 +12,9 @@ Run the complete repository completion gate while real Linux perf sampling is
 temporarily available, record the terminal result, and restore the host's
 original perf security policy afterward.
 
-The release profile and Valgrind gates now use bounded deterministic production
-workbench workloads. Memcheck passes 128 frames with no lost bytes or open
-descriptors; this third terminal candidate is ready for the complete gate.
+The release profile and Valgrind corrections pass. The bridge protocol smoke
+check now uses the unconfigured Doctor route and passes without daemon
+authority; this fourth terminal candidate is ready for the complete gate.
 
 ## Dependencies
 
@@ -28,6 +28,8 @@ descriptors; this third terminal candidate is ready for the complete gate.
 - `scripts/flamegraph.sh`
 - `scripts/profile-workload.sh`
 - `scripts/valgrind.sh`
+- `scripts/headless-workload.sh`
+- `scripts/check-docs.sh`
 - `artifacts/flamegraph/yoctui.svg`
 - `artifacts/flamegraph/summary.txt`
 - `docs/implementation-status.md`

@@ -9,7 +9,7 @@ trap 'rm -rf "$workload_config_dir"' EXIT
 if [[ "$backend" == "bridge" ]]; then
   output="$(
     XDG_CONFIG_HOME="$workload_config_dir" \
-    "$binary" --backend bridge --build-dir "$repo_root" doctor
+    "$binary" --backend bridge doctor
   )"
   if [[ "$output" != *"bridge protocol: ok"* ]]; then
     printf '%s\n' "$output" >&2
