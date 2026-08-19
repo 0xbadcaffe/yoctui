@@ -1108,3 +1108,11 @@ without rewriting tracked evidence. Fresh Scarthgap 5.0.19 monolithic Poky and
 Wrynose 6.0.2 split-component runs both passed daemon identity, inventories,
 configuration, dependency graph, native task events, cancellation, and typed
 server teardown. `COMPAT-CI-001` is active next.
+`COMPAT-CI-001` is complete. Normal CI now runs a network-free compatibility
+gate across the typed model, probes/resolver/argv, app, UI, bridge, future
+behavior, and offline evidence policy. A separate weekly/manual matrix runs
+exact older/latest fresh roles with explicit opt-in and bounded timeout, then
+always uploads role-scoped Doctor, daemon, inventory, and BitBake diagnostics.
+The static CI contract rejects accidental PR live runs, missing roles/bounds/
+artifacts, deterministic coverage omissions, and network operations in the fast
+script. `COMPAT-DOC-001` is active next.

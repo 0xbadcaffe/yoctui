@@ -1,10 +1,28 @@
 name: CI
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '17 4 * * 1'
+  workflow_dispatch:
 permissions: { contents: read }
 concurrency:
   group: "yoctui-${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 jobs:
+  compatibility-fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: python3 -m pip install pytest
+      - name: Run deterministic release compatibility gates
+        run: ./scripts/test-release-compatibility.sh
+      - name: Validate compatibility CI contract
+        run: ./scripts/check-ci.sh
   test:
     runs-on: ubuntu-latest
     steps:
@@ -52,3 +70,33 @@ jobs:
           name: yoctui-release-quality-${{ github.sha }}
           path: artifacts/release-quality/
           if-no-files-found: ignore
+  compatibility-live:
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        role: [older, latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Install Yocto host prerequisites
+        run: sudo apt-get update && sudo apt-get install -y chrpath diffstat gawk lz4
+      - name: Build Yoctui
+        run: cargo build --locked -p yoctui
+      - name: Run fresh official compatibility role
+        env:
+          YOCTUI_LIVE_COMPATIBILITY: '1'
+          YOCTUI_LIVE_TIMEOUT: '300'
+          YOCTUI_COMPAT_ARTIFACT_DIR: artifacts/compatibility/${{ matrix.role }}
+        run: ./scripts/test-compatibility-matrix.sh --live ${{ matrix.role }}
+      - name: Upload compatibility diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yoctui-compatibility-${{ matrix.role }}-${{ github.sha }}
+          path: artifacts/compatibility/${{ matrix.role }}/
+          if-no-files-found: error

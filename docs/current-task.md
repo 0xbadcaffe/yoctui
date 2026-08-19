@@ -2,47 +2,47 @@
 
 ## Task
 
-**ID:** COMPAT-CI-001
-**Title:** Integrate compatibility tests into CI
+**ID:** COMPAT-DOC-001
+**Title:** Document dynamic release correlation
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Run deterministic capability compatibility gates in normal CI and provide a
-bounded scheduled/manual live matrix that checks fresh official releases and
-uploads diagnostics without imposing network-heavy Yocto work on every PR.
+Explain clearly that one Yoctui binary exposes functionality according to the
+connected Yocto environment's detected capabilities, including release policy,
+fallbacks, disabled reasons, future behavior, diagnostics, and live evidence.
 
 ## Dependencies
 
-- `COMPAT-TEST-CMDS-001` — DONE
-- `COMPAT-TEST-UI-001` — DONE
+- `COMPAT-DOCTOR-001` — DONE
+- `COMPAT-MATRIX-001` — DONE
 - `COMPAT-LIVE-MATRIX-001` — DONE
 
 ## Relevant files
 
-- `.github/workflows/ci.yml`
-- `scripts/check-ci.sh`
-- `scripts/test-release-compatibility.sh`
-- `scripts/test-compatibility-matrix.sh`
-- `scripts/verify-compatibility.sh`
+- `README.md`
+- `docs/compatibility.md`
+- `docs/compatibility-matrix.md`
+- `docs/product-roadmap.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Normal CI runs deterministic capability model, probe, command generation,
-  dynamic UI gating, future-release behavior, and offline evidence checks.
-- Scheduled/manual CI runs exact fresh older/latest official roles with bounded
-  timeouts, without running on ordinary pull requests.
-- Live failures upload Doctor, daemon, inventory, and BitBake smoke diagnostics.
-- Workflow and helper validation rejects missing jobs, unsafe triggers,
-  fixture-only live substitution, and omitted artifact publication.
-- Local verification remains network-free unless explicitly opted in.
+- User documentation states the Yocto-feature-correlated product semantics.
+- Examples compare the same binary on older and newer environments, including
+  unavailable Devtool behavior and a BitBake command implementation/fallback.
+- Future unknown releases, unsupported/degraded releases, exact reasons, and
+  the Environment/Compatibility inspector and Doctor output are documented.
+- Supported/tested/expected/unknown claims remain distinct and link to exact
+  current live evidence and renewal policy.
+- Offline and opt-in live matrix commands are documented without implying that
+  fixtures or optional development runs establish support.
 
 ## Verification
 
 ```bash
-./scripts/check-ci.sh
-./scripts/test-release-compatibility.sh
+./scripts/check-docs.sh
+./scripts/verify-compatibility.sh --structure-only
 ./scripts/verify-roadmap.sh
 ```

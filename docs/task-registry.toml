@@ -5021,18 +5021,18 @@ notes = "The default offline harness validates latest+older evidence, age/suppor
 id = "COMPAT-CI-001"
 milestone = "M18"
 title = "Integrate compatibility tests into CI"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 518
 required = true
 depends_on = ["COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-LIVE-MATRIX-001"]
 verify = ["./scripts/check-ci.sh", "./scripts/test-release-compatibility.sh", "./scripts/verify-roadmap.sh"]
-notes = "Fast CI runs deterministic capability/probe/argv/UI/future tests; scheduled or opt-in CI runs fresh Poky clones and uploads diagnostics on failure."
+notes = "A network-free compatibility-fast job runs model, resolver/probe/argv, app, TestBackend UI, bridge, future-version, offline matrix/evidence, and structure gates on normal CI. A separately conditioned weekly/manual compatibility-live matrix runs only exact older/latest evidence roles, uses 45/5-minute workflow/smoke bounds, and always uploads role-scoped Doctor/daemon/inventory/BitBake diagnostics. check-ci statically rejects missing triggers, role isolation, opt-in, timeouts, artifacts, deterministic coverage, live work in the fast script, or missing isolated-source markers. Local scripts and both fresh live roles pass."
 
 [[task]]
 id = "COMPAT-DOC-001"
 milestone = "M18"
 title = "Document dynamic release correlation"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 519
 required = true
 depends_on = ["COMPAT-DOCTOR-001", "COMPAT-MATRIX-001", "COMPAT-LIVE-MATRIX-001"]
