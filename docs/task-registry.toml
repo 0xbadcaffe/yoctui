@@ -4250,7 +4250,7 @@ priority = 458
 required = true
 depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001"]
 verify = ["./scripts/test-flamegraph.sh", "./scripts/flamegraph.sh", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "A daemon-independent 160x48 benchmark now drives 6,000 deterministic production reducer/Ratatui frames. The accepted portable DWARF perf capture contains 1,869 samples, no lost samples, a stable 95f340a128cd6012 checksum, and a machine-readable summary. Three malformed raw call-chain lines (0.2147% of event weight) were transparently reported and excluded below the strict 0.5% ceiling; the resulting SVG contains zero unresolved/null frames. Evidence exposed avoidable full-table formatting plus repeated task cloning/sorting; bounded viewport rendering and one shared borrowed task projection reduced the same workload from roughly 6.3 seconds to 3.731 seconds. The final exclusive profile is led by expected Ratatui buffer styling/diffing and Unicode processing, with shared task sorting at 2.66%. Format, Clippy, workspace tests, 43 bridge tests, docs, and roadmap checks pass."
+notes = "A daemon-independent 160x48 benchmark now drives 6,000 deterministic production reducer/Ratatui frames. The final portable DWARF perf capture contains 2,014 samples, no lost samples, a stable 95f340a128cd6012 checksum, and a machine-readable summary. Two malformed raw call-chain lines (0.2394% of event weight) were transparently reported and excluded below the strict 0.5% ceiling; the resulting SVG contains zero unresolved/null frames. Evidence exposed avoidable full-table formatting plus repeated task cloning/sorting; bounded viewport rendering and one shared borrowed task projection reduced the same workload from roughly 6.3 seconds to 4.028 seconds in the final capture. The exclusive profile is led by expected Ratatui buffer styling/diffing and Unicode processing, with shared task sorting at 2.66%. Format, Clippy, workspace tests, 43 bridge tests, docs, and roadmap checks pass."
 
 [[task]]
 id = "FINAL-GATE-PERF-001"
@@ -4261,7 +4261,7 @@ priority = 458
 required = true
 depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001", "PERF-FLAMEGRAPH-QUALITY-001"]
 verify = ["perf record -- true", "./scripts/flamegraph.sh", "./scripts/verify-completion.sh"]
-notes = "The seventh clean candidate includes the daemon-authority CLI smoke, shared ASan production-workbench, and Ruff formatting corrections. The sixth gate passed Ruff and then exposed an unsafe optional import spec in the bridge test loader under mypy. The loader now fails explicitly when its spec or loader is absent; Ruff, mypy, and all 43 bridge tests pass. Rerun the complete gate before restoring kernel.perf_event_paranoid=4."
+notes = "The seventh clean candidate passed the complete repository gate, including CLI authority smoke, workspace tests and Clippy, terminal/fuzz/stress, ASan/LSan, Rust and Python coverage, audit/deny, Valgrind, release profiling, a fresh resolved perf capture, and live-evidence validation. The final capture contains 2,014 samples over 6,000 deterministic frames, the stable 95f340a128cd6012 checksum, no lost samples, and zero unresolved/null output frames. Non-interactive sudo could not restore the host policy; run `sudo sysctl -w kernel.perf_event_paranoid=4` interactively to restore the original value."
 
 # M13 — Dense terminal workbench redesign
 [[task]]

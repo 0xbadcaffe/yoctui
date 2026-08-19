@@ -11,22 +11,25 @@ Status values:
 
 ## Current phase
 
-`FINAL-GATE-PERF-001` is the seventh `DONE` terminal candidate. CLI smoke and
-the shared ASan production workbench pass. The sixth gate passed Ruff and then
-exposed an unsafe optional import spec in the bridge test loader under mypy.
-The loader now fails explicitly when its spec or loader is absent; Ruff, mypy,
-and all 43 bridge tests pass. The complete gate must pass before the host's
-original `kernel.perf_event_paranoid=4` policy is restored.
+`FINAL-GATE-PERF-001` is `DONE`. The seventh clean candidate passed the complete
+repository gate, including CLI authority smoke, workspace tests and Clippy,
+fuzz/stress, ASan/LSan, Rust and Python coverage, audit/deny, Valgrind, release
+profiling, fresh perf sampling, and live-evidence validation. The final capture
+contains 2,014 samples, 6,000 deterministic frames, the stable
+`95f340a128cd6012` checksum, no lost samples, and zero unresolved/null output
+frames. Non-interactive sudo could not restore the host policy; an operator must
+run `sudo sysctl -w kernel.perf_event_paranoid=4` to restore the original value.
 
 `PERF-FLAMEGRAPH-QUALITY-001` is `DONE`: the replacement 160x48 benchmark
 drives 6,000 deterministic production reducer/Ratatui frames without a daemon
-or Yocto checkout. Its accepted portable DWARF capture records 1,869 real
-samples, the stable `95f340a128cd6012` checksum, and no lost samples. Three
-malformed raw call-chain lines (0.2147% of event weight) are reported and
+or Yocto checkout. Its final portable DWARF capture records 2,014 real samples,
+the stable `95f340a128cd6012` checksum, and no lost samples. Two malformed raw
+call-chain lines (0.2394% of event weight) are reported and
 excluded below the 0.5% ceiling; the SVG has zero unresolved/null frames. A
 bounded task-table viewport and one shared borrowed task projection removed
 full-inventory formatting, cloning, and repeated sorting, reducing the same
-workload from roughly 6.3 seconds to 3.731 seconds. The final exclusive costs
+workload from roughly 6.3 seconds to 4.028 seconds in the final capture. The
+exclusive costs
 are expected Ratatui buffer/Unicode work, with shared task sorting at 2.66%.
 The validator, format, Clippy, full workspace tests, all 43 bridge tests,
 documentation, and roadmap checks pass.
@@ -188,14 +191,10 @@ the task registry now capture the approved reference's dark panel grid,
 blue selection, lime progress, amber hierarchy, one-line operational header,
 context command rail, and task/log/history composition.
 
-`FINAL-GATE-PERF-001` is `BLOCKED` only on host policy: the clean terminal gate
-passes roadmap, workspace tests, Clippy, terminal tests, fuzzing, stress,
-ASan/LSan, Rust coverage, audit/deny, all 39 Python bridge tests at 75.95%
-packaged-source coverage, and Valgrind with zero lost bytes. This host currently
-has `kernel.perf_event_paranoid=4`, so `scripts/flamegraph.sh` cannot sample.
-An operator must temporarily grant `CAP_PERFMON` or lower that policy and rerun
-the Flamegraph and completion commands. The published 0.1.0 release is not
-affected.
+`FINAL-GATE-PERF-001` was initially blocked on host perf policy after the other
+release checks passed. Temporary sampling access subsequently produced strict
+resolved evidence and the complete gate passed; the terminal record is at the
+top of this document. The published 0.1.0 release was not affected.
 
 `CRATESIO-COVERAGE-001` is `DONE`: Python coverage now measures the canonical
 bridge bundled in `yoctui-bitbake`, while Ruff and mypy inspect both the

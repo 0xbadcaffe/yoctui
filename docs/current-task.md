@@ -12,11 +12,11 @@ Run the complete repository completion gate while real Linux perf sampling is
 temporarily available, record the terminal result, and restore the host's
 original perf security policy afterward.
 
-The CLI and sanitizer corrections pass. The sixth candidate passed Ruff and
-then exposed an unsafe optional import spec in the bridge test loader under
-mypy. The loader now fails explicitly when its spec or loader is absent; Ruff,
-mypy, and all 43 bridge tests pass. This seventh terminal candidate is ready for
-the complete gate.
+The seventh candidate passed the complete repository gate. Its fresh perf
+capture recorded 2,014 samples over 6,000 deterministic frames with the stable
+`95f340a128cd6012` checksum, no lost samples, and zero unresolved/null output
+frames. Restoring the host policy requires an interactive sudo credential; run
+`sudo sysctl -w kernel.perf_event_paranoid=4` to restore the original value.
 
 ## Dependencies
 
