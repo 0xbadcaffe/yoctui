@@ -886,6 +886,16 @@ drives a bounded detail panel containing typed operation, type, exact state,
 context, known times, warning/error counts, outcome, and latest retained output.
 An empty view explicitly states that no jobs or build records are retained.
 
+Both Job History surfaces include the same compact background-job summary.
+`Active` counts Starting, Running, and Cancelling jobs; `Queued` remains
+separate; `Failed` counts only the exact Failed state; and `Recent complete`
+counts every retained terminal background job. Completed build records are not
+added because a build may already have a background-job record. `Daemon-owned`
+is shown only while the client has a Current daemon replica and is the exact
+number of summaries in that replica; stale, synchronizing, and disconnected
+replicas omit the count. At widths below 84 columns the stable textual form is
+`A<n> Q<n> F<n> Done<n> [D<n>]`; it remains text rather than color-only state.
+
 The wide Tasks Inspector is subdivided into titled sections:
 
 - selected task metadata

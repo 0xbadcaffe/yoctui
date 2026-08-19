@@ -2,23 +2,24 @@
 
 ## Task
 
-**ID:** JOB-UI-002
-**Title:** Add compact job summary
+**ID:** INSPECTOR-UI-001
+**Title:** Redesign Inspector shell
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add a compact, reusable summary of retained and active background work using
-only counts available from typed model state.
+Provide one consistent dense-but-readable Inspector structure for every
+supported typed selection without moving parsing or state into widgets.
 
 ## Dependencies
 
-- `JOB-UI-001` — DONE
+- `FOUNDATION-UI-003` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/lib.rs`
 - `crates/yoctui-ui/src/lib.rs`
+- `crates/yoctui-ui/src/primitives.rs`
+- `crates/yoctui-model/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
@@ -27,19 +28,22 @@ only counts available from typed model state.
 
 ## Definition of done
 
-- A compact summary shows authoritative active, queued, failed, and recently
-  completed counts.
-- Daemon-owned work is labeled and counted only where ownership is known.
-- Embedded and standalone Job History surfaces share the same projection.
-- Compact and wide forms preserve every required state without relying on
-  color.
-- Empty history remains explicit and no count is fabricated.
+- Typed Inspector modes have a consistent title and section order: primary
+  facts, secondary facts, related paths, recent output, contextual actions.
+- Existing task, recipe, layer, file, dependency, package, artifact, job,
+  error, test, utility, daemon/session, and compatibility selections retain
+  their authoritative content and actions.
+- Missing sections are omitted or explicitly unavailable; no placeholder data
+  is invented.
+- Wide Inspector panels are dense and readable, and collapsed/narrow layouts
+  preserve access through existing focus/navigation paths.
+- Theme, no-color, and focus styling use semantic roles.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_job_summary
-cargo test -p yoctui-model background_job
+cargo test -p yoctui-ui next_generation_inspector_shell
+cargo test -p yoctui-ui inspector
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

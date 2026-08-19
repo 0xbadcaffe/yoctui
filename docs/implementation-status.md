@@ -11,8 +11,15 @@ Status values:
 
 ## Current phase
 
-`JOB-UI-002` is `IN_PROGRESS`. It will add one compact authoritative summary
-for active, queued, failed, recently completed, and daemon-owned jobs.
+`INSPECTOR-UI-001` is `IN_PROGRESS`. It will establish one consistent typed
+Inspector shell for title, primary/secondary facts, paths, output, and actions.
+
+`JOB-UI-002` is `DONE`: a pure bounded summary separates queued from executing
+background work, counts exact failures and all retained terminal completions,
+excludes build-history duplicates, and reports daemon-owned records only for a
+Current replica. Embedded and standalone Job History titles share the same
+wide/compact textual projection. Focused model/TestBackend coverage and the
+reviewed canonical golden pass.
 
 `JOB-UI-001` is `DONE`: one borrowed model projection combines bounded
 background jobs and retained build records, pins nonterminal work first, and

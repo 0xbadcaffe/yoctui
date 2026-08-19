@@ -1557,6 +1557,15 @@ pub enum JobHistoryRowRef<'a> {
     Background(&'a BackgroundJob),
     Build(&'a BuildRecord),
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct JobSummary {
+    pub active: usize,
+    pub queued: usize,
+    pub failed: usize,
+    pub recent_completed: usize,
+    pub daemon_owned: Option<usize>,
+}
 impl BackgroundJob {
     fn from_spec(spec: BackgroundJobSpec) -> Self {
         Self {
@@ -3108,6 +3117,29 @@ impl App {
             .chain(terminal)
             .chain(self.build_history.iter().rev().map(JobHistoryRowRef::Build))
             .collect()
+    }
+    pub fn job_summary(&self) -> JobSummary {
+        let mut summary = JobSummary {
+            daemon_owned: (self.daemon.status == ClientReplicaStatus::Current)
+                .then_some(self.daemon.jobs.len()),
+            ..JobSummary::default()
+        };
+        for job in &self.background_jobs.jobs {
+            match job.status {
+                BackgroundJobStatus::Queued => summary.queued += 1,
+                BackgroundJobStatus::Starting
+                | BackgroundJobStatus::Running
+                | BackgroundJobStatus::Cancelling => summary.active += 1,
+                BackgroundJobStatus::Failed => {
+                    summary.failed += 1;
+                    summary.recent_completed += 1;
+                }
+                BackgroundJobStatus::Succeeded
+                | BackgroundJobStatus::Cancelled
+                | BackgroundJobStatus::Lost => summary.recent_completed += 1,
+            }
+        }
+        summary
     }
     pub fn visible_task_row_refs_at(&self, now: SystemTime) -> Vec<TaskRowRef<'_>> {
         let state_matches = |state: TaskState| match self.task_filters.state {
@@ -14400,6 +14432,82 @@ mod tests {
         ));
         let _ = update(&mut app, Action::SelectBuildHistory { delta: 99 });
         assert_eq!(app.build_history_selection, 2);
+    }
+
+    #[test]
+    fn background_job_summary_counts_exact_states_and_current_daemon_ownership() {
+        let mut app = App::new(10, 1_000);
+        for id in 1..=4 {
+            let _ = update(
+                &mut app,
+                Action::QueueBackgroundJob(background_job_spec(id, true)),
+            );
+        }
+        run_background_job(&mut app, 2);
+        let _ = update(
+            &mut app,
+            Action::StartBackgroundJob {
+                id: BackgroundJobId(3),
+                started_at: SystemTime::UNIX_EPOCH + Duration::from_secs(3),
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::RunBackgroundJob {
+                id: BackgroundJobId(3),
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::FailBackgroundJob {
+                id: BackgroundJobId(3),
+                error: BackgroundJobError {
+                    summary: "failed".into(),
+                    detail: None,
+                },
+                finished_at: SystemTime::UNIX_EPOCH + Duration::from_secs(4),
+            },
+        );
+        run_background_job(&mut app, 4);
+        let _ = update(
+            &mut app,
+            Action::SucceedBackgroundJob {
+                id: BackgroundJobId(4),
+                result: BackgroundJobResult {
+                    summary: "done".into(),
+                    artifacts: Vec::new(),
+                },
+                finished_at: SystemTime::UNIX_EPOCH + Duration::from_secs(5),
+            },
+        );
+        app.build_history.push_back(BuildRecord {
+            target: Some("already represented".into()),
+            success: false,
+            exit_code: Some(1),
+            elapsed: Some(Duration::from_secs(5)),
+            completed_tasks: 1,
+            warnings: 0,
+            errors: 1,
+        });
+        app.daemon.status = ClientReplicaStatus::Current;
+        app.daemon.jobs.push(ClientDaemonJobSummary {
+            id: 90,
+            label: "daemon job".into(),
+            lifecycle: ClientDaemonLifecycle::Running,
+        });
+
+        assert_eq!(
+            app.job_summary(),
+            JobSummary {
+                active: 1,
+                queued: 1,
+                failed: 1,
+                recent_completed: 2,
+                daemon_owned: Some(1),
+            }
+        );
+        app.daemon.status = ClientReplicaStatus::Stale;
+        assert_eq!(app.job_summary().daemon_owned, None);
     }
     #[test]
     fn background_job_cancellation_requires_capability_and_acknowledgement() {

@@ -4370,6 +4370,28 @@ fn job_history_columns(width: u16) -> Vec<JobHistoryColumn> {
     columns
 }
 
+fn job_summary_label(app: &App, width: u16) -> String {
+    let summary = app.job_summary();
+    let daemon = summary.daemon_owned.map_or_else(String::new, |count| {
+        if width >= 84 {
+            format!(" · Daemon-owned {count}")
+        } else {
+            format!(" D{count}")
+        }
+    });
+    if width >= 84 {
+        format!(
+            "Active {} · Queued {} · Failed {} · Recent complete {}{}",
+            summary.active, summary.queued, summary.failed, summary.recent_completed, daemon
+        )
+    } else {
+        format!(
+            "A{} Q{} F{} Done{}{}",
+            summary.active, summary.queued, summary.failed, summary.recent_completed, daemon
+        )
+    }
+}
+
 fn job_elapsed(row: JobHistoryRowRef<'_>, now: SystemTime) -> Option<Duration> {
     match row {
         JobHistoryRowRef::Background(job) => job
@@ -4433,6 +4455,7 @@ fn job_history_cell(
 
 fn render_job_history(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let history = app.job_history_rows();
+    let title = format!("Job History · {}", job_summary_label(app, area.width));
     let columns = job_history_columns(area.width);
     let capacity = usize::from(area.height.saturating_sub(3));
     let rows = history.iter().copied().take(capacity).map(|row| {
@@ -4456,7 +4479,7 @@ fn render_job_history(frame: &mut Frame, app: &App, area: Rect, now: SystemTime)
                     palette.role(palette.table_header, Modifier::BOLD)
                 }),
             )
-            .block(Block::default().title("Job History").borders(Borders::ALL)),
+            .block(Block::default().title(title).borders(Borders::ALL)),
         area,
     );
 }
@@ -9145,7 +9168,8 @@ fn build_history(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
             .block(
                 Block::default()
                     .title(format!(
-                        "Job History / Build history ({} retained · {} active pinned)",
+                        "Job History / Build history · {} · {} retained · {} jobs pinned",
+                        job_summary_label(app, chunks[0].width),
                         history.len(),
                         active
                     ))
@@ -16890,7 +16914,7 @@ mod tests {
         app.build_history_selection = failed;
         let output = rendered_text_at(&app, 180, 34, UNIX_EPOCH + Duration::from_secs(100));
         for expected in [
-            "4 active pinned",
+            "4 jobs pinned",
             "· Queued",
             "… Starting",
             "▶ Running",
@@ -16910,6 +16934,69 @@ mod tests {
             matches!(first, JobHistoryRowRef::Background(job) if !job.status.is_terminal()),
             "active work stays pinned ahead of terminal history"
         );
+    }
+
+    #[test]
+    fn next_generation_job_summary_is_shared_compact_and_authoritative() {
+        let mut app = App::new(10, 1_000);
+        for (index, status) in [
+            BackgroundJobStatus::Queued,
+            BackgroundJobStatus::Running,
+            BackgroundJobStatus::Failed,
+            BackgroundJobStatus::Succeeded,
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            app.background_jobs
+                .jobs
+                .push_back(yoctui_model::BackgroundJob {
+                    id: yoctui_model::BackgroundJobId(index as u64 + 1),
+                    kind: BackgroundJobKind::Build,
+                    title: format!("job-{index}"),
+                    status,
+                    context: yoctui_model::BackgroundJobContext::default(),
+                    cancellation_supported: true,
+                    progress: yoctui_model::BackgroundJobProgress::Indeterminate,
+                    output: std::collections::VecDeque::new(),
+                    retained_output_bytes: 0,
+                    dropped_output_entries: 0,
+                    warnings: 0,
+                    errors: usize::from(status == BackgroundJobStatus::Failed),
+                    queued_at: UNIX_EPOCH,
+                    started_at: (status != BackgroundJobStatus::Queued)
+                        .then_some(UNIX_EPOCH + Duration::from_secs(1)),
+                    finished_at: status
+                        .is_terminal()
+                        .then_some(UNIX_EPOCH + Duration::from_secs(2)),
+                    result: None,
+                    error: None,
+                });
+        }
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        for id in 10..12 {
+            app.daemon.jobs.push(yoctui_model::ClientDaemonJobSummary {
+                id,
+                label: format!("daemon-{id}"),
+                lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+            });
+        }
+
+        let wide = "Active 1 · Queued 1 · Failed 1 · Recent complete 2 · Daemon-owned 2";
+        assert_eq!(job_summary_label(&app, 100), wide);
+        assert_eq!(job_summary_label(&app, 70), "A1 Q1 F1 Done2 D2");
+
+        app.screen = Screen::Tasks;
+        let embedded = rendered_text_at(&app, 180, 44, UNIX_EPOCH + Duration::from_secs(10));
+        assert!(embedded.contains(wide), "{embedded}");
+
+        app.screen = Screen::BuildHistory;
+        let standalone = rendered_text_at(&app, 180, 34, UNIX_EPOCH + Duration::from_secs(10));
+        assert!(standalone.contains("A1 Q1 F1 Done2 D2"), "{standalone}");
+
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Stale;
+        assert_eq!(job_summary_label(&app, 70), "A1 Q1 F1 Done2");
+        assert!(!job_summary_label(&app, 100).contains("Daemon-owned"));
     }
     #[test]
     fn dependency_workspace_renders_typed_partial_graph_paths_and_responsive_states() {

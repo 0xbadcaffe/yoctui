@@ -502,6 +502,13 @@ and standalone Job History tables. Ratatui chooses columns and formats typed
 timestamps, but never infers missing identity, context, time, or outcome from
 process text.
 
+`yoctui_model::JobSummary` is the pure bounded aggregate used by both Job
+History surfaces. It counts only `BackgroundJobs` lifecycle records, so the
+parallel completed-build retention cannot double-count one operation. Daemon
+ownership is an optional count derived only from a Current
+`ClientDaemonView`; stale or absent replicas produce `None`, which renderers
+must omit rather than display as zero.
+
 `yoctui_ui::SemanticTheme` is the single rendering color boundary. It resolves
 each typed theme and the no-color override into named surface, text, border,
 selection, lifecycle, emphasis, graph, and source-preview roles. Renderers and

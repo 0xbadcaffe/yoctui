@@ -5189,18 +5189,18 @@ notes = "Added one borrowed model projection over bounded background jobs and re
 id = "JOB-UI-002"
 milestone = "M19"
 title = "Add compact job summary"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 532
 required = true
 depends_on = ["JOB-UI-001"]
 verify = ["cargo test -p yoctui-ui next_generation_job_summary"]
-notes = "Show authoritative active, queued, failed, recent-completed, and daemon-owned counts."
+notes = "Added a pure bounded JobSummary projection that separates queued from executing work, counts exact failures and all retained terminal completions, excludes duplicate build-history records, and reports daemon-owned records only for a Current replica. Embedded and standalone Job History titles share responsive wide/compact text. Focused model/TestBackend coverage and the reviewed canonical golden verify the projection."
 
 [[task]]
 id = "INSPECTOR-UI-001"
 milestone = "M19"
 title = "Redesign Inspector shell"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 533
 required = true
 depends_on = ["FOUNDATION-UI-003"]
