@@ -1091,5 +1091,12 @@ now install the daemon snapshot and reject absent or mismatched authority before
 operation. The machine-readable 90-day record and offline verifier reject
 fixtures, stale dates, ambiguous commits, missing workflows, implausible
 metrics, and non-ancestor Yoctui code. The exact revision is Tested, while a
-supported release window remains pending `COMPAT-LIVE-OLDER-001`, which is
-active next.
+supported release window remained gated on the older anchor and matrix
+automation. `COMPAT-LIVE-OLDER-001` is complete. Authoritative support policy,
+calendar, and release notes selected maintained Scarthgap 5.0.19 and bound the
+fresh Poky checkout to Poky `bb983546`, OE-Core `2814f096`, BitBake `0880963f`
+(`2.8.1`), and meta-yocto `2f749ae`. Daemon/Doctor identity and degraded reasons,
+1,829 Recipes, three Layers, capability-authorized Configuration, initialized
+utility surfaces, an exit-0 `base-files:do_listtasks` run with 77 typed
+observations, and 0.405-second cancellation passed. The exact Tested revision
+is the lower proposed support anchor; `COMPAT-LIVE-MATRIX-001` is active next.

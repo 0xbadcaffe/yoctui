@@ -27,6 +27,7 @@ TODAY = dt.date.today()
 HEX40 = re.compile(r"[0-9a-f]{40}\Z")
 HEX64 = re.compile(r"[0-9a-f]{64}\Z")
 RELEASE = re.compile(r"[0-9]+\.[0-9]+\.[0-9]+\Z")
+YEAR_MONTH = re.compile(r"[0-9]{4}-[0-9]{2}\Z")
 OFFICIAL_HOSTS = {
     "docs.yoctoproject.org",
     "wiki.yoctoproject.org",
@@ -118,24 +119,39 @@ def verify(kind: str) -> None:
         "official_source_url",
         "official_release_calendar_url",
         "official_release_notes_url",
+        "official_support_policy_url",
         "repository_url",
         "oe_core_repository_url",
         "bitbake_repository_url",
         "meta_yocto_repository_url",
     ):
         require_url(data, kind, name)
+    composition = require_text(data, kind, "source_composition")
+    checkout = require_text(data, kind, "source_checkout")
+    if composition == "split_components":
+        if data.get("poky_commit") != data.get("meta_yocto_commit"):
+            fail(kind, "split composition poky_commit must identify the exact meta-yocto revision")
+        if checkout != "fresh_official_component_checkouts":
+            fail(kind, "split composition must identify fresh official component checkouts")
+    elif composition == "poky_checkout":
+        if checkout != "fresh_official_poky_checkout":
+            fail(kind, "Poky composition must identify a fresh official Poky checkout")
+    else:
+        fail(kind, "source_composition is unsupported")
     for name in ("poky_commit", "oe_core_commit", "bitbake_commit", "meta_yocto_commit", "yoctui_commit"):
         if not HEX40.fullmatch(require_text(data, kind, name)):
             fail(kind, f"{name} must be an exact lowercase Git commit")
-    if data["poky_commit"] != data["meta_yocto_commit"]:
-        fail(kind, "component-composition poky_commit must identify the exact meta-yocto revision")
     if not HEX64.fullmatch(require_text(data, kind, "build_identity")):
         fail(kind, "build_identity must be an exact SHA-256 fingerprint")
     if not RELEASE.fullmatch(require_text(data, kind, "yocto_release")):
         fail(kind, "yocto_release must be an exact point release")
+    if require_text(data, kind, "support_status") != "maintained_lts":
+        fail(kind, "release must be maintained under the recorded support policy")
+    if not YEAR_MONTH.fullmatch(require_text(data, kind, "support_until")):
+        fail(kind, "support_until must identify an exact policy month")
     for name in (
         "yocto_series", "bitbake_version", "distro", "machine", "backend",
-        "protocol_version", "host_identity", "source_checkout",
+        "protocol_version", "host_identity",
     ):
         require_text(data, kind, name)
 

@@ -1,0 +1,102 @@
+schema_version = 1
+kind = "older"
+observed_at = "2026-08-19"
+expires_after_days = 90
+evidence_level = "live"
+fixture_only = false
+synthetic = false
+official_checkout = true
+release_role = "older_supported"
+
+official_source_url = "https://docs.yoctoproject.org/next/migration-guides/release-notes-5.0.19.html"
+official_release_calendar_url = "https://wiki.yoctoproject.org/wiki/Release_calendar"
+official_release_notes_url = "https://docs.yoctoproject.org/next/migration-guides/release-notes-5.0.19.html"
+official_support_policy_url = "https://docs.yoctoproject.org/scarthgap/ref-manual/release-process.html"
+repository_url = "https://git.yoctoproject.org/poky"
+oe_core_repository_url = "https://git.openembedded.org/openembedded-core"
+bitbake_repository_url = "https://git.openembedded.org/bitbake"
+meta_yocto_repository_url = "https://git.yoctoproject.org/meta-yocto"
+
+poky_commit = "bb98354685781296e3b3737e7762412100f359c2"
+oe_core_commit = "2814f0962f56c8d1afa4de76d2895ba9b5cb767d"
+bitbake_commit = "0880963fea4d91a034e4a6e007d23f98658ab986"
+meta_yocto_commit = "2f749ae477c3b94dce71038f025180d7f612dab0"
+yoctui_commit = "28669570918bd0821e5d7a8508687386f7302c28"
+
+yocto_release = "5.0.19"
+yocto_series = "scarthgap"
+bitbake_version = "2.8.1"
+build_identity = "9be51c8f6ac7761ba9f8bf5cb1cc8280b95e9c7ed3e8b9c7ac5294bb128480a5"
+distro = "poky 5.0.19"
+machine = "qemux86-64"
+backend = "Tinfoil modern adapter selected centrally; direct bridge negotiation"
+protocol_version = "yoctui-daemon 1.0; bridge protocol 1"
+host_identity = "Linux 7.0.0-29-generic x86_64 GNU/Linux"
+source_checkout = "fresh_official_poky_checkout"
+source_composition = "poky_checkout"
+support_status = "maintained_lts"
+support_until = "2028-04"
+
+commands = [
+  "bitbake.version=passed",
+  "bitbake.help_options=passed",
+  "bitbake_getvar.value=passed",
+  "yoctui.doctor_json=passed",
+  "yoctui.inspect=passed",
+  "yoctui.recipes=passed",
+  "yoctui.layers=passed",
+  "yoctui.config=passed",
+  "yoctui.daemon_build=passed",
+  "yoctui.daemon_cancel=passed",
+]
+
+capabilities = [
+  "bitbake.build=available_with_limitations",
+  "bitbake.cancellation=available_with_limitations",
+  "bitbake.getvar=available",
+  "bitbake.recipe_inventory=available_with_limitations",
+  "bitbake.layer_inventory=available_with_limitations",
+  "devtool.modify=available",
+  "devtool.upgrade=unknown",
+  "recipetool.create=unknown",
+  "bitbake_layers.show_layers=available",
+  "pkgdata.lookup_pkg=available",
+  "pkgdata.generated=unavailable",
+  "build_compare=unavailable",
+  "sstate.cleanup=unavailable",
+]
+
+workflows = [
+  "environment_identity=passed",
+  "capability_probe=passed",
+  "doctor=passed",
+  "workspace_inspection=passed",
+  "recipes=passed",
+  "layers=passed",
+  "configuration=passed",
+  "core_build_events=passed",
+  "build_cancellation=passed",
+  "devtool_capabilities=passed",
+  "utility_capabilities=passed",
+  "modern_bitbake_commands=passed",
+]
+
+[metrics]
+recipe_count = 1829
+layer_count = 3
+native_event_count = 77
+successful_build_exit_code = 0
+successful_build_seconds = 4.797
+cancellation_seconds = 0.405
+doctor_available = 36
+doctor_limited = 14
+doctor_unavailable = 4
+doctor_unknown = 22
+doctor_unsupported = 0
+
+[scope]
+successful_build = "base-files:do_listtasks completed through daemon IPC with workspace, parse, task-started/task-completed, log, completion, and exit-0 terminal events."
+cancellation = "core-image-minimal cancellation used the capability-authorized Tinfoil adapter; the priority terminal invalidated pre-cancel native records and reached one shared Failed exit-1 state in 0.405 seconds."
+configuration = "Yoctui selected the positively probed bitbake-getvar --value implementation and returned MACHINE=qemux86-64; unsupported bitbake --getvar was never emitted."
+degradation = "Doctor reported degraded mode. build_compare and sstate.cleanup were Unavailable with exact absent-tool/environment reasons; pkgdata.generated was independently Unavailable; incomplete Devtool/Recipetool probes remained Unknown without implementations."
+utilities = "Manual initialized-environment help confirmed devtool modify/upgrade/finish/deploy-target, recipetool create/appendfile, bitbake-layers show-layers/create-layer, and oe-pkgdata-util lookup-pkg/find-path without upgrading incomplete daemon probe evidence."

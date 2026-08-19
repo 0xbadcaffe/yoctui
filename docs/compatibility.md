@@ -340,7 +340,7 @@ device, service, network integration, or artifact layout is compatible.
 | Component | Declared range | Validation level | Evidence and limitation |
 |---|---|---|---|
 | Bridge wire protocol | NDJSON protocol version 1 | Fixture observed and live observed | Framing, sequence/correlation, 1 MiB line bounds, malformed input, unknown messages, and unsupported versions pass deterministic Rust/Python tests. The live snapshot below negotiated version 1. |
-| Python Tinfoil bridge | Daemon-selected capability implementations plus direct operation negotiation | Live observed for exact BitBake 2.18.0 and earlier focused 2.19.0 snapshot | The bridge has no renderer/local major-version switch. It accepts only capability/implementation pairs from the daemon snapshot, negotiates callable operations, and fails closed on stale, unoffered, or absent behavior. |
+| Python Tinfoil bridge | Daemon-selected capability implementations plus direct operation negotiation | Live observed for exact BitBake 2.8.1 and 2.18.0; earlier focused 2.19.0 snapshot | The bridge has no renderer/local major-version switch. It accepts only capability/implementation pairs from the daemon snapshot, negotiates callable operations, and fails closed on stale, unoffered, or absent behavior. |
 | Environment-only bridge | Used when Python cannot import a versioned `bb` module | Fixture observed | Supports safe protocol and environment inspection. It is not a build-control adapter and cannot establish live compatibility. |
 | Direct process backend | Inherited `bitbake` executable | Fixture/static observed | Shell-free process execution, output bounds, exit, loss, timeout, and process-group cancellation pass fake-process and headless hardening tests. No live Yocto release is currently recorded for this backend. |
 | CLI/headless bridge diagnostic | Repository directory without Yocto | Static/host observed | `./scripts/test-cli.sh` and `./scripts/headless-workload.sh target/debug/yoctui bridge` validate startup, bounded handshake/shutdown, isolated session state, and explicit absent daemon compatibility authority. They do not run a workspace API or live BitBake without a daemon snapshot. |
@@ -371,8 +371,40 @@ Devtool probes remained Unknown even when manual help was retained as live
 diagnostic evidence.
 
 The exact revision is classified **Tested** in the release matrix. The broader
-supported-window claim remains pending a materially older live baseline and the
-M18 parent gate.
+supported-window claim remains pending multi-release automation and the M18
+parent gate.
+
+## Current older-LTS live evidence
+
+On **2026-08-19**, authoritative Yocto release policy identified Scarthgap 5.0
+as a maintained LTS through April 2028, and the release calendar showed 5.0.19
+as published while 5.0.20 remained scheduled. The official 5.0.19 release
+notes identify Poky commit `bb98354685781296e3b3737e7762412100f359c2`,
+OE-Core `2814f0962f56c8d1afa4de76d2895ba9b5cb767d`, BitBake
+`0880963fea4d91a034e4a6e007d23f98658ab986`, and meta-yocto
+`2f749ae477c3b94dce71038f025180d7f612dab0`.
+
+The production daemon detected Scarthgap/Poky 5.0.19, BitBake 2.8.1,
+qemux86-64, three configured layers, initialized tools, and protocol 1 from a
+fresh official Poky checkout. Doctor exposed the same snapshot in degraded
+mode: 36 Available, 14 AvailableWithLimitations, four Unavailable, 22 Unknown,
+and no Unsupported capabilities. Exact reasons identify absent build-compare
+and sstate-cleanup tooling, missing generated pkgdata, and incomplete utility
+probes; Unknown actions have no selected implementation.
+
+Live scope included 1,829 Recipes, three Layers, `MACHINE=qemux86-64` through
+the positively probed `bitbake-getvar --value` implementation, the initialized
+Devtool/Recipetool/bitbake-layers/pkgdata surfaces, and a successful
+`base-files:do_listtasks` daemon run with 77 typed workspace/parse/task/log/
+completion observations. A separate `core-image-minimal` cancellation exposed
+and fixed older-event ordering, then reached the shared Failed terminal in
+0.405 seconds. No `bitbake --getvar` form or another unsupported argv was
+emitted. The exact machine-readable scope is in
+[`compatibility-evidence/older.toml`](compatibility-evidence/older.toml).
+
+This exact maintained revision is classified **Tested**. It is the lower live
+anchor for the proposed support window; automation and the M18 parent gate must
+still pass before the repository promotes a broader release-family claim.
 
 ## Observed live Yocto combination
 

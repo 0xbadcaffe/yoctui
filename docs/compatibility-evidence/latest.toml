@@ -11,6 +11,7 @@ release_role = "latest_published_stable"
 official_source_url = "https://docs.yoctoproject.org/next/migration-guides/release-notes-6.0.2.html"
 official_release_calendar_url = "https://wiki.yoctoproject.org/wiki/Release_calendar"
 official_release_notes_url = "https://docs.yoctoproject.org/next/migration-guides/release-notes-6.0.2.html"
+official_support_policy_url = "https://docs.yoctoproject.org/dev/ref-manual/release-process.html"
 repository_url = "https://git.yoctoproject.org/poky"
 oe_core_repository_url = "https://git.openembedded.org/openembedded-core"
 bitbake_repository_url = "https://git.openembedded.org/bitbake"
@@ -35,6 +36,9 @@ backend = "Tinfoil modern adapter selected centrally; direct bridge negotiation"
 protocol_version = "yoctui-daemon 1.0; bridge protocol 1"
 host_identity = "Linux 7.0.0-29-generic x86_64 GNU/Linux"
 source_checkout = "fresh_official_component_checkouts"
+source_composition = "split_components"
+support_status = "maintained_lts"
+support_until = "2030-04"
 
 commands = [
   "bitbake.version=passed",
