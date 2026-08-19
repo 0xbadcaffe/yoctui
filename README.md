@@ -140,9 +140,10 @@ yoctui --build-dir "$BUILDDIR" doctor --json
 ```
 
 The exact Scarthgap 5.0.19 / BitBake 2.8.1 and Wrynose 6.0.2 / BitBake 2.18.0
-revisions are currently classified **Tested**. This does not turn fixtures or
-an optional development snapshot into a support claim. Live records expire
-after 90 days and after relevant capability-contract changes. See the
+revisions bound the current **Claimed supported** window. Capabilities are still
+probed independently; this claim does not cover an unrecorded point revision,
+fixtures, or an optional development snapshot. Live records expire after 90
+days and after relevant capability-contract changes. See the
 [compatibility contract](docs/compatibility.md) and
 [release matrix](docs/compatibility-matrix.md) for exact revisions, scope, and
 renewal policy.

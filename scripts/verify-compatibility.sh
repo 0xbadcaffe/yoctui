@@ -26,7 +26,7 @@ try:
 except (OSError, tomllib.TOMLDecodeError) as exc:
     raise SystemExit(f"compatibility gate: task registry does not parse: {exc}")
 
-required_ids = {
+expected_ids = {
     "COMPAT-SPEC-001", "COMPAT-ENV-ID-001", "COMPAT-CAP-MODEL-001",
     "COMPAT-CATALOG-001", "COMPAT-PROBE-001", "COMPAT-VERSION-001",
     "COMPAT-BITBAKE-CMD-001", "COMPAT-BITBAKE-API-001",
@@ -40,12 +40,21 @@ required_ids = {
     "COMPAT-DAEMON-RUNTIME-001",
     "COMPAT-PROBE-AGGREGATION-001",
     "COMPAT-BITBAKE-CANCEL-RUNTIME-001",
+    "COMPAT-BITBAKE-CANCEL-ORDER-001",
     "COMPAT-LIVE-LATEST-001", "COMPAT-LIVE-OLDER-001",
     "COMPAT-LIVE-MATRIX-001", "COMPAT-CI-001", "COMPAT-DOC-001",
     "COMPAT-001",
 }
 tasks = {task.get("id"): task for task in registry.get("task", [])}
-missing = sorted(required_ids - tasks.keys())
+required_ids = {
+    task_id
+    for task_id, task in tasks.items()
+    if isinstance(task_id, str)
+    and task_id.startswith("COMPAT-")
+    and task.get("milestone") == "M18"
+    and task.get("required") is True
+}
+missing = sorted(expected_ids - required_ids)
 if missing:
     raise SystemExit("compatibility gate: required registry tasks missing: " + ", ".join(missing))
 for task_id in sorted(required_ids):
@@ -90,20 +99,15 @@ for line in current_matrix.splitlines():
 if not matrix_rows:
     raise SystemExit("compatibility gate: current matrix has no release rows")
 
-claimed = [row for row in matrix_rows if row[2] == "Claimed supported"]
-if claimed:
-    for kind in ("latest", "older"):
-        path = root / f"docs/compatibility-evidence/{kind}.toml"
-        try:
-            claim_evidence = tomllib.loads(path.read_text(encoding="utf-8"))
-        except (OSError, tomllib.TOMLDecodeError) as exc:
-            raise SystemExit(
-                f"compatibility gate: claimed support lacks parseable live {kind} evidence: {exc}"
-            )
-        if claim_evidence.get("evidence_level") != "live" or claim_evidence.get("fixture_only") is not False:
-            raise SystemExit(
-                f"compatibility gate: claimed support cannot use fixture-only {kind} evidence"
-            )
+compatibility = root / "docs/compatibility.md"
+readme = root / "README.md"
+for path in (compatibility, readme):
+    if not path.is_file() or path.stat().st_size == 0:
+        raise SystemExit(f"compatibility gate: {path.relative_to(root)} is missing or empty")
+    if "Yoctui functionality is Yocto-feature-correlated" not in path.read_text(encoding="utf-8"):
+        raise SystemExit(
+            f"compatibility gate: {path.relative_to(root)} lacks the product compatibility rule"
+        )
 
 if mode == "--structure-only":
     print("compatibility milestone structure is valid")
@@ -120,6 +124,7 @@ if missing_parent_edges:
     raise SystemExit("compatibility gate: COMPAT-001 lacks child dependencies: " + ", ".join(missing_parent_edges))
 
 today = dt.date.today()
+evidence_by_kind: dict[str, dict] = {}
 for kind in ("latest", "older"):
     path = root / f"docs/compatibility-evidence/{kind}.toml"
     try:
@@ -144,6 +149,25 @@ for kind in ("latest", "older"):
         raise SystemExit(f"compatibility gate: invalid {kind} evidence date policy: {exc}")
     if expiry < 1 or observed > today or (today - observed).days > expiry:
         raise SystemExit(f"compatibility gate: {kind} live evidence is stale or future-dated")
+    evidence_by_kind[kind] = evidence
+
+claimed = [row for row in matrix_rows if row[2] == "Claimed supported"]
+if len(claimed) < 2:
+    raise SystemExit(
+        "compatibility gate: parent completion requires claimed-supported latest and older rows"
+    )
+for kind, evidence in evidence_by_kind.items():
+    release = str(evidence["yocto_release"])
+    bitbake = str(evidence["bitbake_version"])
+    link = f"compatibility-evidence/{kind}.toml"
+    matches = [
+        row for row in claimed
+        if release in row[0] and row[1].strip("`") == bitbake and link in row[3]
+    ]
+    if len(matches) != 1:
+        raise SystemExit(
+            f"compatibility gate: {kind} live identity is not exactly represented as Claimed supported"
+        )
 
 print("compatibility registry, documentation, and live evidence are current")
 PY

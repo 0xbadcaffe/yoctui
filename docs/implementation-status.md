@@ -1122,4 +1122,11 @@ environments, and points to the shared Compatibility inspector and Doctor
 snapshot. The release policy names the exact Scarthgap 5.0.19 and Wrynose 6.0.2
 Tested anchors, preserves the distinction from a broader Claimed-supported
 window, documents the 90-day renewal rule, and keeps fixtures and optional
-development runs non-claiming. `COMPAT-001` is active next.
+development runs non-claiming. `COMPAT-001` is complete. The dedicated gate now
+discovers every required M18 compatibility task, retains an explicit minimum
+contract, checks the product rule in README and compatibility documentation,
+requires exact Claimed-supported latest and older matrix rows, and delegates to
+the deterministic and strict live-evidence verifiers. The exact current support
+anchors are Scarthgap 5.0.19 / BitBake 2.8.1 and Wrynose 6.0.2 / BitBake 2.18.0;
+other point releases, fixtures, and development snapshots remain outside that
+claim. All M18 children and the parent are complete.

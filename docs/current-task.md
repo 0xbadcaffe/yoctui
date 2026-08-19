@@ -2,46 +2,49 @@
 
 ## Task
 
-**ID:** COMPAT-001
-**Title:** Complete Yocto release correlated functionality
-**Status:** IN_PROGRESS
+**ID:** FINAL-GATE-PERF-001
+**Title:** Rerun the terminal gate with perf sampling enabled
+**Status:** BLOCKED
 
 ## Objective
 
-Close the M18 parent gate only after the centralized daemon-owned capability
-architecture, dynamic UI/command authority, deterministic compatibility tests,
-current latest-plus-older live evidence, and completion verification all pass
-together.
+Complete the final clean-checkout gate with real Linux `perf` sampling and a
+fresh deterministic Yoctui flamegraph.
 
 ## Dependencies
 
-- Every required `COMPAT-*` child — DONE
+- `CRATESIO-COVERAGE-001` — DONE
+- `UI-STARTUP-DIAG-001` — DONE
 
 ## Relevant files
 
-- `scripts/verify-compatibility.sh`
+- `scripts/flamegraph.sh`
 - `scripts/verify-completion.sh`
+- `artifacts/flamegraph/yoctui.svg`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 - `docs/current-task.md`
 
 ## Definition of done
 
-- Every required compatibility child remains DONE.
-- The dedicated verifier independently checks deterministic model, probe,
-  command, UI, future-release, documentation, and current non-fixture live
-  evidence gates.
-- Completion cannot pass from registry status alone or from fixture evidence.
-- The full workspace baseline and roadmap checks pass.
-- M18 is promoted to DONE only after all gates pass.
+- `perf record -- true` succeeds with real sampling permission.
+- `./scripts/flamegraph.sh` records a fresh deterministic flamegraph from the
+  real Yoctui release workload.
+- `./scripts/verify-completion.sh` passes.
+- The task is marked DONE only after those commands pass.
+
+## Blocker
+
+On 2026-08-19, `perf record --no-buildid-mmap -e dummy:u -- true` fails because
+this host has `kernel.perf_event_paranoid=4` and the current process has no
+`CAP_PERFMON`, `CAP_SYS_PTRACE`, or `CAP_SYS_ADMIN`. Changing that host security
+policy requires operator authority; product tests cannot substitute for real
+sampling.
 
 ## Verification
 
 ```bash
-./scripts/verify-compatibility.sh
-cargo fmt --all --check
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-python3 -m pytest bridge/tests
-./scripts/verify-roadmap.sh
+perf record -- true
+./scripts/flamegraph.sh
+./scripts/verify-completion.sh
 ```

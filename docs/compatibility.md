@@ -87,12 +87,14 @@ substitute for capability probes:
 
 The support window is evidence-driven and recorded in
 `compatibility-matrix.md`; it is not compiled into UI conditionals. Current
-non-fixture anchors are exact **Tested** revisions: maintained Scarthgap 5.0.19
+non-fixture anchors are exact live-validated revisions: maintained Scarthgap 5.0.19
 with BitBake 2.8.1 at the proposed lower boundary, and Wrynose 6.0.2 with
 BitBake 2.18.0 as the latest published stable observed on 2026-08-19. Both live
-records satisfy the machine-readable evidence policy. The broader release
-window becomes **Claimed supported** only when the M18 parent gate passes; an
-earlier BitBake 2.19.0 development snapshot remains merely Partially tested.
+records satisfy the machine-readable evidence policy and bound the current
+**Claimed supported** window. The claim attaches to the exact recorded release
+identities and required workflow set; it does not replace per-capability
+probing or silently extend to another point revision. An earlier BitBake 2.19.0
+development snapshot remains merely Partially tested.
 
 An unsupported release does not crash the application. Yoctui opens in
 diagnostic degraded mode, identifies what it can, enables safe positively
@@ -385,8 +387,9 @@ evidence. `pkgdata.generated` remained honestly Unavailable, and incomplete
 Devtool probes remained Unknown even when manual help was retained as live
 diagnostic evidence.
 
-The exact revision is classified **Tested** in the release matrix. The broader
-supported-window claim remains pending the M18 parent gate.
+The exact revision is the current **Claimed supported** upper anchor in the
+release matrix. Individual runtime actions still require connected-environment
+capability evidence.
 
 ## Current older-LTS live evidence
 
@@ -416,9 +419,9 @@ and fixed older-event ordering, then reached the shared Failed terminal in
 emitted. The exact machine-readable scope is in
 [`compatibility-evidence/older.toml`](compatibility-evidence/older.toml).
 
-This exact maintained revision is classified **Tested**. It is the lower live
-anchor for the proposed support window; the M18 parent gate must still pass
-before the repository promotes a broader release-family claim.
+This exact maintained revision is the current **Claimed supported** lower live
+anchor. The claim covers the recorded required workflow set and does not infer
+support for an untested Scarthgap point revision.
 
 ## Observed live Yocto combination
 
