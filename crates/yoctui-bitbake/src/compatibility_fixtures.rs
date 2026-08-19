@@ -214,6 +214,29 @@ pub fn release_capability_fixtures() -> Vec<ReleaseCapabilityFixture> {
             .id
             .clone()
     };
+    let complete = |id, status, subject: &str| {
+        vec![
+            observation(status, subject);
+            catalog
+                .entry(id)
+                .expect("fixture capability must be cataloged")
+                .probes
+                .len()
+        ]
+    };
+    let conflicting = |id, subject: &str| {
+        let mut observations = complete(id, CapabilityProbeStatus::Positive, subject);
+        observations
+            .last_mut()
+            .expect("catalog probes are nonempty")
+            .status = CapabilityProbeStatus::Negative;
+        observations
+            .last_mut()
+            .expect("catalog probes are nonempty")
+            .evidence
+            .outcome = CapabilityEvidenceOutcome::Negative;
+        observations
+    };
     vec![
         ReleaseCapabilityFixture {
             role: CompatibilityFixtureRole::OldestPolicyCandidate,
@@ -226,15 +249,36 @@ pub fn release_capability_fixtures() -> Vec<ReleaseCapabilityFixture> {
             ),
             observations: BTreeMap::from([
                 (
+                    CapabilityId::BitBakeWorkspaceInspection,
+                    complete(
+                        CapabilityId::BitBakeWorkspaceInspection,
+                        CapabilityProbeStatus::Inconclusive,
+                        "workspace backend unprobeable",
+                    ),
+                ),
+                (
+                    CapabilityId::BitBakeBuild,
+                    complete(
+                        CapabilityId::BitBakeBuild,
+                        CapabilityProbeStatus::Inconclusive,
+                        "build backend unprobeable",
+                    ),
+                ),
+                (
                     CapabilityId::DevtoolUpgrade,
-                    vec![observation(
+                    complete(
+                        CapabilityId::DevtoolUpgrade,
                         CapabilityProbeStatus::Negative,
                         "devtool upgrade",
-                    )],
+                    ),
                 ),
                 (
                     CapabilityId::ResultTool,
-                    vec![observation(CapabilityProbeStatus::Negative, "resulttool")],
+                    complete(
+                        CapabilityId::ResultTool,
+                        CapabilityProbeStatus::Negative,
+                        "resulttool",
+                    ),
                 ),
             ]),
             expectations: vec![
@@ -269,13 +313,32 @@ pub fn release_capability_fixtures() -> Vec<ReleaseCapabilityFixture> {
                 Some("2.8.0"),
                 None,
             ),
-            observations: BTreeMap::from([(
-                CapabilityId::DevtoolUpgrade,
-                vec![observation(
-                    CapabilityProbeStatus::Positive,
-                    "devtool upgrade",
-                )],
-            )]),
+            observations: BTreeMap::from([
+                (
+                    CapabilityId::BitBakeWorkspaceInspection,
+                    complete(
+                        CapabilityId::BitBakeWorkspaceInspection,
+                        CapabilityProbeStatus::Inconclusive,
+                        "workspace backend unprobeable",
+                    ),
+                ),
+                (
+                    CapabilityId::BitBakeBuild,
+                    complete(
+                        CapabilityId::BitBakeBuild,
+                        CapabilityProbeStatus::Inconclusive,
+                        "build backend unprobeable",
+                    ),
+                ),
+                (
+                    CapabilityId::DevtoolUpgrade,
+                    complete(
+                        CapabilityId::DevtoolUpgrade,
+                        CapabilityProbeStatus::Positive,
+                        "devtool upgrade",
+                    ),
+                ),
+            ]),
             expectations: vec![
                 expectation(
                     CapabilityId::BitBakeWorkspaceInspection,
@@ -306,11 +369,27 @@ pub fn release_capability_fixtures() -> Vec<ReleaseCapabilityFixture> {
             observations: BTreeMap::from([
                 (
                     CapabilityId::BitBakeWorkspaceInspection,
-                    vec![observation(CapabilityProbeStatus::Positive, "workspace")],
+                    complete(
+                        CapabilityId::BitBakeWorkspaceInspection,
+                        CapabilityProbeStatus::Positive,
+                        "workspace",
+                    ),
                 ),
                 (
                     CapabilityId::ResultTool,
-                    vec![observation(CapabilityProbeStatus::Positive, "resulttool")],
+                    complete(
+                        CapabilityId::ResultTool,
+                        CapabilityProbeStatus::Positive,
+                        "resulttool",
+                    ),
+                ),
+                (
+                    CapabilityId::BitBakeBuild,
+                    complete(
+                        CapabilityId::BitBakeBuild,
+                        CapabilityProbeStatus::Inconclusive,
+                        "build backend unprobeable",
+                    ),
                 ),
             ]),
             expectations: vec![
@@ -343,14 +422,27 @@ pub fn release_capability_fixtures() -> Vec<ReleaseCapabilityFixture> {
             observations: BTreeMap::from([
                 (
                     CapabilityId::BitBakeWorkspaceInspection,
-                    vec![observation(CapabilityProbeStatus::Positive, "workspace")],
+                    complete(
+                        CapabilityId::BitBakeWorkspaceInspection,
+                        CapabilityProbeStatus::Positive,
+                        "workspace",
+                    ),
                 ),
                 (
                     CapabilityId::DevtoolUpgrade,
-                    vec![observation(
+                    complete(
+                        CapabilityId::DevtoolUpgrade,
                         CapabilityProbeStatus::Positive,
                         "devtool upgrade",
-                    )],
+                    ),
+                ),
+                (
+                    CapabilityId::BitBakeBuild,
+                    complete(
+                        CapabilityId::BitBakeBuild,
+                        CapabilityProbeStatus::Inconclusive,
+                        "build backend unprobeable",
+                    ),
                 ),
             ]),
             expectations: vec![
@@ -383,21 +475,31 @@ pub fn release_capability_fixtures() -> Vec<ReleaseCapabilityFixture> {
             observations: BTreeMap::from([
                 (
                     CapabilityId::DevtoolUpgrade,
-                    vec![observation(
+                    complete(
+                        CapabilityId::DevtoolUpgrade,
                         CapabilityProbeStatus::Positive,
                         "devtool upgrade",
-                    )],
+                    ),
                 ),
                 (
                     CapabilityId::ResultTool,
-                    vec![observation(CapabilityProbeStatus::Negative, "resulttool")],
+                    complete(
+                        CapabilityId::ResultTool,
+                        CapabilityProbeStatus::Negative,
+                        "resulttool",
+                    ),
                 ),
                 (
                     CapabilityId::WicCreate,
-                    vec![
-                        observation(CapabilityProbeStatus::Positive, "wic create"),
-                        observation(CapabilityProbeStatus::Negative, "wic option"),
-                    ],
+                    conflicting(CapabilityId::WicCreate, "wic create conflict"),
+                ),
+                (
+                    CapabilityId::BitBakeBuild,
+                    complete(
+                        CapabilityId::BitBakeBuild,
+                        CapabilityProbeStatus::Inconclusive,
+                        "build backend unprobeable",
+                    ),
                 ),
             ]),
             expectations: vec![

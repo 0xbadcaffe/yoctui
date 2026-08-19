@@ -2469,14 +2469,22 @@ been negotiated are represented as unprobed, not as authoritative empty sets,
 so centralized adapter fallback may apply while an actual negative inventory
 still disables the action.
 
+Catalog probe sets are conjunctive required evidence. The resolver enables a
+preferred implementation only when every unique probe is present and positive.
+One authoritative negative disables it; positive/negative contradiction is an
+explicit conflict; absent or positive-plus-inconclusive evidence remains
+Unknown and has no implementation. A release/version adapter fallback is
+eligible only after every declared direct probe was collected and all were
+inconclusive. The versioned catalog rejects duplicate probes, and deterministic
+release fixtures enumerate every required observation rather than treating one
+executable result as aggregate authority.
+
 Supervisor event queues are drained with a fixed per-tick budget. Native
 BitBake parse/task bursts therefore cannot starve IPC handshakes, status,
-Doctor, or shutdown processing. Live Wrynose validation also identified two
-separate gates that remain intentionally incomplete: compound direct probes
-must not resolve Available when a required subcommand probe is inconclusive,
-and bridge-native event iteration must yield so an accepted cancellation can
-be read during an active build. These are tracked as required M18 tasks before
-live release support can be claimed.
+Doctor, or shutdown processing. Live Wrynose validation still has one separate
+required gate: bridge-native event iteration must yield so an accepted
+cancellation can be read during an active build. It is tracked before live
+release support can be claimed.
 
 Multi-generation test data lives behind the BitBake crate's `test-fixtures`
 feature. Each fixture contains a typed environment, direct observations, and

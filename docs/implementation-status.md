@@ -1053,10 +1053,16 @@ Fresh official Wrynose 6.0.2 / BitBake 2.18.0 validation confirmed exact Poky,
 DISTRO, MACHINE, COREBASE/core-series, layer roots, utility identities,
 `bitbake-getvar` implementation, Doctor transport, bridge negotiation, a real
 `base-files` build reaching native parse/task events, and responsive status
-during event bursts. It also exposed two independent pre-release defects now
-tracked as required atomic gates. `COMPAT-PROBE-AGGREGATION-001` must prevent a
-positive executable probe from masking an inconclusive required subcommand
-probe. `COMPAT-BITBAKE-CANCEL-RUNTIME-001` must make bridge event delivery yield
-to an accepted cancellation while BitBake is active. The probe-aggregation task
-is next; live support remains unclaimed and `COMPAT-LIVE-LATEST-001` depends on
-both fixes.
+during event bursts. `COMPAT-PROBE-AGGREGATION-001` is complete. Catalog version
+two now rejects duplicate required probes, and the centralized resolver enables
+only a complete all-positive probe set. A negative requirement disables,
+contradiction conflicts, and absent/partial/inconclusive required evidence stays
+Unknown without an implementation. Static fallback is considered only after a
+complete all-inconclusive direct set. Multi-generation fixtures enumerate every
+required observation, and focused resolver/version/future tests pass. A fresh
+live Doctor snapshot confirmed the timed-out `devtool upgrade --help` is Unknown
+with `evidence.incomplete`, while fully positive `bitbake-getvar` remains
+Available and the fully inconclusive backend build probe selects its explicit
+limited adapter fallback. `COMPAT-BITBAKE-CANCEL-RUNTIME-001` is next to make
+bridge event delivery yield to an accepted cancellation while BitBake is
+active; live support remains unclaimed.

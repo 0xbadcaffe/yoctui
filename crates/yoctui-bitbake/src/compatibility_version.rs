@@ -97,6 +97,45 @@ pub enum VersionFallbackResolution {
     },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum DirectEvidenceAssessment {
+    CompletePositive,
+    Negative,
+    CompleteInconclusive,
+    Conflict,
+    Incomplete,
+    Missing,
+}
+
+pub(crate) fn assess_direct_evidence(
+    entry: &CapabilityCatalogEntry,
+    direct: &[CapabilityProbeObservation],
+) -> DirectEvidenceAssessment {
+    if direct.is_empty() {
+        return DirectEvidenceAssessment::Missing;
+    }
+    let positive = direct
+        .iter()
+        .any(|observation| observation.status == CapabilityProbeStatus::Positive);
+    let negative = direct
+        .iter()
+        .any(|observation| observation.status == CapabilityProbeStatus::Negative);
+    let inconclusive = direct
+        .iter()
+        .any(|observation| observation.status == CapabilityProbeStatus::Inconclusive);
+    if positive && negative {
+        DirectEvidenceAssessment::Conflict
+    } else if negative {
+        DirectEvidenceAssessment::Negative
+    } else if direct.len() != entry.probes.len() || positive && inconclusive {
+        DirectEvidenceAssessment::Incomplete
+    } else if positive {
+        DirectEvidenceAssessment::CompletePositive
+    } else {
+        DirectEvidenceAssessment::CompleteInconclusive
+    }
+}
+
 #[derive(Debug, Clone)]
 struct VersionFallbackRule {
     map_key: &'static str,
@@ -118,28 +157,39 @@ impl VersionFallbackMap {
         version: Option<&str>,
         direct: &[CapabilityProbeObservation],
     ) -> VersionFallbackResolution {
-        let positive = direct
-            .iter()
-            .any(|observation| observation.status == CapabilityProbeStatus::Positive);
-        let negative = direct
-            .iter()
-            .any(|observation| observation.status == CapabilityProbeStatus::Negative);
-        if positive && negative {
-            return unknown(
-                "evidence.conflict",
-                "Direct capability probes returned conflicting positive and negative evidence.",
-                "direct capability probes conflict",
-            );
-        }
-        if positive {
-            return VersionFallbackResolution::Direct {
-                outcome: CapabilityEvidenceOutcome::Positive,
-            };
-        }
-        if negative {
-            return VersionFallbackResolution::Direct {
-                outcome: CapabilityEvidenceOutcome::Negative,
-            };
+        match assess_direct_evidence(entry, direct) {
+            DirectEvidenceAssessment::CompletePositive => {
+                return VersionFallbackResolution::Direct {
+                    outcome: CapabilityEvidenceOutcome::Positive,
+                };
+            }
+            DirectEvidenceAssessment::Negative => {
+                return VersionFallbackResolution::Direct {
+                    outcome: CapabilityEvidenceOutcome::Negative,
+                };
+            }
+            DirectEvidenceAssessment::Conflict => {
+                return unknown(
+                    "evidence.conflict",
+                    "Direct capability probes returned conflicting positive and negative evidence.",
+                    "direct capability probes conflict",
+                );
+            }
+            DirectEvidenceAssessment::Incomplete => {
+                return unknown(
+                    "evidence.incomplete",
+                    "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+                    "one or more required direct probes are absent or inconclusive",
+                );
+            }
+            DirectEvidenceAssessment::Missing => {
+                return unknown(
+                    "evidence.missing",
+                    "Required capability probes were not collected.",
+                    "no direct capability observations were supplied",
+                );
+            }
+            DirectEvidenceAssessment::CompleteInconclusive => {}
         }
 
         let Some(map_key) = declared_map_key(entry) else {
@@ -333,7 +383,7 @@ mod tests {
         let new = map.resolve_bitbake(
             &entry(CapabilityId::BitBakeWorkspaceInspection),
             Some("2.18.0"),
-            &[],
+            &[direct(CapabilityProbeStatus::Inconclusive)],
         );
         assert!(matches!(
             new,
@@ -403,6 +453,57 @@ mod tests {
     }
 
     #[test]
+    fn compatibility_probe_aggregation_requires_every_direct_requirement() {
+        let map = VersionFallbackMap;
+        let capability = entry(CapabilityId::DevtoolUpgrade);
+        assert!(capability.probes.len() > 1);
+
+        let complete = vec![direct(CapabilityProbeStatus::Positive); capability.probes.len()];
+        assert_eq!(
+            map.resolve_bitbake(&capability, Some("2.18"), &complete),
+            VersionFallbackResolution::Direct {
+                outcome: CapabilityEvidenceOutcome::Positive,
+            }
+        );
+        for incomplete in [
+            vec![direct(CapabilityProbeStatus::Positive)],
+            vec![
+                direct(CapabilityProbeStatus::Positive),
+                direct(CapabilityProbeStatus::Inconclusive),
+            ],
+        ] {
+            let resolution = map.resolve_bitbake(&capability, Some("2.18"), &incomplete);
+            assert!(matches!(
+                resolution,
+                VersionFallbackResolution::Unknown {
+                    state: CapabilityState::Unknown { ref reason },
+                    ..
+                } if reason.code.as_str() == "evidence.incomplete"
+            ));
+        }
+        assert!(matches!(
+            map.resolve_bitbake(&capability, Some("2.18"), &[]),
+            VersionFallbackResolution::Unknown {
+                state: CapabilityState::Unknown { ref reason },
+                ..
+            } if reason.code.as_str() == "evidence.missing"
+        ));
+        assert_eq!(
+            map.resolve_bitbake(
+                &capability,
+                Some("2.18"),
+                &[
+                    direct(CapabilityProbeStatus::Negative),
+                    direct(CapabilityProbeStatus::Inconclusive),
+                ],
+            ),
+            VersionFallbackResolution::Direct {
+                outcome: CapabilityEvidenceOutcome::Negative,
+            }
+        );
+    }
+
+    #[test]
     fn compatibility_version_catalog_fallback_is_not_an_executable_probe() {
         let capability = entry(CapabilityId::BitBakeBuild);
         assert!(
@@ -413,7 +514,11 @@ mod tests {
         );
         let VersionFallbackResolution::Inferred {
             state, evidence, ..
-        } = VersionFallbackMap.resolve_bitbake(&capability, Some("2.8.1"), &[])
+        } = VersionFallbackMap.resolve_bitbake(
+            &capability,
+            Some("2.8.1"),
+            &[direct(CapabilityProbeStatus::Inconclusive)],
+        )
         else {
             panic!("expected inferred adapter");
         };

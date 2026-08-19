@@ -4955,18 +4955,18 @@ notes = "The production daemon now requires an initialized BUILDDIR, derives bou
 id = "COMPAT-PROBE-AGGREGATION-001"
 milestone = "M18"
 title = "Require complete direct evidence for compound capabilities"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 512
 required = true
 depends_on = ["COMPAT-CATALOG-001", "COMPAT-PROBE-001", "COMPAT-DAEMON-RUNTIME-001"]
 verify = ["cargo test -p yoctui-bitbake compatibility_probe_aggregation", "cargo test -p yoctui-bitbake compatibility_future_unknown", "./scripts/verify-roadmap.sh"]
-notes = "Fresh Wrynose probing showed that a positive executable probe plus a timed-out required subcommand probe could resolve Available. Make compound catalog requirements conjunctive: incomplete required evidence remains Unknown/limited and disabled, negative required evidence is unavailable, conflicts are explicit, and only complete positive direct evidence enables the implementation."
+notes = "Catalog version two rejects duplicate required probes, and one centralized assessment now resolves complete all-positive evidence as Available, any uncontradicted negative as Unavailable, contradictions as conflict, and missing/partial/inconclusive compound evidence as Unknown without an implementation. Version fallback is eligible only after a complete all-inconclusive direct set. Fixtures enumerate every required probe; focused resolver/version/future/fixture/command tests pass. Fresh Wrynose Doctor evidence confirms a timed-out devtool upgrade subcommand stays Unknown while complete bitbake-getvar evidence remains Available and complete inconclusive backend evidence selects only the declared limited fallback."
 
 [[task]]
 id = "COMPAT-BITBAKE-CANCEL-RUNTIME-001"
 milestone = "M18"
 title = "Keep live BitBake cancellation responsive during native events"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 513
 required = true
 depends_on = ["COMPAT-BITBAKE-API-001", "COMPAT-DAEMON-RUNTIME-001", "COMPAT-PROBE-AGGREGATION-001"]

@@ -7,10 +7,7 @@ use yoctui_model::{
     YoctoEnvironmentIdentity,
 };
 
-use crate::{
-    CapabilityProbeObservation, CapabilityProbeStatus, VersionFallbackMap,
-    VersionFallbackResolution,
-};
+use crate::{CapabilityProbeObservation, VersionFallbackMap, VersionFallbackResolution};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResolvedCapability {
@@ -36,55 +33,10 @@ impl CapabilityResolver {
         bitbake_version: Option<&str>,
         observations: &[CapabilityProbeObservation],
     ) -> ResolvedCapability {
-        let positive = observations
-            .iter()
-            .any(|observation| observation.status == CapabilityProbeStatus::Positive);
-        let negative = observations
-            .iter()
-            .any(|observation| observation.status == CapabilityProbeStatus::Negative);
         let evidence = observations
             .iter()
             .map(|observation| observation.evidence.clone())
             .collect::<Vec<_>>();
-        if positive && negative {
-            return ResolvedCapability {
-                record: CapabilityRecord {
-                    id: entry.id,
-                    state: CapabilityState::Unknown {
-                        reason: reason(
-                            "evidence.conflict",
-                            "Capability probes returned conflicting positive and negative evidence.",
-                            Some(entry.id.as_str()),
-                        ),
-                    },
-                    evidence,
-                },
-                implementation: None,
-            };
-        }
-        if positive {
-            return ResolvedCapability {
-                record: CapabilityRecord {
-                    id: entry.id,
-                    state: CapabilityState::Available,
-                    evidence,
-                },
-                implementation: Some(entry.preferred.clone()),
-            };
-        }
-        if negative {
-            return ResolvedCapability {
-                record: CapabilityRecord {
-                    id: entry.id,
-                    state: CapabilityState::Unavailable {
-                        reason: entry.unavailable_reason.clone(),
-                    },
-                    evidence,
-                },
-                implementation: None,
-            };
-        }
-
         match self
             .fallback
             .resolve_bitbake(entry, bitbake_version, observations)
@@ -112,34 +64,54 @@ impl CapabilityResolver {
                 },
                 implementation: None,
             },
-            VersionFallbackResolution::Direct { outcome } => {
-                // The explicit positive/negative branches above consume all
-                // direct conclusive evidence. Keep an impossible disagreement
-                // fail-closed instead of manufacturing availability.
-                ResolvedCapability {
-                    record: CapabilityRecord {
-                        id: entry.id,
-                        state: CapabilityState::Unknown {
-                            reason: reason(
-                                "evidence.resolution_mismatch",
-                                "Direct evidence could not be resolved consistently.",
-                                Some(entry.id.as_str()),
-                            ),
-                        },
-                        evidence: append_evidence(
-                            evidence,
-                            CapabilityEvidence {
-                                kind: yoctui_model::CapabilityEvidenceKind::ReleaseVersionFallback,
-                                outcome,
-                                subject: "direct evidence resolution".into(),
-                                detail: "fallback resolver returned direct evidence after conclusive evidence handling".into(),
-                                argv: Vec::new(),
-                            },
+            VersionFallbackResolution::Direct {
+                outcome: CapabilityEvidenceOutcome::Positive,
+            } => ResolvedCapability {
+                record: CapabilityRecord {
+                    id: entry.id,
+                    state: CapabilityState::Available,
+                    evidence,
+                },
+                implementation: Some(entry.preferred.clone()),
+            },
+            VersionFallbackResolution::Direct {
+                outcome: CapabilityEvidenceOutcome::Negative,
+            } => ResolvedCapability {
+                record: CapabilityRecord {
+                    id: entry.id,
+                    state: CapabilityState::Unavailable {
+                        reason: entry.unavailable_reason.clone(),
+                    },
+                    evidence,
+                },
+                implementation: None,
+            },
+            VersionFallbackResolution::Direct {
+                outcome: CapabilityEvidenceOutcome::Inconclusive,
+            } => ResolvedCapability {
+                record: CapabilityRecord {
+                    id: entry.id,
+                    state: CapabilityState::Unknown {
+                        reason: reason(
+                            "evidence.resolution_mismatch",
+                            "Direct evidence could not be resolved consistently.",
+                            Some(entry.id.as_str()),
                         ),
                     },
-                    implementation: None,
-                }
-            }
+                    evidence: append_evidence(
+                        evidence,
+                        CapabilityEvidence {
+                            kind: yoctui_model::CapabilityEvidenceKind::ReleaseVersionFallback,
+                            outcome: CapabilityEvidenceOutcome::Inconclusive,
+                            subject: "direct evidence resolution".into(),
+                            detail: "fallback resolver returned an inconclusive direct outcome"
+                                .into(),
+                            argv: Vec::new(),
+                        },
+                    ),
+                },
+                implementation: None,
+            },
         }
     }
 
@@ -246,6 +218,7 @@ fn reason(code: &str, message: &str, capability: Option<&str>) -> CapabilityReas
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::CapabilityProbeStatus;
     use yoctui_model::{
         AuthoritativeValue, CapabilityEvidenceKind, CapabilityEvidenceOutcome, IdentityAuthority,
         ReleaseIdentity,
@@ -266,6 +239,15 @@ mod tests {
                 argv: Vec::new(),
             },
         }
+    }
+
+    fn complete_observations(
+        catalog: &CapabilityCatalog,
+        id: CapabilityId,
+        status: CapabilityProbeStatus,
+        subject: &str,
+    ) -> Vec<CapabilityProbeObservation> {
+        vec![observation(status, subject); catalog.entry(id).unwrap().probes.len()]
     }
 
     fn future_environment() -> YoctoEnvironmentIdentity {
@@ -295,7 +277,12 @@ mod tests {
         let observations = BTreeMap::from([
             (
                 CapabilityId::DevtoolUpgrade,
-                vec![observation(CapabilityProbeStatus::Positive, "upgrade")],
+                complete_observations(
+                    &catalog,
+                    CapabilityId::DevtoolUpgrade,
+                    CapabilityProbeStatus::Positive,
+                    "upgrade",
+                ),
             ),
             (
                 CapabilityId::ResultTool,
@@ -373,6 +360,96 @@ mod tests {
     }
 
     #[test]
+    fn compatibility_probe_aggregation_keeps_partial_compound_evidence_disabled() {
+        let catalog = CapabilityCatalog::builtin();
+        let entry = catalog.entry(CapabilityId::DevtoolUpgrade).unwrap();
+        let resolver = CapabilityResolver::default();
+
+        let complete = complete_observations(
+            &catalog,
+            entry.id,
+            CapabilityProbeStatus::Positive,
+            "devtool upgrade",
+        );
+        let available = resolver.resolve(entry, Some("2.18"), &complete);
+        assert_eq!(available.record.state, CapabilityState::Available);
+        assert_eq!(available.implementation, Some(entry.preferred.clone()));
+
+        let partial = vec![
+            observation(CapabilityProbeStatus::Positive, "devtool executable"),
+            observation(
+                CapabilityProbeStatus::Inconclusive,
+                "upgrade --help timeout",
+            ),
+        ];
+        let unknown = resolver.resolve(entry, Some("2.18"), &partial);
+        assert!(matches!(
+            unknown.record.state,
+            CapabilityState::Unknown { ref reason }
+                if reason.code.as_str() == "evidence.incomplete"
+        ));
+        assert!(unknown.implementation.is_none());
+
+        let unavailable = resolver.resolve(
+            entry,
+            Some("2.18"),
+            &[
+                observation(CapabilityProbeStatus::Negative, "upgrade absent"),
+                observation(CapabilityProbeStatus::Inconclusive, "help timeout"),
+            ],
+        );
+        assert!(matches!(
+            unavailable.record.state,
+            CapabilityState::Unavailable { .. }
+        ));
+        assert!(unavailable.implementation.is_none());
+
+        let conflict = resolver.resolve(
+            entry,
+            Some("2.18"),
+            &[
+                observation(CapabilityProbeStatus::Positive, "upgrade present"),
+                observation(CapabilityProbeStatus::Negative, "upgrade absent"),
+            ],
+        );
+        assert!(matches!(
+            conflict.record.state,
+            CapabilityState::Unknown { ref reason }
+                if reason.code.as_str() == "evidence.conflict"
+        ));
+        assert!(conflict.implementation.is_none());
+    }
+
+    #[test]
+    fn compatibility_probe_aggregation_allows_fallback_only_after_complete_inconclusive_probe() {
+        let catalog = CapabilityCatalog::builtin();
+        let entry = catalog.entry(CapabilityId::BitBakeBuild).unwrap();
+        let resolver = CapabilityResolver::default();
+
+        let missing = resolver.resolve(entry, Some("2.18"), &[]);
+        assert!(matches!(
+            missing.record.state,
+            CapabilityState::Unknown { ref reason }
+                if reason.code.as_str() == "evidence.missing"
+        ));
+        assert!(missing.implementation.is_none());
+
+        let probed = resolver.resolve(
+            entry,
+            Some("2.18"),
+            &[observation(
+                CapabilityProbeStatus::Inconclusive,
+                "backend handshake unavailable",
+            )],
+        );
+        assert!(matches!(
+            probed.record.state,
+            CapabilityState::AvailableWithLimitations { .. }
+        ));
+        assert_eq!(probed.implementation.unwrap().id, "tinfoil.adapter.modern");
+    }
+
+    #[test]
     fn compatibility_future_unknown_absent_and_inconclusive_evidence_stays_unknown() {
         let catalog = CapabilityCatalog::builtin();
         let entry = catalog.entry(CapabilityId::BitBakeBuild).unwrap();
@@ -410,6 +487,13 @@ mod tests {
             (
                 CapabilityId::DevtoolUpgrade,
                 vec![observation(CapabilityProbeStatus::Negative, "upgrade")],
+            ),
+            (
+                CapabilityId::BitBakeNativeEvents,
+                vec![observation(
+                    CapabilityProbeStatus::Inconclusive,
+                    "native events backend unprobeable",
+                )],
             ),
         ]);
         let resolved = CapabilityResolver::default()
@@ -458,10 +542,12 @@ mod tests {
         let catalog = CapabilityCatalog::builtin();
         let positive_getvar = BTreeMap::from([(
             CapabilityId::BitBakeGetVar,
-            vec![observation(
+            complete_observations(
+                &catalog,
+                CapabilityId::BitBakeGetVar,
                 CapabilityProbeStatus::Positive,
                 "bitbake-getvar help and required options",
-            )],
+            ),
         )]);
         let direct = CapabilityResolver::default()
             .resolve_snapshot(3, future_environment(), &catalog, &positive_getvar)
@@ -485,7 +571,12 @@ mod tests {
 
         let environment_only = BTreeMap::from([(
             CapabilityId::BitBakeEnvironmentDump,
-            vec![observation(CapabilityProbeStatus::Positive, "bitbake -e")],
+            complete_observations(
+                &catalog,
+                CapabilityId::BitBakeEnvironmentDump,
+                CapabilityProbeStatus::Positive,
+                "bitbake -e",
+            ),
         )]);
         let fallback = CapabilityResolver::default()
             .resolve_snapshot(4, future_environment(), &catalog, &environment_only)

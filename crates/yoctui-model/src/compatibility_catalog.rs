@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use thiserror::Error;
 
-pub const CAPABILITY_CATALOG_VERSION: u32 = 1;
+pub const CAPABILITY_CATALOG_VERSION: u32 = 2;
 pub const MAX_CATALOG_REQUIREMENTS: usize = 32;
 pub const MAX_CATALOG_PROBES: usize = 32;
 pub const MAX_CATALOG_BOUNDARIES: usize = 16;
@@ -251,6 +251,11 @@ fn validate_entry(entry: &CapabilityCatalogEntry) -> Result<(), CapabilityCatalo
             .probes
             .iter()
             .any(|probe| !valid_probe(probe, &entry.required_tools))
+        || entry
+            .probes
+            .iter()
+            .enumerate()
+            .any(|(index, probe)| entry.probes[..index].contains(probe))
         || entry
             .known_release_boundaries
             .iter()
@@ -1075,6 +1080,16 @@ mod catalog {
             unsafe_probe.validate(),
             Err(CapabilityCatalogError::InvalidEntry(
                 unsafe_probe.entries[0].id
+            ))
+        );
+
+        let mut duplicate_probe = CapabilityCatalog::builtin();
+        let repeated_probe = duplicate_probe.entries[0].probes[0].clone();
+        duplicate_probe.entries[0].probes.push(repeated_probe);
+        assert_eq!(
+            duplicate_probe.validate(),
+            Err(CapabilityCatalogError::InvalidEntry(
+                duplicate_probe.entries[0].id
             ))
         );
 

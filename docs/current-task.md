@@ -2,51 +2,53 @@
 
 ## Task
 
-**ID:** COMPAT-PROBE-AGGREGATION-001
-**Title:** Require complete direct evidence for compound capabilities
+**ID:** COMPAT-BITBAKE-CANCEL-RUNTIME-001
+**Title:** Keep live BitBake cancellation responsive during native events
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Prevent a partial direct probe from enabling a compound catalog capability.
-Every required executable, subcommand, option, metadata, and backend probe must
-contribute to one conservative typed decision.
+Allow the bridge to receive and execute `cancel_build` while a native BitBake
+build is actively producing events, without losing event ordering or blocking
+the daemon's IPC loop.
 
 ## Dependencies
 
-- `COMPAT-CATALOG-001` — DONE
-- `COMPAT-PROBE-001` — DONE
+- `COMPAT-BITBAKE-API-001` — DONE
 - `COMPAT-DAEMON-RUNTIME-001` — DONE
+- `COMPAT-PROBE-AGGREGATION-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/compatibility_catalog.rs`
-- `crates/yoctui-bitbake/src/compatibility_resolver.rs`
-- `crates/yoctui-bitbake/src/compatibility_version.rs`
-- `crates/yoctui-bitbake/src/compatibility_fixtures.rs`
+- `crates/yoctui-bitbake/bridge/yoctui_bridge.py`
+- `bridge/tests/test_bridge.py`
+- `crates/yoctui-bitbake/src/bridge.rs`
+- `crates/yoctui-bitbake/src/backend.rs`
+- `crates/yoctui-cli/src/daemon_bitbake.rs`
+- `crates/yoctui-cli/src/main.rs`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- A compound capability resolves Available only when every required direct
-  probe is positive.
-- Any authoritative negative required probe makes the capability Unavailable;
-  mixed contradictory evidence remains an explicit conflict.
-- Inconclusive or absent required evidence cannot be masked by executable
-  discovery and remains disabled with an exact Unknown/limited reason.
-- Centralized version fallback remains eligible only for catalog entries that
-  explicitly declare it and whose direct behavior probe is genuinely
-  uncollectable, never when a required direct probe failed.
-- Tests cover positive, negative, inconclusive, contradictory, future-version,
-  subcommand-timeout, and option-timeout combinations without spawning a real
-  utility.
+- Native BitBake event polling is incremental and yields to command input; no
+  synchronous iterator monopolizes the bridge command loop.
+- An accepted daemon `CancelJob` reaches the active BitBake cancellation API
+  promptly and produces exactly one typed terminal outcome.
+- Event/cancel correlation and ordering remain bounded; late events cannot
+  resurrect cancelled work.
+- Status, Doctor, and a second local client remain responsive during event
+  bursts and cancellation.
+- Fake bridge/backend/daemon tests cover active cancellation, event flood,
+  rejection/failure, terminal deduplication, and shutdown.
+- A live Wrynose build is cancelled through daemon IPC and reaches a terminal
+  cancelled/failed state without force-killing the daemon.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake compatibility_probe_aggregation
-cargo test -p yoctui-bitbake compatibility_future_unknown
+python3 -m pytest bridge/tests -k compatibility_cancellation
+cargo test -p yoctui --bin yoctui daemon_compatibility_cancellation
 ./scripts/verify-roadmap.sh
 ```
