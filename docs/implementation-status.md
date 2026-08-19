@@ -11,14 +11,15 @@ Status values:
 
 ## Current phase
 
-`FINAL-GATE-PERF-001` is the second `DONE` terminal candidate: the first clean
-candidate passed compatibility, the full Rust workspace, and all 43 Python
-tests, then exposed `scripts/profile-workload.sh` invoking the obsolete direct
-process-backend BitBake path. The release profile now uses the deterministic
-production workbench benchmark, rejects invalid frame counts or missing
-completion markers, and passes 6,000 frames with checksum
-`95f340a128cd6012` in 3.694 seconds. The complete gate must pass before the
-host's original `kernel.perf_event_paranoid=4` policy is restored.
+`FINAL-GATE-PERF-001` is the third `DONE` terminal candidate. The first two
+clean candidates exposed obsolete backend-dependent release-profile and
+Valgrind workloads after compatibility, full Rust workspace, and all 43 Python
+tests passed. Both now use bounded deterministic production workbench runs. The
+release profile passes 6,000 frames with checksum `95f340a128cd6012`;
+Memcheck passes 128 frames with zero definite, indirect, or possible bytes
+lost, 544 bytes still reachable, and no open descriptors. The complete gate
+must pass before the host's original `kernel.perf_event_paranoid=4` policy is
+restored.
 
 `PERF-FLAMEGRAPH-QUALITY-001` is `DONE`: the replacement 160x48 benchmark
 drives 6,000 deterministic production reducer/Ratatui frames without a daemon

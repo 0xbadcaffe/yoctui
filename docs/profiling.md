@@ -11,11 +11,12 @@ backend mode.
 `scripts/profile-workload.sh` runs the deterministic release workbench benchmark
 through the production reducer and Ratatui renderer and writes its frame count,
 cell-buffer checksum, and elapsed time to `artifacts/profile/summary.txt`.
-`scripts/valgrind.sh` uses the native process backend so Memcheck observes only
-Rust-owned execution and emits XML plus a human-readable summary under
-`artifacts/valgrind/`; it fails on definite/indirect leaks, unexpected
-descriptors, or non-runtime findings while reporting the two Tokio signal
-descriptors and still-reachable allocations separately.
+`scripts/valgrind.sh` runs 128 frames of the same daemon-independent production
+workbench under Memcheck and emits XML plus a human-readable summary under
+`artifacts/valgrind/`; it fails on incomplete workload execution,
+definite/indirect leaks, unexpected descriptors, or non-runtime findings while
+reporting allowlisted Tokio signal descriptors and still-reachable allocations
+separately when present.
 
 `scripts/flamegraph.sh` samples the same production workbench benchmark and
 writes a validated `artifacts/flamegraph/yoctui.svg` plus its machine-readable

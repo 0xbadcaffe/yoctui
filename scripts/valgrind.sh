@@ -4,11 +4,26 @@ repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 command -v valgrind >/dev/null || { printf '%s\n' 'valgrind is required; install it before profiling' >&2; exit 2; }
 mkdir -p artifacts/valgrind
-cargo build -p yoctui
-valgrind_config_dir="$(mktemp -d)"
-trap 'rm -rf "$valgrind_config_dir"' EXIT
-XDG_CONFIG_HOME="$valgrind_config_dir" \
-valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-fds=yes --track-origins=yes --xml=yes --xml-file=artifacts/valgrind/report.xml target/debug/yoctui --headless --backend process --build-dir "$repo_root" >artifacts/valgrind/workload.txt 2>&1
+profile_binary="$(
+  cargo build -p yoctui --bench workbench_profile --message-format=json | \
+    python3 -c 'import json, sys
+for line in sys.stdin:
+    event = json.loads(line)
+    target = event.get("target", {})
+    if event.get("reason") == "compiler-artifact" and target.get("name") == "workbench_profile" and event.get("executable"):
+        print(event["executable"])
+'
+)"
+if [[ ! -x "$profile_binary" ]]; then
+  printf '%s\n' 'Valgrind workbench benchmark executable was not produced' >&2
+  exit 1
+fi
+YOCTUI_PROFILE_FRAMES=128 \
+valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all --track-fds=yes --track-origins=yes --xml=yes --xml-file=artifacts/valgrind/report.xml "$profile_binary" >artifacts/valgrind/workload.txt 2>&1
+if ! grep -Eq '^yoctui workbench profile: frames=128 checksum=[0-9a-f]{16} elapsed_ms=[1-9][0-9]*$' artifacts/valgrind/workload.txt; then
+  printf '%s\n' 'Valgrind workbench benchmark did not complete' >&2
+  exit 1
+fi
 python3 - <<'PY' | tee artifacts/valgrind/summary.txt
 import sys
 import xml.etree.ElementTree as ET
@@ -36,7 +51,7 @@ unexpected_fds = [
         for frame in element.findall("stack/frame")
     )
 ]
-print("Valgrind native process-backend workload summary")
+print("Valgrind production workbench workload summary")
 for name, value in values.items():
     print(f"{name}: {value} bytes")
 print(f"Tokio signal descriptors reported: {len(fd_errors) - len(unexpected_fds)}")

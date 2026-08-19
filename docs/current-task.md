@@ -12,10 +12,9 @@ Run the complete repository completion gate while real Linux perf sampling is
 temporarily available, record the terminal result, and restore the host's
 original perf security policy afterward.
 
-The first all-tasks-done candidate exposed an obsolete direct process-backend
-command in `scripts/profile-workload.sh`. The release profile now uses the
-deterministic production workbench benchmark; this second terminal candidate
-is ready for the complete gate.
+The release profile and Valgrind gates now use bounded deterministic production
+workbench workloads. Memcheck passes 128 frames with no lost bytes or open
+descriptors; this third terminal candidate is ready for the complete gate.
 
 ## Dependencies
 
@@ -28,6 +27,7 @@ is ready for the complete gate.
 - `scripts/verify-completion.sh`
 - `scripts/flamegraph.sh`
 - `scripts/profile-workload.sh`
+- `scripts/valgrind.sh`
 - `artifacts/flamegraph/yoctui.svg`
 - `artifacts/flamegraph/summary.txt`
 - `docs/implementation-status.md`

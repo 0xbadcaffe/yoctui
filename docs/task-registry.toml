@@ -4261,7 +4261,7 @@ priority = 458
 required = true
 depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001", "PERF-FLAMEGRAPH-QUALITY-001"]
 verify = ["perf record -- true", "./scripts/flamegraph.sh", "./scripts/verify-completion.sh"]
-notes = "The first clean terminal candidate passed compatibility, the full Rust workspace, and all 43 Python tests, then exposed scripts/profile-workload.sh invoking the obsolete direct process-backend BitBake path. The release profile now uses the same deterministic production workbench benchmark, rejects invalid frame counts or missing completion markers, and passes 6,000 frames with checksum 95f340a128cd6012 in 3.694 seconds. This second all-tasks-done candidate must pass the full completion gate before kernel.perf_event_paranoid=4 is restored."
+notes = "The first two clean candidates exposed obsolete backend-dependent release-profile and Valgrind workloads after compatibility, full Rust workspace, and 43 Python tests passed. Both now use the deterministic production workbench. The release profile passes 6,000 frames with checksum 95f340a128cd6012; Memcheck passes 128 frames with zero definite, indirect, or possible bytes lost, 544 bytes still reachable, and no open descriptors. This third terminal candidate must pass the complete gate before kernel.perf_event_paranoid=4 is restored."
 
 # M13 — Dense terminal workbench redesign
 [[task]]

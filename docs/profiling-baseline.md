@@ -22,4 +22,9 @@ The generated timing output is ignored at `artifacts/profile/summary.txt`.
 
 ## Valgrind baseline
 
-The same debug bridge workload was run with Memcheck on 2026-07-20. It reported 0 bytes definitely lost, 0 indirectly lost, and 0 possibly lost. It retained 59,872 bytes reachable at process shutdown and reported two Tokio runtime signal-registry file descriptors. These non-fatal runtime resources are reported in the generated XML; the script fails on definite or indirect leaks and any non-runtime Memcheck error.
+The 128-frame debug production workbench was run with Memcheck on 2026-08-19.
+It reported 0 bytes definitely lost, 0 indirectly lost, 0 possibly lost, 544
+bytes still reachable, and no open descriptors. These non-fatal reachable
+allocations remain reported in the generated XML; the script fails on definite
+or indirect leaks, unexpected descriptors, incomplete workload execution, and
+any non-runtime Memcheck error.
