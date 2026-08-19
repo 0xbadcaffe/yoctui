@@ -418,9 +418,9 @@ Priority order:
 
 ## 4. Navigator
 
-The left pane is the primary workspace navigator. In wide layouts it is a
-single mixed project tree, matching an IDE project explorer rather than a list
-of abstract workspace destinations. Its required top-level order is:
+The left pane is the primary workspace navigator. The canonical wide Tasks
+workbench uses a mixed project-context tree, matching an IDE project explorer
+rather than presenting fake abstract files. Its required top-level order is:
 
 - `Layers`: configured layer inventory from typed workspace metadata
 - `Recipes`: useful typed recipe shortcuts, including the active recipe and
@@ -435,12 +435,16 @@ are enabled. The selected child uses the complete available row width. A
 bounded footer inside the Navigator reports selected layer, selected recipe or
 job identity, and process/build identity only when those typed values exist.
 
-The tree is a navigation projection over existing typed model state. It does
-not parse BitBake output, fabricate reference entries in production, or replace
-the complete destination catalog. Entries that do not fit in the visible tree
-remain reachable through `F10 Menu`, the command palette, or their documented
-global shortcut. At medium and narrow widths the tree may compact to category
-rows while preserving access to every destination.
+The project-context tree is a navigation projection over existing typed model
+state. It does not parse BitBake output, fabricate reference entries in
+production, or replace the complete destination catalog. Other workspace
+states, and compact layouts where the contextual tree would hide
+functionality, render the complete workspace rail in stable `OVERVIEW`,
+`CONTENT`, `BUILD`, `VALIDATE`, and `TOOLS` groups. This distinction prevents a
+workspace-owned layer, recipe, package, or artifact tree from being duplicated
+as a fake filesystem in the Navigator. Entries that do not fit remain
+reachable through bounded scrolling, `F10 Menu`, the command palette, or their
+documented global shortcut.
 
 Required entries:
 
@@ -466,15 +470,29 @@ Required entries:
 
 The currently active workspace is highlighted.
 
-The navigator may show badges:
+The workspace rail shows a badge only when its value is authoritative. The
+currently supported badges are active typed task count, aggregate build error
+count, live/paused log-follow mode, and retained typed Devtool status count.
+Unsupported illustrative badges are omitted:
 
 ```text
 Tasks          12
 Errors          3
 Logs          LIVE
 Devtool         2
-Testing       FAIL
 ```
+
+Expanded groups use `▾`; collapsed groups use `▸`. `Left` collapses the group
+that owns the selected destination. `Right` expands it, or activates the
+selected destination when already expanded. Keyboard movement skips hidden
+destinations. When the rail is taller than its viewport, the title reports the
+bounded selected-row position as `current/total` and keeps selection visible.
+
+Mouse behavior uses the same typed actions: the wheel moves bounded selection,
+a group-heading click toggles that group, the first destination click selects
+and focuses it, and a repeated click activates it. The canonical Tasks
+project-context rows select their owning real workspace; they never simulate a
+filesystem operation.
 
 Keyboard:
 

@@ -2973,6 +2973,7 @@ pub fn mouse_action_for_app(
     mouse: MouseInput,
     app: &yoctui_model::App,
     terminal_width: u16,
+    terminal_height: u16,
 ) -> Option<Action> {
     if matches!(mouse.kind, MouseKind::Down) && app.active_dialog().is_some() {
         return Some(Action::Focus(FocusTarget::Dialog));
@@ -2997,7 +2998,78 @@ pub fn mouse_action_for_app(
             },
         });
     }
+    let navigator_width = if terminal_width >= 100 {
+        if terminal_width == 160 && app.screen == Screen::Tasks {
+            26
+        } else {
+            22
+        }
+    } else if app.focus == FocusTarget::Navigator {
+        terminal_width
+    } else {
+        0
+    };
+    if mouse.column < navigator_width {
+        if matches!(mouse.kind, MouseKind::ScrollUp) {
+            return Some(Action::SelectNavigator { delta: -1 });
+        }
+        if matches!(mouse.kind, MouseKind::ScrollDown) {
+            return Some(Action::SelectNavigator { delta: 1 });
+        }
+        if matches!(mouse.kind, MouseKind::Down)
+            && mouse.row >= 3
+            && mouse.row < terminal_height.saturating_sub(3)
+        {
+            let row = usize::from(mouse.row - 3);
+            let selection = if terminal_width == 160 && app.screen == Screen::Tasks {
+                literal_navigator_selection_at_row(app, row)
+            } else {
+                let visible_rows = usize::from(terminal_height.saturating_sub(6));
+                let visual_row = app.navigator_viewport_start(visible_rows) + row;
+                if let Some(group) = app.navigator_group_at_visual_row(visual_row) {
+                    return Some(Action::ToggleNavigatorGroup { group });
+                }
+                app.navigator_selection_at_visual_row(visual_row)
+            };
+            if let Some(index) = selection {
+                return if app.focus == FocusTarget::Navigator && app.navigator_selection == index {
+                    Some(Action::ActivateNavigator)
+                } else {
+                    Some(Action::SelectNavigatorAt { index })
+                };
+            }
+        }
+        if matches!(mouse.kind, MouseKind::Down) {
+            return Some(Action::Focus(FocusTarget::Navigator));
+        }
+    }
     mouse_action(mouse, terminal_width)
+}
+
+fn literal_navigator_selection_at_row(app: &yoctui_model::App, row: usize) -> Option<usize> {
+    let layer_rows = app.workspace.layers.len().clamp(1, 7);
+    let recipe_rows = app.workspace.recipes.len().clamp(1, 3);
+    let image_rows = app.available_images.len().clamp(1, 2);
+    let layers_end = 1 + layer_rows;
+    if row < layers_end {
+        return Some(1);
+    }
+    let recipes_start = layers_end;
+    let recipes_end = recipes_start + 1 + recipe_rows;
+    if row < recipes_end {
+        return Some(2);
+    }
+    let images_start = recipes_end;
+    let images_end = images_start + 1 + image_rows;
+    if row < images_end {
+        return Some(4);
+    }
+    let tasks_start = images_end;
+    if row == tasks_start {
+        return Some(6);
+    }
+    const TASK_DESTINATIONS: [usize; 8] = [6, 11, 13, 14, 15, 5, 12, 16];
+    TASK_DESTINATIONS.get(row - tasks_start - 1).copied()
 }
 
 pub fn popup_editor_action(editing: bool, key: Input) -> Option<Action> {
@@ -3090,6 +3162,8 @@ pub fn focus_action(focus: FocusTarget, key: Input) -> Option<Action> {
             Some(Action::SelectNavigator { delta: 1 })
         }
         (FocusTarget::Navigator, Input::Enter) => Some(Action::ActivateNavigator),
+        (FocusTarget::Navigator, Input::Left) => Some(Action::CollapseNavigatorGroup),
+        (FocusTarget::Navigator, Input::Right) => Some(Action::ExpandNavigatorGroup),
         (FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector, Input::Tab) => {
             Some(Action::CycleFocus { backwards: false })
         }
@@ -5130,6 +5204,7 @@ mod tests {
                 },
                 &app,
                 120,
+                30,
             ),
             Some(Action::SelectPtySession { delta: 1 })
         );
@@ -5142,6 +5217,7 @@ mod tests {
                 },
                 &app,
                 120,
+                30,
             ),
             Some(Action::ResizeFocusedPane {
                 delta_per_mille: 25
@@ -5157,6 +5233,7 @@ mod tests {
                 },
                 &app,
                 120,
+                30,
             ),
             Some(Action::Focus(FocusTarget::Dialog))
         );
@@ -7008,6 +7085,44 @@ mod tests {
             focus_action(FocusTarget::Navigator, Input::CtrlP),
             None,
             "unmapped global input must continue to the shared key route"
+        );
+    }
+
+    #[test]
+    fn next_generation_navigator_mouse_and_keyboard_share_typed_routing() {
+        let mut app = yoctui_model::App::new(16, 4096);
+        let click_layers = MouseInput {
+            kind: MouseKind::Down,
+            column: 5,
+            row: 6,
+        };
+        let select = mouse_action_for_app(click_layers, &app, 180, 40);
+        assert_eq!(select, Some(Action::SelectNavigatorAt { index: 1 }));
+        let _ = yoctui_model::update(&mut app, select.unwrap());
+        assert_eq!(app.navigator_selection, 1);
+        assert_eq!(app.focus, FocusTarget::Navigator);
+        assert_eq!(
+            mouse_action_for_app(click_layers, &app, 180, 40),
+            Some(Action::ActivateNavigator)
+        );
+
+        assert_eq!(
+            focus_action(FocusTarget::Navigator, Input::Left),
+            Some(Action::CollapseNavigatorGroup)
+        );
+        assert_eq!(
+            focus_action(FocusTarget::Navigator, Input::Right),
+            Some(Action::ExpandNavigatorGroup)
+        );
+
+        let content_heading = MouseInput {
+            kind: MouseKind::Down,
+            column: 5,
+            row: 5,
+        };
+        assert_eq!(
+            mouse_action_for_app(content_heading, &app, 180, 40),
+            Some(Action::ToggleNavigatorGroup { group: 1 })
         );
     }
 

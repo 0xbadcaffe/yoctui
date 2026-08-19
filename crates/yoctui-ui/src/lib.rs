@@ -21,25 +21,26 @@ use yoctui_model::{
     MaintenanceCapabilitySnapshot, MaintenanceDialog, MaintenanceIntegrationDiagnostics,
     MaintenanceIntegrationsSnapshot, MaintenanceOperation, MaintenanceOperationPreview,
     MaintenanceServiceDiagnostics, MaintenanceSessionStatus, MaintenanceTool,
-    MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView, PackageDetailState,
-    PackageField, PackageIdentity, PackageInventoryState, PaneNode, PreviewKind, QaCapability,
-    QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus, QaLayerCapability,
-    QaLayerRunCapability, QaOutputStream, QaReportFailureKind, QaReportInventoryState,
-    QaSessionStatus, QaStatusFilter, QaView, QemuCapability, QemuDisplayMode, QemuLaunchDialog,
-    QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe,
-    RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen, SdkArtifactInventoryState,
-    SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog, SdkNativeField, SdkNativeMode,
-    SdkNativePreview, SdkOperation, SdkPublishDraft, SdkPublishPreview, SdkSessionId,
-    SdkToolCapability, SecurityCapability, SecurityDialog, SecurityInventoryState,
-    SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope, SecuritySessionStatus,
-    SecurityView, Severity, SignatureComparisonState, SignatureDifferenceCategory,
-    SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskRow, TaskRowRef, TaskState,
-    TestComparisonCategory, TestComparisonState, TestExecutableCapability, TestJunitExportState,
-    TestLaunchDialog, TestLaunchField, TestLaunchPreview, TestResultInventoryState,
-    TestWorkspaceView, Theme, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
-    WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog,
-    WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog,
-    WicWritePreview, WorkspaceAvailabilityState, WorkspaceDestination,
+    MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView, NAVIGATOR_GROUPS,
+    PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PaneNode,
+    PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus,
+    QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
+    QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView, QemuCapability,
+    QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode,
+    QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen,
+    SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog,
+    SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation, SdkPublishDraft,
+    SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
+    SecurityInventoryState, SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope,
+    SecuritySessionStatus, SecurityView, Severity, SignatureComparisonState,
+    SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskRow,
+    TaskRowRef, TaskState, TestComparisonCategory, TestComparisonState, TestExecutableCapability,
+    TestJunitExportState, TestLaunchDialog, TestLaunchField, TestLaunchPreview,
+    TestResultInventoryState, TestWorkspaceView, Theme, VariableIdentity, WicCapability,
+    WicCompression, WicCreateDialog, WicCreateField, WicCreatePreview, WicDevice,
+    WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart, WicOperation,
+    WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
+    WorkspaceAvailabilityState, WorkspaceDestination,
     compatibility_ui_workspace_destination_action_availability, config_comparison,
     config_edit_disabled_reason, config_source_disabled_reason, format_duration,
     selected_config_copy_value,
@@ -782,7 +783,7 @@ fn footer_shortcuts(app: &App) -> String {
             app.navigator_compatibility_destination(),
             with_focus_shortcuts(
                 app,
-                "j/k or ↑/↓ select | Enter open | Ctrl+B prefix | q quit",
+                "j/k or ↑/↓ select | ←/→ collapse/open | Enter open | Ctrl+B prefix | q quit",
             ),
         );
     }
@@ -2610,49 +2611,57 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
         literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
-    const GROUPS: [(&str, &[(&str, Screen)]); 5] = [
-        ("OVERVIEW", &[("Dashboard", Screen::Dashboard)]),
+    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 20] = [
         (
-            "CONTENT",
-            &[
-                ("Layers", Screen::Layers),
-                ("Recipes", Screen::Recipes),
-                ("Packages", Screen::Packages),
-                ("Images", Screen::Images),
-                ("SDK", Screen::Sdk),
-            ],
+            "Dashboard",
+            Screen::Dashboard,
+            WorkspaceDestination::Dashboard,
+        ),
+        ("Layers", Screen::Layers, WorkspaceDestination::Layers),
+        ("Recipes", Screen::Recipes, WorkspaceDestination::Recipes),
+        ("Packages", Screen::Packages, WorkspaceDestination::Packages),
+        ("Images", Screen::Images, WorkspaceDestination::Images),
+        ("SDK", Screen::Sdk, WorkspaceDestination::Sdk),
+        ("Tasks", Screen::Tasks, WorkspaceDestination::Tasks),
+        ("Logs", Screen::Logs, WorkspaceDestination::Logs),
+        ("Errors", Screen::Errors, WorkspaceDestination::Errors),
+        (
+            "Configuration",
+            Screen::Configuration,
+            WorkspaceDestination::Configuration,
         ),
         (
-            "BUILD",
-            &[
-                ("Tasks", Screen::Tasks),
-                ("Logs", Screen::Logs),
-                ("Errors", Screen::Errors),
-                ("Configuration", Screen::Configuration),
-                ("Dependencies", Screen::Dependencies),
-            ],
+            "Dependencies",
+            Screen::Dependencies,
+            WorkspaceDestination::Dependencies,
+        ),
+        ("Testing", Screen::Testing, WorkspaceDestination::Testing),
+        ("Security", Screen::Security, WorkspaceDestination::Security),
+        ("QA", Screen::Qa, WorkspaceDestination::Qa),
+        ("Devtool", Screen::Recipes, WorkspaceDestination::Devtool),
+        ("QEMU / Wic", Screen::Images, WorkspaceDestination::QemuWic),
+        (
+            "Maintenance",
+            Screen::Maintenance,
+            WorkspaceDestination::Maintenance,
         ),
         (
-            "VALIDATE",
-            &[
-                ("Testing", Screen::Testing),
-                ("Security", Screen::Security),
-                ("QA", Screen::Qa),
-            ],
+            "Build environment",
+            Screen::BuildEnvironment,
+            WorkspaceDestination::BuildEnvironment,
         ),
         (
-            "TOOLS",
-            &[
-                ("Devtool", Screen::Recipes),
-                ("Maintenance", Screen::Maintenance),
-                ("Build environment", Screen::BuildEnvironment),
-                ("Compatibility", Screen::Compatibility),
-                ("Settings", Screen::Settings),
-            ],
+            "Compatibility",
+            Screen::Compatibility,
+            WorkspaceDestination::Compatibility,
         ),
+        ("Settings", Screen::Settings, WorkspaceDestination::Settings),
     ];
     enum NavigatorRow<'a> {
-        Group(&'a str),
+        Group {
+            name: &'a str,
+            index: usize,
+        },
         Destination {
             name: &'a str,
             destination: WorkspaceDestination,
@@ -2660,44 +2669,41 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
         },
     }
 
-    let mut destination_index = 0;
     let mut rows = Vec::new();
-    for (group, destinations) in GROUPS {
-        rows.push(NavigatorRow::Group(group));
-        rows.extend(destinations.iter().map(|(name, screen)| {
-            let index = destination_index;
-            destination_index += 1;
-            let destination = if *name == "Devtool" {
-                WorkspaceDestination::Devtool
-            } else {
-                yoctui_model::workspace_screen_destination(*screen)
-            };
-            NavigatorRow::Destination {
-                name,
-                destination,
-                index,
-            }
-        }));
+    for (group_index, group) in NAVIGATOR_GROUPS.iter().enumerate() {
+        rows.push(NavigatorRow::Group {
+            name: group.label,
+            index: group_index,
+        });
+        if app.navigator_groups_expanded[group_index] {
+            rows.extend(DESTINATIONS[group.start..group.end].iter().enumerate().map(
+                |(offset, (name, _, destination))| NavigatorRow::Destination {
+                    name,
+                    destination: *destination,
+                    index: group.start + offset,
+                },
+            ));
+        }
     }
-    debug_assert_eq!(destination_index, 19);
 
-    let block = pane_block(app, "Navigator", app.focus == FocusTarget::Navigator);
+    let expected_visible = usize::from(area.height.saturating_sub(2));
+    let title = if app.navigator_visible_row_count() > expected_visible {
+        format!(
+            "Navigator {}/{}",
+            app.navigator_visual_row() + 1,
+            app.navigator_visible_row_count()
+        )
+    } else {
+        "Navigator".into()
+    };
+    let block = pane_block(app, &title, app.focus == FocusTarget::Navigator);
     let inner = block.inner(area);
     frame.render_widget(block, area);
     if inner.is_empty() {
         return;
     }
-    let selected_visual_row = rows
-        .iter()
-        .position(|row| {
-            matches!(
-                row,
-                NavigatorRow::Destination { index, .. } if *index == app.navigator_selection
-            )
-        })
-        .unwrap_or(0);
     let visible = usize::from(inner.height);
-    let start = selected_visual_row.saturating_sub(visible.saturating_sub(1));
+    let start = app.navigator_viewport_start(visible);
     let palette = ThemePalette::for_app(app);
     let width = usize::from(inner.width);
     let lines = rows
@@ -2705,10 +2711,22 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
         .skip(start)
         .take(visible)
         .map(|row| match row {
-            NavigatorRow::Group(name) => Line::from(Span::styled(
-                format!("▾ {name:<width$}", width = width.saturating_sub(2)),
-                palette.role(palette.warning, Modifier::BOLD),
-            )),
+            NavigatorRow::Group { name, index } => {
+                let expanded = app.navigator_groups_expanded[*index];
+                let selected = !expanded && app.navigator_group_index() == *index;
+                Line::from(Span::styled(
+                    format!(
+                        "{} {name:<width$}",
+                        if expanded { "▾" } else { "▸" },
+                        width = width.saturating_sub(2)
+                    ),
+                    if selected {
+                        palette.selected()
+                    } else {
+                        palette.role(palette.warning, Modifier::BOLD)
+                    },
+                ))
+            }
             NavigatorRow::Destination {
                 name,
                 destination,
@@ -2726,8 +2744,13 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
                     WorkspaceAvailabilityState::Unknown => "?",
                     WorkspaceAvailabilityState::Unsupported => "!",
                 };
+                let badge = navigator_badge(app, *destination);
+                let content_width = width.saturating_sub(4);
+                let badge_width = badge.chars().count();
+                let label_width = content_width.saturating_sub(badge_width);
+                let label = name.chars().take(label_width).collect::<String>();
                 Line::from(Span::styled(
-                    format!("  {marker} {name:<width$}", width = width.saturating_sub(4)),
+                    format!("  {marker} {label:<label_width$}{badge}"),
                     if selected {
                         palette.selected()
                     } else {
@@ -2738,6 +2761,40 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
         })
         .collect::<Vec<_>>();
     frame.render_widget(Paragraph::new(Text::from(lines)), inner);
+}
+
+fn navigator_badge(app: &App, destination: WorkspaceDestination) -> String {
+    match destination {
+        WorkspaceDestination::Tasks => {
+            let active = app
+                .tasks
+                .values()
+                .filter(|task| task.state == TaskState::Active)
+                .count();
+            if active > 0 {
+                format!(" {active}")
+            } else {
+                String::new()
+            }
+        }
+        WorkspaceDestination::Errors => {
+            if app.build.errors > 0 {
+                format!(" {}", app.build.errors)
+            } else {
+                String::new()
+            }
+        }
+        WorkspaceDestination::Logs if app.logs.paused_len.is_some() => " PAUSE".into(),
+        WorkspaceDestination::Logs if app.logs.follow => " LIVE".into(),
+        WorkspaceDestination::Devtool => {
+            if app.devtool_statuses.is_empty() {
+                String::new()
+            } else {
+                format!(" {}", app.devtool_statuses.len())
+            }
+        }
+        _ => String::new(),
+    }
 }
 
 fn project_tree_child(
@@ -12998,9 +13055,47 @@ mod tests {
     fn workbench_navigator_scrolls_the_last_destination_into_view() {
         let mut app = App::new(32, 8192);
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 18;
+        app.navigator_selection = 19;
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains("TOOLS"), "{output}");
+        assert!(output.contains("Settings"), "{output}");
+    }
+
+    #[test]
+    fn next_generation_navigator_renders_authoritative_badges_and_collapsed_groups() {
+        let mut app = App::new(32, 8192);
+        app.focus = FocusTarget::Navigator;
+        app.build.errors = 3;
+        app.tasks.insert(
+            yoctui_model::TaskId("busybox:do_compile".into()),
+            yoctui_model::TaskInfo {
+                id: yoctui_model::TaskId("busybox:do_compile".into()),
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                state: TaskState::Active,
+                ..Default::default()
+            },
+        );
+        let expanded = rendered_text(&app, 180, 40);
+        assert!(expanded.contains("Tasks"), "{expanded}");
+        assert!(expanded.contains("Tasks          1"), "{expanded}");
+        assert!(expanded.contains("Errors         3"), "{expanded}");
+        assert!(expanded.contains("Logs        LIVE"), "{expanded}");
+
+        app.navigator_selection = 6;
+        app.navigator_groups_expanded[2] = false;
+        let collapsed = rendered_text(&app, 180, 40);
+        assert!(collapsed.contains("▸ BUILD"), "{collapsed}");
+        assert!(!collapsed.contains("Tasks          1"), "{collapsed}");
+    }
+
+    #[test]
+    fn next_generation_navigator_reports_bounded_scroll_position() {
+        let mut app = App::new(32, 8192);
+        app.focus = FocusTarget::Navigator;
+        app.navigator_selection = 19;
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("Navigator 25/25"), "{output}");
         assert!(output.contains("Settings"), "{output}");
     }
 

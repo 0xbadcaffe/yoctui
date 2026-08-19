@@ -21,6 +21,7 @@ fn mouse_runtime_routes_dashboard_terminal_and_dialog_focus() {
             },
             &app,
             120,
+            30,
         ),
         Some(Action::SelectPtySession { delta: 1 })
     );
@@ -34,6 +35,7 @@ fn mouse_runtime_routes_dashboard_terminal_and_dialog_focus() {
             },
             &app,
             120,
+            30,
         ),
         Some(Action::Focus(FocusTarget::Dialog))
     );

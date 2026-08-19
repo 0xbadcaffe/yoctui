@@ -9633,6 +9633,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     crossterm::event::MouseEventKind::ScrollDown => Some(MouseKind::ScrollDown),
                     _ => None,
                 };
+                let terminal_size = terminal.size()?;
                 if let Some(kind) = kind
                     && let Some(action) = mouse_action_for_app(
                         MouseInput {
@@ -9641,7 +9642,8 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             row: mouse.row,
                         },
                         &app,
-                        terminal.size()?.width,
+                        terminal_size.width,
+                        terminal_size.height,
                     )
                 {
                     let _ = compatibility_workspace_action(&mut app, action);

@@ -194,7 +194,7 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-const NAVIGATOR_SCREENS: [Screen; 19] = [
+const NAVIGATOR_SCREENS: [Screen; 20] = [
     Screen::Dashboard,
     Screen::Layers,
     Screen::Recipes,
@@ -210,12 +210,13 @@ const NAVIGATOR_SCREENS: [Screen; 19] = [
     Screen::Security,
     Screen::Qa,
     Screen::Recipes,
+    Screen::Images,
     Screen::Maintenance,
     Screen::BuildEnvironment,
     Screen::Compatibility,
     Screen::Settings,
 ];
-const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 19] = [
+const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 20] = [
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Layers,
     WorkspaceDestination::Recipes,
@@ -231,11 +232,54 @@ const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 19] = [
     WorkspaceDestination::Security,
     WorkspaceDestination::Qa,
     WorkspaceDestination::Devtool,
+    WorkspaceDestination::QemuWic,
     WorkspaceDestination::Maintenance,
     WorkspaceDestination::BuildEnvironment,
     WorkspaceDestination::Compatibility,
     WorkspaceDestination::Settings,
 ];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NavigatorGroupRange {
+    pub label: &'static str,
+    pub start: usize,
+    pub end: usize,
+}
+
+pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
+    NavigatorGroupRange {
+        label: "OVERVIEW",
+        start: 0,
+        end: 1,
+    },
+    NavigatorGroupRange {
+        label: "CONTENT",
+        start: 1,
+        end: 6,
+    },
+    NavigatorGroupRange {
+        label: "BUILD",
+        start: 6,
+        end: 11,
+    },
+    NavigatorGroupRange {
+        label: "VALIDATE",
+        start: 11,
+        end: 14,
+    },
+    NavigatorGroupRange {
+        label: "TOOLS",
+        start: 14,
+        end: 20,
+    },
+];
+
+fn navigator_group_for_selection(selection: usize) -> usize {
+    NAVIGATOR_GROUPS
+        .iter()
+        .position(|group| (group.start..group.end).contains(&selection))
+        .unwrap_or(0)
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum BuildStatus {
     Idle,
@@ -2613,6 +2657,7 @@ pub struct App {
     pub focus: FocusTarget,
     pub focus_return: Option<FocusTarget>,
     pub navigator_selection: usize,
+    pub navigator_groups_expanded: [bool; NAVIGATOR_GROUPS.len()],
     pub backend: String,
     pub project_profile: ProjectProfileState,
     pub project_profile_selection: usize,
@@ -2743,6 +2788,7 @@ impl App {
             focus: FocusTarget::Workspace,
             focus_return: None,
             navigator_selection: 0,
+            navigator_groups_expanded: [true; NAVIGATOR_GROUPS.len()],
             backend: "unknown".into(),
             project_profile: ProjectProfileState::NotLoaded,
             project_profile_selection: 0,
@@ -2889,6 +2935,80 @@ impl App {
             .get(self.navigator_selection)
             .copied()
             .unwrap_or(WorkspaceDestination::Dashboard)
+    }
+    pub fn navigator_group_index(&self) -> usize {
+        navigator_group_for_selection(self.navigator_selection)
+    }
+    pub fn navigator_visible_row_count(&self) -> usize {
+        NAVIGATOR_GROUPS.len()
+            + NAVIGATOR_GROUPS
+                .iter()
+                .enumerate()
+                .filter(|(index, _)| self.navigator_groups_expanded[*index])
+                .map(|(_, group)| group.end - group.start)
+                .sum::<usize>()
+    }
+    pub fn navigator_visual_row(&self) -> usize {
+        let selected_group = self.navigator_group_index();
+        let rows_before = NAVIGATOR_GROUPS
+            .iter()
+            .enumerate()
+            .take(selected_group)
+            .map(|(index, group)| {
+                1 + usize::from(self.navigator_groups_expanded[index]) * (group.end - group.start)
+            })
+            .sum::<usize>();
+        if self.navigator_groups_expanded[selected_group] {
+            rows_before
+                + 1
+                + self
+                    .navigator_selection
+                    .saturating_sub(NAVIGATOR_GROUPS[selected_group].start)
+        } else {
+            rows_before
+        }
+    }
+    pub fn navigator_selection_at_visual_row(&self, visual_row: usize) -> Option<usize> {
+        let mut cursor = 0;
+        for (group_index, group) in NAVIGATOR_GROUPS.iter().enumerate() {
+            if visual_row == cursor {
+                return None;
+            }
+            cursor += 1;
+            if !self.navigator_groups_expanded[group_index] {
+                continue;
+            }
+            let end = cursor + group.end - group.start;
+            if visual_row < end {
+                return Some(group.start + visual_row - cursor);
+            }
+            cursor = end;
+        }
+        None
+    }
+    pub fn navigator_group_at_visual_row(&self, visual_row: usize) -> Option<usize> {
+        let mut cursor = 0;
+        for (group_index, group) in NAVIGATOR_GROUPS.iter().enumerate() {
+            if visual_row == cursor {
+                return Some(group_index);
+            }
+            cursor += 1;
+            if self.navigator_groups_expanded[group_index] {
+                cursor += group.end - group.start;
+            }
+        }
+        None
+    }
+    pub fn navigator_viewport_start(&self, visible_rows: usize) -> usize {
+        self.navigator_visual_row()
+            .saturating_sub(visible_rows.saturating_sub(1))
+            .min(
+                self.navigator_visible_row_count()
+                    .saturating_sub(visible_rows),
+            )
+    }
+    fn navigator_selection_is_visible(&self, selection: usize) -> bool {
+        self.navigator_groups_expanded[navigator_group_for_selection(selection)]
     }
     pub fn waiting_task_count(&self) -> usize {
         if matches!(
@@ -3526,6 +3646,14 @@ pub enum Action {
     SelectNavigator {
         delta: isize,
     },
+    SelectNavigatorAt {
+        index: usize,
+    },
+    ToggleNavigatorGroup {
+        group: usize,
+    },
+    CollapseNavigatorGroup,
+    ExpandNavigatorGroup,
     SelectPtySession {
         delta: isize,
     },
@@ -6165,6 +6293,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             &action,
             Action::Open(_)
                 | Action::SelectNavigator { .. }
+                | Action::SelectNavigatorAt { .. }
+                | Action::ToggleNavigatorGroup { .. }
+                | Action::CollapseNavigatorGroup
+                | Action::ExpandNavigatorGroup
                 | Action::ActivateNavigator
                 | Action::CycleFocus { .. }
                 | Action::Focus(
@@ -6344,13 +6476,52 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::SelectNavigator { delta } => {
-            app.navigator_selection = if delta.is_negative() {
-                app.navigator_selection.saturating_sub(delta.unsigned_abs())
-            } else {
-                app.navigator_selection
-                    .saturating_add(delta as usize)
-                    .min(NAVIGATOR_SCREENS.len().saturating_sub(1))
-            };
+            let backwards = delta.is_negative();
+            for _ in 0..delta.unsigned_abs() {
+                let mut candidate = app.navigator_selection;
+                loop {
+                    let next = if backwards {
+                        candidate.checked_sub(1)
+                    } else {
+                        candidate
+                            .checked_add(1)
+                            .filter(|next| *next < NAVIGATOR_SCREENS.len())
+                    };
+                    let Some(next) = next else {
+                        break;
+                    };
+                    candidate = next;
+                    if app.navigator_selection_is_visible(candidate) {
+                        app.navigator_selection = candidate;
+                        break;
+                    }
+                }
+            }
+        }
+        Action::SelectNavigatorAt { index } => {
+            if index < NAVIGATOR_SCREENS.len() && app.navigator_selection_is_visible(index) {
+                app.navigator_selection = index;
+                app.focus = FocusTarget::Navigator;
+                app.focus_return = None;
+            }
+        }
+        Action::ToggleNavigatorGroup { group } => {
+            if let Some(expanded) = app.navigator_groups_expanded.get_mut(group) {
+                *expanded = !*expanded;
+                app.focus = FocusTarget::Navigator;
+                app.focus_return = None;
+            }
+        }
+        Action::CollapseNavigatorGroup => {
+            let group = app.navigator_group_index();
+            app.navigator_groups_expanded[group] = false;
+        }
+        Action::ExpandNavigatorGroup => {
+            let group = app.navigator_group_index();
+            if app.navigator_groups_expanded[group] {
+                return update(app, Action::ActivateNavigator);
+            }
+            app.navigator_groups_expanded[group] = true;
         }
         Action::SelectPtySession { delta } => {
             let count = app.daemon.pty_sessions.len();
@@ -6371,6 +6542,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             let _ = app.pane_layout.resize(focused, delta_per_mille);
         }
         Action::ActivateNavigator => {
+            let group = app.navigator_group_index();
+            if !app.navigator_groups_expanded[group] {
+                app.navigator_groups_expanded[group] = true;
+                return None;
+            }
             app.screen = NAVIGATOR_SCREENS[app.navigator_selection];
             app.focus = FocusTarget::Workspace;
             app.focus_return = None;
@@ -14327,12 +14503,40 @@ mod tests {
                 Screen::Security,
                 Screen::Qa,
                 Screen::Recipes,
+                Screen::Images,
                 Screen::Maintenance,
                 Screen::BuildEnvironment,
                 Screen::Compatibility,
                 Screen::Settings,
             ]
         );
+    }
+
+    #[test]
+    fn navigator_groups_collapse_without_exposing_hidden_destinations() {
+        let mut app = App::new(10, 1_000);
+        app.navigator_selection = 6;
+        assert_eq!(app.navigator_group_index(), 2);
+        assert_eq!(app.navigator_visual_row(), 9);
+
+        let _ = update(&mut app, Action::CollapseNavigatorGroup);
+        assert!(!app.navigator_groups_expanded[2]);
+        assert_eq!(app.navigator_visual_row(), 8);
+        assert_eq!(app.navigator_group_at_visual_row(8), Some(2));
+        assert_eq!(app.navigator_selection_at_visual_row(8), None);
+
+        let _ = update(&mut app, Action::SelectNavigator { delta: 1 });
+        assert_eq!(app.navigator_selection, 11);
+        let _ = update(&mut app, Action::SelectNavigatorAt { index: 7 });
+        assert_eq!(
+            app.navigator_selection, 11,
+            "hidden rows cannot be selected"
+        );
+
+        app.navigator_selection = 6;
+        let _ = update(&mut app, Action::ActivateNavigator);
+        assert!(app.navigator_groups_expanded[2]);
+        assert_eq!(app.screen, Screen::Dashboard, "expansion does not navigate");
     }
     #[test]
     fn responsive_pane_focus_cycle_cannot_escape_modal_focus() {

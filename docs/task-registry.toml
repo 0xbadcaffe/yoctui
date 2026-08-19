@@ -5112,18 +5112,18 @@ notes = "Added the public SemanticTheme catalog covering surface/text, borders, 
 id = "NAV-UI-001"
 milestone = "M19"
 title = "Redesign Navigator presentation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 525
 required = true
 depends_on = ["FOUNDATION-UI-003"]
 verify = ["cargo test -p yoctui-ui next_generation_navigator", "cargo test -p yoctui-app next_generation_navigator"]
-notes = "Render deterministic workspace groups and authoritative contextual rows with keyboard/mouse selection and bounded scrolling without inventing a filesystem."
+notes = "The complete workspace rail now uses model-owned deterministic groups, expandable/collapsible branches, bounded selected-row projection, a visible current/total scroll title, full-row semantic selection, terminal-safe compatibility markers, and only authoritative Tasks/Errors/Logs/Devtool badges. QEMU / Wic is explicitly reachable. Keyboard and size-aware mouse hit-testing share typed selection/toggle/activation actions; canonical Tasks context rows select their owning workspace without pretending to be filesystem operations. Focused model/app/UI and CLI mouse tests plus the unchanged literal golden pass."
 
 [[task]]
 id = "TASKS-UI-001"
 milestone = "M19"
 title = "Redesign the Tasks table"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 526
 required = true
 depends_on = ["FOUNDATION-UI-003"]

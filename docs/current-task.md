@@ -2,15 +2,15 @@
 
 ## Task
 
-**ID:** NAV-UI-001
-**Title:** Redesign Navigator presentation
+**ID:** TASKS-UI-001
+**Title:** Redesign the Tasks table
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Refine the Navigator into a polished, deterministic workspace rail with
-terminal-safe hierarchy, authoritative contextual rows, bounded scrolling,
-and complete keyboard and mouse selection.
+Refine the Tasks table into a dense build monitor with adaptive authoritative
+columns, strong running-row treatment, honest determinate and indeterminate
+progress, and stable reduced-motion behavior.
 
 ## Dependencies
 
@@ -20,7 +20,6 @@ and complete keyboard and mouse selection.
 
 - `crates/yoctui-ui/src/lib.rs`
 - `crates/yoctui-model/src/lib.rs`
-- `crates/yoctui-app/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -28,18 +27,19 @@ and complete keyboard and mouse selection.
 
 ## Definition of done
 
-- Workspace destinations remain visually grouped and deterministically ordered.
-- Active selection, focus, badges, and optional contextual entries use only
-  authoritative typed state.
-- Workspace navigation remains distinct from workspace-owned content trees.
-- Keyboard and mouse selection share typed action routing.
-- Scrolling is bounded and stable at all supported widths.
+- Columns hide deterministically according to the documented width priorities.
+- Task, recipe, state, elapsed, real progress, and worker appear only when the
+  typed model provides them.
+- No task CPU value or ETA is fabricated.
+- Running rows remain prominent without masking the selected row.
+- Unknown progress uses a stable reduced-motion presentation and never appears
+  determinate.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_navigator
-cargo test -p yoctui-app next_generation_navigator
+cargo test -p yoctui-ui next_generation_tasks_table
+cargo test -p yoctui-model task_rows
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

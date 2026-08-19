@@ -11,10 +11,19 @@ Status values:
 
 ## Current phase
 
-`NAV-UI-001` is `IN_PROGRESS`. It will refine the existing grouped Navigator
-into a deterministic, bounded workspace rail with authoritative contextual
-rows and complete keyboard/mouse parity, without duplicating workspace-owned
-content trees.
+`TASKS-UI-001` is `IN_PROGRESS`. It will refine the Tasks table around adaptive
+authoritative columns, strong running selection, honest determinate and
+indeterminate progress, and stable reduced-motion behavior without inventing
+CPU or ETA.
+
+`NAV-UI-001` is `DONE`: the complete workspace rail now uses model-owned stable
+groups, collapse/expand state, bounded visual-row projection, full-row semantic
+selection, a current/total scroll title, compatibility markers, and only
+authoritative Tasks/Errors/Logs/Devtool badges. QEMU / Wic is explicitly
+reachable. Keyboard and size-aware mouse hit-testing emit the same typed
+selection, group-toggle, and activation actions; the canonical Tasks context
+tree selects real owning workspaces and never simulates filesystem behavior.
+Focused model/app/UI and CLI mouse tests plus the unchanged literal golden pass.
 
 `FOUNDATION-UI-003` is `DONE`: the public `SemanticTheme` catalog now resolves
 surface/text, borders, selection, lifecycle, emphasis, bounded graphs,
