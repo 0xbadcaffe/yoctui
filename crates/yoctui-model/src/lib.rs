@@ -898,6 +898,285 @@ pub struct HostTelemetry {
     pub disk_total_bytes: Option<u64>,
     pub load_average_milli: Option<[u32; 3]>,
 }
+
+pub const HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS: u16 = 1;
+pub const HOST_TELEMETRY_HISTORY_SAMPLES: usize = 60;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TelemetryMetric {
+    HostCpuUtilization,
+    HostLogicalCpuCount,
+    HostMemoryCapacity,
+    BuildFilesystemCapacity,
+    HostLoadAverage,
+    DiskReadRate,
+    DiskWriteRate,
+    NetworkReceiveRate,
+    NetworkTransmitRate,
+    DaemonConnectionState,
+    DaemonUptime,
+    BitBakeState,
+    ConnectedClients,
+    TerminalSessions,
+    ActiveJobs,
+    DaemonQueueDepth,
+    DaemonResidentMemory,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TelemetrySource {
+    HostProcStat,
+    HostAvailableParallelism,
+    HostProcMeminfo,
+    BuildFilesystemStatvfs,
+    HostProcLoadavg,
+    ClientReplica,
+    DaemonRuntimeClock,
+    DaemonSnapshot,
+    DaemonTelemetry,
+    NotCollected,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TelemetryUnit {
+    IntegerPercent,
+    Count,
+    Bytes,
+    BytesPerSecond,
+    MilliLoad,
+    Lifecycle,
+    Seconds,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TelemetryHostSupport {
+    Portable,
+    Unix,
+    Linux,
+    DaemonProtocol,
+    NotCollected,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TelemetryProvenance {
+    pub metric: TelemetryMetric,
+    pub source: TelemetrySource,
+    pub unit: TelemetryUnit,
+    pub host_support: TelemetryHostSupport,
+    pub sample_period_seconds: Option<u16>,
+    pub history_samples: usize,
+    pub requires_delta: bool,
+    pub renderable: bool,
+    pub precision: &'static str,
+    pub unavailable_behavior: &'static str,
+}
+
+pub const TELEMETRY_PROVENANCE: &[TelemetryProvenance] = &[
+    TelemetryProvenance {
+        metric: TelemetryMetric::HostCpuUtilization,
+        source: TelemetrySource::HostProcStat,
+        unit: TelemetryUnit::IntegerPercent,
+        host_support: TelemetryHostSupport::Linux,
+        sample_period_seconds: Some(HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS),
+        history_samples: HOST_TELEMETRY_HISTORY_SAMPLES,
+        requires_delta: true,
+        renderable: true,
+        precision: "aggregate non-idle counter delta, truncated to a whole percent",
+        unavailable_behavior: "unavailable until two valid active-operation samples exist",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::HostLogicalCpuCount,
+        source: TelemetrySource::HostAvailableParallelism,
+        unit: TelemetryUnit::Count,
+        host_support: TelemetryHostSupport::Portable,
+        sample_period_seconds: Some(HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS),
+        history_samples: 0,
+        requires_delta: false,
+        renderable: true,
+        precision: "logical parallelism visible to this process",
+        unavailable_behavior: "display unknown core count when the runtime query fails or exceeds u16",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::HostMemoryCapacity,
+        source: TelemetrySource::HostProcMeminfo,
+        unit: TelemetryUnit::Bytes,
+        host_support: TelemetryHostSupport::Linux,
+        sample_period_seconds: Some(HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS),
+        history_samples: HOST_TELEMETRY_HISTORY_SAMPLES,
+        requires_delta: false,
+        renderable: true,
+        precision: "MemTotal and MemAvailable kB converted exactly to bytes",
+        unavailable_behavior: "omit the sample unless both values are valid and available does not exceed total",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::BuildFilesystemCapacity,
+        source: TelemetrySource::BuildFilesystemStatvfs,
+        unit: TelemetryUnit::Bytes,
+        host_support: TelemetryHostSupport::Unix,
+        sample_period_seconds: Some(HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS),
+        history_samples: 0,
+        requires_delta: false,
+        renderable: true,
+        precision: "f_bavail and f_blocks multiplied by filesystem fragment size",
+        unavailable_behavior: "display unavailable when the build path or statvfs sample is invalid",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::HostLoadAverage,
+        source: TelemetrySource::HostProcLoadavg,
+        unit: TelemetryUnit::MilliLoad,
+        host_support: TelemetryHostSupport::Linux,
+        sample_period_seconds: Some(HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS),
+        history_samples: 0,
+        requires_delta: false,
+        renderable: true,
+        precision: "1/5/15-minute kernel values retained to three decimal places",
+        unavailable_behavior: "display all three values as unavailable when parsing fails",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::DiskReadRate,
+        source: TelemetrySource::NotCollected,
+        unit: TelemetryUnit::BytesPerSecond,
+        host_support: TelemetryHostSupport::NotCollected,
+        sample_period_seconds: None,
+        history_samples: 0,
+        requires_delta: true,
+        renderable: false,
+        precision: "no authoritative counter is sampled",
+        unavailable_behavior: "omit the metric",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::DiskWriteRate,
+        source: TelemetrySource::NotCollected,
+        unit: TelemetryUnit::BytesPerSecond,
+        host_support: TelemetryHostSupport::NotCollected,
+        sample_period_seconds: None,
+        history_samples: 0,
+        requires_delta: true,
+        renderable: false,
+        precision: "no authoritative counter is sampled",
+        unavailable_behavior: "omit the metric",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::NetworkReceiveRate,
+        source: TelemetrySource::NotCollected,
+        unit: TelemetryUnit::BytesPerSecond,
+        host_support: TelemetryHostSupport::NotCollected,
+        sample_period_seconds: None,
+        history_samples: 0,
+        requires_delta: true,
+        renderable: false,
+        precision: "no authoritative interface counter is sampled",
+        unavailable_behavior: "omit the metric",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::NetworkTransmitRate,
+        source: TelemetrySource::NotCollected,
+        unit: TelemetryUnit::BytesPerSecond,
+        host_support: TelemetryHostSupport::NotCollected,
+        sample_period_seconds: None,
+        history_samples: 0,
+        requires_delta: true,
+        renderable: false,
+        precision: "no authoritative interface counter is sampled",
+        unavailable_behavior: "omit the metric",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::DaemonConnectionState,
+        source: TelemetrySource::ClientReplica,
+        unit: TelemetryUnit::Lifecycle,
+        host_support: TelemetryHostSupport::DaemonProtocol,
+        sample_period_seconds: None,
+        history_samples: 0,
+        requires_delta: false,
+        renderable: true,
+        precision: "current client replica lifecycle",
+        unavailable_behavior: "render the exact disconnected, synchronizing, stale, or current state",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::DaemonUptime,
+        source: TelemetrySource::DaemonRuntimeClock,
+        unit: TelemetryUnit::Seconds,
+        host_support: TelemetryHostSupport::DaemonProtocol,
+        sample_period_seconds: Some(1),
+        history_samples: 0,
+        requires_delta: false,
+        renderable: true,
+        precision: "whole seconds from saturating wall-clock difference to daemon start",
+        unavailable_behavior: "display unavailable until current daemon telemetry arrives",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::BitBakeState,
+        source: TelemetrySource::DaemonSnapshot,
+        unit: TelemetryUnit::Lifecycle,
+        host_support: TelemetryHostSupport::DaemonProtocol,
+        sample_period_seconds: None,
+        history_samples: 0,
+        requires_delta: false,
+        renderable: true,
+        precision: "exact lifecycle from the current daemon journal snapshot",
+        unavailable_behavior: "render disconnected or stale replica state rather than reuse old authority",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::ConnectedClients,
+        source: TelemetrySource::DaemonSnapshot,
+        unit: TelemetryUnit::Count,
+        host_support: TelemetryHostSupport::DaemonProtocol,
+        sample_period_seconds: None,
+        history_samples: 0,
+        requires_delta: false,
+        renderable: true,
+        precision: "exact current snapshot client inventory length",
+        unavailable_behavior: "display unavailable when the daemon replica is not current",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::TerminalSessions,
+        source: TelemetrySource::DaemonSnapshot,
+        unit: TelemetryUnit::Count,
+        host_support: TelemetryHostSupport::DaemonProtocol,
+        sample_period_seconds: None,
+        history_samples: 0,
+        requires_delta: false,
+        renderable: true,
+        precision: "exact current snapshot PTY inventory length",
+        unavailable_behavior: "display unavailable when the daemon replica is not current",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::ActiveJobs,
+        source: TelemetrySource::DaemonTelemetry,
+        unit: TelemetryUnit::Count,
+        host_support: TelemetryHostSupport::DaemonProtocol,
+        sample_period_seconds: Some(1),
+        history_samples: 0,
+        requires_delta: false,
+        renderable: true,
+        precision: "Connecting, Running, and Stopping daemon job count",
+        unavailable_behavior: "display unavailable until current daemon telemetry arrives",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::DaemonQueueDepth,
+        source: TelemetrySource::DaemonTelemetry,
+        unit: TelemetryUnit::Count,
+        host_support: TelemetryHostSupport::DaemonProtocol,
+        sample_period_seconds: Some(1),
+        history_samples: 0,
+        requires_delta: false,
+        renderable: false,
+        precision: "wire field currently mirrors connected client count, not queued work",
+        unavailable_behavior: "do not render as queue depth",
+    },
+    TelemetryProvenance {
+        metric: TelemetryMetric::DaemonResidentMemory,
+        source: TelemetrySource::DaemonTelemetry,
+        unit: TelemetryUnit::Bytes,
+        host_support: TelemetryHostSupport::Unix,
+        sample_period_seconds: Some(1),
+        history_samples: 0,
+        requires_delta: false,
+        renderable: false,
+        precision: "Linux resident pages multiplied by an assumed 4096-byte page size",
+        unavailable_behavior: "diagnostic only; do not render as precise memory until page size is authoritative",
+    },
+];
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Layer {
     pub name: String,
@@ -14197,10 +14476,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.recipe_sources.insert(recipe, paths);
         }
         Action::HostTelemetryUpdated(telemetry) => {
-            const HISTORY_LIMIT: usize = 60;
             if let Some(cpu) = telemetry.cpu_utilization_percent {
                 app.host_cpu_history.push_back(cpu.min(100));
-                while app.host_cpu_history.len() > HISTORY_LIMIT {
+                while app.host_cpu_history.len() > HOST_TELEMETRY_HISTORY_SAMPLES {
                     app.host_cpu_history.pop_front();
                 }
             }
@@ -14214,7 +14492,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 let percent = used.saturating_mul(100) / total;
                 app.host_memory_history
                     .push_back(u8::try_from(percent.min(100)).unwrap_or(100));
-                while app.host_memory_history.len() > HISTORY_LIMIT {
+                while app.host_memory_history.len() > HOST_TELEMETRY_HISTORY_SAMPLES {
                     app.host_memory_history.pop_front();
                 }
             }
@@ -17456,6 +17734,63 @@ mod tests {
         );
         assert_eq!(app.host_cpu_history.len(), 60);
         assert_eq!(app.host_memory_history.len(), 60);
+    }
+
+    #[test]
+    fn telemetry_provenance_catalog_is_complete_and_honest() {
+        let metrics = TELEMETRY_PROVENANCE
+            .iter()
+            .map(|entry| entry.metric)
+            .collect::<HashSet<_>>();
+        assert_eq!(TELEMETRY_PROVENANCE.len(), 17);
+        assert_eq!(metrics.len(), TELEMETRY_PROVENANCE.len());
+        for required in [
+            TelemetryMetric::HostCpuUtilization,
+            TelemetryMetric::HostLogicalCpuCount,
+            TelemetryMetric::HostMemoryCapacity,
+            TelemetryMetric::BuildFilesystemCapacity,
+            TelemetryMetric::DiskReadRate,
+            TelemetryMetric::DiskWriteRate,
+            TelemetryMetric::NetworkReceiveRate,
+            TelemetryMetric::NetworkTransmitRate,
+            TelemetryMetric::DaemonUptime,
+            TelemetryMetric::BitBakeState,
+            TelemetryMetric::ConnectedClients,
+            TelemetryMetric::TerminalSessions,
+            TelemetryMetric::ActiveJobs,
+        ] {
+            assert!(metrics.contains(&required), "missing {required:?}");
+        }
+
+        let provenance = |metric| {
+            TELEMETRY_PROVENANCE
+                .iter()
+                .find(|entry| entry.metric == metric)
+                .unwrap()
+        };
+        let cpu = provenance(TelemetryMetric::HostCpuUtilization);
+        assert_eq!(cpu.source, TelemetrySource::HostProcStat);
+        assert_eq!(cpu.sample_period_seconds, Some(1));
+        assert_eq!(cpu.history_samples, HOST_TELEMETRY_HISTORY_SAMPLES);
+        assert!(cpu.requires_delta && cpu.renderable);
+
+        for metric in [
+            TelemetryMetric::DiskReadRate,
+            TelemetryMetric::DiskWriteRate,
+            TelemetryMetric::NetworkReceiveRate,
+            TelemetryMetric::NetworkTransmitRate,
+        ] {
+            let entry = provenance(metric);
+            assert_eq!(entry.source, TelemetrySource::NotCollected);
+            assert_eq!(entry.host_support, TelemetryHostSupport::NotCollected);
+            assert!(!entry.renderable);
+        }
+        let queue = provenance(TelemetryMetric::DaemonQueueDepth);
+        assert!(!queue.renderable);
+        assert!(queue.precision.contains("client count"));
+        let daemon_memory = provenance(TelemetryMetric::DaemonResidentMemory);
+        assert!(!daemon_memory.renderable);
+        assert!(daemon_memory.precision.contains("assumed 4096-byte"));
     }
     #[test]
     fn settings_selection_and_changes_are_typed_and_persisted() {

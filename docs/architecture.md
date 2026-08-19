@@ -244,6 +244,24 @@ the UI consumes only current typed values and history. Widgets may derive
 display ratios, average task velocity, and ETA from model state, but never read
 procfs, call filesystem APIs, or reinterpret raw operating-system text.
 
+`TELEMETRY_PROVENANCE` is the closed audit of host and daemon metrics. Each
+entry fixes its source, unit, host support, nominal cadence, delta requirement,
+history capacity, precision, renderability, and unavailable behavior. Host
+sampling occurs only during active managed operations at a nominal one-second
+cadence. `HOST_TELEMETRY_HISTORY_SAMPLES` therefore bounds CPU/RAM to the latest
+60 valid observations; it is not a wall-clock promise. CPU requires two valid
+`/proc/stat` observations, while RAM/build-filesystem/load values are current
+samples. Disk and network throughput have no sampler and remain non-renderable.
+
+Daemon connection/BitBake/client/session facts come from the current typed
+replica/snapshot; uptime and the exact nonterminal job count come from the
+one-second daemon telemetry event. The legacy `queue_depth` event member is not
+an authority for queued work because the runtime currently fills it with the
+connected-client count, so renderers ignore it. Daemon resident memory remains
+diagnostic-only because `/proc/self/statm` pages are currently multiplied by an
+assumed 4096-byte size. These limitations stay explicit until a task changes
+the sampler/protocol rather than being repaired in a widget.
+
 Selected configuration variables use a version-compatible typed detail
 payload. It carries global or recipe scope, expanded and unexpanded datastore
 values, normalized varhistory operations (`op`, file, line, and detail), and

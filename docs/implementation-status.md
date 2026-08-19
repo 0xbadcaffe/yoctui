@@ -11,9 +11,19 @@ Status values:
 
 ## Current phase
 
-`METRICS-MODEL-001` is `IN_PROGRESS`. It will audit every candidate telemetry
-field and record its source, units, precision, sampling constraints, host
-support, and unavailable behavior before any new gauge or sparkline is added.
+`METRICS-MODEL-002` is `IN_PROGRESS`. It will extend the existing 60-sample
+CPU/RAM retention into one bounded telemetry-history model for supported disk
+I/O and network rate samples without retaining invalid/reset observations.
+
+`METRICS-MODEL-001` is `DONE`: a closed typed provenance catalog records the
+source, units, host support, nominal cadence, delta requirement, bounded
+history, precision, renderability, and unavailable behavior of 17 host/daemon
+metrics. The audit confirms CPU/RAM/build-FS/load and typed daemon facts,
+withholds the first CPU delta, and keeps disk/network rates uncollected. It also
+identifies daemon queue depth as a client-count alias and resident memory as
+page-size-assumption diagnostic data; neither is renderable. System Status no
+longer labels the alias as queue depth. Focused model/CLI tests, all 169 UI
+tests, and the documentation gate pass.
 
 `INSPECTOR-UI-003` is `DONE`: one reusable action list now renders aligned
 typed names and shortcuts, explicit marker-plus-state availability, semantic

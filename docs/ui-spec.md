@@ -281,6 +281,36 @@ history only. It does not increase redraw frequency: new points arrive on the
 telemetry sampling cadence, and reduced motion disables any presentation-only
 animation.
 
+##### Telemetry provenance audit
+
+The typed provenance catalog is authoritative for whether a metric may render.
+The client host sampler runs at a nominal one-second cadence only while a build
+or another managed operation is active. CPU and RAM histories therefore retain
+the latest 60 valid samples, not an unconditional 60 wall-clock seconds; the
+caption is `60-sample history`. Missing samples do not append zeroes.
+
+| Metric | Authority and units | Precision/cadence | Unsupported or unavailable behavior |
+| --- | --- | --- | --- |
+| Host CPU | aggregate `/proc/stat` counters; whole percent | delta of non-idle/total counters, truncated; nominal 1 s active-operation sampling; 60 valid samples | Linux only; first sample, reset/non-increasing interval, read, or parse failure is unavailable |
+| Logical CPU count | Rust `available_parallelism`; logical processors visible to the process | current runtime query at host-sample cadence; no history | show unknown when the runtime query fails or cannot fit the typed count |
+| RAM | `/proc/meminfo` `MemTotal` and `MemAvailable`; bytes | reported kB multiplied by 1024; used percent derived from valid total/available; 60 valid samples | Linux only; omit unless both fields exist, total is nonzero, and available does not exceed total |
+| Build filesystem | `statvfs` on the configured build directory; available and total bytes | `f_bavail`/`f_blocks` times fragment size at host-sample cadence; no history yet | Unix only; explicitly unavailable for an invalid/missing path or failed sample |
+| Load 1/5/15 | `/proc/loadavg`; thousandths of a load unit | at most three decimals, nominal 1 s active-operation sampling; no history | Linux only; all three values become unavailable on invalid input |
+| Disk read/write rates | none; intended bytes/s | requires two monotonic counters and a measured interval | not collected; both cells remain omitted |
+| Network RX/TX rates | none; intended bytes/s | requires per-interface monotonic counters, interface policy, and measured interval | not collected; both cells remain omitted |
+| Daemon connection | client replica status; lifecycle | event-driven Current/Stale/Synchronizing/Disconnected | render the exact replica state, never a numeric stand-in |
+| Daemon uptime | daemon start wall-clock difference; seconds | saturating whole seconds, published nominally each second | unavailable until current daemon telemetry arrives |
+| BitBake state | current daemon journal snapshot; lifecycle | event-driven exact lifecycle | stale/disconnected client state is named and old authority is not presented as current |
+| Connected clients | current daemon snapshot client inventory; count | exact inventory length | unavailable unless the replica is current |
+| Terminal sessions | current daemon snapshot PTY inventory; count | exact inventory length | unavailable unless the replica is current |
+| Active jobs | daemon telemetry count of Connecting, Running, and Stopping jobs | whole count, nominal 1 s | unavailable until current daemon telemetry arrives; retained terminal jobs are not counted as active |
+| Daemon queue depth | existing daemon telemetry wire field; count | currently mirrors connected-client count and is not a work queue | non-renderable; System Status must not label it as queue depth |
+| Daemon resident memory | `/proc/self/statm`; diagnostic bytes | resident pages currently use an assumed 4096-byte page | non-renderable as precise memory until the runtime page size is authoritative |
+
+The audit does not authorize per-task CPU/ETA or daemon version/PID. Disk and
+network rates remain unavailable until a later task adds a bounded,
+reset-aware sampler and history.
+
 #### Responsive table columns
 
 Column helpers select complete columns before row construction; renderers do
@@ -785,11 +815,12 @@ The dashboard must be useful both when idle and during a build.
 
 On terminals with enough vertical space, Dashboard includes a dedicated
 terminal-native telemetry cockpit. It renders determinate CPU, memory, and
-build-filesystem gauges; bounded CPU and memory history sparklines; logical CPU
-count; 1/5/15-minute load averages; and exact used/total byte labels. Missing
-or unsupported metrics remain visibly unknown. Gauges clamp only for rendering
-and never manufacture samples. At the minimum supported size the cockpit
-collapses to compact labeled values so build and task state remain visible.
+build-filesystem gauges; bounded CPU and memory sample-history sparklines;
+logical CPU count; 1/5/15-minute load averages; and exact used/total byte
+labels. Missing or unsupported metrics remain visibly unknown. Gauges clamp
+only for rendering and never manufacture samples. At the minimum supported
+size the cockpit collapses to compact labeled values so build and task state
+remain visible.
 
 Build progress surfaces average completed-task velocity and an ETA only when a
 start time and a nonzero authoritative total make those values meaningful.

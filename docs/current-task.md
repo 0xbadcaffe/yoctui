@@ -2,19 +2,19 @@
 
 ## Task
 
-**ID:** METRICS-MODEL-001
-**Title:** Audit all currently available telemetry
+**ID:** METRICS-MODEL-002
+**Title:** Add bounded telemetry history model
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Identify every telemetry value Yoctui can currently obtain honestly and record
-its authority, units, precision, sampling limits, host support, and unavailable
-behavior before adding new metric visualizations.
+Add one bounded model for recent telemetry samples, extending the existing
+CPU/RAM retention to supported disk-I/O and network rates without storing
+invalid, reset, or unavailable observations.
 
 ## Dependencies
 
-- `FOUNDATION-UI-001` — DONE
+- `METRICS-MODEL-001` — DONE
 
 ## Relevant files
 
@@ -28,19 +28,20 @@ behavior before adding new metric visualizations.
 
 ## Definition of done
 
-- CPU usage/core count, memory, build filesystem, disk I/O, network I/O,
-  daemon uptime/state, BitBake state, clients, sessions, and jobs are audited.
-- Every supported metric records its authoritative source and exact units.
-- Sampling interval, precision, reset/wrap behavior, and boundedness are
-  documented where applicable.
-- Unsupported or unavailable metrics have explicit host/runtime behavior.
-- No renderer gains a fabricated or newly inferred value during this audit.
+- CPU, memory, supported disk-I/O, and supported network samples share an
+  explicit fixed capacity.
+- Rate histories accept only values derived from two valid monotonic counters
+  and a nonzero measured interval.
+- Counter reset, interface disappearance, overflow, and unavailable samples do
+  not append spikes or synthetic zeroes.
+- Every history remains bounded under prolonged sampling.
+- Existing CPU/RAM history behavior and typed reducer ownership are preserved.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model telemetry_provenance
-cargo test -p yoctui telemetry_provenance
+cargo test -p yoctui-model bounded_telemetry_history
+cargo test -p yoctui telemetry_sampling
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh

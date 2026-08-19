@@ -3173,10 +3173,6 @@ fn system_status_text(app: &App) -> String {
         || "unavailable".into(),
         |telemetry| format_duration(Duration::from_secs(telemetry.uptime_seconds)),
     );
-    let queue = app.daemon.telemetry.as_ref().map_or_else(
-        || "unavailable".into(),
-        |telemetry| telemetry.queue_depth.to_string(),
-    );
     let cpu = app
         .host_telemetry
         .cpu_utilization_percent
@@ -3186,7 +3182,7 @@ fn system_status_text(app: &App) -> String {
         .disk_available_bytes
         .map_or_else(|| "unavailable".into(), format_bytes);
     format!(
-        "Yoctui Daemon    {}  up {}\nBitBake Server    {}\nActive Jobs       {}\nTerminal Sessions {}\nConnected Clients {}\nQueue / CPU       {queue} / {cpu}\nBuild disk free   {disk}",
+        "Yoctui Daemon    {}  up {}\nBitBake Server    {}\nActive Jobs       {}\nTerminal Sessions {}\nConnected Clients {}\nHost CPU          {cpu}\nBuild disk free   {disk}",
         daemon_status_label(app.daemon.status),
         uptime,
         daemon_lifecycle_label(app.daemon.bitbake),
@@ -3773,7 +3769,7 @@ fn render_history(frame: &mut Frame, label: &str, samples: &[u64], area: Rect, s
 fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
     let palette = ThemePalette::for_app(app);
     let block = Block::default()
-        .title("System telemetry · 60s history")
+        .title("System telemetry · 60-sample history")
         .borders(Borders::ALL)
         .style(palette.base());
     let inner = block.inner(area);
@@ -17023,7 +17019,7 @@ mod tests {
         }
         let output = rendered_text(&app, 300, 40);
         assert!(
-            output.contains("System telemetry · 60s history"),
+            output.contains("System telemetry · 60-sample history"),
             "{output}"
         );
         assert!(output.contains("CPU  42% · 16 cores"), "{output}");

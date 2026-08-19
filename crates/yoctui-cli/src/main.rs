@@ -13311,6 +13311,53 @@ mod tests {
     }
 
     #[test]
+    fn telemetry_provenance_matches_cli_sampler_and_withholds_first_cpu_delta() {
+        use yoctui_model::{TelemetryMetric as Metric, TelemetrySource as Source};
+
+        let provenance = |metric| {
+            yoctui_model::TELEMETRY_PROVENANCE
+                .iter()
+                .find(|entry| entry.metric == metric)
+                .unwrap()
+        };
+        for (metric, source) in [
+            (Metric::HostCpuUtilization, Source::HostProcStat),
+            (
+                Metric::HostLogicalCpuCount,
+                Source::HostAvailableParallelism,
+            ),
+            (Metric::HostMemoryCapacity, Source::HostProcMeminfo),
+            (
+                Metric::BuildFilesystemCapacity,
+                Source::BuildFilesystemStatvfs,
+            ),
+            (Metric::HostLoadAverage, Source::HostProcLoadavg),
+        ] {
+            let entry = provenance(metric);
+            assert_eq!(entry.source, source);
+            assert_eq!(
+                entry.sample_period_seconds,
+                Some(yoctui_model::HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS)
+            );
+            assert!(entry.renderable);
+        }
+        for metric in [
+            Metric::DiskReadRate,
+            Metric::DiskWriteRate,
+            Metric::NetworkReceiveRate,
+            Metric::NetworkTransmitRate,
+        ] {
+            let entry = provenance(metric);
+            assert_eq!(entry.source, Source::NotCollected);
+            assert!(!entry.renderable);
+        }
+
+        let mut sampler = HostTelemetrySampler::default();
+        let first = sampler.sample(Path::new("."));
+        assert_eq!(first.cpu_utilization_percent, None);
+    }
+
+    #[test]
     fn bbmask_assignment_is_single_line_and_shell_quoted() {
         assert_eq!(
             bbmask_assignment("meta-broken/.* \"quoted\"").unwrap(),

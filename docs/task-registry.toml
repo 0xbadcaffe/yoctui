@@ -5233,18 +5233,18 @@ notes = "Added one reusable aligned expanded/compact action list with text marke
 id = "METRICS-MODEL-001"
 milestone = "M19"
 title = "Audit all currently available telemetry"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 536
 required = true
 depends_on = ["FOUNDATION-UI-001"]
 verify = ["cargo test -p yoctui-model telemetry_provenance", "cargo test -p yoctui telemetry_provenance", "./scripts/check-docs.sh"]
-notes = "Record provenance, units, sampling limits, precision, host support, and unavailable behavior for every candidate metric before rendering it."
+notes = "Added a closed 17-metric provenance catalog covering source, units, support, cadence, delta rules, history, precision, renderability, and unavailable behavior. CPU/RAM/build-FS/load and daemon facts are authoritative; disk/network rates remain uncollected. Daemon queue depth is documented as a non-renderable client-count alias and resident memory as page-size-assumption diagnostic data; System Status no longer labels the alias as queue depth. Focused model/CLI tests, all 169 UI tests, and docs validation pass."
 
 [[task]]
 id = "METRICS-MODEL-002"
 milestone = "M19"
 title = "Add bounded telemetry history model"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 537
 required = true
 depends_on = ["METRICS-MODEL-001"]
