@@ -1100,3 +1100,11 @@ fresh Poky checkout to Poky `bb983546`, OE-Core `2814f096`, BitBake `0880963f`
 utility surfaces, an exit-0 `base-files:do_listtasks` run with 77 typed
 observations, and 0.405-second cancellation passed. The exact Tested revision
 is the lower proposed support anchor; `COMPAT-LIVE-MATRIX-001` is active next.
+`COMPAT-LIVE-MATRIX-001` is complete. The deterministic default validates both
+live records, expiry/support policy, exact differing identities/compositions,
+version ordering, and non-claiming development semantics. Explicit live roles
+fetch exact official revisions into isolated roots and produce diagnostics
+without rewriting tracked evidence. Fresh Scarthgap 5.0.19 monolithic Poky and
+Wrynose 6.0.2 split-component runs both passed daemon identity, inventories,
+configuration, dependency graph, native task events, cancellation, and typed
+server teardown. `COMPAT-CI-001` is active next.

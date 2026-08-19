@@ -75,3 +75,27 @@ authoritative Yocto Project documentation when the live task is executed. On
 2026-08-19 the release calendar identified 6.0.2 as the newest published stable
 and listed 6.0.3 for the following week, so an unreleased point version was not
 selected.
+
+## Matrix automation
+
+`./scripts/test-compatibility-matrix.sh` is offline and deterministic by
+default. It validates both live evidence records, expiration/support policy,
+different exact source/build identities, older-before-latest Yocto and BitBake
+ordering, source composition, and the policy document. It performs no clone or
+build unless explicitly opted in.
+
+Scheduled or operator-triggered validation uses
+`YOCTUI_LIVE_COMPATIBILITY=1 ./scripts/test-compatibility-matrix.sh --live
+latest` or `--live older`. Each role fetches exact official revisions into a
+private temporary source root, initializes an isolated build/runtime/state,
+starts the daemon, validates Doctor identity and inventories, and runs the
+bounded native build/cancellation smoke. Diagnostics are written under
+`artifacts/compatibility/<role>/`; tracked evidence is never rewritten
+automatically. The latest role composes exact OE-Core, BitBake, and meta-yocto
+sources and explicitly selects the checked-out Poky distro; the older role uses
+the exact official Poky commit.
+
+`--live development` additionally requires an exact
+`YOCTUI_COMPAT_DEVELOPMENT_REVISION`. It is an optional diagnostic role and is
+never accepted as support evidence. Fixture identities likewise remain outside
+this live harness.

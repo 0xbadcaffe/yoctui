@@ -2,48 +2,47 @@
 
 ## Task
 
-**ID:** COMPAT-LIVE-MATRIX-001
-**Title:** Add multi-release live compatibility validation
+**ID:** COMPAT-CI-001
+**Title:** Integrate compatibility tests into CI
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Create an opt-in, reproducible live compatibility matrix that selects
-representative maintained official Yocto releases from authoritative policy
-and validates exact evidence without making network-heavy work mandatory on
-every local or pull-request run.
+Run deterministic capability compatibility gates in normal CI and provide a
+bounded scheduled/manual live matrix that checks fresh official releases and
+uploads diagnostics without imposing network-heavy Yocto work on every PR.
 
 ## Dependencies
 
-- `COMPAT-LIVE-LATEST-001` — DONE
-- `COMPAT-LIVE-OLDER-001` — DONE
+- `COMPAT-TEST-CMDS-001` — DONE
+- `COMPAT-TEST-UI-001` — DONE
+- `COMPAT-LIVE-MATRIX-001` — DONE
 
 ## Relevant files
 
+- `.github/workflows/ci.yml`
+- `scripts/check-ci.sh`
+- `scripts/test-release-compatibility.sh`
 - `scripts/test-compatibility-matrix.sh`
-- `scripts/verify-live-compatibility.sh`
-- `docs/compatibility-evidence/`
-- `docs/compatibility-matrix.md`
+- `scripts/verify-compatibility.sh`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 
 ## Definition of done
 
-- Representative maintained releases are selected from current official Yocto
-  policy rather than a blind release-name list.
-- The harness has an offline evidence-validation mode and an explicit opt-in
-  fresh-source/live mode suitable for scheduled CI.
-- Fresh runs use exact official source revisions, isolated build/runtime/state
-  directories, bounded operations, and release-correlated diagnostics.
-- Oldest proposed LTS, current stable, and optional development/snapshot roles
-  are distinguished without converting optional or fixture results into claims.
-- Latest and older evidence records pass together and disagree in the expected
-  release/BitBake identities.
+- Normal CI runs deterministic capability model, probe, command generation,
+  dynamic UI gating, future-release behavior, and offline evidence checks.
+- Scheduled/manual CI runs exact fresh older/latest official roles with bounded
+  timeouts, without running on ordinary pull requests.
+- Live failures upload Doctor, daemon, inventory, and BitBake smoke diagnostics.
+- Workflow and helper validation rejects missing jobs, unsafe triggers,
+  fixture-only live substitution, and omitted artifact publication.
+- Local verification remains network-free unless explicitly opted in.
 
 ## Verification
 
 ```bash
-./scripts/test-compatibility-matrix.sh
-./scripts/verify-live-compatibility.sh --evidence-only
+./scripts/check-ci.sh
+./scripts/test-release-compatibility.sh
 ./scripts/verify-roadmap.sh
 ```

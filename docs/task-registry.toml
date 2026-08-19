@@ -5010,18 +5010,18 @@ notes = "Authoritative policy/calendar selected maintained Scarthgap 5.0.19 thro
 id = "COMPAT-LIVE-MATRIX-001"
 milestone = "M18"
 title = "Add multi-release live compatibility validation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 517
 required = true
 depends_on = ["COMPAT-LIVE-LATEST-001", "COMPAT-LIVE-OLDER-001"]
 verify = ["./scripts/test-compatibility-matrix.sh", "./scripts/verify-live-compatibility.sh --evidence-only", "./scripts/verify-roadmap.sh"]
-notes = "Provide opt-in/scheduled official representative maintained-release validation selected from current authoritative Yocto documentation."
+notes = "The default offline harness validates latest+older evidence, age/support policy, exact distinct source/build identities, source compositions, correlated version ordering, and non-claiming development policy. Explicit YOCTUI_LIVE_COMPATIBILITY=1 roles fetch exact official revisions into isolated source/build/runtime/state roots, validate daemon Doctor/inventories/configuration, and run bounded native build/cancellation/dependency smoke while writing untracked diagnostics only. Fresh Scarthgap 5.0.19 monolithic Poky and Wrynose 6.0.2 split-component roles both passed; optional development requires an exact revision and cannot create a claim."
 
 [[task]]
 id = "COMPAT-CI-001"
 milestone = "M18"
 title = "Integrate compatibility tests into CI"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 518
 required = true
 depends_on = ["COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-LIVE-MATRIX-001"]

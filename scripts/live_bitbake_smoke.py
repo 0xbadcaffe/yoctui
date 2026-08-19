@@ -149,11 +149,7 @@ def main():
         correlation = driver.send({"type": "list_recipes", "filter": args.target})
         recipes, _ = driver.wait_for(correlation, "recipes")
         selected_recipe = next(
-            (
-                item
-                for item in recipes["recipes"]
-                if item.get("name") == args.target
-            ),
+            (item for item in recipes["recipes"] if item.get("name") == args.target),
             None,
         )
         if selected_recipe is None:
@@ -175,9 +171,13 @@ def main():
         if metadata.get("recipe") != args.target:
             raise SmokeFailure("live recipe metadata identified a different recipe")
         if not isinstance(metadata.get("tasks"), list) or not metadata["tasks"]:
-            raise SmokeFailure("live recipe metadata did not expose authoritative tasks")
+            raise SmokeFailure(
+                "live recipe metadata did not expose authoritative tasks"
+            )
         if not isinstance(metadata.get("sources"), list) or not metadata["sources"]:
-            raise SmokeFailure("live recipe metadata did not expose metadata source paths")
+            raise SmokeFailure(
+                "live recipe metadata did not expose metadata source paths"
+            )
         if not isinstance(metadata.get("packages"), list) or not metadata["packages"]:
             raise SmokeFailure("live recipe metadata did not expose package outputs")
         summary["recipe_task_count"] = len(metadata["tasks"])
@@ -227,9 +227,7 @@ def main():
             {"build_started", "parse_progress", "task_queued", "task_started", "log"},
             "normal build",
         )
-        queued = [
-            event for event in build_events if event.get("type") == "task_queued"
-        ]
+        queued = [event for event in build_events if event.get("type") == "task_queued"]
         if not any(
             isinstance(event.get("stats"), dict)
             and isinstance(event["stats"].get("total"), int)
@@ -264,8 +262,12 @@ def main():
             {event.get("type") for event in cancel_events if event.get("type")}
         )
 
-        correlation = driver.send({"type": "shutdown"})
-        driver.wait_for(correlation, "bridge_shutdown")
+        # Cancellation can leave maintained older Tinfoil generations in a
+        # cooker-shutdown state whose generic client cleanup does not exit
+        # promptly.  Exercise the same typed process-server termination used
+        # by the daemon instead of relying on an external process signal.
+        correlation = driver.send({"type": "terminate_server"})
+        driver.wait_for(correlation, "server_terminated")
     finally:
         code = driver.close()
     if code != 0:
