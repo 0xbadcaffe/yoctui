@@ -462,6 +462,13 @@ Owns:
 
 Widgets must be deterministic from model state.
 
+`yoctui-ui::primitives` is the render-only reuse boundary for pane shells,
+section headers, focused and inactive selection, separators, textual status
+labels, empty/loading/unavailable/error presentation, bounded scroll labels,
+and width-prioritized column selection. Callers resolve semantic styles and
+typed content before invoking these primitives. The primitives accept no
+backend/protocol type, retain no cache or selection, and emit no action.
+
 The workbench shell is a UI-only projection over existing typed state. Grouped
 Navigator headings, dense panel composition, task-log selection, job-history
 tables, and Inspector sections do not own or synthesize Yocto data. Navigation

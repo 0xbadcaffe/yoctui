@@ -2,22 +2,23 @@
 
 ## Task
 
-**ID:** FOUNDATION-UI-002
-**Title:** Create reusable layout primitives
+**ID:** FOUNDATION-UI-003
+**Title:** Unify visual theme semantics
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Implement reusable render-only primitives for the documented workbench shell
-and state presentation before migrating individual workspaces.
+Extend the semantic theme model used by the shared primitives and workspaces
+without hardcoding widget-specific colors or breaking any existing theme.
 
 ## Dependencies
 
-- `FOUNDATION-UI-001` — DONE
+- `FOUNDATION-UI-002` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
+- `crates/yoctui-ui/src/primitives.rs`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -25,17 +26,17 @@ and state presentation before migrating individual workspaces.
 
 ## Definition of done
 
-- Pane shell, section header, focused/unfocused borders, selected rows, and
-  separators are reusable.
-- Status labels and empty, unavailable, and loading states share typed
-  presentation helpers.
-- Bounded scroll indicators and responsive column selection are reusable.
-- Primitive tests cover color, no-color, focus, bounds, and narrow geometry.
+- Every requested visual meaning maps through one semantic theme role.
+- No workspace renderer hardcodes a role color.
+- Every existing theme remains valid and visually distinct.
+- High contrast and no-color preserve status, focus, and selection meaning.
+- Semantic theme tests and the reviewed literal golden pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui foundation_ui_primitives
+cargo test -p yoctui-ui semantic_theme
+cargo test -p yoctui-model theme
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

@@ -355,6 +355,22 @@ items are adapted until authoritative support exists:
 These omissions are honest unavailable behavior, not missing permission to
 invent equivalent values.
 
+#### Reusable rendering primitives
+
+All workspaces use the shared render-only primitive vocabulary. A pane shell
+owns border/title/base styles and resolves focused versus inactive borders. A
+selected-row helper distinguishes the focused selection from an inactive
+retained selection. Section headers and separators accept already-resolved
+text and semantic styles. Status labels always include a textual marker.
+Empty, loading, unavailable, partial, and error views follow the state grammar
+above. Scroll indicators clamp offset and viewport to retained bounds.
+Responsive columns add mandatory columns first and optional columns in stable
+priority order without reordering their table positions.
+
+These helpers own no model state and receive no backend/protocol values. A
+workspace remains responsible for selecting the correct typed content and
+semantic role; the helper only renders it.
+
 ---
 
 ## 3. Header

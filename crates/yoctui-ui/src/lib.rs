@@ -1,4 +1,7 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
+pub mod primitives;
+
+use primitives::{PaneShell, PaneStyles};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Sparkline, Table, Wrap},
@@ -314,7 +317,7 @@ impl ThemePalette {
 
 fn selected_style(app: &App, active: bool) -> Style {
     if active {
-        ThemePalette::for_app(app).selected()
+        PaneShell::new("", false, pane_styles(app)).row_style(true, true)
     } else {
         Style::default()
     }
@@ -2307,17 +2310,24 @@ fn pane_switcher(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn pane_block<'a>(app: &App, title: &'a str, focused: bool) -> Block<'a> {
+    PaneShell::new(title, focused, pane_styles(app)).block()
+}
+
+fn pane_styles(app: &App) -> PaneStyles {
     let palette = ThemePalette::for_app(app);
-    let style = if focused {
-        palette.focus()
-    } else {
-        Style::default().fg(palette.border)
-    };
-    Block::default()
-        .title(title)
-        .borders(Borders::ALL)
-        .style(palette.base())
-        .border_style(style)
+    PaneStyles {
+        base: palette.base(),
+        border: Style::default().fg(palette.border),
+        focused_border: palette.focus(),
+        selected: palette.selected(),
+        inactive_selected: if palette.attribute_only {
+            Style::default().add_modifier(Modifier::UNDERLINED)
+        } else {
+            Style::default().fg(palette.selection_foreground)
+        },
+        table_header: palette.role(palette.foreground, Modifier::BOLD),
+        muted: palette.role(palette.disabled, Modifier::DIM),
+    }
 }
 
 fn signatures_workspace(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {

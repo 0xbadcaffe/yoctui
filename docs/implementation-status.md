@@ -11,8 +11,16 @@ Status values:
 
 ## Current phase
 
-`FOUNDATION-UI-002` is `IN_PROGRESS`. It will implement the reusable shell and
-state primitives required by the completed visual contract.
+`FOUNDATION-UI-003` is `IN_PROGRESS`. It will extend the existing Packrat
+palette mapping into the complete semantic role set used by the new shared
+primitives and workspaces.
+
+`FOUNDATION-UI-002` is `DONE`: `yoctui-ui::primitives` now provides render-only
+pane shells, section headers, focused/inactive selection, separators,
+marker-bearing statuses, shared state views, bounded scroll labels, and stable
+priority-based responsive columns. Five focused tests, the unchanged 160x48
+cell/style golden, formatting, and warnings-denied UI Clippy pass. The module
+accepts resolved text/styles only and owns no model or backend state.
 
 `FOUNDATION-UI-001` is `DONE`: `docs/ui-spec.md` now fixes the exact region
 hierarchy, 80x24 minimum, 200/160/130/100/80 breakpoints, deterministic width

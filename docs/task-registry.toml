@@ -5090,18 +5090,18 @@ notes = "The authoritative specification now fixes the exact region tree, 80x24 
 id = "FOUNDATION-UI-002"
 milestone = "M19"
 title = "Create reusable layout primitives"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 523
 required = true
 depends_on = ["FOUNDATION-UI-001"]
 verify = ["cargo test -p yoctui-ui foundation_ui_primitives", "cargo fmt --all --check"]
-notes = "Add reusable pane, header, border, selection, separator, status, state, scroll, and responsive-column widgets without model mutation."
+notes = "Added the public render-only yoctui-ui primitives module for pane shells, section headers, focused/inactive selection, separators, marker-bearing statuses, shared empty/loading/unavailable/partial/error views, bounded scroll labels, and stable priority-based responsive columns. Five focused tests cover rendering, focus, states, bounds, and column degradation; the existing 160x48 cell/style golden is unchanged and UI Clippy passes with warnings denied."
 
 [[task]]
 id = "FOUNDATION-UI-003"
 milestone = "M19"
 title = "Unify visual theme semantics"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 524
 required = true
 depends_on = ["FOUNDATION-UI-002"]
