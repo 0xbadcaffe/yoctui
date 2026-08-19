@@ -12,9 +12,10 @@ Run the complete repository completion gate while real Linux perf sampling is
 temporarily available, record the terminal result, and restore the host's
 original perf security policy afterward.
 
-The release profile and Valgrind corrections pass. The bridge protocol smoke
-check now uses the unconfigured Doctor route and passes without daemon
-authority; this fourth terminal candidate is ready for the complete gate.
+The CLI smoke correction passes daemon-independent Doctor and fail-closed
+authority checks. AddressSanitizer now runs the same bounded deterministic
+production workbench as perf and Valgrind, and both ASan and LSan pass. This
+fifth terminal candidate is ready for the complete gate.
 
 ## Dependencies
 
@@ -30,6 +31,9 @@ authority; this fourth terminal candidate is ready for the complete gate.
 - `scripts/valgrind.sh`
 - `scripts/headless-workload.sh`
 - `scripts/check-docs.sh`
+- `scripts/check-checkout.sh`
+- `scripts/test-cli.sh`
+- `scripts/test-sanitizers.sh`
 - `artifacts/flamegraph/yoctui.svg`
 - `artifacts/flamegraph/summary.txt`
 - `docs/implementation-status.md`

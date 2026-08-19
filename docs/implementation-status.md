@@ -11,11 +11,12 @@ Status values:
 
 ## Current phase
 
-`FINAL-GATE-PERF-001` is the fourth `DONE` terminal candidate. Release
-profiling and Memcheck use bounded deterministic production workbench runs, and
-the bridge protocol smoke check now uses the unconfigured Doctor route and
-passes without daemon authority. The complete gate must pass before the host's
-original `kernel.perf_event_paranoid=4` policy is restored.
+`FINAL-GATE-PERF-001` is the fifth `DONE` terminal candidate. CLI smoke coverage
+passes daemon-independent Doctor and explicit fail-closed authority checks.
+AddressSanitizer now uses the same bounded deterministic production workbench
+as perf and Valgrind; that workload and the ASan/LSan high-volume stress tests
+pass. The complete gate must pass before the host's original
+`kernel.perf_event_paranoid=4` policy is restored.
 
 `PERF-FLAMEGRAPH-QUALITY-001` is `DONE`: the replacement 160x48 benchmark
 drives 6,000 deterministic production reducer/Ratatui frames without a daemon

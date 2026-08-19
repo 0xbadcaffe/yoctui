@@ -4261,7 +4261,7 @@ priority = 458
 required = true
 depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001", "PERF-FLAMEGRAPH-QUALITY-001"]
 verify = ["perf record -- true", "./scripts/flamegraph.sh", "./scripts/verify-completion.sh"]
-notes = "The first three clean candidates exposed obsolete backend-dependent release-profile and Valgrind workloads plus a documentation smoke check misidentifying the repository root as a BitBake build directory. Release profiling and Memcheck now use bounded deterministic production workbench runs, while the bridge protocol smoke check uses the unconfigured Doctor route and passes without daemon authority. This fourth terminal candidate must pass the complete gate before kernel.perf_event_paranoid=4 is restored."
+notes = "The fifth clean candidate corrects two more stale release checks: CLI smoke coverage now requires daemon-independent Doctor success and explicit fail-closed behavior for direct BitBake operations, while AddressSanitizer runs the same bounded deterministic production workbench as perf and Valgrind. CLI smoke, 128 ASan workbench frames, and ASan/LSan high-volume stress tests pass. Rerun the complete gate before restoring kernel.perf_event_paranoid=4."
 
 # M13 — Dense terminal workbench redesign
 [[task]]
