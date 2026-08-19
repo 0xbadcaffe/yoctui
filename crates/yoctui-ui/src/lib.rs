@@ -35,7 +35,7 @@ use yoctui_model::{
     SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
     SecurityInventoryState, SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope,
     SecuritySessionStatus, SecurityView, Severity, SignatureComparisonState,
-    SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskRow,
+    SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskInspectorRef,
     TaskRowRef, TaskState, TestComparisonCategory, TestComparisonState, TestExecutableCapability,
     TestJunitExportState, TestLaunchDialog, TestLaunchField, TestLaunchPreview,
     TestResultInventoryState, TestWorkspaceView, Theme, VariableIdentity, WicCapability,
@@ -3012,32 +3012,105 @@ fn workspace(
     }
 }
 
-fn task_metadata_text(row: Option<&TaskRow>, now: SystemTime) -> String {
-    match row {
-        None => "No task selected.\nTask details appear as typed BitBake events arrive.".into(),
-        Some(TaskRow::WaitingSummary(count)) => format!(
-            "Tasks       {count} waiting\nRecipe      unavailable\nTask        unavailable\nStatus      {}\nTiming      unavailable\n\nOnly the aggregate waiting count is authoritative.",
+fn task_inspector_primary(inspector: &TaskInspectorRef<'_>) -> String {
+    match inspector {
+        TaskInspectorRef::None => {
+            "No task selected.\nTask facts appear as typed BitBake events arrive.".into()
+        }
+        TaskInspectorRef::Waiting { count } => format!(
+            "Task        unavailable\nRecipe      unavailable\nPN          unavailable\nPV          unavailable\nPR          unavailable\nState       {}\nProgress    unavailable\n\n{count} waiting tasks are known only as an aggregate.",
             task_state_label(TaskState::Waiting)
         ),
-        Some(TaskRow::Task(task)) => format!(
-            "Task        {}\nRecipe      {}\nStatus      {}\nProgress    {}\nWorker      {}\nPID         {}\nStarted     {}\nElapsed     {}\nLog file    {}",
+        TaskInspectorRef::Task {
+            task,
+            state,
+            version,
+            revision,
+            ..
+        } => format!(
+            "Task        {}\nRecipe      {}\nPN          {}\nPV          {}\nPR          {}\nState       {}\nProgress    {}",
             task.task,
             task.recipe,
-            task_state_label(task.state),
+            task.recipe,
+            version.unwrap_or("unavailable"),
+            revision.unwrap_or("unavailable"),
+            task_state_label(*state),
             task.progress
                 .map_or_else(|| "unknown".into(), |value| format!("{value}%")),
-            task.worker.as_deref().unwrap_or("unavailable"),
-            task.pid
-                .map_or_else(|| "unavailable".into(), |pid| pid.to_string()),
-            task.started
-                .map_or_else(|| "unavailable".into(), clock_text),
-            task.elapsed_at(now)
-                .map_or_else(|| "unavailable".into(), format_duration),
-            task.log_path
-                .as_ref()
-                .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
         ),
     }
+}
+
+fn task_inspector_context(inspector: &TaskInspectorRef<'_>, now: SystemTime) -> String {
+    match inspector {
+        TaskInspectorRef::None => "Secondary facts, paths, and dependencies unavailable.".into(),
+        TaskInspectorRef::Waiting { .. } => {
+            "Worker      unavailable\nPID         unavailable\nStarted     unavailable\nElapsed     unavailable\nWorkdir     unavailable\nLog file    unavailable\nDependencies unavailable".into()
+        }
+        TaskInspectorRef::Task {
+            task,
+            workdir,
+            ..
+        } => {
+            let dependencies = if task.dependencies.is_empty() {
+                "none reported".into()
+            } else {
+                task.dependencies
+                    .iter()
+                    .map(|dependency| dependency.0.as_str())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            };
+            format!(
+                "Worker      {}\nPID         {}\nStarted     {}\nElapsed     {}\nWorkdir     {}\nLog file    {}\nDependencies {}",
+                task.worker.as_deref().unwrap_or("unavailable"),
+                task.pid
+                    .map_or_else(|| "unavailable".into(), |pid| pid.to_string()),
+                task.started
+                    .map_or_else(|| "unavailable".into(), clock_text),
+                task.elapsed_at(now)
+                    .map_or_else(|| "unavailable".into(), format_duration),
+                workdir.map_or_else(
+                    || "unavailable".into(),
+                    |path| path.display().to_string()
+                ),
+                task.log_path.as_ref().map_or_else(
+                    || "unavailable".into(),
+                    |path| path.display().to_string()
+                ),
+                dependencies,
+            )
+        }
+    }
+}
+
+fn task_inspector_recent_lines<'a>(
+    app: &App,
+    inspector: &'a TaskInspectorRef<'a>,
+) -> Vec<Line<'a>> {
+    let TaskInspectorRef::Task { recent_logs, .. } = inspector else {
+        return vec![Line::from("No task-specific log is available.")];
+    };
+    if recent_logs.is_empty() {
+        return vec![Line::from(
+            "Waiting for typed log entries for the selected task.",
+        )];
+    }
+    recent_logs
+        .iter()
+        .map(|entry| {
+            let marker = match entry.severity {
+                Severity::Trace => "·",
+                Severity::Info => "│",
+                Severity::Warning => "!",
+                Severity::Error => "✕",
+            };
+            Line::from(vec![
+                Span::styled(format!("{marker} "), severity_style(app, entry.severity)),
+                Span::styled(entry.message.as_str(), severity_style(app, entry.severity)),
+            ])
+        })
+        .collect()
 }
 
 fn task_actions_text(app: &App) -> Text<'static> {
@@ -3226,18 +3299,20 @@ fn tasks_inspector(
     now: SystemTime,
     task_rows: &[TaskRowRef<'_>],
 ) {
-    let selected = task_rows
-        .get(app.task_progress_scroll)
-        .copied()
-        .map(TaskRowRef::into_owned);
+    let selected = task_rows.get(app.task_progress_scroll).copied();
     let focused = app.focus == FocusTarget::Inspector;
-    if area.height < 32 {
+    if area.height < 35 {
+        let inspector = app.task_inspector(selected, 0);
         let sections =
             Layout::vertical([Constraint::Percentage(58), Constraint::Percentage(42)]).split(area);
         frame.render_widget(
-            Paragraph::new(task_metadata_text(selected.as_ref(), now))
-                .block(pane_block(app, "Inspector: Task", focused))
-                .wrap(Wrap { trim: false }),
+            Paragraph::new(format!(
+                "{}\n{}",
+                task_inspector_primary(&inspector),
+                task_inspector_context(&inspector, now)
+            ))
+            .block(pane_block(app, "Inspector: Task", focused))
+            .wrap(Wrap { trim: false }),
             sections[0],
         );
         frame.render_widget(
@@ -3249,42 +3324,61 @@ fn tasks_inspector(
         return;
     }
 
-    let sections = if area.width == 45 && area.height == 44 {
+    let show_system = area.height >= 40;
+    let sections = if area.height == 40 {
         Layout::vertical([
-            Constraint::Length(16),
-            Constraint::Length(15),
+            Constraint::Length(10),
+            Constraint::Length(10),
+            Constraint::Length(7),
+            Constraint::Length(7),
+            Constraint::Length(6),
+        ])
+        .split(area)
+    } else if show_system {
+        Layout::vertical([
+            Constraint::Length(11),
+            Constraint::Length(12),
+            Constraint::Min(5),
             Constraint::Length(7),
             Constraint::Length(6),
         ])
         .split(area)
     } else {
         Layout::vertical([
+            Constraint::Length(11),
             Constraint::Length(12),
             Constraint::Min(5),
-            Constraint::Length(6),
-            Constraint::Length(9),
+            Constraint::Length(7),
         ])
         .split(area)
     };
+    let recent_limit = usize::from(sections[2].height.saturating_sub(2));
+    let inspector = app.task_inspector(selected, recent_limit);
     frame.render_widget(
-        Paragraph::new(task_metadata_text(selected.as_ref(), now))
+        Paragraph::new(task_inspector_primary(&inspector))
             .block(pane_block(app, "Inspector: Task", focused))
             .wrap(Wrap { trim: false }),
         sections[0],
     );
     frame.render_widget(
-        Paragraph::new(Text::from(matching_task_logs(
-            app,
-            selected.as_ref(),
-            usize::from(sections[1].height.saturating_sub(2)),
-        )))
-        .block(pane_block(
-            app,
-            "Recent output · Recent Log (tail)",
-            focused,
-        ))
-        .wrap(Wrap { trim: false }),
+        Paragraph::new(task_inspector_context(&inspector, now))
+            .block(pane_block(
+                app,
+                "Secondary facts · Paths · Dependencies",
+                focused,
+            ))
+            .wrap(Wrap { trim: false }),
         sections[1],
+    );
+    frame.render_widget(
+        Paragraph::new(Text::from(task_inspector_recent_lines(app, &inspector)))
+            .block(pane_block(
+                app,
+                "Recent output · Recent Log (tail)",
+                focused,
+            ))
+            .wrap(Wrap { trim: false }),
+        sections[2],
     );
     frame.render_widget(
         Paragraph::new(task_actions_text(app)).block(pane_block(
@@ -3292,14 +3386,16 @@ fn tasks_inspector(
             "Contextual Actions",
             focused,
         )),
-        sections[2],
-    );
-    frame.render_widget(
-        Paragraph::new(system_status_text(app))
-            .block(pane_block(app, "System Status", focused))
-            .wrap(Wrap { trim: false }),
         sections[3],
     );
+    if show_system {
+        frame.render_widget(
+            Paragraph::new(system_status_text(app))
+                .block(pane_block(app, "System Status", focused))
+                .wrap(Wrap { trim: false }),
+            sections[4],
+        );
+    }
 }
 
 fn inspector(
@@ -3961,14 +4057,6 @@ fn task_state_style(app: &App, state: TaskState) -> Style {
             palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED)
         }
     }
-}
-
-fn matching_task_logs(app: &App, row: Option<&TaskRow>, limit: usize) -> Vec<Line<'static>> {
-    let task = match row {
-        Some(TaskRow::Task(task)) => Some(task.as_ref()),
-        Some(TaskRow::WaitingSummary(_)) | None => None,
-    };
-    matching_task_logs_for_task(app, task, limit)
 }
 
 fn matching_task_logs_ref(
@@ -12921,8 +13009,10 @@ mod tests {
         assert_eq!(buffer[(26, 45)].symbol(), "└");
 
         assert!(row(2).contains("Inspector: Task"), "{}", row(2));
-        assert_eq!(buffer[(115, 17)].symbol(), "└");
-        assert!(row(18).contains("Recent Log (tail)"), "{}", row(18));
+        assert_eq!(buffer[(115, 12)].symbol(), "└");
+        assert!(row(13).contains("Secondary facts"), "{}", row(13));
+        assert_eq!(buffer[(115, 24)].symbol(), "└");
+        assert!(row(25).contains("Recent Log (tail)"), "{}", row(25));
         assert_eq!(buffer[(115, 32)].symbol(), "└");
         assert!(row(33).contains("Actions"), "{}", row(33));
         assert_eq!(buffer[(115, 39)].symbol(), "└");
@@ -18731,6 +18821,100 @@ mod tests {
         assert!(output.contains("· All"), "{output}");
         assert!(output.contains("PID         4242"), "{output}");
         assert!(output.contains("log.do_compile"), "{output}");
+    }
+
+    #[test]
+    fn next_generation_task_inspector_is_authoritative_bounded_and_responsive() {
+        let mut app = App::new(20, 4_000);
+        app.screen = Screen::Tasks;
+        app.focus = FocusTarget::Inspector;
+        app.workspace.recipes.push(Recipe {
+            name: "busybox".into(),
+            version: Some("1.36.1".into()),
+            ..Recipe::default()
+        });
+        let mut task = yoctui_model::TaskInfo::active(
+            yoctui_model::TaskId("busybox:do_compile".into()),
+            "busybox".into(),
+            "do_compile".into(),
+        );
+        task.progress = Some(72);
+        task.worker = Some("worker-3".into());
+        task.pid = Some(85873);
+        task.started = Some(UNIX_EPOCH + Duration::from_secs(10));
+        task.log_path = Some("/build/tmp/work/busybox/temp/log.do_compile".into());
+        task.dependencies = vec![
+            yoctui_model::TaskId("busybox:do_configure".into()),
+            yoctui_model::TaskId("virtual/libc:do_populate_sysroot".into()),
+        ];
+        app.tasks.insert(task.id.clone(), task);
+        for id in 0..10 {
+            app.logs.insert(yoctui_model::LogEntry {
+                id,
+                severity: if id == 9 {
+                    Severity::Warning
+                } else {
+                    Severity::Info
+                },
+                message: format!("compile-line-{id}"),
+                recipe: Some("busybox".into()),
+                task: Some("do_compile".into()),
+                path: Some("/build/tmp/work/busybox/temp/log.do_compile".into()),
+                timestamp: UNIX_EPOCH + Duration::from_secs(id),
+                build: Some("core-image-minimal".into()),
+                protected: id == 9,
+                diagnostic: None,
+            });
+        }
+        let now = UNIX_EPOCH + Duration::from_secs(70);
+        let rows = app.visible_task_row_refs_at(now);
+        let mut terminal = Terminal::new(TestBackend::new(60, 44)).unwrap();
+        terminal
+            .draw(|frame| tasks_inspector(frame, &app, frame.area(), now, &rows))
+            .unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        for expected in [
+            "Inspector: Task",
+            "Task        do_compile",
+            "PN          busybox",
+            "PV          1.36.1",
+            "PR          unavailable",
+            "State       ▶ Running",
+            "Progress    72%",
+            "Worker      worker-3",
+            "PID         85873",
+            "Elapsed     00:01:00",
+            "Workdir     unavailable",
+            "log.do_compile",
+            "busybox:do_configure",
+            "virtual/libc:do_populate_sysroot",
+            "compile-line-9",
+        ] {
+            assert!(output.contains(expected), "missing {expected}: {output}");
+        }
+        assert!(!output.contains("compile-line-0"), "{output}");
+
+        let waiting = [TaskRowRef::WaitingSummary(7)];
+        let mut compact = Terminal::new(TestBackend::new(78, 19)).unwrap();
+        compact
+            .draw(|frame| tasks_inspector(frame, &app, frame.area(), now, &waiting))
+            .unwrap();
+        let compact = compact
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(compact.contains("7 waiting tasks"), "{compact}");
+        assert!(compact.contains("PV          unavailable"), "{compact}");
+        assert!(!compact.contains("72%"), "{compact}");
     }
 
     #[test]

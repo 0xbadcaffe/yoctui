@@ -11,9 +11,17 @@ Status values:
 
 ## Current phase
 
-`INSPECTOR-UI-002` is `IN_PROGRESS`. It will project the selected task's real
-metadata, lifecycle, timing, paths, dependencies, and bounded recent log tail
-into the shared Inspector grammar.
+`INSPECTOR-UI-003` is `IN_PROGRESS`. It will align contextual action names and
+shortcuts, distinguish enabled and disabled actions semantically, and keep the
+exact reason for every discoverable disabled action in Inspector/help state.
+
+`INSPECTOR-UI-002` is `DONE`: a borrowed model projection now joins the selected
+task to an exact recipe version, typed dependencies and paths, and a bounded
+exact-identity log tail without cloning retained records. The Task Inspector
+shows authoritative lifecycle, progress, timing, worker/PID, log, and
+dependency facts; PR/workdir and every other missing source stay explicitly
+unavailable. Aggregate waiting and responsive modes remain honest. Focused
+model/UI tests, all 167 UI tests, and the reviewed canonical golden pass.
 
 `INSPECTOR-UI-001` is `DONE`: model-owned Inspector modes now distinguish the
 selected entity across every workspace and Navigator focus. The UI uses exact

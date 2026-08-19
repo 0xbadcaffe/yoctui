@@ -5211,18 +5211,18 @@ notes = "Added model-owned InspectorMode identities for Navigator, daemon/sessio
 id = "INSPECTOR-UI-002"
 milestone = "M19"
 title = "Add task Inspector"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 534
 required = true
 depends_on = ["INSPECTOR-UI-001", "TASKS-UI-001", "LOG-UI-001"]
 verify = ["cargo test -p yoctui-ui next_generation_task_inspector", "cargo test -p yoctui-model task_inspector"]
-notes = "Show only real task, recipe, metadata, timing, state, progress, worker/PID, workdir/log/dependency, and bounded tail fields; unavailable data stays explicit."
+notes = "Added a borrowed TaskInspectorRef that joins exact recipe version, typed task facts/dependencies/paths, and an exact-identity recent log tail capped before collection. The responsive Inspector shows authoritative lifecycle, progress, timing, worker/PID, log and dependencies; absent PR/workdir remain unavailable and aggregate waiting never gains invented metadata. Focused model/UI tests, all 167 UI tests, and the reviewed canonical golden pass."
 
 [[task]]
 id = "INSPECTOR-UI-003"
 milestone = "M19"
 title = "Add action list presentation"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 535
 required = true
 depends_on = ["INSPECTOR-UI-001"]

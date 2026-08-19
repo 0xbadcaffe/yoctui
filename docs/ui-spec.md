@@ -924,7 +924,8 @@ replicas omit the count. At widths below 84 columns the stable textual form is
 
 The wide Tasks Inspector is subdivided into titled sections:
 
-- selected task metadata
+- primary task facts
+- secondary facts, paths, and dependencies
 - recent matching log tail
 - available typed actions and their actual shortcuts
 - daemon/BitBake/job/session/system status
@@ -932,6 +933,24 @@ The wide Tasks Inspector is subdivided into titled sections:
 These sections render only authoritative state. Actions that are unavailable
 remain absent or explicitly disabled; labels never imply an unimplemented
 command.
+
+For a selected task, primary facts show Task, Recipe, PN, PV, PR, exact state,
+and progress. PN is the task's typed recipe identity. PV is the matching
+authoritative recipe-inventory version when present; it is `unavailable` when
+that inventory has no match. The model currently has no task-specific PR or
+workdir authority, so both remain explicitly `unavailable` rather than being
+inferred from a generic environment variable or log path. Secondary facts show
+worker, PID, start time, elapsed time, task log path, and the exact typed task
+dependencies. Missing values use the shared unavailable treatment.
+
+Recent output contains only retained log entries whose recipe and task both
+match the selection. The model bounds the tail to the requested visible
+capacity before the UI renders it, and the displayed entries remain in
+chronological order. The aggregate waiting row reports only its count and does
+not inherit metadata or a synthetic percentage. Wide mode shows all sections;
+short wide/overlay layouts remove system status and then recent output before
+primary facts, context, and actions; narrow mode exposes the same Inspector
+through the pane switcher without changing its authority.
 
 Example:
 

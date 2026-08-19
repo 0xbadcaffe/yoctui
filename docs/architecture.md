@@ -517,6 +517,15 @@ projection (primary, secondary, paths, output, actions, status), semantic
 heading styles, pane border, and responsive placement. Existing workspace
 detail producers remain typed-state formatters and do not parse backend text.
 
+`yoctui_model::TaskInspectorRef` is the borrowed selected-task projection. It
+joins `TaskInfo` to an exact recipe-inventory version, retains absent revision
+and workdir authority as `None`, exposes typed dependencies and paths without
+reparsing them, and correlates recent output by exact recipe/task identity. The
+projection walks retained logs newest-first, caps them before collection, and
+returns chronological references, avoiding both an unbounded allocation and a
+per-frame clone of task/log records. `yoctui-ui` only formats those typed facts
+and applies responsive section priority.
+
 `yoctui_ui::SemanticTheme` is the single rendering color boundary. It resolves
 each typed theme and the no-color override into named surface, text, border,
 selection, lifecycle, emphasis, graph, and source-preview roles. Renderers and
