@@ -363,3 +363,42 @@ Exit criteria:
   capability-contract change and never convert fixture/development runs into claims
 - fixture-only tests cannot satisfy a live compatibility claim
 - `./scripts/verify-compatibility.sh` independently enforces the milestone
+
+## M19 — Next-Generation TUI Implementation and Polish
+
+The requested milestone name used `M13`, but `M13 — Dense terminal workbench
+redesign` is an existing completed and evidence-backed milestone. This work is
+therefore registered as M19 without renumbering or rewriting historical tasks.
+The requested parent task ID remains `M13-UI-001` for traceability.
+
+Goal: evolve the literal workbench into a polished terminal-native IDE while
+keeping Navigator / Workspace / Inspector architecture, typed actions and
+effects, bounded state, capability-correlated availability, and real data as
+the only rendering authority.
+
+Capabilities:
+
+- documented wide, medium, narrow, and below-minimum layout behavior
+- reusable pane, section, status, empty/loading/unavailable, scroll, and
+  responsive-column primitives
+- complete semantic theme roles with high-contrast and no-color behavior
+- adaptive Tasks, Logs, Jobs, Inspector, header, footer, search, palette, and
+  dialog presentation
+- provenance-audited bounded telemetry with honest unavailable states
+- keyboard/mouse parity, reduced motion, terminal-reader text equivalents,
+  PTY coverage, and explicit breakpoint tests
+- semantic TestBackend snapshots, a small reviewed target-design golden set,
+  and style invariants
+- measured rendering budgets and evidence-backed caching only where justified
+- fresh real-Poky UI evidence and current real-binary README screenshots
+
+Exit criteria:
+
+- every required M19 task is `DONE` with its focused evidence
+- no displayed value or action is fabricated from the concept image
+- all existing workspace functionality and capability gating remains reachable
+- `scripts/verify-next-generation-ui.sh` independently verifies the requested
+  unit, visual, golden, keymap, responsive, mouse, PTY, accessibility,
+  performance, live-evidence, screenshot, Clippy, formatting, and regression
+  categories
+- `./scripts/verify-completion.sh` passes without weakening an older gate

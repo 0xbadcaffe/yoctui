@@ -5060,3 +5060,534 @@ required = true
 depends_on = ["COMPAT-SPEC-001", "COMPAT-ENV-ID-001", "COMPAT-CAP-MODEL-001", "COMPAT-CATALOG-001", "COMPAT-PROBE-001", "COMPAT-VERSION-001", "COMPAT-BITBAKE-CMD-001", "COMPAT-BITBAKE-API-001", "COMPAT-DEVTOOL-001", "COMPAT-RECIPETOOL-001", "COMPAT-LAYERS-001", "COMPAT-PKGDATA-001", "COMPAT-UTILITIES-001", "COMPAT-WORKSPACE-CATALOG-001", "COMPAT-WORKSPACE-MODEL-001", "COMPAT-WORKSPACE-APP-001", "COMPAT-WORKSPACE-001", "COMPAT-UI-MODEL-001", "COMPAT-UI-INSPECTOR-001", "COMPAT-UI-ACTION-CATALOG-001", "COMPAT-UI-NAV-ACTIONS-001", "COMPAT-UI-WORKSPACE-ACTIONS-001", "COMPAT-UI-DIALOG-ACTIONS-001", "COMPAT-UI-ACTIONS-001", "COMPAT-UI-001", "COMPAT-DOCTOR-001", "COMPAT-CACHE-001", "COMPAT-DAEMON-001", "COMPAT-DAEMON-RUNTIME-001", "COMPAT-PROBE-AGGREGATION-001", "COMPAT-BITBAKE-CANCEL-RUNTIME-001", "COMPAT-BITBAKE-CANCEL-ORDER-001", "COMPAT-PROTOCOL-001", "COMPAT-UNKNOWN-001", "COMPAT-OLD-001", "COMPAT-MATRIX-001", "COMPAT-TEST-FIXTURES-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-BITBAKE-GETVAR-001", "COMPAT-LIVE-LATEST-001", "COMPAT-LIVE-OLDER-001", "COMPAT-LIVE-MATRIX-001", "COMPAT-CI-001", "COMPAT-DOC-001"]
 verify = ["./scripts/verify-compatibility.sh", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
 notes = "The independent gate discovers every required M18 COMPAT task, retains an explicit minimum contract, validates centralized model/probe/argv/UI/future behavior, rejects fixtures and stale or inexact evidence, and requires exact Claimed-supported latest and older rows. One binary now follows the daemon-owned typed snapshot with safe alternatives and exact UI reasons. Current support anchors are exact Scarthgap 5.0.19 / BitBake 2.8.1 and Wrynose 6.0.2 / BitBake 2.18.0 records; other point releases and development snapshots remain unclaimed."
+
+# M19 — Next-Generation TUI Implementation and Polish. The user-requested M13
+# name collides with the completed historical M13 milestone, so the new work is
+# registered under the next unused milestone without rewriting existing tasks.
+[[task]]
+id = "M19-GOV-001"
+milestone = "M19"
+title = "Register next-generation TUI implementation and polish"
+status = "DONE"
+priority = 521
+required = true
+depends_on = ["COMPAT-001", "FINAL-GATE-PERF-001"]
+verify = ["./scripts/verify-roadmap.sh", "bash -n scripts/verify-next-generation-ui.sh"]
+notes = "Preserved all 458 existing tasks and statuses, reconciled the occupied M13 milestone as M19 while retaining the requested M13-UI-001 parent ID, registered the complete atomic dependency graph, selected FOUNDATION-UI-001, and added an independent non-weakening completion gate."
+
+[[task]]
+id = "FOUNDATION-UI-001"
+milestone = "M19"
+title = "Specify the new visual layout contract"
+status = "IN_PROGRESS"
+priority = 522
+required = true
+depends_on = ["M19-GOV-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Document exact hierarchy, dimensions, breakpoints, priority, collapse, footer, telemetry, columns, focus, scrolling, and state presentation before layout implementation."
+
+[[task]]
+id = "FOUNDATION-UI-002"
+milestone = "M19"
+title = "Create reusable layout primitives"
+status = "NOT_STARTED"
+priority = 523
+required = true
+depends_on = ["FOUNDATION-UI-001"]
+verify = ["cargo test -p yoctui-ui foundation_ui_primitives", "cargo fmt --all --check"]
+notes = "Add reusable pane, header, border, selection, separator, status, state, scroll, and responsive-column widgets without model mutation."
+
+[[task]]
+id = "FOUNDATION-UI-003"
+milestone = "M19"
+title = "Unify visual theme semantics"
+status = "NOT_STARTED"
+priority = 524
+required = true
+depends_on = ["FOUNDATION-UI-002"]
+verify = ["cargo test -p yoctui-ui semantic_theme", "cargo test -p yoctui-model theme"]
+notes = "Extend semantic roles for every requested workbench meaning while preserving all themes, high contrast, and no-color behavior."
+
+[[task]]
+id = "NAV-UI-001"
+milestone = "M19"
+title = "Redesign Navigator presentation"
+status = "NOT_STARTED"
+priority = 525
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+verify = ["cargo test -p yoctui-ui next_generation_navigator", "cargo test -p yoctui-app next_generation_navigator"]
+notes = "Render deterministic workspace groups and authoritative contextual rows with keyboard/mouse selection and bounded scrolling without inventing a filesystem."
+
+[[task]]
+id = "TASKS-UI-001"
+milestone = "M19"
+title = "Redesign the Tasks table"
+status = "NOT_STARTED"
+priority = 526
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+verify = ["cargo test -p yoctui-ui next_generation_tasks_table", "cargo test -p yoctui-model task_rows"]
+notes = "Add adaptive authoritative columns, strong running selection, determinate and honest indeterminate progress, and reduced-motion stability; never fabricate CPU or ETA."
+
+[[task]]
+id = "TASKS-UI-002"
+milestone = "M19"
+title = "Improve overall build progress presentation"
+status = "NOT_STARTED"
+priority = 527
+required = true
+depends_on = ["TASKS-UI-001"]
+verify = ["cargo test -p yoctui-ui next_generation_build_summary", "cargo test -p yoctui-model build_summary"]
+notes = "Render a compact typed build summary and strong progress bar from completed, total, active, waiting, warning, error, elapsed, and available sstate data only."
+
+[[task]]
+id = "TASKS-UI-003"
+milestone = "M19"
+title = "Add high-quality task state visualization"
+status = "NOT_STARTED"
+priority = 528
+required = true
+depends_on = ["TASKS-UI-002"]
+verify = ["cargo test -p yoctui-ui next_generation_task_states", "cargo test -p yoctui-model task_state"]
+notes = "Distinguish queued, waiting, active, succeeded, failed, cancelled, and lost with text or symbols as well as semantic color."
+
+[[task]]
+id = "LOG-UI-001"
+milestone = "M19"
+title = "Redesign live Log Viewer"
+status = "NOT_STARTED"
+priority = 529
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+verify = ["cargo test -p yoctui-ui next_generation_log_viewer", "cargo test -p yoctui-model log_state"]
+notes = "Add contextual section chrome, bounded scroll position, warning/error emphasis, search hits, two-axis indicators, and honest full/source-log actions over normalized retained text."
+
+[[task]]
+id = "LOG-UI-002"
+milestone = "M19"
+title = "Add compact log activity indicator"
+status = "NOT_STARTED"
+priority = 530
+required = true
+depends_on = ["LOG-UI-001"]
+verify = ["cargo test -p yoctui-ui next_generation_log_activity"]
+notes = "Expose following, paused, filtered, searching, and eviction state compactly and textually."
+
+[[task]]
+id = "JOB-UI-001"
+milestone = "M19"
+title = "Redesign Job History"
+status = "NOT_STARTED"
+priority = 531
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+verify = ["cargo test -p yoctui-ui next_generation_job_history", "cargo test -p yoctui-model background_job"]
+notes = "Render stable status/type/context/timing columns, keep active jobs visible, preserve exact terminal distinctions, and open typed details on selection."
+
+[[task]]
+id = "JOB-UI-002"
+milestone = "M19"
+title = "Add compact job summary"
+status = "NOT_STARTED"
+priority = 532
+required = true
+depends_on = ["JOB-UI-001"]
+verify = ["cargo test -p yoctui-ui next_generation_job_summary"]
+notes = "Show authoritative active, queued, failed, recent-completed, and daemon-owned counts."
+
+[[task]]
+id = "INSPECTOR-UI-001"
+milestone = "M19"
+title = "Redesign Inspector shell"
+status = "NOT_STARTED"
+priority = 533
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+verify = ["cargo test -p yoctui-ui next_generation_inspector_shell"]
+notes = "Provide one consistent typed title/facts/paths/output/actions structure for all supported inspector modes."
+
+[[task]]
+id = "INSPECTOR-UI-002"
+milestone = "M19"
+title = "Add task Inspector"
+status = "NOT_STARTED"
+priority = 534
+required = true
+depends_on = ["INSPECTOR-UI-001", "TASKS-UI-001", "LOG-UI-001"]
+verify = ["cargo test -p yoctui-ui next_generation_task_inspector", "cargo test -p yoctui-model task_inspector"]
+notes = "Show only real task, recipe, metadata, timing, state, progress, worker/PID, workdir/log/dependency, and bounded tail fields; unavailable data stays explicit."
+
+[[task]]
+id = "INSPECTOR-UI-003"
+milestone = "M19"
+title = "Add action list presentation"
+status = "NOT_STARTED"
+priority = 535
+required = true
+depends_on = ["INSPECTOR-UI-001"]
+verify = ["cargo test -p yoctui-ui next_generation_inspector_actions", "cargo test -p yoctui-app compatibility_ui_actions"]
+notes = "Align names and shortcuts, visually distinguish enabled and disabled actions, and retain exact disabled reasons in typed help/Inspector state."
+
+[[task]]
+id = "METRICS-MODEL-001"
+milestone = "M19"
+title = "Audit all currently available telemetry"
+status = "NOT_STARTED"
+priority = 536
+required = true
+depends_on = ["FOUNDATION-UI-001"]
+verify = ["cargo test -p yoctui-model telemetry_provenance", "cargo test -p yoctui telemetry_provenance", "./scripts/check-docs.sh"]
+notes = "Record provenance, units, sampling limits, precision, host support, and unavailable behavior for every candidate metric before rendering it."
+
+[[task]]
+id = "METRICS-MODEL-002"
+milestone = "M19"
+title = "Add bounded telemetry history model"
+status = "NOT_STARTED"
+priority = 537
+required = true
+depends_on = ["METRICS-MODEL-001"]
+verify = ["cargo test -p yoctui-model bounded_telemetry_history", "cargo test -p yoctui telemetry_sampling"]
+notes = "Retain fixed-size CPU, memory where useful, disk I/O, and network histories only for supported samples."
+
+[[task]]
+id = "METRICS-UI-001"
+milestone = "M19"
+title = "Add CPU gauge"
+status = "NOT_STARTED"
+priority = 538
+required = true
+depends_on = ["METRICS-MODEL-002", "FOUNDATION-UI-003"]
+verify = ["cargo test -p yoctui-ui next_generation_cpu_gauge"]
+notes = "Render numeric utilization and core count with a compact gauge and narrow horizontal fallback."
+
+[[task]]
+id = "METRICS-UI-002"
+milestone = "M19"
+title = "Add RAM gauge"
+status = "NOT_STARTED"
+priority = 539
+required = true
+depends_on = ["METRICS-UI-001"]
+verify = ["cargo test -p yoctui-ui next_generation_ram_gauge"]
+notes = "Render percentage and honestly rounded used/total memory without fake precision."
+
+[[task]]
+id = "METRICS-UI-003"
+milestone = "M19"
+title = "Add disk and build-filesystem gauge"
+status = "NOT_STARTED"
+priority = 540
+required = true
+depends_on = ["METRICS-UI-002"]
+verify = ["cargo test -p yoctui-ui next_generation_disk_gauge"]
+notes = "Render used/free capacity and the exact sampled build-filesystem context."
+
+[[task]]
+id = "METRICS-UI-004"
+milestone = "M19"
+title = "Add disk I/O sparklines"
+status = "NOT_STARTED"
+priority = 541
+required = true
+depends_on = ["METRICS-UI-003"]
+verify = ["cargo test -p yoctui-ui next_generation_disk_io"]
+notes = "Render supported read/write rates with bounded history; unsupported hosts show unavailable rather than zero traffic."
+
+[[task]]
+id = "METRICS-UI-005"
+milestone = "M19"
+title = "Add network sparklines"
+status = "NOT_STARTED"
+priority = 542
+required = true
+depends_on = ["METRICS-UI-004"]
+verify = ["cargo test -p yoctui-ui next_generation_network_io"]
+notes = "Render optional RX/TX rates with bounded history and honest unsupported behavior."
+
+[[task]]
+id = "METRICS-UI-006"
+milestone = "M19"
+title = "Create responsive telemetry strip"
+status = "NOT_STARTED"
+priority = 543
+required = true
+depends_on = ["METRICS-UI-005"]
+verify = ["cargo test -p yoctui-ui next_generation_telemetry_strip"]
+notes = "Compose wide CPU/RAM/Disk/Read/Write/RX/TX, medium CPU/RAM/Disk/I/O, and narrow compact-or-hidden variants."
+
+[[task]]
+id = "SYSTEM-UI-001"
+milestone = "M19"
+title = "Redesign System Status pane"
+status = "NOT_STARTED"
+priority = 544
+required = true
+depends_on = ["INSPECTOR-UI-001", "METRICS-MODEL-001"]
+verify = ["cargo test -p yoctui-ui next_generation_system_status"]
+notes = "Render real daemon, version/uptime, BitBake, jobs, sessions, clients, workspace, disk, and compatibility state where authoritative."
+
+[[task]]
+id = "SYSTEM-UI-002"
+milestone = "M19"
+title = "Add health and warning indicators"
+status = "NOT_STARTED"
+priority = 545
+required = true
+depends_on = ["SYSTEM-UI-001"]
+verify = ["cargo test -p yoctui-ui next_generation_health_indicators"]
+notes = "Expose disconnected, low-disk, reconnecting, degraded-capability, log-pressure, and unknown-workspace states with text/symbols and semantic styling."
+
+[[task]]
+id = "HEADER-UI-001"
+milestone = "M19"
+title = "Redesign header"
+status = "NOT_STARTED"
+priority = 546
+required = true
+depends_on = ["SYSTEM-UI-002"]
+verify = ["cargo test -p yoctui-ui next_generation_header"]
+notes = "Apply the documented priority order and progressive hiding to typed project/build/target/MACHINE/DISTRO/release/daemon/BitBake identity."
+
+[[task]]
+id = "FOOTER-UI-001"
+milestone = "M19"
+title = "Redesign bottom shortcut bar"
+status = "NOT_STARTED"
+priority = 547
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+verify = ["cargo test -p yoctui-ui next_generation_footer", "cargo test -p yoctui-app keymap"]
+notes = "Render only current-context authoritative bindings and keep keymap, footer, and help synchronized."
+
+[[task]]
+id = "FOOTER-UI-002"
+milestone = "M19"
+title = "Add transient status area"
+status = "NOT_STARTED"
+priority = 548
+required = true
+depends_on = ["FOOTER-UI-001"]
+verify = ["cargo test -p yoctui-ui next_generation_transient_status", "cargo test -p yoctui-model notification"]
+notes = "Present notifications, results, errors, confirmations, reconnects, and background activity without obscuring contextual shortcuts."
+
+[[task]]
+id = "SEARCH-UI-001"
+milestone = "M19"
+title = "Improve search UX"
+status = "NOT_STARTED"
+priority = 549
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+verify = ["cargo test -p yoctui-ui next_generation_search", "cargo test -p yoctui-app search"]
+notes = "Use consistent visible query/count/next/previous/clear presentation with unambiguous focus."
+
+[[task]]
+id = "PALETTE-UI-001"
+milestone = "M19"
+title = "Polish command palette"
+status = "NOT_STARTED"
+priority = 550
+required = true
+depends_on = ["SEARCH-UI-001"]
+verify = ["cargo test -p yoctui-ui next_generation_palette", "cargo test -p yoctui-app command_palette"]
+notes = "Render command, shortcut, availability, description, search, and scroll through one responsive focus-trapped overlay."
+
+[[task]]
+id = "DIALOG-UI-001"
+milestone = "M19"
+title = "Polish typed dialogs"
+status = "NOT_STARTED"
+priority = 551
+required = true
+depends_on = ["FOUNDATION-UI-003"]
+verify = ["cargo test -p yoctui-ui next_generation_dialogs", "cargo test -p yoctui-model dialog"]
+notes = "Unify title/body/fields/selection/disabled/buttons/hints/validation while retaining typed focus and confirmation semantics."
+
+[[task]]
+id = "MOUSE-UI-001"
+milestone = "M19"
+title = "Ensure mouse parity"
+status = "NOT_STARTED"
+priority = 552
+required = true
+depends_on = ["NAV-UI-001", "TASKS-UI-003", "LOG-UI-002", "DIALOG-UI-001"]
+verify = ["cargo test -p yoctui-app next_generation_mouse", "cargo test -p yoctui --test mouse_runtime next_generation_mouse"]
+notes = "Support semantic click selection, wheel scroll, pane focus, dialog choices, applicable tabs, and existing split resize without reducing keyboard completeness."
+
+[[task]]
+id = "A11Y-UI-001"
+milestone = "M19"
+title = "Improve accessibility"
+status = "NOT_STARTED"
+priority = 553
+required = true
+depends_on = ["TASKS-UI-003", "LOG-UI-002", "DIALOG-UI-001", "METRICS-UI-006", "FOOTER-UI-002"]
+verify = ["cargo test -p yoctui-ui accessibility_invariants", "cargo test -p yoctui-model reduced_motion"]
+notes = "Guarantee non-color state meaning, high contrast, no-color, reduced motion, visible focus, meaningful text, and numeric progress equivalents."
+
+[[task]]
+id = "PERF-UI-001"
+milestone = "M19"
+title = "Profile rendering"
+status = "NOT_STARTED"
+priority = 554
+required = true
+depends_on = ["A11Y-UI-001", "METRICS-UI-006"]
+verify = ["./scripts/test-next-generation-ui-performance.sh", "./scripts/flamegraph.sh"]
+notes = "Measure documented idle, active build, large recipe/layer, log-heavy, and telemetry-history workloads and identify real hot paths."
+
+[[task]]
+id = "PERF-UI-002"
+milestone = "M19"
+title = "Add render caching where justified"
+status = "NOT_STARTED"
+priority = 555
+required = true
+depends_on = ["PERF-UI-001"]
+verify = ["./scripts/test-next-generation-ui-performance.sh", "cargo test -p yoctui-model render_cache"]
+notes = "Cache only measured filtered indices, normalized queries, computed layout, static labels, or sparkline points with explicit invalidation and stale-state tests."
+
+[[task]]
+id = "RESPONSIVE-UI-001"
+milestone = "M19"
+title = "Add explicit breakpoint tests"
+status = "NOT_STARTED"
+priority = 556
+required = true
+depends_on = ["HEADER-UI-001", "METRICS-UI-006", "DIALOG-UI-001"]
+verify = ["cargo test -p yoctui-ui breakpoint_matrix"]
+notes = "Cover 200x60, 160x50, 130x40, 100x30, 80x24, and below minimum for panics, overlap, controls, useful content, and pane priority."
+
+[[task]]
+id = "VISUAL-TEST-001"
+milestone = "M19"
+title = "Create semantic Ratatui snapshot tests"
+status = "NOT_STARTED"
+priority = 557
+required = true
+depends_on = ["RESPONSIVE-UI-001"]
+verify = ["cargo test -p yoctui-ui semantic_snapshots"]
+notes = "Snapshot every requested workspace and representative dialogs with stable semantic assertions."
+
+[[task]]
+id = "VISUAL-TEST-002"
+milestone = "M19"
+title = "Create target-design golden tests"
+status = "NOT_STARTED"
+priority = 558
+required = true
+depends_on = ["VISUAL-TEST-001"]
+verify = ["cargo test -p yoctui-ui target_design_golden"]
+notes = "Keep reviewed canonical wide buffers for idle Dashboard, active Tasks, selected failure, and reconnect/degraded states."
+
+[[task]]
+id = "VISUAL-TEST-003"
+milestone = "M19"
+title = "Add style invariant tests"
+status = "NOT_STARTED"
+priority = 559
+required = true
+depends_on = ["VISUAL-TEST-002"]
+verify = ["cargo test -p yoctui-ui style_invariants"]
+notes = "Verify one focus highlight, section titles, active borders, semantic status roles, progress/state agreement, and disabled-action styling."
+
+[[task]]
+id = "INPUT-TEST-001"
+milestone = "M19"
+title = "Test every documented shortcut"
+status = "NOT_STARTED"
+priority = 560
+required = true
+depends_on = ["FOOTER-UI-001", "PALETTE-UI-001"]
+verify = ["cargo test -p yoctui-e2e next_generation_keymap"]
+notes = "Generate or maintain typed dispatch coverage proving keymap, footer, and help agree."
+
+[[task]]
+id = "INPUT-TEST-002"
+milestone = "M19"
+title = "Test Tab and Shift-Tab flow"
+status = "NOT_STARTED"
+priority = 561
+required = true
+depends_on = ["INPUT-TEST-001", "RESPONSIVE-UI-001"]
+verify = ["cargo test -p yoctui-e2e next_generation_focus_flow"]
+notes = "Cover Navigator, Workspace, Inspector, dialogs, palette, terminal session, and narrow layout focus order."
+
+[[task]]
+id = "INPUT-TEST-003"
+milestone = "M19"
+title = "Test mouse interaction"
+status = "NOT_STARTED"
+priority = 562
+required = true
+depends_on = ["MOUSE-UI-001"]
+verify = ["cargo test -p yoctui-app next_generation_mouse", "cargo test -p yoctui --test mouse_runtime next_generation_mouse"]
+notes = "Cover pane focus, row selection, scroll, dialog clicks, and supported split resizing."
+
+[[task]]
+id = "PTY-UI-TEST-001"
+milestone = "M19"
+title = "Test embedded terminal rendering"
+status = "NOT_STARTED"
+priority = 563
+required = true
+depends_on = ["INPUT-TEST-002", "INPUT-TEST-003"]
+verify = ["cargo test -p yoctui-e2e next_generation_pty", "./scripts/test-embedded-shell.sh"]
+notes = "Use real PTY fixtures for pane placement, resize, attach/detach, focus, escape chord, scrollback, and uncorrupted workbench rendering."
+
+[[task]]
+id = "LIVE-UI-POKY-001"
+milestone = "M19"
+title = "Validate redesigned UI against real Poky"
+status = "NOT_STARTED"
+priority = 564
+required = true
+depends_on = ["VISUAL-TEST-003", "PTY-UI-TEST-001", "PERF-UI-002"]
+verify = ["./scripts/test-live-next-generation-ui.sh", "./scripts/verify-next-generation-ui-evidence.sh"]
+notes = "Run the required fresh supported Poky startup, verification, workspace, build/log/completion, safe failure, terminal, and daemon reconnect flow with retained real terminal evidence."
+
+[[task]]
+id = "README-UI-001"
+milestone = "M19"
+title = "Update README screenshots and UI documentation"
+status = "NOT_STARTED"
+priority = 565
+required = true
+depends_on = ["LIVE-UI-POKY-001"]
+verify = ["./scripts/verify-next-generation-ui-evidence.sh", "./scripts/check-docs.sh"]
+notes = "Publish only current screenshots captured from the real Yoctui binary and bind them to the tested binary/evidence manifest."
+
+[[task]]
+id = "UI-REGRESSION-001"
+milestone = "M19"
+title = "Verify all existing functionality remains available"
+status = "NOT_STARTED"
+priority = 566
+required = true
+depends_on = ["VISUAL-TEST-003", "INPUT-TEST-002"]
+verify = ["cargo test --workspace --all-features ui_regression", "./scripts/verify-utility-coverage.sh", "./scripts/verify-compatibility.sh"]
+notes = "Prove every pre-existing workspace, daemon/session function, and capability-correlated route remains reachable after redesign."
+
+[[task]]
+id = "UI-CLEANUP-001"
+milestone = "M19"
+title = "Refactor rendering modules after behavior stabilizes"
+status = "NOT_STARTED"
+priority = 567
+required = true
+depends_on = ["README-UI-001", "UI-REGRESSION-001"]
+verify = ["cargo test -p yoctui-ui", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Split stable rendering into shell/widgets/workspaces/dialogs/telemetry/theme/layout modules without changing typed behavior or golden output."
+
+[[task]]
+id = "M13-UI-001"
+milestone = "M19"
+title = "Complete next-generation Yoctui TUI"
+status = "NOT_STARTED"
+priority = 568
+required = true
+depends_on = ["FOUNDATION-UI-001", "FOUNDATION-UI-002", "FOUNDATION-UI-003", "NAV-UI-001", "TASKS-UI-001", "TASKS-UI-002", "TASKS-UI-003", "LOG-UI-001", "LOG-UI-002", "JOB-UI-001", "JOB-UI-002", "INSPECTOR-UI-001", "INSPECTOR-UI-002", "INSPECTOR-UI-003", "METRICS-MODEL-001", "METRICS-MODEL-002", "METRICS-UI-001", "METRICS-UI-002", "METRICS-UI-003", "METRICS-UI-004", "METRICS-UI-005", "METRICS-UI-006", "SYSTEM-UI-001", "SYSTEM-UI-002", "HEADER-UI-001", "FOOTER-UI-001", "FOOTER-UI-002", "SEARCH-UI-001", "PALETTE-UI-001", "DIALOG-UI-001", "MOUSE-UI-001", "A11Y-UI-001", "PERF-UI-001", "PERF-UI-002", "RESPONSIVE-UI-001", "VISUAL-TEST-001", "VISUAL-TEST-002", "VISUAL-TEST-003", "INPUT-TEST-001", "INPUT-TEST-002", "INPUT-TEST-003", "PTY-UI-TEST-001", "LIVE-UI-POKY-001", "README-UI-001", "UI-REGRESSION-001", "UI-CLEANUP-001"]
+verify = ["./scripts/verify-next-generation-ui.sh", "./scripts/verify-completion.sh"]
+notes = "Parent gate closes only when the redesigned typed workbench matches the visual hierarchy, degrades responsively, retains all functionality, passes every visual/input/PTY/accessibility/performance/live-evidence check, and the full non-weakened completion gate passes."

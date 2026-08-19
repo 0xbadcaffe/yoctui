@@ -11,7 +11,19 @@ Status values:
 
 ## Current phase
 
-`FINAL-GATE-PERF-001` is `DONE`. The seventh clean candidate passed the complete
+`FOUNDATION-UI-001` is `IN_PROGRESS`. The requested next-generation TUI
+milestone is registered as M19 because the repository already has a completed,
+evidence-backed M13. All requested task IDs are retained, including the
+`M13-UI-001` parent gate. The completion gate now requires an independent M19
+registry and acceptance matrix before the pre-existing product, compatibility,
+quality, profiling, and live-evidence gates can pass.
+
+`M19-GOV-001` is `DONE`: the task graph preserves all 458 existing task records
+and statuses, documents the milestone-number reconciliation, selects the first
+dependency-eligible specification task, and wires the new independent gate
+without weakening any older check.
+
+`FINAL-GATE-PERF-001` remains `DONE`. The seventh clean candidate passed the complete
 repository gate, including CLI authority smoke, workspace tests and Clippy,
 fuzz/stress, ASan/LSan, Rust and Python coverage, audit/deny, Valgrind, release
 profiling, fresh perf sampling, and live-evidence validation. The final capture
