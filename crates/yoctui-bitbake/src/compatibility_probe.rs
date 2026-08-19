@@ -26,12 +26,12 @@ pub struct CapabilityProbeContext {
     build_directory: PathBuf,
     tools: BTreeMap<CapabilityToolId, PathBuf>,
     process_environment: BTreeMap<String, String>,
-    metadata_tasks: BTreeSet<String>,
-    metadata_variables: BTreeSet<String>,
-    backend_capabilities: BTreeSet<String>,
-    protocol_capabilities: BTreeSet<String>,
-    artifacts: BTreeSet<String>,
-    configurations: BTreeSet<String>,
+    metadata_tasks: Option<BTreeSet<String>>,
+    metadata_variables: Option<BTreeSet<String>>,
+    backend_capabilities: Option<BTreeSet<String>>,
+    protocol_capabilities: Option<BTreeSet<String>>,
+    artifacts: Option<BTreeSet<String>>,
+    configurations: Option<BTreeSet<String>>,
 }
 
 impl CapabilityProbeContext {
@@ -41,12 +41,12 @@ impl CapabilityProbeContext {
         build_directory: PathBuf,
         tools: BTreeMap<CapabilityToolId, PathBuf>,
         process_environment: BTreeMap<String, String>,
-        metadata_tasks: BTreeSet<String>,
-        metadata_variables: BTreeSet<String>,
-        backend_capabilities: BTreeSet<String>,
-        protocol_capabilities: BTreeSet<String>,
-        artifacts: BTreeSet<String>,
-        configurations: BTreeSet<String>,
+        metadata_tasks: Option<BTreeSet<String>>,
+        metadata_variables: Option<BTreeSet<String>>,
+        backend_capabilities: Option<BTreeSet<String>>,
+        protocol_capabilities: Option<BTreeSet<String>>,
+        artifacts: Option<BTreeSet<String>>,
+        configurations: Option<BTreeSet<String>>,
     ) -> Result<Self, CapabilityProbeContextError> {
         let environment = environment.normalize()?;
         let canonical_build = canonical_directory(&build_directory).ok_or_else(|| {
@@ -60,12 +60,12 @@ impl CapabilityProbeContext {
         if tools.len() > MAX_PROBE_CONTEXT_VALUES
             || process_environment.len() > MAX_PROBE_ENVIRONMENT_VALUES
             || [
-                metadata_tasks.len(),
-                metadata_variables.len(),
-                backend_capabilities.len(),
-                protocol_capabilities.len(),
-                artifacts.len(),
-                configurations.len(),
+                metadata_tasks.as_ref().map_or(0, BTreeSet::len),
+                metadata_variables.as_ref().map_or(0, BTreeSet::len),
+                backend_capabilities.as_ref().map_or(0, BTreeSet::len),
+                protocol_capabilities.as_ref().map_or(0, BTreeSet::len),
+                artifacts.as_ref().map_or(0, BTreeSet::len),
+                configurations.as_ref().map_or(0, BTreeSet::len),
             ]
             .into_iter()
             .any(|count| count > MAX_PROBE_CONTEXT_VALUES)
@@ -77,11 +77,12 @@ impl CapabilityProbeContext {
             .any(|(key, value)| !valid_environment_text(key) || !valid_environment_text(value))
             || metadata_tasks
                 .iter()
-                .chain(metadata_variables.iter())
-                .chain(backend_capabilities.iter())
-                .chain(protocol_capabilities.iter())
-                .chain(artifacts.iter())
-                .chain(configurations.iter())
+                .flatten()
+                .chain(metadata_variables.iter().flatten())
+                .chain(backend_capabilities.iter().flatten())
+                .chain(protocol_capabilities.iter().flatten())
+                .chain(artifacts.iter().flatten())
+                .chain(configurations.iter().flatten())
                 .any(|value| !valid_token(value))
         {
             return Err(CapabilityProbeContextError::InvalidInput);
@@ -202,27 +203,31 @@ impl CapabilityProbeRunner {
                     .await
             }
             CapabilityProbeSpec::MetadataAnyTask { names } => observation(
-                if names
-                    .iter()
-                    .any(|name| context.metadata_tasks.contains(name))
-                {
-                    CapabilityProbeStatus::Positive
-                } else {
-                    CapabilityProbeStatus::Negative
-                },
+                context.metadata_tasks.as_ref().map_or(
+                    CapabilityProbeStatus::Inconclusive,
+                    |tasks| {
+                        if names.iter().any(|name| tasks.contains(name)) {
+                            CapabilityProbeStatus::Positive
+                        } else {
+                            CapabilityProbeStatus::Negative
+                        }
+                    },
+                ),
                 CapabilityEvidenceKind::Metadata,
                 "BitBake task inventory",
-                if names
-                    .iter()
-                    .any(|name| context.metadata_tasks.contains(name))
-                {
-                    format!(
-                        "At least one required task is present: {}",
-                        names.join(", ")
-                    )
-                } else {
-                    format!("No required task is present: {}", names.join(", "))
-                },
+                context.metadata_tasks.as_ref().map_or_else(
+                    || format!("Task inventory was not probed: {}", names.join(", ")),
+                    |tasks| {
+                        if names.iter().any(|name| tasks.contains(name)) {
+                            format!(
+                                "At least one required task is present: {}",
+                                names.join(", ")
+                            )
+                        } else {
+                            format!("No required task is present: {}", names.join(", "))
+                        }
+                    },
+                ),
                 Vec::new(),
             ),
             CapabilityProbeSpec::MetadataVariable { name } => set_observation(
@@ -471,11 +476,20 @@ async fn run_read_only(
 }
 
 fn set_observation(
-    values: &BTreeSet<String>,
+    values: &Option<BTreeSet<String>>,
     value: &str,
     kind: CapabilityEvidenceKind,
     subject: &str,
 ) -> CapabilityProbeObservation {
+    let Some(values) = values else {
+        return observation(
+            CapabilityProbeStatus::Inconclusive,
+            kind,
+            subject,
+            format!("{subject} inventory was not probed for {value}"),
+            Vec::new(),
+        );
+    };
     let present = values.contains(value);
     observation(
         if present {
@@ -558,18 +572,44 @@ fn safe_executable(path: &Path) -> Option<PathBuf> {
         return None;
     }
     let metadata = fs::symlink_metadata(path).ok()?;
-    if metadata.file_type().is_symlink() || !metadata.is_file() {
+    let is_symlink = metadata.file_type().is_symlink();
+    let executable_metadata = if is_symlink {
+        let target = fs::read_link(path).ok()?;
+        if target.is_absolute()
+            || target
+                .components()
+                .any(|component| !matches!(component, Component::Normal(_)))
+        {
+            return None;
+        }
+        let parent = path.parent()?;
+        if fs::canonicalize(parent).ok()? != parent {
+            return None;
+        }
+        let canonical_target = fs::canonicalize(parent.join(target)).ok()?;
+        if canonical_target.parent()? != parent {
+            return None;
+        }
+        fs::metadata(canonical_target).ok()?
+    } else {
+        metadata
+    };
+    if !executable_metadata.is_file() {
         return None;
     }
     #[cfg(unix)]
     {
         use std::os::unix::fs::PermissionsExt;
-        if metadata.permissions().mode() & 0o111 == 0 {
+        if executable_metadata.permissions().mode() & 0o111 == 0 {
             return None;
         }
     }
-    let canonical = fs::canonicalize(path).ok()?;
-    (canonical == path).then_some(canonical)
+    if is_symlink {
+        Some(path.to_owned())
+    } else {
+        let canonical = fs::canonicalize(path).ok()?;
+        (canonical == path).then_some(canonical)
+    }
 }
 
 fn valid_absolute_path(path: &Path) -> bool {
@@ -661,12 +701,12 @@ mod tests {
                 self.root.clone(),
                 BTreeMap::from([(tool_id, self.tool.clone())]),
                 BTreeMap::from([("PATH".into(), "/usr/bin:/bin".into())]),
-                BTreeSet::from(["create_spdx".into()]),
-                BTreeSet::from(["MACHINE".into()]),
-                BTreeSet::from(["getvar".into()]),
-                BTreeSet::from(["state_snapshots".into()]),
-                BTreeSet::from(["wic".into()]),
-                BTreeSet::from(["buildhistory".into()]),
+                Some(BTreeSet::from(["create_spdx".into()])),
+                Some(BTreeSet::from(["MACHINE".into()])),
+                Some(BTreeSet::from(["getvar".into()])),
+                Some(BTreeSet::from(["state_snapshots".into()])),
+                Some(BTreeSet::from(["wic".into()])),
+                Some(BTreeSet::from(["buildhistory".into()])),
             )
             .unwrap()
         }
@@ -843,6 +883,63 @@ mod tests {
         assert_eq!(stale.status, CapabilityProbeStatus::Inconclusive);
     }
 
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn compatibility_probe_accepts_safe_same_directory_utility_symlink_without_losing_argv0()
+    {
+        use std::os::unix::fs::symlink;
+
+        let fixture = Fixture::new("#!/bin/sh\necho modify\n");
+        let target = fixture.root.join("devtool-real");
+        fs::rename(&fixture.tool, &target).unwrap();
+        symlink("devtool-real", &fixture.tool).unwrap();
+        let observation = CapabilityProbeRunner::default()
+            .probe(
+                &fixture.context(),
+                &CapabilityProbeSpec::Executable {
+                    tool: CapabilityToolId::Devtool,
+                },
+            )
+            .await;
+        assert_eq!(observation.status, CapabilityProbeStatus::Positive);
+        assert_eq!(
+            observation.evidence.argv,
+            [fixture.tool.display().to_string()]
+        );
+    }
+
+    #[tokio::test]
+    async fn compatibility_probe_uncollected_inventory_is_inconclusive_not_negative() {
+        let fixture = Fixture::new("#!/bin/sh\necho ok\n");
+        let mut context = fixture.context();
+        context.metadata_tasks = None;
+        context.metadata_variables = None;
+        context.backend_capabilities = None;
+        context.configurations = None;
+        for probe in [
+            CapabilityProbeSpec::MetadataAnyTask {
+                names: vec!["do_build".into()],
+            },
+            CapabilityProbeSpec::MetadataVariable {
+                name: "MACHINE".into(),
+            },
+            CapabilityProbeSpec::BackendCapability {
+                name: "workspace".into(),
+            },
+            CapabilityProbeSpec::Configuration {
+                name: "ptest_enabled".into(),
+            },
+        ] {
+            assert_eq!(
+                CapabilityProbeRunner::default()
+                    .probe(&context, &probe)
+                    .await
+                    .status,
+                CapabilityProbeStatus::Inconclusive
+            );
+        }
+    }
+
     #[tokio::test]
     async fn compatibility_probe_maps_typed_non_process_observations() {
         let fixture = Fixture::new("#!/bin/sh\necho ok\n");
@@ -898,12 +995,12 @@ mod tests {
             fixture.root.clone(),
             BTreeMap::from([(CapabilityToolId::Devtool, fixture.tool.clone())]),
             BTreeMap::new(),
-            BTreeSet::new(),
-            BTreeSet::new(),
-            BTreeSet::new(),
-            BTreeSet::new(),
-            BTreeSet::new(),
-            BTreeSet::new(),
+            Some(BTreeSet::new()),
+            Some(BTreeSet::new()),
+            Some(BTreeSet::new()),
+            Some(BTreeSet::new()),
+            Some(BTreeSet::new()),
+            Some(BTreeSet::new()),
         );
         assert!(matches!(
             result,
@@ -924,12 +1021,12 @@ mod tests {
             fixture.root.clone(),
             BTreeMap::from([(CapabilityToolId::Devtool, fixture.tool.clone())]),
             BTreeMap::new(),
-            BTreeSet::new(),
-            BTreeSet::new(),
-            BTreeSet::new(),
-            BTreeSet::new(),
-            BTreeSet::new(),
-            BTreeSet::new(),
+            Some(BTreeSet::new()),
+            Some(BTreeSet::new()),
+            Some(BTreeSet::new()),
+            Some(BTreeSet::new()),
+            Some(BTreeSet::new()),
+            Some(BTreeSet::new()),
         );
         assert!(matches!(
             result,

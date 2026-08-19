@@ -1472,7 +1472,7 @@ async fn daemon_cli(command: DaemonCliCommand) -> Result<()> {
         }
         DaemonCliCommand::Foreground => {
             let mut termination = termination_receiver()?;
-            run_daemon_foreground(&mut termination)
+            run_daemon_foreground(&mut termination).await
         }
         DaemonCliCommand::Service { command } => daemon_service(command),
     }
@@ -1512,7 +1512,7 @@ fn start_daemon() -> Result<()> {
     let mut child = command
         .spawn()
         .context("could not start the Yoctui daemon")?;
-    let deadline = Instant::now() + Duration::from_secs(15);
+    let deadline = Instant::now() + Duration::from_secs(60);
     loop {
         if let Some(status) = child.try_wait()? {
             anyhow::bail!("Yoctui daemon exited during startup with {status}");
@@ -1527,7 +1527,7 @@ fn start_daemon() -> Result<()> {
         }
         if Instant::now() >= deadline {
             anyhow::bail!(
-                "Yoctui daemon did not become available at {} within 5 seconds",
+                "Yoctui daemon did not become available at {} within 60 seconds",
                 paths.socket.display()
             );
         }
@@ -1814,7 +1814,7 @@ fn stop_daemon() -> Result<()> {
 }
 
 #[cfg(unix)]
-fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> Result<()> {
+async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> Result<()> {
     use yoctui_protocol::{
         daemon::{
             Capability, ClientId, ClientMessage, CommandOutcome, CommandResult, DaemonCommand,
@@ -1875,6 +1875,31 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     if let Some(persisted) = &persisted {
         recover_daemon_model_metadata(&mut daemon_state, persisted, &record.boot_id)?;
     }
+    let mut compatibility_coordinator =
+        daemon_compatibility::DaemonCompatibilityCoordinator::default();
+    let startup_environment = env::vars().collect::<BTreeMap<_, _>>();
+    match compatibility_coordinator
+        .startup_from_environment(&startup_environment)
+        .await
+    {
+        Ok(Some(compatibility)) => {
+            yoctui_app::reduce_daemon_state(
+                &mut daemon_state,
+                yoctui_model::DaemonStateAction::ReplaceCompatibility(Box::new(compatibility)),
+            )?;
+        }
+        Ok(None) => {}
+        Err(error) => {
+            eprintln!("daemon compatibility startup probe failed: {error}");
+            tracing::warn!(%error, "daemon compatibility startup probe failed");
+            yoctui_app::reduce_daemon_state(
+                &mut daemon_state,
+                yoctui_model::DaemonStateAction::RecordError(format!(
+                    "Compatibility authority is unavailable: {error}"
+                )),
+            )?;
+        }
+    }
     let snapshot = daemon_protocol_snapshot(&daemon_state);
     let snapshot = persisted
         .as_ref()
@@ -1882,11 +1907,12 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
         .unwrap_or(snapshot);
     let daemon_journal = DaemonSnapshotJournal::new(snapshot, DaemonSnapshotLimits::default())?;
     let mut daemon_journal = daemon_journal;
-    let _compatibility_coordinator =
-        daemon_compatibility::DaemonCompatibilityCoordinator::default();
     let mut devtool_supervisor = daemon_devtool::DaemonDevtoolSupervisor::default();
     devtool_supervisor.replace_compatibility(daemon_state.compatibility.clone())?;
     let mut bitbake_supervisor = daemon_bitbake::DaemonBitBakeSupervisor::default();
+    bitbake_supervisor
+        .replace_compatibility(daemon_state.compatibility.clone())
+        .map_err(anyhow::Error::msg)?;
     let mut sdk_supervisor = daemon_sdk::DaemonSdkSupervisor::default();
     let mut qemu_supervisor = daemon_qemu::DaemonQemuSupervisor::default();
     let mut wic_supervisor = daemon_wic::DaemonWicSupervisor::default();
@@ -1918,41 +1944,78 @@ fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> R
     let mut clients: Vec<(DaemonConnection, bool, bool, u64, ClientId)> = Vec::new();
     let mut shutting_down = false;
     let mut last_telemetry_ms = record.started_unix_ms;
+    const MAX_SUPERVISOR_EVENTS_PER_TICK: usize = 32;
     while !shutting_down {
-        while let Some(event) = devtool_supervisor.try_event() {
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = devtool_supervisor.try_event() else {
+                break;
+            };
             publish_daemon_devtool_event(&mut daemon_journal, event)?;
         }
-        while let Some(event) = bitbake_supervisor.try_event() {
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = bitbake_supervisor.try_event() else {
+                break;
+            };
             publish_daemon_bitbake_event(&mut daemon_journal, event)?;
         }
-        while let Some(event) = sdk_supervisor.try_event() {
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = sdk_supervisor.try_event() else {
+                break;
+            };
             publish_daemon_sdk_event(&mut daemon_journal, event)?;
         }
-        while let Some(event) = qemu_supervisor.try_event() {
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = qemu_supervisor.try_event() else {
+                break;
+            };
             publish_daemon_qemu_event(&mut daemon_journal, event)?;
         }
-        while let Some(event) = wic_supervisor.try_event() {
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = wic_supervisor.try_event() else {
+                break;
+            };
             publish_daemon_wic_event(&mut daemon_journal, event)?;
         }
-        while let Some(event) = test_supervisor.try_event() {
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = test_supervisor.try_event() else {
+                break;
+            };
             publish_daemon_test_event(&mut daemon_journal, event)?;
         }
-        while let Some(event) = qa_supervisor.try_event() {
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = qa_supervisor.try_event() else {
+                break;
+            };
             publish_daemon_qa_event(&mut daemon_journal, event)?;
         }
-        while let Some(event) = qa_report_supervisor.try_event() {
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = qa_report_supervisor.try_event() else {
+                break;
+            };
             publish_daemon_qa_report_event(&mut daemon_journal, event)?;
         }
-        while let Some(event) = security_supervisor.try_event() {
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = security_supervisor.try_event() else {
+                break;
+            };
             publish_daemon_security_event(&mut daemon_journal, event)?;
         }
-        while let Some(event) = security_mapper_supervisor.try_event() {
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = security_mapper_supervisor.try_event() else {
+                break;
+            };
             publish_daemon_security_mapper_event(&mut daemon_journal, event)?;
         }
-        while let Some(event) = maintenance_supervisor.try_event() {
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = maintenance_supervisor.try_event() else {
+                break;
+            };
             publish_daemon_maintenance_event(&mut daemon_journal, event)?;
         }
-        while let Some(event) = pty_supervisor.try_event() {
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = pty_supervisor.try_event() else {
+                break;
+            };
             publish_daemon_pty_event(&mut daemon_journal, event)?;
         }
         let now_ms = unix_ms();
@@ -4162,6 +4225,36 @@ async fn spawn_configured_bridge(
         BridgeBackend::spawn_with_environment(python, script, build_dir, environment).await
     } else {
         BridgeBackend::spawn_bundled_with_environment(python, build_dir, environment).await
+    }
+}
+
+async fn spawn_configured_bridge_with_compatibility(
+    python: &str,
+    build_dir: PathBuf,
+    environment: Option<BTreeMap<String, String>>,
+    compatibility: yoctui_model::DaemonCompatibilitySnapshot,
+) -> Result<BridgeBackend, yoctui_bitbake::BackendError> {
+    let environment = environment.unwrap_or_default();
+    let generation = compatibility.snapshot.generation;
+    if let Some(script) = bridge_path_override(env::var_os("YOCTUI_BRIDGE_PATH")) {
+        BridgeBackend::spawn_with_compatibility(
+            python,
+            script,
+            build_dir,
+            environment,
+            compatibility,
+            generation,
+        )
+        .await
+    } else {
+        BridgeBackend::spawn_bundled_with_compatibility(
+            python,
+            build_dir,
+            environment,
+            compatibility,
+            generation,
+        )
+        .await
     }
 }
 

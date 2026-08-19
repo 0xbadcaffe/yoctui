@@ -323,11 +323,7 @@ fn definition(id: CapabilityId) -> Definition {
     };
     let executable = |tool| CapabilityProbeSpec::Executable { tool };
     let tool_command = |label, tool, subcommand: Option<&str>, options: &[&str], impl_id| {
-        let mut probes = vec![
-            executable(tool),
-            CapabilityProbeSpec::CommandVersion { tool },
-            help(tool, subcommand),
-        ];
+        let mut probes = vec![executable(tool), help(tool, subcommand)];
         probes.extend(
             options
                 .iter()
@@ -1006,6 +1002,26 @@ mod catalog {
                 Some(format!("Required capability: {}", id.as_str()).as_str())
             );
         }
+    }
+
+    #[test]
+    fn catalog_command_capabilities_do_not_require_unrelated_version_output() {
+        let catalog = CapabilityCatalog::builtin();
+        let devtool = catalog.entry(CapabilityId::DevtoolUpgrade).unwrap();
+
+        assert!(devtool.probes.iter().any(|probe| matches!(
+            probe,
+            CapabilityProbeSpec::CommandHelp {
+                tool: CapabilityToolId::Devtool,
+                subcommand: Some(subcommand),
+            } if subcommand == "upgrade"
+        )));
+        assert!(
+            !devtool
+                .probes
+                .iter()
+                .any(|probe| matches!(probe, CapabilityProbeSpec::CommandVersion { .. }))
+        );
     }
 
     #[test]

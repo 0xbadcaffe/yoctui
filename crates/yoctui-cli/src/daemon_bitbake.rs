@@ -2,7 +2,7 @@ use std::{collections::HashMap, path::PathBuf};
 
 use tokio::sync::mpsc;
 use yoctui_bitbake::{BackendEvent, BitBakeBackend};
-use yoctui_model::BuildRequest;
+use yoctui_model::{BuildRequest, DaemonCompatibilitySnapshot};
 use yoctui_protocol::daemon::JobId;
 
 #[derive(Debug, Clone)]
@@ -22,6 +22,7 @@ pub struct DaemonBitBakeSupervisor {
     active: HashMap<JobId, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonBitBakeEvent>,
     rx: mpsc::UnboundedReceiver<DaemonBitBakeEvent>,
+    compatibility: Option<DaemonCompatibilitySnapshot>,
 }
 
 impl Default for DaemonBitBakeSupervisor {
@@ -32,13 +33,40 @@ impl Default for DaemonBitBakeSupervisor {
             active: HashMap::new(),
             tx,
             rx,
+            compatibility: None,
         }
     }
 }
 
 impl DaemonBitBakeSupervisor {
+    pub fn replace_compatibility(
+        &mut self,
+        compatibility: Option<DaemonCompatibilitySnapshot>,
+    ) -> Result<(), String> {
+        self.compatibility = compatibility
+            .map(DaemonCompatibilitySnapshot::normalize)
+            .transpose()
+            .map_err(|error| error.to_string())?;
+        Ok(())
+    }
+
     pub fn start(&mut self, build_dir: PathBuf, request: BuildRequest) -> Result<JobId, String> {
         request.validate().map_err(|error| error.to_string())?;
+        let compatibility = self.compatibility.clone().ok_or_else(|| {
+            "daemon BitBake build requires current environment capability authority".to_owned()
+        })?;
+        if compatibility
+            .snapshot
+            .environment
+            .build_directory
+            .value()
+            .map(PathBuf::as_path)
+            != Some(build_dir.as_path())
+        {
+            return Err(
+                "daemon BitBake build directory does not match capability authority".into(),
+            );
+        }
         if self.active.values().len() >= 1 {
             return Err("another daemon-owned BitBake build is already active".into());
         }
@@ -49,7 +77,14 @@ impl DaemonBitBakeSupervisor {
         let tx = self.tx.clone();
         tokio::spawn(async move {
             let python = std::env::var("PYTHON").unwrap_or_else(|_| "python3".into());
-            let mut backend = match crate::spawn_configured_bridge(&python, build_dir, None).await {
+            let mut backend = match crate::spawn_configured_bridge_with_compatibility(
+                &python,
+                build_dir,
+                None,
+                compatibility,
+            )
+            .await
+            {
                 Ok(backend) => backend,
                 Err(error) => {
                     let _ = tx.send(DaemonBitBakeEvent::Failed {
@@ -156,5 +191,26 @@ impl DaemonBitBakeSupervisor {
             self.active.remove(&id);
         }
         Some(event)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn daemon_compatibility_runtime_bitbake_rejects_missing_authority_before_spawn() {
+        let mut supervisor = DaemonBitBakeSupervisor::default();
+        let error = supervisor
+            .start(
+                "/work/build".into(),
+                BuildRequest {
+                    targets: vec!["base-files".into()],
+                    task: Some("listtasks".into()),
+                    force: false,
+                },
+            )
+            .unwrap_err();
+        assert!(error.contains("requires current environment capability authority"));
     }
 }

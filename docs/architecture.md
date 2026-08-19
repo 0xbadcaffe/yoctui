@@ -2437,6 +2437,47 @@ remain distinct fail-closed diagnostics. Existing local environment/bridge
 health checks are separate from the compatibility section and cannot enable a
 feature or create a release-support claim.
 
+### Production daemon compatibility startup
+
+The production foreground daemon establishes compatibility authority before it
+writes its runtime record or accepts a client. Authority exists only when
+`BUILDDIR` resolves to an initialized build containing both configuration
+files. The startup detector preserves a bounded copy of that initialized
+environment, discovers only catalog tools from its exact `PATH`, queries the
+exact BitBake version and read-only datastore variables through the detected
+`bitbake-getvar`, and fingerprints the canonical build directory plus local and
+layer configuration. Host `PATH` without an initialized build never creates
+authority.
+
+Detected identity records only direct evidence: canonical build and layer
+roots, BitBake version, Poky/OE-Core/DISTRO/MACHINE values, COREBASE-backed core
+layer-series compatibility, exact utility paths, and daemon protocol version.
+Backend identity remains Unknown until a backend handshake supplies it. Empty,
+failed, oversized, or timed-out queries remain Unknown instead of being
+invented from release labels. A same-directory relative utility symlink is
+accepted only when its target is a regular executable in that canonical
+directory; the invoked symlink path is retained because utilities such as
+`bitbake-dumpsig` select behavior from `argv[0]`.
+
+The coordinator deduplicates catalog probes, runs bounded read-only probe
+groups, resolves one generation, and installs it into daemon model state before
+the initial journal snapshot. Doctor, attached clients, Devtool, and BitBake
+supervisors therefore consume the same generation. BitBake startup additionally
+checks that the requested build directory matches the snapshot identity and
+refuses to spawn without authority. Backend/task inventories that have not yet
+been negotiated are represented as unprobed, not as authoritative empty sets,
+so centralized adapter fallback may apply while an actual negative inventory
+still disables the action.
+
+Supervisor event queues are drained with a fixed per-tick budget. Native
+BitBake parse/task bursts therefore cannot starve IPC handshakes, status,
+Doctor, or shutdown processing. Live Wrynose validation also identified two
+separate gates that remain intentionally incomplete: compound direct probes
+must not resolve Available when a required subcommand probe is inconclusive,
+and bridge-native event iteration must yield so an accepted cancellation can
+be read during an active build. These are tracked as required M18 tasks before
+live release support can be claimed.
+
 Multi-generation test data lives behind the BitBake crate's `test-fixtures`
 feature. Each fixture contains a typed environment, direct observations, and
 exact expected states/implementations, then passes through the production

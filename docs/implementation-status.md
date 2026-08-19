@@ -1037,9 +1037,26 @@ explicit capability-backed fallback. Direct BitBake, server-control, and
 signature consumers reject configured/authorized executable disagreement.
 Focused old, modern, absent-tool, stale-generation, and exact-executable tests,
 the full all-feature workspace suite, Clippy, bridge tests, and roadmap gate
-pass. Fresh production-daemon validation then exposed that the compatibility
-coordinator was constructed but never selected, probed, or published the
-initialized environment. `COMPAT-DAEMON-RUNTIME-001` is active as an atomic
-prerequisite to install the authoritative startup snapshot in daemon state,
-journal transport, command supervisors, and Doctor. `COMPAT-LIVE-LATEST-001`
-resumes after that runtime authority is verified.
+pass. `COMPAT-DAEMON-RUNTIME-001` is complete. The production daemon now
+requires an initialized `BUILDDIR`, derives a bounded direct identity and
+configuration fingerprint, deduplicates and runs safe catalog probes, installs
+generation one before attach, and shares that authority with the journal,
+Doctor, Devtool, and BitBake supervisors. Missing authority fails closed before
+BitBake spawn, while unprobed backend/task inventories remain inconclusive
+rather than false negative. Same-directory utility symlinks retain their exact
+invocation name, and per-supervisor event budgets keep daemon IPC responsive
+under live parse traffic. Fake initialized-environment tests cover exact
+identity, core layer series, publication, no-PATH-only authority, and bounded
+invalid input.
+
+Fresh official Wrynose 6.0.2 / BitBake 2.18.0 validation confirmed exact Poky,
+DISTRO, MACHINE, COREBASE/core-series, layer roots, utility identities,
+`bitbake-getvar` implementation, Doctor transport, bridge negotiation, a real
+`base-files` build reaching native parse/task events, and responsive status
+during event bursts. It also exposed two independent pre-release defects now
+tracked as required atomic gates. `COMPAT-PROBE-AGGREGATION-001` must prevent a
+positive executable probe from masking an inconclusive required subcommand
+probe. `COMPAT-BITBAKE-CANCEL-RUNTIME-001` must make bridge event delivery yield
+to an accepted cancellation while BitBake is active. The probe-aggregation task
+is next; live support remains unclaimed and `COMPAT-LIVE-LATEST-001` depends on
+both fixes.
