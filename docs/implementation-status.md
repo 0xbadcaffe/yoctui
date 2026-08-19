@@ -11,12 +11,12 @@ Status values:
 
 ## Current phase
 
-`FINAL-GATE-PERF-001` is the fifth `DONE` terminal candidate. CLI smoke coverage
-passes daemon-independent Doctor and explicit fail-closed authority checks.
-AddressSanitizer now uses the same bounded deterministic production workbench
-as perf and Valgrind; that workload and the ASan/LSan high-volume stress tests
-pass. The complete gate must pass before the host's original
-`kernel.perf_event_paranoid=4` policy is restored.
+`FINAL-GATE-PERF-001` is the sixth `DONE` terminal candidate. CLI smoke and the
+shared ASan production workbench pass. The fifth gate reached Python static
+checks and exposed only Ruff formatter drift in the bridge and its tests; the
+repository Ruff version now reports all three checked files formatted, its
+static check passes, and all 43 bridge tests pass. The complete gate must pass
+before the host's original `kernel.perf_event_paranoid=4` policy is restored.
 
 `PERF-FLAMEGRAPH-QUALITY-001` is `DONE`: the replacement 160x48 benchmark
 drives 6,000 deterministic production reducer/Ratatui frames without a daemon

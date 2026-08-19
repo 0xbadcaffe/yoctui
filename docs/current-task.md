@@ -12,10 +12,10 @@ Run the complete repository completion gate while real Linux perf sampling is
 temporarily available, record the terminal result, and restore the host's
 original perf security policy afterward.
 
-The CLI smoke correction passes daemon-independent Doctor and fail-closed
-authority checks. AddressSanitizer now runs the same bounded deterministic
-production workbench as perf and Valgrind, and both ASan and LSan pass. This
-fifth terminal candidate is ready for the complete gate.
+The CLI and sanitizer corrections pass. The fifth candidate reached Python
+static checks and exposed formatter drift in the bridge and its tests. The
+repository Ruff version now reports those sources formatted, and all 43 bridge
+tests pass. This sixth terminal candidate is ready for the complete gate.
 
 ## Dependencies
 
@@ -34,6 +34,8 @@ fifth terminal candidate is ready for the complete gate.
 - `scripts/check-checkout.sh`
 - `scripts/test-cli.sh`
 - `scripts/test-sanitizers.sh`
+- `crates/yoctui-bitbake/bridge/yoctui_bridge.py`
+- `bridge/tests/test_bridge.py`
 - `artifacts/flamegraph/yoctui.svg`
 - `artifacts/flamegraph/summary.txt`
 - `docs/implementation-status.md`

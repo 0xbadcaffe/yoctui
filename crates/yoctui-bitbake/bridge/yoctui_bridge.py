@@ -580,7 +580,9 @@ class BitBakeAdapter:
         for capability in requested:
             capability_id = capability["id"]
             methods = operations.get(capability_id)
-            if methods and all(callable(getattr(connection, name, None)) for name in methods):
+            if methods and all(
+                callable(getattr(connection, name, None)) for name in methods
+            ):
                 if capability_id != "bitbake.native_events" or bool(
                     getattr(connection, "native_event_stream", False)
                 ):
@@ -990,14 +992,24 @@ def configure_compatibility(command):
     generation = compatibility.get("generation")
     build_directory = compatibility.get("build_directory")
     capabilities = compatibility.get("capabilities")
-    if not isinstance(generation, int) or isinstance(generation, bool) or generation <= 0:
+    if (
+        not isinstance(generation, int)
+        or isinstance(generation, bool)
+        or generation <= 0
+    ):
         raise CompatibilityError("bridge compatibility generation must be positive")
     if not isinstance(build_directory, str) or not os.path.isabs(build_directory):
-        raise CompatibilityError("bridge compatibility build directory must be absolute")
+        raise CompatibilityError(
+            "bridge compatibility build directory must be absolute"
+        )
     if os.path.realpath(build_directory) != os.path.realpath(os.getcwd()):
-        raise CompatibilityError("bridge compatibility belongs to another build directory")
+        raise CompatibilityError(
+            "bridge compatibility belongs to another build directory"
+        )
     if not isinstance(capabilities, list) or len(capabilities) > 64:
-        raise CompatibilityError("bridge compatibility capability list is invalid or oversized")
+        raise CompatibilityError(
+            "bridge compatibility capability list is invalid or oversized"
+        )
     seen = set()
     direct_implementations = {
         "bitbake.workspace_inspection": "tinfoil.workspace",
@@ -1034,7 +1046,11 @@ def configure_compatibility(command):
             )
         seen.add(capability["id"])
     implementation = next(
-        (item["implementation"] for item in capabilities if item["implementation"].startswith("tinfoil.adapter.")),
+        (
+            item["implementation"]
+            for item in capabilities
+            if item["implementation"].startswith("tinfoil.adapter.")
+        ),
         next((item["implementation"] for item in capabilities), None),
     )
     adapter = select_adapter(implementation=implementation)
@@ -2198,9 +2214,15 @@ def main():
                 if isinstance(message, dict) and message.get("type") == "hello":
                     try:
                         adapter.shutdown()
-                        adapter, generation, capabilities = configure_compatibility(message)
+                        adapter, generation, capabilities = configure_compatibility(
+                            message
+                        )
                     except (CompatibilityError, ServerUnavailable) as exc:
-                        error("compatibility_negotiation_failed", str(exc), data.get("correlation_id"))
+                        error(
+                            "compatibility_negotiation_failed",
+                            str(exc),
+                            data.get("correlation_id"),
+                        )
                     else:
                         emit(
                             {

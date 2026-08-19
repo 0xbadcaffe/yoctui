@@ -4261,7 +4261,7 @@ priority = 458
 required = true
 depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001", "PERF-FLAMEGRAPH-QUALITY-001"]
 verify = ["perf record -- true", "./scripts/flamegraph.sh", "./scripts/verify-completion.sh"]
-notes = "The fifth clean candidate corrects two more stale release checks: CLI smoke coverage now requires daemon-independent Doctor success and explicit fail-closed behavior for direct BitBake operations, while AddressSanitizer runs the same bounded deterministic production workbench as perf and Valgrind. CLI smoke, 128 ASan workbench frames, and ASan/LSan high-volume stress tests pass. Rerun the complete gate before restoring kernel.perf_event_paranoid=4."
+notes = "The sixth clean candidate includes the daemon-authority CLI smoke and shared ASan production-workbench corrections. The fifth gate passed those stages, fuzzing, stress, sanitizers, coverage, audit, and deny before exposing only Ruff formatter drift in the bridge and its tests. The repository Ruff version now reports the sources formatted, its static check passes, and all 43 bridge tests pass. Rerun the complete gate before restoring kernel.perf_event_paranoid=4."
 
 # M13 — Dense terminal workbench redesign
 [[task]]

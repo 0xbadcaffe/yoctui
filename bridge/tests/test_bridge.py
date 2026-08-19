@@ -274,10 +274,12 @@ fi
         self.assertEqual(message["type"], "hello_ack")
         self.assertEqual(message["bitbake_version"], "99.0")
 
-    def test_compatibility_handshake_negotiates_only_direct_backend_behavior(self) -> None:
+    def test_compatibility_handshake_negotiates_only_direct_backend_behavior(
+        self,
+    ) -> None:
         with tempfile.TemporaryDirectory() as directory:
             Path(directory, "bb.py").write_text(
-                '''__version__ = "99.0"
+                """__version__ = "99.0"
 class Connection:
  native_event_stream = True
  def inspect_workspace(self): return {"build_dir": %r, "variables": {}}
@@ -286,7 +288,7 @@ class Connection:
 class Server:
  def connect(self): return Connection()
 server = Server()
-'''
+"""
                 % str(Path.cwd()),
                 encoding="utf-8",
             )
@@ -334,13 +336,13 @@ server = Server()
         with tempfile.TemporaryDirectory() as directory:
             marker = Path(directory, "called")
             Path(directory, "bb.py").write_text(
-                f'''__version__ = "2.18"
+                f"""__version__ = "2.18"
 class Connection:
  def inspect_workspace(self): return {{"build_dir": {str(Path.cwd())!r}, "variables": {{}}}}
 class Server:
  def connect(self): return Connection()
 server = Server()
-''',
+""",
                 encoding="utf-8",
             )
             hello = {
@@ -417,7 +419,7 @@ server = Server()
         with tempfile.TemporaryDirectory() as directory:
             cancelled = Path(directory, "cancelled")
             Path(directory, "bb.py").write_text(
-                f'''__version__ = "2.18.0"
+                f"""__version__ = "2.18.0"
 class Connection:
  native_event_stream = True
  def __init__(self): self.cancelled = False
@@ -439,7 +441,7 @@ class Server:
  def __init__(self): self.connection = Connection()
  def connect(self): return self.connection
 server = Server()
-''',
+""",
                 encoding="utf-8",
             )
             capabilities = [
