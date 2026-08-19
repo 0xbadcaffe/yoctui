@@ -2,7 +2,8 @@
 pub mod primitives;
 
 use primitives::{
-    PaneShell, PaneStyles, ResponsiveColumn, StateKind, StateView, responsive_columns,
+    ActionListItem, ActionListStyles, PaneShell, PaneStyles, ResponsiveColumn, StateKind,
+    StateView, action_list, action_list_plain, responsive_columns,
 };
 use ratatui::{
     prelude::*,
@@ -651,7 +652,11 @@ fn workspace_destination_label(destination: WorkspaceDestination) -> &'static st
     }
 }
 
-fn compatibility_destination_detail(app: &App, destination: WorkspaceDestination) -> String {
+fn compatibility_destination_detail(
+    app: &App,
+    destination: WorkspaceDestination,
+    width: u16,
+) -> String {
     let availability = compatibility_ui_workspace_destination_action_availability(
         &app.workspace_compatibility,
         destination,
@@ -688,20 +693,27 @@ fn compatibility_destination_detail(app: &App, destination: WorkspaceDestination
             ),
         ]);
     }
-    let actions = compatibility_workspace_actions_text(app, destination);
+    let actions = compatibility_workspace_actions(app, destination);
     if !actions.is_empty() {
-        lines.extend([String::new(), "Actions / Compatibility".into(), actions]);
+        lines.extend([
+            String::new(),
+            "Actions / Compatibility".into(),
+            action_list_plain(&actions, width),
+        ]);
     }
     lines.join("\n")
 }
 
-fn compatibility_workspace_actions_text(app: &App, destination: WorkspaceDestination) -> String {
+fn compatibility_workspace_actions(
+    app: &App,
+    destination: WorkspaceDestination,
+) -> Vec<ActionListItem> {
     yoctui_model::compatibility_ui_workspace_action_presentations(
         &app.workspace_compatibility,
         destination,
     )
     .into_iter()
-    .flat_map(|action| {
+    .map(|action| {
         let availability = action.availability;
         let state = if availability.state == WorkspaceAvailabilityState::Available
             && availability.implementations.is_empty()
@@ -717,22 +729,19 @@ fn compatibility_workspace_actions_text(app: &App, destination: WorkspaceDestina
             WorkspaceAvailabilityState::Unknown => "?",
             WorkspaceAvailabilityState::Unsupported => "!",
         };
-        let mut lines = vec![format!(
-            "{marker} {} [{}] — {state}",
-            action.label, action.shortcut
-        )];
+        let mut details = Vec::new();
         if let Some(reason) = availability.exact_reason() {
-            lines.push(format!("  Reason: {reason}"));
+            details.push(format!("Reason: {reason}"));
         }
-        lines.extend(
+        details.extend(
             availability
                 .limitations
                 .iter()
-                .map(|limitation| format!("  Limitation: {limitation}")),
+                .map(|limitation| format!("Limitation: {limitation}")),
         );
         if !availability.implementations.is_empty() {
-            lines.push(format!(
-                "  Implementation: {}",
+            details.push(format!(
+                "Implementation: {}",
                 availability
                     .implementations
                     .iter()
@@ -741,10 +750,16 @@ fn compatibility_workspace_actions_text(app: &App, destination: WorkspaceDestina
                     .join(", ")
             ));
         }
-        lines
+        ActionListItem {
+            marker,
+            label: action.label.into(),
+            shortcut: action.shortcut.into(),
+            state: state.into(),
+            enabled: availability.enabled,
+            details,
+        }
     })
-    .collect::<Vec<_>>()
-    .join("\n")
+    .collect()
 }
 
 fn with_compatibility_footer(
@@ -3113,55 +3128,44 @@ fn task_inspector_recent_lines<'a>(
         .collect()
 }
 
-fn task_actions_text(app: &App) -> Text<'static> {
+fn inspector_action_styles(app: &App) -> ActionListStyles {
     let palette = ThemePalette::for_app(app);
-    let cancel_style = if matches!(
+    ActionListStyles {
+        enabled: palette.role(palette.primary_foreground, Modifier::empty()),
+        disabled: palette.role(palette.disabled, Modifier::DIM),
+        shortcut: palette.role(palette.accent, Modifier::BOLD),
+        detail: palette.role(palette.secondary_foreground, Modifier::ITALIC),
+    }
+}
+
+fn task_inspector_actions(app: &App) -> Vec<ActionListItem> {
+    let active_build = matches!(
         app.build.status,
         BuildStatus::Running | BuildStatus::Parsing | BuildStatus::Cancelling
-    ) {
-        palette.role(palette.heading, Modifier::BOLD)
-    } else {
-        palette.role(palette.disabled, Modifier::DIM)
-    };
-    let compatibility = if app.workspace_compatibility.authority().is_some() {
-        yoctui_model::compatibility_ui_workspace_action_presentations(
-            &app.workspace_compatibility,
-            WorkspaceDestination::Tasks,
-        )
-    } else {
-        Vec::new()
-    };
-    let state = |id: &str| {
-        compatibility
-            .iter()
-            .find(|action| action.id == id)
-            .map_or_else(String::new, |action| {
-                format!(
-                    " [{}]",
-                    compatibility_workspace_state_label(action.availability.state)
-                )
-            })
-    };
-    Text::from(vec![
-        Line::from(vec![
-            Span::styled("Cancel build       ", cancel_style),
-            Span::styled("c", palette.role(palette.warning, Modifier::BOLD)),
-            Span::raw(state("tasks.cancel")),
-        ]),
-        Line::from(vec![
-            Span::raw("Open Logs         "),
-            Span::styled("l", palette.role(palette.warning, Modifier::BOLD)),
-        ]),
-        Line::from(vec![
-            Span::raw("Build History     "),
-            Span::styled("h", palette.role(palette.warning, Modifier::BOLD)),
-        ]),
-        Line::from(vec![
-            Span::raw("Build options     "),
-            Span::styled("B", palette.role(palette.warning, Modifier::BOLD)),
-            Span::raw(state("tasks.build")),
-        ]),
-    ])
+    );
+    let mut actions = compatibility_workspace_actions(app, WorkspaceDestination::Tasks)
+        .into_iter()
+        .filter(|action| action.label != "Inspect task inventory")
+        .map(|mut action| {
+            if action.label == "Cancel active build" && !active_build {
+                action.enabled = false;
+                action.marker = "×";
+                action.state = "Disabled".into();
+                action
+                    .details
+                    .insert(0, "Reason: No active build can be cancelled.".into());
+            }
+            action
+        })
+        .collect::<Vec<_>>();
+    actions.sort_by_key(|action| match action.label.as_str() {
+        "Cancel active build" => 0,
+        "Open Logs" => 1,
+        "Build History" => 2,
+        "Build options" => 3,
+        _ => 4,
+    });
+    actions
 }
 
 fn system_status_text(app: &App) -> String {
@@ -3212,30 +3216,48 @@ fn push_inspector_section(
     lines.extend(body.lines().map(|line| Line::from(line.to_owned())));
 }
 
+struct InspectorDocumentSections<'a> {
+    primary: &'a str,
+    secondary: Option<&'a str>,
+    related_paths: &'a [String],
+    recent_output: Option<&'a str>,
+    actions: Option<&'a [ActionListItem]>,
+    status: Option<&'a str>,
+}
+
 fn inspector_document(
     app: &App,
-    primary: &str,
-    secondary: Option<&str>,
-    related_paths: &[String],
-    recent_output: Option<&str>,
-    actions: Option<&str>,
-    status: Option<&str>,
+    sections: InspectorDocumentSections<'_>,
+    width: u16,
 ) -> Text<'static> {
     let mut lines = Vec::new();
-    push_inspector_section(&mut lines, app, "PRIMARY FACTS", primary);
-    if let Some(secondary) = secondary {
+    push_inspector_section(&mut lines, app, "PRIMARY FACTS", sections.primary);
+    if let Some(secondary) = sections.secondary {
         push_inspector_section(&mut lines, app, "SECONDARY FACTS", secondary);
     }
-    if !related_paths.is_empty() {
-        push_inspector_section(&mut lines, app, "RELATED PATHS", &related_paths.join("\n"));
+    if !sections.related_paths.is_empty() {
+        push_inspector_section(
+            &mut lines,
+            app,
+            "RELATED PATHS",
+            &sections.related_paths.join("\n"),
+        );
     }
-    if let Some(output) = recent_output {
+    if let Some(output) = sections.recent_output {
         push_inspector_section(&mut lines, app, "RECENT OUTPUT", output);
     }
-    if let Some(actions) = actions {
-        push_inspector_section(&mut lines, app, "CONTEXTUAL ACTIONS", actions);
+    if let Some(actions) = sections.actions.filter(|actions| !actions.is_empty()) {
+        if !lines.is_empty() {
+            lines.push(Line::default());
+        }
+        let palette = ThemePalette::for_app(app);
+        lines.push(Line::styled(
+            "▾ CONTEXTUAL ACTIONS",
+            palette.role(palette.heading, Modifier::BOLD),
+        ));
+        lines.extend(action_list(actions, width, inspector_action_styles(app)).lines);
     }
-    if let Some(status) = status {
+    if let Some(status) = sections.status {
         push_inspector_section(&mut lines, app, "SYSTEM / COMPATIBILITY", status);
     }
     Text::from(lines)
@@ -3303,8 +3325,7 @@ fn tasks_inspector(
     let focused = app.focus == FocusTarget::Inspector;
     if area.height < 35 {
         let inspector = app.task_inspector(selected, 0);
-        let sections =
-            Layout::vertical([Constraint::Percentage(58), Constraint::Percentage(42)]).split(area);
+        let sections = Layout::vertical([Constraint::Min(10), Constraint::Length(7)]).split(area);
         frame.render_widget(
             Paragraph::new(format!(
                 "{}\n{}",
@@ -3315,10 +3336,14 @@ fn tasks_inspector(
             .wrap(Wrap { trim: false }),
             sections[0],
         );
+        let actions = task_inspector_actions(app);
         frame.render_widget(
-            Paragraph::new(system_status_text(app))
-                .block(pane_block(app, "System Status", focused))
-                .wrap(Wrap { trim: false }),
+            Paragraph::new(action_list(
+                &actions,
+                sections[1].width.saturating_sub(2),
+                inspector_action_styles(app),
+            ))
+            .block(pane_block(app, "Contextual Actions", focused)),
             sections[1],
         );
         return;
@@ -3329,8 +3354,8 @@ fn tasks_inspector(
         Layout::vertical([
             Constraint::Length(10),
             Constraint::Length(10),
-            Constraint::Length(7),
-            Constraint::Length(7),
+            Constraint::Length(6),
+            Constraint::Length(8),
             Constraint::Length(6),
         ])
         .split(area)
@@ -3339,7 +3364,7 @@ fn tasks_inspector(
             Constraint::Length(11),
             Constraint::Length(12),
             Constraint::Min(5),
-            Constraint::Length(7),
+            Constraint::Length(9),
             Constraint::Length(6),
         ])
         .split(area)
@@ -3348,7 +3373,7 @@ fn tasks_inspector(
             Constraint::Length(11),
             Constraint::Length(12),
             Constraint::Min(5),
-            Constraint::Length(7),
+            Constraint::Length(9),
         ])
         .split(area)
     };
@@ -3380,12 +3405,14 @@ fn tasks_inspector(
             .wrap(Wrap { trim: false }),
         sections[2],
     );
+    let actions = task_inspector_actions(app);
     frame.render_widget(
-        Paragraph::new(task_actions_text(app)).block(pane_block(
-            app,
-            "Contextual Actions",
-            focused,
-        )),
+        Paragraph::new(action_list(
+            &actions,
+            sections[3].width.saturating_sub(2),
+            inspector_action_styles(app),
+        ))
+        .block(pane_block(app, "Contextual Actions", focused)),
         sections[3],
     );
     if show_system {
@@ -3414,6 +3441,7 @@ fn inspector(
             Paragraph::new(compatibility_destination_detail(
                 app,
                 app.navigator_compatibility_destination(),
+                area.width.saturating_sub(2),
             ))
             .block(pane_block(
                 app,
@@ -3515,7 +3543,7 @@ fn inspector(
         ),
     };
     let destination = yoctui_model::workspace_screen_destination(app.screen);
-    let actions = compatibility_workspace_actions_text(app, destination);
+    let actions = compatibility_workspace_actions(app, destination);
     let related_paths = inspector_related_paths(app);
     let secondary = matches!(app.screen, Screen::Dashboard | Screen::BuildHistory)
         .then(|| job_summary_label(app, area.width));
@@ -3532,16 +3560,18 @@ fn inspector(
             }),
         _ => None,
     };
+    let status = (app.screen == Screen::Dashboard).then(|| system_status_text(app));
     let document = inspector_document(
         app,
-        &details,
-        secondary.as_deref(),
-        &related_paths,
-        recent_output,
-        (!actions.is_empty()).then_some(actions.as_str()),
-        (app.screen == Screen::Dashboard)
-            .then(|| system_status_text(app))
-            .as_deref(),
+        InspectorDocumentSections {
+            primary: &details,
+            secondary: secondary.as_deref(),
+            related_paths: &related_paths,
+            recent_output,
+            actions: (!actions.is_empty()).then_some(actions.as_slice()),
+            status: status.as_deref(),
+        },
+        area.width.saturating_sub(2),
     );
     let title = format!("Inspector: {}", app.inspector_mode().label());
     frame.render_widget(
@@ -13013,8 +13043,8 @@ mod tests {
         assert!(row(13).contains("Secondary facts"), "{}", row(13));
         assert_eq!(buffer[(115, 24)].symbol(), "└");
         assert!(row(25).contains("Recent Log (tail)"), "{}", row(25));
-        assert_eq!(buffer[(115, 32)].symbol(), "└");
-        assert!(row(33).contains("Actions"), "{}", row(33));
+        assert_eq!(buffer[(115, 30)].symbol(), "└");
+        assert!(row(31).contains("Actions"), "{}", row(31));
         assert_eq!(buffer[(115, 39)].symbol(), "└");
         assert!(row(40).contains("System Status"), "{}", row(40));
         assert_eq!(buffer[(115, 45)].symbol(), "└");
@@ -13430,11 +13460,13 @@ mod tests {
         let configuration = rendered_text(&app, 180, 50);
         for expected in [
             "CONTEXTUAL ACTIONS",
-            "Refresh effective variables [r]",
+            "Refresh effective variables",
+            "[r] — Limited",
             "Limited",
             "Native getvar is absent; environment dump fallback selected.",
             "bitbake.getvar.environment-fallback",
-            "Inspect/copy/source [Enter/C/U/o]",
+            "Inspect/copy/source",
+            "[Enter/C/U/o] — Local",
             "Local",
         ] {
             assert!(
@@ -13448,7 +13480,8 @@ mod tests {
         let devtool = rendered_text(&app, 180, 58);
         for expected in [
             "Destination: Devtool",
-            "Upgrade recipe [U]",
+            "Upgrade recipe",
+            "[U] — Unavailable",
             "Unavailable",
             "Current Devtool does not expose the upgrade subcommand.",
         ] {
@@ -13467,10 +13500,7 @@ mod tests {
 
         yoctui_model::invalidate_workspace_compatibility(&mut app);
         let unknown = rendered_text(&app, 180, 46);
-        assert!(
-            unknown.contains("Refresh effective variables [r] — Unknown"),
-            "{unknown}"
-        );
+        assert!(unknown.contains("[r] — Unknown"), "{unknown}");
         assert!(
             unknown.contains("No current environment capability snapshot"),
             "{unknown}"
@@ -13479,13 +13509,14 @@ mod tests {
 
         app.screen = Screen::Images;
         let images = rendered_text(&app, 180, 60);
-        assert!(images.contains("Launch QEMU [Q] — Unknown"), "{images}");
+        assert!(images.contains("Launch QEMU"), "{images}");
+        assert!(images.contains("[Q] — Unknown"), "{images}");
         assert!(
-            images.contains("Write selected local device [D] — Local"),
+            images.contains("Write selected local device") && images.contains("[D] — Local"),
             "{images}"
         );
         assert!(
-            images.contains("Cancel owned image operation [x/c] — Local"),
+            images.contains("Cancel owned image operation") && images.contains("[x/c] — Local"),
             "{images}"
         );
     }
@@ -13497,7 +13528,8 @@ mod tests {
         app.focus = FocusTarget::Navigator;
         app.navigator_selection = 14;
         let unavailable = rendered_text(&app, 180, 56);
-        assert!(unavailable.contains("Upgrade recipe [U]"), "{unavailable}");
+        assert!(unavailable.contains("Upgrade recipe"), "{unavailable}");
+        assert!(unavailable.contains("[U] — Unavailable"), "{unavailable}");
         assert!(
             unavailable.contains("Current Devtool does not expose the upgrade subcommand."),
             "{unavailable}"
@@ -13523,7 +13555,8 @@ mod tests {
         yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
         assert_eq!(app.navigator_selection, 14);
         let available = rendered_text(&app, 180, 56);
-        assert!(available.contains("Upgrade recipe [U]"), "{available}");
+        assert!(available.contains("Upgrade recipe"), "{available}");
+        assert!(available.contains("[U] — Available"), "{available}");
         assert!(available.contains("Available"), "{available}");
         assert!(available.contains("devtool.upgrade.argv"), "{available}");
         assert!(
@@ -13689,7 +13722,8 @@ mod tests {
         app.focus = FocusTarget::Inspector;
         let workspace = rendered_text(&app, 180, 50);
         assert!(
-            workspace.contains("Refresh effective variables [r] — Limited"),
+            workspace.contains("Refresh effective variables")
+                && workspace.contains("[r] — Limited"),
             "{workspace}"
         );
         assert!(
@@ -18915,6 +18949,76 @@ mod tests {
         assert!(compact.contains("7 waiting tasks"), "{compact}");
         assert!(compact.contains("PV          unavailable"), "{compact}");
         assert!(!compact.contains("72%"), "{compact}");
+    }
+
+    #[test]
+    fn next_generation_inspector_actions_are_aligned_typed_and_accessible() {
+        let mut app = App::new(20, 4_000);
+        app.screen = Screen::Tasks;
+        app.focus = FocusTarget::Inspector;
+        app.color_enabled = false;
+        app.build.status = BuildStatus::Idle;
+
+        let actions = task_inspector_actions(&app);
+        let action = |label: &str| {
+            actions
+                .iter()
+                .find(|action| action.label == label)
+                .unwrap_or_else(|| panic!("missing action {label}"))
+        };
+        assert_eq!(action("Build options").shortcut, "B");
+        assert_eq!(action("Open Logs").shortcut, "l");
+        assert_eq!(action("Build History").shortcut, "h");
+        let cancel = action("Cancel active build");
+        assert_eq!(cancel.shortcut, "c");
+        assert!(!cancel.enabled);
+        assert_eq!(cancel.marker, "×");
+        assert_eq!(cancel.state, "Disabled");
+        assert!(
+            cancel
+                .details
+                .iter()
+                .any(|detail| detail == "Reason: No active build can be cancelled.")
+        );
+        assert!(action("Open Logs").enabled);
+        assert_eq!(action("Open Logs").marker, "✓");
+
+        let plain = action_list_plain(&actions, 52);
+        let shortcut_columns = plain
+            .lines()
+            .filter(|line| !line.starts_with("  "))
+            .filter_map(|line| line.chars().position(|character| character == '['))
+            .collect::<Vec<_>>();
+        assert!(
+            shortcut_columns.windows(2).all(|pair| pair[0] == pair[1]),
+            "{plain}"
+        );
+        assert!(plain.contains("[B] — Unknown"), "{plain}");
+        assert!(
+            plain.contains("No current environment capability snapshot"),
+            "{plain}"
+        );
+
+        let mut terminal = Terminal::new(TestBackend::new(34, 28)).unwrap();
+        terminal
+            .draw(|frame| tasks_inspector(frame, &app, frame.area(), UNIX_EPOCH, &[]))
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        let output = buffer
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("Contextual Actions"), "{output}");
+        assert!(output.contains("× Cancel"), "{output}");
+        assert!(output.contains("✓ Open Logs"), "{output}");
+        assert!(
+            buffer
+                .content
+                .iter()
+                .any(|cell| cell.symbol() == "×" && cell.modifier.contains(Modifier::DIM)),
+            "disabled action must retain non-color emphasis"
+        );
     }
 
     #[test]

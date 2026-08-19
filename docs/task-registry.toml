@@ -5222,18 +5222,18 @@ notes = "Added a borrowed TaskInspectorRef that joins exact recipe version, type
 id = "INSPECTOR-UI-003"
 milestone = "M19"
 title = "Add action list presentation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 535
 required = true
 depends_on = ["INSPECTOR-UI-001"]
 verify = ["cargo test -p yoctui-ui next_generation_inspector_actions", "cargo test -p yoctui-app compatibility_ui_actions"]
-notes = "Align names and shortcuts, visually distinguish enabled and disabled actions, and retain exact disabled reasons in typed help/Inspector state."
+notes = "Added one reusable aligned expanded/compact action list with text markers, semantic enabled/disabled styles, and exact typed reasons, limitations, and implementations. Tasks orders the authoritative c/l/h/B actions and keeps them visible in reduced-height Inspectors; B now dispatches through the app keymap instead of a duplicate CLI branch. Focused UI/app tests, all 169 UI tests, and the reviewed canonical golden pass."
 
 [[task]]
 id = "METRICS-MODEL-001"
 milestone = "M19"
 title = "Audit all currently available telemetry"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 536
 required = true
 depends_on = ["FOUNDATION-UI-001"]

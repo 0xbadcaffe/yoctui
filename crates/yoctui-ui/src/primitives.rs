@@ -117,6 +117,125 @@ pub fn status_label<'a>(tone: StatusTone, label: impl Into<String>, style: Style
     Span::styled(format!("{} {}", tone.marker(), label.into()), style)
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ActionListItem {
+    pub marker: &'static str,
+    pub label: String,
+    pub shortcut: String,
+    pub state: String,
+    pub enabled: bool,
+    pub details: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ActionListStyles {
+    pub enabled: Style,
+    pub disabled: Style,
+    pub shortcut: Style,
+    pub detail: Style,
+}
+
+fn action_list_widths(items: &[ActionListItem], width: u16) -> (usize, bool) {
+    let expanded = width >= 36;
+    let shortcut_width = items
+        .iter()
+        .map(|item| item.shortcut.chars().count())
+        .max()
+        .unwrap_or(1);
+    let maximum_label = items
+        .iter()
+        .map(|item| item.label.chars().count())
+        .max()
+        .unwrap_or(1);
+    let reserved = shortcut_width.saturating_add(8);
+    let available_label = usize::from(width).saturating_sub(reserved).max(8);
+    (maximum_label.min(available_label), expanded)
+}
+
+fn clipped_label(label: &str, width: usize) -> String {
+    let count = label.chars().count();
+    if count <= width {
+        return label.to_owned();
+    }
+    if width <= 1 {
+        return "…".into();
+    }
+    format!("{}…", label.chars().take(width - 1).collect::<String>())
+}
+
+pub fn action_list_plain(items: &[ActionListItem], width: u16) -> String {
+    let (label_width, expanded) = action_list_widths(items, width);
+    items
+        .iter()
+        .flat_map(|item| {
+            let label = clipped_label(&item.label, label_width);
+            let row = if expanded {
+                format!(
+                    "{} {label:<label_width$}  [{}] — {}",
+                    item.marker, item.shortcut, item.state
+                )
+            } else {
+                format!(
+                    "{} {label} [{}] — {}",
+                    item.marker, item.shortcut, item.state
+                )
+            };
+            std::iter::once(row).chain(item.details.iter().map(|detail| format!("  {detail}")))
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+pub fn action_list(
+    items: &[ActionListItem],
+    width: u16,
+    styles: ActionListStyles,
+) -> Text<'static> {
+    let (label_width, expanded) = action_list_widths(items, width);
+    let mut lines = Vec::new();
+    for item in items {
+        let item_style = if item.enabled {
+            styles.enabled
+        } else {
+            styles.disabled
+        };
+        let shortcut_style = if item.enabled {
+            styles.shortcut
+        } else {
+            styles.disabled
+        };
+        let label = clipped_label(&item.label, label_width);
+        let spans = if expanded {
+            vec![
+                Span::styled(
+                    format!("{} {label:<label_width$}  ", item.marker),
+                    item_style,
+                ),
+                Span::styled(format!("[{}]", item.shortcut), shortcut_style),
+                Span::styled(format!(" — {}", item.state), item_style),
+            ]
+        } else {
+            vec![
+                Span::styled(format!("{} {label} [", item.marker), item_style),
+                Span::styled(item.shortcut.clone(), shortcut_style),
+                Span::styled(format!("] — {}", item.state), item_style),
+            ]
+        };
+        lines.push(Line::from(spans));
+        lines.extend(item.details.iter().map(|detail| {
+            Line::styled(
+                format!("  {detail}"),
+                if item.enabled {
+                    styles.detail
+                } else {
+                    styles.disabled
+                },
+            )
+        }));
+    }
+    Text::from(lines)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum StateKind {
     Empty,
@@ -386,5 +505,63 @@ mod tests {
         ] {
             assert!(!kind.marker().is_empty());
         }
+    }
+
+    #[test]
+    fn action_lists_align_shortcuts_and_keep_disabled_reasons_in_text() {
+        let items = vec![
+            ActionListItem {
+                marker: "✓",
+                label: "Open Logs".into(),
+                shortcut: "l".into(),
+                state: "Local".into(),
+                enabled: true,
+                details: Vec::new(),
+            },
+            ActionListItem {
+                marker: "×",
+                label: "Cancel active build".into(),
+                shortcut: "c".into(),
+                state: "Disabled".into(),
+                enabled: false,
+                details: vec!["Reason: No active build can be cancelled.".into()],
+            },
+        ];
+        let plain = action_list_plain(&items, 48);
+        assert!(
+            plain.contains("Open Logs            [l] — Local"),
+            "{plain}"
+        );
+        assert!(
+            plain.contains("Cancel active build  [c] — Disabled"),
+            "{plain}"
+        );
+        assert!(
+            plain.contains("Reason: No active build can be cancelled."),
+            "{plain}"
+        );
+
+        let styled = action_list(
+            &items,
+            32,
+            ActionListStyles {
+                enabled: Style::default(),
+                disabled: Style::default().add_modifier(Modifier::DIM),
+                shortcut: Style::default().add_modifier(Modifier::BOLD),
+                detail: Style::default(),
+            },
+        );
+        assert!(
+            styled.lines[1].spans[0]
+                .style
+                .add_modifier
+                .contains(Modifier::DIM)
+        );
+        assert!(
+            styled
+                .lines
+                .iter()
+                .any(|line| line.to_string().contains("[c]"))
+        );
     }
 }

@@ -758,7 +758,8 @@ pub fn compatibility_ui_workspace_action_definitions(
                 "c",
                 Id::BitBakeCancellation,
             ),
-            Action::local("tasks.logs", "Open retained task log", "l"),
+            Action::local("tasks.logs", "Open Logs", "l"),
+            Action::local("tasks.history", "Build History", "h"),
         ],
         Destination::BuildHistory => vec![Action::local(
             "build_history.inspect",

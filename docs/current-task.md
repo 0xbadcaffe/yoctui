@@ -2,23 +2,24 @@
 
 ## Task
 
-**ID:** INSPECTOR-UI-003
-**Title:** Add action list presentation
+**ID:** METRICS-MODEL-001
+**Title:** Audit all currently available telemetry
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Present contextual Inspector actions with aligned names and authoritative
-shortcuts, availability, and disabled reasons across responsive layouts.
+Identify every telemetry value Yoctui can currently obtain honestly and record
+its authority, units, precision, sampling limits, host support, and unavailable
+behavior before adding new metric visualizations.
 
 ## Dependencies
 
-- `INSPECTOR-UI-001` — DONE
+- `FOUNDATION-UI-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-app/src/lib.rs`
-- `crates/yoctui-ui/src/lib.rs`
+- `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-cli/src/main.rs`
 - `docs/ui-spec.md`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
@@ -27,18 +28,20 @@ shortcuts, availability, and disabled reasons across responsive layouts.
 
 ## Definition of done
 
-- Contextual actions render in an aligned `Action Name / Shortcut` grammar.
-- Enabled and disabled states remain distinguishable without relying on color.
-- Discoverable disabled actions retain their exact typed reason in the
-  Inspector or help path.
-- Only authoritative keymap bindings are displayed.
-- Wide, overlay, narrow, high-contrast, and no-color layouts remain safe.
+- CPU usage/core count, memory, build filesystem, disk I/O, network I/O,
+  daemon uptime/state, BitBake state, clients, sessions, and jobs are audited.
+- Every supported metric records its authoritative source and exact units.
+- Sampling interval, precision, reset/wrap behavior, and boundedness are
+  documented where applicable.
+- Unsupported or unavailable metrics have explicit host/runtime behavior.
+- No renderer gains a fabricated or newly inferred value during this audit.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_inspector_actions
-cargo test -p yoctui-app compatibility_ui_actions
+cargo test -p yoctui-model telemetry_provenance
+cargo test -p yoctui telemetry_provenance
 cargo fmt --all --check
+./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
 ```

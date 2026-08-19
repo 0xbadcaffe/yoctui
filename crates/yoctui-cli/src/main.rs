@@ -11558,8 +11558,6 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         .collect();
                     let _ =
                         compatibility_workspace_action(&mut app, Action::OpenImagePicker(images));
-                } else if input == Input::Char('B') {
-                    let _ = compatibility_workspace_action(&mut app, Action::OpenBuildOptions);
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
                     let _ =
                         compatibility_workspace_action(&mut app, Action::BeginSelectedRecipeBuild);

@@ -11,9 +11,17 @@ Status values:
 
 ## Current phase
 
-`INSPECTOR-UI-003` is `IN_PROGRESS`. It will align contextual action names and
-shortcuts, distinguish enabled and disabled actions semantically, and keep the
-exact reason for every discoverable disabled action in Inspector/help state.
+`METRICS-MODEL-001` is `IN_PROGRESS`. It will audit every candidate telemetry
+field and record its source, units, precision, sampling constraints, host
+support, and unavailable behavior before any new gauge or sparkline is added.
+
+`INSPECTOR-UI-003` is `DONE`: one reusable action list now renders aligned
+typed names and shortcuts, explicit marker-plus-state availability, semantic
+enabled/disabled styles, and exact reasons, limitations, and implementations.
+Tasks orders the real `c/l/h/B` actions, exposes the inactive-cancel reason,
+and keeps useful actions visible in reduced-height Inspector layouts. `B` now
+dispatches through the app keymap rather than a duplicate CLI branch. Focused
+UI/app tests, all 169 UI tests, and the reviewed canonical golden pass.
 
 `INSPECTOR-UI-002` is `DONE`: a borrowed model projection now joins the selected
 task to an exact recipe version, typed dependencies and paths, and a bounded

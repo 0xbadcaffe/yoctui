@@ -698,6 +698,18 @@ match this grammar. Related paths come only from typed recipe, layer/file, log,
 error, image/SDK artifact, or job context fields. Logs place the selected
 message under Recent output rather than duplicating it among facts.
 
+Contextual actions use one shared action-list grammar. Expanded rows are
+`<marker> <aligned action name> [<shortcut>] — <state>`; compact rows preserve
+the same fields without padding. `✓` identifies an enabled local/available
+action, `~` an enabled limited action, and `×`, `?`, or `!` identify disabled,
+unknown, or unsupported actions. State therefore never depends on color.
+Enabled names use primary text and semantic accent shortcuts; disabled rows use
+the disabled role and no-color dim emphasis. An exact typed `Reason:`, each
+limitation, and the selected implementation follow the affected row when
+present. Renderers consume the closed workspace action inventory and do not
+invent labels or bindings. The app keymap owns dispatch, including `B` for
+Build options; the CLI does not keep a second direct-key definition.
+
 Supported inspector modes include:
 
 - file preview
@@ -933,6 +945,13 @@ The wide Tasks Inspector is subdivided into titled sections:
 These sections render only authoritative state. Actions that are unavailable
 remain absent or explicitly disabled; labels never imply an unimplemented
 command.
+
+The Tasks action list orders Cancel active build, Open Logs, Build History, and
+Build options. Their authoritative shortcuts are `c`, `l`, `h`, and `B`.
+Cancel is disabled with `No active build can be cancelled.` outside an active
+build lifecycle; environment-backed actions additionally retain their exact
+compatibility reason. The F2 task-inventory route remains in the global keymap
+but is not repeated as an action inside the already-open Tasks Inspector.
 
 For a selected task, primary facts show Task, Recipe, PN, PV, PR, exact state,
 and progress. PN is the task's typed recipe identity. PV is the matching

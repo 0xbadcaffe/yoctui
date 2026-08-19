@@ -526,6 +526,16 @@ returns chronological references, avoiding both an unbounded allocation and a
 per-frame clone of task/log records. `yoctui-ui` only formats those typed facts
 and applies responsive section priority.
 
+The closed `compatibility_ui_workspace_action_definitions` inventory remains
+the authority for contextual action IDs, labels, shortcuts, and capability
+requirements. `yoctui-app` owns the corresponding typed key dispatch; the
+global `B` build-options route is resolved there rather than by a duplicate CLI
+branch. `yoctui_ui::primitives::ActionListItem` is a render-only resolved row:
+it receives availability, state, exact reasons, limitations, and implementation
+text from typed projections, then produces aligned expanded or compact text
+with semantic enabled/disabled styles. It neither evaluates capabilities nor
+mutates application state.
+
 `yoctui_ui::SemanticTheme` is the single rendering color boundary. It resolves
 each typed theme and the no-color override into named surface, text, border,
 selection, lifecycle, emphasis, graph, and source-preview roles. Renderers and
