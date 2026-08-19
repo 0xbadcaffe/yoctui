@@ -2,19 +2,18 @@
 
 ## Task
 
-**ID:** TASKS-UI-001
-**Title:** Redesign the Tasks table
+**ID:** TASKS-UI-002
+**Title:** Improve overall build progress presentation
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Refine the Tasks table into a dense build monitor with adaptive authoritative
-columns, strong running-row treatment, honest determinate and indeterminate
-progress, and stable reduced-motion behavior.
+Add a compact Tasks workspace build summary and strong overall progress bar
+using only authoritative or honestly derived aggregate values.
 
 ## Dependencies
 
-- `FOUNDATION-UI-003` — DONE
+- `TASKS-UI-001` — DONE
 
 ## Relevant files
 
@@ -27,19 +26,18 @@ progress, and stable reduced-motion behavior.
 
 ## Definition of done
 
-- Columns hide deterministically according to the documented width priorities.
-- Task, recipe, state, elapsed, real progress, and worker appear only when the
-  typed model provides them.
-- No task CPU value or ETA is fabricated.
-- Running rows remain prominent without masking the selected row.
-- Unknown progress uses a stable reduced-motion presentation and never appears
-  determinate.
+- Completed/total, active, waiting, warnings, errors, and elapsed use typed
+  build/task state.
+- Sstate reuse appears only if an authoritative value exists.
+- The overall bar is determinate only when total tasks are known and nonzero.
+- Unknown totals remain explicitly indeterminate without a fake percentage.
+- The summary remains compact and useful at supported widths.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_tasks_table
-cargo test -p yoctui-model task_rows
+cargo test -p yoctui-ui next_generation_build_summary
+cargo test -p yoctui-model build_summary
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

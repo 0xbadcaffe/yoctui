@@ -468,6 +468,9 @@ labels, empty/loading/unavailable/error presentation, bounded scroll labels,
 and width-prioritized column selection. Callers resolve semantic styles and
 typed content before invoking these primitives. The primitives accept no
 backend/protocol type, retain no cache or selection, and emit no action.
+Workspace tables resolve a complete responsive column set through this boundary
+before constructing row cells. Optional fields therefore remain model-owned
+and are neither derived nor formatted when their column is hidden.
 
 `yoctui_ui::SemanticTheme` is the single rendering color boundary. It resolves
 each typed theme and the no-color override into named surface, text, border,

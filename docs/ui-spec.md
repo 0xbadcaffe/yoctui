@@ -299,6 +299,15 @@ elapsed time; an unknown total or zero completed work renders `--`. PN, PV,
 PR, workdir, daemon version, disk I/O, and network rates are not inferred from
 recipe labels, paths, or the raster reference.
 
+For the Tasks table, the render-area thresholds are explicit: below 84 columns
+show `Task | Status | Progress`; 84–109 columns add `Recipe | Time`; 110 or
+more may add `Worker | PID` when at least one retained typed row supplies each
+field. The canonical reviewed 89×17 table retains its approved proportional
+geometry. The responsive helper selects the complete column set before cells
+are constructed, so hidden Worker/PID values are not formatted. An unselected
+active row uses the running role across the full row; selection remains a
+separate full-row treatment and the status cell retains its textual marker.
+
 #### Focus and scroll presentation
 
 Exactly one pane or modal owns focus. Focused panes use the semantic focused

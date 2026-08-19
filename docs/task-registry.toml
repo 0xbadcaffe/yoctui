@@ -5123,18 +5123,18 @@ notes = "The complete workspace rail now uses model-owned deterministic groups, 
 id = "TASKS-UI-001"
 milestone = "M19"
 title = "Redesign the Tasks table"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 526
 required = true
 depends_on = ["FOUNDATION-UI-003"]
 verify = ["cargo test -p yoctui-ui next_generation_tasks_table", "cargo test -p yoctui-model task_rows"]
-notes = "Add adaptive authoritative columns, strong running selection, determinate and honest indeterminate progress, and reduced-motion stability; never fabricate CPU or ETA."
+notes = "The Tasks table now selects its full column set before row construction: narrow shows Task/Status/Progress, medium adds Recipe/Time, and wide adds Worker/PID only when typed rows supply them. Unselected active work receives a full-row running treatment while selection stays distinct. Determinate bars remain numeric; unknown progress remains explicitly indeterminate and freezes to stable active text in reduced motion. Focused model/UI tests, the unchanged literal golden, and absence of per-task CPU/ETA columns are verified."
 
 [[task]]
 id = "TASKS-UI-002"
 milestone = "M19"
 title = "Improve overall build progress presentation"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 527
 required = true
 depends_on = ["TASKS-UI-001"]

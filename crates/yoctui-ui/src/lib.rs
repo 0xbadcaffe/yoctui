@@ -1,7 +1,7 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
 pub mod primitives;
 
-use primitives::{PaneShell, PaneStyles};
+use primitives::{PaneShell, PaneStyles, ResponsiveColumn, responsive_columns};
 use ratatui::{
     prelude::*,
     widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Sparkline, Table, Wrap},
@@ -3902,6 +3902,170 @@ fn task_filter_summary(app: &App) -> String {
     filters.join(" · ")
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum TaskTableColumn {
+    Task,
+    Recipe,
+    State,
+    Elapsed,
+    Progress,
+    Worker,
+    Pid,
+}
+
+impl TaskTableColumn {
+    const ALL: [Self; 7] = [
+        Self::Task,
+        Self::Recipe,
+        Self::State,
+        Self::Elapsed,
+        Self::Progress,
+        Self::Worker,
+        Self::Pid,
+    ];
+
+    const fn header(self) -> &'static str {
+        match self {
+            Self::Task => "Task",
+            Self::Recipe => "Recipe",
+            Self::State => "Status",
+            Self::Elapsed => "Time",
+            Self::Progress => "Progress",
+            Self::Worker => "Worker",
+            Self::Pid => "PID",
+        }
+    }
+
+    const fn constraint(self) -> Constraint {
+        match self {
+            Self::Task => Constraint::Min(12),
+            Self::Recipe => Constraint::Percentage(24),
+            Self::State => Constraint::Length(13),
+            Self::Elapsed => Constraint::Length(9),
+            Self::Progress => Constraint::Length(24),
+            Self::Worker => Constraint::Length(12),
+            Self::Pid => Constraint::Length(8),
+        }
+    }
+}
+
+fn task_table_columns(area_width: u16, rows: &[TaskRowRef<'_>]) -> Vec<TaskTableColumn> {
+    const DEFINITIONS: [ResponsiveColumn; 7] = [
+        ResponsiveColumn {
+            minimum_width: 14,
+            priority: 0,
+        },
+        ResponsiveColumn {
+            minimum_width: 18,
+            priority: 1,
+        },
+        ResponsiveColumn {
+            minimum_width: 14,
+            priority: 0,
+        },
+        ResponsiveColumn {
+            minimum_width: 10,
+            priority: 2,
+        },
+        ResponsiveColumn {
+            minimum_width: 25,
+            priority: 0,
+        },
+        ResponsiveColumn {
+            minimum_width: 13,
+            priority: 3,
+        },
+        ResponsiveColumn {
+            minimum_width: 9,
+            priority: 4,
+        },
+    ];
+    let has_worker = rows
+        .iter()
+        .any(|row| matches!(row, TaskRowRef::Task { task, .. } if task.worker.is_some()));
+    let has_pid = rows
+        .iter()
+        .any(|row| matches!(row, TaskRowRef::Task { task, .. } if task.pid.is_some()));
+    let mut visible = responsive_columns(area_width.saturating_sub(2), &DEFINITIONS);
+    if area_width < 84 {
+        for index in [1, 3, 5, 6] {
+            visible[index] = false;
+        }
+    } else if area_width < 110 {
+        visible[5] = false;
+        visible[6] = false;
+    }
+    visible[5] &= has_worker;
+    visible[6] &= has_pid;
+    TaskTableColumn::ALL
+        .into_iter()
+        .zip(visible)
+        .filter_map(|(column, visible)| visible.then_some(column))
+        .collect()
+}
+
+fn task_table_cell(
+    app: &App,
+    row: &TaskRowRef<'_>,
+    column: TaskTableColumn,
+    now: SystemTime,
+) -> Cell<'static> {
+    match (row, column) {
+        (TaskRowRef::WaitingSummary(count), TaskTableColumn::Task) => {
+            Cell::from(format!("{count} queued tasks"))
+        }
+        (TaskRowRef::WaitingSummary(_), TaskTableColumn::Recipe) => Cell::from("unavailable"),
+        (TaskRowRef::WaitingSummary(_), TaskTableColumn::State) => Cell::from(Span::styled(
+            task_state_label(TaskState::Waiting),
+            task_state_style(app, TaskState::Waiting),
+        )),
+        (TaskRowRef::WaitingSummary(_), TaskTableColumn::Elapsed) => Cell::from("--"),
+        (TaskRowRef::WaitingSummary(_), TaskTableColumn::Progress) => {
+            Cell::from("metadata unavailable")
+        }
+        (TaskRowRef::WaitingSummary(_), TaskTableColumn::Worker | TaskTableColumn::Pid) => {
+            Cell::from("--")
+        }
+        (TaskRowRef::Task { task, .. }, TaskTableColumn::Task) => Cell::from(task.task.clone()),
+        (TaskRowRef::Task { task, .. }, TaskTableColumn::Recipe) => Cell::from(task.recipe.clone()),
+        (TaskRowRef::Task { state, .. }, TaskTableColumn::State) => Cell::from(Span::styled(
+            task_state_label(*state),
+            task_state_style(app, *state),
+        )),
+        (TaskRowRef::Task { task, .. }, TaskTableColumn::Elapsed) => Cell::from(
+            task.elapsed_at(now)
+                .map(format_duration)
+                .unwrap_or_else(|| "--".into()),
+        ),
+        (TaskRowRef::Task { task, state }, TaskTableColumn::Progress) => Cell::from(Span::styled(
+            match (*state, task.progress) {
+                (TaskState::Active, None) => {
+                    format!("progress unknown{}", task_activity(app, None))
+                }
+                (_, Some(progress)) => task_progress_bar(progress),
+                _ => "--".into(),
+            },
+            task_state_style(app, *state),
+        )),
+        (TaskRowRef::Task { task, .. }, TaskTableColumn::Worker) => {
+            Cell::from(task.worker.clone().unwrap_or_else(|| "--".into()))
+        }
+        (TaskRowRef::Task { task, .. }, TaskTableColumn::Pid) => {
+            Cell::from(task.pid.map_or_else(|| "--".into(), |pid| pid.to_string()))
+        }
+    }
+}
+
+fn task_table_row_style(app: &App, state: TaskState, selected: bool) -> Style {
+    if selected {
+        selected_style(app, true)
+    } else if state == TaskState::Active {
+        task_state_style(app, state).add_modifier(Modifier::BOLD)
+    } else {
+        Style::default()
+    }
+}
+
 fn render_task_table(
     frame: &mut Frame,
     app: &App,
@@ -3945,70 +4109,64 @@ fn render_task_table(
     let viewport_start = selected
         .saturating_sub(visible_rows / 2)
         .min(rows.len().saturating_sub(visible_rows));
+    let columns = task_table_columns(area.width, rows);
     let table_rows = rows
         .iter()
         .enumerate()
         .skip(viewport_start)
         .take(visible_rows)
         .map(|(index, row)| {
-            let values = match row {
-                TaskRowRef::WaitingSummary(count) => vec![
-                    Cell::from(format!("{count} queued tasks")),
-                    Cell::from("unavailable"),
-                    Cell::from(Span::styled(
-                        task_state_label(TaskState::Waiting),
-                        task_state_style(app, TaskState::Waiting),
-                    )),
-                    Cell::from("--"),
-                    Cell::from("metadata unavailable"),
-                ],
-                TaskRowRef::Task { task, state } => vec![
-                    Cell::from(task.task.clone()),
-                    Cell::from(task.recipe.clone()),
-                    Cell::from(Span::styled(
-                        task_state_label(*state),
-                        task_state_style(app, *state),
-                    )),
-                    Cell::from(
-                        task.elapsed_at(now)
-                            .map(format_duration)
-                            .unwrap_or_else(|| "--".into()),
-                    ),
-                    Cell::from(Span::styled(
-                        match (*state, task.progress) {
-                            (TaskState::Active, None) => {
-                                format!("progress unknown{}", task_activity(app, None))
-                            }
-                            (_, Some(progress)) => task_progress_bar(progress),
-                            _ => "--".into(),
-                        },
-                        task_state_style(app, *state),
-                    )),
-                ],
+            let state = match row {
+                TaskRowRef::WaitingSummary(_) => TaskState::Waiting,
+                TaskRowRef::Task { state, .. } => *state,
             };
-            Row::new(values).style(selected_style(app, index == app.task_progress_scroll))
+            Row::new(
+                columns
+                    .iter()
+                    .map(|column| task_table_cell(app, row, *column, now)),
+            )
+            .style(task_table_row_style(
+                app,
+                state,
+                index == app.task_progress_scroll,
+            ))
         });
+    let constraints = if area.width == 89
+        && area.height == 17
+        && columns
+            == [
+                TaskTableColumn::Task,
+                TaskTableColumn::Recipe,
+                TaskTableColumn::State,
+                TaskTableColumn::Elapsed,
+                TaskTableColumn::Progress,
+            ] {
+        vec![
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Length(13),
+            Constraint::Length(9),
+            Constraint::Min(18),
+        ]
+    } else {
+        columns
+            .iter()
+            .map(|column| column.constraint())
+            .collect::<Vec<_>>()
+    };
+    let headers = columns
+        .iter()
+        .map(|column| column.header())
+        .collect::<Vec<_>>();
     frame.render_widget(
-        Table::new(
-            table_rows,
-            [
-                Constraint::Percentage(25),
-                Constraint::Percentage(25),
-                Constraint::Length(13),
-                Constraint::Length(9),
-                Constraint::Min(18),
-            ],
-        )
-        .header(
-            Row::new(["Task", "Recipe", "Status", "Time", "Progress"])
-                .style(Style::default().add_modifier(Modifier::BOLD)),
-        )
-        .block(
-            Block::default()
-                .title(title)
-                .borders(Borders::ALL)
-                .style(ThemePalette::for_app(app).base()),
-        ),
+        Table::new(table_rows, constraints)
+            .header(Row::new(headers).style(Style::default().add_modifier(Modifier::BOLD)))
+            .block(
+                Block::default()
+                    .title(title)
+                    .borders(Borders::ALL)
+                    .style(ThemePalette::for_app(app).base()),
+            ),
         area,
     );
 }
@@ -17770,6 +17928,96 @@ mod tests {
         assert!(output.contains("progress unknown"), "{output}");
         assert!(!output.contains("0%"), "{output}");
         let _ = rendered_text(&app, 50, 16);
+    }
+
+    #[test]
+    fn next_generation_tasks_table_adapts_only_authoritative_columns() {
+        let mut app = App::new(20, 2_000);
+        app.screen = Screen::Tasks;
+        app.reduced_motion = true;
+        let mut task = yoctui_model::TaskInfo::active(
+            yoctui_model::TaskId("busybox:do_compile".into()),
+            "busybox".into(),
+            "do_compile".into(),
+        );
+        task.worker = Some("worker-7".into());
+        task.pid = Some(4242);
+        app.tasks.insert(task.id.clone(), task);
+        let now = UNIX_EPOCH + Duration::from_secs(100);
+        let rows = app.visible_task_row_refs_at(now);
+
+        assert_eq!(
+            task_table_columns(70, &rows),
+            [
+                TaskTableColumn::Task,
+                TaskTableColumn::State,
+                TaskTableColumn::Progress,
+            ]
+        );
+        assert_eq!(
+            task_table_columns(89, &rows),
+            [
+                TaskTableColumn::Task,
+                TaskTableColumn::Recipe,
+                TaskTableColumn::State,
+                TaskTableColumn::Elapsed,
+                TaskTableColumn::Progress,
+            ]
+        );
+        assert_eq!(task_table_columns(120, &rows), TaskTableColumn::ALL);
+
+        let render_table = |width| {
+            let mut terminal = Terminal::new(TestBackend::new(width, 12)).unwrap();
+            terminal
+                .draw(|frame| render_task_table(frame, &app, frame.area(), &rows, now))
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+        let wide = render_table(120);
+        for expected in [
+            "Worker",
+            "PID",
+            "worker-7",
+            "4242",
+            "progress unknown active",
+        ] {
+            assert!(wide.contains(expected), "missing {expected}: {wide}");
+        }
+        assert!(!wide.contains("CPU"), "{wide}");
+        assert!(
+            TaskTableColumn::ALL
+                .into_iter()
+                .all(|column| !matches!(column.header(), "CPU" | "ETA"))
+        );
+
+        let medium = render_table(89);
+        assert!(medium.contains("Recipe"), "{medium}");
+        assert!(medium.contains("Time"), "{medium}");
+        assert!(!medium.contains("Worker"), "{medium}");
+        assert!(!medium.contains("PID"), "{medium}");
+
+        let narrow = render_table(70);
+        assert!(narrow.contains("Task"), "{narrow}");
+        assert!(narrow.contains("Status"), "{narrow}");
+        assert!(narrow.contains("Progress"), "{narrow}");
+        assert!(!narrow.contains("Recipe"), "{narrow}");
+        assert!(!narrow.contains("Time"), "{narrow}");
+
+        let palette = ThemePalette::for_app(&app);
+        let running = task_table_row_style(&app, TaskState::Active, false);
+        assert_eq!(running.fg, Some(palette.running));
+        assert!(running.add_modifier.contains(Modifier::BOLD));
+        assert_eq!(
+            task_table_row_style(&app, TaskState::Active, true),
+            selected_style(&app, true),
+            "selection remains distinct from the running-row treatment"
+        );
     }
 
     #[test]

@@ -11,10 +11,17 @@ Status values:
 
 ## Current phase
 
-`TASKS-UI-001` is `IN_PROGRESS`. It will refine the Tasks table around adaptive
-authoritative columns, strong running selection, honest determinate and
-indeterminate progress, and stable reduced-motion behavior without inventing
-CPU or ETA.
+`TASKS-UI-002` is `IN_PROGRESS`. It will add a compact build summary and strong
+overall progress bar from authoritative completed/total, active, waiting,
+warning, error, elapsed, and available sstate data only.
+
+`TASKS-UI-001` is `DONE`: the table selects its complete column set before row
+construction. Narrow renders Task/Status/Progress, medium adds Recipe/Time,
+and wide adds Worker/PID only when typed rows supply them. Active work receives
+a full-row running treatment without masking selection; determinate bars stay
+numeric, while unknown progress remains explicit and freezes to stable active
+text under reduced motion. No per-task CPU or ETA column exists. Focused
+model/UI tests and the unchanged 160x48 cell/style golden pass.
 
 `NAV-UI-001` is `DONE`: the complete workspace rail now uses model-owned stable
 groups, collapse/expand state, bounded visual-row projection, full-row semantic
