@@ -4261,7 +4261,7 @@ priority = 458
 required = true
 depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001", "PERF-FLAMEGRAPH-QUALITY-001"]
 verify = ["perf record -- true", "./scripts/flamegraph.sh", "./scripts/verify-completion.sh"]
-notes = "The user authorized a temporary perf sampling window and the resolved representative flamegraph prerequisite passes. This is the terminal completion candidate required by verify-product-complete; the full completion gate and restoration of the original kernel.perf_event_paranoid=4 policy remain the final verification actions."
+notes = "The first clean terminal candidate passed compatibility, the full Rust workspace, and all 43 Python tests, then exposed scripts/profile-workload.sh invoking the obsolete direct process-backend BitBake path. The release profile now uses the same deterministic production workbench benchmark, rejects invalid frame counts or missing completion markers, and passes 6,000 frames with checksum 95f340a128cd6012 in 3.694 seconds. This second all-tasks-done candidate must pass the full completion gate before kernel.perf_event_paranoid=4 is restored."
 
 # M13 — Dense terminal workbench redesign
 [[task]]

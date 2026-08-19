@@ -12,9 +12,10 @@ Run the complete repository completion gate while real Linux perf sampling is
 temporarily available, record the terminal result, and restore the host's
 original perf security policy afterward.
 
-This terminal handoff is marked complete so `verify-product-complete` can
-evaluate the all-tasks-done candidate. Any failing gate returns the task to
-`IN_PROGRESS` before corrective work.
+The first all-tasks-done candidate exposed an obsolete direct process-backend
+command in `scripts/profile-workload.sh`. The release profile now uses the
+deterministic production workbench benchmark; this second terminal candidate
+is ready for the complete gate.
 
 ## Dependencies
 
@@ -26,6 +27,7 @@ evaluate the all-tasks-done candidate. Any failing gate returns the task to
 
 - `scripts/verify-completion.sh`
 - `scripts/flamegraph.sh`
+- `scripts/profile-workload.sh`
 - `artifacts/flamegraph/yoctui.svg`
 - `artifacts/flamegraph/summary.txt`
 - `docs/implementation-status.md`

@@ -4,11 +4,12 @@ Date: 2026-07-20
 
 The former deterministic release bridge workload completed in **0.142 seconds** wall-clock time on the development host. That historical workload performed bridge startup, protocol negotiation, workspace inspection, typed metadata queries, and clean shutdown without contacting a live BitBake server. It predates daemon-owned compatibility authorization and is retained only as historical timing evidence.
 
-The current workload performs bridge startup, protocol negotiation, clean
-shutdown, and a read-only Doctor compatibility report. Workspace/API actions
-are intentionally absent unless a daemon supplies the exact environment
-capability snapshot, so current timings are not compared directly with the
-historical 0.142-second observation.
+The current workload renders 6,000 deterministic 160x48 frames through the
+production reducer and Ratatui UI without requiring daemon or BitBake authority.
+The 2026-08-19 optimized baseline completed in **3.731 seconds** with cell-buffer
+checksum `95f340a128cd6012`. This is intentionally not compared directly with
+the historical bridge-startup observation because it measures sustained CPU
+rendering rather than protocol lifecycle latency.
 
 Reproduce with:
 
@@ -16,7 +17,8 @@ Reproduce with:
 ./scripts/profile-workload.sh
 ```
 
-Timing is environment-dependent and is recorded only as a regression baseline. The generated raw timing output is ignored at `artifacts/profile/summary.txt`.
+Timing is environment-dependent and is recorded only as a regression baseline.
+The generated timing output is ignored at `artifacts/profile/summary.txt`.
 
 ## Valgrind baseline
 

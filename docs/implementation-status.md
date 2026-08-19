@@ -11,11 +11,14 @@ Status values:
 
 ## Current phase
 
-`FINAL-GATE-PERF-001` is the `DONE` terminal completion candidate: all 458
-registry tasks are complete and the representative flamegraph prerequisite
-passes. The complete terminal gate is evaluating this candidate; any failure
-returns it to `IN_PROGRESS`. After the gate finishes, the host's original
-`kernel.perf_event_paranoid=4` policy must be restored.
+`FINAL-GATE-PERF-001` is the second `DONE` terminal candidate: the first clean
+candidate passed compatibility, the full Rust workspace, and all 43 Python
+tests, then exposed `scripts/profile-workload.sh` invoking the obsolete direct
+process-backend BitBake path. The release profile now uses the deterministic
+production workbench benchmark, rejects invalid frame counts or missing
+completion markers, and passes 6,000 frames with checksum
+`95f340a128cd6012` in 3.694 seconds. The complete gate must pass before the
+host's original `kernel.perf_event_paranoid=4` policy is restored.
 
 `PERF-FLAMEGRAPH-QUALITY-001` is `DONE`: the replacement 160x48 benchmark
 drives 6,000 deterministic production reducer/Ratatui frames without a daemon
