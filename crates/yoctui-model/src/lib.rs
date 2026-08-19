@@ -117,6 +117,61 @@ pub enum FocusTarget {
     Dialog,
     CommandPalette,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InspectorMode {
+    Navigator,
+    DaemonSession,
+    Task,
+    Job,
+    Dependency,
+    Signature,
+    Recipe,
+    Package,
+    Artifact,
+    Test,
+    Security,
+    Qa,
+    Layer,
+    File,
+    Configuration,
+    Utility,
+    Log,
+    Error,
+    Help,
+    BuildEnvironment,
+    CompatibilityCapability,
+    Settings,
+}
+
+impl InspectorMode {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Navigator => "Navigator",
+            Self::DaemonSession => "Daemon / session",
+            Self::Task => "Task",
+            Self::Job => "Job",
+            Self::Dependency => "Dependency",
+            Self::Signature => "Signature",
+            Self::Recipe => "Recipe",
+            Self::Package => "Package",
+            Self::Artifact => "Artifact",
+            Self::Test => "Test",
+            Self::Security => "Security",
+            Self::Qa => "QA",
+            Self::Layer => "Layer",
+            Self::File => "File",
+            Self::Configuration => "Configuration",
+            Self::Utility => "Utility",
+            Self::Log => "Log",
+            Self::Error => "Error",
+            Self::Help => "Help",
+            Self::BuildEnvironment => "Build environment",
+            Self::CompatibilityCapability => "Compatibility capability",
+            Self::Settings => "Settings",
+        }
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum Theme {
@@ -3140,6 +3195,44 @@ impl App {
             }
         }
         summary
+    }
+    pub fn inspector_mode(&self) -> InspectorMode {
+        if self.focus == FocusTarget::Navigator {
+            return InspectorMode::Navigator;
+        }
+        match self.screen {
+            Screen::Dashboard => InspectorMode::DaemonSession,
+            Screen::Tasks => InspectorMode::Task,
+            Screen::BuildHistory => InspectorMode::Job,
+            Screen::Dependencies | Screen::LayerRelationships => InspectorMode::Dependency,
+            Screen::Signatures => InspectorMode::Signature,
+            Screen::Recipes => InspectorMode::Recipe,
+            Screen::Packages => InspectorMode::Package,
+            Screen::Images | Screen::Sdk => InspectorMode::Artifact,
+            Screen::Testing => InspectorMode::Test,
+            Screen::Security => InspectorMode::Security,
+            Screen::Qa => InspectorMode::Qa,
+            Screen::Layers => {
+                if self
+                    .layer_browser
+                    .as_ref()
+                    .and_then(LayerBrowser::selected_entry)
+                    .is_some_and(|entry| !entry.is_dir)
+                {
+                    InspectorMode::File
+                } else {
+                    InspectorMode::Layer
+                }
+            }
+            Screen::Configuration | Screen::Bbmask => InspectorMode::Configuration,
+            Screen::Maintenance => InspectorMode::Utility,
+            Screen::Logs => InspectorMode::Log,
+            Screen::Errors => InspectorMode::Error,
+            Screen::Help => InspectorMode::Help,
+            Screen::BuildEnvironment => InspectorMode::BuildEnvironment,
+            Screen::Compatibility => InspectorMode::CompatibilityCapability,
+            Screen::Settings => InspectorMode::Settings,
+        }
     }
     pub fn visible_task_row_refs_at(&self, now: SystemTime) -> Vec<TaskRowRef<'_>> {
         let state_matches = |state: TaskState| match self.task_filters.state {
@@ -14508,6 +14601,48 @@ mod tests {
         );
         app.daemon.status = ClientReplicaStatus::Stale;
         assert_eq!(app.job_summary().daemon_owned, None);
+    }
+
+    #[test]
+    fn inspector_mode_tracks_typed_screen_selection_and_navigator_focus() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Workspace;
+        for (screen, mode) in [
+            (Screen::Dashboard, InspectorMode::DaemonSession),
+            (Screen::Tasks, InspectorMode::Task),
+            (Screen::BuildHistory, InspectorMode::Job),
+            (Screen::Dependencies, InspectorMode::Dependency),
+            (Screen::Recipes, InspectorMode::Recipe),
+            (Screen::Packages, InspectorMode::Package),
+            (Screen::Images, InspectorMode::Artifact),
+            (Screen::Testing, InspectorMode::Test),
+            (Screen::Maintenance, InspectorMode::Utility),
+            (Screen::Errors, InspectorMode::Error),
+            (
+                Screen::Compatibility,
+                InspectorMode::CompatibilityCapability,
+            ),
+        ] {
+            app.screen = screen;
+            assert_eq!(app.inspector_mode(), mode);
+        }
+
+        app.screen = Screen::Layers;
+        assert_eq!(app.inspector_mode(), InspectorMode::Layer);
+        let mut browser = LayerBrowser::new("meta-test".into(), PathBuf::from("/layers/meta-test"));
+        browser.entries.push(LayerBrowserEntry {
+            path: PathBuf::from("recipes-test/test.bb"),
+            ..LayerBrowserEntry::default()
+        });
+        app.layer_browser = Some(browser);
+        assert_eq!(app.inspector_mode(), InspectorMode::File);
+
+        app.focus = FocusTarget::Navigator;
+        assert_eq!(app.inspector_mode(), InspectorMode::Navigator);
+        assert_eq!(
+            InspectorMode::CompatibilityCapability.label(),
+            "Compatibility capability"
+        );
     }
     #[test]
     fn background_job_cancellation_requires_capability_and_acknowledgement() {

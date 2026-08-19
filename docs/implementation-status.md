@@ -11,8 +11,17 @@ Status values:
 
 ## Current phase
 
-`INSPECTOR-UI-001` is `IN_PROGRESS`. It will establish one consistent typed
-Inspector shell for title, primary/secondary facts, paths, output, and actions.
+`INSPECTOR-UI-002` is `IN_PROGRESS`. It will project the selected task's real
+metadata, lifecycle, timing, paths, dependencies, and bounded recent log tail
+into the shared Inspector grammar.
+
+`INSPECTOR-UI-001` is `DONE`: model-owned Inspector modes now distinguish the
+selected entity across every workspace and Navigator focus. The UI uses exact
+typed titles plus one optional semantic section order for primary/secondary
+facts, related paths, recent output, contextual actions, and system status in
+wide, overlay, and narrow layouts. Task subpanes use the same names. Focused
+model/UI and all 166 UI tests pass; the reviewed golden changed only the two
+Task section titles.
 
 `JOB-UI-002` is `DONE`: a pure bounded summary separates queued from executing
 background work, counts exact failures and all retained terminal completions,

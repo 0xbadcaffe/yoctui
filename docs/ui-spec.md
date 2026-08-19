@@ -672,6 +672,32 @@ The tree must not eagerly scan the entire Yocto source tree.
 
 The right pane is context-sensitive.
 
+Every Inspector title is `Inspector: <typed mode>` rather than the generic
+word alone. The model-owned modes currently distinguish Navigator,
+Daemon/session, Task, Job, Dependency, Signature, Recipe, Package, Artifact,
+Test, Security, QA, Layer, File, Configuration, Utility, Log, Error, Help,
+Build environment, Compatibility capability, and Settings. A selected regular
+layer-tree entry changes Layer to File; Navigator focus changes the mode to
+Navigator without changing workspace selection.
+
+The shared document order is fixed and sections with no authoritative content
+are omitted:
+
+1. `PRIMARY FACTS`
+2. `SECONDARY FACTS`
+3. `RELATED PATHS`
+4. `RECENT OUTPUT`
+5. `CONTEXTUAL ACTIONS`
+6. `SYSTEM / COMPATIBILITY`
+
+Section headings use the semantic heading role. The pane shell owns the single
+focus border in wide, overlay, and narrow modes; child sections do not invent
+independent focus. Tasks retains separate bounded subpanes because its live log
+tail and actions need independent height priority, but their names and order
+match this grammar. Related paths come only from typed recipe, layer/file, log,
+error, image/SDK artifact, or job context fields. Logs place the selected
+message under Recent output rather than duplicating it among facts.
+
 Supported inspector modes include:
 
 - file preview

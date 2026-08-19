@@ -5200,18 +5200,18 @@ notes = "Added a pure bounded JobSummary projection that separates queued from e
 id = "INSPECTOR-UI-001"
 milestone = "M19"
 title = "Redesign Inspector shell"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 533
 required = true
 depends_on = ["FOUNDATION-UI-003"]
 verify = ["cargo test -p yoctui-ui next_generation_inspector_shell"]
-notes = "Provide one consistent typed title/facts/paths/output/actions structure for all supported inspector modes."
+notes = "Added model-owned InspectorMode identities for Navigator, daemon/session, task, job, dependency, signature, recipe, package, artifact, test, security, QA, layer/file, configuration, utility, log, error, help, build environment, compatibility, and settings. The UI now renders exact typed titles and one optional semantic section order for primary/secondary facts, paths, output, actions, and status across wide/overlay/narrow layouts. Task subpanes use matching Recent output and Contextual Actions names. Focused model/UI and all 166 UI tests pass; the reviewed golden changed only those Task section titles."
 
 [[task]]
 id = "INSPECTOR-UI-002"
 milestone = "M19"
 title = "Add task Inspector"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 534
 required = true
 depends_on = ["INSPECTOR-UI-001", "TASKS-UI-001", "LOG-UI-001"]

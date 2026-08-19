@@ -3119,6 +3119,106 @@ fn system_status_text(app: &App) -> String {
     )
 }
 
+fn push_inspector_section(
+    lines: &mut Vec<Line<'static>>,
+    app: &App,
+    title: &'static str,
+    body: &str,
+) {
+    if body.trim().is_empty() {
+        return;
+    }
+    if !lines.is_empty() {
+        lines.push(Line::default());
+    }
+    let palette = ThemePalette::for_app(app);
+    lines.push(Line::styled(
+        format!("▾ {title}"),
+        palette.role(palette.heading, Modifier::BOLD),
+    ));
+    lines.extend(body.lines().map(|line| Line::from(line.to_owned())));
+}
+
+fn inspector_document(
+    app: &App,
+    primary: &str,
+    secondary: Option<&str>,
+    related_paths: &[String],
+    recent_output: Option<&str>,
+    actions: Option<&str>,
+    status: Option<&str>,
+) -> Text<'static> {
+    let mut lines = Vec::new();
+    push_inspector_section(&mut lines, app, "PRIMARY FACTS", primary);
+    if let Some(secondary) = secondary {
+        push_inspector_section(&mut lines, app, "SECONDARY FACTS", secondary);
+    }
+    if !related_paths.is_empty() {
+        push_inspector_section(&mut lines, app, "RELATED PATHS", &related_paths.join("\n"));
+    }
+    if let Some(output) = recent_output {
+        push_inspector_section(&mut lines, app, "RECENT OUTPUT", output);
+    }
+    if let Some(actions) = actions {
+        push_inspector_section(&mut lines, app, "CONTEXTUAL ACTIONS", actions);
+    }
+    if let Some(status) = status {
+        push_inspector_section(&mut lines, app, "SYSTEM / COMPATIBILITY", status);
+    }
+    Text::from(lines)
+}
+
+fn inspector_related_paths(app: &App) -> Vec<String> {
+    let path = match app.screen {
+        Screen::Recipes => app
+            .workspace
+            .recipes
+            .get(app.recipe_selection)
+            .and_then(|recipe| recipe.file.clone()),
+        Screen::Layers => app
+            .layer_browser
+            .as_ref()
+            .and_then(|browser| {
+                browser.selected_entry().map(|entry| {
+                    if entry.path.is_absolute() {
+                        entry.path.clone()
+                    } else {
+                        browser.root.join(&entry.path)
+                    }
+                })
+            })
+            .or_else(|| {
+                app.workspace
+                    .layers
+                    .get(app.layer_selection)
+                    .map(|layer| layer.path.clone())
+            }),
+        Screen::Logs => app.logs.selected().and_then(|entry| entry.path.clone()),
+        Screen::Errors => app
+            .logs
+            .diagnostics()
+            .nth(app.error_selection)
+            .and_then(|entry| entry.path.clone()),
+        Screen::Images => app
+            .selected_image_artifact()
+            .map(|artifact| artifact.identity.path.clone()),
+        Screen::Sdk => app
+            .selected_sdk_artifact()
+            .map(|artifact| artifact.identity.path.clone()),
+        Screen::BuildHistory => app
+            .job_history_rows()
+            .get(app.build_history_selection)
+            .and_then(|row| match row {
+                JobHistoryRowRef::Background(job) => job.context.path.clone(),
+                JobHistoryRowRef::Build(_) => None,
+            }),
+        _ => None,
+    };
+    path.into_iter()
+        .map(|path| path.display().to_string())
+        .collect()
+}
+
 fn tasks_inspector(
     frame: &mut Frame,
     app: &App,
@@ -3178,12 +3278,20 @@ fn tasks_inspector(
             selected.as_ref(),
             usize::from(sections[1].height.saturating_sub(2)),
         )))
-        .block(pane_block(app, "Recent Log (tail)", focused))
+        .block(pane_block(
+            app,
+            "Recent output · Recent Log (tail)",
+            focused,
+        ))
         .wrap(Wrap { trim: false }),
         sections[1],
     );
     frame.render_widget(
-        Paragraph::new(task_actions_text(app)).block(pane_block(app, "Actions", focused)),
+        Paragraph::new(task_actions_text(app)).block(pane_block(
+            app,
+            "Contextual Actions",
+            focused,
+        )),
         sections[2],
     );
     frame.render_widget(
@@ -3211,13 +3319,17 @@ fn inspector(
                 app,
                 app.navigator_compatibility_destination(),
             ))
-            .block(pane_block(app, "Inspector: Navigator", false))
+            .block(pane_block(
+                app,
+                &format!("Inspector: {}", app.inspector_mode().label()),
+                false,
+            ))
             .wrap(Wrap { trim: false }),
             area,
         );
         return;
     }
-    let mut details = match app.screen {
+    let details = match app.screen {
         Screen::Recipes => app.workspace.recipes.get(app.recipe_selection).map_or_else(
             || "No recipe selected.".into(),
             |recipe| recipe_inspector(app, recipe),
@@ -3260,7 +3372,7 @@ fn inspector(
             || "No logs retained.".into(),
             |entry| {
                 format!(
-                    "Time: {}\nSeverity: {:?}\nBuild: {}\nRecipe: {}\nTask: {}\nSource: {}\nProtected: {}\n\n{}",
+                    "Time: {}\nSeverity: {:?}\nBuild: {}\nRecipe: {}\nTask: {}\nSource: {}\nProtected: {}",
                     timestamp_text(entry.timestamp),
                     entry.severity,
                     entry.build.as_deref().unwrap_or("unavailable"),
@@ -3271,7 +3383,6 @@ fn inspector(
                         .as_ref()
                         .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
                     if entry.protected { "yes" } else { "no" },
-                    entry.message,
                 )
             },
         ),
@@ -3283,8 +3394,16 @@ fn inspector(
                 || "No retained warnings or errors.".into(),
                 |entry| diagnostic_detail(app, entry),
             ),
-        Screen::Dependencies => dependency_inspector(app),
+        Screen::Dependencies | Screen::LayerRelationships => dependency_inspector(app),
         Screen::Signatures => signature_detail_text(app),
+        Screen::BuildHistory => app
+            .job_history_rows()
+            .get(app.build_history_selection)
+            .copied()
+            .map_or_else(
+                || "No background jobs or completed builds are retained in this session.".into(),
+                |row| job_history_detail(row, now),
+            ),
         Screen::Packages => package_inspector_text(app),
         Screen::Images => image_artifact_inspector_text(app),
         Screen::Sdk => sdk_inspector_text(app),
@@ -3301,17 +3420,37 @@ fn inspector(
     };
     let destination = yoctui_model::workspace_screen_destination(app.screen);
     let actions = compatibility_workspace_actions_text(app, destination);
-    if !actions.is_empty() {
-        details.push_str("\n\nActions / Compatibility\n");
-        details.push_str(&actions);
-    }
+    let related_paths = inspector_related_paths(app);
+    let secondary = matches!(app.screen, Screen::Dashboard | Screen::BuildHistory)
+        .then(|| job_summary_label(app, area.width));
+    let recent_output = match app.screen {
+        Screen::Logs => app.logs.selected().map(|entry| entry.message.as_str()),
+        Screen::BuildHistory => app
+            .job_history_rows()
+            .get(app.build_history_selection)
+            .and_then(|row| match row {
+                JobHistoryRowRef::Background(job) => {
+                    job.output.back().map(|entry| entry.message.as_str())
+                }
+                JobHistoryRowRef::Build(_) => None,
+            }),
+        _ => None,
+    };
+    let document = inspector_document(
+        app,
+        &details,
+        secondary.as_deref(),
+        &related_paths,
+        recent_output,
+        (!actions.is_empty()).then_some(actions.as_str()),
+        (app.screen == Screen::Dashboard)
+            .then(|| system_status_text(app))
+            .as_deref(),
+    );
+    let title = format!("Inspector: {}", app.inspector_mode().label());
     frame.render_widget(
-        Paragraph::new(details)
-            .block(pane_block(
-                app,
-                "Inspector",
-                app.focus == FocusTarget::Inspector,
-            ))
+        Paragraph::new(document)
+            .block(pane_block(app, &title, app.focus == FocusTarget::Inspector))
             .wrap(Wrap { trim: false }),
         area,
     );
@@ -13200,7 +13339,7 @@ mod tests {
         app.focus = FocusTarget::Inspector;
         let configuration = rendered_text(&app, 180, 50);
         for expected in [
-            "Actions / Compatibility",
+            "CONTEXTUAL ACTIONS",
             "Refresh effective variables [r]",
             "Limited",
             "Native getvar is absent; environment dump fallback selected.",
@@ -17639,6 +17778,54 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Path: /layers/meta/conf/layer.conf"));
         assert!(output.contains("BBFILE_COLLECTIONS"));
+    }
+
+    #[test]
+    fn next_generation_inspector_shell_names_modes_and_orders_typed_sections() {
+        let mut app = App::new(10, 1_000);
+        app.focus = FocusTarget::Inspector;
+        app.screen = Screen::Logs;
+        app.logs.insert(yoctui_model::LogEntry {
+            id: 1,
+            severity: Severity::Warning,
+            message: "authoritative warning output".into(),
+            recipe: Some("busybox".into()),
+            task: Some("do_compile".into()),
+            path: Some("/build/temp/log.do_compile".into()),
+            timestamp: UNIX_EPOCH + Duration::from_secs(10),
+            build: Some("core-image-minimal".into()),
+            protected: true,
+            diagnostic: None,
+        });
+        let log = rendered_text_at(&app, 180, 36, UNIX_EPOCH + Duration::from_secs(11));
+        for expected in [
+            "Inspector: Log",
+            "▾ PRIMARY FACTS",
+            "▾ RELATED PATHS",
+            "/build/temp/log.do_compile",
+            "▾ RECENT OUTPUT",
+            "authoritative warning output",
+        ] {
+            assert!(log.contains(expected), "missing {expected}: {log}");
+        }
+
+        app.screen = Screen::Layers;
+        let mut browser = LayerBrowser::new("meta-demo".into(), "/layers/meta-demo".into());
+        browser.entries.push(yoctui_model::LayerBrowserEntry {
+            path: "conf/layer.conf".into(),
+            ..yoctui_model::LayerBrowserEntry::default()
+        });
+        app.layer_browser = Some(browser);
+        let file = rendered_text_at(&app, 180, 36, UNIX_EPOCH + Duration::from_secs(11));
+        assert!(file.contains("Inspector: File"), "{file}");
+        assert!(file.contains("/layers/meta-demo/conf/layer.conf"), "{file}");
+
+        app.screen = Screen::Dashboard;
+        app.color_enabled = false;
+        let narrow = rendered_text_at(&app, 90, 24, UNIX_EPOCH + Duration::from_secs(11));
+        assert!(narrow.contains("Inspector: Daemon / session"), "{narrow}");
+        assert!(narrow.contains("▾ SYSTEM / COMPATIBILITY"), "{narrow}");
+        assert!(narrow.contains("Yoctui Daemon"), "{narrow}");
     }
     #[test]
     fn recipes_workspace_renders_authoritative_summary_and_inspector_sections() {

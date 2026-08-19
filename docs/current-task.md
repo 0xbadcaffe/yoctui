@@ -2,24 +2,25 @@
 
 ## Task
 
-**ID:** INSPECTOR-UI-001
-**Title:** Redesign Inspector shell
+**ID:** INSPECTOR-UI-002
+**Title:** Add task Inspector
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Provide one consistent dense-but-readable Inspector structure for every
-supported typed selection without moving parsing or state into widgets.
+Render the selected task as a dense typed Inspector document using only task,
+recipe, dependency, path, and bounded log data already present in the model.
 
 ## Dependencies
 
-- `FOUNDATION-UI-003` — DONE
+- `INSPECTOR-UI-001` — DONE
+- `TASKS-UI-001` — DONE
+- `LOG-UI-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-ui/src/primitives.rs`
 - `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-ui/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/architecture.md`
 - `docs/implementation-status.md`
@@ -28,22 +29,20 @@ supported typed selection without moving parsing or state into widgets.
 
 ## Definition of done
 
-- Typed Inspector modes have a consistent title and section order: primary
-  facts, secondary facts, related paths, recent output, contextual actions.
-- Existing task, recipe, layer, file, dependency, package, artifact, job,
-  error, test, utility, daemon/session, and compatibility selections retain
-  their authoritative content and actions.
-- Missing sections are omitted or explicitly unavailable; no placeholder data
-  is invented.
-- Wide Inspector panels are dense and readable, and collapsed/narrow layouts
-  preserve access through existing focus/navigation paths.
-- Theme, no-color, and focus styling use semantic roles.
+- Primary facts show task, recipe/PN, lifecycle, progress, start, elapsed,
+  worker, and PID from typed task state.
+- PV is shown only when the authoritative recipe inventory provides it; PR and
+  workdir remain explicitly unavailable unless an authoritative field exists.
+- The log path and typed task dependencies are visible in their own sections.
+- Recent output is a bounded tail correlated by selected recipe/task identity.
+- Waiting aggregate rows remain explicit and do not acquire invented metadata.
+- Wide, overlay, and narrow Inspector layouts remain readable and safe.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_inspector_shell
-cargo test -p yoctui-ui inspector
+cargo test -p yoctui-ui next_generation_task_inspector
+cargo test -p yoctui-model task_inspector
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

@@ -509,6 +509,14 @@ ownership is an optional count derived only from a Current
 `ClientDaemonView`; stale or absent replicas produce `None`, which renderers
 must omit rather than display as zero.
 
+`yoctui_model::InspectorMode` is the typed identity of the current Inspector.
+`App::inspector_mode` derives it from screen, selected layer entry type, and
+Navigator focus; it contains no terminal geometry or rendered strings beyond
+stable accessible labels. `yoctui-ui` owns the ordered optional section
+projection (primary, secondary, paths, output, actions, status), semantic
+heading styles, pane border, and responsive placement. Existing workspace
+detail producers remain typed-state formatters and do not parse backend text.
+
 `yoctui_ui::SemanticTheme` is the single rendering color boundary. It resolves
 each typed theme and the no-color override into named surface, text, border,
 selection, lifecycle, emphasis, graph, and source-preview roles. Renderers and
