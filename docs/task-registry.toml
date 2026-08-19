@@ -5032,18 +5032,18 @@ notes = "A network-free compatibility-fast job runs model, resolver/probe/argv, 
 id = "COMPAT-DOC-001"
 milestone = "M18"
 title = "Document dynamic release correlation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 519
 required = true
 depends_on = ["COMPAT-DOCTOR-001", "COMPAT-MATRIX-001", "COMPAT-LIVE-MATRIX-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-compatibility.sh --structure-only", "./scripts/verify-roadmap.sh"]
-notes = "Explain that one Yoctui binary follows connected-environment capabilities, including older/newer examples, fallbacks, unavailable Devtool, unknown future releases, diagnostics, and policy."
+notes = "User-facing documentation states the Yocto-feature-correlated rule and shows one binary adapting to unavailable Devtool, native/fallback BitBake variable lookup, older/degraded environments, and future unknown releases. It documents exact reasons, the shared Compatibility inspector/Doctor snapshot, Tested versus Claimed-supported classifications, exact Scarthgap 5.0.19 and Wrynose 6.0.2 evidence, 90-day renewal, offline/live matrix commands, and non-claiming fixture/development runs."
 
 [[task]]
 id = "COMPAT-001"
 milestone = "M18"
 title = "Complete Yocto release correlated functionality"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 520
 required = true
 depends_on = ["COMPAT-SPEC-001", "COMPAT-ENV-ID-001", "COMPAT-CAP-MODEL-001", "COMPAT-CATALOG-001", "COMPAT-PROBE-001", "COMPAT-VERSION-001", "COMPAT-BITBAKE-CMD-001", "COMPAT-BITBAKE-API-001", "COMPAT-DEVTOOL-001", "COMPAT-RECIPETOOL-001", "COMPAT-LAYERS-001", "COMPAT-PKGDATA-001", "COMPAT-UTILITIES-001", "COMPAT-WORKSPACE-001", "COMPAT-UI-001", "COMPAT-DOCTOR-001", "COMPAT-CACHE-001", "COMPAT-DAEMON-001", "COMPAT-DAEMON-RUNTIME-001", "COMPAT-PROBE-AGGREGATION-001", "COMPAT-BITBAKE-CANCEL-RUNTIME-001", "COMPAT-BITBAKE-CANCEL-ORDER-001", "COMPAT-PROTOCOL-001", "COMPAT-UNKNOWN-001", "COMPAT-OLD-001", "COMPAT-MATRIX-001", "COMPAT-TEST-FIXTURES-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-BITBAKE-GETVAR-001", "COMPAT-LIVE-LATEST-001", "COMPAT-LIVE-OLDER-001", "COMPAT-LIVE-MATRIX-001", "COMPAT-CI-001", "COMPAT-DOC-001"]

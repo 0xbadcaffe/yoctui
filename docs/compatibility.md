@@ -86,14 +86,13 @@ substitute for capability probes:
   probes alone decide individual behavior.
 
 The support window is evidence-driven and recorded in
-`compatibility-matrix.md`; it is not compiled into UI conditionals. At the
-start of M18, **no minimum supported release is claimed** because the required
-older-release live gate has not run. The **latest tested exact environment** is
-the Poky development snapshot and BitBake `2.19.0` observation recorded below,
-classified only as partially tested; it is not yet the latest *supported*
-release. `COMPAT-LIVE-OLDER-001` establishes the minimum and
-`COMPAT-LIVE-LATEST-001` establishes the latest supported stable only after
-both satisfy the machine-readable evidence policy.
+`compatibility-matrix.md`; it is not compiled into UI conditionals. Current
+non-fixture anchors are exact **Tested** revisions: maintained Scarthgap 5.0.19
+with BitBake 2.8.1 at the proposed lower boundary, and Wrynose 6.0.2 with
+BitBake 2.18.0 as the latest published stable observed on 2026-08-19. Both live
+records satisfy the machine-readable evidence policy. The broader release
+window becomes **Claimed supported** only when the M18 parent gate passes; an
+earlier BitBake 2.19.0 development snapshot remains merely Partially tested.
 
 An unsupported release does not crash the application. Yoctui opens in
 diagnostic degraded mode, identifies what it can, enables safe positively
@@ -129,6 +128,22 @@ reprobe. `Unsupported` is a Yoctui support decision. Neither may be rendered as
 an unexplained generic “Unsupported.” Useful unavailable actions remain visible
 for discoverability; features irrelevant to the current workspace may remain
 outside that workspace's normal action list.
+
+### Same binary, different connected environments
+
+One installed Yoctui can select different safe outcomes without renderer-local
+release checks:
+
+| Connected evidence | Runtime result |
+|---|---|
+| Devtool help does not expose `upgrade` | `devtool.upgrade` is Unavailable; the visible action is disabled with “Current Devtool does not expose the upgrade subcommand,” and no process is spawned. |
+| Initialized `bitbake-getvar` help positively exposes `--value` | `bitbake.getvar` selects `bitbake_getvar.argv` and emits the verified native form. |
+| `bitbake-getvar` is absent but `bitbake -e` is positively verified | Variable lookup is AvailableWithLimitations through the maintained environment-dump fallback, with that limitation visible before use. |
+| A future release has an unknown name/version | Only directly or negotiated positively evidenced behavior becomes Available; historical options and fallbacks remain Unknown. |
+
+These rows specify product behavior, not a claim that every condition occurred
+in the two current live records. Exact observed Scarthgap and Wrynose outcomes
+are recorded below and in the release matrix.
 
 ### Behavior catalog and implementation alternatives
 
@@ -280,9 +295,9 @@ unsupported, and unknown feature records. The JSON form also retains the
 bounded typed capability records and evidence. A disconnected daemon, absent
 snapshot, invalid protocol value, or malformed snapshot is reported as
 Unavailable or Invalid; Doctor does not run an independent compatibility probe
-or turn fixture/version identity into a release-support claim. Until current
-live matrix evidence is correlated into authority, release support is honestly
-reported as Unknown even when individual capabilities are positively verified.
+or turn fixture/version identity into a release-support claim. Runtime feature
+authority remains the snapshot's direct evidence; the separate release-support
+classification follows the current non-fixture matrix and its expiry policy.
 
 The reusable deterministic fixture catalog resolves the complete capability
 inventory for five explicit policy roles. It covers legacy and modern fallback
@@ -371,8 +386,7 @@ Devtool probes remained Unknown even when manual help was retained as live
 diagnostic evidence.
 
 The exact revision is classified **Tested** in the release matrix. The broader
-supported-window claim remains pending multi-release automation and the M18
-parent gate.
+supported-window claim remains pending the M18 parent gate.
 
 ## Current older-LTS live evidence
 
@@ -403,8 +417,8 @@ emitted. The exact machine-readable scope is in
 [`compatibility-evidence/older.toml`](compatibility-evidence/older.toml).
 
 This exact maintained revision is classified **Tested**. It is the lower live
-anchor for the proposed support window; automation and the M18 parent gate must
-still pass before the repository promotes a broader release-family claim.
+anchor for the proposed support window; the M18 parent gate must still pass
+before the repository promotes a broader release-family claim.
 
 ## Observed live Yocto combination
 

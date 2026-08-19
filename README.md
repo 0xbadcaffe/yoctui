@@ -105,6 +105,48 @@ Inside Yoctui, press `B`, press `e`, enter `core-image-minimal`, select the
 build action, and confirm it. The first BitBake build starts from that explicit
 TUI confirmation.
 
+## Dynamic Yocto compatibility
+
+**Yoctui functionality is Yocto-feature-correlated.** The installed Yoctui
+binary defines what Yoctui knows how to do; the connected build environment
+determines which of those behaviors and implementations are available now.
+The UI is generated from the daemon-owned capability snapshot, never from the
+Yoctui version alone or an executable merely present on the host `PATH`.
+
+The same binary can therefore behave differently across workspaces. If a
+connected Devtool does not expose `upgrade`, the action remains discoverable
+but disabled with the exact reason, for example “Current Devtool does not
+expose the upgrade subcommand.” For a BitBake variable query, a positively
+probed `bitbake-getvar --value` selects the native implementation; an
+environment that lacks it may use the separately verified `bitbake -e`
+fallback. Yoctui never emits an unverified `bitbake --getvar` option.
+
+Older environments keep every safely verified workflow and explain unavailable
+newer behavior. Unknown future releases are not rejected by their version:
+positive probes can enable behavior, while uncertain operations remain
+`Unknown` and cannot spawn a command. An environment outside the support
+policy still opens in diagnostic/degraded mode instead of taking down the
+whole application.
+
+Open **Environment / Compatibility** from the Navigator or use `F10`/`Ctrl+P`
+and choose **Open Compatibility**. It shows detected identity, capability
+states, exact reasons, selected implementations, and bounded evidence. Filters
+`1`–`5` select Available, Limited, Unavailable, Unknown, and Unsupported; `/`
+searches the report. Doctor exposes the same daemon snapshot:
+
+```sh
+yoctui --build-dir "$BUILDDIR" doctor
+yoctui --build-dir "$BUILDDIR" doctor --json
+```
+
+The exact Scarthgap 5.0.19 / BitBake 2.8.1 and Wrynose 6.0.2 / BitBake 2.18.0
+revisions are currently classified **Tested**. This does not turn fixtures or
+an optional development snapshot into a support claim. Live records expire
+after 90 days and after relevant capability-contract changes. See the
+[compatibility contract](docs/compatibility.md) and
+[release matrix](docs/compatibility-matrix.md) for exact revisions, scope, and
+renewal policy.
+
 ## Optional project profile
 
 Yoctui works normally without a profile. A team may optionally commit
@@ -246,8 +288,9 @@ debugging a foreground service startup. The live harness fails closed when
 Poky's host prerequisites are unavailable.
 After a host reboot, persisted metadata is restored but arbitrary child
 processes and PTYs are reported Lost; only an explicit supported relaunch may
-restart them. The real-Poky daemon acceptance has not yet completed in this
-environment, so no live build-survival claim is made until that run completes.
+restart them. Fresh official Scarthgap 5.0.19 and Wrynose 6.0.2 daemon runs are
+recorded in the compatibility evidence; their exact tested scope does not imply
+that arbitrary child processes survive a host reboot.
 
 ## Performance evidence
 
@@ -268,6 +311,7 @@ cargo install flamegraph
 
 - [Operator guide](docs/operator-guide.md) — daily workflows and troubleshooting
 - [Compatibility evidence](docs/compatibility.md) — live, fixture, and host validation boundaries
+- [Release compatibility matrix](docs/compatibility-matrix.md) — support classifications, exact tested revisions, and renewal policy
 - [UI specification](docs/ui-spec.md) — screens, focus, dialogs, and shortcuts
 - [Architecture](docs/architecture.md) — crate boundaries and state flow
 - [Testing](docs/testing.md) and [profiling](docs/profiling.md) — verification and performance

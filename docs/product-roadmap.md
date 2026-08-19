@@ -343,6 +343,8 @@ Capabilities:
   and shared client/runtime enforcement
 - dynamic workspace/UI gating and an Environment/Compatibility inspector
 - deterministic release-generation fixtures and current live multi-release evidence
+- offline evidence validation plus isolated scheduled/manual fresh official
+  older/latest runs with retained role-scoped diagnostics
 
 The UI delivery is dependency-ordered: first one typed presentation projection,
 then the responsive Environment/Compatibility workspace, then visible action
@@ -356,5 +358,7 @@ Exit criteria:
 - older supported environments preserve safe workflows and explain unavailable ones
 - unknown future releases expose only positively evidenced functionality
 - latest supported stable and a materially older release have current live evidence
+- exact machine-readable evidence records expire after 90 days or a relevant
+  capability-contract change and never convert fixture/development runs into claims
 - fixture-only tests cannot satisfy a live compatibility claim
 - `./scripts/verify-compatibility.sh` independently enforces the milestone

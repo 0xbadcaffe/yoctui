@@ -20,7 +20,7 @@ an isolated successful operation into a release support claim.
 
 | Yocto/Poky identity | BitBake | Classification | Evidence |
 |---|---|---|---|
-| Official Poky component composition `6.0.2` (Wrynose), exact revisions observed 2026-08-19 | `2.18.0` | Tested | Current non-fixture [latest compatibility evidence](compatibility-evidence/latest.toml): daemon identity/probes, Doctor, 1,922 Recipes, 3 Layers, Configuration, Devtool/utilities, native task/log events, exit-0 core task, and bounded cancellation. Exact revision scope only; the support-window claim awaits matrix automation and the parent gate. |
+| Official Poky component composition `6.0.2` (Wrynose), exact revisions observed 2026-08-19 | `2.18.0` | Tested | Current non-fixture [latest compatibility evidence](compatibility-evidence/latest.toml): daemon identity/probes, Doctor, 1,922 Recipes, 3 Layers, Configuration, Devtool/utilities, native task/log events, exit-0 core task, and bounded cancellation. Exact revision scope only; the support-window claim awaits the parent gate. |
 | Official Poky `5.0.19` (Scarthgap LTS), commit `bb98354685781296e3b3737e7762412100f359c2`, observed 2026-08-19 | `2.8.1` | Tested | Current non-fixture [older compatibility evidence](compatibility-evidence/older.toml): maintained-release identity, Doctor/degraded capability reasons, 1,829 Recipes, 3 Layers, Configuration, utility surfaces, exit-0 native core task, and 0.405-second cancellation. Exact revision scope only. |
 | Poky `6.0.99+snapshot-a4eb7bc2a750f76d9772eb88b7afb2b801bd1250` observed 2026-07-24 | `2.19.0` | Partially tested | Exact [live bridge/Tinfoil observation](compatibility.md#observed-live-yocto-combination): core smoke and selected focused workflows only; predates the M18 release-support gate and is not a support claim. |
 | Any other release | Unknown | Unknown | No M18 live compatibility evidence yet. |
@@ -29,11 +29,11 @@ an isolated successful operation into a release support claim.
 
 - Lowest maintained exact revision validated for the proposed support window:
   **Yocto 5.0.19 (Scarthgap LTS), BitBake 2.8.1**. The broader minimum-release
-  claim remains gated by the multi-release automation and M18 parent gate.
+  claim remains gated by the M18 parent gate.
 - Latest stable exact revision tested: **Yocto 6.0.2 (Wrynose), BitBake
   2.18.0**. It was selected from the authoritative release calendar and 6.0.2
-  release notes. A broader supported-window claim remains pending the required
-  final multi-release and parent gates.
+  release notes. A broader supported-window claim remains pending the parent
+  gate.
 - Latest exact live observation: the partially tested development snapshot in
   the table above; it is neither a minimum nor a latest-stable claim.
 - Future/development and mixed identities: **Unknown** at release-policy level;

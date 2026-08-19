@@ -2,47 +2,46 @@
 
 ## Task
 
-**ID:** COMPAT-DOC-001
-**Title:** Document dynamic release correlation
+**ID:** COMPAT-001
+**Title:** Complete Yocto release correlated functionality
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Explain clearly that one Yoctui binary exposes functionality according to the
-connected Yocto environment's detected capabilities, including release policy,
-fallbacks, disabled reasons, future behavior, diagnostics, and live evidence.
+Close the M18 parent gate only after the centralized daemon-owned capability
+architecture, dynamic UI/command authority, deterministic compatibility tests,
+current latest-plus-older live evidence, and completion verification all pass
+together.
 
 ## Dependencies
 
-- `COMPAT-DOCTOR-001` — DONE
-- `COMPAT-MATRIX-001` — DONE
-- `COMPAT-LIVE-MATRIX-001` — DONE
+- Every required `COMPAT-*` child — DONE
 
 ## Relevant files
 
-- `README.md`
-- `docs/compatibility.md`
-- `docs/compatibility-matrix.md`
-- `docs/product-roadmap.md`
+- `scripts/verify-compatibility.sh`
+- `scripts/verify-completion.sh`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
+- `docs/current-task.md`
 
 ## Definition of done
 
-- User documentation states the Yocto-feature-correlated product semantics.
-- Examples compare the same binary on older and newer environments, including
-  unavailable Devtool behavior and a BitBake command implementation/fallback.
-- Future unknown releases, unsupported/degraded releases, exact reasons, and
-  the Environment/Compatibility inspector and Doctor output are documented.
-- Supported/tested/expected/unknown claims remain distinct and link to exact
-  current live evidence and renewal policy.
-- Offline and opt-in live matrix commands are documented without implying that
-  fixtures or optional development runs establish support.
+- Every required compatibility child remains DONE.
+- The dedicated verifier independently checks deterministic model, probe,
+  command, UI, future-release, documentation, and current non-fixture live
+  evidence gates.
+- Completion cannot pass from registry status alone or from fixture evidence.
+- The full workspace baseline and roadmap checks pass.
+- M18 is promoted to DONE only after all gates pass.
 
 ## Verification
 
 ```bash
-./scripts/check-docs.sh
-./scripts/verify-compatibility.sh --structure-only
+./scripts/verify-compatibility.sh
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
 ```

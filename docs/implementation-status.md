@@ -1115,4 +1115,11 @@ exact older/latest fresh roles with explicit opt-in and bounded timeout, then
 always uploads role-scoped Doctor, daemon, inventory, and BitBake diagnostics.
 The static CI contract rejects accidental PR live runs, missing roles/bounds/
 artifacts, deterministic coverage omissions, and network operations in the fast
-script. `COMPAT-DOC-001` is active next.
+script. `COMPAT-DOC-001` is complete. User documentation now states the
+Yocto-feature-correlated rule, compares one binary across unavailable Devtool,
+native/fallback BitBake variable lookup, older/degraded, and future-unknown
+environments, and points to the shared Compatibility inspector and Doctor
+snapshot. The release policy names the exact Scarthgap 5.0.19 and Wrynose 6.0.2
+Tested anchors, preserves the distinction from a broader Claimed-supported
+window, documents the 90-day renewal rule, and keeps fixtures and optional
+development runs non-claiming. `COMPAT-001` is active next.
