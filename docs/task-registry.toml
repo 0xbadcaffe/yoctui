@@ -5134,18 +5134,18 @@ notes = "The Tasks table now selects its full column set before row construction
 id = "TASKS-UI-002"
 milestone = "M19"
 title = "Improve overall build progress presentation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 527
 required = true
 depends_on = ["TASKS-UI-001"]
 verify = ["cargo test -p yoctui-ui next_generation_build_summary", "cargo test -p yoctui-model build_summary"]
-notes = "Render a compact typed build summary and strong progress bar from completed, total, active, waiting, warning, error, elapsed, and available sstate data only."
+notes = "Added pure BuildSummary projection and a two-row Tasks header: a strong determinate gauge only for known nonzero totals, otherwise explicit progress-unknown activity, followed by typed active/waiting/warning/error/elapsed values and honestly derived pace/ETA where space permits. Terminal elapsed freezes from BuildRecord. Sstate reuse is omitted because no authoritative model/backend value exists. Focused model/UI tests pass and the intentionally updated 160x48 canonical golden records the real aggregate gauge."
 
 [[task]]
 id = "TASKS-UI-003"
 milestone = "M19"
 title = "Add high-quality task state visualization"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 528
 required = true
 depends_on = ["TASKS-UI-002"]

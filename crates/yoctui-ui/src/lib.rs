@@ -4066,6 +4066,73 @@ fn task_table_row_style(app: &App, state: TaskState, selected: bool) -> Style {
     }
 }
 
+fn render_build_summary(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
+    if area.is_empty() {
+        return;
+    }
+    let summary = app.build_summary_at(now);
+    let rows = if area.height >= 2 {
+        Layout::vertical([Constraint::Length(1), Constraint::Length(1)]).split(area)
+    } else {
+        Layout::vertical([Constraint::Length(1)]).split(area)
+    };
+    let palette = ThemePalette::for_app(app);
+    if let (Some(total), Some(percent)) = (summary.total, summary.progress_percent()) {
+        frame.render_widget(
+            Gauge::default()
+                .ratio(f64::from(percent) / 100.0)
+                .label(format!(
+                    "Overall  {percent}%  {}/{}",
+                    summary.completed.min(total),
+                    total
+                ))
+                .gauge_style(
+                    build_status_style(app)
+                        .bg(palette.background)
+                        .add_modifier(Modifier::BOLD),
+                ),
+            rows[0],
+        );
+    } else {
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Overall  progress unknown{}  {}/?",
+                task_activity(app, None),
+                summary.completed
+            ))
+            .style(
+                palette
+                    .role(palette.running, Modifier::BOLD)
+                    .add_modifier(Modifier::BOLD),
+            ),
+            rows[0],
+        );
+    }
+    if let Some(row) = rows.get(1) {
+        let elapsed = summary.elapsed.map_or_else(|| "--".into(), format_duration);
+        let text = if area.width >= 84 {
+            let mut text = format!(
+                "Active {}  Waiting {}  Warnings {}  Errors {}  Elapsed {elapsed}",
+                summary.active, summary.waiting, summary.warnings, summary.errors
+            );
+            if area.width >= 96 {
+                text.push_str("  ");
+                text.push_str(&build_pace_at(app, now));
+            }
+            text
+        } else {
+            format!(
+                "A{} W{} !{} ✕{} {elapsed}",
+                summary.active, summary.waiting, summary.warnings, summary.errors
+            )
+        };
+        frame.render_widget(
+            Paragraph::new(text).style(palette.role(palette.secondary_foreground, Modifier::DIM)),
+            *row,
+        );
+    }
+}
+
 fn render_task_table(
     frame: &mut Frame,
     app: &App,
@@ -4073,38 +4140,27 @@ fn render_task_table(
     rows: &[TaskRowRef<'_>],
     now: SystemTime,
 ) {
-    let waiting = app.waiting_task_count();
-    let active = app
-        .tasks
-        .values()
-        .filter(|task| task.state == TaskState::Active)
-        .count();
-    let failed = app
-        .completed_tasks
-        .iter()
-        .filter(|task| !task.success)
-        .count();
-    let progress = app.build.total.filter(|total| *total > 0).map_or_else(
-        || format!("{} / ?", app.build.completed),
-        |total| {
-            let completed = app.build.completed.min(total);
-            format!(
-                "{}% {completed}/{total}",
-                completed.saturating_mul(100) / total
-            )
-        },
-    );
     let target = app.build.target.as_deref().unwrap_or("not selected");
     let title = if area.width == 89 && area.height == 17 {
         "Tasks: Build".into()
     } else {
-        format!(
-            "Tasks: {target} · {progress} · A{active} W{waiting} F{failed} · {} · {}",
-            build_pace_at(app, now),
-            task_filter_summary(app)
-        )
+        format!("Tasks: {target} · {}", task_filter_summary(app))
     };
-    let visible_rows = usize::from(area.height.saturating_sub(3)).max(1);
+    let block = Block::default()
+        .title(title)
+        .borders(Borders::ALL)
+        .style(ThemePalette::for_app(app).base());
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+    let summary_height = inner.height.min(2);
+    let sections =
+        Layout::vertical([Constraint::Length(summary_height), Constraint::Min(1)]).split(inner);
+    render_build_summary(frame, app, sections[0], now);
+    let table_area = sections[1];
+    let visible_rows = usize::from(table_area.height.saturating_sub(1)).max(1);
     let selected = app.task_progress_scroll.min(rows.len().saturating_sub(1));
     let viewport_start = selected
         .saturating_sub(visible_rows / 2)
@@ -4160,14 +4216,8 @@ fn render_task_table(
         .collect::<Vec<_>>();
     frame.render_widget(
         Table::new(table_rows, constraints)
-            .header(Row::new(headers).style(Style::default().add_modifier(Modifier::BOLD)))
-            .block(
-                Block::default()
-                    .title(title)
-                    .borders(Borders::ALL)
-                    .style(ThemePalette::for_app(app).base()),
-            ),
-        area,
+            .header(Row::new(headers).style(Style::default().add_modifier(Modifier::BOLD))),
+        table_area,
     );
 }
 
@@ -17884,6 +17934,7 @@ mod tests {
         app.screen = Screen::Tasks;
         app.build.completed = 2;
         app.build.total = Some(5);
+        app.build.errors = 1;
         let mut active = yoctui_model::TaskInfo::active(
             yoctui_model::TaskId("busybox:do_compile".into()),
             "busybox".into(),
@@ -17906,8 +17957,10 @@ mod tests {
             success: false,
         });
         let output = rendered_text(&app, 180, 34);
-        assert!(output.contains("40% 2/5"), "{output}");
-        assert!(output.contains("A1 W2 F1"), "{output}");
+        assert!(output.contains("Overall  40%  2/5"), "{output}");
+        assert!(output.contains("Active 1"), "{output}");
+        assert!(output.contains("Waiting 2"), "{output}");
+        assert!(output.contains("Errors 1"), "{output}");
         assert!(output.contains("✕ Failed"), "{output}");
         assert!(output.contains("· All"), "{output}");
         assert!(output.contains("PID         4242"), "{output}");
@@ -18018,6 +18071,73 @@ mod tests {
             selected_style(&app, true),
             "selection remains distinct from the running-row treatment"
         );
+    }
+
+    #[test]
+    fn next_generation_build_summary_is_determinate_only_with_a_real_total() {
+        let now = UNIX_EPOCH + Duration::from_secs(100);
+        let mut app = App::new(20, 2_000);
+        app.screen = Screen::Tasks;
+        app.build.status = BuildStatus::Running;
+        app.build.started = Some(UNIX_EPOCH + Duration::from_secs(40));
+        app.build.completed = 3;
+        app.build.total = Some(10);
+        app.build.warnings = 2;
+        app.build.errors = 1;
+        let active = yoctui_model::TaskInfo::active(
+            yoctui_model::TaskId("busybox:do_compile".into()),
+            "busybox".into(),
+            "do_compile".into(),
+        );
+        app.tasks.insert(active.id.clone(), active);
+
+        let render_table = |app: &App, width| {
+            let rows = app.visible_task_row_refs_at(now);
+            let mut terminal = Terminal::new(TestBackend::new(width, 12)).unwrap();
+            terminal
+                .draw(|frame| render_task_table(frame, app, frame.area(), &rows, now))
+                .unwrap();
+            let output = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>();
+            (output, terminal)
+        };
+
+        let (known, terminal) = render_table(&app, 100);
+        for expected in [
+            "Overall  30%  3/10",
+            "Active 1",
+            "Waiting 6",
+            "Warnings 2",
+            "Errors 1",
+            "Elapsed 00:01:00",
+        ] {
+            assert!(known.contains(expected), "missing {expected}: {known}");
+        }
+        assert!(
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .any(|cell| cell.symbol() == "█"),
+            "determinate progress must have a visible filled bar"
+        );
+        assert!(!known.contains("Sstate"), "{known}");
+
+        app.build.total = None;
+        app.reduced_motion = true;
+        let (unknown, _) = render_table(&app, 70);
+        assert!(
+            unknown.contains("progress unknown active  3/?"),
+            "{unknown}"
+        );
+        assert!(!unknown.contains("30%"), "{unknown}");
+        assert!(unknown.contains("A1 W0 !2 ✕1 00:01:00"), "{unknown}");
     }
 
     #[test]

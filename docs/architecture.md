@@ -472,6 +472,11 @@ Workspace tables resolve a complete responsive column set through this boundary
 before constructing row cells. Optional fields therefore remain model-owned
 and are neither derived nor formatted when their column is hidden.
 
+`yoctui_model::BuildSummary` is the pure aggregate projection for the Tasks
+header. It combines typed build counters with active/waiting task state and an
+injected clock. Terminal elapsed time comes from the retained `BuildRecord`;
+the UI receives no raw timestamps to reinterpret and no sstate value to infer.
+
 `yoctui_ui::SemanticTheme` is the single rendering color boundary. It resolves
 each typed theme and the no-color override into named surface, text, border,
 selection, lifecycle, emphasis, graph, and source-preview roles. Renderers and

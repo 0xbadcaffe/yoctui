@@ -833,6 +833,17 @@ height they collapse in that order to preserve task selection and controls.
 Overall build progress and active filters move into the table title/status
 rows instead of consuming large standalone cards.
 
+The first two bordered content rows are the compact build summary. With a
+known nonzero total, row one is a strong determinate gauge labeled with integer
+percent and bounded `completed/total`. Without that authority it is plain text
+`progress unknown` plus the stable/animated activity marker and `completed/?`;
+an empty gauge or `0%` is forbidden. Row two shows typed Active, Waiting,
+Warnings, Errors, and Elapsed values. At 96 columns it may append the honestly
+derived average rate and `ETA`; compact widths use `A/W/!/✕` labels. Terminal
+elapsed time freezes from the retained build record. Yoctui currently receives
+no authoritative sstate-reuse percentage, so this summary omits it rather than
+parsing logs or estimating it.
+
 The task table renders only the rows that fit its bordered viewport. The
 viewport follows `task_progress_scroll` and always includes the selected row;
 off-screen retained tasks are not formatted into Ratatui rows on every frame.

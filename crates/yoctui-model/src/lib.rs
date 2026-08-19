@@ -1411,6 +1411,25 @@ pub struct BuildState {
     pub errors: usize,
     pub exit_code: Option<i32>,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BuildSummary {
+    pub completed: usize,
+    pub total: Option<usize>,
+    pub active: usize,
+    pub waiting: usize,
+    pub warnings: usize,
+    pub errors: usize,
+    pub elapsed: Option<Duration>,
+}
+
+impl BuildSummary {
+    pub fn progress_percent(self) -> Option<u8> {
+        let total = self.total.filter(|total| *total > 0)?;
+        let percent = self.completed.min(total).saturating_mul(100) / total;
+        Some(u8::try_from(percent).unwrap_or(100))
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BuildRecord {
     pub target: Option<String>,
@@ -3020,6 +3039,31 @@ impl App {
         self.build.total.map_or(0, |total| {
             total.saturating_sub(self.build.completed.saturating_add(self.tasks.len()))
         })
+    }
+    pub fn build_summary_at(&self, now: SystemTime) -> BuildSummary {
+        let elapsed = if matches!(
+            self.build.status,
+            BuildStatus::Completed | BuildStatus::Cancelled | BuildStatus::Failed
+        ) {
+            self.build_history.back().and_then(|record| record.elapsed)
+        } else {
+            self.build
+                .started
+                .and_then(|started| now.duration_since(started).ok())
+        };
+        BuildSummary {
+            completed: self.build.completed,
+            total: self.build.total,
+            active: self
+                .tasks
+                .values()
+                .filter(|task| task.state == TaskState::Active)
+                .count(),
+            waiting: self.waiting_task_count(),
+            warnings: self.build.warnings,
+            errors: self.build.errors,
+            elapsed,
+        }
     }
     pub fn visible_task_row_refs_at(&self, now: SystemTime) -> Vec<TaskRowRef<'_>> {
         let state_matches = |state: TaskState| match self.task_filters.state {
@@ -17535,6 +17579,54 @@ mod tests {
                     && task.pid == Some(4242)
                     && task.progress.is_none()
         ));
+    }
+
+    #[test]
+    fn build_summary_uses_typed_counts_and_freezes_terminal_elapsed_time() {
+        let now = SystemTime::UNIX_EPOCH + Duration::from_secs(100);
+        let mut app = App::new(20, 2_000);
+        app.build.status = BuildStatus::Running;
+        app.build.started = Some(SystemTime::UNIX_EPOCH + Duration::from_secs(40));
+        app.build.completed = 3;
+        app.build.total = Some(10);
+        app.build.warnings = 2;
+        app.build.errors = 1;
+        let active = TaskInfo::active(
+            TaskId("busybox:do_compile".into()),
+            "busybox".into(),
+            "do_compile".into(),
+        );
+        app.tasks.insert(active.id.clone(), active);
+
+        let summary = app.build_summary_at(now);
+        assert_eq!(summary.completed, 3);
+        assert_eq!(summary.total, Some(10));
+        assert_eq!(summary.progress_percent(), Some(30));
+        assert_eq!(summary.active, 1);
+        assert_eq!(summary.waiting, 6);
+        assert_eq!(summary.warnings, 2);
+        assert_eq!(summary.errors, 1);
+        assert_eq!(summary.elapsed, Some(Duration::from_secs(60)));
+
+        app.build.status = BuildStatus::Completed;
+        app.build_history.push_back(BuildRecord {
+            target: None,
+            success: true,
+            exit_code: Some(0),
+            elapsed: Some(Duration::from_secs(75)),
+            completed_tasks: 10,
+            warnings: 2,
+            errors: 1,
+        });
+        assert_eq!(
+            app.build_summary_at(now + Duration::from_secs(900)).elapsed,
+            Some(Duration::from_secs(75))
+        );
+
+        app.build.total = None;
+        assert_eq!(app.build_summary_at(now).progress_percent(), None);
+        app.build.total = Some(0);
+        assert_eq!(app.build_summary_at(now).progress_percent(), None);
     }
 
     #[test]

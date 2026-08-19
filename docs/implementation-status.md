@@ -11,9 +11,18 @@ Status values:
 
 ## Current phase
 
-`TASKS-UI-002` is `IN_PROGRESS`. It will add a compact build summary and strong
-overall progress bar from authoritative completed/total, active, waiting,
-warning, error, elapsed, and available sstate data only.
+`TASKS-UI-003` is `IN_PROGRESS`. It will complete distinct textual, symbolic,
+and semantic visualization for queued, waiting, active, succeeded, failed,
+cancelled, and lost task states.
+
+`TASKS-UI-002` is `DONE`: a pure model `BuildSummary` now drives two compact
+Tasks header rows. Known nonzero totals render a strong numeric gauge;
+unknown totals render explicit indeterminate activity and never `0%`. Typed
+active/waiting/warning/error/elapsed values follow, with aggregate pace/ETA
+only where honestly derivable and space permits. Terminal elapsed freezes from
+the retained build record. Sstate reuse is omitted because no authoritative
+source exists. Focused model/UI tests pass, and the reviewed 160x48 golden was
+intentionally refreshed for the real summary.
 
 `TASKS-UI-001` is `DONE`: the table selects its complete column set before row
 construction. Narrow renders Task/Status/Progress, medium adds Recipe/Time,
