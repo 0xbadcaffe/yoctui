@@ -19,6 +19,7 @@ unsupported argv.
 - `COMPAT-TEST-CMDS-001` — DONE
 - `COMPAT-TEST-UI-001` — DONE
 - `COMPAT-MATRIX-001` — DONE
+- `COMPAT-BITBAKE-CANCEL-ORDER-001` — DONE
 
 ## Relevant files
 

@@ -1072,6 +1072,14 @@ bridge and real-backend daemon flood tests pass. A live official Wrynose 6.0.2 /
 BitBake 2.18.0 `core-image-minimal` run was cancelled through daemon IPC at
 67/4346 tasks and reached Failed in 0.257 seconds; a second client and Doctor
 remained responsive, and the bridge/server child exited without force kill.
+`COMPAT-BITBAKE-CANCEL-ORDER-001` is complete. Live Scarthgap 5.0.19 /
+BitBake 2.8.1 exposed a distinct ordering failure: accepted cancellation
+stopped the bridge/server, but thousands of already queued native records kept
+the shared job Running beyond 15 seconds. Explicit cancellation now uses the
+typed cooker force-shutdown operation, cleanup acknowledgement is bounded, and
+a priority terminal channel invalidates pre-cancel records without replaying
+them after terminal state. A 10,000-event delayed-cleanup regression passes,
+and live `core-image-minimal` cancellation now reaches Failed in 0.405 seconds.
 `COMPAT-LIVE-LATEST-001` is complete. Authoritative release documentation
 selected official Wrynose 6.0.2 / BitBake 2.18.0 as the latest published stable
 on 2026-08-19 and supplied exact OE-Core, BitBake, and meta-yocto revisions.

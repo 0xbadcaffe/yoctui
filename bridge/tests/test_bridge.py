@@ -1,6 +1,7 @@
 """Bridge framing tests; compatible with both unittest and pytest collection."""
 
 import json
+import importlib.util
 import os
 import subprocess
 import sys
@@ -31,6 +32,30 @@ def run_bridge(
 
 
 class BridgeProtocolTests(unittest.TestCase):
+    def test_tinfoil_cancellation_uses_bounded_cooker_shutdown(self) -> None:
+        spec = importlib.util.spec_from_file_location("yoctui_bridge_test", BRIDGE)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        bridge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bridge)
+
+        class FakeTinfoil:
+            def __init__(self) -> None:
+                self.calls: list[tuple[str, bool]] = []
+
+            def run_command(self, command: str, *, handle_events: bool) -> None:
+                self.calls.append((command, handle_events))
+
+        connection = object.__new__(bridge.TinfoilConnection)
+        connection.active = True
+        connection.tinfoil = FakeTinfoil()
+        connection.cancel_build()
+
+        self.assertEqual(
+            connection.tinfoil.calls,
+            [("stateForceShutdown", False)],
+        )
+
     def test_hello_and_shutdown_are_framed_as_json_lines(self) -> None:
         result = run_bridge(
             b'{"protocol_version":1,"sequence":1,"message":{"type":"hello"}}',

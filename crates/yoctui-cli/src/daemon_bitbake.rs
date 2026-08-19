@@ -1,6 +1,7 @@
 use std::{
     collections::{BTreeMap, HashMap},
     path::PathBuf,
+    time::Duration,
 };
 
 use tokio::sync::mpsc;
@@ -25,6 +26,8 @@ pub struct DaemonBitBakeSupervisor {
     active: HashMap<JobId, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonBitBakeEvent>,
     rx: mpsc::UnboundedReceiver<DaemonBitBakeEvent>,
+    cancellation_terminal_tx: mpsc::UnboundedSender<DaemonBitBakeEvent>,
+    cancellation_terminal_rx: mpsc::UnboundedReceiver<DaemonBitBakeEvent>,
     compatibility: Option<DaemonCompatibilitySnapshot>,
     bridge_environment: Option<BTreeMap<String, String>>,
 }
@@ -32,11 +35,14 @@ pub struct DaemonBitBakeSupervisor {
 impl Default for DaemonBitBakeSupervisor {
     fn default() -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
+        let (cancellation_terminal_tx, cancellation_terminal_rx) = mpsc::unbounded_channel();
         Self {
             next_job_id: 1,
             active: HashMap::new(),
             tx,
             rx,
+            cancellation_terminal_tx,
+            cancellation_terminal_rx,
             compatibility: None,
             bridge_environment: None,
         }
@@ -86,6 +92,7 @@ impl DaemonBitBakeSupervisor {
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(job_id, cancel_tx);
         let tx = self.tx.clone();
+        let cancellation_terminal_tx = self.cancellation_terminal_tx.clone();
         let bridge_environment = self.bridge_environment.clone();
         tokio::spawn(async move {
             let python = std::env::var("PYTHON").unwrap_or_else(|_| "python3".into());
@@ -145,7 +152,7 @@ impl DaemonBitBakeSupervisor {
                             if let Err(error) = backend.cancel_build().await {
                                 let _ = backend.terminate_server().await;
                                 backend_closed = true;
-                                let _ = tx.send(DaemonBitBakeEvent::Failed {
+                                let _ = cancellation_terminal_tx.send(DaemonBitBakeEvent::Failed {
                                     job_id,
                                     message: format!("BitBake cancellation failed: {error}"),
                                 });
@@ -158,13 +165,37 @@ impl DaemonBitBakeSupervisor {
                             let terminal = matches!(event, BackendEvent::BuildCompleted { .. } | BackendEvent::CommandFailed { .. } | BackendEvent::Disconnected);
                             if terminal {
                                 if terminate_server {
-                                    let _ = backend.terminate_server().await;
+                                    let _ = tokio::time::timeout(
+                                        Duration::from_secs(2),
+                                        backend.terminate_server(),
+                                    )
+                                    .await;
                                 } else {
-                                    let _ = backend.shutdown().await;
+                                    let _ = tokio::time::timeout(
+                                        Duration::from_secs(2),
+                                        backend.shutdown(),
+                                    )
+                                    .await;
                                 }
+                                // A release-specific Tinfoil server can take
+                                // an unbounded amount of time to acknowledge
+                                // post-terminal cleanup.  The native terminal
+                                // event remains authoritative, but cleanup is
+                                // bounded before it is published so an older
+                                // server cannot leave the shared job Running.
                                 backend_closed = true;
                             }
-                            let _ = tx.send(DaemonBitBakeEvent::Backend { job_id, event: Box::new(event) });
+                            let event = DaemonBitBakeEvent::Backend { job_id, event: Box::new(event) };
+                            if terminal && terminate_server {
+                                // Cancellation is a control-plane boundary.
+                                // Deliver its terminal ahead of native/log
+                                // records already queued before the request;
+                                // try_event discards those stale records so
+                                // they cannot resurrect the cancelled job.
+                                let _ = cancellation_terminal_tx.send(event);
+                            } else {
+                                let _ = tx.send(event);
+                            }
                             if terminal { break; }
                         }
                         Err(error) => {
@@ -190,6 +221,18 @@ impl DaemonBitBakeSupervisor {
     }
 
     pub fn try_event(&mut self) -> Option<DaemonBitBakeEvent> {
+        if let Ok(event) = self.cancellation_terminal_rx.try_recv() {
+            // Only one BitBake build may be active, so every queued regular
+            // record belongs to the now-cancelled job and is stale by the
+            // authoritative cancellation terminal.
+            while self.rx.try_recv().is_ok() {}
+            let id = match event {
+                DaemonBitBakeEvent::Backend { job_id, .. }
+                | DaemonBitBakeEvent::Failed { job_id, .. } => job_id,
+            };
+            self.active.remove(&id);
+            return Some(event);
+        }
         let event = self.rx.try_recv().ok()?;
         let terminal = match &event {
             DaemonBitBakeEvent::Backend { event, .. } => matches!(
@@ -315,7 +358,8 @@ mod tests {
         fs::write(
             python.join("bb.py"),
             format!(
-                r#"__version__ = "2.18.0"
+                r#"import time
+__version__ = "2.18.0"
 class Connection:
  native_event_stream = True
  def __init__(self): self.cancelled = False
@@ -334,7 +378,7 @@ class Connection:
      return
     yield {{"type": "parse_progress", "parsed": index, "total": 10000}}
   return events()
- def terminate_server(self): pass
+ def terminate_server(self): time.sleep(30)
  def shutdown(self): pass
 class Server:
  def __init__(self): self.connection = Connection()
@@ -392,6 +436,10 @@ server = Server()
         assert!(cancellation_sent, "event stream never became active");
         assert_eq!(terminal_count, 1);
         assert!(!late_started);
+        assert!(
+            supervisor.try_event().is_none(),
+            "pre-cancellation native records survived the terminal boundary"
+        );
         assert_eq!(fs::read_to_string(&marker).unwrap(), "cancelled");
         assert!(supervisor.cancel(job_id).is_err());
         fs::remove_dir_all(&root).unwrap();

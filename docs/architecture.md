@@ -2496,14 +2496,21 @@ cancellation deterministic priority over its next event read. Native parse and
 task bursts therefore cannot starve cancellation, IPC handshakes, status,
 Doctor, or shutdown processing.
 
-Successful `stateShutdown` acknowledgement is Yoctui's cancellation terminal
-boundary. Some supported Tinfoil streams, including BitBake 2.18.0 on Wrynose,
+Successful cooker-shutdown acknowledgement is Yoctui's cancellation terminal
+boundary. Explicit cancellation uses BitBake's typed `stateForceShutdown`
+server command because maintained older releases may let graceful shutdown
+continue running work beyond the bounded cancellation contract. This is a
+Tinfoil/server operation scoped to the active runqueue, not an arbitrary host
+process signal. Some supported Tinfoil streams, including BitBake 2.18.0 on Wrynose,
 do not reliably deliver a later `BuildCompleted`; waiting for it can leave the
 job active indefinitely. The bridge emits exactly one failed build terminal
 with the original build correlation, clears its retained iterator and task
-identities, and stops native polling. The daemon then invokes the negotiated
-server-termination operation. Delayed native events cannot resurrect the job,
-and every attached client observes the same journal terminal. `StartBuild`
+identities, and stops native polling. Post-terminal bridge/server cleanup is
+bounded. A dedicated typed supervisor channel publishes cancellation terminal
+state ahead of native records queued before the request and invalidates those
+records; this prevents high-volume older BitBake streams from leaving an
+already stopped build visibly Running. Delayed native events cannot resurrect
+the job, and every attached client observes the same journal terminal. `StartBuild`
 obtains its exact build directory from the daemon-owned compatibility identity,
 so a separate client-side environment variable cannot select a different
 workspace.

@@ -492,7 +492,13 @@ class TinfoilConnection:
     def cancel_build(self):
         if not self.active:
             raise RuntimeError("no BitBake build is active")
-        self.tinfoil.run_command("stateShutdown", handle_events=False)
+        # Cancellation is an explicit request to stop this runqueue.  Some
+        # maintained BitBake generations let stateShutdown drain running work
+        # for longer than Yoctui's bounded cancellation contract.  Use the
+        # supported cooker force-shutdown command here; this remains a typed
+        # Tinfoil/server operation and does not signal or kill an arbitrary
+        # host process.
+        self.tinfoil.run_command("stateForceShutdown", handle_events=False)
 
     def drain_events(self):
         events = []
@@ -2126,7 +2132,7 @@ def handle(command, correlation_id, adapter):
         except ServerUnavailable as exc:
             error("bitbake_server_unavailable", str(exc), correlation_id)
         else:
-            # stateShutdown acknowledges the cancellation request, but some
+            # The cooker shutdown command acknowledges cancellation, but some
             # BitBake releases do not subsequently deliver BuildCompleted to
             # this Tinfoil event stream.  The accepted shutdown request is the
             # authoritative terminal boundary for Yoctui.  Stop polling here
