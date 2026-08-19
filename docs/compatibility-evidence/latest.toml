@@ -1,0 +1,102 @@
+schema_version = 1
+kind = "latest"
+observed_at = "2026-08-19"
+expires_after_days = 90
+evidence_level = "live"
+fixture_only = false
+synthetic = false
+official_checkout = true
+release_role = "latest_published_stable"
+
+official_source_url = "https://docs.yoctoproject.org/next/migration-guides/release-notes-6.0.2.html"
+official_release_calendar_url = "https://wiki.yoctoproject.org/wiki/Release_calendar"
+official_release_notes_url = "https://docs.yoctoproject.org/next/migration-guides/release-notes-6.0.2.html"
+repository_url = "https://git.yoctoproject.org/poky"
+oe_core_repository_url = "https://git.openembedded.org/openembedded-core"
+bitbake_repository_url = "https://git.openembedded.org/bitbake"
+meta_yocto_repository_url = "https://git.yoctoproject.org/meta-yocto"
+
+# The official 6.0.2 release is composed from these exact component commits.
+# The schema's historical poky_commit field records the meta-yocto component
+# revision when validating the official split-component composition.
+poky_commit = "24c24cef5d1523fefe43a3e3d34667b37ae551f3"
+meta_yocto_commit = "24c24cef5d1523fefe43a3e3d34667b37ae551f3"
+oe_core_commit = "5d1aa5c806c061a2994f4decb59016610f093213"
+bitbake_commit = "acfe02fa38b5da9e6a36c6cedcf91d4fcbefbfbd"
+yoctui_commit = "15658267c046ab9f90feb17e3f6589abfe0f4d58"
+
+yocto_release = "6.0.2"
+yocto_series = "wrynose"
+bitbake_version = "2.18.0"
+build_identity = "abc79c2d97aa9352a9310e5c82ded937972c8c1993789f8a0820831d4cd29cf5"
+distro = "poky 6.0.2"
+machine = "qemux86-64"
+backend = "Tinfoil modern adapter selected centrally; direct bridge negotiation"
+protocol_version = "yoctui-daemon 1.0; bridge protocol 1"
+host_identity = "Linux 7.0.0-29-generic x86_64 GNU/Linux"
+source_checkout = "fresh_official_component_checkouts"
+
+commands = [
+  "bitbake.version=passed",
+  "bitbake.help_options=passed",
+  "bitbake_getvar.value=passed",
+  "yoctui.doctor_json=passed",
+  "yoctui.inspect=passed",
+  "yoctui.recipes=passed",
+  "yoctui.layers=passed",
+  "yoctui.config=passed",
+  "yoctui.daemon_build=passed",
+  "yoctui.daemon_cancel=passed",
+]
+
+capabilities = [
+  "bitbake.build=available_with_limitations",
+  "bitbake.cancellation=available_with_limitations",
+  "bitbake.getvar=available",
+  "bitbake.recipe_inventory=available_with_limitations",
+  "bitbake.layer_inventory=available_with_limitations",
+  "devtool.modify=available",
+  "devtool.deploy_target=available",
+  "devtool.upgrade=unknown",
+  "recipetool.create=available",
+  "recipetool.appendfile=available",
+  "bitbake_layers.show_layers=available",
+  "bitbake_layers.create_layer=available",
+  "pkgdata.lookup_pkg=available",
+  "pkgdata.generated=unavailable",
+]
+
+workflows = [
+  "environment_identity=passed",
+  "capability_probe=passed",
+  "doctor=passed",
+  "workspace_inspection=passed",
+  "recipes=passed",
+  "layers=passed",
+  "configuration=passed",
+  "core_build_events=passed",
+  "build_cancellation=passed",
+  "devtool_capabilities=passed",
+  "utility_capabilities=passed",
+  "modern_bitbake_commands=passed",
+]
+
+[metrics]
+recipe_count = 1922
+layer_count = 3
+native_event_count = 7
+successful_build_exit_code = 0
+successful_build_seconds = 7.028
+cancellation_seconds = 0.257
+doctor_available = 34
+doctor_limited = 14
+doctor_unavailable = 5
+doctor_unknown = 23
+doctor_unsupported = 0
+
+[scope]
+successful_build = "base-files:do_listtasks completed through daemon IPC with parse, runqueue/task, log, and completion events; the network-dependent default base-files build was cancelled while upstream fetches were pending and is not claimed complete."
+cancellation = "core-image-minimal cancelled through daemon IPC at 67/4346 tasks; one Failed terminal was shared with a second client and no force kill was used."
+configuration = "Yoctui selected the capability-authorized bitbake-getvar --value implementation and returned MACHINE=qemux86-64; it did not emit unsupported bitbake --getvar argv."
+devtool = "Direct help exposed modify, upgrade, finish, and deploy-target. The daemon snapshot enabled positively complete probes and retained timeout-incomplete upgrade evidence as Unknown rather than guessing availability."
+pkgdata = "oe-pkgdata-util and lookup commands were present, while pkgdata.generated was independently Unavailable because this build had not produced tmp/pkgdata."

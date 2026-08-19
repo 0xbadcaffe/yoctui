@@ -2437,6 +2437,16 @@ remain distinct fail-closed diagnostics. Existing local environment/bridge
 health checks are separate from the compatibility section and cannot enable a
 feature or create a release-support claim.
 
+Headless workspace clients use the same ordinary bounded Hello/Attach path.
+Before creating either a bridge or process backend they convert and validate
+the daemon's wire snapshot, require its detected build directory to match the
+selected directory exactly, and install it into the backend authorization
+boundary. Missing daemon authority, another workspace's authority, unknown
+wire data, and implementation mismatch fail before backend operation. The
+Configuration command uses `BitBakeCommandPlanner` from that same snapshot and
+runs only the selected `bitbake-getvar --value` or maintained `bitbake -e`
+fallback as shell-free argv with a 120-second deadline and 16 MiB stream bounds.
+
 ### Production daemon compatibility startup
 
 The production foreground daemon establishes compatibility authority before it

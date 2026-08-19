@@ -1072,5 +1072,16 @@ bridge and real-backend daemon flood tests pass. A live official Wrynose 6.0.2 /
 BitBake 2.18.0 `core-image-minimal` run was cancelled through daemon IPC at
 67/4346 tasks and reached Failed in 0.257 seconds; a second client and Doctor
 remained responsive, and the bridge/server child exited without force kill.
-`COMPAT-LIVE-LATEST-001` is active; this cancellation evidence alone is not a
-release support claim.
+`COMPAT-LIVE-LATEST-001` is complete. Authoritative release documentation
+selected official Wrynose 6.0.2 / BitBake 2.18.0 as the latest published stable
+on 2026-08-19 and supplied exact OE-Core, BitBake, and meta-yocto revisions.
+The daemon/Doctor identity agrees with those components; 1,922 Recipes, three
+Layers, capability-authorized Configuration, Devtool and utility surfaces,
+modern command options, a successful `base-files:do_listtasks` native-event
+run, and the independent 0.257-second cancellation passed. Headless backends
+now install the daemon snapshot and reject absent or mismatched authority before
+operation. The machine-readable 90-day record and offline verifier reject
+fixtures, stale dates, ambiguous commits, missing workflows, implausible
+metrics, and non-ancestor Yoctui code. The exact revision is Tested, while a
+supported release window remains pending `COMPAT-LIVE-OLDER-001`, which is
+active next.

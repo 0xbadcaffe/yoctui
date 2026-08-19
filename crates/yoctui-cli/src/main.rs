@@ -955,20 +955,117 @@ async fn print_layers(backend: Backend, build_dir: PathBuf) -> Result<()> {
 }
 
 async fn print_variable(backend: Backend, build_dir: PathBuf, name: &str) -> Result<()> {
-    let mut backend = select_backend(backend, build_dir).await?;
-    let result = backend.get_variable(name.into(), None).await;
-    let shutdown = backend.shutdown().await;
-    let variable = result?;
-    let value = variable
-        .value
-        .as_deref()
-        .with_context(|| format!("{name} is not available from the selected backend"))?;
-    shutdown?;
+    let _ = backend;
+    let compatibility = current_daemon_compatibility(&build_dir)?;
+    let planner = yoctui_bitbake::BitBakeCommandPlanner::new(
+        &compatibility,
+        compatibility.snapshot.generation,
+        &build_dir,
+    )?;
+    let command = planner.get_variable(name, None)?;
+    let implementation = command.implementation.clone();
+    let output = run_bounded_config_query(command, &build_dir).await?;
+    let value = config_value_from_authorized_output(name, &implementation, &output)?;
     println!("{name}={value}");
-    if let Some(provenance) = variable.provenance {
-        println!("provenance: {provenance}");
-    }
     Ok(())
+}
+
+fn config_value_from_authorized_output(
+    name: &str,
+    implementation: &str,
+    output: &str,
+) -> Result<String> {
+    let value = if implementation == yoctui_bitbake::BITBAKE_GETVAR_UTILITY_IMPLEMENTATION {
+        output.trim().to_owned()
+    } else {
+        let prefix = format!("{name}=");
+        let assignment = output
+            .lines()
+            .rev()
+            .find_map(|line| line.strip_prefix(&prefix))
+            .with_context(|| {
+                format!("{name} is absent from the authorized BitBake environment dump")
+            })?;
+        assignment
+            .strip_prefix('"')
+            .and_then(|value| value.strip_suffix('"'))
+            .unwrap_or(assignment)
+            .to_owned()
+    };
+    if value.is_empty() {
+        anyhow::bail!("{name} is not available from the selected environment");
+    }
+    Ok(value)
+}
+
+async fn run_bounded_config_query(
+    command: yoctui_bitbake::AuthorizedBitBakeCommand,
+    build_dir: &Path,
+) -> Result<String> {
+    use tokio::io::AsyncReadExt;
+
+    const OUTPUT_LIMIT: usize = 16 * 1024 * 1024;
+    async fn drain_bounded<R: tokio::io::AsyncRead + Unpin>(mut reader: R) -> io::Result<Vec<u8>> {
+        let mut retained = Vec::new();
+        let mut buffer = [0_u8; 8192];
+        loop {
+            let count = reader.read(&mut buffer).await?;
+            if count == 0 {
+                return Ok(retained);
+            }
+            let available = OUTPUT_LIMIT.saturating_sub(retained.len());
+            retained.extend_from_slice(&buffer[..count.min(available)]);
+        }
+    }
+
+    let mut process = tokio::process::Command::new(&command.executable);
+    process
+        .args(&command.arguments)
+        .current_dir(build_dir)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .kill_on_drop(true);
+    let mut child = process.spawn().with_context(|| {
+        format!(
+            "could not start capability-authorized variable query {}",
+            command.executable.display()
+        )
+    })?;
+    let stdout = child
+        .stdout
+        .take()
+        .context("variable query stdout unavailable")?;
+    let stderr = child
+        .stderr
+        .take()
+        .context("variable query stderr unavailable")?;
+    let stdout_task = tokio::spawn(drain_bounded(stdout));
+    let stderr_task = tokio::spawn(drain_bounded(stderr));
+    let status = match tokio::time::timeout(Duration::from_secs(120), child.wait()).await {
+        Ok(status) => status?,
+        Err(_) => {
+            let _ = child.kill().await;
+            anyhow::bail!("capability-authorized variable query timed out after 120 seconds");
+        }
+    };
+    let stdout = stdout_task
+        .await
+        .context("variable query stdout task failed")??;
+    let stderr = stderr_task
+        .await
+        .context("variable query stderr task failed")??;
+    if !status.success() {
+        anyhow::bail!(
+            "capability-authorized variable query exited with {status}: {}",
+            String::from_utf8_lossy(&stderr).trim()
+        );
+    }
+    if stdout.len() == OUTPUT_LIMIT || stderr.len() == OUTPUT_LIMIT {
+        anyhow::bail!("capability-authorized variable query exceeded the 16 MiB output bound");
+    }
+    String::from_utf8(stdout)
+        .context("capability-authorized variable query returned non-UTF-8 output")
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -1439,7 +1536,8 @@ async fn doctor(build_dir: &Path, json: bool) -> Result<()> {
             }
         )
     }
-    match select_backend(Backend::Bridge, build_dir.to_path_buf()).await {
+    let python = env::var("PYTHON").unwrap_or_else(|_| "python3".into());
+    match spawn_configured_bridge(&python, build_dir.to_path_buf(), None).await {
         Ok(mut bridge) => {
             let shutdown = bridge.shutdown().await;
             match shutdown {
@@ -4205,9 +4303,10 @@ async fn select_backend_with_environment(
     cancellation_timeout: Option<Duration>,
     environment: Option<BTreeMap<String, String>>,
 ) -> Result<Box<dyn BitBakeBackend>> {
+    let compatibility = current_daemon_compatibility(&build_dir)?;
     match backend {
         Backend::Process => {
-            let backend = ProcessBackend::new(build_dir);
+            let backend = ProcessBackend::new(build_dir).with_compatibility(compatibility)?;
             let backend = if let Some(environment) = environment {
                 backend.with_environment(environment)
             } else {
@@ -4222,25 +4321,57 @@ async fn select_backend_with_environment(
         }
         Backend::Bridge => {
             let python = env::var("PYTHON").unwrap_or_else(|_| "python3".into());
-            let bridge = spawn_configured_bridge(&python, build_dir, environment).await;
+            let bridge = spawn_configured_bridge_with_compatibility(
+                &python,
+                build_dir,
+                environment,
+                compatibility,
+            )
+            .await;
             bridge
                 .map(|backend| Box::new(backend) as Box<dyn BitBakeBackend>)
-                .context("could not start the BitBake bridge; source oe-init-build-env or use --backend process")
+                .context("could not start the capability-authorized BitBake bridge; start Yoctui's daemon from the initialized build environment")
         }
     }
 }
 
-async fn spawn_configured_bridge(
-    python: &str,
-    build_dir: PathBuf,
-    environment: Option<BTreeMap<String, String>>,
-) -> Result<BridgeBackend, yoctui_bitbake::BackendError> {
-    let environment = environment.unwrap_or_default();
-    if let Some(script) = bridge_path_override(env::var_os("YOCTUI_BRIDGE_PATH")) {
-        BridgeBackend::spawn_with_environment(python, script, build_dir, environment).await
-    } else {
-        BridgeBackend::spawn_bundled_with_environment(python, build_dir, environment).await
+#[cfg(unix)]
+fn current_daemon_compatibility(
+    build_dir: &std::path::Path,
+) -> Result<yoctui_model::DaemonCompatibilitySnapshot> {
+    use yoctui_protocol::daemon::ClientMessage;
+
+    let (mut connection, snapshot) = daemon_connection_with_snapshot().context(
+        "BitBake operations require the daemon-owned compatibility snapshot; start Yoctui's daemon from the initialized build environment",
+    )?;
+    let _ = connection.send(&ClientMessage::Detach);
+    let wire = snapshot.compatibility.context(
+        "the running daemon has no current initialized-environment compatibility authority",
+    )?;
+    let compatibility = yoctui_app::compatibility_model_snapshot(&wire)
+        .map_err(anyhow::Error::msg)
+        .context("the daemon compatibility snapshot is invalid")?;
+    if compatibility
+        .snapshot
+        .environment
+        .build_directory
+        .value()
+        .map(std::path::PathBuf::as_path)
+        != Some(build_dir)
+    {
+        anyhow::bail!(
+            "selected build directory {} does not match the daemon compatibility authority",
+            build_dir.display()
+        );
     }
+    Ok(compatibility)
+}
+
+#[cfg(not(unix))]
+fn current_daemon_compatibility(
+    _build_dir: &std::path::Path,
+) -> Result<yoctui_model::DaemonCompatibilitySnapshot> {
+    anyhow::bail!("daemon-owned compatibility authority currently requires Unix local IPC")
 }
 
 async fn spawn_configured_bridge_with_compatibility(
@@ -4270,6 +4401,19 @@ async fn spawn_configured_bridge_with_compatibility(
             generation,
         )
         .await
+    }
+}
+
+async fn spawn_configured_bridge(
+    python: &str,
+    build_dir: PathBuf,
+    environment: Option<BTreeMap<String, String>>,
+) -> Result<BridgeBackend, yoctui_bitbake::BackendError> {
+    let environment = environment.unwrap_or_default();
+    if let Some(script) = bridge_path_override(env::var_os("YOCTUI_BRIDGE_PATH")) {
+        BridgeBackend::spawn_with_environment(python, script, build_dir, environment).await
+    } else {
+        BridgeBackend::spawn_bundled_with_environment(python, build_dir, environment).await
     }
 }
 
@@ -12113,6 +12257,38 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn compatibility_config_query_parses_selected_utility_and_environment_forms() {
+        assert_eq!(
+            config_value_from_authorized_output(
+                "MACHINE",
+                yoctui_bitbake::BITBAKE_GETVAR_UTILITY_IMPLEMENTATION,
+                "qemux86-64\n",
+            )
+            .unwrap(),
+            "qemux86-64"
+        );
+        assert_eq!(
+            config_value_from_authorized_output(
+                "MACHINE",
+                yoctui_bitbake::BITBAKE_GETVAR_ENVIRONMENT_IMPLEMENTATION,
+                "# history\nMACHINE=\"old\"\nMACHINE=\"qemuarm64\"\n",
+            )
+            .unwrap(),
+            "qemuarm64"
+        );
+        assert!(
+            config_value_from_authorized_output(
+                "MACHINE",
+                yoctui_bitbake::BITBAKE_GETVAR_ENVIRONMENT_IMPLEMENTATION,
+                "DISTRO=\"poky\"\n",
+            )
+            .unwrap_err()
+            .to_string()
+            .contains("absent")
+        );
+    }
 
     fn doctor_compatibility_fixture() -> yoctui_protocol::daemon::CompatibilitySnapshotData {
         use yoctui_protocol::daemon::{

@@ -4977,18 +4977,18 @@ notes = "Bridge polling now consumes at most 64 records from a retained iterator
 id = "COMPAT-LIVE-LATEST-001"
 milestone = "M18"
 title = "Validate latest supported Yocto stable release"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 514
 required = true
 depends_on = ["COMPAT-DOCTOR-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-MATRIX-001", "COMPAT-BITBAKE-GETVAR-001", "COMPAT-DAEMON-RUNTIME-001", "COMPAT-PROBE-AGGREGATION-001", "COMPAT-BITBAKE-CANCEL-RUNTIME-001"]
 verify = ["./scripts/verify-live-compatibility.sh latest", "./scripts/verify-roadmap.sh"]
-notes = "Fresh official Poky evidence must record exact release/commit/BitBake and validate identity, probes, workspace, build/events, Recipes, Layers, Configuration, Devtool, utilities, and modern commands."
+notes = "Authoritative calendar/release notes selected Wrynose 6.0.2 as the latest published stable on 2026-08-19 and matched exact OE-Core 5d1aa5c, BitBake acfe02fa, and meta-yocto 24c24cef revisions. Daemon/Doctor identity, 1,922 Recipes, 3 Layers, capability-authorized Configuration, Devtool/utility surfaces, modern options, successful base-files:do_listtasks native events, and 0.257-second cancellation passed. Headless backends now require/install the daemon snapshot. A 90-day non-fixture TOML record and offline verifier enforce exact identities, scope, metrics, age, and tested Yoctui ancestry."
 
 [[task]]
 id = "COMPAT-LIVE-OLDER-001"
 milestone = "M18"
 title = "Validate an older supported Yocto release"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 515
 required = true
 depends_on = ["COMPAT-DOCTOR-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-MATRIX-001"]
