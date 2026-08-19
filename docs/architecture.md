@@ -477,6 +477,14 @@ header. It combines typed build counters with active/waiting task state and an
 injected clock. Terminal elapsed time comes from the retained `BuildRecord`;
 the UI receives no raw timestamps to reinterpret and no sstate value to infer.
 
+`yoctui_model::TaskState` preserves backend lifecycle meaning. `TaskQueued`
+creates an identified `Queued` task without a start time or PID;
+`TaskStarted` transitions that identity to `Active`. `Waiting` is reserved for
+the aggregate count derived from an authoritative total when individual task
+identities are absent. The waiting filter includes both pending meanings, but
+the renderer receives and labels them distinctly. Terminal completion,
+cancellation, and lost-backend paths retain their exact states.
+
 `yoctui_ui::SemanticTheme` is the single rendering color boundary. It resolves
 each typed theme and the no-color override into named surface, text, border,
 selection, lifecycle, emphasis, graph, and source-preview roles. Renderers and

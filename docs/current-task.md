@@ -2,23 +2,25 @@
 
 ## Task
 
-**ID:** TASKS-UI-003
-**Title:** Add high-quality task state visualization
+**ID:** LOG-UI-001
+**Title:** Redesign live Log Viewer
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Make every task lifecycle state distinct through stable text, a terminal-safe
-marker, and semantic styling without relying on color alone.
+Make live logs easy to follow without moving parsing into rendering: show exact
+task/recipe context, bounded position, normalized search emphasis, and only
+actions backed by authoritative log paths.
 
 ## Dependencies
 
-- `TASKS-UI-002` — DONE
+- `FOUNDATION-UI-003` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
 - `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-app/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -26,18 +28,18 @@ marker, and semantic styling without relying on color alone.
 
 ## Definition of done
 
-- Queued, waiting, active, succeeded, failed, cancelled, and lost meanings are
-  visually and textually distinct.
-- No state relies on color alone.
-- Status labels remain stable in Unicode-disabled/no-color modes.
-- Task and aggregate waiting rows preserve their exact distinct meaning.
-- State presentation is covered across selected and unselected rows.
+- The section header reports selected recipe/task context and follow/pause.
+- Vertical and horizontal position indicators are bounded and truthful.
+- Warning/error lines and normalized search hits use semantic emphasis.
+- Retained ANSI-safe normalized text remains the only rendered log source.
+- Full-log and source-log actions appear only when their typed path exists.
+- Empty, loading, error, and eviction states remain explicit and bounded.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_task_states
-cargo test -p yoctui-model task_state
+cargo test -p yoctui-ui next_generation_log_viewer
+cargo test -p yoctui-model log_state
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

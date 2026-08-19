@@ -3014,7 +3014,8 @@ fn task_metadata_text(row: Option<&TaskRow>, now: SystemTime) -> String {
     match row {
         None => "No task selected.\nTask details appear as typed BitBake events arrive.".into(),
         Some(TaskRow::WaitingSummary(count)) => format!(
-            "Tasks       {count} queued\nRecipe      unavailable\nTask        unavailable\nStatus      pending\nTiming      unavailable\n\nOnly the aggregate queue count is authoritative."
+            "Tasks       {count} waiting\nRecipe      unavailable\nTask        unavailable\nStatus      {}\nTiming      unavailable\n\nOnly the aggregate waiting count is authoritative.",
+            task_state_label(TaskState::Waiting)
         ),
         Some(TaskRow::Task(task)) => format!(
             "Task        {}\nRecipe      {}\nStatus      {}\nProgress    {}\nWorker      {}\nPID         {}\nStarted     {}\nElapsed     {}\nLog file    {}",
@@ -3797,7 +3798,8 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
 
 fn task_state_label(state: TaskState) -> &'static str {
     match state {
-        TaskState::Waiting => "⌛ Pending",
+        TaskState::Queued => "· Queued",
+        TaskState::Waiting => "○ Waiting",
         TaskState::Active => "▶ Running",
         TaskState::Completed => "✓ Succeeded",
         TaskState::Failed => "✕ Failed",
@@ -3811,6 +3813,7 @@ fn task_state_style(app: &App, state: TaskState) -> Style {
     match state {
         TaskState::Active => palette.role(palette.running, Modifier::BOLD),
         TaskState::Completed => palette.role(palette.success, Modifier::BOLD),
+        TaskState::Queued => palette.role(palette.pending, Modifier::DIM),
         TaskState::Waiting => palette.role(palette.pending, Modifier::BOLD),
         TaskState::Cancelled => palette.role(palette.warning, Modifier::BOLD),
         TaskState::Failed | TaskState::Lost => {
@@ -4012,7 +4015,7 @@ fn task_table_cell(
 ) -> Cell<'static> {
     match (row, column) {
         (TaskRowRef::WaitingSummary(count), TaskTableColumn::Task) => {
-            Cell::from(format!("{count} queued tasks"))
+            Cell::from(format!("{count} waiting tasks"))
         }
         (TaskRowRef::WaitingSummary(_), TaskTableColumn::Recipe) => Cell::from("unavailable"),
         (TaskRowRef::WaitingSummary(_), TaskTableColumn::State) => Cell::from(Span::styled(
@@ -4226,7 +4229,7 @@ fn render_task_log(frame: &mut Frame, app: &App, area: Rect, selected: Option<&T
         Some(TaskRowRef::Task { task, .. }) => {
             format!("Log Viewer — {} ({})", task.task, task.recipe)
         }
-        Some(TaskRowRef::WaitingSummary(_)) => "Log Viewer — queued tasks".into(),
+        Some(TaskRowRef::WaitingSummary(_)) => "Log Viewer — waiting tasks".into(),
         None => "Log Viewer — no task selected".into(),
     };
     let limit = usize::from(area.height.saturating_sub(2)).max(1);
@@ -18070,6 +18073,98 @@ mod tests {
             task_table_row_style(&app, TaskState::Active, true),
             selected_style(&app, true),
             "selection remains distinct from the running-row treatment"
+        );
+    }
+
+    #[test]
+    fn next_generation_task_states_remain_distinct_without_color() {
+        let mut app = App::new(20, 2_000);
+        app.screen = Screen::Tasks;
+        app.color_enabled = false;
+        app.reduced_motion = true;
+        let states = [
+            TaskState::Queued,
+            TaskState::Waiting,
+            TaskState::Active,
+            TaskState::Completed,
+            TaskState::Failed,
+            TaskState::Cancelled,
+            TaskState::Lost,
+        ];
+        let tasks = states
+            .iter()
+            .enumerate()
+            .map(|(index, state)| {
+                let mut task = yoctui_model::TaskInfo::active(
+                    yoctui_model::TaskId(format!("recipe-{index}:do_state")),
+                    format!("recipe-{index}"),
+                    "do_state".into(),
+                );
+                task.state = *state;
+                task
+            })
+            .collect::<Vec<_>>();
+        let mut rows = tasks
+            .iter()
+            .zip(states)
+            .map(|(task, state)| TaskRowRef::Task { task, state })
+            .collect::<Vec<_>>();
+        rows.push(TaskRowRef::WaitingSummary(2));
+
+        let mut terminal = Terminal::new(TestBackend::new(120, 14)).unwrap();
+        terminal
+            .draw(|frame| {
+                render_task_table(
+                    frame,
+                    &app,
+                    frame.area(),
+                    &rows,
+                    UNIX_EPOCH + Duration::from_secs(100),
+                )
+            })
+            .unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        for expected in [
+            "· Queued",
+            "○ Waiting",
+            "▶ Running",
+            "✓ Succeeded",
+            "✕ Failed",
+            "■ Cancelled",
+            "? Lost",
+            "2 waiting tasks",
+        ] {
+            assert!(output.contains(expected), "missing {expected}: {output}");
+        }
+        assert_eq!(
+            states
+                .iter()
+                .map(|state| task_state_label(*state))
+                .collect::<std::collections::HashSet<_>>()
+                .len(),
+            states.len(),
+            "every lifecycle state has a unique text-and-marker label"
+        );
+        for state in states {
+            let style = task_state_style(&app, state);
+            assert_eq!(style.fg, Some(Color::Reset));
+            assert_eq!(style.bg, None);
+            assert_eq!(
+                task_table_row_style(&app, state, true),
+                selected_style(&app, true),
+                "selection must remain visible for {state:?}"
+            );
+        }
+        assert_ne!(
+            task_state_style(&app, TaskState::Queued).add_modifier,
+            task_state_style(&app, TaskState::Waiting).add_modifier,
+            "queued and aggregate waiting retain different non-color treatment"
         );
     }
 

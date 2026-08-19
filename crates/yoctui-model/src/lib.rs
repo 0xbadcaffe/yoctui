@@ -462,6 +462,7 @@ impl BuildRequest {
 pub struct TaskId(pub String);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum TaskState {
+    Queued,
     Waiting,
     #[default]
     Active,
@@ -3069,7 +3070,7 @@ impl App {
         let state_matches = |state: TaskState| match self.task_filters.state {
             TaskStateFilter::All => true,
             TaskStateFilter::Active => state == TaskState::Active,
-            TaskStateFilter::Waiting => state == TaskState::Waiting,
+            TaskStateFilter::Waiting => matches!(state, TaskState::Queued | TaskState::Waiting),
             TaskStateFilter::Completed => state == TaskState::Completed,
             TaskStateFilter::Failed => {
                 matches!(
@@ -3092,16 +3093,18 @@ impl App {
         };
         let retained = self.tasks.values().map(|task| (task, task.state)).chain(
             self.completed_tasks.iter().map(|completed| {
-                let state =
-                    if matches!(completed.task.state, TaskState::Active | TaskState::Waiting) {
-                        if completed.success {
-                            TaskState::Completed
-                        } else {
-                            TaskState::Failed
-                        }
+                let state = if matches!(
+                    completed.task.state,
+                    TaskState::Queued | TaskState::Active | TaskState::Waiting
+                ) {
+                    if completed.success {
+                        TaskState::Completed
                     } else {
-                        completed.task.state
-                    };
+                        TaskState::Failed
+                    }
+                } else {
+                    completed.task.state
+                };
                 (&completed.task, state)
             }),
         );
@@ -3665,9 +3668,10 @@ fn contains_case_insensitive(value: &str, query: &str) -> bool {
 fn task_state_order(state: TaskState) -> u8 {
     match state {
         TaskState::Active => 0,
-        TaskState::Waiting => 1,
-        TaskState::Failed | TaskState::Cancelled | TaskState::Lost => 2,
-        TaskState::Completed => 3,
+        TaskState::Queued => 1,
+        TaskState::Waiting => 2,
+        TaskState::Failed | TaskState::Cancelled | TaskState::Lost => 3,
+        TaskState::Completed => 4,
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -11153,7 +11157,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.build.completed = app.build.completed.max(stats.completed);
                 app.build.total = (stats.total > 0).then_some(stats.total);
             }
-            task.state = TaskState::Waiting;
+            task.state = TaskState::Queued;
+            task.started = None;
+            task.finished = None;
+            task.pid = None;
             app.tasks.insert(task.id.clone(), task);
             clamp_task_selection(app);
         }
@@ -17531,6 +17538,47 @@ mod tests {
         );
         assert_eq!(app.build.completed, 5);
         assert_eq!(app.waiting_task_count(), 0);
+    }
+
+    #[test]
+    fn task_state_distinguishes_identified_queue_entries_from_aggregate_waiting_work() {
+        let mut app = App::new(20, 2_000);
+        app.build.status = BuildStatus::Running;
+        app.build.total = Some(4);
+        let id = TaskId("busybox:do_compile".into());
+        let mut queued = TaskInfo::active(id.clone(), "busybox".into(), "do_compile".into());
+        queued.pid = Some(4242);
+
+        let _ = update(&mut app, Action::TaskQueued(queued));
+        let queued = app.tasks.get(&id).expect("queued task retained");
+        assert_eq!(queued.state, TaskState::Queued);
+        assert_eq!(queued.started, None, "queued work has not started");
+        assert_eq!(queued.pid, None, "queued work cannot retain a running PID");
+        assert_eq!(app.waiting_task_count(), 3);
+        assert!(matches!(
+            app.visible_task_rows().as_slice(),
+            [TaskRow::Task(task), TaskRow::WaitingSummary(3)]
+                if task.state == TaskState::Queued
+        ));
+
+        app.task_filters.state = TaskStateFilter::Waiting;
+        assert!(matches!(
+            app.visible_task_rows().as_slice(),
+            [TaskRow::Task(task), TaskRow::WaitingSummary(3)]
+                if task.state == TaskState::Queued
+        ));
+
+        let started = TaskInfo::active(id.clone(), "busybox".into(), "do_compile".into());
+        let _ = update(&mut app, Action::TaskStarted(started));
+        assert!(matches!(
+            app.visible_task_rows().as_slice(),
+            [TaskRow::WaitingSummary(3)]
+        ));
+        app.task_filters.state = TaskStateFilter::Active;
+        assert!(matches!(
+            app.visible_task_rows().as_slice(),
+            [TaskRow::Task(task)] if task.state == TaskState::Active
+        ));
     }
 
     #[test]

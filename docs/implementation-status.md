@@ -11,9 +11,19 @@ Status values:
 
 ## Current phase
 
-`TASKS-UI-003` is `IN_PROGRESS`. It will complete distinct textual, symbolic,
-and semantic visualization for queued, waiting, active, succeeded, failed,
-cancelled, and lost task states.
+`LOG-UI-001` is `IN_PROGRESS`. It will redesign the retained live Log Viewer
+around typed task/recipe context, bounded two-axis position, normalized search
+hits, warning/error emphasis, and only available full/source-log actions.
+
+`TASKS-UI-003` is `DONE`: identified `TaskQueued` events now remain `Queued`
+without a false start time or PID, while total-derived unidentified work stays
+an aggregate `Waiting` row. The waiting filter intentionally includes both.
+Seven unique marker-plus-text labels distinguish queued, waiting, running,
+succeeded, failed, cancelled, and lost states; semantic attributes survive
+no-color mode, selected rows keep the one dominant selection treatment, and
+reduced motion never changes lifecycle meaning. Focused model and TestBackend
+tests cover the state transition, aggregate distinction, filter, every label,
+and no-color rendering.
 
 `TASKS-UI-002` is `DONE`: a pure model `BuildSummary` now drives two compact
 Tasks header rows. Known nonzero totals render a strong numeric gauge;

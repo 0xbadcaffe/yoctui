@@ -844,6 +844,24 @@ elapsed time freezes from the retained build record. Yoctui currently receives
 no authoritative sstate-reuse percentage, so this summary omits it rather than
 parsing logs or estimating it.
 
+Task lifecycle presentation has seven exact text-and-marker labels:
+
+| Model meaning | Label | Non-color meaning |
+|---|---|---|
+| identified task announced by `TaskQueued` | `· Queued` | pending, dim |
+| unobserved work derived from the build total | `○ Waiting` | pending, bold |
+| executing task announced by `TaskStarted` | `▶ Running` | running, bold |
+| successful terminal task | `✓ Succeeded` | success, bold |
+| failed terminal task | `✕ Failed` | error, bold and underlined |
+| explicitly cancelled task | `■ Cancelled` | warning, bold |
+| task whose backend lifecycle was lost | `? Lost` | error, bold and underlined |
+
+The words are stable ASCII text and carry the meaning if a terminal substitutes
+a marker glyph. No-color changes only the resolved colors, never the marker or
+word. Selection replaces the unselected row treatment with the single visible
+selection treatment, while the State cell retains its label. Reduced motion
+changes only indeterminate activity, not lifecycle labels.
+
 The task table renders only the rows that fit its bordered viewport. The
 viewport follows `task_progress_scroll` and always includes the selected row;
 off-screen retained tasks are not formatted into Ratatui rows on every frame.
@@ -946,9 +964,9 @@ Task controls:
 - `/` edits the selected text filter; `Enter` or `Esc` finishes editing
 - `d` cycles all, one-second, ten-second, and one-minute duration thresholds
 
-When BitBake reports a total without individual queued-task identities, the
+When BitBake reports a total without individual task identities, the
 workspace shows one honest aggregate waiting row. It must not invent recipe,
-task, worker, or timing metadata for those queued tasks. The Inspector labels
+task, worker, or timing metadata for those waiting tasks. The Inspector labels
 unavailable task fields explicitly.
 
 ---

@@ -5145,18 +5145,18 @@ notes = "Added pure BuildSummary projection and a two-row Tasks header: a strong
 id = "TASKS-UI-003"
 milestone = "M19"
 title = "Add high-quality task state visualization"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 528
 required = true
 depends_on = ["TASKS-UI-002"]
 verify = ["cargo test -p yoctui-ui next_generation_task_states", "cargo test -p yoctui-model task_state"]
-notes = "Distinguish queued, waiting, active, succeeded, failed, cancelled, and lost with text or symbols as well as semantic color."
+notes = "TaskState now preserves an identified Queued event separately from aggregate Waiting work; queued tasks cannot claim a start time or PID, and the waiting filter includes both pending meanings. The Tasks table uses seven unique marker-plus-text labels with semantic attributes, retains those labels under no-color and reduced motion, and keeps selection visibly dominant. Focused reducer and TestBackend coverage exercises all states, aggregate waiting, filtering, and no-color output."
 
 [[task]]
 id = "LOG-UI-001"
 milestone = "M19"
 title = "Redesign live Log Viewer"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 529
 required = true
 depends_on = ["FOUNDATION-UI-003"]
