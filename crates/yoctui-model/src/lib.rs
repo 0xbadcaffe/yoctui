@@ -1551,6 +1551,12 @@ pub struct BackgroundJob {
     pub result: Option<BackgroundJobResult>,
     pub error: Option<BackgroundJobError>,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum JobHistoryRowRef<'a> {
+    Background(&'a BackgroundJob),
+    Build(&'a BuildRecord),
+}
 impl BackgroundJob {
     fn from_spec(spec: BackgroundJobSpec) -> Self {
         Self {
@@ -3082,6 +3088,26 @@ impl App {
             errors: self.build.errors,
             elapsed,
         }
+    }
+    pub fn job_history_rows(&self) -> Vec<JobHistoryRowRef<'_>> {
+        let active = self
+            .background_jobs
+            .jobs
+            .iter()
+            .rev()
+            .filter(|job| !job.status.is_terminal())
+            .map(JobHistoryRowRef::Background);
+        let terminal = self
+            .background_jobs
+            .jobs
+            .iter()
+            .rev()
+            .filter(|job| job.status.is_terminal())
+            .map(JobHistoryRowRef::Background);
+        active
+            .chain(terminal)
+            .chain(self.build_history.iter().rev().map(JobHistoryRowRef::Build))
+            .collect()
     }
     pub fn visible_task_row_refs_at(&self, now: SystemTime) -> Vec<TaskRowRef<'_>> {
         let state_matches = |state: TaskState| match self.task_filters.state {
@@ -11397,13 +11423,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = None;
         }
         Action::SelectBuildHistory { delta } => {
+            let count = app.job_history_rows().len();
             app.build_history_selection = if delta.is_negative() {
                 app.build_history_selection
                     .saturating_sub(delta.unsigned_abs())
             } else {
                 app.build_history_selection
                     .saturating_add(delta as usize)
-                    .min(app.build_history.len().saturating_sub(1))
+                    .min(count.saturating_sub(1))
             };
         }
         Action::Cancel => {
@@ -14325,6 +14352,54 @@ mod tests {
             lost.error.as_ref().map(|error| error.summary.as_str()),
             Some("bridge disconnected")
         );
+    }
+    #[test]
+    fn background_job_history_pins_active_rows_and_bounds_shared_selection() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(1, true)),
+        );
+        run_background_job(&mut app, 1);
+        let _ = update(
+            &mut app,
+            Action::SucceedBackgroundJob {
+                id: BackgroundJobId(1),
+                result: BackgroundJobResult {
+                    summary: "done".into(),
+                    artifacts: Vec::new(),
+                },
+                finished_at: SystemTime::UNIX_EPOCH + Duration::from_secs(5),
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(2, true)),
+        );
+        app.build_history.push_back(BuildRecord {
+            target: Some("core-image-minimal".into()),
+            success: true,
+            exit_code: Some(0),
+            elapsed: Some(Duration::from_secs(9)),
+            completed_tasks: 4,
+            warnings: 0,
+            errors: 0,
+        });
+
+        let rows = app.job_history_rows();
+        assert!(matches!(
+            rows.as_slice(),
+            [
+                JobHistoryRowRef::Background(active),
+                JobHistoryRowRef::Background(terminal),
+                JobHistoryRowRef::Build(_)
+            ] if active.id == BackgroundJobId(2)
+                && active.status == BackgroundJobStatus::Queued
+                && terminal.id == BackgroundJobId(1)
+                && terminal.status == BackgroundJobStatus::Succeeded
+        ));
+        let _ = update(&mut app, Action::SelectBuildHistory { delta: 99 });
+        assert_eq!(app.build_history_selection, 2);
     }
     #[test]
     fn background_job_cancellation_requires_capability_and_acknowledgement() {

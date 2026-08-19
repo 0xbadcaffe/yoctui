@@ -19,7 +19,7 @@ use yoctui_model::{
     DependencyGraph, DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction,
     DevtoolCapability, DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace,
     Dialog, FocusTarget, GitFileState, ImageArtifactField, ImageArtifactInventoryState,
-    LayerBrowser, LayerBrowserEntry, LayerInspectorMode, MaintenanceCapability,
+    JobHistoryRowRef, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, MaintenanceCapability,
     MaintenanceCapabilitySnapshot, MaintenanceDialog, MaintenanceIntegrationDiagnostics,
     MaintenanceIntegrationsSnapshot, MaintenanceOperation, MaintenanceOperationPreview,
     MaintenanceServiceDiagnostics, MaintenanceSessionStatus, MaintenanceTool,
@@ -2982,7 +2982,7 @@ fn workspace(
     match app.screen {
         Screen::Dashboard => dashboard(frame, app, area),
         Screen::Tasks => tasks_workspace(frame, app, area, now, task_rows.unwrap_or_default()),
-        Screen::BuildHistory => build_history(frame, app, area),
+        Screen::BuildHistory => build_history(frame, app, area, now),
         Screen::Dependencies => dependencies(frame, app, area),
         Screen::Signatures => signature_records(frame, app, area),
         Screen::LayerRelationships => layer_relationships(frame, app, area),
@@ -4262,71 +4262,201 @@ fn background_job_style(app: &App, status: BackgroundJobStatus) -> Style {
     }
 }
 
+fn job_status_label(status: BackgroundJobStatus) -> &'static str {
+    match status {
+        BackgroundJobStatus::Queued => "· Queued",
+        BackgroundJobStatus::Starting => "… Starting",
+        BackgroundJobStatus::Running => "▶ Running",
+        BackgroundJobStatus::Cancelling => "! Cancelling",
+        BackgroundJobStatus::Succeeded => "✓ Succeeded",
+        BackgroundJobStatus::Failed => "✕ Failed",
+        BackgroundJobStatus::Cancelled => "■ Cancelled",
+        BackgroundJobStatus::Lost => "? Lost",
+    }
+}
+
+fn job_kind_label(kind: BackgroundJobKind) -> &'static str {
+    match kind {
+        BackgroundJobKind::Build => "Build",
+        BackgroundJobKind::CveCheck => "CVE check",
+        BackgroundJobKind::Spdx => "SPDX",
+        BackgroundJobKind::Qemu => "QEMU",
+        BackgroundJobKind::Wic => "Wic",
+        BackgroundJobKind::Sdk => "SDK",
+        BackgroundJobKind::Test => "Test",
+        BackgroundJobKind::Devtool => "Devtool",
+        BackgroundJobKind::Maintenance => "Maintenance",
+    }
+}
+
+fn job_context(job: &yoctui_model::BackgroundJob) -> String {
+    let mut values = Vec::new();
+    if let Some(target) = job.context.target.as_ref() {
+        values.push(target.clone());
+    }
+    match (job.context.recipe.as_ref(), job.context.task.as_ref()) {
+        (Some(recipe), Some(task)) => values.push(format!("{recipe}:{task}")),
+        (Some(recipe), None) => values.push(recipe.clone()),
+        (None, Some(task)) => values.push(task.clone()),
+        (None, None) => {}
+    }
+    if let Some(image) = job.context.image.as_ref() {
+        values.push(image.clone());
+    }
+    if let Some(path) = job.context.path.as_ref() {
+        values.push(path.display().to_string());
+    }
+    if values.is_empty() {
+        "unavailable".into()
+    } else {
+        values.join(" · ")
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum JobHistoryColumn {
+    Id,
+    Status,
+    Operation,
+    Type,
+    Context,
+    Started,
+    Finished,
+    Elapsed,
+}
+
+impl JobHistoryColumn {
+    fn header(self) -> &'static str {
+        match self {
+            Self::Id => "ID",
+            Self::Status => "Status",
+            Self::Operation => "Operation",
+            Self::Type => "Type",
+            Self::Context => "Target / Context",
+            Self::Started => "Started",
+            Self::Finished => "Finished",
+            Self::Elapsed => "Elapsed",
+        }
+    }
+
+    fn constraint(self) -> Constraint {
+        match self {
+            Self::Id => Constraint::Length(6),
+            Self::Status => Constraint::Length(13),
+            Self::Operation => Constraint::Percentage(24),
+            Self::Type => Constraint::Length(12),
+            Self::Context => Constraint::Percentage(28),
+            Self::Started | Self::Finished => Constraint::Length(9),
+            Self::Elapsed => Constraint::Min(9),
+        }
+    }
+}
+
+fn job_history_columns(width: u16) -> Vec<JobHistoryColumn> {
+    let mut columns = vec![
+        JobHistoryColumn::Status,
+        JobHistoryColumn::Operation,
+        JobHistoryColumn::Context,
+        JobHistoryColumn::Elapsed,
+    ];
+    if width >= 84 {
+        columns.insert(2, JobHistoryColumn::Type);
+        columns.insert(columns.len() - 1, JobHistoryColumn::Started);
+    }
+    if width >= 118 {
+        columns.insert(0, JobHistoryColumn::Id);
+        columns.insert(columns.len() - 1, JobHistoryColumn::Finished);
+    }
+    columns
+}
+
+fn job_elapsed(row: JobHistoryRowRef<'_>, now: SystemTime) -> Option<Duration> {
+    match row {
+        JobHistoryRowRef::Background(job) => job
+            .started_at
+            .and_then(|started| job.finished_at.unwrap_or(now).duration_since(started).ok()),
+        JobHistoryRowRef::Build(record) => record.elapsed,
+    }
+}
+
+fn job_history_cell(
+    app: &App,
+    row: JobHistoryRowRef<'_>,
+    column: JobHistoryColumn,
+    now: SystemTime,
+) -> Cell<'static> {
+    match (row, column) {
+        (JobHistoryRowRef::Background(job), JobHistoryColumn::Id) => {
+            Cell::from(job.id.0.to_string())
+        }
+        (JobHistoryRowRef::Build(_), JobHistoryColumn::Id) => Cell::from("--"),
+        (JobHistoryRowRef::Background(job), JobHistoryColumn::Status) => Cell::from(Span::styled(
+            job_status_label(job.status),
+            background_job_style(app, job.status),
+        )),
+        (JobHistoryRowRef::Build(record), JobHistoryColumn::Status) => {
+            let palette = ThemePalette::for_app(app);
+            let (label, style) = if record.success {
+                ("✓ Succeeded", palette.role(palette.success, Modifier::BOLD))
+            } else {
+                ("✕ Failed", palette.role(palette.error, Modifier::BOLD))
+            };
+            Cell::from(Span::styled(label, style))
+        }
+        (JobHistoryRowRef::Background(job), JobHistoryColumn::Operation) => {
+            Cell::from(job.title.clone())
+        }
+        (JobHistoryRowRef::Build(_), JobHistoryColumn::Operation) => Cell::from("Build record"),
+        (JobHistoryRowRef::Background(job), JobHistoryColumn::Type) => {
+            Cell::from(job_kind_label(job.kind))
+        }
+        (JobHistoryRowRef::Build(_), JobHistoryColumn::Type) => Cell::from("Build"),
+        (JobHistoryRowRef::Background(job), JobHistoryColumn::Context) => {
+            Cell::from(job_context(job))
+        }
+        (JobHistoryRowRef::Build(record), JobHistoryColumn::Context) => {
+            Cell::from(record.target.clone().unwrap_or_else(|| "unknown".into()))
+        }
+        (JobHistoryRowRef::Background(job), JobHistoryColumn::Started) => {
+            Cell::from(job.started_at.map_or_else(|| "--".into(), clock_text))
+        }
+        (JobHistoryRowRef::Build(_), JobHistoryColumn::Started) => Cell::from("--"),
+        (JobHistoryRowRef::Background(job), JobHistoryColumn::Finished) => {
+            Cell::from(job.finished_at.map_or_else(|| "--".into(), clock_text))
+        }
+        (JobHistoryRowRef::Build(_), JobHistoryColumn::Finished) => Cell::from("--"),
+        (row, JobHistoryColumn::Elapsed) => {
+            Cell::from(job_elapsed(row, now).map_or_else(|| "--".into(), format_duration))
+        }
+    }
+}
+
 fn render_job_history(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
-    let mut rows = app
-        .background_jobs
-        .jobs
-        .iter()
-        .rev()
-        .map(|job| {
-            let elapsed = job
-                .started_at
-                .and_then(|started| job.finished_at.unwrap_or(now).duration_since(started).ok());
-            Row::new(vec![
-                Cell::from(job.id.0.to_string()),
-                Cell::from(job.title.clone()),
-                Cell::from(format!("{:?}", job.kind)),
-                Cell::from(Span::styled(
-                    background_status_label(job.status),
-                    background_job_style(app, job.status),
-                )),
-                Cell::from(job.started_at.map_or_else(|| "--".into(), clock_text)),
-                Cell::from(job.finished_at.map_or_else(|| "--".into(), clock_text)),
-                Cell::from(elapsed.map_or_else(|| "--".into(), format_duration)),
-            ])
-        })
-        .collect::<Vec<_>>();
-    rows.extend(app.build_history.iter().rev().map(|record| {
-        let state = if record.success {
-            "succeeded"
-        } else {
-            "failed"
+    let history = app.job_history_rows();
+    let columns = job_history_columns(area.width);
+    let capacity = usize::from(area.height.saturating_sub(3));
+    let rows = history.iter().copied().take(capacity).map(|row| {
+        let active = matches!(row, JobHistoryRowRef::Background(job) if !job.status.is_terminal());
+        let style = match row {
+            JobHistoryRowRef::Background(job) if active => background_job_style(app, job.status),
+            _ => Style::default(),
         };
-        let style = if record.success {
-            ThemePalette::for_app(app).role(ThemePalette::for_app(app).success, Modifier::BOLD)
-        } else {
-            ThemePalette::for_app(app).role(ThemePalette::for_app(app).error, Modifier::BOLD)
-        };
-        Row::new(vec![
-            Cell::from("--"),
-            Cell::from(record.target.clone().unwrap_or_else(|| "unknown".into())),
-            Cell::from("Build"),
-            Cell::from(Span::styled(state, style)),
-            Cell::from("--"),
-            Cell::from("--"),
-            Cell::from(record.elapsed.map_or_else(|| "--".into(), format_duration)),
-        ])
-    }));
+        Row::new(
+            columns
+                .iter()
+                .map(|column| job_history_cell(app, row, *column, now)),
+        )
+        .style(style)
+    });
     frame.render_widget(
-        Table::new(
-            rows,
-            [
-                Constraint::Length(5),
-                Constraint::Percentage(28),
-                Constraint::Length(12),
-                Constraint::Length(12),
-                Constraint::Length(9),
-                Constraint::Length(9),
-                Constraint::Min(8),
-            ],
-        )
-        .header(
-            Row::new([
-                "ID", "Name", "Type", "Status", "Started", "Finished", "Elapsed",
-            ])
-            .style(Style::default().add_modifier(Modifier::BOLD)),
-        )
-        .block(Block::default().title("Job History").borders(Borders::ALL)),
+        Table::new(rows, columns.iter().map(|column| column.constraint()))
+            .header(
+                Row::new(columns.iter().map(|column| column.header())).style({
+                    let palette = ThemePalette::for_app(app);
+                    palette.role(palette.table_header, Modifier::BOLD)
+                }),
+            )
+            .block(Block::default().title("Job History").borders(Borders::ALL)),
         area,
     );
 }
@@ -8898,71 +9028,143 @@ fn build_environment_workspace(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
-fn build_history(frame: &mut Frame, app: &App, area: Rect) {
-    let records = app.build_history.iter().rev().collect::<Vec<_>>();
-    let selected = records.get(app.build_history_selection).copied();
-    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(7)]).split(area);
-    frame.render_widget(
-        Table::new(
-            records.iter().enumerate().map(|(index, record)| {
-                Row::new(vec![
-                    Cell::from(record.target.as_deref().unwrap_or("unknown")),
-                    Cell::from(if record.success { "success" } else { "failed" }),
-                    Cell::from(
-                        record
-                            .exit_code
-                            .map_or_else(|| "--".into(), |code| code.to_string()),
-                    ),
-                    Cell::from(
-                        record
-                            .elapsed
-                            .map_or_else(|| "--:--:--".into(), format_duration),
-                    ),
-                    Cell::from(record.completed_tasks.to_string()),
-                ])
-                .style(selected_style(app, index == app.build_history_selection))
-            }),
-            [
-                Constraint::Percentage(35),
-                Constraint::Percentage(16),
-                Constraint::Percentage(12),
-                Constraint::Percentage(18),
-                Constraint::Percentage(19),
-            ],
-        )
-        .header(
-            Row::new(["Target", "Result", "Exit", "Elapsed", "Tasks"])
-                .style(Style::default().add_modifier(Modifier::BOLD)),
-        )
-        .block(
-            Block::default()
-                .title(format!(
-                    "Build history ({} retained; newest first)",
-                    records.len()
-                ))
-                .borders(Borders::ALL),
+fn job_history_detail(row: JobHistoryRowRef<'_>, now: SystemTime) -> String {
+    match row {
+        JobHistoryRowRef::Background(job) => {
+            let outcome = job.result.as_ref().map_or_else(
+                || {
+                    job.error.as_ref().map_or_else(
+                        || "pending".into(),
+                        |error| {
+                            error.detail.as_ref().map_or_else(
+                                || error.summary.clone(),
+                                |detail| format!("{} — {detail}", error.summary),
+                            )
+                        },
+                    )
+                },
+                |result| result.summary.clone(),
+            );
+            let recent = job
+                .output
+                .back()
+                .map_or("none", |entry| entry.message.as_str());
+            format!(
+                "Operation: {}\nType: {}  Status: {}\nContext: {}\nQueued: {}  Started: {}  Finished: {}\nElapsed: {}  Warnings: {}  Errors: {}\nOutcome: {}\nRecent output: {}",
+                job.title,
+                job_kind_label(job.kind),
+                job_status_label(job.status),
+                job_context(job),
+                clock_text(job.queued_at),
+                job.started_at.map_or_else(|| "--".into(), clock_text),
+                job.finished_at.map_or_else(|| "--".into(), clock_text),
+                job_elapsed(row, now).map_or_else(|| "--".into(), format_duration),
+                job.warnings,
+                job.errors,
+                outcome,
+                recent,
+            )
+        }
+        JobHistoryRowRef::Build(record) => format!(
+            "Operation: retained build record\nType: Build  Status: {}\nContext: {}\nStarted: unavailable  Finished: unavailable\nElapsed: {}  Exit: {}\nWarnings: {}  Errors: {}\nCompleted package tasks: {}",
+            if record.success {
+                "✓ Succeeded"
+            } else {
+                "✕ Failed"
+            },
+            record.target.as_deref().unwrap_or("unknown"),
+            record.elapsed.map_or_else(|| "--".into(), format_duration),
+            record
+                .exit_code
+                .map_or_else(|| "--".into(), |code| code.to_string()),
+            record.warnings,
+            record.errors,
+            record.completed_tasks,
         ),
+    }
+}
+
+fn build_history(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
+    let history = app.job_history_rows();
+    let selected_index = app
+        .build_history_selection
+        .min(history.len().saturating_sub(1));
+    let selected = history.get(selected_index).copied();
+    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(11)]).split(area);
+    let capacity = usize::from(chunks[0].height.saturating_sub(3)).max(1);
+    let active = history
+        .iter()
+        .take_while(
+            |row| matches!(row, JobHistoryRowRef::Background(job) if !job.status.is_terminal()),
+        )
+        .count();
+    let pinned = active.min(capacity);
+    let remaining = capacity.saturating_sub(pinned);
+    let terminal_start = if selected_index < pinned || remaining == 0 {
+        pinned
+    } else {
+        selected_index
+            .saturating_add(1)
+            .saturating_sub(remaining)
+            .max(pinned)
+            .min(history.len().saturating_sub(remaining))
+    };
+    let indices = (0..pinned)
+        .chain(terminal_start..history.len())
+        .take(capacity)
+        .collect::<Vec<_>>();
+    let columns = job_history_columns(chunks[0].width);
+    let rows = indices.into_iter().map(|index| {
+        let row = history[index];
+        let selected = index == selected_index;
+        let active = matches!(row, JobHistoryRowRef::Background(job) if !job.status.is_terminal());
+        let style = if selected {
+            selected_style(app, true)
+        } else if let JobHistoryRowRef::Background(job) = row {
+            if active {
+                background_job_style(app, job.status)
+            } else {
+                Style::default()
+            }
+        } else {
+            Style::default()
+        };
+        Row::new(
+            columns
+                .iter()
+                .map(|column| job_history_cell(app, row, *column, now)),
+        )
+        .style(style)
+    });
+    frame.render_widget(
+        Table::new(rows, columns.iter().map(|column| column.constraint()))
+            .header(
+                Row::new(columns.iter().map(|column| column.header()))
+                    .style(Style::default().add_modifier(Modifier::BOLD)),
+            )
+            .block(
+                Block::default()
+                    .title(format!(
+                        "Job History / Build history ({} retained · {} active pinned)",
+                        history.len(),
+                        active
+                    ))
+                    .borders(Borders::ALL),
+            ),
         chunks[0],
     );
     let detail = selected.map_or_else(
-        || "No completed builds are retained in this session.".into(),
-        |record| {
-            format!(
-                "Target: {}\nResult: {}\nWarnings: {}  Errors: {}\nCompleted package tasks: {}",
-                record.target.as_deref().unwrap_or("unknown"),
-                if record.success { "success" } else { "failed" },
-                record.warnings,
-                record.errors,
-                record.completed_tasks,
-            )
-        },
+        || "No background jobs or completed builds are retained in this session.".into(),
+        |row| job_history_detail(row, now),
     );
     frame.render_widget(
-        Paragraph::new(detail).block(
-            Block::default()
-                .title("Selected build")
-                .borders(Borders::ALL),
-        ),
+        Paragraph::new(detail)
+            .block(
+                Block::default()
+                    .title("Selected job detail")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false }),
         chunks[1],
     );
 }
@@ -12569,10 +12771,10 @@ mod tests {
             "do_fetch",
             "do_compile",
             "72%",
-            "857",
+            "✓ Succeeded",
             "core-image-minimal",
             "busybox",
-            "failed",
+            "✕ Failed",
             "/home/user/yocto/build/tmp/work",
             "le.85873",
         ] {
@@ -12612,8 +12814,12 @@ mod tests {
     }
 
     fn rendered_text(app: &App, width: u16, height: u16) -> String {
+        rendered_text_at(app, width, height, SystemTime::now())
+    }
+
+    fn rendered_text_at(app: &App, width: u16, height: u16, now: SystemTime) -> String {
         let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
-        terminal.draw(|frame| render(frame, app)).unwrap();
+        terminal.draw(|frame| render_at(frame, app, now)).unwrap();
         terminal
             .backend()
             .buffer()
@@ -16601,6 +16807,111 @@ mod tests {
         assert!(output.contains("Completed package tasks: 42"));
     }
     #[test]
+    fn next_generation_job_history_is_responsive_pinned_and_exact() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::BuildHistory;
+        let states = [
+            BackgroundJobStatus::Queued,
+            BackgroundJobStatus::Starting,
+            BackgroundJobStatus::Running,
+            BackgroundJobStatus::Cancelling,
+            BackgroundJobStatus::Succeeded,
+            BackgroundJobStatus::Failed,
+            BackgroundJobStatus::Cancelled,
+            BackgroundJobStatus::Lost,
+        ];
+        for (index, status) in states.into_iter().enumerate() {
+            let terminal = status.is_terminal();
+            app.background_jobs
+                .jobs
+                .push_back(yoctui_model::BackgroundJob {
+                    id: yoctui_model::BackgroundJobId(index as u64 + 1),
+                    kind: BackgroundJobKind::Build,
+                    title: format!("operation-{index}"),
+                    status,
+                    context: yoctui_model::BackgroundJobContext {
+                        target: Some("core-image-minimal".into()),
+                        recipe: Some("busybox".into()),
+                        task: Some("do_compile".into()),
+                        ..yoctui_model::BackgroundJobContext::default()
+                    },
+                    cancellation_supported: true,
+                    progress: yoctui_model::BackgroundJobProgress::Indeterminate,
+                    output: std::collections::VecDeque::new(),
+                    retained_output_bytes: 0,
+                    dropped_output_entries: 0,
+                    warnings: 1,
+                    errors: usize::from(matches!(
+                        status,
+                        BackgroundJobStatus::Failed | BackgroundJobStatus::Lost
+                    )),
+                    queued_at: UNIX_EPOCH + Duration::from_secs(index as u64),
+                    started_at: (!matches!(status, BackgroundJobStatus::Queued))
+                        .then_some(UNIX_EPOCH + Duration::from_secs(index as u64 + 1)),
+                    finished_at: terminal
+                        .then_some(UNIX_EPOCH + Duration::from_secs(index as u64 + 5)),
+                    result: (status == BackgroundJobStatus::Succeeded).then_some(
+                        yoctui_model::BackgroundJobResult {
+                            summary: "completed result".into(),
+                            artifacts: Vec::new(),
+                        },
+                    ),
+                    error: matches!(
+                        status,
+                        BackgroundJobStatus::Failed | BackgroundJobStatus::Lost
+                    )
+                    .then_some(yoctui_model::BackgroundJobError {
+                        summary: format!("{status:?} outcome"),
+                        detail: Some("exact terminal detail".into()),
+                    }),
+                });
+        }
+
+        assert_eq!(
+            job_history_columns(70),
+            [
+                JobHistoryColumn::Status,
+                JobHistoryColumn::Operation,
+                JobHistoryColumn::Context,
+                JobHistoryColumn::Elapsed,
+            ]
+        );
+        assert!(job_history_columns(90).contains(&JobHistoryColumn::Started));
+        assert!(!job_history_columns(90).contains(&JobHistoryColumn::Finished));
+        assert_eq!(job_history_columns(120).len(), 8);
+
+        let failed = app
+            .job_history_rows()
+            .iter()
+            .position(|row| {
+                matches!(row, JobHistoryRowRef::Background(job) if job.status == BackgroundJobStatus::Failed)
+            })
+            .unwrap();
+        app.build_history_selection = failed;
+        let output = rendered_text_at(&app, 180, 34, UNIX_EPOCH + Duration::from_secs(100));
+        for expected in [
+            "4 active pinned",
+            "· Queued",
+            "… Starting",
+            "▶ Running",
+            "! Cancelling",
+            "✓ Succeeded",
+            "✕ Failed",
+            "■ Cancelled",
+            "? Lost",
+            "Target / Context",
+            "busybox:do_compile",
+            "Outcome: Failed outcome — exact terminal detail",
+        ] {
+            assert!(output.contains(expected), "missing {expected}: {output}");
+        }
+        let first = app.job_history_rows()[0];
+        assert!(
+            matches!(first, JobHistoryRowRef::Background(job) if !job.status.is_terminal()),
+            "active work stays pinned ahead of terminal history"
+        );
+    }
+    #[test]
     fn dependency_workspace_renders_typed_partial_graph_paths_and_responsive_states() {
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Dependencies;
@@ -18460,7 +18771,7 @@ mod tests {
             },
         );
 
-        let output = rendered_text(&app, 180, 44);
+        let output = rendered_text_at(&app, 180, 44, UNIX_EPOCH + Duration::from_secs(3_600));
         for expected in [
             "Tasks: core-image-minimal",
             "do_compile",
@@ -18470,7 +18781,7 @@ mod tests {
             "Log Viewer — do_compile (busybox)",
             "CC builtins/execute_cmd.o",
             "Job History",
-            "857",
+            "… Starting",
             "Inspector: Task",
             "Recent Log (tail)",
             "Actions",

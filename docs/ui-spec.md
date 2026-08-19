@@ -866,6 +866,26 @@ The task table renders only the rows that fit its bordered viewport. The
 viewport follows `task_progress_scroll` and always includes the selected row;
 off-screen retained tasks are not formatted into Ratatui rows on every frame.
 
+Job History is one ordered view over two authoritative retained sources:
+background jobs followed by completed build records. Nonterminal background
+jobs are pinned first, newest first, then terminal background jobs and retained
+build records appear newest first. Its lifecycle labels are `· Queued`,
+`… Starting`, `▶ Running`, `! Cancelling`, `✓ Succeeded`, `✕ Failed`,
+`■ Cancelled`, and `? Lost`; markers plus words preserve meaning without color.
+The responsive column contract is:
+
+- below 84 columns: Status, Operation, Target/Context, Elapsed
+- 84 through 117 columns: add Type and Started
+- 118 columns and wider: add ID and Finished
+
+Missing timestamps and context render as `--` or `unavailable`; the renderer
+does not reconstruct them from logs. The standalone Job History workspace keeps
+all active rows visible ahead of the scrollable terminal portion whenever its
+viewport permits. Keyboard selection ranges over the combined ordered view and
+drives a bounded detail panel containing typed operation, type, exact state,
+context, known times, warning/error counts, outcome, and latest retained output.
+An empty view explicitly states that no jobs or build records are retained.
+
 The wide Tasks Inspector is subdivided into titled sections:
 
 - selected task metadata

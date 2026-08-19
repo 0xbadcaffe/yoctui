@@ -493,6 +493,15 @@ typed `LogEntry` messages; ANSI stripping remains in the BitBake/process
 adapter. Full-entry copy and source-log opening continue through existing typed
 model actions and effects.
 
+`yoctui_model::App::job_history_rows` is the borrowed presentation projection
+for retained work. It merges background jobs and completed `BuildRecord`s
+without copying either source, orders nonterminal background jobs first, and
+then returns terminal background jobs and build records newest first. The same
+projection bounds the reducer-owned history selection and feeds both embedded
+and standalone Job History tables. Ratatui chooses columns and formats typed
+timestamps, but never infers missing identity, context, time, or outcome from
+process text.
+
 `yoctui_ui::SemanticTheme` is the single rendering color boundary. It resolves
 each typed theme and the no-color override into named surface, text, border,
 selection, lifecycle, emphasis, graph, and source-preview roles. Renderers and

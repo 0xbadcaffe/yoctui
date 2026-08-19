@@ -2,43 +2,43 @@
 
 ## Task
 
-**ID:** JOB-UI-001
-**Title:** Redesign Job History
+**ID:** JOB-UI-002
+**Title:** Add compact job summary
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Make retained background work readable as a stable responsive table with exact
-typed lifecycle distinctions and selection-driven detail.
+Add a compact, reusable summary of retained and active background work using
+only counts available from typed model state.
 
 ## Dependencies
 
-- `FOUNDATION-UI-003` — DONE
+- `JOB-UI-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-ui/src/lib.rs`
 - `crates/yoctui-model/src/lib.rs`
-- `crates/yoctui-app/src/lib.rs`
+- `crates/yoctui-ui/src/lib.rs`
 - `docs/ui-spec.md`
+- `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 - `docs/current-task.md`
 
 ## Definition of done
 
-- The table has stable status, operation type, target/context, start, finish,
-  and elapsed columns with responsive hiding.
-- Active jobs remain pinned or otherwise unmistakably visible.
-- Failed, cancelled, and lost remain exact distinct terminal states.
-- Selection opens or drives authoritative job detail.
-- Empty history and unavailable timestamps remain explicit.
-- Keyboard and existing mouse selection behavior remain typed.
+- A compact summary shows authoritative active, queued, failed, and recently
+  completed counts.
+- Daemon-owned work is labeled and counted only where ownership is known.
+- Embedded and standalone Job History surfaces share the same projection.
+- Compact and wide forms preserve every required state without relying on
+  color.
+- Empty history remains explicit and no count is fabricated.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_job_history
+cargo test -p yoctui-ui next_generation_job_summary
 cargo test -p yoctui-model background_job
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh

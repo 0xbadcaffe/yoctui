@@ -5178,18 +5178,18 @@ notes = "Added one reusable width-aware textual log activity projection. It alwa
 id = "JOB-UI-001"
 milestone = "M19"
 title = "Redesign Job History"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 531
 required = true
 depends_on = ["FOUNDATION-UI-003"]
 verify = ["cargo test -p yoctui-ui next_generation_job_history", "cargo test -p yoctui-model background_job"]
-notes = "Render stable status/type/context/timing columns, keep active jobs visible, preserve exact terminal distinctions, and open typed details on selection."
+notes = "Added one borrowed model projection over bounded background jobs and retained builds, with nonterminal work pinned first and reducer selection bounded across the combined view. Embedded and standalone Job History tables now use exact marker-plus-text lifecycle states, authoritative type/context/timing fields, responsive column tiers, active-row emphasis, explicit unavailable/empty states, and selection-driven bounded details. Focused model/UI tests, all 164 UI tests, and the reviewed canonical golden pass."
 
 [[task]]
 id = "JOB-UI-002"
 milestone = "M19"
 title = "Add compact job summary"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 532
 required = true
 depends_on = ["JOB-UI-001"]

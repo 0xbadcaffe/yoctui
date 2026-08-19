@@ -11,9 +11,16 @@ Status values:
 
 ## Current phase
 
-`JOB-UI-001` is `IN_PROGRESS`. It will redesign retained Job History around a
-stable responsive table, exact lifecycle distinctions, active visibility, and
-selection-driven typed job detail.
+`JOB-UI-002` is `IN_PROGRESS`. It will add one compact authoritative summary
+for active, queued, failed, recently completed, and daemon-owned jobs.
+
+`JOB-UI-001` is `DONE`: one borrowed model projection combines bounded
+background jobs and retained build records, pins nonterminal work first, and
+bounds reducer selection across that shared ordering. Embedded and standalone
+tables use exact marker-plus-text lifecycle states, responsive column tiers,
+authoritative context/timing only, active-row emphasis, explicit unavailable
+and empty states, and selection-driven bounded detail. Focused model/UI tests,
+all 164 UI tests, and the reviewed canonical golden pass.
 
 `LOG-UI-002` is `DONE`: one width-aware textual projection now drives both the
 Logs activity row and embedded Tasks Log Viewer. Follow and pause are always
