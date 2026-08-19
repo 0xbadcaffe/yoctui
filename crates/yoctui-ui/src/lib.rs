@@ -30,13 +30,13 @@ use yoctui_model::{
     SdkToolCapability, SecurityCapability, SecurityDialog, SecurityInventoryState,
     SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope, SecuritySessionStatus,
     SecurityView, Severity, SignatureComparisonState, SignatureDifferenceCategory,
-    SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskRow, TaskState, TestComparisonCategory,
-    TestComparisonState, TestExecutableCapability, TestJunitExportState, TestLaunchDialog,
-    TestLaunchField, TestLaunchPreview, TestResultInventoryState, TestWorkspaceView, Theme,
-    VariableIdentity, WicCapability, WicCompression, WicCreateDialog, WicCreateField,
-    WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart,
-    WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
-    WorkspaceAvailabilityState, WorkspaceDestination,
+    SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskRow, TaskRowRef, TaskState,
+    TestComparisonCategory, TestComparisonState, TestExecutableCapability, TestJunitExportState,
+    TestLaunchDialog, TestLaunchField, TestLaunchPreview, TestResultInventoryState,
+    TestWorkspaceView, Theme, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
+    WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog,
+    WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog,
+    WicWritePreview, WorkspaceAvailabilityState, WorkspaceDestination,
     compatibility_ui_workspace_destination_action_availability, config_comparison,
     config_edit_disabled_reason, config_source_disabled_reason, format_duration,
     selected_config_copy_value,
@@ -1076,7 +1076,12 @@ pub fn render(frame: &mut Frame, app: &App) {
     render_at(frame, app, SystemTime::now());
 }
 
-fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
+/// Render one frame with an injected clock.
+///
+/// Production uses [`render`]. Deterministic visual tests and the release
+/// profiling workload use this entry point so clock changes cannot alter the
+/// rendered cell buffer between otherwise identical frames.
+pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     let area = frame.area();
     let palette = ThemePalette::for_app(app);
     frame.render_widget(Block::default().style(palette.base()), area);
@@ -2157,6 +2162,8 @@ fn responsive_shell(
         signatures_workspace(frame, app, area, terminal_width);
         return;
     }
+    let task_rows = (app.screen == Screen::Tasks).then(|| app.visible_task_row_refs_at(now));
+    let task_rows = task_rows.as_deref();
     if terminal_width >= WIDE_WORKBENCH_MIN_WIDTH {
         let panes = if app.screen == Screen::Tasks && terminal_width == 160 {
             Layout::horizontal([
@@ -2180,25 +2187,25 @@ fn responsive_shell(
             ])
             .split(area)
         };
-        navigator(frame, app, panes[0]);
-        workspace(frame, app, panes[1], now);
-        inspector(frame, app, panes[2], now);
+        navigator(frame, app, panes[0], task_rows);
+        workspace(frame, app, panes[1], now, task_rows);
+        inspector(frame, app, panes[2], now, task_rows);
     } else if terminal_width >= 100 {
         let panes = Layout::horizontal([Constraint::Length(22), Constraint::Min(40)]).split(area);
-        navigator(frame, app, panes[0]);
-        workspace(frame, app, panes[1], now);
+        navigator(frame, app, panes[0], task_rows);
+        workspace(frame, app, panes[1], now, task_rows);
         if app.focus == FocusTarget::Inspector {
             frame.render_widget(Clear, panes[1]);
-            inspector(frame, app, panes[1], now);
+            inspector(frame, app, panes[1], now, task_rows);
         }
     } else {
         let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(area);
         pane_switcher(frame, app, rows[0]);
         match app.focus {
-            FocusTarget::Navigator => navigator(frame, app, rows[1]),
-            FocusTarget::Inspector => inspector(frame, app, rows[1], now),
+            FocusTarget::Navigator => navigator(frame, app, rows[1], task_rows),
+            FocusTarget::Inspector => inspector(frame, app, rows[1], now, task_rows),
             FocusTarget::Workspace | FocusTarget::Dialog | FocusTarget::CommandPalette => {
-                workspace(frame, app, rows[1], now);
+                workspace(frame, app, rows[1], now, task_rows);
             }
         }
     }
@@ -2544,9 +2551,9 @@ fn signature_detail_text(app: &App) -> String {
     lines.join("\n")
 }
 
-fn navigator(frame: &mut Frame, app: &App, area: Rect) {
+fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskRowRef<'_>]>) {
     if area.width == 26 && app.screen == Screen::Tasks {
-        literal_project_navigator(frame, app, area);
+        literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
     const GROUPS: [(&str, &[(&str, Screen)]); 5] = [
@@ -2709,7 +2716,12 @@ fn project_tree_group(label: &str, width: usize, palette: ThemePalette) -> Line<
     )
 }
 
-fn literal_project_navigator(frame: &mut Frame, app: &App, area: Rect) {
+fn literal_project_navigator(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    task_rows: &[TaskRowRef<'_>],
+) {
     let palette = ThemePalette::for_app(app);
     let block = pane_block(app, "Navigator", app.focus == FocusTarget::Navigator);
     let inner = block.inner(area);
@@ -2828,10 +2840,12 @@ fn literal_project_navigator(frame: &mut Frame, app: &App, area: Rect) {
         .jobs
         .last()
         .map_or_else(|| "--".into(), |job| job.id.to_string());
-    let pid = app.selected_task_row().and_then(|row| match row {
-        TaskRow::Task(task) => task.pid,
-        TaskRow::WaitingSummary(_) => None,
-    });
+    let pid = task_rows
+        .get(app.task_progress_scroll)
+        .and_then(|row| match row {
+            TaskRowRef::Task { task, .. } => task.pid,
+            TaskRowRef::WaitingSummary(_) => None,
+        });
     frame.render_widget(
         Paragraph::new(Line::from(vec![
             Span::styled("L:", palette.role(palette.warning, Modifier::BOLD)),
@@ -2845,10 +2859,16 @@ fn literal_project_navigator(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
-fn workspace(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
+fn workspace(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    now: SystemTime,
+    task_rows: Option<&[TaskRowRef<'_>]>,
+) {
     match app.screen {
         Screen::Dashboard => dashboard(frame, app, area),
-        Screen::Tasks => tasks_workspace(frame, app, area, now),
+        Screen::Tasks => tasks_workspace(frame, app, area, now, task_rows.unwrap_or_default()),
         Screen::BuildHistory => build_history(frame, app, area),
         Screen::Dependencies => dependencies(frame, app, area),
         Screen::Signatures => signature_records(frame, app, area),
@@ -2985,8 +3005,17 @@ fn system_status_text(app: &App) -> String {
     )
 }
 
-fn tasks_inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
-    let selected = app.selected_task_row();
+fn tasks_inspector(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    now: SystemTime,
+    task_rows: &[TaskRowRef<'_>],
+) {
+    let selected = task_rows
+        .get(app.task_progress_scroll)
+        .copied()
+        .map(TaskRowRef::into_owned);
     let focused = app.focus == FocusTarget::Inspector;
     if area.height < 32 {
         let sections =
@@ -3051,9 +3080,15 @@ fn tasks_inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     );
 }
 
-fn inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
+fn inspector(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    now: SystemTime,
+    task_rows: Option<&[TaskRowRef<'_>]>,
+) {
     if app.screen == Screen::Tasks {
-        tasks_inspector(frame, app, area, now);
+        tasks_inspector(frame, app, area, now, task_rows.unwrap_or_default());
         return;
     }
     if app.focus == FocusTarget::Navigator {
@@ -3673,7 +3708,31 @@ fn task_state_style(app: &App, state: TaskState) -> Style {
 }
 
 fn matching_task_logs(app: &App, row: Option<&TaskRow>, limit: usize) -> Vec<Line<'static>> {
-    let Some(TaskRow::Task(task)) = row else {
+    let task = match row {
+        Some(TaskRow::Task(task)) => Some(task.as_ref()),
+        Some(TaskRow::WaitingSummary(_)) | None => None,
+    };
+    matching_task_logs_for_task(app, task, limit)
+}
+
+fn matching_task_logs_ref(
+    app: &App,
+    row: Option<&TaskRowRef<'_>>,
+    limit: usize,
+) -> Vec<Line<'static>> {
+    let task = match row {
+        Some(TaskRowRef::Task { task, .. }) => Some(*task),
+        Some(TaskRowRef::WaitingSummary(_)) | None => None,
+    };
+    matching_task_logs_for_task(app, task, limit)
+}
+
+fn matching_task_logs_for_task(
+    app: &App,
+    task: Option<&yoctui_model::TaskInfo>,
+    limit: usize,
+) -> Vec<Line<'static>> {
+    let Some(task) = task else {
         return vec![Line::from("No task-specific log is available.")];
     };
     let entries = app
@@ -3731,7 +3790,13 @@ fn task_filter_summary(app: &App) -> String {
     filters.join(" · ")
 }
 
-fn render_task_table(frame: &mut Frame, app: &App, area: Rect, rows: &[TaskRow], now: SystemTime) {
+fn render_task_table(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    rows: &[TaskRowRef<'_>],
+    now: SystemTime,
+) {
     let waiting = app.waiting_task_count();
     let active = app
         .tasks
@@ -3763,44 +3828,54 @@ fn render_task_table(frame: &mut Frame, app: &App, area: Rect, rows: &[TaskRow],
             task_filter_summary(app)
         )
     };
-    let table_rows = rows.iter().enumerate().map(|(index, row)| {
-        let values = match row {
-            TaskRow::WaitingSummary(count) => vec![
-                Cell::from(format!("{count} queued tasks")),
-                Cell::from("unavailable"),
-                Cell::from(Span::styled(
-                    task_state_label(TaskState::Waiting),
-                    task_state_style(app, TaskState::Waiting),
-                )),
-                Cell::from("--"),
-                Cell::from("metadata unavailable"),
-            ],
-            TaskRow::Task(task) => vec![
-                Cell::from(task.task.clone()),
-                Cell::from(task.recipe.clone()),
-                Cell::from(Span::styled(
-                    task_state_label(task.state),
-                    task_state_style(app, task.state),
-                )),
-                Cell::from(
-                    task.elapsed_at(now)
-                        .map(format_duration)
-                        .unwrap_or_else(|| "--".into()),
-                ),
-                Cell::from(Span::styled(
-                    match (task.state, task.progress) {
-                        (TaskState::Active, None) => {
-                            format!("progress unknown{}", task_activity(app, None))
-                        }
-                        (_, Some(progress)) => task_progress_bar(progress),
-                        _ => "--".into(),
-                    },
-                    task_state_style(app, task.state),
-                )),
-            ],
-        };
-        Row::new(values).style(selected_style(app, index == app.task_progress_scroll))
-    });
+    let visible_rows = usize::from(area.height.saturating_sub(3)).max(1);
+    let selected = app.task_progress_scroll.min(rows.len().saturating_sub(1));
+    let viewport_start = selected
+        .saturating_sub(visible_rows / 2)
+        .min(rows.len().saturating_sub(visible_rows));
+    let table_rows = rows
+        .iter()
+        .enumerate()
+        .skip(viewport_start)
+        .take(visible_rows)
+        .map(|(index, row)| {
+            let values = match row {
+                TaskRowRef::WaitingSummary(count) => vec![
+                    Cell::from(format!("{count} queued tasks")),
+                    Cell::from("unavailable"),
+                    Cell::from(Span::styled(
+                        task_state_label(TaskState::Waiting),
+                        task_state_style(app, TaskState::Waiting),
+                    )),
+                    Cell::from("--"),
+                    Cell::from("metadata unavailable"),
+                ],
+                TaskRowRef::Task { task, state } => vec![
+                    Cell::from(task.task.clone()),
+                    Cell::from(task.recipe.clone()),
+                    Cell::from(Span::styled(
+                        task_state_label(*state),
+                        task_state_style(app, *state),
+                    )),
+                    Cell::from(
+                        task.elapsed_at(now)
+                            .map(format_duration)
+                            .unwrap_or_else(|| "--".into()),
+                    ),
+                    Cell::from(Span::styled(
+                        match (*state, task.progress) {
+                            (TaskState::Active, None) => {
+                                format!("progress unknown{}", task_activity(app, None))
+                            }
+                            (_, Some(progress)) => task_progress_bar(progress),
+                            _ => "--".into(),
+                        },
+                        task_state_style(app, *state),
+                    )),
+                ],
+            };
+            Row::new(values).style(selected_style(app, index == app.task_progress_scroll))
+        });
     frame.render_widget(
         Table::new(
             table_rows,
@@ -3826,15 +3901,17 @@ fn render_task_table(frame: &mut Frame, app: &App, area: Rect, rows: &[TaskRow],
     );
 }
 
-fn render_task_log(frame: &mut Frame, app: &App, area: Rect, selected: Option<&TaskRow>) {
+fn render_task_log(frame: &mut Frame, app: &App, area: Rect, selected: Option<&TaskRowRef<'_>>) {
     let title = match selected {
-        Some(TaskRow::Task(task)) => format!("Log Viewer — {} ({})", task.task, task.recipe),
-        Some(TaskRow::WaitingSummary(_)) => "Log Viewer — queued tasks".into(),
+        Some(TaskRowRef::Task { task, .. }) => {
+            format!("Log Viewer — {} ({})", task.task, task.recipe)
+        }
+        Some(TaskRowRef::WaitingSummary(_)) => "Log Viewer — queued tasks".into(),
         None => "Log Viewer — no task selected".into(),
     };
     let limit = usize::from(area.height.saturating_sub(2)).max(1);
     frame.render_widget(
-        Paragraph::new(Text::from(matching_task_logs(app, selected, limit)))
+        Paragraph::new(Text::from(matching_task_logs_ref(app, selected, limit)))
             .block(Block::default().title(title).borders(Borders::ALL))
             .wrap(Wrap { trim: false }),
         area,
@@ -3926,8 +4003,13 @@ fn render_job_history(frame: &mut Frame, app: &App, area: Rect, now: SystemTime)
     );
 }
 
-fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
-    let rows = app.visible_task_rows();
+fn tasks_workspace(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    now: SystemTime,
+    rows: &[TaskRowRef<'_>],
+) {
     let selected = rows.get(app.task_progress_scroll);
     if area.width == 89 && area.height == 44 {
         let panels = Layout::vertical([
@@ -3936,7 +4018,7 @@ fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
             Constraint::Length(9),
         ])
         .split(area);
-        render_task_table(frame, app, panels[0], &rows, now);
+        render_task_table(frame, app, panels[0], rows, now);
         render_task_log(frame, app, panels[1], selected);
         render_job_history(frame, app, panels[2], now);
     } else if area.height >= 27 {
@@ -3946,15 +4028,15 @@ fn tasks_workspace(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
             Constraint::Min(6),
         ])
         .split(area);
-        render_task_table(frame, app, panels[0], &rows, now);
+        render_task_table(frame, app, panels[0], rows, now);
         render_task_log(frame, app, panels[1], selected);
         render_job_history(frame, app, panels[2], now);
     } else if area.height >= 18 {
         let panels = Layout::vertical([Constraint::Percentage(62), Constraint::Min(6)]).split(area);
-        render_task_table(frame, app, panels[0], &rows, now);
+        render_task_table(frame, app, panels[0], rows, now);
         render_task_log(frame, app, panels[1], selected);
     } else {
-        render_task_table(frame, app, area, &rows, now);
+        render_task_table(frame, app, area, rows, now);
     }
 }
 
@@ -16063,6 +16145,41 @@ mod tests {
         let output = rendered_text(&app, 120, 30);
         assert!(output.contains("████▏░░░░░ 42%"), "{output}");
     }
+
+    #[test]
+    fn task_table_bounds_row_rendering_to_the_selected_viewport() {
+        let mut app = App::new(256, 64_000);
+        app.screen = Screen::Tasks;
+        for index in 0..120 {
+            let id = yoctui_model::TaskId(format!("recipe-{index:03}:do_compile"));
+            app.tasks.insert(
+                id.clone(),
+                yoctui_model::TaskInfo {
+                    id,
+                    recipe: format!("recipe-{index:03}"),
+                    task: format!("compile-{index:03}"),
+                    state: yoctui_model::TaskState::Active,
+                    ..yoctui_model::TaskInfo::default()
+                },
+            );
+        }
+        app.task_progress_scroll = 119;
+        let rows = app.visible_task_row_refs_at(SystemTime::now());
+        let mut terminal = Terminal::new(TestBackend::new(100, 15)).unwrap();
+        terminal
+            .draw(|frame| render_task_table(frame, &app, frame.area(), &rows, SystemTime::now()))
+            .unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("compile-119"), "{output}");
+        assert!(!output.contains("compile-000"), "{output}");
+    }
+
     #[test]
     fn task_progress_renders_average_velocity_and_eta_when_authoritative() {
         let mut app = App::new(10, 1_000);

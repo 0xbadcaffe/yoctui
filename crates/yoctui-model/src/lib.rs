@@ -536,6 +536,26 @@ pub enum TaskRow {
     Task(Box<TaskInfo>),
     WaitingSummary(usize),
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TaskRowRef<'a> {
+    Task {
+        task: &'a TaskInfo,
+        state: TaskState,
+    },
+    WaitingSummary(usize),
+}
+impl TaskRowRef<'_> {
+    pub fn into_owned(self) -> TaskRow {
+        match self {
+            Self::Task { task, state } => {
+                let mut task = task.clone();
+                task.state = state;
+                TaskRow::Task(Box::new(task))
+            }
+            Self::WaitingSummary(waiting) => TaskRow::WaitingSummary(waiting),
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DevtoolFinishRequest {
     pub recipe: String,
@@ -2881,8 +2901,7 @@ impl App {
             total.saturating_sub(self.build.completed.saturating_add(self.tasks.len()))
         })
     }
-    pub fn visible_task_rows(&self) -> Vec<TaskRow> {
-        let now = SystemTime::now();
+    pub fn visible_task_row_refs_at(&self, now: SystemTime) -> Vec<TaskRowRef<'_>> {
         let state_matches = |state: TaskState| match self.task_filters.state {
             TaskStateFilter::All => true,
             TaskStateFilter::Active => state == TaskState::Active,
@@ -2907,36 +2926,44 @@ impl App {
                         .is_some_and(|elapsed| elapsed >= minimum)
                 })
         };
-        let retained = self
-            .tasks
-            .values()
-            .cloned()
-            .chain(self.completed_tasks.iter().map(|completed| {
-                let mut task = completed.task.clone();
-                if matches!(task.state, TaskState::Active | TaskState::Waiting) {
-                    task.state = if completed.success {
-                        TaskState::Completed
+        let retained = self.tasks.values().map(|task| (task, task.state)).chain(
+            self.completed_tasks.iter().map(|completed| {
+                let state =
+                    if matches!(completed.task.state, TaskState::Active | TaskState::Waiting) {
+                        if completed.success {
+                            TaskState::Completed
+                        } else {
+                            TaskState::Failed
+                        }
                     } else {
-                        TaskState::Failed
+                        completed.task.state
                     };
-                }
-                task
-            }));
+                (&completed.task, state)
+            }),
+        );
         let mut rows = retained
-            .filter(|task| state_matches(task.state) && text_matches(task))
-            .map(|task| TaskRow::Task(Box::new(task)))
+            .filter(|(task, state)| state_matches(*state) && text_matches(task))
+            .map(|(task, state)| TaskRowRef::Task { task, state })
             .collect::<Vec<_>>();
-        rows.sort_by(|left, right| {
-            let TaskRow::Task(left) = left else {
+        rows.sort_unstable_by(|left, right| {
+            let TaskRowRef::Task {
+                task: left,
+                state: left_state,
+            } = left
+            else {
                 return std::cmp::Ordering::Less;
             };
-            let TaskRow::Task(right) = right else {
+            let TaskRowRef::Task {
+                task: right,
+                state: right_state,
+            } = right
+            else {
                 return std::cmp::Ordering::Greater;
             };
             (
                 left.started.is_none(),
                 left.started,
-                task_state_order(left.state),
+                task_state_order(*left_state),
                 left.recipe.as_str(),
                 left.task.as_str(),
                 left.id.0.as_str(),
@@ -2944,7 +2971,7 @@ impl App {
                 .cmp(&(
                     right.started.is_none(),
                     right.started,
-                    task_state_order(right.state),
+                    task_state_order(*right_state),
                     right.recipe.as_str(),
                     right.task.as_str(),
                     right.id.0.as_str(),
@@ -2959,14 +2986,21 @@ impl App {
             && self.task_filters.worker.is_empty()
             && self.task_filters.minimum_duration.is_none();
         if waiting > 0 && waiting_filter_matches {
-            rows.push(TaskRow::WaitingSummary(waiting));
+            rows.push(TaskRowRef::WaitingSummary(waiting));
         }
         rows
     }
+    pub fn visible_task_rows(&self) -> Vec<TaskRow> {
+        self.visible_task_row_refs_at(SystemTime::now())
+            .into_iter()
+            .map(TaskRowRef::into_owned)
+            .collect()
+    }
     pub fn selected_task_row(&self) -> Option<TaskRow> {
-        self.visible_task_rows()
+        self.visible_task_row_refs_at(SystemTime::now())
             .get(self.task_progress_scroll)
-            .cloned()
+            .copied()
+            .map(TaskRowRef::into_owned)
     }
     pub fn filtered_packages(&self) -> Vec<&PackageSummary> {
         let query = self.package_query.to_ascii_lowercase();

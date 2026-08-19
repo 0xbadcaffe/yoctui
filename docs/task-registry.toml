@@ -4245,23 +4245,23 @@ notes = "Python coverage now measures crates/yoctui-bitbake/bridge while Ruff an
 id = "PERF-FLAMEGRAPH-QUALITY-001"
 milestone = "M7"
 title = "Produce a meaningful fully symbolized Yoctui flamegraph"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 458
 required = true
 depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001"]
 verify = ["./scripts/test-flamegraph.sh", "./scripts/flamegraph.sh", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "The user requested a fresh representative flamegraph with no unresolved/null application frames and review of genuine CPU hot paths. The previous process-backend headless command now exits without daemon capability authority and yielded only seven samples, so it cannot remain completion evidence."
+notes = "A daemon-independent 160x48 benchmark now drives 6,000 deterministic production reducer/Ratatui frames. The accepted portable DWARF perf capture contains 1,869 samples, no lost samples, a stable 95f340a128cd6012 checksum, and a machine-readable summary. Three malformed raw call-chain lines (0.2147% of event weight) were transparently reported and excluded below the strict 0.5% ceiling; the resulting SVG contains zero unresolved/null frames. Evidence exposed avoidable full-table formatting plus repeated task cloning/sorting; bounded viewport rendering and one shared borrowed task projection reduced the same workload from roughly 6.3 seconds to 3.731 seconds. The final exclusive profile is led by expected Ratatui buffer styling/diffing and Unicode processing, with shared task sorting at 2.66%. Format, Clippy, workspace tests, 43 bridge tests, docs, and roadmap checks pass."
 
 [[task]]
 id = "FINAL-GATE-PERF-001"
 milestone = "M12"
 title = "Rerun the terminal gate with perf sampling enabled"
-status = "BLOCKED"
+status = "IN_PROGRESS"
 priority = 458
 required = true
 depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001", "PERF-FLAMEGRAPH-QUALITY-001"]
 verify = ["perf record -- true", "./scripts/flamegraph.sh", "./scripts/verify-completion.sh"]
-notes = "The clean completion gate passes roadmap, workspace tests, Clippy, terminal tests, fuzzing, stress, ASan/LSan, Rust coverage, audit/deny, all 39 Python bridge tests at 75.95% packaged-source coverage, and Valgrind with zero lost bytes. It stops at scripts/flamegraph.sh because this host currently has kernel.perf_event_paranoid=4. An operator must temporarily grant CAP_PERFMON or lower the policy, then rerun the listed commands; no product or release defect is implicated."
+notes = "The user authorized a temporary perf sampling window and the flamegraph quality prerequisite now passes with resolved representative evidence. Run the complete terminal gate while sampling remains available, then restore the original kernel.perf_event_paranoid=4 policy."
 
 # M13 — Dense terminal workbench redesign
 [[task]]

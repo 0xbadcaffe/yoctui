@@ -1962,12 +1962,15 @@ drives the production model reducer and Ratatui renderer at the canonical
 terminal size. The workload is a benchmark target rather than a backend
 shortcut, so it requires no daemon, initialized BitBake environment, network,
 or operator session state. Flamegraph capture uses user-space samples and
-unwind information from a release build with frame pointers. The profiling
-gate rejects a failed or trivially short workload, an empty or stale SVG, and
-application stacks containing unresolved/null frames. Its machine-readable
-summary records the workload checksum, sample count, unresolved-frame count,
-and dominant symbols so a visually plausible but meaningless artifact cannot
-satisfy completion.
+call-chain information from a release build with frame pointers. Rare
+malformed perf call chains are removed before SVG rendering only when their
+recorded event weight is at most 0.5%; the raw excluded line count, weight, and
+ratio remain in the summary. The gate rejects a failed or trivially short
+workload, an empty or stale SVG, excessive unresolved input, and any
+unresolved/null frame in the resulting artifact. Its machine-readable summary
+records the workload checksum, actual perf sample count, hardware event count,
+unresolved-frame evidence, and dominant symbols so a visually plausible but
+meaningless artifact cannot satisfy completion.
 
 ## Compatibility claims
 

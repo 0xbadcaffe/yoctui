@@ -11,14 +11,23 @@ Status values:
 
 ## Current phase
 
-`PERF-FLAMEGRAPH-QUALITY-001` is `IN_PROGRESS`: the previously accepted
-flamegraph workload became invalid when direct BitBake operations moved behind
-daemon-owned compatibility authority. A fresh attempt exited before useful
-work and produced only seven samples. The replacement gate will profile the
-production reducer and Ratatui renderer deterministically, reject unresolved
-application stacks and stale/trivial SVGs, report dominant symbols, and require
-review or repair of any genuine Yoctui CPU hotspot before the terminal gate is
-accepted.
+`FINAL-GATE-PERF-001` is `IN_PROGRESS`: real perf sampling is temporarily
+available and the representative flamegraph prerequisite passes. The complete
+terminal gate is next; after it finishes, the host's original
+`kernel.perf_event_paranoid=4` policy must be restored.
+
+`PERF-FLAMEGRAPH-QUALITY-001` is `DONE`: the replacement 160x48 benchmark
+drives 6,000 deterministic production reducer/Ratatui frames without a daemon
+or Yocto checkout. Its accepted portable DWARF capture records 1,869 real
+samples, the stable `95f340a128cd6012` checksum, and no lost samples. Three
+malformed raw call-chain lines (0.2147% of event weight) are reported and
+excluded below the 0.5% ceiling; the SVG has zero unresolved/null frames. A
+bounded task-table viewport and one shared borrowed task projection removed
+full-inventory formatting, cloning, and repeated sorting, reducing the same
+workload from roughly 6.3 seconds to 3.731 seconds. The final exclusive costs
+are expected Ratatui buffer/Unicode work, with shared task sorting at 2.66%.
+The validator, format, Clippy, full workspace tests, all 43 bridge tests,
+documentation, and roadmap checks pass.
 
 `UI-WIDE-RAIL-001` is `DONE`: F1–F10 now remains visible on every screen at
 130 columns or wider; compact layouts retain contextual actions and the exact

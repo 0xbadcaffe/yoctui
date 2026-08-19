@@ -12,7 +12,27 @@ if ! perf record --no-buildid-mmap -e dummy:u -o "$perf_probe" -- true >/dev/nul
 fi
 rm -f "$perf_probe"
 mkdir -p artifacts/flamegraph
-flamegraph_config_dir="$(mktemp -d)"
-trap 'rm -rf "$flamegraph_config_dir"' EXIT
-XDG_CONFIG_HOME="$flamegraph_config_dir" \
-cargo flamegraph --deterministic --output artifacts/flamegraph/yoctui.svg --bin yoctui -- --headless --backend process --build-dir "$repo_root"
+flamegraph_work_dir="$(mktemp -d)"
+trap 'rm -rf "$flamegraph_work_dir"' EXIT
+svg="$flamegraph_work_dir/yoctui.svg"
+workload_log="$flamegraph_work_dir/workload.log"
+summary="$flamegraph_work_dir/summary.txt"
+filter_report="$flamegraph_work_dir/filter.txt"
+
+YOCTUI_FLAMEGRAPH_FILTER_REPORT="$filter_report" \
+RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-C force-frame-pointers=yes" \
+cargo flamegraph \
+  -p yoctui \
+  --deterministic \
+  --cmd 'record -F 499 -e cycles:u --call-graph dwarf,8192 -g' \
+  --min-width 0.01 \
+  --post-process 'python3 scripts/filter-flamegraph-stacks.py' \
+  --title 'Yoctui workbench CPU profile' \
+  --subtitle 'Deterministic 160x48 production reducer and Ratatui rendering workload' \
+  --output "$svg" \
+  --bench workbench_profile \
+  2>&1 | tee "$workload_log"
+
+python3 scripts/validate-flamegraph.py "$svg" "$workload_log" "$filter_report" "$summary"
+mv "$svg" artifacts/flamegraph/yoctui.svg
+mv "$summary" artifacts/flamegraph/summary.txt

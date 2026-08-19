@@ -206,7 +206,8 @@ PY
 
 for media in \
   docs/media/yoctui-demo.gif \
-  artifacts/flamegraph/yoctui.svg
+  artifacts/flamegraph/yoctui.svg \
+  artifacts/flamegraph/summary.txt
 do
   if [[ ! -s "$media" ]]; then
     printf 'documentation check: visual artifact is missing or empty: %s\n' "$media" >&2

@@ -2,53 +2,46 @@
 
 ## Task
 
-**ID:** PERF-FLAMEGRAPH-QUALITY-001
-**Title:** Produce a meaningful fully symbolized Yoctui flamegraph
+**ID:** FINAL-GATE-PERF-001
+**Title:** Rerun the terminal gate with perf sampling enabled
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Replace the stale backend-dependent profiling command with a deterministic
-production workbench workload, capture a fresh real Linux `perf` flamegraph,
-and reject unresolved or meaningless profiling evidence.
+Run the complete repository completion gate while real Linux perf sampling is
+temporarily available, record the terminal result, and restore the host's
+original perf security policy afterward.
 
 ## Dependencies
 
 - `CRATESIO-COVERAGE-001` — DONE
 - `UI-STARTUP-DIAG-001` — DONE
+- `PERF-FLAMEGRAPH-QUALITY-001` — DONE
 
 ## Relevant files
 
-- `scripts/flamegraph.sh`
-- `scripts/test-flamegraph.sh`
-- `crates/yoctui-cli/benches/workbench_profile.rs`
-- `crates/yoctui-cli/Cargo.toml`
 - `scripts/verify-completion.sh`
+- `scripts/flamegraph.sh`
 - `artifacts/flamegraph/yoctui.svg`
 - `artifacts/flamegraph/summary.txt`
-- `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 - `docs/current-task.md`
 
 ## Definition of done
 
-- The profiling target exercises the production reducer and Ratatui renderer
-  deterministically without requiring a daemon or initialized Yocto checkout.
-- `./scripts/flamegraph.sh` records a nontrivial fresh user-space flamegraph
-  with resolved Yoctui application stacks and a machine-readable summary.
-- The validator rejects stale/trivial output, failed workload execution,
-  unresolved/null application frames, and missing dominant-symbol evidence.
-- Dominant stacks are reviewed and any genuine avoidable Yoctui CPU hot path is
-  fixed and recaptured before completion.
+- Real `perf record` sampling succeeds.
+- `./scripts/flamegraph.sh` passes its workload and symbol-quality gates.
+- `./scripts/verify-completion.sh` passes without skipped required checks.
+- The registry, implementation status, and terminal current-task handoff record
+  final completion.
+- The original `kernel.perf_event_paranoid=4` policy is restored or an exact
+  operator command is reported if credentialed restoration remains external.
 
 ## Verification
 
 ```bash
-./scripts/test-flamegraph.sh
+perf record -- true
 ./scripts/flamegraph.sh
-cargo fmt --all --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-./scripts/check-docs.sh
-./scripts/verify-roadmap.sh
+./scripts/verify-completion.sh
 ```

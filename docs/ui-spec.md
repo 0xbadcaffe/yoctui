@@ -559,6 +559,10 @@ height they collapse in that order to preserve task selection and controls.
 Overall build progress and active filters move into the table title/status
 rows instead of consuming large standalone cards.
 
+The task table renders only the rows that fit its bordered viewport. The
+viewport follows `task_progress_scroll` and always includes the selected row;
+off-screen retained tasks are not formatted into Ratatui rows on every frame.
+
 The wide Tasks Inspector is subdivided into titled sections:
 
 - selected task metadata
