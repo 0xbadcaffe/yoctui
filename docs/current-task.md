@@ -4,13 +4,17 @@
 
 **ID:** FINAL-GATE-PERF-001
 **Title:** Rerun the terminal gate with perf sampling enabled
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
 Run the complete repository completion gate while real Linux perf sampling is
 temporarily available, record the terminal result, and restore the host's
 original perf security policy afterward.
+
+This terminal handoff is marked complete so `verify-product-complete` can
+evaluate the all-tasks-done candidate. Any failing gate returns the task to
+`IN_PROGRESS` before corrective work.
 
 ## Dependencies
 

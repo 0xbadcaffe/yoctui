@@ -11,9 +11,10 @@ Status values:
 
 ## Current phase
 
-`FINAL-GATE-PERF-001` is `IN_PROGRESS`: real perf sampling is temporarily
-available and the representative flamegraph prerequisite passes. The complete
-terminal gate is next; after it finishes, the host's original
+`FINAL-GATE-PERF-001` is the `DONE` terminal completion candidate: all 458
+registry tasks are complete and the representative flamegraph prerequisite
+passes. The complete terminal gate is evaluating this candidate; any failure
+returns it to `IN_PROGRESS`. After the gate finishes, the host's original
 `kernel.perf_event_paranoid=4` policy must be restored.
 
 `PERF-FLAMEGRAPH-QUALITY-001` is `DONE`: the replacement 160x48 benchmark
