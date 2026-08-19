@@ -1957,6 +1957,18 @@ same rendering path and cannot branch on fixture identity. The existing PTY
 checks remain integration evidence for terminal ownership and escape delivery;
 they do not replace the deterministic visual gate.
 
+Release profiling uses a deterministic CPU-bound workbench workload that
+drives the production model reducer and Ratatui renderer at the canonical
+terminal size. The workload is a benchmark target rather than a backend
+shortcut, so it requires no daemon, initialized BitBake environment, network,
+or operator session state. Flamegraph capture uses user-space samples and
+unwind information from a release build with frame pointers. The profiling
+gate rejects a failed or trivially short workload, an empty or stale SVG, and
+application stacks containing unresolved/null frames. Its machine-readable
+summary records the workload checksum, sample count, unresolved-frame count,
+and dominant symbols so a visually plausible but meaningless artifact cannot
+satisfy completion.
+
 ## Compatibility claims
 
 Mocked tests prove adapter logic, not live compatibility.

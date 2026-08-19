@@ -176,6 +176,7 @@ Exit criteria:
 - formatting, lint, tests, coverage, audit, and deny pass
 - property, fuzz, stress, terminal, and process-tree tests
 - deterministic profiling and memory reports
+- a fresh representative release flamegraph with resolved application stacks
 - complete compatibility matrix
 - installation and operator documentation
 - final completion gate passes from a fresh checkout

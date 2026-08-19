@@ -11,6 +11,15 @@ Status values:
 
 ## Current phase
 
+`PERF-FLAMEGRAPH-QUALITY-001` is `IN_PROGRESS`: the previously accepted
+flamegraph workload became invalid when direct BitBake operations moved behind
+daemon-owned compatibility authority. A fresh attempt exited before useful
+work and produced only seven samples. The replacement gate will profile the
+production reducer and Ratatui renderer deterministically, reject unresolved
+application stacks and stale/trivial SVGs, report dominant symbols, and require
+review or repair of any genuine Yoctui CPU hotspot before the terminal gate is
+accepted.
+
 `UI-WIDE-RAIL-001` is `DONE`: F1–F10 now remains visible on every screen at
 130 columns or wider; compact layouts retain contextual actions and the exact
 canonical 160×48 golden is unchanged. All-label tests cover Dashboard and

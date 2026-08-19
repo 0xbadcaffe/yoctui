@@ -4242,13 +4242,24 @@ verify = ["$HOME/.local/bin/ruff check crates/yoctui-bitbake/bridge bridge/tests
 notes = "Python coverage now measures crates/yoctui-bitbake/bridge while Ruff and mypy inspect both that packaged source and bridge/tests. Ruff, formatting, mypy, all 39 bridge tests, and packaged-source coverage pass at 75.95%."
 
 [[task]]
+id = "PERF-FLAMEGRAPH-QUALITY-001"
+milestone = "M7"
+title = "Produce a meaningful fully symbolized Yoctui flamegraph"
+status = "IN_PROGRESS"
+priority = 458
+required = true
+depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001"]
+verify = ["./scripts/test-flamegraph.sh", "./scripts/flamegraph.sh", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "The user requested a fresh representative flamegraph with no unresolved/null application frames and review of genuine CPU hot paths. The previous process-backend headless command now exits without daemon capability authority and yielded only seven samples, so it cannot remain completion evidence."
+
+[[task]]
 id = "FINAL-GATE-PERF-001"
 milestone = "M12"
 title = "Rerun the terminal gate with perf sampling enabled"
 status = "BLOCKED"
 priority = 458
 required = true
-depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001"]
+depends_on = ["CRATESIO-COVERAGE-001", "UI-STARTUP-DIAG-001", "PERF-FLAMEGRAPH-QUALITY-001"]
 verify = ["perf record -- true", "./scripts/flamegraph.sh", "./scripts/verify-completion.sh"]
 notes = "The clean completion gate passes roadmap, workspace tests, Clippy, terminal tests, fuzzing, stress, ASan/LSan, Rust coverage, audit/deny, all 39 Python bridge tests at 75.95% packaged-source coverage, and Valgrind with zero lost bytes. It stops at scripts/flamegraph.sh because this host currently has kernel.perf_event_paranoid=4. An operator must temporarily grant CAP_PERFMON or lower the policy, then rerun the listed commands; no product or release defect is implicated."
 

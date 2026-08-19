@@ -2,14 +2,15 @@
 
 ## Task
 
-**ID:** FINAL-GATE-PERF-001
-**Title:** Rerun the terminal gate with perf sampling enabled
-**Status:** BLOCKED
+**ID:** PERF-FLAMEGRAPH-QUALITY-001
+**Title:** Produce a meaningful fully symbolized Yoctui flamegraph
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Complete the final clean-checkout gate with real Linux `perf` sampling and a
-fresh deterministic Yoctui flamegraph.
+Replace the stale backend-dependent profiling command with a deterministic
+production workbench workload, capture a fresh real Linux `perf` flamegraph,
+and reject unresolved or meaningless profiling evidence.
 
 ## Dependencies
 
@@ -19,32 +20,35 @@ fresh deterministic Yoctui flamegraph.
 ## Relevant files
 
 - `scripts/flamegraph.sh`
+- `scripts/test-flamegraph.sh`
+- `crates/yoctui-cli/benches/workbench_profile.rs`
+- `crates/yoctui-cli/Cargo.toml`
 - `scripts/verify-completion.sh`
 - `artifacts/flamegraph/yoctui.svg`
+- `artifacts/flamegraph/summary.txt`
+- `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 - `docs/current-task.md`
 
 ## Definition of done
 
-- `perf record -- true` succeeds with real sampling permission.
-- `./scripts/flamegraph.sh` records a fresh deterministic flamegraph from the
-  real Yoctui release workload.
-- `./scripts/verify-completion.sh` passes.
-- The task is marked DONE only after those commands pass.
-
-## Blocker
-
-On 2026-08-19, `perf record --no-buildid-mmap -e dummy:u -- true` fails because
-this host has `kernel.perf_event_paranoid=4` and the current process has no
-`CAP_PERFMON`, `CAP_SYS_PTRACE`, or `CAP_SYS_ADMIN`. Changing that host security
-policy requires operator authority; product tests cannot substitute for real
-sampling.
+- The profiling target exercises the production reducer and Ratatui renderer
+  deterministically without requiring a daemon or initialized Yocto checkout.
+- `./scripts/flamegraph.sh` records a nontrivial fresh user-space flamegraph
+  with resolved Yoctui application stacks and a machine-readable summary.
+- The validator rejects stale/trivial output, failed workload execution,
+  unresolved/null application frames, and missing dominant-symbol evidence.
+- Dominant stacks are reviewed and any genuine avoidable Yoctui CPU hot path is
+  fixed and recaptured before completion.
 
 ## Verification
 
 ```bash
-perf record -- true
+./scripts/test-flamegraph.sh
 ./scripts/flamegraph.sh
-./scripts/verify-completion.sh
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+./scripts/check-docs.sh
+./scripts/verify-roadmap.sh
 ```
