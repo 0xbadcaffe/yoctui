@@ -2,21 +2,22 @@
 
 ## Task
 
-**ID:** FOUNDATION-UI-001
-**Title:** Specify the new visual layout contract
+**ID:** FOUNDATION-UI-002
+**Title:** Create reusable layout primitives
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Define the authoritative layout and responsive behavior for the
-next-generation terminal workbench before changing layout code.
+Implement reusable render-only primitives for the documented workbench shell
+and state presentation before migrating individual workspaces.
 
 ## Dependencies
 
-- `M19-GOV-001` — DONE
+- `FOUNDATION-UI-001` — DONE
 
 ## Relevant files
 
+- `crates/yoctui-ui/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -24,17 +25,17 @@ next-generation terminal workbench before changing layout code.
 
 ## Definition of done
 
-- Exact region hierarchy and minimum dimensions are normative.
-- Wide, medium, narrow, and below-minimum behavior is explicit.
-- Pane priority, Inspector collapse, footer and metric-strip behavior are
-  defined.
-- Responsive column hiding, focus, scroll indicators, and empty/loading/error
-  states are defined.
-- Unsupported concept-image elements are explicitly adapted or omitted.
+- Pane shell, section header, focused/unfocused borders, selected rows, and
+  separators are reusable.
+- Status labels and empty, unavailable, and loading states share typed
+  presentation helpers.
+- Bounded scroll indicators and responsive column selection are reusable.
+- Primitive tests cover color, no-color, focus, bounds, and narrow geometry.
 
 ## Verification
 
 ```bash
-./scripts/check-docs.sh
+cargo test -p yoctui-ui foundation_ui_primitives
+cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

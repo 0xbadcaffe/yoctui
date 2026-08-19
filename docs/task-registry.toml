@@ -5079,18 +5079,18 @@ notes = "Preserved all 458 existing tasks and statuses, reconciled the occupied 
 id = "FOUNDATION-UI-001"
 milestone = "M19"
 title = "Specify the new visual layout contract"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 522
 required = true
 depends_on = ["M19-GOV-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Document exact hierarchy, dimensions, breakpoints, priority, collapse, footer, telemetry, columns, focus, scrolling, and state presentation before layout implementation."
+notes = "The authoritative specification now fixes the exact region tree, 80x24 minimum, 200/160/130/100/80 breakpoints, deterministic column geometry, height and pane priority, Inspector collapse, footer/status and telemetry behavior, responsive table columns, focus/scroll indicators, shared state grammar, and explicit concept-image omissions. Documentation and roadmap gates pass; no renderer changed before this contract."
 
 [[task]]
 id = "FOUNDATION-UI-002"
 milestone = "M19"
 title = "Create reusable layout primitives"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 523
 required = true
 depends_on = ["FOUNDATION-UI-001"]

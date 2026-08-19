@@ -11,12 +11,22 @@ Status values:
 
 ## Current phase
 
-`FOUNDATION-UI-001` is `IN_PROGRESS`. The requested next-generation TUI
-milestone is registered as M19 because the repository already has a completed,
-evidence-backed M13. All requested task IDs are retained, including the
-`M13-UI-001` parent gate. The completion gate now requires an independent M19
-registry and acceptance matrix before the pre-existing product, compatibility,
-quality, profiling, and live-evidence gates can pass.
+`FOUNDATION-UI-002` is `IN_PROGRESS`. It will implement the reusable shell and
+state primitives required by the completed visual contract.
+
+`FOUNDATION-UI-001` is `DONE`: `docs/ui-spec.md` now fixes the exact region
+hierarchy, 80x24 minimum, 200/160/130/100/80 breakpoints, deterministic width
+and height degradation, pane priority, Inspector collapse, footer/status and
+telemetry behavior, responsive table columns, focus/scroll indicators, shared
+empty/loading/unavailable/error grammar, and explicit omissions for every
+unsupported illustrative field. No renderer changed before the contract.
+
+The requested next-generation TUI milestone is registered as M19 because the
+repository already has a completed, evidence-backed M13. All requested task
+IDs are retained, including the `M13-UI-001` parent gate. The completion gate
+requires an independent M19 registry and acceptance matrix before the
+pre-existing product, compatibility, quality, profiling, and live-evidence
+gates can pass.
 
 `M19-GOV-001` is `DONE`: the task graph preserves all 458 existing task records
 and statuses, documents the milestone-number reconciliation, selects the first

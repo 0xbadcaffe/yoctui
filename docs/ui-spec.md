@@ -124,6 +124,237 @@ No renderer may copy illustrative values from a design reference. Every value
 comes from typed model state; missing values read `unavailable`, `unknown`, or
 `--` according to the field contract.
 
+### Next-generation layout contract
+
+This section is the normative M19 layout contract. It refines the earlier
+literal scene without invalidating the reviewed `160x48` acceptance artifact:
+that artifact remains a regression fixture until a later target-design golden
+task reviews and replaces it. New canonical scenes use `200x60` and `160x50`
+so the telemetry/context tier can be exercised without removing the task,
+log, or history tiers.
+
+The persistent region hierarchy is:
+
+```text
+Shell
+├── Header
+├── Body
+│   ├── Navigator
+│   ├── Workspace
+│   │   ├── Main workspace
+│   │   ├── Secondary workspace / log / details
+│   │   └── Context tier
+│   │       ├── History or workspace context
+│   │       └── Telemetry strip, when supported and space permits
+│   └── Inspector
+│       ├── Title and primary facts
+│       ├── Secondary facts / related paths
+│       ├── Recent bounded output
+│       ├── Contextual actions
+│       └── System or compatibility status
+└── Footer
+    ├── Contextual shortcut rail
+    └── Transient status and fixed-width clock
+```
+
+Header and footer are each exactly two terminal rows in every supported
+layout. The body owns every remaining row. Panels use one-cell borders and
+one-cell title rows; adjacent rectangles must not overlap. A renderer must
+return before attempting to split an empty rectangle.
+
+#### Dimensions and breakpoints
+
+The supported minimum is `80x24`. Both dimensions are mandatory. A terminal
+below either minimum renders only the resize message and the quit route; it
+does not attempt a partial shell.
+
+At `130` columns and wider, all three body panes are visible. Column sizing is
+deterministic:
+
+- Navigator: approximately `16.25%`, clamped to `22..30` columns
+- Inspector: approximately `28.125%`, with a `32`-column minimum
+- Workspace: all remaining columns, never less than `76` at the wide boundary
+
+This produces `26 / 89 / 45` at 160 columns. At `200x60`, the preferred
+allocation is `30 / 116 / 54`. At `130x40`, it is `22 / 76 / 32`. The
+Workspace is the first recipient of extra width after the Navigator reaches
+30 columns; the Inspector may then grow without displacing Workspace below
+its minimum.
+
+At `100..129` columns, Navigator is 22 columns and Workspace receives the
+remainder. Inspector remains a first-class focus target but is collapsed from
+the grid. Focusing it replaces the Workspace rectangle with a full-height
+Inspector overlay; `Esc` returns to Workspace and Tab/Shift+Tab preserve the
+global focus order.
+
+At `80..99` columns, exactly one body pane is visible beneath a one-row pane
+switcher. Navigator, Workspace, and Inspector retain independent selection and
+scroll state while hidden. Tab and Shift+Tab change the visible pane. Dialogs
+replace none of those states and remain bounded inside the full terminal.
+
+Height degradation is independent of width:
+
+- body height `46+` (for example `160x50`): Main, Secondary, History/Context,
+  and supported Telemetry tiers may all render
+- body height `36..45`: omit the Telemetry tier first and give its rows to Main
+  and Secondary; the reviewed `160x48` Tasks geometry remains valid
+- body height `27..35`: retain Main, Secondary, and a compact Context summary
+- body height `18..26`: retain Main and Secondary; history moves to Inspector
+- body height `1..17`: render only Main with its title and bounded rows
+
+Pane priority is therefore: persistent Header/Footer, focused modal, active
+Workspace Main, Navigator or narrow pane switcher, Inspector primary facts,
+Secondary Workspace, contextual actions, History, System Status, Telemetry,
+and decorative detail. Removing a low-priority region must never remove its
+keyboard route or authoritative detail; the detail moves to Inspector/help or
+is reached by the existing workspace route.
+
+#### Workspace tier allocation
+
+Each workspace declares which of Main, Secondary, and Context it supports.
+Unsupported tiers are omitted and their rows return to Main. Tasks uses Main
+for the task table and overall build summary, Secondary for the selected live
+log, and Context for job history plus telemetry. Logs uses Main for retained
+entries and a compact status/search section; its selected record details live
+in Inspector rather than a duplicate fake tail. Other workspaces keep their
+existing typed tables, trees, previews, and detail panels and may use a single
+Main region.
+
+At `160x50`, the target Tasks Workspace body uses 14 rows for Main, 14 for
+Secondary, 10 for History, and 8 for Telemetry when at least one telemetry
+group is supported. If telemetry is wholly unavailable, its 8 rows return to
+Main and Secondary in equal proportions. At `200x60`, additional rows first
+extend Main and Secondary, then History; the telemetry strip remains bounded
+to 8 rows.
+
+#### Inspector collapse and priority
+
+Wide Inspector sections are ordered: primary facts, secondary facts/paths,
+recent bounded output, contextual actions, then system/compatibility status.
+The selected entity type is always named in the title. At reduced height:
+
+1. recent output shrinks to a compact tail and then becomes a Logs route
+2. secondary facts collapse behind the same Inspector scroll region
+3. system status becomes a compact health line
+4. primary facts and at least one enabled action remain visible
+
+Disabled actions may remain visible when their exact typed reason is useful.
+They use the disabled semantic role and cannot look selected or enabled.
+Medium uses the overlay described above. Narrow uses the pane switcher and a
+single independently scrollable Inspector. No breakpoint creates a second
+Inspector authority or selection.
+
+#### Footer behavior
+
+The wide F1-F10 rail remains authoritative global navigation because every
+displayed binding is implemented. A workspace may add only bindings that fit
+without clipping. Medium and narrow rails prefer, in order: active dialog or
+confirmation controls, active search/editor controls, current workspace
+actions, focus controls, and global help/menu/quit. Help must expose any valid
+binding omitted for width.
+
+Transient status shares the footer rather than covering the Workspace. Error
+and pending-confirmation text has priority over notification, operation
+result, reconnect, and background-activity text. The fixed-width clock is the
+last item on wide and medium layouts and may be hidden on narrow layouts.
+Status text is bounded to the available cells with a visible ellipsis; its
+typed severity remains available through text or a symbol in no-color mode.
+
+#### Telemetry strip behavior
+
+Telemetry is presentation of sampled typed state, never an illustration.
+Each cell includes a text value even when it also uses a gauge or sparkline.
+An unsupported metric is either omitted or explicitly says `unavailable`; it
+is never drawn as zero. A rate is shown only after two valid monotonic samples
+with a known interval. Counter reset, interface disappearance, overflow, and
+sampling failure produce an unavailable sample rather than a spike.
+
+- Wide: `CPU | RAM | Build FS | Read | Write | RX | TX`
+- Medium: `CPU | RAM | Build FS | I/O`, where I/O is a textual aggregate with
+  separate read/write values and never a fabricated combined counter
+- Narrow: omit the strip and expose a compact summary in System Status or the
+  Inspector
+
+CPU, RAM, and Build FS retain their cells when sampled. Disk I/O and network
+cells appear only on supported hosts. The strip stores and displays bounded
+history only. It does not increase redraw frequency: new points arrive on the
+telemetry sampling cadence, and reduced motion disables any presentation-only
+animation.
+
+#### Responsive table columns
+
+Column helpers select complete columns before row construction; renderers do
+not format data that will be hidden. Column priority is stable:
+
+| Table | Wide priority order | Medium | Narrow |
+| --- | --- | --- | --- |
+| Tasks | Task, Recipe, State, Elapsed, Progress, Worker, PID | Task, Recipe, State, Progress, Elapsed | Task, State, Progress |
+| Jobs | Status, Operation, Target/context, Started, Finished, Elapsed, ID | Status, Operation, Target, Elapsed | Status, Target, Elapsed |
+| Logs | Severity, Recipe, Task, Message, Source | Severity, Recipe, Message | Severity, Message |
+
+Worker and PID render only when authoritative. Per-task CPU is currently not
+part of `TaskInfo` and is omitted. An ETA is labeled `estimate` and renders
+only when the model supplies or honestly derives it from completed work and
+elapsed time; an unknown total or zero completed work renders `--`. PN, PV,
+PR, workdir, daemon version, disk I/O, and network rates are not inferred from
+recipe labels, paths, or the raster reference.
+
+#### Focus and scroll presentation
+
+Exactly one pane or modal owns focus. Focused panes use the semantic focused
+border and, where applicable, one selected row. Unfocused selected rows retain
+identity but use the inactive-selection treatment. No-color uses attributes,
+not color, for the same distinction. Dialog and command-palette focus replaces
+pane focus visually until the modal closes.
+
+Every bounded scrollable region exposes position when content exceeds its
+viewport. Titles use `top`, `1/N`, `N/N`, or an equivalent bounded range plus
+`↑`/`↓` availability. Horizontally scrolled content exposes `←` and/or `→`.
+Indicators are derived from retained length, viewport, selection, and offset;
+they do not imply access to evicted content. Follow mode pins the log indicator
+to the retained tail, while paused mode preserves its exact position.
+
+#### Empty, loading, unavailable, and error states
+
+All workspaces use the same textual state grammar:
+
+- empty: `∅ No <items>.` followed by a real next action when one exists
+- loading: `… Loading <items>.` with stable reduced-motion text
+- unavailable: `! Unavailable — <exact typed reason>.`
+- partial/degraded: `! Partial — <limitation>.` while retaining valid rows
+- error: `✕ <operation> failed — <typed summary>.` followed by retry/open-log
+  guidance only when that action exists
+- stale/disconnected: name the stale authority and the reconnect or refresh
+  action; never present stale data as current
+
+An empty successful inventory is distinct from unavailable, failed, loading,
+and filtered-to-zero. A filtered empty state keeps the query visible and
+offers the real clear-search action. No state is encoded only by glyph or
+color, and every progress visualization includes a numeric or textual
+equivalent.
+
+#### Concept-image adaptations
+
+The raster concept controls hierarchy, density, proportions, spacing, borders,
+selection, typography, gauges, meters, sparklines, status presentation, and
+terminal-native tone. It does not authorize data. The following illustrated
+items are adapted until authoritative support exists:
+
+- per-task CPU and per-task ETA columns are omitted unless typed task data is
+  added; host CPU is not attributed to a task
+- PN/PV/PR, section, workdir, and log file render only from explicit metadata,
+  never by parsing a recipe label or path
+- disk and network throughput do not render until the telemetry audit and
+  bounded sampler provide supported rates
+- daemon version and PID render only if the daemon protocol supplies them
+- illustrative action names and F-key assignments are replaced by Yoctui's
+  actual typed keymap and capability availability
+- decorative Navigator rows or badges without an authoritative workspace,
+  inventory, job, warning, or error count are omitted
+
+These omissions are honest unavailable behavior, not missing permission to
+invent equivalent values.
+
 ---
 
 ## 3. Header
