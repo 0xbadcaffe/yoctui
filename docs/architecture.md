@@ -2479,12 +2479,24 @@ inconclusive. The versioned catalog rejects duplicate probes, and deterministic
 release fixtures enumerate every required observation rather than treating one
 executable result as aggregate authority.
 
-Supervisor event queues are drained with a fixed per-tick budget. Native
-BitBake parse/task bursts therefore cannot starve IPC handshakes, status,
-Doctor, or shutdown processing. Live Wrynose validation still has one separate
-required gate: bridge-native event iteration must yield so an accepted
-cancellation can be read during an active build. It is tracked before live
-release support can be claimed.
+Supervisor event queues are drained with a fixed per-tick budget, and the
+bridge consumes at most 64 native events from one retained iterator before it
+returns to command input. The BitBake supervisor gives an already queued
+cancellation deterministic priority over its next event read. Native parse and
+task bursts therefore cannot starve cancellation, IPC handshakes, status,
+Doctor, or shutdown processing.
+
+Successful `stateShutdown` acknowledgement is Yoctui's cancellation terminal
+boundary. Some supported Tinfoil streams, including BitBake 2.18.0 on Wrynose,
+do not reliably deliver a later `BuildCompleted`; waiting for it can leave the
+job active indefinitely. The bridge emits exactly one failed build terminal
+with the original build correlation, clears its retained iterator and task
+identities, and stops native polling. The daemon then invokes the negotiated
+server-termination operation. Delayed native events cannot resurrect the job,
+and every attached client observes the same journal terminal. `StartBuild`
+obtains its exact build directory from the daemon-owned compatibility identity,
+so a separate client-side environment variable cannot select a different
+workspace.
 
 Multi-generation test data lives behind the BitBake crate's `test-fixtures`
 feature. Each fixture contains a typed environment, direct observations, and

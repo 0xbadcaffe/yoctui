@@ -11,6 +11,7 @@ from pathlib import Path
 
 BRIDGE = Path(__file__).parents[2] / "crates/yoctui-bitbake/bridge/yoctui_bridge.py"
 MAX_LINE_BYTES = 1024 * 1024
+MAX_NATIVE_EVENTS_PER_POLL = 64
 
 
 def run_bridge(
@@ -385,6 +386,114 @@ server = Server()
                 for line in result.stdout.splitlines()
             ],
             ["build_started", "build_completed"],
+        )
+
+    def test_compatibility_cancellation_preempts_native_event_flood(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            cancelled = Path(directory, "cancelled")
+            Path(directory, "bb.py").write_text(
+                f'''__version__ = "2.18.0"
+class Connection:
+ native_event_stream = True
+ def __init__(self): self.cancelled = False
+ def start_build(self, targets, task, force=False): pass
+ def cancel_build(self):
+  self.cancelled = True
+  open({str(cancelled)!r}, "w", encoding="utf-8").write("cancelled")
+ def drain_events(self):
+  def events():
+   for index in range(10000):
+    if self.cancelled:
+     yield {{"type": "build_completed", "success": False, "exit_code": 1}}
+     yield {{"type": "build_started"}}
+     return
+    yield {{"type": "parse_progress", "parsed": index, "total": 10000}}
+  return events()
+ def shutdown(self): pass
+class Server:
+ def __init__(self): self.connection = Connection()
+ def connect(self): return self.connection
+server = Server()
+''',
+                encoding="utf-8",
+            )
+            capabilities = [
+                {
+                    "id": capability,
+                    "implementation": "tinfoil.adapter.modern",
+                }
+                for capability in (
+                    "bitbake.build",
+                    "bitbake.cancellation",
+                    "bitbake.native_events",
+                )
+            ]
+            commands = [
+                {
+                    "protocol_version": 1,
+                    "sequence": 1,
+                    "correlation_id": 100,
+                    "message": {
+                        "type": "hello",
+                        "compatibility": {
+                            "generation": 1,
+                            "build_directory": str(Path.cwd()),
+                            "capabilities": capabilities,
+                        },
+                    },
+                },
+                {
+                    "protocol_version": 1,
+                    "sequence": 2,
+                    "correlation_id": 101,
+                    "message": {
+                        "type": "start_build",
+                        "targets": ["base-files"],
+                        "task": None,
+                    },
+                },
+                {
+                    "protocol_version": 1,
+                    "sequence": 3,
+                    "correlation_id": 102,
+                    "message": {"type": "cancel_build"},
+                },
+                {
+                    "protocol_version": 1,
+                    "sequence": 4,
+                    "correlation_id": 103,
+                    "message": {"type": "shutdown"},
+                },
+            ]
+            result = run_bridge(
+                *(json.dumps(command).encode() for command in commands),
+                environment={"PYTHONPATH": directory},
+            )
+            cancelled_text = cancelled.read_text(encoding="utf-8")
+
+        self.assertEqual(result.returncode, 0, result.stderr.decode())
+        self.assertEqual(cancelled_text, "cancelled")
+        messages = [json.loads(line) for line in result.stdout.splitlines()]
+        terminal = [
+            message
+            for message in messages
+            if message["message"]["type"] == "build_completed"
+        ]
+        self.assertEqual(len(terminal), 1)
+        self.assertEqual(terminal[0]["correlation_id"], 101)
+        self.assertFalse(terminal[0]["message"]["success"])
+        self.assertFalse(
+            any(message["message"]["type"] == "build_started" for message in messages)
+        )
+        terminal_index = messages.index(terminal[0])
+        self.assertEqual(messages[-1]["message"]["type"], "bridge_shutdown")
+        self.assertLess(terminal_index, len(messages) - 1)
+        self.assertLessEqual(
+            sum(
+                message["message"]["type"] == "parse_progress"
+                for message in messages[:terminal_index]
+            ),
+            MAX_NATIVE_EVENTS_PER_POLL,
         )
 
     def test_mocked_server_adapter_reports_variable_provenance(self) -> None:

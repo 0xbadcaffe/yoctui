@@ -1,4 +1,7 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::{
+    collections::{BTreeMap, HashMap},
+    path::PathBuf,
+};
 
 use tokio::sync::mpsc;
 use yoctui_bitbake::{BackendEvent, BitBakeBackend};
@@ -23,6 +26,7 @@ pub struct DaemonBitBakeSupervisor {
     tx: mpsc::UnboundedSender<DaemonBitBakeEvent>,
     rx: mpsc::UnboundedReceiver<DaemonBitBakeEvent>,
     compatibility: Option<DaemonCompatibilitySnapshot>,
+    bridge_environment: Option<BTreeMap<String, String>>,
 }
 
 impl Default for DaemonBitBakeSupervisor {
@@ -34,11 +38,18 @@ impl Default for DaemonBitBakeSupervisor {
             tx,
             rx,
             compatibility: None,
+            bridge_environment: None,
         }
     }
 }
 
 impl DaemonBitBakeSupervisor {
+    #[cfg(test)]
+    fn with_bridge_environment(mut self, environment: BTreeMap<String, String>) -> Self {
+        self.bridge_environment = Some(environment);
+        self
+    }
+
     pub fn replace_compatibility(
         &mut self,
         compatibility: Option<DaemonCompatibilitySnapshot>,
@@ -75,12 +86,13 @@ impl DaemonBitBakeSupervisor {
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(job_id, cancel_tx);
         let tx = self.tx.clone();
+        let bridge_environment = self.bridge_environment.clone();
         tokio::spawn(async move {
             let python = std::env::var("PYTHON").unwrap_or_else(|_| "python3".into());
             let mut backend = match crate::spawn_configured_bridge_with_compatibility(
                 &python,
                 build_dir,
-                None,
+                bridge_environment,
                 compatibility,
             )
             .await
@@ -122,6 +134,11 @@ impl DaemonBitBakeSupervisor {
             let mut backend_closed = false;
             loop {
                 tokio::select! {
+                    // A continuously ready event stream must never win over
+                    // an already queued user cancellation.  The bridge also
+                    // bounds each native-event poll, but this supervisor is
+                    // the authority that guarantees command priority.
+                    biased;
                     cancel = cancel_rx.recv() => {
                         if cancel.is_some() {
                             terminate_server = true;
@@ -197,6 +214,74 @@ impl DaemonBitBakeSupervisor {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::{
+        fs,
+        path::Path,
+        sync::atomic::{AtomicU64, Ordering},
+        time::{Duration, Instant},
+    };
+    use yoctui_model::{
+        AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
+        CapabilityId, CapabilityImplementation, CapabilityImplementationKind, CapabilityRecord,
+        CapabilitySnapshot, CapabilityState, IdentityAuthority, YoctoEnvironmentIdentity,
+    };
+
+    static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
+
+    fn cancellation_authority(build: &Path) -> DaemonCompatibilitySnapshot {
+        let capabilities = [
+            CapabilityId::BitBakeWorkspaceInspection,
+            CapabilityId::BitBakeBuild,
+            CapabilityId::BitBakeCancellation,
+            CapabilityId::BitBakeNativeEvents,
+            CapabilityId::BitBakeServerSocket,
+        ];
+        DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation: 1,
+                environment: YoctoEnvironmentIdentity {
+                    build_directory: AuthoritativeValue::detected(
+                        build.to_path_buf(),
+                        IdentityAuthority::InitializedEnvironment,
+                    ),
+                    bitbake_version: AuthoritativeValue::detected(
+                        "2.18.0".into(),
+                        IdentityAuthority::BitBakeVersionProbe,
+                    ),
+                    ..YoctoEnvironmentIdentity::default()
+                },
+                capabilities: capabilities
+                    .into_iter()
+                    .map(|id| CapabilityRecord {
+                        id,
+                        state: CapabilityState::Available,
+                        evidence: vec![CapabilityEvidence {
+                            kind: CapabilityEvidenceKind::BackendNegotiation,
+                            outcome: CapabilityEvidenceOutcome::Positive,
+                            subject: id.as_str().into(),
+                            detail: "Fake initialized backend exposes the required operation."
+                                .into(),
+                            argv: Vec::new(),
+                        }],
+                    })
+                    .collect(),
+            },
+            implementations: capabilities
+                .into_iter()
+                .map(|id| {
+                    (
+                        id,
+                        CapabilityImplementation {
+                            id: "tinfoil.adapter.modern".into(),
+                            kind: CapabilityImplementationKind::BackendApi,
+                        },
+                    )
+                })
+                .collect(),
+        }
+        .normalize()
+        .unwrap()
+    }
 
     #[test]
     fn daemon_compatibility_runtime_bitbake_rejects_missing_authority_before_spawn() {
@@ -212,5 +297,103 @@ mod tests {
             )
             .unwrap_err();
         assert!(error.contains("requires current environment capability authority"));
+    }
+
+    #[tokio::test]
+    async fn daemon_compatibility_cancellation_preempts_event_flood_and_terminates_once() {
+        let root = std::env::temp_dir().join(format!(
+            "yoctui-daemon-cancellation-{}-{}",
+            std::process::id(),
+            NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let build = root.join("build");
+        let python = root.join("python");
+        let marker = root.join("cancelled");
+        fs::create_dir_all(&build).unwrap();
+        fs::create_dir_all(&python).unwrap();
+        let build = build.canonicalize().unwrap();
+        fs::write(
+            python.join("bb.py"),
+            format!(
+                r#"__version__ = "2.18.0"
+class Connection:
+ native_event_stream = True
+ def __init__(self): self.cancelled = False
+ def inspect_workspace(self):
+  return {{"build_dir": {build:?}, "source_dir": None, "variables": {{}}, "variable_provenance": {{}}, "variable_provenance_chain": {{}}, "bitbake_version": "2.18.0", "release": "6.0.2", "layers": [], "recipes": []}}
+ def start_build(self, targets, task, force=False): pass
+ def cancel_build(self):
+  self.cancelled = True
+  open({marker:?}, "w", encoding="utf-8").write("cancelled")
+ def drain_events(self):
+  def events():
+   for index in range(10000):
+    if self.cancelled:
+     yield {{"type": "build_completed", "success": False, "exit_code": 1}}
+     yield {{"type": "build_started"}}
+     return
+    yield {{"type": "parse_progress", "parsed": index, "total": 10000}}
+  return events()
+ def terminate_server(self): pass
+ def shutdown(self): pass
+class Server:
+ def __init__(self): self.connection = Connection()
+ def connect(self): return self.connection
+server = Server()
+"#,
+                build = build.display().to_string(),
+                marker = marker.display().to_string(),
+            ),
+        )
+        .unwrap();
+
+        let mut supervisor = DaemonBitBakeSupervisor::default().with_bridge_environment(
+            BTreeMap::from([("PYTHONPATH".into(), python.display().to_string())]),
+        );
+        supervisor
+            .replace_compatibility(Some(cancellation_authority(&build)))
+            .unwrap();
+        let job_id = supervisor
+            .start(
+                build,
+                BuildRequest {
+                    targets: vec!["base-files".into()],
+                    task: None,
+                    force: false,
+                },
+            )
+            .unwrap();
+
+        let deadline = Instant::now() + Duration::from_secs(10);
+        let mut cancellation_sent = false;
+        let mut terminal_count = 0;
+        let mut late_started = false;
+        while Instant::now() < deadline && terminal_count == 0 {
+            while let Some(event) = supervisor.try_event() {
+                match event {
+                    DaemonBitBakeEvent::Backend { event, .. } => match *event {
+                        BackendEvent::ParseProgress { .. } if !cancellation_sent => {
+                            supervisor.cancel(job_id).unwrap();
+                            cancellation_sent = true;
+                        }
+                        BackendEvent::BuildStarted if cancellation_sent => late_started = true,
+                        BackendEvent::BuildCompleted { success, .. } => {
+                            assert!(!success);
+                            terminal_count += 1;
+                        }
+                        _ => {}
+                    },
+                    DaemonBitBakeEvent::Failed { message, .. } => panic!("{message}"),
+                }
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+
+        assert!(cancellation_sent, "event stream never became active");
+        assert_eq!(terminal_count, 1);
+        assert!(!late_started);
+        assert_eq!(fs::read_to_string(&marker).unwrap(), "cancelled");
+        assert!(supervisor.cancel(job_id).is_err());
+        fs::remove_dir_all(&root).unwrap();
     }
 }

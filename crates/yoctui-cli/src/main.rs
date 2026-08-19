@@ -2290,12 +2290,27 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                     }
                     let outcome = match request.command {
                         DaemonCommand::StartBuild { targets, task, force } => {
-                            let Some(build_dir) = std::env::var_os("YOCTUI_BUILD_DIR") else {
+                            let build_dir = daemon_journal
+                                .snapshot()
+                                .compatibility
+                                .as_ref()
+                                .and_then(|compatibility| {
+                                    match &compatibility.environment.build_directory {
+                                        yoctui_protocol::daemon::CompatibilityDetected::Detected {
+                                            value,
+                                            ..
+                                        } => Some(PathBuf::from(value)),
+                                        yoctui_protocol::daemon::CompatibilityDetected::Unknown => {
+                                            None
+                                        }
+                                    }
+                                });
+                            let Some(build_dir) = build_dir else {
                                 connection.send(&ServerMessage::CommandResult(CommandResult {
                                     request_id: request.request_id,
                                     outcome: CommandOutcome::Rejected {
                                         code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,
-                                        message: "daemon BitBake build requires YOCTUI_BUILD_DIR".into(),
+                                        message: "daemon BitBake build requires current compatibility build-directory authority".into(),
                                         current_generation: daemon_journal.snapshot().generation,
                                     },
                                 }))?;
@@ -2303,7 +2318,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                             };
                             let build_targets = targets.clone();
                             match bitbake_supervisor.start(
-                                PathBuf::from(build_dir),
+                                build_dir,
                                 BuildRequest { targets, task, force },
                             ) {
                                 Ok(job_id) => {

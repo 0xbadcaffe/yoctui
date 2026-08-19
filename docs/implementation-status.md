@@ -1063,6 +1063,14 @@ required observation, and focused resolver/version/future tests pass. A fresh
 live Doctor snapshot confirmed the timed-out `devtool upgrade --help` is Unknown
 with `evidence.incomplete`, while fully positive `bitbake-getvar` remains
 Available and the fully inconclusive backend build probe selects its explicit
-limited adapter fallback. `COMPAT-BITBAKE-CANCEL-RUNTIME-001` is next to make
-bridge event delivery yield to an accepted cancellation while BitBake is
-active; live support remains unclaimed.
+limited adapter fallback. `COMPAT-BITBAKE-CANCEL-RUNTIME-001` is complete.
+Bridge-native event iteration and daemon event publication are independently
+bounded, queued cancellation has deterministic supervisor priority, and an
+accepted BitBake shutdown becomes exactly one build-correlated terminal even
+when Tinfoil omits a final event. Late native records are discarded. Fake
+bridge and real-backend daemon flood tests pass. A live official Wrynose 6.0.2 /
+BitBake 2.18.0 `core-image-minimal` run was cancelled through daemon IPC at
+67/4346 tasks and reached Failed in 0.257 seconds; a second client and Doctor
+remained responsive, and the bridge/server child exited without force kill.
+`COMPAT-LIVE-LATEST-001` is active; this cancellation evidence alone is not a
+release support claim.

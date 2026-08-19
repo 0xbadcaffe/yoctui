@@ -4966,18 +4966,18 @@ notes = "Catalog version two rejects duplicate required probes, and one centrali
 id = "COMPAT-BITBAKE-CANCEL-RUNTIME-001"
 milestone = "M18"
 title = "Keep live BitBake cancellation responsive during native events"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 513
 required = true
 depends_on = ["COMPAT-BITBAKE-API-001", "COMPAT-DAEMON-RUNTIME-001", "COMPAT-PROBE-AGGREGATION-001"]
 verify = ["python3 -m pytest bridge/tests -k compatibility_cancellation", "cargo test -p yoctui --bin yoctui daemon_compatibility_cancellation", "./scripts/verify-roadmap.sh"]
-notes = "Fresh Wrynose execution proved that the daemon accepts CancelJob while the bridge's synchronous native-event iterator prevents it from reading cancel_build until the build ends. Make command input and native event delivery cooperative and bounded, prove cancellation reaches active BitBake promptly with one terminal outcome, and retain daemon responsiveness under event load."
+notes = "Bridge polling now consumes at most 64 records from a retained iterator before returning to command input, the daemon drains at most 32 supervisor records per tick, and queued cancellation has deterministic select priority. Successful stateShutdown acknowledgement emits one original-build-correlated failed terminal, clears retained native state, and triggers negotiated server termination because Wrynose Tinfoil may omit BuildCompleted. Fake 10,000-event bridge and real-backend daemon tests pass. Live official Wrynose 6.0.2 / BitBake 2.18.0 cancelled core-image-minimal at 67/4346 tasks through daemon IPC in 0.257 seconds; a second client and Doctor stayed responsive and no force kill was used."
 
 [[task]]
 id = "COMPAT-LIVE-LATEST-001"
 milestone = "M18"
 title = "Validate latest supported Yocto stable release"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 514
 required = true
 depends_on = ["COMPAT-DOCTOR-001", "COMPAT-TEST-CMDS-001", "COMPAT-TEST-UI-001", "COMPAT-MATRIX-001", "COMPAT-BITBAKE-GETVAR-001", "COMPAT-DAEMON-RUNTIME-001", "COMPAT-PROBE-AGGREGATION-001", "COMPAT-BITBAKE-CANCEL-RUNTIME-001"]

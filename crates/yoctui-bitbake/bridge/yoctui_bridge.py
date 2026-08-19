@@ -15,6 +15,7 @@ VERSION = 1
 MAX_LINE_BYTES = 1024 * 1024
 MAX_DEPENDENCY_NODES = 1500
 MAX_DEPENDENCY_EDGES = 3000
+MAX_NATIVE_EVENTS_PER_POLL = 64
 sequence = 0
 protocol_output = sys.stdout
 
@@ -496,7 +497,7 @@ class TinfoilConnection:
     def drain_events(self):
         events = []
         first = True
-        while True:
+        while len(events) < MAX_NATIVE_EVENTS_PER_POLL:
             # A short first wait pumps the event socket after the runqueue
             # becomes idle. Pure zero-timeout polling can leave the final
             # BuildCompleted record unread until another server command.
@@ -545,6 +546,7 @@ class BitBakeAdapter:
         self.build_correlation_id = None
         self.build_active = False
         self.task_identities_by_pid = {}
+        self.native_event_iterator = None
         self.compatibility_generation = None
         self.negotiated_capabilities = set()
 
@@ -618,6 +620,7 @@ class BitBakeAdapter:
     def start_build(self, targets, task, force=False):
         connection = self.server()
         self.task_identities_by_pid.clear()
+        self.native_event_iterator = None
         operation = getattr(connection, "start_build", None)
         if not callable(operation):
             raise ServerUnavailable(
@@ -659,6 +662,7 @@ class BitBakeAdapter:
         self.connection = None
         self.build_active = False
         self.task_identities_by_pid.clear()
+        self.native_event_iterator = None
 
     def optional_server_operation(self, name):
         if self.module is None:
@@ -859,43 +863,64 @@ class BitBakeAdapter:
             )
 
     def native_events(self):
-        """Drain a non-blocking server event hook when the adapter exposes one."""
+        """Return one bounded event slice without monopolizing command input."""
         if self.connection is None:
             return []
         drain = getattr(self.connection, "drain_events", None)
         if not callable(drain):
             return []
-        try:
-            events = drain()
-        except Exception as exc:
-            return [
-                {
-                    "type": "warning",
-                    "message": f"could not drain BitBake server events: {exc}",
-                }
-            ]
-        if events is None:
-            return []
-        try:
-            events = [
-                event
-                for event in (
-                    normalize_event(item, self.task_identities_by_pid)
-                    for item in events
-                )
-                if event
-            ]
-            if any(event.get("type") == "build_completed" for event in events):
+        if self.native_event_iterator is None:
+            try:
+                drained = drain()
+            except Exception as exc:
+                return [
+                    {
+                        "type": "warning",
+                        "message": f"could not drain BitBake server events: {exc}",
+                    }
+                ]
+            if drained is None:
+                return []
+            try:
+                self.native_event_iterator = iter(drained)
+            except TypeError:
+                return [
+                    {
+                        "type": "warning",
+                        "message": "BitBake server drain_events result is not iterable",
+                    }
+                ]
+
+        events = []
+        for _ in range(MAX_NATIVE_EVENTS_PER_POLL):
+            try:
+                raw = next(self.native_event_iterator)
+            except StopIteration:
+                self.native_event_iterator = None
+                break
+            event = normalize_event(raw, self.task_identities_by_pid)
+            if not event:
+                continue
+            kind = event.get("type")
+            if kind == "build_completed":
+                if not self.build_active:
+                    continue
                 self.build_active = False
                 self.task_identities_by_pid.clear()
-            return events
-        except TypeError:
-            return [
-                {
-                    "type": "warning",
-                    "message": "BitBake server drain_events result is not iterable",
-                }
-            ]
+                self.native_event_iterator = None
+                events.append(event)
+                break
+            if not self.build_active and kind in {
+                "build_started",
+                "parse_progress",
+                "task_queued",
+                "task_started",
+                "task_progress",
+                "task_completed",
+            }:
+                continue
+            events.append(event)
+        return events
 
     def mock_events(self):
         try:
@@ -1932,7 +1957,6 @@ def handle(command, correlation_id, adapter):
                 adapter.build_correlation_id = correlation_id
                 if not native_events:
                     emit({"type": "build_started"}, correlation_id)
-                emit_adapter_events(adapter)
                 for event in adapter.mock_events():
                     emit(event, correlation_id)
     elif kind == "list_recipes":
@@ -2098,14 +2122,25 @@ def handle(command, correlation_id, adapter):
             emit({"type": "layer_relationships", "layers": layers}, correlation_id)
     elif kind == "cancel_build":
         try:
-            native_events = adapter.cancel_build()
+            adapter.cancel_build()
         except ServerUnavailable as exc:
             error("bitbake_server_unavailable", str(exc), correlation_id)
         else:
-            if not native_events:
-                emit({"type": "build_completed", "success": False}, correlation_id)
-                adapter.build_active = False
-                adapter.build_correlation_id = None
+            # stateShutdown acknowledges the cancellation request, but some
+            # BitBake releases do not subsequently deliver BuildCompleted to
+            # this Tinfoil event stream.  The accepted shutdown request is the
+            # authoritative terminal boundary for Yoctui.  Stop polling here
+            # so delayed native records cannot resurrect the cancelled build;
+            # the daemon then closes the server through terminate_server.
+            build_correlation_id = adapter.build_correlation_id or correlation_id
+            adapter.build_active = False
+            adapter.native_event_iterator = None
+            adapter.task_identities_by_pid.clear()
+            emit(
+                {"type": "build_completed", "success": False, "exit_code": 1},
+                build_correlation_id,
+            )
+            adapter.build_correlation_id = None
     elif kind == "shutdown":
         emit({"type": "bridge_shutdown"}, correlation_id)
         return False
@@ -2135,7 +2170,8 @@ def main():
             # events cannot be stranded between adjacent client commands.
             ready = selector.select(0.1 if adapter.build_active else 1.0)
             if not ready:
-                emit_adapter_events(adapter)
+                if adapter.build_active:
+                    emit_adapter_events(adapter)
                 continue
             raw = sys.stdin.buffer.readline()
             if not raw:
@@ -2172,6 +2208,8 @@ def main():
                     continue
                 if not handle(message, data.get("correlation_id"), adapter):
                     return
+                if adapter.build_active:
+                    emit_adapter_events(adapter)
             except (UnicodeDecodeError, json.JSONDecodeError, AttributeError) as exc:
                 error("malformed_command", str(exc))
     finally:
