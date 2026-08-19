@@ -11,12 +11,12 @@ Status values:
 
 ## Current phase
 
-`FINAL-GATE-PERF-001` is the sixth `DONE` terminal candidate. CLI smoke and the
-shared ASan production workbench pass. The fifth gate reached Python static
-checks and exposed only Ruff formatter drift in the bridge and its tests; the
-repository Ruff version now reports all three checked files formatted, its
-static check passes, and all 43 bridge tests pass. The complete gate must pass
-before the host's original `kernel.perf_event_paranoid=4` policy is restored.
+`FINAL-GATE-PERF-001` is the seventh `DONE` terminal candidate. CLI smoke and
+the shared ASan production workbench pass. The sixth gate passed Ruff and then
+exposed an unsafe optional import spec in the bridge test loader under mypy.
+The loader now fails explicitly when its spec or loader is absent; Ruff, mypy,
+and all 43 bridge tests pass. The complete gate must pass before the host's
+original `kernel.perf_event_paranoid=4` policy is restored.
 
 `PERF-FLAMEGRAPH-QUALITY-001` is `DONE`: the replacement 160x48 benchmark
 drives 6,000 deterministic production reducer/Ratatui frames without a daemon

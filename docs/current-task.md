@@ -12,10 +12,11 @@ Run the complete repository completion gate while real Linux perf sampling is
 temporarily available, record the terminal result, and restore the host's
 original perf security policy afterward.
 
-The CLI and sanitizer corrections pass. The fifth candidate reached Python
-static checks and exposed formatter drift in the bridge and its tests. The
-repository Ruff version now reports those sources formatted, and all 43 bridge
-tests pass. This sixth terminal candidate is ready for the complete gate.
+The CLI and sanitizer corrections pass. The sixth candidate passed Ruff and
+then exposed an unsafe optional import spec in the bridge test loader under
+mypy. The loader now fails explicitly when its spec or loader is absent; Ruff,
+mypy, and all 43 bridge tests pass. This seventh terminal candidate is ready for
+the complete gate.
 
 ## Dependencies
 

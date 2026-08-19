@@ -34,8 +34,8 @@ def run_bridge(
 class BridgeProtocolTests(unittest.TestCase):
     def test_tinfoil_cancellation_uses_bounded_cooker_shutdown(self) -> None:
         spec = importlib.util.spec_from_file_location("yoctui_bridge_test", BRIDGE)
-        self.assertIsNotNone(spec)
-        self.assertIsNotNone(spec.loader)
+        if spec is None or spec.loader is None:
+            self.fail(f"could not load bridge module from {BRIDGE}")
         bridge = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(bridge)
 
