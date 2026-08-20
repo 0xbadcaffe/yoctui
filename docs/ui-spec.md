@@ -275,6 +275,17 @@ sampling failure produce an unavailable sample rather than a spike.
 - Narrow: omit the strip and expose a compact summary in System Status or the
   Inspector
 
+The strip's render-area breakpoints are explicit: `112+` columns is Wide,
+`64..111` is Medium, and below 64 is Hidden. It requires at least four rows,
+and Dashboard/Tasks allocate the bounded eight-row tier only when their
+Workspace body is at least 46 rows high and at least one metric group is
+authoritative. Otherwise those rows return to higher-priority workspace
+content. Wide preserves the stable cell order and omits the paired Read/Write
+or RX/TX cells when neither a current sample nor retained valid history proves
+that optional host source. Medium similarly omits its two-line `I/O` cell when
+disk rates are unsupported. Vertical separators and semantic graph roles are
+shared across themes; no-color and reduced-motion retain the same text.
+
 CPU, RAM, and Build FS retain their cells when sampled. Disk I/O and network
 cells appear only on supported hosts. The strip stores and displays bounded
 history only. It does not increase redraw frequency: new points arrive on the

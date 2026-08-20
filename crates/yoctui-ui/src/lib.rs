@@ -567,10 +567,6 @@ fn utilization_percent(total: Option<u64>, available: Option<u64>) -> Option<u8>
     u8::try_from((u128::from(used) * 100 / u128::from(total)).min(100)).ok()
 }
 
-fn fixed_milli(value: u32) -> String {
-    format!("{}.{:02}", value / 1_000, (value % 1_000) / 10)
-}
-
 fn build_pace(app: &App) -> String {
     build_pace_at(app, SystemTime::now())
 }
@@ -4067,73 +4063,156 @@ fn render_network_io(frame: &mut Frame, app: &App, receive_area: Rect, transmit_
     );
 }
 
-fn render_history(frame: &mut Frame, label: &str, samples: &[u64], area: Rect, style: Style) {
-    let columns = Layout::horizontal([Constraint::Length(9), Constraint::Min(1)]).split(area);
-    frame.render_widget(Paragraph::new(label).style(style), columns[0]);
-    frame.render_widget(
-        Sparkline::default().data(samples).max(100).style(style),
-        columns[1],
-    );
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum TelemetryStripMode {
+    Wide,
+    Medium,
+    Hidden,
 }
 
-fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
+fn telemetry_strip_mode(area: Rect) -> TelemetryStripMode {
+    if area.height < 4 || area.width < 64 {
+        TelemetryStripMode::Hidden
+    } else if area.width < 112 {
+        TelemetryStripMode::Medium
+    } else {
+        TelemetryStripMode::Wide
+    }
+}
+
+fn disk_io_supported(app: &App) -> bool {
+    app.host_telemetry.disk_read_bytes_per_second.is_some()
+        || app.host_telemetry.disk_write_bytes_per_second.is_some()
+        || !app
+            .host_telemetry_history
+            .disk_read_bytes_per_second
+            .is_empty()
+        || !app
+            .host_telemetry_history
+            .disk_write_bytes_per_second
+            .is_empty()
+}
+
+fn network_io_supported(app: &App) -> bool {
+    app.host_telemetry
+        .network_receive_bytes_per_second
+        .is_some()
+        || app
+            .host_telemetry
+            .network_transmit_bytes_per_second
+            .is_some()
+        || !app
+            .host_telemetry_history
+            .network_receive_bytes_per_second
+            .is_empty()
+        || !app
+            .host_telemetry_history
+            .network_transmit_bytes_per_second
+            .is_empty()
+}
+
+fn telemetry_available(app: &App) -> bool {
+    app.host_telemetry.cpu_utilization_percent.is_some()
+        || utilization_percent(
+            app.host_telemetry.memory_total_bytes,
+            app.host_telemetry.memory_available_bytes,
+        )
+        .is_some()
+        || (app.workspace.build_dir.is_some()
+            && utilization_percent(
+                app.host_telemetry.disk_total_bytes,
+                app.host_telemetry.disk_available_bytes,
+            )
+            .is_some())
+        || disk_io_supported(app)
+        || network_io_supported(app)
+}
+
+#[derive(Clone, Copy)]
+enum TelemetryCell {
+    Cpu,
+    Ram,
+    BuildFilesystem,
+    DiskRead,
+    DiskWrite,
+    NetworkReceive,
+    NetworkTransmit,
+    DiskIo,
+}
+
+fn render_telemetry_cell(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    cell: TelemetryCell,
+    divider: bool,
+) {
+    let block = Block::default().borders(if divider {
+        Borders::RIGHT
+    } else {
+        Borders::NONE
+    });
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    match cell {
+        TelemetryCell::Cpu => render_cpu_gauge(frame, app, inner),
+        TelemetryCell::Ram => render_ram_gauge(frame, app, inner),
+        TelemetryCell::BuildFilesystem => render_disk_gauge(frame, app, inner),
+        TelemetryCell::DiskRead => render_disk_io(frame, app, inner, Rect::default()),
+        TelemetryCell::DiskWrite => render_disk_io(frame, app, Rect::default(), inner),
+        TelemetryCell::NetworkReceive => {
+            render_network_io(frame, app, inner, Rect::default());
+        }
+        TelemetryCell::NetworkTransmit => {
+            render_network_io(frame, app, Rect::default(), inner);
+        }
+        TelemetryCell::DiskIo => {
+            let rows = Layout::vertical([Constraint::Length(1); 2]).split(inner);
+            render_disk_io(frame, app, rows[0], rows[1]);
+        }
+    }
+}
+
+fn render_telemetry_strip(frame: &mut Frame, app: &App, area: Rect) {
+    let mode = telemetry_strip_mode(area);
+    if mode == TelemetryStripMode::Hidden || !telemetry_available(app) {
+        return;
+    }
     let palette = ThemePalette::for_app(app);
     let block = Block::default()
-        .title("System telemetry · 60-sample history")
+        .title("Telemetry · bounded 60-sample histories")
         .borders(Borders::ALL)
         .style(palette.base());
     let inner = block.inner(area);
     frame.render_widget(block, area);
-    let rows = Layout::vertical([Constraint::Length(1); 10]).split(inner);
 
-    render_cpu_gauge(frame, app, rows[0]);
-    let cpu_history = app
-        .host_telemetry_history
-        .cpu_percent
-        .iter()
-        .copied()
-        .collect::<Vec<_>>();
-    render_history(
-        frame,
-        "CPU trail",
-        &cpu_history,
-        rows[1],
-        palette.role(palette.progress, Modifier::BOLD),
-    );
-
-    render_ram_gauge(frame, app, rows[2]);
-    let memory_history = app
-        .host_telemetry_history
-        .memory_percent
-        .iter()
-        .copied()
-        .collect::<Vec<_>>();
-    render_history(
-        frame,
-        "RAM trail",
-        &memory_history,
-        rows[3],
-        palette.role(palette.accent, Modifier::BOLD),
-    );
-
-    render_disk_gauge(frame, app, rows[4]);
-    render_disk_io(frame, app, rows[5], rows[6]);
-    render_network_io(frame, app, rows[7], rows[8]);
-    let load = app.host_telemetry.load_average_milli.map_or_else(
-        || "LOAD 1/5/15  -- / -- / --".into(),
-        |load| {
-            format!(
-                "LOAD 1/5/15  {} / {} / {}",
-                fixed_milli(load[0]),
-                fixed_milli(load[1]),
-                fixed_milli(load[2])
-            )
-        },
-    );
-    frame.render_widget(
-        Paragraph::new(load).style(palette.role(palette.informational, Modifier::BOLD)),
-        rows[9],
-    );
+    let mut cells = vec![
+        TelemetryCell::Cpu,
+        TelemetryCell::Ram,
+        TelemetryCell::BuildFilesystem,
+    ];
+    match mode {
+        TelemetryStripMode::Wide => {
+            if disk_io_supported(app) {
+                cells.extend([TelemetryCell::DiskRead, TelemetryCell::DiskWrite]);
+            }
+            if network_io_supported(app) {
+                cells.extend([
+                    TelemetryCell::NetworkReceive,
+                    TelemetryCell::NetworkTransmit,
+                ]);
+            }
+        }
+        TelemetryStripMode::Medium if disk_io_supported(app) => {
+            cells.push(TelemetryCell::DiskIo);
+        }
+        TelemetryStripMode::Medium | TelemetryStripMode::Hidden => {}
+    }
+    let count = u32::try_from(cells.len()).unwrap_or(1);
+    let areas = Layout::horizontal(vec![Constraint::Ratio(1, count); cells.len()]).split(inner);
+    for (index, (cell, area)) in cells.into_iter().zip(areas.iter().copied()).enumerate() {
+        render_telemetry_cell(frame, app, area, cell, index + 1 < areas.len());
+    }
 }
 
 fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
@@ -4159,8 +4238,17 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
         .map(|l| l.message.as_str())
         .collect::<Vec<_>>()
         .join("\n");
-    let chunks =
-        Layout::horizontal([Constraint::Percentage(45), Constraint::Percentage(55)]).split(area);
+    let show_telemetry = area.height >= 46
+        && telemetry_available(app)
+        && telemetry_strip_mode(Rect::new(area.x, area.y, area.width, 8))
+            != TelemetryStripMode::Hidden;
+    let dashboard_sections = if show_telemetry {
+        Layout::vertical([Constraint::Min(1), Constraint::Length(8)]).split(area)
+    } else {
+        Layout::vertical([Constraint::Min(1)]).split(area)
+    };
+    let chunks = Layout::horizontal([Constraint::Percentage(45), Constraint::Percentage(55)])
+        .split(dashboard_sections[0]);
     let parse_progress = app.build.parse_current.map_or_else(
         || "not parsing".into(),
         |current| {
@@ -4186,17 +4274,8 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
     } else {
         "unavailable".into()
     };
-    let show_cockpit = chunks[0].height >= 28;
-    let build_panels = if show_cockpit {
-        Layout::vertical([
-            Constraint::Length(13),
-            Constraint::Length(12),
-            Constraint::Min(3),
-        ])
-        .split(chunks[0])
-    } else {
-        Layout::vertical([Constraint::Length(13), Constraint::Min(3)]).split(chunks[0])
-    };
+    let build_panels =
+        Layout::vertical([Constraint::Length(13), Constraint::Min(3)]).split(chunks[0]);
     frame.render_widget(
         Paragraph::new(format!(
             "Target: {}\nBackend: {}\nStatus: {}\nExit code: {}\nParse progress: {}\nMachine: {}  Distro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\n{}\nHost CPU: {}  Build disk free: {}",
@@ -4228,12 +4307,6 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
         .block(Block::default().title("Build").borders(Borders::ALL)),
         build_panels[0],
     );
-    let task_panel_index = if show_cockpit {
-        telemetry_cockpit(frame, app, build_panels[1]);
-        2
-    } else {
-        1
-    };
     let task_count = package_tasks.len();
     let start = app.task_progress_scroll.min(task_count.saturating_sub(1));
     let task_block = Block::default()
@@ -4243,8 +4316,8 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
             app.completed_tasks.len()
         ))
         .borders(Borders::ALL);
-    let task_area = task_block.inner(build_panels[task_panel_index]);
-    frame.render_widget(task_block, build_panels[task_panel_index]);
+    let task_area = task_block.inner(build_panels[1]);
+    frame.render_widget(task_block, build_panels[1]);
     if package_tasks.is_empty() {
         frame.render_widget(
             Paragraph::new("Waiting for BitBake task events."),
@@ -4318,7 +4391,10 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
             )
             .wrap(Wrap { trim: false }),
         chunks[1],
-    )
+    );
+    if show_telemetry {
+        render_telemetry_strip(frame, app, dashboard_sections[1]);
+    }
 }
 
 fn task_state_label(state: TaskState) -> &'static str {
@@ -5017,6 +5093,25 @@ fn tasks_workspace(
         render_task_table(frame, app, panels[0], rows, now);
         render_task_log(frame, app, panels[1], selected);
         render_job_history(frame, app, panels[2], now);
+    } else if area.height >= 46
+        && telemetry_available(app)
+        && telemetry_strip_mode(Rect::new(area.x, area.y, area.width, 8))
+            != TelemetryStripMode::Hidden
+    {
+        let extra = area.height.saturating_sub(46);
+        let main_height = 14 + extra.div_ceil(2);
+        let secondary_height = 14 + extra / 2;
+        let panels = Layout::vertical([
+            Constraint::Length(main_height),
+            Constraint::Length(secondary_height),
+            Constraint::Min(10),
+            Constraint::Length(8),
+        ])
+        .split(area);
+        render_task_table(frame, app, panels[0], rows, now);
+        render_task_log(frame, app, panels[1], selected);
+        render_job_history(frame, app, panels[2], now);
+        render_telemetry_strip(frame, app, panels[3]);
     } else if area.height >= 27 {
         let panels = Layout::vertical([
             Constraint::Percentage(45),
@@ -17541,7 +17636,7 @@ mod tests {
         assert!(render_io(&app, 16).contains("TX 0 B/s"));
     }
     #[test]
-    fn dashboard_telemetry_cockpit_renders_gauges_history_and_load() {
+    fn next_generation_telemetry_strip_composes_wide_medium_and_hidden_tiers() {
         let mut app = App::new(10, 1_000);
         app.workspace.build_dir = Some("/work/build".into());
         for cpu in [12, 38, 71, 42] {
@@ -17562,24 +17657,113 @@ mod tests {
                 }),
             );
         }
-        let output = rendered_text(&app, 300, 40);
-        assert!(
-            output.contains("System telemetry · 60-sample history"),
-            "{output}"
+        let render_strip = |app: &App, width| {
+            let mut terminal = Terminal::new(TestBackend::new(width, 8)).unwrap();
+            terminal
+                .draw(|frame| render_telemetry_strip(frame, app, frame.area()))
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+
+        assert_eq!(
+            telemetry_strip_mode(Rect::new(0, 0, 112, 8)),
+            TelemetryStripMode::Wide
         );
-        assert!(output.contains("CPU  42% · 16 cores"), "{output}");
-        assert!(output.contains("CPU trail"), "{output}");
-        assert!(output.contains("RAM  75%"), "{output}");
-        assert!(output.contains("RAM trail"), "{output}");
-        assert!(output.contains("BUILD FS  60%"), "{output}");
-        assert!(output.contains("Read 42.0 KiB/s"), "{output}");
-        assert!(output.contains("Write 84.0 KiB/s"), "{output}");
-        assert!(output.contains("RX 126.0 KiB/s"), "{output}");
-        assert!(output.contains("TX 168.0 KiB/s"), "{output}");
-        assert!(
-            output.contains("LOAD 1/5/15  1.25 / 2.50 / 3.75"),
-            "{output}"
+        assert_eq!(
+            telemetry_strip_mode(Rect::new(0, 0, 111, 8)),
+            TelemetryStripMode::Medium
         );
+        assert_eq!(
+            telemetry_strip_mode(Rect::new(0, 0, 63, 8)),
+            TelemetryStripMode::Hidden
+        );
+
+        let wide = render_strip(&app, 210);
+        for expected in [
+            "Telemetry · bounded 60-sample histories",
+            "CPU  42% · 16 cores",
+            "RAM 75%",
+            "BUILD FS 60%",
+            "Read 42.0 KiB/s",
+            "Write 84.0 KiB/s",
+            "RX 126.0 KiB/s",
+            "TX 168.0 KiB/s",
+        ] {
+            assert!(wide.contains(expected), "missing {expected}: {wide}");
+        }
+        assert!(wide.chars().any(|character| "▁▂▃▄▅▆▇█".contains(character)));
+
+        let medium = render_strip(&app, 100);
+        for expected in [
+            "CPU 42% · 16c",
+            "RAM 75%",
+            "BUILD FS 60%",
+            "R 42.0 KiB/s",
+            "W 84.0 KiB/s",
+        ] {
+            assert!(medium.contains(expected), "missing {expected}: {medium}");
+        }
+        assert!(!medium.contains("RX 126.0 KiB/s"), "{medium}");
+        assert!(!medium.contains("TX 168.0 KiB/s"), "{medium}");
+
+        let narrow = render_strip(&app, 63);
+        assert!(!narrow.contains("Telemetry"), "{narrow}");
+        assert!(!narrow.contains("CPU 42%"), "{narrow}");
+
+        let mut unsupported_optional = app.clone();
+        unsupported_optional
+            .host_telemetry
+            .disk_read_bytes_per_second = None;
+        unsupported_optional
+            .host_telemetry
+            .disk_write_bytes_per_second = None;
+        unsupported_optional
+            .host_telemetry
+            .network_receive_bytes_per_second = None;
+        unsupported_optional
+            .host_telemetry
+            .network_transmit_bytes_per_second = None;
+        unsupported_optional.host_telemetry_history = Default::default();
+        let unsupported = render_strip(&unsupported_optional, 210);
+        assert!(!unsupported.contains("Read"), "{unsupported}");
+        assert!(!unsupported.contains("Write"), "{unsupported}");
+        assert!(!unsupported.contains("RX"), "{unsupported}");
+        assert!(!unsupported.contains("TX"), "{unsupported}");
+
+        app.theme = Theme::HighContrast;
+        app.reduced_motion = true;
+        assert!(render_strip(&app, 112).contains("CPU 42%"));
+        app.color_enabled = false;
+        assert!(render_strip(&app, 100).contains("R 42.0 KiB/s"));
+
+        let dashboard = rendered_text(&app, 300, 60);
+        assert!(dashboard.contains("Telemetry · bounded 60-sample histories"));
+
+        app.screen = Screen::Tasks;
+        let task_rows = app.visible_task_row_refs_at(UNIX_EPOCH);
+        let mut tasks = Terminal::new(TestBackend::new(140, 50)).unwrap();
+        tasks
+            .draw(|frame| {
+                tasks_workspace(frame, &app, frame.area(), UNIX_EPOCH, &task_rows);
+            })
+            .unwrap();
+        let tasks = tasks
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(tasks.contains("Telemetry · bounded 60-sample histories"));
+        assert!(tasks.contains("Tasks:"), "{tasks}");
+        assert!(tasks.contains("Log Viewer"), "{tasks}");
+        assert!(tasks.contains("Job History"), "{tasks}");
     }
     #[test]
     fn dashboard_renders_parse_progress() {

@@ -11,9 +11,19 @@ Status values:
 
 ## Current phase
 
-`METRICS-UI-006` is `IN_PROGRESS`. It will compose the authoritative gauges
-and rate histories into explicit wide, medium, and narrow telemetry strips
-without requiring optional host sources.
+`SYSTEM-UI-001` is `IN_PROGRESS`. It will replace the generic status text with
+a dense, responsive pane of authoritative daemon, BitBake, job/session/client,
+workspace, build-filesystem, and compatibility facts.
+
+`METRICS-UI-006` is `DONE`: one bounded telemetry strip now composes the
+semantic gauges and rate histories in Dashboard and tall Tasks workspaces.
+Wide uses stable CPU/RAM/Build-FS/Read/Write/RX/TX order, medium uses
+CPU/RAM/Build-FS plus a two-line disk I/O cell, and below 64 columns the strip
+is hidden in favor of the existing Inspector/System Status route. Optional
+disk/network groups are omitted without reserving misleading cells; the
+eight-row tier appears only at 46+ workspace rows. Exact breakpoints, optional
+sources, high-contrast, no-color, reduced-motion, Dashboard, and Tasks
+integration pass focused coverage, and all 174 UI tests pass.
 
 `METRICS-UI-005` is `DONE`: optional network RX and TX now render separately
 with binary bytes-per-second text and independently scaled bounded-history

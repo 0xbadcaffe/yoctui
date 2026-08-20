@@ -5310,18 +5310,18 @@ notes = "Optional network RX/TX now render separately with binary bytes-per-seco
 id = "METRICS-UI-006"
 milestone = "M19"
 title = "Create responsive telemetry strip"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 543
 required = true
 depends_on = ["METRICS-UI-005"]
 verify = ["cargo test -p yoctui-ui next_generation_telemetry_strip"]
-notes = "Compose wide CPU/RAM/Disk/Read/Write/RX/TX, medium CPU/RAM/Disk/I/O, and narrow compact-or-hidden variants."
+notes = "One bounded strip now composes semantic gauges and histories in Dashboard and tall Tasks workspaces. Wide uses stable CPU/RAM/Build-FS/Read/Write/RX/TX order; medium uses CPU/RAM/Build-FS plus two-line disk I/O; below 64 columns it is hidden behind the existing Inspector/System Status route. Optional disk/network groups reserve no misleading cells. Focused breakpoint/theme/integration and all 174 UI tests pass."
 
 [[task]]
 id = "SYSTEM-UI-001"
 milestone = "M19"
 title = "Redesign System Status pane"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 544
 required = true
 depends_on = ["INSPECTOR-UI-001", "METRICS-MODEL-001"]

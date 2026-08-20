@@ -2,19 +2,20 @@
 
 ## Task
 
-**ID:** METRICS-UI-006
-**Title:** Create responsive telemetry strip
+**ID:** SYSTEM-UI-001
+**Title:** Redesign System Status pane
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Compose the authoritative CPU, RAM, build-filesystem, disk-I/O, and network
-widgets into an explicit responsive telemetry strip whose pane priority and
-content remain useful from wide through narrow terminals.
+Render a dense, consistent System Status pane from authoritative model state,
+with responsive labels and exact unavailable behavior for facts the current
+protocol or host sampler does not supply.
 
 ## Dependencies
 
-- `METRICS-UI-005` — DONE
+- `INSPECTOR-UI-001` — DONE
+- `METRICS-MODEL-001` — DONE
 
 ## Relevant files
 
@@ -26,23 +27,22 @@ content remain useful from wide through narrow terminals.
 
 ## Definition of done
 
-- Wide layout composes CPU, RAM, Build FS, Read, Write, RX, and TX in stable
-  terminal-native cells with bounded histories where supported.
-- Medium layout preserves CPU, RAM, Build FS, and a compact I/O summary.
-- Narrow layout presents an honest compact summary or hides the strip behind
-  the existing status/Inspector path according to the documented pane
-  priority.
-- Optional unsupported metrics never reserve misleading data or display a
-  synthetic zero.
-- Breakpoint selection is deterministic, uses reusable layout primitives, and
-  does not overlap or panic below the preferred width.
-- High-contrast, no-color, and reduced-motion presentations retain meaningful
-  text and visible state.
+- Daemon connection, uptime, BitBake lifecycle, active jobs, terminal
+  sessions, and connected clients render from typed current state.
+- Workspace/build identity and exact build-filesystem context render only when
+  authoritative.
+- Compatibility state names current, degraded, synchronizing, stale, and
+  unavailable authority without inventing a daemon version or PID.
+- Wide and compact presentations use consistent aligned labels and retain
+  meaningful text in high-contrast and no-color modes.
+- Missing values are explicitly unavailable and stale authority is never
+  presented as current.
+- The pane remains bounded and safe at responsive breakpoints.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_telemetry_strip
+cargo test -p yoctui-ui next_generation_system_status
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
