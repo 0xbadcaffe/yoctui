@@ -12372,6 +12372,9 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     let selected = app.workspace.recipes.get(app.recipe_selection);
     let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(12)]).split(area);
     let list = Layout::vertical([Constraint::Length(1), Constraint::Min(3)]).split(chunks[0]);
+    let visible_rows = usize::from(list[1].height.saturating_sub(3));
+    let viewport =
+        yoctui_model::centered_viewport_range(filtered_selection, recipe_count, visible_rows);
     frame.render_widget(
         Paragraph::new(search_line(
             app,
@@ -12387,22 +12390,26 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Table::new(
-            recipes.into_iter().map(|(index, recipe)| {
-                Row::new(vec![
-                    Cell::from(recipe.name.as_str()),
-                    Cell::from(recipe.version.as_deref().unwrap_or("?")),
-                    Cell::from(recipe.preferred_version.as_deref().unwrap_or("?")),
-                    Cell::from(recipe.layer.as_deref().unwrap_or("?")),
-                    Cell::from(
-                        recipe
-                            .append_count
-                            .map_or_else(|| "?".into(), |count| count.to_string()),
-                    ),
-                    Cell::from(recipe_workspace_state(app, recipe)),
-                    Cell::from(recipe_build_state(app, &recipe.name)),
-                ])
-                .style(selected_style(app, index == app.recipe_selection))
-            }),
+            recipes
+                .into_iter()
+                .skip(viewport.start)
+                .take(viewport.len())
+                .map(|(index, recipe)| {
+                    Row::new(vec![
+                        Cell::from(recipe.name.as_str()),
+                        Cell::from(recipe.version.as_deref().unwrap_or("?")),
+                        Cell::from(recipe.preferred_version.as_deref().unwrap_or("?")),
+                        Cell::from(recipe.layer.as_deref().unwrap_or("?")),
+                        Cell::from(
+                            recipe
+                                .append_count
+                                .map_or_else(|| "?".into(), |count| count.to_string()),
+                        ),
+                        Cell::from(recipe_workspace_state(app, recipe)),
+                        Cell::from(recipe_build_state(app, &recipe.name)),
+                    ])
+                    .style(selected_style(app, index == app.recipe_selection))
+                }),
             [
                 Constraint::Min(12),
                 Constraint::Length(10),
@@ -12796,30 +12803,41 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
     );
     let chunks = Layout::horizontal([Constraint::Percentage(48), Constraint::Percentage(52)])
         .split(workspace[1]);
+    let visible_layer_rows = usize::from(chunks[0].height.saturating_sub(3));
+    let layer_viewport = yoctui_model::centered_viewport_range(
+        (layer_count > 0).then_some(app.layer_selection),
+        layer_count,
+        visible_layer_rows,
+    );
     frame.render_widget(
         Table::new(
-            layers.into_iter().enumerate().map(|(index, layer)| {
-                Row::new(vec![
-                    Cell::from(format!("▸ {}", layer.name)),
-                    Cell::from(layer.path.display().to_string()),
-                    Cell::from(
-                        layer
-                            .priority
-                            .map_or_else(String::new, |priority| priority.to_string()),
-                    ),
-                ])
-                .style({
-                    let mut style = selected_style(app, index == app.layer_selection);
-                    let palette = ThemePalette::for_app(app);
-                    if index != app.layer_selection {
-                        style = style.fg(palette.success);
-                    }
-                    if palette.attribute_only {
-                        style = style.add_modifier(Modifier::BOLD);
-                    }
-                    style
-                })
-            }),
+            layers
+                .into_iter()
+                .enumerate()
+                .skip(layer_viewport.start)
+                .take(layer_viewport.len())
+                .map(|(index, layer)| {
+                    Row::new(vec![
+                        Cell::from(format!("▸ {}", layer.name)),
+                        Cell::from(layer.path.display().to_string()),
+                        Cell::from(
+                            layer
+                                .priority
+                                .map_or_else(String::new, |priority| priority.to_string()),
+                        ),
+                    ])
+                    .style({
+                        let mut style = selected_style(app, index == app.layer_selection);
+                        let palette = ThemePalette::for_app(app);
+                        if index != app.layer_selection {
+                            style = style.fg(palette.success);
+                        }
+                        if palette.attribute_only {
+                            style = style.add_modifier(Modifier::BOLD);
+                        }
+                        style
+                    })
+                }),
             [
                 Constraint::Percentage(32),
                 Constraint::Percentage(53),
@@ -20988,6 +21006,67 @@ mod tests {
         assert!(output.contains("security.patch"));
         assert!(output.contains("busybox-src"));
         assert!(output.contains("History: unavailable"));
+    }
+
+    #[test]
+    fn render_cache_metadata_viewports_follow_selection_and_query_without_stale_rows() {
+        let mut app = App::new(16, 4096);
+        app.screen = Screen::Recipes;
+        app.focus = FocusTarget::Workspace;
+        app.workspace.recipes = (0..4_096)
+            .map(|index| yoctui_model::Recipe {
+                name: format!("recipe-{index:05}"),
+                layer: Some(format!("meta-{:04}", index % 1_024)),
+                ..Default::default()
+            })
+            .collect();
+        app.workspace.layers = (0..1_024)
+            .map(|index| yoctui_model::Layer {
+                name: format!("meta-{index:04}"),
+                path: format!("/layers/meta-{index:04}").into(),
+                priority: Some(index),
+            })
+            .collect();
+
+        let render_recipes = |app: &App| {
+            let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
+            terminal
+                .draw(|frame| recipes(frame, app, frame.area()))
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+        app.recipe_selection = 4_000;
+        let selected = render_recipes(&app);
+        assert!(selected.contains("recipe-04000"), "{selected}");
+        assert!(!selected.contains("recipe-00000"), "{selected}");
+
+        app.metadata_query = "recipe-00042".into();
+        app.recipe_selection = 42;
+        let filtered = render_recipes(&app);
+        assert!(filtered.contains("recipe-00042"), "{filtered}");
+        assert!(!filtered.contains("recipe-04000"), "{filtered}");
+
+        app.metadata_query.clear();
+        app.layer_selection = 1_000;
+        let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
+        terminal
+            .draw(|frame| layers(frame, &app, frame.area()))
+            .unwrap();
+        let layer_output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(layer_output.contains("meta-1000"), "{layer_output}");
+        assert!(!layer_output.contains("meta-0000"), "{layer_output}");
     }
 
     #[test]

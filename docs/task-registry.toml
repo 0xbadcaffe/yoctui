@@ -5442,18 +5442,18 @@ notes = "A deterministic five-scenario 160x48 matrix measures idle 0.396 ms/fram
 id = "PERF-UI-002"
 milestone = "M19"
 title = "Add render caching where justified"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 555
 required = true
 depends_on = ["PERF-UI-001"]
 verify = ["./scripts/test-next-generation-ui-performance.sh", "cargo test -p yoctui-model render_cache"]
-notes = "Cache only measured filtered indices, normalized queries, computed layout, static labels, or sparkline points with explicit invalidation and stale-state tests."
+notes = "The measured full-table hot path is removed by projecting recipe/layer rows through a pure selection-centered visible range before constructing Ratatui rows. Query/inventory/selection shrink recomputes immediately, so no retained cache or stale invalidation surface is needed. Large metadata fell from 5.318 to 0.789 ms/frame (85.2%); other scenarios remain below 0.84 ms/frame. Model and TestBackend stale-row tests plus the matrix pass."
 
 [[task]]
 id = "RESPONSIVE-UI-001"
 milestone = "M19"
 title = "Add explicit breakpoint tests"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 556
 required = true
 depends_on = ["HEADER-UI-001", "METRICS-UI-006", "DIALOG-UI-001"]

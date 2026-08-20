@@ -3440,6 +3440,25 @@ pub struct App {
     pub metadata_query: String,
     pub metadata_searching: bool,
 }
+
+/// Return a bounded, selection-centered viewport without retaining derived UI
+/// state. Recomputing this range from authoritative selection and row counts
+/// makes query/inventory invalidation immediate and stale-state-free.
+pub fn centered_viewport_range(
+    selected: Option<usize>,
+    total: usize,
+    visible: usize,
+) -> std::ops::Range<usize> {
+    if total == 0 || visible == 0 {
+        return 0..0;
+    }
+    let visible = visible.min(total);
+    let selected = selected.unwrap_or(0).min(total - 1);
+    let start = selected
+        .saturating_sub(visible / 2)
+        .min(total.saturating_sub(visible));
+    start..start + visible
+}
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
@@ -15061,6 +15080,20 @@ impl fmt::Display for BuildStatus {
 mod tests {
     use super::*;
     use proptest::prelude::*;
+
+    #[test]
+    fn render_cache_viewport_recomputes_without_stale_selection_state() {
+        assert_eq!(centered_viewport_range(None, 100, 10), 0..10);
+        assert_eq!(centered_viewport_range(Some(50), 100, 10), 45..55);
+        assert_eq!(centered_viewport_range(Some(99), 100, 10), 90..100);
+        assert_eq!(
+            centered_viewport_range(Some(99), 3, 10),
+            0..3,
+            "query/inventory shrink clamps a formerly valid selection immediately"
+        );
+        assert_eq!(centered_viewport_range(Some(1), 0, 10), 0..0);
+        assert_eq!(centered_viewport_range(Some(1), 10, 0), 0..0);
+    }
 
     #[test]
     fn function_shortcut_catalog_is_complete_unique_and_truthful() {

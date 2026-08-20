@@ -55,3 +55,12 @@ the symbolized stacks shows that the recipe renderer constructs Ratatui rows
 for all 4,096 filtered recipes before the table clips to its viewport. This is
 an actionable per-frame allocation/formatting hot path assigned to
 `PERF-UI-002`; ordinary Ratatui buffer and Unicode work remains expected.
+
+`PERF-UI-002` bounds recipe and layer row construction to the centered visible
+viewport before creating Ratatui `Row`/`Cell` values. The viewport range is a
+pure projection of authoritative selection, filtered count, and visible height,
+so query/inventory changes cannot leave a retained cache stale. On the same
+500-frame matrix, large metadata fell from 5,318,065 to 788,694 ns/frame
+(85.2%); idle, active build, log-heavy, and telemetry remained below 0.84
+ms/frame. No retained label, query, index, layout, or sparkline cache was
+justified after that measured fix.

@@ -11,9 +11,18 @@ Status values:
 
 ## Current phase
 
-`PERF-UI-002` is `IN_PROGRESS`. It will remove the measured large-recipe
-full-table construction hot path using viewport-bounded rendering and explicit
-selection/query invalidation without introducing stale UI state.
+`RESPONSIVE-UI-001` is `IN_PROGRESS`. It will add the explicit 200x60,
+160x50, 130x40, 100x30, 80x24, and below-minimum matrix for pane priority,
+useful content, dialog controls, overlap, clipping, and panic safety.
+
+`PERF-UI-002` is `DONE`: recipe and layer renderers now compute a pure centered
+viewport from authoritative selection, filtered row count, and visible height,
+then construct Ratatui rows only for that bounded range. Query/inventory shrink
+recomputes immediately, so no retained cache or stale invalidation surface is
+needed. The same matrix reduced large metadata from 5.318 to 0.789 ms/frame
+(85.2%); idle, active-build, log-heavy, and telemetry cases remain below 0.84
+ms/frame. Model and TestBackend tests prove deep selection, query replacement,
+inventory shrink, empty state, and layer selection cannot retain stale rows.
 
 `PERF-UI-001` is `DONE`: a deterministic 160x48 matrix measures idle at 0.396
 ms/frame, active build at 0.595, large metadata at 5.318, log-heavy at 0.845,
