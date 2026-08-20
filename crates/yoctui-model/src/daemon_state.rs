@@ -452,6 +452,17 @@ pub struct ClientDaemonPtySummary {
     pub viewers: u16,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClientDaemonPtyScreen {
+    pub session_id: u64,
+    pub columns: u16,
+    pub rows_count: u16,
+    pub cursor_column: u16,
+    pub cursor_row: u16,
+    pub rows: Vec<String>,
+    pub scrollback_lines: u32,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ClientDaemonTelemetry {
     pub uptime_seconds: u64,
@@ -471,6 +482,7 @@ pub struct ClientDaemonView {
     pub bitbake: ClientDaemonLifecycle,
     pub jobs: Vec<ClientDaemonJobSummary>,
     pub pty_sessions: Vec<ClientDaemonPtySummary>,
+    pub pty_screens: Vec<ClientDaemonPtyScreen>,
     pub connected_clients: usize,
     pub recent_logs: Vec<String>,
     pub recovery_warnings: Vec<String>,
@@ -487,6 +499,7 @@ impl Default for ClientDaemonView {
             bitbake: ClientDaemonLifecycle::Disconnected,
             jobs: Vec::new(),
             pty_sessions: Vec::new(),
+            pty_screens: Vec::new(),
             connected_clients: 0,
             recent_logs: Vec::new(),
             recovery_warnings: Vec::new(),

@@ -17,6 +17,8 @@ pub const MAX_SNAPSHOT_LOGS: usize = 100_000;
 pub const MAX_DAEMON_CLIENTS: usize = 32;
 pub const MAX_DAEMON_PTY_SESSIONS: usize = 64;
 pub const MAX_TERMINAL_SCROLLBACK_LINES: usize = 100_000;
+pub const MAX_TERMINAL_ROWS: u16 = 512;
+pub const MAX_TERMINAL_COLUMNS: u16 = 512;
 pub const MAX_UTILITY_OUTPUT_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_PTY_OUTPUT_EVENT_BYTES: usize = 64 * 1024;
 pub const MAX_DAEMON_BUILD_EVENTS: usize = 2_048;
@@ -1231,6 +1233,8 @@ pub struct DaemonSnapshot {
     pub compatibility: Option<CompatibilitySnapshotData>,
     pub jobs: Vec<JobSummary>,
     pub pty_sessions: Vec<PtySessionSummary>,
+    #[serde(default)]
+    pub pty_screens: Vec<PtyScreenSnapshot>,
     pub clients: Vec<ClientSummary>,
     pub recent_logs: Vec<LogRecord>,
     #[serde(default)]
@@ -1550,6 +1554,9 @@ impl DaemonSnapshotJournal {
         if let Some(compatibility) = &snapshot.compatibility {
             compatibility.validate()?;
         }
+        for screen in &snapshot.pty_screens {
+            validate_pty_screen(screen)?;
+        }
         ensure_snapshot_bound(&snapshot, limits.snapshot_bytes)?;
         Ok(Self {
             snapshot,
@@ -1594,6 +1601,11 @@ impl DaemonSnapshotJournal {
             && !candidate.recent_logs.is_empty()
         {
             candidate.recent_logs.remove(0);
+        }
+        while serde_json::to_vec(&candidate)?.len() > self.limits.snapshot_bytes
+            && candidate.pty_screens.len() > 1
+        {
+            candidate.pty_screens.remove(0);
         }
         ensure_snapshot_bound(&candidate, self.limits.snapshot_bytes)?;
         self.snapshot = candidate;
@@ -1691,8 +1703,14 @@ pub fn apply_sequenced_event(
         DaemonEvent::PtyChanged(pty) => {
             replace_by(&mut snapshot.pty_sessions, pty.clone(), |item| item.id);
         }
+        DaemonEvent::PtyScreen(screen) => {
+            validate_pty_screen(screen)?;
+            snapshot
+                .pty_screens
+                .retain(|item| item.session_id != screen.session_id);
+            snapshot.pty_screens.push(screen.clone());
+        }
         DaemonEvent::PtyOutput { .. }
-        | DaemonEvent::PtyScreen(_)
         | DaemonEvent::TestResults(_)
         | DaemonEvent::TestComparison(_)
         | DaemonEvent::TestResultTool(_)
@@ -1786,6 +1804,25 @@ fn replace_by<T, K: PartialEq>(items: &mut Vec<T>, replacement: T, key: impl Fn(
     }
 }
 
+fn validate_pty_screen(screen: &PtyScreenSnapshot) -> Result<(), DaemonSnapshotError> {
+    let dimensions = screen.dimensions;
+    let valid_dimensions = dimensions.columns > 0
+        && dimensions.columns <= MAX_TERMINAL_COLUMNS
+        && dimensions.rows > 0
+        && dimensions.rows <= MAX_TERMINAL_ROWS;
+    let valid_cursor =
+        screen.cursor_column < dimensions.columns && screen.cursor_row < dimensions.rows;
+    let valid_rows = screen.rows.len() <= usize::from(dimensions.rows);
+    if !valid_dimensions
+        || !valid_cursor
+        || !valid_rows
+        || screen.scrollback_lines as usize > MAX_TERMINAL_SCROLLBACK_LINES
+    {
+        return Err(DaemonSnapshotError::InvalidPtyScreen(screen.session_id));
+    }
+    Ok(())
+}
+
 fn ensure_snapshot_bound(
     snapshot: &DaemonSnapshot,
     maximum_bytes: usize,
@@ -1825,6 +1862,8 @@ pub enum DaemonSnapshotError {
     },
     #[error("stale compatibility generation: current {current}, received {received}")]
     StaleCompatibilityGeneration { current: u64, received: u64 },
+    #[error("invalid bounded PTY screen snapshot for session {0:?}")]
+    InvalidPtyScreen(PtySessionId),
     #[error(transparent)]
     Json(#[from] serde_json::Error),
 }
@@ -2028,6 +2067,7 @@ mod tests {
             compatibility: None,
             jobs: Vec::new(),
             pty_sessions: Vec::new(),
+            pty_screens: Vec::new(),
             clients: Vec::new(),
             recent_logs: Vec::new(),
             build_events: Vec::new(),
@@ -2233,6 +2273,7 @@ mod tests {
             compatibility: None,
             jobs: Vec::new(),
             pty_sessions: Vec::new(),
+            pty_screens: Vec::new(),
             clients: vec![ClientSummary {
                 id: client_id(1),
                 name: "ssh-client".into(),
@@ -2401,6 +2442,50 @@ mod tests {
             _ => panic!("expected replay"),
         };
         assert_eq!(events(first), events(second));
+    }
+
+    #[test]
+    fn next_generation_pty_screen_is_bounded_and_retained_for_reattach() {
+        let mut journal =
+            DaemonSnapshotJournal::new(daemon_snapshot_fixture(), DaemonSnapshotLimits::default())
+                .unwrap();
+        let screen = PtyScreenSnapshot {
+            session_id: PtySessionId(9),
+            dimensions: TerminalDimensions {
+                columns: 20,
+                rows: 4,
+            },
+            cursor_column: 3,
+            cursor_row: 1,
+            rows: vec!["ready".into(), "prompt".into()],
+            scrollback_lines: 7,
+        };
+        journal
+            .publish(DaemonEvent::PtyScreen(screen.clone()))
+            .unwrap();
+        assert_eq!(journal.snapshot().pty_screens, vec![screen.clone()]);
+        let mut replacement = screen;
+        replacement.rows = vec!["updated".into()];
+        journal
+            .publish(DaemonEvent::PtyScreen(replacement.clone()))
+            .unwrap();
+        assert_eq!(journal.snapshot().pty_screens, vec![replacement]);
+
+        let invalid = PtyScreenSnapshot {
+            session_id: PtySessionId(10),
+            dimensions: TerminalDimensions {
+                columns: 2,
+                rows: 1,
+            },
+            cursor_column: 0,
+            cursor_row: 0,
+            rows: vec!["first".into(), "extra".into()],
+            scrollback_lines: 0,
+        };
+        assert!(matches!(
+            journal.publish(DaemonEvent::PtyScreen(invalid)),
+            Err(DaemonSnapshotError::InvalidPtyScreen(PtySessionId(10)))
+        ));
     }
 
     #[test]

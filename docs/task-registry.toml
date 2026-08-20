@@ -5530,18 +5530,18 @@ notes = "The next_generation_mouse app and runtime suites cover geometry-owned w
 id = "PTY-UI-TEST-001"
 milestone = "M19"
 title = "Test embedded terminal rendering"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 563
 required = true
 depends_on = ["INPUT-TEST-002", "INPUT-TEST-003"]
 verify = ["cargo test -p yoctui-e2e next_generation_pty", "./scripts/test-embedded-shell.sh"]
-notes = "Use real PTY fixtures for pane placement, resize, attach/detach, focus, escape chord, scrollback, and uncorrupted workbench rendering."
+notes = "Real PTY output now crosses the maintained emulator, bounded typed PtyScreenSnapshot journal state, protocol-free app replica, and matching Ratatui pane. Acceptance covers exact right-pane placement, resize, bounded scrollback, attach/writer/detach lifecycle, Ctrl+B detach focus retention, ANSI isolation, reattach retention, and uncorrupted header/footer; strict workspace tests and clippy pass."
 
 [[task]]
 id = "LIVE-UI-POKY-001"
 milestone = "M19"
 title = "Validate redesigned UI against real Poky"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 564
 required = true
 depends_on = ["VISUAL-TEST-003", "PTY-UI-TEST-001", "PERF-UI-002"]

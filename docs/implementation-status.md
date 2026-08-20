@@ -11,9 +11,20 @@ Status values:
 
 ## Current phase
 
-`PTY-UI-TEST-001` is `IN_PROGRESS`. It will extend the real-PTY harness across
-embedded pane placement, resize, attach/detach, focus and escape-chord transfer,
-bounded scrollback, and preservation of the surrounding workbench.
+`LIVE-UI-POKY-001` is `IN_PROGRESS`. It will run the next-generation workbench
+against a fresh supported Poky checkout and retain policy-complete evidence for
+startup, metadata workspaces, build/log completion, a safe failure, terminal
+interaction, and daemon reconnect.
+
+`PTY-UI-TEST-001` is `DONE`: the audit found that daemon PTY output was
+journaled but discarded by the interactive replica, leaving panes with session
+metadata only. Real output now crosses the maintained emulator, a dimension/
+cursor/row/scrollback/frame-bounded typed screen snapshot, the app replica, and
+the matching client-local Ratatui pane without UI-side ANSI parsing. The real
+PTY acceptance covers exact pane placement, resize, bounded scrollback,
+attach/writer/detach lifecycle, `Ctrl+B d` focus retention, screen retention,
+and uncorrupted workbench header/footer. Full workspace tests and strict clippy
+pass.
 
 `INPUT-TEST-003` is `DONE`: the app and runtime mouse suites use the same
 geometry as rendering at wide, medium, narrow, and below-minimum sizes. They

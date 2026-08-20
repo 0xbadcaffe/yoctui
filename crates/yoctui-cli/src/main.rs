@@ -2923,16 +2923,31 @@ fn publish_daemon_pty_event(
             let _ = session_id;
             journal.publish(DaemonEvent::PtyChanged(snapshot))?;
         }
-        DaemonPtyEvent::Output { session_id, bytes } => {
+        DaemonPtyEvent::Output {
+            session_id,
+            bytes,
+            screen,
+        } => {
             journal.publish(DaemonEvent::PtyOutput {
                 session_id: yoctui_protocol::daemon::PtySessionId(session_id.0),
                 bytes,
             })?;
+            if let Some(screen) = screen
+                && let Err(error) = journal.publish(DaemonEvent::PtyScreen(screen))
+            {
+                tracing::warn!(%error, "discarding invalid or oversized PTY screen snapshot");
+            }
         }
         DaemonPtyEvent::Exited {
             session_id,
             exit_code,
+            screen,
         } => {
+            if let Some(screen) = screen
+                && let Err(error) = journal.publish(DaemonEvent::PtyScreen(screen))
+            {
+                tracing::warn!(%error, "discarding invalid or oversized final PTY screen snapshot");
+            }
             if let Some(existing) = journal
                 .snapshot()
                 .pty_sessions

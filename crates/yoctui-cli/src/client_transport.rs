@@ -421,6 +421,7 @@ mod tests {
             compatibility: None,
             jobs: Vec::new(),
             pty_sessions: Vec::new(),
+            pty_screens: Vec::new(),
             clients: Vec::new(),
             recent_logs: Vec::new(),
             build_events: Vec::new(),

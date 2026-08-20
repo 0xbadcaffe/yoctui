@@ -3568,6 +3568,14 @@ single writer lease. Other attached clients remain read-only and show the
 writer identity. Taking control is explicit, and loss of the client or SSH
 connection releases control without terminating the session.
 
+Each terminal pane keeps its real session/lifecycle title and a compact
+viewer/selection line above the daemon-provided screen rows. Screen rows are
+typed, dimension-bounded replica data; Ratatui never parses ANSI output. A
+session without a retained screen says `Screen unavailable · awaiting daemon
+snapshot` rather than presenting metadata as terminal output. The selected
+session's screen is rendered only inside its client-local pane; the workbench
+header and footer remain outside the PTY viewport.
+
 The configured prefix returns input handling to Yoctui for detach, pane/session
 navigation, help, and later split commands; those keys are not forwarded to the
 terminal application unless the literal-prefix route is chosen. Detach and

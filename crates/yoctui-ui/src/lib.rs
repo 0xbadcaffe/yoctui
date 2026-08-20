@@ -2936,15 +2936,32 @@ fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
         let title = session
             .map(|session| format!(" {} #{} {:?} ", session.name, id.0, session.lifecycle))
             .unwrap_or_else(|| format!(" pane #{} ", id.0));
-        frame.render_widget(
-            Paragraph::new(session.map_or("No PTY session".into(), |session| {
-                format!(
+        let screen = session.and_then(|session| {
+            app.daemon
+                .pty_screens
+                .iter()
+                .find(|screen| screen.session_id == session.id)
+        });
+        let content = session.map_or_else(
+            || vec![Line::raw("No PTY session")],
+            |session| {
+                let mut lines =
+                    Vec::with_capacity(1 + screen.map_or(1, |screen| screen.rows.len()));
+                lines.push(Line::raw(format!(
                     "{} viewer(s) | selection {}",
                     session.viewers,
                     app.pty_selection + 1
-                )
-            }))
-            .block(pane_block(app, &title, index == app.pty_selection)),
+                )));
+                if let Some(screen) = screen {
+                    lines.extend(screen.rows.iter().map(|row| Line::raw(row.as_str())));
+                } else {
+                    lines.push(Line::raw("Screen unavailable · awaiting daemon snapshot"));
+                }
+                lines
+            },
+        );
+        frame.render_widget(
+            Paragraph::new(content).block(pane_block(app, &title, index == app.pty_selection)),
             rect,
         );
     }

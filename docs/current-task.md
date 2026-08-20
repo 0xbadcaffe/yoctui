@@ -2,28 +2,28 @@
 
 ## Task
 
-**ID:** PTY-UI-TEST-001
-**Title:** Test embedded terminal rendering
+**ID:** LIVE-UI-POKY-001
+**Title:** Validate redesigned UI against real Poky
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Exercise embedded terminal behavior through real PTY fixtures and prove that
-session rendering, resize, lifecycle, focus transfer, escape-chord handling,
-and bounded scrollback do not corrupt the surrounding workbench.
+Run the redesigned workbench against a fresh supported Poky environment and
+retain policy-complete real-binary terminal evidence across startup, metadata,
+build, logs, completion, safe failure, terminal interaction, and reconnect.
 
 ## Dependencies
 
-- `INPUT-TEST-002` — DONE
-- `INPUT-TEST-003` — DONE
+- `VISUAL-TEST-003` — DONE
+- `PTY-UI-TEST-001` — DONE
+- `PERF-UI-002` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-e2e/`
-- `crates/yoctui-shell/`
-- `crates/yoctui-ui/`
-- `crates/yoctui-app/`
-- `scripts/test-embedded-shell.sh`
+- `scripts/test-live-next-generation-ui.sh`
+- `scripts/verify-next-generation-ui-evidence.sh`
+- `artifacts/release-quality/next-generation-ui/`
+- `docs/ui-acceptance-tests.md`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -31,19 +31,23 @@ and bounded scrollback do not corrupt the surrounding workbench.
 
 ## Definition of done
 
-- A real PTY fixture renders inside the selected terminal pane without altering
-  the workbench header, surrounding panes, or footer.
-- Resize, attach/detach, focus transfer, escape chord, and bounded scrollback
-  have explicit acceptance coverage.
-- Session output and lifecycle transitions remain typed and bounded.
-- Focus and writer ownership rules prevent input from leaking between the
-  embedded session and the workbench.
+- The harness uses a fresh supported Poky environment and the real release
+  Yoctui binary, with exact revision, BitBake version, host, MACHINE, DISTRO,
+  build directory, commands, binary identity, and outcomes recorded.
+- Startup, environment verification, Recipes, Layers, Tasks,
+  `core-image-minimal`, live logs, successful completion, a safe failure,
+  terminal interaction, and daemon attach/reconnect are exercised.
+- Raw ANSI, semantic terminal text, terminal dimensions, process/build logs,
+  exit states, and representative terminal buffers are retained and bounded.
+- The independent verifier rejects fixture evidence, missing/redacted policy
+  fields, stale binary/commit identities, incomplete scenarios, and oversize
+  artifacts.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-e2e next_generation_pty
-./scripts/test-embedded-shell.sh
+./scripts/test-live-next-generation-ui.sh
+./scripts/verify-next-generation-ui-evidence.sh
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh

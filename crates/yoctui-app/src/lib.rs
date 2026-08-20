@@ -437,6 +437,7 @@ pub fn daemon_protocol_snapshot(
             .map(daemon_compatibility_protocol),
         jobs,
         pty_sessions,
+        pty_screens: Vec::new(),
         clients: Vec::<ClientSummary>::new(),
         recent_logs,
         build_events: Vec::new(),
@@ -1333,7 +1334,9 @@ fn daemon_client_view(
     snapshot: Option<&yoctui_protocol::daemon::DaemonSnapshot>,
     telemetry: Option<yoctui_protocol::daemon::DaemonTelemetry>,
 ) -> yoctui_model::ClientDaemonView {
-    use yoctui_model::{ClientDaemonJobSummary, ClientDaemonPtySummary, ClientDaemonView};
+    use yoctui_model::{
+        ClientDaemonJobSummary, ClientDaemonPtyScreen, ClientDaemonPtySummary, ClientDaemonView,
+    };
     let Some(snapshot) = snapshot else {
         return ClientDaemonView {
             status,
@@ -1371,6 +1374,19 @@ fn daemon_client_view(
                 name: pty.name.clone(),
                 lifecycle: client_daemon_lifecycle(pty.lifecycle),
                 viewers: pty.viewers,
+            })
+            .collect(),
+        pty_screens: snapshot
+            .pty_screens
+            .iter()
+            .map(|screen| ClientDaemonPtyScreen {
+                session_id: screen.session_id.0,
+                columns: screen.dimensions.columns,
+                rows_count: screen.dimensions.rows,
+                cursor_column: screen.cursor_column,
+                cursor_row: screen.cursor_row,
+                rows: screen.rows.clone(),
+                scrollback_lines: screen.scrollback_lines,
             })
             .collect(),
         connected_clients: snapshot.clients.len(),
@@ -5812,6 +5828,46 @@ mod tests {
             yoctui_model::ClientReplicaStatus::Disconnected
         );
         assert_eq!(client.snapshot.as_ref(), Some(&initial));
+    }
+
+    #[test]
+    fn next_generation_pty_screen_crosses_replica_as_typed_bounded_rows() {
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([5; 16]),
+            123,
+            "pty-screen".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut client = DaemonClientSnapshot::default();
+        client.replace(daemon_protocol_snapshot(&state));
+        let mut app = yoctui_model::App::new(16, 4096);
+        client
+            .apply_event_to_app(
+                &mut app,
+                &yoctui_protocol::daemon::SequencedEvent {
+                    sequence: 1,
+                    generation: 1,
+                    event: yoctui_protocol::daemon::DaemonEvent::PtyScreen(
+                        yoctui_protocol::daemon::PtyScreenSnapshot {
+                            session_id: yoctui_protocol::daemon::PtySessionId(4),
+                            dimensions: yoctui_protocol::daemon::TerminalDimensions {
+                                columns: 20,
+                                rows: 3,
+                            },
+                            cursor_column: 2,
+                            cursor_row: 1,
+                            rows: vec!["ready".into(), "prompt".into()],
+                            scrollback_lines: 8,
+                        },
+                    ),
+                },
+            )
+            .unwrap();
+        let screen = &app.daemon.pty_screens[0];
+        assert_eq!(screen.session_id, 4);
+        assert_eq!(screen.rows, ["ready", "prompt"]);
+        assert_eq!(screen.scrollback_lines, 8);
     }
 
     #[test]

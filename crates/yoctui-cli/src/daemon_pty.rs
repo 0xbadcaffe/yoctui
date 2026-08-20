@@ -2,7 +2,7 @@ use std::{
     collections::{BTreeMap, HashMap},
     path::PathBuf,
     sync::mpsc::{self, Receiver, SyncSender},
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use yoctui_model::{
@@ -14,6 +14,8 @@ use yoctui_protocol::daemon::{
 };
 
 use crate::pty_attach::{DaemonPtySession, PtyAttachEvent};
+
+const PTY_SCREEN_MIN_INTERVAL: Duration = Duration::from_millis(33);
 
 #[derive(Debug)]
 enum Control {
@@ -44,10 +46,12 @@ pub enum DaemonPtyEvent {
     Output {
         session_id: PtySessionId,
         bytes: Vec<u8>,
+        screen: Option<yoctui_protocol::daemon::PtyScreenSnapshot>,
     },
     Exited {
         session_id: PtySessionId,
         exit_code: Option<i32>,
+        screen: Option<yoctui_protocol::daemon::PtyScreenSnapshot>,
     },
     Lost {
         session_id: PtySessionId,
@@ -150,6 +154,9 @@ impl DaemonPtySupervisor {
                     snapshot: snapshot_to_wire(&snapshot.listing),
                 });
             }
+            let mut last_screen_publish = Instant::now()
+                .checked_sub(PTY_SCREEN_MIN_INTERVAL)
+                .unwrap_or_else(Instant::now);
             loop {
                 tokio::select! {
                     control = control_rx.recv() => {
@@ -173,11 +180,22 @@ impl DaemonPtySupervisor {
                             Ok(PtyAttachEvent::Started) => {}
                             Ok(PtyAttachEvent::Output { mut bytes, .. }) => {
                                 bytes.truncate(MAX_PTY_OUTPUT_EVENT_BYTES);
-                                let _ = event_tx.send(DaemonPtyEvent::Output { session_id, bytes });
+                                let screen = (last_screen_publish.elapsed() >= PTY_SCREEN_MIN_INTERVAL)
+                                    .then(|| session.snapshot(0).ok())
+                                    .flatten()
+                                    .map(|snapshot| terminal_to_wire(session_id, &snapshot.terminal));
+                                if screen.is_some() {
+                                    last_screen_publish = Instant::now();
+                                }
+                                let _ = event_tx.send(DaemonPtyEvent::Output { session_id, bytes, screen });
                             }
                             Ok(PtyAttachEvent::Exited(status)) => {
                                 let code = match status { yoctui_model::PtyExitStatus::Code(code) => Some(code), yoctui_model::PtyExitStatus::Signal(_) => None };
-                                let _ = event_tx.send(DaemonPtyEvent::Exited { session_id, exit_code: code });
+                                let screen = session
+                                    .snapshot(0)
+                                    .ok()
+                                    .map(|snapshot| terminal_to_wire(session_id, &snapshot.terminal));
+                                let _ = event_tx.send(DaemonPtyEvent::Exited { session_id, exit_code: code, screen });
                                 return;
                             }
                             Ok(PtyAttachEvent::Lost { message }) => {
@@ -369,6 +387,37 @@ fn snapshot_to_wire(
     }
 }
 
+fn terminal_to_wire(
+    session_id: PtySessionId,
+    terminal: &yoctui_model::TerminalSnapshot,
+) -> yoctui_protocol::daemon::PtyScreenSnapshot {
+    let columns = usize::from(terminal.dimensions.columns);
+    let rows = terminal
+        .cells
+        .chunks(columns)
+        .map(|cells| {
+            cells
+                .iter()
+                .filter(|cell| !cell.wide_continuation)
+                .map(|cell| cell.contents.as_str())
+                .collect::<String>()
+                .trim_end()
+                .to_owned()
+        })
+        .collect();
+    yoctui_protocol::daemon::PtyScreenSnapshot {
+        session_id: yoctui_protocol::daemon::PtySessionId(session_id.0),
+        dimensions: yoctui_protocol::daemon::TerminalDimensions {
+            columns: terminal.dimensions.columns,
+            rows: terminal.dimensions.rows,
+        },
+        cursor_column: terminal.cursor.1,
+        cursor_row: terminal.cursor.0,
+        rows,
+        scrollback_lines: terminal.max_scrollback_offset.min(u32::MAX as usize) as u32,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -395,5 +444,26 @@ mod tests {
             )
             .is_err()
         );
+    }
+
+    #[test]
+    fn next_generation_pty_converts_typed_emulator_cells_without_ansi_leakage() {
+        let mut emulator = yoctui_model::TerminalEmulator::new(
+            PtyDimensions {
+                columns: 12,
+                rows: 3,
+            },
+            8,
+        )
+        .unwrap();
+        emulator
+            .process(b"\x1b[2J\x1b[1;1Hready\r\nprompt")
+            .unwrap();
+        let terminal = emulator.snapshot(0).unwrap();
+        let screen = terminal_to_wire(PtySessionId(3), &terminal);
+        assert_eq!(screen.session_id.0, 3);
+        assert_eq!(screen.rows[0], "ready");
+        assert_eq!(screen.rows[1], "prompt");
+        assert!(screen.rows.iter().all(|row| !row.contains('\x1b')));
     }
 }

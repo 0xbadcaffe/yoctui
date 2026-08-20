@@ -1917,6 +1917,16 @@ clipboard requests or other external side effects. Shell/editor/ncurses-style
 fixtures cover cursor addressing, Unicode box drawing, SGR, alternate screen,
 scrollback, resize, paste, keypad, cursor, and mouse modes.
 
+As bounded PTY output chunks arrive, the daemon converts the maintained
+emulator state into a typed `PtyScreenSnapshot` at no more than 30 frames per
+second and always captures the final exited screen. It journals the screen
+separately from the raw output event. The snapshot journal validates
+dimensions, cursor, row counts, frame size, and scrollback bounds, retains the
+latest screen per session for reattach, and drops older session screens before
+exceeding the global snapshot frame bound. The app replica maps those protocol
+rows into protocol-free model state; the UI renders that state inside the
+matching client-local pane and does not interpret escape sequences.
+
 `DaemonPtySession` composes one runner and emulator for attach semantics while
 the bounded multi-session registry remains a later task. The daemon pump feeds
 every output event into the emulator independently of viewer presence. Attach

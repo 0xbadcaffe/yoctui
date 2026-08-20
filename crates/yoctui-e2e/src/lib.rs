@@ -173,6 +173,173 @@ mod tests {
         assert!(String::from_utf8_lossy(&output).contains("pty-ok"));
     }
 
+    #[cfg(unix)]
+    #[test]
+    fn next_generation_pty_renders_real_output_and_preserves_workbench_ownership() {
+        use yoctui_model::{
+            ClientDaemonLifecycle, ClientDaemonPtyScreen, ClientDaemonPtySummary, PaneId,
+            PtyClientId, PtyCommandIdentity, PtyDimensions, PtySession, PtySessionAction,
+            PtySessionId, PtySessionKind, PtySessionSpec, PtyWorkspaceContext, SplitAxis,
+            TerminalEmulator,
+        };
+
+        let output = run_pty(
+            "/bin/sh",
+            &[
+                "-c",
+                "printf '\\033[2J\\033[1;1Hreal-pty-ready\\r\\nline-two\\r\\nline-three\\r\\n'",
+            ],
+            b"",
+        )
+        .expect("real PTY fixture");
+        let mut emulator = TerminalEmulator::new(
+            PtyDimensions {
+                columns: 24,
+                rows: 6,
+            },
+            4,
+        )
+        .unwrap();
+        emulator.process(&output).unwrap();
+        let snapshot = emulator.snapshot(0).unwrap();
+        assert!(snapshot.plain_text.contains("real-pty-ready"));
+        assert!(snapshot.max_scrollback_offset <= 4);
+
+        emulator
+            .resize(PtyDimensions {
+                columns: 32,
+                rows: 8,
+            })
+            .unwrap();
+        let resized = emulator.snapshot(usize::MAX).unwrap();
+        assert_eq!(resized.dimensions.columns, 32);
+        assert!(resized.scrollback_offset <= resized.max_scrollback_offset);
+
+        let client = PtyClientId([7; 16]);
+        let mut lifecycle = PtySession::new(
+            PtySessionSpec {
+                id: PtySessionId(7),
+                name: "acceptance shell".into(),
+                kind: PtySessionKind::BuildShell,
+                cwd: "/work/poky/build".into(),
+                command: PtyCommandIdentity {
+                    executable: "/bin/sh".into(),
+                    arguments: Vec::new(),
+                },
+                dimensions: PtyDimensions {
+                    columns: 32,
+                    rows: 8,
+                },
+                restartable: true,
+                workspace: PtyWorkspaceContext {
+                    source_dir: "/work/poky".into(),
+                    build_dir: "/work/poky/build".into(),
+                    authorized_context_roots: Vec::new(),
+                    owner_identity: "pty-ui-acceptance".into(),
+                },
+            },
+            77,
+        )
+        .unwrap();
+        lifecycle.apply(PtySessionAction::MarkRunning).unwrap();
+        lifecycle.apply(PtySessionAction::Attach(client)).unwrap();
+        lifecycle
+            .apply(PtySessionAction::TakeControl {
+                client,
+                expected_epoch: 0,
+            })
+            .unwrap();
+        lifecycle.apply(PtySessionAction::Detach(client)).unwrap();
+        assert!(lifecycle.attached_clients.is_empty());
+        assert!(lifecycle.writer.is_none());
+
+        let mut app = yoctui_model::App::new(32, 8192);
+        app.screen = AppScreen::Dashboard;
+        app.focus = FocusTarget::Workspace;
+        let second = app
+            .pane_layout
+            .split(PaneId(1), SplitAxis::Horizontal)
+            .unwrap();
+        app.daemon.pty_sessions = vec![
+            ClientDaemonPtySummary {
+                id: 1,
+                name: "left".into(),
+                lifecycle: ClientDaemonLifecycle::Running,
+                viewers: 1,
+            },
+            ClientDaemonPtySummary {
+                id: 7,
+                name: "real shell".into(),
+                lifecycle: ClientDaemonLifecycle::Running,
+                viewers: 1,
+            },
+        ];
+        app.daemon.pty_screens = vec![
+            ClientDaemonPtyScreen {
+                session_id: 1,
+                columns: 24,
+                rows_count: 6,
+                cursor_column: 0,
+                cursor_row: 0,
+                rows: vec!["left-session-only".into()],
+                scrollback_lines: 0,
+            },
+            ClientDaemonPtyScreen {
+                session_id: 7,
+                columns: resized.dimensions.columns,
+                rows_count: resized.dimensions.rows,
+                cursor_column: resized.cursor.1,
+                cursor_row: resized.cursor.0,
+                rows: resized.plain_text.lines().map(str::to_owned).collect(),
+                scrollback_lines: resized.max_scrollback_offset as u32,
+            },
+        ];
+        let _ = yoctui_model::update(
+            &mut app,
+            Action::SelectPtyPane {
+                pane: second,
+                index: 1,
+            },
+        );
+        assert_eq!(app.pane_layout.focused, second);
+        assert_eq!(app.pty_selection, 1);
+
+        let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
+        terminal
+            .draw(|frame| yoctui_ui::render_at(frame, &app, UNIX_EPOCH))
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        let row_text = |row| {
+            (0..120)
+                .map(|column| buffer[(column, row)].symbol())
+                .collect::<String>()
+        };
+        let output_row = (1..29)
+            .find(|row| row_text(*row).contains("real-pty-ready"))
+            .expect("real PTY output appears inside a workbench pane");
+        let output_column = row_text(output_row).find("real-pty-ready").unwrap();
+        assert!(
+            output_column >= 60,
+            "output must be in the selected right pane"
+        );
+        assert!((0..2).any(|row| row_text(row).to_ascii_lowercase().contains("yoctui")));
+        assert!((28..30).any(|row| row_text(row).contains("F1 Help")));
+        assert!(row_text(output_row).contains("real-pty-ready"));
+        assert!((1..29).any(|row| row_text(row).contains("left-session-only")));
+
+        let retained_focus = app.focus;
+        let mut prefix = PrefixState::new(Duration::from_secs(1));
+        assert_eq!(
+            prefix.feed(Input::CtrlB, Instant::now()),
+            PrefixEvent::Awaiting
+        );
+        assert_eq!(
+            prefix.feed(Input::Char('d'), Instant::now()),
+            PrefixEvent::Command(PrefixCommand::Detach)
+        );
+        assert_eq!(app.focus, retained_focus);
+    }
+
     #[test]
     fn keyboard_matrix_is_complete_and_unique() {
         let keys = [
