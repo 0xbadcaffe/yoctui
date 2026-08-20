@@ -5299,18 +5299,18 @@ notes = "Disk read/write now render separately with binary bytes-per-second text
 id = "METRICS-UI-005"
 milestone = "M19"
 title = "Add network sparklines"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 542
 required = true
 depends_on = ["METRICS-UI-004"]
 verify = ["cargo test -p yoctui-ui next_generation_network_io"]
-notes = "Render optional RX/TX rates with bounded history and honest unsupported behavior."
+notes = "Optional network RX/TX now render separately with binary bytes-per-second text and independently scaled bounded-history sparklines using semantic graph roles. Unavailable current deltas remain distinct from retained valid trails and real zero deltas; compact labels prioritize text and unsupported hosts remain honest. Focused responsive/accessibility and cockpit tests pass."
 
 [[task]]
 id = "METRICS-UI-006"
 milestone = "M19"
 title = "Create responsive telemetry strip"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 543
 required = true
 depends_on = ["METRICS-UI-005"]

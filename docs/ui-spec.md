@@ -326,6 +326,19 @@ zero delta renders `0 B/s`. First observation, reset, device change, overflow,
 zero interval, or unmatched device appends no point, so none can create a
 synthetic zero or spike. Reduced motion does not animate the graphs.
 
+Network receive and transmit occupy separate `RX` and `TX` rows/cells and
+always label the current value in binary bytes per second. Each sparkline
+scales independently to the maximum of its own retained valid history and uses
+the semantic network-RX or network-TX graph role. Below 18 columns current text
+takes priority over the graph. When the current delta is unavailable the label
+says `! unavailable`; an older valid trail may remain visible but is not
+presented as current. A real monotonic zero delta renders `0 B/s`. First
+observation, reset, interface change or disappearance, overflow, zero interval,
+or absent lowest-metric IPv4 default-route interface appends no point, so none
+can create a synthetic zero or spike. Hosts without a supported selected
+interface keep both optional rows explicitly unavailable, and reduced motion
+does not animate the graphs.
+
 ##### Telemetry provenance audit
 
 The typed provenance catalog is authoritative for whether a metric may render.

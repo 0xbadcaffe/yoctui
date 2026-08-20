@@ -11,8 +11,18 @@ Status values:
 
 ## Current phase
 
-`METRICS-UI-005` is `IN_PROGRESS`. It will apply the same current-versus-
-retained-history contract to optional network RX/TX rates and sparklines.
+`METRICS-UI-006` is `IN_PROGRESS`. It will compose the authoritative gauges
+and rate histories into explicit wide, medium, and narrow telemetry strips
+without requiring optional host sources.
+
+`METRICS-UI-005` is `DONE`: optional network RX and TX now render separately
+with binary bytes-per-second text and independently scaled bounded-history
+sparklines using their semantic graph roles. An unavailable current delta is
+named while prior valid history may remain visible; a real zero delta remains
+distinct. Compact rendering prioritizes text, unsupported hosts remain honest,
+and no reset/first/interface-change sample is manufactured. Wide, compact,
+current, unavailable, zero, high-contrast, no-color, reduced-motion, and
+cockpit fixtures pass focused coverage.
 
 `METRICS-UI-004` is `DONE`: disk read and write now render separately with
 binary bytes-per-second text and independently scaled bounded-history

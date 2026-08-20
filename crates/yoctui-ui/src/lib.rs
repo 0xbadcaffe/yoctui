@@ -4027,6 +4027,46 @@ fn render_disk_io(frame: &mut Frame, app: &App, read_area: Rect, write_area: Rec
     );
 }
 
+fn render_network_io(frame: &mut Frame, app: &App, receive_area: Rect, transmit_area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let receive_history = app
+        .host_telemetry_history
+        .network_receive_bytes_per_second
+        .iter()
+        .copied()
+        .collect::<Vec<_>>();
+    render_rate_history(
+        frame,
+        app,
+        receive_area,
+        RateHistory {
+            label: "RX",
+            compact_label: "RX",
+            current: app.host_telemetry.network_receive_bytes_per_second,
+            samples: &receive_history,
+            graph_color: palette.graph_network_rx,
+        },
+    );
+    let transmit_history = app
+        .host_telemetry_history
+        .network_transmit_bytes_per_second
+        .iter()
+        .copied()
+        .collect::<Vec<_>>();
+    render_rate_history(
+        frame,
+        app,
+        transmit_area,
+        RateHistory {
+            label: "TX",
+            compact_label: "TX",
+            current: app.host_telemetry.network_transmit_bytes_per_second,
+            samples: &transmit_history,
+            graph_color: palette.graph_network_tx,
+        },
+    );
+}
+
 fn render_history(frame: &mut Frame, label: &str, samples: &[u64], area: Rect, style: Style) {
     let columns = Layout::horizontal([Constraint::Length(9), Constraint::Min(1)]).split(area);
     frame.render_widget(Paragraph::new(label).style(style), columns[0]);
@@ -4044,7 +4084,7 @@ fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
         .style(palette.base());
     let inner = block.inner(area);
     frame.render_widget(block, area);
-    let rows = Layout::vertical([Constraint::Length(1); 8]).split(inner);
+    let rows = Layout::vertical([Constraint::Length(1); 10]).split(inner);
 
     render_cpu_gauge(frame, app, rows[0]);
     let cpu_history = app
@@ -4078,6 +4118,7 @@ fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
 
     render_disk_gauge(frame, app, rows[4]);
     render_disk_io(frame, app, rows[5], rows[6]);
+    render_network_io(frame, app, rows[7], rows[8]);
     let load = app.host_telemetry.load_average_milli.map_or_else(
         || "LOAD 1/5/15  -- / -- / --".into(),
         |load| {
@@ -4091,7 +4132,7 @@ fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(load).style(palette.role(palette.informational, Modifier::BOLD)),
-        rows[7],
+        rows[9],
     );
 }
 
@@ -4149,7 +4190,7 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
     let build_panels = if show_cockpit {
         Layout::vertical([
             Constraint::Length(13),
-            Constraint::Length(10),
+            Constraint::Length(12),
             Constraint::Min(3),
         ])
         .split(chunks[0])
@@ -17442,6 +17483,64 @@ mod tests {
         assert!(render_io(&app, 16).contains("R 0 B/s"));
     }
     #[test]
+    fn next_generation_network_io_sparklines_keep_current_and_history_distinct() {
+        let render_io = |app: &App, width| {
+            let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
+            terminal
+                .draw(|frame| {
+                    let rows = Layout::vertical([Constraint::Length(1); 2]).split(frame.area());
+                    render_network_io(frame, app, rows[0], rows[1]);
+                })
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+
+        let mut app = App::new(10, 1_000);
+        app.host_telemetry.network_receive_bytes_per_second = Some(3 * 1024);
+        app.host_telemetry.network_transmit_bytes_per_second = Some(6 * 1024);
+        app.host_telemetry_history
+            .network_receive_bytes_per_second
+            .extend([512, 1024, 3 * 1024]);
+        app.host_telemetry_history
+            .network_transmit_bytes_per_second
+            .extend([6 * 1024, 1024, 4 * 1024, 6 * 1024]);
+        let wide = render_io(&app, 42);
+        assert!(wide.contains("RX 3.0 KiB/s"), "{wide}");
+        assert!(wide.contains("TX 6.0 KiB/s"), "{wide}");
+        assert!(wide.chars().any(|character| "▁▂▃▄▅▆▇█".contains(character)));
+
+        let narrow = render_io(&app, 16);
+        assert!(narrow.contains("RX 3.0 KiB/s"), "{narrow}");
+        assert!(narrow.contains("TX 6.0 KiB/s"), "{narrow}");
+
+        app.host_telemetry.network_receive_bytes_per_second = None;
+        app.host_telemetry.network_transmit_bytes_per_second = None;
+        let unavailable = render_io(&app, 42);
+        assert!(unavailable.contains("RX ! unavailable"), "{unavailable}");
+        assert!(unavailable.contains("TX ! unavailable"), "{unavailable}");
+        assert!(!unavailable.contains("0 B/s"), "{unavailable}");
+        assert!(
+            unavailable
+                .chars()
+                .any(|character| "▁▂▃▄▅▆▇█".contains(character)),
+            "retained valid history should remain visible: {unavailable}"
+        );
+
+        app.host_telemetry.network_receive_bytes_per_second = Some(0);
+        app.host_telemetry.network_transmit_bytes_per_second = Some(0);
+        app.theme = Theme::HighContrast;
+        app.reduced_motion = true;
+        assert!(render_io(&app, 42).contains("RX 0 B/s"));
+        app.color_enabled = false;
+        assert!(render_io(&app, 16).contains("TX 0 B/s"));
+    }
+    #[test]
     fn dashboard_telemetry_cockpit_renders_gauges_history_and_load() {
         let mut app = App::new(10, 1_000);
         app.workspace.build_dir = Some("/work/build".into());
@@ -17457,8 +17556,9 @@ mod tests {
                     disk_available_bytes: Some(40 * 1024 * 1024 * 1024),
                     disk_read_bytes_per_second: Some(u64::from(cpu) * 1024),
                     disk_write_bytes_per_second: Some(u64::from(cpu) * 2048),
+                    network_receive_bytes_per_second: Some(u64::from(cpu) * 3072),
+                    network_transmit_bytes_per_second: Some(u64::from(cpu) * 4096),
                     load_average_milli: Some([1_250, 2_500, 3_750]),
-                    ..yoctui_model::HostTelemetry::default()
                 }),
             );
         }
@@ -17474,6 +17574,8 @@ mod tests {
         assert!(output.contains("BUILD FS  60%"), "{output}");
         assert!(output.contains("Read 42.0 KiB/s"), "{output}");
         assert!(output.contains("Write 84.0 KiB/s"), "{output}");
+        assert!(output.contains("RX 126.0 KiB/s"), "{output}");
+        assert!(output.contains("TX 168.0 KiB/s"), "{output}");
         assert!(
             output.contains("LOAD 1/5/15  1.25 / 2.50 / 3.75"),
             "{output}"

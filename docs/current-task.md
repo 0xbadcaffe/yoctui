@@ -2,21 +2,19 @@
 
 ## Task
 
-**ID:** METRICS-UI-005
-**Title:** Add network sparklines
+**ID:** METRICS-UI-006
+**Title:** Create responsive telemetry strip
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Render optional authoritative reset-aware network receive and transmit rates
-with bounded recent history as semantic sparklines, without making network
-telemetry a requirement for core functionality or displaying unavailable
-values as zero.
+Compose the authoritative CPU, RAM, build-filesystem, disk-I/O, and network
+widgets into an explicit responsive telemetry strip whose pane priority and
+content remain useful from wide through narrow terminals.
 
 ## Dependencies
 
-- `METRICS-UI-004` — DONE
-- `METRICS-MODEL-002` — DONE
+- `METRICS-UI-005` — DONE
 
 ## Relevant files
 
@@ -28,22 +26,23 @@ values as zero.
 
 ## Definition of done
 
-- Current RX and TX rates render separately with byte-per-second units.
-- Each sparkline consumes only its bounded typed history and scales to the
-  retained maximum without mutating or reparsing sampler data.
-- First/reset/interface-change/overflow/unavailable observations do not render
-  as a spike or synthetic zero.
-- Hosts without a supported active interface keep network telemetry optional
-  and explicitly unavailable or omitted according to layout space.
-- Narrow rendering keeps meaningful text without panic or overlap.
+- Wide layout composes CPU, RAM, Build FS, Read, Write, RX, and TX in stable
+  terminal-native cells with bounded histories where supported.
+- Medium layout preserves CPU, RAM, Build FS, and a compact I/O summary.
+- Narrow layout presents an honest compact summary or hides the strip behind
+  the existing status/Inspector path according to the documented pane
+  priority.
+- Optional unsupported metrics never reserve misleading data or display a
+  synthetic zero.
+- Breakpoint selection is deterministic, uses reusable layout primitives, and
+  does not overlap or panic below the preferred width.
 - High-contrast, no-color, and reduced-motion presentations retain meaningful
   text and visible state.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_network_io
-cargo test -p yoctui telemetry_sampling
+cargo test -p yoctui-ui next_generation_telemetry_strip
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
