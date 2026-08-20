@@ -36,8 +36,8 @@ use yoctui_model::{
     MaintenanceView, PopupEditorCommand, QaAction, QaDialog, QaReportFailureKind, QaReportRequest,
     QaView, QemuOutputStream, QemuSessionId, RecipeDependencies, Screen, SdkBuildAction, SdkKind,
     SdkOutputStream, SdkSessionId, SecurityAction, SecurityDialog, SecurityOutputStream,
-    SecurityView, Severity, TaskId, TaskInfo, TestComparison, VariableDetail, VariableIdentity,
-    WicCapability, WicOutput, WicOutputStream, WicSessionId,
+    SecurityView, Severity, SplitAxis, TaskId, TaskInfo, TestComparison, TestWorkspaceView,
+    VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream, WicSessionId,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -2976,41 +2976,15 @@ pub fn mouse_action_for_app(
     terminal_width: u16,
     terminal_height: u16,
 ) -> Option<Action> {
-    if matches!(mouse.kind, MouseKind::Down) && app.active_dialog().is_some() {
-        return Some(Action::Focus(FocusTarget::Dialog));
+    if app.active_dialog().is_some() {
+        return dialog_mouse_action(mouse, app);
     }
-    if matches!(mouse.kind, MouseKind::Down)
-        && app.screen == Screen::Dashboard
-        && !app.daemon.pty_sessions.is_empty()
-        && mouse.column >= 24
-    {
-        let delta = if mouse.row.is_multiple_of(2) { 1 } else { -1 };
-        return Some(Action::SelectPtySession { delta });
+    let shell = workbench_shell(terminal_width, terminal_height)?;
+    if app.screen == Screen::Dashboard && !app.daemon.pty_sessions.is_empty() {
+        return terminal_session_mouse_action(mouse, app, shell);
     }
-    if matches!(mouse.kind, MouseKind::Drag)
-        && app.screen == Screen::Dashboard
-        && !app.daemon.pty_sessions.is_empty()
-    {
-        return Some(Action::ResizeFocusedPane {
-            delta_per_mille: if mouse.column.is_multiple_of(2) {
-                25
-            } else {
-                -25
-            },
-        });
-    }
-    let navigator_width = if terminal_width >= 100 {
-        if terminal_width == 160 && app.screen == Screen::Tasks {
-            26
-        } else {
-            22
-        }
-    } else if app.focus == FocusTarget::Navigator {
-        terminal_width
-    } else {
-        0
-    };
-    if mouse.column < navigator_width {
+    let region = workbench_mouse_region(mouse, app, shell)?;
+    if region.target == FocusTarget::Navigator {
         if matches!(mouse.kind, MouseKind::ScrollUp) {
             return Some(Action::SelectNavigator { delta: -1 });
         }
@@ -3018,14 +2992,14 @@ pub fn mouse_action_for_app(
             return Some(Action::SelectNavigator { delta: 1 });
         }
         if matches!(mouse.kind, MouseKind::Down)
-            && mouse.row >= 3
-            && mouse.row < terminal_height.saturating_sub(3)
+            && mouse.row > region.area.y
+            && mouse.row < region.area.bottom().saturating_sub(1)
         {
-            let row = usize::from(mouse.row - 3);
+            let row = usize::from(mouse.row - region.area.y - 1);
             let selection = if terminal_width == 160 && app.screen == Screen::Tasks {
                 literal_navigator_selection_at_row(app, row)
             } else {
-                let visible_rows = usize::from(terminal_height.saturating_sub(6));
+                let visible_rows = usize::from(region.area.height.saturating_sub(2));
                 let visual_row = app.navigator_viewport_start(visible_rows) + row;
                 if let Some(group) = app.navigator_group_at_visual_row(visual_row) {
                     return Some(Action::ToggleNavigatorGroup { group });
@@ -3043,8 +3017,479 @@ pub fn mouse_action_for_app(
         if matches!(mouse.kind, MouseKind::Down) {
             return Some(Action::Focus(FocusTarget::Navigator));
         }
+        return None;
     }
-    mouse_action(mouse, terminal_width)
+    if region.target == FocusTarget::Workspace {
+        if matches!(mouse.kind, MouseKind::ScrollUp | MouseKind::ScrollDown) {
+            let key = if matches!(mouse.kind, MouseKind::ScrollUp) {
+                Input::Up
+            } else {
+                Input::Down
+            };
+            return workspace_wheel_action(app, key);
+        }
+        if matches!(mouse.kind, MouseKind::Down) {
+            if let Some(action) = workspace_tab_click(app, region.area, mouse) {
+                return Some(action);
+            }
+            if app.screen == Screen::Tasks
+                && let Some(action) = task_row_click(app, region.area, mouse)
+            {
+                return Some(action);
+            }
+            return Some(Action::Focus(FocusTarget::Workspace));
+        }
+        return None;
+    }
+    if matches!(mouse.kind, MouseKind::Down) {
+        return Some(Action::Focus(FocusTarget::Inspector));
+    }
+    None
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct MouseRect {
+    x: u16,
+    y: u16,
+    width: u16,
+    height: u16,
+}
+
+impl MouseRect {
+    fn right(self) -> u16 {
+        self.x.saturating_add(self.width)
+    }
+
+    fn bottom(self) -> u16 {
+        self.y.saturating_add(self.height)
+    }
+
+    fn contains(self, mouse: MouseInput) -> bool {
+        mouse.column >= self.x
+            && mouse.column < self.right()
+            && mouse.row >= self.y
+            && mouse.row < self.bottom()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct WorkbenchMouseRegion {
+    target: FocusTarget,
+    area: MouseRect,
+}
+
+fn workbench_shell(width: u16, height: u16) -> Option<MouseRect> {
+    (width >= 80 && height >= 24).then_some(MouseRect {
+        x: 0,
+        y: 2,
+        width,
+        height: height.saturating_sub(4),
+    })
+}
+
+fn workbench_mouse_region(
+    mouse: MouseInput,
+    app: &yoctui_model::App,
+    shell: MouseRect,
+) -> Option<WorkbenchMouseRegion> {
+    if !shell.contains(mouse) {
+        return None;
+    }
+    if shell.width >= 130 {
+        let (navigator_width, workspace_width) =
+            if app.screen == Screen::Tasks && shell.width == 160 {
+                (26, 89)
+            } else {
+                let percentage = if app.screen == Screen::Tasks { 56 } else { 43 };
+                (22, shell.width.saturating_mul(percentage) / 100)
+            };
+        let workspace_width = workspace_width.min(
+            shell
+                .width
+                .saturating_sub(navigator_width)
+                .saturating_sub(if app.screen == Screen::Tasks { 32 } else { 28 }),
+        );
+        let navigator = MouseRect {
+            width: navigator_width,
+            ..shell
+        };
+        let workspace = MouseRect {
+            x: shell.x + navigator_width,
+            width: workspace_width,
+            ..shell
+        };
+        let inspector = MouseRect {
+            x: workspace.right(),
+            width: shell.right().saturating_sub(workspace.right()),
+            ..shell
+        };
+        return [
+            WorkbenchMouseRegion {
+                target: FocusTarget::Navigator,
+                area: navigator,
+            },
+            WorkbenchMouseRegion {
+                target: FocusTarget::Workspace,
+                area: workspace,
+            },
+            WorkbenchMouseRegion {
+                target: FocusTarget::Inspector,
+                area: inspector,
+            },
+        ]
+        .into_iter()
+        .find(|region| region.area.contains(mouse));
+    }
+    if shell.width >= 100 {
+        let navigator = MouseRect { width: 22, ..shell };
+        if navigator.contains(mouse) {
+            return Some(WorkbenchMouseRegion {
+                target: FocusTarget::Navigator,
+                area: navigator,
+            });
+        }
+        return Some(WorkbenchMouseRegion {
+            target: if app.focus == FocusTarget::Inspector {
+                FocusTarget::Inspector
+            } else {
+                FocusTarget::Workspace
+            },
+            area: MouseRect {
+                x: navigator.right(),
+                width: shell.right().saturating_sub(navigator.right()),
+                ..shell
+            },
+        });
+    }
+    if mouse.row == shell.y {
+        return narrow_switcher_target(app.focus, mouse.column).map(|target| {
+            WorkbenchMouseRegion {
+                target,
+                area: shell,
+            }
+        });
+    }
+    Some(WorkbenchMouseRegion {
+        target: match app.focus {
+            FocusTarget::Navigator => FocusTarget::Navigator,
+            FocusTarget::Inspector => FocusTarget::Inspector,
+            FocusTarget::Workspace | FocusTarget::Dialog | FocusTarget::CommandPalette => {
+                FocusTarget::Workspace
+            }
+        },
+        area: MouseRect {
+            y: shell.y + 1,
+            height: shell.height.saturating_sub(1),
+            ..shell
+        },
+    })
+}
+
+fn narrow_switcher_target(focus: FocusTarget, column: u16) -> Option<FocusTarget> {
+    let mut cursor = "Panes: ".len() as u16;
+    for (target, name) in [
+        (FocusTarget::Navigator, "Navigator"),
+        (FocusTarget::Workspace, "Workspace"),
+        (FocusTarget::Inspector, "Inspector"),
+    ] {
+        let width = name.len() as u16 + u16::from(focus == target) * 2;
+        if (cursor..cursor.saturating_add(width)).contains(&column) {
+            return Some(target);
+        }
+        cursor = cursor.saturating_add(width + 2);
+    }
+    None
+}
+
+fn dialog_mouse_action(mouse: MouseInput, app: &yoctui_model::App) -> Option<Action> {
+    if matches!(mouse.kind, MouseKind::Down) {
+        return Some(Action::Focus(FocusTarget::Dialog));
+    }
+    let delta = match mouse.kind {
+        MouseKind::ScrollUp => -1,
+        MouseKind::ScrollDown => 1,
+        MouseKind::Drag | MouseKind::Up | MouseKind::Down => return None,
+    };
+    match app.active_dialog()? {
+        yoctui_model::Dialog::ThemePicker { .. } => Some(Action::SelectTheme { delta }),
+        yoctui_model::Dialog::ImagePicker(_) => Some(Action::SelectImage { delta }),
+        yoctui_model::Dialog::RecipeTaskPicker(_) => Some(Action::SelectRecipeTask { delta }),
+        yoctui_model::Dialog::RecipeTaskLogPicker(_) => Some(Action::SelectRecipeTaskLog { delta }),
+        yoctui_model::Dialog::RecipePatchPicker(_) => Some(Action::SelectRecipePatch { delta }),
+        yoctui_model::Dialog::SignatureTaskPicker(_) => Some(Action::SelectSignatureTask { delta }),
+        yoctui_model::Dialog::ConfigSourcePicker(_) => Some(Action::SelectConfigSource { delta }),
+        yoctui_model::Dialog::ConfigScopePicker(_) => Some(Action::SelectConfigScope { delta }),
+        yoctui_model::Dialog::DevtoolFinishPicker(_) => {
+            Some(Action::SelectDevtoolFinishLayer { delta })
+        }
+        yoctui_model::Dialog::WicDevicePicker(_) => Some(Action::SelectWicDevice { delta }),
+        _ => None,
+    }
+}
+
+fn workspace_wheel_action(app: &yoctui_model::App, key: Input) -> Option<Action> {
+    let delta = if key == Input::Up { -1 } else { 1 };
+    match app.screen {
+        Screen::Dashboard | Screen::Tasks => tasks_action(app.task_filter_editing, key),
+        Screen::BuildHistory => Some(Action::SelectBuildHistory { delta }),
+        Screen::Dependencies => dependency_workspace_action(key),
+        Screen::Signatures => signature_workspace_action(key),
+        Screen::Recipes => recipes_workspace_action(app.metadata_searching, key),
+        Screen::Packages => package_workspace_action(app.package_searching, key),
+        Screen::Images => images_workspace_action(app.image_artifact_searching, key),
+        Screen::Sdk => sdk_workspace_action(app.sdk_artifact_searching, key),
+        Screen::Testing => match app.test_view {
+            TestWorkspaceView::Launches => testing_workspace_action(key),
+            TestWorkspaceView::Results => test_results_workspace_action(
+                app.test_result_searching,
+                app.test_result_drilled,
+                key,
+            ),
+            TestWorkspaceView::Comparison => test_comparison_workspace_action(key),
+        },
+        Screen::Security => security_workspace_action(
+            app.security.view,
+            app.security.drilled,
+            app.security.searching,
+            key,
+        ),
+        Screen::Qa => qa_workspace_action(app.qa.view, app.qa.drilled, app.qa.searching, key),
+        Screen::Layers => {
+            if app.layer_browser.is_some() {
+                layer_tree_action(app.metadata_searching, key)
+            } else {
+                Some(Action::SelectLayer { delta })
+            }
+        }
+        Screen::Configuration => config_workspace_action(app.metadata_searching, key),
+        Screen::Maintenance => maintenance_workspace_action(
+            app.maintenance.view,
+            match app.maintenance.view {
+                MaintenanceView::Sstate => 2,
+                MaintenanceView::Services => 1,
+                MaintenanceView::Release | MaintenanceView::Integrations => 4,
+            },
+            key,
+        ),
+        Screen::Logs => logs_action(app.logs.searching, key),
+        Screen::Errors => errors_action(key),
+        Screen::BuildEnvironment => build_environment_action(key),
+        Screen::Compatibility => {
+            compatibility_ui_inspector_action(app.compatibility_ui.searching, key)
+        }
+        Screen::Settings => settings_action(key),
+        Screen::LayerRelationships | Screen::Bbmask | Screen::Help => None,
+    }
+}
+
+fn workspace_tab_click(
+    app: &yoctui_model::App,
+    area: MouseRect,
+    mouse: MouseInput,
+) -> Option<Action> {
+    if mouse.row != area.y.saturating_add(1) || mouse.column <= area.x {
+        return None;
+    }
+    let column = mouse.column - area.x - 1;
+    match app.screen {
+        Screen::Security if column < 6 => (app.security.view != SecurityView::Cves)
+            .then_some(Action::Security(SecurityAction::CycleView)),
+        Screen::Security if (9..15).contains(&column) => (app.security.view != SecurityView::Sbom)
+            .then_some(Action::Security(SecurityAction::CycleView)),
+        Screen::Qa if column < 17 => {
+            (app.qa.view != QaView::RecipeKernel).then_some(Action::Qa(QaAction::CycleView))
+        }
+        Screen::Qa if (20..30).contains(&column) => {
+            (app.qa.view != QaView::LayerQa).then_some(Action::Qa(QaAction::CycleView))
+        }
+        Screen::Testing if column < 10 => Some(Action::SelectTestView(TestWorkspaceView::Launches)),
+        Screen::Testing if (13..22).contains(&column) => {
+            Some(Action::SelectTestView(TestWorkspaceView::Results))
+        }
+        Screen::Testing if (25..37).contains(&column) => {
+            Some(Action::SelectTestView(TestWorkspaceView::Comparison))
+        }
+        _ => None,
+    }
+}
+
+fn task_row_click(app: &yoctui_model::App, area: MouseRect, mouse: MouseInput) -> Option<Action> {
+    let table_height = if area.width == 89 && area.height == 44 {
+        17
+    } else if area.height >= 46 {
+        14 + area.height.saturating_sub(46).div_ceil(2)
+    } else if area.height >= 27 {
+        area.height.saturating_mul(45) / 100
+    } else if area.height >= 18 {
+        area.height.saturating_mul(62) / 100
+    } else {
+        area.height
+    };
+    let first_row = area.y.saturating_add(4);
+    let visible_rows = usize::from(table_height.saturating_sub(5)).max(1);
+    if mouse.row < first_row || mouse.row >= first_row.saturating_add(visible_rows as u16) {
+        return None;
+    }
+    let rows = app.visible_task_row_refs_at(SystemTime::now());
+    let selected = app.task_progress_scroll.min(rows.len().saturating_sub(1));
+    let viewport_start = selected
+        .saturating_sub(visible_rows / 2)
+        .min(rows.len().saturating_sub(visible_rows));
+    let clicked = viewport_start + usize::from(mouse.row - first_row);
+    (clicked < rows.len()).then_some(Action::ScrollBuildTasks {
+        delta: clicked as isize - app.task_progress_scroll as isize,
+    })
+}
+
+fn terminal_session_mouse_action(
+    mouse: MouseInput,
+    app: &yoctui_model::App,
+    shell: MouseRect,
+) -> Option<Action> {
+    if !shell.contains(mouse) {
+        return None;
+    }
+    match mouse.kind {
+        MouseKind::Down => {
+            let mut leaves = Vec::new();
+            collect_terminal_mouse_panes(&app.pane_layout.root, shell, &mut leaves);
+            leaves
+                .into_iter()
+                .enumerate()
+                .find(|(index, (area, _))| {
+                    *index < app.daemon.pty_sessions.len() && area.contains(mouse)
+                })
+                .map(|(index, (_, pane))| Action::SelectPtyPane { pane, index })
+        }
+        MouseKind::Drag => terminal_resize_action(mouse, app, shell),
+        MouseKind::ScrollUp => Some(Action::SelectPtySession { delta: -1 }),
+        MouseKind::ScrollDown => Some(Action::SelectPtySession { delta: 1 }),
+        MouseKind::Up => None,
+    }
+}
+
+fn collect_terminal_mouse_panes(
+    node: &yoctui_model::PaneNode,
+    area: MouseRect,
+    output: &mut Vec<(MouseRect, yoctui_model::PaneId)>,
+) {
+    match node {
+        yoctui_model::PaneNode::Leaf { id } => output.push((area, *id)),
+        yoctui_model::PaneNode::Split {
+            axis,
+            ratio_per_mille,
+            first,
+            second,
+        } => {
+            let (first_area, second_area) = split_mouse_rect(area, *axis, *ratio_per_mille);
+            collect_terminal_mouse_panes(first, first_area, output);
+            collect_terminal_mouse_panes(second, second_area, output);
+        }
+    }
+}
+
+fn split_mouse_rect(
+    area: MouseRect,
+    axis: SplitAxis,
+    ratio_per_mille: u16,
+) -> (MouseRect, MouseRect) {
+    let ratio = f32::from(ratio_per_mille) / 1000.0;
+    match axis {
+        SplitAxis::Horizontal => {
+            let first_width = ((f32::from(area.width) * ratio) as u16)
+                .max(1)
+                .min(area.width.saturating_sub(1));
+            (
+                MouseRect {
+                    width: first_width,
+                    ..area
+                },
+                MouseRect {
+                    x: area.x + first_width,
+                    width: area.width - first_width,
+                    ..area
+                },
+            )
+        }
+        SplitAxis::Vertical => {
+            let first_height = ((f32::from(area.height) * ratio) as u16)
+                .max(1)
+                .min(area.height.saturating_sub(1));
+            (
+                MouseRect {
+                    height: first_height,
+                    ..area
+                },
+                MouseRect {
+                    y: area.y + first_height,
+                    height: area.height - first_height,
+                    ..area
+                },
+            )
+        }
+    }
+}
+
+fn terminal_resize_action(
+    mouse: MouseInput,
+    app: &yoctui_model::App,
+    shell: MouseRect,
+) -> Option<Action> {
+    let (axis, ratio, area) =
+        focused_split_geometry(&app.pane_layout.root, app.pane_layout.focused, shell)?;
+    let desired = match axis {
+        SplitAxis::Horizontal => {
+            u32::from(mouse.column.saturating_sub(area.x)).saturating_mul(1000)
+                / u32::from(area.width.max(1))
+        }
+        SplitAxis::Vertical => {
+            u32::from(mouse.row.saturating_sub(area.y)).saturating_mul(1000)
+                / u32::from(area.height.max(1))
+        }
+    }
+    .clamp(100, 900) as i16;
+    let delta = desired - ratio as i16;
+    (delta != 0).then_some(Action::ResizeFocusedPane {
+        delta_per_mille: delta,
+    })
+}
+
+fn focused_split_geometry(
+    node: &yoctui_model::PaneNode,
+    focused: yoctui_model::PaneId,
+    area: MouseRect,
+) -> Option<(SplitAxis, u16, MouseRect)> {
+    let yoctui_model::PaneNode::Split {
+        axis,
+        ratio_per_mille,
+        first,
+        second,
+    } = node
+    else {
+        return None;
+    };
+    let (first_area, second_area) = split_mouse_rect(area, *axis, *ratio_per_mille);
+    if matches!(first.as_ref(), yoctui_model::PaneNode::Leaf { id } if *id == focused)
+        || matches!(second.as_ref(), yoctui_model::PaneNode::Leaf { id } if *id == focused)
+    {
+        return Some((*axis, *ratio_per_mille, area));
+    }
+    if pane_node_contains(first, focused) {
+        focused_split_geometry(first, focused, first_area)
+    } else if pane_node_contains(second, focused) {
+        focused_split_geometry(second, focused, second_area)
+    } else {
+        None
+    }
+}
+
+fn pane_node_contains(node: &yoctui_model::PaneNode, pane: yoctui_model::PaneId) -> bool {
+    match node {
+        yoctui_model::PaneNode::Leaf { id } => *id == pane,
+        yoctui_model::PaneNode::Split { first, second, .. } => {
+            pane_node_contains(first, pane) || pane_node_contains(second, pane)
+        }
+    }
 }
 
 fn literal_navigator_selection_at_row(app: &yoctui_model::App, row: usize) -> Option<usize> {
@@ -5232,7 +5677,10 @@ mod tests {
                 120,
                 30,
             ),
-            Some(Action::SelectPtySession { delta: 1 })
+            Some(Action::SelectPtyPane {
+                pane: yoctui_model::PaneId(1),
+                index: 0,
+            })
         );
         assert_eq!(
             mouse_action_for_app(
@@ -5245,9 +5693,8 @@ mod tests {
                 120,
                 30,
             ),
-            Some(Action::ResizeFocusedPane {
-                delta_per_mille: 25
-            })
+            None,
+            "a single terminal leaf has no supported split to resize"
         );
         app.dialogs.push_back(yoctui_model::Dialog::BuildOptions);
         assert_eq!(
@@ -7149,6 +7596,258 @@ mod tests {
         assert_eq!(
             mouse_action_for_app(content_heading, &app, 180, 40),
             Some(Action::ToggleNavigatorGroup { group: 1 })
+        );
+    }
+
+    #[test]
+    fn next_generation_mouse_uses_responsive_regions_and_keyboard_scroll_routes() {
+        let mut app = yoctui_model::App::new(16, 4096);
+        app.screen = Screen::Recipes;
+
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 100,
+                    row: 10,
+                },
+                &app,
+                160,
+                48,
+            ),
+            Some(Action::Focus(FocusTarget::Inspector))
+        );
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::ScrollUp,
+                    column: 30,
+                    row: 10,
+                },
+                &app,
+                160,
+                48,
+            ),
+            recipes_workspace_action(false, Input::Up)
+        );
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 8,
+                    row: 2,
+                },
+                &app,
+                90,
+                30,
+            ),
+            Some(Action::Focus(FocusTarget::Navigator))
+        );
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 32,
+                    row: 2,
+                },
+                &app,
+                90,
+                30,
+            ),
+            Some(Action::Focus(FocusTarget::Inspector))
+        );
+        for inert in [
+            MouseInput {
+                kind: MouseKind::Down,
+                column: 30,
+                row: 0,
+            },
+            MouseInput {
+                kind: MouseKind::Down,
+                column: 30,
+                row: 29,
+            },
+        ] {
+            assert_eq!(mouse_action_for_app(inert, &app, 90, 30), None);
+        }
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 5,
+                    row: 5,
+                },
+                &app,
+                79,
+                23,
+            ),
+            None,
+            "the below-minimum resize screen is inert"
+        );
+    }
+
+    #[test]
+    fn next_generation_mouse_selects_exact_tasks_and_tabs() {
+        let mut app = yoctui_model::App::new(16, 4096);
+        app.screen = Screen::Tasks;
+        for index in 0..3 {
+            let id = TaskId(format!("task-{index}"));
+            app.tasks.insert(
+                id.clone(),
+                TaskInfo::active(id, format!("recipe-{index}"), "do_compile".into()),
+            );
+        }
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 40,
+                    row: 7,
+                },
+                &app,
+                160,
+                48,
+            ),
+            Some(Action::ScrollBuildTasks { delta: 1 })
+        );
+
+        app.screen = Screen::Testing;
+        let comparison = mouse_action_for_app(
+            MouseInput {
+                kind: MouseKind::Down,
+                column: 48,
+                row: 3,
+            },
+            &app,
+            160,
+            48,
+        );
+        assert_eq!(
+            comparison,
+            Some(Action::SelectTestView(TestWorkspaceView::Comparison))
+        );
+        let _ = yoctui_model::update(&mut app, comparison.unwrap());
+        assert_eq!(app.test_view, TestWorkspaceView::Comparison);
+        app.screen = Screen::Security;
+        app.security.view = SecurityView::Cves;
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 32,
+                    row: 3,
+                },
+                &app,
+                160,
+                48,
+            ),
+            Some(Action::Security(SecurityAction::CycleView))
+        );
+    }
+
+    #[test]
+    fn next_generation_mouse_traps_dialogs_and_resizes_exact_terminal_axis() {
+        let mut app = yoctui_model::App::new(16, 4096);
+        let second = app
+            .pane_layout
+            .split(yoctui_model::PaneId(1), SplitAxis::Horizontal)
+            .unwrap();
+        for id in 1..=2 {
+            app.daemon
+                .pty_sessions
+                .push(yoctui_model::ClientDaemonPtySummary {
+                    id,
+                    name: format!("shell-{id}"),
+                    lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                    viewers: 1,
+                });
+        }
+        let select_first = mouse_action_for_app(
+            MouseInput {
+                kind: MouseKind::Down,
+                column: 10,
+                row: 10,
+            },
+            &app,
+            120,
+            30,
+        );
+        assert_eq!(
+            select_first,
+            Some(Action::SelectPtyPane {
+                pane: yoctui_model::PaneId(1),
+                index: 0,
+            })
+        );
+        let _ = yoctui_model::update(&mut app, select_first.unwrap());
+        assert_eq!(app.pane_layout.focused, yoctui_model::PaneId(1));
+
+        let select_second = mouse_action_for_app(
+            MouseInput {
+                kind: MouseKind::Down,
+                column: 90,
+                row: 10,
+            },
+            &app,
+            120,
+            30,
+        );
+        assert_eq!(
+            select_second,
+            Some(Action::SelectPtyPane {
+                pane: second,
+                index: 1,
+            })
+        );
+        let _ = yoctui_model::update(&mut app, select_second.unwrap());
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Drag,
+                    column: 90,
+                    row: 10,
+                },
+                &app,
+                120,
+                30,
+            ),
+            Some(Action::ResizeFocusedPane {
+                delta_per_mille: 250,
+            })
+        );
+
+        app.dialogs.push_back(yoctui_model::Dialog::ThemePicker {
+            selection: 0,
+            original_theme: app.theme,
+            original_color_enabled: app.color_enabled,
+            original_settings_dirty: app.settings_dirty,
+        });
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::ScrollDown,
+                    column: 90,
+                    row: 10,
+                },
+                &app,
+                120,
+                30,
+            ),
+            Some(Action::SelectTheme { delta: 1 })
+        );
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Drag,
+                    column: 10,
+                    row: 10,
+                },
+                &app,
+                120,
+                30,
+            ),
+            None,
+            "a modal traps drag input instead of leaking to terminal resizing"
         );
     }
 

@@ -5409,18 +5409,18 @@ notes = "Reusable render-only DialogShell/DialogTone/DialogStyles, bounded geome
 id = "MOUSE-UI-001"
 milestone = "M19"
 title = "Ensure mouse parity"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 552
 required = true
 depends_on = ["NAV-UI-001", "TASKS-UI-003", "LOG-UI-002", "DIALOG-UI-001"]
 verify = ["cargo test -p yoctui-app next_generation_mouse", "cargo test -p yoctui --test mouse_runtime next_generation_mouse"]
-notes = "Support semantic click selection, wheel scroll, pane focus, dialog choices, applicable tabs, and existing split resize without reducing keyboard completeness."
+notes = "Mouse routing now hit-tests the documented wide/medium/narrow shell, selects exact Navigator/task/tab/PTY identities, sends wheel input through each workspace's typed Up/Down route, traps modal input, and computes focused split deltas from the real axis and ratio instead of coordinate parity. Header/footer/minimum padding and unsupported controls are inert. Three focused app tests, the CLI runtime test, all 192 UI tests, the full workspace, strict clippy, 43 bridge tests, docs, and roadmap checks pass."
 
 [[task]]
 id = "A11Y-UI-001"
 milestone = "M19"
 title = "Improve accessibility"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 553
 required = true
 depends_on = ["TASKS-UI-003", "LOG-UI-002", "DIALOG-UI-001", "METRICS-UI-006", "FOOTER-UI-002"]

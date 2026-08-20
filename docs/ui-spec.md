@@ -3681,13 +3681,26 @@ Mouse support is optional and configurable.
 
 When enabled:
 
-- click focuses and selects Navigator rows/tree nodes and workspace items
-- wheel scrolls the focused Navigator/log pane
-- click a terminal-session pane selects that session; dialog clicks remain
-  trapped by the dialog focus target
-- drag/up events are routed as typed workspace interactions; dragging a split
-  separator adjusts the focused client-local pane ratio within the 10–90%
-  bounds and preserves the keyboard resize route
+- hit testing uses the same header, shell, footer, responsive breakpoints, and
+  pane proportions as rendering; header/footer padding and the below-minimum
+  resize screen are inert
+- click focuses Navigator, Workspace, or Inspector by the pane actually under
+  the pointer; the narrow pane switcher labels select their named pane
+- click selects Navigator rows/tree nodes using the current bounded viewport;
+  clicking the selected row follows the same typed activation route as Enter
+- wheel input over Navigator follows the Up/Down selection route, while wheel
+  input over Workspace follows that workspace's typed Up/Down route; Inspector,
+  header, footer, and non-selectable padding remain inert
+- modal dialogs trap every mouse event. A click focuses the dialog, and wheel
+  input follows the dialog's typed Up/Down choice route only when that dialog
+  exposes one; controls without authoritative geometry remain keyboard-driven
+  and discoverable in the dialog hints
+- click a terminal-session leaf selects the exact session rendered in that
+  leaf. Dragging recalculates the focused leaf's nearest resizable parent split
+  from its real axis, area, and current ratio; it never infers direction from
+  coordinate parity and remains bounded by the model's 10–90% constraint
+- mouse Up has no state transition, and clicks or drags outside an actionable
+  current-layout region have no state transition
 - server-relevant terminal mouse reports are sent only for a focused,
   writer-owned PTY that has requested mouse reporting
 

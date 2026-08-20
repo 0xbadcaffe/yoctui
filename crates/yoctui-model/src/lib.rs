@@ -4583,6 +4583,10 @@ pub enum Action {
     SelectPtySession {
         delta: isize,
     },
+    SelectPtyPane {
+        pane: PaneId,
+        index: usize,
+    },
     ResizeFocusedPane {
         delta_per_mille: i16,
     },
@@ -4863,6 +4867,7 @@ pub enum Action {
     InspectResultToolCapability,
     ResultToolCapabilityLoaded(ResultToolCapability),
     CycleTestView,
+    SelectTestView(TestWorkspaceView),
     BeginTestResultImport,
     ToggleTestResultImportTomlEditor,
     AppendTestResultImportTomlEditor(char),
@@ -7471,6 +7476,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .min(count.saturating_sub(1))
             };
         }
+        Action::SelectPtyPane { pane, index } => {
+            if index < app.daemon.pty_sessions.len() && app.pane_layout.focus(pane).is_ok() {
+                app.pty_selection = index;
+            }
+        }
         Action::ResizeFocusedPane { delta_per_mille } => {
             let focused = app.pane_layout.focused;
             let _ = app.pane_layout.resize(focused, delta_per_mille);
@@ -9630,6 +9640,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::CycleTestView => {
             app.test_view = app.test_view.next();
+        }
+        Action::SelectTestView(view) => {
+            app.test_view = view;
         }
         Action::BeginTestResultImport => {
             let mut editor = PopupEditor::new(popup_toml_document("root", "", None));

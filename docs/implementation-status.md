@@ -11,9 +11,19 @@ Status values:
 
 ## Current phase
 
-`MOUSE-UI-001` is `IN_PROGRESS`. It will ensure semantic click selection,
-wheel scrolling, pane focus, dialog choices, applicable tabs, and supported
-split resizing remain at parity with complete keyboard operation.
+`A11Y-UI-001` is `IN_PROGRESS`. It will audit and enforce textual state
+meaning, high contrast, no-color, reduced motion, visible focus, terminal
+reader labels, and numeric progress equivalents across the redesigned shell.
+
+`MOUSE-UI-001` is `DONE`: one geometry-owned router now matches the documented
+header/shell/footer and wide/medium/narrow pane regions. Navigator and task
+rows, Security/QA/Testing tabs, dialog picker wheels, workspace wheels, and PTY
+leaves all emit typed actions; PTY selection carries the exact pane identity,
+and split dragging derives the bounded delta from the focused split's actual
+axis and ratio instead of coordinate parity. Modal input is trapped and
+unsupported/header/footer/minimum-screen coordinates are inert. Three focused
+app tests, the CLI mouse-runtime test, all 192 UI tests, the full all-feature
+workspace suite, strict clippy, 43 bridge tests, docs, and roadmap checks pass.
 
 `DIALOG-UI-001` is `DONE`: reusable render-only dialog shell, tone, style,
 bounded-geometry, field, validation, and control primitives now unify every

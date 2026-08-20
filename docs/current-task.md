@@ -2,29 +2,30 @@
 
 ## Task
 
-**ID:** MOUSE-UI-001
-**Title:** Ensure mouse parity
+**ID:** A11Y-UI-001
+**Title:** Improve accessibility
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Ensure mouse input reaches the same typed pane focus, selection, scrolling,
-dialog, tab, terminal-session, and supported split-resize operations as the
-keyboard without making any workflow mouse-dependent.
+Guarantee that the redesigned shell remains understandable and operable in
+high-contrast, no-color, and reduced-motion modes, with visible focus, textual
+state meaning, terminal-reader-friendly labels, and numeric progress
+equivalents.
 
 ## Dependencies
 
-- `NAV-UI-001` — DONE
 - `TASKS-UI-003` — DONE
 - `LOG-UI-002` — DONE
 - `DIALOG-UI-001` — DONE
+- `METRICS-UI-006` — DONE
+- `FOOTER-UI-002` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-app/src/lib.rs`
-- `crates/yoctui-cli/src/main.rs`
-- `crates/yoctui-cli/tests/mouse_runtime.rs`
+- `crates/yoctui-ui/src/primitives.rs`
+- `crates/yoctui-model/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -32,25 +33,24 @@ keyboard without making any workflow mouse-dependent.
 
 ## Definition of done
 
-- Clicking Navigator, Workspace, or Inspector gives that pane the same typed
-  focus and visible selection semantics as keyboard focus cycling.
-- Clicking selectable rows and applicable tabs selects or activates the exact
-  typed item without coordinate guesses outside the current responsive layout.
-- Wheel input scrolls the pane under the pointer with bounded typed movement;
-  modal dialogs trap mouse input just as they trap keyboard input.
-- Dialog controls and choices support click activation only where the exact
-  current geometry and typed action are authoritative.
-- Existing split resizing and terminal-session selection retain mouse parity;
-  unsupported resize boundaries remain inert and bounded.
-- Every mouse operation has a documented keyboard route, and keyboard-only,
-  no-color, reduced-motion, wide, narrow, and minimum modes remain complete.
-- Input outside an actionable region causes no state mutation and no panic.
+- No task, log, job, dialog, health, or compatibility state relies on color
+  alone; each has a stable textual marker or label.
+- High-contrast and no-color palettes preserve visible focus, selection,
+  disabled state, severity, and active/inactive borders.
+- Reduced motion removes animated state changes while preserving explicit
+  running/pending text and stable indeterminate meaning.
+- Progress bars and gauges retain numeric or textual equivalents at every
+  supported breakpoint.
+- Section titles, action labels, paths, status text, and progress descriptions
+  remain meaningful in terminal buffer text for terminal readers.
+- Wide, medium, narrow, and minimum modes do not hide the sole focus cue or
+  encode an unavailable action as enabled.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app next_generation_mouse
-cargo test -p yoctui --test mouse_runtime next_generation_mouse
+cargo test -p yoctui-ui accessibility_invariants
+cargo test -p yoctui-model reduced_motion
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
