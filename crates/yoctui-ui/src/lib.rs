@@ -14657,6 +14657,75 @@ mod tests {
             .collect()
     }
 
+    struct SemanticSnapshot<'a> {
+        name: &'a str,
+        screen: Screen,
+        anchors: &'a [&'a str],
+        selected: Option<&'a str>,
+    }
+
+    fn assert_semantic_snapshot(app: &App, snapshot: &SemanticSnapshot<'_>) {
+        let mut state = app.clone();
+        state.screen = snapshot.screen;
+        state.focus = FocusTarget::Workspace;
+        let mut terminal = Terminal::new(TestBackend::new(160, 50)).unwrap();
+        terminal
+            .draw(|frame| render_at(frame, &state, literal_now()))
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        let lines = buffer
+            .content
+            .chunks(160)
+            .map(|row| row.iter().map(|cell| cell.symbol()).collect::<String>())
+            .collect::<Vec<_>>();
+        for anchor in snapshot.anchors {
+            assert!(
+                lines.iter().any(|line| line.contains(anchor)),
+                "semantic snapshot {} lost anchor {anchor:?}:\n{}",
+                snapshot.name,
+                lines.join("\n")
+            );
+        }
+        if let Some(selected) = snapshot.selected {
+            let palette = ThemePalette::for_app(&state);
+            let selected_row = buffer.content.chunks(160).find(|row| {
+                row.iter()
+                    .map(|cell| cell.symbol())
+                    .collect::<String>()
+                    .contains(selected)
+                    && row.iter().any(|cell| {
+                        cell.bg == palette.selection_background
+                            || cell.modifier.contains(Modifier::REVERSED)
+                    })
+            });
+            assert!(
+                selected_row.is_some(),
+                "semantic snapshot {} selected row {selected:?} lost selection styling",
+                snapshot.name
+            );
+        }
+    }
+
+    fn assert_dialog_semantic_snapshot(name: &str, app: &App, anchors: &[&str]) {
+        let mut terminal = Terminal::new(TestBackend::new(100, 30)).unwrap();
+        terminal
+            .draw(|frame| render_at(frame, app, literal_now()))
+            .unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        for anchor in anchors {
+            assert!(
+                output.contains(anchor),
+                "semantic dialog snapshot {name} lost anchor {anchor:?}: {output}"
+            );
+        }
+    }
+
     fn compatibility_ui_inspector_app() -> App {
         let reason = |code: &str, message: &str, requirement: Option<&str>| {
             yoctui_model::CapabilityReason::new(code, message, requirement.map(str::to_owned))
@@ -18917,6 +18986,197 @@ mod tests {
                 "below minimum rendered shell content {forbidden}: {too_small}"
             );
         }
+    }
+
+    #[test]
+    fn semantic_snapshots_cover_required_workspaces_and_dialog_families() {
+        let mut app = literal_reference_app();
+        app.daemon.pty_sessions.clear();
+        app.recipe_selection = 2;
+        app.layer_selection = 4;
+        app.settings_selection = 0;
+        let catalog = [
+            SemanticSnapshot {
+                name: "dashboard",
+                screen: Screen::Dashboard,
+                anchors: &[
+                    "Build",
+                    "Target: core-image-minimal",
+                    "Recent output",
+                    "Package task progress",
+                ],
+                selected: None,
+            },
+            SemanticSnapshot {
+                name: "tasks",
+                screen: Screen::Tasks,
+                anchors: &[
+                    "Tasks: core-image-minimal",
+                    "do_compile",
+                    "Log Viewer",
+                    "Job History",
+                    "Inspector: Task",
+                ],
+                selected: Some("do_compile"),
+            },
+            SemanticSnapshot {
+                name: "logs",
+                screen: Screen::Logs,
+                anchors: &[
+                    "Log activity",
+                    "following",
+                    "Log Viewer",
+                    "[ 72%] Linking bash",
+                ],
+                selected: Some("[ 72%] Linking bash"),
+            },
+            SemanticSnapshot {
+                name: "jobs",
+                screen: Screen::BuildHistory,
+                anchors: &[
+                    "Job History / Build history",
+                    "core-image-minimal",
+                    "Selected job detail",
+                    "Operation:",
+                ],
+                selected: Some("core-image-m"),
+            },
+            SemanticSnapshot {
+                name: "recipes",
+                screen: Screen::Recipes,
+                anchors: &[
+                    "Recipes (shown: 3 of 3)",
+                    "core-image-minimal",
+                    "Selected recipe Inspector",
+                ],
+                selected: Some("core-image-m"),
+            },
+            SemanticSnapshot {
+                name: "layers",
+                screen: Screen::Layers,
+                anchors: &[
+                    "Active layer tree (shown: 7 of",
+                    "meta-oe",
+                    "Recipes: meta-oe",
+                ],
+                selected: Some("meta-oe"),
+            },
+            SemanticSnapshot {
+                name: "images",
+                screen: Screen::Images,
+                anchors: &[
+                    "Images",
+                    "MACHINE qemux86-64",
+                    "core-image-minimal",
+                    "Artifacts not loaded. Press R to scan.",
+                ],
+                selected: None,
+            },
+            SemanticSnapshot {
+                name: "settings",
+                screen: Screen::Settings,
+                anchors: &["Settings", "Theme", "DarkPro", "Settings controls"],
+                selected: Some("Theme"),
+            },
+            SemanticSnapshot {
+                name: "build-environment",
+                screen: Screen::BuildEnvironment,
+                anchors: &[
+                    "Build environment",
+                    "connected",
+                    "available images:",
+                    "V to verify BitBake",
+                ],
+                selected: None,
+            },
+        ];
+        for snapshot in &catalog {
+            assert_semantic_snapshot(&app, snapshot);
+        }
+
+        let terminal_app = literal_reference_app();
+        assert_semantic_snapshot(
+            &terminal_app,
+            &SemanticSnapshot {
+                name: "terminal-session",
+                screen: Screen::Dashboard,
+                anchors: &["terminal #1 Running", "1 viewer(s)", "selection 1"],
+                selected: None,
+            },
+        );
+
+        let dialog = |value: Dialog| {
+            let mut app = literal_reference_app();
+            app.focus = FocusTarget::Dialog;
+            app.dialogs.push_back(value);
+            app
+        };
+        assert_dialog_semantic_snapshot(
+            "standard",
+            &dialog(Dialog::BuildOptions),
+            &[
+                "modal · Image build options",
+                "Machine: qemux86-64",
+                "Esc closes",
+            ],
+        );
+        assert_dialog_semantic_snapshot(
+            "confirmation",
+            &dialog(Dialog::RecipeTaskConfirmation(BuildRequest {
+                targets: vec!["busybox".into()],
+                task: Some("compile".into()),
+                force: false,
+            })),
+            &[
+                "confirm modal · Confirm recipe task",
+                "bitbake busybox -c compile",
+                "Enter to continue or Esc to cancel",
+            ],
+        );
+        assert_dialog_semantic_snapshot(
+            "destructive",
+            &dialog(Dialog::DevtoolResetConfirmation(
+                yoctui_model::DevtoolResetPlan {
+                    identity: yoctui_model::RecipeIdentity {
+                        name: "busybox".into(),
+                        file: "/work/meta/recipes-core/busybox/busybox.bb".into(),
+                    },
+                    source_path: "/work/build/workspace/sources/busybox".into(),
+                },
+            )),
+            &[
+                "destructive modal · Confirm Devtool reset",
+                "devtool reset busybox",
+                "This removes the Devtool workspace",
+                "Esc cancels",
+            ],
+        );
+        let mut result = dialog(Dialog::BuildCompletion);
+        result.build.status = BuildStatus::Completed;
+        assert_dialog_semantic_snapshot(
+            "result",
+            &result,
+            &[
+                "result modal · Build finished",
+                "completed successfully",
+                "Tasks completed: 4",
+                "Press any key",
+            ],
+        );
+        assert_dialog_semantic_snapshot(
+            "editor",
+            &dialog(Dialog::BuildTarget {
+                editor: yoctui_model::PopupEditor::new("target = \"core-image-minimal\"\n".into()),
+                task: Some("build".into()),
+            }),
+            &[
+                "modal · Build target.toml",
+                "requested task: build",
+                "core-image-minimal",
+                "[Enter] Save/preview",
+                "[Esc] Normal",
+            ],
+        );
     }
 
     #[test]

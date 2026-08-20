@@ -11,9 +11,17 @@ Status values:
 
 ## Current phase
 
-`VISUAL-TEST-001` is `IN_PROGRESS`. It will add stable semantic TestBackend
-snapshots for Tasks, Logs, Jobs, Recipes, Layers, Images, Dashboard, Settings,
-Build Environment, Terminal/session, and representative typed dialogs.
+`VISUAL-TEST-002` is `IN_PROGRESS`. It will add reviewed cell-and-style golden
+buffers for the canonical idle Dashboard, active Tasks build, selected failed
+task, and daemon reconnect/degraded scenes.
+
+`VISUAL-TEST-001` is `DONE`: a deterministic 160x50 TestBackend semantic
+catalog covers Dashboard, Tasks, Logs, Job History, Recipes, Layers, Images,
+Settings, Build Environment, and a typed terminal-session pane. Stable region,
+state, and control anchors cover standard, confirmation, destructive, result,
+and editor dialogs; selected Tasks, Logs, Jobs, Recipes, Layers, and Settings
+rows must also retain semantic selection styling. The contract deliberately
+ignores unrelated blank-cell changes while keeping anchor changes reviewable.
 
 `RESPONSIVE-UI-001` is `DONE`: a canonical semantic TestBackend matrix now
 covers 200x60, 160x50, 130x40, 100x30, 80x24, and 79x23 across Dashboard,

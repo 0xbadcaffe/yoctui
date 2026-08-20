@@ -120,6 +120,16 @@ The code-owned acceptance level is the terminal cell buffer. A raster capture
 is supporting human evidence only because terminal font, glyph rasterization,
 DPI, and compositor behavior are outside Yoctui's control.
 
+Semantic TestBackend snapshots complement the literal golden. They use the
+same fixed clock and typed fixture authority, but compare stable region titles,
+state text, selected-row styling, and dialog controls rather than incidental
+blank cells. The required semantic catalog covers Dashboard, Tasks, Logs, Job
+History, Recipes, Layers, Images, Settings, Build Environment, a real typed
+terminal-session pane, and standard, confirmation, destructive, result, and
+editor dialogs. Each catalog entry names its reviewed anchors in code; adding
+or removing an anchor is therefore an intentional test review, while spacing
+inside an unrelated pane is not a snapshot update.
+
 No renderer may copy illustrative values from a design reference. Every value
 comes from typed model state; missing values read `unavailable`, `unknown`, or
 `--` according to the field contract.

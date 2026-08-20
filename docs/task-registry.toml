@@ -5464,18 +5464,18 @@ notes = "A canonical semantic TestBackend matrix covers 200x60, 160x50, 130x40, 
 id = "VISUAL-TEST-001"
 milestone = "M19"
 title = "Create semantic Ratatui snapshot tests"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 557
 required = true
 depends_on = ["RESPONSIVE-UI-001"]
 verify = ["cargo test -p yoctui-ui semantic_snapshots"]
-notes = "Snapshot every requested workspace and representative dialogs with stable semantic assertions."
+notes = "A deterministic 160x50 TestBackend semantic catalog covers Dashboard, Tasks, Logs, Job History, Recipes, Layers, Images, Settings, Build Environment, and a typed terminal-session pane. Standard, confirmation, destructive, result, and editor dialogs snapshot reviewed anchors; selected Tasks, Logs, Jobs, Recipes, Layers, and Settings rows must retain semantic selection styling."
 
 [[task]]
 id = "VISUAL-TEST-002"
 milestone = "M19"
 title = "Create target-design golden tests"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 558
 required = true
 depends_on = ["VISUAL-TEST-001"]

@@ -2,19 +2,19 @@
 
 ## Task
 
-**ID:** VISUAL-TEST-001
-**Title:** Create semantic Ratatui snapshot tests
+**ID:** VISUAL-TEST-002
+**Title:** Create target-design golden tests
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Create stable semantic TestBackend snapshots for every required next-generation
-workspace and representative typed dialogs. Assert meaningful regions, state,
-selection, and controls without coupling the suite to irrelevant whitespace.
+Create reviewed canonical TestBackend cell-and-style goldens for the target
+design's idle Dashboard, active Tasks build, selected failed task, and daemon
+reconnect/degraded scenes. Updates must remain explicit and diff-reviewable.
 
 ## Dependencies
 
-- `RESPONSIVE-UI-001` — DONE
+- `VISUAL-TEST-001` — DONE
 
 ## Relevant files
 
@@ -26,18 +26,18 @@ selection, and controls without coupling the suite to irrelevant whitespace.
 
 ## Definition of done
 
-- Semantic snapshots cover Tasks, Logs, Jobs, Recipes, Layers, Images,
-  Dashboard, Settings, Build Environment, and Terminal/session views.
-- Representative standard, confirmation, destructive, result, and editor
-  dialogs retain typed state, availability, validation, and controls.
-- Assertions compare stable semantic regions/cells or normalized lines rather
-  than incidental full-buffer whitespace.
-- Snapshot fixtures are deterministic and explain intentional update review.
+- Four reviewed golden buffers cover idle Dashboard, active Tasks build,
+  selected failed task, and daemon reconnect/degraded state.
+- Every fixture uses typed model data, a fixed clock, and canonical dimensions.
+- Goldens serialize terminal symbols and semantic styles and fail with an exact
+  cell coordinate when presentation changes.
+- Updates require an explicit environment switch/script and produce a
+  reviewable fixture diff; ordinary tests never accept changes.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui semantic_snapshots
+cargo test -p yoctui-ui target_design_golden
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
