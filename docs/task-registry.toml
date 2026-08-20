@@ -5244,18 +5244,18 @@ notes = "Added a closed 17-metric provenance catalog covering source, units, sup
 id = "METRICS-MODEL-002"
 milestone = "M19"
 title = "Add bounded telemetry history model"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 537
 required = true
 depends_on = ["METRICS-MODEL-001"]
 verify = ["cargo test -p yoctui-model bounded_telemetry_history", "cargo test -p yoctui telemetry_sampling"]
-notes = "Retain fixed-size CPU, memory where useful, disk I/O, and network histories only for supported samples."
+notes = "One reducer-owned history now independently bounds CPU, RAM, disk read/write, and network RX/TX to the latest 60 valid samples. The CLI derives reset-aware rates from the exact build-filesystem device and active lowest-metric IPv4 default-route interface over measured intervals; first/reset/nonmonotonic/identity-change/missing/zero-interval/overflow observations append neither spikes nor synthetic zeroes. Focused model and CLI parser/rate tests pass."
 
 [[task]]
 id = "METRICS-UI-001"
 milestone = "M19"
 title = "Add CPU gauge"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 538
 required = true
 depends_on = ["METRICS-MODEL-002", "FOUNDATION-UI-003"]

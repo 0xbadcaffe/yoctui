@@ -896,11 +896,73 @@ pub struct HostTelemetry {
     pub memory_available_bytes: Option<u64>,
     pub disk_available_bytes: Option<u64>,
     pub disk_total_bytes: Option<u64>,
+    pub disk_read_bytes_per_second: Option<u64>,
+    pub disk_write_bytes_per_second: Option<u64>,
+    pub network_receive_bytes_per_second: Option<u64>,
+    pub network_transmit_bytes_per_second: Option<u64>,
     pub load_average_milli: Option<[u32; 3]>,
 }
 
 pub const HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS: u16 = 1;
 pub const HOST_TELEMETRY_HISTORY_SAMPLES: usize = 60;
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct TelemetryHistory {
+    pub cpu_percent: VecDeque<u64>,
+    pub memory_percent: VecDeque<u64>,
+    pub disk_read_bytes_per_second: VecDeque<u64>,
+    pub disk_write_bytes_per_second: VecDeque<u64>,
+    pub network_receive_bytes_per_second: VecDeque<u64>,
+    pub network_transmit_bytes_per_second: VecDeque<u64>,
+}
+
+impl TelemetryHistory {
+    fn push(queue: &mut VecDeque<u64>, sample: u64) {
+        queue.push_back(sample);
+        while queue.len() > HOST_TELEMETRY_HISTORY_SAMPLES {
+            queue.pop_front();
+        }
+    }
+
+    pub fn record(&mut self, telemetry: &HostTelemetry) {
+        if let Some(cpu) = telemetry.cpu_utilization_percent {
+            Self::push(&mut self.cpu_percent, u64::from(cpu.min(100)));
+        }
+        if let (Some(total), Some(available)) = (
+            telemetry.memory_total_bytes,
+            telemetry.memory_available_bytes,
+        ) && total > 0
+            && available <= total
+        {
+            Self::push(
+                &mut self.memory_percent,
+                total.saturating_sub(available).saturating_mul(100) / total,
+            );
+        }
+        for (queue, sample) in [
+            (
+                &mut self.disk_read_bytes_per_second,
+                telemetry.disk_read_bytes_per_second,
+            ),
+            (
+                &mut self.disk_write_bytes_per_second,
+                telemetry.disk_write_bytes_per_second,
+            ),
+            (
+                &mut self.network_receive_bytes_per_second,
+                telemetry.network_receive_bytes_per_second,
+            ),
+            (
+                &mut self.network_transmit_bytes_per_second,
+                telemetry.network_transmit_bytes_per_second,
+            ),
+        ] {
+            if let Some(sample) = sample {
+                Self::push(queue, sample);
+            }
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum TelemetryMetric {
@@ -930,6 +992,8 @@ pub enum TelemetrySource {
     HostProcMeminfo,
     BuildFilesystemStatvfs,
     HostProcLoadavg,
+    HostProcDiskstats,
+    HostProcNetDev,
     ClientReplica,
     DaemonRuntimeClock,
     DaemonSnapshot,
@@ -1034,51 +1098,51 @@ pub const TELEMETRY_PROVENANCE: &[TelemetryProvenance] = &[
     },
     TelemetryProvenance {
         metric: TelemetryMetric::DiskReadRate,
-        source: TelemetrySource::NotCollected,
+        source: TelemetrySource::HostProcDiskstats,
         unit: TelemetryUnit::BytesPerSecond,
-        host_support: TelemetryHostSupport::NotCollected,
-        sample_period_seconds: None,
-        history_samples: 0,
+        host_support: TelemetryHostSupport::Linux,
+        sample_period_seconds: Some(HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS),
+        history_samples: HOST_TELEMETRY_HISTORY_SAMPLES,
         requires_delta: true,
-        renderable: false,
-        precision: "no authoritative counter is sampled",
-        unavailable_behavior: "omit the metric",
+        renderable: true,
+        precision: "matched build-filesystem device sectors multiplied by 512, divided by measured interval",
+        unavailable_behavior: "omit samples on first observation, reset, device change, overflow, zero interval, or unmatched device",
     },
     TelemetryProvenance {
         metric: TelemetryMetric::DiskWriteRate,
-        source: TelemetrySource::NotCollected,
+        source: TelemetrySource::HostProcDiskstats,
         unit: TelemetryUnit::BytesPerSecond,
-        host_support: TelemetryHostSupport::NotCollected,
-        sample_period_seconds: None,
-        history_samples: 0,
+        host_support: TelemetryHostSupport::Linux,
+        sample_period_seconds: Some(HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS),
+        history_samples: HOST_TELEMETRY_HISTORY_SAMPLES,
         requires_delta: true,
-        renderable: false,
-        precision: "no authoritative counter is sampled",
-        unavailable_behavior: "omit the metric",
+        renderable: true,
+        precision: "matched build-filesystem device sectors multiplied by 512, divided by measured interval",
+        unavailable_behavior: "omit samples on first observation, reset, device change, overflow, zero interval, or unmatched device",
     },
     TelemetryProvenance {
         metric: TelemetryMetric::NetworkReceiveRate,
-        source: TelemetrySource::NotCollected,
+        source: TelemetrySource::HostProcNetDev,
         unit: TelemetryUnit::BytesPerSecond,
-        host_support: TelemetryHostSupport::NotCollected,
-        sample_period_seconds: None,
-        history_samples: 0,
+        host_support: TelemetryHostSupport::Linux,
+        sample_period_seconds: Some(HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS),
+        history_samples: HOST_TELEMETRY_HISTORY_SAMPLES,
         requires_delta: true,
-        renderable: false,
-        precision: "no authoritative interface counter is sampled",
-        unavailable_behavior: "omit the metric",
+        renderable: true,
+        precision: "IPv4 default-route interface byte counter delta divided by measured interval",
+        unavailable_behavior: "omit samples on first observation, reset, interface change/disappearance, overflow, zero interval, or absent IPv4 default route",
     },
     TelemetryProvenance {
         metric: TelemetryMetric::NetworkTransmitRate,
-        source: TelemetrySource::NotCollected,
+        source: TelemetrySource::HostProcNetDev,
         unit: TelemetryUnit::BytesPerSecond,
-        host_support: TelemetryHostSupport::NotCollected,
-        sample_period_seconds: None,
-        history_samples: 0,
+        host_support: TelemetryHostSupport::Linux,
+        sample_period_seconds: Some(HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS),
+        history_samples: HOST_TELEMETRY_HISTORY_SAMPLES,
         requires_delta: true,
-        renderable: false,
-        precision: "no authoritative interface counter is sampled",
-        unavailable_behavior: "omit the metric",
+        renderable: true,
+        precision: "IPv4 default-route interface byte counter delta divided by measured interval",
+        unavailable_behavior: "omit samples on first observation, reset, interface change/disappearance, overflow, zero interval, or absent IPv4 default route",
     },
     TelemetryProvenance {
         metric: TelemetryMetric::DaemonConnectionState,
@@ -3077,8 +3141,7 @@ pub struct App {
     pub animation_frame: u64,
     pub workspace: Workspace,
     pub host_telemetry: HostTelemetry,
-    pub host_cpu_history: VecDeque<u8>,
-    pub host_memory_history: VecDeque<u8>,
+    pub host_telemetry_history: TelemetryHistory,
     pub build: BuildState,
     pub background_jobs: BackgroundJobs,
     pub build_history: VecDeque<BuildRecord>,
@@ -3212,8 +3275,7 @@ impl App {
             animation_frame: 0,
             workspace: Workspace::default(),
             host_telemetry: HostTelemetry::default(),
-            host_cpu_history: VecDeque::new(),
-            host_memory_history: VecDeque::new(),
+            host_telemetry_history: TelemetryHistory::default(),
             build: BuildState::default(),
             background_jobs: BackgroundJobs::default(),
             build_history: VecDeque::new(),
@@ -14476,26 +14538,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.recipe_sources.insert(recipe, paths);
         }
         Action::HostTelemetryUpdated(telemetry) => {
-            if let Some(cpu) = telemetry.cpu_utilization_percent {
-                app.host_cpu_history.push_back(cpu.min(100));
-                while app.host_cpu_history.len() > HOST_TELEMETRY_HISTORY_SAMPLES {
-                    app.host_cpu_history.pop_front();
-                }
-            }
-            if let (Some(total), Some(available)) = (
-                telemetry.memory_total_bytes,
-                telemetry.memory_available_bytes,
-            ) && total > 0
-                && available <= total
-            {
-                let used = total.saturating_sub(available);
-                let percent = used.saturating_mul(100) / total;
-                app.host_memory_history
-                    .push_back(u8::try_from(percent.min(100)).unwrap_or(100));
-                while app.host_memory_history.len() > HOST_TELEMETRY_HISTORY_SAMPLES {
-                    app.host_memory_history.pop_front();
-                }
-            }
+            app.host_telemetry_history.record(&telemetry);
             app.host_telemetry = telemetry;
         }
         Action::Failure(e) => {
@@ -17703,7 +17746,7 @@ mod tests {
         ));
     }
     #[test]
-    fn host_telemetry_updates_current_values_and_bounds_valid_history() {
+    fn bounded_telemetry_history_retains_only_the_latest_valid_samples() {
         let mut app = App::new(10, 1_000);
         for sample in 0..75 {
             let telemetry = HostTelemetry {
@@ -17711,17 +17754,27 @@ mod tests {
                 memory_total_bytes: Some(1_000),
                 memory_available_bytes: Some(750),
                 disk_available_bytes: Some(8 * 1024 * 1024 * 1024),
+                disk_read_bytes_per_second: Some(u64::from(sample) * 10),
+                disk_write_bytes_per_second: Some(u64::from(sample) * 20),
+                network_receive_bytes_per_second: Some(u64::from(sample) * 30),
+                network_transmit_bytes_per_second: Some(u64::from(sample) * 40),
                 ..HostTelemetry::default()
             };
             let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry));
         }
         let telemetry = app.host_telemetry.clone();
         assert_eq!(app.host_telemetry, telemetry);
-        assert_eq!(app.host_cpu_history.len(), 60);
-        assert_eq!(app.host_cpu_history.front(), Some(&15));
-        assert_eq!(app.host_cpu_history.back(), Some(&74));
-        assert_eq!(app.host_memory_history.len(), 60);
-        assert!(app.host_memory_history.iter().all(|sample| *sample == 25));
+        let history = &app.host_telemetry_history;
+        assert_eq!(history.cpu_percent.len(), 60);
+        assert_eq!(history.cpu_percent.front(), Some(&15));
+        assert_eq!(history.cpu_percent.back(), Some(&74));
+        assert_eq!(history.memory_percent.len(), 60);
+        assert!(history.memory_percent.iter().all(|sample| *sample == 25));
+        assert_eq!(history.disk_read_bytes_per_second.front(), Some(&150));
+        assert_eq!(history.disk_read_bytes_per_second.back(), Some(&740));
+        assert_eq!(history.disk_write_bytes_per_second.len(), 60);
+        assert_eq!(history.network_receive_bytes_per_second.len(), 60);
+        assert_eq!(history.network_transmit_bytes_per_second.len(), 60);
 
         let _ = update(
             &mut app,
@@ -17732,8 +17785,11 @@ mod tests {
                 ..HostTelemetry::default()
             }),
         );
-        assert_eq!(app.host_cpu_history.len(), 60);
-        assert_eq!(app.host_memory_history.len(), 60);
+        let history = &app.host_telemetry_history;
+        assert_eq!(history.cpu_percent.len(), 60);
+        assert_eq!(history.memory_percent.len(), 60);
+        assert_eq!(history.disk_read_bytes_per_second.len(), 60);
+        assert_eq!(history.network_receive_bytes_per_second.len(), 60);
     }
 
     #[test]
@@ -17777,13 +17833,24 @@ mod tests {
         for metric in [
             TelemetryMetric::DiskReadRate,
             TelemetryMetric::DiskWriteRate,
+        ] {
+            let entry = provenance(metric);
+            assert_eq!(entry.source, TelemetrySource::HostProcDiskstats);
+            assert_eq!(entry.host_support, TelemetryHostSupport::Linux);
+            assert_eq!(entry.sample_period_seconds, Some(1));
+            assert_eq!(entry.history_samples, HOST_TELEMETRY_HISTORY_SAMPLES);
+            assert!(entry.requires_delta && entry.renderable);
+        }
+        for metric in [
             TelemetryMetric::NetworkReceiveRate,
             TelemetryMetric::NetworkTransmitRate,
         ] {
             let entry = provenance(metric);
-            assert_eq!(entry.source, TelemetrySource::NotCollected);
-            assert_eq!(entry.host_support, TelemetryHostSupport::NotCollected);
-            assert!(!entry.renderable);
+            assert_eq!(entry.source, TelemetrySource::HostProcNetDev);
+            assert_eq!(entry.host_support, TelemetryHostSupport::Linux);
+            assert_eq!(entry.sample_period_seconds, Some(1));
+            assert_eq!(entry.history_samples, HOST_TELEMETRY_HISTORY_SAMPLES);
+            assert!(entry.requires_delta && entry.renderable);
         }
         let queue = provenance(TelemetryMetric::DaemonQueueDepth);
         assert!(!queue.renderable);

@@ -3792,10 +3792,10 @@ fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
         frame.render_widget(Paragraph::new("CPU  sampling…"), rows[0]);
     }
     let cpu_history = app
-        .host_cpu_history
+        .host_telemetry_history
+        .cpu_percent
         .iter()
         .copied()
-        .map(u64::from)
         .collect::<Vec<_>>();
     render_history(
         frame,
@@ -3830,10 +3830,10 @@ fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
         frame.render_widget(Paragraph::new("RAM  unavailable"), rows[2]);
     }
     let memory_history = app
-        .host_memory_history
+        .host_telemetry_history
+        .memory_percent
         .iter()
         .copied()
-        .map(u64::from)
         .collect::<Vec<_>>();
     render_history(
         frame,
@@ -17014,6 +17014,7 @@ mod tests {
                     disk_total_bytes: Some(100 * 1024 * 1024 * 1024),
                     disk_available_bytes: Some(40 * 1024 * 1024 * 1024),
                     load_average_milli: Some([1_250, 2_500, 3_750]),
+                    ..yoctui_model::HostTelemetry::default()
                 }),
             );
         }

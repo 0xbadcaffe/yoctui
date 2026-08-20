@@ -347,24 +347,49 @@ struct CpuCounters {
     idle: u64,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct DiskCounters {
+    major: u64,
+    minor: u64,
+    read_bytes: u64,
+    write_bytes: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct NetworkCounters {
+    interface: String,
+    receive_bytes: u64,
+    transmit_bytes: u64,
+}
+
 #[derive(Debug, Default)]
 struct HostTelemetrySampler {
     previous_cpu: Option<CpuCounters>,
+    previous_disk: Option<DiskCounters>,
+    previous_network: Option<NetworkCounters>,
+    previous_sampled_at: Option<Instant>,
 }
 
 impl HostTelemetrySampler {
     fn sample(&mut self, build_dir: &Path) -> HostTelemetry {
+        self.sample_at(build_dir, Instant::now())
+    }
+
+    fn sample_at(&mut self, build_dir: &Path, sampled_at: Instant) -> HostTelemetry {
+        let elapsed = self
+            .previous_sampled_at
+            .replace(sampled_at)
+            .and_then(|previous| sampled_at.checked_duration_since(previous));
         let current_cpu = read_cpu_counters();
         let cpu_utilization_percent = current_cpu.and_then(|current| {
             let previous = self.previous_cpu.replace(current)?;
-            let total = current.total.saturating_sub(previous.total);
-            let idle = current.idle.saturating_sub(previous.idle);
-            (total > 0).then(|| {
-                ((total.saturating_sub(idle) * 100) / total)
-                    .min(100)
-                    .try_into()
-                    .unwrap_or(100)
-            })
+            let total = current.total.checked_sub(previous.total)?;
+            let idle = current.idle.checked_sub(previous.idle)?;
+            if total == 0 || idle > total {
+                return None;
+            }
+            let percent = (total - idle).checked_mul(100)?.checked_div(total)?;
+            Some(percent.min(100).try_into().unwrap_or(100))
         });
         let (memory_total_bytes, memory_available_bytes) = read_memory_info()
             .map_or((None, None), |(total, available)| {
@@ -374,6 +399,30 @@ impl HostTelemetrySampler {
             .map_or((None, None), |(available, total)| {
                 (Some(available), Some(total))
             });
+        let current_disk = read_build_disk_counters(build_dir);
+        let (disk_read_bytes_per_second, disk_write_bytes_per_second) = elapsed
+            .and_then(|elapsed| {
+                disk_rates(
+                    self.previous_disk.as_ref()?,
+                    current_disk.as_ref()?,
+                    elapsed,
+                )
+            })
+            .map_or((None, None), |(read, write)| (Some(read), Some(write)));
+        self.previous_disk = current_disk;
+        let current_network = read_default_network_counters();
+        let (network_receive_bytes_per_second, network_transmit_bytes_per_second) = elapsed
+            .and_then(|elapsed| {
+                network_rates(
+                    self.previous_network.as_ref()?,
+                    current_network.as_ref()?,
+                    elapsed,
+                )
+            })
+            .map_or((None, None), |(receive, transmit)| {
+                (Some(receive), Some(transmit))
+            });
+        self.previous_network = current_network;
         HostTelemetry {
             cpu_utilization_percent,
             logical_cpu_count: std::thread::available_parallelism()
@@ -383,6 +432,10 @@ impl HostTelemetrySampler {
             memory_available_bytes,
             disk_available_bytes,
             disk_total_bytes,
+            disk_read_bytes_per_second,
+            disk_write_bytes_per_second,
+            network_receive_bytes_per_second,
+            network_transmit_bytes_per_second,
             load_average_milli: read_load_average(),
         }
     }
@@ -466,6 +519,117 @@ fn parse_decimal_milli(value: &str) -> Option<u32> {
         scale /= 10;
     }
     whole.checked_add(fractional)
+}
+
+fn bytes_per_second(previous: u64, current: u64, elapsed: Duration) -> Option<u64> {
+    let delta = current.checked_sub(previous)?;
+    let nanos = elapsed.as_nanos();
+    if nanos == 0 {
+        return None;
+    }
+    u128::from(delta)
+        .checked_mul(1_000_000_000)?
+        .checked_div(nanos)
+        .and_then(|rate| u64::try_from(rate).ok())
+}
+
+fn disk_rates(
+    previous: &DiskCounters,
+    current: &DiskCounters,
+    elapsed: Duration,
+) -> Option<(u64, u64)> {
+    (previous.major == current.major && previous.minor == current.minor).then_some(())?;
+    Some((
+        bytes_per_second(previous.read_bytes, current.read_bytes, elapsed)?,
+        bytes_per_second(previous.write_bytes, current.write_bytes, elapsed)?,
+    ))
+}
+
+fn network_rates(
+    previous: &NetworkCounters,
+    current: &NetworkCounters,
+    elapsed: Duration,
+) -> Option<(u64, u64)> {
+    (previous.interface == current.interface).then_some(())?;
+    Some((
+        bytes_per_second(previous.receive_bytes, current.receive_bytes, elapsed)?,
+        bytes_per_second(previous.transmit_bytes, current.transmit_bytes, elapsed)?,
+    ))
+}
+
+fn parse_diskstats(input: &str, major: u64, minor: u64) -> Option<DiskCounters> {
+    input.lines().find_map(|line| {
+        let fields = line.split_whitespace().collect::<Vec<_>>();
+        if fields.len() < 10
+            || fields[0].parse::<u64>().ok()? != major
+            || fields[1].parse::<u64>().ok()? != minor
+        {
+            return None;
+        }
+        Some(DiskCounters {
+            major,
+            minor,
+            read_bytes: fields[5].parse::<u64>().ok()?.checked_mul(512)?,
+            write_bytes: fields[9].parse::<u64>().ok()?.checked_mul(512)?,
+        })
+    })
+}
+
+#[cfg(target_os = "linux")]
+fn read_build_disk_counters(path: &Path) -> Option<DiskCounters> {
+    use std::os::unix::fs::MetadataExt;
+    let device = fs::metadata(path).ok()?.dev();
+    let major = u64::from(libc::major(device));
+    let minor = u64::from(libc::minor(device));
+    parse_diskstats(&fs::read_to_string("/proc/diskstats").ok()?, major, minor)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn read_build_disk_counters(_path: &Path) -> Option<DiskCounters> {
+    None
+}
+
+fn parse_default_route_interface(input: &str) -> Option<String> {
+    input
+        .lines()
+        .skip(1)
+        .filter_map(|line| {
+            let fields = line.split_whitespace().collect::<Vec<_>>();
+            if fields.len() < 8 || fields[1] != "00000000" || fields[7] != "00000000" {
+                return None;
+            }
+            let flags = u16::from_str_radix(fields[3], 16).ok()?;
+            if flags & 1 == 0 {
+                return None;
+            }
+            Some((fields[6].parse::<u64>().ok()?, fields[0].to_owned()))
+        })
+        .min_by_key(|(metric, _)| *metric)
+        .map(|(_, interface)| interface)
+}
+
+fn parse_network_dev(input: &str, interface: &str) -> Option<NetworkCounters> {
+    input.lines().find_map(|line| {
+        let (name, counters) = line.split_once(':')?;
+        (name.trim() == interface).then_some(())?;
+        let fields = counters.split_whitespace().collect::<Vec<_>>();
+        (fields.len() >= 16).then_some(NetworkCounters {
+            interface: interface.to_owned(),
+            receive_bytes: fields[0].parse().ok()?,
+            transmit_bytes: fields[8].parse().ok()?,
+        })
+    })
+}
+
+#[cfg(target_os = "linux")]
+fn read_default_network_counters() -> Option<NetworkCounters> {
+    let interface = parse_default_route_interface(&fs::read_to_string("/proc/net/route").ok()?)?;
+    parse_network_dev(&fs::read_to_string("/proc/net/dev").ok()?, &interface)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn read_default_network_counters() -> Option<NetworkCounters> {
+    None
 }
 
 #[cfg(unix)]
@@ -13311,7 +13475,7 @@ mod tests {
     }
 
     #[test]
-    fn telemetry_provenance_matches_cli_sampler_and_withholds_first_cpu_delta() {
+    fn telemetry_sampling_provenance_matches_cli_sampler_and_withholds_first_deltas() {
         use yoctui_model::{TelemetryMetric as Metric, TelemetrySource as Source};
 
         let provenance = |metric| {
@@ -13341,20 +13505,119 @@ mod tests {
             );
             assert!(entry.renderable);
         }
-        for metric in [
-            Metric::DiskReadRate,
-            Metric::DiskWriteRate,
-            Metric::NetworkReceiveRate,
-            Metric::NetworkTransmitRate,
+        for (metric, source) in [
+            (Metric::DiskReadRate, Source::HostProcDiskstats),
+            (Metric::DiskWriteRate, Source::HostProcDiskstats),
+            (Metric::NetworkReceiveRate, Source::HostProcNetDev),
+            (Metric::NetworkTransmitRate, Source::HostProcNetDev),
         ] {
             let entry = provenance(metric);
-            assert_eq!(entry.source, Source::NotCollected);
-            assert!(!entry.renderable);
+            assert_eq!(entry.source, source);
+            assert!(entry.requires_delta && entry.renderable);
         }
 
         let mut sampler = HostTelemetrySampler::default();
         let first = sampler.sample(Path::new("."));
         assert_eq!(first.cpu_utilization_percent, None);
+        assert_eq!(first.disk_read_bytes_per_second, None);
+        assert_eq!(first.disk_write_bytes_per_second, None);
+        assert_eq!(first.network_receive_bytes_per_second, None);
+        assert_eq!(first.network_transmit_bytes_per_second, None);
+    }
+
+    #[test]
+    fn telemetry_sampling_derives_only_monotonic_identity_stable_rates() {
+        let diskstats = "   8       0 sda 10 0 20 0 30 0 40 0 0 0 0 0 0 0 0\n";
+        assert_eq!(
+            parse_diskstats(diskstats, 8, 0),
+            Some(DiskCounters {
+                major: 8,
+                minor: 0,
+                read_bytes: 20 * 512,
+                write_bytes: 40 * 512,
+            })
+        );
+        assert_eq!(parse_diskstats(diskstats, 8, 1), None);
+
+        let routes = concat!(
+            "Iface Destination Gateway Flags RefCnt Use Metric Mask MTU Window IRTT\n",
+            "wlan0 00000000 01010101 0003 0 0 600 00000000 0 0 0\n",
+            "eth0 00000000 01010101 0003 0 0 100 00000000 0 0 0\n",
+            "down0 00000000 01010101 0000 0 0 1 00000000 0 0 0\n",
+        );
+        assert_eq!(
+            parse_default_route_interface(routes).as_deref(),
+            Some("eth0")
+        );
+        let network = parse_network_dev(
+            "Inter-| Receive | Transmit\n eth0: 100 1 2 3 4 5 6 7 900 9 10 11 12 13 14 15\n",
+            "eth0",
+        )
+        .unwrap();
+        assert_eq!(network.receive_bytes, 100);
+        assert_eq!(network.transmit_bytes, 900);
+
+        assert_eq!(
+            bytes_per_second(1_000, 3_000, Duration::from_millis(500)),
+            Some(4_000)
+        );
+        assert_eq!(bytes_per_second(3_000, 1_000, Duration::from_secs(1)), None);
+        assert_eq!(bytes_per_second(1_000, 3_000, Duration::ZERO), None);
+
+        let previous_disk = DiskCounters {
+            major: 8,
+            minor: 0,
+            read_bytes: 1_000,
+            write_bytes: 2_000,
+        };
+        let current_disk = DiskCounters {
+            major: 8,
+            minor: 0,
+            read_bytes: 3_000,
+            write_bytes: 5_000,
+        };
+        assert_eq!(
+            disk_rates(&previous_disk, &current_disk, Duration::from_secs(1)),
+            Some((2_000, 3_000))
+        );
+        assert_eq!(
+            disk_rates(
+                &previous_disk,
+                &DiskCounters {
+                    major: 8,
+                    minor: 1,
+                    ..current_disk
+                },
+                Duration::from_secs(1)
+            ),
+            None
+        );
+
+        let previous_network = NetworkCounters {
+            interface: "eth0".into(),
+            receive_bytes: 100,
+            transmit_bytes: 200,
+        };
+        let current_network = NetworkCounters {
+            interface: "eth0".into(),
+            receive_bytes: 500,
+            transmit_bytes: 800,
+        };
+        assert_eq!(
+            network_rates(&previous_network, &current_network, Duration::from_secs(2)),
+            Some((200, 300))
+        );
+        assert_eq!(
+            network_rates(
+                &previous_network,
+                &NetworkCounters {
+                    interface: "wlan0".into(),
+                    ..current_network
+                },
+                Duration::from_secs(1)
+            ),
+            None
+        );
     }
 
     #[test]

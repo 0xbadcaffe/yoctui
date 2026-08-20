@@ -285,9 +285,10 @@ animation.
 
 The typed provenance catalog is authoritative for whether a metric may render.
 The client host sampler runs at a nominal one-second cadence only while a build
-or another managed operation is active. CPU and RAM histories therefore retain
-the latest 60 valid samples, not an unconditional 60 wall-clock seconds; the
-caption is `60-sample history`. Missing samples do not append zeroes.
+or another managed operation is active. CPU, RAM, disk-I/O, and network
+histories therefore retain the latest 60 valid samples per metric, not an
+unconditional 60 wall-clock seconds; the caption is `60-sample history`.
+Missing samples do not append zeroes.
 
 | Metric | Authority and units | Precision/cadence | Unsupported or unavailable behavior |
 | --- | --- | --- | --- |
@@ -296,8 +297,8 @@ caption is `60-sample history`. Missing samples do not append zeroes.
 | RAM | `/proc/meminfo` `MemTotal` and `MemAvailable`; bytes | reported kB multiplied by 1024; used percent derived from valid total/available; 60 valid samples | Linux only; omit unless both fields exist, total is nonzero, and available does not exceed total |
 | Build filesystem | `statvfs` on the configured build directory; available and total bytes | `f_bavail`/`f_blocks` times fragment size at host-sample cadence; no history yet | Unix only; explicitly unavailable for an invalid/missing path or failed sample |
 | Load 1/5/15 | `/proc/loadavg`; thousandths of a load unit | at most three decimals, nominal 1 s active-operation sampling; no history | Linux only; all three values become unavailable on invalid input |
-| Disk read/write rates | none; intended bytes/s | requires two monotonic counters and a measured interval | not collected; both cells remain omitted |
-| Network RX/TX rates | none; intended bytes/s | requires per-interface monotonic counters, interface policy, and measured interval | not collected; both cells remain omitted |
+| Disk read/write rates | `/proc/diskstats` counters for the exact device ID backing the configured build directory; bytes/s | read/write sectors multiplied by 512, then monotonic counter deltas divided by the measured interval; nominal 1 s active-operation sampling; 60 valid samples per direction | Linux only; first sample, reset, device change, overflow, zero interval, missing path, or a filesystem device absent from diskstats is unavailable and appends nothing |
+| Network RX/TX rates | `/proc/net/dev` counters for the active lowest-metric IPv4 default-route interface; bytes/s | per-interface monotonic counter deltas divided by the measured interval; nominal 1 s active-operation sampling; 60 valid samples per direction | Linux only; first sample, reset, interface change/disappearance, overflow, zero interval, absent IPv4 default route, read, or parse failure is unavailable and appends nothing |
 | Daemon connection | client replica status; lifecycle | event-driven Current/Stale/Synchronizing/Disconnected | render the exact replica state, never a numeric stand-in |
 | Daemon uptime | daemon start wall-clock difference; seconds | saturating whole seconds, published nominally each second | unavailable until current daemon telemetry arrives |
 | BitBake state | current daemon journal snapshot; lifecycle | event-driven exact lifecycle | stale/disconnected client state is named and old authority is not presented as current |
@@ -308,8 +309,9 @@ caption is `60-sample history`. Missing samples do not append zeroes.
 | Daemon resident memory | `/proc/self/statm`; diagnostic bytes | resident pages currently use an assumed 4096-byte page | non-renderable as precise memory until the runtime page size is authoritative |
 
 The audit does not authorize per-task CPU/ETA or daemon version/PID. Disk and
-network rates remain unavailable until a later task adds a bounded,
-reset-aware sampler and history.
+network rate collection is host-optional: overlay/container filesystems may
+not map to a diskstats device, and hosts without an active IPv4 default route
+have no selected network interface. Those cases stay explicitly unavailable.
 
 #### Responsive table columns
 
@@ -383,8 +385,8 @@ items are adapted until authoritative support exists:
   added; host CPU is not attributed to a task
 - PN/PV/PR, section, workdir, and log file render only from explicit metadata,
   never by parsing a recipe label or path
-- disk and network throughput do not render until the telemetry audit and
-  bounded sampler provide supported rates
+- disk and network throughput renders only from the bounded reset-aware host
+  sampler; unsupported or currently unavailable sources remain omitted
 - daemon version and PID render only if the daemon protocol supplies them
 - illustrative action names and F-key assignments are replaced by Yoctui's
   actual typed keymap and capability availability

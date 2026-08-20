@@ -64,6 +64,7 @@ fn workload() -> App {
         disk_available_bytes: Some(180 * 1024 * 1024 * 1024),
         disk_total_bytes: Some(512 * 1024 * 1024 * 1024),
         load_average_milli: Some([2_100, 1_800, 1_500]),
+        ..HostTelemetry::default()
     };
 
     for index in 0..256 {

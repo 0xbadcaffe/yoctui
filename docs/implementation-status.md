@@ -11,15 +11,25 @@ Status values:
 
 ## Current phase
 
-`METRICS-MODEL-002` is `IN_PROGRESS`. It will extend the existing 60-sample
-CPU/RAM retention into one bounded telemetry-history model for supported disk
-I/O and network rate samples without retaining invalid/reset observations.
+`METRICS-UI-001` is `IN_PROGRESS`. It will turn the authoritative current CPU
+percentage and logical core count into a semantic compact gauge with a
+horizontal/compact narrow fallback and an honest unavailable state.
+
+`METRICS-MODEL-002` is `DONE`: one reducer-owned telemetry history now bounds
+CPU, RAM, disk read/write, and network RX/TX independently to the latest 60
+valid samples. The CLI derives disk rates from the exact build-filesystem
+device and network rates from the active lowest-metric IPv4 default-route
+interface using measured intervals. First observations, reset/nonmonotonic
+counters, identity changes, missing sources, zero intervals, and overflow stay
+unavailable and append neither spikes nor synthetic zeroes. Focused model and
+CLI parser/rate tests pass.
 
 `METRICS-MODEL-001` is `DONE`: a closed typed provenance catalog records the
 source, units, host support, nominal cadence, delta requirement, bounded
 history, precision, renderability, and unavailable behavior of 17 host/daemon
 metrics. The audit confirms CPU/RAM/build-FS/load and typed daemon facts,
-withholds the first CPU delta, and keeps disk/network rates uncollected. It also
+withholds the first CPU delta and initially identified disk/network rates as
+uncollected. It also
 identifies daemon queue depth as a client-count alias and resident memory as
 page-size-assumption diagnostic data; neither is renderable. System Status no
 longer labels the alias as queue depth. Focused model/CLI tests, all 169 UI

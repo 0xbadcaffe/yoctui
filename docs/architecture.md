@@ -237,21 +237,29 @@ the existing editor lifecycle, while selected-image builds reuse the normal
 confirmed `BuildRequest` and persistent BitBake job coordinator.
 
 Host telemetry follows the same typed boundary without invoking shell text.
-The CLI samples aggregate CPU counters, `/proc/meminfo`, `/proc/loadavg`, and
-the configured build filesystem into optional bounded numeric fields. The
-model reducer owns a fixed-size telemetry history and discards absent samples;
-the UI consumes only current typed values and history. Widgets may derive
-display ratios, average task velocity, and ETA from model state, but never read
-procfs, call filesystem APIs, or reinterpret raw operating-system text.
+The CLI samples aggregate CPU counters, `/proc/meminfo`, `/proc/loadavg`, the
+configured build filesystem, its exact `/proc/diskstats` device counters, and
+the active lowest-metric IPv4 default-route interface counters from
+`/proc/net/dev` into optional bounded numeric fields. The model reducer owns
+one fixed-size `TelemetryHistory` and discards absent samples; the UI consumes
+only current typed values and history. Widgets may derive display ratios,
+average task velocity, and ETA from model state, but never read procfs, call
+filesystem APIs, or reinterpret raw operating-system text.
 
 `TELEMETRY_PROVENANCE` is the closed audit of host and daemon metrics. Each
 entry fixes its source, unit, host support, nominal cadence, delta requirement,
 history capacity, precision, renderability, and unavailable behavior. Host
 sampling occurs only during active managed operations at a nominal one-second
-cadence. `HOST_TELEMETRY_HISTORY_SAMPLES` therefore bounds CPU/RAM to the latest
-60 valid observations; it is not a wall-clock promise. CPU requires two valid
+cadence. `HOST_TELEMETRY_HISTORY_SAMPLES` therefore bounds CPU, RAM, disk
+read/write, and network RX/TX independently to the latest 60 valid
+observations; it is not a wall-clock promise. CPU requires two monotonic
 `/proc/stat` observations, while RAM/build-filesystem/load values are current
-samples. Disk and network throughput have no sampler and remain non-renderable.
+samples. Disk rates require the same build-filesystem device identity and
+monotonic sector counters; network rates require the same selected
+default-route interface and monotonic byte counters. All rates use the
+measured nonzero `Instant` interval. A first observation, reset, identity
+change/disappearance, overflow, or unavailable source produces no sample and
+cannot inject a spike or synthetic zero.
 
 Daemon connection/BitBake/client/session facts come from the current typed
 replica/snapshot; uptime and the exact nonterminal job count come from the
