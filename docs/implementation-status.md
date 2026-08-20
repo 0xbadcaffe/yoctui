@@ -11,9 +11,19 @@ Status values:
 
 ## Current phase
 
-`HEADER-UI-001` is `IN_PROGRESS`. It will apply the documented identity and
-state priority order with deterministic progressive hiding across wide,
-medium, and narrow headers.
+`FOOTER-UI-001` is `IN_PROGRESS`. It will project the current typed keymap and
+context into a responsive shortcut rail without advertising unavailable or
+unmapped actions, and keep footer/help labels synchronized.
+
+`HEADER-UI-001` is `DONE`: the persistent header now separates authoritative
+project identity from build target, adds marker-plus-text build state, and
+reserves independently measured daemon/BitBake health. Full, wide, compact
+wide, medium, and narrow tiers progressively hide DISTRO/release, MACHINE,
+project, and BitBake without clipping higher-priority identity. Missing paths
+and target are explicit, absent optional metadata is omitted, and non-current
+replicas suppress retained BitBake lifecycle. Focused breakpoints, stale,
+high-contrast, no-color, reduced-motion, all 178 UI tests, and the reviewed
+160x48 golden pass.
 
 `SYSTEM-UI-002` is `DONE`: reusable semantic health projection now gives every
 daemon, BitBake, compatibility, filesystem, log-pressure, and workspace state

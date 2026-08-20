@@ -970,6 +970,57 @@ fn daemon_lifecycle_tone(lifecycle: yoctui_model::ClientDaemonLifecycle) -> Stat
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum HeaderMode {
+    Full,
+    Wide,
+    Medium,
+    Narrow,
+}
+
+fn header_mode(width: u16) -> HeaderMode {
+    match width {
+        180.. => HeaderMode::Full,
+        130..=179 => HeaderMode::Wide,
+        100..=129 => HeaderMode::Medium,
+        _ => HeaderMode::Narrow,
+    }
+}
+
+fn header_project_identity(app: &App) -> String {
+    app.workspace
+        .source_dir
+        .as_deref()
+        .or(app.workspace.build_dir.as_deref())
+        .map(|path| {
+            path.file_name().map_or_else(
+                || path.display().to_string(),
+                |name| name.to_string_lossy().into(),
+            )
+        })
+        .unwrap_or_else(|| "unavailable".into())
+}
+
+fn build_status_tone(status: BuildStatus) -> StatusTone {
+    match status {
+        BuildStatus::Completed => StatusTone::Success,
+        BuildStatus::Cancelled => StatusTone::Warning,
+        BuildStatus::Failed => StatusTone::Error,
+        BuildStatus::LoadingWorkspace
+        | BuildStatus::Parsing
+        | BuildStatus::Running
+        | BuildStatus::Cancelling => StatusTone::Running,
+        BuildStatus::Idle => StatusTone::Disabled,
+    }
+}
+
+fn header_separator(palette: &ThemePalette, compact: bool) -> Span<'static> {
+    Span::styled(
+        if compact { " • " } else { "  •  " },
+        palette.role(palette.disabled, Modifier::DIM),
+    )
+}
+
 fn workbench_header(frame: &mut Frame, app: &App, area: Rect) {
     let palette = ThemePalette::for_app(app);
     let block = Block::default()
@@ -982,56 +1033,56 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect) {
         return;
     }
 
-    let machine = app
-        .workspace
-        .variables
-        .get("MACHINE")
-        .map_or("unknown", String::as_str);
-    let distro = app
-        .workspace
-        .variables
-        .get("DISTRO")
-        .map_or("unknown", String::as_str);
-    let project = app.build.target.as_deref().unwrap_or("not selected");
-    let compact = area.width < 100;
-    let medium = area.width < 130;
-    let columns = if compact {
-        Layout::horizontal([Constraint::Percentage(58), Constraint::Percentage(42)]).split(inner)
+    let mode = header_mode(area.width);
+    let compact = area.width < 150 || matches!(mode, HeaderMode::Medium | HeaderMode::Narrow);
+    let project = bounded_status_line(header_project_identity(app), 20);
+    let target = bounded_status_line(
+        app.build
+            .target
+            .clone()
+            .unwrap_or_else(|| "not selected".into()),
+        if mode == HeaderMode::Full { 30 } else { 22 },
+    );
+    let machine = app.workspace.variables.get("MACHINE");
+    let distro = app.workspace.variables.get("DISTRO");
+    let release = app.workspace.release.as_deref();
+    let build_tone = build_status_tone(app.build.status);
+    let mut left = vec![Span::styled(
+        "yoctui",
+        palette.role(palette.progress, Modifier::BOLD),
+    )];
+    if mode != HeaderMode::Narrow {
+        left.push(header_separator(&palette, compact));
+        left.push(Span::raw(format!("Project: {project}")));
+    }
+    left.push(header_separator(&palette, compact));
+    left.push(status_label(
+        build_tone,
+        app.build.status.to_string(),
+        status_tone_style(&palette, build_tone),
+    ));
+    left.push(header_separator(&palette, compact));
+    left.push(Span::raw(if compact {
+        format!("T:{target}")
     } else {
-        Layout::horizontal([Constraint::Percentage(64), Constraint::Percentage(36)]).split(inner)
-    };
-    let left = if compact {
-        Line::from(vec![
-            Span::styled("yoctui", palette.role(palette.progress, Modifier::BOLD)),
-            Span::styled(" • ", palette.role(palette.disabled, Modifier::DIM)),
-            Span::raw(project.to_owned()),
-        ])
-    } else if medium {
-        Line::from(vec![
-            Span::styled("yoctui", palette.role(palette.progress, Modifier::BOLD)),
-            Span::styled(" • ", palette.role(palette.disabled, Modifier::DIM)),
-            Span::raw(format!("Project: {project}")),
-            Span::styled(" • ", palette.role(palette.disabled, Modifier::DIM)),
-            Span::raw(format!("Machine: {machine}")),
-        ])
-    } else {
-        Line::from(vec![
-            Span::styled("yoctui", palette.role(palette.progress, Modifier::BOLD)),
-            Span::styled("  •  ", palette.role(palette.disabled, Modifier::DIM)),
-            Span::raw(format!("Project: {project}")),
-            Span::styled("  •  ", palette.role(palette.disabled, Modifier::DIM)),
-            Span::raw(format!("Machine: {machine}")),
-            Span::styled("  •  ", palette.role(palette.disabled, Modifier::DIM)),
-            Span::raw(format!("Distro: {distro}")),
-        ])
-    };
-    frame.render_widget(Paragraph::new(left), columns[0]);
-    let daemon_prefix = if compact { " D:" } else { "  Daemon: " };
-    let bitbake_prefix = if compact {
-        " • BB:"
-    } else {
-        "  •  BitBake: "
-    };
+        format!("Target: {target}")
+    }));
+    if matches!(mode, HeaderMode::Full | HeaderMode::Wide)
+        && let Some(machine) = machine
+    {
+        left.push(header_separator(&palette, false));
+        left.push(Span::raw(format!("Machine: {machine}")));
+    }
+    if mode == HeaderMode::Full {
+        if let Some(distro) = distro {
+            left.push(header_separator(&palette, false));
+            left.push(Span::raw(format!("Distro: {distro}")));
+        }
+        if let Some(release) = release {
+            left.push(Span::raw(format!(" ({release})")));
+        }
+    }
+
     let daemon_tone = daemon_status_tone(app.daemon.status);
     let (bitbake_label, bitbake_tone) =
         if app.daemon.status == yoctui_model::ClientReplicaStatus::Current {
@@ -1042,25 +1093,30 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect) {
         } else {
             ("Unavailable", StatusTone::Disabled)
         };
+    let mut right = vec![Span::raw(if compact { "D:" } else { "Daemon: " })];
+    right.push(status_label(
+        daemon_tone,
+        daemon_status_label(app.daemon.status),
+        status_tone_style(&palette, daemon_tone),
+    ));
+    if mode != HeaderMode::Narrow {
+        right.push(header_separator(&palette, compact));
+        right.push(Span::raw(if compact { "BB:" } else { "BitBake: " }));
+        right.push(status_label(
+            bitbake_tone,
+            bitbake_label,
+            status_tone_style(&palette, bitbake_tone),
+        ));
+    }
+    let right = Line::from(right);
+    let right_width = u16::try_from(right.width())
+        .unwrap_or(inner.width)
+        .min(inner.width.saturating_sub(12));
+    let columns =
+        Layout::horizontal([Constraint::Min(12), Constraint::Length(right_width)]).split(inner);
+    frame.render_widget(Paragraph::new(Line::from(left)), columns[0]);
     frame.render_widget(
-        Paragraph::new(Line::from(vec![
-            Span::raw(daemon_prefix),
-            status_label(
-                daemon_tone,
-                daemon_status_label(app.daemon.status),
-                status_tone_style(&palette, daemon_tone),
-            ),
-            Span::styled(
-                bitbake_prefix,
-                palette.role(palette.disabled, Modifier::DIM),
-            ),
-            status_label(
-                bitbake_tone,
-                bitbake_label,
-                status_tone_style(&palette, bitbake_tone),
-            ),
-        ]))
-        .alignment(Alignment::Right),
+        Paragraph::new(right).alignment(Alignment::Right),
         columns[1],
     );
 }
@@ -14413,6 +14469,7 @@ mod tests {
     #[test]
     fn workbench_shell_renders_project_context_and_reference_command_rail() {
         let mut app = App::new(32, 8192);
+        app.workspace.source_dir = Some("/work/poky".into());
         app.build.target = Some("core-image-minimal".into());
         app.workspace
             .variables
@@ -14426,7 +14483,9 @@ mod tests {
         let output = rendered_text(&app, 180, 36);
         for expected in [
             "yoctui",
-            "Project: core-image-minimal",
+            "Project: poky",
+            "– Idle",
+            "Target: core-image-minimal",
             "Machine: qemux86-64",
             "Distro: poky",
             "Daemon: ✓ Connected",
@@ -14438,6 +14497,149 @@ mod tests {
             assert!(output.contains(expected), "missing {expected}: {output}");
         }
         assert!(!output.contains("Telemetry --"), "{output}");
+    }
+
+    #[test]
+    fn next_generation_header_projects_authoritative_context_by_width() {
+        let mut app = App::new(32, 8192);
+        app.workspace.source_dir = Some("/work/poky".into());
+        app.workspace.release = Some("scarthgap".into());
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        app.workspace
+            .variables
+            .insert("DISTRO".into(), "poky".into());
+        app.build.target = Some("core-image-minimal".into());
+        app.build.status = BuildStatus::Running;
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Running;
+
+        let render = |width| {
+            let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
+            terminal
+                .draw(|frame| workbench_header(frame, &app, frame.area()))
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+
+        let full = render(180);
+        for expected in [
+            "Project: poky",
+            "▶ Running",
+            "Target: core-image-minimal",
+            "Machine: qemux86-64",
+            "Distro: poky (scarthgap)",
+            "Daemon: ✓ Connected",
+            "BitBake: ✓ Running",
+        ] {
+            assert!(full.contains(expected), "missing {expected}: {full}");
+        }
+
+        let wide = render(160);
+        for expected in [
+            "Project: poky",
+            "▶ Running",
+            "Target: core-image-minimal",
+            "Machine: qemux86-64",
+            "Daemon: ✓ Connected",
+            "BitBake: ✓ Running",
+        ] {
+            assert!(wide.contains(expected), "missing {expected}: {wide}");
+        }
+        assert!(!wide.contains("Distro:"), "{wide}");
+        assert!(!wide.contains("scarthgap"), "{wide}");
+
+        let compact_wide = render(130);
+        for expected in [
+            "Project: poky",
+            "T:core-image-minimal",
+            "Machine: qemux86-64",
+            "D:✓ Connected",
+            "BB:✓ Running",
+        ] {
+            assert!(
+                compact_wide.contains(expected),
+                "missing {expected}: {compact_wide}"
+            );
+        }
+
+        let medium = render(110);
+        for expected in [
+            "Project: poky",
+            "▶ Running",
+            "T:core-image-minimal",
+            "D:✓ Connected",
+            "BB:✓ Running",
+        ] {
+            assert!(medium.contains(expected), "missing {expected}: {medium}");
+        }
+        assert!(!medium.contains("Machine:"), "{medium}");
+        assert!(!medium.contains("Distro:"), "{medium}");
+
+        let narrow = render(90);
+        for expected in [
+            "yoctui",
+            "▶ Running",
+            "T:core-image-minimal",
+            "D:✓ Connected",
+        ] {
+            assert!(narrow.contains(expected), "missing {expected}: {narrow}");
+        }
+        for omitted in ["Project:", "Machine:", "Distro:", "BB:"] {
+            assert!(!narrow.contains(omitted), "unexpected {omitted}: {narrow}");
+        }
+    }
+
+    #[test]
+    fn next_generation_header_handles_missing_stale_and_accessible_states() {
+        assert_eq!(header_mode(179), HeaderMode::Wide);
+        assert_eq!(header_mode(180), HeaderMode::Full);
+        assert_eq!(header_mode(129), HeaderMode::Medium);
+        assert_eq!(header_mode(130), HeaderMode::Wide);
+        assert_eq!(header_mode(99), HeaderMode::Narrow);
+        assert_eq!(header_mode(100), HeaderMode::Medium);
+
+        let mut app = App::new(32, 8192);
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Stale;
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Running;
+        app.theme = Theme::HighContrast;
+        app.color_enabled = false;
+        app.reduced_motion = true;
+
+        let render = |width| {
+            let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
+            terminal
+                .draw(|frame| workbench_header(frame, &app, frame.area()))
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+        let wide = render(160);
+        assert!(wide.contains("Project: unavailable"), "{wide}");
+        assert!(wide.contains("Target: not selected"), "{wide}");
+        assert!(wide.contains("Daemon: ! Stale"), "{wide}");
+        assert!(wide.contains("BitBake: – Unavailable"), "{wide}");
+        assert!(!wide.contains("BitBake: ✓ Running"), "{wide}");
+        assert!(!wide.contains("Machine:"), "{wide}");
+        assert!(!wide.contains("Distro:"), "{wide}");
+
+        let minimum = render(80);
+        assert!(minimum.contains("yoctui"), "{minimum}");
+        assert!(minimum.contains("– Idle"), "{minimum}");
+        assert!(minimum.contains("T:not selected"), "{minimum}");
+        assert!(minimum.contains("D:! Stale"), "{minimum}");
     }
 
     #[test]

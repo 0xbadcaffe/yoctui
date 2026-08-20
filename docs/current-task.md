@@ -2,23 +2,24 @@
 
 ## Task
 
-**ID:** HEADER-UI-001
-**Title:** Redesign header
+**ID:** FOOTER-UI-001
+**Title:** Redesign bottom shortcut bar
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Redesign the compact persistent header around the authoritative identity and
-build-state priority order, with deterministic progressive hiding at reduced
-widths.
+Redesign the persistent shortcut rail so every displayed action is relevant to
+the current context, backed by the authoritative typed keymap, and readable at
+all supported widths.
 
 ## Dependencies
 
-- `SYSTEM-UI-002` — DONE
+- `FOUNDATION-UI-003` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
+- `crates/yoctui-app/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -26,21 +27,26 @@ widths.
 
 ## Definition of done
 
-- Project/Yoctui identity remains first, followed by build state and target.
-- MACHINE, DISTRO/release, daemon state, and BitBake state render only from
-  authoritative model values in the documented priority order.
-- Wide, medium, and narrow variants hide lower-priority fields
-  deterministically without clipping higher-priority state.
-- Daemon and BitBake reuse the shared text-marker health semantics and stale
-  authority never appears current.
-- No daemon version, PID, target, release, or environment value is inferred.
+- The footer is derived from current-context actions and existing typed
+  keybindings rather than a decorative fixed list.
+- Every displayed shortcut dispatches the named action, and footer/help labels
+  agree with the authoritative keymap.
+- Unavailable routes are omitted from the rail or shown only with an explicit
+  disabled reason where the documented context requires discoverability.
+- Wide layouts preserve the documented high-value global/workspace routes;
+  medium and narrow layouts hide lower-priority actions deterministically.
+- Dialog, command-palette, editor, terminal-prefix, and workspace-specific
+  traps retain their complete keyboard behavior.
+- The fixed-width clock and shell border remain stable without crowding the
+  shortcut rail.
 - High-contrast, no-color, reduced-motion, and minimum-width layouts remain
   readable and panic-free.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_header
+cargo test -p yoctui-ui next_generation_footer
+cargo test -p yoctui-app keymap
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh

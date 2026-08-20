@@ -5343,18 +5343,18 @@ notes = "Reusable health projection now gives daemon, BitBake, compatibility, fi
 id = "HEADER-UI-001"
 milestone = "M19"
 title = "Redesign header"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 546
 required = true
 depends_on = ["SYSTEM-UI-002"]
 verify = ["cargo test -p yoctui-ui next_generation_header"]
-notes = "Apply the documented priority order and progressive hiding to typed project/build/target/MACHINE/DISTRO/release/daemon/BitBake identity."
+notes = "The persistent header now separates project identity from build target, adds marker-plus-text build state, reserves independently measured daemon/BitBake health, suppresses retained BitBake lifecycle unless the replica is Current, and deterministically hides DISTRO/release, MACHINE, project, and BitBake across documented Full/Wide/Medium/Narrow tiers. Missing paths/target remain explicit, absent optional metadata is omitted, all 178 UI tests pass, and the reviewed 160x48 golden records only the intentional header-row change."
 
 [[task]]
 id = "FOOTER-UI-001"
 milestone = "M19"
 title = "Redesign bottom shortcut bar"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 547
 required = true
 depends_on = ["FOUNDATION-UI-003"]

@@ -524,44 +524,50 @@ semantic role; the helper only renders it.
 
 ## 3. Header
 
-The header is always visible unless the terminal is too small. In normal
-layouts it is one bordered row: project context is left aligned and daemon /
-BitBake health is right aligned. A compact overflow marker may represent
-lower-priority actions.
+The header is always visible unless the terminal is below the supported
+minimum. It occupies the shell's two-row bordered region and renders one
+content row. Identity/build context is left aligned; daemon/BitBake health is
+right aligned in a separately measured rectangle so health never overwrites
+the higher-priority build identity.
 
-It shows compact live build and environment state:
+The left-to-right priority order is:
 
-- application name
-- active build/session number
-- backend
-- build status
-- target
-- task when applicable
-- `MACHINE`
-- `DISTRO`
-- completed/total task count
-- active task count
-- warning count
-- error count
-- estimated sstate reuse
-- elapsed time
-- CPU utilization
-- memory utilization when available
-- build filesystem free space
+1. `yoctui` identity
+2. project identity
+3. build state, including a non-color marker
+4. selected build target
+5. authoritative `MACHINE`
+6. authoritative `DISTRO` and Yocto release
 
-The header must never horizontally panic. It progressively hides low-priority metrics on narrow terminals.
+Project identity is the basename of the typed source directory, falling back
+to the typed build directory. It is never copied from the build target. When
+neither path is known it says `unavailable`; a missing target says
+`not selected`. `MACHINE`, `DISTRO`, and release are omitted when absent and
+are never inferred. Long project and target values are bounded before layout.
 
-Priority order:
+The right side always reports daemon replica state. BitBake lifecycle is shown
+only when space permits and is authoritative only while the daemon replica is
+Current. A stale, synchronizing, or disconnected replica forces BitBake to
+`Unavailable` rather than exposing retained lifecycle state. Both health
+labels use semantic theme roles plus the shared textual markers, so no-color,
+high-contrast, and reduced-motion modes retain their meaning.
 
-1. status
-2. target
-3. task progress
-4. errors/warnings
-5. machine
-6. distro
-7. elapsed time
-8. sstate
-9. CPU/memory/disk
+Header width tiers are deterministic:
+
+| Terminal width | Left context | Right health |
+| --- | --- | --- |
+| `180+` Full | Yoctui, project, build, target, MACHINE, DISTRO/release | verbose daemon and BitBake |
+| `150..179` Wide | Yoctui, project, build, target, MACHINE | verbose daemon and BitBake |
+| `130..149` Wide compact | Yoctui, project, build, target, MACHINE | compact `D:` and `BB:` labels |
+| `100..129` Medium | Yoctui, project, build, compact target | compact `D:` and `BB:` labels; MACHINE and DISTRO/release hidden |
+| `80..99` Narrow | Yoctui, build, compact target | compact daemon only; project, MACHINE, DISTRO/release, and BitBake hidden |
+
+Task counts, warnings/errors, progress, elapsed time, sstate reuse, and host
+telemetry belong to the Tasks summary, Inspector, System Status, or telemetry
+strip; the header does not duplicate them. Backend names, session numbers,
+daemon versions/PIDs, and other unavailable identities are likewise not
+fabricated merely to fill the visual target. Rendering an empty or undersized
+header rectangle is a no-op and no supported tier may panic or overlap.
 
 ---
 
