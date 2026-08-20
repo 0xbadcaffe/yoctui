@@ -5288,18 +5288,18 @@ notes = "Added one responsive semantic build-filesystem gauge gated by both conf
 id = "METRICS-UI-004"
 milestone = "M19"
 title = "Add disk I/O sparklines"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 541
 required = true
 depends_on = ["METRICS-UI-003"]
 verify = ["cargo test -p yoctui-ui next_generation_disk_io"]
-notes = "Render supported read/write rates with bounded history; unsupported hosts show unavailable rather than zero traffic."
+notes = "Disk read/write now render separately with binary bytes-per-second text and independently scaled bounded-history sparklines using semantic graph roles. Unavailable current deltas remain distinct from retained valid trails and real zero deltas; narrow labels prioritize text. Focused wide/narrow/current/unavailable/zero/accessibility and cockpit tests pass."
 
 [[task]]
 id = "METRICS-UI-005"
 milestone = "M19"
 title = "Add network sparklines"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 542
 required = true
 depends_on = ["METRICS-UI-004"]

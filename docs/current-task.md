@@ -2,19 +2,20 @@
 
 ## Task
 
-**ID:** METRICS-UI-004
-**Title:** Add disk I/O sparklines
+**ID:** METRICS-UI-005
+**Title:** Add network sparklines
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Render authoritative reset-aware disk read and write rates with bounded recent
-history as semantic sparklines, without displaying unsupported, unavailable,
-or first-sample values as zero.
+Render optional authoritative reset-aware network receive and transmit rates
+with bounded recent history as semantic sparklines, without making network
+telemetry a requirement for core functionality or displaying unavailable
+values as zero.
 
 ## Dependencies
 
-- `METRICS-UI-003` — DONE
+- `METRICS-UI-004` — DONE
 - `METRICS-MODEL-002` — DONE
 
 ## Relevant files
@@ -27,13 +28,13 @@ or first-sample values as zero.
 
 ## Definition of done
 
-- Current read and write rates render separately with byte-per-second units.
+- Current RX and TX rates render separately with byte-per-second units.
 - Each sparkline consumes only its bounded typed history and scales to the
   retained maximum without mutating or reparsing sampler data.
-- First/reset/device-change/overflow/unavailable observations do not render as
-  a spike or synthetic zero.
-- Unsupported or currently unavailable disk counters are explicitly
-  unavailable or omitted according to available layout space.
+- First/reset/interface-change/overflow/unavailable observations do not render
+  as a spike or synthetic zero.
+- Hosts without a supported active interface keep network telemetry optional
+  and explicitly unavailable or omitted according to layout space.
 - Narrow rendering keeps meaningful text without panic or overlap.
 - High-contrast, no-color, and reduced-motion presentations retain meaningful
   text and visible state.
@@ -41,7 +42,7 @@ or first-sample values as zero.
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_disk_io_sparklines
+cargo test -p yoctui-ui next_generation_network_io
 cargo test -p yoctui telemetry_sampling
 cargo fmt --all --check
 ./scripts/check-docs.sh

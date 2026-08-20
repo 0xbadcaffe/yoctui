@@ -314,6 +314,18 @@ available greater than total renders `BUILD FS ! unavailable`, never `0%`.
 Normal utilization uses the semantic progress role and pressure thresholds use
 warning/error roles; no-color and reduced-motion preserve determinate text.
 
+Disk read and write occupy separate rows/cells and always label the current
+value in binary bytes per second (`B/s`, `KiB/s`, `MiB/s`, or `GiB/s`). Each
+sparkline scales independently to the maximum of its own retained valid
+history and uses the semantic disk-read or disk-write graph role. At 28 or
+more columns labels are `Read` and `Write`; below 28 they contract to `R` and
+`W`, and below 18 the current text takes priority over the graph. When the
+current delta is unavailable the label says `! unavailable`; any older valid
+trail may remain visible but is not presented as current. A real monotonic
+zero delta renders `0 B/s`. First observation, reset, device change, overflow,
+zero interval, or unmatched device appends no point, so none can create a
+synthetic zero or spike. Reduced motion does not animate the graphs.
+
 ##### Telemetry provenance audit
 
 The typed provenance catalog is authoritative for whether a metric may render.

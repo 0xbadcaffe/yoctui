@@ -3936,6 +3936,97 @@ fn render_disk_gauge(frame: &mut Frame, app: &App, area: Rect) {
     }
 }
 
+fn format_rate(bytes_per_second: u64) -> String {
+    format!("{}/s", format_bytes(bytes_per_second))
+}
+
+struct RateHistory<'a> {
+    label: &'a str,
+    compact_label: &'a str,
+    current: Option<u64>,
+    samples: &'a [u64],
+    graph_color: Color,
+}
+
+fn render_rate_history(frame: &mut Frame, app: &App, area: Rect, rate: RateHistory<'_>) {
+    if area.is_empty() {
+        return;
+    }
+    let palette = ThemePalette::for_app(app);
+    let label = if area.width >= 28 {
+        rate.label
+    } else {
+        rate.compact_label
+    };
+    let text = rate.current.map_or_else(
+        || format!("{label} ! unavailable"),
+        |rate| format!("{label} {}", format_rate(rate)),
+    );
+    let text_style = if rate.current.is_some() {
+        palette.role(rate.graph_color, Modifier::BOLD)
+    } else {
+        palette.role(palette.disabled, Modifier::DIM)
+    };
+    if area.width < 18 {
+        frame.render_widget(Paragraph::new(text).style(text_style), area);
+        return;
+    }
+    let label_width = if area.width >= 28 { 20 } else { 14 };
+    let columns = Layout::horizontal([
+        Constraint::Length(label_width.min(area.width)),
+        Constraint::Min(1),
+    ])
+    .split(area);
+    frame.render_widget(Paragraph::new(text).style(text_style), columns[0]);
+    frame.render_widget(
+        Sparkline::default()
+            .data(rate.samples)
+            .max(rate.samples.iter().copied().max().unwrap_or(1).max(1))
+            .style(palette.role(rate.graph_color, Modifier::BOLD)),
+        columns[1],
+    );
+}
+
+fn render_disk_io(frame: &mut Frame, app: &App, read_area: Rect, write_area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let read_history = app
+        .host_telemetry_history
+        .disk_read_bytes_per_second
+        .iter()
+        .copied()
+        .collect::<Vec<_>>();
+    render_rate_history(
+        frame,
+        app,
+        read_area,
+        RateHistory {
+            label: "Read",
+            compact_label: "R",
+            current: app.host_telemetry.disk_read_bytes_per_second,
+            samples: &read_history,
+            graph_color: palette.graph_disk_read,
+        },
+    );
+    let write_history = app
+        .host_telemetry_history
+        .disk_write_bytes_per_second
+        .iter()
+        .copied()
+        .collect::<Vec<_>>();
+    render_rate_history(
+        frame,
+        app,
+        write_area,
+        RateHistory {
+            label: "Write",
+            compact_label: "W",
+            current: app.host_telemetry.disk_write_bytes_per_second,
+            samples: &write_history,
+            graph_color: palette.graph_disk_write,
+        },
+    );
+}
+
 fn render_history(frame: &mut Frame, label: &str, samples: &[u64], area: Rect, style: Style) {
     let columns = Layout::horizontal([Constraint::Length(9), Constraint::Min(1)]).split(area);
     frame.render_widget(Paragraph::new(label).style(style), columns[0]);
@@ -3953,7 +4044,7 @@ fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
         .style(palette.base());
     let inner = block.inner(area);
     frame.render_widget(block, area);
-    let rows = Layout::vertical([Constraint::Length(1); 6]).split(inner);
+    let rows = Layout::vertical([Constraint::Length(1); 8]).split(inner);
 
     render_cpu_gauge(frame, app, rows[0]);
     let cpu_history = app
@@ -3986,6 +4077,7 @@ fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
     );
 
     render_disk_gauge(frame, app, rows[4]);
+    render_disk_io(frame, app, rows[5], rows[6]);
     let load = app.host_telemetry.load_average_milli.map_or_else(
         || "LOAD 1/5/15  -- / -- / --".into(),
         |load| {
@@ -3999,7 +4091,7 @@ fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(load).style(palette.role(palette.informational, Modifier::BOLD)),
-        rows[5],
+        rows[7],
     );
 }
 
@@ -4057,7 +4149,7 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
     let build_panels = if show_cockpit {
         Layout::vertical([
             Constraint::Length(13),
-            Constraint::Length(8),
+            Constraint::Length(10),
             Constraint::Min(3),
         ])
         .split(chunks[0])
@@ -17292,6 +17384,64 @@ mod tests {
         assert!(render_gauge(&app, 20).contains("BUILD FS 75%"));
     }
     #[test]
+    fn next_generation_disk_io_sparklines_keep_current_and_history_distinct() {
+        let render_io = |app: &App, width| {
+            let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
+            terminal
+                .draw(|frame| {
+                    let rows = Layout::vertical([Constraint::Length(1); 2]).split(frame.area());
+                    render_disk_io(frame, app, rows[0], rows[1]);
+                })
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+
+        let mut app = App::new(10, 1_000);
+        app.host_telemetry.disk_read_bytes_per_second = Some(2 * 1024);
+        app.host_telemetry.disk_write_bytes_per_second = Some(4 * 1024);
+        app.host_telemetry_history
+            .disk_read_bytes_per_second
+            .extend([512, 1024, 2 * 1024]);
+        app.host_telemetry_history
+            .disk_write_bytes_per_second
+            .extend([4 * 1024, 1024, 3 * 1024, 4 * 1024]);
+        let wide = render_io(&app, 42);
+        assert!(wide.contains("Read 2.0 KiB/s"), "{wide}");
+        assert!(wide.contains("Write 4.0 KiB/s"), "{wide}");
+        assert!(wide.chars().any(|character| "▁▂▃▄▅▆▇█".contains(character)));
+
+        let narrow = render_io(&app, 16);
+        assert!(narrow.contains("R 2.0 KiB/s"), "{narrow}");
+        assert!(narrow.contains("W 4.0 KiB/s"), "{narrow}");
+
+        app.host_telemetry.disk_read_bytes_per_second = None;
+        app.host_telemetry.disk_write_bytes_per_second = None;
+        let unavailable = render_io(&app, 42);
+        assert!(unavailable.contains("Read ! unavailable"), "{unavailable}");
+        assert!(unavailable.contains("Write ! unavailable"), "{unavailable}");
+        assert!(!unavailable.contains("0 B/s"), "{unavailable}");
+        assert!(
+            unavailable
+                .chars()
+                .any(|character| "▁▂▃▄▅▆▇█".contains(character)),
+            "retained valid history should remain visible: {unavailable}"
+        );
+
+        app.host_telemetry.disk_read_bytes_per_second = Some(0);
+        app.host_telemetry.disk_write_bytes_per_second = Some(0);
+        app.theme = Theme::HighContrast;
+        app.reduced_motion = true;
+        assert!(render_io(&app, 42).contains("Read 0 B/s"));
+        app.color_enabled = false;
+        assert!(render_io(&app, 16).contains("R 0 B/s"));
+    }
+    #[test]
     fn dashboard_telemetry_cockpit_renders_gauges_history_and_load() {
         let mut app = App::new(10, 1_000);
         app.workspace.build_dir = Some("/work/build".into());
@@ -17305,6 +17455,8 @@ mod tests {
                     memory_available_bytes: Some(4 * 1024 * 1024 * 1024),
                     disk_total_bytes: Some(100 * 1024 * 1024 * 1024),
                     disk_available_bytes: Some(40 * 1024 * 1024 * 1024),
+                    disk_read_bytes_per_second: Some(u64::from(cpu) * 1024),
+                    disk_write_bytes_per_second: Some(u64::from(cpu) * 2048),
                     load_average_milli: Some([1_250, 2_500, 3_750]),
                     ..yoctui_model::HostTelemetry::default()
                 }),
@@ -17320,6 +17472,8 @@ mod tests {
         assert!(output.contains("RAM  75%"), "{output}");
         assert!(output.contains("RAM trail"), "{output}");
         assert!(output.contains("BUILD FS  60%"), "{output}");
+        assert!(output.contains("Read 42.0 KiB/s"), "{output}");
+        assert!(output.contains("Write 84.0 KiB/s"), "{output}");
         assert!(
             output.contains("LOAD 1/5/15  1.25 / 2.50 / 3.75"),
             "{output}"

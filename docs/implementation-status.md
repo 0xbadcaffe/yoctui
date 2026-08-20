@@ -11,9 +11,16 @@ Status values:
 
 ## Current phase
 
-`METRICS-UI-004` is `IN_PROGRESS`. It will render the supported reset-aware
-disk read/write rates and their bounded recent histories as semantic
-sparklines, while keeping unsupported hosts honest.
+`METRICS-UI-005` is `IN_PROGRESS`. It will apply the same current-versus-
+retained-history contract to optional network RX/TX rates and sparklines.
+
+`METRICS-UI-004` is `DONE`: disk read and write now render separately with
+binary bytes-per-second text and independently scaled bounded-history
+sparklines using their semantic graph roles. An unavailable current delta is
+named while prior valid history may remain visible; a real zero delta remains
+distinct. Narrow labels prioritize text, and no reset/first/device-change
+sample is manufactured. Wide/narrow/current/unavailable/zero/high-contrast,
+no-color, reduced-motion, and cockpit fixtures pass focused coverage.
 
 `METRICS-UI-003` is `DONE`: build-filesystem capacity now uses one responsive
 semantic gauge only when both the configured build directory and a consistent
