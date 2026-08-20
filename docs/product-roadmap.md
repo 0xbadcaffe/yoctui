@@ -308,6 +308,11 @@ Exit criteria:
 Goal: keep the reference's global F1–F10 navigation visible throughout every
 wide workbench instead of tying it to one exact terminal width and screen.
 
+M19 `FOOTER-UI-001` intentionally supersedes the fixed presentation while
+preserving every typed function-key route. The footer is now contextual and
+bounded; the complete truthful F1–F10 catalog remains in Help, and the
+canonical footer geometry remains unchanged.
+
 Capabilities:
 
 - stable F1–F10 rail on every screen at 130 columns or wider

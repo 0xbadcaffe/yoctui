@@ -56,7 +56,7 @@ The normal application layout is a dense, IDE-like operations workbench:
 │   Testing        │                                     │                                  │
 │   Security / QA  │                                     │                                  │
 ├──────────────────┴─────────────────────────────────────┴──────────────────────────────────┤
-│ F1 Help  F2 Tasks  F3 Jobs  F4 Terminal  F5 Logs  F9 Search  F10 Menu        19:28:27   │
+│ ↑/↓ Select  f State  / Filter  c Cancel  F1 Help  F10 Menu  q Quit          19:28:27   │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -285,12 +285,15 @@ context as width permits.
 
 #### Footer behavior
 
-The wide F1-F10 rail remains authoritative global navigation because every
-displayed binding is implemented. A workspace may add only bindings that fit
-without clipping. Medium and narrow rails prefer, in order: active dialog or
-confirmation controls, active search/editor controls, current workspace
-actions, focus controls, and global help/menu/quit. Help must expose any valid
-binding omitted for width.
+The footer is a bounded current-context projection, not a decorative fixed
+F-key list. It prefers, in order: active dialog or confirmation controls,
+active search/editor controls, up to six current workspace actions, one
+compact focus destination, optional non-current workspace routes, and global
+help/menu/quit. Whole hints are added only when they fit; a lower-priority hint
+is omitted rather than clipped. Complex narrow workspaces may use documented
+compound key tokens such as `s/E SDK` to retain more real controls. Help lists
+the complete shared function-key catalog and every valid binding omitted for
+width.
 
 Transient status shares the footer rather than covering the Workspace. Error
 and pending-confirmation text has priority over notification, operation
@@ -685,10 +688,9 @@ Rules:
 
 - `Tab`: next focus target
 - `Shift+Tab`: previous focus target
-- compact contextual rails name the active pane and the destination of both
-  focus chords; the wide stable F1–F10 rail instead relies on the focused
-  border/selection treatment and exposes the complete focus map through
-  `F1 Help` and `F10 Menu`
+- contextual rails include the next `Tab` destination when it fits; the
+  focused border/selection treatment and Help expose the complete forward and
+  backward focus map when that lower-priority hint is omitted
 - arrow keys affect only the focused region
 - pane focus consumes only keys mapped to focus or pane navigation; every
   unmatched key continues through the active workspace and global shortcut
@@ -3062,25 +3064,42 @@ target through the dialog workflow.
 
 ## 24. Footer and keyboard shortcuts
 
-The footer is always visible in normal layouts. At every wide layout
-(`130` columns or wider) it uses this stable reference order:
+The footer is always visible in normal layouts. It renders the highest-value
+current-context controls that fit, followed by global Help, Menu, and Quit.
+The authoritative shared function-key catalog is:
 
 ```text
-F1 Help  F2 Tasks  F3 Jobs  F4 Terminal  F5 Logs  F6 Layer  F7 Recipe  F8 Image  F9 Search  F10 Menu
+F1 Help  F2 Tasks  F3 History  F4 Dashboard  F5 Logs
+F6 Layers  F7 Recipes  F8 Images  F9 Commands  F10 Menu
 ```
 
-At the canonical `160x48` Tasks size the footer retains its exact two-row
-bordered reference geometry. The clock is right aligned. Each displayed key
-invokes the named action; the rail never advertises an unavailable route.
-`F10 Menu` opens the command palette/menu, from which `Choose theme` is
-directly visible. At constrained sizes below 130 columns the rail uses the
-current context, highlighted key tokens, and a right-aligned local clock; it
-may add the most important contextual actions that fit.
+This catalog is shared by input dispatch, Help, and footer rendering. `F9` and
+`F10` are intentional aliases for the command palette; the bounded rail omits
+the lower-priority `F9` alias instead of advertising it as a nonexistent
+global search. There is no function-key terminal route: `F4` truthfully opens
+Dashboard, while terminal/session access remains in Navigator, Dashboard, and
+the command palette through its actual bindings.
 
-Global example:
+At the canonical `160x48` Tasks size the footer retains its exact two-row
+bordered reference geometry. With Navigator focused it prioritizes Navigator
+selection/open/prefix controls, then non-current global destinations that fit,
+then `F1 Help`, `F10 Menu`, and `q Quit`. With Workspace focused it instead
+prioritizes task selection/filter/cancellation and `Tab Inspector`. A route
+that already names the active screen is omitted as redundant. Every displayed
+key invokes the named action; no unavailable or duplicate route is used merely
+to resemble concept art.
+
+The clock is fixed at eight digits and right aligned at `100+` columns. It is
+hidden at `80..99` columns so current workspace actions and Help/Menu/Quit do
+not clip. Items are measured using terminal cell width and are appended only
+as complete hints. At constrained widths the rail uses compact highlighted key
+tokens; complex SDK, Testing, Security, and QA workspaces retain their existing
+compound narrow tokens.
+
+Dashboard example:
 
 ```text
-? Help  B Build  Ctrl+P Commands  / Search  Tab Focus  e Errors  l Logs  q Quit
+B Options  Ctrl+B Prefix  Tab Inspector  ↑/↓ Package progress  F1 Help  F10 Menu  q Quit
 ```
 
 When no dialog or editor traps input, `q` and `Ctrl+C` retain their global quit
@@ -3099,7 +3118,7 @@ Enter Open/Toggle  ← Collapse  → Expand  e Editor  m Metadata  d Dependencie
 Tasks example:
 
 ```text
-↑/↓ Select  f State  F Field  / Edit Filter  d Duration  c Cancel  Tab Focus
+↑/↓ Select  f State  F Field  / Edit Filter  d Duration  c Cancel  Tab Inspector
 ```
 
 Dialog example:
@@ -3793,9 +3812,9 @@ panel and never widen the terminal.
 
 Medium layout uses the standard Inspector overlay. Narrow layout uses the
 shared visible-pane switcher, keeping identity/summary, table, and Inspector
-reachable. The below-`80x24` resize contract remains unchanged. The global
-wide F1–F10 rail remains visible; the contextual compact footer is
-`↑↓ Select  1-5 Filter  / Search  Tab Focus`.
+reachable. The below-`80x24` resize contract remains unchanged. The contextual
+footer prioritizes `↑↓ Select  1-5 Filter  / Search  Tab Focus`, then appends
+the shared Help/Menu/Quit routes that fit.
 
 ### Visible action availability
 

@@ -11,9 +11,18 @@ Status values:
 
 ## Current phase
 
-`FOOTER-UI-001` is `IN_PROGRESS`. It will project the current typed keymap and
-context into a responsive shortcut rail without advertising unavailable or
-unmapped actions, and keep footer/help labels synchronized.
+`FOOTER-UI-002` is `IN_PROGRESS`. It will add a bounded semantic transient
+status projection for notifications, results, errors, confirmations,
+reconnects, and background activity without obscuring critical shortcuts.
+
+`FOOTER-UI-001` is `DONE`: one model-owned F1-F10 catalog now drives app
+dispatch, Help, and truthful footer labels. The old false `F3 Jobs`,
+`F4 Terminal`, and `F9 Search` labels are gone. The persistent rail measures
+whole current-context hints, reserves Help/Menu/Quit, omits redundant
+current-screen routes, switches to explicit modal controls, hides the clock
+below 100 columns, and preserves compact SDK/Testing/Security/QA controls.
+Focused shared-catalog, keymap, modal, width, theme/no-color/reduced-motion,
+all 179 UI tests, and the reviewed 160x48 footer-row golden pass.
 
 `HEADER-UI-001` is `DONE`: the persistent header now separates authoritative
 project identity from build target, adds marker-plus-text build state, and

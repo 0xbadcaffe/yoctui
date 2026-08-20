@@ -205,15 +205,8 @@ for anchor in (
     "Images",
     "Targets",
     "F1 Help",
-    "F2 Tasks",
-    "F3 Jobs",
-    "F4 Terminal",
-    "F5 Logs",
-    "F6 Layer",
-    "F7 Recipe",
-    "F8 Image",
-    "F9 Search",
     "F10 Menu",
+    "q Quit",
 ):
     if not has_rendered_anchor(normalized, anchor):
         raise SystemExit(f"live workbench: missing PTY anchor: {anchor}")

@@ -30,7 +30,7 @@ use yoctui_model::{
     Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
     BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
-    LayerInspectorMode, LayerRelationship, LayerRelationships, MaintenanceAction,
+    FunctionKey, LayerInspectorMode, LayerRelationship, LayerRelationships, MaintenanceAction,
     MaintenanceBuildHistoryField, MaintenanceCleanupField, MaintenanceDialog,
     MaintenanceGitArchiveField, MaintenanceLockedCacheField, MaintenanceReadinessField,
     MaintenanceView, PopupEditorCommand, QaAction, QaDialog, QaReportFailureKind, QaReportRequest,
@@ -3132,15 +3132,16 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('?') => Some(Action::Open(Screen::Help)),
         Input::Char('q') | Input::CtrlC => Some(Action::Quit),
         Input::CtrlP => Some(Action::OpenCommandPalette),
-        Input::F1 => Some(Action::Open(Screen::Help)),
-        Input::F2 => Some(Action::Open(Screen::Tasks)),
-        Input::F3 => Some(Action::Open(Screen::BuildHistory)),
-        Input::F4 => Some(Action::Open(Screen::Dashboard)),
-        Input::F5 => Some(Action::Open(Screen::Logs)),
-        Input::F6 => Some(Action::Open(Screen::Layers)),
-        Input::F7 => Some(Action::Open(Screen::Recipes)),
-        Input::F8 => Some(Action::Open(Screen::Images)),
-        Input::F9 | Input::F10 => Some(Action::OpenCommandPalette),
+        Input::F1 => Some(yoctui_model::function_shortcut_action(FunctionKey::F1)),
+        Input::F2 => Some(yoctui_model::function_shortcut_action(FunctionKey::F2)),
+        Input::F3 => Some(yoctui_model::function_shortcut_action(FunctionKey::F3)),
+        Input::F4 => Some(yoctui_model::function_shortcut_action(FunctionKey::F4)),
+        Input::F5 => Some(yoctui_model::function_shortcut_action(FunctionKey::F5)),
+        Input::F6 => Some(yoctui_model::function_shortcut_action(FunctionKey::F6)),
+        Input::F7 => Some(yoctui_model::function_shortcut_action(FunctionKey::F7)),
+        Input::F8 => Some(yoctui_model::function_shortcut_action(FunctionKey::F8)),
+        Input::F9 => Some(yoctui_model::function_shortcut_action(FunctionKey::F9)),
+        Input::F10 => Some(yoctui_model::function_shortcut_action(FunctionKey::F10)),
         Input::Tab => Some(Action::CycleFocus { backwards: false }),
         Input::BackTab => Some(Action::CycleFocus { backwards: true }),
         Input::Char('Y') => Some(Action::ConfirmQuit),
@@ -7128,20 +7129,41 @@ mod tests {
     }
 
     #[test]
-    fn focus_reference_function_key_rail_maps_every_named_route() {
-        for (input, expected) in [
-            (Input::F1, Action::Open(Screen::Help)),
-            (Input::F2, Action::Open(Screen::Tasks)),
-            (Input::F3, Action::Open(Screen::BuildHistory)),
-            (Input::F4, Action::Open(Screen::Dashboard)),
-            (Input::F5, Action::Open(Screen::Logs)),
-            (Input::F6, Action::Open(Screen::Layers)),
-            (Input::F7, Action::Open(Screen::Recipes)),
-            (Input::F8, Action::Open(Screen::Images)),
-            (Input::F9, Action::OpenCommandPalette),
-            (Input::F10, Action::OpenCommandPalette),
-        ] {
-            assert_eq!(key_action(input), Some(expected));
+    fn keymap_function_key_catalog_maps_every_named_route() {
+        let inputs = [
+            Input::F1,
+            Input::F2,
+            Input::F3,
+            Input::F4,
+            Input::F5,
+            Input::F6,
+            Input::F7,
+            Input::F8,
+            Input::F9,
+            Input::F10,
+        ];
+        let labels = [
+            ("F1", "Help"),
+            ("F2", "Tasks"),
+            ("F3", "History"),
+            ("F4", "Dashboard"),
+            ("F5", "Logs"),
+            ("F6", "Layers"),
+            ("F7", "Recipes"),
+            ("F8", "Images"),
+            ("F9", "Commands"),
+            ("F10", "Menu"),
+        ];
+        for ((input, shortcut), label) in inputs
+            .into_iter()
+            .zip(yoctui_model::FUNCTION_SHORTCUTS)
+            .zip(labels)
+        {
+            assert_eq!((shortcut.key_label, shortcut.action_label), label);
+            assert_eq!(
+                key_action(input),
+                Some(yoctui_model::function_shortcut_action(shortcut.key))
+            );
         }
     }
 

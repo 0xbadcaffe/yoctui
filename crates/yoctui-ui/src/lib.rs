@@ -19,30 +19,30 @@ use yoctui_model::{
     CompatibilityUiCapabilityState, CompatibilityUiFilter, ConfigCopyValue, DependencyEdgeKind,
     DependencyGraph, DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction,
     DevtoolCapability, DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace,
-    Dialog, FocusTarget, GitFileState, ImageArtifactField, ImageArtifactInventoryState,
-    JobHistoryRowRef, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, MaintenanceCapability,
-    MaintenanceCapabilitySnapshot, MaintenanceDialog, MaintenanceIntegrationDiagnostics,
-    MaintenanceIntegrationsSnapshot, MaintenanceOperation, MaintenanceOperationPreview,
-    MaintenanceServiceDiagnostics, MaintenanceSessionStatus, MaintenanceTool,
-    MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView, NAVIGATOR_GROUPS,
-    PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PaneNode,
-    PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus,
-    QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
-    QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView, QemuCapability,
-    QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode,
-    QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen,
-    SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog,
-    SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation, SdkPublishDraft,
-    SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
-    SecurityInventoryState, SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope,
-    SecuritySessionStatus, SecurityView, Severity, SignatureComparisonState,
-    SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskInspectorRef,
-    TaskRowRef, TaskState, TestComparisonCategory, TestComparisonState, TestExecutableCapability,
-    TestJunitExportState, TestLaunchDialog, TestLaunchField, TestLaunchPreview,
-    TestResultInventoryState, TestWorkspaceView, Theme, VariableIdentity, WicCapability,
-    WicCompression, WicCreateDialog, WicCreateField, WicCreatePreview, WicDevice,
-    WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart, WicOperation,
-    WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
+    Dialog, FUNCTION_SHORTCUTS, FocusTarget, FunctionKey, FunctionShortcutRoute, GitFileState,
+    ImageArtifactField, ImageArtifactInventoryState, JobHistoryRowRef, LayerBrowser,
+    LayerBrowserEntry, LayerInspectorMode, MaintenanceCapability, MaintenanceCapabilitySnapshot,
+    MaintenanceDialog, MaintenanceIntegrationDiagnostics, MaintenanceIntegrationsSnapshot,
+    MaintenanceOperation, MaintenanceOperationPreview, MaintenanceServiceDiagnostics,
+    MaintenanceSessionStatus, MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface,
+    MaintenanceView, NAVIGATOR_GROUPS, PackageDetailState, PackageField, PackageIdentity,
+    PackageInventoryState, PaneNode, PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily,
+    QaDialog, QaFindingStatus, QaLayerCapability, QaLayerRunCapability, QaOutputStream,
+    QaReportFailureKind, QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView,
+    QemuCapability, QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview,
+    QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor,
+    RecipeIdentity, Screen, SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind,
+    SdkNativeDialog, SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation,
+    SdkPublishDraft, SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability,
+    SecurityDialog, SecurityInventoryState, SecurityOperation, SecurityOutputStream,
+    SecurityReport, SecurityScope, SecuritySessionStatus, SecurityView, Severity,
+    SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind,
+    SplitAxis, TaskInspectorRef, TaskRowRef, TaskState, TestComparisonCategory,
+    TestComparisonState, TestExecutableCapability, TestJunitExportState, TestLaunchDialog,
+    TestLaunchField, TestLaunchPreview, TestResultInventoryState, TestWorkspaceView, Theme,
+    VariableIdentity, WicCapability, WicCompression, WicCreateDialog, WicCreateField,
+    WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart,
+    WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
     WorkspaceAvailabilityState, WorkspaceDestination,
     compatibility_ui_workspace_destination_action_availability, config_comparison,
     config_edit_disabled_reason, config_source_disabled_reason, format_duration,
@@ -51,7 +51,6 @@ use yoctui_model::{
 
 const LITERAL_REFERENCE_WIDTH: u16 = 160;
 const WIDE_WORKBENCH_MIN_WIDTH: u16 = 130;
-const REFERENCE_COMMAND_RAIL: &str = "F1 Help | F2 Tasks | F3 Jobs | F4 Terminal | F5 Logs | F6 Layer | F7 Recipe | F8 Image | F9 Search | F10 Menu";
 
 fn matches_metadata(query: &str, values: &[&str]) -> bool {
     let query = query.to_lowercase();
@@ -804,7 +803,7 @@ fn footer_shortcuts(app: &App) -> String {
         return with_compatibility_footer(
             app,
             yoctui_model::workspace_screen_destination(app.screen),
-            with_focus_shortcuts(app, "↑/↓ scroll inspector | / search | q quit"),
+            with_focus_shortcuts(app, "↑/↓ scroll inspector | q quit"),
         );
     }
     if app.layer_browser.is_some() {
@@ -819,7 +818,7 @@ fn footer_shortcuts(app: &App) -> String {
     }
     let shortcuts = match app.screen {
         Screen::Dashboard => {
-            "B build | Ctrl+P commands | Ctrl+B prefix | Tab focus | ↑/↓ package progress | i image | ! shell | c cancel | r recipes | y layers | ? help | q quit"
+            "B options | Ctrl+P commands | Ctrl+B prefix | Tab focus | ↑/↓ package progress | i image | ! shell | c cancel | r recipes | y layers | ? help | q quit"
         }
         Screen::Tasks => {
             "↑/↓ select | f state | F field | / edit filter | d duration | c cancel | Tab focus"
@@ -925,6 +924,140 @@ fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
             shortcuts
         }
     }
+}
+
+fn footer_context_items(app: &App, width: u16) -> Vec<String> {
+    if app.command_palette_open || app.focus == FocusTarget::CommandPalette {
+        return ["Type search", "↑/↓ select", "Enter run", "Esc close"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect();
+    }
+    if app.active_dialog().is_some() || app.focus == FocusTarget::Dialog {
+        return ["Enter select/confirm", "Esc cancel"]
+            .into_iter()
+            .map(str::to_owned)
+            .collect();
+    }
+
+    let responsive_override = (app.screen == Screen::Images && width <= 129)
+        || (matches!(
+            app.screen,
+            Screen::Sdk | Screen::Testing | Screen::Security | Screen::Qa
+        ) && width <= 90);
+    let source = if width < WIDE_WORKBENCH_MIN_WIDTH {
+        responsive_footer_shortcuts(app, width)
+    } else {
+        footer_shortcuts(app)
+    };
+    let mut items = source.split(" | ").map(str::to_owned).collect::<Vec<_>>();
+    if !responsive_override
+        && width >= 100
+        && pane_focus_shortcuts(app.focus).is_some()
+        && items.len() >= 3
+    {
+        items.drain(..3);
+    }
+    items.retain(|item| {
+        !matches!(
+            item.split_once(' ').map_or(item.as_str(), |(key, _)| key),
+            "?" | "q" | "Ctrl+P"
+        )
+    });
+    items.truncate(6);
+    let focus = match app.focus {
+        FocusTarget::Navigator => Some("Tab Workspace"),
+        FocusTarget::Workspace => Some("Tab Inspector"),
+        FocusTarget::Inspector => Some("Tab Navigator"),
+        FocusTarget::Dialog | FocusTarget::CommandPalette => None,
+    };
+    if let Some(focus) = focus {
+        items.push(focus.into());
+    }
+    items
+}
+
+fn function_footer_item(key: FunctionKey) -> String {
+    let shortcut = FUNCTION_SHORTCUTS
+        .iter()
+        .find(|shortcut| shortcut.key == key)
+        .expect("the closed function-key catalog contains every FunctionKey");
+    format!("{} {}", shortcut.key_label, shortcut.action_label)
+}
+
+fn footer_item_width(item: &str) -> usize {
+    Line::from(item).width()
+}
+
+fn footer_items_width(items: &[String]) -> usize {
+    items
+        .iter()
+        .map(|item| footer_item_width(item))
+        .sum::<usize>()
+        + items.len().saturating_sub(1) * 3
+}
+
+fn push_footer_items_that_fit(output: &mut Vec<String>, candidates: &[String], budget: usize) {
+    for candidate in candidates {
+        let added = footer_item_width(candidate) + usize::from(!output.is_empty()) * 3;
+        if footer_items_width(output).saturating_add(added) > budget {
+            break;
+        }
+        output.push(candidate.clone());
+    }
+}
+
+fn footer_rail_shortcuts(app: &App, width: u16) -> String {
+    let budget = usize::from(width);
+    let compact = width < 100;
+    if compact
+        && matches!(
+            app.screen,
+            Screen::Sdk | Screen::Testing | Screen::Security | Screen::Qa
+        )
+        && app.active_dialog().is_none()
+        && !app.command_palette_open
+    {
+        return responsive_footer_shortcuts(app, width);
+    }
+    let essentials = if compact {
+        vec!["? Help".into(), "Ctrl+P Menu".into(), "q Quit".into()]
+    } else {
+        vec![
+            function_footer_item(FunctionKey::F1),
+            function_footer_item(FunctionKey::F10),
+            "q Quit".into(),
+        ]
+    };
+    let essentials_width = footer_items_width(&essentials);
+    if essentials_width >= budget {
+        let mut output = Vec::new();
+        push_footer_items_that_fit(&mut output, &essentials, budget);
+        return output.join(" | ");
+    }
+
+    let prefix_budget = budget.saturating_sub(essentials_width + 3);
+    let mut prefix = Vec::new();
+    push_footer_items_that_fit(
+        &mut prefix,
+        &footer_context_items(app, width),
+        prefix_budget,
+    );
+
+    if !compact {
+        let optional = FUNCTION_SHORTCUTS
+            .iter()
+            .filter(|shortcut| {
+                !matches!(shortcut.key, FunctionKey::F1 | FunctionKey::F9 | FunctionKey::F10)
+                    && !matches!(shortcut.route, FunctionShortcutRoute::Open(screen) if screen == app.screen)
+            })
+            .map(|shortcut| format!("{} {}", shortcut.key_label, shortcut.action_label))
+            .collect::<Vec<_>>();
+        push_footer_items_that_fit(&mut prefix, &optional, prefix_budget);
+    }
+
+    prefix.extend(essentials);
+    prefix.join(" | ")
 }
 
 fn daemon_status_label(status: yoctui_model::ClientReplicaStatus) -> &'static str {
@@ -1145,6 +1278,13 @@ fn shortcut_rail<'a>(app: &App, shortcuts: &'a str) -> Line<'a> {
             ));
         }
         let (key, action) = item.split_once(' ').unwrap_or((item, ""));
+        if key == "…" {
+            spans.push(Span::styled(
+                key,
+                palette.role(palette.muted, Modifier::DIM),
+            ));
+            continue;
+        }
         spans.push(Span::styled(
             key,
             palette.role(palette.warning, Modifier::BOLD),
@@ -1172,22 +1312,22 @@ fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     if inner.is_empty() {
         return;
     }
-    let columns = Layout::horizontal([Constraint::Min(20), Constraint::Length(10)]).split(inner);
-    let shortcuts = if area.width >= WIDE_WORKBENCH_MIN_WIDTH {
-        REFERENCE_COMMAND_RAIL.into()
-    } else {
-        responsive_footer_shortcuts(app, area.width)
-    };
+    let clock_width = if area.width >= 100 { 10 } else { 0 };
+    let columns =
+        Layout::horizontal([Constraint::Min(20), Constraint::Length(clock_width)]).split(inner);
+    let shortcuts = footer_rail_shortcuts(app, columns[0].width);
     frame.render_widget(
         Paragraph::new(shortcut_rail(app, &shortcuts)).style(palette.base()),
         columns[0],
     );
-    frame.render_widget(
-        Paragraph::new(clock_text(now))
-            .alignment(Alignment::Right)
-            .style(palette.role(palette.primary_foreground, Modifier::DIM)),
-        columns[1],
-    );
+    if clock_width > 0 {
+        frame.render_widget(
+            Paragraph::new(clock_text(now))
+                .alignment(Alignment::Right)
+                .style(palette.role(palette.primary_foreground, Modifier::DIM)),
+            columns[1],
+        );
+    }
 }
 
 pub fn render(frame: &mut Frame, app: &App) {
@@ -13192,7 +13332,24 @@ fn bbmask_assignment(value: &str) -> String {
     )
 }
 fn help(frame: &mut Frame, area: Rect) {
-    frame.render_widget(Paragraph::new("B Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation.").block(Block::default().title("Help").borders(Borders::ALL)),area)
+    let function_keys = FUNCTION_SHORTCUTS
+        .chunks(5)
+        .map(|shortcuts| {
+            shortcuts
+                .iter()
+                .map(|shortcut| format!("{} {}", shortcut.key_label, shortcut.action_label))
+                .collect::<Vec<_>>()
+                .join("   ")
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    let text = format!(
+        "{function_keys}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
+    );
+    frame.render_widget(
+        Paragraph::new(text).block(Block::default().title("Help").borders(Borders::ALL)),
+        area,
+    )
 }
 #[cfg(test)]
 mod tests {
@@ -13594,18 +13751,24 @@ mod tests {
         };
         let rail = row(46);
         for label in [
+            "j/k or ↑/↓ select",
+            "←/→ collapse/open",
+            "Enter open",
+            "Ctrl+B prefix",
             "F1 Help",
-            "F2 Tasks",
-            "F3 Jobs",
-            "F4 Terminal",
+            "F3 History",
+            "F4 Dashboard",
             "F5 Logs",
-            "F6 Layer",
-            "F7 Recipe",
-            "F8 Image",
-            "F9 Search",
             "F10 Menu",
+            "q Quit",
         ] {
             assert!(rail.contains(label), "missing {label}: {rail}");
+        }
+        for false_label in ["F3 Jobs", "F4 Terminal", "F9 Search"] {
+            assert!(
+                !rail.contains(false_label),
+                "dishonest {false_label}: {rail}"
+            );
         }
 
         let palette = ThemePalette::for_app(&app);
@@ -14643,36 +14806,87 @@ mod tests {
     }
 
     #[test]
-    fn wide_reference_rail_is_stable_across_screens_and_widths() {
-        let labels = [
-            "F1 Help",
-            "F2 Tasks",
-            "F3 Jobs",
-            "F4 Terminal",
-            "F5 Logs",
-            "F6 Layer",
-            "F7 Recipe",
-            "F8 Image",
-            "F9 Search",
-            "F10 Menu",
-        ];
-        for screen in [Screen::Dashboard, Screen::Tasks] {
-            for width in [130, 160, 180, 200] {
-                let mut app = App::new(32, 8192);
-                app.screen = screen;
-                let output = rendered_text(&app, width, 36);
-                for label in labels {
-                    assert!(
-                        output.contains(label),
-                        "missing {label} on {screen:?} at {width} columns: {output}"
-                    );
-                }
-            }
+    fn next_generation_footer_is_contextual_bounded_and_keymap_truthful() {
+        let mut dashboard = App::new(32, 8192);
+        dashboard.focus = FocusTarget::Workspace;
+        for width in [130_u16, 160, 180, 200] {
+            let rail = footer_rail_shortcuts(&dashboard, width.saturating_sub(10));
+            assert!(rail.contains("B options"), "{width}: {rail}");
+            assert!(rail.contains("Ctrl+B prefix"), "{width}: {rail}");
+            assert!(rail.contains("F1 Help"), "{width}: {rail}");
+            assert!(rail.contains("F10 Menu"), "{width}: {rail}");
+            assert!(rail.contains("q Quit"), "{width}: {rail}");
+            assert!(footer_item_width(&rail) <= usize::from(width - 10));
         }
 
-        let compact = rendered_text(&App::new(32, 8192), 129, 36);
-        assert!(compact.contains("B build"), "{compact}");
-        assert!(!compact.contains("F10 Menu"), "{compact}");
+        let mut tasks = App::new(32, 8192);
+        tasks.screen = Screen::Tasks;
+        tasks.focus = FocusTarget::Workspace;
+        let task_rail = footer_rail_shortcuts(&tasks, 148);
+        for label in [
+            "↑/↓ select",
+            "f state",
+            "F field",
+            "/ edit filter",
+            "c cancel",
+            "Tab Inspector",
+            "F1 Help",
+            "F10 Menu",
+            "q Quit",
+        ] {
+            assert!(task_rail.contains(label), "missing {label}: {task_rail}");
+        }
+        assert!(!task_rail.contains("F2 Tasks"), "{task_rail}");
+        for false_label in ["F3 Jobs", "F4 Terminal", "F9 Search"] {
+            assert!(!task_rail.contains(false_label), "{task_rail}");
+        }
+
+        let compact = footer_rail_shortcuts(&dashboard, 80);
+        assert!(compact.contains("B options"), "{compact}");
+        assert!(compact.contains("? Help"), "{compact}");
+        assert!(compact.contains("Ctrl+P Menu"), "{compact}");
+        assert!(compact.contains("q Quit"), "{compact}");
+        assert!(footer_item_width(&compact) <= 80, "{compact}");
+    }
+
+    #[test]
+    fn next_generation_footer_projects_modal_and_accessible_states() {
+        let mut app = App::new(32, 8192);
+        app.command_palette_open = true;
+        app.focus = FocusTarget::CommandPalette;
+        let palette = footer_rail_shortcuts(&app, 100);
+        for label in ["Type search", "↑/↓ select", "Enter run", "Esc close"] {
+            assert!(palette.contains(label), "missing {label}: {palette}");
+        }
+
+        app.command_palette_open = false;
+        app.focus = FocusTarget::Dialog;
+        app.dialogs.push_front(Dialog::QuitConfirmation);
+        let dialog = footer_rail_shortcuts(&app, 100);
+        assert!(dialog.contains("Enter select/confirm"), "{dialog}");
+        assert!(dialog.contains("Esc cancel"), "{dialog}");
+
+        for (theme, color) in [
+            (Theme::HighContrast, true),
+            (Theme::Monochrome, true),
+            (Theme::DarkPro, false),
+        ] {
+            app.dialogs.clear();
+            app.focus = FocusTarget::Workspace;
+            app.theme = theme;
+            app.color_enabled = color;
+            app.reduced_motion = true;
+            let output = rendered_text(&app, 80, 24);
+            assert!(output.contains("? Help"), "{output}");
+            assert!(output.contains("q Quit"), "{output}");
+        }
+
+        app.screen = Screen::Help;
+        let help = rendered_text(&app, 200, 30);
+        for shortcut in FUNCTION_SHORTCUTS {
+            let label = format!("{} {}", shortcut.key_label, shortcut.action_label);
+            assert!(help.contains(&label), "missing {label}: {help}");
+        }
     }
 
     #[test]

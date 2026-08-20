@@ -207,7 +207,7 @@ references fail closed with a diagnostic.
 
 | Key | Action |
 |---|---|
-| `F5` | Build the selected target |
+| `F5` | Open Logs |
 | `B` | Image build options |
 | `r` / `y` | Recipes / Layers |
 | `Ctrl+P` | Command palette |
@@ -216,8 +216,9 @@ references fail closed with a diagnostic.
 | `?` | Contextual help |
 | `q` | Quit |
 
-Shortcuts always appear in the footer. Destructive operations show an exact
-preview and require confirmation.
+The footer shows the highest-priority current-context shortcuts that fit;
+`F1` Help lists the complete shared function-key catalog. Destructive
+operations show an exact preview and require confirmation.
 
 ## Daemon and persistent sessions
 

@@ -5354,18 +5354,18 @@ notes = "The persistent header now separates project identity from build target,
 id = "FOOTER-UI-001"
 milestone = "M19"
 title = "Redesign bottom shortcut bar"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 547
 required = true
 depends_on = ["FOUNDATION-UI-003"]
 verify = ["cargo test -p yoctui-ui next_generation_footer", "cargo test -p yoctui-app keymap"]
-notes = "Render only current-context authoritative bindings and keep keymap, footer, and help synchronized."
+notes = "One model-owned F1-F10 catalog now drives truthful app dispatch, Help, and footer labels; the old false F3 Jobs/F4 Terminal/F9 Search labels are removed. The persistent rail measures whole current-context hints, reserves Help/Menu/Quit, omits redundant current-screen routes, shows modal controls, hides the clock below 100 columns, and retains compact SDK/Testing/Security/QA controls. Focused model/app/UI, accessibility, breakpoints, all 179 UI tests, and the reviewed footer-row golden pass."
 
 [[task]]
 id = "FOOTER-UI-002"
 milestone = "M19"
 title = "Add transient status area"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 548
 required = true
 depends_on = ["FOOTER-UI-001"]

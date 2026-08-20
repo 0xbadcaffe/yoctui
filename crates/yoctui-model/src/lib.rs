@@ -108,6 +108,108 @@ pub enum Screen {
     Compatibility,
     Settings,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum FunctionKey {
+    F1,
+    F2,
+    F3,
+    F4,
+    F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FunctionShortcutRoute {
+    Open(Screen),
+    CommandPalette,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FunctionShortcut {
+    pub key: FunctionKey,
+    pub key_label: &'static str,
+    pub action_label: &'static str,
+    pub route: FunctionShortcutRoute,
+}
+
+pub const FUNCTION_SHORTCUTS: [FunctionShortcut; 10] = [
+    FunctionShortcut {
+        key: FunctionKey::F1,
+        key_label: "F1",
+        action_label: "Help",
+        route: FunctionShortcutRoute::Open(Screen::Help),
+    },
+    FunctionShortcut {
+        key: FunctionKey::F2,
+        key_label: "F2",
+        action_label: "Tasks",
+        route: FunctionShortcutRoute::Open(Screen::Tasks),
+    },
+    FunctionShortcut {
+        key: FunctionKey::F3,
+        key_label: "F3",
+        action_label: "History",
+        route: FunctionShortcutRoute::Open(Screen::BuildHistory),
+    },
+    FunctionShortcut {
+        key: FunctionKey::F4,
+        key_label: "F4",
+        action_label: "Dashboard",
+        route: FunctionShortcutRoute::Open(Screen::Dashboard),
+    },
+    FunctionShortcut {
+        key: FunctionKey::F5,
+        key_label: "F5",
+        action_label: "Logs",
+        route: FunctionShortcutRoute::Open(Screen::Logs),
+    },
+    FunctionShortcut {
+        key: FunctionKey::F6,
+        key_label: "F6",
+        action_label: "Layers",
+        route: FunctionShortcutRoute::Open(Screen::Layers),
+    },
+    FunctionShortcut {
+        key: FunctionKey::F7,
+        key_label: "F7",
+        action_label: "Recipes",
+        route: FunctionShortcutRoute::Open(Screen::Recipes),
+    },
+    FunctionShortcut {
+        key: FunctionKey::F8,
+        key_label: "F8",
+        action_label: "Images",
+        route: FunctionShortcutRoute::Open(Screen::Images),
+    },
+    FunctionShortcut {
+        key: FunctionKey::F9,
+        key_label: "F9",
+        action_label: "Commands",
+        route: FunctionShortcutRoute::CommandPalette,
+    },
+    FunctionShortcut {
+        key: FunctionKey::F10,
+        key_label: "F10",
+        action_label: "Menu",
+        route: FunctionShortcutRoute::CommandPalette,
+    },
+];
+
+pub fn function_shortcut_action(key: FunctionKey) -> Action {
+    let shortcut = FUNCTION_SHORTCUTS
+        .iter()
+        .find(|shortcut| shortcut.key == key)
+        .expect("the closed function-key catalog contains every FunctionKey");
+    match shortcut.route {
+        FunctionShortcutRoute::Open(screen) => Action::Open(screen),
+        FunctionShortcutRoute::CommandPalette => Action::OpenCommandPalette,
+    }
+}
 /// The one active target in Yoctui's persistent workbench shell.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum FocusTarget {
@@ -14686,6 +14788,32 @@ impl fmt::Display for BuildStatus {
 mod tests {
     use super::*;
     use proptest::prelude::*;
+
+    #[test]
+    fn function_shortcut_catalog_is_complete_unique_and_truthful() {
+        assert_eq!(FUNCTION_SHORTCUTS.len(), 10);
+        let keys = FUNCTION_SHORTCUTS
+            .iter()
+            .map(|shortcut| shortcut.key)
+            .collect::<HashSet<_>>();
+        let labels = FUNCTION_SHORTCUTS
+            .iter()
+            .map(|shortcut| shortcut.key_label)
+            .collect::<HashSet<_>>();
+        assert_eq!(keys.len(), FUNCTION_SHORTCUTS.len());
+        assert_eq!(labels.len(), FUNCTION_SHORTCUTS.len());
+        for shortcut in FUNCTION_SHORTCUTS {
+            assert!(!shortcut.action_label.is_empty());
+            assert_eq!(
+                function_shortcut_action(shortcut.key),
+                match shortcut.route {
+                    FunctionShortcutRoute::Open(screen) => Action::Open(screen),
+                    FunctionShortcutRoute::CommandPalette => Action::OpenCommandPalette,
+                }
+            );
+        }
+    }
+
     fn log(message: &str) -> LogEntry {
         LogEntry {
             id: 0,
