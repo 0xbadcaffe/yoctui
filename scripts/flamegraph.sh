@@ -20,6 +20,7 @@ summary="$flamegraph_work_dir/summary.txt"
 filter_report="$flamegraph_work_dir/filter.txt"
 
 YOCTUI_FLAMEGRAPH_FILTER_REPORT="$filter_report" \
+YOCTUI_PROFILE_SCENARIO=large-metadata \
 RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-C force-frame-pointers=yes" \
 cargo flamegraph \
   -p yoctui \
@@ -28,7 +29,7 @@ cargo flamegraph \
   --min-width 0.01 \
   --post-process 'python3 scripts/filter-flamegraph-stacks.py' \
   --title 'Yoctui workbench CPU profile' \
-  --subtitle 'Deterministic 160x48 production reducer and Ratatui rendering workload' \
+  --subtitle 'Measured worst-case 4096-recipe / 1024-layer 160x48 rendering workload' \
   --output "$svg" \
   --bench workbench_profile \
   2>&1 | tee "$workload_log"

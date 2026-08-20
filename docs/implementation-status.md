@@ -11,9 +11,20 @@ Status values:
 
 ## Current phase
 
-`PERF-UI-001` is `IN_PROGRESS`. It will measure idle, active-build, large
-recipe/layer, log-heavy, and bounded-telemetry rendering, capture a fresh
-validated flamegraph with no null frames, and document any real CPU hot path.
+`PERF-UI-002` is `IN_PROGRESS`. It will remove the measured large-recipe
+full-table construction hot path using viewport-bounded rendering and explicit
+selection/query invalidation without introducing stale UI state.
+
+`PERF-UI-001` is `DONE`: a deterministic 160x48 matrix measures idle at 0.396
+ms/frame, active build at 0.595, large metadata at 5.318, log-heavy at 0.845,
+and maximum bounded telemetry history at 0.643 against an explicit 10 ms
+ceiling. The fresh measured-worst-case flamegraph contains 12,843 samples over
+6,000 frames, checksum `f4d850b421930dfd`, zero unresolved/null SVG frames,
+and 0.3596% policy-filtered malformed raw event weight. Symbolized stacks put
+`recipes` at 32.69B weighted inclusive events versus 5.66B for `layers`; the
+renderer constructs rows for all 4,096 recipes before Ratatui clips the table.
+That real hot path is assigned immediately to `PERF-UI-002`. The harness,
+validator unit test, and fresh flamegraph gate pass.
 
 `A11Y-UI-001` is `DONE`: the buffer-level accessibility contract and aggregate
 invariant suite now exercise task, log, history, health, dialog, high-contrast,

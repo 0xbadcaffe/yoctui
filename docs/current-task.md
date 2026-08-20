@@ -2,30 +2,28 @@
 
 ## Task
 
-**ID:** PERF-UI-001
-**Title:** Profile rendering
+**ID:** PERF-UI-002
+**Title:** Add render caching where justified
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Measure rendering cost for idle, active-build, large recipe/layer, log-heavy,
-and bounded-telemetry workloads. Produce a fresh validated flamegraph with no
-null/unresolved frames, identify any real CPU hot path, and record explicit
-thresholds and provenance before adding caching.
+Remove the measured large-recipe per-frame hot path by bounding row projection
+to the visible viewport and caching only model-owned filtered indices or
+normalized query state where measurement justifies it. Preserve exact
+selection/query invalidation and prove that no stale UI state can appear.
 
 ## Dependencies
 
-- `A11Y-UI-001` — DONE
-- `METRICS-UI-006` — DONE
+- `PERF-UI-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-ui/benches/workbench_profile.rs`
+- `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-cli/benches/workbench_profile.rs`
 - `scripts/test-next-generation-ui-performance.sh`
-- `scripts/flamegraph.sh`
-- `scripts/validate-flamegraph.py`
-- `artifacts/flamegraph/`
+- `docs/profiling.md`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -33,23 +31,23 @@ thresholds and provenance before adding caching.
 
 ## Definition of done
 
-- A deterministic benchmark measures all five required workload classes with
-  bounded inputs and documented frame-count/time thresholds.
-- Idle and active-build frame cost, large recipe/layer collections, log-heavy
-  retention, and telemetry history are reported separately.
-- The fresh flamegraph contains real samples, no null/unresolved frames, no
-  lost samples beyond policy, and passes the independent validator.
-- Exclusive/inclusive hot paths are documented from the fresh capture; a real
-  actionable rendering hot path is handed to `PERF-UI-002`, while expected
-  Ratatui/Unicode buffer work is not mislabeled as a defect.
-- Profiling artifacts name the workload, dimensions, sample count, checksum,
-  toolchain, and capture date without depending on a live daemon or Poky tree.
+- Recipe and layer tables construct/format only the bounded visible row window,
+  not the complete filtered dataset, on each frame.
+- Filtered indices and normalized queries, if cached in the model, invalidate
+  on query, workspace inventory, selection, refresh, and error transitions.
+- Selection identity and scroll position remain stable and bounded after every
+  invalidation; empty and no-match states cannot retain stale rows.
+- Static labels or sparkline points are cached only if the measured matrix
+  still identifies them as material after viewport bounding.
+- `render_cache` model tests exercise cache reuse and every invalidation path.
+- The five-scenario matrix shows a material large-metadata improvement without
+  regressing idle, active-build, log-heavy, or telemetry thresholds.
 
 ## Verification
 
 ```bash
 ./scripts/test-next-generation-ui-performance.sh
-./scripts/flamegraph.sh
+cargo test -p yoctui-model render_cache
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh

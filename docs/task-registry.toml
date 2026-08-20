@@ -5431,18 +5431,18 @@ notes = "The documented buffer-level accessibility contract now has an aggregate
 id = "PERF-UI-001"
 milestone = "M19"
 title = "Profile rendering"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 554
 required = true
 depends_on = ["A11Y-UI-001", "METRICS-UI-006"]
 verify = ["./scripts/test-next-generation-ui-performance.sh", "./scripts/flamegraph.sh"]
-notes = "Measure documented idle, active build, large recipe/layer, log-heavy, and telemetry-history workloads and identify real hot paths."
+notes = "A deterministic five-scenario 160x48 matrix measures idle 0.396 ms/frame, active build 0.595, large metadata 5.318, log-heavy 0.845, and bounded telemetry 0.643 against a 10 ms ceiling. The fresh worst-case flamegraph has 12,843 samples, 6,000 frames, checksum f4d850b421930dfd, zero unresolved/null SVG frames, and 0.3596% policy-filtered malformed raw weight. Symbolized stacks identify full 4,096-row recipe construction as the actionable hot path; PERF-UI-002 owns its fix."
 
 [[task]]
 id = "PERF-UI-002"
 milestone = "M19"
 title = "Add render caching where justified"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 555
 required = true
 depends_on = ["PERF-UI-001"]

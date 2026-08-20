@@ -17,7 +17,9 @@ WORKLOAD_RE = re.compile(
 )
 UNRESOLVED = {"[unknown]", "unknown", "null", "(null)", "??"}
 DIRECT_APPLICATION = {
+    "layers",
     "matching_task_logs_for_task",
+    "recipes",
     "render_at",
     "render_job_history",
     "render_task_log",
