@@ -11,9 +11,15 @@ Status values:
 
 ## Current phase
 
-`INPUT-TEST-003` is `IN_PROGRESS`. It will consolidate mouse acceptance for
-pane focus, list selection, wheel scrolling, dialog interaction, and supported
-split resizing across app and real runtime routes.
+`PTY-UI-TEST-001` is `IN_PROGRESS`. It will extend the real-PTY harness across
+embedded pane placement, resize, attach/detach, focus and escape-chord transfer,
+bounded scrollback, and preservation of the surrounding workbench.
+
+`INPUT-TEST-003` is `DONE`: the app and runtime mouse suites use the same
+geometry as rendering at wide, medium, narrow, and below-minimum sizes. They
+cover pane focus, exact Navigator/task/tab/PTY selection, wheel-to-keyboard
+routes, inert padding, dialog trapping, and supported split dragging with the
+exact focused pane, real split axis, and bounded typed ratio delta.
 
 `INPUT-TEST-002` is `DONE`: the e2e focus-flow sequence dispatches real
 `Tab`/`Shift+Tab` actions forward and backward through Navigator, Workspace,

@@ -3781,6 +3781,11 @@ When enabled:
 
 Every action must remain fully usable by keyboard.
 
+Acceptance tests resolve mouse input against canonical wide, medium, narrow,
+and below-minimum shell geometry. They assert exact Navigator, task, tab, and
+PTY-leaf selection; wheel-to-keyboard action parity; modal trapping; inert
+non-actionable regions; and axis-correct bounded split resizing.
+
 ---
 
 ## 28. Background jobs

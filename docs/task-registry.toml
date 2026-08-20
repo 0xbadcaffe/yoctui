@@ -5519,18 +5519,18 @@ notes = "The e2e focus-flow sequence dispatches real Tab/Shift+Tab actions forwa
 id = "INPUT-TEST-003"
 milestone = "M19"
 title = "Test mouse interaction"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 562
 required = true
 depends_on = ["MOUSE-UI-001"]
 verify = ["cargo test -p yoctui-app next_generation_mouse", "cargo test -p yoctui --test mouse_runtime next_generation_mouse"]
-notes = "Cover pane focus, row selection, scroll, dialog clicks, and supported split resizing."
+notes = "The next_generation_mouse app and runtime suites cover geometry-owned wide/medium/narrow pane focus, exact Navigator/task/tab/PTY selection, workspace and modal wheel routes, inert unsupported regions, dialog trapping, and split dragging with the exact focused pane, real axis, bounded ratio delta, and keyboard-equivalent typed actions."
 
 [[task]]
 id = "PTY-UI-TEST-001"
 milestone = "M19"
 title = "Test embedded terminal rendering"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 563
 required = true
 depends_on = ["INPUT-TEST-002", "INPUT-TEST-003"]
