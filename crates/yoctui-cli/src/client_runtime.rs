@@ -1,4 +1,8 @@
-use std::{fs::File, io::Read, time::Duration};
+use std::{
+    fs::File,
+    io::Read,
+    time::{Duration, Instant},
+};
 
 use thiserror::Error;
 use yoctui_app::{DaemonClientSnapshot, PrefixCommand};
@@ -11,6 +15,9 @@ use yoctui_protocol::daemon::{
 };
 
 use crate::client_transport::{ClientServerEvent, ClientTransportError, DaemonClientTransport};
+
+const MAX_EVENTS_PER_POLL: usize = 64;
+const MAX_POLL_DURATION: Duration = Duration::from_millis(8);
 
 pub struct InteractiveDaemonRuntime {
     transport: DaemonClientTransport,
@@ -52,29 +59,37 @@ impl InteractiveDaemonRuntime {
     }
 
     pub fn poll(&mut self, app: &mut App) -> Result<bool, ClientRuntimeError> {
-        let Some(event) = self.transport.try_receive(Duration::from_millis(1))? else {
-            return Ok(false);
-        };
-        match event {
-            ClientServerEvent::Snapshot(snapshot) => self.replica.replace_app(app, *snapshot),
-            ClientServerEvent::Event(event) => self.replica.apply_event_to_app(app, &event)?,
-            ClientServerEvent::ResyncRequired { reason, .. } => {
-                self.replica.begin_synchronization();
-                self.replica.install_app(app);
-                app.notification = Some(format!("Daemon resynchronization required: {reason}"));
+        let mut received = false;
+        let started = Instant::now();
+        for _ in 0..MAX_EVENTS_PER_POLL {
+            let Some(event) = self.transport.try_receive(Duration::from_millis(1))? else {
+                break;
+            };
+            received = true;
+            match event {
+                ClientServerEvent::Snapshot(snapshot) => self.replica.replace_app(app, *snapshot),
+                ClientServerEvent::Event(event) => self.replica.apply_event_to_app(app, &event)?,
+                ClientServerEvent::ResyncRequired { reason, .. } => {
+                    self.replica.begin_synchronization();
+                    self.replica.install_app(app);
+                    app.notification = Some(format!("Daemon resynchronization required: {reason}"));
+                }
+                ClientServerEvent::CommandResult(result) => {
+                    app.notification = Some(format!(
+                        "Daemon request {}: {:?}",
+                        result.request_id.0, result.outcome
+                    ));
+                }
+                ClientServerEvent::ShuttingDown => {
+                    self.replica.disconnect_app(app);
+                    app.notification = Some("Yoctui daemon is shutting down.".into());
+                }
             }
-            ClientServerEvent::CommandResult(result) => {
-                app.notification = Some(format!(
-                    "Daemon request {}: {:?}",
-                    result.request_id.0, result.outcome
-                ));
-            }
-            ClientServerEvent::ShuttingDown => {
-                self.replica.disconnect_app(app);
-                app.notification = Some("Yoctui daemon is shutting down.".into());
+            if started.elapsed() >= MAX_POLL_DURATION {
+                break;
             }
         }
-        Ok(true)
+        Ok(received)
     }
 
     pub fn route_effect(

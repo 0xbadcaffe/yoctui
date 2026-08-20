@@ -135,6 +135,9 @@ impl DaemonListener {
                     return Ok(DaemonConnection {
                         stream,
                         server_mode: true,
+                        pending: Vec::new(),
+                        expected_frame_len: None,
+                        write_poisoned: false,
                     });
                 }
                 Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
@@ -171,6 +174,9 @@ impl Drop for DaemonListener {
 pub struct DaemonConnection {
     stream: UnixStream,
     server_mode: bool,
+    pending: Vec<u8>,
+    expected_frame_len: Option<usize>,
+    write_poisoned: bool,
 }
 
 impl DaemonConnection {
@@ -182,6 +188,9 @@ impl DaemonConnection {
                     return Ok(Self {
                         stream,
                         server_mode: false,
+                        pending: Vec::new(),
+                        expected_frame_len: None,
+                        write_poisoned: false,
                     });
                 }
                 Err(error)
@@ -221,32 +230,61 @@ impl DaemonConnection {
     }
 
     pub fn send<T: Serialize>(&mut self, message: &T) -> Result<(), IpcError> {
+        if self.write_poisoned {
+            return Err(IpcError::Disconnected);
+        }
         let frame = encode_frame(message)?;
         match self.stream.write_all(&frame).map_err(map_timeout) {
             Ok(()) => {}
-            Err(error) if self.server_mode && is_peer_disconnect(&error) => return Ok(()),
+            Err(error) if self.server_mode && is_peer_disconnect(&error) => {
+                self.write_poisoned = true;
+                return Ok(());
+            }
             Err(error) => return Err(error),
         }
         match self.stream.flush().map_err(map_timeout) {
             Ok(()) => {}
-            Err(error) if self.server_mode && is_peer_disconnect(&error) => return Ok(()),
+            Err(error) if self.server_mode && is_peer_disconnect(&error) => {
+                self.write_poisoned = true;
+                return Ok(());
+            }
             Err(error) => return Err(error),
         }
         Ok(())
     }
 
     pub fn receive<T: DeserializeOwned>(&mut self) -> Result<T, IpcError> {
-        let mut prefix = [0_u8; 4];
-        read_exact(&mut self.stream, &mut prefix)?;
-        let length = u32::from_be_bytes(prefix) as usize;
-        if length > MAX_FRAME_BYTES {
-            return Err(DaemonProtocolError::TooLarge.into());
+        if self.write_poisoned {
+            return Err(IpcError::Disconnected);
         }
-        let mut frame = Vec::with_capacity(length + 4);
-        frame.extend_from_slice(&prefix);
-        frame.resize(length + 4, 0);
-        read_exact(&mut self.stream, &mut frame[4..])?;
-        Ok(decode_frame(&frame)?)
+        loop {
+            if self.expected_frame_len.is_none() && self.pending.len() >= 4 {
+                let payload_len = u32::from_be_bytes(
+                    self.pending[..4]
+                        .try_into()
+                        .expect("four-byte frame prefix"),
+                ) as usize;
+                if payload_len > MAX_FRAME_BYTES {
+                    self.pending.clear();
+                    return Err(DaemonProtocolError::TooLarge.into());
+                }
+                self.expected_frame_len = Some(payload_len + 4);
+            }
+            if let Some(frame_len) = self.expected_frame_len
+                && self.pending.len() >= frame_len
+            {
+                let frame = self.pending.drain(..frame_len).collect::<Vec<_>>();
+                self.expected_frame_len = None;
+                return Ok(decode_frame(&frame)?);
+            }
+
+            let mut chunk = [0_u8; 16 * 1024];
+            match self.stream.read(&mut chunk).map_err(map_timeout) {
+                Ok(0) => return Err(IpcError::Disconnected),
+                Ok(read) => self.pending.extend_from_slice(&chunk[..read]),
+                Err(error) => return Err(error),
+            }
+        }
     }
 
     pub fn peer_uid(&self) -> Result<u32, IpcError> {
@@ -341,14 +379,6 @@ fn clean_stale_socket(path: &Path, uid: u32) -> Result<(), IpcError> {
             path: path.to_path_buf(),
             source: error,
         }),
-    }
-}
-
-fn read_exact(stream: &mut UnixStream, bytes: &mut [u8]) -> Result<(), IpcError> {
-    match stream.read_exact(bytes) {
-        Ok(_) => Ok(()),
-        Err(error) if error.kind() == io::ErrorKind::UnexpectedEof => Err(IpcError::Disconnected),
-        Err(error) => Err(map_timeout(error)),
     }
 }
 
@@ -486,6 +516,34 @@ mod tests {
     }
 
     #[test]
+    fn server_write_timeout_poisoning_prevents_a_followup_frame() {
+        let paths = test_paths("write-timeout");
+        let listener = DaemonListener::bind(&paths).unwrap();
+        let client_paths = paths.clone();
+        let client = thread::spawn(move || {
+            let connection =
+                DaemonConnection::connect(&client_paths, Duration::from_secs(1)).unwrap();
+            thread::sleep(Duration::from_millis(200));
+            connection
+        });
+        let mut server = listener.accept(Duration::from_secs(1)).unwrap();
+        server
+            .set_write_timeout(Some(Duration::from_millis(20)))
+            .unwrap();
+
+        server.send(&"x".repeat(3 * 1024 * 1024)).unwrap();
+        assert!(server.write_poisoned);
+        assert!(matches!(
+            server.send(&ClientMessage::Pong { nonce: 31 }),
+            Err(IpcError::Disconnected)
+        ));
+
+        drop(client.join().unwrap());
+        drop(listener);
+        cleanup(&paths);
+    }
+
+    #[test]
     fn security_daemon_enforces_private_runtime_and_same_uid_peer() {
         let paths = test_paths("security");
         let listener = DaemonListener::bind(&paths).unwrap();
@@ -602,6 +660,38 @@ mod tests {
         ));
         drop(waiting_server);
         let _ = waiting_client.join().unwrap();
+        drop(listener);
+        cleanup(&paths);
+    }
+
+    #[test]
+    fn daemon_ipc_retains_partial_frame_across_read_timeout() {
+        let paths = test_paths("partial-timeout");
+        let listener = DaemonListener::bind(&paths).unwrap();
+        let client_paths = paths.clone();
+        let client = thread::spawn(move || {
+            let connection =
+                DaemonConnection::connect(&client_paths, Duration::from_secs(1)).unwrap();
+            let frame = encode_frame(&ClientMessage::Pong { nonce: 29 }).unwrap();
+            (&connection.stream).write_all(&frame[..8]).unwrap();
+            thread::sleep(Duration::from_millis(60));
+            (&connection.stream).write_all(&frame[8..]).unwrap();
+        });
+        let mut server = listener.accept(Duration::from_secs(1)).unwrap();
+        server
+            .set_read_timeout(Some(Duration::from_millis(20)))
+            .unwrap();
+
+        assert!(matches!(
+            server.receive::<ClientMessage>(),
+            Err(IpcError::Timeout(_))
+        ));
+        client.join().unwrap();
+        assert_eq!(
+            server.receive::<ClientMessage>().unwrap(),
+            ClientMessage::Pong { nonce: 29 }
+        );
+
         drop(listener);
         cleanup(&paths);
     }
