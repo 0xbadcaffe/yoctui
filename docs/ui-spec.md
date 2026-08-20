@@ -83,6 +83,12 @@ use one row per record, and decorative blank space is avoided. Adjacent panels
 share a visually continuous grid. Focus remains visible through the focused
 border and selection treatment; color is never the only status signal.
 
+Exactly one bordered region carries the focused-border role at a time. A
+multi-section Inspector assigns that role to its primary titled section; its
+secondary facts, recent output, actions, and system-status sections retain
+inactive borders while remaining within the same focused pane. Dialog focus
+removes focus styling from the shell and assigns it only to the modal border.
+
 ### Literal reference acceptance
 
 The approved terminal reference is an acceptance target, not merely visual

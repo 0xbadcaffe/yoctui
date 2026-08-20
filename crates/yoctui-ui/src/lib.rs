@@ -4219,7 +4219,7 @@ fn tasks_inspector(
                 sections[1].width.saturating_sub(2),
                 inspector_action_styles(app),
             ))
-            .block(pane_block(app, "Contextual Actions", focused)),
+            .block(pane_block(app, "Contextual Actions", false)),
             sections[1],
         );
         return;
@@ -4266,18 +4266,14 @@ fn tasks_inspector(
             .block(pane_block(
                 app,
                 "Secondary facts · Paths · Dependencies",
-                focused,
+                false,
             ))
             .wrap(Wrap { trim: false }),
         sections[1],
     );
     frame.render_widget(
         Paragraph::new(Text::from(task_inspector_recent_lines(app, &inspector)))
-            .block(pane_block(
-                app,
-                "Recent output · Recent Log (tail)",
-                focused,
-            ))
+            .block(pane_block(app, "Recent output · Recent Log (tail)", false))
             .wrap(Wrap { trim: false }),
         sections[2],
     );
@@ -4288,7 +4284,7 @@ fn tasks_inspector(
             sections[3].width.saturating_sub(2),
             inspector_action_styles(app),
         ))
-        .block(pane_block(app, "Contextual Actions", focused)),
+        .block(pane_block(app, "Contextual Actions", false)),
         sections[3],
     );
     if show_system {
@@ -4297,7 +4293,7 @@ fn tasks_inspector(
                 app,
                 sections[4].width.saturating_sub(2),
             ))
-            .block(pane_block(app, "System Status", focused))
+            .block(pane_block(app, "System Status", false))
             .wrap(Wrap { trim: false }),
             sections[4],
         );
@@ -19404,6 +19400,189 @@ mod tests {
                 "[Enter] Save/preview",
                 "[Esc] Normal",
             ],
+        );
+    }
+
+    #[test]
+    fn style_invariants_enforce_focus_titles_status_progress_and_disabled_actions() {
+        let focused_corner_count = |app: &App, width: u16, height: u16| {
+            let palette = ThemePalette::for_app(app);
+            let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+            terminal
+                .draw(|frame| render_at(frame, app, literal_now()))
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .filter(|cell| cell.symbol() == "┌" && cell.fg == palette.focused_border)
+                .count()
+        };
+
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            for focus in [
+                FocusTarget::Navigator,
+                FocusTarget::Workspace,
+                FocusTarget::Inspector,
+            ] {
+                let mut app = literal_reference_app();
+                app.focus = focus;
+                assert_eq!(
+                    focused_corner_count(&app, width, height),
+                    1,
+                    "{width}x{height} {focus:?} must expose exactly one focused border"
+                );
+            }
+        }
+        let mut dialog = literal_reference_app();
+        dialog.focus = FocusTarget::Dialog;
+        dialog.dialogs.push_back(Dialog::BuildOptions);
+        assert_eq!(focused_corner_count(&dialog, 100, 30), 1);
+
+        let titled = literal_reference_app();
+        let mut terminal = Terminal::new(TestBackend::new(160, 50)).unwrap();
+        terminal
+            .draw(|frame| render_at(frame, &titled, literal_now()))
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        for y in 2..48 {
+            for x in 0..160 {
+                if buffer[(x, y)].symbol() != "┌" {
+                    continue;
+                }
+                let right = (x + 1..160)
+                    .find(|right| buffer[(*right, y)].symbol() == "┐")
+                    .expect("every body border has a bounded right corner");
+                let title = (x + 1..right)
+                    .map(|column| buffer[(column, y)].symbol())
+                    .filter(|symbol| !matches!(*symbol, "─" | " "))
+                    .collect::<String>();
+                assert!(
+                    !title.is_empty(),
+                    "body pane at ({x},{y}) has no semantic section title"
+                );
+            }
+        }
+
+        let palette = ThemePalette::for_app(&titled);
+        for (tone, expected) in [
+            (StatusTone::Success, palette.success),
+            (StatusTone::Warning, palette.warning),
+            (StatusTone::Error, palette.error),
+            (StatusTone::Running, palette.running),
+            (StatusTone::Pending, palette.pending),
+            (StatusTone::Accent, palette.accent),
+            (StatusTone::Muted, palette.muted),
+            (StatusTone::Info, palette.informational),
+            (StatusTone::Disabled, palette.disabled),
+        ] {
+            assert_eq!(status_tone_style(&palette, tone).fg, Some(expected));
+            assert!(!tone.marker().is_empty());
+        }
+
+        let mut state_app = App::new(32, 8192);
+        state_app.screen = Screen::Tasks;
+        state_app.reduced_motion = true;
+        let states = [
+            (TaskState::Queued, None),
+            (TaskState::Waiting, None),
+            (TaskState::Active, Some(42)),
+            (TaskState::Active, None),
+            (TaskState::Completed, Some(100)),
+            (TaskState::Failed, None),
+            (TaskState::Cancelled, None),
+            (TaskState::Lost, None),
+        ];
+        let tasks = states
+            .iter()
+            .enumerate()
+            .map(|(index, (state, progress))| yoctui_model::TaskInfo {
+                id: yoctui_model::TaskId(format!("recipe-{index}:do_state")),
+                recipe: format!("recipe-{index}"),
+                task: format!("do_state_{index}"),
+                state: *state,
+                progress: *progress,
+                ..Default::default()
+            })
+            .collect::<Vec<_>>();
+        let rows = tasks
+            .iter()
+            .zip(states)
+            .map(|(task, (state, _))| TaskRowRef::Task { task, state })
+            .collect::<Vec<_>>();
+        let mut task_terminal = Terminal::new(TestBackend::new(120, 16)).unwrap();
+        task_terminal
+            .draw(|frame| render_task_table(frame, &state_app, frame.area(), &rows, literal_now()))
+            .unwrap();
+        let task_output = task_terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        for expected in [
+            "· Queued",
+            "○ Waiting",
+            "▶ Running",
+            "progress unknown",
+            "42%",
+            "✓ Succeeded",
+            "100%",
+            "✕ Failed",
+            "■ Cancelled",
+            "? Lost",
+        ] {
+            assert!(
+                task_output.contains(expected),
+                "missing {expected}: {task_output}"
+            );
+        }
+        assert_eq!(
+            task_output.matches('%').count(),
+            2,
+            "only authoritative active/completed percentages may render: {task_output}"
+        );
+
+        let items = vec![
+            ActionListItem {
+                marker: "✓",
+                label: "Enabled action".into(),
+                shortcut: "e".into(),
+                state: "Local".into(),
+                enabled: true,
+                details: Vec::new(),
+            },
+            ActionListItem {
+                marker: "×",
+                label: "Disabled action".into(),
+                shortcut: "d".into(),
+                state: "Disabled".into(),
+                enabled: false,
+                details: Vec::new(),
+            },
+        ];
+        let mut action_terminal = Terminal::new(TestBackend::new(60, 2)).unwrap();
+        action_terminal
+            .draw(|frame| {
+                frame.render_widget(
+                    Paragraph::new(action_list(&items, 60, inspector_action_styles(&titled))),
+                    frame.area(),
+                )
+            })
+            .unwrap();
+        let disabled_row = &action_terminal.backend().buffer().content[60..120];
+        assert!(disabled_row.iter().any(|cell| cell.symbol() == "×"));
+        assert!(
+            disabled_row
+                .iter()
+                .filter(|cell| cell.symbol() != " ")
+                .all(|cell| {
+                    cell.fg == palette.disabled
+                        && cell.bg != palette.selection_background
+                        && cell.fg != palette.accent
+                })
         );
     }
 

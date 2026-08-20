@@ -5486,18 +5486,18 @@ notes = "Four reviewed 160x50 fixed-clock fixtures serialize every terminal symb
 id = "VISUAL-TEST-003"
 milestone = "M19"
 title = "Add style invariant tests"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 559
 required = true
 depends_on = ["VISUAL-TEST-002"]
 verify = ["cargo test -p yoctui-ui style_invariants"]
-notes = "Verify one focus highlight, section titles, active borders, semantic status roles, progress/state agreement, and disabled-action styling."
+notes = "An aggregate TestBackend invariant suite enforces exactly one focused-border corner across wide/medium/narrow panes and dialogs, non-empty body section titles, every StatusTone-to-theme mapping, textual task lifecycle/progress agreement, and disabled-action styling. It found and fixed multi-section Task Inspector borders that all appeared focused; only the primary Inspector section now owns focus."
 
 [[task]]
 id = "INPUT-TEST-001"
 milestone = "M19"
 title = "Test every documented shortcut"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 560
 required = true
 depends_on = ["FOOTER-UI-001", "PALETTE-UI-001"]

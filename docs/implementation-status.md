@@ -11,9 +11,17 @@ Status values:
 
 ## Current phase
 
-`VISUAL-TEST-003` is `IN_PROGRESS`. It will aggregate buffer-level invariants
-for exactly one focus highlight, section titles, focused borders, semantic
-status roles, progress/state agreement, and disabled-action presentation.
+`INPUT-TEST-001` is `IN_PROGRESS`. It will dispatch every documented
+next-generation shortcut through the typed input path and prove the keymap,
+footer, and Help catalog remain in agreement.
+
+`VISUAL-TEST-003` is `DONE`: an aggregate TestBackend suite enforces exactly
+one focused-border corner across wide, medium, narrow, and modal states;
+non-empty body section titles; every semantic status role; task lifecycle and
+progress agreement; and disabled-action styling. It found and fixed a real
+focus ambiguity where every Task Inspector subsection used the focused border.
+Only the primary Inspector section now owns focus, with the subordinate facts,
+output, actions, and system panes visibly inactive.
 
 `VISUAL-TEST-002` is `DONE`: four reviewed 160x50 fixed-clock fixtures now
 serialize every terminal symbol and style for idle Dashboard, active Tasks at

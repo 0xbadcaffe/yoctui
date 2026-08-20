@@ -2,21 +2,26 @@
 
 ## Task
 
-**ID:** VISUAL-TEST-003
-**Title:** Add style invariant tests
+**ID:** INPUT-TEST-001
+**Title:** Test every documented shortcut
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add aggregate buffer-level tests that enforce the visual semantics shared by
-all next-generation workbench scenes, independent of any one golden fixture.
+Dispatch every documented next-generation shortcut through the real typed
+input path and prove the authoritative keymap, contextual footer, and Help
+catalog agree on its route and label.
 
 ## Dependencies
 
-- `VISUAL-TEST-002` — DONE
+- `FOOTER-UI-001` — DONE
+- `PALETTE-UI-001` — DONE
 
 ## Relevant files
 
+- `crates/yoctui-e2e/`
+- `crates/yoctui-app/`
+- `crates/yoctui-model/`
 - `crates/yoctui-ui/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
@@ -25,21 +30,17 @@ all next-generation workbench scenes, independent of any one golden fixture.
 
 ## Definition of done
 
-- Exactly one pane exposes the focused-border treatment in each supported
-  responsive state.
-- Every rendered pane has a non-empty semantic section title and focused panes
-  never use the inactive border style.
-- Status text maps through semantic theme roles and never depends on color
-  alone.
-- Task progress presentation agrees with queued, active, terminal, and unknown
-  task states.
-- Disabled actions remain textual/discoverable and never use enabled or
-  selected presentation.
+- Every authoritative shortcut is dispatched and produces its expected typed
+  action or state transition.
+- Function keys, global keys, prefix chords, contextual workspace keys, and
+  modal routes are covered without generic shell fallbacks.
+- Footer labels and Help documentation agree with the keymap catalog.
+- Duplicate or shadowed documented bindings fail deterministically.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui style_invariants
+cargo test -p yoctui-e2e next_generation_keymap
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
