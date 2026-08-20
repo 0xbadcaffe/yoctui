@@ -11,9 +11,18 @@ Status values:
 
 ## Current phase
 
-`PALETTE-UI-001` is `IN_PROGRESS`. It will polish the focus-trapped command
-palette overlay around the shared search presentation, typed command catalog,
-availability, shortcuts, descriptions, and bounded scrolling.
+`DIALOG-UI-001` is `IN_PROGRESS`. It will unify typed dialog title, body,
+field alignment, selected and disabled controls, buttons, keyboard hints, and
+validation while preserving focus traps and confirmation semantics.
+
+`PALETTE-UI-001` is `DONE`: one focus-trapped overlay now uses documented
+centered/inset geometry, shared counted search, wide
+`Command | Shortcut | Availability` columns, fact-preserving narrow rows,
+marker-plus-text compatibility/local availability, exact bounded detail, and
+a selected/total visible-row window. Empty/long queries, local disablement,
+wide/medium/minimum layouts, high contrast, monochrome, no-color, and reduced
+motion pass. All 188 UI tests, the full workspace suite, strict clippy, and 43
+bridge tests pass without changing the canonical shell golden.
 
 `SEARCH-UI-001` is `DONE`: one responsive search line now projects explicit
 `EDITING`/`FILTERED`/`IDLE` state, a cell-bounded query and text cursor,

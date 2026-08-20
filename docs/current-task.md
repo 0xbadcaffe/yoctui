@@ -2,24 +2,25 @@
 
 ## Task
 
-**ID:** PALETTE-UI-001
-**Title:** Polish command palette
+**ID:** DIALOG-UI-001
+**Title:** Polish typed dialogs
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Polish the focus-trapped command palette into a responsive workbench overlay
-that clearly presents command, shortcut, availability, description, shared
-search state, and bounded scroll position.
+Unify every typed dialog around one documented visual structure for title,
+body, aligned fields, selection, disabled state, buttons, keyboard hints, and
+validation while retaining typed focus and confirmation semantics.
 
 ## Dependencies
 
-- `SEARCH-UI-001` — DONE
+- `FOUNDATION-UI-003` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
 - `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-app/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -27,25 +28,25 @@ search state, and bounded scroll position.
 
 ## Definition of done
 
-- The overlay is centered at supported wide/medium sizes and safely fills the
-  useful narrow viewport without clipping controls.
-- Every visible row presents command, shortcut, and exact availability from
-  the existing typed command catalog.
-- Selection exposes description plus disabled/compatibility reason without
-  hiding the result list.
-- Shared search state, result count, and clear behavior remain visible.
-- A bounded scroll indicator names the selected result position and visible
-  window; no command list is duplicated in rendering code.
-- Palette focus remains trapped until close or typed activation, with clear
-  selection and disabled presentation in all themes and no-color mode.
-- Empty, no-match, long-content, wide, medium, narrow, and minimum terminal
-  states remain useful and panic-free.
+- Shared dialog primitives provide consistent border, title, body, aligned
+  field, selected-control, disabled-control, button, hint, and validation
+  presentation without erasing typed dialog identity.
+- Dialogs remain modal and focus trapped; closing restores the exact previous
+  pane and destructive confirmation behavior does not weaken.
+- Enabled and disabled actions are textually distinct, and disabled reasons
+  remain discoverable without relying on color.
+- Validation errors have a stable bounded area and do not displace or clip
+  confirmation controls.
+- Wide, medium, narrow, minimum, long-content, high-contrast, no-color, and
+  reduced-motion dialog states remain useful and panic-free.
+- Existing typed workflows and input mappings remain intact; no one-off shell
+  execution or rendering-owned state mutation is introduced.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_palette
-cargo test -p yoctui-app command_palette
+cargo test -p yoctui-ui next_generation_dialogs
+cargo test -p yoctui-model dialog
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh

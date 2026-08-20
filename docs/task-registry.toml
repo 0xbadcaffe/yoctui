@@ -5387,18 +5387,18 @@ notes = "One responsive search line now projects explicit EDITING/FILTERED/IDLE 
 id = "PALETTE-UI-001"
 milestone = "M19"
 title = "Polish command palette"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 550
 required = true
 depends_on = ["SEARCH-UI-001"]
 verify = ["cargo test -p yoctui-ui next_generation_palette", "cargo test -p yoctui-app command_palette"]
-notes = "Render command, shortcut, availability, description, search, and scroll through one responsive focus-trapped overlay."
+notes = "One focus-trapped overlay now uses documented centered/inset geometry, shared counted search, wide Command/Shortcut/Availability columns, fact-preserving narrow rows, marker-plus-text authority, exact bounded detail, and a centered scroll window. Empty/long/local-disablement, wide/medium/minimum, theme, no-color, and reduced-motion cases pass 188 UI tests; the full workspace, strict clippy, and 43 bridge tests pass."
 
 [[task]]
 id = "DIALOG-UI-001"
 milestone = "M19"
 title = "Polish typed dialogs"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 551
 required = true
 depends_on = ["FOUNDATION-UI-003"]

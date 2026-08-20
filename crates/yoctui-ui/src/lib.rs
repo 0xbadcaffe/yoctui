@@ -2442,121 +2442,117 @@ fn build_environment_clone_review(
     );
 }
 
-fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
-    let width = area.width.saturating_sub(12).clamp(60, 100);
-    let height = area.height.saturating_sub(4).clamp(16, 26);
-    let popup = Rect::new(
-        (area.width.saturating_sub(width)) / 2,
-        (area.height.saturating_sub(height)) / 2,
+fn command_palette_rect(area: Rect) -> Rect {
+    let (horizontal_inset, vertical_inset, maximum_width, maximum_height): (u16, u16, u16, u16) =
+        match area.width {
+            130.. => (6, 2, 112, 30),
+            100..=129 => (3, 2, area.width, 28),
+            _ => (1, 1, area.width, area.height),
+        };
+    let width = area
+        .width
+        .saturating_sub(horizontal_inset.saturating_mul(2))
+        .min(maximum_width);
+    let height = area
+        .height
+        .saturating_sub(vertical_inset.saturating_mul(2))
+        .min(maximum_height);
+    Rect::new(
+        area.x + area.width.saturating_sub(width) / 2,
+        area.y + area.height.saturating_sub(height) / 2,
         width,
         height,
-    );
-    let commands = app.filtered_command_palette_commands();
-    let visible_count = usize::from(height.saturating_sub(10)).max(1);
-    let start = app
-        .command_palette_selection
-        .saturating_sub(visible_count.saturating_sub(1));
+    )
+}
+
+fn palette_command_availability(
+    app: &App,
+    command: &yoctui_model::PaletteCommand,
+) -> (String, Style) {
     let palette = ThemePalette::for_app(app);
-    let mut lines = vec![
-        search_line(
-            app,
-            &app.command_palette_query,
-            true,
-            (!commands.is_empty()).then_some(app.command_palette_selection),
-            commands.len(),
-            SearchNavigation::Results,
-            SearchExit::Close,
-            width.saturating_sub(2),
-        ),
-        Line::from(""),
-    ];
-    if commands.is_empty() {
-        lines.push(Line::styled(
-            "No commands match this search.",
+    if !command.enabled() {
+        return (
+            "– Unavailable".into(),
             palette.role(palette.disabled, Modifier::DIM),
-        ));
-    } else {
-        lines.extend(
-            commands
-                .iter()
-                .enumerate()
-                .skip(start)
-                .take(visible_count)
-                .map(|(index, command)| {
-                    let disabled = command.disabled_reason.is_some();
-                    let marker = if index == app.command_palette_selection {
-                        ">"
-                    } else {
-                        " "
-                    };
-                    let state = compatibility_workspace_state_label(command.compatibility_state);
-                    let suffix =
-                        if command.compatibility_state == WorkspaceAvailabilityState::Available {
-                            if disabled { "Unavailable" } else { "" }
-                        } else {
-                            state
-                        };
-                    let style = if index == app.command_palette_selection {
-                        selected_style(app, true)
-                    } else if disabled {
-                        palette.role(palette.disabled, Modifier::DIM)
-                    } else {
-                        Style::default()
-                    };
-                    Line::styled(
-                        format!(
-                            "{marker} {}  [{}]{}{}",
-                            command.label,
-                            command.shortcut,
-                            if suffix.is_empty() { "" } else { " (" },
-                            if suffix.is_empty() {
-                                String::new()
-                            } else {
-                                format!("{suffix})")
-                            }
-                        ),
-                        style,
-                    )
-                }),
         );
     }
-    lines.push(Line::from(""));
-    if let Some(command) = commands.get(app.command_palette_selection) {
-        lines.push(Line::styled(
-            command.description,
+    match command.compatibility_state {
+        WorkspaceAvailabilityState::Available => (
+            "✓ Ready".into(),
+            palette.role(palette.success, Modifier::BOLD),
+        ),
+        WorkspaceAvailabilityState::AvailableWithLimitations => (
+            "! Limited".into(),
+            palette.role(palette.warning, Modifier::BOLD),
+        ),
+        WorkspaceAvailabilityState::Unavailable => (
+            "✕ Unavailable".into(),
+            palette.role(palette.error, Modifier::BOLD),
+        ),
+        WorkspaceAvailabilityState::Unsupported => (
+            "– Unsupported".into(),
+            palette.role(palette.disabled, Modifier::DIM),
+        ),
+        WorkspaceAvailabilityState::Unknown => (
+            "? Unknown".into(),
             palette.role(palette.informational, Modifier::ITALIC),
+        ),
+    }
+}
+
+fn command_palette_detail_lines(
+    app: &App,
+    command: Option<&yoctui_model::PaletteCommand>,
+    width: u16,
+    maximum: usize,
+) -> Vec<Line<'static>> {
+    let palette = ThemePalette::for_app(app);
+    let Some(command) = command else {
+        return vec![Line::styled(
+            "No command selected.",
+            palette.role(palette.muted, Modifier::DIM),
+        )];
+    };
+    let mut values = vec![
+        (
+            command.description.to_owned(),
+            palette.role(palette.informational, Modifier::ITALIC),
+        ),
+        (
+            format!(
+                "Available: {} · Compatibility: {}",
+                if command.enabled() { "yes" } else { "no" },
+                compatibility_workspace_state_label(command.compatibility_state)
+            ),
+            compatibility_workspace_state_style(app, command.compatibility_state),
+        ),
+    ];
+    if let Some(reason) = command.disabled_reason.as_deref() {
+        values.push((
+            format!("Cannot run: {reason}"),
+            palette.role(palette.warning, Modifier::BOLD),
         ));
-        if command.compatibility_state != WorkspaceAvailabilityState::Available {
-            lines.push(Line::styled(
-                format!(
-                    "Compatibility: {}",
-                    compatibility_workspace_state_label(command.compatibility_state)
-                ),
-                compatibility_workspace_state_style(app, command.compatibility_state),
-            ));
-        }
-        if let Some(reason) = command.disabled_reason.as_deref() {
-            lines.push(Line::styled(
-                format!("Cannot run: {reason}"),
-                palette.role(palette.warning, Modifier::BOLD),
-            ));
-        }
-        if let Some(reason) = command.compatibility_reason.as_deref()
-            && command.disabled_reason.as_deref() != Some(reason)
-        {
-            lines.push(Line::styled(
-                format!("Reason: {reason}"),
-                palette.role(palette.warning, Modifier::BOLD),
-            ));
-        }
-        for limitation in &command.compatibility_limitations {
-            lines.push(Line::styled(
-                format!("Limitation: {limitation}"),
-                palette.role(palette.warning, Modifier::ITALIC),
-            ));
-        }
-        if !command.implementations.is_empty() {
-            lines.push(Line::from(format!(
+    }
+    if let Some(reason) = command.compatibility_reason.as_deref()
+        && command.disabled_reason.as_deref() != Some(reason)
+    {
+        values.push((
+            format!("Reason: {reason}"),
+            palette.role(palette.warning, Modifier::BOLD),
+        ));
+    }
+    if !command.compatibility_limitations.is_empty() {
+        values.push((
+            format!(
+                "Limitations: {}",
+                command.compatibility_limitations.join("; ")
+            ),
+            palette.role(palette.warning, Modifier::ITALIC),
+        ));
+    }
+    if !command.implementations.is_empty() {
+        values.push((
+            format!(
                 "Implementation: {}",
                 command
                     .implementations
@@ -2564,24 +2560,195 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
                     .map(|(_, implementation)| implementation.as_str())
                     .collect::<Vec<_>>()
                     .join(", ")
-            )));
-        }
+            ),
+            palette.role(palette.secondary_foreground, Modifier::DIM),
+        ));
     }
-    lines.push(Line::from(""));
-    lines.push(Line::from(
-        "Type to search  ↑/↓ select  Enter run  Backspace edit  Ctrl+U clear  Esc close",
-    ));
+    values
+        .into_iter()
+        .take(maximum)
+        .map(|(value, style)| Line::styled(bounded_cell_text(&value, width), style))
+        .collect()
+}
 
+fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
+    let popup = command_palette_rect(area);
+    if popup.width < 4 || popup.height < 4 {
+        return;
+    }
+    let palette = ThemePalette::for_app(app);
     clear_popup(frame, app, popup);
+    let outer = Block::default()
+        .title("Command Palette · focus trapped")
+        .borders(Borders::ALL)
+        .style(palette.base())
+        .border_style(palette.focus());
+    let inner = outer.inner(popup);
+    frame.render_widget(outer, popup);
+    if inner.is_empty() {
+        return;
+    }
+
+    let detail_height = if popup.height >= 24 { 7 } else { 5 };
+    let regions = Layout::vertical([
+        Constraint::Length(1),
+        Constraint::Min(4),
+        Constraint::Length(detail_height),
+        Constraint::Length(1),
+    ])
+    .split(inner);
+    let commands = app.filtered_command_palette_commands();
+    let selection = app
+        .command_palette_selection
+        .min(commands.len().saturating_sub(1));
     frame.render_widget(
-        Paragraph::new(Text::from(lines))
-            .block(
-                Block::default()
-                    .title("Command palette")
-                    .borders(Borders::ALL),
+        Paragraph::new(search_line(
+            app,
+            &app.command_palette_query,
+            true,
+            (!commands.is_empty()).then_some(selection),
+            commands.len(),
+            SearchNavigation::Results,
+            SearchExit::Close,
+            regions[0].width,
+        )),
+        regions[0],
+    );
+
+    let visible_count = usize::from(regions[1].height.saturating_sub(3)).max(1);
+    let maximum_start = commands.len().saturating_sub(visible_count);
+    let start = selection
+        .saturating_sub(visible_count / 2)
+        .min(maximum_start);
+    let end = start.saturating_add(visible_count).min(commands.len());
+    let current = if commands.is_empty() {
+        0
+    } else {
+        selection + 1
+    };
+    let window_start = if commands.is_empty() { 0 } else { start + 1 };
+    let list_title = format!(
+        "Commands · {current}/{} · rows {window_start}–{end}",
+        commands.len()
+    );
+    let list_block = Block::default()
+        .title(list_title)
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(palette.inactive_border));
+    if commands.is_empty() {
+        frame.render_widget(
+            StateView {
+                kind: StateKind::Empty,
+                summary: "No commands match this search.".into(),
+                detail: Some("Backspace edits; Ctrl+U clears the query.".into()),
+                action: None,
+            }
+            .paragraph(
+                palette.role(palette.muted, Modifier::BOLD),
+                palette.role(palette.secondary_foreground, Modifier::DIM),
             )
-            .wrap(Wrap { trim: true }),
-        popup,
+            .block(list_block),
+            regions[1],
+        );
+    } else if regions[1].width >= 88 {
+        let rows = commands
+            .iter()
+            .enumerate()
+            .skip(start)
+            .take(visible_count)
+            .map(|(index, command)| {
+                let (availability, state_style) = palette_command_availability(app, command);
+                let row_style = if index == selection {
+                    selected_style(app, true)
+                } else {
+                    palette.base()
+                };
+                let label_style = if command.enabled() {
+                    palette.base()
+                } else {
+                    palette.role(palette.disabled, Modifier::DIM)
+                };
+                Row::new([
+                    Cell::from(format!(
+                        "{} {}",
+                        if index == selection { "▶" } else { " " },
+                        command.label
+                    ))
+                    .style(label_style),
+                    Cell::from(command.shortcut.to_owned())
+                        .style(palette.role(palette.secondary_foreground, Modifier::DIM)),
+                    Cell::from(availability).style(state_style),
+                ])
+                .style(row_style)
+            });
+        frame.render_widget(
+            Table::new(
+                rows,
+                [
+                    Constraint::Min(20),
+                    Constraint::Length(16),
+                    Constraint::Length(16),
+                ],
+            )
+            .header(
+                Row::new(["Command", "Shortcut", "Availability"])
+                    .style(palette.role(palette.heading, Modifier::BOLD)),
+            )
+            .block(list_block)
+            .column_spacing(1),
+            regions[1],
+        );
+    } else {
+        let row_width = regions[1].width.saturating_sub(2);
+        let rows = commands
+            .iter()
+            .enumerate()
+            .skip(start)
+            .take(visible_count)
+            .map(|(index, command)| {
+                let (availability, state_style) = palette_command_availability(app, command);
+                let value = format!(
+                    "{} {} · {} · {availability}",
+                    if index == selection { "▶" } else { " " },
+                    command.label,
+                    command.shortcut,
+                );
+                Row::new([bounded_cell_text(&value, row_width)]).style(if index == selection {
+                    selected_style(app, true)
+                } else {
+                    state_style
+                })
+            });
+        frame.render_widget(
+            Table::new(rows, [Constraint::Min(1)]).block(list_block),
+            regions[1],
+        );
+    }
+
+    let detail_block = Block::default()
+        .title("Selected command")
+        .borders(Borders::ALL)
+        .border_style(Style::default().fg(palette.inactive_border));
+    let detail_inner = detail_block.inner(regions[2]);
+    let detail_lines = command_palette_detail_lines(
+        app,
+        commands.get(selection),
+        detail_inner.width,
+        usize::from(detail_inner.height),
+    );
+    frame.render_widget(
+        Paragraph::new(detail_lines)
+            .block(detail_block)
+            .wrap(Wrap { trim: false }),
+        regions[2],
+    );
+    frame.render_widget(
+        Paragraph::new(bounded_cell_text(
+            "Esc close · Enter run · ↑/↓ select · Type search · Backspace edit · Ctrl+U clear",
+            regions[3].width,
+        ))
+        .style(palette.role(palette.secondary_foreground, Modifier::DIM)),
+        regions[3],
     );
 }
 
@@ -18466,7 +18633,7 @@ mod tests {
         assert!(output.contains("Build image"));
         assert!(output.contains("Cannot run:"));
         assert!(output.contains("Load a Yocto workspace first"));
-        assert!(output.contains("Type to search"));
+        assert!(output.contains("Type search"));
 
         app.command_palette_query = "nothing matches this".into();
         let output = rendered_text(&app, 80, 24);
@@ -18488,9 +18655,115 @@ mod tests {
             let output = rendered_text(&app, 80, 24);
             assert!(output.contains("Open Settings"));
             assert!(output.contains("persistent visual"));
-            assert!(output.contains("[none]"));
+            assert!(output.contains("none"));
         }
     }
+
+    #[test]
+    fn next_generation_palette_uses_documented_responsive_geometry() {
+        for (area, expected) in [
+            (Rect::new(0, 0, 200, 60), Rect::new(44, 15, 112, 30)),
+            (Rect::new(0, 0, 160, 50), Rect::new(24, 10, 112, 30)),
+            (Rect::new(0, 0, 130, 40), Rect::new(9, 5, 112, 30)),
+            (Rect::new(0, 0, 100, 30), Rect::new(3, 2, 94, 26)),
+            (Rect::new(0, 0, 80, 24), Rect::new(1, 1, 78, 22)),
+        ] {
+            assert_eq!(command_palette_rect(area), expected);
+        }
+        assert_eq!(
+            command_palette_rect(Rect::new(7, 11, 100, 30)),
+            Rect::new(10, 13, 94, 26)
+        );
+    }
+
+    #[test]
+    fn next_generation_palette_retains_typed_facts_at_every_breakpoint() {
+        for (width, height, has_columns) in [(160, 50, true), (100, 30, true), (80, 24, false)] {
+            let mut app = App::new(32, 8192);
+            app.command_palette_open = true;
+            app.focus = FocusTarget::CommandPalette;
+            app.command_palette_query = "Open Dashboard".into();
+            let output = rendered_text(&app, width, height);
+            for expected in [
+                "Command Palette · focus trapped",
+                "[EDITING]",
+                "Commands · 1/1 · rows 1–1",
+                "Open Dashboard",
+                "Esc",
+                "✓ Ready",
+                "Selected command",
+                "Show build status",
+                "Available: yes",
+                "Esc close",
+            ] {
+                assert!(output.contains(expected), "{width}x{height}: {output}");
+            }
+            assert_eq!(output.matches('▶').count(), 1, "{width}x{height}: {output}");
+            assert_eq!(output.contains("Shortcut"), has_columns, "{output}");
+            assert_eq!(output.contains("Availability"), has_columns, "{output}");
+        }
+    }
+
+    #[test]
+    fn next_generation_palette_explains_local_disablement_without_false_ready_state() {
+        let mut app = App::new(32, 8192);
+        app.command_palette_open = true;
+        app.focus = FocusTarget::CommandPalette;
+        app.command_palette_query = "Build image".into();
+        let output = rendered_text(&app, 160, 40);
+        assert!(output.contains("– Unavailable"), "{output}");
+        assert!(output.contains("Available: no"), "{output}");
+        assert!(
+            output.contains("Cannot run: Load a Yocto workspace first"),
+            "{output}"
+        );
+        assert!(!output.contains("✓ Ready"), "{output}");
+    }
+
+    #[test]
+    fn next_generation_palette_bounds_scroll_and_clears_stale_empty_detail() {
+        let mut app = App::new(32, 8192);
+        app.command_palette_open = true;
+        app.focus = FocusTarget::CommandPalette;
+        app.command_palette_selection = 15;
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("Commands · 16/16 · rows 7–16"), "{output}");
+        assert!(output.contains("Open Help"), "{output}");
+
+        app.command_palette_query = "nothing matches this".repeat(20);
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("Commands · 0/0 · rows 0–0"), "{output}");
+        assert!(
+            output.contains("No commands match this search."),
+            "{output}"
+        );
+        assert!(output.contains("No command selected."), "{output}");
+        assert!(!output.contains("Show all global"), "{output}");
+    }
+
+    #[test]
+    fn next_generation_palette_is_explicit_in_accessible_modes() {
+        for (theme, color_enabled) in [
+            (Theme::HighContrast, true),
+            (Theme::Monochrome, true),
+            (Theme::DarkPro, false),
+        ] {
+            let mut app = App::new(32, 8192);
+            app.theme = theme;
+            app.color_enabled = color_enabled;
+            app.reduced_motion = true;
+            app.command_palette_open = true;
+            app.focus = FocusTarget::CommandPalette;
+            app.command_palette_query = "Open Settings".into();
+            let output = rendered_text(&app, 80, 24);
+            assert!(output.contains("▶ Open Settings"), "{output}");
+            assert!(output.contains("✓ Ready"), "{output}");
+            assert!(output.contains("Available: yes"), "{output}");
+            assert!(output.contains("focus trapped"), "{output}");
+            assert_eq!(output.matches('▶').count(), 1, "{output}");
+        }
+    }
+
     #[test]
     fn theme_command_palette_and_no_color_override_are_explicit() {
         let mut app = App::new(10, 1_000);

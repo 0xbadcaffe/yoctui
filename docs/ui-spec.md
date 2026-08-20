@@ -3086,11 +3086,34 @@ The palette uses one typed catalog with stable ordering. Each result shows:
 - selected state
 - `unavailable` state and its exact requirement
 
+The overlay uses three responsive geometries. At 130+ columns it is centered,
+up to 112 columns wide, and up to 30 rows high. At 100–129 columns it is inset
+three cells on each side and two rows vertically. At 80–99 columns it keeps a
+one-cell horizontal and vertical inset and consumes the remaining useful
+viewport. It never computes a rectangle larger than the terminal.
+
+Inside the border, regions are stable: shared one-line search, bounded command
+table, selected-command detail, then one-line controls. The wide/medium table
+columns are `Command | Shortcut | Availability`; narrow rows retain the same
+three facts in one bounded cell. Availability is always marker plus text:
+`✓ Ready`, `! Limited`, `✕ Unavailable`, `– Unsupported`, `– Unavailable`, or
+`? Unknown`; it is never color-only. The selected row uses the shared full-row
+selection treatment.
+
+The command-table title reports selected/total result position and visible
+window as `Commands · <current>/<total> · rows <start>–<end>`. Selection stays
+inside a bounded, centered viewport where practical. The detail region always
+names the selected description and `Available: yes/no`; exact disabled reason,
+compatibility reason, limitations, and implementation IDs follow in priority
+order and ellipsize rather than taking rows from the command list. A no-match
+query renders an explicit empty result plus `0/0`; it does not show stale
+selected details.
+
 Typing filters case-insensitively across labels, descriptions, and shortcuts.
-`Backspace` edits the query, `Up`/`Down` moves through filtered results,
-`Enter` activates an available result, and `Esc` closes the palette. Empty
-results show an explicit message. Activating an unavailable command or an
-empty result changes no application state.
+`Backspace` edits the query, `Ctrl+U` clears it, `Up`/`Down` moves through
+filtered results, `Enter` activates an available result, and `Esc` closes the
+palette. Empty results show an explicit message. Activating an unavailable
+command or an empty result changes no application state.
 
 Palette input is routed before dialog and workspace input and remains
 focus-trapped. Opening records the exact active pane. Closing without a
