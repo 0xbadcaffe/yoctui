@@ -281,6 +281,17 @@ history only. It does not increase redraw frequency: new points arrive on the
 telemetry sampling cadence, and reduced motion disables any presentation-only
 animation.
 
+The CPU cell uses a horizontal terminal gauge with a numeric label in every
+determinate presentation. At 28 or more cell columns the label is
+`CPU n% · N cores`; at 16–27 columns the authoritative core count contracts to
+`Nc`; below 16 columns the gauge retains `CPU n%` and omits the lower-priority
+core count. A missing CPU sample renders `CPU ! unavailable`, never `0%` or a
+perpetual activity claim. A missing logical core count is omitted rather than
+rendered as a guessed or question-mark count. Normal utilization uses the
+semantic CPU-graph role, while warning/error thresholds use their semantic
+roles; no-color retains the text and attribute distinction. The gauge is
+determinate and unchanged by reduced-motion mode.
+
 ##### Telemetry provenance audit
 
 The typed provenance catalog is authoritative for whether a metric may render.

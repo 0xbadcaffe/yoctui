@@ -3757,6 +3757,53 @@ fn telemetry_meter_style(app: &App, percent: u8) -> Style {
     }
 }
 
+fn cpu_meter_style(app: &App, percent: u8) -> Style {
+    let palette = ThemePalette::for_app(app);
+    if percent >= 90 {
+        palette.role(palette.error, Modifier::BOLD)
+    } else if percent >= 70 {
+        palette.role(palette.warning, Modifier::BOLD)
+    } else {
+        palette.role(palette.graph_cpu, Modifier::BOLD)
+    }
+}
+
+fn cpu_gauge_label(cpu: u8, cores: Option<u16>, width: u16) -> String {
+    match (cores, width) {
+        (Some(cores), 28..) => format!("CPU {cpu:>3}% · {cores} cores"),
+        (Some(cores), 16..) => format!("CPU {cpu}% · {cores}c"),
+        (None, 28..) => format!("CPU {cpu:>3}%"),
+        _ => format!("CPU {cpu}%"),
+    }
+}
+
+fn render_cpu_gauge(frame: &mut Frame, app: &App, area: Rect) {
+    if area.is_empty() {
+        return;
+    }
+    let palette = ThemePalette::for_app(app);
+    if let Some(cpu) = app.host_telemetry.cpu_utilization_percent {
+        let cpu = cpu.min(100);
+        frame.render_widget(
+            Gauge::default()
+                .ratio(f64::from(cpu) / 100.0)
+                .label(cpu_gauge_label(
+                    cpu,
+                    app.host_telemetry.logical_cpu_count,
+                    area.width,
+                ))
+                .gauge_style(cpu_meter_style(app, cpu)),
+            area,
+        );
+    } else {
+        frame.render_widget(
+            Paragraph::new("CPU ! unavailable")
+                .style(palette.role(palette.disabled, Modifier::DIM)),
+            area,
+        );
+    }
+}
+
 fn render_history(frame: &mut Frame, label: &str, samples: &[u64], area: Rect, style: Style) {
     let columns = Layout::horizontal([Constraint::Length(9), Constraint::Min(1)]).split(area);
     frame.render_widget(Paragraph::new(label).style(style), columns[0]);
@@ -3776,21 +3823,7 @@ fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(block, area);
     let rows = Layout::vertical([Constraint::Length(1); 6]).split(inner);
 
-    if let Some(cpu) = app.host_telemetry.cpu_utilization_percent {
-        let cores = app
-            .host_telemetry
-            .logical_cpu_count
-            .map_or_else(|| "? cores".into(), |count| format!("{count} cores"));
-        frame.render_widget(
-            Gauge::default()
-                .ratio(f64::from(cpu.min(100)) / 100.0)
-                .label(format!("CPU {cpu:>3}% · {cores}"))
-                .gauge_style(telemetry_meter_style(app, cpu)),
-            rows[0],
-        );
-    } else {
-        frame.render_widget(Paragraph::new("CPU  sampling…"), rows[0]);
-    }
+    render_cpu_gauge(frame, app, rows[0]);
     let cpu_history = app
         .host_telemetry_history
         .cpu_percent
@@ -3919,7 +3952,7 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
     let cpu_utilization = app
         .host_telemetry
         .cpu_utilization_percent
-        .map_or_else(|| "sampling".into(), |percent| format!("{percent}%"));
+        .map_or_else(|| "unavailable".into(), |percent| format!("{percent}%"));
     let disk_available = app
         .host_telemetry
         .disk_available_bytes
@@ -16999,6 +17032,53 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Host CPU: 42%"));
         assert!(output.contains("Build disk free: 8.0 GiB"));
+    }
+    #[test]
+    fn next_generation_cpu_gauge_is_numeric_responsive_and_accessible() {
+        let render_gauge = |app: &App, width| {
+            let mut terminal = Terminal::new(TestBackend::new(width, 1)).unwrap();
+            terminal
+                .draw(|frame| render_cpu_gauge(frame, app, frame.area()))
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+
+        let mut app = App::new(10, 1_000);
+        app.host_telemetry.cpu_utilization_percent = Some(42);
+        app.host_telemetry.logical_cpu_count = Some(16);
+        let wide = render_gauge(&app, 36);
+        assert!(wide.contains("CPU  42% · 16 cores"), "{wide}");
+        let medium = render_gauge(&app, 18);
+        assert!(medium.contains("CPU 42% · 16c"), "{medium}");
+        let narrow = render_gauge(&app, 10);
+        assert!(narrow.contains("CPU 42%"), "{narrow}");
+        assert!(!narrow.contains("16c"), "{narrow}");
+
+        app.host_telemetry.logical_cpu_count = None;
+        let unknown_cores = render_gauge(&app, 36);
+        assert!(unknown_cores.contains("CPU  42%"), "{unknown_cores}");
+        assert!(!unknown_cores.contains("cores"), "{unknown_cores}");
+
+        app.host_telemetry.cpu_utilization_percent = None;
+        let unavailable = render_gauge(&app, 24);
+        assert!(unavailable.contains("CPU ! unavailable"), "{unavailable}");
+        assert!(!unavailable.contains("0%"), "{unavailable}");
+
+        app.host_telemetry.cpu_utilization_percent = Some(87);
+        app.host_telemetry.logical_cpu_count = Some(8);
+        app.theme = Theme::HighContrast;
+        app.reduced_motion = true;
+        let reduced_motion = render_gauge(&app, 36);
+        assert!(reduced_motion.contains("CPU  87% · 8 cores"));
+        app.color_enabled = false;
+        let no_color = render_gauge(&app, 18);
+        assert!(no_color.contains("CPU 87% · 8c"), "{no_color}");
     }
     #[test]
     fn dashboard_telemetry_cockpit_renders_gauges_history_and_load() {

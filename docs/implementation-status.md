@@ -11,9 +11,16 @@ Status values:
 
 ## Current phase
 
-`METRICS-UI-001` is `IN_PROGRESS`. It will turn the authoritative current CPU
-percentage and logical core count into a semantic compact gauge with a
-horizontal/compact narrow fallback and an honest unavailable state.
+`METRICS-UI-002` is `IN_PROGRESS`. It will give RAM the same responsive,
+semantic gauge quality while retaining an honestly rounded percentage and
+used/total byte values.
+
+`METRICS-UI-001` is `DONE`: the dashboard uses one dedicated semantic CPU
+gauge with numeric percentage, full and compact authoritative core-count
+labels, and a minimal narrow label. Missing utilization now says unavailable
+instead of implying ongoing sampling or rendering zero, and a missing core
+count is omitted instead of guessed. Wide, medium, narrow, high-contrast,
+no-color, reduced-motion, and existing cockpit fixtures pass focused coverage.
 
 `METRICS-MODEL-002` is `DONE`: one reducer-owned telemetry history now bounds
 CPU, RAM, disk read/write, and network RX/TX independently to the latest 60

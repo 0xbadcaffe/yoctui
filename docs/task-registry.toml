@@ -5255,18 +5255,18 @@ notes = "One reducer-owned history now independently bounds CPU, RAM, disk read/
 id = "METRICS-UI-001"
 milestone = "M19"
 title = "Add CPU gauge"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 538
 required = true
 depends_on = ["METRICS-MODEL-002", "FOUNDATION-UI-003"]
 verify = ["cargo test -p yoctui-ui next_generation_cpu_gauge"]
-notes = "Render numeric utilization and core count with a compact gauge and narrow horizontal fallback."
+notes = "Added one semantic determinate CPU gauge with numeric percentage, full/compact authoritative core-count labels, a minimal narrow fallback, and explicit unavailable text that never fabricates zero or perpetual sampling. Focused wide/medium/narrow, high-contrast, no-color, reduced-motion, and existing cockpit tests pass."
 
 [[task]]
 id = "METRICS-UI-002"
 milestone = "M19"
 title = "Add RAM gauge"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 539
 required = true
 depends_on = ["METRICS-UI-001"]
