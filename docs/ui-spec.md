@@ -3351,6 +3351,31 @@ they are forbidden in production widget rendering.
 These modes must not depend on the terminal's default foreground/background
 pair to distinguish focus, selection, severity, or progress.
 
+### Accessibility invariants
+
+Accessibility is a property of the rendered terminal buffer, not a separate
+workspace or a color-only theme:
+
+- every lifecycle and severity uses a stable marker plus a word (`▶ Running`,
+  `✓ Succeeded`, `✕ Failed`, `! Warning`, `? Lost`, and equivalent labels)
+- the focused pane has a bold focused border in attribute-only modes, selected
+  rows use reverse video, disabled controls are dim and say `Disabled`, and
+  errors are bold and underlined
+- every determinate bar or gauge includes its numeric percent and context;
+  indeterminate work says `progress unknown active` when reduced motion is on
+- reduced motion makes the same model state produce the same buffer regardless
+  of animation frame; running and pending meaning remains in text
+- section titles, table headings, paths, actions, validation errors, and
+  shortcut hints remain present as ordinary buffer text so terminal readers do
+  not need to infer meaning from box drawing, color, or animation
+- responsive hiding may remove lower-priority facts, but never the only focus
+  cue, state word, numeric progress equivalent, or disabled reason
+
+The accessibility invariant suite renders representative task, log, history,
+health, dialog, and compatibility states in high-contrast, monochrome,
+`--no-color`, and reduced-motion modes. It checks semantic text and terminal
+attributes independently; passing colored snapshots alone is insufficient.
+
 The resolved Yoctui color preference is authoritative at the terminal backend:
 when color is enabled, the backend emits the selected semantic palette even if
 the parent process exports `NO_COLOR`; when color is disabled in Settings or by

@@ -2367,9 +2367,9 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         let width = area.width.saturating_sub(12).clamp(38, 84);
         let popup = Rect::new(
             (area.width.saturating_sub(width)) / 2,
-            area.height.saturating_sub(10) / 2,
+            area.height.saturating_sub(11) / 2,
             width,
-            10,
+            11,
         );
         clear_popup(frame, app, popup);
         frame.render_widget(
@@ -5636,10 +5636,7 @@ fn render_task_table(
     } else {
         format!("Tasks: {target} · {}", task_filter_summary(app))
     };
-    let block = Block::default()
-        .title(title)
-        .borders(Borders::ALL)
-        .style(ThemePalette::for_app(app).base());
+    let block = pane_block(app, &title, app.focus == FocusTarget::Workspace);
     let inner = block.inner(area);
     frame.render_widget(block, area);
     if inner.is_empty() {
@@ -16698,6 +16695,130 @@ mod tests {
         slow.reduced_motion = true;
         assert_eq!(task_activity(&slow, None), " active");
         assert_eq!(task_activity(&slow, Some(0)), "");
+    }
+
+    #[test]
+    fn accessibility_invariants_survive_color_motion_and_responsive_modes() {
+        let mut app = literal_reference_app();
+        app.focus = FocusTarget::Workspace;
+        app.reduced_motion = true;
+        app.color_enabled = false;
+        app.theme = Theme::HighContrast;
+
+        for (width, height) in [(160, 48), (100, 30), (80, 24)] {
+            let output = rendered_text_at(&app, width, height, literal_now());
+            for expected in ["Tasks", "▶ Running", "72%"] {
+                assert!(
+                    output.contains(expected),
+                    "{width}x{height} missing {expected}: {output}"
+                );
+            }
+        }
+
+        let mut terminal = Terminal::new(TestBackend::new(160, 48)).unwrap();
+        terminal
+            .draw(|frame| render_at(frame, &app, literal_now()))
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        assert!(
+            buffer
+                .content
+                .iter()
+                .all(|cell| cell.fg == Color::Reset && cell.bg == Color::Reset),
+            "--no-color must leave no semantic RGB/ANSI color in the terminal buffer"
+        );
+        assert!(
+            buffer
+                .content
+                .iter()
+                .any(|cell| cell.modifier.contains(Modifier::REVERSED)),
+            "the selected task row must remain visible through reverse video"
+        );
+        assert!(
+            buffer.content.iter().any(|cell| {
+                matches!(cell.symbol(), "─" | "│" | "┌" | "┐" | "└" | "┘")
+                    && cell.modifier.contains(Modifier::BOLD)
+            }),
+            "the focused pane border must remain visible without color"
+        );
+
+        app.animation_frame = 0;
+        let stable = rendered_text_at(&app, 160, 48, literal_now());
+        app.animation_frame = u64::MAX;
+        assert_eq!(
+            rendered_text_at(&app, 160, 48, literal_now()),
+            stable,
+            "reduced motion must make presentation independent of animation frame"
+        );
+
+        app.dialogs.push_back(Dialog::BuildOptions);
+        let dialog = rendered_text_at(&app, 80, 24, literal_now());
+        for expected in [
+            "modal · Image build options",
+            "Machine:",
+            "b  Build image",
+            "Esc closes",
+        ] {
+            assert!(
+                dialog.contains(expected),
+                "dialog missing {expected}: {dialog}"
+            );
+        }
+
+        app.dialogs.clear();
+        app.screen = Screen::BuildHistory;
+        let history = rendered_text_at(&app, 160, 48, literal_now());
+        for expected in ["Job History", "✓ Succeeded", "✕ Failed"] {
+            assert!(
+                history.contains(expected),
+                "history missing {expected}: {history}"
+            );
+        }
+
+        app.screen = Screen::Logs;
+        let _ = update(
+            &mut app,
+            Action::Log(yoctui_model::LogEntry {
+                id: 0,
+                severity: Severity::Warning,
+                message: "warning remains textual".into(),
+                recipe: None,
+                task: None,
+                path: None,
+                timestamp: literal_now(),
+                build: None,
+                protected: false,
+                diagnostic: None,
+            }),
+        );
+        let _ = update(
+            &mut app,
+            Action::Log(yoctui_model::LogEntry {
+                id: 0,
+                severity: Severity::Error,
+                message: "error remains textual".into(),
+                recipe: None,
+                task: None,
+                path: None,
+                timestamp: literal_now(),
+                build: None,
+                protected: true,
+                diagnostic: None,
+            }),
+        );
+        let logs = rendered_text_at(&app, 160, 48, literal_now());
+        for expected in ["Logs", "! Warning", "✕ Error", "▶ Follow"] {
+            assert!(logs.contains(expected), "logs missing {expected}: {logs}");
+        }
+
+        let palette = ThemePalette::for_app(&App {
+            theme: Theme::HighContrast,
+            color_enabled: true,
+            ..App::new(16, 4096)
+        });
+        assert_ne!(palette.focused_border, palette.inactive_border);
+        assert_ne!(palette.success, palette.error);
+        assert_ne!(palette.selection_background, palette.background);
     }
 
     #[test]

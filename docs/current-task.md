@@ -2,30 +2,30 @@
 
 ## Task
 
-**ID:** A11Y-UI-001
-**Title:** Improve accessibility
+**ID:** PERF-UI-001
+**Title:** Profile rendering
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Guarantee that the redesigned shell remains understandable and operable in
-high-contrast, no-color, and reduced-motion modes, with visible focus, textual
-state meaning, terminal-reader-friendly labels, and numeric progress
-equivalents.
+Measure rendering cost for idle, active-build, large recipe/layer, log-heavy,
+and bounded-telemetry workloads. Produce a fresh validated flamegraph with no
+null/unresolved frames, identify any real CPU hot path, and record explicit
+thresholds and provenance before adding caching.
 
 ## Dependencies
 
-- `TASKS-UI-003` — DONE
-- `LOG-UI-002` — DONE
-- `DIALOG-UI-001` — DONE
+- `A11Y-UI-001` — DONE
 - `METRICS-UI-006` — DONE
-- `FOOTER-UI-002` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-ui/src/primitives.rs`
-- `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-ui/benches/workbench_profile.rs`
+- `scripts/test-next-generation-ui-performance.sh`
+- `scripts/flamegraph.sh`
+- `scripts/validate-flamegraph.py`
+- `artifacts/flamegraph/`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -33,24 +33,23 @@ equivalents.
 
 ## Definition of done
 
-- No task, log, job, dialog, health, or compatibility state relies on color
-  alone; each has a stable textual marker or label.
-- High-contrast and no-color palettes preserve visible focus, selection,
-  disabled state, severity, and active/inactive borders.
-- Reduced motion removes animated state changes while preserving explicit
-  running/pending text and stable indeterminate meaning.
-- Progress bars and gauges retain numeric or textual equivalents at every
-  supported breakpoint.
-- Section titles, action labels, paths, status text, and progress descriptions
-  remain meaningful in terminal buffer text for terminal readers.
-- Wide, medium, narrow, and minimum modes do not hide the sole focus cue or
-  encode an unavailable action as enabled.
+- A deterministic benchmark measures all five required workload classes with
+  bounded inputs and documented frame-count/time thresholds.
+- Idle and active-build frame cost, large recipe/layer collections, log-heavy
+  retention, and telemetry history are reported separately.
+- The fresh flamegraph contains real samples, no null/unresolved frames, no
+  lost samples beyond policy, and passes the independent validator.
+- Exclusive/inclusive hot paths are documented from the fresh capture; a real
+  actionable rendering hot path is handed to `PERF-UI-002`, while expected
+  Ratatui/Unicode buffer work is not mislabeled as a defect.
+- Profiling artifacts name the workload, dimensions, sample count, checksum,
+  toolchain, and capture date without depending on a live daemon or Poky tree.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui accessibility_invariants
-cargo test -p yoctui-model reduced_motion
+./scripts/test-next-generation-ui-performance.sh
+./scripts/flamegraph.sh
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh

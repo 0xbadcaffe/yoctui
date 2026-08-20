@@ -11,9 +11,20 @@ Status values:
 
 ## Current phase
 
-`A11Y-UI-001` is `IN_PROGRESS`. It will audit and enforce textual state
-meaning, high contrast, no-color, reduced motion, visible focus, terminal
-reader labels, and numeric progress equivalents across the redesigned shell.
+`PERF-UI-001` is `IN_PROGRESS`. It will measure idle, active-build, large
+recipe/layer, log-heavy, and bounded-telemetry rendering, capture a fresh
+validated flamegraph with no null frames, and document any real CPU hot path.
+
+`A11Y-UI-001` is `DONE`: the buffer-level accessibility contract and aggregate
+invariant suite now exercise task, log, history, health, dialog, high-contrast,
+no-color, and reduced-motion meaning at wide, medium, and narrow sizes. The
+suite found and fixed two real issues: Tasks workspace focus had no bold
+attribute-only border, and the minimum-size Build options dialog clipped its
+Esc hint. Determinate progress remains numeric, indeterminate reduced-motion
+state remains textual, all no-color cells reset color while selection uses
+reverse video, and animation frames cannot change reduced-motion output. The
+reviewed golden now correctly dims the unfocused Tasks border. Focused tests,
+all 193 UI tests, the full workspace, strict clippy, and 43 bridge tests pass.
 
 `MOUSE-UI-001` is `DONE`: one geometry-owned router now matches the documented
 header/shell/footer and wide/medium/narrow pane regions. Navigator and task

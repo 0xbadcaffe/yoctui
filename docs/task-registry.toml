@@ -5420,18 +5420,18 @@ notes = "Mouse routing now hit-tests the documented wide/medium/narrow shell, se
 id = "A11Y-UI-001"
 milestone = "M19"
 title = "Improve accessibility"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 553
 required = true
 depends_on = ["TASKS-UI-003", "LOG-UI-002", "DIALOG-UI-001", "METRICS-UI-006", "FOOTER-UI-002"]
 verify = ["cargo test -p yoctui-ui accessibility_invariants", "cargo test -p yoctui-model reduced_motion"]
-notes = "Guarantee non-color state meaning, high contrast, no-color, reduced motion, visible focus, meaningful text, and numeric progress equivalents."
+notes = "The documented buffer-level accessibility contract now has an aggregate wide/medium/narrow invariant test spanning task, log, history, health, dialog, high-contrast, no-color, and reduced-motion meaning. It found and fixed a missing no-color Tasks workspace focus border and a clipped minimum-size Build options hint. The reviewed golden now correctly dims the unfocused Tasks border. Focused tests, all 193 UI tests, full workspace, strict clippy, and 43 bridge tests pass."
 
 [[task]]
 id = "PERF-UI-001"
 milestone = "M19"
 title = "Profile rendering"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 554
 required = true
 depends_on = ["A11Y-UI-001", "METRICS-UI-006"]
