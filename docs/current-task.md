@@ -2,26 +2,23 @@
 
 ## Task
 
-**ID:** RESPONSIVE-UI-001
-**Title:** Add explicit breakpoint tests
+**ID:** VISUAL-TEST-001
+**Title:** Create semantic Ratatui snapshot tests
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add a canonical breakpoint matrix covering 200x60, 160x50, 130x40, 100x30,
-80x24, and below minimum. Prove that every layout is panic-free, preserves pane
-priority and useful content, and never overlaps or clips dialog controls.
+Create stable semantic TestBackend snapshots for every required next-generation
+workspace and representative typed dialogs. Assert meaningful regions, state,
+selection, and controls without coupling the suite to irrelevant whitespace.
 
 ## Dependencies
 
-- `HEADER-UI-001` — DONE
-- `METRICS-UI-006` — DONE
-- `DIALOG-UI-001` — DONE
+- `RESPONSIVE-UI-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-ui/tests/`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -29,21 +26,18 @@ priority and useful content, and never overlaps or clips dialog controls.
 
 ## Definition of done
 
-- The exact six-size matrix renders representative Dashboard, Tasks, Logs,
-  Recipes, Layers, and typed-dialog states without panic.
-- 200x60, 160x50, and 130x40 preserve wide pane priority; 100x30 preserves the
-  medium Inspector replacement contract; 80x24 preserves the focused narrow
-  pane and switcher; below minimum renders only the resize instruction.
-- No region overlap, orphaned border, or clipped dialog control is present in
-  semantic TestBackend buffers.
-- Useful state text, active focus, current selection, and contextual controls
-  remain visible at each supported size.
-- Resize transitions preserve selected pane and model selection identity.
+- Semantic snapshots cover Tasks, Logs, Jobs, Recipes, Layers, Images,
+  Dashboard, Settings, Build Environment, and Terminal/session views.
+- Representative standard, confirmation, destructive, result, and editor
+  dialogs retain typed state, availability, validation, and controls.
+- Assertions compare stable semantic regions/cells or normalized lines rather
+  than incidental full-buffer whitespace.
+- Snapshot fixtures are deterministic and explain intentional update review.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui breakpoint_matrix
+cargo test -p yoctui-ui semantic_snapshots
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh

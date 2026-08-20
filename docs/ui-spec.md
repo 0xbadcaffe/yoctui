@@ -202,6 +202,17 @@ Height degradation is independent of width:
 - body height `18..26`: retain Main and Secondary; history moves to Inspector
 - body height `1..17`: render only Main with its title and bounded rows
 
+The canonical responsive verification matrix is `200x60`, `160x50`,
+`130x40`, `100x30`, `80x24`, and `79x23`. The first three exercise the wide
+three-pane shell, `100x30` exercises both the normal medium Workspace and the
+focused Inspector replacement, `80x24` exercises each single-pane switcher
+state, and `79x23` exercises the exclusive resize screen. Dashboard, Tasks,
+Logs, Recipes, and Layers must retain meaningful selected-state text at every
+supported size; a typed Build Options dialog must retain its title, primary
+field, confirm action, and close hint. Canonical buffers must contain neither
+replacement characters nor clipped dialog controls, and resizing across the
+matrix must not mutate pane focus or workspace selection identity.
+
 Pane priority is therefore: persistent Header/Footer, focused modal, active
 Workspace Main, Navigator or narrow pane switcher, Inspector primary facts,
 Secondary Workspace, contextual actions, History, System Status, Telemetry,

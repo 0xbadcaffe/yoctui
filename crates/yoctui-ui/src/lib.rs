@@ -18788,6 +18788,137 @@ mod tests {
         assert!(narrow.contains("[Inspector]"));
         assert_eq!(app.focus, FocusTarget::Inspector);
     }
+
+    #[test]
+    fn breakpoint_matrix_preserves_pane_priority_content_and_dialog_controls() {
+        const SUPPORTED: [(u16, u16); 5] = [(200, 60), (160, 50), (130, 40), (100, 30), (80, 24)];
+        let mut app = literal_reference_app();
+        app.daemon.pty_sessions.clear();
+        app.focus = FocusTarget::Workspace;
+        app.recipe_selection = 2;
+        app.layer_selection = 4;
+
+        for (screen, expected) in [
+            (Screen::Dashboard, "Build"),
+            (Screen::Tasks, "do_compile"),
+            (Screen::Logs, "Linking bash"),
+            (Screen::Recipes, "core-image-minimal"),
+            (Screen::Layers, "meta-oe"),
+        ] {
+            app.screen = screen;
+            for (width, height) in SUPPORTED {
+                let output = rendered_text_at(&app, width, height, literal_now());
+                assert!(
+                    output.contains(expected),
+                    "{screen:?} at {width}x{height} lost {expected}: {output}"
+                );
+                assert!(
+                    !output.contains('\u{fffd}'),
+                    "{screen:?} at {width}x{height} emitted a replacement character"
+                );
+            }
+        }
+
+        app.screen = Screen::Tasks;
+        for (width, height) in [(200, 60), (160, 50), (130, 40)] {
+            let output = rendered_text_at(&app, width, height, literal_now());
+            for expected in ["Navigator", "Tasks:", "Inspector: Task"] {
+                assert!(
+                    output.contains(expected),
+                    "wide {width}x{height} lost {expected}: {output}"
+                );
+            }
+        }
+
+        let medium_workspace = rendered_text_at(&app, 100, 30, literal_now());
+        assert!(medium_workspace.contains("Navigator"), "{medium_workspace}");
+        assert!(
+            medium_workspace.contains("do_compile"),
+            "{medium_workspace}"
+        );
+        assert!(
+            !medium_workspace.contains("Inspector: Task"),
+            "the collapsed Inspector must not overlap medium Workspace: {medium_workspace}"
+        );
+        app.focus = FocusTarget::Inspector;
+        let medium_inspector = rendered_text_at(&app, 100, 30, literal_now());
+        assert!(medium_inspector.contains("Navigator"), "{medium_inspector}");
+        assert!(
+            medium_inspector.contains("Inspector: Task"),
+            "{medium_inspector}"
+        );
+        assert!(
+            !medium_inspector.contains("Log Viewer"),
+            "focused Inspector must replace, not overlap, medium Workspace: {medium_inspector}"
+        );
+
+        for (focus, switcher, content) in [
+            (
+                FocusTarget::Navigator,
+                "Panes: [Navigator]  Workspace  Inspector",
+                "Dashboard",
+            ),
+            (
+                FocusTarget::Workspace,
+                "Panes: Navigator  [Workspace]  Inspector",
+                "do_compile",
+            ),
+            (
+                FocusTarget::Inspector,
+                "Panes: Navigator  Workspace  [Inspector]",
+                "Inspector: Task",
+            ),
+        ] {
+            app.focus = focus;
+            let output = rendered_text_at(&app, 80, 24, literal_now());
+            assert!(output.contains(switcher), "{output}");
+            assert!(output.contains(content), "{output}");
+        }
+
+        app.focus = FocusTarget::Dialog;
+        app.dialogs.push_back(Dialog::BuildOptions);
+        for (width, height) in SUPPORTED {
+            let output = rendered_text_at(&app, width, height, literal_now());
+            for expected in [
+                "modal · Image build options",
+                "Machine:",
+                "b  Build image",
+                "Esc closes",
+            ] {
+                assert!(
+                    output.contains(expected),
+                    "dialog at {width}x{height} clipped {expected}: {output}"
+                );
+            }
+        }
+        app.dialogs.clear();
+
+        let retained_focus = app.focus;
+        let retained_recipe = app.recipe_selection;
+        let retained_layer = app.layer_selection;
+        for (width, height) in SUPPORTED.into_iter().rev() {
+            let _ = rendered_text_at(&app, width, height, literal_now());
+        }
+        assert_eq!(app.focus, retained_focus);
+        assert_eq!(app.recipe_selection, retained_recipe);
+        assert_eq!(app.layer_selection, retained_layer);
+
+        let too_small = rendered_text_at(&app, 79, 23, literal_now());
+        for expected in [
+            "Yoctui needs at least 80x24.",
+            "Current terminal: 79x23.",
+            "Resize the terminal or press Q to quit.",
+        ] {
+            assert!(too_small.contains(expected), "{too_small}");
+        }
+        for forbidden in ["Navigator", "Panes:", "Inspector:", "F1 Help"] {
+            assert!(
+                !too_small.contains(forbidden),
+                "below minimum rendered shell content {forbidden}: {too_small}"
+            );
+        }
+    }
+
     #[test]
     fn responsive_all_screens_and_dialogs_render_at_boundary_sizes() {
         let screens = [

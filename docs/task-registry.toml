@@ -5453,18 +5453,18 @@ notes = "The measured full-table hot path is removed by projecting recipe/layer 
 id = "RESPONSIVE-UI-001"
 milestone = "M19"
 title = "Add explicit breakpoint tests"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 556
 required = true
 depends_on = ["HEADER-UI-001", "METRICS-UI-006", "DIALOG-UI-001"]
 verify = ["cargo test -p yoctui-ui breakpoint_matrix"]
-notes = "Cover 200x60, 160x50, 130x40, 100x30, 80x24, and below minimum for panics, overlap, controls, useful content, and pane priority."
+notes = "A canonical semantic TestBackend matrix covers 200x60, 160x50, 130x40, 100x30, 80x24, and 79x23 across Dashboard, Tasks, Logs, Recipes, Layers, every pane tier, and the typed Build Options dialog. It proves pane priority, medium replacement, narrow switching, selected-state retention, complete controls, clean text, and the exclusive below-minimum screen."
 
 [[task]]
 id = "VISUAL-TEST-001"
 milestone = "M19"
 title = "Create semantic Ratatui snapshot tests"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 557
 required = true
 depends_on = ["RESPONSIVE-UI-001"]

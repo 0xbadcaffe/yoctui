@@ -11,9 +11,17 @@ Status values:
 
 ## Current phase
 
-`RESPONSIVE-UI-001` is `IN_PROGRESS`. It will add the explicit 200x60,
-160x50, 130x40, 100x30, 80x24, and below-minimum matrix for pane priority,
-useful content, dialog controls, overlap, clipping, and panic safety.
+`VISUAL-TEST-001` is `IN_PROGRESS`. It will add stable semantic TestBackend
+snapshots for Tasks, Logs, Jobs, Recipes, Layers, Images, Dashboard, Settings,
+Build Environment, Terminal/session, and representative typed dialogs.
+
+`RESPONSIVE-UI-001` is `DONE`: a canonical semantic TestBackend matrix now
+covers 200x60, 160x50, 130x40, 100x30, 80x24, and 79x23 across Dashboard,
+Tasks, Logs, Recipes, Layers, all three pane-focus states, and the typed Build
+Options dialog. It proves wide pane priority, medium Inspector replacement,
+narrow switching, selected-state retention, complete controls, clean text,
+and an exclusive below-minimum resize screen without mutating focus or
+workspace selections.
 
 `PERF-UI-002` is `DONE`: recipe and layer renderers now compute a pure centered
 viewport from authoritative selection, filtered row count, and visible height,
