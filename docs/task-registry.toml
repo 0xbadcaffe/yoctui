@@ -5508,18 +5508,18 @@ notes = "The cross-crate next_generation_keymap e2e test dispatches every functi
 id = "INPUT-TEST-002"
 milestone = "M19"
 title = "Test Tab and Shift-Tab flow"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 561
 required = true
 depends_on = ["INPUT-TEST-001", "RESPONSIVE-UI-001"]
 verify = ["cargo test -p yoctui-e2e next_generation_focus_flow"]
-notes = "Cover Navigator, Workspace, Inspector, dialogs, palette, terminal session, and narrow layout focus order."
+notes = "The e2e focus-flow sequence dispatches real Tab/Shift+Tab actions forward and backward through Navigator, Workspace, and Inspector while rendering 160x50, 100x30, and 80x24. It proves medium replacement, narrow switcher visibility, selection retention, dialog/palette trapping and exact restoration, plus terminal-session prefix isolation."
 
 [[task]]
 id = "INPUT-TEST-003"
 milestone = "M19"
 title = "Test mouse interaction"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 562
 required = true
 depends_on = ["MOUSE-UI-001"]

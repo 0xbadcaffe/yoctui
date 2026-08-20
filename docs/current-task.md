@@ -2,26 +2,24 @@
 
 ## Task
 
-**ID:** INPUT-TEST-002
-**Title:** Test Tab and Shift-Tab flow
+**ID:** INPUT-TEST-003
+**Title:** Test mouse interaction
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Exercise the complete forward and backward focus sequence through the persistent
-shell, modal overlays, command palette, terminal-session view, and narrow pane
-switcher without allowing input to escape the active focus owner.
+Consolidate next-generation mouse acceptance across geometry-owned pane focus,
+list/row selection, wheel scrolling, modal choices, and supported terminal
+split resizing while preserving complete keyboard parity.
 
 ## Dependencies
 
-- `INPUT-TEST-001` — DONE
-- `RESPONSIVE-UI-001` — DONE
+- `MOUSE-UI-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-app/`
-- `crates/yoctui-model/`
-- `crates/yoctui-ui/src/lib.rs`
+- `crates/yoctui-cli/tests/mouse_runtime.rs`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -29,16 +27,19 @@ switcher without allowing input to escape the active focus owner.
 
 ## Definition of done
 
-- Tab and Shift+Tab traverse Navigator, Workspace, and Inspector in exact
-  forward/reverse order at wide, medium, and narrow sizes.
-- Dialogs and command palette trap focus and restore the prior pane when closed.
-- Terminal-session focus and prefix handling do not leak into shell pane focus.
-- Narrow pane switcher follows the same model focus and retains selections.
+- App-level tests cover wide/medium/narrow pane focus, exact Navigator/task/tab
+  selection, workspace and dialog wheel routes, and inert unsupported regions.
+- Runtime tests dispatch click focus and modal choices through the real client
+  input composition path.
+- PTY leaf selection and supported split drag resizing preserve exact pane ID,
+  axis, ratio, and bounded typed actions.
+- Every mouse route has a keyboard equivalent and modal input never leaks.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-e2e next_generation_focus_flow
+cargo test -p yoctui-app next_generation_mouse
+cargo test -p yoctui --test mouse_runtime next_generation_mouse
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh

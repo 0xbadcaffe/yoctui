@@ -11,9 +11,15 @@ Status values:
 
 ## Current phase
 
-`INPUT-TEST-002` is `IN_PROGRESS`. It will exercise forward and backward focus
-flow through Navigator, Workspace, Inspector, dialogs, command palette,
-terminal sessions, and narrow layouts.
+`INPUT-TEST-003` is `IN_PROGRESS`. It will consolidate mouse acceptance for
+pane focus, list selection, wheel scrolling, dialog interaction, and supported
+split resizing across app and real runtime routes.
+
+`INPUT-TEST-002` is `DONE`: the e2e focus-flow sequence dispatches real
+`Tab`/`Shift+Tab` actions forward and backward through Navigator, Workspace,
+and Inspector while rendering 160x50, 100x30, and 80x24. It proves medium
+replacement, narrow switcher visibility, selection retention, dialog/palette
+trapping and exact restoration, plus terminal-session prefix isolation.
 
 `INPUT-TEST-001` is `DONE`: the cross-crate `next_generation_keymap` e2e test
 dispatches every shared function-key route into model state, global/focus/

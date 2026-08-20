@@ -788,6 +788,13 @@ Rules:
   original pane return target
 - asynchronous completion arriving while a user dialog is active is queued
   and shown after that dialog closes; it never interrupts or discards input
+
+The focus-flow acceptance sequence dispatches real `Tab`/`Shift+Tab` actions
+through Navigator → Workspace → Inspector in both directions and renders each
+state at `160x50`, `100x30`, and `80x24`. It also proves dialogs and command
+palette retain and restore the exact previous pane, prefix commands leave
+terminal-session shell focus unchanged, and resizing/focus cycling does not
+mutate Navigator or workspace selections.
 - inactive panes remain visible but use subdued styling
 - focus must be visibly obvious in every theme
 
