@@ -936,7 +936,8 @@ impl TelemetryHistory {
         {
             Self::push(
                 &mut self.memory_percent,
-                total.saturating_sub(available).saturating_mul(100) / total,
+                u64::try_from(u128::from(total - available) * 100 / u128::from(total))
+                    .unwrap_or(100),
             );
         }
         for (queue, sample) in [
@@ -17790,6 +17791,16 @@ mod tests {
         assert_eq!(history.memory_percent.len(), 60);
         assert_eq!(history.disk_read_bytes_per_second.len(), 60);
         assert_eq!(history.network_receive_bytes_per_second.len(), 60);
+
+        let _ = update(
+            &mut app,
+            Action::HostTelemetryUpdated(HostTelemetry {
+                memory_total_bytes: Some(u64::MAX),
+                memory_available_bytes: Some(u64::MAX / 2),
+                ..HostTelemetry::default()
+            }),
+        );
+        assert_eq!(app.host_telemetry_history.memory_percent.back(), Some(&50));
     }
 
     #[test]

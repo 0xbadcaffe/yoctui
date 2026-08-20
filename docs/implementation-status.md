@@ -11,9 +11,17 @@ Status values:
 
 ## Current phase
 
-`METRICS-UI-002` is `IN_PROGRESS`. It will give RAM the same responsive,
-semantic gauge quality while retaining an honestly rounded percentage and
-used/total byte values.
+`METRICS-UI-003` is `IN_PROGRESS`. It will make build-filesystem capacity a
+responsive gauge with honest used/free values and the exact configured build
+filesystem context.
+
+`METRICS-UI-002` is `DONE`: RAM now uses one responsive semantic gauge with an
+overflow-free whole used percentage, full and shared-unit used/total labels,
+and a compact narrow label. Missing, zero-total, and inconsistent samples say
+unavailable instead of fabricating zero. The same overflow-free calculation
+feeds bounded history. Wide, medium, narrow, huge-capacity, invalid,
+high-contrast, no-color, reduced-motion, cockpit, and model-history fixtures
+pass focused coverage.
 
 `METRICS-UI-001` is `DONE`: the dashboard uses one dedicated semantic CPU
 gauge with numeric percentage, full and compact authoritative core-count

@@ -563,8 +563,8 @@ fn utilization_percent(total: Option<u64>, available: Option<u64>) -> Option<u8>
     if total == 0 || available > total {
         return None;
     }
-    let used = total.saturating_sub(available);
-    u8::try_from((used.saturating_mul(100) / total).min(100)).ok()
+    let used = total - available;
+    u8::try_from((u128::from(used) * 100 / u128::from(total)).min(100)).ok()
 }
 
 fn fixed_milli(value: u32) -> String {
@@ -3804,6 +3804,81 @@ fn render_cpu_gauge(frame: &mut Frame, app: &App, area: Rect) {
     }
 }
 
+fn memory_meter_style(app: &App, percent: u8) -> Style {
+    let palette = ThemePalette::for_app(app);
+    if percent >= 90 {
+        palette.role(palette.error, Modifier::BOLD)
+    } else if percent >= 80 {
+        palette.role(palette.warning, Modifier::BOLD)
+    } else {
+        palette.role(palette.graph_memory, Modifier::BOLD)
+    }
+}
+
+fn format_bytes_pair(used: u64, total: u64) -> String {
+    const UNITS: [&str; 5] = ["B", "KiB", "MiB", "GiB", "TiB"];
+    let mut divisor = 1_u64;
+    let mut unit = 0;
+    while total / divisor >= 1024 && unit < UNITS.len() - 1 {
+        let Some(next) = divisor.checked_mul(1024) else {
+            break;
+        };
+        divisor = next;
+        unit += 1;
+    }
+    if unit == 0 {
+        format!("{used}/{total} {}", UNITS[unit])
+    } else {
+        format!(
+            "{:.1}/{:.1} {}",
+            used as f64 / divisor as f64,
+            total as f64 / divisor as f64,
+            UNITS[unit]
+        )
+    }
+}
+
+fn ram_gauge_label(percent: u8, used: u64, total: u64, width: u16) -> String {
+    if width >= 38 {
+        format!(
+            "RAM {percent:>3}% · {} / {}",
+            format_bytes(used),
+            format_bytes(total)
+        )
+    } else if width >= 28 {
+        format!("RAM {percent}% · {}", format_bytes_pair(used, total))
+    } else {
+        format!("RAM {percent}%")
+    }
+}
+
+fn render_ram_gauge(frame: &mut Frame, app: &App, area: Rect) {
+    if area.is_empty() {
+        return;
+    }
+    let palette = ThemePalette::for_app(app);
+    let total = app.host_telemetry.memory_total_bytes;
+    let available = app.host_telemetry.memory_available_bytes;
+    if let (Some(percent), Some(total), Some(available)) =
+        (utilization_percent(total, available), total, available)
+    {
+        let used = total - available;
+        frame.render_widget(
+            Gauge::default()
+                .ratio(f64::from(percent) / 100.0)
+                .label(ram_gauge_label(percent, used, total, area.width))
+                .gauge_style(memory_meter_style(app, percent)),
+            area,
+        );
+    } else {
+        frame.render_widget(
+            Paragraph::new("RAM ! unavailable")
+                .style(palette.role(palette.disabled, Modifier::DIM)),
+            area,
+        );
+    }
+}
+
 fn render_history(frame: &mut Frame, label: &str, samples: &[u64], area: Rect, style: Style) {
     let columns = Layout::horizontal([Constraint::Length(9), Constraint::Min(1)]).split(area);
     frame.render_widget(Paragraph::new(label).style(style), columns[0]);
@@ -3838,30 +3913,7 @@ fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
         palette.role(palette.progress, Modifier::BOLD),
     );
 
-    let memory_percent = utilization_percent(
-        app.host_telemetry.memory_total_bytes,
-        app.host_telemetry.memory_available_bytes,
-    );
-    if let (Some(percent), Some(total), Some(available)) = (
-        memory_percent,
-        app.host_telemetry.memory_total_bytes,
-        app.host_telemetry.memory_available_bytes,
-    ) {
-        let used = total.saturating_sub(available);
-        frame.render_widget(
-            Gauge::default()
-                .ratio(f64::from(percent) / 100.0)
-                .label(format!(
-                    "RAM {percent:>3}% · {} / {}",
-                    format_bytes(used),
-                    format_bytes(total)
-                ))
-                .gauge_style(telemetry_meter_style(app, percent)),
-            rows[2],
-        );
-    } else {
-        frame.render_widget(Paragraph::new("RAM  unavailable"), rows[2]);
-    }
+    render_ram_gauge(frame, app, rows[2]);
     let memory_history = app
         .host_telemetry_history
         .memory_percent
@@ -17079,6 +17131,55 @@ mod tests {
         app.color_enabled = false;
         let no_color = render_gauge(&app, 18);
         assert!(no_color.contains("CPU 87% · 8c"), "{no_color}");
+    }
+    #[test]
+    fn next_generation_ram_gauge_is_honest_responsive_and_accessible() {
+        let render_gauge = |app: &App, width| {
+            let mut terminal = Terminal::new(TestBackend::new(width, 1)).unwrap();
+            terminal
+                .draw(|frame| render_ram_gauge(frame, app, frame.area()))
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+
+        let gib = 1024_u64.pow(3);
+        let mut app = App::new(10, 1_000);
+        app.host_telemetry.memory_total_bytes = Some(16 * gib);
+        app.host_telemetry.memory_available_bytes = Some(4 * gib);
+        let wide = render_gauge(&app, 42);
+        assert!(wide.contains("RAM  75% · 12.0 GiB / 16.0 GiB"), "{wide}");
+        let medium = render_gauge(&app, 30);
+        assert!(medium.contains("RAM 75% · 12.0/16.0 GiB"), "{medium}");
+        let narrow = render_gauge(&app, 14);
+        assert!(narrow.contains("RAM 75%"), "{narrow}");
+        assert!(!narrow.contains("GiB"), "{narrow}");
+
+        app.host_telemetry.memory_total_bytes = Some(u64::MAX);
+        app.host_telemetry.memory_available_bytes = Some(u64::MAX / 2);
+        let large = render_gauge(&app, 14);
+        assert!(large.contains("RAM 50%"), "{large}");
+
+        for (total, available) in [(None, None), (Some(0), Some(0)), (Some(10), Some(11))] {
+            app.host_telemetry.memory_total_bytes = total;
+            app.host_telemetry.memory_available_bytes = available;
+            let unavailable = render_gauge(&app, 24);
+            assert!(unavailable.contains("RAM ! unavailable"), "{unavailable}");
+            assert!(!unavailable.contains("0%"), "{unavailable}");
+        }
+
+        app.host_telemetry.memory_total_bytes = Some(8 * gib);
+        app.host_telemetry.memory_available_bytes = Some(2 * gib);
+        app.theme = Theme::HighContrast;
+        app.reduced_motion = true;
+        assert!(render_gauge(&app, 30).contains("RAM 75% · 6.0/8.0 GiB"));
+        app.color_enabled = false;
+        assert!(render_gauge(&app, 14).contains("RAM 75%"));
     }
     #[test]
     fn dashboard_telemetry_cockpit_renders_gauges_history_and_load() {

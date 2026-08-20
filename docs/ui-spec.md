@@ -292,6 +292,17 @@ semantic CPU-graph role, while warning/error thresholds use their semantic
 roles; no-color retains the text and attribute distinction. The gauge is
 determinate and unchanged by reduced-motion mode.
 
+The RAM cell derives whole used percent with overflow-free integer arithmetic
+from valid total/available byte samples. At 38 or more cell columns it labels
+the gauge `RAM n% · used / total`; at 28–37 columns the values share the total's
+largest binary unit as `used/total unit`; below 28 columns the compact gauge
+retains `RAM n%`. Capacity labels use at most one decimal binary-unit digit and
+do not imply a fractional percentage. Missing fields, zero total, or available
+greater than total renders `RAM ! unavailable`, never a synthetic capacity or
+`0%`. Normal memory utilization uses the semantic memory-graph role and high
+pressure uses warning/error roles. No-color and reduced-motion preserve the
+same determinate text.
+
 ##### Telemetry provenance audit
 
 The typed provenance catalog is authoritative for whether a metric may render.
