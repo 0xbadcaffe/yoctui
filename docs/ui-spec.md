@@ -244,6 +244,28 @@ Medium uses the overlay described above. Narrow uses the pane switcher and a
 single independently scrollable Inspector. No breakpoint creates a second
 Inspector authority or selection.
 
+#### System Status presentation
+
+System Status is a bounded four-line projection, not a second daemon model.
+At 40 or more content columns it orders: daemon connection/version/uptime;
+BitBake lifecycle/version/active jobs; PTY sessions/connected clients/current
+compatibility generation and counts; then build-filesystem capacity and exact
+workspace path. Below 40 columns the same facts use shorter labels and stable
+priority. Every line is bounded with a visible ellipsis rather than wrapping
+into the next section.
+
+Daemon uptime and active-job telemetry, BitBake lifecycle, PTY inventory, and
+connected-client count render only while the client replica is `Current`.
+Disconnected, Synchronizing, or Stale replicas name their exact connection
+state and render those retained facts as `unavailable`; stale numeric values
+must never look current. Compatibility authority likewise requires a Current
+replica and otherwise says Unavailable. Workspace and build-filesystem facts
+remain independently valid when supplied by local typed workspace and host
+telemetry state. The current protocol supplies no daemon version or PID, so
+System Status explicitly says `version unavailable` and never invents either.
+The misleading queue-depth alias and assumed-page-size resident-memory
+diagnostic remain non-renderable.
+
 #### Footer behavior
 
 The wide F1-F10 rail remains authoritative global navigation because every

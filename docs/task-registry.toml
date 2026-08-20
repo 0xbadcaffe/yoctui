@@ -5321,18 +5321,18 @@ notes = "One bounded strip now composes semantic gauges and histories in Dashboa
 id = "SYSTEM-UI-001"
 milestone = "M19"
 title = "Redesign System Status pane"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 544
 required = true
 depends_on = ["INSPECTOR-UI-001", "METRICS-MODEL-001"]
 verify = ["cargo test -p yoctui-ui next_generation_system_status"]
-notes = "Render real daemon, version/uptime, BitBake, jobs, sessions, clients, workspace, disk, and compatibility state where authoritative."
+notes = "System Status is now a bounded four-line projection of daemon connection/version availability/uptime, BitBake lifecycle/version, active jobs, PTYs, clients, compatibility generation/counts, build-filesystem capacity, and workspace identity. Daemon-owned values require a Current replica; stale/synchronizing/disconnected retained facts render unavailable. Missing daemon version is explicit; queue-depth and imprecise memory remain omitted. Focused responsive/stale/theme tests and the reviewed 160x48 golden pass."
 
 [[task]]
 id = "SYSTEM-UI-002"
 milestone = "M19"
 title = "Add health and warning indicators"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 545
 required = true
 depends_on = ["SYSTEM-UI-001"]

@@ -2,20 +2,19 @@
 
 ## Task
 
-**ID:** SYSTEM-UI-001
-**Title:** Redesign System Status pane
+**ID:** SYSTEM-UI-002
+**Title:** Add health and warning indicators
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Render a dense, consistent System Status pane from authoritative model state,
-with responsive labels and exact unavailable behavior for facts the current
-protocol or host sampler does not supply.
+Add compact semantic text-and-symbol health indicators to System Status and
+the persistent shell for authoritative backend, disk, compatibility, log, and
+workspace conditions.
 
 ## Dependencies
 
-- `INSPECTOR-UI-001` — DONE
-- `METRICS-MODEL-001` — DONE
+- `SYSTEM-UI-001` — DONE
 
 ## Relevant files
 
@@ -27,22 +26,22 @@ protocol or host sampler does not supply.
 
 ## Definition of done
 
-- Daemon connection, uptime, BitBake lifecycle, active jobs, terminal
-  sessions, and connected clients render from typed current state.
-- Workspace/build identity and exact build-filesystem context render only when
-  authoritative.
-- Compatibility state names current, degraded, synchronizing, stale, and
-  unavailable authority without inventing a daemon version or PID.
-- Wide and compact presentations use consistent aligned labels and retain
-  meaningful text in high-contrast and no-color modes.
-- Missing values are explicitly unavailable and stale authority is never
-  presented as current.
-- The pane remains bounded and safe at responsive breakpoints.
+- Backend disconnected, synchronizing/reconnecting, and stale states use
+  distinct text markers and semantic roles.
+- Low build-filesystem capacity is derived only from the authoritative sample
+  and uses documented warning/error thresholds.
+- Degraded compatibility, log pressure/eviction, and unknown workspace state
+  are named without relying on color.
+- Healthy, warning, error, and unavailable conditions share reusable semantic
+  presentation rather than widget-local hardcoded colors.
+- Indicators remain meaningful in high-contrast and no-color modes and do not
+  animate under reduced motion.
+- Responsive layouts bound or prioritize status without overlap or panic.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_system_status
+cargo test -p yoctui-ui next_generation_health_indicators
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh

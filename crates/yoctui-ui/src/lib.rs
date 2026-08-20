@@ -3164,28 +3164,124 @@ fn task_inspector_actions(app: &App) -> Vec<ActionListItem> {
     actions
 }
 
-fn system_status_text(app: &App) -> String {
-    let uptime = app.daemon.telemetry.as_ref().map_or_else(
-        || "unavailable".into(),
-        |telemetry| format_duration(Duration::from_secs(telemetry.uptime_seconds)),
-    );
-    let cpu = app
-        .host_telemetry
-        .cpu_utilization_percent
-        .map_or_else(|| "unavailable".into(), |value| format!("{value}%"));
-    let disk = app
-        .host_telemetry
-        .disk_available_bytes
-        .map_or_else(|| "unavailable".into(), format_bytes);
-    format!(
-        "Yoctui Daemon    {}  up {}\nBitBake Server    {}\nActive Jobs       {}\nTerminal Sessions {}\nConnected Clients {}\nHost CPU          {cpu}\nBuild disk free   {disk}",
-        daemon_status_label(app.daemon.status),
-        uptime,
-        daemon_lifecycle_label(app.daemon.bitbake),
-        app.daemon.jobs.len(),
-        app.daemon.pty_sessions.len(),
-        app.daemon.connected_clients,
-    )
+fn bounded_status_line(value: String, width: u16) -> String {
+    let width = usize::from(width);
+    if value.chars().count() <= width {
+        return value;
+    }
+    if width == 0 {
+        return String::new();
+    }
+    value
+        .chars()
+        .take(width.saturating_sub(1))
+        .chain(std::iter::once('…'))
+        .collect()
+}
+
+fn system_status_text(app: &App, width: u16) -> String {
+    let current = app.daemon.status == yoctui_model::ClientReplicaStatus::Current;
+    let uptime = if current {
+        app.daemon.telemetry.as_ref().map_or_else(
+            || "unavailable".into(),
+            |telemetry| format_duration(Duration::from_secs(telemetry.uptime_seconds)),
+        )
+    } else {
+        "unavailable".into()
+    };
+    let active_jobs = if current {
+        app.daemon.telemetry.as_ref().map_or_else(
+            || "unavailable".into(),
+            |value| value.active_jobs.to_string(),
+        )
+    } else {
+        "unavailable".into()
+    };
+    let sessions = if current {
+        app.daemon.pty_sessions.len().to_string()
+    } else {
+        "unavailable".into()
+    };
+    let clients = if current {
+        app.daemon.connected_clients.to_string()
+    } else {
+        "unavailable".into()
+    };
+    let bitbake = if current {
+        daemon_lifecycle_label(app.daemon.bitbake).to_owned()
+    } else {
+        "unavailable".into()
+    };
+    let bitbake_version = if current {
+        app.workspace
+            .bitbake_version
+            .as_deref()
+            .unwrap_or("unavailable")
+    } else {
+        "unavailable"
+    };
+    let workspace = app
+        .workspace
+        .build_dir
+        .as_deref()
+        .or(app.workspace.source_dir.as_deref())
+        .map_or_else(|| "unavailable".into(), |path| path.display().to_string());
+    let filesystem = match (
+        utilization_percent(
+            app.host_telemetry.disk_total_bytes,
+            app.host_telemetry.disk_available_bytes,
+        ),
+        app.host_telemetry.disk_total_bytes,
+        app.host_telemetry.disk_available_bytes,
+        app.workspace.build_dir.as_ref(),
+    ) {
+        (Some(percent), Some(total), Some(available), Some(_)) => {
+            format!("{percent}% · {} free", format_bytes_pair(available, total))
+        }
+        _ => "unavailable".into(),
+    };
+    let projection = app
+        .compatibility_ui
+        .project(&app.workspace_compatibility, app.daemon.status);
+    let compatibility = match (current, projection.authority) {
+        (false, _) => "Unavailable".into(),
+        (true, CompatibilityUiAuthorityStatus::Current { generation, mode }) => format!(
+            "{:?} g{generation} · A{} L{} U{} ?{}",
+            mode,
+            projection.summary.available,
+            projection.summary.limited,
+            projection.summary.unavailable,
+            projection.summary.unknown + projection.summary.unsupported,
+        ),
+        (true, CompatibilityUiAuthorityStatus::Unavailable { .. }) => "Unavailable".into(),
+    };
+    let daemon = match app.daemon.status {
+        yoctui_model::ClientReplicaStatus::Disconnected => "Disconnected",
+        yoctui_model::ClientReplicaStatus::Synchronizing => "Synchronizing",
+        yoctui_model::ClientReplicaStatus::Current => "Connected",
+        yoctui_model::ClientReplicaStatus::Stale => "Stale",
+    };
+
+    let lines = if width >= 40 {
+        vec![
+            format!("Daemon {daemon} · version unavailable · up {uptime}"),
+            format!("BitBake {bitbake} · v{bitbake_version} · Jobs {active_jobs}"),
+            format!("PTY {sessions} · Clients {clients} · Compat {compatibility}"),
+            format!("Build FS {filesystem} · Workspace {workspace}"),
+        ]
+    } else {
+        vec![
+            format!("Daemon {daemon} · version unavailable"),
+            format!("Up {uptime} · BitBake {bitbake} · v{bitbake_version}"),
+            format!("Jobs {active_jobs} · PTY {sessions} · Clients {clients}"),
+            format!("Compat {compatibility} · FS {filesystem} · WS {workspace}"),
+        ]
+    };
+    lines
+        .into_iter()
+        .map(|line| bounded_status_line(line, width))
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 fn push_inspector_section(
@@ -3409,7 +3505,7 @@ fn tasks_inspector(
     );
     if show_system {
         frame.render_widget(
-            Paragraph::new(system_status_text(app))
+            Paragraph::new(system_status_text(app, sections[4].width.saturating_sub(2)))
                 .block(pane_block(app, "System Status", focused))
                 .wrap(Wrap { trim: false }),
             sections[4],
@@ -3552,7 +3648,8 @@ fn inspector(
             }),
         _ => None,
     };
-    let status = (app.screen == Screen::Dashboard).then(|| system_status_text(app));
+    let status = (app.screen == Screen::Dashboard)
+        .then(|| system_status_text(app, area.width.saturating_sub(2)));
     let document = inspector_document(
         app,
         InspectorDocumentSections {
@@ -17766,6 +17863,78 @@ mod tests {
         assert!(tasks.contains("Job History"), "{tasks}");
     }
     #[test]
+    fn next_generation_system_status_is_authoritative_dense_and_responsive() {
+        let mut app = compatibility_ui_inspector_app();
+        app.screen = Screen::Dashboard;
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Running;
+        app.daemon.connected_clients = 3;
+        app.daemon
+            .pty_sessions
+            .push(yoctui_model::ClientDaemonPtySummary {
+                id: 4,
+                name: "devshell".into(),
+                lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                viewers: 1,
+            });
+        app.daemon.telemetry = Some(yoctui_model::ClientDaemonTelemetry {
+            uptime_seconds: 125,
+            active_jobs: 2,
+            pty_sessions: 1,
+            queue_depth: 3,
+            memory_bytes: None,
+            recovery: yoctui_model::DaemonRecoveryState::CleanStart,
+        });
+        app.workspace.build_dir = Some("/work/poky/build".into());
+        app.workspace.bitbake_version = Some("2.18.0".into());
+        app.host_telemetry.disk_total_bytes = Some(100 * 1024_u64.pow(3));
+        app.host_telemetry.disk_available_bytes = Some(40 * 1024_u64.pow(3));
+
+        let wide = system_status_text(&app, 72);
+        for expected in [
+            "Daemon Connected · version unavailable · up 00:02:05",
+            "BitBake Running · v2.18.0 · Jobs 2",
+            "PTY 1 · Clients 3 · Compat Degraded g7 · A1 L1 U1 ?2",
+            "Build FS 60% · 40.0/100.0 GiB free · Workspace /work/poky/build",
+        ] {
+            assert!(wide.contains(expected), "missing {expected}: {wide}");
+        }
+        assert!(!wide.contains("PID"), "{wide}");
+
+        let compact = system_status_text(&app, 32);
+        assert_eq!(compact.lines().count(), 4, "{compact}");
+        assert!(compact.lines().all(|line| line.chars().count() <= 32));
+        assert!(compact.contains("Daemon Connected"), "{compact}");
+        assert!(compact.contains("BitBake Running"), "{compact}");
+        assert!(compact.contains("Jobs 2 · PTY 1 · Clients 3"), "{compact}");
+        assert!(compact.contains("Compat Degraded g7"), "{compact}");
+
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Stale;
+        app.daemon.connected_clients = 99;
+        app.daemon.telemetry.as_mut().unwrap().active_jobs = 99;
+        let stale = system_status_text(&app, 72);
+        assert!(stale.contains("Daemon Stale"), "{stale}");
+        assert!(stale.contains("up unavailable"), "{stale}");
+        assert!(
+            stale.contains("BitBake unavailable · vunavailable · Jobs unavailable"),
+            "{stale}"
+        );
+        assert!(
+            stale.contains("PTY unavailable · Clients unavailable · Compat Unavailable"),
+            "{stale}"
+        );
+        assert!(
+            !stale.contains("99"),
+            "stale counts must not render: {stale}"
+        );
+
+        app.theme = Theme::HighContrast;
+        app.color_enabled = false;
+        app.screen = Screen::Tasks;
+        let rendered = rendered_text(&app, 180, 44);
+        assert!(rendered.contains("System Status"), "{rendered}");
+        assert!(rendered.contains("Daemon Stale"), "{rendered}");
+    }
+    #[test]
     fn dashboard_renders_parse_progress() {
         let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
         let mut app = App::new(10, 1_000);
@@ -18678,7 +18847,7 @@ mod tests {
         let narrow = rendered_text_at(&app, 90, 24, UNIX_EPOCH + Duration::from_secs(11));
         assert!(narrow.contains("Inspector: Daemon / session"), "{narrow}");
         assert!(narrow.contains("▾ SYSTEM / COMPATIBILITY"), "{narrow}");
-        assert!(narrow.contains("Yoctui Daemon"), "{narrow}");
+        assert!(narrow.contains("Daemon Disconnected"), "{narrow}");
     }
     #[test]
     fn recipes_workspace_renders_authoritative_summary_and_inspector_sections() {

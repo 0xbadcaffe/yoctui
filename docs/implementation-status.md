@@ -11,9 +11,19 @@ Status values:
 
 ## Current phase
 
-`SYSTEM-UI-001` is `IN_PROGRESS`. It will replace the generic status text with
-a dense, responsive pane of authoritative daemon, BitBake, job/session/client,
-workspace, build-filesystem, and compatibility facts.
+`SYSTEM-UI-002` is `IN_PROGRESS`. It will add semantic text-and-symbol health
+indicators for disconnected/reconnecting backends, low disk, degraded
+capabilities, log pressure, and unknown workspace state.
+
+`SYSTEM-UI-001` is `DONE`: System Status is now a bounded four-line projection
+of daemon connection/version availability/uptime, BitBake lifecycle/version,
+active jobs, PTYs, clients, compatibility generation/counts, build-filesystem
+capacity, and workspace identity. Daemon-owned values render only for a
+Current replica; stale/synchronizing/disconnected replicas expose unavailable
+facts instead of retained counts. The missing daemon version is explicit,
+queue-depth and imprecise memory remain omitted, compact lines ellipsize, and
+the reviewed 160x48 golden records the denser pane. Focused current/compact/
+stale/theme tests and all 175 UI tests pass.
 
 `METRICS-UI-006` is `DONE`: one bounded telemetry strip now composes the
 semantic gauges and rate histories in Dashboard and tall Tasks workspaces.
