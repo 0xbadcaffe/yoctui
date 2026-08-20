@@ -4,7 +4,7 @@
 //! backend data, mutate model state, or own workspace selection.
 
 use ratatui::{
-    prelude::{Line, Span, Style, Text},
+    prelude::{Line, Rect, Span, Style, Text},
     widgets::{Block, Borders, Paragraph, Row, Wrap},
 };
 
@@ -234,6 +234,141 @@ pub fn action_list(
         }));
     }
     Text::from(lines)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DialogTone {
+    Standard,
+    Confirmation,
+    Destructive,
+    Result,
+    Error,
+}
+
+impl DialogTone {
+    const fn label(self) -> Option<&'static str> {
+        match self {
+            Self::Standard => None,
+            Self::Confirmation => Some("confirm"),
+            Self::Destructive => Some("destructive"),
+            Self::Result => Some("result"),
+            Self::Error => Some("error"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DialogStyles {
+    pub base: Style,
+    pub focused_border: Style,
+    pub heading: Style,
+    pub selected: Style,
+    pub disabled: Style,
+    pub validation: Style,
+    pub hint: Style,
+    pub destructive: Style,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DialogShell {
+    title: String,
+    tone: DialogTone,
+    styles: DialogStyles,
+}
+
+impl DialogShell {
+    pub fn new(title: impl Into<String>, tone: DialogTone, styles: DialogStyles) -> Self {
+        Self {
+            title: title.into(),
+            tone,
+            styles,
+        }
+    }
+
+    pub fn block(self) -> Block<'static> {
+        let title = match self.tone.label() {
+            Some(tone) => format!("{tone} modal · {}", self.title),
+            None => format!("modal · {}", self.title),
+        };
+        let title_style = match self.tone {
+            DialogTone::Destructive | DialogTone::Error => self.styles.destructive,
+            _ => self.styles.heading,
+        };
+        Block::default()
+            .title(Line::styled(title, title_style))
+            .borders(Borders::ALL)
+            .style(self.styles.base)
+            .border_style(self.styles.focused_border)
+    }
+
+    pub fn field(
+        &self,
+        label: &str,
+        value: impl Into<String>,
+        label_width: usize,
+        selected: bool,
+        disabled: bool,
+    ) -> Line<'static> {
+        let marker = if disabled {
+            "–"
+        } else if selected {
+            "▶"
+        } else {
+            " "
+        };
+        let style = if disabled {
+            self.styles.disabled
+        } else if selected {
+            self.styles.selected
+        } else {
+            self.styles.base
+        };
+        Line::styled(
+            format!("{marker} {label:<label_width$}: {}", value.into()),
+            style,
+        )
+    }
+
+    pub fn validation(&self, error: Option<&str>) -> Line<'static> {
+        match error {
+            Some(error) => Line::styled(format!("✕ Validation: {error}"), self.styles.validation),
+            None => Line::styled("✓ Validation: ready", self.styles.hint),
+        }
+    }
+
+    pub fn controls(
+        &self,
+        primary: Option<(&str, &str)>,
+        secondary: &[(&str, &str)],
+    ) -> Line<'static> {
+        let mut spans = Vec::new();
+        if let Some((key, label)) = primary {
+            let style = if self.tone == DialogTone::Destructive {
+                self.styles.destructive
+            } else {
+                self.styles.selected
+            };
+            spans.push(Span::styled(format!("[{key}] {label}"), style));
+        }
+        for (key, label) in secondary {
+            if !spans.is_empty() {
+                spans.push(Span::styled("  ", self.styles.hint));
+            }
+            spans.push(Span::styled(format!("[{key}] {label}"), self.styles.hint));
+        }
+        Line::from(spans)
+    }
+}
+
+pub fn bounded_dialog_rect(area: Rect, preferred_width: u16, preferred_height: u16) -> Rect {
+    let width = preferred_width.min(area.width.saturating_sub(2)).max(1);
+    let height = preferred_height.min(area.height.saturating_sub(2)).max(1);
+    Rect::new(
+        area.x + area.width.saturating_sub(width) / 2,
+        area.y + area.height.saturating_sub(height) / 2,
+        width,
+        height,
+    )
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -563,5 +698,51 @@ mod tests {
                 .iter()
                 .any(|line| line.to_string().contains("[c]"))
         );
+    }
+
+    #[test]
+    fn dialog_primitives_bound_geometry_and_keep_state_textual() {
+        let dialog_styles = DialogStyles {
+            base: Style::default().fg(Color::White),
+            focused_border: Style::default().fg(Color::Cyan),
+            heading: Style::default().add_modifier(Modifier::BOLD),
+            selected: Style::default().bg(Color::Blue),
+            disabled: Style::default().add_modifier(Modifier::DIM),
+            validation: Style::default().fg(Color::Red),
+            hint: Style::default().fg(Color::DarkGray),
+            destructive: Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+        };
+        let shell = DialogShell::new("Remove workspace", DialogTone::Destructive, dialog_styles);
+        let field = shell.field("Recipe", "busybox", 8, true, false);
+        let disabled = shell.field("Deploy", "unavailable", 8, false, true);
+        let validation = shell.validation(Some("target changed"));
+        let controls = shell.controls(Some(("Enter", "Confirm destructive")), &[("Esc", "Cancel")]);
+        assert!(field.to_string().contains("▶ Recipe"));
+        assert!(disabled.to_string().contains("– Deploy"));
+        assert!(
+            validation
+                .to_string()
+                .contains("✕ Validation: target changed")
+        );
+        assert!(controls.to_string().contains("[Enter] Confirm destructive"));
+        assert!(controls.to_string().contains("[Esc] Cancel"));
+        assert_eq!(
+            bounded_dialog_rect(Rect::new(7, 11, 80, 24), 110, 30),
+            Rect::new(8, 12, 78, 22)
+        );
+
+        let mut terminal = Terminal::new(TestBackend::new(50, 8)).unwrap();
+        terminal
+            .draw(|frame| frame.render_widget(shell.block(), frame.area()))
+            .unwrap();
+        let output = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>();
+        assert!(output.contains("destructive modal · Remove workspace"));
+        assert_eq!(terminal.backend().buffer()[(0, 0)].fg, Color::Cyan);
     }
 }

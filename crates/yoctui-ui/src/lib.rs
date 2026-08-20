@@ -2,8 +2,9 @@
 pub mod primitives;
 
 use primitives::{
-    ActionListItem, ActionListStyles, PaneShell, PaneStyles, ResponsiveColumn, StateKind,
-    StateView, StatusTone, action_list, action_list_plain, responsive_columns, status_label,
+    ActionListItem, ActionListStyles, DialogShell, DialogStyles, DialogTone, PaneShell, PaneStyles,
+    ResponsiveColumn, StateKind, StateView, StatusTone, action_list, action_list_plain,
+    bounded_dialog_rect, responsive_columns, status_label,
 };
 use ratatui::{
     prelude::*,
@@ -465,6 +466,29 @@ fn selected_style(app: &App, active: bool) -> Style {
         Style::default()
     }
 }
+
+fn dialog_styles(app: &App) -> DialogStyles {
+    let palette = ThemePalette::for_app(app);
+    DialogStyles {
+        base: palette.base(),
+        focused_border: palette.focus(),
+        heading: palette.role(palette.heading, Modifier::BOLD),
+        selected: palette.selected(),
+        disabled: palette.role(palette.disabled, Modifier::DIM),
+        validation: palette.role(palette.error, Modifier::BOLD),
+        hint: palette.role(palette.secondary_foreground, Modifier::DIM),
+        destructive: palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED),
+    }
+}
+
+fn dialog_shell(app: &App, title: impl Into<String>, tone: DialogTone) -> DialogShell {
+    DialogShell::new(title, tone, dialog_styles(app))
+}
+
+fn dialog_block(app: &App, title: impl Into<String>, tone: DialogTone) -> Block<'static> {
+    dialog_shell(app, title, tone).block()
+}
+
 fn selected_log_style(app: &App, severity: Severity) -> Style {
     let palette = ThemePalette::for_app(app);
     let style = severity_style(app, severity);
@@ -1758,8 +1782,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 3);
         clear_popup(frame, app, popup);
         frame.render_widget(
-            Paragraph::new("Build is active. Press Y to quit UI, or Esc to continue.")
-                .block(Block::default().title("Confirm quit").borders(Borders::ALL)),
+            Paragraph::new("[Y] Quit UI  [Esc] Continue active build.").block(dialog_block(
+                app,
+                "Confirm quit",
+                DialogTone::Destructive,
+            )),
             popup,
         )
     } else if let Some(Dialog::SignatureTaskPicker(picker)) = app.active_dialog() {
@@ -1773,16 +1800,24 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         frame.render_widget(
             Table::new(
                 picker.tasks.iter().enumerate().map(|(index, task)| {
-                    Row::new([task.as_str()]).style(selected_style(app, index == picker.selection))
+                    Row::new([format!(
+                        "{} {task}",
+                        if index == picker.selection {
+                            "▶"
+                        } else {
+                            " "
+                        }
+                    )])
+                    .style(selected_style(app, index == picker.selection))
                 }),
                 [Constraint::Min(1)],
             )
             .header(Row::new(["Authoritative signature tasks"]).style(Style::default().bold()))
-            .block(
-                Block::default()
-                    .title(format!("Inspect signatures: {}", picker.recipe.name))
-                    .borders(Borders::ALL),
-            ),
+            .block(dialog_block(
+                app,
+                format!("Inspect signatures: {}", picker.recipe.name),
+                DialogTone::Standard,
+            )),
             popup,
         );
     } else if let Some(Dialog::RecipeTaskPicker(picker)) = app.active_dialog() {
@@ -1796,20 +1831,28 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         frame.render_widget(
             Table::new(
                 picker.tasks.iter().enumerate().map(|(index, task)| {
-                    Row::new([task.as_str()]).style(selected_style(app, index == picker.selection))
+                    Row::new([format!(
+                        "{} {task}",
+                        if index == picker.selection {
+                            "▶"
+                        } else {
+                            " "
+                        }
+                    )])
+                    .style(selected_style(app, index == picker.selection))
                 }),
                 [Constraint::Min(1)],
             )
             .header(Row::new(["Authoritative BitBake tasks"]).style(Style::default().bold()))
-            .block(
-                Block::default()
-                    .title(format!(
-                        "{} task: {}",
-                        if picker.force { "Force" } else { "Run" },
-                        picker.recipe
-                    ))
-                    .borders(Borders::ALL),
-            ),
+            .block(dialog_block(
+                app,
+                format!(
+                    "{} task: {}",
+                    if picker.force { "Force" } else { "Run" },
+                    picker.recipe
+                ),
+                DialogTone::Standard,
+            )),
             popup,
         );
     } else if let Some(Dialog::RecipeTaskLogPicker(picker)) = app.active_dialog() {
@@ -1824,7 +1867,15 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             Table::new(
                 picker.logs.iter().enumerate().map(|(index, log)| {
                     Row::new([
-                        Cell::from(log.task.as_str()),
+                        Cell::from(format!(
+                            "{} {}",
+                            if index == picker.selection {
+                                "▶"
+                            } else {
+                                " "
+                            },
+                            log.task
+                        )),
                         Cell::from(format!("{:?}", log.state)),
                         Cell::from(log.path.display().to_string()),
                     ])
@@ -1840,11 +1891,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 Row::new(["Task", "State", "Authoritative log path"])
                     .style(Style::default().bold()),
             )
-            .block(
-                Block::default()
-                    .title(format!("{} retained task logs", picker.recipe))
-                    .borders(Borders::ALL),
-            ),
+            .block(dialog_block(
+                app,
+                format!("{} retained task logs", picker.recipe),
+                DialogTone::Standard,
+            )),
             popup,
         );
     } else if let Some(Dialog::ConfigEdit {
@@ -1867,11 +1918,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 request.destination.display(),
                 request.assignment
             ))
-            .block(
-                Block::default()
-                    .title("Preview configuration edit")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Preview configuration edit",
+                DialogTone::Confirmation,
+            ))
             .wrap(Wrap { trim: false }),
             popup,
         );
@@ -1900,11 +1951,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 field("Effective", &comparison.effective),
                 field("Unexpanded", &comparison.unexpanded),
             ))
-            .block(
-                Block::default()
-                    .title("Configuration comparison")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Configuration comparison",
+                DialogTone::Result,
+            ))
             .wrap(Wrap { trim: false }),
             popup,
         );
@@ -1919,17 +1970,25 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         frame.render_widget(
             Table::new(
                 picker.scopes.iter().enumerate().map(|(index, scope)| {
-                    Row::new([scope.as_deref().unwrap_or("(global)")])
-                        .style(selected_style(app, index == picker.selection))
+                    Row::new([format!(
+                        "{} {}",
+                        if index == picker.selection {
+                            "▶"
+                        } else {
+                            " "
+                        },
+                        scope.as_deref().unwrap_or("(global)")
+                    )])
+                    .style(selected_style(app, index == picker.selection))
                 }),
                 [Constraint::Min(20)],
             )
             .header(Row::new(["Variable scope"]).style(Style::default().bold()))
-            .block(
-                Block::default()
-                    .title(format!("{} scope", picker.variable))
-                    .borders(Borders::ALL),
-            ),
+            .block(dialog_block(
+                app,
+                format!("{} scope", picker.variable),
+                DialogTone::Standard,
+            )),
             popup,
         );
     } else if let Some(Dialog::ConfigSourcePicker(picker)) = app.active_dialog() {
@@ -1944,7 +2003,15 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             Table::new(
                 picker.sources.iter().enumerate().map(|(index, source)| {
                     Row::new([
-                        Cell::from(source.operation.as_str()),
+                        Cell::from(format!(
+                            "{} {}",
+                            if index == picker.selection {
+                                "▶"
+                            } else {
+                                " "
+                            },
+                            source.operation
+                        )),
                         Cell::from(source.path.display().to_string()),
                         Cell::from(
                             source
@@ -1964,11 +2031,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 Row::new(["Operation", "Authoritative source", "Line"])
                     .style(Style::default().bold()),
             )
-            .block(
-                Block::default()
-                    .title(format!("{} defining sources", picker.identity.name))
-                    .borders(Borders::ALL),
-            ),
+            .block(dialog_block(
+                app,
+                format!("{} defining sources", picker.identity.name),
+                DialogTone::Standard,
+            )),
             popup,
         );
     } else if let Some(Dialog::RecipePatchPicker(picker)) = app.active_dialog() {
@@ -1982,17 +2049,25 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         frame.render_widget(
             Table::new(
                 picker.patches.iter().enumerate().map(|(index, patch)| {
-                    Row::new([patch.display().to_string()])
-                        .style(selected_style(app, index == picker.selection))
+                    Row::new([format!(
+                        "{} {}",
+                        if index == picker.selection {
+                            "▶"
+                        } else {
+                            " "
+                        },
+                        patch.display()
+                    )])
+                    .style(selected_style(app, index == picker.selection))
                 }),
                 [Constraint::Min(20)],
             )
             .header(Row::new(["Authoritative local patch"]).style(Style::default().bold()))
-            .block(
-                Block::default()
-                    .title(format!("{} patch review", picker.recipe))
-                    .borders(Borders::ALL),
-            ),
+            .block(dialog_block(
+                app,
+                format!("{} patch review", picker.recipe),
+                DialogTone::Standard,
+            )),
             popup,
         );
     } else if let Some(Dialog::RecipeTaskConfirmation(request)) = app.active_dialog() {
@@ -2008,11 +2083,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                     .as_deref()
                     .map_or(String::new(), |task| format!("-c {task}"))
             ))
-            .block(
-                Block::default()
-                    .title("Confirm recipe task")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Confirm recipe task",
+                DialogTone::Confirmation,
+            ))
             .wrap(Wrap { trim: true }),
             popup,
         );
@@ -2031,11 +2106,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 identity.name,
                 identity.file.display()
             ))
-            .block(
-                Block::default()
-                    .title("Confirm Devtool modify")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Confirm Devtool modify",
+                DialogTone::Confirmation,
+            ))
             .wrap(Wrap { trim: true }),
             popup,
         );
@@ -2055,11 +2130,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 plan.identity.file.display(),
                 plan.source_path.display()
             ))
-            .block(
-                Block::default()
-                    .title("Confirm Devtool reset")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Confirm Devtool reset",
+                DialogTone::Destructive,
+            ))
             .wrap(Wrap { trim: true }),
             popup,
         );
@@ -2078,11 +2153,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 identity.name,
                 identity.file.display()
             ))
-            .block(
-                Block::default()
-                    .title("Confirm Devtool update-recipe")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Confirm Devtool update-recipe",
+                DialogTone::Confirmation,
+            ))
             .wrap(Wrap { trim: true }),
             popup,
         );
@@ -2104,11 +2179,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 plan.layer.name,
                 plan.layer.path.display()
             ))
-            .block(
-                Block::default()
-                    .title("Confirm Devtool finish")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Confirm Devtool finish",
+                DialogTone::Destructive,
+            ))
             .wrap(Wrap { trim: true }),
             popup,
         );
@@ -2129,11 +2204,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 plan.identity.file.display(),
                 plan.target
             ))
-            .block(
-                Block::default()
-                    .title("Confirm Devtool deploy-target")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Confirm Devtool deploy-target",
+                DialogTone::Confirmation,
+            ))
             .wrap(Wrap { trim: true }),
             popup,
         );
@@ -2153,11 +2228,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 draft.identity.file.display(),
                 draft.target
             ))
-            .block(
-                Block::default()
-                    .title("Devtool deploy target")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Devtool deploy target",
+                DialogTone::Standard,
+            ))
             .wrap(Wrap { trim: false }),
             popup,
         );
@@ -2177,8 +2252,19 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         frame.render_widget(
             Table::new(
                 picker.layers.iter().enumerate().map(|(index, layer)| {
-                    Row::new([layer.name.clone(), layer.path.display().to_string()])
-                        .style(selected_style(app, index == picker.selection))
+                    Row::new([
+                        format!(
+                            "{} {}",
+                            if index == picker.selection {
+                                "▶"
+                            } else {
+                                " "
+                            },
+                            layer.name
+                        ),
+                        layer.path.display().to_string(),
+                    ])
+                    .style(selected_style(app, index == picker.selection))
                 }),
                 [Constraint::Length(24), Constraint::Min(20)],
             )
@@ -2186,14 +2272,14 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 Row::new(["Configured layer", "Absolute destination"])
                     .style(Style::default().bold()),
             )
-            .block(
-                Block::default()
-                    .title(format!(
-                        "Devtool finish {} — ↑/↓ select, Enter preview, Esc cancel",
-                        picker.identity.name
-                    ))
-                    .borders(Borders::ALL),
-            ),
+            .block(dialog_block(
+                app,
+                format!(
+                    "Devtool finish {} — ↑/↓ select, Enter preview, Esc cancel",
+                    picker.identity.name
+                ),
+                DialogTone::Standard,
+            )),
             popup,
         );
     } else if let Some(Dialog::BbmaskConfirmation(value)) = app.active_dialog() {
@@ -2210,7 +2296,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 "Append this exact assignment to $BUILDDIR/conf/local.conf:\n\n{}\n\nEnter writes and refreshes configuration; Esc cancels.",
                 bbmask_assignment(value)
             ))
-            .block(Block::default().title("Confirm BBMASK change").borders(Borders::ALL))
+            .block(dialog_block(
+                app,
+                "Confirm BBMASK change",
+                DialogTone::Destructive,
+            ))
             .wrap(Wrap { trim: false }),
             popup,
         );
@@ -2237,7 +2327,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             .map(|(index, image)| {
                 format!(
                     "{} {}",
-                    if index == picker.selection { ">" } else { " " },
+                    if index == picker.selection {
+                        "▶"
+                    } else {
+                        " "
+                    },
                     image
                 )
             })
@@ -2248,7 +2342,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             Paragraph::new(format!(
                 "Active MACHINE: {machine}\n\n{images}\n\nUp/Down select  Enter choose image  Esc cancel"
             ))
-            .block(Block::default().title("Available image targets").borders(Borders::ALL))
+            .block(dialog_block(
+                app,
+                "Available image targets",
+                DialogTone::Standard,
+            ))
             .wrap(Wrap { trim: false }),
             popup,
         );
@@ -2279,7 +2377,11 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 "Machine: {machine}\nCurrent image target: {}\n\nb  Build image\nc  Clean image\nm  Run menuconfig\ne  Enter a different image target\n\nEsc closes this menu.",
                 app.build.target.as_deref().unwrap_or("not selected")
             ))
-            .block(Block::default().title("Image build options").borders(Borders::ALL)),
+            .block(dialog_block(
+                app,
+                "Image build options",
+                DialogTone::Standard,
+            )),
             popup,
         );
     } else if let Some(Dialog::BuildTarget { editor, task }) = app.active_dialog() {
@@ -2361,19 +2463,24 @@ fn theme_picker(frame: &mut Frame, app: &App, selection: usize, area: Rect) {
         .iter()
         .enumerate()
         .map(|(index, theme)| {
-            Row::new([format!("{:?}", theme)]).style(selected_style(app, index == selection))
+            Row::new([format!(
+                "{} {:?}",
+                if index == selection { "▶" } else { " " },
+                theme
+            )])
+            .style(selected_style(app, index == selection))
         });
     frame.render_widget(
         Table::new(rows, [Constraint::Min(1)])
-            .block(
-                Block::default()
-                    .title(if app.color_forced_off {
-                        "Theme — preview locked by --no-color"
-                    } else {
-                        "Theme — applies immediately"
-                    })
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                if app.color_forced_off {
+                    "Theme — preview locked by --no-color"
+                } else {
+                    "Theme — applies immediately"
+                },
+                DialogTone::Standard,
+            ))
             .footer(Row::new(["↑/↓ select  Enter apply  Esc restore"])),
         popup,
     );
@@ -2435,7 +2542,11 @@ fn build_environment_clone_review(
         });
     frame.render_widget(
         Paragraph::new(format!("Review before cloning:\n\n{clone}{checkout}\n\nBuild directory: {}\n\nEnter confirms this network operation. Esc cancels.", plan.build_dir.display()))
-            .block(Block::default().title("Clone Poky review").borders(Borders::ALL))
+            .block(dialog_block(
+                app,
+                "Clone Poky review",
+                DialogTone::Confirmation,
+            ))
             .style(ThemePalette::for_app(app).base())
             .wrap(Wrap { trim: true }),
         popup,
@@ -4440,7 +4551,7 @@ fn build_completion_popup(frame: &mut Frame, app: &App, area: Rect) {
             action,
         ))
         .style(build_status_style(app))
-        .block(Block::default().title("Build finished").borders(Borders::ALL))
+        .block(dialog_block(app, "Build finished", DialogTone::Result))
         .wrap(Wrap { trim: true }),
         popup,
     );
@@ -4455,8 +4566,16 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         height,
     );
     clear_popup(frame, app, popup);
-    let columns =
-        Layout::horizontal([Constraint::Percentage(35), Constraint::Percentage(65)]).split(popup);
+    let outer = dialog_block(
+        app,
+        format!("Recipe editor: {}", editor.recipe),
+        DialogTone::Standard,
+    );
+    let inner = outer.inner(popup);
+    frame.render_widget(outer, popup);
+    let regions = Layout::vertical([Constraint::Min(4), Constraint::Length(1)]).split(inner);
+    let columns = Layout::horizontal([Constraint::Percentage(35), Constraint::Percentage(65)])
+        .split(regions[0]);
     let files = editor
         .files
         .iter()
@@ -4464,7 +4583,11 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         .map(|(index, path)| {
             format!(
                 "{} {}",
-                if index == editor.selection { ">" } else { " " },
+                if index == editor.selection {
+                    "▶"
+                } else {
+                    " "
+                },
                 path.display()
             )
         })
@@ -4505,18 +4628,12 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
             .wrap(Wrap { trim: false }),
         columns[1],
     );
-    let footer = Rect::new(
-        popup.x,
-        popup.y.saturating_add(popup.height.saturating_sub(1)),
-        popup.width,
-        1,
-    );
     frame.render_widget(
         Paragraph::new(
             "↑/↓ file  Enter/e edit  Ctrl+S save  Ctrl+B build recipe  Esc return to Yoctui",
         )
-        .style(ThemePalette::for_app(app).role(ThemePalette::for_app(app).disabled, Modifier::DIM)),
-        footer,
+        .style(dialog_styles(app).hint),
+        regions[1],
     );
 }
 fn telemetry_meter_style(app: &App, percent: u8) -> Style {
@@ -5908,15 +6025,8 @@ fn tasks_workspace(
     }
 }
 
-fn qemu_popup_rect(area: Rect, preferred_width: u16, preferred_height: u16) -> Rect {
-    let width = preferred_width.min(area.width.saturating_sub(2)).max(1);
-    let height = preferred_height.min(area.height.saturating_sub(2)).max(1);
-    Rect::new(
-        area.x + area.width.saturating_sub(width) / 2,
-        area.y + area.height.saturating_sub(height) / 2,
-        width,
-        height,
-    )
+fn dialog_popup_rect(area: Rect, preferred_width: u16, preferred_height: u16) -> Rect {
+    bounded_dialog_rect(area, preferred_width, preferred_height)
 }
 
 fn sdk_kind_label(kind: SdkArtifactKind) -> &'static str {
@@ -6407,9 +6517,10 @@ fn qa_inspector_text(app: &App) -> String {
 }
 
 fn qa_dialog(frame: &mut Frame, app: &App, dialog: &QaDialog, area: Rect) {
-    let (title, body) = match dialog {
+    let (title, tone, body) = match dialog {
         QaDialog::Operation(preview) => (
             "Confirm recipe/kernel QA",
+            DialogTone::Confirmation,
             format!(
                 "Operation {}\nCheck: {}\nRecipe: {}\nProvider: {}\n\nIndexed BitBake request:\n{}\n\nReport roots:\n{}\n\nEnter runs | Esc cancels",
                 preview.id.0,
@@ -6427,6 +6538,7 @@ fn qa_dialog(frame: &mut Frame, app: &App, dialog: &QaDialog, area: Rect) {
         ),
         QaDialog::LayerOperation(preview) => (
             "Confirm layer QA",
+            DialogTone::Confirmation,
             format!(
                 "Operation {}\nLayer: {} ({})\nExecutable: {}\n\nIndexed native vector:\n{}\n\nEnter runs | Esc cancels",
                 preview.id.0,
@@ -6442,6 +6554,7 @@ fn qa_dialog(frame: &mut Frame, app: &App, dialog: &QaDialog, area: Rect) {
             background_job,
         } => (
             "Cancel managed QA",
+            DialogTone::Confirmation,
             format!(
                 "Cancel QA session {} attached to build job {}?\n\nEnter confirms | Esc keeps running",
                 session.0, background_job.0
@@ -6449,24 +6562,18 @@ fn qa_dialog(frame: &mut Frame, app: &App, dialog: &QaDialog, area: Rect) {
         ),
         QaDialog::LayerCancellation(session) => (
             "Cancel layer QA",
+            DialogTone::Confirmation,
             format!(
                 "Cancel exact layer-QA session {}?\n\nEnter confirms | Esc keeps running",
                 session.0
             ),
         ),
     };
-    let width = 78.min(area.width.saturating_sub(2));
-    let height = 18.min(area.height.saturating_sub(2));
-    let popup = Rect::new(
-        area.x + area.width.saturating_sub(width) / 2,
-        area.y + area.height.saturating_sub(height) / 2,
-        width,
-        height,
-    );
+    let popup = dialog_popup_rect(area, 78, 18);
     clear_popup(frame, app, popup);
     frame.render_widget(
         Paragraph::new(body)
-            .block(Block::default().title(title).borders(Borders::ALL))
+            .block(dialog_block(app, title, tone))
             .wrap(Wrap { trim: false }),
         popup,
     );
@@ -7156,11 +7263,11 @@ fn security_dialog(frame: &mut Frame, app: &App, dialog: &SecurityDialog, area: 
             7,
         ),
     };
-    let popup = qemu_popup_rect(area, 94, height);
+    let popup = dialog_popup_rect(area, 94, height);
     clear_popup(frame, app, popup);
     frame.render_widget(
         Paragraph::new(text)
-            .block(Block::default().title(title).borders(Borders::ALL))
+            .block(dialog_block(app, title, DialogTone::Confirmation))
             .wrap(Wrap { trim: false }),
         popup,
     );
@@ -7862,14 +7969,15 @@ fn testing_popup(
     app: &App,
     area: Rect,
     title: &str,
+    tone: DialogTone,
     text: String,
     preferred_height: u16,
 ) {
-    let popup = qemu_popup_rect(area, 92, preferred_height);
+    let popup = dialog_popup_rect(area, 92, preferred_height);
     clear_popup(frame, app, popup);
     frame.render_widget(
         Paragraph::new(text)
-            .block(Block::default().title(title).borders(Borders::ALL))
+            .block(dialog_block(app, title, tone))
             .wrap(Wrap { trim: false }),
         popup,
     );
@@ -7884,6 +7992,10 @@ fn test_launch_dialog(frame: &mut Frame, app: &App, dialog: &TestLaunchDialog, a
         }
     };
     let editing = if dialog.editing { " [editing]" } else { "" };
+    let validation = dialog.validation_error.as_ref().map_or_else(
+        || "✓ Validation: exact typed choices only.".into(),
+        |error| format!("✕ Validation: {error}"),
+    );
     let text = format!(
         "Family: {}\nMACHINE: {}\nDISTRO: {}\nImage: {}\n\n{} Scope: {:?}\n{} Selector: {}{}\n{} Parallelism: {}{}\n{} Verbose: {}\n{} Skip network: {}\n\n{}\n↑/↓ field | ←/→ or Enter choice | Enter edit | p preview | Esc cancel",
         dialog.draft.family.label(),
@@ -7914,12 +8026,17 @@ fn test_launch_dialog(frame: &mut Frame, app: &App, dialog: &TestLaunchDialog, a
         dialog.draft.verbose,
         marker(TestLaunchField::SkipNetwork),
         dialog.draft.skip_network,
-        dialog
-            .validation_error
-            .as_deref()
-            .unwrap_or("Exact typed choices only."),
+        validation,
     );
-    testing_popup(frame, app, area, "Testing launch", text, 19);
+    testing_popup(
+        frame,
+        app,
+        area,
+        "Testing launch",
+        DialogTone::Standard,
+        text,
+        19,
+    );
 }
 
 fn test_launch_confirmation(frame: &mut Frame, app: &App, preview: &TestLaunchPreview, area: Rect) {
@@ -7954,7 +8071,15 @@ fn test_launch_confirmation(frame: &mut Frame, app: &App, preview: &TestLaunchPr
             request.force,
         ),
     };
-    testing_popup(frame, app, area, "Confirm Testing launch", text, 18);
+    testing_popup(
+        frame,
+        app,
+        area,
+        "Confirm Testing launch",
+        DialogTone::Confirmation,
+        text,
+        18,
+    );
 }
 
 fn test_cancellation_confirmation(
@@ -7968,6 +8093,7 @@ fn test_cancellation_confirmation(
         app,
         area,
         "Confirm Testing cancellation",
+        DialogTone::Confirmation,
         format!(
             "Cancel Testing session {} only?\n\nEnter requests cancellation; Esc keeps it running.",
             id.0
@@ -7982,18 +8108,19 @@ fn test_result_import_dialog(
     dialog: &yoctui_model::TestResultImportDialog,
     area: Rect,
 ) {
+    let validation = dialog.validation_error.as_ref().map_or_else(
+        || "✓ Validation: only the exact selected root is scanned within bounded limits.".into(),
+        |error| format!("✕ Validation: {error}"),
+    );
     testing_popup(
         frame,
         app,
         area,
         "Import structured test results",
+        DialogTone::Standard,
         format!(
             "Normalized absolute testresults.json file or retained directory:\n{}_\n\n{}\nEnter imports; Esc cancels.",
-            dialog.input,
-            dialog
-                .validation_error
-                .as_deref()
-                .unwrap_or("Only the exact selected root is scanned within bounded limits."),
+            dialog.input, validation,
         ),
         10,
     );
@@ -8016,12 +8143,7 @@ fn toml_popup_editor(
     clear_popup(frame, app, popup);
     let mode = if editor.editing { "INSERT" } else { "NORMAL" };
     let content = popup_editor_text(editor);
-    let body = format!(
-        "{content}\n{mode}: i inserts, e changes selected value, Enter saves/previews, q closes.\nInsert: arrows/Home/End move, type/paste replace selection, Backspace deletes, Esc normal.",
-    );
-    let block = Block::default()
-        .title(format!("{title} — {mode}"))
-        .borders(Borders::ALL);
+    let block = dialog_block(app, format!("{title} — {mode}"), DialogTone::Standard);
     let inner = block.inner(popup);
     frame.render_widget(block, popup);
     let rows = Layout::vertical(if validation_error.is_some() {
@@ -8034,20 +8156,30 @@ fn toml_popup_editor(
         vec![Constraint::Min(0), Constraint::Length(3)]
     })
     .split(inner);
-    frame.render_widget(Paragraph::new(body).wrap(Wrap { trim: false }), rows[0]);
+    frame.render_widget(Paragraph::new(content).wrap(Wrap { trim: false }), rows[0]);
     let shortcuts = if let Some(error) = validation_error {
         frame.render_widget(
-            Paragraph::new(format!("Validation: {error}")).wrap(Wrap { trim: false }),
+            Paragraph::new(dialog_shell(app, title, DialogTone::Standard).validation(Some(error)))
+                .wrap(Wrap { trim: false }),
             rows[1],
         );
         rows[2]
     } else {
         rows[1]
     };
+    let shell = dialog_shell(app, title, DialogTone::Standard);
     frame.render_widget(
-        Paragraph::new(
-            "i insert  e change value  Enter save/preview  Esc normal  q close\nHome/End line  Ctrl+C copy  Ctrl+V paste",
-        )
+        Paragraph::new(Text::from(vec![
+            shell.controls(
+                Some(("Enter", "Save/preview")),
+                &[("Esc", "Normal"), ("q", "Close")],
+            ),
+            Line::styled("i insert  e change value", dialog_styles(app).hint),
+            Line::styled(
+                "Home/End line  Ctrl+C copy  Ctrl+V paste",
+                dialog_styles(app).hint,
+            ),
+        ]))
         .wrap(Wrap { trim: false }),
         shortcuts,
     );
@@ -8113,11 +8245,16 @@ fn test_comparison_dialog(
         })
         .collect::<Vec<_>>()
         .join("\n");
+    let validation = picker.validation_error.as_ref().map_or_else(
+        || "✓ Validation: baseline and candidate must be distinct.".into(),
+        |error| format!("✕ Validation: {error}"),
+    );
     testing_popup(
         frame,
         app,
         area,
         "Choose exact comparison inputs",
+        DialogTone::Standard,
         format!(
             "Active field: {:?}\nBaseline: {}\nCandidate: {}\n\n{}\n\n{}\nTab field | ↑/↓ choose | Enter set | p preview | Esc cancel",
             picker.active_field,
@@ -8130,10 +8267,7 @@ fn test_comparison_dialog(
                 |value| value.path.display().to_string()
             ),
             rows,
-            picker
-                .validation_error
-                .as_deref()
-                .unwrap_or("Baseline and candidate must be distinct."),
+            validation,
         ),
         20,
     );
@@ -8150,6 +8284,7 @@ fn test_comparison_confirmation(
         app,
         area,
         "Confirm result comparison",
+        DialogTone::Confirmation,
         format!(
             "Baseline:\n{}\nfingerprint: {}\n\nCandidate:\n{}\nfingerprint: {}\n\nExact indexed shell-free argv:\n{}\n\nEnter compares; Esc cancels.",
             preview.request.baseline.path.display(),
@@ -8174,19 +8309,25 @@ fn test_junit_dialog(
     dialog: &yoctui_model::TestJunitExportDialog,
     area: Rect,
 ) {
+    let validation = dialog.validation_error.as_ref().map_or_else(
+        || {
+            "✓ Validation: destination must not exist and its canonical parent must remain unchanged."
+                .into()
+        },
+        |error| format!("✕ Validation: {error}"),
+    );
     testing_popup(
         frame,
         app,
         area,
         "JUnit export destination",
+        DialogTone::Standard,
         format!(
             "Result:\n{}\nfingerprint: {}\n\nNew absolute .xml destination:\n{}_\n\n{}\nEnter validates; Esc cancels.",
             dialog.result.path.display(),
             dialog.result.fingerprint,
             dialog.destination_input,
-            dialog.validation_error.as_deref().unwrap_or(
-                "The destination must not exist and its canonical parent must remain unchanged."
-            ),
+            validation,
         ),
         14,
     );
@@ -8203,6 +8344,7 @@ fn test_junit_confirmation(
         app,
         area,
         "Confirm JUnit export",
+        DialogTone::Confirmation,
         format!(
             "Result:\n{}\nfingerprint: {}\nDestination:\n{}\n\nExact indexed shell-free argv:\n{}\n\nThis never overwrites. Enter exports; Esc cancels.",
             preview.request.result.path.display(),
@@ -8567,19 +8709,15 @@ fn sdk_popup(
     app: &App,
     area: Rect,
     title: &str,
+    tone: DialogTone,
     content: String,
     preferred_height: u16,
 ) {
-    let popup = qemu_popup_rect(area, 92, preferred_height);
+    let popup = dialog_popup_rect(area, 92, preferred_height);
     clear_popup(frame, app, popup);
     frame.render_widget(
         Paragraph::new(content)
-            .block(
-                Block::default()
-                    .title(title)
-                    .borders(Borders::ALL)
-                    .border_style(ThemePalette::for_app(app).focus()),
-            )
+            .block(dialog_block(app, title, tone))
             .wrap(Wrap { trim: false }),
         popup,
     );
@@ -8602,6 +8740,7 @@ fn sdk_build_confirmation(
         app,
         area,
         "Confirm SDK build",
+        DialogTone::Confirmation,
         format!(
             "Action: {action}\nMachine: {}\nDistro: {}\nImage target: {}\nBitBake task: {}\n\nEnter starts the managed BitBake build.\nEsc closes without starting.",
             preview.machine,
@@ -8634,14 +8773,15 @@ fn sdk_publish_dialog(frame: &mut Frame, app: &App, draft: &SdkPublishDraft, are
                 })
         })
         .map_or_else(
-            |message| format!("Validation: {message}"),
-            |()| "Validation: ready for exact preview".into(),
+            |message| format!("✕ Validation: {message}"),
+            |()| "✓ Validation: ready for exact preview".into(),
         );
     sdk_popup(
         frame,
         app,
         area,
         "Publish SDK installer",
+        DialogTone::Standard,
         format!(
             "Tool: {}\nInstaller [read-only]: {installer}\nDestination [editing]: {}_\n{validation}\n\nDestination must be an absolute canonical empty directory.\nEnter validates and opens the exact argument preview.\nEsc closes without publishing.",
             app.sdk_tool_capability
@@ -8668,6 +8808,7 @@ fn sdk_publish_confirmation(frame: &mut Frame, app: &App, preview: &SdkPublishPr
         app,
         area,
         "Confirm SDK publication",
+        DialogTone::Confirmation,
         format!(
             "Installer: {}\nDestination: {}\n\nExact indexed shell-free argument vector:\n{}\n\nNo overwrite policy is guessed.\nEnter starts the managed publication job.\nEsc closes without publishing.",
             preview.request.artifact.path.display(),
@@ -8701,8 +8842,8 @@ fn sdk_native_dialog(frame: &mut Frame, app: &App, dialog: &SdkNativeDialog, are
             .map(|_| ())
         })
         .map_or_else(
-            |message| format!("Validation: {message}"),
-            |()| "Validation: ready for exact preview".into(),
+            |message| format!("✕ Validation: {message}"),
+            |()| "✓ Validation: ready for exact preview".into(),
         );
     let row = |field: SdkNativeField, label: &str, value: &str| {
         let marker = if dialog.selected_field == field {
@@ -8720,12 +8861,13 @@ fn sdk_native_dialog(frame: &mut Frame, app: &App, dialog: &SdkNativeDialog, are
     let validation = dialog
         .validation_error
         .as_ref()
-        .map_or(validation, |message| format!("Validation: {message}"));
+        .map_or(validation, |message| format!("✕ Validation: {message}"));
     sdk_popup(
         frame,
         app,
         area,
         "SDK native tool",
+        DialogTone::Standard,
         format!(
             "{}\nExecutable: {}\n{}\n{}\n{}\n{}\n{validation}\n\n↑/↓ select · Enter edit/cycle · ←/→ mode · p preview · Esc close",
             row(SdkNativeField::Mode, "Mode", &format!("{:?}", draft.mode)),
@@ -8773,6 +8915,7 @@ fn sdk_native_confirmation(frame: &mut Frame, app: &App, preview: &SdkNativePrev
         app,
         area,
         "Confirm SDK native tool",
+        DialogTone::Confirmation,
         format!(
             "Mode: {:?}\nWorkspace: {}\nRecipe: {}\nTool: {}\n\nExact indexed shell-free argument vector:\n{}\n\nEnvironment changes apply only to the managed child.\nEnter starts the operation.\nEsc closes without starting.",
             preview.request.mode,
@@ -8801,6 +8944,7 @@ fn sdk_cancellation_confirmation(frame: &mut Frame, app: &App, id: SdkSessionId,
         app,
         area,
         "Confirm SDK cancellation",
+        DialogTone::Confirmation,
         format!(
             "Cancel managed SDK {operation} operation #{}?\n\nRetained output and the terminal cancellation result remain in SDK history.\nEnter requests cancellation.\nEsc keeps the operation running.",
             id.0
@@ -8870,9 +9014,22 @@ fn qemu_launch_field_value(dialog: &QemuLaunchDialog, field: QemuLaunchField) ->
 }
 
 fn qemu_launch_dialog(frame: &mut Frame, app: &App, dialog: &QemuLaunchDialog, area: Rect) {
-    let popup = qemu_popup_rect(area, 100, 20);
+    let popup = dialog_popup_rect(area, 100, 20);
     clear_popup(frame, app, popup);
-    let palette = ThemePalette::for_app(app);
+    let shell = dialog_shell(app, "Launch runqemu", DialogTone::Standard);
+    let block = shell.clone().block();
+    let inner = block.inner(popup);
+    frame.render_widget(block, popup);
+    let regions = Layout::vertical(if dialog.validation_error.is_some() {
+        vec![
+            Constraint::Min(4),
+            Constraint::Length(2),
+            Constraint::Length(1),
+        ]
+    } else {
+        vec![Constraint::Min(4), Constraint::Length(1)]
+    })
+    .split(inner);
     let fields = [
         QemuLaunchField::Machine,
         QemuLaunchField::Image,
@@ -8894,40 +9051,48 @@ fn qemu_launch_dialog(frame: &mut Frame, app: &App, dialog: &QemuLaunchDialog, a
             ""
         };
         Row::new([
-            format!("{}{}", qemu_launch_field_label(field), suffix),
+            format!(
+                "{} {}{}",
+                if selected { "▶" } else { " " },
+                qemu_launch_field_label(field),
+                suffix
+            ),
             qemu_launch_field_value(dialog, field),
         ])
         .style(selected_style(app, selected))
     });
-    let mut title =
-        String::from("Launch runqemu | ↑/↓ field ←/→ choice Enter edit p preview Esc close");
-    if popup.width < 80 {
-        title = "Launch runqemu | p preview | Esc close".into();
-    }
     frame.render_widget(
-        Table::new(rows, [Constraint::Length(23), Constraint::Min(1)])
-            .header(Row::new(["Field", "Value"]).style(Style::default().bold()))
-            .block(Block::default().title(title).borders(Borders::ALL)),
-        popup,
+        Table::new(rows, [Constraint::Length(23), Constraint::Min(1)]).header(
+            Row::new(["Field", "Value"]).style(
+                ThemePalette::for_app(app)
+                    .role(ThemePalette::for_app(app).table_header, Modifier::BOLD),
+            ),
+        ),
+        regions[0],
     );
     if let Some(message) = &dialog.validation_error {
-        let error = Rect::new(
-            popup.x.saturating_add(1),
-            popup.y + popup.height.saturating_sub(3),
-            popup.width.saturating_sub(2),
-            2.min(popup.height.saturating_sub(1)),
-        );
         frame.render_widget(
-            Paragraph::new(format!("Validation: {message}"))
-                .style(palette.role(palette.error, Modifier::BOLD))
-                .wrap(Wrap { trim: false }),
-            error,
+            Paragraph::new(shell.validation(Some(message))).wrap(Wrap { trim: false }),
+            regions[1],
         );
     }
+    let controls = *regions.last().expect("dialog has controls");
+    frame.render_widget(
+        Paragraph::new(shell.controls(
+            Some(("p", "Preview")),
+            &[
+                ("↑/↓", "Field"),
+                ("←/→", "Choice"),
+                ("Enter", "Edit"),
+                ("Esc", "Close"),
+            ],
+        )),
+        controls,
+    );
 }
 
 fn qemu_launch_confirmation(frame: &mut Frame, app: &App, preview: &QemuLaunchPreview, area: Rect) {
-    let popup = qemu_popup_rect(area, 100, 18);
+    let popup = dialog_popup_rect(area, 100, 18);
     clear_popup(frame, app, popup);
     let mut lines = vec![
         Line::from(format!("Machine: {}", preview.request.machine)),
@@ -8951,18 +9116,18 @@ fn qemu_launch_confirmation(frame: &mut Frame, app: &App, preview: &QemuLaunchPr
     ));
     frame.render_widget(
         Paragraph::new(lines)
-            .block(
-                Block::default()
-                    .title("Confirm managed runqemu launch")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Confirm managed runqemu launch",
+                DialogTone::Confirmation,
+            ))
             .wrap(Wrap { trim: false }),
         popup,
     );
 }
 
 fn qemu_cancellation_confirmation(frame: &mut Frame, app: &App, id: QemuSessionId, area: Rect) {
-    let popup = qemu_popup_rect(area, 72, 7);
+    let popup = dialog_popup_rect(area, 72, 7);
     clear_popup(frame, app, popup);
     let detail = app.qemu_session(id).map_or_else(
         || format!("Session {} is no longer available.", id.0),
@@ -8979,11 +9144,11 @@ fn qemu_cancellation_confirmation(frame: &mut Frame, app: &App, id: QemuSessionI
         Paragraph::new(format!(
             "{detail}\n\nEnter confirms cancellation. Esc keeps it running."
         ))
-        .block(
-            Block::default()
-                .title("Confirm runqemu cancellation")
-                .borders(Borders::ALL),
-        )
+        .block(dialog_block(
+            app,
+            "Confirm runqemu cancellation",
+            DialogTone::Confirmation,
+        ))
         .wrap(Wrap { trim: false }),
         popup,
     );
@@ -9047,8 +9212,22 @@ fn wic_limitations(kickstart: &WicKickstart) -> String {
 }
 
 fn wic_create_dialog(frame: &mut Frame, app: &App, dialog: &WicCreateDialog, area: Rect) {
-    let popup = qemu_popup_rect(area, 100, 20);
+    let popup = dialog_popup_rect(area, 100, 20);
     clear_popup(frame, app, popup);
+    let shell = dialog_shell(app, "Create Wic", DialogTone::Standard);
+    let block = shell.clone().block();
+    let inner = block.inner(popup);
+    frame.render_widget(block, popup);
+    let regions = Layout::vertical(if dialog.validation_error.is_some() {
+        vec![
+            Constraint::Min(4),
+            Constraint::Length(2),
+            Constraint::Length(1),
+        ]
+    } else {
+        vec![Constraint::Min(4), Constraint::Length(1)]
+    })
+    .split(inner);
     let fields = [
         WicCreateField::Machine,
         WicCreateField::Image,
@@ -9074,38 +9253,44 @@ fn wic_create_dialog(frame: &mut Frame, app: &App, dialog: &WicCreateDialog, are
         } else {
             ""
         };
-        Row::new([format!("{label}{marker}"), wic_field_value(dialog, field)])
-            .style(selected_style(app, selected))
+        Row::new([
+            format!("{} {label}{marker}", if selected { "▶" } else { " " }),
+            wic_field_value(dialog, field),
+        ])
+        .style(selected_style(app, selected))
     });
-    let title = if popup.width < 80 {
-        "Create Wic | p preview | Esc close"
-    } else {
-        "Create Wic | ↑/↓ field ←/→ choice Enter edit p preview Esc close"
-    };
     frame.render_widget(
-        Table::new(rows, [Constraint::Length(27), Constraint::Min(1)])
-            .header(Row::new(["Field", "Value"]).style(Style::default().bold()))
-            .block(Block::default().title(title).borders(Borders::ALL)),
-        popup,
+        Table::new(rows, [Constraint::Length(27), Constraint::Min(1)]).header(
+            Row::new(["Field", "Value"]).style(
+                ThemePalette::for_app(app)
+                    .role(ThemePalette::for_app(app).table_header, Modifier::BOLD),
+            ),
+        ),
+        regions[0],
     );
     if let Some(message) = &dialog.validation_error {
-        let palette = ThemePalette::for_app(app);
         frame.render_widget(
-            Paragraph::new(format!("Validation: {message}"))
-                .style(palette.role(palette.error, Modifier::BOLD))
-                .wrap(Wrap { trim: false }),
-            Rect::new(
-                popup.x.saturating_add(1),
-                popup.y + popup.height.saturating_sub(3),
-                popup.width.saturating_sub(2),
-                2.min(popup.height.saturating_sub(1)),
-            ),
+            Paragraph::new(shell.validation(Some(message))).wrap(Wrap { trim: false }),
+            regions[1],
         );
     }
+    let controls = *regions.last().expect("dialog has controls");
+    frame.render_widget(
+        Paragraph::new(shell.controls(
+            Some(("p", "Preview")),
+            &[
+                ("↑/↓", "Field"),
+                ("←/→", "Choice"),
+                ("Enter", "Edit"),
+                ("Esc", "Close"),
+            ],
+        )),
+        controls,
+    );
 }
 
 fn wic_create_confirmation(frame: &mut Frame, app: &App, preview: &WicCreatePreview, area: Rect) {
-    let popup = qemu_popup_rect(area, 100, area.height.saturating_sub(2).min(30));
+    let popup = dialog_popup_rect(area, 100, area.height.saturating_sub(2).min(30));
     clear_popup(frame, app, popup);
     let partitions = wic_partition_summary(&preview.kickstart);
     let limitations = wic_limitations(&preview.kickstart);
@@ -9166,11 +9351,11 @@ fn wic_create_confirmation(frame: &mut Frame, app: &App, preview: &WicCreatePrev
     ]);
     frame.render_widget(
         Paragraph::new(Text::from(lines))
-            .block(
-                Block::default()
-                    .title("Confirm managed Wic creation")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Confirm managed Wic creation",
+                DialogTone::Confirmation,
+            ))
             .wrap(Wrap { trim: false }),
         popup,
     );
@@ -9223,7 +9408,7 @@ fn wic_device_lines(app: &App, devices: &[WicDevice]) -> Vec<Line<'static>> {
 }
 
 fn wic_device_picker(frame: &mut Frame, app: &App, dialog: &WicDevicePickerDialog, area: Rect) {
-    let popup = qemu_popup_rect(area, 110, area.height.saturating_sub(2).min(30));
+    let popup = dialog_popup_rect(area, 110, area.height.saturating_sub(2).min(30));
     clear_popup(frame, app, popup);
     let mut lines = vec![
         Line::from(format!(
@@ -9283,11 +9468,11 @@ fn wic_device_picker(frame: &mut Frame, app: &App, dialog: &WicDevicePickerDialo
     ));
     frame.render_widget(
         Paragraph::new(lines)
-            .block(
-                Block::default()
-                    .title("Select protected Wic write device")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Select protected Wic write device",
+                DialogTone::Standard,
+            ))
             .wrap(Wrap { trim: false }),
         popup,
     );
@@ -9299,7 +9484,7 @@ fn wic_write_phrase_dialog(
     dialog: &WicWritePhraseDialog,
     area: Rect,
 ) {
-    let popup = qemu_popup_rect(area, 100, 15);
+    let popup = dialog_popup_rect(area, 100, 15);
     clear_popup(frame, app, popup);
     let expected = format!("WRITE {}", dialog.device.path.display());
     let mut lines = vec![
@@ -9327,7 +9512,7 @@ fn wic_write_phrase_dialog(
     if let Some(error) = &dialog.validation_error {
         let palette = ThemePalette::for_app(app);
         lines.push(
-            Line::from(format!("Validation: {error}"))
+            Line::from(format!("✕ Validation: {error}"))
                 .style(palette.role(palette.error, Modifier::BOLD)),
         );
     }
@@ -9340,18 +9525,18 @@ fn wic_write_phrase_dialog(
     ]);
     frame.render_widget(
         Paragraph::new(lines)
-            .block(
-                Block::default()
-                    .title("Confirm protected Wic device identity")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Confirm protected Wic device identity",
+                DialogTone::Destructive,
+            ))
             .wrap(Wrap { trim: false }),
         popup,
     );
 }
 
 fn wic_write_confirmation(frame: &mut Frame, app: &App, preview: &WicWritePreview, area: Rect) {
-    let popup = qemu_popup_rect(area, 110, area.height.saturating_sub(2).min(25));
+    let popup = dialog_popup_rect(area, 110, area.height.saturating_sub(2).min(25));
     clear_popup(frame, app, popup);
     let mut lines = vec![
         Line::from("DESTRUCTIVE OPERATION: this overwrites the selected whole device."),
@@ -9405,11 +9590,11 @@ fn wic_write_confirmation(frame: &mut Frame, app: &App, preview: &WicWritePrevie
     ]);
     frame.render_widget(
         Paragraph::new(lines)
-            .block(
-                Block::default()
-                    .title("Final protected Wic device-write preview")
-                    .borders(Borders::ALL),
-            )
+            .block(dialog_block(
+                app,
+                "Final protected Wic device-write preview",
+                DialogTone::Destructive,
+            ))
             .wrap(Wrap { trim: false }),
         popup,
     );
@@ -9422,7 +9607,7 @@ fn wic_cancellation_confirmation(
     incomplete_device_warning: bool,
     area: Rect,
 ) {
-    let popup = qemu_popup_rect(area, 84, 10);
+    let popup = dialog_popup_rect(area, 84, 10);
     clear_popup(frame, app, popup);
     let detail = app.wic_session(id).map_or_else(
         || format!("Wic operation {} is unavailable.", id.0),
@@ -9455,7 +9640,15 @@ fn wic_cancellation_confirmation(
         Paragraph::new(format!(
             "{detail}{warning}\n\nEnter confirms cancellation. Esc keeps it running."
         ))
-        .block(Block::default().title(title).borders(Borders::ALL))
+        .block(dialog_block(
+            app,
+            title,
+            if incomplete_device_warning {
+                DialogTone::Destructive
+            } else {
+                DialogTone::Confirmation
+            },
+        ))
         .wrap(Wrap { trim: false }),
         popup,
     );
@@ -13581,17 +13774,20 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
             "Sstate readiness check",
             format!(
                 "{} Targets: {}\n{} Mode: {:?}\n{} Output: {}\n{} Log: {}\n{} Timeout seconds: {}\n\n{}\n\nTab/Shift+Tab field | Space/←/→ mode | Enter preview | Esc cancel",
-                if draft.field == yoctui_model::MaintenanceReadinessField::Targets { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceReadinessField::Targets { "▶" } else { " " },
                 if draft.targets.is_empty() { "<required>" } else { &draft.targets },
-                if draft.field == yoctui_model::MaintenanceReadinessField::Mode { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceReadinessField::Mode { "▶" } else { " " },
                 draft.mode,
-                if draft.field == yoctui_model::MaintenanceReadinessField::Output { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceReadinessField::Output { "▶" } else { " " },
                 if draft.output.is_empty() { "<none>" } else { &draft.output },
-                if draft.field == yoctui_model::MaintenanceReadinessField::Log { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceReadinessField::Log { "▶" } else { " " },
                 if draft.log.is_empty() { "<none>" } else { &draft.log },
-                if draft.field == yoctui_model::MaintenanceReadinessField::Timeout { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceReadinessField::Timeout { "▶" } else { " " },
                 if draft.timeout.is_empty() { "<required>" } else { &draft.timeout },
-                draft.validation.as_deref().unwrap_or("No command runs until the exact adapter preview is confirmed."),
+                draft.validation.as_ref().map_or_else(
+                    || "✓ Validation: no command runs until the exact adapter preview is confirmed.".into(),
+                    |error| format!("✕ Validation: {error}"),
+                ),
             ),
             if draft.validation.is_some() {
                 palette.role(palette.error, Modifier::BOLD)
@@ -13605,15 +13801,18 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
                 "Cache: {}\nStamps:\n- {}\n\n{} [{}] duplicates\n{} [{}] orphans\n{} [{}] unreferenced by stamps\n{} Jobs: {}\n\n{}\n\nTab/Shift+Tab field | Space toggle | Enter discover candidates | Esc cancel",
                 draft.cache_dir.display(),
                 if draft.stamps_dirs.is_empty() { "none".into() } else { draft.stamps_dirs.iter().take(3).map(|path| path.display().to_string()).collect::<Vec<_>>().join("\n- ") },
-                if draft.field == yoctui_model::MaintenanceCleanupField::Duplicates { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceCleanupField::Duplicates { "▶" } else { " " },
                 if draft.duplicates { "x" } else { " " },
-                if draft.field == yoctui_model::MaintenanceCleanupField::Orphans { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceCleanupField::Orphans { "▶" } else { " " },
                 if draft.orphans { "x" } else { " " },
-                if draft.field == yoctui_model::MaintenanceCleanupField::UnreferencedByStamps { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceCleanupField::UnreferencedByStamps { "▶" } else { " " },
                 if draft.unreferenced_by_stamps { "x" } else { " " },
-                if draft.field == yoctui_model::MaintenanceCleanupField::Jobs { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceCleanupField::Jobs { "▶" } else { " " },
                 if draft.jobs.is_empty() { "<required>" } else { &draft.jobs },
-                draft.validation.as_deref().unwrap_or("Candidate discovery is read-only. Deletion still requires the exact phrase and a second confirmation."),
+                draft.validation.as_ref().map_or_else(
+                    || "✓ Validation: candidate discovery is read-only. Deletion still requires the exact phrase and a second confirmation.".into(),
+                    |error| format!("✕ Validation: {error}"),
+                ),
             ),
             if draft.validation.is_some() {
                 palette.role(palette.error, Modifier::BOLD)
@@ -13637,7 +13836,10 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
                 } else {
                     "\nExport may replace the exact destination."
                 },
-                draft.validation.as_deref().unwrap_or("No helper runs until the exact adapter preview is confirmed."),
+                draft.validation.as_ref().map_or_else(
+                    || "✓ Validation: no helper runs until the exact adapter preview is confirmed.".into(),
+                    |error| format!("✕ Validation: {error}"),
+                ),
             ),
             if draft.validation.is_some() {
                 palette.role(palette.error, Modifier::BOLD)
@@ -13651,16 +13853,19 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
             "Locked-signature cache",
             format!(
                 "{} Locked signatures: {}\n{} Input cache: {}\n{} Output cache: {}\n  Native LSB (read-only): {}\n{} Filter: {}\n\nMatching files beneath the exact output cache may be replaced. The adapter preview and a separate destructive confirmation are still required.\n\n{}\n\nTab/Shift+Tab field | Type/Backspace edit | Enter preview | Esc cancel",
-                if draft.field == yoctui_model::MaintenanceLockedCacheField::LockedSignatures { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceLockedCacheField::LockedSignatures { "▶" } else { " " },
                 if draft.locked_signatures.is_empty() { "<required>" } else { &draft.locked_signatures },
-                if draft.field == yoctui_model::MaintenanceLockedCacheField::InputCache { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceLockedCacheField::InputCache { "▶" } else { " " },
                 if draft.input_cache.is_empty() { "<required>" } else { &draft.input_cache },
-                if draft.field == yoctui_model::MaintenanceLockedCacheField::OutputCache { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceLockedCacheField::OutputCache { "▶" } else { " " },
                 if draft.output_cache.is_empty() { "<required>" } else { &draft.output_cache },
                 draft.native_lsb,
-                if draft.field == yoctui_model::MaintenanceLockedCacheField::Filter { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceLockedCacheField::Filter { "▶" } else { " " },
                 if draft.filter.is_empty() { "<none>" } else { &draft.filter },
-                draft.validation.as_deref().unwrap_or("No generator runs until the exact adapter preview is confirmed."),
+                draft.validation.as_ref().map_or_else(
+                    || "✓ Validation: no generator runs until the exact adapter preview is confirmed.".into(),
+                    |error| format!("✕ Validation: {error}"),
+                ),
             ),
             palette.role(
                 if draft.validation.is_some() {
@@ -13676,23 +13881,26 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
             format!(
                 "Repository (read-only): {}\n{} From revision: {}\n{} To revision: {}\n{} [{}] report version\n{} [{}] report all\n{} [{}] signatures\n{} [{}] signature diff\n{} Exclude paths: {}\n{} [{}] no colour\n\nComparison uses buildhistory-diff only; build-compare is a separate unsupported capability. Output is bounded session evidence.\n\n{}\n\nTab/Shift+Tab field | Space/←/→ toggle | Enter preview | Esc cancel",
                 draft.repository.display(),
-                if draft.field == yoctui_model::MaintenanceBuildHistoryField::FromRevision { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::FromRevision { "▶" } else { " " },
                 if draft.from_revision.is_empty() { "<none>" } else { &draft.from_revision },
-                if draft.field == yoctui_model::MaintenanceBuildHistoryField::ToRevision { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::ToRevision { "▶" } else { " " },
                 if draft.to_revision.is_empty() { "<none>" } else { &draft.to_revision },
-                if draft.field == yoctui_model::MaintenanceBuildHistoryField::ReportVersion { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::ReportVersion { "▶" } else { " " },
                 if draft.report_version { "x" } else { " " },
-                if draft.field == yoctui_model::MaintenanceBuildHistoryField::ReportAll { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::ReportAll { "▶" } else { " " },
                 if draft.report_all { "x" } else { " " },
-                if draft.field == yoctui_model::MaintenanceBuildHistoryField::Signatures { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::Signatures { "▶" } else { " " },
                 if draft.signatures { "x" } else { " " },
-                if draft.field == yoctui_model::MaintenanceBuildHistoryField::SignatureDiff { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::SignatureDiff { "▶" } else { " " },
                 if draft.signature_diff { "x" } else { " " },
-                if draft.field == yoctui_model::MaintenanceBuildHistoryField::ExcludePaths { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::ExcludePaths { "▶" } else { " " },
                 if draft.exclude_paths.is_empty() { "<none>" } else { &draft.exclude_paths },
-                if draft.field == yoctui_model::MaintenanceBuildHistoryField::NoColour { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceBuildHistoryField::NoColour { "▶" } else { " " },
                 if draft.no_colour { "x" } else { " " },
-                draft.validation.as_deref().unwrap_or("No comparison runs until the exact adapter preview is confirmed."),
+                draft.validation.as_ref().map_or_else(
+                    || "✓ Validation: no comparison runs until the exact adapter preview is confirmed.".into(),
+                    |error| format!("✕ Validation: {error}"),
+                ),
             ),
             palette.role(
                 if draft.validation.is_some() {
@@ -13707,35 +13915,38 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
             "Git release archive",
             format!(
                 "{} Data directory: {}\n{} Git directory: {}\n{} [{}] create  {} [{}] bare  {} [{}] create tag\n{} Branch: {}\n{} Tag: {}\n{} Commit subject: {}\n{} Commit body: {}\n{} Tag subject: {}\n{} Tag body: {}\n{} Exclusions: {}\n{} Notes: {}\n{} Push remote: {}\n\nLocal archive creation runs first. A configured push is deferred and requires a second network confirmation after local success. Repository creation, tag replacement, and tracked-output overwrite risks remain visible in the adapter preview.\n\n{}\n\nTab/Shift+Tab field | Space/←/→ toggle | Enter preview | Esc cancel",
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::DataDir { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::DataDir { "▶" } else { " " },
                 if draft.data_dir.is_empty() { "<required>" } else { &draft.data_dir },
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::GitDir { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::GitDir { "▶" } else { " " },
                 if draft.git_dir.is_empty() { "<required>" } else { &draft.git_dir },
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::Create { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::Create { "▶" } else { " " },
                 if draft.create { "x" } else { " " },
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::Bare { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::Bare { "▶" } else { " " },
                 if draft.bare { "x" } else { " " },
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::CreateTag { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::CreateTag { "▶" } else { " " },
                 if draft.create_tag { "x" } else { " " },
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::BranchName { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::BranchName { "▶" } else { " " },
                 draft.branch_name,
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::TagName { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::TagName { "▶" } else { " " },
                 if draft.tag_name.is_empty() { "<none>" } else { &draft.tag_name },
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::CommitSubject { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::CommitSubject { "▶" } else { " " },
                 draft.commit_subject,
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::CommitBody { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::CommitBody { "▶" } else { " " },
                 if draft.commit_body.is_empty() { "<none>" } else { &draft.commit_body },
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::TagSubject { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::TagSubject { "▶" } else { " " },
                 draft.tag_subject,
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::TagBody { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::TagBody { "▶" } else { " " },
                 if draft.tag_body.is_empty() { "<none>" } else { &draft.tag_body },
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::Exclusions { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::Exclusions { "▶" } else { " " },
                 if draft.exclusions.is_empty() { "<none>" } else { &draft.exclusions },
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::Notes { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::Notes { "▶" } else { " " },
                 if draft.notes.is_empty() { "<none>" } else { &draft.notes },
-                if draft.field == yoctui_model::MaintenanceGitArchiveField::PushRemote { ">" } else { " " },
+                if draft.field == yoctui_model::MaintenanceGitArchiveField::PushRemote { "▶" } else { " " },
                 if draft.push_remote.is_empty() { "<local only>" } else { &draft.push_remote },
-                draft.validation.as_deref().unwrap_or("No archive or network operation runs until the exact preview is confirmed."),
+                draft.validation.as_ref().map_or_else(
+                    || "✓ Validation: no archive or network operation runs until the exact preview is confirmed.".into(),
+                    |error| format!("✕ Validation: {error}"),
+                ),
             ),
             palette.role(
                 if draft.validation.is_some() {
@@ -13805,22 +14016,24 @@ fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, 
     } else {
         18
     };
-    let height = preferred_height.min(area.height.saturating_sub(2));
-    let popup = Rect::new(
-        area.x + area.width.saturating_sub(width) / 2,
-        area.y + area.height.saturating_sub(height) / 2,
-        width,
-        height,
-    );
+    let popup = dialog_popup_rect(area, width, preferred_height);
+    let tone = match dialog {
+        MaintenanceDialog::Confirm(preview) if preview.operation.destructive() => {
+            DialogTone::Destructive
+        }
+        MaintenanceDialog::CleanupPhrase { .. } | MaintenanceDialog::ConfirmNetworkPush(_) => {
+            DialogTone::Destructive
+        }
+        MaintenanceDialog::Confirm(_) | MaintenanceDialog::ConfirmCancellation(_) => {
+            DialogTone::Confirmation
+        }
+        _ => DialogTone::Standard,
+    };
     clear_popup(frame, app, popup);
     frame.render_widget(
         Paragraph::new(body)
-            .block(
-                Block::default()
-                    .title(title)
-                    .borders(Borders::ALL)
-                    .border_style(style),
-            )
+            .style(style)
+            .block(dialog_block(app, title, tone))
             .wrap(Wrap { trim: false }),
         popup,
     );
@@ -18620,8 +18833,134 @@ mod tests {
             app.dialogs.push_back(dialog);
             let output = rendered_text(&app, 80, 24);
             assert!(output.contains(title), "missing {title} in narrow dialog");
+            assert!(output.contains("modal ·"), "missing modal shell: {output}");
         }
     }
+
+    #[test]
+    fn next_generation_dialogs_name_standard_confirmation_destructive_and_result_shells() {
+        let reset = yoctui_model::DevtoolResetPlan {
+            identity: yoctui_model::RecipeIdentity {
+                name: "busybox".into(),
+                file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+            },
+            source_path: "/build/workspace/sources/busybox".into(),
+        };
+        for (dialog, expected, control) in [
+            (Dialog::BuildOptions, "modal · Image build options", "Esc"),
+            (
+                Dialog::RecipeTaskConfirmation(BuildRequest {
+                    targets: vec!["busybox".into()],
+                    task: Some("compile".into()),
+                    force: false,
+                }),
+                "confirm modal · Confirm recipe task",
+                "Esc",
+            ),
+            (
+                Dialog::DevtoolResetConfirmation(reset),
+                "destructive modal · Confirm Devtool reset",
+                "Esc",
+            ),
+            (
+                Dialog::BuildCompletion,
+                "result modal · Build finished",
+                "any key",
+            ),
+        ] {
+            let mut app = App::new(32, 8192);
+            app.focus = FocusTarget::Dialog;
+            app.build.status = BuildStatus::Completed;
+            app.dialogs.push_front(dialog);
+            for (width, height) in [(160, 40), (100, 30), (80, 24)] {
+                let output = rendered_text(&app, width, height);
+                assert!(output.contains(expected), "{width}x{height}: {output}");
+                assert!(output.contains(control), "{width}x{height}: {output}");
+            }
+        }
+    }
+
+    #[test]
+    fn next_generation_dialogs_reserve_validation_fields_and_controls() {
+        let mut app = qemu_workspace_app();
+        app.focus = FocusTarget::Dialog;
+        let artifact = app.selected_image_artifact().unwrap().identity.clone();
+        let mut launch = QemuLaunchDialog::new(yoctui_model::QemuLaunchDraft::for_artifact(
+            artifact,
+            yoctui_model::ImageArtifactKind::Wic,
+        ));
+        launch.selected_field = QemuLaunchField::Kernel;
+        launch.editing = true;
+        launch.draft.kernel = "relative/kernel".into();
+        launch.validation_error = Some("kernel path must be absolute".repeat(20));
+        app.dialogs.push_front(Dialog::QemuLaunch(launch));
+        for (width, height) in [(160, 40), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            for expected in [
+                "modal · Launch runqemu",
+                "▶ Kernel [editing]",
+                "✕ Validation: kernel path must be absolute",
+                "[p] Preview",
+                "[Esc] Close",
+            ] {
+                assert!(output.contains(expected), "{width}x{height}: {output}");
+            }
+            assert_eq!(output.matches("▶ Kernel").count(), 1, "{output}");
+        }
+
+        app.dialogs.clear();
+        let mut editor =
+            yoctui_model::PopupEditor::new("destination = \"⟦/exports/result.xml⟧\"\n".into());
+        editor.cursor = editor.text.len();
+        app.dialogs.push_front(Dialog::SdkPublishTomlEditor(editor));
+        let output = rendered_text(&app, 80, 24);
+        assert!(
+            output.contains("modal · SDK publish.toml — NORMAL"),
+            "{output}"
+        );
+        assert!(output.contains("[Enter] Save/preview"), "{output}");
+        assert!(output.contains("Home/End line"), "{output}");
+        assert!(output.contains("Ctrl+V paste"), "{output}");
+    }
+
+    #[test]
+    fn next_generation_dialogs_keep_accessible_focus_and_bounded_geometry() {
+        for (theme, color_enabled) in [
+            (Theme::HighContrast, true),
+            (Theme::Monochrome, true),
+            (Theme::DarkPro, false),
+        ] {
+            let mut app = App::new(32, 8192);
+            app.theme = theme;
+            app.color_enabled = color_enabled;
+            app.reduced_motion = true;
+            app.focus = FocusTarget::Dialog;
+            app.dialogs.push_front(Dialog::QuitConfirmation);
+            let output = rendered_text(&app, 80, 24);
+            assert!(
+                output.contains("destructive modal · Confirm quit"),
+                "{output}"
+            );
+            assert!(output.contains("[Y] Quit UI"), "{output}");
+            assert!(output.contains("[Esc] Continue"), "{output}");
+        }
+
+        for area in [
+            Rect::new(0, 0, 200, 60),
+            Rect::new(0, 0, 100, 30),
+            Rect::new(0, 0, 80, 24),
+            Rect::new(7, 11, 80, 24),
+        ] {
+            let popup = dialog_popup_rect(area, 110, 30);
+            assert!(popup.x >= area.x && popup.y >= area.y);
+            assert!(popup.right() <= area.right() && popup.bottom() <= area.bottom());
+            assert!(popup.width <= area.width && popup.height <= area.height);
+            if area.width >= 2 && area.height >= 2 {
+                assert!(popup.x > area.x && popup.y > area.y);
+            }
+        }
+    }
+
     #[test]
     fn command_palette_renders_search_results_and_disabled_explanations() {
         let mut app = App::new(10, 1_000);

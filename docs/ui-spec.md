@@ -3034,6 +3034,46 @@ Common rules:
 - invalid actions for the active dialog leave it unchanged
 - asynchronous result dialogs retain FIFO order behind an active user dialog
 
+The common visual contract is render-only and consumes the existing typed
+dialog state. Every dialog outer shell uses the semantic background, focused
+border, and heading roles and prefixes `modal ·` to its title so focus trapping
+remains visible even when a long title is clipped. Confirmation/destructive
+shells prefix `confirm modal ·`/`destructive modal ·`; danger is therefore never
+communicated by color alone. Workspace renderers do not choose literal colors.
+
+Dialog content follows this stable order where the type supplies each region:
+
+1. concise body/operation identity
+2. aligned facts or fields
+3. bounded validation/unavailable reason
+4. persistent controls
+
+Field rows reserve a marker and aligned label: `▶` selected, one blank cell for
+an enabled unselected field, and `–` disabled. Editing state is written as
+`[editing]`; selected and disabled state never rely only on color. Validation
+uses `✕ Validation: <exact reason>` in a reserved, wrapped area. It must not
+replace the primary operation identity or the final controls. Buttons and
+controls use bracketed key-first text such as `[Enter] Confirm` and
+`[Esc] Cancel`; destructive confirmation says `[Enter] Confirm destructive`
+or an equally exact typed operation. Dialogs that close on any key say so
+instead of claiming Enter/Esc behavior.
+
+Centered dialogs retain their type-specific preferred width and height but use
+one bounded rectangle calculation: at least one cell remains around the dialog
+at every supported size, and neither dimension may exceed the terminal.
+Editors may use the largest bounded dialog; compact confirmations may remain
+short. Long values ellipsize or wrap within the body. At 80×24 the title,
+selected control or operation identity, exact validation/disabled reason, and
+cancel route take priority. Below 80×24 the global resize message remains
+authoritative and no dialog is rendered.
+
+Selection lists use the semantic table-header and full-row selected styles.
+High-contrast and no-color modes preserve the marker, title, controls, and
+validation text; reduced motion does not animate dialogs. Opening records the
+previous pane, the front typed dialog alone receives input, and close restores
+that exact pane unless a typed workflow intentionally transitions to another
+dialog. Rendering helpers never mutate dialog state.
+
 ---
 
 ## 22. Notifications

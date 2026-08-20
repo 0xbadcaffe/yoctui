@@ -11,9 +11,20 @@ Status values:
 
 ## Current phase
 
-`DIALOG-UI-001` is `IN_PROGRESS`. It will unify typed dialog title, body,
-field alignment, selected and disabled controls, buttons, keyboard hints, and
-validation while preserving focus traps and confirmation semantics.
+`MOUSE-UI-001` is `IN_PROGRESS`. It will ensure semantic click selection,
+wheel scrolling, pane focus, dialog choices, applicable tabs, and supported
+split resizing remain at parity with complete keyboard operation.
+
+`DIALOG-UI-001` is `DONE`: reusable render-only dialog shell, tone, style,
+bounded-geometry, field, validation, and control primitives now unify every
+typed dialog outer shell. Modal, confirmation, destructive, result, and error
+identity is title-first so it survives narrow clipping; selection and
+validation use textual markers; forms reserve validation/control space; and
+editors retain their typed clipboard/navigation controls. Focus trapping,
+nested transitions, exact-pane restoration, asynchronous FIFO dialogs, and
+all typed confirmation behavior remain model-owned and unchanged. Focused
+UI/model tests, all 192 UI tests, the full all-feature workspace suite, strict
+clippy, and 43 bridge tests pass.
 
 `PALETTE-UI-001` is `DONE`: one focus-trapped overlay now uses documented
 centered/inset geometry, shared counted search, wide

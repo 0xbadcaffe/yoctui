@@ -5398,18 +5398,18 @@ notes = "One focus-trapped overlay now uses documented centered/inset geometry, 
 id = "DIALOG-UI-001"
 milestone = "M19"
 title = "Polish typed dialogs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 551
 required = true
 depends_on = ["FOUNDATION-UI-003"]
 verify = ["cargo test -p yoctui-ui next_generation_dialogs", "cargo test -p yoctui-model dialog"]
-notes = "Unify title/body/fields/selection/disabled/buttons/hints/validation while retaining typed focus and confirmation semantics."
+notes = "Reusable render-only DialogShell/DialogTone/DialogStyles, bounded geometry, textual selection/disabled fields, validation, and control primitives now unify all typed dialog outer shells. Modal/confirm/destructive/result identity is title-first, forms reserve validation/control regions, lists use textual selection, and every existing focus/typed workflow remains intact. Focused UI/model plus all 192 UI tests, full workspace, strict clippy, and 43 bridge tests pass."
 
 [[task]]
 id = "MOUSE-UI-001"
 milestone = "M19"
 title = "Ensure mouse parity"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 552
 required = true
 depends_on = ["NAV-UI-001", "TASKS-UI-003", "LOG-UI-002", "DIALOG-UI-001"]
