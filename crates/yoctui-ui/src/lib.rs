@@ -40,10 +40,10 @@ use yoctui_model::{
     SplitAxis, TaskInspectorRef, TaskRowRef, TaskState, TestComparisonCategory,
     TestComparisonState, TestExecutableCapability, TestJunitExportState, TestLaunchDialog,
     TestLaunchField, TestLaunchPreview, TestResultInventoryState, TestWorkspaceView, Theme,
-    VariableIdentity, WicCapability, WicCompression, WicCreateDialog, WicCreateField,
-    WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog, WicKickstart,
-    WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog, WicWritePreview,
-    WorkspaceAvailabilityState, WorkspaceDestination,
+    TransientStatusKind, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
+    WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog,
+    WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog,
+    WicWritePreview, WorkspaceAvailabilityState, WorkspaceDestination,
     compatibility_ui_workspace_destination_action_availability, config_comparison,
     config_edit_disabled_reason, config_source_disabled_reason, format_duration,
     selected_config_copy_value,
@@ -1313,20 +1313,67 @@ fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
         return;
     }
     let clock_width = if area.width >= 100 { 10 } else { 0 };
-    let columns =
-        Layout::horizontal([Constraint::Min(20), Constraint::Length(clock_width)]).split(inner);
+    let transient = app.transient_status();
+    let desired_status_width = match area.width {
+        180.. => 44,
+        130..=179 => 36,
+        100..=129 => 28,
+        _ => 26,
+    };
+    let shortcut_minimum = if area.width < 100 { 32 } else { 36 };
+    let available_status_width = inner
+        .width
+        .saturating_sub(clock_width)
+        .saturating_sub(shortcut_minimum);
+    let status_width = transient
+        .as_ref()
+        .map_or(0, |_| desired_status_width.min(available_status_width));
+    let status_width = if status_width >= 12 { status_width } else { 0 };
+    let columns = Layout::horizontal([
+        Constraint::Min(shortcut_minimum),
+        Constraint::Length(status_width),
+        Constraint::Length(clock_width),
+    ])
+    .split(inner);
     let shortcuts = footer_rail_shortcuts(app, columns[0].width);
     frame.render_widget(
         Paragraph::new(shortcut_rail(app, &shortcuts)).style(palette.base()),
         columns[0],
     );
+    if let Some(status) = transient.filter(|_| status_width > 0) {
+        let tone = transient_status_tone(status.kind);
+        let text = bounded_status_line(
+            status.text.split_whitespace().collect::<Vec<_>>().join(" "),
+            status_width.saturating_sub(2),
+        );
+        frame.render_widget(
+            Paragraph::new(Line::from(status_label(
+                tone,
+                text,
+                status_tone_style(&palette, tone),
+            )))
+            .alignment(Alignment::Right),
+            columns[1],
+        );
+    }
     if clock_width > 0 {
         frame.render_widget(
             Paragraph::new(clock_text(now))
                 .alignment(Alignment::Right)
                 .style(palette.role(palette.primary_foreground, Modifier::DIM)),
-            columns[1],
+            columns[2],
         );
+    }
+}
+
+fn transient_status_tone(kind: TransientStatusKind) -> StatusTone {
+    match kind {
+        TransientStatusKind::Error => StatusTone::Error,
+        TransientStatusKind::Confirmation | TransientStatusKind::Warning => StatusTone::Warning,
+        TransientStatusKind::Success => StatusTone::Success,
+        TransientStatusKind::Notification => StatusTone::Info,
+        TransientStatusKind::Reconnecting => StatusTone::Pending,
+        TransientStatusKind::Activity => StatusTone::Running,
     }
 }
 
@@ -2095,28 +2142,6 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             task.as_deref().unwrap_or("default")
         );
         toml_popup_editor(frame, app, area, &title, editor, None);
-    } else if let Some(notification) = app.notification.as_deref() {
-        let palette = ThemePalette::for_app(app);
-        let width = area.width.saturating_sub(8).clamp(24, 80);
-        let popup = Rect::new(
-            (area.width.saturating_sub(width)) / 2,
-            area.height.saturating_sub(5) / 2,
-            width,
-            5,
-        );
-        clear_popup(frame, app, popup);
-        frame.render_widget(
-            Paragraph::new(format!("{notification}\n\nPress Enter to dismiss."))
-                .style(palette.role(palette.informational, Modifier::BOLD))
-                .block(
-                    Block::default()
-                        .title("Notice")
-                        .borders(Borders::ALL)
-                        .border_style(palette.role(palette.accent, Modifier::BOLD)),
-                )
-                .wrap(Wrap { trim: true }),
-            popup,
-        );
     }
     if !app.command_palette_open
         && let Some(dialog) = app.active_dialog()
@@ -13757,10 +13782,9 @@ mod tests {
             "Ctrl+B prefix",
             "F1 Help",
             "F3 History",
-            "F4 Dashboard",
-            "F5 Logs",
             "F10 Menu",
             "q Quit",
+            "▶ Build running · 1 active",
         ] {
             assert!(rail.contains(label), "missing {label}: {rail}");
         }
@@ -14886,6 +14910,121 @@ mod tests {
         for shortcut in FUNCTION_SHORTCUTS {
             let label = format!("{} {}", shortcut.key_label, shortcut.action_label);
             assert!(help.contains(&label), "missing {label}: {help}");
+        }
+    }
+
+    #[test]
+    fn next_generation_transient_status_reserves_shortcuts_and_degrades_responsively() {
+        let mut app = App::new(32, 8192);
+        app.focus = FocusTarget::Workspace;
+        app.notification = Some(
+            "Profile saved with a deliberately long status that must remain on one line".into(),
+        );
+        let render_footer = |app: &App, width| {
+            let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
+            terminal
+                .draw(|frame| workbench_footer(frame, app, frame.area(), UNIX_EPOCH))
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+
+        for width in [200_u16, 160, 130, 100] {
+            let footer = render_footer(&app, width);
+            assert!(footer.contains("i Profile saved"), "{width}: {footer}");
+            assert!(footer.contains('…'), "{width}: {footer}");
+            if width >= 160 {
+                assert!(footer.contains("F1 Help"), "{width}: {footer}");
+                assert!(footer.contains("F10 Menu"), "{width}: {footer}");
+            } else {
+                assert!(footer.contains("? Help"), "{width}: {footer}");
+                assert!(footer.contains("Ctrl+P Menu"), "{width}: {footer}");
+            }
+            assert!(footer.contains("q Quit"), "{width}: {footer}");
+            assert!(footer.contains("00:00:00"), "{width}: {footer}");
+        }
+        let narrow = render_footer(&app, 80);
+        assert!(narrow.contains("i Profile saved"), "{narrow}");
+        assert!(narrow.contains("? Help"), "{narrow}");
+        assert!(narrow.contains("Ctrl+P Menu"), "{narrow}");
+        assert!(narrow.contains("q Quit"), "{narrow}");
+        assert!(!narrow.contains("00:00:00"), "{narrow}");
+
+        app.notification = None;
+        let idle = render_footer(&app, 160);
+        assert!(!idle.contains("Profile saved"), "{idle}");
+        assert!(idle.contains("F3 History"), "{idle}");
+    }
+
+    #[test]
+    fn next_generation_transient_status_maps_typed_priority_and_accessible_markers() {
+        assert_eq!(
+            transient_status_tone(TransientStatusKind::Error),
+            StatusTone::Error
+        );
+        assert_eq!(
+            transient_status_tone(TransientStatusKind::Confirmation),
+            StatusTone::Warning
+        );
+        assert_eq!(
+            transient_status_tone(TransientStatusKind::Success),
+            StatusTone::Success
+        );
+        assert_eq!(
+            transient_status_tone(TransientStatusKind::Notification),
+            StatusTone::Info
+        );
+        assert_eq!(
+            transient_status_tone(TransientStatusKind::Reconnecting),
+            StatusTone::Pending
+        );
+        assert_eq!(
+            transient_status_tone(TransientStatusKind::Activity),
+            StatusTone::Running
+        );
+
+        let mut app = App::new(32, 8192);
+        app.notification = Some("ordinary notice".into());
+        app.dialogs.push_front(Dialog::QuitConfirmation);
+        assert!(rendered_text(&app, 160, 30).contains("! Confirmation pending"));
+
+        app.dialogs.clear();
+        let _ = update(
+            &mut app,
+            Action::Failure(yoctui_model::AppError::new(
+                "backend",
+                "connection lost",
+                "retry",
+            )),
+        );
+        app.dialogs.push_front(Dialog::QuitConfirmation);
+        let failure = rendered_text(&app, 160, 30);
+        assert!(
+            failure.contains("✕ backend: connection lost. retry"),
+            "{failure}"
+        );
+        assert!(!failure.contains("Notice"), "{failure}");
+
+        app.dialogs.clear();
+        app.notification = None;
+        app.build.status = BuildStatus::Idle;
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Synchronizing;
+        for (theme, color_enabled) in [
+            (Theme::HighContrast, true),
+            (Theme::Monochrome, true),
+            (Theme::DarkPro, false),
+        ] {
+            app.theme = theme;
+            app.color_enabled = color_enabled;
+            app.reduced_motion = true;
+            let output = rendered_text(&app, 80, 24);
+            assert!(output.contains("… Daemon synchronizing"), "{output}");
+            assert!(output.contains("? Help"), "{output}");
         }
     }
 
@@ -17953,6 +18092,9 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(screen.contains("Backend unavailable"));
+        assert!(screen.contains("? Help"));
+        assert!(!screen.contains("Press Enter to dismiss."));
+        assert!(!screen.contains("Notice"));
     }
     #[test]
     fn dashboard_renders_backend_and_build_metrics() {

@@ -11,9 +11,21 @@ Status values:
 
 ## Current phase
 
-`FOOTER-UI-002` is `IN_PROGRESS`. It will add a bounded semantic transient
-status projection for notifications, results, errors, confirmations,
-reconnects, and background activity without obscuring critical shortcuts.
+`SEARCH-UI-001` is `IN_PROGRESS`. It will unify visible search query, focus,
+result count, next/previous navigation, and clearing across existing typed
+search workflows without introducing a generic untyped search path.
+
+`FOOTER-UI-002` is `DONE`: one model-owned projection now prioritizes exact
+errors, pending confirmations, notifications/results, daemon/BitBake
+synchronization, and local background/build activity. Arbitrary notification
+strings remain informational unless exact retained log or typed build outcome
+state supplies severity. The footer normalizes and ellipsizes marker-plus-text
+status in a responsive slot before the clock, preserves Help/Menu/Quit,
+removes the old workspace-obscuring notification popup, names stale state
+without claiming reconnect, and keeps no-color/reduced-motion meaning. Focused
+model/UI tests, all 300 model tests, all 181 UI tests, full workspace, strict
+clippy, 43 bridge tests, docs/roadmap checks, and the reviewed canonical golden
+pass.
 
 `FOOTER-UI-001` is `DONE`: one model-owned F1-F10 catalog now drives app
 dispatch, Help, and truthful footer labels. The old false `F3 Jobs`,

@@ -5365,18 +5365,18 @@ notes = "One model-owned F1-F10 catalog now drives truthful app dispatch, Help, 
 id = "FOOTER-UI-002"
 milestone = "M19"
 title = "Add transient status area"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 548
 required = true
 depends_on = ["FOOTER-UI-001"]
 verify = ["cargo test -p yoctui-ui next_generation_transient_status", "cargo test -p yoctui-model notification"]
-notes = "Present notifications, results, errors, confirmations, reconnects, and background activity without obscuring contextual shortcuts."
+notes = "One model-owned projection now prioritizes exactly correlated errors, pending confirmations, notifications/results, synchronization, and local activity. The footer normalizes and ellipsizes marker-plus-text status in a responsive slot before the clock, reserves Help/Menu/Quit, removes the old notification popup, never calls stale state reconnecting, and preserves no-color/reduced-motion meaning. Focused model/UI, all 300 model tests, all 181 UI tests, full workspace, strict clippy, bridge, docs, roadmap, and the reviewed canonical golden pass."
 
 [[task]]
 id = "SEARCH-UI-001"
 milestone = "M19"
 title = "Improve search UX"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 549
 required = true
 depends_on = ["FOUNDATION-UI-003"]

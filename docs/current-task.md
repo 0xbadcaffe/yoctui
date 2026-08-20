@@ -2,24 +2,24 @@
 
 ## Task
 
-**ID:** FOOTER-UI-002
-**Title:** Add transient status area
+**ID:** SEARCH-UI-001
+**Title:** Improve search UX
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add a bounded transient status area to the persistent footer that presents
-typed notifications, operation outcomes, errors, confirmations, reconnects,
-and background activity without hiding critical contextual shortcuts.
+Unify the visible search experience across existing typed metadata, log, and
+command-palette searches so query text, focus, result counts,
+next/previous navigation, and clearing are explicit and consistent.
 
 ## Dependencies
 
-- `FOOTER-UI-001` — DONE
+- `FOUNDATION-UI-003` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-app/src/lib.rs`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -27,24 +27,23 @@ and background activity without hiding critical contextual shortcuts.
 
 ## Definition of done
 
-- Notifications, operation results, errors, pending confirmations, daemon
-  reconnect state, and background activity use typed existing model state.
-- Status priority is deterministic: error and pending confirmation precede
-  notification/result, reconnect, and background activity.
-- Status text is bounded and never pushes critical context shortcuts outside
-  their measured footer region.
-- No result, progress, reconnect, or activity is inferred from absent or stale
-  state.
-- Text markers preserve severity in high-contrast and no-color modes;
-  reduced-motion does not change semantic content.
-- Wide, medium, narrow, empty, long-text, and minimum-width layouts remain
-  readable and panic-free.
+- Search input uses one consistent visible presentation while retaining each
+  workspace's existing typed query and reducer path.
+- The current query, active-input focus, result count, next/previous controls,
+  and clear action are explicit wherever supported.
+- Empty query, no-match, one-match, many-match, and long-query states are
+  bounded and unambiguous.
+- Search focus never conflicts with pane, dialog, command-palette, or terminal
+  focus; dialogs and the palette remain focus trapped.
+- Keyboard behavior and footer/help labels agree with the typed keymap.
+- Wide, medium, narrow, high-contrast, no-color, and reduced-motion rendering
+  stays readable and panic-free.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_transient_status
-cargo test -p yoctui-model notification
+cargo test -p yoctui-ui next_generation_search
+cargo test -p yoctui-app search
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh

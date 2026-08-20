@@ -295,12 +295,24 @@ compound key tokens such as `s/E SDK` to retain more real controls. Help lists
 the complete shared function-key catalog and every valid binding omitted for
 width.
 
-Transient status shares the footer rather than covering the Workspace. Error
-and pending-confirmation text has priority over notification, operation
-result, reconnect, and background-activity text. The fixed-width clock is the
-last item on wide and medium layouts and may be hidden on narrow layouts.
-Status text is bounded to the available cells with a visible ellipsis; its
-typed severity remains available through text or a symbol in no-color mode.
+Transient status shares the footer rather than covering the Workspace. Its
+priority is exact error, pending confirmation, notification or operation
+result, daemon/BitBake synchronization, then local background/build activity.
+An arbitrary notification is informational; it becomes error or warning only
+when an exact retained log entry or the typed build-completion transition
+provides that severity. Stale daemon state says `Daemon state stale`; it is not
+misrepresented as reconnecting. Disconnected state stays in Header/System
+Status instead of creating permanent transient noise.
+
+The status slot is inserted immediately before the clock. Its desired width is
+44 cells at 180+, 36 at 130–179, 28 at 100–129, and 26 below 100 columns, but
+it shrinks or disappears before consuming the 36-cell wide/medium or 32-cell
+narrow critical-shortcut reservation. Text whitespace is normalized onto one
+line and bounded with a visible ellipsis. Semantic marker-plus-text forms are
+`✕` error, `!` confirmation/warning, `✓` success, `i` information, `…`
+synchronizing, and `▶` activity, so no-color and reduced-motion retain the
+same meaning. The fixed-width clock remains last at 100+ columns and is hidden
+below 100 columns.
 
 #### Telemetry strip behavior
 
@@ -2995,24 +3007,19 @@ Common rules:
 
 ## 22. Notifications
 
-Notifications appear above the footer or in a temporary overlay.
+Non-dialog notifications render in the bounded transient footer slot; they do
+not clear or cover the Workspace with a popup. Typed dialogs, including build
+completion review, remain modal overlays and use the same footer slot to say
+that confirmation is pending. A notification remains actionable/dismissible
+through the existing typed `Enter`/dismiss route, and important build failures
+retain their action that opens Errors.
 
-Types:
-
-- info
-- success
-- warning
-- error
-- progress
-
-Notifications support:
-
-- timeout
-- persistent state for important failures
-- action shortcut
-- grouping repeated messages
-- build-session association
-- screen-reader/plain-text fallback
+The footer projects informational, success, warning, error, reconnecting, and
+activity marker-plus-text forms from existing model state. Generic strings are
+informational rather than guessed from wording. Exact retained error/warning
+logs and typed build completion/cancellation supply result severity. Repeated
+backend log lines remain in bounded log retention and do not become one footer
+notification per line.
 
 Do not flood the UI with one notification per BitBake log line.
 
@@ -3087,7 +3094,9 @@ then `F1 Help`, `F10 Menu`, and `q Quit`. With Workspace focused it instead
 prioritizes task selection/filter/cancellation and `Tab Inspector`. A route
 that already names the active screen is omitted as redundant. Every displayed
 key invokes the named action; no unavailable or duplicate route is used merely
-to resemble concept art.
+to resemble concept art. When transient status is present it takes the bounded
+slot before the clock, removing lower-priority optional routes first while
+preserving Help, Menu, and Quit.
 
 The clock is fixed at eight digits and right aligned at `100+` columns. It is
 hidden at `80..99` columns so current workspace actions and Help/Menu/Quit do

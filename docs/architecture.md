@@ -1230,6 +1230,14 @@ for Help and for optional global footer destinations. Workspace and modal
 controls remain context projections of existing typed input routes; the UI may
 omit a lower-priority hint for width but may not rename or invent its action.
 
+Transient footer status follows the same projection boundary.
+`yoctui-model::App::transient_status` selects one bounded semantic status from
+the active typed dialog, exact notification/log correlation, daemon replica
+and BitBake lifecycle, local background jobs, or build lifecycle. Its priority
+is reducer/model policy. `yoctui-ui` only assigns semantic theme roles, bounds
+the one-line text, and measures the footer columns; it does not parse message
+wording, infer reconnect attempts, or manufacture activity.
+
 ## Tool integration contract
 
 Each Yocto tool integration should contain:

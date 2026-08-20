@@ -1909,6 +1909,102 @@ pub enum Dialog {
     RecipeEditor(RecipeEditor),
     QuitConfirmation,
 }
+
+impl Dialog {
+    pub fn is_confirmation(&self) -> bool {
+        match self {
+            Self::BuildEnvironmentCloneReview(_)
+            | Self::BuildCompletion
+            | Self::QemuLaunchConfirmation(_)
+            | Self::QemuCancellationConfirmation(_)
+            | Self::WicCreateConfirmation(_)
+            | Self::WicWritePhrase(_)
+            | Self::WicWriteConfirmation(_)
+            | Self::WicCancellationConfirmation { .. }
+            | Self::SdkBuildConfirmation(_)
+            | Self::SdkPublishConfirmation(_)
+            | Self::SdkNativeConfirmation(_)
+            | Self::SdkCancellationConfirmation(_)
+            | Self::TestLaunchConfirmation(_)
+            | Self::TestCancellationConfirmation(_)
+            | Self::TestComparisonConfirmation(_)
+            | Self::TestJunitExportConfirmation(_)
+            | Self::RecipeTaskConfirmation(_)
+            | Self::ConfigEditConfirmation(_)
+            | Self::DevtoolModifyConfirmation(_)
+            | Self::DevtoolResetConfirmation(_)
+            | Self::DevtoolUpdateConfirmation(_)
+            | Self::DevtoolFinishConfirmation(_)
+            | Self::DevtoolDeployConfirmation(_)
+            | Self::BbmaskConfirmation(_)
+            | Self::QuitConfirmation => true,
+            Self::Security(dialog) => matches!(
+                dialog,
+                SecurityDialog::Operation(_) | SecurityDialog::Cancellation(_)
+            ),
+            Self::Qa(dialog) => !matches!(dialog, QaDialog::Import { .. }),
+            Self::Maintenance(dialog) => matches!(
+                dialog.as_ref(),
+                MaintenanceDialog::Confirm(_)
+                    | MaintenanceDialog::CleanupPhrase { .. }
+                    | MaintenanceDialog::ConfirmNetworkPush(_)
+                    | MaintenanceDialog::ConfirmCancellation(_)
+            ),
+            Self::BuildEnvironmentCloneEditor(_)
+            | Self::BuildEnvironmentEditor(_)
+            | Self::ThemePicker { .. }
+            | Self::BuildOptions
+            | Self::BuildTarget { .. }
+            | Self::ImagePicker(_)
+            | Self::QemuLaunch(_)
+            | Self::WicCreate(_)
+            | Self::WicCreateTomlEditor { .. }
+            | Self::WicDevicePicker(_)
+            | Self::SdkPublish(_)
+            | Self::SdkPublishTomlEditor(_)
+            | Self::SdkNative(_)
+            | Self::SdkNativeTomlEditor(_)
+            | Self::TestLaunch(_)
+            | Self::TestLaunchTomlEditor { .. }
+            | Self::TestResultImport(_)
+            | Self::TestResultImportTomlEditor { .. }
+            | Self::TestComparison(_)
+            | Self::TestComparisonTomlEditor { .. }
+            | Self::TestJunitExport(_)
+            | Self::TestJunitTomlEditor { .. }
+            | Self::RecipeTaskPicker(_)
+            | Self::SignatureTaskPicker(_)
+            | Self::RecipeTaskLogPicker(_)
+            | Self::RecipePatchPicker(_)
+            | Self::ConfigSourcePicker(_)
+            | Self::ConfigScopePicker(_)
+            | Self::ConfigComparison(_)
+            | Self::ConfigEdit { .. }
+            | Self::DevtoolFinishPicker(_)
+            | Self::DevtoolDeploy(_)
+            | Self::BbmaskEdit(_)
+            | Self::RecipeEditor(_) => false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TransientStatusKind {
+    Error,
+    Confirmation,
+    Success,
+    Warning,
+    Notification,
+    Reconnecting,
+    Activity,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TransientStatus {
+    pub kind: TransientStatusKind,
+    pub text: String,
+}
+
 impl RecipeEditor {
     fn selected_path(&self) -> Option<PathBuf> {
         self.files
@@ -3655,6 +3751,122 @@ impl App {
             }
         }
         summary
+    }
+    pub fn transient_status(&self) -> Option<TransientStatus> {
+        let notification = self
+            .notification
+            .as_deref()
+            .map(str::trim)
+            .filter(|message| !message.is_empty());
+
+        let notification_kind = notification.map(|message| {
+            let logged_severity = self
+                .logs
+                .entries
+                .iter()
+                .rev()
+                .find(|entry| entry.message == message)
+                .map(|entry| entry.severity);
+            match logged_severity {
+                Some(Severity::Error) => TransientStatusKind::Error,
+                Some(Severity::Warning) => TransientStatusKind::Warning,
+                _ if self.build.status == BuildStatus::Failed
+                    && message.starts_with("Build failed with ") =>
+                {
+                    TransientStatusKind::Error
+                }
+                _ if self.build.status == BuildStatus::Completed
+                    && message.starts_with("Build completed with ") =>
+                {
+                    TransientStatusKind::Warning
+                }
+                _ if self.build.status == BuildStatus::Completed
+                    && message == "Build completed successfully with no errors." =>
+                {
+                    TransientStatusKind::Success
+                }
+                _ if self.build.status == BuildStatus::Cancelled
+                    && message == "Build was cancelled; this is distinct from a build failure." =>
+                {
+                    TransientStatusKind::Warning
+                }
+                _ => TransientStatusKind::Notification,
+            }
+        });
+        if notification_kind == Some(TransientStatusKind::Error) {
+            return Some(TransientStatus {
+                kind: TransientStatusKind::Error,
+                text: notification
+                    .expect("an error kind requires notification text")
+                    .to_owned(),
+            });
+        }
+        if self.active_dialog().is_some_and(Dialog::is_confirmation) {
+            return Some(TransientStatus {
+                kind: TransientStatusKind::Confirmation,
+                text: "Confirmation pending".into(),
+            });
+        }
+        if let Some(message) = notification {
+            return Some(TransientStatus {
+                kind: notification_kind
+                    .expect("notification text always has a projected semantic kind"),
+                text: message.to_owned(),
+            });
+        }
+
+        match self.daemon.status {
+            ClientReplicaStatus::Synchronizing => {
+                return Some(TransientStatus {
+                    kind: TransientStatusKind::Reconnecting,
+                    text: "Daemon synchronizing".into(),
+                });
+            }
+            ClientReplicaStatus::Stale => {
+                return Some(TransientStatus {
+                    kind: TransientStatusKind::Warning,
+                    text: "Daemon state stale".into(),
+                });
+            }
+            ClientReplicaStatus::Current
+                if self.daemon.bitbake == ClientDaemonLifecycle::Connecting =>
+            {
+                return Some(TransientStatus {
+                    kind: TransientStatusKind::Reconnecting,
+                    text: "BitBake connecting".into(),
+                });
+            }
+            ClientReplicaStatus::Disconnected | ClientReplicaStatus::Current => {}
+        }
+
+        let jobs = self.job_summary();
+        if jobs.active > 0 || jobs.queued > 0 {
+            return Some(TransientStatus {
+                kind: TransientStatusKind::Activity,
+                text: format!("{} active jobs · {} queued", jobs.active, jobs.queued),
+            });
+        }
+        let text = match self.build.status {
+            BuildStatus::LoadingWorkspace => "Workspace loading".to_owned(),
+            BuildStatus::Parsing => "BitBake parsing".to_owned(),
+            BuildStatus::Running => {
+                let active = self
+                    .tasks
+                    .values()
+                    .filter(|task| task.state == TaskState::Active)
+                    .count();
+                format!("Build running · {active} active")
+            }
+            BuildStatus::Cancelling => "Build cancellation pending".to_owned(),
+            BuildStatus::Idle
+            | BuildStatus::Completed
+            | BuildStatus::Cancelled
+            | BuildStatus::Failed => return None,
+        };
+        Some(TransientStatus {
+            kind: TransientStatusKind::Activity,
+            text,
+        })
     }
     pub fn inspector_mode(&self) -> InspectorMode {
         if self.focus == FocusTarget::Navigator {
@@ -14855,6 +15067,137 @@ mod tests {
             cancellation_supported,
             queued_at: SystemTime::UNIX_EPOCH,
         }
+    }
+    #[test]
+    fn notification_transient_status_uses_typed_priority_and_dismisses() {
+        let mut app = App::new(10, 1_000);
+        assert_eq!(app.transient_status(), None);
+
+        let _ = update(&mut app, Action::Notify("  Saved profile  ".into()));
+        assert_eq!(
+            app.transient_status(),
+            Some(TransientStatus {
+                kind: TransientStatusKind::Notification,
+                text: "Saved profile".into(),
+            })
+        );
+
+        app.dialogs.push_front(Dialog::QuitConfirmation);
+        assert_eq!(
+            app.transient_status(),
+            Some(TransientStatus {
+                kind: TransientStatusKind::Confirmation,
+                text: "Confirmation pending".into(),
+            })
+        );
+        app.build.status = BuildStatus::Failed;
+        assert_eq!(
+            app.transient_status(),
+            Some(TransientStatus {
+                kind: TransientStatusKind::Confirmation,
+                text: "Confirmation pending".into(),
+            })
+        );
+        app.dialogs.clear();
+        assert_eq!(
+            app.transient_status().map(|status| status.kind),
+            Some(TransientStatusKind::Notification)
+        );
+        let _ = update(
+            &mut app,
+            Action::Failure(AppError::new("backend", "connection lost", "retry")),
+        );
+        app.dialogs.push_front(Dialog::QuitConfirmation);
+        assert_eq!(
+            app.transient_status().map(|status| status.kind),
+            Some(TransientStatusKind::Error)
+        );
+        let _ = update(&mut app, Action::DismissNotification);
+        assert_eq!(
+            app.transient_status().map(|status| status.kind),
+            Some(TransientStatusKind::Confirmation)
+        );
+        app.dialogs.clear();
+        assert_eq!(app.transient_status(), None);
+
+        let _ = update(
+            &mut app,
+            Action::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        );
+        assert_eq!(
+            app.transient_status().map(|status| status.kind),
+            Some(TransientStatusKind::Confirmation)
+        );
+        app.dialogs.clear();
+        assert_eq!(
+            app.transient_status().map(|status| status.kind),
+            Some(TransientStatusKind::Success)
+        );
+        let _ = update(&mut app, Action::BuildCancelled { exit_code: None });
+        assert_eq!(
+            app.transient_status().map(|status| status.kind),
+            Some(TransientStatusKind::Confirmation)
+        );
+        app.dialogs.clear();
+        assert_eq!(
+            app.transient_status().map(|status| status.kind),
+            Some(TransientStatusKind::Warning)
+        );
+        app.notification = Some("   ".into());
+        app.build.status = BuildStatus::Idle;
+        assert_eq!(app.transient_status(), None);
+
+        app.notification = None;
+        app.daemon.status = ClientReplicaStatus::Synchronizing;
+        assert_eq!(
+            app.transient_status(),
+            Some(TransientStatus {
+                kind: TransientStatusKind::Reconnecting,
+                text: "Daemon synchronizing".into(),
+            })
+        );
+        app.daemon.status = ClientReplicaStatus::Stale;
+        assert_eq!(
+            app.transient_status(),
+            Some(TransientStatus {
+                kind: TransientStatusKind::Warning,
+                text: "Daemon state stale".into(),
+            })
+        );
+        app.daemon.status = ClientReplicaStatus::Current;
+        app.daemon.bitbake = ClientDaemonLifecycle::Connecting;
+        assert_eq!(
+            app.transient_status(),
+            Some(TransientStatus {
+                kind: TransientStatusKind::Reconnecting,
+                text: "BitBake connecting".into(),
+            })
+        );
+
+        app.daemon.bitbake = ClientDaemonLifecycle::Running;
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(7, true)),
+        );
+        assert_eq!(
+            app.transient_status(),
+            Some(TransientStatus {
+                kind: TransientStatusKind::Activity,
+                text: "0 active jobs · 1 queued".into(),
+            })
+        );
+        app.background_jobs.jobs.clear();
+        app.build.status = BuildStatus::Running;
+        assert_eq!(
+            app.transient_status(),
+            Some(TransientStatus {
+                kind: TransientStatusKind::Activity,
+                text: "Build running · 0 active".into(),
+            })
+        );
     }
     fn run_background_job(app: &mut App, id: u64) {
         let id = BackgroundJobId(id);
