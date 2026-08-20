@@ -60,14 +60,110 @@ fn matches_metadata(query: &str, values: &[&str]) -> bool {
             .any(|value| value.to_lowercase().contains(query.as_str()))
 }
 
-fn metadata_title(base: String, app: &App) -> String {
-    if app.metadata_searching {
-        format!("{base} | search: {}_", app.metadata_query)
-    } else if app.metadata_query.is_empty() {
-        base
-    } else {
-        format!("{base} | search: {}", app.metadata_query)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SearchNavigation {
+    Results,
+    Matches,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SearchExit {
+    Done,
+    Close,
+}
+
+fn bounded_cell_text(value: &str, width: u16) -> String {
+    if Line::from(value).width() <= usize::from(width) {
+        return value.to_owned();
     }
+    if width == 0 {
+        return String::new();
+    }
+    let budget = usize::from(width.saturating_sub(1));
+    let mut output = String::new();
+    for character in value.chars() {
+        output.push(character);
+        if Line::from(output.as_str()).width() > budget {
+            output.pop();
+            break;
+        }
+    }
+    output.push('…');
+    output
+}
+
+#[allow(clippy::too_many_arguments)]
+fn search_line(
+    app: &App,
+    query: &str,
+    editing: bool,
+    selected_index: Option<usize>,
+    total: usize,
+    navigation: SearchNavigation,
+    exit: SearchExit,
+    width: u16,
+) -> Line<'static> {
+    let mode = if editing {
+        "EDITING"
+    } else if query.is_empty() {
+        "IDLE"
+    } else {
+        "FILTERED"
+    };
+    let current = if total == 0 {
+        0
+    } else {
+        selected_index.unwrap_or(0).min(total.saturating_sub(1)) + 1
+    };
+    let navigation = match navigation {
+        SearchNavigation::Results => "↑/↓ results",
+        SearchNavigation::Matches => "n/N next/previous",
+    };
+    let exit = match exit {
+        SearchExit::Done => {
+            if editing {
+                "Enter/Esc done"
+            } else {
+                "/ edit"
+            }
+        }
+        SearchExit::Close => "Esc close",
+    };
+    let clear = if query.is_empty() {
+        ""
+    } else {
+        " · Ctrl+U clear"
+    };
+    let query_budget = match width {
+        130.. => width.saturating_sub(94).clamp(8, 36),
+        60..=129 => width.saturating_sub(43).clamp(6, 24),
+        _ => width.saturating_sub(20).clamp(4, 16),
+    };
+    let query = if query.is_empty() { "<empty>" } else { query };
+    let query = bounded_cell_text(query, query_budget.saturating_sub(u16::from(editing)));
+    let cursor = if editing { "▏" } else { "" };
+    let text = if width >= 130 {
+        format!(
+            "/ Search [{mode}] · Query: {query}{cursor} · Results: {current}/{total} · {navigation}{clear} · {exit}"
+        )
+    } else if width >= 60 {
+        let navigation = match navigation {
+            "↑/↓ results" => "↑/↓",
+            _ => "n/N",
+        };
+        format!("/ [{mode}] Query: {query}{cursor} · {current}/{total} · {navigation}{clear}")
+    } else {
+        format!("/ [{mode}] {current}/{total} {query}{cursor}")
+    };
+    let palette = ThemePalette::for_app(app);
+    let style = if editing {
+        palette.role(palette.accent, Modifier::BOLD)
+    } else if query == "<empty>" {
+        palette.role(palette.muted, Modifier::DIM)
+    } else {
+        palette.role(palette.informational, Modifier::BOLD)
+    };
+    Line::styled(bounded_cell_text(&text, width), style)
 }
 
 fn timestamp_text(timestamp: SystemTime) -> String {
@@ -926,18 +1022,65 @@ fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
     }
 }
 
+fn current_search_state(app: &App) -> Option<(bool, bool)> {
+    let state = match app.screen {
+        Screen::Logs => (app.logs.searching, !app.logs.query.is_empty()),
+        Screen::Recipes | Screen::Layers | Screen::Configuration => {
+            (app.metadata_searching, !app.metadata_query.is_empty())
+        }
+        Screen::Packages => (app.package_searching, !app.package_query.is_empty()),
+        Screen::Images => (
+            app.image_artifact_searching,
+            !app.image_artifact_query.is_empty(),
+        ),
+        Screen::Sdk => (
+            app.sdk_artifact_searching,
+            !app.sdk_artifact_query.is_empty(),
+        ),
+        Screen::Testing if app.test_view == TestWorkspaceView::Results => {
+            (app.test_result_searching, !app.test_result_query.is_empty())
+        }
+        Screen::Security => (app.security.searching, !app.security.query.is_empty()),
+        Screen::Qa => (app.qa.searching, !app.qa.query.is_empty()),
+        Screen::Compatibility => (
+            app.compatibility_ui.searching,
+            !app.compatibility_ui.query.is_empty(),
+        ),
+        _ => return None,
+    };
+    Some(state)
+}
+
 fn footer_context_items(app: &App, width: u16) -> Vec<String> {
     if app.command_palette_open || app.focus == FocusTarget::CommandPalette {
-        return ["Type search", "↑/↓ select", "Enter run", "Esc close"]
-            .into_iter()
-            .map(str::to_owned)
-            .collect();
+        return [
+            "Type search",
+            "↑/↓ select",
+            "Ctrl+U clear",
+            "Enter run",
+            "Esc close",
+        ]
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
     }
     if app.active_dialog().is_some() || app.focus == FocusTarget::Dialog {
         return ["Enter select/confirm", "Esc cancel"]
             .into_iter()
             .map(str::to_owned)
             .collect();
+    }
+    if current_search_state(app).is_some_and(|(editing, _)| editing) {
+        return [
+            "Type query",
+            "Backspace edit",
+            "Ctrl+U clear",
+            "Enter done",
+            "Esc done",
+        ]
+        .into_iter()
+        .map(str::to_owned)
+        .collect();
     }
 
     let responsive_override = (app.screen == Screen::Images && width <= 129)
@@ -951,6 +1094,9 @@ fn footer_context_items(app: &App, width: u16) -> Vec<String> {
         footer_shortcuts(app)
     };
     let mut items = source.split(" | ").map(str::to_owned).collect::<Vec<_>>();
+    if current_search_state(app).is_some_and(|(_, filtered)| filtered) {
+        items.insert(0, "Ctrl+U clear".into());
+    }
     if !responsive_override
         && width >= 100
         && pane_focus_shortcuts(app.focus).is_some()
@@ -2312,7 +2458,16 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
         .saturating_sub(visible_count.saturating_sub(1));
     let palette = ThemePalette::for_app(app);
     let mut lines = vec![
-        Line::from(format!("Search: {}_", app.command_palette_query)),
+        search_line(
+            app,
+            &app.command_palette_query,
+            true,
+            (!commands.is_empty()).then_some(app.command_palette_selection),
+            commands.len(),
+            SearchNavigation::Results,
+            SearchExit::Close,
+            width.saturating_sub(2),
+        ),
         Line::from(""),
     ];
     if commands.is_empty() {
@@ -2414,7 +2569,7 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     }
     lines.push(Line::from(""));
     lines.push(Line::from(
-        "Type to search  ↑/↓ select  Enter run  Backspace edit  Esc cancel",
+        "Type to search  ↑/↓ select  Enter run  Backspace edit  Ctrl+U clear  Esc close",
     ));
 
     clear_popup(frame, app, popup);
@@ -5638,6 +5793,31 @@ fn qa_workspace(frame: &mut Frame, app: &App, area: Rect) {
             Style::default()
         }
     };
+    let (search_selection, search_total) = if app.qa.drilled {
+        let visible = app.qa.visible_findings();
+        (
+            visible
+                .iter()
+                .position(|finding| app.qa.finding_selection.as_ref() == Some(&finding.identity)),
+            visible.len(),
+        )
+    } else if app.qa.view == QaView::LayerQa {
+        let visible = app.qa.visible_layers();
+        (
+            visible
+                .iter()
+                .position(|layer| app.qa.layer_selection.as_ref() == Some(&layer.identity)),
+            visible.len(),
+        )
+    } else {
+        let visible = app.qa.visible_checks();
+        (
+            visible
+                .iter()
+                .position(|check| app.qa.check_selection.as_ref() == Some(&check.id)),
+            visible.len(),
+        )
+    };
     let mut lines = vec![
         Line::from(vec![
             Span::styled(" Recipe & Kernel ", active(QaView::RecipeKernel)),
@@ -5645,17 +5825,20 @@ fn qa_workspace(frame: &mut Frame, app: &App, area: Rect) {
             Span::styled(" Layer QA ", active(QaView::LayerQa)),
         ]),
         Line::from(format!(
-            "Scope: {} | Filter: {}{}",
+            "Scope: {} | Filter: {}",
             qa_scope_label(app),
             qa_filter_label(app.qa.status_filter),
-            if app.qa.searching {
-                format!(" | Search: {}_", app.qa.query)
-            } else if app.qa.query.is_empty() {
-                String::new()
-            } else {
-                format!(" | Search: {}", app.qa.query)
-            }
         )),
+        search_line(
+            app,
+            &app.qa.query,
+            app.qa.searching,
+            search_selection,
+            search_total,
+            SearchNavigation::Results,
+            SearchExit::Done,
+            area.width.saturating_sub(2),
+        ),
         Line::from(""),
     ];
     if app.qa.drilled {
@@ -6267,6 +6450,31 @@ fn security_workspace(frame: &mut Frame, app: &App, area: Rect) {
             Style::default()
         }
     };
+    let (search_selection, search_total) = if app.security.view == SecurityView::Cves {
+        let visible = app.security.visible_findings();
+        (
+            visible.iter().position(|finding| {
+                app.security.finding_selection.as_ref() == Some(&finding.identity)
+            }),
+            visible.len(),
+        )
+    } else if app.security.drilled {
+        let visible = app.security.visible_components();
+        (
+            visible.iter().position(|component| {
+                app.security.component_selection.as_deref() == Some(component.identity.as_str())
+            }),
+            visible.len(),
+        )
+    } else {
+        let visible = app.security.visible_reports();
+        (
+            visible.iter().position(|report| {
+                app.security.report_selection.as_ref() == Some(report.identity())
+            }),
+            visible.len(),
+        )
+    };
     let mut lines = vec![
         Line::from(vec![
             Span::styled(" CVEs ", active(SecurityView::Cves)),
@@ -6282,11 +6490,16 @@ fn security_workspace(frame: &mut Frame, app: &App, area: Rect) {
             security_capability_summary(&app.security.capability)
         )),
     ];
-    if app.security.searching {
-        lines.push(Line::from(format!("Search: {}_", app.security.query)));
-    } else if !app.security.query.is_empty() {
-        lines.push(Line::from(format!("Search: {}", app.security.query)));
-    }
+    lines.push(search_line(
+        app,
+        &app.security.query,
+        app.security.searching,
+        search_selection,
+        search_total,
+        SearchNavigation::Results,
+        SearchExit::Done,
+        area.width.saturating_sub(2),
+    ));
     lines.push(Line::from(""));
     security_inventory_lines(app, &palette, &mut lines);
     security_session_lines(app, &palette, &mut lines);
@@ -6908,7 +7121,9 @@ fn testing_workspace(frame: &mut Frame, app: &App, area: Rect) {
     ];
     match app.test_view {
         TestWorkspaceView::Launches => testing_launch_lines(app, &palette, &mut lines),
-        TestWorkspaceView::Results => testing_result_lines(app, &palette, &mut lines),
+        TestWorkspaceView::Results => {
+            testing_result_lines(app, &palette, &mut lines, area.width.saturating_sub(2))
+        }
         TestWorkspaceView::Comparison => testing_comparison_lines(app, &palette, &mut lines),
     }
     frame.render_widget(
@@ -6986,12 +7201,26 @@ fn testing_launch_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<
     }
 }
 
-fn testing_result_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
-    if app.test_result_searching {
-        lines.push(Line::from(format!("Search: {}_", app.test_result_query)));
-    } else if !app.test_result_query.is_empty() {
-        lines.push(Line::from(format!("Search: {}", app.test_result_query)));
-    }
+fn testing_result_lines(
+    app: &App,
+    palette: &ThemePalette,
+    lines: &mut Vec<Line<'static>>,
+    width: u16,
+) {
+    let filtered = app.filtered_test_results();
+    let filtered_selection = filtered
+        .iter()
+        .position(|record| app.test_result_selection.as_ref() == Some(&record.identity));
+    lines.push(search_line(
+        app,
+        &app.test_result_query,
+        app.test_result_searching,
+        filtered_selection,
+        filtered.len(),
+        SearchNavigation::Results,
+        SearchExit::Done,
+        width,
+    ));
     if app.test_result_drilled {
         let Some(record) = app.selected_test_result() else {
             lines.push(Line::styled(
@@ -7837,17 +8066,26 @@ fn sdk_workspace(frame: &mut Frame, app: &App, area: Rect) {
         .map_or("unavailable", String::as_str);
     let target = app.build.target.as_deref().unwrap_or("not selected");
     let root = sdk_inventory_root(app);
+    let filtered = app.filtered_sdk_artifacts();
+    let filtered_selection = filtered
+        .iter()
+        .position(|artifact| app.sdk_artifact_selection.as_ref() == Some(&artifact.identity));
     let mut lines = vec![
         Line::from(format!(
             "MACHINE {machine} | DISTRO {distro} | image {target}"
         )),
         Line::from(format!("SDK_DEPLOY {root}")),
     ];
-    if app.sdk_artifact_searching {
-        lines.push(Line::from(format!("Search: {}_", app.sdk_artifact_query)));
-    } else if !app.sdk_artifact_query.is_empty() {
-        lines.push(Line::from(format!("Search: {}", app.sdk_artifact_query)));
-    }
+    lines.push(search_line(
+        app,
+        &app.sdk_artifact_query,
+        app.sdk_artifact_searching,
+        filtered_selection,
+        filtered.len(),
+        SearchNavigation::Results,
+        SearchExit::Done,
+        area.width.saturating_sub(2),
+    ));
     lines.push(Line::from(
         "  Kind       SDK type     Size       Modified     Published  Artifact",
     ));
@@ -9068,6 +9306,10 @@ fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
         .variables
         .get("MACHINE")
         .map_or("unavailable", String::as_str);
+    let filtered = app.filtered_image_artifacts();
+    let filtered_selection = filtered
+        .iter()
+        .position(|artifact| app.image_artifact_selection.as_ref() == Some(&artifact.identity));
     let mut lines = vec![Line::from(format!(
         "MACHINE {machine} | build target {} | {recipe_count} image recipe target(s)",
         app.build.target.as_deref().unwrap_or("not selected")
@@ -9088,11 +9330,16 @@ fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
             recipe_targets.join(", ")
         }
     )));
-    if app.image_artifact_searching {
-        lines.push(Line::from(format!("Search: {}_", app.image_artifact_query)));
-    } else if !app.image_artifact_query.is_empty() {
-        lines.push(Line::from(format!("Search: {}", app.image_artifact_query)));
-    }
+    lines.push(search_line(
+        app,
+        &app.image_artifact_query,
+        app.image_artifact_searching,
+        filtered_selection,
+        filtered.len(),
+        SearchNavigation::Results,
+        SearchExit::Done,
+        area.width.saturating_sub(2),
+    ));
     lines.push(Line::from(
         "Image target                 Kind             Size       Timestamp    File",
     ));
@@ -9690,6 +9937,10 @@ fn compatibility_workspace(frame: &mut Frame, app: &App, area: Rect) {
     );
 
     let palette = ThemePalette::for_app(app);
+    let filtered_selection = projection
+        .rows
+        .iter()
+        .position(|row| projection.selected == Some(row.id));
     let rows = projection.rows.iter().map(|row| {
         let implementation = row
             .implementation
@@ -9707,17 +9958,24 @@ fn compatibility_workspace(frame: &mut Frame, app: &App, area: Rect) {
         ])
         .style(style)
     });
-    let search = if app.compatibility_ui.searching {
-        format!("search: {}_", app.compatibility_ui.query)
-    } else if app.compatibility_ui.query.is_empty() {
-        "search: --".into()
-    } else {
-        format!("search: {}", app.compatibility_ui.query)
-    };
+    let capabilities =
+        Layout::vertical([Constraint::Length(1), Constraint::Min(4)]).split(sections[1]);
+    frame.render_widget(
+        Paragraph::new(search_line(
+            app,
+            &app.compatibility_ui.query,
+            app.compatibility_ui.searching,
+            filtered_selection,
+            projection.rows.len(),
+            SearchNavigation::Results,
+            SearchExit::Done,
+            capabilities[0].width,
+        )),
+        capabilities[0],
+    );
     let table_title = format!(
-        "Capabilities · {} · {} · {}/{} visible",
+        "Capabilities · {} · {}/{} visible",
         compatibility_filter_label(app.compatibility_ui.filter),
-        search,
         projection.rows.len(),
         projection.total_capabilities,
     );
@@ -9739,7 +9997,7 @@ fn compatibility_workspace(frame: &mut Frame, app: &App, area: Rect) {
             &table_title,
             app.focus == FocusTarget::Workspace,
         )),
-        sections[1],
+        capabilities[1],
     );
 }
 
@@ -10735,19 +10993,16 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
             app.logs.retained_bytes, app.logs.max_bytes
         )
     };
-    let search = if app.logs.searching {
-        format!("search: {}_", app.logs.query)
-    } else if app.logs.query.is_empty() {
-        "search: none".into()
-    } else {
-        format!("search: {}", app.logs.query)
-    };
-    let search = app
-        .logs
-        .vertical_position()
-        .map_or(search.clone(), |(current, count)| {
-            format!("{search} · result {current}/{count}")
-        });
+    let search = search_line(
+        app,
+        &app.logs.query,
+        app.logs.searching,
+        (!all_visible.is_empty()).then_some(selection),
+        all_visible.len(),
+        SearchNavigation::Matches,
+        SearchExit::Done,
+        chunks[0].width.saturating_sub(2),
+    );
     let actions = app.logs.selected().map_or_else(
         || "Actions  unavailable — no selected entry".into(),
         |entry| {
@@ -10759,9 +11014,13 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         },
     );
     frame.render_widget(
-        Paragraph::new(format!(
-            "{mode}\n{actions}\n{filters}\n{search}\n{pressure}"
-        ))
+        Paragraph::new(vec![
+            Line::from(mode),
+            Line::from(actions),
+            Line::from(filters),
+            search,
+            Line::from(pressure),
+        ])
         .block(pane_block(
             app,
             "Log activity",
@@ -11424,14 +11683,26 @@ fn recipe_inspector(app: &App, recipe: &Recipe) -> String {
 
 fn packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let palette = ThemePalette::for_app(app);
-    let title = if app.package_searching {
-        format!("Packages | search: {}_", app.package_query)
-    } else if app.package_query.is_empty() {
-        "Packages".into()
-    } else {
-        format!("Packages | search: {}", app.package_query)
-    };
-    let block = pane_block(app, &title, app.focus == FocusTarget::Workspace);
+    let visible = app.filtered_packages();
+    let selected = visible
+        .iter()
+        .position(|package| app.package_selection.as_ref() == Some(&package.identity));
+    let workspace = Layout::vertical([Constraint::Length(1), Constraint::Min(3)]).split(area);
+    frame.render_widget(
+        Paragraph::new(search_line(
+            app,
+            &app.package_query,
+            app.package_searching,
+            selected,
+            visible.len(),
+            SearchNavigation::Results,
+            SearchExit::Done,
+            workspace[0].width,
+        )),
+        workspace[0],
+    );
+    let area = workspace[1];
+    let block = pane_block(app, "Packages", app.focus == FocusTarget::Workspace);
     match &app.package_inventory {
         PackageInventoryState::NotLoaded => frame.render_widget(
             Paragraph::new(
@@ -11738,8 +12009,25 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
         })
         .collect::<Vec<_>>();
     let recipe_count = recipes.len();
+    let filtered_selection = recipes
+        .iter()
+        .position(|(index, _)| *index == app.recipe_selection);
     let selected = app.workspace.recipes.get(app.recipe_selection);
     let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(12)]).split(area);
+    let list = Layout::vertical([Constraint::Length(1), Constraint::Min(3)]).split(chunks[0]);
+    frame.render_widget(
+        Paragraph::new(search_line(
+            app,
+            &app.metadata_query,
+            app.metadata_searching,
+            filtered_selection,
+            recipe_count,
+            SearchNavigation::Results,
+            SearchExit::Done,
+            list[0].width,
+        )),
+        list[0],
+    );
     frame.render_widget(
         Table::new(
             recipes.into_iter().map(|(index, recipe)| {
@@ -11782,17 +12070,14 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
         )
         .block(
             Block::default()
-                .title(metadata_title(
-                    format!(
-                        "Recipes (shown: {} of {})",
-                        recipe_count,
-                        app.workspace.recipes.len()
-                    ),
-                    app,
+                .title(format!(
+                    "Recipes (shown: {} of {})",
+                    recipe_count,
+                    app.workspace.recipes.len()
                 ))
                 .borders(Borders::ALL),
         ),
-        chunks[0],
+        list[1],
     );
     let detail = selected.map_or_else(
         || "No recipes supplied by the backend.".into(),
@@ -12022,17 +12307,39 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
     );
 
     let query = app.metadata_query.to_ascii_lowercase();
-    let entries = browser.entries.iter().enumerate().filter(|(_, entry)| {
-        query.is_empty()
-            || entry
-                .path
-                .to_string_lossy()
-                .to_ascii_lowercase()
-                .contains(&query)
-    });
+    let entries = browser
+        .entries
+        .iter()
+        .enumerate()
+        .filter(|(_, entry)| {
+            query.is_empty()
+                || entry
+                    .path
+                    .to_string_lossy()
+                    .to_ascii_lowercase()
+                    .contains(&query)
+        })
+        .collect::<Vec<_>>();
+    let filtered_selection = entries
+        .iter()
+        .position(|(index, _)| *index == browser.selection);
+    let tree = Layout::vertical([Constraint::Length(1), Constraint::Min(3)]).split(left[1]);
+    frame.render_widget(
+        Paragraph::new(search_line(
+            app,
+            &app.metadata_query,
+            app.metadata_searching,
+            filtered_selection,
+            entries.len(),
+            SearchNavigation::Results,
+            SearchExit::Done,
+            tree[0].width,
+        )),
+        tree[0],
+    );
     frame.render_widget(
         Table::new(
-            entries.map(|(index, entry)| {
+            entries.into_iter().map(|(index, entry)| {
                 let name = entry.path.file_name().map_or_else(
                     || entry.path.display().to_string(),
                     |name| name.to_string_lossy().into_owned(),
@@ -12064,17 +12371,14 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
         )
         .block(
             Block::default()
-                .title(metadata_title(
-                    format!(
-                        "{} tree | hidden {}",
-                        browser.layer,
-                        if browser.show_hidden { "on" } else { "off" }
-                    ),
-                    app,
+                .title(format!(
+                    "{} tree | hidden {}",
+                    browser.layer,
+                    if browser.show_hidden { "on" } else { "off" }
                 ))
                 .borders(Borders::ALL),
         ),
-        left[1],
+        tree[1],
     );
 
     let mode = match browser.inspector_mode {
@@ -12107,6 +12411,7 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
             )
         })
         .collect::<Vec<_>>();
+    let layer_count = layers.len();
     let selected = layers.get(app.layer_selection).copied();
     let recipes = selected.map_or_else(Vec::new, |layer| {
         let mut recipes = app
@@ -12118,8 +12423,22 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
         recipes.sort_by(|left, right| left.name.cmp(&right.name));
         recipes
     });
-    let chunks =
-        Layout::horizontal([Constraint::Percentage(48), Constraint::Percentage(52)]).split(area);
+    let workspace = Layout::vertical([Constraint::Length(1), Constraint::Min(3)]).split(area);
+    frame.render_widget(
+        Paragraph::new(search_line(
+            app,
+            &app.metadata_query,
+            app.metadata_searching,
+            (layer_count > 0).then_some(app.layer_selection),
+            layer_count,
+            SearchNavigation::Results,
+            SearchExit::Done,
+            workspace[0].width,
+        )),
+        workspace[0],
+    );
+    let chunks = Layout::horizontal([Constraint::Percentage(48), Constraint::Percentage(52)])
+        .split(workspace[1]);
     frame.render_widget(
         Table::new(
             layers.into_iter().enumerate().map(|(index, layer)| {
@@ -12156,20 +12475,10 @@ fn layers(frame: &mut Frame, app: &App, area: Rect) {
         )
         .block(
             Block::default()
-                .title(metadata_title(
-                    format!(
-                        "Active layer tree (shown: {} of {})",
-                        app.workspace
-                            .layers
-                            .iter()
-                            .filter(|layer| matches_metadata(
-                                &app.metadata_query,
-                                &[layer.name.as_str(), layer.path.to_str().unwrap_or("")]
-                            ))
-                            .count(),
-                        app.workspace.layers.len()
-                    ),
-                    app,
+                .title(format!(
+                    "Active layer tree (shown: {} of {})",
+                    layer_count,
+                    app.workspace.layers.len()
                 ))
                 .borders(Borders::ALL),
         ),
@@ -12344,6 +12653,20 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
     let variables = config_variables(app);
     let variable_count = variables.len();
     let chunks = Layout::vertical([Constraint::Percentage(32), Constraint::Min(5)]).split(area);
+    let list = Layout::vertical([Constraint::Length(1), Constraint::Min(3)]).split(chunks[0]);
+    frame.render_widget(
+        Paragraph::new(search_line(
+            app,
+            &app.metadata_query,
+            app.metadata_searching,
+            (variable_count > 0).then_some(app.config_selection),
+            variable_count,
+            SearchNavigation::Results,
+            SearchExit::Done,
+            list[0].width,
+        )),
+        list[0],
+    );
     frame.render_widget(
         Table::new(
             variables
@@ -12361,17 +12684,14 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
         )
         .block(
             Block::default()
-                .title(metadata_title(
-                    format!(
-                        "Effective configuration (shown: {} of {}, read-only)",
-                        variable_count,
-                        app.workspace.variables.len()
-                    ),
-                    app,
+                .title(format!(
+                    "Effective configuration (shown: {} of {}, read-only)",
+                    variable_count,
+                    app.workspace.variables.len()
                 ))
                 .borders(Borders::ALL),
         ),
-        chunks[0],
+        list[1],
     );
     let detail = config_inspector(app);
     frame.render_widget(
@@ -13369,7 +13689,7 @@ fn help(frame: &mut Frame, area: Rect) {
         .collect::<Vec<_>>()
         .join("\n");
     let text = format!(
-        "{function_keys}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Search recipes, layers, or configuration   Esc Dashboard   q Quit\n\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
+        "{function_keys}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Edit current workspace search; Ctrl+U clears its typed query   Esc Dashboard   q Quit\n\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
     );
     frame.render_widget(
         Paragraph::new(text).block(Block::default().title("Help").borders(Borders::ALL)),
@@ -15025,6 +15345,172 @@ mod tests {
             let output = rendered_text(&app, 80, 24);
             assert!(output.contains("… Daemon synchronizing"), "{output}");
             assert!(output.contains("? Help"), "{output}");
+        }
+    }
+
+    #[test]
+    fn next_generation_search_line_is_bounded_counted_and_focus_explicit() {
+        let mut app = App::new(32, 8192);
+        let render_line = |app: &App, query: &str, editing, width| {
+            search_line(
+                app,
+                query,
+                editing,
+                Some(1),
+                3,
+                SearchNavigation::Matches,
+                SearchExit::Done,
+                width,
+            )
+        };
+
+        let wide = render_line(
+            &app,
+            "a deliberately long needle that must be bounded",
+            true,
+            160,
+        );
+        let wide_text = wide
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+        assert!(wide_text.contains("/ Search [EDITING]"), "{wide_text}");
+        assert!(wide_text.contains("Results: 2/3"), "{wide_text}");
+        assert!(wide_text.contains("n/N next/previous"), "{wide_text}");
+        assert!(wide_text.contains("Ctrl+U clear"), "{wide_text}");
+        assert!(wide_text.contains("Enter/Esc done"), "{wide_text}");
+        assert!(wide_text.contains('▏'), "{wide_text}");
+        assert!(wide.width() <= 160);
+
+        let medium = render_line(&app, "needle", false, 80);
+        let medium_text = medium
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+        assert!(medium_text.contains("[FILTERED]"), "{medium_text}");
+        assert!(medium_text.contains("2/3"), "{medium_text}");
+        assert!(medium_text.contains("Ctrl+U clear"), "{medium_text}");
+        assert!(!medium_text.contains('▏'), "{medium_text}");
+        assert!(medium.width() <= 80);
+
+        let narrow = render_line(&app, "wide界query", true, 32);
+        let narrow_text = narrow
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+        assert!(narrow_text.contains("[EDITING]"), "{narrow_text}");
+        assert!(narrow_text.contains("2/3"), "{narrow_text}");
+        assert!(narrow_text.contains('▏'), "{narrow_text}");
+        assert!(narrow.width() <= 32);
+
+        app.theme = Theme::HighContrast;
+        app.color_enabled = false;
+        app.reduced_motion = true;
+        let idle = search_line(
+            &app,
+            "",
+            false,
+            None,
+            0,
+            SearchNavigation::Results,
+            SearchExit::Done,
+            80,
+        );
+        let idle_text = idle
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+        assert!(idle_text.contains("[IDLE]"), "{idle_text}");
+        assert!(idle_text.contains("<empty>"), "{idle_text}");
+        assert!(idle_text.contains("0/0"), "{idle_text}");
+        assert!(!idle_text.contains("Ctrl+U clear"), "{idle_text}");
+    }
+
+    #[test]
+    fn next_generation_search_is_shared_by_every_typed_workspace() {
+        let mut states = Vec::new();
+        for screen in [Screen::Recipes, Screen::Layers, Screen::Configuration] {
+            let mut app = App::new(32, 8192);
+            app.screen = screen;
+            app.focus = FocusTarget::Workspace;
+            app.metadata_searching = true;
+            app.metadata_query = "needle".into();
+            states.push(app);
+        }
+        for screen in [
+            Screen::Logs,
+            Screen::Packages,
+            Screen::Images,
+            Screen::Sdk,
+            Screen::Testing,
+            Screen::Security,
+            Screen::Qa,
+            Screen::Compatibility,
+        ] {
+            let mut app = App::new(32, 8192);
+            app.screen = screen;
+            app.focus = FocusTarget::Workspace;
+            match screen {
+                Screen::Logs => {
+                    app.logs.searching = true;
+                    app.logs.query = "needle".into();
+                }
+                Screen::Packages => {
+                    app.package_searching = true;
+                    app.package_query = "needle".into();
+                }
+                Screen::Images => {
+                    app.image_artifact_searching = true;
+                    app.image_artifact_query = "needle".into();
+                }
+                Screen::Sdk => {
+                    app.sdk_artifact_searching = true;
+                    app.sdk_artifact_query = "needle".into();
+                }
+                Screen::Testing => {
+                    app.test_view = TestWorkspaceView::Results;
+                    app.test_result_searching = true;
+                    app.test_result_query = "needle".into();
+                }
+                Screen::Security => {
+                    app.security.searching = true;
+                    app.security.query = "needle".into();
+                }
+                Screen::Qa => {
+                    app.qa.searching = true;
+                    app.qa.query = "needle".into();
+                }
+                Screen::Compatibility => {
+                    app.compatibility_ui.searching = true;
+                    app.compatibility_ui.query = "needle".into();
+                }
+                _ => unreachable!(),
+            }
+            states.push(app);
+        }
+        let mut palette = App::new(32, 8192);
+        palette.command_palette_open = true;
+        palette.focus = FocusTarget::CommandPalette;
+        palette.command_palette_query = "needle".into();
+        states.push(palette);
+
+        for mut app in states {
+            app.theme = Theme::HighContrast;
+            app.color_enabled = false;
+            app.reduced_motion = true;
+            let output = rendered_text(&app, 160, 40);
+            assert!(output.contains("[EDITING]"), "{:?}: {output}", app.screen);
+            assert!(output.contains("needle"), "{:?}: {output}", app.screen);
+            assert!(output.contains("0/0"), "{:?}: {output}", app.screen);
+            assert!(
+                output.contains("Ctrl+U clear"),
+                "{:?}: {output}",
+                app.screen
+            );
         }
     }
 
@@ -17975,7 +18461,8 @@ mod tests {
         app.command_palette_open = true;
         app.command_palette_query = "build".into();
         let output = rendered_text(&app, 100, 25);
-        assert!(output.contains("Search: build_"));
+        assert!(output.contains("[EDITING] Query: build▏"));
+        assert!(output.contains("Ctrl+U clear"));
         assert!(output.contains("Build image"));
         assert!(output.contains("Cannot run:"));
         assert!(output.contains("Load a Yocto workspace first"));
@@ -21237,7 +21724,10 @@ mod tests {
         });
         let output = rendered_text(&app, 220, 24);
         assert!(output.contains("7 coalesced"), "{output}");
-        assert!(output.contains("search: needle_"), "{output}");
+        assert!(
+            output.contains("[EDITING] Query: needle▏ · 1/1"),
+            "{output}"
+        );
         assert!(output.contains("build: core-image-minimal"), "{output}");
         let _ = rendered_text(&app, 50, 16);
     }
@@ -21284,7 +21774,7 @@ mod tests {
             "✕ Error",
             "C Copy full entry",
             "o Open source log",
-            "search: needle · result 2/2",
+            "[FILTERED] Query: needle · 2/2",
         ] {
             assert!(output.contains(expected), "missing {expected}: {output}");
         }

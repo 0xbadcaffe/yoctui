@@ -1238,6 +1238,16 @@ is reducer/model policy. `yoctui-ui` only assigns semantic theme roles, bounds
 the one-line text, and measures the footer columns; it does not parse message
 wording, infer reconnect attempts, or manufacture activity.
 
+Search remains domain-owned. Metadata, logs, packages, image/SDK artifacts,
+test results, Security, QA, Compatibility, and the command palette retain
+their independent bounded query and stable selection state. Each domain has a
+typed clear reducer action; `yoctui-app` maps `Input::CtrlU` to the action for
+the focused domain, and the CLI only decodes the terminal control chord. The
+shared UI search line receives query/focus/selected-index/result-count facts
+and renders responsive text; it neither filters source data nor changes
+selection. Logs retain their typed `n`/`N` match route while other lists use
+their existing Up/Down result navigation.
+
 ## Tool integration contract
 
 Each Yocto tool integration should contain:

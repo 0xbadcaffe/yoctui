@@ -2906,6 +2906,7 @@ pub enum Input {
     CtrlV,
     CtrlB,
     CtrlP,
+    CtrlU,
     F1,
     F2,
     F3,
@@ -3114,6 +3115,7 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('/') => Some(Action::BeginLogSearch),
         Input::Char('n') => Some(Action::NextLogMatch),
         Input::Char('N') => Some(Action::PreviousLogMatch),
+        Input::CtrlU => Some(Action::ClearLogQuery),
         Input::Char('R') => Some(Action::CycleLogRecipeFilter),
         Input::Char('T') => Some(Action::CycleLogTaskFilter),
         Input::Backspace => Some(Action::BackspaceLogQuery),
@@ -3202,6 +3204,7 @@ pub fn compatibility_ui_inspector_action(searching: bool, key: Input) -> Option<
             }
             Input::Char(character) => Some(Action::AppendCompatibilityQuery(character)),
             Input::Backspace => Some(Action::BackspaceCompatibilityQuery),
+            Input::CtrlU => Some(Action::ClearCompatibilityQuery),
             Input::Enter | Input::Esc => Some(Action::FinishCompatibilitySearch),
             _ => None,
         };
@@ -3225,6 +3228,7 @@ pub fn compatibility_ui_inspector_action(searching: bool, key: Input) -> Option<
             yoctui_model::CompatibilityUiFilter::Attention,
         )),
         Input::Char('/') => Some(Action::BeginCompatibilitySearch),
+        Input::CtrlU => Some(Action::ClearCompatibilityQuery),
         _ => None,
     }
 }
@@ -3268,6 +3272,7 @@ pub fn logs_action(searching: bool, key: Input) -> Option<Action> {
         return match key {
             Input::Char(character) => Some(Action::AppendLogQuery(character)),
             Input::Backspace => Some(Action::BackspaceLogQuery),
+            Input::CtrlU => Some(Action::ClearLogQuery),
             Input::Enter | Input::Esc => Some(Action::FinishLogSearch),
             _ => None,
         };
@@ -3281,6 +3286,7 @@ pub fn logs_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('w') => Some(Action::ToggleLogWrap),
         Input::Char('s') => Some(Action::CycleLogSeverity),
         Input::Char('/') => Some(Action::BeginLogSearch),
+        Input::CtrlU => Some(Action::ClearLogQuery),
         Input::Char('n') => Some(Action::NextLogMatch),
         Input::Char('N') => Some(Action::PreviousLogMatch),
         Input::Char('R') => Some(Action::CycleLogRecipeFilter),
@@ -3342,6 +3348,7 @@ pub fn package_workspace_action(searching: bool, key: Input) -> Option<Action> {
         return match key {
             Input::Char(character) => Some(Action::AppendPackageQuery(character)),
             Input::Backspace => Some(Action::BackspacePackageQuery),
+            Input::CtrlU => Some(Action::ClearPackageQuery),
             Input::Enter | Input::Esc => Some(Action::FinishPackageSearch),
             _ => None,
         };
@@ -3351,6 +3358,7 @@ pub fn package_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Down | Input::Char('j') => Some(Action::SelectPackage { delta: 1 }),
         Input::Enter => Some(Action::BeginSelectedPackageDetail),
         Input::Char('/') => Some(Action::BeginPackageSearch),
+        Input::CtrlU => Some(Action::ClearPackageQuery),
         Input::Char('R') => Some(Action::RefreshPackageInventory),
         Input::Char('c') => Some(Action::CancelPackageOperation),
         Input::Char('D') => Some(Action::TogglePackageDependencyKind),
@@ -3369,6 +3377,7 @@ pub fn images_workspace_action(searching: bool, key: Input) -> Option<Action> {
         return match key {
             Input::Char(character) => Some(Action::AppendImageArtifactQuery(character)),
             Input::Backspace => Some(Action::BackspaceImageArtifactQuery),
+            Input::CtrlU => Some(Action::ClearImageArtifactQuery),
             Input::Enter | Input::Esc => Some(Action::FinishImageArtifactSearch),
             _ => None,
         };
@@ -3377,6 +3386,7 @@ pub fn images_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Up | Input::Char('k') => Some(Action::SelectImageArtifact { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectImageArtifact { delta: 1 }),
         Input::Char('/') => Some(Action::BeginImageArtifactSearch),
+        Input::CtrlU => Some(Action::ClearImageArtifactQuery),
         Input::Char('R') => Some(Action::RefreshImageArtifactInventory),
         Input::Char('c') => Some(Action::CancelImageArtifactOperation),
         Input::Char('b') => Some(Action::BeginSelectedImageArtifactBuild),
@@ -3409,6 +3419,7 @@ pub fn sdk_workspace_action(searching: bool, key: Input) -> Option<Action> {
         return match key {
             Input::Char(character) => Some(Action::AppendSdkArtifactQuery(character)),
             Input::Backspace => Some(Action::BackspaceSdkArtifactQuery),
+            Input::CtrlU => Some(Action::ClearSdkArtifactQuery),
             Input::Enter | Input::Esc => Some(Action::FinishSdkArtifactSearch),
             _ => None,
         };
@@ -3417,6 +3428,7 @@ pub fn sdk_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Up | Input::Char('k') => Some(Action::SelectSdkArtifact { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectSdkArtifact { delta: 1 }),
         Input::Char('/') => Some(Action::BeginSdkArtifactSearch),
+        Input::CtrlU => Some(Action::ClearSdkArtifactQuery),
         Input::Char('R') => Some(Action::RefreshSdkArtifactInventory),
         Input::Char('s') => Some(Action::BeginSdkBuild(SdkBuildAction::Populate(
             SdkKind::Standard,
@@ -3525,6 +3537,7 @@ pub fn security_workspace_action(
         return match key {
             Input::Char(character) => security(SecurityAction::AppendQuery(character)),
             Input::Backspace => security(SecurityAction::BackspaceQuery),
+            Input::CtrlU => security(SecurityAction::ClearQuery),
             Input::Enter | Input::Esc => security(SecurityAction::FinishSearch),
             _ => None,
         };
@@ -3549,6 +3562,7 @@ pub fn security_workspace_action(
         Input::Esc if drilled => security(SecurityAction::LeaveDrill),
         Input::Char('s') => security(SecurityAction::CycleScope),
         Input::Char('/') => security(SecurityAction::BeginSearch),
+        Input::CtrlU => security(SecurityAction::ClearQuery),
         Input::Char('f') => security(SecurityAction::CycleCveFilter),
         Input::Char('V') => security(SecurityAction::BeginCveCheck),
         Input::Char('M') => security(SecurityAction::BeginPackageMap),
@@ -3597,6 +3611,7 @@ pub fn qa_workspace_action(
         return match key {
             Input::Char(character) => qa(QaAction::AppendQuery(character)),
             Input::Backspace => qa(QaAction::BackspaceQuery),
+            Input::CtrlU => qa(QaAction::ClearQuery),
             Input::Enter | Input::Esc => qa(QaAction::FinishSearch),
             _ => None,
         };
@@ -3625,6 +3640,7 @@ pub fn qa_workspace_action(
             QaAction::CycleScope
         }),
         Input::Char('/') => qa(QaAction::BeginSearch),
+        Input::CtrlU => qa(QaAction::ClearQuery),
         Input::Char('f') => qa(QaAction::CycleStatusFilter),
         Input::Char('r') => qa(if view == QaView::LayerQa {
             QaAction::BeginSelectedLayerCheck
@@ -4154,6 +4170,7 @@ pub fn test_results_workspace_action(searching: bool, drilled: bool, key: Input)
         return match key {
             Input::Char(character) => Some(Action::AppendTestResultQuery(character)),
             Input::Backspace => Some(Action::BackspaceTestResultQuery),
+            Input::CtrlU => Some(Action::ClearTestResultQuery),
             Input::Enter | Input::Esc => Some(Action::FinishTestResultSearch),
             _ => None,
         };
@@ -4168,6 +4185,7 @@ pub fn test_results_workspace_action(searching: bool, drilled: bool, key: Input)
         Input::Enter => Some(Action::DrillIntoSelectedTestResult),
         Input::Esc if drilled => Some(Action::LeaveTestResultCases),
         Input::Char('/') => Some(Action::BeginTestResultSearch),
+        Input::CtrlU => Some(Action::ClearTestResultQuery),
         Input::Char('I') => Some(Action::BeginTestResultImport),
         Input::Char('R') => Some(Action::RefreshTestResults),
         Input::Char('c') => Some(Action::BeginTestComparison),
@@ -4357,6 +4375,7 @@ pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
         return match key {
             Input::Char(character) => Some(Action::AppendMetadataQuery(character)),
             Input::Backspace => Some(Action::BackspaceMetadataQuery),
+            Input::CtrlU => Some(Action::ClearMetadataQuery),
             Input::Enter | Input::Esc => Some(Action::FinishMetadataSearch),
             _ => None,
         };
@@ -4372,6 +4391,7 @@ pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('e') => Some(Action::EditSelectedLayerBrowserFile),
         Input::Char('.') => Some(Action::ToggleLayerBrowserHidden),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
+        Input::CtrlU => Some(Action::ClearMetadataQuery),
         Input::Char('g') => Some(Action::SetLayerInspectorMode(LayerInspectorMode::Git)),
         Input::Char('m') => Some(Action::SetLayerInspectorMode(LayerInspectorMode::Metadata)),
         Input::Char('d') => Some(Action::SetLayerInspectorMode(
@@ -4385,6 +4405,7 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
         return match key {
             Input::Char(character) => Some(Action::AppendMetadataQuery(character)),
             Input::Backspace => Some(Action::BackspaceMetadataQuery),
+            Input::CtrlU => Some(Action::ClearMetadataQuery),
             Input::Enter | Input::Esc => Some(Action::FinishMetadataSearch),
             _ => None,
         };
@@ -4394,6 +4415,7 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Down | Input::Char('j') => Some(Action::SelectRecipe { delta: 1 }),
         Input::Enter => Some(Action::BeginSelectedRecipeMetadata),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
+        Input::CtrlU => Some(Action::ClearMetadataQuery),
         Input::Char('e') => Some(Action::OpenSelectedRecipeProvider),
         Input::Char('o') => Some(Action::BeginSelectedRecipeTaskLog),
         Input::Char('p') => Some(Action::BeginSelectedRecipePatchReview),
@@ -4495,6 +4517,7 @@ pub fn config_workspace_action(searching: bool, key: Input) -> Option<Action> {
         return match key {
             Input::Char(character) => Some(Action::AppendMetadataQuery(character)),
             Input::Backspace => Some(Action::BackspaceMetadataQuery),
+            Input::CtrlU => Some(Action::ClearMetadataQuery),
             Input::Enter | Input::Esc => Some(Action::FinishMetadataSearch),
             _ => None,
         };
@@ -4509,6 +4532,7 @@ pub fn config_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('c') => Some(Action::OpenConfigComparison),
         Input::Char('E') => Some(Action::BeginConfigEdit),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
+        Input::CtrlU => Some(Action::ClearMetadataQuery),
         Input::Char('o') => Some(Action::OpenSelectedConfigSource),
         _ => None,
     }
@@ -7242,6 +7266,55 @@ mod tests {
             Some(Action::AppendLogQuery('x'))
         );
         assert_eq!(logs_action(true, Input::Esc), Some(Action::FinishLogSearch));
+    }
+    #[test]
+    fn search_clear_shortcut_maps_to_every_typed_domain() {
+        for searching in [false, true] {
+            assert_eq!(
+                compatibility_ui_inspector_action(searching, Input::CtrlU),
+                Some(Action::ClearCompatibilityQuery)
+            );
+            assert_eq!(
+                logs_action(searching, Input::CtrlU),
+                Some(Action::ClearLogQuery)
+            );
+            assert_eq!(
+                package_workspace_action(searching, Input::CtrlU),
+                Some(Action::ClearPackageQuery)
+            );
+            assert_eq!(
+                images_workspace_action(searching, Input::CtrlU),
+                Some(Action::ClearImageArtifactQuery)
+            );
+            assert_eq!(
+                sdk_workspace_action(searching, Input::CtrlU),
+                Some(Action::ClearSdkArtifactQuery)
+            );
+            assert_eq!(
+                test_results_workspace_action(searching, false, Input::CtrlU),
+                Some(Action::ClearTestResultQuery)
+            );
+            assert_eq!(
+                layer_tree_action(searching, Input::CtrlU),
+                Some(Action::ClearMetadataQuery)
+            );
+            assert_eq!(
+                recipes_workspace_action(searching, Input::CtrlU),
+                Some(Action::ClearMetadataQuery)
+            );
+            assert_eq!(
+                config_workspace_action(searching, Input::CtrlU),
+                Some(Action::ClearMetadataQuery)
+            );
+            assert_eq!(
+                security_workspace_action(SecurityView::Cves, false, searching, Input::CtrlU),
+                Some(Action::Security(SecurityAction::ClearQuery))
+            );
+            assert_eq!(
+                qa_workspace_action(QaView::RecipeKernel, false, searching, Input::CtrlU),
+                Some(Action::Qa(QaAction::ClearQuery))
+            );
+        }
     }
     #[test]
     fn enter_activates_contextual_notification() {

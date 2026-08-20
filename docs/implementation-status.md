@@ -11,9 +11,20 @@ Status values:
 
 ## Current phase
 
-`SEARCH-UI-001` is `IN_PROGRESS`. It will unify visible search query, focus,
-result count, next/previous navigation, and clearing across existing typed
-search workflows without introducing a generic untyped search path.
+`PALETTE-UI-001` is `IN_PROGRESS`. It will polish the focus-trapped command
+palette overlay around the shared search presentation, typed command catalog,
+availability, shortcuts, descriptions, and bounded scrolling.
+
+`SEARCH-UI-001` is `DONE`: one responsive search line now projects explicit
+`EDITING`/`FILTERED`/`IDLE` state, a cell-bounded query and text cursor,
+selected/total result counts, and truthful navigation across metadata, logs,
+packages, image/SDK artifacts, test results, Security, QA, Compatibility, and
+the command palette. `Ctrl+U` is decoded once and maps to a distinct typed
+clear action in every domain; active-search footer/help hints agree. Long and
+wide-character queries, no matches, wide/medium/narrow layouts, command focus,
+high-contrast, no-color, and reduced-motion pass. Focused model/app/CLI/UI,
+all 183 UI tests, the full workspace suite, strict clippy, 43 bridge tests,
+docs/roadmap checks, and the unchanged canonical golden pass.
 
 `FOOTER-UI-002` is `DONE`: one model-owned projection now prioritizes exact
 errors, pending confirmations, notifications/results, daemon/BitBake

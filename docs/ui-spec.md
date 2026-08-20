@@ -314,6 +314,36 @@ synchronizing, and `▶` activity, so no-color and reduced-motion retain the
 same meaning. The fixed-width clock remains last at 100+ columns and is hidden
 below 100 columns.
 
+#### Search behavior
+
+Every searchable workspace keeps its existing typed query, result selector,
+and reducer actions; there is no generic shell-backed or cross-workspace
+search mutation. The shared presentation is one bounded line with this
+semantic order:
+
+```text
+/ Search [EDITING|FILTERED|IDLE] · Query: <text|empty> · Results: <current>/<total> · <navigation> · Ctrl+U clear · <finish/edit hint>
+```
+
+`EDITING` plus a trailing `▏` text cursor means keyboard text is trapped by
+that search input. `FILTERED` means a non-empty query remains applied after
+input finishes. `IDLE` means the query is empty. `Results` counts the actual
+domain-filtered rows; it is `0/0` for no matches and otherwise follows the
+selected result identity/index. Logs advertise `n/N next/previous`; other
+lists and the command palette advertise `↑/↓ results`. `Enter done` and `Esc
+done` finish editing while retaining the filter, `/ edit` resumes it, and
+`Ctrl+U clear` clears the active domain query in one typed action. The command
+palette remains focus trapped and uses `Esc close` instead of finishing into a
+workspace.
+
+Wide layouts show the complete line. Medium layouts may omit navigation words
+after retaining mode, bounded query, and numeric results. Narrow layouts may
+reduce this to `/ [EDITING|FILTERED|IDLE] <query> <current>/<total>` plus the
+cursor, but never hide editing focus or numeric result state. Long queries are
+ellipsized by terminal cells, controls are never rendered as query content,
+and high-contrast/no-color/reduced-motion modes preserve the same bracketed
+state and text cursor.
+
 #### Telemetry strip behavior
 
 Telemetry is presentation of sampled typed state, never an illustration.
@@ -1362,6 +1392,7 @@ Controls:
 - `←`/`→` scrolls horizontally only while wrap is disabled
 - `/` starts incremental search; `Enter` or `Esc` finishes it
 - `n`/`N` selects the next/previous search match
+- `Ctrl+U` clears the retained log query without changing other filters
 - `s`, `R`, `T`, and `B` cycle severity, recipe, task, and build filters
 - `o` opens the selected source path in the configured editor
 - `C` copies structured selected-entry details when a supported clipboard tool

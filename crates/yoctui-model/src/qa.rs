@@ -1417,6 +1417,7 @@ pub enum QaAction {
     BeginSearch,
     AppendQuery(char),
     BackspaceQuery,
+    ClearQuery,
     FinishSearch,
     CycleStatusFilter,
     OpenSelectedReport,
@@ -2275,6 +2276,11 @@ pub fn update_qa(state: &mut QaState, action: QaAction) -> QaTransition {
         }
         QaAction::BackspaceQuery if state.searching => {
             state.query.pop();
+            clamp_selection(state);
+            QaTransition::none()
+        }
+        QaAction::ClearQuery => {
+            state.query.clear();
             clamp_selection(state);
             QaTransition::none()
         }

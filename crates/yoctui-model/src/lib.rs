@@ -4597,6 +4597,7 @@ pub enum Action {
     },
     AppendCommandPaletteQuery(char),
     BackspaceCommandPaletteQuery,
+    ClearCommandPaletteQuery,
     ActivateCommandPalette,
     CloseCommandPalette,
     SelectSetting {
@@ -4615,6 +4616,7 @@ pub enum Action {
     BeginCompatibilitySearch,
     AppendCompatibilityQuery(char),
     BackspaceCompatibilityQuery,
+    ClearCompatibilityQuery,
     FinishCompatibilitySearch,
     EditActivePopup(PopupEditorCommand),
     ConfigureBuildEnvironment(BuildEnvironmentProfile),
@@ -4685,6 +4687,7 @@ pub enum Action {
     BeginImageArtifactSearch,
     AppendImageArtifactQuery(char),
     BackspaceImageArtifactQuery,
+    ClearImageArtifactQuery,
     FinishImageArtifactSearch,
     BeginSelectedImageArtifactBuild,
     OpenSelectedImageArtifact,
@@ -4709,6 +4712,7 @@ pub enum Action {
     BeginSdkArtifactSearch,
     AppendSdkArtifactQuery(char),
     BackspaceSdkArtifactQuery,
+    ClearSdkArtifactQuery,
     FinishSdkArtifactSearch,
     OpenSelectedSdkArtifact,
     SdkToolCapabilityLoaded(SdkToolCapability),
@@ -4893,6 +4897,7 @@ pub enum Action {
     BeginTestResultSearch,
     AppendTestResultQuery(char),
     BackspaceTestResultQuery,
+    ClearTestResultQuery,
     FinishTestResultSearch,
     OpenSelectedTestResult,
     DrillIntoSelectedTestResult,
@@ -5249,6 +5254,7 @@ pub enum Action {
     BeginLogSearch,
     AppendLogQuery(char),
     BackspaceLogQuery,
+    ClearLogQuery,
     FinishLogSearch,
     NextLogMatch,
     PreviousLogMatch,
@@ -5392,6 +5398,7 @@ pub enum Action {
     BeginPackageSearch,
     AppendPackageQuery(char),
     BackspacePackageQuery,
+    ClearPackageQuery,
     FinishPackageSearch,
     BeginSelectedPackageDetail,
     PackageDetailLoaded {
@@ -5553,6 +5560,7 @@ pub enum Action {
     BeginMetadataSearch,
     AppendMetadataQuery(char),
     BackspaceMetadataQuery,
+    ClearMetadataQuery,
     FinishMetadataSearch,
     Notify(String),
     ActivateNotification,
@@ -7627,6 +7635,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.command_palette_query.pop();
             app.command_palette_selection = 0;
         }
+        Action::ClearCommandPaletteQuery if app.command_palette_open => {
+            app.command_palette_query.clear();
+            app.command_palette_selection = 0;
+        }
         Action::ActivateCommandPalette => {
             if !app.command_palette_open {
                 return None;
@@ -7724,6 +7736,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .backspace_query(app.workspace_compatibility.authority());
         }
         Action::BackspaceCompatibilityQuery => {}
+        Action::ClearCompatibilityQuery => app
+            .compatibility_ui
+            .clear_query(app.workspace_compatibility.authority()),
         Action::FinishCompatibilitySearch => app.compatibility_ui.finish_search(),
         Action::EditActivePopup(command) => {
             let (editor, validation_error) = match app.active_dialog_mut() {
@@ -8342,6 +8357,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 );
             }
         }
+        Action::ClearImageArtifactQuery => {
+            app.image_artifact_query.clear();
+            set_image_artifact_selection_to_current_or_first(
+                app,
+                app.image_artifact_selection.clone(),
+            );
+        }
         Action::FinishImageArtifactSearch => app.image_artifact_searching = false,
         Action::BeginSelectedImageArtifactBuild => {
             if let Some(target) = app
@@ -8552,6 +8574,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     app.sdk_artifact_selection.clone(),
                 );
             }
+        }
+        Action::ClearSdkArtifactQuery => {
+            app.sdk_artifact_query.clear();
+            set_sdk_artifact_selection_to_current_or_first(app, app.sdk_artifact_selection.clone());
         }
         Action::FinishSdkArtifactSearch => app.sdk_artifact_searching = false,
         Action::OpenSelectedSdkArtifact => {
@@ -9830,6 +9856,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 let previous = app.test_result_selection.clone();
                 set_test_result_selection_to_current_or_first(app, previous);
             }
+        }
+        Action::ClearTestResultQuery => {
+            app.test_result_query.clear();
+            let previous = app.test_result_selection.clone();
+            set_test_result_selection_to_current_or_first(app, previous);
         }
         Action::FinishTestResultSearch => app.test_result_searching = false,
         Action::OpenSelectedTestResult => {
@@ -12337,6 +12368,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.logs.query.pop();
             app.logs.clamp_selection();
         }
+        Action::ClearLogQuery => {
+            app.logs.query.clear();
+            app.logs.clamp_selection();
+        }
         Action::FinishLogSearch => app.logs.searching = false,
         Action::NextLogMatch if !app.logs.query.is_empty() => {
             let count = app.logs.filtered().count();
@@ -13423,6 +13458,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::BackspacePackageQuery => {
             app.package_query.pop();
+            set_package_selection_to_current_or_first(app, app.package_selection.clone());
+        }
+        Action::ClearPackageQuery => {
+            app.package_query.clear();
             set_package_selection_to_current_or_first(app, app.package_selection.clone());
         }
         Action::FinishPackageSearch => app.package_searching = false,
@@ -14671,6 +14710,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             select_first_matching_layer_entry(app);
             select_first_matching_recipe(app);
         }
+        Action::ClearMetadataQuery => {
+            app.metadata_query.clear();
+            app.recipe_selection = 0;
+            app.layer_selection = 0;
+            app.config_selection = 0;
+            select_first_matching_layer_entry(app);
+            select_first_matching_recipe(app);
+        }
         Action::FinishMetadataSearch => app.metadata_searching = false,
         Action::AppendLogQuery(_)
         | Action::BackspaceLogQuery
@@ -14678,6 +14725,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::PreviousLogMatch
         | Action::AppendCommandPaletteQuery(_)
         | Action::BackspaceCommandPaletteQuery
+        | Action::ClearCommandPaletteQuery
         | Action::AppendMetadataQuery(_)
         | Action::BackspaceMetadataQuery => {}
         Action::Notify(message) => app.notification = Some(message),
@@ -18067,6 +18115,49 @@ mod tests {
         let _ = update(&mut app, Action::FinishMetadataSearch);
         assert_eq!(app.metadata_query, "q");
         assert!(!app.metadata_searching);
+    }
+
+    #[test]
+    fn search_clear_actions_reset_every_typed_query_without_closing_focus() {
+        let mut app = App::new(10, 1_000);
+        app.command_palette_open = true;
+        app.command_palette_query = "palette".into();
+        app.compatibility_ui.query = "capability".into();
+        app.image_artifact_query = "image".into();
+        app.sdk_artifact_query = "sdk".into();
+        app.test_result_query = "test".into();
+        app.logs.query = "log".into();
+        app.package_query = "package".into();
+        app.metadata_query = "metadata".into();
+        app.security.query = "security".into();
+        app.qa.query = "qa".into();
+
+        for action in [
+            Action::ClearCommandPaletteQuery,
+            Action::ClearCompatibilityQuery,
+            Action::ClearImageArtifactQuery,
+            Action::ClearSdkArtifactQuery,
+            Action::ClearTestResultQuery,
+            Action::ClearLogQuery,
+            Action::ClearPackageQuery,
+            Action::ClearMetadataQuery,
+            Action::Security(SecurityAction::ClearQuery),
+            Action::Qa(QaAction::ClearQuery),
+        ] {
+            let _ = update(&mut app, action);
+        }
+
+        assert!(app.command_palette_query.is_empty());
+        assert!(app.compatibility_ui.query.is_empty());
+        assert!(app.image_artifact_query.is_empty());
+        assert!(app.sdk_artifact_query.is_empty());
+        assert!(app.test_result_query.is_empty());
+        assert!(app.logs.query.is_empty());
+        assert!(app.package_query.is_empty());
+        assert!(app.metadata_query.is_empty());
+        assert!(app.security.query.is_empty());
+        assert!(app.qa.query.is_empty());
+        assert!(app.command_palette_open);
     }
     #[test]
     fn log_match_navigation_stays_within_active_search_results() {

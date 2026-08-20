@@ -214,6 +214,11 @@ impl CompatibilityUiState {
         self.reconcile(authority);
     }
 
+    pub fn clear_query(&mut self, authority: Option<&DaemonCompatibilitySnapshot>) {
+        self.query.clear();
+        self.reconcile(authority);
+    }
+
     pub fn select(&mut self, delta: isize, authority: Option<&DaemonCompatibilitySnapshot>) {
         let rows = self.filtered_rows(authority);
         if rows.is_empty() {

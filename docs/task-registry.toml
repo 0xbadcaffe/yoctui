@@ -5376,18 +5376,18 @@ notes = "One model-owned projection now prioritizes exactly correlated errors, p
 id = "SEARCH-UI-001"
 milestone = "M19"
 title = "Improve search UX"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 549
 required = true
 depends_on = ["FOUNDATION-UI-003"]
 verify = ["cargo test -p yoctui-ui next_generation_search", "cargo test -p yoctui-app search"]
-notes = "Use consistent visible query/count/next/previous/clear presentation with unambiguous focus."
+notes = "One responsive search line now projects explicit EDITING/FILTERED/IDLE state, cell-bounded query and cursor, selected/total result counts, truthful domain navigation, and typed Ctrl+U clearing across metadata, logs, packages, image/SDK artifacts, test results, Security, QA, Compatibility, and the command palette. Active-search footer controls agree with input; no-color/reduced-motion remain textual. Focused UI/app/model/CLI, all 183 UI tests, full workspace, strict clippy, bridge, docs, roadmap, and canonical golden pass."
 
 [[task]]
 id = "PALETTE-UI-001"
 milestone = "M19"
 title = "Polish command palette"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 550
 required = true
 depends_on = ["SEARCH-UI-001"]

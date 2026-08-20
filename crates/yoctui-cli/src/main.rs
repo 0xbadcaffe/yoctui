@@ -9938,6 +9938,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             &mut app,
                             Action::BackspaceCommandPaletteQuery,
                         ),
+                        Input::CtrlU => compatibility_workspace_action(
+                            &mut app,
+                            Action::ClearCommandPaletteQuery,
+                        ),
                         Input::Char(character) => compatibility_workspace_action(
                             &mut app,
                             Action::AppendCommandPaletteQuery(character),
@@ -12392,6 +12396,7 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Char('s') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlS),
         KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlB),
         KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlP),
+        KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlU),
         KeyCode::F(1) => Some(Input::F1),
         KeyCode::F(2) => Some(Input::F2),
         KeyCode::F(3) => Some(Input::F3),
@@ -13835,6 +13840,12 @@ mod tests {
     fn ctrl_c_is_not_the_regular_cancel_key() {
         let key = KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL);
         assert_eq!(input_from_key(key), Some(Input::CtrlC));
+    }
+
+    #[test]
+    fn search_clear_control_key_decodes_without_becoming_text() {
+        let key = KeyEvent::new(KeyCode::Char('u'), KeyModifiers::CONTROL);
+        assert_eq!(input_from_key(key), Some(Input::CtrlU));
     }
 
     #[test]

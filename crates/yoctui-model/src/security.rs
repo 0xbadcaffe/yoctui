@@ -868,6 +868,7 @@ pub enum SecurityAction {
     BeginSearch,
     AppendQuery(char),
     BackspaceQuery,
+    ClearQuery,
     FinishSearch,
     CycleCveFilter,
     OpenSelectedReport,
@@ -1624,6 +1625,11 @@ pub fn update_security(state: &mut SecurityState, action: SecurityAction) -> Sec
         }
         SecurityAction::BackspaceQuery if state.searching => {
             state.query.pop();
+            clamp_selection(state);
+            SecurityTransition::none()
+        }
+        SecurityAction::ClearQuery => {
+            state.query.clear();
             clamp_selection(state);
             SecurityTransition::none()
         }
