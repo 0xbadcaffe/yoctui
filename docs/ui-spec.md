@@ -130,6 +130,14 @@ editor dialogs. Each catalog entry names its reviewed anchors in code; adding
 or removing an anchor is therefore an intentional test review, while spacing
 inside an unrelated pane is not a snapshot update.
 
+Four target-design goldens use `160x50` and the fixed `19:28:27` clock: an
+idle Dashboard with current daemon authority, the active Tasks build at 72%,
+the same Tasks cockpit with `bash:do_compile` selected and failed, and a Tasks
+cockpit while the daemon replica is synchronizing. These serialize every cell
+symbol and style. `YOCTUI_UPDATE_TARGET_GOLDENS=1` is the only update switch;
+the repository script runs it and prints the four fixture diffs for review.
+Normal verification only compares and reports the first changed coordinate.
+
 No renderer may copy illustrative values from a design reference. Every value
 comes from typed model state; missing values read `unavailable`, `unknown`, or
 `--` according to the field contract.

@@ -11,9 +11,16 @@ Status values:
 
 ## Current phase
 
-`VISUAL-TEST-002` is `IN_PROGRESS`. It will add reviewed cell-and-style golden
-buffers for the canonical idle Dashboard, active Tasks build, selected failed
-task, and daemon reconnect/degraded scenes.
+`VISUAL-TEST-003` is `IN_PROGRESS`. It will aggregate buffer-level invariants
+for exactly one focus highlight, section titles, focused borders, semantic
+status roles, progress/state agreement, and disabled-action presentation.
+
+`VISUAL-TEST-002` is `DONE`: four reviewed 160x50 fixed-clock fixtures now
+serialize every terminal symbol and style for idle Dashboard, active Tasks at
+72%, selected failed `do_compile`, and daemon synchronization/degradation.
+Ordinary tests report the first changed coordinate and cannot rewrite files;
+the explicit update script regenerates only the four target fixtures and
+prints their Git diff for review.
 
 `VISUAL-TEST-001` is `DONE`: a deterministic 160x50 TestBackend semantic
 catalog covers Dashboard, Tasks, Logs, Job History, Recipes, Layers, Images,

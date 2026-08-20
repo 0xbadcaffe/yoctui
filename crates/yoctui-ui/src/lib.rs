@@ -14100,6 +14100,8 @@ mod tests {
 
     const LITERAL_WIDTH: u16 = LITERAL_REFERENCE_WIDTH;
     const LITERAL_HEIGHT: u16 = 48;
+    const TARGET_GOLDEN_WIDTH: u16 = 160;
+    const TARGET_GOLDEN_HEIGHT: u16 = 50;
     const LITERAL_GOLDEN_PATH: &str = concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/tests/golden/literal-reference-160x48.cells"
@@ -14241,6 +14243,92 @@ mod tests {
             let y = index / usize::from(LITERAL_WIDTH);
             panic!(
                 "literal reference mismatch at ({x},{y})\nexpected: {expected:?}\n  actual: {actual:?}\nRun scripts/update-literal-ui-golden.sh only after reviewing the intentional UI change."
+            );
+        }
+    }
+
+    fn serialize_target_golden(cells: &[LiteralCell]) -> String {
+        let mut output = format!(
+            "YOCTUI_CELL_GOLDEN_V1 {TARGET_GOLDEN_WIDTH} {TARGET_GOLDEN_HEIGHT}\nSYMBOLS\n"
+        );
+        for row in cells.chunks(usize::from(TARGET_GOLDEN_WIDTH)) {
+            output.push_str("S|");
+            for cell in row {
+                output.push_str(&format!("{}:{}", cell.symbol.len(), cell.symbol));
+            }
+            output.push('\n');
+        }
+        output.push_str("STYLES\n");
+        let mut start = 0;
+        while start < cells.len() {
+            let style = &cells[start].style;
+            let mut end = start + 1;
+            while end < cells.len() && cells[end].style == *style {
+                end += 1;
+            }
+            output.push_str(&format!("T|{}|{style}\n", end - start));
+            start = end;
+        }
+        output
+    }
+
+    fn parse_target_golden(golden: &str) -> Vec<LiteralCell> {
+        let mut lines = golden.lines();
+        assert_eq!(
+            lines.next(),
+            Some("YOCTUI_CELL_GOLDEN_V1 160 50"),
+            "target-design golden header changed"
+        );
+        assert_eq!(lines.next(), Some("SYMBOLS"));
+        let mut symbols =
+            Vec::with_capacity(usize::from(TARGET_GOLDEN_WIDTH * TARGET_GOLDEN_HEIGHT));
+        for _ in 0..TARGET_GOLDEN_HEIGHT {
+            symbols.extend(parse_literal_symbols(
+                lines
+                    .next()
+                    .expect("target-design golden is missing a symbol row"),
+            ));
+        }
+        assert_eq!(lines.next(), Some("STYLES"));
+        let mut styles = Vec::with_capacity(symbols.len());
+        for line in lines.filter(|line| !line.is_empty()) {
+            let value = line
+                .strip_prefix("T|")
+                .expect("target-design style run must start with T|");
+            let (count, style) = value
+                .split_once('|')
+                .expect("target-design style run must contain a count");
+            styles.extend(std::iter::repeat_n(
+                style.to_owned(),
+                count
+                    .parse::<usize>()
+                    .expect("target-design style count must be numeric"),
+            ));
+        }
+        assert_eq!(
+            symbols.len(),
+            usize::from(TARGET_GOLDEN_WIDTH * TARGET_GOLDEN_HEIGHT)
+        );
+        assert_eq!(styles.len(), symbols.len());
+        symbols
+            .into_iter()
+            .zip(styles)
+            .map(|(symbol, style)| LiteralCell { symbol, style })
+            .collect()
+    }
+
+    fn assert_target_golden(name: &str, expected: &[LiteralCell], actual: &[LiteralCell]) {
+        assert_eq!(expected.len(), actual.len());
+        if let Some((index, (expected, actual))) = expected
+            .iter()
+            .zip(actual)
+            .enumerate()
+            .find(|(_, (expected, actual))| expected != actual)
+        {
+            let x = index % usize::from(TARGET_GOLDEN_WIDTH);
+            let y = index / usize::from(TARGET_GOLDEN_WIDTH);
+            panic!(
+                "target-design golden {name} mismatch at ({x},{y})\nexpected: {expected:?}\n  actual: {actual:?}\nRun scripts/update-target-design-goldens.sh only after reviewing the intentional UI change."
             );
         }
     }
@@ -14461,6 +14549,146 @@ mod tests {
             "/tests/golden/literal-reference-160x48.cells"
         )));
         assert_literal_cells(&expected, &actual);
+    }
+
+    #[test]
+    fn target_design_golden_canonical_states() {
+        let mut idle = literal_reference_app();
+        idle.screen = Screen::Dashboard;
+        idle.focus = FocusTarget::Workspace;
+        idle.build.status = BuildStatus::Idle;
+        idle.build.started = None;
+        idle.build.completed = 0;
+        idle.build.total = None;
+        idle.tasks.clear();
+        idle.completed_tasks.clear();
+        idle.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Exited;
+        idle.daemon.jobs.clear();
+        idle.daemon.pty_sessions.clear();
+        if let Some(telemetry) = idle.daemon.telemetry.as_mut() {
+            telemetry.active_jobs = 0;
+            telemetry.pty_sessions = 0;
+        }
+
+        let mut active = literal_reference_app();
+        active.focus = FocusTarget::Workspace;
+
+        let mut failed = literal_reference_app();
+        failed.focus = FocusTarget::Workspace;
+        failed.build.status = BuildStatus::Failed;
+        failed.build.errors = 1;
+        failed.build.exit_code = Some(1);
+        failed.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Failed;
+        let failed_task = failed
+            .tasks
+            .get_mut(&yoctui_model::TaskId("bash:do_compile".into()))
+            .expect("literal fixture has the selected compile task");
+        failed_task.state = yoctui_model::TaskState::Failed;
+        failed_task.progress = None;
+        failed_task.finished = Some(literal_now());
+        let _ = update(
+            &mut failed,
+            Action::Log(yoctui_model::LogEntry {
+                id: 0,
+                severity: Severity::Error,
+                message: "ERROR: bash:do_compile failed with exit code 1".into(),
+                recipe: Some("bash_5.2.21-2".into()),
+                task: Some("do_compile".into()),
+                path: Some("/home/user/yocto/build/tmp/log.do_compile.85873".into()),
+                timestamp: literal_now(),
+                build: Some("core-image-minimal".into()),
+                protected: true,
+                diagnostic: None,
+            }),
+        );
+
+        let mut reconnecting = literal_reference_app();
+        reconnecting.focus = FocusTarget::Inspector;
+        reconnecting.daemon.status = yoctui_model::ClientReplicaStatus::Synchronizing;
+        reconnecting.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Connecting;
+
+        let scenes = [
+            (
+                "idle-dashboard",
+                idle,
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/target-idle-dashboard-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/target-idle-dashboard-160x50.cells"
+                )),
+                ["Status: Idle", "Tasks: 0/?", "Daemon: ✓ Connected"].as_slice(),
+            ),
+            (
+                "active-tasks",
+                active,
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/target-active-tasks-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/target-active-tasks-160x50.cells"
+                )),
+                ["▶ Running", "do_compile", "72%"].as_slice(),
+            ),
+            (
+                "failed-task",
+                failed,
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/target-failed-task-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/target-failed-task-160x50.cells"
+                )),
+                ["✕ Failed", "do_compile", "exit code 1"].as_slice(),
+            ),
+            (
+                "daemon-reconnecting",
+                reconnecting,
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/target-daemon-reconnecting-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/target-daemon-reconnecting-160x50.cells"
+                )),
+                ["Daemon: … Syncing", "Daemon synchronizing", "unavailable"].as_slice(),
+            ),
+        ];
+
+        let update_goldens = std::env::var_os("YOCTUI_UPDATE_TARGET_GOLDENS").is_some();
+        for (name, app, path, fixture, anchors) in scenes {
+            let mut terminal =
+                Terminal::new(TestBackend::new(TARGET_GOLDEN_WIDTH, TARGET_GOLDEN_HEIGHT)).unwrap();
+            terminal
+                .draw(|frame| render_at(frame, &app, literal_now()))
+                .unwrap();
+            let actual = literal_cells(&terminal);
+            let output = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>();
+            for anchor in anchors {
+                assert!(
+                    output.contains(anchor),
+                    "{name} lost anchor {anchor}: {output}"
+                );
+            }
+            if update_goldens {
+                fs::write(path, serialize_target_golden(&actual)).unwrap();
+            } else {
+                assert_target_golden(name, &parse_target_golden(fixture), &actual);
+            }
+        }
     }
 
     #[test]

@@ -5475,18 +5475,18 @@ notes = "A deterministic 160x50 TestBackend semantic catalog covers Dashboard, T
 id = "VISUAL-TEST-002"
 milestone = "M19"
 title = "Create target-design golden tests"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 558
 required = true
 depends_on = ["VISUAL-TEST-001"]
 verify = ["cargo test -p yoctui-ui target_design_golden"]
-notes = "Keep reviewed canonical wide buffers for idle Dashboard, active Tasks, selected failure, and reconnect/degraded states."
+notes = "Four reviewed 160x50 fixed-clock fixtures serialize every terminal symbol and style for idle Dashboard, active Tasks at 72%, selected failed do_compile, and daemon synchronization/degradation. The ordinary test reports the first changed coordinate; the explicit update script regenerates only these four files and prints their diff."
 
 [[task]]
 id = "VISUAL-TEST-003"
 milestone = "M19"
 title = "Add style invariant tests"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 559
 required = true
 depends_on = ["VISUAL-TEST-002"]
