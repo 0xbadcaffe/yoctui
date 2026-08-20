@@ -303,6 +303,17 @@ greater than total renders `RAM ! unavailable`, never a synthetic capacity or
 pressure uses warning/error roles. No-color and reduced-motion preserve the
 same determinate text.
 
+The build-filesystem cell is valid only when the configured build directory
+and a consistent total/available `statvfs` sample are both present. At 52 or
+more cell columns the label is
+`BUILD FS n% · free/total unit free · <build-dir>`; at 34–51 columns it omits
+the path but retains free/total; at 16–33 it retains `BUILD FS n%`; below 16 it
+contracts to `FS n%`. The path is the configured build directory, not an
+inferred block-device name. Missing context, missing fields, zero total, or
+available greater than total renders `BUILD FS ! unavailable`, never `0%`.
+Normal utilization uses the semantic progress role and pressure thresholds use
+warning/error roles; no-color and reduced-motion preserve determinate text.
+
 ##### Telemetry provenance audit
 
 The typed provenance catalog is authoritative for whether a metric may render.

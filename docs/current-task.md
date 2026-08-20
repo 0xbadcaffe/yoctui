@@ -2,19 +2,20 @@
 
 ## Task
 
-**ID:** METRICS-UI-003
-**Title:** Add disk and build-filesystem gauge
+**ID:** METRICS-UI-004
+**Title:** Add disk I/O sparklines
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Render authoritative capacity for the filesystem backing the configured build
-directory as a responsive semantic gauge with honest used/free values and
-clear build-filesystem context.
+Render authoritative reset-aware disk read and write rates with bounded recent
+history as semantic sparklines, without displaying unsupported, unavailable,
+or first-sample values as zero.
 
 ## Dependencies
 
-- `METRICS-UI-002` — DONE
+- `METRICS-UI-003` — DONE
+- `METRICS-MODEL-002` — DONE
 
 ## Relevant files
 
@@ -26,21 +27,21 @@ clear build-filesystem context.
 
 ## Definition of done
 
-- Valid total/available build-filesystem capacity renders an honestly derived
-  whole used percentage and free/total or used/total values when width permits.
-- The configured build directory or an unambiguous build-filesystem label
-  identifies the exact sampled context without inventing a device name.
-- Wide and medium layouts use a semantic determinate gauge; narrow layouts use
-  a bounded horizontal or compact numeric fallback.
-- Missing build directory, missing sample, zero total, or inconsistent capacity
-  renders unavailable rather than `0%` or synthetic capacity.
+- Current read and write rates render separately with byte-per-second units.
+- Each sparkline consumes only its bounded typed history and scales to the
+  retained maximum without mutating or reparsing sampler data.
+- First/reset/device-change/overflow/unavailable observations do not render as
+  a spike or synthetic zero.
+- Unsupported or currently unavailable disk counters are explicitly
+  unavailable or omitted according to available layout space.
+- Narrow rendering keeps meaningful text without panic or overlap.
 - High-contrast, no-color, and reduced-motion presentations retain meaningful
   text and visible state.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_disk_gauge
+cargo test -p yoctui-ui next_generation_disk_io_sparklines
 cargo test -p yoctui telemetry_sampling
 cargo fmt --all --check
 ./scripts/check-docs.sh

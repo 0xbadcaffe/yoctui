@@ -11,9 +11,17 @@ Status values:
 
 ## Current phase
 
-`METRICS-UI-003` is `IN_PROGRESS`. It will make build-filesystem capacity a
-responsive gauge with honest used/free values and the exact configured build
-filesystem context.
+`METRICS-UI-004` is `IN_PROGRESS`. It will render the supported reset-aware
+disk read/write rates and their bounded recent histories as semantic
+sparklines, while keeping unsupported hosts honest.
+
+`METRICS-UI-003` is `DONE`: build-filesystem capacity now uses one responsive
+semantic gauge only when both the configured build directory and a consistent
+capacity sample exist. Wide labels retain free/total plus the exact build path;
+medium labels retain free/total, and narrow labels retain the numeric used
+percentage. Missing context and invalid samples say unavailable rather than
+fabricating zero. Wide/medium/narrow/minimum, invalid, high-contrast, no-color,
+reduced-motion, dashboard-summary, and cockpit fixtures pass focused coverage.
 
 `METRICS-UI-002` is `DONE`: RAM now uses one responsive semantic gauge with an
 overflow-free whole used percentage, full and shared-unit used/total labels,

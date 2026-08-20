@@ -3879,6 +3879,63 @@ fn render_ram_gauge(frame: &mut Frame, app: &App, area: Rect) {
     }
 }
 
+fn disk_gauge_label(
+    percent: u8,
+    available: u64,
+    total: u64,
+    build_dir: &std::path::Path,
+    width: u16,
+) -> String {
+    if width >= 52 {
+        format!(
+            "BUILD FS {percent:>3}% · {} free · {}",
+            format_bytes_pair(available, total),
+            build_dir.display()
+        )
+    } else if width >= 34 {
+        format!(
+            "BUILD FS {percent}% · {} free",
+            format_bytes_pair(available, total)
+        )
+    } else if width >= 16 {
+        format!("BUILD FS {percent}%")
+    } else {
+        format!("FS {percent}%")
+    }
+}
+
+fn render_disk_gauge(frame: &mut Frame, app: &App, area: Rect) {
+    if area.is_empty() {
+        return;
+    }
+    let palette = ThemePalette::for_app(app);
+    let total = app.host_telemetry.disk_total_bytes;
+    let available = app.host_telemetry.disk_available_bytes;
+    let build_dir = app.workspace.build_dir.as_deref();
+    if let (Some(percent), Some(total), Some(available), Some(build_dir)) = (
+        utilization_percent(total, available),
+        total,
+        available,
+        build_dir,
+    ) {
+        frame.render_widget(
+            Gauge::default()
+                .ratio(f64::from(percent) / 100.0)
+                .label(disk_gauge_label(
+                    percent, available, total, build_dir, area.width,
+                ))
+                .gauge_style(telemetry_meter_style(app, percent)),
+            area,
+        );
+    } else {
+        frame.render_widget(
+            Paragraph::new("BUILD FS ! unavailable")
+                .style(palette.role(palette.disabled, Modifier::DIM)),
+            area,
+        );
+    }
+}
+
 fn render_history(frame: &mut Frame, label: &str, samples: &[u64], area: Rect, style: Style) {
     let columns = Layout::horizontal([Constraint::Length(9), Constraint::Min(1)]).split(area);
     frame.render_widget(Paragraph::new(label).style(style), columns[0]);
@@ -3928,29 +3985,7 @@ fn telemetry_cockpit(frame: &mut Frame, app: &App, area: Rect) {
         palette.role(palette.accent, Modifier::BOLD),
     );
 
-    let disk_percent = utilization_percent(
-        app.host_telemetry.disk_total_bytes,
-        app.host_telemetry.disk_available_bytes,
-    );
-    if let (Some(percent), Some(total), Some(available)) = (
-        disk_percent,
-        app.host_telemetry.disk_total_bytes,
-        app.host_telemetry.disk_available_bytes,
-    ) {
-        frame.render_widget(
-            Gauge::default()
-                .ratio(f64::from(percent) / 100.0)
-                .label(format!(
-                    "BUILD FS {percent:>3}% · {} free / {}",
-                    format_bytes(available),
-                    format_bytes(total)
-                ))
-                .gauge_style(telemetry_meter_style(app, percent)),
-            rows[4],
-        );
-    } else {
-        frame.render_widget(Paragraph::new("BUILD FS  unavailable"), rows[4]);
-    }
+    render_disk_gauge(frame, app, rows[4]);
     let load = app.host_telemetry.load_average_milli.map_or_else(
         || "LOAD 1/5/15  -- / -- / --".into(),
         |load| {
@@ -4005,10 +4040,19 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
         .host_telemetry
         .cpu_utilization_percent
         .map_or_else(|| "unavailable".into(), |percent| format!("{percent}%"));
-    let disk_available = app
-        .host_telemetry
-        .disk_available_bytes
-        .map_or_else(|| "unavailable".into(), format_bytes);
+    let disk_available = if app.workspace.build_dir.is_some()
+        && utilization_percent(
+            app.host_telemetry.disk_total_bytes,
+            app.host_telemetry.disk_available_bytes,
+        )
+        .is_some()
+    {
+        app.host_telemetry
+            .disk_available_bytes
+            .map_or_else(|| "unavailable".into(), format_bytes)
+    } else {
+        "unavailable".into()
+    };
     let show_cockpit = chunks[0].height >= 28;
     let build_panels = if show_cockpit {
         Layout::vertical([
@@ -17074,6 +17118,8 @@ mod tests {
         let mut app = App::new(10, 1_000);
         app.host_telemetry.cpu_utilization_percent = Some(42);
         app.host_telemetry.disk_available_bytes = Some(8 * 1024 * 1024 * 1024);
+        app.host_telemetry.disk_total_bytes = Some(16 * 1024 * 1024 * 1024);
+        app.workspace.build_dir = Some("/work/build".into());
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
             .backend()
@@ -17182,8 +17228,73 @@ mod tests {
         assert!(render_gauge(&app, 14).contains("RAM 75%"));
     }
     #[test]
+    fn next_generation_disk_gauge_keeps_capacity_context_and_unavailable_honest() {
+        let render_gauge = |app: &App, width| {
+            let mut terminal = Terminal::new(TestBackend::new(width, 1)).unwrap();
+            terminal
+                .draw(|frame| render_disk_gauge(frame, app, frame.area()))
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+
+        let gib = 1024_u64.pow(3);
+        let mut app = App::new(10, 1_000);
+        app.workspace.build_dir = Some("/work/build".into());
+        app.host_telemetry.disk_total_bytes = Some(100 * gib);
+        app.host_telemetry.disk_available_bytes = Some(40 * gib);
+        let wide = render_gauge(&app, 80);
+        assert!(
+            wide.contains("BUILD FS  60% · 40.0/100.0 GiB free · /work/build"),
+            "{wide}"
+        );
+        let medium = render_gauge(&app, 42);
+        assert!(
+            medium.contains("BUILD FS 60% · 40.0/100.0 GiB free"),
+            "{medium}"
+        );
+        let narrow = render_gauge(&app, 20);
+        assert!(narrow.contains("BUILD FS 60%"), "{narrow}");
+        let minimum = render_gauge(&app, 10);
+        assert!(minimum.contains("FS 60%"), "{minimum}");
+
+        app.workspace.build_dir = None;
+        let missing_context = render_gauge(&app, 28);
+        assert!(
+            missing_context.contains("BUILD FS ! unavailable"),
+            "{missing_context}"
+        );
+        assert!(!missing_context.contains("0%"), "{missing_context}");
+
+        app.workspace.build_dir = Some("/work/build".into());
+        for (total, available) in [(None, None), (Some(0), Some(0)), (Some(10), Some(11))] {
+            app.host_telemetry.disk_total_bytes = total;
+            app.host_telemetry.disk_available_bytes = available;
+            let unavailable = render_gauge(&app, 28);
+            assert!(
+                unavailable.contains("BUILD FS ! unavailable"),
+                "{unavailable}"
+            );
+            assert!(!unavailable.contains("0%"), "{unavailable}");
+        }
+
+        app.host_telemetry.disk_total_bytes = Some(8 * gib);
+        app.host_telemetry.disk_available_bytes = Some(2 * gib);
+        app.theme = Theme::HighContrast;
+        app.reduced_motion = true;
+        assert!(render_gauge(&app, 42).contains("BUILD FS 75% · 2.0/8.0 GiB free"));
+        app.color_enabled = false;
+        assert!(render_gauge(&app, 20).contains("BUILD FS 75%"));
+    }
+    #[test]
     fn dashboard_telemetry_cockpit_renders_gauges_history_and_load() {
         let mut app = App::new(10, 1_000);
+        app.workspace.build_dir = Some("/work/build".into());
         for cpu in [12, 38, 71, 42] {
             let _ = yoctui_model::update(
                 &mut app,

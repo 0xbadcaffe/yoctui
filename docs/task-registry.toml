@@ -5277,18 +5277,18 @@ notes = "Added one responsive semantic RAM gauge with overflow-free whole used p
 id = "METRICS-UI-003"
 milestone = "M19"
 title = "Add disk and build-filesystem gauge"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 540
 required = true
 depends_on = ["METRICS-UI-002"]
 verify = ["cargo test -p yoctui-ui next_generation_disk_gauge"]
-notes = "Render used/free capacity and the exact sampled build-filesystem context."
+notes = "Added one responsive semantic build-filesystem gauge gated by both configured build-directory identity and a consistent capacity sample. Wide labels retain free/total and exact build path, medium retains free/total, narrow/minimum retain numeric used percentage, and missing/invalid inputs say unavailable. Focused responsive/accessibility plus dashboard/cockpit tests pass."
 
 [[task]]
 id = "METRICS-UI-004"
 milestone = "M19"
 title = "Add disk I/O sparklines"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 541
 required = true
 depends_on = ["METRICS-UI-003"]
