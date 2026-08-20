@@ -2212,6 +2212,10 @@ name = "yoctui-e2e"
 version = "0.1.0"
 dependencies = [
  "libc",
+ "ratatui",
+ "yoctui-app",
+ "yoctui-model",
+ "yoctui-ui",
 ]
 
 [[package]]

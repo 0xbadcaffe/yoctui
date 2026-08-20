@@ -11,9 +11,17 @@ Status values:
 
 ## Current phase
 
-`INPUT-TEST-001` is `IN_PROGRESS`. It will dispatch every documented
-next-generation shortcut through the typed input path and prove the keymap,
-footer, and Help catalog remain in agreement.
+`INPUT-TEST-002` is `IN_PROGRESS`. It will exercise forward and backward focus
+flow through Navigator, Workspace, Inspector, dialogs, command palette,
+terminal sessions, and narrow layouts.
+
+`INPUT-TEST-001` is `DONE`: the cross-crate `next_generation_keymap` e2e test
+dispatches every shared function-key route into model state, global/focus/
+Tasks/Logs bindings into exact typed actions, all ten `Ctrl+B` second keys,
+and trapped modal confirmation routes. It rejects duplicate global bindings
+and renders Help plus representative contextual footers to prove their labels
+match the authoritative catalog. Specialized workspace routes retain their
+existing focused typed-action tests.
 
 `VISUAL-TEST-003` is `DONE`: an aggregate TestBackend suite enforces exactly
 one focused-border corner across wide, medium, narrow, and modal states;

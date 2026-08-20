@@ -5497,18 +5497,18 @@ notes = "An aggregate TestBackend invariant suite enforces exactly one focused-b
 id = "INPUT-TEST-001"
 milestone = "M19"
 title = "Test every documented shortcut"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 560
 required = true
 depends_on = ["FOOTER-UI-001", "PALETTE-UI-001"]
 verify = ["cargo test -p yoctui-e2e next_generation_keymap"]
-notes = "Generate or maintain typed dispatch coverage proving keymap, footer, and help agree."
+notes = "The cross-crate next_generation_keymap e2e test dispatches every function-key catalog route into model state, global/focus/Tasks/Logs bindings into exact typed actions, all ten Ctrl+B second keys, and trapped modal confirmation routes. It rejects duplicate global bindings and renders Help plus representative contextual footers to prove catalog labels agree."
 
 [[task]]
 id = "INPUT-TEST-002"
 milestone = "M19"
 title = "Test Tab and Shift-Tab flow"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 561
 required = true
 depends_on = ["INPUT-TEST-001", "RESPONSIVE-UI-001"]

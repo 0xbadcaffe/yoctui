@@ -3273,6 +3273,14 @@ Rules:
 - help screen lists all global and context shortcuts
 - configurable keymaps may be added later, but defaults remain stable
 
+The keymap coverage test dispatches the complete shared function-key catalog,
+the documented global and focus routes, Tasks and Logs contextual bindings,
+all default `Ctrl+B` second keys, and representative modal confirmation keys.
+It renders Help and the contextual footers from the same catalog, rejects
+duplicate global labels/bindings, and proves unmatched modal input cannot leak
+to global routing. Workspace-specific typed input tests remain mandatory for
+the specialized bindings documented in their own sections.
+
 ---
 
 ## 25. Themes and preferences

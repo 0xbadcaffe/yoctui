@@ -7,3 +7,9 @@ publish = false
 
 [dependencies]
 libc.workspace = true
+
+[dev-dependencies]
+ratatui.workspace = true
+yoctui-app = { path = "../yoctui-app" }
+yoctui-model = { path = "../yoctui-model" }
+yoctui-ui = { path = "../yoctui-ui" }
