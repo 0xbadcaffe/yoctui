@@ -11,9 +11,19 @@ Status values:
 
 ## Current phase
 
-`SYSTEM-UI-002` is `IN_PROGRESS`. It will add semantic text-and-symbol health
-indicators for disconnected/reconnecting backends, low disk, degraded
-capabilities, log pressure, and unknown workspace state.
+`HEADER-UI-001` is `IN_PROGRESS`. It will apply the documented identity and
+state priority order with deterministic progressive hiding across wide,
+medium, and narrow headers.
+
+`SYSTEM-UI-002` is `DONE`: reusable semantic health projection now gives every
+daemon, BitBake, compatibility, filesystem, log-pressure, and workspace state
+a text marker plus semantic role. Stale/non-current authority suppresses
+retained BitBake state in both System Status and the persistent header. Disk
+health shares explicit 70% warning/90% error thresholds with the gauge; log
+eviction and evicted errors escalate warning/error, and unknown workspace is
+named. High-contrast, no-color, reduced-motion, responsive, all lifecycle,
+threshold, degraded compatibility, pressure, and shell cases pass; all 176 UI
+tests and the reviewed 160x48 golden pass.
 
 `SYSTEM-UI-001` is `DONE`: System Status is now a bounded four-line projection
 of daemon connection/version availability/uptime, BitBake lifecycle/version,

@@ -3,7 +3,7 @@ pub mod primitives;
 
 use primitives::{
     ActionListItem, ActionListStyles, PaneShell, PaneStyles, ResponsiveColumn, StateKind,
-    StateView, action_list, action_list_plain, responsive_columns,
+    StateView, StatusTone, action_list, action_list_plain, responsive_columns, status_label,
 };
 use ratatui::{
     prelude::*,
@@ -948,23 +948,25 @@ fn daemon_lifecycle_label(lifecycle: yoctui_model::ClientDaemonLifecycle) -> &'s
     }
 }
 
-fn daemon_lifecycle_style(app: &App, lifecycle: yoctui_model::ClientDaemonLifecycle) -> Style {
-    let palette = ThemePalette::for_app(app);
+fn daemon_status_tone(status: yoctui_model::ClientReplicaStatus) -> StatusTone {
+    match status {
+        yoctui_model::ClientReplicaStatus::Disconnected => StatusTone::Error,
+        yoctui_model::ClientReplicaStatus::Synchronizing => StatusTone::Pending,
+        yoctui_model::ClientReplicaStatus::Current => StatusTone::Success,
+        yoctui_model::ClientReplicaStatus::Stale => StatusTone::Warning,
+    }
+}
+
+fn daemon_lifecycle_tone(lifecycle: yoctui_model::ClientDaemonLifecycle) -> StatusTone {
     match lifecycle {
-        yoctui_model::ClientDaemonLifecycle::Running => {
-            palette.role(palette.success, Modifier::BOLD)
-        }
+        yoctui_model::ClientDaemonLifecycle::Running => StatusTone::Success,
         yoctui_model::ClientDaemonLifecycle::Connecting
-        | yoctui_model::ClientDaemonLifecycle::Stopping => {
-            palette.role(palette.warning, Modifier::BOLD)
-        }
+        | yoctui_model::ClientDaemonLifecycle::Stopping => StatusTone::Pending,
         yoctui_model::ClientDaemonLifecycle::Failed | yoctui_model::ClientDaemonLifecycle::Lost => {
-            palette.role(palette.error, Modifier::BOLD)
+            StatusTone::Error
         }
         yoctui_model::ClientDaemonLifecycle::Disconnected
-        | yoctui_model::ClientDaemonLifecycle::Exited => {
-            palette.role(palette.disabled, Modifier::DIM)
-        }
+        | yoctui_model::ClientDaemonLifecycle::Exited => StatusTone::Disabled,
     }
 }
 
@@ -1030,33 +1032,32 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect) {
     } else {
         "  •  BitBake: "
     };
+    let daemon_tone = daemon_status_tone(app.daemon.status);
+    let (bitbake_label, bitbake_tone) =
+        if app.daemon.status == yoctui_model::ClientReplicaStatus::Current {
+            (
+                daemon_lifecycle_label(app.daemon.bitbake),
+                daemon_lifecycle_tone(app.daemon.bitbake),
+            )
+        } else {
+            ("Unavailable", StatusTone::Disabled)
+        };
     frame.render_widget(
         Paragraph::new(Line::from(vec![
             Span::raw(daemon_prefix),
-            Span::styled(
+            status_label(
+                daemon_tone,
                 daemon_status_label(app.daemon.status),
-                match app.daemon.status {
-                    yoctui_model::ClientReplicaStatus::Current => {
-                        palette.role(palette.success, Modifier::BOLD)
-                    }
-                    yoctui_model::ClientReplicaStatus::Synchronizing => {
-                        palette.role(palette.warning, Modifier::BOLD)
-                    }
-                    yoctui_model::ClientReplicaStatus::Stale => {
-                        palette.role(palette.error, Modifier::BOLD)
-                    }
-                    yoctui_model::ClientReplicaStatus::Disconnected => {
-                        palette.role(palette.disabled, Modifier::DIM)
-                    }
-                },
+                status_tone_style(&palette, daemon_tone),
             ),
             Span::styled(
                 bitbake_prefix,
                 palette.role(palette.disabled, Modifier::DIM),
             ),
-            Span::styled(
-                daemon_lifecycle_label(app.daemon.bitbake),
-                daemon_lifecycle_style(app, app.daemon.bitbake),
+            status_label(
+                bitbake_tone,
+                bitbake_label,
+                status_tone_style(&palette, bitbake_tone),
             ),
         ]))
         .alignment(Alignment::Right),
@@ -3179,7 +3180,42 @@ fn bounded_status_line(value: String, width: u16) -> String {
         .collect()
 }
 
-fn system_status_text(app: &App, width: u16) -> String {
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct SystemStatusLine {
+    text: String,
+    tone: StatusTone,
+}
+
+fn status_tone_style(palette: &ThemePalette, tone: StatusTone) -> Style {
+    match tone {
+        StatusTone::Success => palette.role(palette.success, Modifier::BOLD),
+        StatusTone::Warning => palette.role(palette.warning, Modifier::BOLD),
+        StatusTone::Error => palette.role(palette.error, Modifier::BOLD),
+        StatusTone::Running => palette.role(palette.running, Modifier::BOLD),
+        StatusTone::Pending => palette.role(palette.pending, Modifier::BOLD),
+        StatusTone::Accent => palette.role(palette.accent, Modifier::BOLD),
+        StatusTone::Muted => palette.role(palette.muted, Modifier::DIM),
+        StatusTone::Info => palette.role(palette.informational, Modifier::BOLD),
+        StatusTone::Disabled => palette.role(palette.disabled, Modifier::DIM),
+    }
+}
+
+fn stronger_tone(left: StatusTone, right: StatusTone) -> StatusTone {
+    let rank = |tone| match tone {
+        StatusTone::Error => 4,
+        StatusTone::Warning => 3,
+        StatusTone::Pending => 2,
+        StatusTone::Disabled | StatusTone::Muted => 1,
+        StatusTone::Success | StatusTone::Running | StatusTone::Accent | StatusTone::Info => 0,
+    };
+    if rank(left) >= rank(right) {
+        left
+    } else {
+        right
+    }
+}
+
+fn system_status_projection(app: &App, width: u16) -> Vec<SystemStatusLine> {
     let current = app.daemon.status == yoctui_model::ClientReplicaStatus::Current;
     let uptime = if current {
         app.daemon.telemetry.as_ref().map_or_else(
@@ -3226,7 +3262,7 @@ fn system_status_text(app: &App, width: u16) -> String {
         .as_deref()
         .or(app.workspace.source_dir.as_deref())
         .map_or_else(|| "unavailable".into(), |path| path.display().to_string());
-    let filesystem = match (
+    let filesystem_sample = match (
         utilization_percent(
             app.host_telemetry.disk_total_bytes,
             app.host_telemetry.disk_available_bytes,
@@ -3236,52 +3272,150 @@ fn system_status_text(app: &App, width: u16) -> String {
         app.workspace.build_dir.as_ref(),
     ) {
         (Some(percent), Some(total), Some(available), Some(_)) => {
-            format!("{percent}% · {} free", format_bytes_pair(available, total))
+            Some((percent, format_bytes_pair(available, total)))
         }
-        _ => "unavailable".into(),
+        _ => None,
     };
     let projection = app
         .compatibility_ui
         .project(&app.workspace_compatibility, app.daemon.status);
-    let compatibility = match (current, projection.authority) {
-        (false, _) => "Unavailable".into(),
-        (true, CompatibilityUiAuthorityStatus::Current { generation, mode }) => format!(
-            "{:?} g{generation} · A{} L{} U{} ?{}",
-            mode,
-            projection.summary.available,
-            projection.summary.limited,
-            projection.summary.unavailable,
-            projection.summary.unknown + projection.summary.unsupported,
+    let (compatibility, compatibility_tone) = match (current, projection.authority) {
+        (false, _) => ("Unavailable".into(), StatusTone::Warning),
+        (true, CompatibilityUiAuthorityStatus::Current { generation, mode }) => (
+            format!(
+                "{:?} g{generation} · A{} L{} U{} ?{}",
+                mode,
+                projection.summary.available,
+                projection.summary.limited,
+                projection.summary.unavailable,
+                projection.summary.unknown + projection.summary.unsupported,
+            ),
+            match mode {
+                yoctui_model::EnvironmentOperatingMode::Full => StatusTone::Success,
+                yoctui_model::EnvironmentOperatingMode::Degraded
+                | yoctui_model::EnvironmentOperatingMode::Diagnostic => StatusTone::Warning,
+            },
         ),
-        (true, CompatibilityUiAuthorityStatus::Unavailable { .. }) => "Unavailable".into(),
+        (true, CompatibilityUiAuthorityStatus::Unavailable { .. }) => {
+            ("Unavailable".into(), StatusTone::Warning)
+        }
     };
-    let daemon = match app.daemon.status {
-        yoctui_model::ClientReplicaStatus::Disconnected => "Disconnected",
-        yoctui_model::ClientReplicaStatus::Synchronizing => "Synchronizing",
-        yoctui_model::ClientReplicaStatus::Current => "Connected",
-        yoctui_model::ClientReplicaStatus::Stale => "Stale",
+    let (daemon, daemon_tone) = match app.daemon.status {
+        yoctui_model::ClientReplicaStatus::Disconnected => ("Disconnected", StatusTone::Error),
+        yoctui_model::ClientReplicaStatus::Synchronizing => ("Synchronizing", StatusTone::Pending),
+        yoctui_model::ClientReplicaStatus::Current => ("Connected", StatusTone::Success),
+        yoctui_model::ClientReplicaStatus::Stale => ("Stale", StatusTone::Warning),
+    };
+    let bitbake_tone = if current {
+        match app.daemon.bitbake {
+            yoctui_model::ClientDaemonLifecycle::Running => StatusTone::Success,
+            yoctui_model::ClientDaemonLifecycle::Connecting
+            | yoctui_model::ClientDaemonLifecycle::Stopping => StatusTone::Pending,
+            yoctui_model::ClientDaemonLifecycle::Failed
+            | yoctui_model::ClientDaemonLifecycle::Lost => StatusTone::Error,
+            yoctui_model::ClientDaemonLifecycle::Disconnected
+            | yoctui_model::ClientDaemonLifecycle::Exited => StatusTone::Disabled,
+        }
+    } else {
+        StatusTone::Disabled
+    };
+    let (filesystem, filesystem_tone) = filesystem_sample.map_or_else(
+        || ("unavailable".into(), StatusTone::Warning),
+        |(percent, pair)| {
+            let tone = if percent >= 90 {
+                StatusTone::Error
+            } else if percent >= 70 {
+                StatusTone::Warning
+            } else {
+                StatusTone::Success
+            };
+            (format!("{percent}% · {pair} free"), tone)
+        },
+    );
+    let log_tone = if app.logs.dropped_errors > 0 {
+        StatusTone::Error
+    } else if app.logs.dropped > 0 {
+        StatusTone::Warning
+    } else {
+        StatusTone::Success
+    };
+    let workspace_tone = if workspace == "unavailable" {
+        StatusTone::Warning
+    } else {
+        StatusTone::Success
+    };
+    let host_tone = stronger_tone(stronger_tone(filesystem_tone, log_tone), workspace_tone);
+    let host = if workspace == "unavailable" {
+        format!("Workspace unknown · Build FS {filesystem}")
+    } else if app.logs.dropped > 0 {
+        format!(
+            "Logs {} evicted ({} warning/{} error) · Build FS {filesystem} · Workspace {workspace}",
+            app.logs.dropped, app.logs.dropped_warnings, app.logs.dropped_errors,
+        )
+    } else {
+        format!("Build FS {filesystem} · Workspace {workspace}")
     };
 
     let lines = if width >= 40 {
         vec![
-            format!("Daemon {daemon} · version unavailable · up {uptime}"),
-            format!("BitBake {bitbake} · v{bitbake_version} · Jobs {active_jobs}"),
-            format!("PTY {sessions} · Clients {clients} · Compat {compatibility}"),
-            format!("Build FS {filesystem} · Workspace {workspace}"),
+            (
+                format!("Daemon {daemon} · version unavailable · up {uptime}"),
+                daemon_tone,
+            ),
+            (
+                format!("BitBake {bitbake} · v{bitbake_version} · Jobs {active_jobs}"),
+                bitbake_tone,
+            ),
+            (
+                format!("Compat {compatibility} · PTY {sessions} · Clients {clients}"),
+                compatibility_tone,
+            ),
+            (host, host_tone),
         ]
     } else {
         vec![
-            format!("Daemon {daemon} · version unavailable"),
-            format!("Up {uptime} · BitBake {bitbake} · v{bitbake_version}"),
-            format!("Jobs {active_jobs} · PTY {sessions} · Clients {clients}"),
-            format!("Compat {compatibility} · FS {filesystem} · WS {workspace}"),
+            (
+                format!("Daemon {daemon} · version unavailable"),
+                daemon_tone,
+            ),
+            (
+                format!("Up {uptime} · BitBake {bitbake} · v{bitbake_version}"),
+                bitbake_tone,
+            ),
+            (
+                format!(
+                    "Compat {compatibility} · Jobs {active_jobs} · PTY {sessions} · Clients {clients}"
+                ),
+                compatibility_tone,
+            ),
+            (host, host_tone),
         ]
     };
     lines
         .into_iter()
-        .map(|line| bounded_status_line(line, width))
+        .map(|(text, tone)| SystemStatusLine {
+            text: bounded_status_line(format!("{} {text}", tone.marker()), width),
+            tone,
+        })
+        .collect()
+}
+
+fn system_status_text(app: &App, width: u16) -> String {
+    system_status_projection(app, width)
+        .into_iter()
+        .map(|line| line.text)
         .collect::<Vec<_>>()
         .join("\n")
+}
+
+fn system_status_document(app: &App, width: u16) -> Text<'static> {
+    let palette = ThemePalette::for_app(app);
+    Text::from(
+        system_status_projection(app, width)
+            .into_iter()
+            .map(|line| Line::styled(line.text, status_tone_style(&palette, line.tone)))
+            .collect::<Vec<_>>(),
+    )
 }
 
 fn push_inspector_section(
@@ -3505,9 +3639,12 @@ fn tasks_inspector(
     );
     if show_system {
         frame.render_widget(
-            Paragraph::new(system_status_text(app, sections[4].width.saturating_sub(2)))
-                .block(pane_block(app, "System Status", focused))
-                .wrap(Wrap { trim: false }),
+            Paragraph::new(system_status_document(
+                app,
+                sections[4].width.saturating_sub(2),
+            ))
+            .block(pane_block(app, "System Status", focused))
+            .wrap(Wrap { trim: false }),
             sections[4],
         );
     }
@@ -14231,8 +14368,8 @@ mod tests {
                 viewers: 1,
             });
         let output = rendered_text(&app, 160, 40);
-        assert!(output.contains("Daemon: Connected"), "{output}");
-        assert!(output.contains("BitBake: Running"), "{output}");
+        assert!(output.contains("Daemon: ✓ Connected"), "{output}");
+        assert!(output.contains("BitBake: ✓ Running"), "{output}");
         assert!(output.contains("Layers"), "{output}");
     }
 
@@ -14244,9 +14381,12 @@ mod tests {
         for screen in [Screen::Dashboard, Screen::Tasks, Screen::Recipes] {
             app.screen = screen;
             let output = rendered_text(&app, 160, 40);
-            assert!(output.contains("Daemon: Connected"), "{screen:?}: {output}");
             assert!(
-                output.contains("BitBake: Connecting"),
+                output.contains("Daemon: ✓ Connected"),
+                "{screen:?}: {output}"
+            );
+            assert!(
+                output.contains("BitBake: … Connecting"),
                 "{screen:?}: {output}"
             );
         }
@@ -14265,8 +14405,8 @@ mod tests {
             recovery: yoctui_model::DaemonRecoveryState::Recovered,
         });
         let output = rendered_text(&app, 160, 40);
-        assert!(output.contains("Daemon: Connected"), "{output}");
-        assert!(output.contains("BitBake: Disconnected"), "{output}");
+        assert!(output.contains("Daemon: ✓ Connected"), "{output}");
+        assert!(output.contains("BitBake: – Disconnected"), "{output}");
         assert!(!output.contains("Telemetry --"), "{output}");
     }
 
@@ -14289,8 +14429,8 @@ mod tests {
             "Project: core-image-minimal",
             "Machine: qemux86-64",
             "Distro: poky",
-            "Daemon: Connected",
-            "BitBake: Running",
+            "Daemon: ✓ Connected",
+            "BitBake: ✓ Running",
             "F1 Help",
             "F2 Tasks",
             "F10 Menu",
@@ -17891,10 +18031,10 @@ mod tests {
 
         let wide = system_status_text(&app, 72);
         for expected in [
-            "Daemon Connected · version unavailable · up 00:02:05",
-            "BitBake Running · v2.18.0 · Jobs 2",
-            "PTY 1 · Clients 3 · Compat Degraded g7 · A1 L1 U1 ?2",
-            "Build FS 60% · 40.0/100.0 GiB free · Workspace /work/poky/build",
+            "✓ Daemon Connected · version unavailable · up 00:02:05",
+            "✓ BitBake Running · v2.18.0 · Jobs 2",
+            "! Compat Degraded g7 · A1 L1 U1 ?2 · PTY 1 · Clients 3",
+            "✓ Build FS 60% · 40.0/100.0 GiB free · Workspace /work/poky/build",
         ] {
             assert!(wide.contains(expected), "missing {expected}: {wide}");
         }
@@ -17905,8 +18045,12 @@ mod tests {
         assert!(compact.lines().all(|line| line.chars().count() <= 32));
         assert!(compact.contains("Daemon Connected"), "{compact}");
         assert!(compact.contains("BitBake Running"), "{compact}");
-        assert!(compact.contains("Jobs 2 · PTY 1 · Clients 3"), "{compact}");
         assert!(compact.contains("Compat Degraded g7"), "{compact}");
+        assert!(
+            compact
+                .lines()
+                .all(|line| matches!(line.chars().next(), Some('✓' | '!' | '✕' | '…' | '–')))
+        );
 
         app.daemon.status = yoctui_model::ClientReplicaStatus::Stale;
         app.daemon.connected_clients = 99;
@@ -17919,7 +18063,7 @@ mod tests {
             "{stale}"
         );
         assert!(
-            stale.contains("PTY unavailable · Clients unavailable · Compat Unavailable"),
+            stale.contains("Compat Unavailable · PTY unavailable · Clients unavailable"),
             "{stale}"
         );
         assert!(
@@ -17933,6 +18077,130 @@ mod tests {
         let rendered = rendered_text(&app, 180, 44);
         assert!(rendered.contains("System Status"), "{rendered}");
         assert!(rendered.contains("Daemon Stale"), "{rendered}");
+    }
+    #[test]
+    fn next_generation_health_indicators_cover_backend_disk_compat_logs_and_workspace() {
+        let mut app = compatibility_ui_inspector_app();
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Running;
+        app.daemon.telemetry = Some(yoctui_model::ClientDaemonTelemetry {
+            uptime_seconds: 60,
+            active_jobs: 1,
+            pty_sessions: 0,
+            queue_depth: 1,
+            memory_bytes: None,
+            recovery: yoctui_model::DaemonRecoveryState::CleanStart,
+        });
+        app.workspace.build_dir = Some("/work/build".into());
+        app.host_telemetry.disk_total_bytes = Some(100);
+        app.host_telemetry.disk_available_bytes = Some(31);
+
+        let healthy = system_status_projection(&app, 120);
+        assert_eq!(healthy[0].tone, StatusTone::Success);
+        assert!(healthy[0].text.starts_with("✓ Daemon Connected"));
+        assert_eq!(healthy[1].tone, StatusTone::Success);
+        assert!(healthy[1].text.starts_with("✓ BitBake Running"));
+        assert_eq!(healthy[2].tone, StatusTone::Warning);
+        assert!(healthy[2].text.starts_with("! Compat Degraded"));
+        assert_eq!(healthy[3].tone, StatusTone::Success);
+        assert!(healthy[3].text.starts_with("✓ Build FS 69%"));
+
+        app.host_telemetry.disk_available_bytes = Some(30);
+        let warning = system_status_projection(&app, 120);
+        assert_eq!(warning[3].tone, StatusTone::Warning);
+        assert!(warning[3].text.starts_with("! Build FS 70%"));
+        app.host_telemetry.disk_available_bytes = Some(10);
+        let error = system_status_projection(&app, 120);
+        assert_eq!(error[3].tone, StatusTone::Error);
+        assert!(error[3].text.starts_with("✕ Build FS 90%"));
+
+        app.host_telemetry.disk_available_bytes = Some(31);
+        app.logs.dropped = 4;
+        app.logs.dropped_warnings = 2;
+        app.logs.dropped_errors = 1;
+        let pressure = system_status_projection(&app, 120);
+        assert_eq!(pressure[3].tone, StatusTone::Error);
+        assert!(
+            pressure[3]
+                .text
+                .contains("Logs 4 evicted (2 warning/1 error)"),
+            "{}",
+            pressure[3].text
+        );
+
+        app.logs.dropped = 0;
+        app.logs.dropped_warnings = 0;
+        app.logs.dropped_errors = 0;
+        app.workspace.build_dir = None;
+        app.workspace.source_dir = None;
+        let unknown = system_status_projection(&app, 120);
+        assert_eq!(unknown[3].tone, StatusTone::Warning);
+        assert!(unknown[3].text.contains("Workspace unknown"));
+
+        for (status, marker, tone) in [
+            (
+                yoctui_model::ClientReplicaStatus::Disconnected,
+                "✕ Daemon Disconnected",
+                StatusTone::Error,
+            ),
+            (
+                yoctui_model::ClientReplicaStatus::Synchronizing,
+                "… Daemon Synchronizing",
+                StatusTone::Pending,
+            ),
+            (
+                yoctui_model::ClientReplicaStatus::Stale,
+                "! Daemon Stale",
+                StatusTone::Warning,
+            ),
+        ] {
+            app.daemon.status = status;
+            let projection = system_status_projection(&app, 120);
+            assert_eq!(projection[0].tone, tone);
+            assert!(projection[0].text.starts_with(marker));
+            assert!(projection[1].text.contains("BitBake unavailable"));
+        }
+
+        let render_header = |app: &App| {
+            let mut terminal = Terminal::new(TestBackend::new(180, 2)).unwrap();
+            terminal
+                .draw(|frame| workbench_header(frame, app, frame.area()))
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+        let stale_header = render_header(&app);
+        assert!(stale_header.contains("Daemon: ! Stale"), "{stale_header}");
+        assert!(
+            stale_header.contains("BitBake: – Unavailable"),
+            "{stale_header}"
+        );
+        assert!(!stale_header.contains("BitBake: ✓ Running"));
+
+        app.color_enabled = false;
+        app.theme = Theme::HighContrast;
+        app.reduced_motion = true;
+        let mut terminal = Terminal::new(TestBackend::new(50, 6)).unwrap();
+        terminal
+            .draw(|frame| {
+                frame.render_widget(
+                    Paragraph::new(system_status_document(&app, 48))
+                        .block(Block::default().borders(Borders::ALL)),
+                    frame.area(),
+                );
+            })
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        assert!(
+            buffer
+                .content
+                .iter()
+                .any(|cell| { cell.symbol() == "!" && cell.modifier.contains(Modifier::BOLD) })
+        );
     }
     #[test]
     fn dashboard_renders_parse_progress() {
@@ -20246,7 +20514,7 @@ mod tests {
             "Recent Log (tail)",
             "Actions",
             "System Status",
-            "Daemon: Connected",
+            "Daemon: ✓ Connected",
         ] {
             assert!(output.contains(expected), "missing {expected}: {output}");
         }

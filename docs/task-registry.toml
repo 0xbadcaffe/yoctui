@@ -5332,18 +5332,18 @@ notes = "System Status is now a bounded four-line projection of daemon connectio
 id = "SYSTEM-UI-002"
 milestone = "M19"
 title = "Add health and warning indicators"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 545
 required = true
 depends_on = ["SYSTEM-UI-001"]
 verify = ["cargo test -p yoctui-ui next_generation_health_indicators"]
-notes = "Expose disconnected, low-disk, reconnecting, degraded-capability, log-pressure, and unknown-workspace states with text/symbols and semantic styling."
+notes = "Reusable health projection now gives daemon, BitBake, compatibility, filesystem, log-pressure, and workspace conditions text markers plus semantic roles. Non-current authority suppresses retained BitBake state in System Status and the header; disk uses 70% warning/90% error thresholds; log eviction/errors and unknown workspace are explicit. Focused lifecycle/threshold/degraded/pressure/accessibility/shell tests, all 176 UI tests, and the reviewed golden pass."
 
 [[task]]
 id = "HEADER-UI-001"
 milestone = "M19"
 title = "Redesign header"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 546
 required = true
 depends_on = ["SYSTEM-UI-002"]

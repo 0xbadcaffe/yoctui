@@ -2,19 +2,19 @@
 
 ## Task
 
-**ID:** SYSTEM-UI-002
-**Title:** Add health and warning indicators
+**ID:** HEADER-UI-001
+**Title:** Redesign header
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add compact semantic text-and-symbol health indicators to System Status and
-the persistent shell for authoritative backend, disk, compatibility, log, and
-workspace conditions.
+Redesign the compact persistent header around the authoritative identity and
+build-state priority order, with deterministic progressive hiding at reduced
+widths.
 
 ## Dependencies
 
-- `SYSTEM-UI-001` — DONE
+- `SYSTEM-UI-002` — DONE
 
 ## Relevant files
 
@@ -26,22 +26,21 @@ workspace conditions.
 
 ## Definition of done
 
-- Backend disconnected, synchronizing/reconnecting, and stale states use
-  distinct text markers and semantic roles.
-- Low build-filesystem capacity is derived only from the authoritative sample
-  and uses documented warning/error thresholds.
-- Degraded compatibility, log pressure/eviction, and unknown workspace state
-  are named without relying on color.
-- Healthy, warning, error, and unavailable conditions share reusable semantic
-  presentation rather than widget-local hardcoded colors.
-- Indicators remain meaningful in high-contrast and no-color modes and do not
-  animate under reduced motion.
-- Responsive layouts bound or prioritize status without overlap or panic.
+- Project/Yoctui identity remains first, followed by build state and target.
+- MACHINE, DISTRO/release, daemon state, and BitBake state render only from
+  authoritative model values in the documented priority order.
+- Wide, medium, and narrow variants hide lower-priority fields
+  deterministically without clipping higher-priority state.
+- Daemon and BitBake reuse the shared text-marker health semantics and stale
+  authority never appears current.
+- No daemon version, PID, target, release, or environment value is inferred.
+- High-contrast, no-color, reduced-motion, and minimum-width layouts remain
+  readable and panic-free.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui next_generation_health_indicators
+cargo test -p yoctui-ui next_generation_header
 cargo fmt --all --check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh

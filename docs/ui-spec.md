@@ -266,6 +266,23 @@ System Status explicitly says `version unavailable` and never invents either.
 The misleading queue-depth alias and assumed-page-size resident-memory
 diagnostic remain non-renderable.
 
+Every status line begins with a non-color marker and uses the matching semantic
+role: `✓` healthy/current, `…` synchronizing or lifecycle transition, `!`
+warning/degraded/stale, `✕` failed/disconnected/error, and `–` unavailable or
+inactive. The persistent header uses the same markers for daemon and BitBake;
+BitBake is explicitly unavailable whenever daemon authority is not Current,
+even if a retained lifecycle exists. Reduced motion never animates markers.
+
+Build-filesystem health uses the same whole used percentage as its gauge:
+below 70% is healthy, 70–89% is warning, and 90% or greater is error. Invalid
+or missing capacity is warning/unavailable rather than zero. Compatibility
+Full is healthy, Degraded or Diagnostic is warning, and absent/non-current
+authority is warning/unavailable. Any retained log eviction is log pressure;
+an evicted error elevates it to error. Unknown workspace identity is an
+explicit warning. The fourth bounded System Status line prioritizes unknown
+workspace, then log pressure, while retaining valid filesystem/workspace
+context as width permits.
+
 #### Footer behavior
 
 The wide F1-F10 rail remains authoritative global navigation because every
