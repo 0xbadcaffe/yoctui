@@ -1,12 +1,12 @@
 poky_revision=5de2230907ac20b7af344c73db4c7d5bde372d1e
 poky_branch=scarthgap
-build_dir=/home/bspguy-dev/projects/yoctui/.yoctui-fresh-poky.L1x7df/build
+build_dir=/home/$USER/projects/yoctui/.yoctui-fresh-poky.L1x7df/build
 environment initialized: yes
-build directory: /home/bspguy-dev/projects/yoctui/.yoctui-fresh-poky.L1x7df/build (usable)
+build directory: /home/$USER/projects/yoctui/.yoctui-fresh-poky.L1x7df/build (usable)
 bitbake: BitBake Build Tool Core version 2.8.1
 BitBake Python module: 2.8.1
 conf/local.conf: present
 conf/bblayers.conf: present
 NOTE: Starting bitbake server...
-bridge protocol: ok (workspace: /home/bspguy-dev/projects/yoctui/.yoctui-fresh-poky.L1x7df/build)
+bridge protocol: ok (workspace: /home/$USER/projects/yoctui/.yoctui-fresh-poky.L1x7df/build)
 bridge shutdown: failed (bridge: bridge did not exit after shutdown acknowledgement)

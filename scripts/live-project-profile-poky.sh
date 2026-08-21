@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
-source_poky="${YOCTUI_POKY_SOURCE:-/home/bspguy-dev/src/poky}"
+source_poky="${YOCTUI_POKY_SOURCE:-/home/$USER/src/poky}"
 if [[ ! -x "$source_poky/oe-init-build-env" ]]; then
   printf 'live project profile: Poky source is unavailable: %s\n' "$source_poky" >&2
   exit 2

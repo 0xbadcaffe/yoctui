@@ -1,3 +1,3 @@
-core /home/bspguy-dev/src/poky/meta
-yocto /home/bspguy-dev/src/poky/meta-poky
-yoctobsp /home/bspguy-dev/src/poky/meta-yocto-bsp
+core /home/$USER/src/poky/meta
+yocto /home/$USER/src/poky/meta-poky
+yoctobsp /home/$USER/src/poky/meta-yocto-bsp
