@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
-source_poky="${YOCTUI_POKY_SOURCE:-/home/bspguy-dev/src/poky}"
+source_poky="${YOCTUI_POKY_SOURCE:-/home/$USER/src/poky}"
 test -x "$source_poky/oe-init-build-env"
 root="$(mktemp -d "$repo_root/.yoctui-fresh-poky.XXXXXX")"
 trap 'rm -rf "$root"' EXIT

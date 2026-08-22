@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
-source_poky="${YOCTUI_POKY_SOURCE:-/home/bspguy-dev/src/poky}"
+source_poky="${YOCTUI_POKY_SOURCE:-/home/$USER/src/poky}"
 target="${YOCTUI_LIVE_POKY_TARGET:-core-image-minimal}"
 timeout_seconds="${YOCTUI_LIVE_BUILD_TIMEOUT:-14400}"
 

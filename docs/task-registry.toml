@@ -674,7 +674,7 @@ priority = 46
 required = true
 depends_on = ["PKG-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake pkgdata_adapter", "cargo test -p yoctui-app pkgdata_adapter"]
-notes = "Validated shell-free oe-pkgdata-util discovery and exact batched commands return typed bounded inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The opt-in live smoke was attempted against /home/bspguy-dev/src/bitbake/bitbake-builds/yoctui-qemux86-64/build but generated build/tmp/pkgdata is absent, so no live package-data compatibility is claimed."
+notes = "Validated shell-free oe-pkgdata-util discovery and exact batched commands return typed bounded inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The opt-in live smoke was attempted against /home/$USER/src/bitbake/bitbake-builds/yoctui-qemux86-64/build but generated build/tmp/pkgdata is absent, so no live package-data compatibility is claimed."
 
 [[task]]
 id = "PKG-UI-001"
@@ -4373,7 +4373,7 @@ priority = 468
 required = true
 depends_on = ["UI-LIVE-DISCOVERY-001"]
 verify = ["./scripts/test-live-workbench.sh $HOME/src/poky/build", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
-notes = "The new private-XDG live gate passed against /home/bspguy-dev/src/poky/build: Poky 5.0.19, qemux86-64, DISTRO poky, core/yocto/yoctobsp layers, and 1,829 recipes including core-image-minimal and busybox. Its colored 160x48 PTY contains grouped workbench and explicit focus anchors without the old daemon fallback notice. Workspace tests, Clippy, and all 39 bridge tests pass."
+notes = "The new private-XDG live gate passed against /home/$USER/src/poky/build: Poky 5.0.19, qemux86-64, DISTRO poky, core/yocto/yoctobsp layers, and 1,829 recipes including core-image-minimal and busybox. Its colored 160x48 PTY contains grouped workbench and explicit focus anchors without the old daemon fallback notice. Workspace tests, Clippy, and all 39 bridge tests pass."
 
 [[task]]
 id = "UI-LIVE-RECOVERY-001"
