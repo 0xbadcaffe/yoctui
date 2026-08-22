@@ -2704,3 +2704,102 @@ ordered journal cursor; daemon events are replayed from that cursor to every
 attached client, while command-created events advance the issuing client's
 cursor after their direct response. This keeps global daemon state and event
 ordering shared without making focus or layout global.
+
+## Raw BitBake Command Workbench boundary
+
+Raw Mode reuses the existing dependency direction and does not introduce a
+shell-command subsystem. The bundled Wrynose 6.0 / BitBake 2.18 Markdown file
+is a development/reference artifact only. Production startup never parses it.
+A versioned typed catalog in `yoctui-model` is the runtime source for stable
+category and command IDs, exact reference section/template/description,
+parameter definitions, capability requirements, interaction mode, and safety.
+A traceability test compares that catalog to the bundled reference during
+development and verification.
+
+`yoctui-model` owns normalized catalog validation, browser/search selection,
+forms and typed parameter values, the bounded expert-argument tokenizer,
+deterministic preview material, favorites, safe history records, Raw job/session
+replicas, and pure reducer transitions. It owns no executable discovery,
+filesystem validation, process, PTY, terminal, or persistence I/O. Catalog
+normalization rejects duplicate identities, invalid category/reference links,
+placeholder/parameter disagreement, missing execution classification, unsafe
+encoded shell operators, and an executable entry without a capability policy.
+
+Raw availability is a projection of `WorkspaceCompatibilityState`. Existing
+behavior capabilities are reused where they exactly authorize the command;
+new BitBake option/task/UI capabilities enter the one central compatibility
+catalog and daemon probe coordinator. No Raw widget or planner compares release
+numbers. An exact command requirement can be all-of or any-of and retains all
+five capability states, limitations, reason evidence, selected implementation,
+environment identity, and generation. Missing current daemon authority fails
+closed.
+
+The client never submits a command string. A typed Raw execution request carries
+catalog revision, stable command ID, typed parameter values, bounded additional
+argv elements, interaction and safety classes, reviewed capability generation,
+exact build-directory identity, and a digest of the indexed preview. The daemon
+looks up the same catalog entry, reconstructs every native argv element
+independently, revalidates parameter/path/capability/executable/build identity,
+and requires an exact preview digest match before creating work. A changed
+catalog, generation, environment, executable, path identity, or safety class is
+a typed stale rejection before spawn.
+
+`yoctui-bitbake` owns `RawCommandPlanner`. It accepts only a normalized daemon
+snapshot and the typed request, resolves the initialized `bitbake` executable,
+applies the catalog's exact capability and safety requirements, validates any
+declared filesystem identity, and returns an immutable executable,
+`Vec<OsString>`, working directory, environment, stream/deadline bounds, and
+interaction classification. It never accepts a prejoined command and never
+calls `sh -c`, `bash -c`, `eval`, or a system-command-string API. The expert
+argument parser has no shell expansion, substitution, redirection, pipeline,
+glob, variable, alias, or environment-assignment semantics.
+
+Noninteractive requests use one daemon-owned Raw runner built on the existing
+process-group and background-job infrastructure. Stable Raw job IDs occupy a
+disjoint typed family. The daemon owns child lifetime, bounded stdout/stderr,
+drop/truncation counts, deadline, cancellation, terminal result, history, and
+journal publication independently of any client. Detach removes only the
+client view; reconnect installs the current bounded replica. Saving output is a
+separate typed file effect with its own normalized destination and replacement
+policy, not process redirection encoded in argv.
+
+Interactive requests use the existing daemon PTY registry. The planner's
+`InteractivePty` result becomes a `PtyCommandIdentity` and authorized Raw
+workspace context; the daemon remains owner of the process group, emulator,
+screen, scrollback, writer lease, resize, attach/detach, exit, and termination.
+The line-oriented Raw runner never launches an interactive catalog entry, and
+the PTY route never accepts an arbitrary executable or command text from the
+client. Catalog classification is checked again at daemon execution.
+
+Protocol DTOs are versioned and bounded independently of model types. They
+carry stable command/catalog IDs and typed values rather than Rust enum layout
+or arbitrary argv authority. Raw job and PTY lifecycle events participate in
+the same daemon sequence/generation journal. Unknown required catalog IDs,
+interaction classes, safety classes, or parameter kinds fail closed; additive
+optional presentation fields may follow negotiated minor-version rules.
+
+`yoctui-app` maps keyboard/mouse input to Raw reducer actions, maps daemon Raw
+events mechanically, and translates validated effects into typed daemon
+requests. The compatibility-aware reducer runs before request preparation and
+again when confirmation is accepted. `yoctui-ui` renders only catalog/model
+projections and shared dialog/terminal primitives; it never tokenizes,
+constructs argv, reads the Markdown reference, evaluates capability, or parses
+process/PTY output.
+
+Favorites use a bounded versioned user-local persistence record integrated with
+the existing atomic `session.toml` boundary. Loading normalizes every catalog
+ID and parameter value; removed/changed templates become explicit stale
+favorites. Capability state, process identity, secrets, output, job IDs, and
+temporary authority are not serialized. Raw history uses the daemon's bounded
+safe durable-state boundary for command identity and terminal metadata while
+client presentation selections remain local. Re-execution always creates a
+new reviewed request.
+
+Security tests inspect the complete code path for prohibited shell-evaluation
+APIs and hostile values such as semicolons, pipelines, substitutions, and
+backticks. Fake process/PTY tests prove exact argv, streaming, cancellation,
+detach, reconnect, bounds, and stale rejection only. Live Raw compatibility
+requires capability-correlated commands against the exact supported BitBake
+environment and records command IDs, selected implementations, environment
+identity, results, and evidence without upgrading the bundled reference into a
+release claim.

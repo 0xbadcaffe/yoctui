@@ -55,6 +55,9 @@ markdown_output = subprocess.check_output(
 )
 markdown_files = [root / line for line in markdown_output.splitlines() if line]
 errors: list[str] = []
+immutable_reference_sources = {
+    root / "docs/reference/bitbake-cheatsheet-wrynose-6.0-bitbake-2.18.md",
+}
 
 
 def markdown_lines(path: Path) -> list[tuple[int, str]]:
@@ -182,6 +185,12 @@ for source in markdown_files:
                 )
                 continue
             if fragment:
+                # Preserved third-party/reference snapshots may contain their own
+                # renderer-specific hand-authored anchors. Keep validating that
+                # project-authored links can reach the snapshot, but do not
+                # rewrite or reinterpret its internal table of contents.
+                if source in immutable_reference_sources:
+                    continue
                 if target.suffix.lower() != ".md":
                     errors.append(
                         f"{source.relative_to(root)}:{line_number}: fragment targets non-Markdown file: {destination}"

@@ -2,42 +2,41 @@
 
 ## Task
 
-**ID:** RAW-SPEC-001
-**Title:** Specify Raw Mode UX execution safety favorites and capability contract
+**ID:** RAW-CATALOG-MODEL-001
+**Title:** Define typed Raw command category and parameter model
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Define the authoritative UI and architecture contract for the Raw BitBake
-Command Workbench before changing runtime behavior.
+Define the bounded pure domain vocabulary for Raw Mode categories, commands,
+reference traceability, parameters, capability requirements, interaction
+modes, and safety classes.
 
 ## Dependencies
 
-- `RAW-REF-001` — DONE
+- `RAW-SPEC-001` — DONE
 
 ## Relevant files
 
-- `docs/ui-spec.md`
-- `docs/architecture.md`
-- `docs/product-roadmap.md`
+- `crates/yoctui-model/src/raw_mode.rs`
+- `crates/yoctui-model/src/lib.rs`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 - `docs/current-task.md`
 
 ## Definition of done
 
- - Raw Mode hierarchy, focus, search, form, preview, output, history, favorite,
-   responsive, mouse, and accessibility behavior are explicit.
- - Typed job versus PTY execution and detach/reattach semantics are explicit.
- - Capability correlation and stale-authority rejection are explicit.
- - Shell operators and destructive/unsafe behavior are classified and rejected
-   or separately confirmed without a shell command path.
- - Component ownership and persistence boundaries are documented.
+ - Stable bounded category, command, and reference identities normalize.
+ - Parameter kinds, required/optional placeholders, interaction mode, and
+   safety class are closed typed values.
+ - Catalog validation rejects duplicate/invalid identities, missing text,
+   placeholder disagreement, unsafe templates, and missing execution policy.
+ - Unit tests cover valid, partial, duplicate, oversized, and unsafe records.
 
 ## Verification
 
 ```bash
-./scripts/verify-ui-spec.sh
+cargo test -p yoctui-model raw_catalog_model
+cargo clippy -p yoctui-model --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
-./scripts/check-docs.sh
 ```

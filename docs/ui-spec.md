@@ -4048,3 +4048,189 @@ implementation when one exists. Client-local dialogs do not add this rail.
 The rail is presentation only: confirmation is independently revalidated by
 the model, and capability loss closes an unsafe dialog with restored focus and
 an exact notification.
+
+---
+
+## 32. Raw Mode
+
+`Raw Mode` is a first-class Navigator destination in the `TOOLS` group and a
+searchable command-palette destination. It is an expert structured workbench
+over BitBake command templates. It is not an arbitrary command launcher, an
+embedded shell replacement, or permission to infer support from the bundled
+Wrynose 6.0 / BitBake 2.18 reference snapshot.
+
+The tracked reference is
+`docs/reference/bitbake-cheatsheet-wrynose-6.0-bitbake-2.18.md`. Production
+widgets never parse it. A compiled typed catalog retains a stable command ID,
+category, exact reference section, reference command template, reference
+description, parameter definitions, capability requirements, interaction
+mode, and safety class. Catalog validation keeps that traceability reviewable.
+
+### Browser hierarchy and focus
+
+The first level follows the reference Table of Contents, with `Favorites`
+pinned before the reference-derived categories. Executable BitBake categories,
+reference-only sections, companion-tool sections, and conceptual sections are
+visibly distinguished. Reference-only, pipeline, filesystem-debugging, and
+conceptual material may provide help or links to an existing typed workspace,
+but it cannot appear as a runnable BitBake command. Companion tools remain
+owned by their existing typed workspaces unless a later catalog entry supplies
+its own exact capability and adapter.
+
+Wide Workspace content uses a bounded category column and a command list; the
+persistent Inspector is titled `Inspector: Raw command`. `Left`/`Right` (or
+`h`/`l`) changes the active browser column, while `Up`/`Down` (or `k`/`j`)
+moves bounded selection in that column. `Enter` on a category activates its
+command list. `Enter` on an executable command opens its typed configuration;
+on reference-only material it opens only its help. Global `Tab` and
+`Shift+Tab` retain the shell Navigator/Workspace/Inspector focus cycle and do
+not become an undisclosed Raw subpane focus model.
+
+The exact selected command drives the Inspector immediately. It shows, in
+order, description, reference section, template, Available/Limited/
+Unavailable/Unknown/Unsupported state, exact reason and selected
+implementation, interaction mode, safety class, parameters, and favorite
+state. No approximate workspace prose may replace the catalog description.
+Disabled commands remain selectable for explanation but cannot open a
+confirmable preview.
+
+`/` edits one bounded case-insensitive search across category labels, command
+templates, descriptions, and favorite names. Result selection remains an exact
+catalog or favorite identity. `Ctrl+U` clears it and `Esc` finishes editing
+without clearing. `f` adds or removes the selected command/defaults as a
+favorite through a typed confirmation when removal or replacement is involved.
+`H` opens bounded Raw history. `Esc` moves outward from command list to
+category browser, or through the global pane behavior when already at the
+outer level.
+
+### Command configuration and parameters
+
+Every executable selection opens a focus-trapping `Run BitBake Command` typed
+form. It names the immutable command template and exposes only its declared
+parameters plus one bounded `Additional arguments` value. Parameter kinds are:
+
+- Recipe: authoritative recipe inventory picker plus validated manual entry
+- Image: authoritative image inventory picker plus validated manual entry
+- Target: authoritative recent/current targets plus validated manual entry
+- Task: exact selected-recipe task inventory plus validated manual entry where
+  the template permits an arbitrary BitBake task
+- UI: an enumerated choice from positively discovered implementations
+- File: a normalized path editor with the catalog-declared read/write and
+  containment policy
+- Value: bounded text with a parameter-specific character policy
+- Number: a bounded integer with catalog-declared minimum and maximum
+- Multiconfig: authoritative configured identities plus validated manual entry
+
+Inventory absence never converts a required parameter into an empty valid
+value. Manual recipe/image/target/task/config values are single native argv
+elements; empty values, leading option ambiguity where disallowed, control
+bytes, and parameter-specific invalid syntax remain inline validation errors.
+Selector and manual editing coexist: choosing an inventory value fills the
+same typed field and editing it does not create another authority.
+
+The shared popup-editor convention owns cursor, selection, clipboard, and
+Normal/Insert behavior. `Enter` validates the current document; a valid form
+opens a separate preview and does not execute. `Esc`/`q` closes without work.
+The form remains usable at `80x24`, preserving title, selected field,
+validation, preview action, and close hint.
+
+### Expert arguments and exact preview
+
+Additional arguments are tokenized into native argv without shell evaluation.
+Single and double quotes may group characters and are removed by the tokenizer;
+backslash may escape only the next ordinary character under the documented
+tokenizer grammar. Unterminated quotes, NUL/control bytes, an empty option name,
+excess argument count/length/aggregate bytes, and the shell operators `|`,
+`>`, `>>`, `<`, `&&`, `||`, `;`, `$()`, and backticks are rejected. Operator
+characters inside a literal parameter are accepted only when that parameter's
+typed policy explicitly permits them and they still remain one argv element;
+they never gain shell meaning.
+
+The preview always shows the exact executable identity and every argument as
+an indexed row. It also shows command ID/catalog revision, connected capability
+generation, build directory, interaction mode, safety class, and any
+limitations. It never renders a command string as execution authority.
+`Enter` confirms only when the exact current capability and inputs still agree;
+`Esc` returns without execution.
+
+Safety is a closed catalog value: `Read only`, `Build/mutating`, `Destructive`,
+`Server lifecycle`, `Interactive`, or `Unsupported reference`. Force, stamp
+invalidation, cleaning, configuration injection, output-file replacement, and
+server lifecycle are never silently treated as ordinary read-only work.
+Destructive and server-lifecycle commands require the existing separate exact
+preview and explicit confirmation strength. Credential-bearing remote-server
+tokens are unsupported until a secret-safe input and redaction contract exists;
+they are never stored in a favorite or history record.
+
+### Execution, detach, and history
+
+The catalog declares each executable command `Noninteractive` or
+`InteractivePty`. A noninteractive confirmation creates a daemon-owned Raw
+background job using exact native argv. Its execution view shows command
+identity, state, elapsed time, stdout/stderr origin, bounded output/drop counts,
+exit code/result, follow/pause, search, vertical/horizontal scroll, save through
+an explicit typed destination, cancellation, detach, and reattach. Closing or
+detaching the view never implicitly cancels the job.
+
+An interactive confirmation creates a daemon-owned PTY session through the
+existing terminal/session architecture. The session retains exact command and
+workspace identity, emulator screen, writer lease, resize, detach/reattach,
+termination, and final status. Raw Mode does not line-buffer an ncurses UI or
+parse its terminal output. Detaching returns to Raw Mode and leaves the session
+alive; termination remains its existing separately confirmed action.
+
+Raw history is bounded and ordered newest first. It retains command/template
+identity, sanitized parameter/default values, start/end time, interaction mode,
+terminal outcome, and durable job/session reference where safe. PID, process
+group, writer lease, secret, complete output, and temporary path authority are
+not persisted. A retained record reopens current compatibility inspection and
+configuration; it cannot replay work without a fresh preview and confirmation.
+
+### Favorites
+
+A favorite stores a stable command-template ID, user-visible bounded name,
+validated parameter defaults, validated additional argv, and ordering. It does
+not store PID, output, job ID, capability authority, or transient process
+state. Favorites are atomically persisted in user-local session state and are
+never written into `.yoctui/project.toml`.
+
+Favorites remain visible when their command is unavailable or the catalog has
+changed. They say `STALE` or the exact five-state availability reason and
+cannot run until revalidated. Add, remove, rename, reorder, edit defaults,
+inspect, and execute all use typed reducer actions. Execution always rebuilds
+the form and preview against the current catalog and daemon snapshot.
+
+### Capability and responsive behavior
+
+Every command has an explicit centralized capability requirement. The current
+daemon `CapabilitySnapshot` is the only runtime authority. Positive direct
+option/task/UI evidence is preferred; conservative catalog-declared fallback
+may yield Limited; missing, negative, conflicting, stale, disconnected, or
+unknown evidence fails closed. A newer snapshot reprojects list/Inspector
+state immediately. It closes an unsafe open form/preview, restores the prior
+pane, records the exact reason, and emits no start effect. Already-owned cancel,
+detach, reattach, and inspect actions remain available.
+
+At `130+` columns the Workspace shows categories and commands beside the
+persistent Inspector. At `100..129`, categories and commands share Workspace
+and the global Inspector overlay supplies help. At `80..99`, the existing
+Navigator/Workspace/Inspector switcher applies; Raw Workspace shows one of
+category, command, form/output, or history state at a time with explicit
+back/forward text. Below `80x24`, only the global resize screen renders.
+Selection and search identities survive resize.
+
+Mouse clicks and wheel movement use the same rendered rectangles and typed
+actions as keyboard selection; modal and PTY ownership rules remain unchanged.
+Every capability, safety, favorite, focus, job, stream, and terminal state has
+a text marker/word. No-color uses attributes, high contrast preserves exact
+meaning, and reduced motion changes no execution or selection state.
+
+The full Raw footer is:
+
+```text
+←/→ Pane  ↑/↓ Select  Enter Open  / Search  f Favorite  H History  Tab Focus  F1 Help  F10 Menu  q Quit
+```
+
+The execution footer prioritizes `f Follow`, `/ Search`, `c Cancel`, `d
+Detach`, `r Reattach`, and `Esc Back` before optional hints. Narrow labels may
+abbreviate words but may not hide cancel/detach or misstate availability.
