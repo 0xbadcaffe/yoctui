@@ -2,41 +2,43 @@
 
 ## Task
 
-**ID:** RAW-CATALOG-MODEL-001
-**Title:** Define typed Raw command category and parameter model
+**ID:** RAW-CATALOG-001
+**Title:** Encode executable BitBake command surface
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Define the bounded pure domain vocabulary for Raw Mode categories, commands,
-reference traceability, parameters, capability requirements, interaction
-modes, and safety classes.
+Encode the supplied reference's BitBake command templates and exact help text
+as a versioned built-in Raw catalog, while keeping shell pipelines, conceptual
+material, companion tools, and unsupported command forms reference-only.
 
 ## Dependencies
 
-- `RAW-SPEC-001` — DONE
+- `RAW-CATALOG-MODEL-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/raw_mode.rs`
-- `crates/yoctui-model/src/lib.rs`
+- `docs/reference/bitbake-cheatsheet-wrynose-6.0-bitbake-2.18.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 - `docs/current-task.md`
 
 ## Definition of done
 
- - Stable bounded category, command, and reference identities normalize.
- - Parameter kinds, required/optional placeholders, interaction mode, and
-   safety class are closed typed values.
- - Catalog validation rejects duplicate/invalid identities, missing text,
-   placeholder disagreement, unsafe templates, and missing execution policy.
- - Unit tests cover valid, partial, duplicate, oversized, and unsafe records.
+- Executable BitBake entries are structured typed argv templates with exact
+  reference templates and descriptions.
+- Shell pipelines, conceptual workflows, companion commands, and unsupported
+  forms are explicitly reference-only and cannot produce argv.
+- Categories follow the reference table of contents without presenting
+  conceptual-only material as executable groups.
+- Tests cover representative executable, interactive, destructive, joined-
+  parameter, and reference-only entries plus full built-in validation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model raw_catalog_model
+cargo test -p yoctui-model raw_catalog
 cargo clippy -p yoctui-model --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

@@ -20,7 +20,12 @@ documents that it is a reference snapshot rather than runtime authority.
 define hierarchy, exact selection-following help, typed/manual parameters,
 bounded no-shell argv, exact previews, safety classes, daemon jobs versus PTYs,
 detach/reattach, safe history/favorites, capability replacement, responsive
-layout, mouse, and accessibility. `RAW-CATALOG-MODEL-001` is active next.
+layout, mouse, and accessibility. `RAW-CATALOG-MODEL-001` is complete: Raw
+Mode now has bounded stable identities, closed category/parameter/interaction/
+safety types, shell-free typed argv parts, explicit execution policy, and
+catalog validation for identity, text, placeholder, capability, and template
+integrity. `RAW-CATALOG-001` is active next to encode the reference command
+surface and classify non-executable material honestly.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not
