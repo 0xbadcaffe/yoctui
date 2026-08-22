@@ -11,6 +11,16 @@ Status values:
 
 ## Current phase
 
+M20 Raw BitBake Command Workbench supersedes the unrelated queue under the
+user's explicit request. `RAW-REF-001` imported the supplied Wrynose 6.0 /
+BitBake 2.18 cheatsheet verbatim at SHA-256
+`ad95ecfa6a17691fa2a6d12f598f01fbd33de524c2a08ebccd218ef5fe88dd47` and
+documents that it is a reference snapshot rather than runtime authority.
+`RAW-SPEC-001` is active next. Runtime Raw Mode support will come only from the
+daemon-owned connected-environment capability snapshot; shell pipelines,
+filesystem recipes, companion commands, and conceptual sections in the
+reference are not implicitly executable.
+
 `LIVE-UI-POKY-001` is `BLOCKED`: the fresh checkout is present, but the host
 denies the unprivileged user namespace required by BitBake. Reproduction is
 `unshare -Ur true` → `Operation not permitted`; the live harness exits 2 before

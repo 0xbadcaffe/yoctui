@@ -5563,7 +5563,7 @@ notes = "Publish only current screenshots captured from the real Yoctui binary a
 id = "UI-REGRESSION-001"
 milestone = "M19"
 title = "Verify all existing functionality remains available"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 566
 required = true
 depends_on = ["VISUAL-TEST-003", "INPUT-TEST-002"]
@@ -5591,3 +5591,377 @@ required = true
 depends_on = ["FOUNDATION-UI-001", "FOUNDATION-UI-002", "FOUNDATION-UI-003", "NAV-UI-001", "TASKS-UI-001", "TASKS-UI-002", "TASKS-UI-003", "LOG-UI-001", "LOG-UI-002", "JOB-UI-001", "JOB-UI-002", "INSPECTOR-UI-001", "INSPECTOR-UI-002", "INSPECTOR-UI-003", "METRICS-MODEL-001", "METRICS-MODEL-002", "METRICS-UI-001", "METRICS-UI-002", "METRICS-UI-003", "METRICS-UI-004", "METRICS-UI-005", "METRICS-UI-006", "SYSTEM-UI-001", "SYSTEM-UI-002", "HEADER-UI-001", "FOOTER-UI-001", "FOOTER-UI-002", "SEARCH-UI-001", "PALETTE-UI-001", "DIALOG-UI-001", "MOUSE-UI-001", "A11Y-UI-001", "PERF-UI-001", "PERF-UI-002", "RESPONSIVE-UI-001", "VISUAL-TEST-001", "VISUAL-TEST-002", "VISUAL-TEST-003", "INPUT-TEST-001", "INPUT-TEST-002", "INPUT-TEST-003", "PTY-UI-TEST-001", "LIVE-UI-POKY-001", "README-UI-001", "UI-REGRESSION-001", "UI-CLEANUP-001"]
 verify = ["./scripts/verify-next-generation-ui.sh", "./scripts/verify-completion.sh"]
 notes = "Parent gate closes only when the redesigned typed workbench matches the visual hierarchy, degrades responsively, retains all functionality, passes every visual/input/PTY/accessibility/performance/live-evidence check, and the full non-weakened completion gate passes."
+
+[[task]]
+id = "RAW-REF-001"
+milestone = "M20"
+title = "Import and preserve BitBake cheatsheet reference"
+status = "DONE"
+priority = 600
+required = true
+depends_on = []
+verify = ["cmp -s bitbake_cheatsheet_yocto_wrynose_6.0_bitbake_2.18.md docs/reference/bitbake-cheatsheet-wrynose-6.0-bitbake-2.18.md", "test -s docs/reference/README.md", "./scripts/verify-roadmap.sh"]
+notes = "Preserve the supplied Wrynose 6.0 / BitBake 2.18 reference verbatim, document its snapshot scope, and state that daemon capability authority controls runtime availability. SHA-256: ad95ecfa6a17691fa2a6d12f598f01fbd33de524c2a08ebccd218ef5fe88dd47."
+
+[[task]]
+id = "RAW-SPEC-001"
+milestone = "M20"
+title = "Specify Raw Mode UX execution safety favorites and capability contract"
+status = "IN_PROGRESS"
+priority = 601
+required = true
+depends_on = ["RAW-REF-001"]
+verify = ["./scripts/verify-ui-spec.sh", "./scripts/verify-roadmap.sh", "./scripts/check-docs.sh"]
+notes = "Define the complete authoritative UI, execution, persistence, security, and ownership contract before runtime implementation."
+
+[[task]]
+id = "RAW-CATALOG-MODEL-001"
+milestone = "M20"
+title = "Define typed Raw command category and parameter model"
+status = "NOT_STARTED"
+priority = 602
+required = true
+depends_on = ["RAW-SPEC-001"]
+verify = ["cargo test -p yoctui-model raw_catalog_model"]
+notes = "Define bounded stable command/category/reference identities, parameter kinds, interaction modes, safety classes, and validation."
+
+[[task]]
+id = "RAW-CATALOG-001"
+milestone = "M20"
+title = "Encode executable BitBake command surface"
+status = "NOT_STARTED"
+priority = 603
+required = true
+depends_on = ["RAW-CATALOG-MODEL-001"]
+verify = ["cargo test -p yoctui-model raw_catalog"]
+notes = "Encode executable BitBake templates and descriptions while classifying reference-only, shell-pipeline, conceptual, and companion-tool material honestly."
+
+[[task]]
+id = "RAW-CATALOG-TRACE-001"
+milestone = "M20"
+title = "Verify Raw catalog traceability to bundled reference"
+status = "NOT_STARTED"
+priority = 604
+required = true
+depends_on = ["RAW-CATALOG-001"]
+verify = ["cargo test -p yoctui-model raw_catalog_trace", "./scripts/verify-raw-catalog.sh"]
+notes = "Check unique IDs, exact sections/descriptions/templates, placeholder agreement, classifications, and reference coverage without runtime Markdown parsing."
+
+[[task]]
+id = "RAW-CAP-001"
+milestone = "M20"
+title = "Map Raw commands to capability requirements"
+status = "NOT_STARTED"
+priority = 605
+required = true
+depends_on = ["RAW-CATALOG-001", "COMPAT-001"]
+verify = ["cargo test -p yoctui-model raw_capability"]
+notes = "Give every executable template an explicit all-of/any-of connected-environment requirement and preserve Limited, Unavailable, Unknown, and Unsupported reasons."
+
+[[task]]
+id = "RAW-CAP-PROBE-001"
+milestone = "M20"
+title = "Integrate Raw availability with daemon capability snapshot"
+status = "NOT_STARTED"
+priority = 606
+required = true
+depends_on = ["RAW-CAP-001"]
+verify = ["cargo test -p yoctui-model raw_capability_probe", "cargo test -p yoctui-bitbake raw_capability_probe", "cargo test -p yoctui -- raw_capability_probe"]
+notes = "Extend safe direct probes and centralized daemon authority only where existing capability records cannot distinguish a Raw command option."
+
+[[task]]
+id = "RAW-PARAM-001"
+milestone = "M20"
+title = "Implement typed Raw parameter validation"
+status = "NOT_STARTED"
+priority = 607
+required = true
+depends_on = ["RAW-CATALOG-MODEL-001"]
+verify = ["cargo test -p yoctui-model raw_parameter"]
+notes = "Validate required and optional recipe, image, target, task, UI, file, value, number, and multiconfig parameters with explicit bounds."
+
+[[task]]
+id = "RAW-RECIPE-001"
+milestone = "M20"
+title = "Integrate authoritative Raw selectors"
+status = "NOT_STARTED"
+priority = 608
+required = true
+depends_on = ["RAW-PARAM-001", "RECIPES-META-001"]
+verify = ["cargo test -p yoctui-model raw_selector", "cargo test -p yoctui-app raw_selector"]
+notes = "Use authoritative recipe/image/target/task/multiconfig inventories while retaining validated manual target and task entry where BitBake permits it."
+
+[[task]]
+id = "RAW-ARG-001"
+milestone = "M20"
+title = "Implement bounded expert argv editor"
+status = "NOT_STARTED"
+priority = 609
+required = true
+depends_on = ["RAW-PARAM-001", "UX-POPUP-EDITOR-005"]
+verify = ["cargo test -p yoctui-model raw_argv", "cargo test -p yoctui-app raw_argv"]
+notes = "Tokenize quoted intent without shell evaluation, bound counts/lengths, reject controls and shell operators, and preserve native argv elements."
+
+[[task]]
+id = "RAW-PREVIEW-001"
+milestone = "M20"
+title = "Implement exact executable and indexed argv preview"
+status = "NOT_STARTED"
+priority = 610
+required = true
+depends_on = ["RAW-ARG-001", "RAW-CAP-001"]
+verify = ["cargo test -p yoctui-model raw_preview", "cargo test -p yoctui-ui raw_preview"]
+notes = "Reconstruct a deterministic preview from validated template parameters and expert arguments and never reduce it to a shell command string."
+
+[[task]]
+id = "RAW-MODEL-001"
+milestone = "M20"
+title = "Implement Raw Mode application state reducer and actions"
+status = "NOT_STARTED"
+priority = 611
+required = true
+depends_on = ["RAW-CATALOG-001", "RAW-CAP-001", "RAW-PARAM-001"]
+verify = ["cargo test -p yoctui-model raw_mode", "cargo test -p yoctui-app raw_mode"]
+notes = "Own category/command/help/search/form/output/history/favorite selection and all transitions in the pure model."
+
+[[task]]
+id = "RAW-NAV-001"
+milestone = "M20"
+title = "Add Raw Mode Navigator destination"
+status = "NOT_STARTED"
+priority = 612
+required = true
+depends_on = ["RAW-MODEL-001", "UI-SHELL-001"]
+verify = ["cargo test -p yoctui-model raw_navigation", "cargo test -p yoctui-app raw_navigation", "cargo test -p yoctui-ui raw_navigation"]
+notes = "Add one inspectable destination to Screen, workspace compatibility, Navigator, palette, footer/help, and responsive focus routing."
+
+[[task]]
+id = "RAW-CATEGORY-UI-001"
+milestone = "M20"
+title = "Implement Raw category browser"
+status = "NOT_STARTED"
+priority = 613
+required = true
+depends_on = ["RAW-NAV-001"]
+verify = ["cargo test -p yoctui-ui raw_category"]
+notes = "Render the reference-derived hierarchy with bounded scrolling and clear non-executable category/reference classification."
+
+[[task]]
+id = "RAW-COMMAND-UI-001"
+milestone = "M20"
+title = "Implement Raw command list"
+status = "NOT_STARTED"
+priority = 614
+required = true
+depends_on = ["RAW-CATEGORY-UI-001"]
+verify = ["cargo test -p yoctui-ui raw_command_list"]
+notes = "Render exact templates, selection, favorite marker, capability state, and bounded scrolling without inventing commands."
+
+[[task]]
+id = "RAW-HELP-UI-001"
+milestone = "M20"
+title = "Implement selection-following Raw command help"
+status = "NOT_STARTED"
+priority = 615
+required = true
+depends_on = ["RAW-COMMAND-UI-001"]
+verify = ["cargo test -p yoctui-ui raw_command_help"]
+notes = "Inspector content follows the exact highlighted catalog record and shows its reference description/template/capability/safety/favorite state."
+
+[[task]]
+id = "RAW-FORM-UI-001"
+milestone = "M20"
+title = "Implement Raw command parameter form"
+status = "NOT_STARTED"
+priority = 616
+required = true
+depends_on = ["RAW-HELP-UI-001", "RAW-RECIPE-001", "RAW-PREVIEW-001"]
+verify = ["cargo test -p yoctui-model raw_form", "cargo test -p yoctui-app raw_form", "cargo test -p yoctui-ui raw_form"]
+notes = "Use the shared focus-trapped popup editor and typed selectors to edit defaults and advance to exact preview."
+
+[[task]]
+id = "RAW-EXEC-MODEL-001"
+milestone = "M20"
+title = "Add typed Raw execution lifecycle"
+status = "NOT_STARTED"
+priority = 617
+required = true
+depends_on = ["RAW-MODEL-001", "RAW-PREVIEW-001", "JOB-001"]
+verify = ["cargo test -p yoctui-model raw_execution", "cargo test -p yoctui-protocol raw_execution", "cargo test -p yoctui-app raw_execution"]
+notes = "Define stable request/session/job identity, streams, bounded output, elapsed/result/cancellation/detach/history state, and versioned wire DTOs."
+
+[[task]]
+id = "RAW-JOB-001"
+milestone = "M20"
+title = "Execute noninteractive Raw commands as daemon jobs"
+status = "NOT_STARTED"
+priority = 618
+required = true
+depends_on = ["RAW-EXEC-MODEL-001", "RAW-CAP-PROBE-001", "CLIENT-ARCH-001"]
+verify = ["cargo test -p yoctui-bitbake raw_job", "cargo test -p yoctui-protocol raw_job", "cargo test -p yoctui-app raw_job", "cargo test -p yoctui -- raw_job"]
+notes = "Revalidate exact capability/executable/build identity in the daemon, spawn native argv, retain bounded stdout/stderr/history, and support cancellation/reconnect/loss."
+
+[[task]]
+id = "RAW-PTY-001"
+milestone = "M20"
+title = "Execute interactive Raw commands through daemon PTYs"
+status = "NOT_STARTED"
+priority = 619
+required = true
+depends_on = ["RAW-EXEC-MODEL-001", "RAW-CAP-PROBE-001", "PTY-MULTI-001"]
+verify = ["cargo test -p yoctui-model raw_pty", "cargo test -p yoctui-app raw_pty", "cargo test -p yoctui -- raw_pty"]
+notes = "Route only catalog-classified interactive argv through existing daemon PTY/session ownership with resize, detach, reattach, writer control, and termination."
+
+[[task]]
+id = "RAW-OUTPUT-UI-001"
+milestone = "M20"
+title = "Implement Raw execution output workspace"
+status = "NOT_STARTED"
+priority = 620
+required = true
+depends_on = ["RAW-JOB-001", "RAW-PTY-001"]
+verify = ["cargo test -p yoctui-model raw_output", "cargo test -p yoctui-app raw_output", "cargo test -p yoctui-ui raw_output"]
+notes = "Render job and PTY lifecycle, elapsed time, bounded streams, follow/pause, search/scroll, cancel, detach, reattach, exit code, and exact command identity."
+
+[[task]]
+id = "RAW-HISTORY-001"
+milestone = "M20"
+title = "Persist bounded Raw command history"
+status = "NOT_STARTED"
+priority = 621
+required = true
+depends_on = ["RAW-EXEC-MODEL-001"]
+verify = ["cargo test -p yoctui-model raw_history", "cargo test -p yoctui -- raw_history"]
+notes = "Retain bounded safe template/parameter/result metadata without persisting live process authority, unbounded output, or temporary job identity."
+
+[[task]]
+id = "RAW-FAVORITE-MODEL-001"
+milestone = "M20"
+title = "Define persistent Raw favorite model"
+status = "NOT_STARTED"
+priority = 622
+required = true
+depends_on = ["RAW-MODEL-001", "RAW-PARAM-001"]
+verify = ["cargo test -p yoctui-model raw_favorite"]
+notes = "Store stable template identity, validated defaults, name, ordering, and compatibility state while excluding PID/output/job/transient state."
+
+[[task]]
+id = "RAW-FAVORITE-PERSIST-001"
+milestone = "M20"
+title = "Persist Raw favorites atomically"
+status = "NOT_STARTED"
+priority = 623
+required = true
+depends_on = ["RAW-FAVORITE-MODEL-001"]
+verify = ["cargo test -p yoctui -- raw_favorite_persistence"]
+notes = "Load and atomically save bounded versioned favorites in user-local session state with invalid/stale entries explicit."
+
+[[task]]
+id = "RAW-FAVORITE-UI-001"
+milestone = "M20"
+title = "Implement Raw Favorites browser and actions"
+status = "NOT_STARTED"
+priority = 624
+required = true
+depends_on = ["RAW-FAVORITE-PERSIST-001", "RAW-FORM-UI-001"]
+verify = ["cargo test -p yoctui-model raw_favorite_ui", "cargo test -p yoctui-app raw_favorite_ui", "cargo test -p yoctui-ui raw_favorite_ui"]
+notes = "Pin Favorites for add/remove/rename/edit/reorder/execute/compatibility inspection without bypassing current capability revalidation."
+
+[[task]]
+id = "RAW-SEARCH-001"
+milestone = "M20"
+title = "Search Raw categories commands and descriptions"
+status = "NOT_STARTED"
+priority = 625
+required = true
+depends_on = ["RAW-COMMAND-UI-001"]
+verify = ["cargo test -p yoctui-model raw_search", "cargo test -p yoctui-app raw_search", "cargo test -p yoctui-ui raw_search"]
+notes = "Provide bounded case-insensitive typed search with result identity, exact help synchronization, and no-match behavior."
+
+[[task]]
+id = "RAW-MOUSE-001"
+milestone = "M20"
+title = "Add first-class Raw Mode mouse behavior"
+status = "NOT_STARTED"
+priority = 626
+required = true
+depends_on = ["RAW-FAVORITE-UI-001", "RAW-SEARCH-001"]
+verify = ["cargo test -p yoctui-app raw_mouse", "cargo test -p yoctui -- raw_mouse"]
+notes = "Use shared rendered geometry for category/command/favorite/history/field selection and wheel parity while modals and PTYs retain their existing traps."
+
+[[task]]
+id = "RAW-RESPONSIVE-001"
+milestone = "M20"
+title = "Implement Raw Mode responsive layouts"
+status = "NOT_STARTED"
+priority = 627
+required = true
+depends_on = ["RAW-OUTPUT-UI-001", "RAW-FAVORITE-UI-001", "RAW-SEARCH-001"]
+verify = ["cargo test -p yoctui-ui raw_responsive"]
+notes = "Verify wide category/command/help composition, medium Inspector replacement, narrow pane switching, dialogs, output, and too-small safety."
+
+[[task]]
+id = "RAW-A11Y-001"
+milestone = "M20"
+title = "Verify Raw Mode accessibility"
+status = "NOT_STARTED"
+priority = 628
+required = true
+depends_on = ["RAW-RESPONSIVE-001"]
+verify = ["cargo test -p yoctui-ui raw_accessibility"]
+notes = "Preserve focus, selection, availability, safety, favorite, job, and PTY meaning in every theme, no-color, high-contrast, and reduced-motion mode."
+
+[[task]]
+id = "RAW-SECURITY-001"
+milestone = "M20"
+title = "Verify Raw Mode has no shell-evaluation escape path"
+status = "NOT_STARTED"
+priority = 629
+required = true
+depends_on = ["RAW-ARG-001", "RAW-JOB-001", "RAW-PTY-001"]
+verify = ["cargo test --workspace --all-features raw_security", "./scripts/verify-raw-security.sh"]
+notes = "Reject shell operators/control corruption and prove ordinary execution reaches only exact native argv or the separately typed PTY path."
+
+[[task]]
+id = "RAW-COMPAT-001"
+milestone = "M20"
+title = "Verify dynamic Raw availability across BitBake fixtures"
+status = "NOT_STARTED"
+priority = 630
+required = true
+depends_on = ["RAW-CAP-PROBE-001", "RAW-FORM-UI-001"]
+verify = ["cargo test --workspace --all-features raw_compatibility", "./scripts/verify-compatibility.sh"]
+notes = "Exercise older, Wrynose 2.18, unknown-future, unavailable, limited, replacement, stale, and denial-with-zero-spawn behavior."
+
+[[task]]
+id = "RAW-LIVE-001"
+milestone = "M20"
+title = "Validate representative Raw commands against supported BitBake"
+status = "NOT_STARTED"
+priority = 631
+required = true
+depends_on = ["RAW-OUTPUT-UI-001", "RAW-HISTORY-001", "RAW-FAVORITE-UI-001", "RAW-SECURITY-001", "RAW-COMPAT-001"]
+verify = ["./scripts/verify-live-raw-mode.sh", "./scripts/verify-raw-mode-evidence.sh"]
+notes = "Run representative read-only, build/task, cancellation, reconnect, and interactive PTY commands against current supported environments with exact capability/evidence identities."
+
+[[task]]
+id = "RAW-DOC-001"
+milestone = "M20"
+title = "Document Raw Mode operation and safety"
+status = "NOT_STARTED"
+priority = 632
+required = true
+depends_on = ["RAW-LIVE-001", "RAW-A11Y-001", "RAW-MOUSE-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-raw-mode-evidence.sh"]
+notes = "Document browsing, parameters, exact argv, jobs, PTYs, favorites, compatibility, reference scope, safety, and live evidence without overstating release support."
+
+[[task]]
+id = "RAW-001"
+milestone = "M20"
+title = "Complete Raw BitBake Command Workbench"
+status = "NOT_STARTED"
+priority = 633
+required = true
+depends_on = ["RAW-REF-001", "RAW-SPEC-001", "RAW-CATALOG-MODEL-001", "RAW-CATALOG-001", "RAW-CATALOG-TRACE-001", "RAW-CAP-001", "RAW-CAP-PROBE-001", "RAW-PARAM-001", "RAW-RECIPE-001", "RAW-ARG-001", "RAW-PREVIEW-001", "RAW-MODEL-001", "RAW-NAV-001", "RAW-CATEGORY-UI-001", "RAW-COMMAND-UI-001", "RAW-HELP-UI-001", "RAW-FORM-UI-001", "RAW-EXEC-MODEL-001", "RAW-JOB-001", "RAW-PTY-001", "RAW-OUTPUT-UI-001", "RAW-HISTORY-001", "RAW-FAVORITE-MODEL-001", "RAW-FAVORITE-PERSIST-001", "RAW-FAVORITE-UI-001", "RAW-SEARCH-001", "RAW-MOUSE-001", "RAW-RESPONSIVE-001", "RAW-A11Y-001", "RAW-SECURITY-001", "RAW-COMPAT-001", "RAW-LIVE-001", "RAW-DOC-001"]
+verify = ["./scripts/verify-raw-mode.sh", "./scripts/verify-completion.sh"]
+notes = "Parent gate closes only after every Raw Mode child task and the unchanged full product completion gate pass."

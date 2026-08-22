@@ -407,3 +407,35 @@ Exit criteria:
   performance, live-evidence, screenshot, Clippy, formatting, and regression
   categories
 - `./scripts/verify-completion.sh` passes without weakening an older gate
+
+## M20 — Raw BitBake Command Workbench
+
+Goal: provide expert users with a structured, capability-correlated browser
+over the BitBake CLI command surface without introducing a shell-evaluation
+escape path or duplicating the embedded terminal.
+
+Capabilities:
+
+- a tracked Wrynose 6.0 / BitBake 2.18 reference snapshot with exact catalog
+  traceability
+- typed categories, command templates, descriptions, parameters, interaction
+  modes, safety classes, and capability requirements
+- authoritative recipe, image, target, task, and multiconfig selection with
+  bounded manual entry where BitBake accepts it
+- a bounded expert argument editor and exact indexed native-argv preview
+- daemon-owned noninteractive jobs and daemon-owned interactive PTY sessions
+- responsive category, command, help, configuration, output, history, search,
+  and favorite workflows
+- atomic persistent favorites and bounded command history
+- dynamic availability from the connected daemon capability snapshot
+- mouse, keyboard, accessibility, security, fixture, and live-BitBake evidence
+
+Exit criteria:
+
+- reference-only, companion-tool, pipeline, and conceptual examples are never
+  misrepresented as executable Raw Mode commands
+- ordinary execution never uses `sh -c`, `bash -c`, `eval`, or an equivalent
+  command string
+- unavailable or stale capability state fails before process or PTY creation
+- closing or detaching a view does not implicitly terminate daemon-owned work
+- `./scripts/verify-raw-mode.sh` and the unchanged full completion gate pass

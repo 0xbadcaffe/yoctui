@@ -2,39 +2,42 @@
 
 ## Task
 
-**ID:** UI-REGRESSION-001
-**Title:** Verify all existing functionality remains available
+**ID:** RAW-SPEC-001
+**Title:** Specify Raw Mode UX execution safety favorites and capability contract
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Prove every pre-existing workspace, daemon/session function, and
-capability-correlated route remains reachable after the redesign.
+Define the authoritative UI and architecture contract for the Raw BitBake
+Command Workbench before changing runtime behavior.
 
 ## Dependencies
 
-- `VISUAL-TEST-003` — DONE
-- `INPUT-TEST-002` — DONE
+- `RAW-REF-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-e2e/`
-- `scripts/verify-utility-coverage.sh`
-- `scripts/verify-compatibility.sh`
+- `docs/ui-spec.md`
+- `docs/architecture.md`
+- `docs/product-roadmap.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 - `docs/current-task.md`
 
 ## Definition of done
 
- - Every existing workspace and daemon/session route remains reachable.
- - Capability-correlated actions retain their typed routes and disabled reasons.
- - Regression tests and utility/compatibility verification pass without weakened checks.
+ - Raw Mode hierarchy, focus, search, form, preview, output, history, favorite,
+   responsive, mouse, and accessibility behavior are explicit.
+ - Typed job versus PTY execution and detach/reattach semantics are explicit.
+ - Capability correlation and stale-authority rejection are explicit.
+ - Shell operators and destructive/unsafe behavior are classified and rejected
+   or separately confirmed without a shell command path.
+ - Component ownership and persistence boundaries are documented.
 
 ## Verification
 
 ```bash
-cargo test --workspace --all-features ui_regression
-./scripts/verify-utility-coverage.sh
-./scripts/verify-compatibility.sh
+./scripts/verify-ui-spec.sh
+./scripts/verify-roadmap.sh
+./scripts/check-docs.sh
 ```
