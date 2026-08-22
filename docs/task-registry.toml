@@ -5541,12 +5541,12 @@ notes = "Real PTY output now crosses the maintained emulator, bounded typed PtyS
 id = "LIVE-UI-POKY-001"
 milestone = "M19"
 title = "Validate redesigned UI against real Poky"
-status = "IN_PROGRESS"
+status = "BLOCKED"
 priority = 564
 required = true
 depends_on = ["VISUAL-TEST-003", "PTY-UI-TEST-001", "PERF-UI-002"]
-verify = ["./scripts/test-live-next-generation-ui.sh", "./scripts/verify-next-generation-ui-evidence.sh"]
-notes = "Run the required fresh supported Poky startup, verification, workspace, build/log/completion, safe failure, terminal, and daemon reconnect flow with retained real terminal evidence."
+verify = ["unshare -Ur true", "YOCTUI_POKY_SOURCE=\"$PWD/.yoctui-fresh-poky\" ./scripts/test-live-next-generation-ui.sh", "./scripts/verify-next-generation-ui-evidence.sh"]
+notes = "BLOCKED in this environment: the fresh checkout at .yoctui-fresh-poky is present, but `unshare -Ur true` fails with `Operation not permitted`, so BitBake cannot start. The harness exits 2 before evidence capture; rerun the listed checks on a host permitting unprivileged user namespaces."
 
 [[task]]
 id = "README-UI-001"
@@ -5563,7 +5563,7 @@ notes = "Publish only current screenshots captured from the real Yoctui binary a
 id = "UI-REGRESSION-001"
 milestone = "M19"
 title = "Verify all existing functionality remains available"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 566
 required = true
 depends_on = ["VISUAL-TEST-003", "INPUT-TEST-002"]

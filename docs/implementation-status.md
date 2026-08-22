@@ -11,10 +11,10 @@ Status values:
 
 ## Current phase
 
-`LIVE-UI-POKY-001` is `IN_PROGRESS`. It will run the next-generation workbench
-against a fresh supported Poky checkout and retain policy-complete evidence for
-startup, metadata workspaces, build/log completion, a safe failure, terminal
-interaction, and daemon reconnect.
+`LIVE-UI-POKY-001` is `BLOCKED`: the fresh checkout is present, but the host
+denies the unprivileged user namespace required by BitBake. Reproduction is
+`unshare -Ur true` → `Operation not permitted`; the live harness exits 2 before
+capture. The next independent task, `UI-REGRESSION-001`, is now active.
 
 `PTY-UI-TEST-001` is `DONE`: the audit found that daemon PTY output was
 journaled but discarded by the interactive replica, leaving panes with session
