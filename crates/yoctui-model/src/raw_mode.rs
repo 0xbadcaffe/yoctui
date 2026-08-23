@@ -39,6 +39,9 @@ pub const MAX_RAW_PREVIEW_ARGUMENTS: usize = 128;
 pub const MAX_RAW_PREVIEW_ARGUMENT_BYTES: usize = 8_192;
 pub const MAX_RAW_SEARCH_BYTES: usize = 512;
 pub const MAX_RAW_FAVORITES: usize = 256;
+pub const RAW_FAVORITE_SCHEMA_VERSION: u16 = 1;
+pub const MAX_RAW_FAVORITE_NAME_BYTES: usize = 160;
+pub const MAX_RAW_FAVORITE_AGGREGATE_BYTES: usize = 256 * 1024;
 pub const RAW_HISTORY_SCHEMA_VERSION: u16 = 1;
 pub const MAX_RAW_HISTORY_RECORDS: usize = 256;
 pub const MAX_RAW_VIEW_DEPTH: usize = 8;
@@ -2219,6 +2222,153 @@ pub struct RawCommandForm {
     pub build_directory: PathBuf,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct RawFavoriteTemplateDigest(pub [u8; 32]);
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RawFavorite {
+    pub schema_version: u16,
+    pub command: RawCommandId,
+    pub template_digest: RawFavoriteTemplateDigest,
+    pub name: String,
+    pub parameter_defaults: BTreeMap<RawParameterId, RawParameterValue>,
+    pub additional_arguments: RawAdditionalArguments,
+    pub order: u16,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawFavoriteProjection {
+    pub stale: bool,
+    pub reason: Option<String>,
+    pub availability: RawCommandAvailability,
+}
+
+impl RawFavorite {
+    pub fn new(
+        command: &RawCommand,
+        name: impl Into<String>,
+        parameter_defaults: BTreeMap<RawParameterId, RawParameterValue>,
+        additional_arguments: RawAdditionalArguments,
+        order: u16,
+    ) -> Result<Self, RawFavoriteError> {
+        if !matches!(command.execution, RawExecutionPolicy::Executable { .. }) {
+            return Err(RawFavoriteError::ReferenceOnly(command.id.clone()));
+        }
+        validate_raw_favorite_defaults(command, &parameter_defaults)?;
+        additional_arguments.validate()?;
+        let favorite = Self {
+            schema_version: RAW_FAVORITE_SCHEMA_VERSION,
+            command: command.id.clone(),
+            template_digest: raw_favorite_template_digest(command),
+            name: name.into(),
+            parameter_defaults,
+            additional_arguments,
+            order,
+        };
+        favorite.validate()?;
+        Ok(favorite)
+    }
+
+    pub fn validate(&self) -> Result<(), RawFavoriteError> {
+        if self.schema_version != RAW_FAVORITE_SCHEMA_VERSION {
+            return Err(RawFavoriteError::UnsupportedSchema(self.schema_version));
+        }
+        RawCommandId::new(self.command.as_str())
+            .map_err(|_| RawFavoriteError::InvalidCommandIdentity)?;
+        if self.name.is_empty()
+            || self.name.trim() != self.name
+            || self.name.len() > MAX_RAW_FAVORITE_NAME_BYTES
+            || self.name.chars().any(char::is_control)
+        {
+            return Err(RawFavoriteError::InvalidName);
+        }
+        if self.parameter_defaults.len() > MAX_RAW_PARAMETERS {
+            return Err(RawFavoriteError::TooManyDefaults);
+        }
+        for (parameter, value) in &self.parameter_defaults {
+            RawParameterId::new(parameter.as_str())
+                .map_err(|_| RawFavoriteError::InvalidParameterIdentity)?;
+            validate_raw_execution_parameter_value(value)
+                .map_err(|_| RawFavoriteError::InvalidDefault(parameter.clone()))?;
+        }
+        self.additional_arguments.validate()?;
+        Ok(())
+    }
+
+    pub fn project(
+        &self,
+        catalog: &RawCatalog,
+        authority: Option<&DaemonCompatibilitySnapshot>,
+    ) -> RawFavoriteProjection {
+        let Some(command) = catalog.command(&self.command) else {
+            return stale_raw_favorite("The favorite command is absent from the current catalog.");
+        };
+        if raw_favorite_template_digest(command) != self.template_digest {
+            return stale_raw_favorite("The favorite command template changed.");
+        }
+        if let Err(error) = validate_raw_favorite_defaults(command, &self.parameter_defaults) {
+            return stale_raw_favorite(&format!("The favorite defaults are stale: {error}"));
+        }
+        RawFavoriteProjection {
+            stale: false,
+            reason: None,
+            availability: command.availability(authority),
+        }
+    }
+}
+
+fn stale_raw_favorite(reason: &str) -> RawFavoriteProjection {
+    RawFavoriteProjection {
+        stale: true,
+        reason: Some(reason.into()),
+        availability: RawCommandAvailability {
+            state: RawAvailabilityState::Unsupported,
+            issues: vec![RawCapabilityIssue {
+                capability: None,
+                reason: reason.into(),
+                limitations: Vec::new(),
+            }],
+            implementations: Vec::new(),
+        },
+    }
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum RawFavoriteError {
+    #[error("unsupported Raw favorite schema version {0}")]
+    UnsupportedSchema(u16),
+    #[error("invalid Raw favorite command identity")]
+    InvalidCommandIdentity,
+    #[error("invalid Raw favorite parameter identity")]
+    InvalidParameterIdentity,
+    #[error("Raw favorite name is empty or exceeds its bound")]
+    InvalidName,
+    #[error("Raw favorite has too many parameter defaults")]
+    TooManyDefaults,
+    #[error("Raw favorite default for {0} is invalid")]
+    InvalidDefault(RawParameterId),
+    #[error("Raw favorite command is reference-only: {0}")]
+    ReferenceOnly(RawCommandId),
+    #[error("Raw favorite command is unavailable: {0}")]
+    Unavailable(String),
+    #[error("Raw favorite repeats command identity {0}")]
+    DuplicateCommand(RawCommandId),
+    #[error("Raw favorite ordering is not contiguous")]
+    InvalidOrder,
+    #[error("Raw favorites are bounded to {MAX_RAW_FAVORITES} entries")]
+    TooManyFavorites,
+    #[error("Raw favorites exceed their aggregate byte bound")]
+    AggregateTooLarge,
+    #[error("Raw favorite is unknown: {0}")]
+    Unknown(RawCommandId),
+    #[error(transparent)]
+    InvalidAdditionalArguments(#[from] RawArgvError),
+    #[error(transparent)]
+    InvalidParameter(#[from] RawParameterError),
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RawFavoriteConfirmation {
     pub command: RawCommandId,
@@ -2266,7 +2416,7 @@ pub struct RawModeState {
     pub output: RawOutputViewState,
     pub history: Vec<RawHistoryRecord>,
     pub history_selection: usize,
-    pub favorites: Vec<RawCommandId>,
+    pub favorites: Vec<RawFavorite>,
     pub favorite_selection: usize,
     pub favorite_confirmation: Option<RawFavoriteConfirmation>,
     pub notification: Option<String>,
@@ -2598,6 +2748,239 @@ impl RawCommand {
     }
 }
 
+fn raw_favorite_template_digest(command: &RawCommand) -> RawFavoriteTemplateDigest {
+    let mut digest = Sha256::new();
+    raw_digest_field(&mut digest, command.id.as_str().as_bytes());
+    for parameter in &command.parameters {
+        raw_digest_field(&mut digest, parameter.id.as_str().as_bytes());
+        raw_digest_field(&mut digest, parameter.placeholder.as_bytes());
+        raw_digest_field(
+            &mut digest,
+            match parameter.kind {
+                RawParameterKind::Recipe => b"recipe",
+                RawParameterKind::Image => b"image",
+                RawParameterKind::Target => b"target",
+                RawParameterKind::Task => b"task",
+                RawParameterKind::UserInterface => b"user_interface",
+                RawParameterKind::File => b"file",
+                RawParameterKind::Integer => b"integer",
+                RawParameterKind::Text => b"text",
+                RawParameterKind::Multiconfig => b"multiconfig",
+            },
+        );
+        raw_digest_field(
+            &mut digest,
+            match parameter.presence {
+                RawParameterPresence::Required => b"required",
+                RawParameterPresence::Optional => b"optional",
+            },
+        );
+    }
+    match &command.execution {
+        RawExecutionPolicy::ReferenceOnly { .. } => raw_digest_field(&mut digest, b"reference"),
+        RawExecutionPolicy::Executable { template } => {
+            raw_digest_field(&mut digest, b"executable");
+            raw_digest_field(&mut digest, template.executable.as_str().as_bytes());
+            raw_digest_field(
+                &mut digest,
+                raw_interaction_name(template.interaction).as_bytes(),
+            );
+            raw_digest_field(&mut digest, raw_safety_name(template.safety).as_bytes());
+            match &template.capabilities {
+                RawCapabilityRequirement::All { capabilities } => {
+                    raw_digest_field(&mut digest, b"all");
+                    for capability in capabilities {
+                        raw_digest_field(&mut digest, capability.to_string().as_bytes());
+                    }
+                }
+                RawCapabilityRequirement::Any { capabilities } => {
+                    raw_digest_field(&mut digest, b"any");
+                    for capability in capabilities {
+                        raw_digest_field(&mut digest, capability.to_string().as_bytes());
+                    }
+                }
+            }
+            for argument in &template.arguments {
+                match argument {
+                    RawArgument::Literal { value } => {
+                        raw_digest_field(&mut digest, b"literal");
+                        raw_digest_field(&mut digest, value.as_bytes());
+                    }
+                    RawArgument::Empty => raw_digest_field(&mut digest, b"empty"),
+                    RawArgument::Parameter { parameter } => {
+                        raw_digest_field(&mut digest, b"parameter");
+                        raw_digest_field(&mut digest, parameter.as_str().as_bytes());
+                    }
+                    RawArgument::JoinedParameter { prefix, parameter } => {
+                        raw_digest_field(&mut digest, b"joined");
+                        raw_digest_field(&mut digest, prefix.as_bytes());
+                        raw_digest_field(&mut digest, parameter.as_str().as_bytes());
+                    }
+                    RawArgument::Composed { segments } => {
+                        raw_digest_field(&mut digest, b"composed");
+                        for segment in segments {
+                            match segment {
+                                RawArgumentSegment::Literal { value } => {
+                                    raw_digest_field(&mut digest, b"literal");
+                                    raw_digest_field(&mut digest, value.as_bytes());
+                                }
+                                RawArgumentSegment::Parameter { parameter } => {
+                                    raw_digest_field(&mut digest, b"parameter");
+                                    raw_digest_field(&mut digest, parameter.as_str().as_bytes());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    RawFavoriteTemplateDigest(digest.finalize().into())
+}
+
+fn validate_raw_favorite_defaults(
+    command: &RawCommand,
+    defaults: &BTreeMap<RawParameterId, RawParameterValue>,
+) -> Result<(), RawFavoriteError> {
+    if defaults.len() > MAX_RAW_PARAMETERS {
+        return Err(RawFavoriteError::TooManyDefaults);
+    }
+    for (parameter, value) in defaults {
+        let definition = command
+            .parameters
+            .iter()
+            .find(|definition| &definition.id == parameter)
+            .ok_or_else(|| RawFavoriteError::InvalidDefault(parameter.clone()))?;
+        definition.validate_value(value)?;
+    }
+    Ok(())
+}
+
+fn raw_favorite_aggregate_bytes(favorites: &[RawFavorite]) -> usize {
+    favorites
+        .iter()
+        .map(|favorite| {
+            2 + 32
+                + 2
+                + favorite.command.as_str().len()
+                + favorite.name.len()
+                + favorite
+                    .parameter_defaults
+                    .iter()
+                    .map(|(parameter, value)| parameter.as_str().len() + value.argument().len() + 8)
+                    .sum::<usize>()
+                + favorite
+                    .additional_arguments
+                    .as_slice()
+                    .iter()
+                    .map(String::len)
+                    .sum::<usize>()
+        })
+        .sum()
+}
+
+pub fn validate_raw_favorites(favorites: &[RawFavorite]) -> Result<(), RawFavoriteError> {
+    if favorites.len() > MAX_RAW_FAVORITES {
+        return Err(RawFavoriteError::TooManyFavorites);
+    }
+    let mut commands = BTreeSet::new();
+    for (index, favorite) in favorites.iter().enumerate() {
+        favorite.validate()?;
+        if favorite.order as usize != index {
+            return Err(RawFavoriteError::InvalidOrder);
+        }
+        if !commands.insert(favorite.command.clone()) {
+            return Err(RawFavoriteError::DuplicateCommand(favorite.command.clone()));
+        }
+    }
+    if raw_favorite_aggregate_bytes(favorites) > MAX_RAW_FAVORITE_AGGREGATE_BYTES {
+        return Err(RawFavoriteError::AggregateTooLarge);
+    }
+    Ok(())
+}
+
+fn normalize_raw_favorite_order(favorites: &mut [RawFavorite]) {
+    for (index, favorite) in favorites.iter_mut().enumerate() {
+        favorite.order = index as u16;
+    }
+}
+
+pub fn add_raw_favorite(
+    favorites: &mut Vec<RawFavorite>,
+    mut favorite: RawFavorite,
+) -> Result<(), RawFavoriteError> {
+    favorite.validate()?;
+    if favorites
+        .iter()
+        .any(|item| item.command == favorite.command)
+    {
+        return Err(RawFavoriteError::DuplicateCommand(favorite.command));
+    }
+    if favorites.len() == MAX_RAW_FAVORITES {
+        return Err(RawFavoriteError::TooManyFavorites);
+    }
+    favorite.order = favorites.len() as u16;
+    let mut next = favorites.clone();
+    next.push(favorite);
+    validate_raw_favorites(&next)?;
+    *favorites = next;
+    Ok(())
+}
+
+pub fn update_raw_favorite(
+    favorites: &mut Vec<RawFavorite>,
+    replacement: RawFavorite,
+) -> Result<(), RawFavoriteError> {
+    replacement.validate()?;
+    let Some(index) = favorites
+        .iter()
+        .position(|item| item.command == replacement.command)
+    else {
+        return Err(RawFavoriteError::Unknown(replacement.command));
+    };
+    let mut next = favorites.clone();
+    next[index] = RawFavorite {
+        order: index as u16,
+        ..replacement
+    };
+    validate_raw_favorites(&next)?;
+    *favorites = next;
+    Ok(())
+}
+
+pub fn remove_raw_favorite(
+    favorites: &mut Vec<RawFavorite>,
+    command: &RawCommandId,
+) -> Result<RawFavorite, RawFavoriteError> {
+    let Some(index) = favorites.iter().position(|item| &item.command == command) else {
+        return Err(RawFavoriteError::Unknown(command.clone()));
+    };
+    let mut next = favorites.clone();
+    let removed = next.remove(index);
+    normalize_raw_favorite_order(&mut next);
+    validate_raw_favorites(&next)?;
+    *favorites = next;
+    Ok(removed)
+}
+
+pub fn move_raw_favorite(
+    favorites: &mut Vec<RawFavorite>,
+    command: &RawCommandId,
+    delta: isize,
+) -> Result<(), RawFavoriteError> {
+    let Some(index) = favorites.iter().position(|item| &item.command == command) else {
+        return Err(RawFavoriteError::Unknown(command.clone()));
+    };
+    let mut next = favorites.clone();
+    let destination = shifted_index(index, next.len(), delta);
+    let favorite = next.remove(index);
+    next.insert(destination, favorite);
+    normalize_raw_favorite_order(&mut next);
+    validate_raw_favorites(&next)?;
+    *favorites = next;
+    Ok(())
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RawCatalog {
     pub version: u16,
@@ -2825,7 +3208,9 @@ impl RawModeState {
     }
 
     pub fn is_favorite(&self, command: &RawCommandId) -> bool {
-        self.favorites.contains(command)
+        self.favorites
+            .iter()
+            .any(|favorite| &favorite.command == command)
     }
 
     pub fn selected_execution(&self) -> Option<&RawExecutionState> {
@@ -3012,7 +3397,7 @@ pub fn reduce_raw_mode(
             state.history_selection =
                 shifted_index(state.history_selection, state.history.len(), delta)
         }
-        RawModeAction::ActivateHistory => activate_raw_retained(state, catalog, true),
+        RawModeAction::ActivateHistory => activate_raw_history(state, catalog),
         RawModeAction::OpenFavorites => {
             state.favorite_selection = state
                 .favorite_selection
@@ -3023,7 +3408,7 @@ pub fn reduce_raw_mode(
             state.favorite_selection =
                 shifted_index(state.favorite_selection, state.favorites.len(), delta)
         }
-        RawModeAction::ActivateFavorite => activate_raw_retained(state, catalog, false),
+        RawModeAction::ActivateFavorite => activate_raw_favorite(state, catalog, authority),
         RawModeAction::ToggleFavorite => toggle_raw_favorite(state, catalog),
         RawModeAction::ConfirmFavorite => confirm_raw_favorite(state),
         RawModeAction::CancelFavorite => cancel_raw_favorite(state),
@@ -3128,7 +3513,7 @@ fn raw_visible_commands<'a>(state: &RawModeState, catalog: &'a RawCatalog) -> Ve
         return state
             .favorites
             .iter()
-            .filter_map(|command| catalog.command(command))
+            .filter_map(|favorite| catalog.command(&favorite.command))
             .collect();
     }
     catalog
@@ -3146,16 +3531,6 @@ fn reconcile_raw_mode(state: &mut RawModeState, catalog: &RawCatalog) {
                 "Raw form closed because the catalog version was replaced.".into(),
             );
         }
-    }
-    state
-        .favorites
-        .retain(|command| catalog.command(command).is_some());
-    if state
-        .favorite_confirmation
-        .as_ref()
-        .is_some_and(|confirmation| catalog.command(&confirmation.command).is_none())
-    {
-        cancel_raw_favorite(state);
     }
     if state
         .category
@@ -3245,6 +3620,22 @@ fn open_raw_selected(
         );
         return;
     };
+    open_raw_form(
+        state,
+        command,
+        authority,
+        &BTreeMap::new(),
+        &RawAdditionalArguments::default(),
+    );
+}
+
+fn open_raw_form(
+    state: &mut RawModeState,
+    command: &RawCommand,
+    authority: Option<&DaemonCompatibilitySnapshot>,
+    defaults: &BTreeMap<RawParameterId, RawParameterValue>,
+    additional_arguments: &RawAdditionalArguments,
+) {
     let availability = command.availability(authority);
     if !availability.is_enabled() {
         state.notification = Some(raw_availability_reason(&availability));
@@ -3263,17 +3654,33 @@ fn open_raw_selected(
         .parameters
         .iter()
         .map(|parameter| {
+            let value = defaults.get(&parameter.id).cloned();
             (
                 parameter.id.clone(),
                 RawFormField {
                     parameter: parameter.id.clone(),
-                    editor: PopupEditor::new(String::new()),
-                    value: None,
+                    editor: PopupEditor::new(
+                        value
+                            .as_ref()
+                            .map_or_else(String::new, RawParameterValue::argument),
+                    ),
+                    value,
                     validation_error: None,
                 },
             )
         })
         .collect();
+    let input = additional_arguments
+        .as_slice()
+        .iter()
+        .map(|argument| {
+            let escaped = argument.replace('\\', "\\\\").replace('\'', "\\'");
+            format!("'{escaped}'")
+        })
+        .collect::<Vec<_>>()
+        .join(" ");
+    let mut argv = RawArgvEditor::new(input).expect("validated favorite argv input is bounded");
+    argv.validated = Some(additional_arguments.clone());
     state.form = Some(RawCommandForm {
         command: command.id.clone(),
         fields,
@@ -3283,7 +3690,7 @@ fn open_raw_selected(
             .map(|parameter| parameter.id.clone())
             .collect(),
         field_selection: 0,
-        additional_arguments: RawArgvEditor::new("").expect("empty Raw argv is bounded"),
+        additional_arguments: argv,
         capability_generation: authority.snapshot.generation,
         build_directory: build_directory.clone(),
     });
@@ -3551,16 +3958,11 @@ fn request_raw_preview(
     }
 }
 
-fn activate_raw_retained(state: &mut RawModeState, catalog: &RawCatalog, history: bool) {
-    let command = if history {
-        state
-            .history
-            .get(state.history_selection)
-            .map(|record| &record.command)
-    } else {
-        state.favorites.get(state.favorite_selection)
-    }
-    .cloned();
+fn activate_raw_history(state: &mut RawModeState, catalog: &RawCatalog) {
+    let command = state
+        .history
+        .get(state.history_selection)
+        .map(|record| record.command.clone());
     let Some(command) = command.and_then(|command| {
         catalog
             .command(&command)
@@ -3579,6 +3981,42 @@ fn activate_raw_retained(state: &mut RawModeState, catalog: &RawCatalog, history
     state.focus = RawModeFocus::Commands;
 }
 
+fn activate_raw_favorite(
+    state: &mut RawModeState,
+    catalog: &RawCatalog,
+    authority: Option<&DaemonCompatibilitySnapshot>,
+) {
+    let Some(favorite) = state.favorites.get(state.favorite_selection).cloned() else {
+        state.notification = Some("No Raw favorite is selected.".into());
+        return;
+    };
+    let projection = favorite.project(catalog, authority);
+    if projection.stale {
+        state.notification = projection.reason;
+        return;
+    }
+    if !projection.availability.is_enabled() {
+        state.notification = Some(raw_availability_reason(&projection.availability));
+        return;
+    }
+    let Some(command) = catalog.command(&favorite.command) else {
+        state.notification = Some("The Raw favorite command is stale.".into());
+        return;
+    };
+    state.command = Some(command.id.clone());
+    state.category = Some(command.category.clone());
+    state.search.query.clear();
+    state.search.editing = false;
+    state.return_stack.clear();
+    open_raw_form(
+        state,
+        command,
+        authority,
+        &favorite.parameter_defaults,
+        &favorite.additional_arguments,
+    );
+}
+
 fn toggle_raw_favorite(state: &mut RawModeState, catalog: &RawCatalog) {
     let Some(command) = state.command.clone() else {
         state.notification = Some("No Raw command is selected.".into());
@@ -3588,7 +4026,11 @@ fn toggle_raw_favorite(state: &mut RawModeState, catalog: &RawCatalog) {
         state.notification = Some("The selected Raw command is stale.".into());
         return;
     }
-    if state.favorites.contains(&command) {
+    if state
+        .favorites
+        .iter()
+        .any(|favorite| favorite.command == command)
+    {
         state.favorite_confirmation = Some(RawFavoriteConfirmation {
             command,
             return_focus: state.focus,
@@ -3600,7 +4042,18 @@ fn toggle_raw_favorite(state: &mut RawModeState, catalog: &RawCatalog) {
             "Raw favorites are bounded to {MAX_RAW_FAVORITES} entries."
         ));
     } else {
-        state.favorites.push(command);
+        let catalog_command = catalog
+            .command(&command)
+            .expect("selected Raw command was checked above");
+        let favorite = RawFavorite::new(
+            catalog_command,
+            catalog_command.label.clone(),
+            BTreeMap::new(),
+            RawAdditionalArguments::default(),
+            state.favorites.len() as u16,
+        )
+        .expect("validated catalog command creates a bounded favorite");
+        state.favorites.push(favorite);
         state.favorite_selection = state.favorites.len().saturating_sub(1);
         state.notification = Some("Raw favorite added.".into());
     }
@@ -3610,9 +4063,7 @@ fn confirm_raw_favorite(state: &mut RawModeState) {
     let Some(confirmation) = state.favorite_confirmation.take() else {
         return;
     };
-    state
-        .favorites
-        .retain(|favorite| favorite != &confirmation.command);
+    let _ = remove_raw_favorite(&mut state.favorites, &confirmation.command);
     state.favorite_selection = state
         .favorite_selection
         .min(state.favorites.len().saturating_sub(1));
@@ -5042,6 +5493,174 @@ mod raw_mode_state_tests {
         );
     }
 
+    fn favorite_fixture(catalog: &RawCatalog, command_id: &str, order: u16) -> RawFavorite {
+        let command = catalog.command(&command(command_id)).unwrap();
+        let defaults = command
+            .parameters
+            .first()
+            .map(|parameter| {
+                BTreeMap::from([(
+                    parameter.id.clone(),
+                    RawParameterValue::Target("core-image-minimal".into()),
+                )])
+            })
+            .unwrap_or_default();
+        RawFavorite::new(
+            command,
+            format!("Favorite {command_id}"),
+            defaults,
+            RawAdditionalArguments::from_vec(vec![
+                "--dry-run".into(),
+                "value with space".into(),
+                "quote'and\\slash".into(),
+            ])
+            .unwrap(),
+            order,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn raw_favorite_validates_version_name_defaults_and_excludes_runtime_authority_by_shape() {
+        let catalog = catalog(1);
+        let favorite = favorite_fixture(&catalog, "build.target", 0);
+        favorite.validate().unwrap();
+        assert_eq!(favorite.command, command("build.target"));
+        assert_eq!(favorite.parameter_defaults.len(), 1);
+        assert_eq!(favorite.additional_arguments.as_slice().len(), 3);
+
+        let mut future = favorite.clone();
+        future.schema_version += 1;
+        assert!(matches!(
+            future.validate(),
+            Err(RawFavoriteError::UnsupportedSchema(_))
+        ));
+        let mut unnamed = favorite.clone();
+        unnamed.name.clear();
+        assert_eq!(unnamed.validate(), Err(RawFavoriteError::InvalidName));
+        let mut invalid = favorite;
+        invalid.parameter_defaults.insert(
+            parameter("target"),
+            RawParameterValue::Target("bad;target".into()),
+        );
+        assert!(matches!(
+            invalid.validate(),
+            Err(RawFavoriteError::InvalidDefault(_))
+        ));
+    }
+
+    #[test]
+    fn raw_favorite_add_update_remove_reorder_and_bounds_are_atomic() {
+        let catalog = catalog(1);
+        let first = favorite_fixture(&catalog, "build.target", 99);
+        let second = favorite_fixture(&catalog, "build.version", 99);
+        let mut favorites = Vec::new();
+        add_raw_favorite(&mut favorites, first.clone()).unwrap();
+        add_raw_favorite(&mut favorites, second.clone()).unwrap();
+        assert_eq!(favorites[0].order, 0);
+        assert_eq!(favorites[1].order, 1);
+        let before = favorites.clone();
+        assert!(matches!(
+            add_raw_favorite(&mut favorites, first),
+            Err(RawFavoriteError::DuplicateCommand(_))
+        ));
+        assert_eq!(favorites, before);
+
+        let mut renamed = favorites[0].clone();
+        renamed.name = "Renamed favorite".into();
+        update_raw_favorite(&mut favorites, renamed).unwrap();
+        move_raw_favorite(&mut favorites, &command("build.target"), 1).unwrap();
+        assert_eq!(favorites[1].name, "Renamed favorite");
+        assert_eq!(favorites[0].order, 0);
+        assert_eq!(favorites[1].order, 1);
+        let removed = remove_raw_favorite(&mut favorites, &command("build.version")).unwrap();
+        assert_eq!(removed.command, command("build.version"));
+        assert_eq!(favorites[0].order, 0);
+
+        let mut too_many = Vec::new();
+        for index in 0..=MAX_RAW_FAVORITES {
+            let mut item = second.clone();
+            item.command = command(&format!("synthetic.{index}"));
+            item.order = index as u16;
+            too_many.push(item);
+        }
+        assert_eq!(
+            validate_raw_favorites(&too_many),
+            Err(RawFavoriteError::TooManyFavorites)
+        );
+
+        let long_arguments =
+            RawAdditionalArguments::from_vec((0..16).map(|_| "x".repeat(512)).collect()).unwrap();
+        let mut oversized = Vec::new();
+        for index in 0..40 {
+            let mut item = second.clone();
+            item.command = command(&format!("large.{index}"));
+            item.additional_arguments = long_arguments.clone();
+            item.order = index;
+            oversized.push(item);
+        }
+        assert_eq!(
+            validate_raw_favorites(&oversized),
+            Err(RawFavoriteError::AggregateTooLarge)
+        );
+    }
+
+    #[test]
+    fn raw_favorite_projection_preserves_stale_and_reopens_only_a_fresh_form() {
+        let original = catalog(1);
+        let favorite = favorite_fixture(&original, "build.target", 0);
+        let available = authority(7, true);
+        let projection = favorite.project(&original, Some(&available));
+        assert!(!projection.stale);
+        assert_eq!(
+            projection.availability.state,
+            RawAvailabilityState::Available
+        );
+
+        let mut changed = catalog(2);
+        let RawExecutionPolicy::Executable { template } = &mut changed
+            .commands
+            .iter_mut()
+            .find(|item| item.id == command("build.target"))
+            .unwrap()
+            .execution
+        else {
+            unreachable!();
+        };
+        template.arguments.push(RawArgument::Literal {
+            value: "--changed".into(),
+        });
+        assert!(favorite.project(&changed, Some(&available)).stale);
+        changed
+            .commands
+            .retain(|item| item.id != command("build.target"));
+        assert!(favorite.project(&changed, Some(&available)).stale);
+
+        let mut state = RawModeState::new(&original);
+        state.favorites = vec![favorite.clone()];
+        state.view = RawModeView::Favorites;
+        state.focus = RawModeFocus::Favorites;
+        reduce_raw_mode(
+            &mut state,
+            &original,
+            Some(&available),
+            RawModeAction::ActivateFavorite,
+        );
+        assert_eq!(state.view, RawModeView::Form);
+        let form = state.form.as_mut().unwrap();
+        assert_eq!(form.capability_generation, 7);
+        assert_eq!(
+            form.fields[&parameter("target")].value,
+            Some(RawParameterValue::Target("core-image-minimal".into()))
+        );
+        assert_eq!(
+            form.additional_arguments.validate().unwrap(),
+            &favorite.additional_arguments
+        );
+        assert!(state.preview.is_none());
+        assert!(state.execution_states.is_empty());
+    }
+
     #[test]
     fn raw_history_catalog_replacement_retains_stale_records_without_replay() {
         let original = catalog(1);
@@ -5061,24 +5680,30 @@ mod raw_mode_state_tests {
             exit_code: Some(0),
             durable_reference: None,
         });
-        assert_eq!(state.favorites, [command("build.target")]);
+        assert_eq!(state.favorites[0].command, command("build.target"));
         assert_eq!(state.history[0].command, command("build.target"));
 
         reduce_raw_mode(&mut state, &original, None, RawModeAction::ToggleFavorite);
         assert!(state.favorite_confirmation.is_some());
-        assert_eq!(state.favorites, [command("build.target")]);
+        assert_eq!(state.favorites[0].command, command("build.target"));
         reduce_raw_mode(&mut state, &original, None, RawModeAction::CancelFavorite);
-        assert_eq!(state.favorites, [command("build.target")]);
+        assert_eq!(state.favorites[0].command, command("build.target"));
         reduce_raw_mode(&mut state, &original, None, RawModeAction::ToggleFavorite);
         reduce_raw_mode(&mut state, &original, None, RawModeAction::ConfirmFavorite);
         assert!(state.favorites.is_empty());
         reduce_raw_mode(&mut state, &original, None, RawModeAction::ToggleFavorite);
 
         reduce_raw_mode(&mut state, &original, None, RawModeAction::OpenFavorites);
-        reduce_raw_mode(&mut state, &original, None, RawModeAction::ActivateFavorite);
+        let available = authority(1, true);
+        reduce_raw_mode(
+            &mut state,
+            &original,
+            Some(&available),
+            RawModeAction::ActivateFavorite,
+        );
         assert_eq!(state.command, Some(command("build.target")));
-        assert_eq!(state.view, RawModeView::Browser);
-        assert_eq!(state.focus, RawModeFocus::Commands);
+        assert_eq!(state.view, RawModeView::Form);
+        assert_eq!(state.focus, RawModeFocus::Form);
 
         let mut replacement = catalog(2);
         replacement
@@ -5091,7 +5716,8 @@ mod raw_mode_state_tests {
             None,
             RawModeAction::ReprojectCatalog,
         );
-        assert!(state.favorites.is_empty());
+        assert_eq!(state.favorites.len(), 1);
+        assert!(state.favorites[0].project(&replacement, None).stale);
         assert_eq!(state.history.len(), 1);
         assert_ne!(state.command, Some(command("build.target")));
         reduce_raw_mode(&mut state, &replacement, None, RawModeAction::OpenHistory);

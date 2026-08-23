@@ -4241,6 +4241,10 @@ changed. They say `STALE` or the exact five-state availability reason and
 cannot run until revalidated. Add, remove, rename, reorder, edit defaults,
 inspect, and execute all use typed reducer actions. Execution always rebuilds
 the form and preview against the current catalog and daemon snapshot.
+Template identity covers executable argv shape, parameter schema, capability
+requirement, interaction, and safety class. Opening a current favorite creates
+a fresh form with its defaults and additional argv; it does not create a
+preview or request until the ordinary review flow is completed.
 
 ### Capability and responsive behavior
 

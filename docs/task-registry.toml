@@ -5838,18 +5838,18 @@ notes = "Versioned terminal-only daemon history is unique by request, newest fir
 id = "RAW-FAVORITE-MODEL-001"
 milestone = "M20"
 title = "Define persistent Raw favorite model"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 622
 required = true
 depends_on = ["RAW-MODEL-001", "RAW-PARAM-001"]
 verify = ["cargo test -p yoctui-model raw_favorite"]
-notes = "Store stable template identity, validated defaults, name, ordering, and compatibility state while excluding PID/output/job/transient state."
+notes = "Versioned command/template records bound name, typed defaults, additional argv, order, count, and aggregate bytes. Atomic mutations, stale digest/default projection, current five-state availability, and fresh form reconstruction retain no execution or capability authority."
 
 [[task]]
 id = "RAW-FAVORITE-PERSIST-001"
 milestone = "M20"
 title = "Persist Raw favorites atomically"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 623
 required = true
 depends_on = ["RAW-FAVORITE-MODEL-001"]

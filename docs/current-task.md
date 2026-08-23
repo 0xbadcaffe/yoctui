@@ -2,24 +2,23 @@
 
 ## Task
 
-**ID:** RAW-FAVORITE-MODEL-001
-**Title:** Define persistent Raw favorite model
+**ID:** RAW-FAVORITE-PERSIST-001
+**Title:** Persist Raw favorites atomically
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Define a bounded, versioned Raw favorite model that stores reusable command
-configuration intent while keeping execution and capability authority live and
-reviewed.
+Load and save bounded versioned Raw favorites through the existing user-local
+atomic session-state boundary without granting persisted execution authority.
 
 ## Dependencies
 
-- `RAW-MODEL-001` — DONE
-- `RAW-PARAM-001` — DONE
+- `RAW-FAVORITE-MODEL-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/raw_mode.rs`
+- `crates/yoctui-cli/src/main.rs`
 - `docs/architecture.md`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
@@ -28,28 +27,26 @@ reviewed.
 
 ## Definition of done
 
-- A versioned favorite record retains stable command identity, a bounded
-  user-visible name, validated typed parameter defaults, validated additional
-  arguments, and explicit ordering.
-- Favorite records never retain PID, process/session/job identity, output,
-  executable/build authority, capability generation, preview digest, secret,
-  or transient form/execution state.
-- Add, update, remove, rename, and reorder operations are deterministic,
-  identity-safe, count/byte bounded, and reject malformed or unknown-version
-  records.
-- Projection against the current catalog preserves removed or changed commands
-  as explicit stale favorites and reports current five-state compatibility
-  without granting execution authority.
-- Reopening a valid favorite creates fresh form defaults only; execution still
-  requires current capability validation, exact preview, confirmation, and a
-  new request identity.
-- Model tests cover validation, bounds, duplicate identity, editing, ordering,
-  stale catalog/template projection, and fresh-form reconstruction.
+- The versioned session schema stores Raw favorites only in user-local
+  `session.toml`, using the existing private atomic replacement path.
+- Loading validates schema, identities, names, typed defaults, argv, ordering,
+  record count, and aggregate bytes before replacing model state.
+- Malformed, duplicate, unknown-version, or oversized favorite data fails
+  closed without partially installing records or disturbing unrelated session
+  preferences.
+- Removed or changed catalog templates load as explicit stale favorites rather
+  than being discarded or upgraded.
+- Persistence never includes process/session/job identity, output, executable
+  or build authority, capability generation/state, preview/request identity,
+  or transient form state.
+- CLI tests cover round trip, atomic replacement, legacy/default loading,
+  malformed and oversized rejection, stale retention, permissions, and
+  preservation of unrelated session fields.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model raw_favorite
+cargo test -p yoctui -- raw_favorite_persistence
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

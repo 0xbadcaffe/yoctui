@@ -158,7 +158,17 @@ version history; restart recovery records abandoned work once as detached
 output, or PTY state. Free-form text and file parameters are conservatively
 omitted from the durable record. Current-catalog activation keeps stale entries
 explicit and can only return to configuration before a fresh preview,
-confirmation, and request. `RAW-FAVORITE-MODEL-001` is active next.
+confirmation, and request. `RAW-FAVORITE-MODEL-001` is complete: one versioned
+record per stable command retains a bounded name, canonical executable-template/
+parameter/capability/interaction/safety digest, validated typed defaults,
+validated additional argv, and explicit order under count and aggregate-byte
+limits. Add, replace, rename, remove, and reorder publish only validated
+collections. Current catalog projection preserves missing, changed-template,
+and invalid-default records as stale and otherwise reports the current
+five-state daemon availability without storing it. Activation reconstructs only
+a fresh current-authority form with defaults; it retains no build/capability
+authority, preview, request, job/session identity, output, or process state.
+`RAW-FAVORITE-PERSIST-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

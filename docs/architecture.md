@@ -2880,6 +2880,17 @@ Free-form text and file-path parameter values are conservatively omitted from
 history because the catalog does not classify their sensitivity.
 Re-execution always creates a new reviewed request.
 
+The favorite model identifies one record per stable command ID and stores a
+canonical digest of the executable template, parameter schema, capability
+requirement, interaction, and safety class. Names, typed defaults, additional
+argv, explicit order, record count, and aggregate bytes are bounded. Collection
+mutations validate a replacement before publication. Projection compares the
+digest and defaults with the current catalog, then computes the same current
+five-state daemon availability used by the command browser; no availability or
+execution authority is stored in the favorite. Activating a current favorite
+creates a new form populated with defaults and argv under the current capability
+generation/build identity, with no preview, request, owner, or process state.
+
 Security tests inspect the complete code path for prohibited shell-evaluation
 APIs and hostile values such as semicolons, pipelines, substitutions, and
 backticks. Fake process/PTY tests prove exact argv, streaming, cancellation,
