@@ -21,8 +21,10 @@ command-string or process authority.
 ## Relevant files
 
 - `crates/yoctui-model/src/raw_mode.rs`
+- `crates/yoctui-protocol/src/daemon.rs`
 - `crates/yoctui-app/src/lib.rs`
 - `crates/yoctui-ui/src/lib.rs`
+- `docs/architecture.md`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
