@@ -8,8 +8,9 @@
 
 ## Objective
 
-Live validation harnesses are present, but execution still requires a
-supported build directory and unprivileged user namespaces.
+Live validation harnesses are present and namespaces now work without sudo,
+but the available build directory has stale `/workspace/.yoctui-fresh-poky`
+layer paths and BitBake cannot initialize.
 
 ## Dependencies
 
@@ -36,7 +37,8 @@ supported build directory and unprivileged user namespaces.
 
 ## Definition of done
 
-- Run `unshare -Ur true` without sudo and make sure it succeeds.
+- Recreate/correct `.yoctui-fresh-build` so its `BBLAYERS` point to the local
+  Poky checkout.
 - Run `YOCTUI_LIVE_RAW=1 YOCTUI_LIVE_BUILD_DIR=/path/to/build
   ./scripts/verify-live-raw-mode.sh`, then
   `./scripts/verify-raw-mode-evidence.sh`.

@@ -5942,7 +5942,7 @@ priority = 631
 required = true
 depends_on = ["RAW-OUTPUT-UI-001", "RAW-HISTORY-001", "RAW-FAVORITE-UI-001", "RAW-SECURITY-001", "RAW-COMPAT-001"]
 verify = ["./scripts/verify-live-raw-mode.sh", "./scripts/verify-raw-mode-evidence.sh"]
-notes = "Harnesses are now present, but live execution remains blocked until a supported build directory is supplied and unprivileged namespace creation works without sudo. Run YOCTUI_LIVE_RAW=1 YOCTUI_LIVE_BUILD_DIR=/path/to/build ./scripts/verify-live-raw-mode.sh, then verify-raw-mode-evidence.sh."
+notes = "User namespaces now pass without sudo. Live execution remains blocked because .yoctui-fresh-build/conf/bblayers.conf references stale /workspace/.yoctui-fresh-poky layer paths, so the bridge cannot report BitBake. Recreate the build against the local Poky checkout (or correct BBLAYERS), then run the two Raw live verification commands."
 
 [[task]]
 id = "RAW-DOC-001"
