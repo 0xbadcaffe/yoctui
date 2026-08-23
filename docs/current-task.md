@@ -9,7 +9,8 @@
 ## Objective
 
 The Raw workbench is complete. Global completion is blocked by the separate
-real-Poky redesigned-UI evidence task.
+real-Poky redesigned-UI evidence task; namespace access is fixed, but the
+bridge build session still disconnects during compatibility negotiation.
 
 ## Dependencies
 
