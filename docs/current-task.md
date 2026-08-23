@@ -2,21 +2,21 @@
 
 ## Task
 
-**ID:** RAW-DOC-001
-**Title:** Document Raw Mode operation and safety
+**ID:** RAW-001
+**Title:** Complete Raw BitBake Command Workbench
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Document browsing, parameters, exact argv, jobs, PTYs, favorites,
-compatibility, reference scope, safety, and live evidence without overstating
-release support.
+Run the complete Raw workbench completion gate after all required model, UI,
+security, compatibility, live, and documentation tasks are complete.
 
 ## Dependencies
 
 - `RAW-FAVORITE-UI-001` — DONE
 - `RAW-SEARCH-001` — DONE
 - `RAW-RESPONSIVE-001` — DONE
+- `RAW-DOC-001` — DONE
 - `RAW-LIVE-001` — DONE
 - `RAW-A11Y-001` — DONE
 - `RAW-MOUSE-001` — DONE
@@ -35,14 +35,14 @@ release support.
 
 ## Definition of done
 
-- Run `./scripts/check-docs.sh` and
-  `./scripts/verify-raw-mode-evidence.sh`.
+- Run `./scripts/verify-completion.sh` and
+  `./scripts/verify-roadmap.sh`.
 
 ## Verification
 
 ```bash
-./scripts/verify-live-raw-mode.sh
-./scripts/verify-raw-mode-evidence.sh
+./scripts/verify-completion.sh
+./scripts/verify-roadmap.sh
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
